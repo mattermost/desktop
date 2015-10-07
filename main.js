@@ -3,10 +3,12 @@
 var app = require('app');  // Module to control application life.
 var BrowserWindow = require('browser-window');  // Module to create native browser window.
 var ipc = require('ipc');
+var Menu = require('menu');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 var mainWindow = null;
+var willAppQuit = false;
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
@@ -44,6 +46,35 @@ app.on('ready', function() {
       default:
     }
   });
+
+  mainWindow.on('close', function(event){
+    // Minimize the window for close button.
+    if(process.platform==='win32'){
+      if(!willAppQuit){ // for Ctrl+Q
+        event.preventDefault();
+        mainWindow.minimize();
+      }
+    }
+  });
+
+  if(process.platform==='win32'){
+    var menu = Menu.buildFromTemplate([
+      {
+        label: 'File',
+        submenu: [
+          {
+            label: 'Quit',
+            accelerator: 'Ctrl + Q',
+            click: function(item, focusedWindow){
+              willAppQuit = true;
+              app.quit();
+            }
+          }
+        ]
+      }
+    ]);
+    Menu.setApplicationMenu(menu);
+  }
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function() {
