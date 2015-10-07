@@ -2,6 +2,7 @@
 
 var app = require('app');  // Module to control application life.
 var BrowserWindow = require('browser-window');  // Module to create native browser window.
+var ipc = require('ipc');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -20,21 +21,27 @@ app.on('window-all-closed', function() {
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
   // Create the browser window.
-  mainWindow = new BrowserWindow({width: 800, height: 600, 'node-integration': false});
+  mainWindow = new BrowserWindow({width: 800, height: 600});
 
   // and load the index.html of the app.
-  var baseUrl = 'http://MATTERMOST_URL';
-  mainWindow.loadUrl(baseUrl);
+  mainWindow.loadUrl('file://' + __dirname + '/index.html');
 
   // Open the DevTools.
-  //mainWindow.openDevTools();
+  // mainWindow.openDevTools();
 
-  // Hook open links
-  var webContents = mainWindow.webContents;
-  webContents.on('will-navigate', function(event, url){
-    if (url.indexOf(baseUrl) != 0){
-      event.preventDefault();
-      require('shell').openExternal(url);
+  // Show badges for unread channels.
+  ipc.on('retrieveUnreadCount', function(event, arg){
+    console.log(arg);
+    switch (process.platform) {
+      case 'win32':
+        if(arg > 0){
+          mainWindow.setOverlayIcon(__dirname + '/badge.png', 'You have unread channels.');
+        }
+        else{
+          mainWindow.setOverlayIcon(null, '');
+        }
+        break;
+      default:
     }
   });
 

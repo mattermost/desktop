@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Mattermost</title>
+</head>
+<body>
+  <!-- Modify src to your Mattermost url -->
+  <webview id="mainWebview" src="http://192.168.99.100:8065" autosize="on" preload="./webview/mattermost.js"></webview>
+  <style>
+  webview {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
+  </style>
+  <script src="./index.js"></script>
+</body>
+</html>
