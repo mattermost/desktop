@@ -2,7 +2,6 @@
 
 var app = require('app');  // Module to control application life.
 var BrowserWindow = require('browser-window');  // Module to create native browser window.
-var ipc = require('ipc');
 var Menu = require('menu');
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -30,22 +29,6 @@ app.on('ready', function() {
 
   // Open the DevTools.
   // mainWindow.openDevTools();
-
-  // Show badges for unread channels.
-  ipc.on('retrieveUnreadCount', function(event, arg){
-    console.log(arg);
-    switch (process.platform) {
-      case 'win32':
-        if(arg > 0){
-          mainWindow.setOverlayIcon(__dirname + '/badge.png', 'You have unread channels.');
-        }
-        else{
-          mainWindow.setOverlayIcon(null, '');
-        }
-        break;
-      default:
-    }
-  });
 
   mainWindow.on('close', function(event){
     // Minimize the window for close button.
