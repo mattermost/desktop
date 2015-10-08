@@ -1,12 +1,21 @@
 'use strict';
 
 var remote = require('remote');
+var url = require('url');
 
 var webView = document.getElementById('mainWebview');
 
-// Open in default browser.
+// Open external link in default browser.
 webView.addEventListener('new-window', function(e) {
-  require('shell').openExternal(e.url);
+  var currentUrl = url.parse(webView.getUrl());
+  var destUrl = url.parse(e.url);
+  // Open in browserWindow. for exmaple, attached files.
+  if(currentUrl.host === destUrl.host){
+    window.open(e.url);
+  }
+  else{
+    require('shell').openExternal(e.url);
+  }
 });
 
 // Count unread channels.
