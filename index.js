@@ -5,13 +5,17 @@ var url = require('url');
 
 var webView = document.getElementById('mainWebview');
 
+webView.addEventListener('page-title-set', function(e){
+  document.title = e.title;
+});
+
 // Open external link in default browser.
 webView.addEventListener('new-window', function(e) {
   var currentUrl = url.parse(webView.getUrl());
   var destUrl = url.parse(e.url);
   // Open in browserWindow. for exmaple, attached files.
   if(currentUrl.host === destUrl.host){
-    window.open(e.url);
+    window.open(e.url, 'Mattermost');
   }
   else{
     require('shell').openExternal(e.url);
