@@ -43,8 +43,14 @@ app.on('ready', function() {
   if(process.platform==='win32'){
     var menu = Menu.buildFromTemplate([
       {
-        label: 'File',
+        label: 'Menu',
         submenu: [
+          {
+            label: 'Settings',
+            click: function(item, focusedWindow){
+              mainWindow.loadUrl(__dirname + '/settings.html');
+            }
+          },
           {
             label: 'Quit',
             accelerator: 'Ctrl + Q',

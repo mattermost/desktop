@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Settings</title>
+</head>
+<body>
+  <h1>Settings</h1>
+  <p>URL: <input type="text" id="url"></p>
+  <input type="button" value="OK" onclick="saveSettings()">
+  <input type="button" value="Cancel" onclick="goBack()">
+
+  <script type="text/javascript">
+    var remote = require('remote');
+    var fs = require('fs');
+
+    var saveSettings = function(){
+      var configFile = remote.require('app').getPath('userData') + '/config.json';
+      var urlInput = document.getElementById('url');
+      var config = {
+        url: urlInput.value
+      };
+      fs.writeFile(configFile, JSON.stringify(config, null, '  '), function(err){
+        if(err) throw err;
+        window.location.href = './index.html';
+      });
+    }
+
+    var goBack = function(){
+      remote.getCurrentWindow().webContents.goBack();
+    }
+  </script>
+</body>
+</html>

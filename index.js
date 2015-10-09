@@ -5,6 +5,19 @@ var url = require('url');
 
 var webView = document.getElementById('mainWebview');
 
+try{
+  var configFile = remote.require('app').getPath('userData') + '/config.json';
+  var config = require(configFile);
+  if(config.url){
+    webView.setAttribute('src', config.url);
+  }
+  else{
+    throw 'URL is not configured';
+  }
+}catch(e){
+  window.location.href = './settings.html';
+}
+
 webView.addEventListener('page-title-set', function(e){
   document.title = e.title;
 });
