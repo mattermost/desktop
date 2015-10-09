@@ -18,6 +18,14 @@ app.on('window-all-closed', function() {
   }
 });
 
+// For win32, auto-hide menu bar.
+app.on('browser-window-created', function(event, window){
+  if(process.platform === 'win32'){
+    window.setAutoHideMenuBar(true);
+    window.setMenuBarVisibility(false);
+  }
+});
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
