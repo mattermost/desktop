@@ -1,7 +1,8 @@
 {
-  "name": "MattermostDesktop",
+  "name": "electron-mattermost",
   "version": "0.1.0",
   "description": "",
   "main": "main.js",
-  "author": "Yuya Ochiai"
+  "author": "Yuya Ochiai",
+  "license": "MIT"
 }
