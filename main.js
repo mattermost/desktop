@@ -26,6 +26,15 @@ app.on('browser-window-created', function(event, window){
   }
 });
 
+// For OSX, show hidden mainWindow when clicking dock icon.
+app.on('activate', function(event){
+  mainWindow.show();
+});
+
+app.on('before-quit', function(){
+  willAppQuit = true;
+})
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
@@ -39,11 +48,17 @@ app.on('ready', function() {
   // mainWindow.openDevTools();
 
   mainWindow.on('close', function(event){
-    // Minimize the window for close button.
-    if(process.platform==='win32'){
-      if(!willAppQuit){ // for Ctrl+Q
-        event.preventDefault();
-        mainWindow.minimize();
+    // Minimize or hide the window for close button.
+    if(!willAppQuit){ // avoid [Ctrl|Cmd]+Q
+      event.preventDefault();
+      switch (process.platform) {
+        case 'win32':
+          mainWindow.minimize();
+          break;
+        case 'darwin':
+          mainWindow.hide();
+          break;
+        default:
       }
     }
   });
@@ -63,7 +78,6 @@ app.on('ready', function() {
             label: 'Quit',
             accelerator: 'Ctrl + Q',
             click: function(item, focusedWindow){
-              willAppQuit = true;
               app.quit();
             }
           }
