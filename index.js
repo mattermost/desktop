@@ -51,6 +51,15 @@ var showUnreadBadge = function(unreadCount){
         window.setOverlayIcon(null, '');
       }
       break;
+    case 'darwin':
+      var app = remote.require('app');
+      if(unreadCount > 0){
+        app.dock.setBadge(unreadCount.toString());
+      }
+      else{
+        app.dock.setBadge('');
+      }
+      break;
     default:
   }
 }
