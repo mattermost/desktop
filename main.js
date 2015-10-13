@@ -3,6 +3,7 @@
 var app = require('app');  // Module to control application life.
 var BrowserWindow = require('browser-window');  // Module to create native browser window.
 var Menu = require('menu');
+var appMenu = require('./app-menu');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -63,29 +64,8 @@ app.on('ready', function() {
     }
   });
 
-  if(process.platform==='win32'){
-    var menu = Menu.buildFromTemplate([
-      {
-        label: 'Menu',
-        submenu: [
-          {
-            label: 'Settings',
-            click: function(item, focusedWindow){
-              mainWindow.loadUrl(__dirname + '/settings.html');
-            }
-          },
-          {
-            label: 'Quit',
-            accelerator: 'Ctrl + Q',
-            click: function(item, focusedWindow){
-              app.quit();
-            }
-          }
-        ]
-      }
-    ]);
-    Menu.setApplicationMenu(menu);
-  }
+  var menu = appMenu.createMenu(mainWindow);
+  Menu.setApplicationMenu(menu);
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function() {
