@@ -74,4 +74,10 @@ app.on('ready', function() {
     // when you should delete the corresponding element.
     mainWindow = null;
   });
+
+  // Deny drag&drop navigation in mainWindow.
+  // Drag&drop is allowed in webview of index.html.
+  mainWindow.webContents.on('will-navigate', function(event, url){
+    event.preventDefault();
+  });
 });
