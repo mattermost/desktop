@@ -14,7 +14,7 @@ var willAppQuit = false;
 app.on('window-all-closed', function() {
   // On OS X it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform != 'darwin') {
+  if (process.platform !== 'darwin') {
     app.quit();
   }
 });
@@ -34,7 +34,7 @@ app.on('activate', function(event){
 
 app.on('before-quit', function(){
   willAppQuit = true;
-})
+});
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -79,12 +79,12 @@ app.on('ready', function() {
   // Drag&drop is allowed in webview of index.html.
   mainWindow.webContents.on('will-navigate', function(event, url){
     var dirname = __dirname;
-    if (process.platform == 'win32'){
+    if (process.platform === 'win32'){
       dirname = '/' + dirname.replace(/\\/g, '/');
     }
 
     var index = url.indexOf('file://' + dirname);
-    if(index != 0){
+    if(index !== 0){
       event.preventDefault();
     }
   });

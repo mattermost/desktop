@@ -2,12 +2,8 @@
 
 var Menu = require('menu');
 
-var createMenu = function(mainWindow){
-  return Menu.buildFromTemplate(createTemplate(mainWindow));
-}
-
 var createTemplate = function(mainWindow){
-  var first_menu_name = (process.platform == 'darwin') ? require('app').getName() : 'File';
+  var first_menu_name = (process.platform === 'darwin') ? require('app').getName() : 'File';
   var template = [];
   template.push({
     label: first_menu_name,
@@ -79,32 +75,40 @@ var createTemplate = function(mainWindow){
       {
         label: 'Toggle Full Screen',
         accelerator: (function() {
-          if (process.platform == 'darwin')
+          if (process.platform === 'darwin'){
             return 'Ctrl+Command+F';
-          else
+          } else {
             return 'F11';
+          }
         })(),
         click: function(item, focusedWindow) {
-          if (focusedWindow)
+          if (focusedWindow) {
             focusedWindow.setFullScreen(!focusedWindow.isFullScreen());
+          }
         }
       },
       {
         label: 'Toggle Developer Tools',
         accelerator: (function() {
-          if (process.platform == 'darwin')
+          if (process.platform === 'darwin') {
             return 'Alt+Command+I';
-          else
+          } else {
             return 'Ctrl+Shift+I';
+          }
         })(),
         click: function(item, focusedWindow) {
-          if (focusedWindow)
+          if (focusedWindow) {
             focusedWindow.toggleDevTools();
+          }
         }
       },
     ]
   });
   return template;
-}
+};
+
+var createMenu = function(mainWindow){
+  return Menu.buildFromTemplate(createTemplate(mainWindow));
+};
 
 module.exports = { createMenu: createMenu };
