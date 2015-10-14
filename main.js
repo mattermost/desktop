@@ -78,6 +78,9 @@ app.on('ready', function() {
   // Deny drag&drop navigation in mainWindow.
   // Drag&drop is allowed in webview of index.html.
   mainWindow.webContents.on('will-navigate', function(event, url){
-    event.preventDefault();
+    var index = url.indexOf('file://' + __dirname);
+    if(index != 0){
+      event.preventDefault();
+    }
   });
 });
