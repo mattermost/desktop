@@ -1,7 +1,7 @@
 "use strict";
 
-var app = require('app');  // Module to control application life.
-var BrowserWindow = require('browser-window');  // Module to create native browser window.
+var app = require('app'); // Module to control application life.
+var BrowserWindow = require('browser-window'); // Module to create native browser window.
 var Menu = require('menu');
 var appMenu = require('./app-menu');
 
@@ -20,19 +20,19 @@ app.on('window-all-closed', function() {
 });
 
 // For win32, auto-hide menu bar.
-app.on('browser-window-created', function(event, window){
-  if(process.platform === 'win32'){
+app.on('browser-window-created', function(event, window) {
+  if (process.platform === 'win32') {
     window.setAutoHideMenuBar(true);
     window.setMenuBarVisibility(false);
   }
 });
 
 // For OSX, show hidden mainWindow when clicking dock icon.
-app.on('activate', function(event){
+app.on('activate', function(event) {
   mainWindow.show();
 });
 
-app.on('before-quit', function(){
+app.on('before-quit', function() {
   willAppQuit = true;
 });
 
@@ -40,7 +40,10 @@ app.on('before-quit', function(){
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
   // Create the browser window.
-  mainWindow = new BrowserWindow({width: 800, height: 600});
+  mainWindow = new BrowserWindow({
+    width: 800,
+    height: 600
+  });
 
   // and load the index.html of the app.
   mainWindow.loadUrl('file://' + __dirname + '/index.html');
@@ -48,9 +51,9 @@ app.on('ready', function() {
   // Open the DevTools.
   // mainWindow.openDevTools();
 
-  mainWindow.on('close', function(event){
+  mainWindow.on('close', function(event) {
     // Minimize or hide the window for close button.
-    if(!willAppQuit){ // avoid [Ctrl|Cmd]+Q
+    if (!willAppQuit) { // avoid [Ctrl|Cmd]+Q
       event.preventDefault();
       switch (process.platform) {
         case 'win32':
@@ -77,14 +80,14 @@ app.on('ready', function() {
 
   // Deny drag&drop navigation in mainWindow.
   // Drag&drop is allowed in webview of index.html.
-  mainWindow.webContents.on('will-navigate', function(event, url){
+  mainWindow.webContents.on('will-navigate', function(event, url) {
     var dirname = __dirname;
-    if (process.platform === 'win32'){
+    if (process.platform === 'win32') {
       dirname = '/' + dirname.replace(/\\/g, '/');
     }
 
     var index = url.indexOf('file://' + dirname);
-    if(index !== 0){
+    if (index !== 0) {
       event.preventDefault();
     }
   });
