@@ -3,11 +3,15 @@
 var Menu = require('menu');
 
 var createTemplate = function(mainWindow) {
-  var first_menu_name = (process.platform === 'darwin') ? require('app').getName() : 'File';
+  var app_name = require('app').getName()
+  var first_menu_name = (process.platform === 'darwin') ? app_name : 'File';
   var template = [];
   template.push({
     label: first_menu_name,
     submenu: [{
+      label: 'About ' + app_name,
+      role: 'about'
+    }, {
       label: 'Settings',
       click: function(item, focusedWindow) {
         mainWindow.loadUrl('file://' + __dirname + '/settings.html');

@@ -45,7 +45,8 @@ gulp.task('package', function() {
     version: '0.33.6',
     out: './release',
     prune: true,
-    overwrite: true
+    overwrite: true,
+    "app-version": packageJson.version
   }, function(err, appPath) {
     if (err) {
       console.log(err);
