@@ -3,6 +3,8 @@
 var remote = require('remote');
 var url = require('url');
 
+var contextMenu = require('./context-menu');
+
 var webView = document.getElementById('mainWebview');
 
 try {
@@ -18,6 +20,11 @@ try {
 catch (e) {
   window.location.href = './settings.html';
 }
+
+var menu = contextMenu.createDefault();
+window.addEventListener('contextmenu', function(e) {
+  menu.popup(remote.getCurrentWindow());
+}, false);
 
 webView.addEventListener('page-title-set', function(e) {
   document.title = e.title;
