@@ -2,8 +2,10 @@
 
 var gulp = require('gulp');
 var prettify = require('gulp-jsbeautifier');
+var packager = require('electron-packager');
+var packageJson = require('./src/package.json');
 
-var sources = ['**/*.js', '**/*.css', '**/*.html', '!node_modules/**'];
+var sources = ['**/*.js', '**/*.css', '**/*.html', '!node_modules/**', '!release/**'];
 
 gulp.task('prettify', function() {
   gulp.src(sources)
@@ -20,4 +22,23 @@ gulp.task('prettify', function() {
       }
     }))
     .pipe(gulp.dest('.'));
+});
+
+gulp.task('package', function() {
+  packager({
+    dir: './src',
+    name: packageJson.name,
+    platform: ['win32', 'darwin'],
+    arch: 'all',
+    version: '0.33.6',
+    out: './release',
+    overwrite: true
+  }, function(err, appPath) {
+    if (err) {
+      console.log(err);
+    }
+    else {
+      console.log('done');
+    }
+  });
 });

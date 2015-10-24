@@ -6,6 +6,7 @@
   "author": "Yuya Ochiai",
   "license": "MIT",
   "devDependencies": {
+    "electron-packager": "^5.1.0",
     "gulp": "^3.9.0",
     "gulp-jsbeautifier": "^1.0.1"
   }
