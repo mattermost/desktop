@@ -4,5 +4,8 @@
   "description": "",
   "main": "main.js",
   "author": "Yuya Ochiai",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "electron-connect": "^0.3.3"
+  }
 }

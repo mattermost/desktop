@@ -5,7 +5,11 @@
   "main": "main.js",
   "author": "Yuya Ochiai",
   "license": "MIT",
+  "scripts": {
+    "postinstall": "cd src && npm install"
+  },
   "devDependencies": {
+    "electron-connect": "^0.3.3",
     "electron-packager": "^5.1.0",
     "gulp": "^3.9.0",
     "gulp-jsbeautifier": "^1.0.1"

@@ -2,10 +2,13 @@
 
 var gulp = require('gulp');
 var prettify = require('gulp-jsbeautifier');
+var electron = require('electron-connect').server.create({
+  path: './src'
+});
 var packager = require('electron-packager');
 var packageJson = require('./src/package.json');
 
-var sources = ['**/*.js', '**/*.css', '**/*.html', '!node_modules/**', '!release/**'];
+var sources = ['**/*.js', '**/*.css', '**/*.html', '!**/node_modules/**', '!release/**'];
 
 gulp.task('prettify', function() {
   gulp.src(sources)
@@ -24,6 +27,15 @@ gulp.task('prettify', function() {
     .pipe(gulp.dest('.'));
 });
 
+gulp.task('serve', function() {
+  var options = ['--livereload'];
+  electron.start(options);
+  gulp.watch(sources, function() {
+    electron.broadcast('stop');
+    electron.restart(options);
+  });
+});
+
 gulp.task('package', function() {
   packager({
     dir: './src',
@@ -32,6 +44,7 @@ gulp.task('package', function() {
     arch: 'all',
     version: '0.33.6',
     out: './release',
+    prune: true,
     overwrite: true
   }, function(err, appPath) {
     if (err) {

@@ -5,6 +5,14 @@ var BrowserWindow = require('browser-window'); // Module to create native browse
 var Menu = require('menu');
 var appMenu = require('./app-menu');
 
+var client = null;
+if (process.argv.indexOf('--livereload') > 0) {
+  client = require('electron-connect').client.create();
+  client.on('stop', function() {
+    app.quit();
+  });
+}
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 var mainWindow = null;
