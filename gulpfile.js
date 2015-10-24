@@ -6,11 +6,10 @@ var electron = require('electron-connect').server.create({
   path: './src'
 });
 var packager = require('electron-packager');
-var packageJson = require('./src/package.json');
 
 var sources = ['**/*.js', '**/*.css', '**/*.html', '!**/node_modules/**', '!release/**'];
 
-gulp.task('prettify', function() {
+gulp.task('prettify', ['sync-meta'], function() {
   gulp.src(sources)
     .pipe(prettify({
       html: {
@@ -36,7 +35,8 @@ gulp.task('serve', function() {
   });
 });
 
-gulp.task('package', function() {
+gulp.task('package', ['sync-meta'], function() {
+  var packageJson = require('./src/package.json');
   packager({
     dir: './src',
     name: packageJson.name,
@@ -55,4 +55,16 @@ gulp.task('package', function() {
       console.log('done');
     }
   });
+});
+
+gulp.task('sync-meta', function() {
+  var appPackageJson = require('./src/package.json');
+  var packageJson = require('./package.json');
+  appPackageJson.name = packageJson.name;
+  appPackageJson.version = packageJson.version;
+  appPackageJson.description = packageJson.description;
+  appPackageJson.author = packageJson.author;
+  appPackageJson.license = packageJson.license;
+  var fs = require('fs');
+  fs.writeFileSync('./src/package.json', JSON.stringify(appPackageJson, null, '  ') + '\n');
 });
