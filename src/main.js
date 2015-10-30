@@ -1,8 +1,10 @@
-"use strict";
+'use strict';
 
 var app = require('app'); // Module to control application life.
 var BrowserWindow = require('browser-window'); // Module to create native browser window.
 var Menu = require('menu');
+var Tray = require('tray');
+var ipc = require('ipc');
 var appMenu = require('./app-menu');
 
 var client = null;
@@ -16,6 +18,7 @@ if (process.argv.indexOf('--livereload') > 0) {
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 var mainWindow = null;
+var trayIcon = null;
 var willAppQuit = false;
 
 // Quit when all windows are closed.
@@ -47,6 +50,18 @@ app.on('before-quit', function() {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
+  // set up tray icon to show balloon
+  if (process.platform === 'win32') {
+    trayIcon = new Tray(null);
+    trayIcon.setToolTip(app.getName());
+    ipc.on('notified', function(event, arg) {
+      trayIcon.displayBalloon({
+        title: arg.title,
+        content: arg.options.body
+      });
+    });
+  }
+
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 800,
