@@ -35,18 +35,19 @@ gulp.task('serve', function() {
   });
 });
 
-gulp.task('package', ['sync-meta'], function() {
+function makePackage(platform, arch) {
   var packageJson = require('./src/package.json');
   packager({
     dir: './src',
     name: packageJson.name,
-    platform: ['win32', 'darwin'],
-    arch: 'all',
+    platform: platform,
+    arch: arch,
     version: '0.33.6',
     out: './release',
     prune: true,
     overwrite: true,
-    "app-version": packageJson.version
+    "app-version": packageJson.version,
+    icon: 'electron-mattermost'
   }, function(err, appPath) {
     if (err) {
       console.log(err);
@@ -55,6 +56,22 @@ gulp.task('package', ['sync-meta'], function() {
       console.log('done');
     }
   });
+};
+
+gulp.task('package', ['sync-meta'], function() {
+  makePackage('all', 'all');
+});
+
+gulp.task('package:windows', ['sync-meta'], function() {
+  makePackage('win32', 'all');
+});
+
+gulp.task('package:osx', ['sync-meta'], function() {
+  makePackage('darwin', 'all');
+});
+
+gulp.task('package:linux', ['sync-meta'], function() {
+  makePackage('linux', 'all');
 });
 
 gulp.task('sync-meta', function() {
