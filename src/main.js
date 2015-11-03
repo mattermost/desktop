@@ -54,6 +54,9 @@ app.on('ready', function() {
   if (process.platform === 'win32') {
     trayIcon = new Tray(__dirname + '/tray.png');
     trayIcon.setToolTip(app.getName());
+    trayIcon.on('balloon-clicked', function() {
+      mainWindow.focus();
+    });
     ipc.on('notified', function(event, arg) {
       trayIcon.displayBalloon({
         title: arg.title,
