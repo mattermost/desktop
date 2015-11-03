@@ -47,7 +47,7 @@ function makePackage(platform, arch) {
     prune: true,
     overwrite: true,
     "app-version": packageJson.version,
-    icon: 'electron-mattermost'
+    icon: 'resources/electron-mattermost'
   }, function(err, appPath) {
     if (err) {
       console.log(err);
