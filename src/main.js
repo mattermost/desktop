@@ -56,6 +56,9 @@ app.on('ready', function() {
     trayIcon.setToolTip(app.getName());
     var tray_menu = require('./menus/tray').createDefault();
     trayIcon.setContextMenu(tray_menu);
+    trayIcon.on('clicked', function() {
+      mainWindow.focus();
+    });
     trayIcon.on('balloon-clicked', function() {
       mainWindow.focus();
     });
