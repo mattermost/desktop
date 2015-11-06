@@ -5,7 +5,7 @@ var BrowserWindow = require('browser-window'); // Module to create native browse
 var Menu = require('menu');
 var Tray = require('tray');
 var ipc = require('ipc');
-var appMenu = require('./app-menu');
+var appMenu = require('./menus/app');
 
 var client = null;
 if (process.argv.indexOf('--livereload') > 0) {
@@ -54,6 +54,8 @@ app.on('ready', function() {
   if (process.platform === 'win32') {
     trayIcon = new Tray(__dirname + '/tray.png');
     trayIcon.setToolTip(app.getName());
+    var tray_menu = require('./menus/tray').createDefault();
+    trayIcon.setContextMenu(tray_menu);
     trayIcon.on('balloon-clicked', function() {
       mainWindow.focus();
     });
@@ -93,8 +95,8 @@ app.on('ready', function() {
     }
   });
 
-  var menu = appMenu.createMenu(mainWindow);
-  Menu.setApplicationMenu(menu);
+  var app_menu = appMenu.createMenu(mainWindow);
+  Menu.setApplicationMenu(app_menu);
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function() {

@@ -3,7 +3,7 @@
 var remote = require('remote');
 var url = require('url');
 
-var contextMenu = require('./context-menu');
+var contextMenu = require('./menus/context');
 
 var webView = document.getElementById('mainWebview');
 
