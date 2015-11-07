@@ -42,7 +42,7 @@ function makePackage(platform, arch) {
     name: packageJson.name,
     platform: platform,
     arch: arch,
-    version: '0.33.6',
+    version: '0.34.3',
     out: './release',
     prune: true,
     overwrite: true,
