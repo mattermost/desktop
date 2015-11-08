@@ -14,7 +14,7 @@ var createTemplate = function(mainWindow) {
     }, {
       label: 'Settings',
       click: function(item, focusedWindow) {
-        mainWindow.loadUrl('file://' + __dirname + '/settings.html');
+        mainWindow.loadUrl('file://' + __dirname + '/../settings.html');
       }
     }, {
       label: 'Quit',
