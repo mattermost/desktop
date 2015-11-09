@@ -23,3 +23,19 @@ Node.js is required to test this app.
 1. Clone or download the source code.
 2. Run `npm install`.
 3. Run `npm start`. (If you have gulp, `gulp serve` has live-reload.)
+
+## Packaging
+gulp is necessary for packaging this app.
+
+```
+$ npm install -g gulp (Or, use node_module/gulp/bin/gulp.js
+```
+
+You can package this app with following commands. Packages will be created in `release` directory.
+
+```
+$ gulp package:windows (Requires Windows or Wine)
+$ gulp package:osx (Requires OS X or Linux)
+$ gulp package:linux
+$ gulp package (Packages for all platform)
+```
