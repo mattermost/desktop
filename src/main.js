@@ -90,6 +90,7 @@ app.on('ready', function() {
       event.preventDefault();
       switch (process.platform) {
         case 'win32':
+        case 'linux':
           mainWindow.minimize();
           break;
         case 'darwin':
