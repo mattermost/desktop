@@ -53,7 +53,7 @@ var showUnreadBadge = function(unreadCount) {
     case 'win32':
       var window = remote.getCurrentWindow();
       if (unreadCount > 0) {
-        window.setOverlayIcon(__dirname + '/badge.png', 'You have unread channels.');
+        window.setOverlayIcon(__dirname + '/resources/badge.png', 'You have unread channels.');
       }
       else {
         window.setOverlayIcon(null, '');

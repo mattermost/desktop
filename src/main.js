@@ -52,7 +52,7 @@ app.on('before-quit', function() {
 app.on('ready', function() {
   // set up tray icon to show balloon
   if (process.platform === 'win32') {
-    trayIcon = new Tray(__dirname + '/tray.png');
+    trayIcon = new Tray(__dirname + '/resources/tray.png');
     trayIcon.setToolTip(app.getName());
     var tray_menu = require('./menus/tray').createDefault();
     trayIcon.setContextMenu(tray_menu);
