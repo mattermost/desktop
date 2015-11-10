@@ -64,6 +64,7 @@ app.on('ready', function() {
     });
     ipc.on('notified', function(event, arg) {
       trayIcon.displayBalloon({
+        icon: __dirname + '/resources/appicon.png',
         title: arg.title,
         content: arg.options.body
       });
