@@ -15,11 +15,11 @@
   <input type="button" value="Cancel" onclick="goBack()">
 
   <script type="text/javascript">
-    var remote = require('remote');
+    const remote = require('electron').remote;
     var fs = require('fs');
 
     var saveSettings = function() {
-      var configFile = remote.require('app').getPath('userData') + '/config.json';
+      var configFile = remote.app.getPath('userData') + '/config.json';
       var urlInput = document.getElementById('url');
       var config = {
         url: urlInput.value

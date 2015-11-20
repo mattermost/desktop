@@ -1,6 +1,7 @@
 'use strict';
 
-var remote = require('remote');
+const electron = require('electron');
+const remote = electron.remote;
 var url = require('url');
 
 var contextMenu = require('./menus/context');
@@ -8,7 +9,7 @@ var contextMenu = require('./menus/context');
 var webView = document.getElementById('mainWebview');
 
 try {
-  var configFile = remote.require('app').getPath('userData') + '/config.json';
+  var configFile = electron.remote.app.getPath('userData') + '/config.json';
   var config = require(configFile);
   if (config.url) {
     webView.setAttribute('src', config.url);
@@ -60,12 +61,11 @@ var showUnreadBadge = function(unreadCount) {
       }
       break;
     case 'darwin':
-      var app = remote.require('app');
       if (unreadCount > 0) {
-        app.dock.setBadge(unreadCount.toString());
+        remote.app.dock.setBadge(unreadCount.toString());
       }
       else {
-        app.dock.setBadge('');
+        remote.app.dock.setBadge('');
       }
       break;
     default:

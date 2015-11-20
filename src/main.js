@@ -1,10 +1,11 @@
 'use strict';
 
-var app = require('app'); // Module to control application life.
-var BrowserWindow = require('browser-window'); // Module to create native browser window.
-var Menu = require('menu');
-var Tray = require('tray');
-var ipc = require('ipcMain');
+const electron = require('electron');
+const app = electron.app; // Module to control application life.
+const BrowserWindow = electron.BrowserWindow; // Module to create native browser window.
+const Menu = electron.Menu;
+const Tray = electron.Tray;
+const ipc = electron.ipcMain;
 var appMenu = require('./menus/app');
 
 var client = null;
