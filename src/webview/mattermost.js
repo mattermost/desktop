@@ -1,6 +1,6 @@
 'use strict';
 
-var ipc = require('ipc');
+var ipc = require('ipcRenderer');
 
 ipc.on('retrieveUnreadCount', function() {
   var unreadCount = document.getElementsByClassName('unread-title').length;

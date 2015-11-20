@@ -32,10 +32,10 @@ webView.addEventListener('page-title-set', function(e) {
 
 // Open external link in default browser.
 webView.addEventListener('new-window', function(e) {
-  var currentUrl = url.parse(webView.getUrl());
-  var destUrl = url.parse(e.url);
+  var currentURL = url.parse(webView.getURL());
+  var destURL = url.parse(e.url);
   // Open in browserWindow. for exmaple, attached files.
-  if (currentUrl.host === destUrl.host) {
+  if (currentURL.host === destURL.host) {
     window.open(e.url, 'Mattermost');
   }
   else {

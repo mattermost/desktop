@@ -4,7 +4,7 @@ var app = require('app'); // Module to control application life.
 var BrowserWindow = require('browser-window'); // Module to create native browser window.
 var Menu = require('menu');
 var Tray = require('tray');
-var ipc = require('ipc');
+var ipc = require('ipcMain');
 var appMenu = require('./menus/app');
 
 var client = null;
@@ -56,10 +56,10 @@ app.on('ready', function() {
     trayIcon.setToolTip(app.getName());
     var tray_menu = require('./menus/tray').createDefault();
     trayIcon.setContextMenu(tray_menu);
-    trayIcon.on('clicked', function() {
+    trayIcon.on('click', function() {
       mainWindow.focus();
     });
-    trayIcon.on('balloon-clicked', function() {
+    trayIcon.on('balloon-click', function() {
       mainWindow.focus();
     });
     ipc.on('notified', function(event, arg) {
@@ -79,7 +79,7 @@ app.on('ready', function() {
   });
 
   // and load the index.html of the app.
-  mainWindow.loadUrl('file://' + __dirname + '/index.html');
+  mainWindow.loadURL('file://' + __dirname + '/index.html');
 
   // Open the DevTools.
   // mainWindow.openDevTools();
