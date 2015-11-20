@@ -8,6 +8,7 @@ ipc.on('retrieveUnreadCount', function() {
 });
 
 // Show balloon when notified.
+/*
 if (process.platform === 'win32') {
   Notification = function(title, options) {
     ipc.send('notified', {
@@ -20,6 +21,7 @@ if (process.platform === 'win32') {
   };
   Notification.prototype.close = function() {};
 }
+*/
 
 // Show window even if it is hidden when notification is clicked.
 var NativeNotification = null;
