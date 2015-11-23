@@ -22,6 +22,9 @@ var mainWindow = null;
 var trayIcon = null;
 var willAppQuit = false;
 
+// For toast notification on windows
+app.setAppUserModelId('yuya-oc.electron-mattermost');
+
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
   // On OS X it is common for applications and their menu bar

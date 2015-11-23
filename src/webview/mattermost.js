@@ -1,6 +1,7 @@
 'use strict';
 
-const ipc = require('electron').ipcRenderer;
+const electron = require('electron');
+const ipc = electron.ipcRenderer;
 
 ipc.on('retrieveUnreadCount', function() {
   var unreadCount = document.getElementsByClassName('unread-title').length;
@@ -23,9 +24,9 @@ if (process.platform === 'win32') {
 }
 */
 
-// Show window even if it is hidden when notification is clicked.
+// Show window even if it is hidden/minimized when notification is clicked.
 var NativeNotification = null;
-if (process.platform === 'darwin') {
+if (process.platform === 'darwin' || process.platform === 'win32') {
   NativeNotification = Notification;
   Notification = function(title, options) {
     this.notification = new NativeNotification(title, options);
@@ -38,7 +39,7 @@ if (process.platform === 'darwin') {
   };
   Notification.prototype.__defineSetter__('onclick', function(callback) {
     this.notification.onclick = function() {
-      require('remote').getCurrentWindow().show();
+      electron.remote.getCurrentWindow().show();
       callback();
     };
   });
