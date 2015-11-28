@@ -12,7 +12,7 @@
   "devDependencies": {
     "electron-connect": "^0.3.3",
     "electron-packager": "^5.1.0",
-    "electron-prebuilt": "^0.34.3",
+    "electron-prebuilt": "^0.35.1",
     "gulp": "^3.9.0",
     "gulp-jsbeautifier": "^1.0.1"
   }

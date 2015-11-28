@@ -1,8 +1,8 @@
 'use strict';
 
-var remote = require('remote');
-var Menu = remote.require('menu');
-var MenuItem = remote.require('menu-item');
+const remote = require('electron').remote;
+const Menu = remote.Menu;
+const MenuItem = remote.MenuItem;
 
 var createDefault = function() {
   var menu = new Menu();

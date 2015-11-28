@@ -1,10 +1,11 @@
 'use strict';
 
-var app = require('app'); // Module to control application life.
-var BrowserWindow = require('browser-window'); // Module to create native browser window.
-var Menu = require('menu');
-var Tray = require('tray');
-var ipc = require('ipc');
+const electron = require('electron');
+const app = electron.app; // Module to control application life.
+const BrowserWindow = electron.BrowserWindow; // Module to create native browser window.
+const Menu = electron.Menu;
+const Tray = electron.Tray;
+const ipc = electron.ipcMain;
 var appMenu = require('./menus/app');
 
 var client = null;
@@ -20,6 +21,9 @@ if (process.argv.indexOf('--livereload') > 0) {
 var mainWindow = null;
 var trayIcon = null;
 var willAppQuit = false;
+
+// For toast notification on windows
+app.setAppUserModelId('yuya-oc.electron-mattermost');
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
@@ -56,10 +60,10 @@ app.on('ready', function() {
     trayIcon.setToolTip(app.getName());
     var tray_menu = require('./menus/tray').createDefault();
     trayIcon.setContextMenu(tray_menu);
-    trayIcon.on('clicked', function() {
+    trayIcon.on('click', function() {
       mainWindow.focus();
     });
-    trayIcon.on('balloon-clicked', function() {
+    trayIcon.on('balloon-click', function() {
       mainWindow.focus();
     });
     ipc.on('notified', function(event, arg) {
@@ -79,7 +83,7 @@ app.on('ready', function() {
   });
 
   // and load the index.html of the app.
-  mainWindow.loadUrl('file://' + __dirname + '/index.html');
+  mainWindow.loadURL('file://' + __dirname + '/index.html');
 
   // Open the DevTools.
   // mainWindow.openDevTools();

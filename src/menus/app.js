@@ -1,9 +1,10 @@
 'use strict';
 
-var Menu = require('menu');
+const electron = require('electron');
+const Menu = electron.Menu;
 
 var createTemplate = function(mainWindow) {
-  var app_name = require('app').getName()
+  var app_name = electron.app.getName();
   var first_menu_name = (process.platform === 'darwin') ? app_name : 'File';
   var template = [];
   template.push({
@@ -14,13 +15,13 @@ var createTemplate = function(mainWindow) {
     }, {
       label: 'Settings',
       click: function(item, focusedWindow) {
-        mainWindow.loadUrl('file://' + __dirname + '/../settings.html');
+        mainWindow.loadURL('file://' + __dirname + '/../settings.html');
       }
     }, {
       label: 'Quit',
       accelerator: 'CmdOrCtrl+Q',
       click: function(item, focusedWindow) {
-        require('app').quit();
+        electron.app.quit();
       }
     }]
   });

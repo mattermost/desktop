@@ -1,7 +1,8 @@
 'use strict';
 
-var Menu = require('menu');
-var MenuItem = require('menu-item');
+const electron = require('electron');
+const Menu = electron.Menu;
+const MenuItem = electron.MenuItem;
 
 var createDefault = function() {
   var menu = new Menu();
