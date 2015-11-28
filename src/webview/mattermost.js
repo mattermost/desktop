@@ -2,15 +2,26 @@
 
 const electron = require('electron');
 const ipc = electron.ipcRenderer;
+const NativeNotification = Notification;
 
 ipc.on('retrieveUnreadCount', function() {
   var unreadCount = document.getElementsByClassName('unread-title').length;
   ipc.sendToHost('retrieveUnreadCount', unreadCount);
+  console.log(isLowerThanOrEqualWindows8_1());
 });
 
+// On Windows 8.1 and Windows 8, a shortcut with a Application User Model ID must be installed to the Start screen.
+// In current version, use tray balloon for notification
+function isLowerThanOrEqualWindows8_1() {
+  if (process.platform != 'win32') {
+    return false;
+  }
+  var osVersion = require('../common/osVersion');
+  return (osVersion.major <= 6 && osVersion.minor <= 3);
+};
+
 // Show balloon when notified.
-/*
-if (process.platform === 'win32') {
+function overrideNotificationWithBalloon() {
   Notification = function(title, options) {
     ipc.send('notified', {
       title: title,
@@ -21,13 +32,10 @@ if (process.platform === 'win32') {
     callback('granted');
   };
   Notification.prototype.close = function() {};
-}
-*/
+};
 
 // Show window even if it is hidden/minimized when notification is clicked.
-var NativeNotification = null;
-if (process.platform === 'darwin' || process.platform === 'win32') {
-  NativeNotification = Notification;
+function overrideNotification() {
   Notification = function(title, options) {
     this.notification = new NativeNotification(title, options);
   };
@@ -43,4 +51,11 @@ if (process.platform === 'darwin' || process.platform === 'win32') {
       callback();
     };
   });
+}
+
+if (process.platform === 'win32' && isLowerThanOrEqualWindows8_1()) {
+  overrideNotificationWithBalloon();
+}
+else {
+  overrideNotification();
 }
