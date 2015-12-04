@@ -47,7 +47,16 @@ function makePackage(platform, arch) {
     prune: true,
     overwrite: true,
     "app-version": packageJson.version,
-    icon: 'resources/electron-mattermost'
+    icon: 'resources/electron-mattermost',
+    "version-string": {
+      CompanyName: packageJson.author,
+      LegalCopyright: 'Copyright (c) 2015 ' + packageJson.author,
+      FileDescription: packageJson.name,
+      OriginalFilename: packageJson.name + '.exe',
+      ProductVersion: packageJson.version,
+      ProductName: packageJson.name,
+      InternalName: packageJson.name
+    }
   }, function(err, appPath) {
     if (err) {
       console.log(err);
