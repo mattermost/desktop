@@ -85,6 +85,7 @@ app.on('ready', function() {
   }
   catch (e) {
     // follow Electron's defaults
+    window_options = {};
   }
   window_options.icon = __dirname + '/resources/appicon.png';
   mainWindow = new BrowserWindow(window_options);
@@ -96,8 +97,11 @@ app.on('ready', function() {
   // mainWindow.openDevTools();
 
   mainWindow.on('close', function(event) {
-    // Minimize or hide the window for close button.
-    if (!willAppQuit) { // avoid [Ctrl|Cmd]+Q
+    if (willAppQuit) { // when [Ctrl|Cmd]+Q
+      var bounds = mainWindow.getBounds();
+      fs.writeFileSync(bounds_info_path, JSON.stringify(bounds));
+    }
+    else { // Minimize or hide the window for close button.
       event.preventDefault();
       switch (process.platform) {
         case 'win32':
