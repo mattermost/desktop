@@ -6,6 +6,8 @@ const BrowserWindow = electron.BrowserWindow; // Module to create native browser
 const Menu = electron.Menu;
 const Tray = electron.Tray;
 const ipc = electron.ipcMain;
+const fs = require('fs');
+
 var appMenu = require('./menus/app');
 
 var client = null;
@@ -76,11 +78,16 @@ app.on('ready', function() {
   }
 
   // Create the browser window.
-  mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    icon: __dirname + '/resources/appicon.png'
-  });
+  var bounds_info_path = app.getPath("userData") + "/bounds-info.json";
+  var window_options;
+  try {
+    window_options = require(bounds_info_path);
+  }
+  catch (e) {
+    // follow Electron's defaults
+  }
+  window_options.icon = __dirname + '/resources/appicon.png';
+  mainWindow = new BrowserWindow(window_options);
 
   // and load the index.html of the app.
   mainWindow.loadURL('file://' + __dirname + '/index.html');
@@ -103,6 +110,16 @@ app.on('ready', function() {
         default:
       }
     }
+  });
+
+  // App should save bounds when a window is closed.
+  // However, 'close' is not fired in some situations(shutdown, ctrl+c)
+  // because main process is killed in such situations.
+  // 'blur' event was effective in order to avoid this.
+  // Ideally, app should detect that OS is shutting down.
+  mainWindow.on('blur', function() {
+    var bounds = mainWindow.getBounds();
+    fs.writeFileSync(bounds_info_path, JSON.stringify(bounds));
   });
 
   var app_menu = appMenu.createMenu(mainWindow);
