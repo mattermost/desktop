@@ -7,8 +7,10 @@ Desktop app for [Mattermost](http://www.mattermost.org/) that runs on [Electron]
 ### Desktop integration
 * Badges for unread channels
 * Notification
-  * Windows: Balloon or Toast
+  * Windows 10: Toast
+  * Windows 7-8.1: Balloon
   * OS X: Notification Center
+  * Linux: libnotify ([Electron's notification spec](http://electron.atom.io/docs/v0.35.0/tutorial/desktop-environment-integration/#linux))
 * Resident application
 
 ### Pre-packaged
@@ -19,7 +21,7 @@ You don't have to install any other software.
 
 ### Installation
 1. Download and unarchive a file from [release page](http://github.com/yuya-oc/electron-mattermost/releases).
-2. Launch electron-mattermost.exe or electron-mattermost.app
+2. Launch `electron-mattermost` in the unarchived folder.
 3. After first launching, please input URL for your Mattermost team. For exmaple, `http://mattermost.example.com/team`.
 
 ### Quit
