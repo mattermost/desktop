@@ -2,6 +2,9 @@
 
 const electron = require('electron');
 const remote = electron.remote;
+const osLocale = require('os-locale');
+const fs = require('fs');
+
 var url = require('url');
 
 var contextMenu = require('./menus/context');
@@ -41,6 +44,33 @@ webView.addEventListener('new-window', function(e) {
   }
   else {
     require('shell').openExternal(e.url);
+  }
+});
+
+webView.addEventListener("dom-ready", function() {
+  // webView.openDevTools();
+
+  // Use 'Meiryo UI' and 'MS Gothic' to prevent CJK fonts on Windows(JP).
+  if (process.platform === 'win32') {
+    var applyCssFile = function(cssFile) {
+      fs.readFile(cssFile, 'utf8', function(err, data) {
+        if (err) {
+          console.log(err);
+          return;
+        }
+        webView.insertCSS(data);
+      });
+    };
+
+    osLocale(function(err, locale) {
+      if (err) {
+        console.log(err);
+        return;
+      }
+      if (locale === 'ja_JP') {
+        applyCssFile(__dirname + '/css/jp_fonts.css');
+      }
+    });
   }
 });
 

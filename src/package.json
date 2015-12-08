@@ -7,5 +7,8 @@
   "license": "MIT",
   "devDependencies": {
     "electron-connect": "^0.3.3"
+  },
+  "dependencies": {
+    "os-locale": "^1.4.0"
   }
 }
