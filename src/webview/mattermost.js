@@ -7,7 +7,6 @@ const NativeNotification = Notification;
 ipc.on('retrieveUnreadCount', function() {
   var unreadCount = document.getElementsByClassName('unread-title').length;
   ipc.sendToHost('retrieveUnreadCount', unreadCount);
-  console.log(isLowerThanOrEqualWindows8_1());
 });
 
 // On Windows 8.1 and Windows 8, a shortcut with a Application User Model ID must be installed to the Start screen.
