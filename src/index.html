@@ -7,7 +7,11 @@
 </head>
 
 <body>
-  <!-- Modify src to your Mattermost url -->
+  <!--
+    'disablewebsecurity' is necessary to display external images.
+    However, it allows also CSS/JavaScript.
+    So webview should use 'allowDisplayingInsecureContent' as same as BrowserWindow.
+  -->
   <webview id="mainWebview" autosize="on" preload="webview/mattermost.js"></webview>
   <style>
     webview {
