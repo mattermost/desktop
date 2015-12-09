@@ -1,5 +1,6 @@
 dependencies:
   post:
+    - sudo service docker start
     - docker build -t $CIRCLE_USERNAME/em-builder docker
     - docker run --rm -it -v `pwd`:/home/xclient/electron-mattermost $CIRCLE_USERNAME/em-builder ./electron-mattermost/docker/package_in_docker.sh
     - mv release/electron-mattermost-win32-ia32 release/electron-mattermost-win32
