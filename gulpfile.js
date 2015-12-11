@@ -68,6 +68,10 @@ function makePackage(platform, arch) {
 };
 
 gulp.task('package', ['sync-meta'], function() {
+  makePackage(process.platform, 'all');
+});
+
+gulp.task('package:all', ['sync-meta'], function() {
   makePackage('all', 'all');
 });
 

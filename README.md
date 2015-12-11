@@ -52,8 +52,9 @@ $ npm install -g gulp (Or, use node_module/gulp/bin/gulp.js
 You can package this app with following commands. Packages will be created in `release` directory.
 
 ```
+$ gulp package (for your platform)
 $ gulp package:windows (Requires Windows or Wine)
 $ gulp package:osx (Requires OS X or Linux)
 $ gulp package:linux
-$ gulp package (Packages for all platform)
+$ gulp package:all (Packages for all platform)
 ```
