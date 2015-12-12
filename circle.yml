@@ -12,10 +12,6 @@ dependencies:
     - tar zcvf $CIRCLE_ARTIFACTS/electron-mattermost-linux-ia32.tar.gz -C release electron-mattermost-linux-ia32
     - tar zcvf $CIRCLE_ARTIFACTS/electron-mattermost-linux-x64.tar.gz -C release electron-mattermost-linux-x64
 
-test:
-  override:
-    - exit 0
-
 deployment:
   release:
     tag: /v[0-9]+(\.[0-9]+)*/

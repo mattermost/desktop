@@ -1,2 +1,5 @@
 node_modules/
 release/
+npm-debug.log
+
+test_config.json

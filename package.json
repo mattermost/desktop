@@ -7,13 +7,18 @@
   "license": "MIT",
   "scripts": {
     "postinstall": "cd src && npm install",
-    "start": "electron src"
+    "start": "electron src",
+    "test": "mocha"
   },
   "devDependencies": {
+    "chromedriver": "^2.20.0",
     "electron-connect": "^0.3.3",
     "electron-packager": "^5.1.0",
     "electron-prebuilt": "^0.35.1",
     "gulp": "^3.9.0",
-    "gulp-jsbeautifier": "^1.0.1"
+    "gulp-jsbeautifier": "^1.0.1",
+    "mocha": "^2.3.4",
+    "should": "^8.0.1",
+    "webdriverio": "^3.3.0"
   }
 }
