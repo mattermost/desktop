@@ -12,8 +12,9 @@ var contextMenu = require('./menus/context');
 var webView = document.getElementById('mainWebview');
 
 try {
-  var configFile = electron.remote.app.getPath('userData') + '/config.json';
-  var config = require(configFile);
+  var configFile = remote.getGlobal('config-file');
+  var str = fs.readFileSync(configFile);
+  var config = JSON.parse(str);
   if (config.url) {
     webView.setAttribute('src', config.url);
   }
