@@ -8,15 +8,19 @@ const fs = require('fs');
 var url = require('url');
 
 var contextMenu = require('./menus/context');
+const settings = require('./common/settings');
 
 var webView = document.getElementById('mainWebview');
 
 try {
   var configFile = remote.getGlobal('config-file');
-  var str = fs.readFileSync(configFile);
-  var config = JSON.parse(str);
-  if (config.url) {
-    webView.setAttribute('src', config.url);
+  var config = settings.readFileSync(configFile);
+  if (config.version != settings.version) {
+    config = settings.upgrade(config);
+    settings.writeFileSync(configFile, config);
+  }
+  if (config.url[0]) {
+    webView.setAttribute('src', config.url[0]);
   }
   else {
     throw 'URL is not configured';

@@ -59,6 +59,26 @@ describe('electron-mattermost', function() {
       });
   });
 
+  it('should upgrade v0 config file', function(done) {
+    const settings = require('../src/common/settings');
+    fs.writeFileSync(config_file_path, JSON.stringify({
+      url: mattermost_url
+    }));
+    var client = webdriverio.remote(options);
+    client
+      .init()
+      .getUrl().then(function(url) {
+        var p = path.parse(url);
+        p.base.should.equal('index.html');
+      })
+      .end().then(function() {
+        var str = fs.readFileSync(config_file_path, 'utf8');
+        var config = JSON.parse(str);
+        config.version.should.equal(settings.version);
+        done();
+      });
+  });
+
   describe('index.html', function() {
     before(function() {
       fs.writeFileSync(config_file_path, JSON.stringify({

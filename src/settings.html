@@ -16,18 +16,17 @@
 
   <script type="text/javascript">
     const remote = require('electron').remote;
-    var fs = require('fs');
+    const settings = require('./common/settings');
 
     var saveSettings = function() {
       var configFile = remote.getGlobal('config-file');
       var urlInput = document.getElementById('url');
       var config = {
-        url: urlInput.value
+        url: [urlInput.value],
+        version: 1
       };
-      fs.writeFile(configFile, JSON.stringify(config, null, '  '), function(err) {
-        if (err) throw err;
-        window.location.href = './index.html';
-      });
+      settings.writeFileSync(configFile, config);
+      window.location.href = './index.html';
     }
 
     var goBack = function() {
