@@ -1,3 +1,7 @@
+machine:
+  node:
+    version: 4.2.2
+
 dependencies:
   post:
     - sudo service docker start
@@ -11,10 +15,6 @@ dependencies:
     - tar zcvf $CIRCLE_ARTIFACTS/electron-mattermost-osx.tar.gz -C release electron-mattermost-osx
     - tar zcvf $CIRCLE_ARTIFACTS/electron-mattermost-linux-ia32.tar.gz -C release electron-mattermost-linux-ia32
     - tar zcvf $CIRCLE_ARTIFACTS/electron-mattermost-linux-x64.tar.gz -C release electron-mattermost-linux-x64
-
-test:
-  override:
-    - exit 0
 
 deployment:
   release:

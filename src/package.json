@@ -9,6 +9,7 @@
     "electron-connect": "^0.3.3"
   },
   "dependencies": {
-    "os-locale": "^1.4.0"
+    "os-locale": "^1.4.0",
+    "yargs": "^3.31.0"
   }
 }

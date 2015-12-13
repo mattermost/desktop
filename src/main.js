@@ -10,12 +10,21 @@ const fs = require('fs');
 
 var appMenu = require('./menus/app');
 
+var argv = require('yargs').argv;
+
 var client = null;
-if (process.argv.indexOf('--livereload') > 0) {
+if (argv.livereload) {
   client = require('electron-connect').client.create();
   client.on('stop', function() {
     app.quit();
   });
+}
+
+if (argv['config-file']) {
+  global['config-file'] = argv['config-file'];
+}
+else {
+  global['config-file'] = app.getPath('userData') + '/config.json'
 }
 
 // Keep a global reference of the window object, if you don't, the window will
