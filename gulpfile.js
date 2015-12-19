@@ -4,6 +4,7 @@ var gulp = require('gulp');
 var prettify = require('gulp-jsbeautifier');
 var babel = require('gulp-babel');
 var changed = require('gulp-changed');
+var esformatter = require('gulp-esformatter');
 var del = require('del');
 var electron = require('electron-connect').server.create({
   path: './build'
@@ -13,7 +14,9 @@ var packager = require('electron-packager');
 var sources = ['**/*.js', '**/*.css', '**/*.html', '!**/node_modules/**', '!**/build/**', '!release/**'];
 var app_root = 'src';
 
-gulp.task('prettify', ['sync-meta'], function() {
+gulp.task('prettify', ['prettify:sources', 'prettify:jsx']);
+
+gulp.task('prettify:sources', ['sync-meta'], function() {
   gulp.src(sources)
     .pipe(prettify({
       html: {
@@ -29,6 +32,17 @@ gulp.task('prettify', ['sync-meta'], function() {
     }))
     .pipe(gulp.dest('.'));
 });
+
+gulp.task('prettify:jsx', function() {
+  return gulp.src(app_root + '/**/*.jsx')
+    .pipe(esformatter({
+      indent: {
+        value: '  '
+      },
+      plugins: ['esformatter-jsx']
+    }))
+    .pipe(gulp.dest(app_root));
+})
 
 gulp.task('build', ['build:jsx']);
 
