@@ -2,12 +2,16 @@
 
 var gulp = require('gulp');
 var prettify = require('gulp-jsbeautifier');
+var babel = require('gulp-babel');
+var changed = require('gulp-changed');
+var del = require('del');
 var electron = require('electron-connect').server.create({
-  path: './src'
+  path: './build'
 });
 var packager = require('electron-packager');
 
-var sources = ['**/*.js', '**/*.css', '**/*.html', '!**/node_modules/**', '!release/**'];
+var sources = ['**/*.js', '**/*.css', '**/*.html', '!**/node_modules/**', '!build/**', '!release/**'];
+var build_dest = 'build';
 
 gulp.task('prettify', ['sync-meta'], function() {
   gulp.src(sources)
@@ -26,6 +30,29 @@ gulp.task('prettify', ['sync-meta'], function() {
     .pipe(gulp.dest('.'));
 });
 
+gulp.task('build', ['build:copy', 'build:jsx']);
+
+gulp.task('build:clean', function() {
+  return del(build_dest + '/**/*');
+});
+
+gulp.task('build:copy', ['sync-meta'], function() {
+  return gulp.src(['src/**', '!**/*.jsx'])
+    .pipe(changed(build_dest))
+    .pipe(gulp.dest(build_dest));
+});
+
+gulp.task('build:jsx', function() {
+  return gulp.src(['src/**/*.jsx', '!src/node_modules/**'])
+    .pipe(changed(build_dest, {
+      extension: '.js'
+    }))
+    .pipe(babel({
+      presets: ['react']
+    }))
+    .pipe(gulp.dest(build_dest));
+});
+
 gulp.task('serve', function() {
   var options = ['--livereload'];
   electron.start(options);
@@ -38,7 +65,7 @@ gulp.task('serve', function() {
 function makePackage(platform, arch) {
   var packageJson = require('./src/package.json');
   packager({
-    dir: './src',
+    dir: './' + build_dest,
     name: packageJson.name,
     platform: platform,
     arch: arch,
@@ -67,23 +94,23 @@ function makePackage(platform, arch) {
   });
 };
 
-gulp.task('package', ['sync-meta'], function() {
+gulp.task('package', ['build'], function() {
   makePackage(process.platform, 'all');
 });
 
-gulp.task('package:all', ['sync-meta'], function() {
+gulp.task('package:all', ['build'], function() {
   makePackage('all', 'all');
 });
 
-gulp.task('package:windows', ['sync-meta'], function() {
+gulp.task('package:windows', ['build'], function() {
   makePackage('win32', 'all');
 });
 
-gulp.task('package:osx', ['sync-meta'], function() {
+gulp.task('package:osx', ['build'], function() {
   makePackage('darwin', 'all');
 });
 
-gulp.task('package:linux', ['sync-meta'], function() {
+gulp.task('package:linux', ['build'], function() {
   makePackage('linux', 'all');
 });
 
