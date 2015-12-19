@@ -5,7 +5,10 @@ const version = 1;
 
 var upgradeV0toV1 = function(config_v0) {
   return {
-    url: [config_v0.url],
+    teams: [{
+      name: 'Primary team',
+      url: config_v0.url
+    }],
     version: 1
   };
 };

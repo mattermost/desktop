@@ -19,8 +19,8 @@ try {
     config = settings.upgrade(config);
     settings.writeFileSync(configFile, config);
   }
-  if (config.url[0]) {
-    webView.setAttribute('src', config.url[0]);
+  if (config.teams[0]) {
+    webView.setAttribute('src', config.teams[0].url);
   }
   else {
     throw 'URL is not configured';

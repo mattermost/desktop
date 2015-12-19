@@ -4,35 +4,13 @@
 <head>
   <meta charset="UTF-8">
   <title>Settings</title>
+  <script src="node_modules/react/dist/react.min.js"></script>
+  <script src="node_modules/react-dom/dist/react-dom.min.js"></script>
 </head>
 
 <body>
-  <h1>Settings</h1>
-  <p>URL:
-    <input type="text" id="url">
-  </p>
-  <input type="button" value="OK" onclick="saveSettings()">
-  <input type="button" value="Cancel" onclick="goBack()">
-
-  <script type="text/javascript">
-    const remote = require('electron').remote;
-    const settings = require('./common/settings');
-
-    var saveSettings = function() {
-      var configFile = remote.getGlobal('config-file');
-      var urlInput = document.getElementById('url');
-      var config = {
-        url: [urlInput.value],
-        version: 1
-      };
-      settings.writeFileSync(configFile, config);
-      window.location.href = './index.html';
-    }
-
-    var goBack = function() {
-      remote.getCurrentWindow().webContents.goBack();
-    }
-  </script>
+  <div id="content"></div>
+  <script src="build/settings.js"></script>
 </body>
 
 </html>
