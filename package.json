@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "postinstall": "cd src && npm install",
-    "start": "gulp build && electron build",
+    "start": "gulp build && electron src",
     "test": "mocha"
   },
   "devDependencies": {

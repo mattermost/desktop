@@ -10,8 +10,8 @@ var electron = require('electron-connect').server.create({
 });
 var packager = require('electron-packager');
 
-var sources = ['**/*.js', '**/*.css', '**/*.html', '!**/node_modules/**', '!build/**', '!release/**'];
-var build_dest = 'build';
+var sources = ['**/*.js', '**/*.css', '**/*.html', '!**/node_modules/**', '!**/build/**', '!release/**'];
+var app_root = 'src';
 
 gulp.task('prettify', ['sync-meta'], function() {
   gulp.src(sources)
@@ -30,27 +30,17 @@ gulp.task('prettify', ['sync-meta'], function() {
     .pipe(gulp.dest('.'));
 });
 
-gulp.task('build', ['build:copy', 'build:jsx']);
-
-gulp.task('build:clean', function() {
-  return del(build_dest + '/**/*');
-});
-
-gulp.task('build:copy', ['sync-meta'], function() {
-  return gulp.src(['src/**', '!**/*.jsx'])
-    .pipe(changed(build_dest))
-    .pipe(gulp.dest(build_dest));
-});
+gulp.task('build', ['build:jsx']);
 
 gulp.task('build:jsx', function() {
   return gulp.src(['src/**/*.jsx', '!src/node_modules/**'])
-    .pipe(changed(build_dest, {
+    .pipe(changed(app_root, {
       extension: '.js'
     }))
     .pipe(babel({
       presets: ['react']
     }))
-    .pipe(gulp.dest(build_dest));
+    .pipe(gulp.dest(app_root + '/build'));
 });
 
 gulp.task('serve', function() {
@@ -65,7 +55,7 @@ gulp.task('serve', function() {
 function makePackage(platform, arch) {
   var packageJson = require('./src/package.json');
   packager({
-    dir: './' + build_dest,
+    dir: './' + app_root,
     name: packageJson.name,
     platform: platform,
     arch: arch,
