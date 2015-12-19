@@ -10,7 +10,7 @@ var packager = require('electron-packager');
 var sources = ['**/*.js', '**/*.css', '**/*.html', '!**/node_modules/**', '!release/**'];
 
 gulp.task('prettify', ['sync-meta'], function() {
-  gulp.src(sources)
+  return gulp.src(sources)
     .pipe(prettify({
       html: {
         indentSize: 2
@@ -35,7 +35,7 @@ gulp.task('serve', function() {
   });
 });
 
-function makePackage(platform, arch) {
+function makePackage(platform, arch, callback) {
   var packageJson = require('./src/package.json');
   packager({
     dir: './src',
@@ -59,32 +59,32 @@ function makePackage(platform, arch) {
     }
   }, function(err, appPath) {
     if (err) {
-      console.log(err);
+      callback(err);
     }
     else {
-      console.log('done');
+      callback();
     }
   });
 };
 
-gulp.task('package', ['sync-meta'], function() {
-  makePackage(process.platform, 'all');
+gulp.task('package', ['sync-meta'], function(cb) {
+  makePackage(process.platform, 'all', cb);
 });
 
-gulp.task('package:all', ['sync-meta'], function() {
-  makePackage('all', 'all');
+gulp.task('package:all', ['sync-meta'], function(cb) {
+  makePackage('all', 'all', cb);
 });
 
-gulp.task('package:windows', ['sync-meta'], function() {
-  makePackage('win32', 'all');
+gulp.task('package:windows', ['sync-meta'], function(cb) {
+  makePackage('win32', 'all', cb);
 });
 
-gulp.task('package:osx', ['sync-meta'], function() {
-  makePackage('darwin', 'all');
+gulp.task('package:osx', ['sync-meta'], function(cb) {
+  makePackage('darwin', 'all', cb);
 });
 
-gulp.task('package:linux', ['sync-meta'], function() {
-  makePackage('linux', 'all');
+gulp.task('package:linux', ['sync-meta'], function(cb) {
+  makePackage('linux', 'all', cb);
 });
 
 gulp.task('sync-meta', function() {
