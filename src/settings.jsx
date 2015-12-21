@@ -3,6 +3,14 @@
 const remote = require('electron').remote;
 const settings = require('./common/settings');
 
+const Grid = ReactBootstrap.Grid;
+const Row = ReactBootstrap.Row;
+const Col = ReactBootstrap.Col;
+const Button = ReactBootstrap.Button;
+const ListGroup = ReactBootstrap.ListGroup;
+const ListGroupItem = ReactBootstrap.ListGroupItem;
+const Glyphicon = ReactBootstrap.Glyphicon;
+
 var SettingsPage = React.createClass({
   getInitialState: function() {
     return {
@@ -20,7 +28,7 @@ var SettingsPage = React.createClass({
       teams: teams
     });
   },
-  handleOK: function() {
+  handleSave: function() {
     var config = {
       teams: this.state.teams,
       version: 1
@@ -33,22 +41,33 @@ var SettingsPage = React.createClass({
   },
   render: function() {
     return (
-      <div className="settingsPage">
-        <TeamList teams={ this.state.teams } onTeamsChange={ this.handleTeamsChange } />
-        <input type="button" value="OK" onClick={ this.handleOK } />
-        <input type="button" value="Cancel" onClick={ this.handleCancel } />
-      </div>
+      <Grid className="settingsPage">
+        <Row>
+          <Col md={ 12 }>
+            <h2>Teams</h2>
+            <TeamList teams={ this.state.teams } onTeamsChange={ this.handleTeamsChange } />
+          </Col>
+        </Row>
+        <Row>
+          <Col md={ 12 }>
+            <Button onClick={ this.handleCancel }>Cancel</Button>
+            { ' ' }
+            <Button bsStyle="primary" onClick={ this.handleSave }>Save</Button>
+          </Col>
+        </Row>
+      </Grid>
       );
   }
 });
 
 var TeamList = React.createClass({
-  handleTeamChange: function(index, team) {
+  handleTeamRemove: function(index) {
+    console.log(index);
     var teams = this.props.teams;
-    teams[index] = team;
+    teams.splice(index, 1);
     this.props.onTeamsChange(teams);
   },
-  handleNewTeamAdd: function(team) {
+  handleTeamAdd: function(team) {
     var teams = this.props.teams;
     teams.push(team);
     this.props.onTeamsChange(teams);
@@ -56,82 +75,97 @@ var TeamList = React.createClass({
   render: function() {
     var thisObj = this;
     var teamNodes = this.props.teams.map(function(team, i) {
-      var handleTeamChange = function(team) {
-        thisObj.handleTeamChange(i, team);
+      var handleTeamRemove = function() {
+        thisObj.handleTeamRemove(i);
       };
       return (
-        <li>
-          <TeamItem index={ i } name={ team.name } url={ team.url } onTeamChange={ handleTeamChange } onName />
-        </li>
+        <TeamListItem index={ i } name={ team.name } url={ team.url } onTeamRemove={ handleTeamRemove } />
         );
     });
     return (
-      <div className="teamList">
-        <ol>
-          { teamNodes }
-          <li>
-            <NewTeamItem onNewTeamAdd={ this.handleNewTeamAdd } />
-          </li>
-        </ol>
-      </div>
+      <ListGroup class="teamList">
+        { teamNodes }
+        <TeamListItemNew onTeamAdd={ this.handleTeamAdd } />
+      </ListGroup>
       );
   }
 });
 
-var TeamItem = React.createClass({
-  handleNameChange: function(e) {
-    this.props.onTeamChange({
-      name: e.target.value,
-      url: this.props.url
-    });
-  },
-  handleURLChange: function(e) {
-    this.props.onTeamChange({
-      name: this.props.name,
-      url: e.target.value
-    });
+var TeamListItem = React.createClass({
+  handleTeamRemove: function() {
+    this.props.onTeamRemove();
   },
   render: function() {
+    var style = {
+      left: {
+        "display": 'inline-block'
+      }
+    };
     return (
-      <div className="teamItem">
-        <input type="text" placeholder="Team name" value={ this.props.name } onChange={ this.handleNameChange }></input>
-        <input type="text" placeholder="Team URL (http://example.com/team)" value={ this.props.url } onChange={ this.handleURLChange }></input>
+      <div className="teamListItem list-group-item">
+        <div style={ style.left }>
+          <h4 className="list-group-item-heading">{ this.props.name }</h4>
+          <p className="list-group-item-text">
+            { this.props.url }
+          </p>
+        </div>
+        <div className="pull-right">
+          <Button bsSize="xsmall" onClick={ this.handleTeamRemove }>
+            <Glyphicon glyph="remove" />
+          </Button>
+        </div>
       </div>
       );
   }
 });
 
-var NewTeamItem = React.createClass({
+var TeamListItemNew = React.createClass({
   getInitialState: function() {
     return {
       name: '',
       url: ''
     };
   },
-  handleNewTeamAdd: function() {
-    this.props.onNewTeamAdd({
+  handleSubmit: function(e) {
+    console.log('submit');
+    e.preventDefault();
+    this.props.onTeamAdd({
       name: this.state.name,
       url: this.state.url
     });
     this.setState(this.getInitialState());
   },
   handleNameChange: function(e) {
+    console.log('name');
     this.setState({
       name: e.target.value
     });
   },
   handleURLChange: function(e) {
+    console.log('url');
     this.setState({
       url: e.target.value
     });
   },
   render: function() {
     return (
-      <div className="newTeamItem">
-        <input type="text" placeholder="Team name" value={ this.state.name } onChange={ this.handleNameChange } />
-        <input type="text" placeholder="Team URL (http://example.com/team)" value={ this.state.url } onChange={ this.handleURLChange } />
-        <input type="button" value="Add" onClick={ this.handleNewTeamAdd } />
-      </div>
+      <ListGroupItem>
+        <form className="form-inline" onSubmit={ this.handleSubmit }>
+          <div className="form-group">
+            <label for="inputTeamName">Name</label>
+            { ' ' }
+            <input type="text" className="form-control" id="inputTeamName" placeholder="Example team" value={ this.state.name } onChange={ this.handleNameChange } />
+          </div>
+          { ' ' }
+          <div className="form-group">
+            <label for="inputTeamURL">URL</label>
+            { ' ' }
+            <input type="url" className="form-control" id="inputTeamURL" placeholder="http://example.com/team" value={ this.state.url } onChange={ this.handleURLChange } />
+          </div>
+          { ' ' }
+          <Button type="submit">Add</Button>
+        </form>
+      </ListGroupItem>
       );
   }
 });
