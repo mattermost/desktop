@@ -15,7 +15,7 @@ function isLowerThanOrEqualWindows8_1() {
   if (process.platform != 'win32') {
     return false;
   }
-  var osVersion = require('../common/osVersion');
+  var osVersion = require('../../common/osVersion');
   return (osVersion.major <= 6 && osVersion.minor <= 3);
 };
 

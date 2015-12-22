@@ -4,11 +4,12 @@ const electron = require('electron');
 const remote = electron.remote;
 const osLocale = require('os-locale');
 const fs = require('fs');
+const path = require('path');
 
 var url = require('url');
 
 var contextMenu = require('./menus/context');
-const settings = require('./common/settings');
+const settings = require('../common/settings');
 
 var webView = document.getElementById('mainWebview');
 
@@ -89,7 +90,7 @@ var showUnreadBadge = function(unreadCount) {
     case 'win32':
       var window = remote.getCurrentWindow();
       if (unreadCount > 0) {
-        window.setOverlayIcon(__dirname + '/resources/badge.png', 'You have unread channels.');
+        window.setOverlayIcon(path.join(__dirname, '../resources/badge.png'), 'You have unread channels.');
       }
       else {
         window.setOverlayIcon(null, '');

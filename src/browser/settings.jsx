@@ -1,7 +1,7 @@
 'use strict';
 
 const remote = require('electron').remote;
-const settings = require('./common/settings');
+const settings = require('../common/settings');
 
 const Grid = ReactBootstrap.Grid;
 const Row = ReactBootstrap.Row;

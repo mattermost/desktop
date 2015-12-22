@@ -47,14 +47,14 @@ gulp.task('prettify:jsx', function() {
 gulp.task('build', ['build:jsx']);
 
 gulp.task('build:jsx', function() {
-  return gulp.src(['src/**/*.jsx', '!src/node_modules/**'])
+  return gulp.src(['src/browser/**/*.jsx', '!src/node_modules/**'])
     .pipe(changed(app_root, {
       extension: '.js'
     }))
     .pipe(babel({
       presets: ['react']
     }))
-    .pipe(gulp.dest(app_root + '/build'));
+    .pipe(gulp.dest('src/browser/build'));
 });
 
 gulp.task('serve', function() {
