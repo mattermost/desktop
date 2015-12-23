@@ -172,6 +172,12 @@ var TeamListItemNew = React.createClass({
 
 var configFile = remote.getGlobal('config-file');
 
+var contextMenu = require('./menus/context');
+var menu = contextMenu.createDefault();
+window.addEventListener('contextmenu', function(e) {
+  menu.popup(remote.getCurrentWindow());
+}, false);
+
 ReactDOM.render(
   <SettingsPage configFile={ configFile } />,
   document.getElementById('content')

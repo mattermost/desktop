@@ -174,6 +174,12 @@ var MattermostView = React.createClass({
 var configFile = remote.getGlobal('config-file');
 var config = settings.readFileSync(configFile);
 
+var contextMenu = require('./menus/context');
+var menu = contextMenu.createDefault();
+window.addEventListener('contextmenu', function(e) {
+  menu.popup(remote.getCurrentWindow());
+}, false);
+
 var showUnreadBadge = function(unreadCount) {
   switch (process.platform) {
     case 'win32':
