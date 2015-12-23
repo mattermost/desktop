@@ -52,7 +52,13 @@ function overrideNotification() {
   };
   Notification.prototype.__defineSetter__('onclick', function(callback) {
     this.notification.onclick = function() {
-      electron.remote.getCurrentWindow().show();
+      if (process.platform === 'win32') {
+        // show() breaks Aero Snap state.
+        electron.remote.getCurrentWindow().focus();
+      }
+      else {
+        electron.remote.getCurrentWindow().show();
+      }
       ipc.sendToHost('onNotificationClick');
       callback();
     };
