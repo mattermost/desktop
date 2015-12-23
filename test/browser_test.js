@@ -100,11 +100,51 @@ describe('electron-mattermost', function() {
       client
         .init()
         .getAttribute('.mattermostView', 'src').then(function(attribute) {
-          console.log(attribute);
           attribute.forEach(function(attr, index) {
             attr.should.equal(config.teams[index].url);
           });
         })
+        .end().then(function() {
+          done();
+        });
+    });
+
+    it('should set name of tab from config file', function(done) {
+      var client = webdriverio.remote(options);
+      client
+        .init()
+        .getText('.teamTabItem').then(function(text) {
+          text.forEach(function(t, index) {
+            t.should.equal(config.teams[index].name);
+          });
+        })
+        .end().then(function() {
+          done();
+        });
+    });
+
+    it('should show only the selected team', function(done) {
+      this.timeout(5000);
+      var checkVisility = function(visibleIndex) {
+        return function(isVisible) {
+          isVisible.forEach(function(v, index) {
+            if (index === visibleIndex) {
+              v.should.equal(true);
+            }
+            else {
+              v.should.equal(false);
+            }
+          });
+        };
+      };
+      var client = webdriverio.remote(options);
+      client
+        .init()
+        .isVisible('.mattermostView').then(checkVisility(0))
+        .click('#teamTabItem1')
+        .isVisible('.mattermostView').then(checkVisility(1))
+        .click('#teamTabItem0')
+        .isVisible('.mattermostView').then(checkVisility(0))
         .end().then(function() {
           done();
         });

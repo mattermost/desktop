@@ -43,7 +43,7 @@ var MainPage = React.createClass({
     }
   },
   visibleStyle: function(visible) {
-    var visibility = visible ? 'initial' : 'hidden';
+    var visibility = visible ? 'visible' : 'hidden';
     return {
       position: 'absolute',
       top: 42,
@@ -62,7 +62,7 @@ var MainPage = React.createClass({
                    { thisObj.state.unreadCounts[index] }
                  </Badge>);
       }
-      return (<NavItem eventKey={ index }>
+      return (<NavItem className="teamTabItem" id={ 'teamTabItem' + index } eventKey={ index }>
                 { team.name }
                 { ' ' }
                 { badge }
