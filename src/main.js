@@ -16,8 +16,8 @@ var argv = require('yargs').argv;
 var client = null;
 if (argv.livereload) {
   client = require('electron-connect').client.create();
-  client.on('stop', function() {
-    app.quit();
+  client.on('reload', function() {
+    mainWindow.reload();
   });
 }
 

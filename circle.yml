@@ -1,10 +1,11 @@
 machine:
   node:
     version: 4.2.2
+  services:
+    - docker
 
 dependencies:
   post:
-    - sudo service docker start
     - docker build -t $CIRCLE_USERNAME/em-builder docker
     - docker run --rm -it -v `pwd`:/home/xclient/electron-mattermost $CIRCLE_USERNAME/em-builder ./electron-mattermost/docker/package_in_docker.sh
     - mv release/electron-mattermost-win32-ia32 release/electron-mattermost-win32
@@ -15,6 +16,12 @@ dependencies:
     - tar zcvf $CIRCLE_ARTIFACTS/electron-mattermost-osx.tar.gz -C release electron-mattermost-osx
     - tar zcvf $CIRCLE_ARTIFACTS/electron-mattermost-linux-ia32.tar.gz -C release electron-mattermost-linux-ia32
     - tar zcvf $CIRCLE_ARTIFACTS/electron-mattermost-linux-x64.tar.gz -C release electron-mattermost-linux-x64
+
+test:
+  override:
+    - node_modules/.bin/mocha --reporter mocha-circleci-reporter
+  post:
+    - mv test-results.xml $CIRCLE_TEST_REPORTS/
 
 deployment:
   release:

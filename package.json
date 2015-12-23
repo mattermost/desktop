@@ -6,9 +6,18 @@
   "author": "Yuya Ochiai",
   "license": "MIT",
   "scripts": {
-    "postinstall": "cd src && npm install",
-    "start": "gulp build && electron src",
-    "test": "gulp build && mocha"
+    "install": "cd src && npm install",
+    "postinstall": "npm run build",
+    "build": "gulp build",
+    "start": "electron src",
+    "serve": "gulp serve",
+    "test": "gulp build && mocha",
+    "package": "gulp package",
+    "package:windows": "gulp package:windows",
+    "package:osx": "gulp package:osx",
+    "package:linux": "gulp package:linux",
+    "package:all": "gulp package:all",
+    "prettify": "gulp prettify"
   },
   "devDependencies": {
     "babel-preset-react": "^6.3.13",
@@ -25,6 +34,7 @@
     "gulp-esformatter": "^5.0.0",
     "gulp-jsbeautifier": "^1.0.1",
     "mocha": "^2.3.4",
+    "mocha-circleci-reporter": "0.0.1",
     "should": "^8.0.1",
     "webdriverio": "^3.3.0"
   }

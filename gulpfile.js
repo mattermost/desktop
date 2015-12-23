@@ -42,7 +42,7 @@ gulp.task('prettify:jsx', function() {
       plugins: ['esformatter-jsx']
     }))
     .pipe(gulp.dest(app_root));
-})
+});
 
 gulp.task('build', ['build:jsx']);
 
@@ -57,13 +57,15 @@ gulp.task('build:jsx', function() {
     .pipe(gulp.dest('src/browser/build'));
 });
 
-gulp.task('serve', function() {
+gulp.task('serve', ['build'], function() {
   var options = ['--livereload'];
   electron.start(options);
-  gulp.watch(sources, function() {
-    electron.broadcast('stop');
+  gulp.watch(['src/**', '!src/browser/**', '!src/node_modules/**'], function() {
     electron.restart(options);
   });
+  gulp.watch('src/browser/**/*.jsx', ['build:jsx']);
+  gulp.watch(['src/browser/**', '!src/browser/**/*.jsx'], electron.reload);
+  gulp.watch('gulpfile.js', process.exit);
 });
 
 function makePackage(platform, arch, callback) {
