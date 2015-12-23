@@ -53,6 +53,7 @@ function overrideNotification() {
   Notification.prototype.__defineSetter__('onclick', function(callback) {
     this.notification.onclick = function() {
       electron.remote.getCurrentWindow().show();
+      ipc.sendToHost('onNotificationClick');
       callback();
     };
   });

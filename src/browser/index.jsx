@@ -72,7 +72,10 @@ var MainPage = React.createClass({
       var handleUnreadCountChange = function(count) {
         thisObj.handleUnreadCountChange(index, count);
       };
-      return (<MattermostView style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } onUnreadCountChange={ handleUnreadCountChange } />)
+      var handleNotificationClick = function() {
+        thisObj.handleSelect(index);
+      }
+      return (<MattermostView style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } onUnreadCountChange={ handleUnreadCountChange } onNotificationClick={ handleNotificationClick } />)
     });
     return (
       <Grid fluid>
@@ -153,6 +156,8 @@ var MattermostView = React.createClass({
           var unreadCount = event.args[0];
           thisObj.handleUnreadCountChange(unreadCount);
           break;
+        case 'onNotificationClick':
+          thisObj.props.onNotificationClick();
       }
     });
 
