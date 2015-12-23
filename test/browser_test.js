@@ -24,6 +24,8 @@ var options = {
 };
 
 describe('electron-mattermost', function() {
+  this.timeout(10000);
+
   before(function(done) {
     fs.unlink(config_file_path, function(err) {
       // waiting for chromedriver
@@ -125,7 +127,6 @@ describe('electron-mattermost', function() {
     });
 
     it('should show only the selected team', function(done) {
-      this.timeout(5000);
       var checkVisility = function(visibleIndex) {
         return function(isVisible) {
           isVisible.forEach(function(v, index) {
