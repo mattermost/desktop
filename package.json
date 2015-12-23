@@ -8,7 +8,7 @@
   "scripts": {
     "postinstall": "cd src && npm install",
     "start": "gulp build && electron src",
-    "test": "mocha"
+    "test": "gulp build && mocha"
   },
   "devDependencies": {
     "babel-preset-react": "^6.3.13",

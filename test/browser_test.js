@@ -80,18 +80,30 @@ describe('electron-mattermost', function() {
   });
 
   describe('index.html', function() {
-    before(function() {
-      fs.writeFileSync(config_file_path, JSON.stringify({
+    const config = {
+      version: 1,
+      teams: [{
+        name: 'example_1',
         url: mattermost_url
-      }));
+      }, {
+        name: 'example_2',
+        url: mattermost_url
+      }]
+    };
+
+    before(function() {
+      fs.writeFileSync(config_file_path, JSON.stringify(config));
     });
 
-    it('should set src of #mainWebview from config file', function(done) {
+    it('should set src of webview from config file', function(done) {
       var client = webdriverio.remote(options);
       client
         .init()
-        .getAttribute('#mainWebview', 'src').then(function(attribute) {
-          attribute.should.equal(mattermost_url);
+        .getAttribute('.mattermostView', 'src').then(function(attribute) {
+          console.log(attribute);
+          attribute.forEach(function(attr, index) {
+            attr.should.equal(config.teams[index].url);
+          });
         })
         .end().then(function() {
           done();

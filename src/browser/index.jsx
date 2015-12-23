@@ -166,13 +166,17 @@ var MattermostView = React.createClass({
     // 'disablewebsecurity' is necessary to display external images.
     // However, it allows also CSS/JavaScript.
     // So webview should use 'allowDisplayingInsecureContent' as same as BrowserWindow.
-    return (<webview style={ this.props.style } preload="webview/mattermost.js" src={ this.props.src } ref="webview"></webview>);
+    return (<webview className="mattermostView" style={ this.props.style } preload="webview/mattermost.js" src={ this.props.src } ref="webview"></webview>);
   }
 });
 
-
-var configFile = remote.getGlobal('config-file');
-var config = settings.readFileSync(configFile);
+var config;
+try {
+  var configFile = remote.getGlobal('config-file');
+  config = settings.readFileSync(configFile);
+} catch (e) {
+  window.location = 'settings.html';
+}
 
 var contextMenu = require('./menus/context');
 var menu = contextMenu.createDefault();
