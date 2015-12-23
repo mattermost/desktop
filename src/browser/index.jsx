@@ -13,6 +13,7 @@ const remote = electron.remote;
 const osLocale = require('os-locale');
 const fs = require('fs');
 const url = require('url');
+const path = require('path');
 
 const settings = require('../common/settings');
 
@@ -34,6 +35,12 @@ var MainPage = React.createClass({
     this.setState({
       unreadCounts: counts
     });
+    if (this.props.onUnreadCountChange) {
+      var c = counts.reduce(function(prev, curr) {
+        return prev + curr;
+      });
+      this.props.onUnreadCountChange(c);
+    }
   },
   visibleStyle: function(visible) {
     var visibility = visible ? 'initial' : 'hidden';
@@ -162,7 +169,28 @@ var MattermostView = React.createClass({
 var configFile = remote.getGlobal('config-file');
 var config = settings.readFileSync(configFile);
 
+var showUnreadBadge = function(unreadCount) {
+  switch (process.platform) {
+    case 'win32':
+      var window = remote.getCurrentWindow();
+      if (unreadCount > 0) {
+        window.setOverlayIcon(path.join(__dirname, '../resources/badge.png'), 'You have unread channels.');
+      } else {
+        window.setOverlayIcon(null, '');
+      }
+      break;
+    case 'darwin':
+      if (unreadCount > 0) {
+        remote.app.dock.setBadge(unreadCount.toString());
+      } else {
+        remote.app.dock.setBadge('');
+      }
+      break;
+    default:
+  }
+}
+
 ReactDOM.render(
-  <MainPage teams={ config.teams } />,
+  <MainPage teams={ config.teams } onUnreadCountChange={ showUnreadBadge } />,
   document.getElementById('content')
 );
