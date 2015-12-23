@@ -26,7 +26,8 @@ var options = {
 describe('electron-mattermost', function() {
   before(function(done) {
     fs.unlink(config_file_path, function(err) {
-      done();
+      // waiting for chromedriver
+      setTimeout(done, 1000);
     });
   });
 
