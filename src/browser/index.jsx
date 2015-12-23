@@ -3,8 +3,9 @@
 const Grid = ReactBootstrap.Grid;
 const Row = ReactBootstrap.Row;
 const Col = ReactBootstrap.Col;
-const Tabs = ReactBootstrap.Tabs;
-const Tab = ReactBootstrap.Tab;
+const Nav = ReactBootstrap.Nav;
+const NavItem = ReactBootstrap.NavItem;
+const Badge = ReactBootstrap.Badge;
 
 const electron = require('electron');
 const remote = electron.remote;
@@ -18,12 +19,20 @@ const settings = require('../common/settings');
 var MainPage = React.createClass({
   getInitialState: function() {
     return {
-      key: 0
+      key: 0,
+      unreadCounts: new Array(this.props.teams.length)
     };
   },
   handleSelect: function(key) {
     this.setState({
-      key
+      key: key
+    });
+  },
+  handleUnreadCountChange: function(index, count) {
+    var counts = this.state.unreadCounts;
+    counts[index] = count;
+    this.setState({
+      unreadCounts: counts
     });
   },
   visibleStyle: function(visible) {
@@ -38,19 +47,32 @@ var MainPage = React.createClass({
     };
   },
   render: function() {
-    var tabs = this.props.teams.map(function(team, index) {
-      return (<Tab eventKey={ index } title={ team.name }></Tab>);
-    });
     var thisObj = this;
+    var tabs = this.props.teams.map(function(team, index) {
+      var badge;
+      if (thisObj.state.unreadCounts[index] != 0) {
+        badge = (<Badge>
+                   { thisObj.state.unreadCounts[index] }
+                 </Badge>);
+      }
+      return (<NavItem eventKey={ index }>
+                { team.name }
+                { ' ' }
+                { badge }
+              </NavItem>);
+    });
     var views = this.props.teams.map(function(team, index) {
-      return (<MattermostView style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } />)
+      var handleUnreadCountChange = function(count) {
+        thisObj.handleUnreadCountChange(index, count);
+      };
+      return (<MattermostView style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } onUnreadCountChange={ handleUnreadCountChange } />)
     });
     return (
       <Grid fluid>
         <Row>
-          <Tabs activeKey={ this.state.key } onSelect={ this.handleSelect }>
+          <Nav bsStyle="tabs" activeKey={ this.state.key } onSelect={ this.handleSelect }>
             { tabs }
-          </Tabs>
+          </Nav>
         </Row>
         <Row>
           { views }
@@ -59,6 +81,7 @@ var MainPage = React.createClass({
       );
   }
 });
+
 
 var MattermostView = React.createClass({
   getInitialState: function() {
@@ -134,6 +157,7 @@ var MattermostView = React.createClass({
     return (<webview style={ this.props.style } preload="webview/mattermost.js" src={ this.props.src } ref="webview"></webview>);
   }
 });
+
 
 var configFile = remote.getGlobal('config-file');
 var config = settings.readFileSync(configFile);
