@@ -8,6 +8,7 @@ const Tray = electron.Tray;
 const ipc = electron.ipcMain;
 const fs = require('fs');
 
+var settings = require('./common/settings');
 var appMenu = require('./menus/app');
 
 var argv = require('yargs').argv;
@@ -25,6 +26,18 @@ if (argv['config-file']) {
 }
 else {
   global['config-file'] = app.getPath('userData') + '/config.json'
+}
+
+try {
+  var configFile = global['config-file'];
+  var config = settings.readFileSync(configFile);
+  if (config.version != settings.version) {
+    config = settings.upgrade(config);
+    settings.writeFileSync(configFile, config);
+  }
+}
+catch (e) {
+  console.log('Failed to read or upgrade config.json');
 }
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -100,7 +113,7 @@ app.on('ready', function() {
   mainWindow = new BrowserWindow(window_options);
 
   // and load the index.html of the app.
-  mainWindow.loadURL('file://' + __dirname + '/index.html');
+  mainWindow.loadURL('file://' + __dirname + '/browser/index.html');
 
   // Open the DevTools.
   // mainWindow.openDevTools();

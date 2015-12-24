@@ -4,10 +4,16 @@ const electron = require('electron');
 const ipc = electron.ipcRenderer;
 const NativeNotification = Notification;
 
-ipc.on('retrieveUnreadCount', function() {
+var unreadCountTimer = setInterval(function() {
+  if (!this.count) {
+    this.count = 0;
+  }
   var unreadCount = document.getElementsByClassName('unread-title').length;
-  ipc.sendToHost('retrieveUnreadCount', unreadCount);
-});
+  if (this.count != unreadCount) {
+    ipc.sendToHost('onUnreadCountChange', unreadCount);
+  }
+  this.count = unreadCount;
+}, 1000);
 
 // On Windows 8.1 and Windows 8, a shortcut with a Application User Model ID must be installed to the Start screen.
 // In current version, use tray balloon for notification
@@ -15,7 +21,7 @@ function isLowerThanOrEqualWindows8_1() {
   if (process.platform != 'win32') {
     return false;
   }
-  var osVersion = require('../common/osVersion');
+  var osVersion = require('../../common/osVersion');
   return (osVersion.major <= 6 && osVersion.minor <= 3);
 };
 
@@ -46,7 +52,14 @@ function overrideNotification() {
   };
   Notification.prototype.__defineSetter__('onclick', function(callback) {
     this.notification.onclick = function() {
-      electron.remote.getCurrentWindow().show();
+      if (process.platform === 'win32') {
+        // show() breaks Aero Snap state.
+        electron.remote.getCurrentWindow().focus();
+      }
+      else {
+        electron.remote.getCurrentWindow().show();
+      }
+      ipc.sendToHost('onNotificationClick');
       callback();
     };
   });

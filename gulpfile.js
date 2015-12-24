@@ -2,14 +2,21 @@
 
 var gulp = require('gulp');
 var prettify = require('gulp-jsbeautifier');
+var babel = require('gulp-babel');
+var changed = require('gulp-changed');
+var esformatter = require('gulp-esformatter');
+var del = require('del');
 var electron = require('electron-connect').server.create({
   path: './src'
 });
 var packager = require('electron-packager');
 
-var sources = ['**/*.js', '**/*.css', '**/*.html', '!**/node_modules/**', '!release/**'];
+var sources = ['**/*.js', '**/*.css', '**/*.html', '!**/node_modules/**', '!**/build/**', '!release/**'];
+var app_root = 'src';
 
-gulp.task('prettify', ['sync-meta'], function() {
+gulp.task('prettify', ['prettify:sources', 'prettify:jsx']);
+
+gulp.task('prettify:sources', ['sync-meta'], function() {
   return gulp.src(sources)
     .pipe(prettify({
       html: {
@@ -26,6 +33,30 @@ gulp.task('prettify', ['sync-meta'], function() {
     .pipe(gulp.dest('.'));
 });
 
+gulp.task('prettify:jsx', function() {
+  return gulp.src(app_root + '/**/*.jsx')
+    .pipe(esformatter({
+      indent: {
+        value: '  '
+      },
+      plugins: ['esformatter-jsx']
+    }))
+    .pipe(gulp.dest(app_root));
+})
+
+gulp.task('build', ['build:jsx']);
+
+gulp.task('build:jsx', function() {
+  return gulp.src(['src/browser/**/*.jsx', '!src/node_modules/**'])
+    .pipe(changed(app_root, {
+      extension: '.js'
+    }))
+    .pipe(babel({
+      presets: ['react']
+    }))
+    .pipe(gulp.dest('src/browser/build'));
+});
+
 gulp.task('serve', function() {
   var options = ['--livereload'];
   electron.start(options);
@@ -38,7 +69,7 @@ gulp.task('serve', function() {
 function makePackage(platform, arch, callback) {
   var packageJson = require('./src/package.json');
   packager({
-    dir: './src',
+    dir: './' + app_root,
     name: packageJson.name,
     platform: platform,
     arch: arch,
@@ -67,23 +98,23 @@ function makePackage(platform, arch, callback) {
   });
 };
 
-gulp.task('package', ['sync-meta'], function(cb) {
+gulp.task('package', ['build'], function(cb) {
   makePackage(process.platform, 'all', cb);
 });
 
-gulp.task('package:all', ['sync-meta'], function(cb) {
+gulp.task('package:all', ['build'], function(cb) {
   makePackage('all', 'all', cb);
 });
 
-gulp.task('package:windows', ['sync-meta'], function(cb) {
+gulp.task('package:windows', ['build'], function(cb) {
   makePackage('win32', 'all', cb);
 });
 
-gulp.task('package:osx', ['sync-meta'], function(cb) {
+gulp.task('package:osx', ['build'], function(cb) {
   makePackage('darwin', 'all', cb);
 });
 
-gulp.task('package:linux', ['sync-meta'], function(cb) {
+gulp.task('package:linux', ['build'], function(cb) {
   makePackage('linux', 'all', cb);
 });
 

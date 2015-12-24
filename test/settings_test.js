@@ -11,8 +11,8 @@ describe('settings.js', function() {
       url: 'http://example.com/team'
     };
     config = settings.upgrade(v0_config);
-    config.url.length.should.equal(1);
-    config.url[0].should.equal(v0_config.url);
+    config.teams.length.should.equal(1);
+    config.teams[0].url.should.equal(v0_config.url);
     config.version.should.equal(settings.version);
   });
 });
