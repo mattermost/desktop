@@ -75,7 +75,7 @@ function makePackage(platform, arch, callback) {
     name: packageJson.name,
     platform: platform,
     arch: arch,
-    version: '0.35.1',
+    version: require('./package.json').devDependencies['electron-prebuilt'],
     out: './release',
     prune: true,
     overwrite: true,
