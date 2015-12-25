@@ -44,7 +44,7 @@ gulp.task('prettify:jsx', function() {
     .pipe(gulp.dest(app_root));
 });
 
-gulp.task('build', ['build:jsx']);
+gulp.task('build', ['sync-meta', 'build:jsx']);
 
 gulp.task('build:jsx', function() {
   return gulp.src(['src/browser/**/*.jsx', '!src/node_modules/**'])
