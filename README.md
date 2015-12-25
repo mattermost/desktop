@@ -11,6 +11,7 @@ Desktop app for [Mattermost](http://www.mattermost.org/) that runs on [Electron]
   * Windows 7-8.1: Balloon
   * OS X: Notification Center
   * Linux: libnotify ([Electron's notification spec](http://electron.atom.io/docs/v0.35.0/tutorial/desktop-environment-integration/#linux))
+* Tabs for multiple teams
 * Resident application
 
 ### Pre-packaged
@@ -34,27 +35,30 @@ Configuration will be saved into Electron's userData directory:
 * `~/.config/electron-mattermost` on Linux
 
 
-## Testing
+## Testing and Development
 Node.js is required to test this app.
 
+### Simple testing
 1. Clone or download the source code.
 2. Run `npm install`.
-3. Run `npm start`. (If you have gulp, `gulp serve` has live-reload.)
+3. Run `npm start`.
 
+When you edit **.jsx** files, please execute `npm run build` before `npm start`.
+
+### Development
+#### `npm run serve`
+Reload the app automatically when you have saved source codes.
+
+#### `npm test`
+Run tests with Mocha.
 
 ## Packaging
-gulp is necessary for packaging this app.
-
-```
-$ npm install -g gulp (Or, use node_module/gulp/bin/gulp.js
-```
-
 You can package this app with following commands. Packages will be created in `release` directory.
 
 ```
-$ gulp package (for your platform)
-$ gulp package:windows (Requires Windows or Wine)
-$ gulp package:osx (Requires OS X or Linux)
-$ gulp package:linux
-$ gulp package:all (Packages for all platform)
+$ npm run package (for your platform)
+$ npm run package:windows (Requires Windows or Wine)
+$ npm run package:osx (Requires OS X or Linux)
+$ npm run package:linux
+$ npm run package:all (Packages for all platform)
 ```
