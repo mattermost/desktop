@@ -1,18 +1,25 @@
+'use strict';
+
 const webdriverio = require('webdriverio');
 const should = require('should');
 const path = require('path');
 const fs = require('fs');
 
-const exe_extension = (process.platform === 'win32') ? ".exe" : "";
 const source_root_dir = path.join(__dirname, '..');
-const electron_binary_path = path.join(source_root_dir, 'node_modules/electron-prebuilt/dist/electron' + exe_extension);
+const electron_binary_path = (function() {
+  if (process.platform === 'darwin') {
+    return path.join(source_root_dir, 'node_modules/electron-prebuilt/dist/Electron.app/Contents/MacOS/Electron');
+  }
+  else {
+    const exe_extension = (process.platform === 'win32') ? '.exe' : '';
+    return path.join(source_root_dir, 'node_modules/electron-prebuilt/dist/electron' + exe_extension);
+  }
+})();
 const config_file_path = path.join(source_root_dir, 'test_config.json');
 const mattermost_url = 'http://example.com/team';
 
-var chromedriver = require('child_process').spawn('node_modules/chromedriver/lib/chromedriver/chromedriver', ['--url-base=wd/hub', '--port=9515']);
-
 var options = {
-  host: "localhost", // Use localhost as chrome driver server
+  host: 'localhost', // Use localhost as chrome driver server
   port: 9515, // "9515" is the port opened by chrome driver.
   desiredCapabilities: {
     browserName: 'chrome',
@@ -26,15 +33,29 @@ var options = {
 describe('electron-mattermost', function() {
   this.timeout(10000);
 
+  var chromedriver;
+  var client;
   before(function(done) {
+    chromedriver = require('child_process').spawn('node_modules/chromedriver/lib/chromedriver/chromedriver', ['--url-base=wd/hub', '--port=9515']);
+    client = webdriverio.remote(options);
+
     fs.unlink(config_file_path, function(err) {
       // waiting for chromedriver
       setTimeout(done, 1000);
     });
   });
 
+  afterEach(function(done) {
+    client.endAll().then(function() {
+      done();
+    });
+  });
+
+  after(function() {
+    chromedriver.kill();
+  });
+
   it('should show settings.html when there is no config file', function(done) {
-    var client = webdriverio.remote(options);
     client
       .init()
       .getUrl().then(function(url) {
@@ -50,7 +71,6 @@ describe('electron-mattermost', function() {
     fs.writeFileSync(config_file_path, JSON.stringify({
       url: mattermost_url
     }));
-    var client = webdriverio.remote(options);
     client
       .init()
       .getUrl().then(function(url) {
@@ -67,7 +87,6 @@ describe('electron-mattermost', function() {
     fs.writeFileSync(config_file_path, JSON.stringify({
       url: mattermost_url
     }));
-    var client = webdriverio.remote(options);
     client
       .init()
       .getUrl().then(function(url) {
@@ -99,7 +118,6 @@ describe('electron-mattermost', function() {
     });
 
     it('should set src of webview from config file', function(done) {
-      var client = webdriverio.remote(options);
       client
         .init()
         .getAttribute('.mattermostView', 'src').then(function(attribute) {
@@ -113,7 +131,6 @@ describe('electron-mattermost', function() {
     });
 
     it('should set name of tab from config file', function(done) {
-      var client = webdriverio.remote(options);
       client
         .init()
         .getText('.teamTabItem').then(function(text) {
@@ -139,7 +156,6 @@ describe('electron-mattermost', function() {
           });
         };
       };
-      var client = webdriverio.remote(options);
       client
         .init()
         .isVisible('.mattermostView').then(checkVisility(0))
