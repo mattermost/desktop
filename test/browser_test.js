@@ -46,7 +46,7 @@ describe('electron-mattermost', function() {
   });
 
   afterEach(function(done) {
-    client.endAll().then(function() {
+    client.end().then(function() {
       done();
     });
   });
