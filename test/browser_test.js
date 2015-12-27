@@ -168,4 +168,54 @@ describe('electron-mattermost', function() {
         });
     });
   });
+
+  describe('settings.html', function() {
+    const config = {
+      version: 1,
+      teams: [{
+        name: 'example_1',
+        url: mattermost_url
+      }, {
+        name: 'example_2',
+        url: mattermost_url
+      }]
+    };
+
+    before(function() {
+      fs.writeFileSync(config_file_path, JSON.stringify(config));
+    });
+
+    it('should show index.thml when Cancel button is clicked', function(done) {
+      client
+        .init()
+        .url('file://' + path.join(source_root_dir, 'src/browser/settings.html'))
+        .waitForExist('#btnCancel')
+        .click('#btnCancel')
+        .pause(1000)
+        .getUrl().then(function(url) {
+          var url_split = url.split('/');
+          url_split[url_split.length - 1].should.equal('index.html');
+        })
+        .end().then(function() {
+          done();
+        });
+    });
+
+    it('should show index.thml when Save button is clicked', function(done) {
+      client
+        .init()
+        .url('file://' + path.join(source_root_dir, 'src/browser/settings.html'))
+        .waitForExist('#btnSave')
+        .click('#btnSave')
+        .pause(1000)
+        .getUrl().then(function(url) {
+          var url_split = url.split('/');
+          url_split[url_split.length - 1].should.equal('index.html');
+        })
+        .end().then(function() {
+          done();
+        });
+    });
+
+  });
 });

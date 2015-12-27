@@ -50,9 +50,9 @@ var SettingsPage = React.createClass({
         </Row>
         <Row>
           <Col md={ 12 }>
-            <Button onClick={ this.handleCancel }>Cancel</Button>
+            <Button id="btnCancel" onClick={ this.handleCancel }>Cancel</Button>
             { ' ' }
-            <Button bsStyle="primary" onClick={ this.handleSave }>Save</Button>
+            <Button id="btnSave" bsStyle="primary" onClick={ this.handleSave }>Save</Button>
           </Col>
         </Row>
       </Grid>
