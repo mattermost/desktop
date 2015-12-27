@@ -1,17 +1,19 @@
 # electron-mattermost
-Desktop app for [Mattermost](http://www.mattermost.org/) that runs on [Electron](http://electron.atom.io/)
+[![Circle CI](https://circleci.com/gh/yuya-oc/electron-mattermost.svg?style=svg)](https://circleci.com/gh/yuya-oc/electron-mattermost)
 
+[Electron](http://electron.atom.io/)-based desktop application for [Mattermost](http://www.mattermost.org/)
 
 ## Features
 
 ### Desktop integration
-* Badges for unread channels
-* Notification
-  * Windows 10: Toast
-  * Windows 7-8.1: Balloon
-  * OS X: Notification Center
-  * Linux: libnotify ([Electron's notification spec](http://electron.atom.io/docs/v0.35.0/tutorial/desktop-environment-integration/#linux))
 * Tabs for multiple teams
+* Notifications
+  * Desktop Notification
+    * Windows 10: Toast
+    * Windows 7-8.1: Balloon
+    * OS X: Notification Center
+    * Linux: libnotify ([Electron's notification spec](http://electron.atom.io/docs/v0.36.0/tutorial/desktop-environment-integration/#linux))
+  * Badges for unread channels
 * Resident application
 
 ### Pre-packaged
@@ -29,6 +31,9 @@ You don't have to install any other software.
 Ctrl or Command + Q to quit.
 
 ### Configuration
+You can show the dialog from menu bar.
+(On Windows, please press Alt key to show the menu bar.)
+
 Configuration will be saved into Electron's userData directory:
 * `%APPDATA%\electron-mattermost` on Windows
 * `~/Library/Application Support/electron-mattermost` on OS X
