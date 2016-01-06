@@ -61,8 +61,20 @@ var createTemplate = function(mainWindow) {
       label: 'Reload',
       accelerator: 'CmdOrCtrl+R',
       click: function(item, focusedWindow) {
-        if (focusedWindow)
+        if (focusedWindow) {
           focusedWindow.reload();
+        }
+      }
+    }, {
+      label: 'Clear Cache and Reload',
+      accelerator: 'Shift+CmdOrCtrl+R',
+      click: function(item, focusedWindow) {
+        // TODO: should reload the selected tab only
+        if (focusedWindow) {
+          focusedWindow.webContents.session.clearCache(function() {
+            focusedWindow.reload();
+          });
+        }
       }
     }, {
       label: 'Toggle Full Screen',
