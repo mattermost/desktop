@@ -8,7 +8,18 @@ var unreadCountTimer = setInterval(function() {
   if (!this.count) {
     this.count = 0;
   }
+
+  // count in sidebar
   var unreadCount = document.getElementsByClassName('unread-title').length;
+
+  // count for active channel
+  var newSeparators = document.getElementsByClassName('new-separator');
+  for (var i = 0; i < newSeparators.length; i++) {
+    if (newSeparators[i].offsetParent !== null) {
+      unreadCount += 1;
+    }
+  }
+
   if (this.count != unreadCount) {
     ipc.sendToHost('onUnreadCountChange', unreadCount);
   }
