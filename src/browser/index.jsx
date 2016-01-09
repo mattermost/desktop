@@ -75,7 +75,8 @@ var MainPage = React.createClass({
       var handleNotificationClick = function() {
         thisObj.handleSelect(index);
       }
-      return (<MattermostView style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } onUnreadCountChange={ handleUnreadCountChange } onNotificationClick={ handleNotificationClick } />)
+      return (<MattermostView id={ 'mattermostView' + index } style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } onUnreadCountChange={ handleUnreadCountChange } onNotificationClick={ handleNotificationClick }
+              />)
     });
     return (
       <Grid fluid>
@@ -166,7 +167,7 @@ var MattermostView = React.createClass({
     // 'disablewebsecurity' is necessary to display external images.
     // However, it allows also CSS/JavaScript.
     // So webview should use 'allowDisplayingInsecureContent' as same as BrowserWindow.
-    return (<webview className="mattermostView" style={ this.props.style } preload="webview/mattermost.js" src={ this.props.src } ref="webview"></webview>);
+    return (<webview id={ this.props.id } className="mattermostView" style={ this.props.style } preload="webview/mattermost.js" src={ this.props.src } ref="webview"></webview>);
   }
 });
 

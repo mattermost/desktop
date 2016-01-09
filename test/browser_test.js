@@ -45,49 +45,43 @@ describe('electron-mattermost', function() {
     });
   });
 
-  afterEach(function(done) {
-    client.end().then(function() {
-      done();
-    });
+  afterEach(function() {
+    return client.end();
   });
 
   after(function() {
     chromedriver.kill();
   });
 
-  it('should show settings.html when there is no config file', function(done) {
-    client
+  it('should show settings.html when there is no config file', function() {
+    return client
       .init()
       .getUrl().then(function(url) {
         var p = path.parse(url);
         p.base.should.equal('settings.html');
       })
-      .end().then(function() {
-        done();
-      });
+      .end();
   });
 
-  it('should show index.html when there is config file', function(done) {
+  it('should show index.html when there is config file', function() {
     fs.writeFileSync(config_file_path, JSON.stringify({
       url: mattermost_url
     }));
-    client
+    return client
       .init()
       .getUrl().then(function(url) {
         var p = path.parse(url);
         p.base.should.equal('index.html');
       })
-      .end().then(function() {
-        done();
-      });
+      .end();
   });
 
-  it('should upgrade v0 config file', function(done) {
+  it('should upgrade v0 config file', function() {
     const settings = require('../src/common/settings');
     fs.writeFileSync(config_file_path, JSON.stringify({
       url: mattermost_url
     }));
-    client
+    return client
       .init()
       .getUrl().then(function(url) {
         var p = path.parse(url);
@@ -97,7 +91,6 @@ describe('electron-mattermost', function() {
         var str = fs.readFileSync(config_file_path, 'utf8');
         var config = JSON.parse(str);
         config.version.should.equal(settings.version);
-        done();
       });
   });
 
@@ -106,10 +99,10 @@ describe('electron-mattermost', function() {
       version: 1,
       teams: [{
         name: 'example_1',
-        url: mattermost_url
+        url: mattermost_url + '1'
       }, {
         name: 'example_2',
-        url: mattermost_url
+        url: mattermost_url + '2'
       }]
     };
 
@@ -117,55 +110,49 @@ describe('electron-mattermost', function() {
       fs.writeFileSync(config_file_path, JSON.stringify(config));
     });
 
-    it('should set src of webview from config file', function(done) {
-      client
+    it('should set src of webview from config file', function() {
+      return client
         .init()
-        .getAttribute('.mattermostView', 'src').then(function(attribute) {
-          attribute.forEach(function(attr, index) {
-            attr.should.equal(config.teams[index].url);
-          });
+        .getAttribute('#mattermostView0', 'src').then(function(attribute) {
+          attribute.should.equal(config.teams[0].url);
         })
-        .end().then(function() {
-          done();
-        });
+        .getAttribute('#mattermostView1', 'src').then(function(attribute) {
+          attribute.should.equal(config.teams[1].url);
+        })
+        .isExisting('#mattermostView2').then(function(isExisting) {
+          isExisting.should.be.false();
+        })
+        .end();
     });
 
-    it('should set name of tab from config file', function(done) {
-      client
+    it('should set name of tab from config file', function() {
+      return client
         .init()
-        .getText('.teamTabItem').then(function(text) {
-          text.forEach(function(t, index) {
-            t.should.equal(config.teams[index].name);
-          });
+        .getText('#teamTabItem0').then(function(text) {
+          text.should.equal(config.teams[0].name);
         })
-        .end().then(function() {
-          done();
-        });
+        .getText('#teamTabItem1').then(function(text) {
+          text.should.equal(config.teams[1].name);
+        })
+        .isExisting('#teamTabItem2').then(function(isExisting) {
+          isExisting.should.be.false();
+        })
+        .end();
     });
 
-    it('should show only the selected team', function(done) {
-      var checkVisility = function(visibleIndex) {
-        return function(isVisible) {
-          isVisible.forEach(function(v, index) {
-            if (index === visibleIndex) {
-              v.should.equal(true);
-            }
-            else {
-              v.should.equal(false);
-            }
-          });
-        };
-      };
-      client
+    it('should show only the selected team', function() {
+      return client
         .init()
-        .isVisible('.mattermostView').then(checkVisility(0))
+        .waitForVisible('#mattermostView0')
+        .isVisible('#mattermostView1').then(function(visility) {
+          visility.should.be.false();
+        })
         .click('#teamTabItem1')
-        .isVisible('.mattermostView').then(checkVisility(1))
-        .click('#teamTabItem0')
-        .isVisible('.mattermostView').then(checkVisility(0))
-        .end().then(function() {
-          done();
-        });
+        .waitForVisible('#mattermostView1')
+        .isVisible('#mattermostView0').then(function(visility) {
+          visility.should.be.false();
+        })
+        .end();
     });
   });
 
@@ -185,8 +172,8 @@ describe('electron-mattermost', function() {
       fs.writeFileSync(config_file_path, JSON.stringify(config));
     });
 
-    it('should show index.thml when Cancel button is clicked', function(done) {
-      client
+    it('should show index.thml when Cancel button is clicked', function() {
+      return client
         .init()
         .url('file://' + path.join(source_root_dir, 'src/browser/settings.html'))
         .waitForExist('#btnCancel')
@@ -196,13 +183,11 @@ describe('electron-mattermost', function() {
           var url_split = url.split('/');
           url_split[url_split.length - 1].should.equal('index.html');
         })
-        .end().then(function() {
-          done();
-        });
+        .end();
     });
 
-    it('should show index.thml when Save button is clicked', function(done) {
-      client
+    it('should show index.thml when Save button is clicked', function() {
+      return client
         .init()
         .url('file://' + path.join(source_root_dir, 'src/browser/settings.html'))
         .waitForExist('#btnSave')
@@ -212,9 +197,7 @@ describe('electron-mattermost', function() {
           var url_split = url.split('/');
           url_split[url_split.length - 1].should.equal('index.html');
         })
-        .end().then(function() {
-          done();
-        });
+        .end();
     });
 
   });
