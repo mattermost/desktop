@@ -17,12 +17,21 @@ const path = require('path');
 
 const settings = require('../common/settings');
 
+remote.getCurrentWindow().removeAllListeners('focus');
+
 var MainPage = React.createClass({
   getInitialState: function() {
     return {
       key: 0,
       unreadCounts: new Array(this.props.teams.length)
     };
+  },
+  componentDidMount: function() {
+    var thisObj = this;
+    remote.getCurrentWindow().on('focus', function() {
+      var webview = document.getElementById('mattermostView' + thisObj.state.key);
+      webview.focus();
+    });
   },
   handleSelect: function(key) {
     this.setState({
