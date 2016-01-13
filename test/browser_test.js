@@ -106,8 +106,20 @@ describe('electron-mattermost', function() {
       }]
     };
 
-    before(function() {
+    beforeEach(function() {
       fs.writeFileSync(config_file_path, JSON.stringify(config));
+    });
+
+    it('should NOT show tabs when there is one team', function() {
+      fs.writeFileSync(config_file_path, JSON.stringify({
+        url: mattermost_url
+      }));
+      return client
+        .init()
+        .isExisting('#tabBar').then(function(isExisting) {
+          isExisting.should.be.false();
+        })
+        .end();
     });
 
     it('should set src of webview from config file', function() {

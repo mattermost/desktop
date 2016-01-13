@@ -55,7 +55,7 @@ var MainPage = React.createClass({
     var visibility = visible ? 'visible' : 'hidden';
     return {
       position: 'absolute',
-      top: 42,
+      top: (this.props.teams.length > 1) ? 42 : 0,
       right: 0,
       bottom: 0,
       left: 0,
@@ -64,19 +64,16 @@ var MainPage = React.createClass({
   },
   render: function() {
     var thisObj = this;
-    var tabs = this.props.teams.map(function(team, index) {
-      var badge;
-      if (thisObj.state.unreadCounts[index] != 0) {
-        badge = (<Badge>
-                   { thisObj.state.unreadCounts[index] }
-                 </Badge>);
-      }
-      return (<NavItem className="teamTabItem" id={ 'teamTabItem' + index } eventKey={ index }>
-                { team.name }
-                { ' ' }
-                { badge }
-              </NavItem>);
-    });
+
+    var tabs_row;
+    if (this.props.teams.length > 1) {
+      tabs_row = (
+        <Row>
+          <TabBar id="tabBar" teams={ this.props.teams } unreadCounts={ this.state.unreadCounts } activeKey={ this.state.key } onSelect={ this.handleSelect }></TabBar>
+        </Row>
+      );
+    }
+
     var views = this.props.teams.map(function(team, index) {
       var handleUnreadCountChange = function(count) {
         thisObj.handleUnreadCountChange(index, count);
@@ -87,21 +84,41 @@ var MainPage = React.createClass({
       return (<MattermostView id={ 'mattermostView' + index } style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } onUnreadCountChange={ handleUnreadCountChange } onNotificationClick={ handleNotificationClick }
               />)
     });
+    var views_row = (<Row>
+                       { views }
+                     </Row>);
     return (
       <Grid fluid>
-        <Row>
-          <Nav bsStyle="tabs" activeKey={ this.state.key } onSelect={ this.handleSelect }>
-            { tabs }
-          </Nav>
-        </Row>
-        <Row>
-          { views }
-        </Row>
+        { tabs_row }
+        { views_row }
       </Grid>
       );
   }
 });
 
+var TabBar = React.createClass({
+  render: function() {
+    var thisObj = this;
+    var tabs = this.props.teams.map(function(team, index) {
+      var badge;
+      if (thisObj.props.unreadCounts[index] != 0) {
+        badge = (<Badge>
+                   { thisObj.props.unreadCounts[index] }
+                 </Badge>);
+      }
+      return (<NavItem className="teamTabItem" id={ 'teamTabItem' + index } eventKey={ index }>
+                { team.name }
+                { ' ' }
+                { badge }
+              </NavItem>);
+    });
+    return (
+      <Nav id={ this.props.id } bsStyle="tabs" activeKey={ this.props.activeKey } onSelect={ this.props.onSelect }>
+        { tabs }
+      </Nav>
+      );
+  }
+});
 
 var MattermostView = React.createClass({
   getInitialState: function() {
