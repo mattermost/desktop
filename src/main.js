@@ -28,9 +28,10 @@ else {
   global['config-file'] = app.getPath('userData') + '/config.json'
 }
 
+var config = {};
 try {
   var configFile = global['config-file'];
-  var config = settings.readFileSync(configFile);
+  config = settings.readFileSync(configFile);
   if (config.version != settings.version) {
     config = settings.upgrade(config);
     settings.writeFileSync(configFile, config);
@@ -61,8 +62,10 @@ app.on('window-all-closed', function() {
 // For win32, auto-hide menu bar.
 app.on('browser-window-created', function(event, window) {
   if (process.platform === 'win32') {
-    window.setAutoHideMenuBar(true);
-    window.setMenuBarVisibility(false);
+    if (config.hideMenuBar) {
+      window.setAutoHideMenuBar(true);
+      window.setMenuBarVisibility(false);
+    }
   }
 });
 
