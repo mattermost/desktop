@@ -210,6 +210,9 @@ try {
 } catch (e) {
   window.location = 'settings.html';
 }
+if (config.teams.length === 0) {
+  window.location = 'settings.html';
+}
 
 var contextMenu = require('./menus/context');
 var menu = contextMenu.createDefault();

@@ -14,7 +14,12 @@ const Glyphicon = ReactBootstrap.Glyphicon;
 
 var SettingsPage = React.createClass({
   getInitialState: function() {
-    var config = settings.readFileSync(this.props.configFile);
+    var config;
+    try {
+      config = settings.readFileSync(this.props.configFile);
+    } catch (e) {
+      config = settings.loadDefault();
+    }
     return {
       teams: config.teams,
       hideMenuBar: config.hideMenuBar
@@ -76,7 +81,7 @@ var SettingsPage = React.createClass({
           <Col md={ 12 }>
             <Button id="btnCancel" onClick={ this.handleCancel }>Cancel</Button>
             { ' ' }
-            <Button id="btnSave" bsStyle="primary" onClick={ this.handleSave }>Save</Button>
+            <Button id="btnSave" bsStyle="primary" onClick={ this.handleSave } disabled={ this.state.teams.length === 0 }>Save</Button>
           </Col>
         </Row>
       </Grid>

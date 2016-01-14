@@ -38,5 +38,13 @@ module.exports = {
     }
     var data = JSON.stringify(config, null, '  ');
     fs.writeFileSync(configFile, data, 'utf8');
+  },
+
+  loadDefault: function() {
+    return {
+      teams: [],
+      hideMenuBar: false,
+      version: version
+    };
   }
 };
