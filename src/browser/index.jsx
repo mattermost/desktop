@@ -28,9 +28,15 @@ var MainPage = React.createClass({
   },
   componentDidMount: function() {
     var thisObj = this;
-    remote.getCurrentWindow().on('focus', function() {
+    var focusListener = function() {
       var webview = document.getElementById('mattermostView' + thisObj.state.key);
       webview.focus();
+    };
+
+    var currentWindow = remote.getCurrentWindow();
+    currentWindow.on('focus', focusListener);
+    window.addEventListener('beforeunload', function() {
+      currentWindow.removeListener('focus', focusListener);
     });
   },
   handleSelect: function(key) {
