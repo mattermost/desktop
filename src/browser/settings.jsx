@@ -33,13 +33,15 @@ var SettingsPage = React.createClass({
   handleSave: function() {
     var config = {
       teams: this.state.teams,
-      hideMenuBar: this.refs.hideMenuBar.getChecked(),
+      hideMenuBar: this.state.hideMenuBar,
       version: settings.version
     };
     settings.writeFileSync(this.props.configFile, config);
-    var currentWindow = remote.getCurrentWindow();
-    currentWindow.setAutoHideMenuBar(config.hideMenuBar);
-    currentWindow.setMenuBarVisibility(!config.hideMenuBar);
+    if (process.platform === 'win32') {
+      var currentWindow = remote.getCurrentWindow();
+      currentWindow.setAutoHideMenuBar(config.hideMenuBar);
+      currentWindow.setMenuBarVisibility(!config.hideMenuBar);
+    }
     window.location = './index.html';
   },
   handleCancel: function() {
