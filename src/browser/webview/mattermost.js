@@ -14,7 +14,7 @@ var unreadCountTimer = setInterval(function() {
 
   // count for active channel
   if(!electron.remote.getCurrentWindow().isFocused()) {
-    var newSeparators = document.getElementsByClassName('new-separator active');
+    var newSeparators = document.getElementsByClassName('new-separator');
     for (var i = 0; i < newSeparators.length; i++) {
       if (newSeparators[i].offsetParent !== null) {
         unreadCount += 1;
