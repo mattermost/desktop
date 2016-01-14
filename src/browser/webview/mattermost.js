@@ -13,10 +13,12 @@ var unreadCountTimer = setInterval(function() {
   var unreadCount = document.getElementsByClassName('unread-title').length;
 
   // count for active channel
-  var newSeparators = document.getElementsByClassName('new-separator');
-  for (var i = 0; i < newSeparators.length; i++) {
-    if (newSeparators[i].offsetParent !== null) {
-      unreadCount += 1;
+  if(!electron.remote.getCurrentWindow().isFocused()) {
+    var newSeparators = document.getElementsByClassName('new-separator active');
+    for (var i = 0; i < newSeparators.length; i++) {
+      if (newSeparators[i].offsetParent !== null) {
+        unreadCount += 1;
+      }
     }
   }
 
