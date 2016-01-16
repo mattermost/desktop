@@ -23,9 +23,11 @@ You don't have to install any other software.
 ## Usage
 
 ### Installation
+Detailed guides are available at [docs/setup.md](docs/setup.md).
+
 1. Download and unarchive a file from [release page](http://github.com/yuya-oc/electron-mattermost/releases).
 2. Launch `electron-mattermost` in the unarchived folder.
-3. After first launching, please input URL for your Mattermost team. For example, `http://mattermost.example.com/team`.
+3. After first launching, please input name and URL for your Mattermost team. For example, `myteam : http://mattermost.example.com/team`.
 
 ### Quit
 Ctrl or Command + Q to quit.
