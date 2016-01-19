@@ -10,18 +10,8 @@ var unreadCountTimer = setInterval(function() {
   }
 
   // count in sidebar
+  // Note: the active channel doesn't have '.unread-title'.
   var unreadCount = document.getElementsByClassName('unread-title').length;
-
-  // count for active channel
-  if(!electron.remote.getCurrentWindow().isFocused()) {
-    var newSeparators = document.getElementsByClassName('new-separator');
-    for (var i = 0; i < newSeparators.length; i++) {
-      if (newSeparators[i].offsetParent !== null) {
-        unreadCount += 1;
-      }
-    }
-  }
-
   if (this.count != unreadCount) {
     ipc.sendToHost('onUnreadCountChange', unreadCount);
   }
@@ -45,6 +35,12 @@ function overrideNotificationWithBalloon() {
       title: title,
       options: options
     });
+
+    // Send notification event at active channel.
+    var activeChannel = document.querySelector('.active .sidebar-channel').text;
+    if (activeChannel === title) {
+      ipc.sendToHost('onActiveChannelNotify');
+    }
   };
   Notification.requestPermission = function(callback) {
     callback('granted');
@@ -56,6 +52,12 @@ function overrideNotificationWithBalloon() {
 function overrideNotification() {
   Notification = function(title, options) {
     this.notification = new NativeNotification(title, options);
+
+    // Send notification event at active channel.
+    var activeChannel = document.querySelector('.active .sidebar-channel').text;
+    if (activeChannel === title) {
+      ipc.sendToHost('onActiveChannelNotify');
+    }
   };
   Notification.requestPermission = function(callback) {
     callback('granted');
