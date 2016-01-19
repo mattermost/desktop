@@ -5,25 +5,51 @@ const ipc = electron.ipcRenderer;
 const NativeNotification = Notification;
 
 var unreadCountTimer = setInterval(function() {
-  if (!this.count) {
-    this.count = 0;
+  if (!this.unreadCount) {
+    this.unreadCount = 0;
+  }
+  if (!this.mentionCount) {
+    this.mentionCount = 0;
   }
 
-  // count in sidebar
+  // unreadCount in sidebar
   var unreadCount = document.getElementsByClassName('unread-title').length;
+  // mentionCount in sidebar
+  var elem = document.getElementsByClassName('badge')
+  var mentionCount = 0;
+  for (var i = 0; i < elem.length; i++) {
+    if (elem[i].offsetHeight != 0) {
+      mentionCount++;
+    }
+  }
+  ipc.sendToHost('console', "sidebar(unread=" + unreadCount +", mention=" + mentionCount + ")");
 
-  // count for active channel
+  // unreadCount for active channel
   var newSeparators = document.getElementsByClassName('new-separator');
+  var post;
   for (var i = 0; i < newSeparators.length; i++) {
     if (newSeparators[i].offsetParent !== null) {
       unreadCount += 1;
+      post = newSeparators[i];
     }
   }
-
-  if (this.count != unreadCount) {
-    ipc.sendToHost('onUnreadCountChange', unreadCount);
+  // mentionCount for active channel
+  if (post != null) {
+    while (post = post.nextSibling) {
+      var highlight = post.getElementsByClassName('mention-highlight');
+      if (highlight.length != 0 && highlight[0].offsetHeight != null) {
+        mentionCount++;
+        break;
+      }
+    }
   }
-  this.count = unreadCount;
+  ipc.sendToHost('console', "sidebar + active(unread=" + unreadCount +", mention=" + mentionCount + ")");
+
+  if (this.unreadCount != unreadCount || this.mentionCount != mentionCount) {
+    ipc.sendToHost('onUnreadCountChange', unreadCount, mentionCount);
+  }
+  this.unreadCount = unreadCount;
+  this.mentionCount = mentionCount;
 }, 1000);
 
 // On Windows 8.1 and Windows 8, a shortcut with a Application User Model ID must be installed to the Start screen.

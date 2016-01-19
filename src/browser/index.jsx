@@ -23,7 +23,8 @@ var MainPage = React.createClass({
   getInitialState: function() {
     return {
       key: 0,
-      unreadCounts: new Array(this.props.teams.length)
+      unreadCounts: new Array(this.props.teams.length),
+      mentionCounts: new Array(this.props.teams.length)
     };
   },
   componentDidMount: function() {
@@ -44,17 +45,23 @@ var MainPage = React.createClass({
       key: key
     });
   },
-  handleUnreadCountChange: function(index, count) {
-    var counts = this.state.unreadCounts;
-    counts[index] = count;
+  handleUnreadCountChange: function(index, unreadCount, mentionCount) {
+    var unreadCounts = this.state.unreadCounts;
+    var mentionCounts = this.state.mentionCounts;
+    unreadCounts[index] = unreadCount;
+    mentionCounts[index] = mentionCount;
     this.setState({
-      unreadCounts: counts
+      unreadCounts: unreadCounts,
+      mentionCounts: mentionCounts
     });
     if (this.props.onUnreadCountChange) {
-      var c = counts.reduce(function(prev, curr) {
+      var allUnreadCount = unreadCounts.reduce(function(prev, curr) {
         return prev + curr;
       });
-      this.props.onUnreadCountChange(c);
+      var allMentionCount = mentionCounts.reduce(function(prev, curr) {
+        return prev + curr;
+      });
+      this.props.onUnreadCountChange(allUnreadCount, allMentionCount);
     }
   },
   visibleStyle: function(visible) {
@@ -75,14 +82,14 @@ var MainPage = React.createClass({
     if (this.props.teams.length > 1) {
       tabs_row = (
         <Row>
-          <TabBar id="tabBar" teams={ this.props.teams } unreadCounts={ this.state.unreadCounts } activeKey={ this.state.key } onSelect={ this.handleSelect }></TabBar>
+          <TabBar id="tabBar" teams={ this.props.teams } unreadCounts={ this.state.unreadCounts } mentionCounts={ this.state.mentionCounts } activeKey={ this.state.key } onSelect={ this.handleSelect }></TabBar>
         </Row>
       );
     }
 
     var views = this.props.teams.map(function(team, index) {
-      var handleUnreadCountChange = function(count) {
-        thisObj.handleUnreadCountChange(index, count);
+      var handleUnreadCountChange = function(unreadCount, mentionCount) {
+        thisObj.handleUnreadCountChange(index, unreadCount, mentionCount);
       };
       var handleNotificationClick = function() {
         thisObj.handleSelect(index);
@@ -107,9 +114,13 @@ var TabBar = React.createClass({
     var thisObj = this;
     var tabs = this.props.teams.map(function(team, index) {
       var badge;
-      if (thisObj.props.unreadCounts[index] != 0) {
+      if (thisObj.props.mentionCounts[index] != 0) {
         badge = (<Badge>
-                   { thisObj.props.unreadCounts[index] }
+                   { thisObj.props.mentionCounts[index] }
+                 </Badge>);
+      } else if (thisObj.props.unreadCounts[index] != 0) {
+        badge = (<Badge>
+                   *
                  </Badge>);
       }
       return (<NavItem className="teamTabItem" id={ 'teamTabItem' + index } eventKey={ index }>
@@ -132,12 +143,13 @@ var MattermostView = React.createClass({
       unreadCount: 0
     };
   },
-  handleUnreadCountChange: function(count) {
+  handleUnreadCountChange: function(unreadCount, mentionCount) {
     this.setState({
-      unreadCount: count
+      unreadCount: unreadCount,
+      mentionCount: mentionCount
     });
     if (this.props.onUnreadCountChange) {
-      this.props.onUnreadCountChange(count);
+      this.props.onUnreadCountChange(unreadCount, mentionCount);
     }
   },
   componentDidMount: function() {
@@ -187,10 +199,15 @@ var MattermostView = React.createClass({
       switch (event.channel) {
         case 'onUnreadCountChange':
           var unreadCount = event.args[0];
-          thisObj.handleUnreadCountChange(unreadCount);
+          var mentionCount = event.args[1];
+          thisObj.handleUnreadCountChange(unreadCount, mentionCount);
           break;
         case 'onNotificationClick':
           thisObj.props.onNotificationClick();
+          break;
+        case 'console':
+          console.log(event.args[0]);
+          break;
       }
     });
 
@@ -220,19 +237,21 @@ window.addEventListener('contextmenu', function(e) {
   menu.popup(remote.getCurrentWindow());
 }, false);
 
-var showUnreadBadge = function(unreadCount) {
+var showUnreadBadge = function(unreadCount, mentionCount) {
   switch (process.platform) {
     case 'win32':
       var window = remote.getCurrentWindow();
-      if (unreadCount > 0) {
+      if (unreadCount > 0 || mentionCount > 0) {
         window.setOverlayIcon(path.join(__dirname, '../resources/badge.png'), 'You have unread channels.');
       } else {
         window.setOverlayIcon(null, '');
       }
       break;
     case 'darwin':
-      if (unreadCount > 0) {
-        remote.app.dock.setBadge(unreadCount.toString());
+      if (mentionCount > 0) {
+        remote.app.dock.setBadge(mentionCount.toString());
+      } else if (mentionCount < unreadCount) {
+        remote.app.dock.setBadge('*');
       } else {
         remote.app.dock.setBadge('');
       }
