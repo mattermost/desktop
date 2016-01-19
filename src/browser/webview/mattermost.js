@@ -22,7 +22,6 @@ var unreadCountTimer = setInterval(function() {
       mentionCount++;
     }
   }
-  ipc.sendToHost('console', "sidebar(unread=" + unreadCount +", mention=" + mentionCount + ")");
 
   // unreadCount for active channel
   var newSeparators = document.getElementsByClassName('new-separator');
@@ -43,7 +42,6 @@ var unreadCountTimer = setInterval(function() {
       }
     }
   }
-  ipc.sendToHost('console', "sidebar + active(unread=" + unreadCount +", mention=" + mentionCount + ")");
 
   if (this.unreadCount != unreadCount || this.mentionCount != mentionCount) {
     ipc.sendToHost('onUnreadCountChange', unreadCount, mentionCount);
