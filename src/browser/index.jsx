@@ -33,7 +33,7 @@ var MainPage = React.createClass({
       var webview = document.getElementById('mattermostView' + thisObj.state.key);
       webview.focus();
 
-      this.handleOnTeamFocused(key);
+      thisObj.handleOnTeamFocused(thisObj.state.key);
     };
 
     var currentWindow = remote.getCurrentWindow();
@@ -79,7 +79,7 @@ var MainPage = React.createClass({
   },
   handleNotify: function(index) {
     // Never turn on the unreadAtActive flag at current focused tab.
-    if (state && this.state.key === index && remote.getCurrentWindow().isFocused()) {
+    if (this.state.key === index && remote.getCurrentWindow().isFocused()) {
       return;
     }
     this.handleUnreadAtActiveChange(index, true);
