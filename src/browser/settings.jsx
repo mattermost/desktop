@@ -6,6 +6,7 @@ const settings = require('../common/settings');
 const Grid = ReactBootstrap.Grid;
 const Row = ReactBootstrap.Row;
 const Col = ReactBootstrap.Col;
+const Input = ReactBootstrap.Input;
 const Button = ReactBootstrap.Button;
 const ListGroup = ReactBootstrap.ListGroup;
 const ListGroupItem = ReactBootstrap.ListGroupItem;
@@ -13,15 +14,16 @@ const Glyphicon = ReactBootstrap.Glyphicon;
 
 var SettingsPage = React.createClass({
   getInitialState: function() {
+    var config;
+    try {
+      config = settings.readFileSync(this.props.configFile);
+    } catch (e) {
+      config = settings.loadDefault();
+    }
     return {
-      teams: []
+      teams: config.teams,
+      hideMenuBar: config.hideMenuBar
     };
-  },
-  componentDidMount: function() {
-    var config = settings.readFileSync(this.props.configFile);
-    this.setState({
-      teams: config.teams
-    })
   },
   handleTeamsChange: function(teams) {
     this.setState({
@@ -31,28 +33,57 @@ var SettingsPage = React.createClass({
   handleSave: function() {
     var config = {
       teams: this.state.teams,
-      version: 1
+      hideMenuBar: this.state.hideMenuBar,
+      version: settings.version
     };
     settings.writeFileSync(this.props.configFile, config);
+    if (process.platform === 'win32') {
+      var currentWindow = remote.getCurrentWindow();
+      currentWindow.setAutoHideMenuBar(config.hideMenuBar);
+      currentWindow.setMenuBarVisibility(!config.hideMenuBar);
+    }
     window.location = './index.html';
   },
   handleCancel: function() {
     window.location = './index.html';
   },
+  handleChangeHideMenuBar: function() {
+    this.setState({
+      hideMenuBar: this.refs.hideMenuBar.getChecked()
+    });
+  },
   render: function() {
+    var teams_row = (
+    <Row>
+      <Col md={ 12 }>
+        <h2>Teams</h2>
+        <TeamList teams={ this.state.teams } onTeamsChange={ this.handleTeamsChange } />
+      </Col>
+    </Row>
+    );
+
+    var options = [];
+    if (process.platform === 'win32') {
+      options.push(<Input ref="hideMenuBar" type="checkbox" label="Hide menubar (Press Alt to show menubar)" checked={ this.state.hideMenuBar } onChange={ this.handleChangeHideMenuBar } />);
+    }
+    var options_row = (options.length > 0) ? (
+      <Row>
+        <Col md={ 12 }>
+          <h2>Options</h2>
+          { options }
+        </Col>
+      </Row>
+      ) : null;
+
     return (
       <Grid className="settingsPage">
-        <Row>
-          <Col md={ 12 }>
-            <h2>Teams</h2>
-            <TeamList teams={ this.state.teams } onTeamsChange={ this.handleTeamsChange } />
-          </Col>
-        </Row>
+        { teams_row }
+        { options_row }
         <Row>
           <Col md={ 12 }>
             <Button id="btnCancel" onClick={ this.handleCancel }>Cancel</Button>
             { ' ' }
-            <Button id="btnSave" bsStyle="primary" onClick={ this.handleSave }>Save</Button>
+            <Button id="btnSave" bsStyle="primary" onClick={ this.handleSave } disabled={ this.state.teams.length === 0 }>Save</Button>
           </Col>
         </Row>
       </Grid>

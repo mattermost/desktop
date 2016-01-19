@@ -9,6 +9,7 @@ var upgradeV0toV1 = function(config_v0) {
       name: 'Primary team',
       url: config_v0.url
     }],
+    hideMenuBar: false,
     version: 1
   };
 };
@@ -38,5 +39,13 @@ module.exports = {
     }
     var data = JSON.stringify(config, null, '  ');
     fs.writeFileSync(configFile, data, 'utf8');
+  },
+
+  loadDefault: function() {
+    return {
+      teams: [],
+      hideMenuBar: false,
+      version: version
+    };
   }
 };

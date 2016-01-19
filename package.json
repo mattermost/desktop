@@ -1,7 +1,7 @@
 {
   "name": "electron-mattermost",
-  "version": "1.0.1",
-  "description": "Desktop app for Mattermost that run on Electron",
+  "version": "1.0.2",
+  "description": "Electron-based desktop application for Mattermost",
   "main": "main.js",
   "author": "Yuya Ochiai",
   "license": "MIT",
@@ -25,7 +25,7 @@
     "del": "^2.2.0",
     "electron-connect": "^0.3.3",
     "electron-packager": "^5.1.0",
-    "electron-prebuilt": "0.36.2",
+    "electron-prebuilt": "0.36.3",
     "esformatter": "^0.8.1",
     "esformatter-jsx": "^4.0.6",
     "gulp": "^3.9.0",

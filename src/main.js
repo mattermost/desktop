@@ -28,9 +28,10 @@ else {
   global['config-file'] = app.getPath('userData') + '/config.json'
 }
 
+var config = {};
 try {
   var configFile = global['config-file'];
-  var config = settings.readFileSync(configFile);
+  config = settings.readFileSync(configFile);
   if (config.version != settings.version) {
     config = settings.upgrade(config);
     settings.writeFileSync(configFile, config);
@@ -61,8 +62,10 @@ app.on('window-all-closed', function() {
 // For win32, auto-hide menu bar.
 app.on('browser-window-created', function(event, window) {
   if (process.platform === 'win32') {
-    window.setAutoHideMenuBar(true);
-    window.setMenuBarVisibility(false);
+    if (config.hideMenuBar) {
+      window.setAutoHideMenuBar(true);
+      window.setMenuBarVisibility(false);
+    }
   }
 });
 
@@ -111,6 +114,9 @@ app.on('ready', function() {
   }
   window_options.icon = __dirname + '/resources/appicon.png';
   mainWindow = new BrowserWindow(window_options);
+  if (window_options.maximized) {
+    mainWindow.maximize();
+  }
 
   // and load the index.html of the app.
   mainWindow.loadURL('file://' + __dirname + '/browser/index.html');
@@ -118,10 +124,16 @@ app.on('ready', function() {
   // Open the DevTools.
   // mainWindow.openDevTools();
 
+  var saveWindowState = function(file, window) {
+    var window_state = window.getBounds();
+    window_state.maximized = window.isMaximized();
+    window_state.fullscreen = window.isFullScreen();
+    fs.writeFileSync(bounds_info_path, JSON.stringify(window_state));
+  };
+
   mainWindow.on('close', function(event) {
     if (willAppQuit) { // when [Ctrl|Cmd]+Q
-      var bounds = mainWindow.getBounds();
-      fs.writeFileSync(bounds_info_path, JSON.stringify(bounds));
+      saveWindowState(bounds_info_path, mainWindow);
     }
     else { // Minimize or hide the window for close button.
       event.preventDefault();
@@ -144,8 +156,7 @@ app.on('ready', function() {
   // 'blur' event was effective in order to avoid this.
   // Ideally, app should detect that OS is shutting down.
   mainWindow.on('blur', function() {
-    var bounds = mainWindow.getBounds();
-    fs.writeFileSync(bounds_info_path, JSON.stringify(bounds));
+    saveWindowState(bounds_info_path, mainWindow);
   });
 
   var app_menu = appMenu.createMenu(mainWindow);
