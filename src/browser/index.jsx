@@ -251,7 +251,7 @@ var showUnreadBadge = function(unreadCount, mentionCount) {
       if (mentionCount > 0) {
         remote.app.dock.setBadge(mentionCount.toString());
       } else if (mentionCount < unreadCount) {
-        remote.app.dock.setBadge('*');
+        remote.app.dock.setBadge('•');
       } else {
         remote.app.dock.setBadge('');
       }
