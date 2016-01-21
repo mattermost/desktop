@@ -120,7 +120,7 @@ var TabBar = React.createClass({
                  </Badge>);
       } else if (thisObj.props.unreadCounts[index] != 0) {
         badge = (<Badge>
-                   *
+                   •
                  </Badge>);
       }
       return (<NavItem className="teamTabItem" id={ 'teamTabItem' + index } eventKey={ index }>
