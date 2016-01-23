@@ -61,7 +61,7 @@ app.on('window-all-closed', function() {
 
 // For win32, auto-hide menu bar.
 app.on('browser-window-created', function(event, window) {
-  if (process.platform === 'win32') {
+  if (process.platform === 'win32' || process.platform === 'linux') {
     if (config.hideMenuBar) {
       window.setAutoHideMenuBar(true);
       window.setMenuBarVisibility(false);
