@@ -37,7 +37,7 @@ var SettingsPage = React.createClass({
       version: settings.version
     };
     settings.writeFileSync(this.props.configFile, config);
-    if (process.platform === 'win32') {
+    if (process.platform === 'win32' || process.platform === 'linux') {
       var currentWindow = remote.getCurrentWindow();
       currentWindow.setAutoHideMenuBar(config.hideMenuBar);
       currentWindow.setMenuBarVisibility(!config.hideMenuBar);
@@ -63,7 +63,7 @@ var SettingsPage = React.createClass({
     );
 
     var options = [];
-    if (process.platform === 'win32') {
+    if (process.platform === 'win32' || process.platform === 'linux') {
       options.push(<Input ref="hideMenuBar" type="checkbox" label="Hide menubar (Press Alt to show menubar)" checked={ this.state.hideMenuBar } onChange={ this.handleChangeHideMenuBar } />);
     }
     var options_row = (options.length > 0) ? (
