@@ -24,7 +24,8 @@ var MainPage = React.createClass({
     return {
       key: 0,
       unreadCounts: new Array(this.props.teams.length),
-      mentionCounts: new Array(this.props.teams.length)
+      mentionCounts: new Array(this.props.teams.length),
+      unreadAtActive: new Array(this.props.teams.length)
     };
   },
   componentDidMount: function() {
@@ -32,6 +33,8 @@ var MainPage = React.createClass({
     var focusListener = function() {
       var webview = document.getElementById('mattermostView' + thisObj.state.key);
       webview.focus();
+
+      thisObj.handleOnTeamFocused(thisObj.state.key);
     };
 
     var currentWindow = remote.getCurrentWindow();
@@ -44,6 +47,7 @@ var MainPage = React.createClass({
     this.setState({
       key: key
     });
+    this.handleOnTeamFocused(key);
   },
   handleUnreadCountChange: function(index, unreadCount, mentionCount) {
     var unreadCounts = this.state.unreadCounts;
@@ -54,16 +58,44 @@ var MainPage = React.createClass({
       unreadCounts: unreadCounts,
       mentionCounts: mentionCounts
     });
+    this.handleUnreadCountTotalChange();
+  },
+  handleUnreadAtActiveChange: function(index, state) {
+    var unreadAtActive = this.state.unreadAtActive;
+    unreadAtActive[index] = state;
+    this.setState({
+      unreadAtActive: unreadAtActive
+    });
+    this.handleUnreadCountTotalChange();
+  },
+  handleUnreadCountTotalChange: function() {
     if (this.props.onUnreadCountChange) {
-      var allUnreadCount = unreadCounts.reduce(function(prev, curr) {
+      var allUnreadCount = this.state.unreadCounts.reduce(function(prev, curr) {
         return prev + curr;
+      }, 0);
+      this.state.unreadAtActive.forEach(function(state) {
+        if (state) {
+          allUnreadCount += 1;
+        }
       });
-      var allMentionCount = mentionCounts.reduce(function(prev, curr) {
+      var allMentionCount = this.state.mentionCounts.reduce(function(prev, curr) {
         return prev + curr;
-      });
+      }, 0);
       this.props.onUnreadCountChange(allUnreadCount, allMentionCount);
     }
   },
+  handleNotify: function(index) {
+    // Never turn on the unreadAtActive flag at current focused tab.
+    if (this.state.key === index && remote.getCurrentWindow().isFocused()) {
+      return;
+    }
+    this.handleUnreadAtActiveChange(index, true);
+  },
+  handleOnTeamFocused: function(index) {
+    // Turn off the flag to indicate whether unread message of active channel contains at current tab.
+    this.handleUnreadAtActiveChange(index, false);
+  },
+
   visibleStyle: function(visible) {
     var visibility = visible ? 'visible' : 'hidden';
     return {
@@ -82,7 +114,8 @@ var MainPage = React.createClass({
     if (this.props.teams.length > 1) {
       tabs_row = (
         <Row>
-          <TabBar id="tabBar" teams={ this.props.teams } unreadCounts={ this.state.unreadCounts } mentionCounts={ this.state.mentionCounts } activeKey={ this.state.key } onSelect={ this.handleSelect }></TabBar>
+          <TabBar id="tabBar" teams={ this.props.teams } unreadCounts={ this.state.unreadCounts } mentionCounts={ this.state.mentionCounts } unreadAtActive={ this.state.unreadAtActive } activeKey={ this.state.key }
+          onSelect={ this.handleSelect }></TabBar>
         </Row>
       );
     }
@@ -91,11 +124,14 @@ var MainPage = React.createClass({
       var handleUnreadCountChange = function(unreadCount, mentionCount) {
         thisObj.handleUnreadCountChange(index, unreadCount, mentionCount);
       };
+      var handleNotify = function() {
+        thisObj.handleNotify(index);
+      };
       var handleNotificationClick = function() {
         thisObj.handleSelect(index);
       }
-      return (<MattermostView id={ 'mattermostView' + index } style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } onUnreadCountChange={ handleUnreadCountChange } onNotificationClick={ handleNotificationClick }
-              />)
+      return (<MattermostView id={ 'mattermostView' + index } style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } onUnreadCountChange={ handleUnreadCountChange } onNotify={ handleNotify }
+              onNotificationClick={ handleNotificationClick } />)
     });
     var views_row = (<Row>
                        { views }
@@ -114,11 +150,18 @@ var TabBar = React.createClass({
     var thisObj = this;
     var tabs = this.props.teams.map(function(team, index) {
       var badge;
+      var unreadCount = 0;
+      if (thisObj.props.unreadCounts[index] > 0) {
+        unreadCount = thisObj.props.unreadCounts[index];
+      }
+      if (thisObj.props.unreadAtActive[index]) {
+        unreadCount += 1;
+      }
       if (thisObj.props.mentionCounts[index] != 0) {
         badge = (<Badge>
                    { thisObj.props.mentionCounts[index] }
                  </Badge>);
-      } else if (thisObj.props.unreadCounts[index] != 0) {
+      } else if (unreadCount > 0) {
         badge = (<Badge>
                    •
                  </Badge>);
@@ -140,7 +183,8 @@ var TabBar = React.createClass({
 var MattermostView = React.createClass({
   getInitialState: function() {
     return {
-      unreadCount: 0
+      unreadCount: 0,
+      mentionCount: 0
     };
   },
   handleUnreadCountChange: function(unreadCount, mentionCount) {
@@ -152,6 +196,13 @@ var MattermostView = React.createClass({
       this.props.onUnreadCountChange(unreadCount, mentionCount);
     }
   },
+
+  handleNotify: function() {
+    if (this.props.onNotify) {
+      this.props.onNotify();
+    }
+  },
+
   componentDidMount: function() {
     var thisObj = this;
     var webview = ReactDOM.findDOMNode(this.refs.webview);
@@ -207,6 +258,9 @@ var MattermostView = React.createClass({
           break;
         case 'console':
           console.log(event.args[0]);
+          break;
+        case 'onActiveChannelNotify':
+          thisObj.handleNotify();
           break;
       }
     });

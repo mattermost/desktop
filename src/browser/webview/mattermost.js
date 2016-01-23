@@ -13,6 +13,7 @@ var unreadCountTimer = setInterval(function() {
   }
 
   // unreadCount in sidebar
+  // Note: the active channel doesn't have '.unread-title'.
   var unreadCount = document.getElementsByClassName('unread-title').length;
   // mentionCount in sidebar
   var elem = document.getElementsByClassName('badge')
@@ -28,7 +29,6 @@ var unreadCountTimer = setInterval(function() {
   var post;
   for (var i = 0; i < newSeparators.length; i++) {
     if (newSeparators[i].offsetParent !== null) {
-      unreadCount += 1;
       post = newSeparators[i];
     }
   }
@@ -67,6 +67,12 @@ function overrideNotificationWithBalloon() {
       title: title,
       options: options
     });
+
+    // Send notification event at active channel.
+    var activeChannel = document.querySelector('.active .sidebar-channel').text;
+    if (activeChannel === title) {
+      ipc.sendToHost('onActiveChannelNotify');
+    }
   };
   Notification.requestPermission = function(callback) {
     callback('granted');
@@ -78,6 +84,14 @@ function overrideNotificationWithBalloon() {
 function overrideNotification() {
   Notification = function(title, options) {
     this.notification = new NativeNotification(title, options);
+
+    // Send notification event at active channel.
+    var activeChannel = document.querySelector('.active .sidebar-channel').text;
+    console.log(activeChannel);
+    console.log(title);
+    if (activeChannel === title) {
+      ipc.sendToHost('onActiveChannelNotify');
+    }
   };
   Notification.requestPermission = function(callback) {
     callback('granted');
