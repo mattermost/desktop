@@ -24,25 +24,6 @@ var unreadCountTimer = setInterval(function() {
     }
   }
 
-  // unreadCount for active channel
-  var newSeparators = document.getElementsByClassName('new-separator');
-  var post;
-  for (var i = 0; i < newSeparators.length; i++) {
-    if (newSeparators[i].offsetParent !== null) {
-      post = newSeparators[i];
-    }
-  }
-  // mentionCount for active channel
-  if (post != null) {
-    while (post = post.nextSibling) {
-      var highlight = post.getElementsByClassName('mention-highlight');
-      if (highlight.length != 0 && highlight[0].offsetHeight != null) {
-        mentionCount++;
-        break;
-      }
-    }
-  }
-
   if (this.unreadCount != unreadCount || this.mentionCount != mentionCount) {
     ipc.sendToHost('onUnreadCountChange', unreadCount, mentionCount);
   }
@@ -80,6 +61,8 @@ function overrideNotificationWithBalloon() {
   Notification.prototype.close = function() {};
 };
 
+var lastUnread = {};
+
 // Show window even if it is hidden/minimized when notification is clicked.
 function overrideNotification() {
   Notification = function(title, options) {
@@ -89,8 +72,57 @@ function overrideNotification() {
     var activeChannel = document.querySelector('.active .sidebar-channel').text;
     console.log(activeChannel);
     console.log(title);
-    if (activeChannel === title) {
-      ipc.sendToHost('onActiveChannelNotify');
+
+    // mentionCount for active channel
+    var newSeparators = document.getElementsByClassName('new-separator');
+    var post;
+    var isMentioned = false;
+    // Skip until real new-separator appear.
+    for (var i = 0; i < newSeparators.length; i++) {
+      if (newSeparators[i].offsetParent !== null) {
+        post = newSeparators[i];
+      }
+    }
+
+    // If active channel is DM, all posts is treated as menion.
+    if (activeChannel === title + "×") {
+      isMentioned = true;
+    }
+    else {
+      // If active channel is CHANNEL, only .mention-highlight post is treated as mention.
+      if (post != null) {
+        // Skip posts until last unread.
+        if (activeChannel === title && lastUnread.channel === title && lastUnread.post !== null) {
+          var firstPost = post;
+          while (post = post.nextSibling) {
+            if (lastUnread.post === post.getAttribute('data-reactid')) {
+              break;
+            }
+          }
+          // Because last unread post not found, set first post.
+          if (post === null) {
+            post = firstPost;
+          }
+        }
+
+        while (post = post.nextSibling) {
+          var highlight = post.getElementsByClassName('mention-highlight');
+          if (highlight.length != 0 && highlight[0].offsetHeight != null) {
+            isMentioned = true;
+          }
+
+          // Remember last unread post.
+          if (post.nextSibling === null) {
+            lastUnread.post = post.getAttribute('data-reactid');
+            lastUnread.channel = title;
+          }
+        }
+      }
+    }
+
+    // Note: DM title is "{username}×". CHANNEL title is "{channel_title}".
+    if (activeChannel === title || activeChannel === title + "×") {
+      ipc.sendToHost('onActiveChannelNotify', isMentioned);
     }
   };
   Notification.requestPermission = function(callback) {

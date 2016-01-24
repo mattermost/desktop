@@ -25,7 +25,8 @@ var MainPage = React.createClass({
       key: 0,
       unreadCounts: new Array(this.props.teams.length),
       mentionCounts: new Array(this.props.teams.length),
-      unreadAtActive: new Array(this.props.teams.length)
+      unreadAtActive: new Array(this.props.teams.length),
+      mentionAtActive: new Array(this.props.teams.length)
     };
   },
   componentDidMount: function() {
@@ -60,11 +61,14 @@ var MainPage = React.createClass({
     });
     this.handleUnreadCountTotalChange();
   },
-  handleUnreadAtActiveChange: function(index, state) {
+  handleUnreadAtActiveChange: function(index, isUnread, isMentioned) {
     var unreadAtActive = this.state.unreadAtActive;
-    unreadAtActive[index] = state;
+    var mentionAtActive = this.state.mentionAtActive;
+    unreadAtActive[index] = isUnread;
+    mentionAtActive[index] = isMentioned;
     this.setState({
-      unreadAtActive: unreadAtActive
+      unreadAtActive: unreadAtActive,
+      mentionAtActive: mentionAtActive
     });
     this.handleUnreadCountTotalChange();
   },
@@ -81,19 +85,24 @@ var MainPage = React.createClass({
       var allMentionCount = this.state.mentionCounts.reduce(function(prev, curr) {
         return prev + curr;
       }, 0);
+      this.state.mentionAtActive.forEach(function(state) {
+        if (state) {
+          allMentionCount += 1;
+        }
+      });
       this.props.onUnreadCountChange(allUnreadCount, allMentionCount);
     }
   },
-  handleNotify: function(index) {
+  handleNotify: function(index, isMentioned) {
     // Never turn on the unreadAtActive flag at current focused tab.
     if (this.state.key === index && remote.getCurrentWindow().isFocused()) {
       return;
     }
-    this.handleUnreadAtActiveChange(index, true);
+    this.handleUnreadAtActiveChange(index, true, isMentioned);
   },
   handleOnTeamFocused: function(index) {
     // Turn off the flag to indicate whether unread message of active channel contains at current tab.
-    this.handleUnreadAtActiveChange(index, false);
+    this.handleUnreadAtActiveChange(index, false, false);
   },
 
   visibleStyle: function(visible) {
@@ -124,8 +133,8 @@ var MainPage = React.createClass({
       var handleUnreadCountChange = function(unreadCount, mentionCount) {
         thisObj.handleUnreadCountChange(index, unreadCount, mentionCount);
       };
-      var handleNotify = function() {
-        thisObj.handleNotify(index);
+      var handleNotify = function(isMentioned) {
+        thisObj.handleNotify(index, isMentioned);
       };
       var handleNotificationClick = function() {
         thisObj.handleSelect(index);
@@ -197,9 +206,9 @@ var MattermostView = React.createClass({
     }
   },
 
-  handleNotify: function() {
+  handleNotify: function(isMentioned) {
     if (this.props.onNotify) {
-      this.props.onNotify();
+      this.props.onNotify(isMentioned);
     }
   },
 
@@ -260,7 +269,8 @@ var MattermostView = React.createClass({
           console.log(event.args[0]);
           break;
         case 'onActiveChannelNotify':
-          thisObj.handleNotify();
+          var isMentioned = event.args[0];
+          thisObj.handleNotify(isMentioned);
           break;
       }
     });
