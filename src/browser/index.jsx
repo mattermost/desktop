@@ -50,22 +50,31 @@ var MainPage = React.createClass({
     });
     this.handleOnTeamFocused(key);
   },
-  handleUnreadCountChange: function(index, unreadCount, mentionCount) {
+  handleUnreadCountChange: function(index, unreadCount, mentionCount, isUnread, isMentioned) {
     var unreadCounts = this.state.unreadCounts;
     var mentionCounts = this.state.mentionCounts;
+    var unreadAtActive = this.state.unreadAtActive;
+    var mentionAtActive = this.state.mentionAtActive;
     unreadCounts[index] = unreadCount;
     mentionCounts[index] = mentionCount;
+    // Never turn on the unreadAtActive flag at current focused tab.
+    if (this.state.key !== index || !remote.getCurrentWindow().isFocused()) {
+      unreadAtActive[index] = unreadAtActive[index] || isUnread;
+      mentionAtActive[index] = mentionAtActive[index] || isMentioned;
+    }
     this.setState({
       unreadCounts: unreadCounts,
-      mentionCounts: mentionCounts
+      mentionCounts: mentionCounts,
+      unreadAtActive: unreadAtActive,
+      mentionAtActive: mentionAtActive
     });
     this.handleUnreadCountTotalChange();
   },
-  handleUnreadAtActiveChange: function(index, isUnread, isMentioned) {
+  markReadAtActive: function(index) {
     var unreadAtActive = this.state.unreadAtActive;
     var mentionAtActive = this.state.mentionAtActive;
-    unreadAtActive[index] = isUnread;
-    mentionAtActive[index] = isMentioned;
+    unreadAtActive[index] = false;
+    mentionAtActive[index] = false;
     this.setState({
       unreadAtActive: unreadAtActive,
       mentionAtActive: mentionAtActive
@@ -93,16 +102,9 @@ var MainPage = React.createClass({
       this.props.onUnreadCountChange(allUnreadCount, allMentionCount);
     }
   },
-  handleNotify: function(index, isMentioned) {
-    // Never turn on the unreadAtActive flag at current focused tab.
-    if (this.state.key === index && remote.getCurrentWindow().isFocused()) {
-      return;
-    }
-    this.handleUnreadAtActiveChange(index, true, isMentioned);
-  },
   handleOnTeamFocused: function(index) {
     // Turn off the flag to indicate whether unread message of active channel contains at current tab.
-    this.handleUnreadAtActiveChange(index, false, false);
+    this.markReadAtActive(index);
   },
 
   visibleStyle: function(visible) {
@@ -123,24 +125,21 @@ var MainPage = React.createClass({
     if (this.props.teams.length > 1) {
       tabs_row = (
         <Row>
-          <TabBar id="tabBar" teams={ this.props.teams } unreadCounts={ this.state.unreadCounts } mentionCounts={ this.state.mentionCounts } unreadAtActive={ this.state.unreadAtActive } activeKey={ this.state.key }
-          onSelect={ this.handleSelect }></TabBar>
+          <TabBar id="tabBar" teams={ this.props.teams } unreadCounts={ this.state.unreadCounts } mentionCounts={ this.state.mentionCounts } unreadAtActive={ this.state.unreadAtActive } mentionAtActive={ this.state.mentionAtActive }
+          activeKey={ this.state.key } onSelect={ this.handleSelect }></TabBar>
         </Row>
       );
     }
 
     var views = this.props.teams.map(function(team, index) {
-      var handleUnreadCountChange = function(unreadCount, mentionCount) {
-        thisObj.handleUnreadCountChange(index, unreadCount, mentionCount);
-      };
-      var handleNotify = function(isMentioned) {
-        thisObj.handleNotify(index, isMentioned);
+      var handleUnreadCountChange = function(unreadCount, mentionCount, isUnread, isMentioned) {
+        thisObj.handleUnreadCountChange(index, unreadCount, mentionCount, isUnread, isMentioned);
       };
       var handleNotificationClick = function() {
         thisObj.handleSelect(index);
       }
-      return (<MattermostView id={ 'mattermostView' + index } style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } onUnreadCountChange={ handleUnreadCountChange } onNotify={ handleNotify }
-              onNotificationClick={ handleNotificationClick } />)
+      return (<MattermostView id={ 'mattermostView' + index } style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } onUnreadCountChange={ handleUnreadCountChange } onNotificationClick={ handleNotificationClick }
+              />)
     });
     var views_row = (<Row>
                        { views }
@@ -158,7 +157,6 @@ var TabBar = React.createClass({
   render: function() {
     var thisObj = this;
     var tabs = this.props.teams.map(function(team, index) {
-      var badge;
       var unreadCount = 0;
       if (thisObj.props.unreadCounts[index] > 0) {
         unreadCount = thisObj.props.unreadCounts[index];
@@ -166,9 +164,19 @@ var TabBar = React.createClass({
       if (thisObj.props.unreadAtActive[index]) {
         unreadCount += 1;
       }
-      if (thisObj.props.mentionCounts[index] != 0) {
+
+      var mentionCount = 0;
+      if (thisObj.props.mentionCounts[index] > 0) {
+        mentionCount = thisObj.props.mentionCounts[index];
+      }
+      if (thisObj.props.mentionAtActive[index] === true) {
+        mentionCount += 1;
+      }
+
+      var badge;
+      if (mentionCount != 0) {
         badge = (<Badge>
-                   { thisObj.props.mentionCounts[index] }
+                   { mentionCount }
                  </Badge>);
       } else if (unreadCount > 0) {
         badge = (<Badge>
@@ -192,23 +200,11 @@ var TabBar = React.createClass({
 var MattermostView = React.createClass({
   getInitialState: function() {
     return {
-      unreadCount: 0,
-      mentionCount: 0
     };
   },
-  handleUnreadCountChange: function(unreadCount, mentionCount) {
-    this.setState({
-      unreadCount: unreadCount,
-      mentionCount: mentionCount
-    });
+  handleUnreadCountChange: function(unreadCount, mentionCount, isUnread, isMentioned) {
     if (this.props.onUnreadCountChange) {
-      this.props.onUnreadCountChange(unreadCount, mentionCount);
-    }
-  },
-
-  handleNotify: function(isMentioned) {
-    if (this.props.onNotify) {
-      this.props.onNotify(isMentioned);
+      this.props.onUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned);
     }
   },
 
@@ -260,17 +256,16 @@ var MattermostView = React.createClass({
         case 'onUnreadCountChange':
           var unreadCount = event.args[0];
           var mentionCount = event.args[1];
-          thisObj.handleUnreadCountChange(unreadCount, mentionCount);
+          // isUnread and isMentioned is pulse flag.
+          var isUnread = event.args[2];
+          var isMentioned = event.args[3];
+          thisObj.handleUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned);
           break;
         case 'onNotificationClick':
           thisObj.props.onNotificationClick();
           break;
         case 'console':
           console.log(event.args[0]);
-          break;
-        case 'onActiveChannelNotify':
-          var isMentioned = event.args[0];
-          thisObj.handleNotify(isMentioned);
           break;
       }
     });
