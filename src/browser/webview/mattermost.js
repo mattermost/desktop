@@ -25,12 +25,12 @@ var unreadCountTimer = setInterval(function() {
   }
 
   var postAttrName = 'data-reactid';
-  var lastPostElem = document.querySelector('div[' + postAttrName + '="' + lastCheckedPost.reactId + '"]');
+  var lastPostElem = document.querySelector('div[' + postAttrName + '="' + this.lastCheckedPostId + '"]');
   var isUnread = false;
   var isMentioned = false;
   if (lastPostElem === null || !isElementVisible(lastPostElem)) {
-    // When load channel or change channel, lastCheckedPost.reactId is invalid.
-    // So we get latest post and save lastCheckedPost.
+    // When load channel or change channel, this.lastCheckedPostId is invalid.
+    // So we get latest post and save lastCheckedPostId.
 
     // find active post-list.
     var postLists = document.querySelectorAll('div.post-list__content');
@@ -45,7 +45,7 @@ var unreadCountTimer = setInterval(function() {
     while (post = post.nextSibling) {
       if (post.nextSibling === null) {
         if (post.getAttribute(postAttrName) !== null) {
-          lastCheckedPost.reactId = post.getAttribute(postAttrName);
+          this.lastCheckedPostId = post.getAttribute(postAttrName);
         }
       }
     }
@@ -53,7 +53,7 @@ var unreadCountTimer = setInterval(function() {
   else if (lastPostElem !== null) {
     var newPostElem = lastPostElem;
     while (newPostElem = newPostElem.nextSibling) {
-      lastCheckedPost.reactId = newPostElem.getAttribute(postAttrName);
+      this.lastCheckedPostId = newPostElem.getAttribute(postAttrName);
       isUnread = true;
       var activeChannel = document.querySelector('.active .sidebar-channel');
       var closeButton = activeChannel.getElementsByClassName('btn-close');
@@ -106,10 +106,6 @@ function overrideNotificationWithBalloon() {
     callback('granted');
   };
   Notification.prototype.close = function() {};
-};
-
-var lastCheckedPost = {
-  reactId: null
 };
 
 // Show window even if it is hidden/minimized when notification is clicked.
