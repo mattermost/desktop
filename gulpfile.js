@@ -3,16 +3,18 @@
 var gulp = require('gulp');
 var prettify = require('gulp-jsbeautifier');
 var babel = require('gulp-babel');
+var webpack = require('webpack-stream');
+var named = require('vinyl-named');
 var changed = require('gulp-changed');
 var esformatter = require('gulp-esformatter');
 var del = require('del');
 var electron = require('electron-connect').server.create({
-  path: './src'
+  path: './dist'
 });
 var packager = require('electron-packager');
 
 var sources = ['**/*.js', '**/*.css', '**/*.html', '!**/node_modules/**', '!**/build/**', '!release/**'];
-var app_root = 'src';
+var app_root = 'dist';
 
 gulp.task('prettify', ['prettify:sources', 'prettify:jsx']);
 
@@ -34,7 +36,7 @@ gulp.task('prettify:sources', ['sync-meta'], function() {
 });
 
 gulp.task('prettify:jsx', function() {
-  return gulp.src(app_root + '/**/*.jsx')
+  return gulp.src('src/browser/**/*.jsx')
     .pipe(esformatter({
       indent: {
         value: '  '
@@ -44,17 +46,77 @@ gulp.task('prettify:jsx', function() {
     .pipe(gulp.dest(app_root));
 });
 
-gulp.task('build', ['sync-meta', 'build:jsx']);
+gulp.task('build', ['sync-meta', 'webpack', 'copy'], function() {
+  return gulp.src('src/package.json')
+    .pipe(gulp.dest('dist'));
+});
 
-gulp.task('build:jsx', function() {
-  return gulp.src(['src/browser/**/*.jsx', '!src/node_modules/**'])
-    .pipe(changed(app_root, {
-      extension: '.js'
+gulp.task('webpack', ['webpack:main', 'webpack:browser']);
+
+gulp.task('webpack:browser', function() {
+  return gulp.src('src/browser/**/*.jsx')
+    .pipe(named())
+    .pipe(webpack({
+      module: {
+        loaders: [{
+          test: /\.json$/,
+          loader: 'json'
+        }, {
+          test: /\.jsx$/,
+          loader: 'babel',
+          query: {
+            presets: ['react']
+          }
+        }]
+      },
+      output: {
+        filename: '[name].js'
+      },
+      node: {
+        __filename: false,
+        __dirname: false
+      },
+      target: 'electron'
     }))
-    .pipe(babel({
-      presets: ['react']
+    .pipe(gulp.dest('dist/browser/'));
+});
+
+gulp.task('webpack:main', function() {
+  return gulp.src('src/main.js')
+    .pipe(webpack({
+      module: {
+        loaders: [{
+          test: /\.json$/,
+          loader: 'json'
+        }]
+      },
+      output: {
+        filename: '[name].js'
+      },
+      node: {
+        __filename: false,
+        __dirname: false
+      },
+      target: 'electron'
     }))
-    .pipe(gulp.dest('src/browser/build'));
+    .pipe(gulp.dest('dist/'));
+});
+
+gulp.task('copy', ['copy:resources', 'copy:html/css', 'copy:modules']);
+
+gulp.task('copy:resources', function() {
+  return gulp.src('src/resources/**')
+    .pipe(gulp.dest('dist/resources'));
+});
+
+gulp.task('copy:html/css', function() {
+  return gulp.src(['src/browser/**/*.html', 'src/browser/**/*.css'])
+    .pipe(gulp.dest('dist/browser'));
+});
+
+gulp.task('copy:modules', function() {
+  return gulp.src(['src/node_modules/bootstrap/dist/**'])
+    .pipe(gulp.dest('dist/browser/modules/bootstrap'))
 });
 
 gulp.task('serve', ['build'], function() {
