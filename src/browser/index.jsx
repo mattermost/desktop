@@ -170,7 +170,7 @@ var TabBar = React.createClass({
         mentionCount = thisObj.props.mentionCounts[index];
       }
       if (thisObj.props.mentionAtActiveCounts[index] > 0) {
-        mentionCount += thisObj.props.mentionAtActiveCounts;
+        mentionCount += thisObj.props.mentionAtActiveCounts[index];
       }
 
       var badge;

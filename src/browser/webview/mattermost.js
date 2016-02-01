@@ -15,13 +15,11 @@ var unreadCountTimer = setInterval(function() {
   // unreadCount in sidebar
   // Note: the active channel doesn't have '.unread-title'.
   var unreadCount = document.getElementsByClassName('unread-title').length;
-  // mentionCount in sidebar
-  var elem = document.getElementsByClassName('badge')
+  // mentionCount in mobile navbar-toggle
+  var mentionBadge = document.getElementsByClassName('badge-notify');
   var mentionCount = 0;
-  for (var i = 0; i < elem.length; i++) {
-    if (isElementVisible(elem[i])) {
-      mentionCount += Number(elem[i].innerHTML);
-    }
+  if (mentionBadge.length > 0) { // older mattermost doesn't have badges.
+    mentionCount = Number(mentionBadge[0].innerHTML);
   }
 
   var postAttrName = 'data-reactid';
