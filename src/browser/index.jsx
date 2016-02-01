@@ -26,7 +26,7 @@ var MainPage = React.createClass({
       unreadCounts: new Array(this.props.teams.length),
       mentionCounts: new Array(this.props.teams.length),
       unreadAtActive: new Array(this.props.teams.length),
-      mentionAtActive: new Array(this.props.teams.length)
+      mentionAtActiveCounts: new Array(this.props.teams.length)
     };
   },
   componentDidMount: function() {
@@ -54,30 +54,32 @@ var MainPage = React.createClass({
     var unreadCounts = this.state.unreadCounts;
     var mentionCounts = this.state.mentionCounts;
     var unreadAtActive = this.state.unreadAtActive;
-    var mentionAtActive = this.state.mentionAtActive;
+    var mentionAtActiveCounts = this.state.mentionAtActiveCounts;
     unreadCounts[index] = unreadCount;
     mentionCounts[index] = mentionCount;
     // Never turn on the unreadAtActive flag at current focused tab.
     if (this.state.key !== index || !remote.getCurrentWindow().isFocused()) {
       unreadAtActive[index] = unreadAtActive[index] || isUnread;
-      mentionAtActive[index] = mentionAtActive[index] || isMentioned;
+      if (isMentioned) {
+        mentionAtActiveCounts[index]++;
+      }
     }
     this.setState({
       unreadCounts: unreadCounts,
       mentionCounts: mentionCounts,
       unreadAtActive: unreadAtActive,
-      mentionAtActive: mentionAtActive
+      mentionAtActiveCounts: mentionAtActiveCounts
     });
     this.handleUnreadCountTotalChange();
   },
   markReadAtActive: function(index) {
     var unreadAtActive = this.state.unreadAtActive;
-    var mentionAtActive = this.state.mentionAtActive;
+    var mentionAtActiveCounts = this.state.mentionAtActiveCounts;
     unreadAtActive[index] = false;
-    mentionAtActive[index] = false;
+    mentionAtActiveCounts[index] = 0;
     this.setState({
       unreadAtActive: unreadAtActive,
-      mentionAtActive: mentionAtActive
+      mentionAtActiveCounts: mentionAtActiveCounts
     });
     this.handleUnreadCountTotalChange();
   },
@@ -94,10 +96,8 @@ var MainPage = React.createClass({
       var allMentionCount = this.state.mentionCounts.reduce(function(prev, curr) {
         return prev + curr;
       }, 0);
-      this.state.mentionAtActive.forEach(function(state) {
-        if (state) {
-          allMentionCount += 1;
-        }
+      this.state.mentionAtActiveCounts.forEach(function(count) {
+        allMentionCount += count;
       });
       this.props.onUnreadCountChange(allUnreadCount, allMentionCount);
     }
@@ -125,7 +125,7 @@ var MainPage = React.createClass({
     if (this.props.teams.length > 1) {
       tabs_row = (
         <Row>
-          <TabBar id="tabBar" teams={ this.props.teams } unreadCounts={ this.state.unreadCounts } mentionCounts={ this.state.mentionCounts } unreadAtActive={ this.state.unreadAtActive } mentionAtActive={ this.state.mentionAtActive }
+          <TabBar id="tabBar" teams={ this.props.teams } unreadCounts={ this.state.unreadCounts } mentionCounts={ this.state.mentionCounts } unreadAtActive={ this.state.unreadAtActive } mentionAtActiveCounts={ this.state.mentionAtActiveCounts }
           activeKey={ this.state.key } onSelect={ this.handleSelect }></TabBar>
         </Row>
       );
@@ -169,8 +169,8 @@ var TabBar = React.createClass({
       if (thisObj.props.mentionCounts[index] > 0) {
         mentionCount = thisObj.props.mentionCounts[index];
       }
-      if (thisObj.props.mentionAtActive[index] === true) {
-        mentionCount += 1;
+      if (thisObj.props.mentionAtActiveCounts[index] > 0) {
+        mentionCount += thisObj.props.mentionAtActiveCounts;
       }
 
       var badge;

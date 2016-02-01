@@ -20,7 +20,7 @@ var unreadCountTimer = setInterval(function() {
   var mentionCount = 0;
   for (var i = 0; i < elem.length; i++) {
     if (isElementVisible(elem[i])) {
-      mentionCount++;
+      mentionCount += Number(elem[i].innerHTML);
     }
   }
 
