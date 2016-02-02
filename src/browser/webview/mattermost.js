@@ -15,40 +15,72 @@ var unreadCountTimer = setInterval(function() {
   // unreadCount in sidebar
   // Note: the active channel doesn't have '.unread-title'.
   var unreadCount = document.getElementsByClassName('unread-title').length;
-  // mentionCount in sidebar
-  var elem = document.getElementsByClassName('badge')
+  // mentionCount in mobile navbar-toggle
+  var mentionBadge = document.getElementsByClassName('badge-notify');
   var mentionCount = 0;
-  for (var i = 0; i < elem.length; i++) {
-    if (elem[i].offsetHeight != 0) {
-      mentionCount++;
-    }
+  if (mentionBadge.length > 0) { // older mattermost doesn't have badges.
+    mentionCount = Number(mentionBadge[0].innerHTML);
   }
 
-  // unreadCount for active channel
-  var newSeparators = document.getElementsByClassName('new-separator');
-  var post;
-  for (var i = 0; i < newSeparators.length; i++) {
-    if (newSeparators[i].offsetParent !== null) {
-      post = newSeparators[i];
+  var postAttrName = 'data-reactid';
+  var lastPostElem = document.querySelector('div[' + postAttrName + '="' + this.lastCheckedPostId + '"]');
+  var isUnread = false;
+  var isMentioned = false;
+  if (lastPostElem === null || !isElementVisible(lastPostElem)) {
+    // When load channel or change channel, this.lastCheckedPostId is invalid.
+    // So we get latest post and save lastCheckedPostId.
+
+    // find active post-list.
+    var postLists = document.querySelectorAll('div.post-list__content');
+    var post;
+    for (var i = 0; i < postLists.length; i++) {
+      if (isElementVisible(postLists[i])) {
+        post = postLists[i].children[0];
+      }
+    }
+
+    // find latest post and save.
+    while (post = post.nextSibling) {
+      if (post.nextSibling === null) {
+        if (post.getAttribute(postAttrName) !== null) {
+          this.lastCheckedPostId = post.getAttribute(postAttrName);
+        }
+      }
     }
   }
-  // mentionCount for active channel
-  if (post != null) {
-    while (post = post.nextSibling) {
-      var highlight = post.getElementsByClassName('mention-highlight');
-      if (highlight.length != 0 && highlight[0].offsetHeight != null) {
-        mentionCount++;
+  else if (lastPostElem !== null) {
+    var newPostElem = lastPostElem;
+    while (newPostElem = newPostElem.nextSibling) {
+      this.lastCheckedPostId = newPostElem.getAttribute(postAttrName);
+      isUnread = true;
+      var activeChannel = document.querySelector('.active .sidebar-channel');
+      var closeButton = activeChannel.getElementsByClassName('btn-close');
+      if (closeButton.length === 1 && closeButton[0].getAttribute('aria-describedby') === 'remove-dm-tooltip') {
+        // If active channel is DM, all posts is treated as menion.
+        isMentioned = true;
         break;
+      }
+      else {
+        // If active channel is public/private channel, only mentioned post is treated as mention.
+        var highlight = newPostElem.getElementsByClassName('mention-highlight');
+        if (highlight.length != 0 && isElementVisible(highlight[0])) {
+          isMentioned = true;
+          break;
+        }
       }
     }
   }
 
-  if (this.unreadCount != unreadCount || this.mentionCount != mentionCount) {
-    ipc.sendToHost('onUnreadCountChange', unreadCount, mentionCount);
+  if (this.unreadCount != unreadCount || this.mentionCount != mentionCount || isUnread || isMentioned) {
+    ipc.sendToHost('onUnreadCountChange', unreadCount, mentionCount, isUnread, isMentioned);
   }
   this.unreadCount = unreadCount;
   this.mentionCount = mentionCount;
 }, 1000);
+
+function isElementVisible(elem) {
+  return elem.offsetHeight !== 0;
+}
 
 // On Windows 8.1 and Windows 8, a shortcut with a Application User Model ID must be installed to the Start screen.
 // In current version, use tray balloon for notification
@@ -67,12 +99,6 @@ function overrideNotificationWithBalloon() {
       title: title,
       options: options
     });
-
-    // Send notification event at active channel.
-    var activeChannel = document.querySelector('.active .sidebar-channel').text;
-    if (activeChannel === title) {
-      ipc.sendToHost('onActiveChannelNotify');
-    }
   };
   Notification.requestPermission = function(callback) {
     callback('granted');
@@ -84,14 +110,6 @@ function overrideNotificationWithBalloon() {
 function overrideNotification() {
   Notification = function(title, options) {
     this.notification = new NativeNotification(title, options);
-
-    // Send notification event at active channel.
-    var activeChannel = document.querySelector('.active .sidebar-channel').text;
-    console.log(activeChannel);
-    console.log(title);
-    if (activeChannel === title) {
-      ipc.sendToHost('onActiveChannelNotify');
-    }
   };
   Notification.requestPermission = function(callback) {
     callback('granted');
