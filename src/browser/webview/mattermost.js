@@ -4,6 +4,14 @@ const electron = require('electron');
 const ipc = electron.ipcRenderer;
 const NativeNotification = Notification;
 
+var hasClass = function(element, className) {
+  var rclass = /[\t\r\n\f]/g;
+  if ((' ' + element.className + ' ').replace(rclass, ' ').indexOf(className) > -1) {
+    return true;
+  }
+  return false;
+};
+
 var unreadCountTimer = setInterval(function() {
   if (!this.unreadCount) {
     this.unreadCount = 0;
@@ -15,11 +23,13 @@ var unreadCountTimer = setInterval(function() {
   // unreadCount in sidebar
   // Note: the active channel doesn't have '.unread-title'.
   var unreadCount = document.getElementsByClassName('unread-title').length;
-  // mentionCount in mobile navbar-toggle
-  var mentionBadge = document.getElementsByClassName('badge-notify');
+  // mentionCount in sidebar
+  var elem = document.getElementsByClassName('badge')
   var mentionCount = 0;
-  if (mentionBadge.length > 0) { // older mattermost doesn't have badges.
-    mentionCount = Number(mentionBadge[0].innerHTML);
+  for (var i = 0; i < elem.length; i++) {
+    if (isElementVisible(elem[i]) && !hasClass(elem[i], 'badge-notify')) {
+      mentionCount += Number(elem[i].innerHTML);
+    }
   }
 
   var postAttrName = 'data-reactid';
