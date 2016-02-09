@@ -102,7 +102,7 @@ gulp.task('webpack:main', function() {
     .pipe(gulp.dest('dist/'));
 });
 
-gulp.task('copy', ['copy:resources', 'copy:html/css', 'copy:modules']);
+gulp.task('copy', ['copy:resources', 'copy:html/css', 'copy:webview:js', 'copy:modules']);
 
 gulp.task('copy:resources', function() {
   return gulp.src('src/resources/**')
@@ -112,6 +112,11 @@ gulp.task('copy:resources', function() {
 gulp.task('copy:html/css', function() {
   return gulp.src(['src/browser/**/*.html', 'src/browser/**/*.css'])
     .pipe(gulp.dest('dist/browser'));
+});
+
+gulp.task('copy:webview:js', function() {
+  return gulp.src(['src/browser/webview/**/*.js'])
+    .pipe(gulp.dest('dist/browser/webview'))
 });
 
 gulp.task('copy:modules', function() {
