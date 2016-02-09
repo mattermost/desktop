@@ -25,7 +25,7 @@ var options = {
     browserName: 'chrome',
     chromeOptions: {
       binary: electron_binary_path, // Path to your Electron binary.
-      args: ['app=' + path.join(source_root_dir, 'src'), '--config-file=' + config_file_path] // Optional, perhaps 'app=' + /path/to/your/app/
+      args: ['app=' + path.join(source_root_dir, 'dist'), '--config-file=' + config_file_path] // Optional, perhaps 'app=' + /path/to/your/app/
     }
   }
 };
@@ -187,7 +187,7 @@ describe('electron-mattermost', function() {
     it('should show index.thml when Cancel button is clicked', function() {
       return client
         .init()
-        .url('file://' + path.join(source_root_dir, 'src/browser/settings.html'))
+        .url('file://' + path.join(source_root_dir, 'dist/browser/settings.html'))
         .waitForExist('#btnCancel')
         .click('#btnCancel')
         .pause(1000)
@@ -201,7 +201,7 @@ describe('electron-mattermost', function() {
     it('should show index.thml when Save button is clicked', function() {
       return client
         .init()
-        .url('file://' + path.join(source_root_dir, 'src/browser/settings.html'))
+        .url('file://' + path.join(source_root_dir, 'dist/browser/settings.html'))
         .waitForExist('#btnSave')
         .click('#btnSave')
         .pause(1000)

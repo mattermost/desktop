@@ -1,5 +1,9 @@
 'use strict';
 
+const React = require('react');
+const ReactDOM = require('react-dom');
+const ReactBootstrap = require('react-bootstrap');
+
 const Grid = ReactBootstrap.Grid;
 const Row = ReactBootstrap.Row;
 const Col = ReactBootstrap.Col;

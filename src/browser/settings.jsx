@@ -3,6 +3,10 @@
 const remote = require('electron').remote;
 const settings = require('../common/settings');
 
+const React = require('react');
+const ReactDOM = require('react-dom');
+const ReactBootstrap = require('react-bootstrap');
+
 const Grid = ReactBootstrap.Grid;
 const Row = ReactBootstrap.Row;
 const Col = ReactBootstrap.Col;
@@ -11,6 +15,10 @@ const Button = ReactBootstrap.Button;
 const ListGroup = ReactBootstrap.ListGroup;
 const ListGroupItem = ReactBootstrap.ListGroupItem;
 const Glyphicon = ReactBootstrap.Glyphicon;
+
+function backToIndex(){
+  window.location = 'index.html';
+}
 
 var SettingsPage = React.createClass({
   getInitialState: function() {
@@ -42,10 +50,10 @@ var SettingsPage = React.createClass({
       currentWindow.setAutoHideMenuBar(config.hideMenuBar);
       currentWindow.setMenuBarVisibility(!config.hideMenuBar);
     }
-    window.location = './index.html';
+    backToIndex();
   },
   handleCancel: function() {
-    window.location = './index.html';
+    backToIndex();
   },
   handleChangeHideMenuBar: function() {
     this.setState({

@@ -50,10 +50,10 @@ Node.js is required to test this app.
 2. Run `npm install`.
 3. Run `npm start`.
 
-When you edit **.jsx** files, please execute `npm run build` before `npm start`.
+When you edit `src/**` files, please execute `npm run build` before `npm start`.
 
 ### Development
-#### `npm run serve`
+#### `npm run watch`
 Reload the app automatically when you have saved source codes.
 
 #### `npm test`
