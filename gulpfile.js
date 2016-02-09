@@ -124,15 +124,18 @@ gulp.task('copy:modules', function() {
     .pipe(gulp.dest('dist/browser/modules/bootstrap'))
 });
 
-gulp.task('serve', ['build'], function() {
+gulp.task('watch', ['build'], function() {
   var options = ['--livereload'];
   electron.start(options);
-  gulp.watch(['src/**', '!src/browser/**', '!src/node_modules/**'], function() {
+
+  gulp.watch(['src/main.js', 'src/main/**/*.js', 'src/common/**/*.js'], ['webpack:main']);
+  gulp.watch(['src/browser/**/*.js', 'src/browser/**/*.jsx'], ['webpack:browser', 'copy:webview:js']);
+  gulp.watch(['src/browser/**/*.css', 'src/browser/**/*.html', 'src/resources/**/*.png'], ['copy']);
+
+  gulp.watch(['dist/main.js', 'dist/resources/**'], function() {
     electron.restart(options);
   });
-  gulp.watch('src/browser/**/*.jsx', ['build:jsx']);
-  gulp.watch(['src/browser/**', '!src/browser/**/*.jsx'], electron.reload);
-  gulp.watch('gulpfile.js', process.exit);
+  gulp.watch(['dist/browser/*.js'], electron.reload);
 });
 
 function makePackage(platform, arch, callback) {
