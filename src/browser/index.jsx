@@ -130,7 +130,7 @@ var MainPage = React.createClass({
       tabs_row = (
         <Row>
           <TabBar id="tabBar" teams={ this.props.teams } unreadCounts={ this.state.unreadCounts } mentionCounts={ this.state.mentionCounts } unreadAtActive={ this.state.unreadAtActive } mentionAtActiveCounts={ this.state.mentionAtActiveCounts }
-          activeKey={ this.state.key } onSelect={ this.handleSelect }></TabBar>
+            activeKey={ this.state.key } onSelect={ this.handleSelect }></TabBar>
         </Row>
       );
     }

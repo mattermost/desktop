@@ -14,7 +14,6 @@ var electron = require('electron-connect').server.create({
 var packager = require('electron-packager');
 
 var sources = ['**/*.js', '**/*.css', '**/*.html', '!**/node_modules/**', '!**/build/**', '!release/**'];
-var app_root = 'dist';
 
 gulp.task('prettify', ['prettify:sources', 'prettify:jsx']);
 
@@ -43,7 +42,7 @@ gulp.task('prettify:jsx', function() {
       },
       plugins: ['esformatter-jsx']
     }))
-    .pipe(gulp.dest(app_root));
+    .pipe(gulp.dest('src/browser'));
 });
 
 gulp.task('build', ['sync-meta', 'webpack', 'copy'], function() {
@@ -141,7 +140,7 @@ gulp.task('watch', ['build'], function() {
 function makePackage(platform, arch, callback) {
   var packageJson = require('./src/package.json');
   packager({
-    dir: './' + app_root,
+    dir: './dist',
     name: packageJson.name,
     platform: platform,
     arch: arch,
