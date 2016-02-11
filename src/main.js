@@ -83,8 +83,8 @@ app.on('before-quit', function() {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
-  // set up tray icon to show balloon
   if (process.platform === 'win32') {
+    // set up tray icon to show balloon
     trayIcon = new Tray(path.resolve(__dirname, 'resources/tray.png'));
     trayIcon.setToolTip(app.getName());
     var tray_menu = require('./main/menus/tray').createDefault();
@@ -101,6 +101,12 @@ app.on('ready', function() {
         title: arg.title,
         content: arg.options.body
       });
+    });
+
+    // Set overlay icon from dataURL
+    ipc.on('win32-overlay', function(event, arg) {
+      var overlay = electron.nativeImage.createFromDataURL(arg.overlayDataURL);
+      mainWindow.setOverlayIcon(overlay, arg.description);
     });
   }
 
