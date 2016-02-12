@@ -28,7 +28,7 @@
     "del": "^2.2.0",
     "electron-connect": "^0.3.3",
     "electron-packager": "^5.1.0",
-    "electron-prebuilt": "0.36.3",
+    "electron-prebuilt": "0.36.7",
     "esformatter": "^0.8.1",
     "esformatter-jsx": "^4.0.6",
     "gulp": "^3.9.0",
