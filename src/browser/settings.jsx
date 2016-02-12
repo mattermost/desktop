@@ -3,6 +3,10 @@
 const remote = require('electron').remote;
 const settings = require('../common/settings');
 
+const React = require('react');
+const ReactDOM = require('react-dom');
+const ReactBootstrap = require('react-bootstrap');
+
 const Grid = ReactBootstrap.Grid;
 const Row = ReactBootstrap.Row;
 const Col = ReactBootstrap.Col;
@@ -11,6 +15,10 @@ const Button = ReactBootstrap.Button;
 const ListGroup = ReactBootstrap.ListGroup;
 const ListGroupItem = ReactBootstrap.ListGroupItem;
 const Glyphicon = ReactBootstrap.Glyphicon;
+
+function backToIndex() {
+  window.location = 'index.html';
+}
 
 var SettingsPage = React.createClass({
   getInitialState: function() {
@@ -42,10 +50,10 @@ var SettingsPage = React.createClass({
       currentWindow.setAutoHideMenuBar(config.hideMenuBar);
       currentWindow.setMenuBarVisibility(!config.hideMenuBar);
     }
-    window.location = './index.html';
+    backToIndex();
   },
   handleCancel: function() {
-    window.location = './index.html';
+    backToIndex();
   },
   handleChangeHideMenuBar: function() {
     this.setState({
@@ -56,8 +64,8 @@ var SettingsPage = React.createClass({
     var teams_row = (
     <Row>
       <Col md={ 12 }>
-        <h2>Teams</h2>
-        <TeamList teams={ this.state.teams } onTeamsChange={ this.handleTeamsChange } />
+      <h2>Teams</h2>
+      <TeamList teams={ this.state.teams } onTeamsChange={ this.handleTeamsChange } />
       </Col>
     </Row>
     );
@@ -69,8 +77,8 @@ var SettingsPage = React.createClass({
     var options_row = (options.length > 0) ? (
       <Row>
         <Col md={ 12 }>
-          <h2>Options</h2>
-          { options }
+        <h2>Options</h2>
+        { options }
         </Col>
       </Row>
       ) : null;
@@ -81,9 +89,9 @@ var SettingsPage = React.createClass({
         { options_row }
         <Row>
           <Col md={ 12 }>
-            <Button id="btnCancel" onClick={ this.handleCancel }>Cancel</Button>
-            { ' ' }
-            <Button id="btnSave" bsStyle="primary" onClick={ this.handleSave } disabled={ this.state.teams.length === 0 }>Save</Button>
+          <Button id="btnCancel" onClick={ this.handleCancel }>Cancel</Button>
+          { ' ' }
+          <Button id="btnSave" bsStyle="primary" onClick={ this.handleSave } disabled={ this.state.teams.length === 0 }>Save</Button>
           </Col>
         </Row>
       </Grid>

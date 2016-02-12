@@ -3,16 +3,17 @@
 var gulp = require('gulp');
 var prettify = require('gulp-jsbeautifier');
 var babel = require('gulp-babel');
+var webpack = require('webpack-stream');
+var named = require('vinyl-named');
 var changed = require('gulp-changed');
 var esformatter = require('gulp-esformatter');
 var del = require('del');
 var electron = require('electron-connect').server.create({
-  path: './src'
+  path: './dist'
 });
 var packager = require('electron-packager');
 
 var sources = ['**/*.js', '**/*.css', '**/*.html', '!**/node_modules/**', '!**/build/**', '!release/**'];
-var app_root = 'src';
 
 gulp.task('prettify', ['prettify:sources', 'prettify:jsx']);
 
@@ -34,44 +35,112 @@ gulp.task('prettify:sources', ['sync-meta'], function() {
 });
 
 gulp.task('prettify:jsx', function() {
-  return gulp.src(app_root + '/**/*.jsx')
+  return gulp.src('src/browser/**/*.jsx')
     .pipe(esformatter({
       indent: {
         value: '  '
       },
       plugins: ['esformatter-jsx']
     }))
-    .pipe(gulp.dest(app_root));
+    .pipe(gulp.dest('src/browser'));
 });
 
-gulp.task('build', ['sync-meta', 'build:jsx']);
-
-gulp.task('build:jsx', function() {
-  return gulp.src(['src/browser/**/*.jsx', '!src/node_modules/**'])
-    .pipe(changed(app_root, {
-      extension: '.js'
-    }))
-    .pipe(babel({
-      presets: ['react']
-    }))
-    .pipe(gulp.dest('src/browser/build'));
+gulp.task('build', ['sync-meta', 'webpack', 'copy'], function() {
+  return gulp.src('src/package.json')
+    .pipe(gulp.dest('dist'));
 });
 
-gulp.task('serve', ['build'], function() {
+gulp.task('webpack', ['webpack:main', 'webpack:browser']);
+
+gulp.task('webpack:browser', function() {
+  return gulp.src('src/browser/**/*.jsx')
+    .pipe(named())
+    .pipe(webpack({
+      module: {
+        loaders: [{
+          test: /\.json$/,
+          loader: 'json'
+        }, {
+          test: /\.jsx$/,
+          loader: 'babel',
+          query: {
+            presets: ['react']
+          }
+        }]
+      },
+      output: {
+        filename: '[name].js'
+      },
+      node: {
+        __filename: false,
+        __dirname: false
+      },
+      target: 'electron'
+    }))
+    .pipe(gulp.dest('dist/browser/'));
+});
+
+gulp.task('webpack:main', function() {
+  return gulp.src('src/main.js')
+    .pipe(webpack({
+      module: {
+        loaders: [{
+          test: /\.json$/,
+          loader: 'json'
+        }]
+      },
+      output: {
+        filename: '[name].js'
+      },
+      node: {
+        __filename: false,
+        __dirname: false
+      },
+      target: 'electron'
+    }))
+    .pipe(gulp.dest('dist/'));
+});
+
+gulp.task('copy', ['copy:resources', 'copy:html/css', 'copy:webview:js', 'copy:modules']);
+
+gulp.task('copy:resources', function() {
+  return gulp.src('src/resources/**')
+    .pipe(gulp.dest('dist/resources'));
+});
+
+gulp.task('copy:html/css', function() {
+  return gulp.src(['src/browser/**/*.html', 'src/browser/**/*.css'])
+    .pipe(gulp.dest('dist/browser'));
+});
+
+gulp.task('copy:webview:js', function() {
+  return gulp.src(['src/browser/webview/**/*.js'])
+    .pipe(gulp.dest('dist/browser/webview'))
+});
+
+gulp.task('copy:modules', function() {
+  return gulp.src(['src/node_modules/bootstrap/dist/**'])
+    .pipe(gulp.dest('dist/browser/modules/bootstrap'))
+});
+
+gulp.task('watch', ['build'], function() {
   var options = ['--livereload'];
   electron.start(options);
-  gulp.watch(['src/**', '!src/browser/**', '!src/node_modules/**'], function() {
+
+  gulp.watch(['src/main.js', 'src/main/**/*.js', 'src/common/**/*.js'], ['webpack:main']);
+  gulp.watch(['src/browser/**/*.js', 'src/browser/**/*.jsx'], ['webpack:browser', 'copy:webview:js']);
+  gulp.watch(['src/browser/**/*.css', 'src/browser/**/*.html', 'src/resources/**/*.png'], ['copy']);
+
+  gulp.watch(['dist/main.js', 'dist/resources/**'], function() {
     electron.restart(options);
   });
-  gulp.watch('src/browser/**/*.jsx', ['build:jsx']);
-  gulp.watch(['src/browser/**', '!src/browser/**/*.jsx'], electron.reload);
-  gulp.watch('gulpfile.js', process.exit);
+  gulp.watch(['dist/browser/*.js'], electron.reload);
 });
 
 function makePackage(platform, arch, callback) {
   var packageJson = require('./src/package.json');
   packager({
-    dir: './' + app_root,
+    dir: './dist',
     name: packageJson.name,
     platform: platform,
     arch: arch,

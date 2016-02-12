@@ -1,5 +1,9 @@
 'use strict';
 
+const React = require('react');
+const ReactDOM = require('react-dom');
+const ReactBootstrap = require('react-bootstrap');
+
 const Grid = ReactBootstrap.Grid;
 const Row = ReactBootstrap.Row;
 const Col = ReactBootstrap.Col;
@@ -126,7 +130,7 @@ var MainPage = React.createClass({
       tabs_row = (
         <Row>
           <TabBar id="tabBar" teams={ this.props.teams } unreadCounts={ this.state.unreadCounts } mentionCounts={ this.state.mentionCounts } unreadAtActive={ this.state.unreadAtActive } mentionAtActiveCounts={ this.state.mentionAtActiveCounts }
-          activeKey={ this.state.key } onSelect={ this.handleSelect }></TabBar>
+            activeKey={ this.state.key } onSelect={ this.handleSelect }></TabBar>
         </Row>
       );
     }
@@ -296,24 +300,45 @@ window.addEventListener('contextmenu', function(e) {
   menu.popup(remote.getCurrentWindow());
 }, false);
 
+var showUnreadBadgeWindows = function(unreadCount, mentionCount) {
+  const badge = require('./js/badge');
+  const sendBadge = function(dataURL, description) {
+    // window.setOverlayIcon() does't work with NativeImage across remote boundaries.
+    // https://github.com/atom/electron/issues/4011
+    electron.ipcRenderer.send('win32-overlay', {
+      overlayDataURL: dataURL,
+      description: description
+    });
+  };
+
+  if (mentionCount > 0) {
+    const dataURL = badge.createDataURL(mentionCount.toString());
+    sendBadge(dataURL, 'You have unread mention (' + mentionCount + ')');
+  } else if (unreadCount > 0) {
+    const dataURL = badge.createDataURL('•');
+    sendBadge(dataURL, 'You have unread channels');
+  } else {
+    remote.getCurrentWindow().setOverlayIcon(null, '');
+  }
+}
+
+var showUnreadBadgeOSX = function(unreadCount, mentionCount) {
+  if (mentionCount > 0) {
+    remote.app.dock.setBadge(mentionCount.toString());
+  } else if (unreadCount > 0) {
+    remote.app.dock.setBadge('•');
+  } else {
+    remote.app.dock.setBadge('');
+  }
+}
+
 var showUnreadBadge = function(unreadCount, mentionCount) {
   switch (process.platform) {
     case 'win32':
-      var window = remote.getCurrentWindow();
-      if (unreadCount > 0 || mentionCount > 0) {
-        window.setOverlayIcon(path.join(__dirname, '../resources/badge.png'), 'You have unread channels.');
-      } else {
-        window.setOverlayIcon(null, '');
-      }
+      showUnreadBadgeWindows(unreadCount, mentionCount);
       break;
     case 'darwin':
-      if (mentionCount > 0) {
-        remote.app.dock.setBadge(mentionCount.toString());
-      } else if (mentionCount < unreadCount) {
-        remote.app.dock.setBadge('•');
-      } else {
-        remote.app.dock.setBadge('');
-      }
+      showUnreadBadgeOSX(unreadCount, mentionCount);
       break;
     default:
   }

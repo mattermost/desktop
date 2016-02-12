@@ -7,9 +7,10 @@ const Menu = electron.Menu;
 const Tray = electron.Tray;
 const ipc = electron.ipcMain;
 const fs = require('fs');
+const path = require('path');
 
 var settings = require('./common/settings');
-var appMenu = require('./menus/app');
+var appMenu = require('./main/menus/app');
 
 var argv = require('yargs').argv;
 
@@ -38,6 +39,7 @@ try {
   }
 }
 catch (e) {
+  config = settings.loadDefault();
   console.log('Failed to read or upgrade config.json');
 }
 
@@ -81,11 +83,11 @@ app.on('before-quit', function() {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
-  // set up tray icon to show balloon
   if (process.platform === 'win32') {
-    trayIcon = new Tray(__dirname + '/resources/tray.png');
+    // set up tray icon to show balloon
+    trayIcon = new Tray(path.resolve(__dirname, 'resources/tray.png'));
     trayIcon.setToolTip(app.getName());
-    var tray_menu = require('./menus/tray').createDefault();
+    var tray_menu = require('./main/menus/tray').createDefault();
     trayIcon.setContextMenu(tray_menu);
     trayIcon.on('click', function() {
       mainWindow.focus();
@@ -95,10 +97,16 @@ app.on('ready', function() {
     });
     ipc.on('notified', function(event, arg) {
       trayIcon.displayBalloon({
-        icon: __dirname + '/resources/appicon.png',
+        icon: path.resolve(__dirname, 'resources/appicon.png'),
         title: arg.title,
         content: arg.options.body
       });
+    });
+
+    // Set overlay icon from dataURL
+    ipc.on('win32-overlay', function(event, arg) {
+      var overlay = electron.nativeImage.createFromDataURL(arg.overlayDataURL);
+      mainWindow.setOverlayIcon(overlay, arg.description);
     });
   }
 
@@ -112,7 +120,7 @@ app.on('ready', function() {
     // follow Electron's defaults
     window_options = {};
   }
-  window_options.icon = __dirname + '/resources/appicon.png';
+  window_options.icon = path.resolve(__dirname, 'resources/appicon.png');
   mainWindow = new BrowserWindow(window_options);
   if (window_options.maximized) {
     mainWindow.maximize();
