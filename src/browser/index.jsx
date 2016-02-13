@@ -272,7 +272,21 @@ var MattermostView = React.createClass({
     });
 
     webview.addEventListener('console-message', (e) => {
-      console.log(`[${this.props.name}]`, e.message);
+      const message = `[${this.props.name}] ${e.message}`;
+      switch (e.level) {
+        case 0:
+          console.log(message);
+          break;
+        case 1:
+          console.warn(message);
+          break;
+        case 2:
+          console.error(message);
+          break;
+        default:
+          console.log(message);
+          break;
+      }
     });
   },
   render: function() {
