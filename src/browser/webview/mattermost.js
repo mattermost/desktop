@@ -42,13 +42,18 @@ var unreadCountTimer = setInterval(function() {
 
     // find active post-list.
     var postLists = document.querySelectorAll('div.post-list__content');
-    var post;
+    if (postLists.length === 0) {
+      return;
+    }
+    var post = null;
     for (var i = 0; i < postLists.length; i++) {
       if (isElementVisible(postLists[i])) {
         post = postLists[i].children[0];
       }
     }
-
+    if (post === null) {
+      return;
+    }
     // find latest post and save.
     while (post = post.nextSibling) {
       if (post.nextSibling === null) {
