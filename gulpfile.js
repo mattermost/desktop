@@ -50,7 +50,7 @@ gulp.task('build', ['sync-meta', 'webpack', 'copy'], function() {
     .pipe(gulp.dest('dist'));
 });
 
-gulp.task('webpack', ['webpack:main', 'webpack:browser']);
+gulp.task('webpack', ['webpack:main', 'webpack:browser', 'webpack:webview']);
 
 gulp.task('webpack:browser', function() {
   return gulp.src('src/browser/**/*.jsx')
@@ -101,7 +101,19 @@ gulp.task('webpack:main', function() {
     .pipe(gulp.dest('dist/'));
 });
 
-gulp.task('copy', ['copy:resources', 'copy:html/css', 'copy:webview:js', 'copy:modules']);
+gulp.task('webpack:webview', function() {
+  return gulp.src('src/browser/webview/mattermost.js')
+    .pipe(named())
+    .pipe(webpack({
+      output: {
+        filename: '[name].js'
+      },
+      target: 'electron'
+    }))
+    .pipe(gulp.dest('dist/browser/webview'))
+});
+
+gulp.task('copy', ['copy:resources', 'copy:html/css', 'copy:modules']);
 
 gulp.task('copy:resources', function() {
   return gulp.src('src/resources/**')
@@ -111,11 +123,6 @@ gulp.task('copy:resources', function() {
 gulp.task('copy:html/css', function() {
   return gulp.src(['src/browser/**/*.html', 'src/browser/**/*.css'])
     .pipe(gulp.dest('dist/browser'));
-});
-
-gulp.task('copy:webview:js', function() {
-  return gulp.src(['src/browser/webview/**/*.js'])
-    .pipe(gulp.dest('dist/browser/webview'))
 });
 
 gulp.task('copy:modules', function() {
@@ -128,7 +135,7 @@ gulp.task('watch', ['build'], function() {
   electron.start(options);
 
   gulp.watch(['src/main.js', 'src/main/**/*.js', 'src/common/**/*.js'], ['webpack:main']);
-  gulp.watch(['src/browser/**/*.js', 'src/browser/**/*.jsx'], ['webpack:browser', 'copy:webview:js']);
+  gulp.watch(['src/browser/**/*.js', 'src/browser/**/*.jsx'], ['webpack:browser', 'webpack:webview']);
   gulp.watch(['src/browser/**/*.css', 'src/browser/**/*.html', 'src/resources/**/*.png'], ['copy']);
 
   gulp.watch(['dist/main.js', 'dist/resources/**'], function() {
