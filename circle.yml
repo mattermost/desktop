@@ -12,6 +12,7 @@ machine:
 dependencies:
   cache_directories:
     - "~/.electron"
+    - "src/node_modules"
   post:
     - mkdir -p ~/.electron
     - docker run --rm -it -v `pwd`:/home/xclient/electron-mattermost -v ~/.electron:/home/xclient/.electron yuyaoc/em-builder:dev ./electron-mattermost/docker/package_in_docker.sh
