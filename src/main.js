@@ -111,10 +111,10 @@ app.on('ready', function() {
   }
 
   // Create the browser window.
-  var bounds_info_path = app.getPath("userData") + "/bounds-info.json";
+  var bounds_info_path = path.resolve(app.getPath("userData"), "bounds-info.json");
   var window_options;
   try {
-    window_options = require(bounds_info_path);
+    window_options = JSON.parse(fs.readFileSync(bounds_info_path, 'utf-8'));
   }
   catch (e) {
     // follow Electron's defaults
