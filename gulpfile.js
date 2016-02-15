@@ -7,6 +7,8 @@ var webpack = require('webpack-stream');
 var named = require('vinyl-named');
 var changed = require('gulp-changed');
 var esformatter = require('gulp-esformatter');
+var esformatter_origin = require('esformatter');
+var through = require('through2');
 var del = require('del');
 var electron = require('electron-connect').server.create({
   path: './dist'
@@ -16,34 +18,61 @@ var packager = require('electron-packager');
 var sources = ['**/*.js', '**/*.css', '**/*.html', '!**/node_modules/**', '!dist/**', '!release/**'];
 
 gulp.task('prettify', ['prettify:sources', 'prettify:jsx']);
+gulp.task('prettify:verify', ['prettify:sources:verify', 'prettify:jsx:verify'])
+
+var prettify_options = {
+  html: {
+    indentSize: 2
+  },
+  css: {
+    indentSize: 2
+  },
+  js: {
+    indentSize: 2,
+    braceStyle: "end-expand"
+  }
+};
 
 gulp.task('prettify:sources', ['sync-meta'], function() {
+  prettify_options.mode = "VERIFY_AND_WRITE";
   return gulp.src(sources)
-    .pipe(prettify({
-      html: {
-        indentSize: 2
-      },
-      css: {
-        indentSize: 2
-      },
-      js: {
-        indentSize: 2,
-        braceStyle: "end-expand"
-      }
-    }))
+    .pipe(prettify(prettify_options))
     .pipe(gulp.dest('.'));
 });
 
+gulp.task('prettify:sources:verify', function() {
+  prettify_options.mode = "VERIFY_ONLY";
+  prettify_options.showDiff = false;
+  return gulp.src(sources)
+    .pipe(prettify(prettify_options));
+});
+
+
+var esformatter_jsx_options = {
+  indent: {
+    value: '  '
+  },
+  plugins: ['esformatter-jsx']
+};
+
 gulp.task('prettify:jsx', function() {
   return gulp.src('src/browser/**/*.jsx')
-    .pipe(esformatter({
-      indent: {
-        value: '  '
-      },
-      plugins: ['esformatter-jsx']
-    }))
+    .pipe(esformatter(esformatter_jsx_options))
     .pipe(gulp.dest('src/browser'));
 });
+
+gulp.task('prettify:jsx:verify', function() {
+  return gulp.src('src/browser/**/*.jsx')
+    .pipe(through.obj(function(file, enc, cb) {
+      var result = esformatter_origin.diff.unified(file.contents.toString(), esformatter_origin.rc(file.path, esformatter_jsx_options));
+      if (result !== "") {
+        console.log('Error: ' + file.path + ' must be formatted');
+        process.exit(1);
+      }
+      cb();
+    }));
+});
+
 
 gulp.task('build', ['sync-meta', 'webpack', 'copy'], function() {
   return gulp.src('src/package.json')
