@@ -7,6 +7,24 @@ var createTemplate = function(mainWindow) {
   var app_name = electron.app.getName();
   var first_menu_name = (process.platform === 'darwin') ? app_name : 'File';
   var template = [];
+
+  const platformAppMenu = process.platform === 'darwin' ? [{
+    type: 'separator'
+  }, {
+    label: 'Hide ' + app_name,
+    accelerator: 'Command+H',
+    selector: 'hide:'
+  }, {
+    label: 'Hide Others',
+    accelerator: 'Command+Shift+H',
+    selector: 'hideOtherApplications:'
+  }, {
+    label: 'Show All',
+    selector: 'unhideAllApplications:'
+  }, {
+    type: 'separator'
+  }] : [];
+
   template.push({
     label: first_menu_name,
     submenu: [{
@@ -17,7 +35,7 @@ var createTemplate = function(mainWindow) {
       click: function(item, focusedWindow) {
         mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
       }
-    }, {
+    }, ...platformAppMenu, {
       label: 'Quit',
       accelerator: 'CmdOrCtrl+Q',
       click: function(item, focusedWindow) {
