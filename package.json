@@ -1,6 +1,6 @@
 {
   "name": "electron-mattermost",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Electron-based desktop application for Mattermost",
   "main": "main.js",
   "author": "Yuya Ochiai",
