@@ -10,9 +10,12 @@ machine:
     - docker
 
 dependencies:
+  cache_directories:
+    - "~/.electron"
+    - "src/node_modules"
   post:
-    - docker build -t yuya-oc/em-builder docker
-    - docker run --rm -it -v `pwd`:/home/xclient/electron-mattermost yuya-oc/em-builder ./electron-mattermost/docker/package_in_docker.sh
+    - mkdir -p ~/.electron
+    - docker run --rm -it -v `pwd`:/home/xclient/electron-mattermost -v ~/.electron:/home/xclient/.electron yuyaoc/em-builder:dev ./electron-mattermost/docker/package_in_docker.sh
     - mv release/electron-mattermost-win32-ia32 release/electron-mattermost-win32
     - mv release/electron-mattermost-win32-x64  release/electron-mattermost-win64
     - mv release/electron-mattermost-darwin-x64 release/electron-mattermost-osx

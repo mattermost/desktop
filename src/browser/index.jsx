@@ -142,7 +142,7 @@ var MainPage = React.createClass({
       var handleNotificationClick = function() {
         thisObj.handleSelect(index);
       }
-      return (<MattermostView id={ 'mattermostView' + index } style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } onUnreadCountChange={ handleUnreadCountChange } onNotificationClick={ handleNotificationClick }
+      return (<MattermostView id={ 'mattermostView' + index } style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } name={ team.name } onUnreadCountChange={ handleUnreadCountChange } onNotificationClick={ handleNotificationClick }
               />)
     });
     var views_row = (<Row>
@@ -268,12 +268,26 @@ var MattermostView = React.createClass({
         case 'onNotificationClick':
           thisObj.props.onNotificationClick();
           break;
-        case 'console':
-          console.log(event.args[0]);
-          break;
       }
     });
 
+    webview.addEventListener('console-message', (e) => {
+      const message = `[${this.props.name}] ${e.message}`;
+      switch (e.level) {
+        case 0:
+          console.log(message);
+          break;
+        case 1:
+          console.warn(message);
+          break;
+        case 2:
+          console.error(message);
+          break;
+        default:
+          console.log(message);
+          break;
+      }
+    });
   },
   render: function() {
     // 'disablewebsecurity' is necessary to display external images.

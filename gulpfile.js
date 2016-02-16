@@ -13,7 +13,7 @@ var electron = require('electron-connect').server.create({
 });
 var packager = require('electron-packager');
 
-var sources = ['**/*.js', '**/*.css', '**/*.html', '!**/node_modules/**', '!**/build/**', '!release/**'];
+var sources = ['**/*.js', '**/*.css', '**/*.html', '!**/node_modules/**', '!dist/**', '!release/**'];
 
 gulp.task('prettify', ['prettify:sources', 'prettify:jsx']);
 
