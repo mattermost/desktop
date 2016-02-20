@@ -121,9 +121,14 @@ app.on('ready', function() {
     window_options = {};
   }
   window_options.icon = path.resolve(__dirname, 'resources/appicon.png');
+  window_options.fullScreenable = true;
   mainWindow = new BrowserWindow(window_options);
+  mainWindow.setFullScreenable(true); // fullscreenable option has no effect.
   if (window_options.maximized) {
     mainWindow.maximize();
+  }
+  if (window_options.fullscreen) {
+    mainWindow.setFullScreen(true);
   }
 
   // and load the index.html of the app.
