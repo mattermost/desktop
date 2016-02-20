@@ -115,6 +115,7 @@ function overrideNotificationWithBalloon() {
       options: options
     });
   };
+  Notification.permission = NativeNotification.permission;
   Notification.requestPermission = function(callback) {
     callback('granted');
   };
@@ -126,6 +127,7 @@ function overrideNotification() {
   Notification = function(title, options) {
     this.notification = new NativeNotification(title, options);
   };
+  Notification.permission = NativeNotification.permission;
   Notification.requestPermission = function(callback) {
     callback('granted');
   };
