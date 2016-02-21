@@ -12,7 +12,7 @@
     "start": "electron dist",
     "watch": "gulp watch",
     "serve": "gulp watch",
-    "test": "gulp build && mocha",
+    "test": "gulp build && mocha && gulp prettify:verify",
     "package": "gulp package",
     "package:windows": "gulp package:windows",
     "package:osx": "gulp package:osx",
@@ -41,6 +41,7 @@
     "mocha-circleci-reporter": "0.0.1",
     "should": "^8.0.1",
     "style-loader": "^0.13.0",
+    "through2": "^2.0.1",
     "vinyl-named": "^1.1.0",
     "webdriverio": "^3.3.0",
     "webpack-stream": "^3.1.0"
