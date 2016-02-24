@@ -68,6 +68,8 @@ app.on('browser-window-created', function(event, window) {
       window.setAutoHideMenuBar(true);
       window.setMenuBarVisibility(false);
     }
+    // hide Taskbar icon
+    window.setSkipTaskbar(true);
   }
 });
 
@@ -170,6 +172,12 @@ app.on('ready', function() {
   // Ideally, app should detect that OS is shutting down.
   mainWindow.on('blur', function() {
     saveWindowState(bounds_info_path, mainWindow);
+  });
+
+  // hide the mainWindow when it is minimized
+  mainWindow.on('minimize', function(event) {
+    event.preventDefault();
+    mainWindow.hide();
   });
 
   var app_menu = appMenu.createMenu(mainWindow);
