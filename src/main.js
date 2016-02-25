@@ -92,10 +92,18 @@ app.on('ready', function() {
     var tray_menu = require('./main/menus/tray').createDefault();
     trayIcon.setContextMenu(tray_menu);
     trayIcon.on('click', function() {
-      mainWindow.focus();
+      if(mainWindow.isMinimized()) {
+        mainWindow.show();
+      }else{
+        mainWindow.focus();
+      }
     });
     trayIcon.on('balloon-click', function() {
-      mainWindow.focus();
+      if(mainWindow.isMinimized()) {
+        mainWindow.show();
+      }else{
+        mainWindow.focus();
+      }
     });
     ipc.on('notified', function(event, arg) {
       trayIcon.displayBalloon({
