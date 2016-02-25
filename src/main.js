@@ -68,6 +68,9 @@ app.on('browser-window-created', function(event, window) {
       window.setAutoHideMenuBar(true);
       window.setMenuBarVisibility(false);
     }
+    if (config.skipTaskbar) {
+      window.setSkipTaskbar(true);
+    }
   }
 });
 
