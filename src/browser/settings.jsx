@@ -81,7 +81,8 @@ var SettingsPage = React.createClass({
     var options = [];
     if (process.platform === 'win32' || process.platform === 'linux') {
       options.push(<Input ref="hideMenuBar" type="checkbox" label="Hide menubar (Press Alt to show menubar)" checked={ this.state.hideMenuBar } onChange={ this.handleChangeHideMenuBar } />);
-      options.push(<Input id="skipTaskbar" ref="skipTaskbar" type="checkbox" label="Hide program in Notification? (Removes it from the taskbar)" checked={ this.state.skipTaskbar } onChange={ this.handleChangeSkipTaskbar } />);
+      options.push(<Input id="skipTaskbar" ref="skipTaskbar" type="checkbox" label="Hide program in Notification? (Removes it from the taskbar)" checked={ this.state.skipTaskbar } onChange={ this.handleChangeSkipTaskbar }
+                   />);
     }
     var options_row = (options.length > 0) ? (
       <Row>

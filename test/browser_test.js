@@ -213,20 +213,20 @@ describe('electron-mattermost', function() {
         .end();
     });
 
-    it('should save skipTaskBar state when save is clicked', function () {
+    it('should save skipTaskBar state when save is clicked', function() {
       return client
-          .init()
-          .url('file://' + path.join(source_root_dir, 'dist/browser/settings.html'))
-          .waitForExist('#skipTaskbar')
-          .click('#skipTaskbar')
-          .pause(1000)
-          .click('#btnSave')
-          .pause(1000)
-          .then(function() {
-            var str = fs.readFileSync(config_file_path, 'utf8');
-            var result = JSON.parse(str);
-            result.skipTaskbar.should.equal(true);
-          });
+        .init()
+        .url('file://' + path.join(source_root_dir, 'dist/browser/settings.html'))
+        .waitForExist('#skipTaskbar')
+        .click('#skipTaskbar')
+        .pause(1000)
+        .click('#btnSave')
+        .pause(1000)
+        .then(function() {
+          var str = fs.readFileSync(config_file_path, 'utf8');
+          var result = JSON.parse(str);
+          result.skipTaskbar.should.equal(true);
+        });
     });
   });
 });
