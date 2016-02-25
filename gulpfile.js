@@ -22,12 +22,15 @@ gulp.task('prettify:verify', ['prettify:sources:verify', 'prettify:jsx:verify'])
 
 var prettify_options = {
   html: {
+    eol: '\n',
     indentSize: 2
   },
   css: {
+    eol: '\n',
     indentSize: 2
   },
   js: {
+    eol: '\n',
     indentSize: 2,
     braceStyle: "end-expand"
   }
