@@ -104,9 +104,22 @@ app.on('ready', function() {
     });
 
     // Set overlay icon from dataURL
+    // Set trayicon to show "dot"
     ipc.on('win32-overlay', function(event, arg) {
-      var overlay = electron.nativeImage.createFromDataURL(arg.overlayDataURL);
+      const overlay = arg.overlayDataURL ? electron.nativeImage.createFromDataURL(arg.overlayDataURL) : null;
       mainWindow.setOverlayIcon(overlay, arg.description);
+
+      var tray_image = null;
+      if (arg.mentionCount > 0) {
+        tray_image = 'tray_mention.png';
+      }
+      else if (arg.unreadCount > 0) {
+        tray_image = 'tray_unread.png';
+      }
+      else {
+        tray_image = 'tray.png';
+      }
+      trayIcon.setImage(path.resolve(__dirname, 'resources', tray_image));
     });
   }
 
