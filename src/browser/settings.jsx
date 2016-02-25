@@ -30,7 +30,8 @@ var SettingsPage = React.createClass({
     }
     return {
       teams: config.teams,
-      hideMenuBar: config.hideMenuBar
+      hideMenuBar: config.hideMenuBar,
+      skipTaskbar: config.skipTaskbar
     };
   },
   handleTeamsChange: function(teams) {
@@ -42,6 +43,7 @@ var SettingsPage = React.createClass({
     var config = {
       teams: this.state.teams,
       hideMenuBar: this.state.hideMenuBar,
+      skipTaskbar: this.state.skipTaskbar,
       version: settings.version
     };
     settings.writeFileSync(this.props.configFile, config);
@@ -49,6 +51,7 @@ var SettingsPage = React.createClass({
       var currentWindow = remote.getCurrentWindow();
       currentWindow.setAutoHideMenuBar(config.hideMenuBar);
       currentWindow.setMenuBarVisibility(!config.hideMenuBar);
+      currentWindow.setSkipTaskbar(config.skipTaskbar);
     }
     backToIndex();
   },
@@ -58,6 +61,11 @@ var SettingsPage = React.createClass({
   handleChangeHideMenuBar: function() {
     this.setState({
       hideMenuBar: this.refs.hideMenuBar.getChecked()
+    });
+  },
+  handleChangeSkipTaskbar: function() {
+    this.setState({
+      skipTaskbar: this.refs.skipTaskbar.getChecked()
     });
   },
   render: function() {
@@ -73,6 +81,7 @@ var SettingsPage = React.createClass({
     var options = [];
     if (process.platform === 'win32' || process.platform === 'linux') {
       options.push(<Input ref="hideMenuBar" type="checkbox" label="Hide menubar (Press Alt to show menubar)" checked={ this.state.hideMenuBar } onChange={ this.handleChangeHideMenuBar } />);
+      options.push(<Input id="skipTaskbar" ref="skipTaskbar" type="checkbox" label="Hide program in Notification? (Removes it from the taskbar)" checked={ this.state.skipTaskbar } onChange={ this.handleChangeSkipTaskbar } />);
     }
     var options_row = (options.length > 0) ? (
       <Row>
