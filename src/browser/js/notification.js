@@ -4,7 +4,7 @@ function override(eventHandlers) {
   Notification = function(title, options) {
     this.notification = new OriginalNotification(title, options);
     if (eventHandlers.notification) {
-      eventHandlers.notification();
+      eventHandlers.notification(title, options);
     }
   };
 
