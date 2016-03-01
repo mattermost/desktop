@@ -321,7 +321,9 @@ var showUnreadBadgeWindows = function(unreadCount, mentionCount) {
     // https://github.com/atom/electron/issues/4011
     electron.ipcRenderer.send('win32-overlay', {
       overlayDataURL: dataURL,
-      description: description
+      description: description,
+      unreadCount: unreadCount,
+      mentionCount: mentionCount
     });
   };
 
@@ -332,7 +334,7 @@ var showUnreadBadgeWindows = function(unreadCount, mentionCount) {
     const dataURL = badge.createDataURL('•');
     sendBadge(dataURL, 'You have unread channels');
   } else {
-    remote.getCurrentWindow().setOverlayIcon(null, '');
+    sendBadge(null, 'You have no unread messages');
   }
 }
 
