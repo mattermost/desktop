@@ -10,6 +10,8 @@ const Col = ReactBootstrap.Col;
 const Nav = ReactBootstrap.Nav;
 const NavItem = ReactBootstrap.NavItem;
 const Badge = ReactBootstrap.Badge;
+const ListGroup = ReactBootstrap.ListGroup;
+const ListGroupItem = ReactBootstrap.ListGroupItem;
 
 const electron = require('electron');
 const remote = electron.remote;
@@ -204,6 +206,7 @@ var TabBar = React.createClass({
 var MattermostView = React.createClass({
   getInitialState: function() {
     return {
+      did_fail_load: null
     };
   },
   handleUnreadCountChange: function(unreadCount, mentionCount, isUnread, isMentioned) {
@@ -215,6 +218,13 @@ var MattermostView = React.createClass({
   componentDidMount: function() {
     var thisObj = this;
     var webview = ReactDOM.findDOMNode(this.refs.webview);
+
+    webview.addEventListener('did-fail-load', function(e) {
+      console.log(thisObj.props.name, 'webview did-fail-load', e);
+      thisObj.setState({
+        did_fail_load: e
+      });
+    });
 
     // Open link in browserWindow. for exmaple, attached files.
     webview.addEventListener('new-window', function(e) {
@@ -293,7 +303,39 @@ var MattermostView = React.createClass({
     // 'disablewebsecurity' is necessary to display external images.
     // However, it allows also CSS/JavaScript.
     // So webview should use 'allowDisplayingInsecureContent' as same as BrowserWindow.
-    return (<webview id={ this.props.id } className="mattermostView" style={ this.props.style } preload="webview/mattermost.js" src={ this.props.src } ref="webview"></webview>);
+    if (this.state.did_fail_load === null) {
+      return (<webview id={ this.props.id } className="mattermostView" style={ this.props.style } preload="webview/mattermost.js" src={ this.props.src } ref="webview"></webview>);
+    } else {
+      return (<ErrorView errorInfo={ this.state.did_fail_load } style={ this.props.style }></ErrorView>)
+    }
+  }
+});
+
+// ErrorCode: https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
+var ErrorView = React.createClass({
+  render: function() {
+    return (
+      <Grid fluid style={ this.props.style }>
+        <h1>Failed to load the URL</h1>
+        <p>
+          { 'URL: ' }
+          { this.props.errorInfo.validatedURL }
+        </p>
+        <p>
+          { 'Error code: ' }
+          { this.props.errorInfo.errorCode }
+        </p>
+        <p>
+          { this.props.errorInfo.errorDescription }
+        </p>
+        <p>Please check below.</p>
+        <ListGroup>
+          <ListGroupItem>Is your computer online?</ListGroupItem>
+          <ListGroupItem>Is the server alive?</ListGroupItem>
+          <ListGroupItem>Is the URL correct?</ListGroupItem>
+        </ListGroup>
+      </Grid>
+      );
   }
 });
 
