@@ -306,7 +306,7 @@ var MattermostView = React.createClass({
     if (this.state.did_fail_load === null) {
       return (<webview id={ this.props.id } className="mattermostView" style={ this.props.style } preload="webview/mattermost.js" src={ this.props.src } ref="webview"></webview>);
     } else {
-      return (<ErrorView errorInfo={ this.state.did_fail_load } style={ this.props.style }></ErrorView>)
+      return (<ErrorView id={ this.props.id + '-fail' } className="errorView" errorInfo={ this.state.did_fail_load } style={ this.props.style }></ErrorView>)
     }
   }
 });
@@ -316,7 +316,7 @@ var MattermostView = React.createClass({
 var ErrorView = React.createClass({
   render: function() {
     return (
-      <Grid fluid style={ this.props.style }>
+      <Grid id={ this.props.id } style={ this.props.style }>
         <h1>Failed to load the URL</h1>
         <p>
           { 'URL: ' }
