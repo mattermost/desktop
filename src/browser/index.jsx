@@ -312,6 +312,7 @@ var MattermostView = React.createClass({
 });
 
 // ErrorCode: https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
+// FIXME: need better wording in English
 var ErrorView = React.createClass({
   render: function() {
     return (
@@ -328,7 +329,7 @@ var ErrorView = React.createClass({
         <p>
           { this.props.errorInfo.errorDescription }
         </p>
-        <p>Please check below.</p>
+        <p>Please check below. Then, reload this window. (Ctrl+R or Command+R)</p>
         <ListGroup>
           <ListGroupItem>Is your computer online?</ListGroupItem>
           <ListGroupItem>Is the server alive?</ListGroupItem>
