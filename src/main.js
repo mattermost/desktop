@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 
 var settings = require('./common/settings');
+var certificateStore = require('./main/certificateStore').load(path.resolve(app.getPath('userData'), 'certificate.json'));
 var appMenu = require('./main/menus/app');
 
 var argv = require('yargs').argv;
@@ -78,6 +79,38 @@ app.on('activate', function(event) {
 
 app.on('before-quit', function() {
   willAppQuit = true;
+});
+
+app.on('certificate-error', function(event, webContents, url, error, certificate, callback) {
+  if (certificateStore.isTrusted(url, certificate)) {
+    event.preventDefault();
+    callback(true);
+  }
+  else {
+    var detail = `URL: ${url}\nError: ${error}`;
+    if (certificateStore.isExisting(url)) {
+      detail = `Certificate is different from previous one.\n\n` + detail;
+    }
+
+    electron.dialog.showMessageBox(mainWindow, {
+      title: 'Certificate error',
+      message: `Do you trust certificate from "${certificate.issuerName}"?`,
+      detail: detail,
+      type: 'warning',
+      buttons: [
+        'Yes',
+        'No'
+      ],
+      cancelId: 1
+    }, function(response) {
+      if (response === 0) {
+        certificateStore.add(url, certificate);
+        certificateStore.save();
+        webContents.loadURL(url);
+      }
+    });
+    callback(false);
+  }
 });
 
 // This method will be called when Electron has finished
