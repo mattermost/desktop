@@ -221,6 +221,11 @@ var MattermostView = React.createClass({
 
     webview.addEventListener('did-fail-load', function(e) {
       console.log(thisObj.props.name, 'webview did-fail-load', e);
+      // should use permanent way to indicate
+      var did_fail_load_notification = new Notification(`Failed to load "${thisObj.props.name}"`, {
+        body: `ErrorCode: ${e.errorCode}`,
+        icon: '../resources/appicon.png'
+      });
       thisObj.setState({
         did_fail_load: e
       });
