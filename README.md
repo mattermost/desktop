@@ -40,6 +40,13 @@ Configuration will be saved into Electron's userData directory:
 * `~/Library/Application Support/electron-mattermost` on OS X
 * `~/.config/electron-mattermost` on Linux
 
+### Proxy
+You can resolve the proxy by following command line options.
+*Note: Authorization is not supported.*
+
+* `--proxy-server=<SERVER>:<PORT>`
+* `--proxy-pac-url=<URL>`
+
 
 ## Testing and Development
 Node.js is required to test this app.
