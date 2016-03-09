@@ -1,7 +1,10 @@
-# electron-mattermost
-[![Circle CI](https://circleci.com/gh/yuya-oc/electron-mattermost.svg?style=svg)](https://circleci.com/gh/yuya-oc/electron-mattermost)
+# Mattermost Desktop (beta) 
 
-[Electron](http://electron.atom.io/)-based desktop application for [Mattermost](http://www.mattermost.org/)
+Native desktop application for [Mattermost](http://www.mattermost.org/) running on Windows, Mac and Linux.
+
+Originally created as "electron-mattermost" by Yuya Ochiai
+
+[![Circle CI](https://circleci.com/gh/yuya-oc/electron-mattermost.svg?style=svg)](https://circleci.com/gh/yuya-oc/electron-mattermost)
 
 ## Features
 
