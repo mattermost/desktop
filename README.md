@@ -41,11 +41,13 @@ Configuration will be saved into Electron's userData directory:
 * `~/.config/electron-mattermost` on Linux
 
 ### Proxy
-You can resolve the proxy by following command line options.
-*Note: Authorization is not supported.*
+Normally, the application will follow your system settings to use proxy.
+Or you can set proxy by following command line options.
 
 * `--proxy-server=<SERVER>:<PORT>`
 * `--proxy-pac-url=<URL>`
+
+*Note: Authorization is not supported yet.*
 
 
 ## Testing and Development
