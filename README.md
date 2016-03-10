@@ -1,8 +1,8 @@
 # Mattermost Desktop (beta) 
 
-Native desktop application for [Mattermost](http://www.mattermost.org/) running on Windows, Mac and Linux. 
+Native desktop application for [Mattermost](http://www.mattermost.org/) running on Windows, Mac and Linux.
 
-Originally created as "electron-mattermost" by Yuya Ochiai. Developed using [Electron](http://electron.atom.io/). 
+Originally created as "electron-mattermost" by Yuya Ochiai. Developed using [Electron](http://electron.atom.io/).
 
 ![s](https://raw.githubusercontent.com/mattermost/desktop/rename-1/docs/20160309_mattermost-desktop.gif)
 
@@ -11,14 +11,14 @@ Originally created as "electron-mattermost" by Yuya Ochiai. Developed using [Ele
 ## Features
 
 ### Desktop integration
-* Tabs for multiple teams across multiple servers 
+* Tabs for multiple teams across multiple servers
 * Desktop Notifications
   * Windows 10: Toast
   * Windows 7-8.1: Balloon (fallback behavior, so lesser support)
   * OS X: Notification Center
   * Linux: [libnotify](http://electron.atom.io/docs/v0.36.0/tutorial/desktop-environment-integration/#linux)
 * Badges for unread channels and mentions
-* Installs as native application 
+* Installs as native application
 
 ### Pre-packaged
 You don't have to install any other software.
