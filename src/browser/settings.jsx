@@ -169,8 +169,8 @@ var TeamListItemNew = React.createClass({
     console.log('submit');
     e.preventDefault();
     this.props.onTeamAdd({
-      name: this.state.name,
-      url: this.state.url
+      name: this.state.name.trim(),
+      url: this.state.url.trim()
     });
     this.setState(this.getInitialState());
   },
@@ -185,6 +185,9 @@ var TeamListItemNew = React.createClass({
     this.setState({
       url: e.target.value
     });
+  },
+  shouldEnableAddButton: function() {
+    return (this.state.name.trim() !== '') && (this.state.url.trim() !== '');
   },
   render: function() {
     return (
@@ -202,7 +205,7 @@ var TeamListItemNew = React.createClass({
             <input type="url" className="form-control" id="inputTeamURL" placeholder="http://example.com/team" value={ this.state.url } onChange={ this.handleURLChange } />
           </div>
           { ' ' }
-          <Button type="submit">Add</Button>
+          <Button type="submit" disabled={ !this.shouldEnableAddButton() }>Add</Button>
         </form>
       </ListGroupItem>
       );
