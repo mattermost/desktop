@@ -2,29 +2,27 @@
 
 Native desktop application for [Mattermost](http://www.mattermost.org/) running on Windows, Mac and Linux.
 
-Originally created as "electron-mattermost" by Yuya Ochiai
+Originally created as "electron-mattermost" by Yuya Ochiai. Developed using [Electron](http://electron.atom.io/).
 
 ![s](https://raw.githubusercontent.com/mattermost/desktop/rename-1/docs/20160309_mattermost-desktop.gif)
 
 [![Circle CI](https://circleci.com/gh/yuya-oc/electron-mattermost.svg?style=svg)](https://circleci.com/gh/yuya-oc/electron-mattermost)
 
-[Electron](http://electron.atom.io/)-based desktop application for [Mattermost](http://www.mattermost.org/)
-
 ## Features
 
 ### Desktop integration
-* Tabs for multiple teams
-* Desktop Notification
+* Tabs for multiple teams across multiple servers
+* Desktop Notifications
   * Windows 10: Toast
   * Windows 7-8.1: Balloon (fallback behavior, so lesser support)
   * OS X: Notification Center
-  * Linux: libnotify ([Electron's notification spec](http://electron.atom.io/docs/v0.36.0/tutorial/desktop-environment-integration/#linux))
-* Badges for unread channels and mention
-* Resident application
+  * Linux: [libnotify](http://electron.atom.io/docs/v0.36.0/tutorial/desktop-environment-integration/#linux)
+* Badges for unread channels and mentions
+* Installs as native application
 
 ### Pre-packaged
 You don't have to install any other software.
-Packages are available at [release page](http://github.com/yuya-oc/electron-mattermost/releases).
+Packages are available on the [releases page](http://github.com/yuya-oc/electron-mattermost/releases).
 
 ## Usage
 
@@ -47,7 +45,6 @@ Configuration will be saved into Electron's userData directory:
 * `~/Library/Application Support/electron-mattermost` on OS X
 * `~/.config/electron-mattermost` on Linux
 
-
 ## Testing and Development
 Node.js is required to test this app.
 
@@ -59,10 +56,10 @@ Node.js is required to test this app.
 When you edit `src/**` files, please execute `npm run build` before `npm start`.
 
 ### Development
-#### `npm run watch`
+###### `npm run watch`
 Reload the app automatically when you have saved source codes.
 
-#### `npm test`
+###### `npm test`
 Run tests with Mocha.
 
 ## Packaging
