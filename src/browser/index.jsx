@@ -219,6 +219,10 @@ var MattermostView = React.createClass({
     var thisObj = this;
     var webview = ReactDOM.findDOMNode(this.refs.webview);
 
+    // This option disables the same-origin policy and allows js/css/plugins not only content like images.
+    // So this should not be enabled.
+    webview.setAttribute('disablewebsecurity', true);
+
     webview.addEventListener('did-fail-load', function(e) {
       console.log(thisObj.props.name, 'webview did-fail-load', e);
       if (e.errorCode === -3) { // An operation was aborted (due to user action).
