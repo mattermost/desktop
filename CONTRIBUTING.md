@@ -23,6 +23,9 @@ Following points are very helpful to understand the problem.
 * OS
 * Mattermost version
 
+## Feature idea
+Please see http://www.mattermost.org/feature-requests/ .
+
 ## Pull request
 PR is welcome. Thank you for your great works!
 

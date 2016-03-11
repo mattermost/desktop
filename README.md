@@ -1,4 +1,4 @@
-# Mattermost Desktop (beta) 
+# Mattermost Desktop (beta)
 
 Native desktop application for [Mattermost](http://www.mattermost.org/) running on Windows, Mac and Linux.
 
@@ -72,3 +72,6 @@ $ npm run package:osx (Requires OS X or Linux)
 $ npm run package:linux
 $ npm run package:all (Packages for all platform)
 ```
+
+## Contributing
+Please see [CONTRIBUTING.md](./CONTRIBUTING.md).
