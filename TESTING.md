@@ -20,7 +20,7 @@ To contribute to the process of testing the Mattermost Desktop App:
     - SCREENSHOT IF APPLICABLE
   2. See [example of Mattermost Desktop issue](https://github.com/mattermost/desktop/issues/63)
 5. When your testing is complete, open a GitHub Issue announcing your device has been verified
-  1. Open an issue [using template for announcing a platform has been tested](https://github.com/mattermost/platform/issues/2275).
+  1. Open an issue [using template for announcing a platform has been tested](https://github.com/mattermost/desktop/issues/70).
   
 # THANK YOU!
 We highly appreciate your help improving the quality of the Mattermost Desktop App for the entire community. 
