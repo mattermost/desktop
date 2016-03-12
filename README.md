@@ -4,7 +4,7 @@ Native desktop application for [Mattermost](http://www.mattermost.org/) running 
 
 Originally created as "electron-mattermost" by Yuya Ochiai. Developed using [Electron](http://electron.atom.io/).
 
-![s](https://raw.githubusercontent.com/mattermost/desktop/master/docs/20160309_mattermost-desktop.gif)
+![Mattermost Desktop Screenshot](docs/20160309_mattermost-desktop.gif)
 
 
 [![Circle CI](https://circleci.com/gh/yuya-oc/electron-mattermost.svg?style=svg)](https://circleci.com/gh/yuya-oc/electron-mattermost)
