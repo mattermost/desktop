@@ -22,12 +22,12 @@ To contribute to the process of testing the Mattermost Desktop App:
 5. When your testing is complete, open a GitHub Issue announcing your device has been verified
   1. Open an issue [using template for announcing a platform has been tested](https://github.com/mattermost/desktop/issues/70).
   
-# THANK YOU!
+## THANK YOU!
 We highly appreciate your help improving the quality of the Mattermost Desktop App for the entire community. 
 
 Your testing contribution, including GitHub username, will be listed under the [Verified Operating Systems](TESTING.md#verified-operation-systems) section of this document.
 
-# Verified Operating Systems 
+## Verified Operating Systems 
 
 The following chart summarizes the operating systems which the Mattermost Desktop App releases have been tested:
 
@@ -35,11 +35,11 @@ The following chart summarizes the operating systems which the Mattermost Deskto
 |:--- |:--- |:--- |:--- |:--- |
 | 1.07 | Windows 7 SP1 64-bit | [#63](https://github.com/mattermost/desktop/issues/63) | [@it33](https://github.com/it33) | 2016-03-12 |
 
-# Testing Guides by Operating System
+## Testing Guides by Operating System
 
 The following guides offer operating system specific instructions for testing the Mattermost Desktop application.
 
-## Windows Testing Guide
+### Windows Testing Guide
 
 1. Install the Mattermost desktop application following the [step-by-step Windows setup guide](docs/setup.md#step-by-step-windows-setup) to connect to the `https://pre-release.mattermost.com/core` team site.
 2. Verify [Start Menu and Task Bar shortcuts open the application as documented.](docs/setup.md#start-menu-and-task-bar-shortcuts).
