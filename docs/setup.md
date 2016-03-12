@@ -51,7 +51,7 @@ The Settings Page is available from the **File** menu under **Settings** (Click 
 - **Hide Menu Bar** 
    1. Under **Options** enable this option to hide the menu bar by default. Press "Alt" to show the Menu Bar. 
 
-### Top Menu
+### Menu Bar
 
 Click the `Alt` key to toggle the menu on and off. 
 
