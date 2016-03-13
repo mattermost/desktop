@@ -33,7 +33,7 @@ The following chart summarizes the operating systems which the Mattermost Deskto
 
 | Version | OS | Issues | Tester | Date |
 |:--- |:--- |:--- |:--- |:--- |
-| 1.07 | Windows 7 SP1 64-bit | [#63](https://github.com/mattermost/desktop/issues/63) | [@it33](https://github.com/it33) | 2016-03-12 |
+| 1.0.7 | Windows 7 SP1 64-bit | [#63](https://github.com/mattermost/desktop/issues/63) | [@it33](https://github.com/it33) | 2016-03-12 |
 
 ## Testing Guides by Operating System
 
