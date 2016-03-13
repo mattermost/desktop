@@ -10,7 +10,7 @@ To contribute to the process of testing the Mattermost Desktop App:
   - [Windows Testing Guide](#windows-testing-guide)
 3. Go to the [Public Test Channel](https://pre-release.mattermost.com/core/channels/public-test-channel) and try the following: 
   1. Post the message with information on what you're testing, for example: `Testing Mattermost Desktop App 1.07 on Windows 7 SP1 64-bit`
-  2. Reply to the post by clicking on "**...**" then "**Reply**" with `This is a comment including files` and upload five (5) files including at least one image, one sound file and one video clip from your Android device.
+  2. Reply to the post by clicking on "**...**" then "**Reply**" with `This is a comment including files` and upload five (5) files including at least one image, one sound file and one video clip from your computer.
   3. Search for the word "Desktop" and click "Jump" on the search result of your own post in Step 3.1. Click into the preview of the files you uploaded and try to download each one.
 4. For any bugs found, please [file an issue report for each](https://github.com/mattermost/desktop/blob/master/CONTRIBUTING.md#issue). 
   1. Please include: 
