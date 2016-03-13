@@ -199,7 +199,7 @@ var TeamListItemNew = React.createClass({
           <div className="form-group">
             <label for="inputTeamURL">URL</label>
             { ' ' }
-            <input type="url" className="form-control" id="inputTeamURL" placeholder="http://example.com/team" value={ this.state.url } onChange={ this.handleURLChange } />
+            <input type="url" className="form-control" id="inputTeamURL" placeholder="https://example.com/team" value={ this.state.url } onChange={ this.handleURLChange } />
           </div>
           { ' ' }
           <Button type="submit">Add</Button>
