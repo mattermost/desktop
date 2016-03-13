@@ -13,5 +13,5 @@ The `electron-mattermost` project is now the official desktop application for th
 ### Known issues
 
 - Windows and Linux: **File** > **About** does not bring up version number dialog
-- Windows 10: Application does not appear in Windows volume mixer
+- Windows: Application does not appear in Windows volume mixer
 - All platforms: Embedded markdown images with `http://` do not render
