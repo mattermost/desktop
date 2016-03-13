@@ -30,7 +30,7 @@ var options = {
   }
 };
 
-describe('electron-mattermost', function() {
+describe('mattermost-desktop', function() {
   this.timeout(10000);
 
   var chromedriver;
