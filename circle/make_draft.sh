@@ -15,9 +15,9 @@ make_zip()
 {
   OLDDIR=`pwd`
   ARCH=$1
-  cp -r release/electron-mattermost-$ARCH /tmp/electron-mattermost-$CIRCLE_TAG-$ARCH
+  cp -r release/mattermost-desktop-$ARCH /tmp/mattermost-desktop-$CIRCLE_TAG-$ARCH
   cd /tmp
-  zip -9 -r electron-mattermost-$CIRCLE_TAG-$ARCH.zip electron-mattermost-$CIRCLE_TAG-$ARCH
+  zip -9 -r mattermost-desktop-$CIRCLE_TAG-$ARCH.zip mattermost-desktop-$CIRCLE_TAG-$ARCH
   cd $OLDDIR
 }
 
@@ -25,9 +25,9 @@ make_tar_gz()
 {
   OLDDIR=`pwd`
   ARCH=$1
-  cp -r release/electron-mattermost-$ARCH /tmp/electron-mattermost-$CIRCLE_TAG-$ARCH
+  cp -r release/mattermost-desktop-$ARCH /tmp/mattermost-desktop-$CIRCLE_TAG-$ARCH
   cd /tmp
-  tar zcvf electron-mattermost-$CIRCLE_TAG-$ARCH.tar.gz electron-mattermost-$CIRCLE_TAG-$ARCH
+  tar zcvf mattermost-desktop-$CIRCLE_TAG-$ARCH.tar.gz mattermost-desktop-$CIRCLE_TAG-$ARCH
   cd $OLDDIR
 }
 
@@ -40,7 +40,7 @@ deploy()
     "tar.gz" ) make_tar_gz $ARCH ;;
     "*" ) echo "Invalid ARCHIVE_FORMAT: $ARCHIVE_FORMAT" && exit 1 ;;
   esac
-  FILE=electron-mattermost-$CIRCLE_TAG-$ARCH.$ARCHIVE_FORMAT
+  FILE=mattermost-desktop-$CIRCLE_TAG-$ARCH.$ARCHIVE_FORMAT
   upload "$FILE" /tmp/$FILE
 }
 
