@@ -158,12 +158,14 @@ describe('electron-mattermost', function() {
     it('should show only the selected team', function() {
       return client
         .init()
-        .waitForVisible('#mattermostView0')
+        .pause(1000)
+        .waitForVisible('#mattermostView0', 1000)
         .isVisible('#mattermostView1').then(function(visility) {
           visility.should.be.false();
         })
         .click('#teamTabItem1')
-        .waitForVisible('#mattermostView1')
+        .pause(1000)
+        .waitForVisible('#mattermostView1', 1000)
         .isVisible('#mattermostView0').then(function(visility) {
           visility.should.be.false();
         })
