@@ -56,6 +56,7 @@ describe('electron-mattermost', function() {
   it('should show settings.html when there is no config file', function() {
     return client
       .init()
+      .pause(1000)
       .getUrl().then(function(url) {
         var p = path.parse(url);
         p.base.should.equal('settings.html');
@@ -69,6 +70,7 @@ describe('electron-mattermost', function() {
     }));
     return client
       .init()
+      .pause(1000)
       .getUrl().then(function(url) {
         var p = path.parse(url);
         p.base.should.equal('index.html');
@@ -83,6 +85,7 @@ describe('electron-mattermost', function() {
     }));
     return client
       .init()
+      .pause(1000)
       .getUrl().then(function(url) {
         var p = path.parse(url);
         p.base.should.equal('index.html');
