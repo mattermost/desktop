@@ -56,6 +56,7 @@ describe('electron-mattermost', function() {
   it('should show settings.html when there is no config file', function() {
     return client
       .init()
+      .pause(1000)
       .getUrl().then(function(url) {
         var p = path.parse(url);
         p.base.should.equal('settings.html');
@@ -69,6 +70,7 @@ describe('electron-mattermost', function() {
     }));
     return client
       .init()
+      .pause(1000)
       .getUrl().then(function(url) {
         var p = path.parse(url);
         p.base.should.equal('index.html');
@@ -83,6 +85,7 @@ describe('electron-mattermost', function() {
     }));
     return client
       .init()
+      .pause(1000)
       .getUrl().then(function(url) {
         var p = path.parse(url);
         p.base.should.equal('index.html');
@@ -155,12 +158,14 @@ describe('electron-mattermost', function() {
     it('should show only the selected team', function() {
       return client
         .init()
-        .waitForVisible('#mattermostView0')
+        .pause(1000)
+        .waitForVisible('#mattermostView0', 1000)
         .isVisible('#mattermostView1').then(function(visility) {
           visility.should.be.false();
         })
         .click('#teamTabItem1')
-        .waitForVisible('#mattermostView1')
+        .pause(1000)
+        .waitForVisible('#mattermostView1', 1000)
         .isVisible('#mattermostView0').then(function(visility) {
           visility.should.be.false();
         })
