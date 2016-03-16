@@ -27,13 +27,12 @@ Following points are very helpful to understand the problem.
 Please see http://www.mattermost.org/feature-requests/ .
 
 ## Pull request
-PR is welcome. Thank you for your great works!
+Pull requests are welcome. Thank you for your great work!
 
-When you edit the code, please run `npm run prettify` before your `git commit`.
-Codes will be formatted.
+1. When you edit the code, please run `npm run prettify` to format your code before `git commit`. 
+2. In the description of your pull request, please include: 
+   * Operating System version on which you tested 
+   * Mattermost server version on which you tested 
+   * New or updated unit tests for your changes 
+3. Please complete the [Mattermost CLA](http://www.mattermost.org/mattermost-contributor-agreement/) prior to submitting a PR.
 
-Then, such as following points are helpful.
-
-* Tested OS
-* Tested Mattermost version
-* Test codes for your changes
