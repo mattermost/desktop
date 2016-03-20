@@ -155,7 +155,7 @@ function makePackage(platform, arch, callback) {
     prune: true,
     overwrite: true,
     "app-version": packageJson.version,
-    icon: 'resources/electron-mattermost',
+    icon: 'resources/appicon',
     "version-string": {
       CompanyName: packageJson.author,
       LegalCopyright: 'Copyright (c) 2015 ' + packageJson.author,
