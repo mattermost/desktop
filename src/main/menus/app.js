@@ -29,7 +29,13 @@ var createTemplate = function(mainWindow) {
     label: first_menu_name,
     submenu: [{
       label: 'About ' + app_name,
-      role: 'about'
+      role: 'about',
+      click: function(item, focusedWindow) {
+        electron.dialog.showMessageBox(mainWindow, {
+          buttons: ["OK"],
+          message: `${app_name} Desktop ${electron.app.getVersion()}`
+        });
+      }
     }, {
       label: 'Settings',
       click: function(item, focusedWindow) {
