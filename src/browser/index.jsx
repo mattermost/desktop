@@ -221,7 +221,7 @@ var MattermostView = React.createClass({
       var currentURL = url.parse(webview.getURL());
       var destURL = url.parse(e.url);
       if (currentURL.host === destURL.host) {
-        window.open(e.url, 'electron-mattermost');
+        window.open(e.url, 'Mattermost');
       } else {
         // if the link is external, use default browser.
         require('shell').openExternal(e.url);

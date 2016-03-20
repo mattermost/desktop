@@ -19,8 +19,8 @@ Following points are very helpful to understand the problem.
 * How to reproduce, step-by-step
 * Expected behavior (or what is wrong)
 * Screenshots (for GUI issues)
-* electron-mattermost version
-* OS
+* Application version
+* Operating system
 * Mattermost version
 
 ## Feature idea

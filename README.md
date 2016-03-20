@@ -23,28 +23,32 @@ Originally created as "electron-mattermost" by Yuya Ochiai. Developed using [Ele
 
 ### Pre-packaged
 You don't have to install any other software.
-Packages are available on the [releases page](http://github.com/yuya-oc/electron-mattermost/releases).
+Packages are available on the [releases page](http://github.com/mattermost/desktop/releases).
 
 ## Usage
 
 ### Installation
 Detailed guides are available at [docs/setup.md](docs/setup.md).
 
-1. Download and unarchive a file from [release page](http://github.com/yuya-oc/electron-mattermost/releases).
-2. Launch `electron-mattermost` in the unarchived folder.
-3. After first launching, please input name and URL for your Mattermost team. For example, `myteam : http://mattermost.example.com/team`.
+1. Download and unarchive a file from [release page](http://github.com/mattermost/desktop/releases).
+2. Launch `Mattermost` in the unarchived folder.
+3. After first launching, please input name and URL for your Mattermost team. For example, `myteam : https://mattermost.example.com/team`.
 
 ### Quit
 Ctrl or Command + Q to quit.
 
 ### Configuration
 You can show the dialog from menu bar.
-(On Windows, please press Alt key to show the menu bar.)
+(Please press Alt key to show the menu bar if it disappers.)
 
 Configuration will be saved into Electron's userData directory:
-* `%APPDATA%\electron-mattermost` on Windows
-* `~/Library/Application Support/electron-mattermost` on OS X
-* `~/.config/electron-mattermost` on Linux
+
+* `%APPDATA%\Mattermost` on Windows
+* `~/Library/Application Support/Mattermost` on OS X
+* `~/.config/Mattermost` on Linux
+
+*When you upgrade from electron-mattermost, please copy `config.json` from `electron-mattermost`.
+Otherwise, you have to configure again.*
 
 ## Testing and Development
 Node.js is required to test this app.

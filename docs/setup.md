@@ -2,9 +2,9 @@
 
 ## Step-by-step Windows setup
 
-To set up the Mattermost desktop application for Windows 7, 8 and 10: 
+To set up the Mattermost desktop application for Windows 7, 8 and 10:
 
-1. Download [the latest release](https://github.com/yuya-oc/electron-mattermost/releases) of electron-attermost  
+1. Download [the latest release](https://github.com/mattermost/desktop/releases) of Mattermost Desktop
 
    Find the file ending in `-win64.zip` if you're running a x64 version of Windows and `-win32.zip` if you're running an older 32-bit version.
 
@@ -12,11 +12,11 @@ To set up the Mattermost desktop application for Windows 7, 8 and 10:
 
    A new directory should be created on your PC.
 
-3. Go to `/electron-mattermost...` directory and find the file named `electron-mattermost` 
+3. Go to `/mattermost-desktop...` directory and find the file named `Mattermost`
 
-   - Right-click the file and select "Pin to Taskbar" to make the application available from your Windows task bar. 
-   - Right-click the file and select "Pin to Start Menu" to make the application available from your Windows Start menu. 
-   - Double-click the file to open the application. 
+   - Right-click the file and select "Pin to Taskbar" to make the application available from your Windows task bar.
+   - Right-click the file and select "Pin to Start Menu" to make the application available from your Windows Start menu.
+   - Double-click the file to open the application.
 
 4. After opening the application, press `Alt` key to bring up the menu at the top of the window, then click `File -> Settings`
 
@@ -28,43 +28,43 @@ To set up the Mattermost desktop application for Windows 7, 8 and 10:
 
    To quit, use `Ctrl+Q`
 
-## Help 
+## Help
 
-The Mattermost desktop application offers: 
+The Mattermost desktop application offers:
 
 - Connectivity to one or more Mattermost team sites and multiple Mattermost servers
 - Shortcuts from Start Menu and Windows Task Bar
 - Icon notifications from Windows Task Bar
 - Desktop notifications
 
-See the Mattermost [help documention](http://docs.mattermost.com/help/getting-started/signing-in.html) for how to use the Mattermost team site. 
+See the Mattermost [help documention](http://docs.mattermost.com/help/getting-started/signing-in.html) for how to use the Mattermost team site.
 
 ### Settings Page
 
-The Settings Page is available from the **File** menu under **Settings** (Click `Alt` to show the menu if it's not visible). This page manages connections to team sites and other settings. 
+The Settings Page is available from the **File** menu under **Settings** (Click `Alt` to show the menu if it's not visible). This page manages connections to team sites and other settings.
 
-- **Add a Team Site**: 
+- **Add a Team Site**:
    1. Under **Teams** section, enter **Name** for team name to show in top tab
    2. Enter **URL** for the team site location. For example: `https://example.com/teamname` then click **Add**.
-- **Delete a Team Site**: 
-   1. Delete a Team Site by clicking the "x" next to the URL of the team site you wish to delete. 
-- **Hide Menu Bar** 
-   1. Under **Options** enable this option to hide the menu bar by default. Press "Alt" to show the Menu Bar. 
+- **Delete a Team Site**:
+   1. Delete a Team Site by clicking the "x" next to the URL of the team site you wish to delete.
+- **Hide Menu Bar**
+   1. Under **Options** enable this option to hide the menu bar by default. Press "Alt" to show the Menu Bar.
 
 ### Menu Bar
 
-Click the `Alt` key to toggle the menu on and off. 
+Click the `Alt` key to toggle the menu on and off.
 
-Below lists menu options (shortcut keys are listed in brackets): 
+Below lists menu options (shortcut keys are listed in brackets):
 
 - **File**
-  - **About electron-mattermost** - Shows version information for Mattermost desktop application 
+  - **About Mattermost** - Shows version information for Mattermost desktop application
   - **Settings** - Opens setting menu to add new team sites and configure shortcut key options
-  - **Quit** (Ctrl+Q) - Exits the application 
+  - **Quit** (Ctrl+Q) - Exits the application
 - **Edit**
-  - **Undo** (Ctrl+Z) - Reverses previous action 
+  - **Undo** (Ctrl+Z) - Reverses previous action
   - **Redo** (Ctrl+Shift+Z) - Replays most recent action
-  - **Cut** (Ctrl+X) - Cuts selected text 
+  - **Cut** (Ctrl+X) - Cuts selected text
   - **Copy** (Ctrl+C) - Copies selected text
   - **Paste** (Ctrl+V) - Pastes text from clipboard
   - **Select All** (Ctrl+A) - Select all text in input box
@@ -74,15 +74,15 @@ Below lists menu options (shortcut keys are listed in brackets):
   - **Toggle Full Screen** (F11) - Toggle application from window to full screen and back
   - **Toggle Developer Tools** (Ctrl+Shift+I) - Turn on and off sidebar showing developer tools
 
-### Notifications 
+### Notifications
 
-Mattermost lets users configure [desktop notifications](http://docs.mattermost.com/help/getting-started/configuring-notifications.html#desktop-notifications) to alert users to new events in a team site. 
+Mattermost lets users configure [desktop notifications](http://docs.mattermost.com/help/getting-started/configuring-notifications.html#desktop-notifications) to alert users to new events in a team site.
 
-For the Mattermost Windows application, these appear as ballon notifications from the task bar on Windows 7 and Windows 8.1, and as a "toast" pop-up on Windows 10. 
+For the Mattermost Windows application, these appear as ballon notifications from the task bar on Windows 7 and Windows 8.1, and as a "toast" pop-up on Windows 10.
 
 ### Start Menu and Task Bar shortcuts
 
-If pinned to the Windows Start Menu in Step 3 of the setup procedure, a shortcut to the Mattermost desktop application should be available from the Start Menu by pressing the Windows Key. 
+If pinned to the Windows Start Menu in Step 3 of the setup procedure, a shortcut to the Mattermost desktop application should be available from the Start Menu by pressing the Windows Key.
 
 If pinned to the Windows Task Bar in Step 3 of the setup procedure, a shortcut to the Mattermost desktop application should be available from the Windows Task Bar.
 
@@ -90,7 +90,7 @@ If pinned to the Windows Task Bar in Step 3 of the setup procedure, a shortcut t
 ## Step-by-step OS X setup
 For OS X 10.11 El Capitan. An older version of OS X has similar way.
 
-1. Download [the latest release](https://github.com/yuya-oc/electron-mattermost/releases) of electron-mattermost  
+1. Download [the latest release](https://github.com/mattermost/desktop/releases) of Mattermost Desktop
 
    Find the file ending in `-osx.tar.gz`.
 
@@ -98,13 +98,13 @@ For OS X 10.11 El Capitan. An older version of OS X has similar way.
 
    A new directory should be created on your Mac.
 
-3. Go to `/electron-mattermost...` directory and right-click on `electron-mattermost` package and select "Open"
+3. Go to `/mattermost-desktop...` directory and right-click on `Mattermost` package and select "Open"
 
    If you see a dialog to confirm the application, select "Open".
 
-   You should see a new application called **electron-mattermost** open.
+   You should see a new application called **Mattermost Desktop** open.
 
-4. Click `electron-mattermost` from the menu at the top of the screen, then click `Settings`
+4. Click `Mattermost` from the menu at the top of the screen, then click `Settings`
 
 5. For each Mattermost team you'd like to use, enter its **Name** and **URL** then click **Add**
 
