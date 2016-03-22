@@ -33,12 +33,12 @@ The `electron-mattermost` project is now the official desktop application for th
 ### Fixes
 
 #### Windows
-- **File** > **About** does not bring up version number dialog.
+- **File** > **About** now brings up version number dialog.
 
 #### Linux
-- **File** > **About** does not bring up version number dialog.
-- Ubuntu: Notification is not showing up.
-- The view crashes when freetype 2.6.3 is used in system.
+- **File** > **About** now brings up version number dialog.
+- Ubuntu: Notifications now appear. 
+- The view no longer crashes when freetype 2.6.3 is used in system.
 
 
 ### Known issues
@@ -46,7 +46,7 @@ The `electron-mattermost` project is now the official desktop application for th
 #### All platforms
 - Images with `http://` do not render.
 - Basic Authentication is not working.
-- Some keyboard shortcuts are missing. (e.g. <kbd>Ctrl+W</kbd>, <kbd>Command+,</kbd>)
+- Some keyboard shortcuts are missing (e.g. <kbd>Ctrl+W</kbd>, <kbd>Command+,</kbd>).
 
 #### Windows
-- Application does not appear properly in Windows volume mixer.
+- Application does not appear in Windows volume mixer.
