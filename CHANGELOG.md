@@ -46,6 +46,7 @@ The `electron-mattermost` project is now the official desktop application for th
 #### All platforms
 - Images with `http://` do not render.
 - Basic Authentication is not working.
+- Some keyboard shortcuts are missing. (e.g. <kbd>Ctrl+W</kbd>, <kbd>Command+,</kbd>)
 
 #### Windows
 - Application does not appear properly in Windows volume mixer.
