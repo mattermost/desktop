@@ -72,7 +72,7 @@ var SettingsPage = React.createClass({
 
     var options = [];
     if (process.platform === 'win32' || process.platform === 'linux') {
-      options.push(<Input ref="hideMenuBar" type="checkbox" label="Hide menubar (Press Alt to show menubar)" checked={ this.state.hideMenuBar } onChange={ this.handleChangeHideMenuBar } />);
+      options.push(<Input ref="hideMenuBar" type="checkbox" label="Hide Menu Bar (Press Alt to show Menu Bar)" checked={ this.state.hideMenuBar } onChange={ this.handleChangeHideMenuBar } />);
     }
     var options_row = (options.length > 0) ? (
       <Row>
@@ -202,7 +202,7 @@ var TeamListItemNew = React.createClass({
           <div className="form-group">
             <label for="inputTeamURL">URL</label>
             { ' ' }
-            <input type="url" className="form-control" id="inputTeamURL" placeholder="http://example.com/team" value={ this.state.url } onChange={ this.handleURLChange } />
+            <input type="url" className="form-control" id="inputTeamURL" placeholder="https://example.com/team" value={ this.state.url } onChange={ this.handleURLChange } />
           </div>
           { ' ' }
           <Button type="submit" disabled={ !this.shouldEnableAddButton() }>Add</Button>

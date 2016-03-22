@@ -50,9 +50,6 @@ var mainWindow = null;
 var trayIcon = null;
 var willAppQuit = false;
 
-// For toast notification on windows
-app.setAppUserModelId('yuya-oc.electron-mattermost');
-
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
   // On OS X it is common for applications and their menu bar
@@ -166,7 +163,9 @@ app.on('ready', function() {
     // follow Electron's defaults
     window_options = {};
   }
-  window_options.icon = path.resolve(__dirname, 'resources/appicon.png');
+  if (process.platform === 'linux') {
+    window_options.icon = path.resolve(__dirname, 'resources/appicon.png');
+  }
   window_options.fullScreenable = true;
   mainWindow = new BrowserWindow(window_options);
   mainWindow.setFullScreenable(true); // fullscreenable option has no effect.

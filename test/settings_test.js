@@ -8,7 +8,7 @@ describe('settings.js', function() {
 
   it('should upgrade v0 config file', function() {
     const v0_config = {
-      url: 'http://example.com/team'
+      url: 'https://example.com/team'
     };
     config = settings.upgrade(v0_config);
     config.teams.length.should.equal(1);
