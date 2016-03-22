@@ -1,7 +1,7 @@
 {
   "name": "mattermost-desktop",
   "productName": "Mattermost",
-  "version": "1.0.7",
+  "version": "1.1.0",
   "description": "Mattermost Desktop application for Windows, Mac and Linux",
   "main": "main.js",
   "author": "Yuya Ochiai",
