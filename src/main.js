@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 
 var settings = require('./common/settings');
+var certificateStore = require('./main/certificateStore').load(path.resolve(app.getPath('userData'), 'certificate.json'));
 var appMenu = require('./main/menus/app');
 
 var argv = require('yargs').argv;
@@ -77,6 +78,38 @@ app.on('before-quit', function() {
   willAppQuit = true;
 });
 
+app.on('certificate-error', function(event, webContents, url, error, certificate, callback) {
+  if (certificateStore.isTrusted(url, certificate)) {
+    event.preventDefault();
+    callback(true);
+  }
+  else {
+    var detail = `URL: ${url}\nError: ${error}`;
+    if (certificateStore.isExisting(url)) {
+      detail = `Certificate is different from previous one.\n\n` + detail;
+    }
+
+    electron.dialog.showMessageBox(mainWindow, {
+      title: 'Certificate error',
+      message: `Do you trust certificate from "${certificate.issuerName}"?`,
+      detail: detail,
+      type: 'warning',
+      buttons: [
+        'Yes',
+        'No'
+      ],
+      cancelId: 1
+    }, function(response) {
+      if (response === 0) {
+        certificateStore.add(url, certificate);
+        certificateStore.save();
+        webContents.loadURL(url);
+      }
+    });
+    callback(false);
+  }
+});
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
@@ -101,9 +134,22 @@ app.on('ready', function() {
     });
 
     // Set overlay icon from dataURL
+    // Set trayicon to show "dot"
     ipc.on('win32-overlay', function(event, arg) {
-      var overlay = electron.nativeImage.createFromDataURL(arg.overlayDataURL);
+      const overlay = arg.overlayDataURL ? electron.nativeImage.createFromDataURL(arg.overlayDataURL) : null;
       mainWindow.setOverlayIcon(overlay, arg.description);
+
+      var tray_image = null;
+      if (arg.mentionCount > 0) {
+        tray_image = 'tray_mention.png';
+      }
+      else if (arg.unreadCount > 0) {
+        tray_image = 'tray_unread.png';
+      }
+      else {
+        tray_image = 'tray.png';
+      }
+      trayIcon.setImage(path.resolve(__dirname, 'resources', tray_image));
     });
   }
 

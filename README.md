@@ -50,6 +50,16 @@ Configuration will be saved into Electron's userData directory:
 *When you upgrade from electron-mattermost, please copy `config.json` from `electron-mattermost`.
 Otherwise, you have to configure again.*
 
+### Proxy
+Normally, the application will follow your system settings to use proxy.
+Or you can set proxy by following command line options.
+
+* `--proxy-server=<SERVER>:<PORT>`
+* `--proxy-pac-url=<URL>`
+
+*Note: Authorization is not supported yet.*
+
+
 ## Testing and Development
 Node.js is required to test this app.
 
