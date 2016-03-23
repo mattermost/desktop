@@ -5,8 +5,8 @@ Thank you for your contributing! My requests are few things. Please read below.
 Thank you for feedback. When you report a problem, please pay attention to following points.
 
 ### Does it happen on web browsers? (especially Chrome)
-Mattermost Desktop is based on Electron. It integrates Chrome as a browser window.
-If the problem appears on web browsers, it may be the issue for Mattermost server (or Chrome).
+Mattermost Desktop is based on Electron, which integrates the Chrome engine within a standalone application.
+If the problem you encounter can be reproduced on web browsers, it may be an issue with Mattermost server (or Chrome).
 
 ### Try "Clear Cache and Reload"
 It's available as `Ctrl(Command) + Shift + R`.
