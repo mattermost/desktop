@@ -78,7 +78,8 @@ var SettingsPage = React.createClass({
     );
 
     var options = [];
-    options.push(<Input ref="httpBasicAuth" type="checkbox" label="HTTP Basic Auth (prompt for login data on startup, requires restart)" checked={ this.state.httpBasicAuth } onChange={ this.handleChangeHttpBasicAuth } />);
+    options.push(<Input ref="httpBasicAuth" type="checkbox" label="HTTP Basic Auth (prompt for login data on startup, requires restart)" checked={ this.state.httpBasicAuth } onChange={ this.handleChangeHttpBasicAuth }
+                 />);
     if (process.platform === 'win32' || process.platform === 'linux') {
       options.push(<Input ref="hideMenuBar" type="checkbox" label="Hide Menu Bar (Press Alt to show Menu Bar)" checked={ this.state.hideMenuBar } onChange={ this.handleChangeHideMenuBar } />);
     }

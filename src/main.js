@@ -58,7 +58,7 @@ if (config.httpBasicAuth) {
     hideEchoBack: true // The typed text on screen is hidden by `*` (default). 
   });
 
-  app.on('login', function (event, webContents, request, authInfo, callback) {
+  app.on('login', function(event, webContents, request, authInfo, callback) {
     event.preventDefault();
     console.log("Replacing default auth behaviour.");
     callback(username, password);
