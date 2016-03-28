@@ -49,6 +49,23 @@ var mainWindow = null;
 var trayIcon = null;
 var willAppQuit = false;
 
+if (config.httpBasicAuth) {
+
+  var readlineSync = require('readline-sync');
+
+  var username = readlineSync.question('Username: ');
+  var password = readlineSync.question('Password: ', {
+    hideEchoBack: true // The typed text on screen is hidden by `*` (default). 
+  });
+
+  app.on('login', function(event, webContents, request, authInfo, callback) {
+    event.preventDefault();
+    console.log("Replacing default auth behaviour.");
+    callback(username, password);
+  });
+
+}
+
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
   // On OS X it is common for applications and their menu bar

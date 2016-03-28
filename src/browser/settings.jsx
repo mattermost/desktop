@@ -30,6 +30,7 @@ var SettingsPage = React.createClass({
     }
     return {
       teams: config.teams,
+      httpBasicAuth: config.httpBasicAuth,
       hideMenuBar: config.hideMenuBar
     };
   },
@@ -41,6 +42,7 @@ var SettingsPage = React.createClass({
   handleSave: function() {
     var config = {
       teams: this.state.teams,
+      httpBasicAuth: this.state.httpBasicAuth,
       hideMenuBar: this.state.hideMenuBar,
       version: settings.version
     };
@@ -60,6 +62,11 @@ var SettingsPage = React.createClass({
       hideMenuBar: this.refs.hideMenuBar.getChecked()
     });
   },
+  handleChangeHttpBasicAuth: function() {
+    this.setState({
+      httpBasicAuth: this.refs.httpBasicAuth.getChecked()
+    });
+  },
   render: function() {
     var teams_row = (
     <Row>
@@ -71,6 +78,8 @@ var SettingsPage = React.createClass({
     );
 
     var options = [];
+    options.push(<Input ref="httpBasicAuth" type="checkbox" label="HTTP Basic Auth (prompt for login data on startup, requires restart)" checked={ this.state.httpBasicAuth } onChange={ this.handleChangeHttpBasicAuth }
+                 />);
     if (process.platform === 'win32' || process.platform === 'linux') {
       options.push(<Input ref="hideMenuBar" type="checkbox" label="Hide Menu Bar (Press Alt to show Menu Bar)" checked={ this.state.hideMenuBar } onChange={ this.handleChangeHideMenuBar } />);
     }
