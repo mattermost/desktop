@@ -49,6 +49,18 @@ var mainWindow = null;
 var trayIcon = null;
 var willAppQuit = false;
 
+app.on('login', function (event, webContents, request, authInfo, callback) {
+  event.preventDefault();
+  var readlineSync = require('readline-sync');
+  console.log("HTTP basic auth requiring login, please provide login data.");
+  var username = readlineSync.question('Username: ');
+  var password = readlineSync.question('Password: ', {
+    hideEchoBack: true 
+  });
+  console.log("Replacing default auth behaviour.");
+  callback(username, password);
+});
+
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
   // On OS X it is common for applications and their menu bar
