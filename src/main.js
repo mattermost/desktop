@@ -50,8 +50,17 @@ var mainWindow = null;
 var trayIcon = null;
 var willAppQuit = false;
 
-// For toast notification on windows
-app.setAppUserModelId('yuya-oc.electron-mattermost');
+app.on('login', function(event, webContents, request, authInfo, callback) {
+  event.preventDefault();
+  var readlineSync = require('readline-sync');
+  console.log("HTTP basic auth requiring login, please provide login data.");
+  var username = readlineSync.question('Username: ');
+  var password = readlineSync.question('Password: ', {
+    hideEchoBack: true
+  });
+  console.log("Replacing default auth behaviour.");
+  callback(username, password);
+});
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
@@ -166,7 +175,10 @@ app.on('ready', function() {
     // follow Electron's defaults
     window_options = {};
   }
-  window_options.icon = path.resolve(__dirname, 'resources/appicon.png');
+  if (process.platform === 'win32' || process.platform === 'linux') {
+    // On HiDPI Windows environment, the taskbar icon is pixelated. So this line is necessary.
+    window_options.icon = path.resolve(__dirname, 'resources/appicon.png');
+  }
   window_options.fullScreenable = true;
   mainWindow = new BrowserWindow(window_options);
   mainWindow.setFullScreenable(true); // fullscreenable option has no effect.

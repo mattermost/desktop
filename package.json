@@ -1,7 +1,8 @@
 {
-  "name": "electron-mattermost",
-  "version": "1.0.7",
-  "description": "Electron-based desktop application for Mattermost",
+  "name": "mattermost-desktop",
+  "productName": "Mattermost",
+  "version": "1.1.0",
+  "description": "Mattermost Desktop application for Windows, Mac and Linux",
   "main": "main.js",
   "author": "Yuya Ochiai",
   "license": "MIT",

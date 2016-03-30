@@ -1,7 +1,8 @@
 {
-  "name": "electron-mattermost",
-  "version": "1.0.7",
-  "description": "Electron-based desktop application for Mattermost",
+  "name": "mattermost-desktop",
+  "productName": "Mattermost",
+  "version": "1.1.0",
+  "description": "Mattermost Desktop application for Windows, Mac and Linux",
   "main": "main.js",
   "author": "Yuya Ochiai",
   "license": "MIT",
@@ -14,6 +15,7 @@
     "react": "^0.14.3",
     "react-bootstrap": "^0.28.1",
     "react-dom": "^0.14.3",
+    "readline-sync": "^1.4.1",
     "yargs": "^3.31.0"
   }
 }
