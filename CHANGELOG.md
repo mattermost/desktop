@@ -25,6 +25,7 @@ The `electron-mattermost` project is now the official desktop application for th
 - Show error messages when the application failed in loading Mattermost server.
 - Show confirmation dialog to continue connection when there is certificate error.
 - Add validation to check whether both of **Name** and **URL** fields are not blank.
+- Add simple basic HTTP authentication (requires a command line).
 
 #### Windows
 - Show a small circle on the tray icon when there are new messages.
@@ -47,6 +48,7 @@ The `electron-mattermost` project is now the official desktop application for th
 - Images with `http://` do not render.
 - Basic Authentication is not working.
 - Some keyboard shortcuts are missing. (e.g. <kbd>Ctrl+W</kbd>, <kbd>Command+,</kbd>)
+- Basic authentication requires a command line.
 
 #### Windows
 - Application does not appear properly in Windows volume mixer.
