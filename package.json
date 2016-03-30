@@ -1,11 +1,14 @@
 {
   "name": "mattermost-desktop",
   "productName": "Mattermost",
-  "version": "1.0.7",
+  "version": "1.1.0",
   "description": "Mattermost Desktop application for Windows, Mac and Linux",
   "main": "main.js",
   "author": "Yuya Ochiai",
   "license": "MIT",
+  "engines": {
+    "node": ">=4.2.0"
+  },
   "scripts": {
     "install": "cd src && npm install",
     "postinstall": "npm run build",
@@ -13,7 +16,7 @@
     "start": "electron dist",
     "watch": "gulp watch",
     "serve": "gulp watch",
-    "test": "gulp build && mocha",
+    "test": "gulp build && mocha && gulp prettify:verify",
     "package": "gulp package",
     "package:windows": "gulp package:windows",
     "package:osx": "gulp package:osx",
@@ -29,7 +32,7 @@
     "del": "^2.2.0",
     "electron-connect": "^0.3.3",
     "electron-packager": "^5.1.0",
-    "electron-prebuilt": "0.36.7",
+    "electron-prebuilt": "0.36.11",
     "esformatter": "^0.8.1",
     "esformatter-jsx": "^4.0.6",
     "gulp": "^3.9.0",
@@ -42,6 +45,7 @@
     "mocha-circleci-reporter": "0.0.1",
     "should": "^8.0.1",
     "style-loader": "^0.13.0",
+    "through2": "^2.0.1",
     "vinyl-named": "^1.1.0",
     "webdriverio": "^3.3.0",
     "webpack-stream": "^3.1.0"

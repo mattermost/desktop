@@ -171,6 +171,21 @@ describe('mattermost-desktop', function() {
         })
         .end();
     });
+
+    it('should show error when using incorrect URL', function() {
+      this.timeout(30000)
+      fs.writeFileSync(config_file_path, JSON.stringify({
+        version: 1,
+        teams: [{
+          name: 'error_1',
+          url: 'http://false'
+        }]
+      }));
+      return client
+        .init()
+        .waitForVisible('#mattermostView0-fail', 20000)
+        .end();
+    });
   });
 
   describe('settings.html', function() {

@@ -10,6 +10,8 @@ const Col = ReactBootstrap.Col;
 const Nav = ReactBootstrap.Nav;
 const NavItem = ReactBootstrap.NavItem;
 const Badge = ReactBootstrap.Badge;
+const ListGroup = ReactBootstrap.ListGroup;
+const ListGroupItem = ReactBootstrap.ListGroupItem;
 
 const electron = require('electron');
 const remote = electron.remote;
@@ -204,6 +206,7 @@ var TabBar = React.createClass({
 var MattermostView = React.createClass({
   getInitialState: function() {
     return {
+      did_fail_load: null
     };
   },
   handleUnreadCountChange: function(unreadCount, mentionCount, isUnread, isMentioned) {
@@ -215,6 +218,22 @@ var MattermostView = React.createClass({
   componentDidMount: function() {
     var thisObj = this;
     var webview = ReactDOM.findDOMNode(this.refs.webview);
+
+    webview.addEventListener('did-fail-load', function(e) {
+      console.log(thisObj.props.name, 'webview did-fail-load', e);
+      if (e.errorCode === -3) { // An operation was aborted (due to user action).
+        return;
+      }
+
+      // should use permanent way to indicate
+      var did_fail_load_notification = new Notification(`Failed to load "${thisObj.props.name}"`, {
+        body: `ErrorCode: ${e.errorCode}`,
+        icon: '../resources/appicon.png'
+      });
+      thisObj.setState({
+        did_fail_load: e
+      });
+    });
 
     // Open link in browserWindow. for exmaple, attached files.
     webview.addEventListener('new-window', function(e) {
@@ -293,7 +312,40 @@ var MattermostView = React.createClass({
     // 'disablewebsecurity' is necessary to display external images.
     // However, it allows also CSS/JavaScript.
     // So webview should use 'allowDisplayingInsecureContent' as same as BrowserWindow.
-    return (<webview id={ this.props.id } className="mattermostView" style={ this.props.style } preload="webview/mattermost.js" src={ this.props.src } ref="webview"></webview>);
+    if (this.state.did_fail_load === null) {
+      return (<webview id={ this.props.id } className="mattermostView" style={ this.props.style } preload="webview/mattermost.js" src={ this.props.src } ref="webview"></webview>);
+    } else {
+      return (<ErrorView id={ this.props.id + '-fail' } className="errorView" errorInfo={ this.state.did_fail_load } style={ this.props.style }></ErrorView>)
+    }
+  }
+});
+
+// ErrorCode: https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
+// FIXME: need better wording in English
+var ErrorView = React.createClass({
+  render: function() {
+    return (
+      <Grid id={ this.props.id } style={ this.props.style }>
+        <h1>Failed to load the URL</h1>
+        <p>
+          { 'URL: ' }
+          { this.props.errorInfo.validatedURL }
+        </p>
+        <p>
+          { 'Error code: ' }
+          { this.props.errorInfo.errorCode }
+        </p>
+        <p>
+          { this.props.errorInfo.errorDescription }
+        </p>
+        <p>Please check below. Then, reload this window. (Ctrl+R or Command+R)</p>
+        <ListGroup>
+          <ListGroupItem>Is your computer online?</ListGroupItem>
+          <ListGroupItem>Is the server alive?</ListGroupItem>
+          <ListGroupItem>Is the URL correct?</ListGroupItem>
+        </ListGroup>
+      </Grid>
+      );
   }
 });
 
@@ -321,7 +373,9 @@ var showUnreadBadgeWindows = function(unreadCount, mentionCount) {
     // https://github.com/atom/electron/issues/4011
     electron.ipcRenderer.send('win32-overlay', {
       overlayDataURL: dataURL,
-      description: description
+      description: description,
+      unreadCount: unreadCount,
+      mentionCount: mentionCount
     });
   };
 
@@ -332,7 +386,7 @@ var showUnreadBadgeWindows = function(unreadCount, mentionCount) {
     const dataURL = badge.createDataURL('•');
     sendBadge(dataURL, 'You have unread channels');
   } else {
-    remote.getCurrentWindow().setOverlayIcon(null, '');
+    sendBadge(null, 'You have no unread messages');
   }
 }
 

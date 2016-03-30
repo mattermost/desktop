@@ -13,6 +13,8 @@ dependencies:
   cache_directories:
     - "~/.electron"
     - "src/node_modules"
+  pre:
+    - npm install -g npm@3.3.12
   post:
     - mkdir -p ~/.electron
     - docker run --rm -it -v `pwd`:/home/xclient/electron-mattermost -v ~/.electron:/home/xclient/.electron yuyaoc/em-builder:dev ./electron-mattermost/docker/package_in_docker.sh
@@ -30,6 +32,7 @@ dependencies:
 test:
   override:
     - node_modules/.bin/mocha --reporter mocha-circleci-reporter
+    - node_modules/.bin/gulp prettify:verify
   post:
     - mv test-results.xml $CIRCLE_TEST_REPORTS/
 
