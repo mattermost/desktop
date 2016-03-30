@@ -144,8 +144,9 @@ var MainPage = React.createClass({
       var handleNotificationClick = function() {
         thisObj.handleSelect(index);
       }
-      return (<MattermostView id={ 'mattermostView' + index } style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } name={ team.name } onUnreadCountChange={ handleUnreadCountChange } onNotificationClick={ handleNotificationClick }
-              />)
+      var id = 'mattermostView' + index;
+      return (<MattermostView key={ id } id={ id } style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } name={ team.name } onUnreadCountChange={ handleUnreadCountChange }
+                onNotificationClick={ handleNotificationClick } />)
     });
     var views_row = (<Row>
                        { views }
@@ -189,7 +190,8 @@ var TabBar = React.createClass({
                    •
                  </Badge>);
       }
-      return (<NavItem className="teamTabItem" id={ 'teamTabItem' + index } eventKey={ index }>
+      var id = 'teamTabItem' + index;
+      return (<NavItem className="teamTabItem" key={ id } id={ id } eventKey={ index }>
                 { team.name }
                 { ' ' }
                 { badge }
