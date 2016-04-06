@@ -125,9 +125,21 @@ app.on('certificate-error', function(event, webContents, url, error, certificate
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
-  if (process.platform === 'win32') {
-    // set up tray icon to show balloon
-    trayIcon = new Tray(path.resolve(__dirname, 'resources/tray.png'));
+  if (process.platform === 'win32' || process.platform === 'darwin') {
+    // set up tray icon
+    var tray_image = '';
+    switch (process.platform) {
+      case 'win32':
+        tray_image = path.resolve(__dirname, 'resources/tray.png');
+        break;
+      case 'darwin':
+        tray_image = path.resolve(__dirname, 'resources/osx/MenuIconTemplate.png');
+        break;
+      default:
+        process.exit(1);
+        break;
+    }
+    trayIcon = new Tray(tray_image);
     trayIcon.setToolTip(app.getName());
     var tray_menu = require('./main/menus/tray').createDefault();
     trayIcon.setContextMenu(tray_menu);
@@ -147,19 +159,38 @@ app.on('ready', function() {
 
     // Set overlay icon from dataURL
     // Set trayicon to show "dot"
-    ipc.on('win32-overlay', function(event, arg) {
-      const overlay = arg.overlayDataURL ? electron.nativeImage.createFromDataURL(arg.overlayDataURL) : null;
-      mainWindow.setOverlayIcon(overlay, arg.description);
+    ipc.on('update-unread', function(event, arg) {
+      if (process.platform === 'win32') {
+        const overlay = arg.overlayDataURL ? electron.nativeImage.createFromDataURL(arg.overlayDataURL) : null;
+        mainWindow.setOverlayIcon(overlay, arg.description);
+      }
 
       var tray_image = null;
-      if (arg.mentionCount > 0) {
-        tray_image = 'tray_mention.png';
-      }
-      else if (arg.unreadCount > 0) {
-        tray_image = 'tray_unread.png';
-      }
-      else {
-        tray_image = 'tray.png';
+      switch (process.platform) {
+        case 'win32':
+          if (arg.mentionCount > 0) {
+            tray_image = 'tray_mention.png';
+          }
+          else if (arg.unreadCount > 0) {
+            tray_image = 'tray_unread.png';
+          }
+          else {
+            tray_image = 'tray.png';
+          }
+          break;
+        case 'darwin':
+          if (arg.mentionCount > 0) {
+            tray_image = 'osx/MenuIconMentionTemplate.png';
+          }
+          else if (arg.unreadCount > 0) {
+            tray_image = 'osx/MenuIconUnreadTemplate.png';
+          }
+          else {
+            tray_image = 'osx/MenuIconTemplate.png';
+          }
+          break;
+        default:
+          break;
       }
       trayIcon.setImage(path.resolve(__dirname, 'resources', tray_image));
     });
