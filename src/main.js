@@ -6,6 +6,7 @@ const BrowserWindow = electron.BrowserWindow; // Module to create native browser
 const Menu = electron.Menu;
 const Tray = electron.Tray;
 const ipc = electron.ipcMain;
+const nativeImage = electron.nativeImage;
 const fs = require('fs');
 const path = require('path');
 
@@ -48,6 +49,24 @@ catch (e) {
 // be closed automatically when the JavaScript object is garbage collected.
 var mainWindow = null;
 var trayIcon = null;
+const trayImages = function() {
+  switch (process.platform) {
+    case 'win32':
+      return {
+        normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/tray.png')),
+        unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/tray_unread.png')),
+        mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/tray_mention.png'))
+      };
+    case 'darwin':
+      return {
+        normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconTemplate.png')),
+        unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconUnreadTemplate.png')),
+        mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconMentionTemplate.png'))
+      };
+    default:
+      return {};
+  }
+}();
 var willAppQuit = false;
 
 app.on('login', function(event, webContents, request, authInfo, callback) {
@@ -127,19 +146,7 @@ app.on('certificate-error', function(event, webContents, url, error, certificate
 app.on('ready', function() {
   if (process.platform === 'win32' || process.platform === 'darwin') {
     // set up tray icon
-    var tray_image = '';
-    switch (process.platform) {
-      case 'win32':
-        tray_image = path.resolve(__dirname, 'resources/tray.png');
-        break;
-      case 'darwin':
-        tray_image = path.resolve(__dirname, 'resources/osx/MenuIconTemplate.png');
-        break;
-      default:
-        process.exit(1);
-        break;
-    }
-    trayIcon = new Tray(tray_image);
+    trayIcon = new Tray(trayImages.normal);
     trayIcon.setToolTip(app.getName());
     var tray_menu = require('./main/menus/tray').createDefault();
     trayIcon.setContextMenu(tray_menu);
@@ -165,34 +172,15 @@ app.on('ready', function() {
         mainWindow.setOverlayIcon(overlay, arg.description);
       }
 
-      var tray_image = null;
-      switch (process.platform) {
-        case 'win32':
-          if (arg.mentionCount > 0) {
-            tray_image = 'tray_mention.png';
-          }
-          else if (arg.unreadCount > 0) {
-            tray_image = 'tray_unread.png';
-          }
-          else {
-            tray_image = 'tray.png';
-          }
-          break;
-        case 'darwin':
-          if (arg.mentionCount > 0) {
-            tray_image = 'osx/MenuIconMentionTemplate.png';
-          }
-          else if (arg.unreadCount > 0) {
-            tray_image = 'osx/MenuIconUnreadTemplate.png';
-          }
-          else {
-            tray_image = 'osx/MenuIconTemplate.png';
-          }
-          break;
-        default:
-          break;
+      if (arg.mentionCount > 0) {
+        trayIcon.setImage(trayImages.mention);
       }
-      trayIcon.setImage(path.resolve(__dirname, 'resources', tray_image));
+      else if (arg.unreadCount > 0) {
+        trayIcon.setImage(trayImages.unread);
+      }
+      else {
+        trayIcon.setImage(trayImages.normal);
+      }
     });
   }
 
