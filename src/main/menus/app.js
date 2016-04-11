@@ -26,7 +26,7 @@ var createTemplate = function(mainWindow) {
   }] : [];
 
   template.push({
-    label: first_menu_name,
+    label: '&' + first_menu_name,
     submenu: [{
       label: 'About ' + app_name,
       role: 'about',
@@ -50,7 +50,7 @@ var createTemplate = function(mainWindow) {
     }]
   });
   template.push({
-    label: 'Edit',
+    label: '&Edit',
     submenu: [{
       label: 'Undo',
       accelerator: 'CmdOrCtrl+Z',
@@ -80,7 +80,7 @@ var createTemplate = function(mainWindow) {
     }, ]
   });
   template.push({
-    label: 'View',
+    label: '&View',
     submenu: [{
       label: 'Reload',
       accelerator: 'CmdOrCtrl+R',
