@@ -1,1 +1,1 @@
-[ ] Did you read `CONTRIBUTING.md`?
+- [ ] Did you read `CONTRIBUTING.md`?
