@@ -373,7 +373,7 @@ var showUnreadBadgeWindows = function(unreadCount, mentionCount) {
   const sendBadge = function(dataURL, description) {
     // window.setOverlayIcon() does't work with NativeImage across remote boundaries.
     // https://github.com/atom/electron/issues/4011
-    electron.ipcRenderer.send('win32-overlay', {
+    electron.ipcRenderer.send('update-unread', {
       overlayDataURL: dataURL,
       description: description,
       unreadCount: unreadCount,
@@ -400,6 +400,11 @@ var showUnreadBadgeOSX = function(unreadCount, mentionCount) {
   } else {
     remote.app.dock.setBadge('');
   }
+
+  electron.ipcRenderer.send('update-unread', {
+    unreadCount: unreadCount,
+    mentionCount: mentionCount
+  });
 }
 
 var showUnreadBadge = function(unreadCount, mentionCount) {
