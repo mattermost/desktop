@@ -30,7 +30,8 @@ var SettingsPage = React.createClass({
     }
     return {
       teams: config.teams,
-      hideMenuBar: config.hideMenuBar
+      hideMenuBar: config.hideMenuBar,
+      showTrayIcon: config.showTrayIcon
     };
   },
   handleTeamsChange: function(teams) {
@@ -42,6 +43,7 @@ var SettingsPage = React.createClass({
     var config = {
       teams: this.state.teams,
       hideMenuBar: this.state.hideMenuBar,
+      showTrayIcon: this.state.showTrayIcon,
       version: settings.version
     };
     settings.writeFileSync(this.props.configFile, config);
@@ -60,6 +62,11 @@ var SettingsPage = React.createClass({
       hideMenuBar: this.refs.hideMenuBar.getChecked()
     });
   },
+  handleChangeShowTrayIcon: function() {
+    this.setState({
+      showTrayIcon: this.refs.showTrayIcon.getChecked()
+    });
+  },
   render: function() {
     var teams_row = (
     <Row>
@@ -73,6 +80,10 @@ var SettingsPage = React.createClass({
     var options = [];
     if (process.platform === 'win32' || process.platform === 'linux') {
       options.push(<Input ref="hideMenuBar" type="checkbox" label="Hide Menu Bar (Press Alt to show Menu Bar)" checked={ this.state.hideMenuBar } onChange={ this.handleChangeHideMenuBar } />);
+    }
+    if (process.platform === 'darwin') {
+      options.push(<Input ref="showTrayIcon" type="checkbox" label="Show Icon on Menu Bar (Need to restart the application)" checked={ this.state.showTrayIcon } onChange={ this.handleChangeShowTrayIcon }
+                   />);
     }
     var options_row = (options.length > 0) ? (
       <Row>

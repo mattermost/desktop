@@ -69,6 +69,16 @@ const trayImages = function() {
 }();
 var willAppQuit = false;
 
+function shouldShowTrayIcon() {
+  if (process.platform === 'win32') {
+    return true;
+  }
+  if (process.platform === 'darwin' && config.showTrayIcon === true) {
+    return true;
+  }
+  return false;
+}
+
 app.on('login', function(event, webContents, request, authInfo, callback) {
   event.preventDefault();
   var readlineSync = require('readline-sync');
@@ -144,7 +154,7 @@ app.on('certificate-error', function(event, webContents, url, error, certificate
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
-  if (process.platform === 'win32' || process.platform === 'darwin') {
+  if (shouldShowTrayIcon()) {
     // set up tray icon
     trayIcon = new Tray(trayImages.normal);
     trayIcon.setToolTip(app.getName());
