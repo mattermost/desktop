@@ -1,5 +1,13 @@
 # Mattermost Desktop Application Changelog
 
+## Release v1.2.0 (Beta)
+
+### Improvements
+
+#### OS X
+- Add the option to show the icon on menu bar
+
+
 ## Release v1.1.0 (Beta)
 
 The `electron-mattermost` project is now the official desktop application for the Mattermost open source project.
