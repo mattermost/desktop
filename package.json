@@ -30,7 +30,7 @@
     "babel-preset-react": "^6.3.13",
     "chromedriver": "^2.20.0",
     "del": "^2.2.0",
-    "electron-connect": "^0.3.3",
+    "electron-connect": "^0.3.7",
     "electron-packager": "^5.1.0",
     "electron-prebuilt": "0.36.11",
     "esformatter": "^0.8.1",
@@ -48,6 +48,7 @@
     "through2": "^2.0.1",
     "vinyl-named": "^1.1.0",
     "webdriverio": "^3.3.0",
+    "webpack": "^1.12.15",
     "webpack-stream": "^3.1.0"
   }
 }

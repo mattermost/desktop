@@ -107,7 +107,7 @@ gulp.task('webpack:browser', function() {
         __filename: false,
         __dirname: false
       },
-      target: 'electron'
+      target: 'electron-renderer'
     }))
     .pipe(gulp.dest('dist/browser/'));
 });
@@ -128,7 +128,10 @@ gulp.task('webpack:main', function() {
         __filename: false,
         __dirname: false
       },
-      target: 'electron'
+      target: 'electron-main',
+      externals: {
+        remote: true // for electron-connect
+      }
     }))
     .pipe(gulp.dest('dist/'));
 });
