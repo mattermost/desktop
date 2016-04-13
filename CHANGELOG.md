@@ -1,6 +1,19 @@
 # Mattermost Desktop Application Changelog
 
+## Release v1.1.1 (Beta)
+
+### Fixes
+
+#### All platforms
+- **Settings** page doesn't return to the main page when the located path contains a blank.
+
+#### Linux
+- Alt+Shift opens menu on Cinnamon desktop environment.
+
+
 ## Release v1.1.0 (Beta)
+
+- **Released:** 2016-03-30
 
 The `electron-mattermost` project is now the official desktop application for the Mattermost open source project.
 
