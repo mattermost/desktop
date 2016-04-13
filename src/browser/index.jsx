@@ -164,6 +164,33 @@ var TabBar = React.createClass({
     var thisObj = this;
     var tabs = this.props.teams.map(function(team, index) {
       var unreadCount = 0;
+      var badgeStyle = {
+        unread: {
+          background: '#383838',
+          float: 'right',
+          color: 'white',
+          textAlign: 'center',
+          marginTop: '5px',
+          width: '10px',
+          height: '10px',
+          marginLeft: '5px',
+          borderRadius: '50%',
+        },
+
+        mention: {
+          background: '#f1342c',
+          float: 'right',
+          color: 'white',
+          minWidth: '19px',
+          fontSize: '12px',
+          textAlign: 'center',
+          lineHeight: '20px',
+          height: '19px',
+          marginLeft: '5px',
+          borderRadius: '50%',
+        }
+      };
+
       if (thisObj.props.unreadCounts[index] > 0) {
         unreadCount = thisObj.props.unreadCounts[index];
       }
@@ -181,13 +208,11 @@ var TabBar = React.createClass({
 
       var badge;
       if (mentionCount != 0) {
-        badge = (<Badge>
+        badge = (<div style={ badgeStyle.mention }>
                    { mentionCount }
-                 </Badge>);
+                 </div>);
       } else if (unreadCount > 0) {
-        badge = (<Badge>
-                   •
-                 </Badge>);
+        badge = (<div style={ badgeStyle.unread }></div>);
       }
       return (<NavItem className="teamTabItem" id={ 'teamTabItem' + index } eventKey={ index }>
                 { team.name }
