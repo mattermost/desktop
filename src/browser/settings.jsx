@@ -17,7 +17,7 @@ const ListGroupItem = ReactBootstrap.ListGroupItem;
 const Glyphicon = ReactBootstrap.Glyphicon;
 
 function backToIndex() {
-  window.location = 'index.html';
+  remote.getCurrentWindow().loadURL('file://' + __dirname + '/index.html');
 }
 
 var SettingsPage = React.createClass({

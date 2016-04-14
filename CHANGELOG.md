@@ -1,5 +1,6 @@
 # Mattermost Desktop Application Changelog
 
+
 ## Release v1.2.0 (Beta)
 
 ### Improvements
@@ -8,7 +9,20 @@
 - Add the option to show the icon on menu bar
 
 
+## Release v1.1.1 (Beta)
+
+### Fixes
+
+#### All platforms
+- **Settings** page doesn't return to the main page when the located path contains a blank.
+
+#### Linux
+- Alt+Shift opens menu on Cinnamon desktop environment.
+
+
 ## Release v1.1.0 (Beta)
+
+- **Released:** 2016-03-30
 
 The `electron-mattermost` project is now the official desktop application for the Mattermost open source project.
 
@@ -21,9 +35,9 @@ The `electron-mattermost` project is now the official desktop application for th
 - Rename the executable file from `electron-mattermost` to `Mattermost`
   - The configuration directory is also different from previous versions.
   - Should execute following command to take over `config.json`.
-    - Windows: `copy %APPDATA%\electron-mattermost\config.json %APPDATA%\Mattermost\config.json`
-    - OS X: `cp ~/Library/Application\ Support/electron-mattermost/config.json ~/Library/Application\ Support/Mattermost/config.json`
-    - Linux: `cp ~/.config/electron-mattermost/config.json ~/.config/Mattermost/config.json`
+    - Windows: `mkdir %APPDATA%\Mattermost & copy %APPDATA%\electron-mattermost\config.json %APPDATA%\Mattermost\config.json`
+    - OS X: `ditto ~/Library/Application\ Support/electron-mattermost/config.json ~/Library/Application\ Support/Mattermost/config.json`
+    - Linux: `mkdir -p ~/.config/Mattermost && cp ~/.config/electron-mattermost/config.json ~/.config/Mattermost/config.json`
 
 
 ### Improvements
