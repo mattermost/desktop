@@ -13,11 +13,13 @@ dependencies:
   cache_directories:
     - "~/.electron"
     - "src/node_modules"
+    - "~/docker_cache"
   pre:
     - npm install -g npm@3.3.12
   post:
+    - ./docker/circle_docker_build.sh
     - mkdir -p ~/.electron
-    - docker run --rm -it -v `pwd`:/home/xclient/electron-mattermost -v ~/.electron:/home/xclient/.electron yuyaoc/em-builder:dev ./electron-mattermost/docker/package_in_docker.sh
+    - docker run --rm -it -v `pwd`:/home/xclient/electron-mattermost -v ~/.electron:/home/xclient/.electron yuya-oc/em-builder ./electron-mattermost/docker/package_in_docker.sh
     - mv release/Mattermost-win32-ia32 release/mattermost-desktop-win32
     - mv release/Mattermost-win32-x64  release/mattermost-desktop-win64
     - mv release/Mattermost-darwin-x64 release/mattermost-desktop-osx
