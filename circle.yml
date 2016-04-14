@@ -18,7 +18,7 @@ dependencies:
   post:
     - docker build -t yuya-oc/em-builder docker
     - mkdir -p ~/.electron
-    - docker run --rm -it -v `pwd`:/home/xclient/electron-mattermost -v ~/.electron:/home/xclient/.electron yuya-oc/em-builder:dev ./electron-mattermost/docker/package_in_docker.sh
+    - docker run --rm -it -v `pwd`:/home/xclient/electron-mattermost -v ~/.electron:/home/xclient/.electron yuya-oc/em-builder ./electron-mattermost/docker/package_in_docker.sh
     - mv release/Mattermost-win32-ia32 release/mattermost-desktop-win32
     - mv release/Mattermost-win32-x64  release/mattermost-desktop-win64
     - mv release/Mattermost-darwin-x64 release/mattermost-desktop-osx
