@@ -49,11 +49,11 @@ The Settings Page is available from the **File** menu under **Settings** (Click 
 - **Delete a Team Site**:
    1. Delete a Team Site by clicking the "x" next to the URL of the team site you wish to delete.
 - **Hide Menu Bar**
-   1. Under **Options** enable this option to hide the menu bar by default. Press "Alt" to show the Menu Bar.
+   1. Under **Options** enable this option to hide the menu bar. Press "Alt" to show the Menu Bar.
 
 ### Menu Bar
 
-Click the `Alt` key to toggle the menu on and off.
+If **Hide Menu Bar** option is enabled, click the `Alt` key to toggle the menu on and off.
 
 Below lists menu options (shortcut keys are listed in brackets):
 
