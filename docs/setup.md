@@ -59,7 +59,7 @@ Below lists menu options (shortcut keys are listed in brackets):
 
 - **File**
   - **About Mattermost** - Shows version information for Mattermost desktop application
-  - **Settings** - Opens setting menu to add new team sites and configure shortcut key options
+  - **Settings** (Ctrl+Comma) - Opens setting menu to add new team sites and configure shortcut key options
   - **Quit** (Ctrl+Q) - Exits the application
 - **Edit**
   - **Undo** (Ctrl+Z) - Reverses previous action
@@ -104,7 +104,7 @@ For OS X 10.11 El Capitan. An older version of OS X has similar way.
 
    You should see a new application called **Mattermost Desktop** open.
 
-4. Click `Mattermost` from the menu at the top of the screen, then click `Settings`
+4. Click `Mattermost` from the menu at the top of the screen, then click `Preferences...`
 
 5. For each Mattermost team you'd like to use, enter its **Name** and **URL** then click **Add**
 
