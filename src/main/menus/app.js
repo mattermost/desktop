@@ -9,8 +9,6 @@ var createTemplate = function(mainWindow) {
   var template = [];
 
   const platformAppMenu = process.platform === 'darwin' ? [{
-    type: 'separator'
-  }, {
     label: 'Hide ' + app_name,
     accelerator: 'Command+H',
     selector: 'hide:'
@@ -37,10 +35,15 @@ var createTemplate = function(mainWindow) {
         });
       }
     }, {
-      label: 'Settings',
+      type: 'separator'
+    }, {
+      label: (process.platform === 'darwin') ? 'Preferences...' : 'Settings',
+      accelerator: 'CmdOrCtrl+,',
       click: function(item, focusedWindow) {
         mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
       }
+    }, {
+      type: 'separator'
     }, ...platformAppMenu, {
       label: 'Quit',
       accelerator: 'CmdOrCtrl+Q',
