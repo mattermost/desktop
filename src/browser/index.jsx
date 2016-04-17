@@ -25,6 +25,16 @@ const settings = require('../common/settings');
 
 remote.getCurrentWindow().removeAllListeners('focus');
 
+// New window should disable nodeIntergration.
+const originalWindowOpen = window.open;
+window.open = function(url, name, features) {
+  var f = 'nodeIntegration=no';
+  if (features !== null) {
+    f += ',' + features;
+  }
+  originalWindowOpen(url, name, f);
+};
+
 var MainPage = React.createClass({
   getInitialState: function() {
     return {
