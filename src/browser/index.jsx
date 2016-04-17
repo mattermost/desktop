@@ -144,8 +144,9 @@ var MainPage = React.createClass({
       var handleNotificationClick = function() {
         thisObj.handleSelect(index);
       }
-      return (<MattermostView id={ 'mattermostView' + index } style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } name={ team.name } onUnreadCountChange={ handleUnreadCountChange } onNotificationClick={ handleNotificationClick }
-              />)
+      var id = 'mattermostView' + index;
+      return (<MattermostView key={ id } id={ id } style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } name={ team.name } onUnreadCountChange={ handleUnreadCountChange }
+                onNotificationClick={ handleNotificationClick } />)
     });
     var views_row = (<Row>
                        { views }
@@ -164,6 +165,33 @@ var TabBar = React.createClass({
     var thisObj = this;
     var tabs = this.props.teams.map(function(team, index) {
       var unreadCount = 0;
+      var badgeStyle = {
+        unread: {
+          background: '#383838',
+          float: 'right',
+          color: 'white',
+          textAlign: 'center',
+          marginTop: '5px',
+          width: '10px',
+          height: '10px',
+          marginLeft: '5px',
+          borderRadius: '50%',
+        },
+
+        mention: {
+          background: '#f1342c',
+          float: 'right',
+          color: 'white',
+          minWidth: '19px',
+          fontSize: '12px',
+          textAlign: 'center',
+          lineHeight: '20px',
+          height: '19px',
+          marginLeft: '5px',
+          borderRadius: '50%',
+        }
+      };
+
       if (thisObj.props.unreadCounts[index] > 0) {
         unreadCount = thisObj.props.unreadCounts[index];
       }
@@ -181,15 +209,14 @@ var TabBar = React.createClass({
 
       var badge;
       if (mentionCount != 0) {
-        badge = (<Badge>
+        badge = (<div style={ badgeStyle.mention }>
                    { mentionCount }
-                 </Badge>);
+                 </div>);
       } else if (unreadCount > 0) {
-        badge = (<Badge>
-                   •
-                 </Badge>);
+        badge = (<div style={ badgeStyle.unread }></div>);
       }
-      return (<NavItem className="teamTabItem" id={ 'teamTabItem' + index } eventKey={ index }>
+      var id = 'teamTabItem' + index;
+      return (<NavItem className="teamTabItem" key={ id } id={ id } eventKey={ index }>
                 { team.name }
                 { ' ' }
                 { badge }
@@ -244,7 +271,7 @@ var MattermostView = React.createClass({
       var currentURL = url.parse(webview.getURL());
       var destURL = url.parse(e.url);
       if (currentURL.host === destURL.host) {
-        window.open(e.url, 'electron-mattermost');
+        window.open(e.url, 'Mattermost');
       } else {
         // if the link is external, use default browser.
         require('shell').openExternal(e.url);
@@ -375,7 +402,7 @@ var showUnreadBadgeWindows = function(unreadCount, mentionCount) {
   const sendBadge = function(dataURL, description) {
     // window.setOverlayIcon() does't work with NativeImage across remote boundaries.
     // https://github.com/atom/electron/issues/4011
-    electron.ipcRenderer.send('win32-overlay', {
+    electron.ipcRenderer.send('update-unread', {
       overlayDataURL: dataURL,
       description: description,
       unreadCount: unreadCount,
@@ -402,6 +429,11 @@ var showUnreadBadgeOSX = function(unreadCount, mentionCount) {
   } else {
     remote.app.dock.setBadge('');
   }
+
+  electron.ipcRenderer.send('update-unread', {
+    unreadCount: unreadCount,
+    mentionCount: mentionCount
+  });
 }
 
 var showUnreadBadge = function(unreadCount, mentionCount) {

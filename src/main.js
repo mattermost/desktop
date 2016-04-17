@@ -6,6 +6,7 @@ const BrowserWindow = electron.BrowserWindow; // Module to create native browser
 const Menu = electron.Menu;
 const Tray = electron.Tray;
 const ipc = electron.ipcMain;
+const nativeImage = electron.nativeImage;
 const fs = require('fs');
 const path = require('path');
 
@@ -48,10 +49,47 @@ catch (e) {
 // be closed automatically when the JavaScript object is garbage collected.
 var mainWindow = null;
 var trayIcon = null;
+const trayImages = function() {
+  switch (process.platform) {
+    case 'win32':
+      return {
+        normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/tray.png')),
+        unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/tray_unread.png')),
+        mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/tray_mention.png'))
+      };
+    case 'darwin':
+      return {
+        normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconTemplate.png')),
+        unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconUnreadTemplate.png')),
+        mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconMentionTemplate.png'))
+      };
+    default:
+      return {};
+  }
+}();
 var willAppQuit = false;
 
-// For toast notification on windows
-app.setAppUserModelId('yuya-oc.electron-mattermost');
+function shouldShowTrayIcon() {
+  if (process.platform === 'win32') {
+    return true;
+  }
+  if (process.platform === 'darwin' && config.showTrayIcon === true) {
+    return true;
+  }
+  return false;
+}
+
+app.on('login', function(event, webContents, request, authInfo, callback) {
+  event.preventDefault();
+  var readlineSync = require('readline-sync');
+  console.log("HTTP basic auth requiring login, please provide login data.");
+  var username = readlineSync.question('Username: ');
+  var password = readlineSync.question('Password: ', {
+    hideEchoBack: true
+  });
+  console.log("Replacing default auth behaviour.");
+  callback(username, password);
+});
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
@@ -116,9 +154,9 @@ app.on('certificate-error', function(event, webContents, url, error, certificate
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
-  if (process.platform === 'win32') {
-    // set up tray icon to show balloon
-    trayIcon = new Tray(path.resolve(__dirname, 'resources/tray.png'));
+  if (shouldShowTrayIcon()) {
+    // set up tray icon
+    trayIcon = new Tray(trayImages.normal);
     trayIcon.setToolTip(app.getName());
     var tray_menu = require('./main/menus/tray').createDefault();
     trayIcon.setContextMenu(tray_menu);
@@ -138,21 +176,21 @@ app.on('ready', function() {
 
     // Set overlay icon from dataURL
     // Set trayicon to show "dot"
-    ipc.on('win32-overlay', function(event, arg) {
-      const overlay = arg.overlayDataURL ? electron.nativeImage.createFromDataURL(arg.overlayDataURL) : null;
-      mainWindow.setOverlayIcon(overlay, arg.description);
+    ipc.on('update-unread', function(event, arg) {
+      if (process.platform === 'win32') {
+        const overlay = arg.overlayDataURL ? electron.nativeImage.createFromDataURL(arg.overlayDataURL) : null;
+        mainWindow.setOverlayIcon(overlay, arg.description);
+      }
 
-      var tray_image = null;
       if (arg.mentionCount > 0) {
-        tray_image = 'tray_mention.png';
+        trayIcon.setImage(trayImages.mention);
       }
       else if (arg.unreadCount > 0) {
-        tray_image = 'tray_unread.png';
+        trayIcon.setImage(trayImages.unread);
       }
       else {
-        tray_image = 'tray.png';
+        trayIcon.setImage(trayImages.normal);
       }
-      trayIcon.setImage(path.resolve(__dirname, 'resources', tray_image));
     });
   }
 
@@ -166,7 +204,10 @@ app.on('ready', function() {
     // follow Electron's defaults
     window_options = {};
   }
-  window_options.icon = path.resolve(__dirname, 'resources/appicon.png');
+  if (process.platform === 'win32' || process.platform === 'linux') {
+    // On HiDPI Windows environment, the taskbar icon is pixelated. So this line is necessary.
+    window_options.icon = path.resolve(__dirname, 'resources/appicon.png');
+  }
   window_options.fullScreenable = true;
   mainWindow = new BrowserWindow(window_options);
   mainWindow.setFullScreenable(true); // fullscreenable option has no effect.

@@ -107,7 +107,7 @@ gulp.task('webpack:browser', function() {
         __filename: false,
         __dirname: false
       },
-      target: 'electron'
+      target: 'electron-renderer'
     }))
     .pipe(gulp.dest('dist/browser/'));
 });
@@ -128,7 +128,10 @@ gulp.task('webpack:main', function() {
         __filename: false,
         __dirname: false
       },
-      target: 'electron'
+      target: 'electron-main',
+      externals: {
+        remote: true // for electron-connect
+      }
     }))
     .pipe(gulp.dest('dist/'));
 });
@@ -180,7 +183,6 @@ function makePackage(platform, arch, callback) {
   var packageJson = require('./src/package.json');
   packager({
     dir: './dist',
-    name: packageJson.name,
     platform: platform,
     arch: arch,
     version: require('./package.json').devDependencies['electron-prebuilt'],
@@ -188,14 +190,14 @@ function makePackage(platform, arch, callback) {
     prune: true,
     overwrite: true,
     "app-version": packageJson.version,
-    icon: 'resources/electron-mattermost',
+    icon: 'resources/appicon',
     "version-string": {
       CompanyName: packageJson.author,
       LegalCopyright: 'Copyright (c) 2015 ' + packageJson.author,
-      FileDescription: packageJson.name,
-      OriginalFilename: packageJson.name + '.exe',
+      FileDescription: packageJson.description,
+      OriginalFilename: packageJson.productName + '.exe',
       ProductVersion: packageJson.version,
-      ProductName: packageJson.name,
+      ProductName: packageJson.productName,
       InternalName: packageJson.name
     }
   }, function(err, appPath) {
@@ -232,6 +234,7 @@ gulp.task('sync-meta', function() {
   var appPackageJson = require('./src/package.json');
   var packageJson = require('./package.json');
   appPackageJson.name = packageJson.name;
+  appPackageJson.productName = packageJson.productName;
   appPackageJson.version = packageJson.version;
   appPackageJson.description = packageJson.description;
   appPackageJson.author = packageJson.author;

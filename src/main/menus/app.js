@@ -9,8 +9,6 @@ var createTemplate = function(mainWindow) {
   var template = [];
 
   const platformAppMenu = process.platform === 'darwin' ? [{
-    type: 'separator'
-  }, {
     label: 'Hide ' + app_name,
     accelerator: 'Command+H',
     selector: 'hide:'
@@ -26,15 +24,26 @@ var createTemplate = function(mainWindow) {
   }] : [];
 
   template.push({
-    label: first_menu_name,
+    label: '&' + first_menu_name,
     submenu: [{
       label: 'About ' + app_name,
-      role: 'about'
+      role: 'about',
+      click: function(item, focusedWindow) {
+        electron.dialog.showMessageBox(mainWindow, {
+          buttons: ["OK"],
+          message: `${app_name} Desktop ${electron.app.getVersion()}`
+        });
+      }
     }, {
-      label: 'Settings',
+      type: 'separator'
+    }, {
+      label: (process.platform === 'darwin') ? 'Preferences...' : 'Settings',
+      accelerator: 'CmdOrCtrl+,',
       click: function(item, focusedWindow) {
         mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
       }
+    }, {
+      type: 'separator'
     }, ...platformAppMenu, {
       label: 'Quit',
       accelerator: 'CmdOrCtrl+Q',
@@ -44,7 +53,7 @@ var createTemplate = function(mainWindow) {
     }]
   });
   template.push({
-    label: 'Edit',
+    label: '&Edit',
     submenu: [{
       label: 'Undo',
       accelerator: 'CmdOrCtrl+Z',
@@ -74,7 +83,7 @@ var createTemplate = function(mainWindow) {
     }, ]
   });
   template.push({
-    label: 'View',
+    label: '&View',
     submenu: [{
       label: 'Reload',
       accelerator: 'CmdOrCtrl+R',
