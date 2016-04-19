@@ -15,7 +15,6 @@
     "react": "^15.0.1",
     "react-bootstrap": "^0.28.5",
     "react-dom": "^15.0.1",
-    "readline-sync": "^1.4.1",
     "yargs": "^3.31.0"
   }
 }
