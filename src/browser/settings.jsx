@@ -28,11 +28,7 @@ var SettingsPage = React.createClass({
     } catch (e) {
       config = settings.loadDefault();
     }
-    return {
-      teams: config.teams,
-      hideMenuBar: config.hideMenuBar,
-      showTrayIcon: config.showTrayIcon
-    };
+    return config;
   },
   handleTeamsChange: function(teams) {
     this.setState({
@@ -44,6 +40,7 @@ var SettingsPage = React.createClass({
       teams: this.state.teams,
       hideMenuBar: this.state.hideMenuBar,
       showTrayIcon: this.state.showTrayIcon,
+      disablewebsecurity: this.state.disablewebsecurity,
       version: settings.version
     };
     settings.writeFileSync(this.props.configFile, config);
@@ -56,6 +53,11 @@ var SettingsPage = React.createClass({
   },
   handleCancel: function() {
     backToIndex();
+  },
+  handleChangeDisableWebSecurity: function() {
+    this.setState({
+      disablewebsecurity: this.refs.disablewebsecurity.getChecked()
+    });
   },
   handleChangeHideMenuBar: function() {
     this.setState({
@@ -85,6 +87,8 @@ var SettingsPage = React.createClass({
       options.push(<Input ref="showTrayIcon" type="checkbox" label="Show Icon on Menu Bar (Need to restart the application)" checked={ this.state.showTrayIcon } onChange={ this.handleChangeShowTrayIcon }
                    />);
     }
+    options.push(<Input ref="disablewebsecurity" type="checkbox" label="Allow insecure contents (This allows not only insecure images, but also insecure scripts)" checked={ this.state.disablewebsecurity }
+                   onChange={ this.handleChangeDisableWebSecurity } />);
     var options_row = (options.length > 0) ? (
       <Row>
         <Col md={ 12 }>
