@@ -48,8 +48,12 @@ The Settings Page is available from the **File** menu under **Settings** (Click 
    2. Enter **URL** for the team site location. For example: `https://example.com/teamname` then click **Add**.
 - **Delete a Team Site**:
    1. Delete a Team Site by clicking the "x" next to the URL of the team site you wish to delete.
-- **Hide Menu Bar**
-   1. Under **Options** enable this option to hide the menu bar by default. Press "Alt" to show the Menu Bar.
+- **Options**
+  - **Hide Menu Bar**
+    1. Under **Options** enable this option to hide the menu bar by default. Press "Alt" to show the Menu Bar.
+  - **Allow insecure contents**
+    1. Your team is hosted on `https://`, images with `http://` are not rendered by default.
+       This option allows such images to be rendered, but please be careful for security.
 
 ### Menu Bar
 

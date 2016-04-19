@@ -4,6 +4,7 @@
 ## Release v1.2.0 (Beta)
 
 ### Improvements
+- Add **Allow insecure contents** option to render images with `http://`.
 
 #### OS X
 - Add the option to show the icon on menu bar
@@ -67,7 +68,6 @@ The `electron-mattermost` project is now the official desktop application for th
 ### Known issues
 
 #### All platforms
-- Images with `http://` do not render.
 - Basic Authentication is not working.
 - Some keyboard shortcuts are missing. (e.g. <kbd>Ctrl+W</kbd>, <kbd>Command+,</kbd>)
 - Basic authentication requires a command line.
