@@ -139,6 +139,21 @@ app.on('certificate-error', function(event, webContents, url, error, certificate
   }
 });
 
+const loginCallbackMap = new Map();
+
+ipc.on('login-credentials', function(event, request, user, password) {
+  const callback = loginCallbackMap.get(JSON.stringify(request));
+  if (callback != null) {
+    callback(user, password);
+  }
+})
+
+app.on('login', function(event, webContents, request, authInfo, callback) {
+  event.preventDefault();
+  loginCallbackMap.set(JSON.stringify(request), callback);
+  mainWindow.webContents.send('login-request', request, authInfo);
+});
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {

@@ -15,6 +15,7 @@ const ListGroupItem = ReactBootstrap.ListGroupItem;
 
 const electron = require('electron');
 const remote = electron.remote;
+const ipcRenderer = electron.ipcRenderer;
 
 const osLocale = require('os-locale');
 const fs = require('fs');
@@ -24,6 +25,12 @@ const path = require('path');
 const settings = require('../common/settings');
 
 remote.getCurrentWindow().removeAllListeners('focus');
+
+ipcRenderer.on('login-request', function(event, request, authInfo) {
+  setTimeout(() => {
+    ipcRenderer.send('login-credentials', request, 'user', 'password');
+  }, 10000);
+});
 
 // New window should disable nodeIntergration.
 const originalWindowOpen = window.open;
