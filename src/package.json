@@ -13,7 +13,7 @@
     "bootstrap": "^3.3.6",
     "os-locale": "^1.4.0",
     "react": "^15.0.1",
-    "react-bootstrap": "^0.28.5",
+    "react-bootstrap": "^0.29.0",
     "react-dom": "^15.0.1",
     "yargs": "^3.31.0"
   }
