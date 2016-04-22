@@ -13,6 +13,8 @@ const Badge = ReactBootstrap.Badge;
 const ListGroup = ReactBootstrap.ListGroup;
 const ListGroupItem = ReactBootstrap.ListGroupItem;
 
+const LoginModal = require('./components/loginModal.jsx');
+
 const electron = require('electron');
 const remote = electron.remote;
 const ipcRenderer = electron.ipcRenderer;
@@ -25,12 +27,6 @@ const path = require('path');
 const settings = require('../common/settings');
 
 remote.getCurrentWindow().removeAllListeners('focus');
-
-ipcRenderer.on('login-request', function(event, request, authInfo) {
-  setTimeout(() => {
-    ipcRenderer.send('login-credentials', request, 'user', 'password');
-  }, 10000);
-});
 
 // New window should disable nodeIntergration.
 const originalWindowOpen = window.open;
@@ -49,11 +45,26 @@ var MainPage = React.createClass({
       unreadCounts: new Array(this.props.teams.length),
       mentionCounts: new Array(this.props.teams.length),
       unreadAtActive: new Array(this.props.teams.length),
-      mentionAtActiveCounts: new Array(this.props.teams.length)
+      mentionAtActiveCounts: new Array(this.props.teams.length),
+      loginQueue: []
     };
   },
   componentDidMount: function() {
     var thisObj = this;
+    ipcRenderer.on('login-request', function(event, request, authInfo) {
+      thisObj.setState({
+        loginRequired: true
+      });
+      const loginQueue = thisObj.state.loginQueue;
+      loginQueue.push({
+        request: request,
+        authInfo: authInfo
+      });
+      thisObj.setState({
+        loginQueue: loginQueue
+      });
+    });
+
     var focusListener = function() {
       var webview = document.getElementById('mattermostView' + thisObj.state.key);
       webview.focus();
@@ -141,6 +152,18 @@ var MainPage = React.createClass({
       visibility: visibility
     };
   },
+
+  handleLogin: function(request, username, password) {
+    ipcRenderer.send('login-credentials', request, username, password);
+    const loginQueue = this.state.loginQueue;
+    loginQueue.shift();
+    this.setState(loginQueue);
+  },
+  handleLoginCancel: function() {
+    const loginQueue = this.state.loginQueue;
+    loginQueue.shift();
+    this.setState(loginQueue);
+  },
   render: function() {
     var thisObj = this;
 
@@ -168,11 +191,22 @@ var MainPage = React.createClass({
     var views_row = (<Row>
                        { views }
                      </Row>);
+
+    var request = null;
+    var authServerURL = null;
+    if (this.state.loginQueue.length !== 0) {
+      request = this.state.loginQueue[0].request;
+      const tmp_url = url.parse(this.state.loginQueue[0].request.url);
+      authServerURL = `${tmp_url.protocol}//${tmp_url.host}`;
+    }
     return (
-      <Grid fluid>
-        { tabs_row }
-        { views_row }
-      </Grid>
+      <div>
+        <LoginModal show={ this.state.loginQueue.length !== 0 } request={ request } authServerURL={ authServerURL } onLogin={ this.handleLogin } onCancel={ this.handleLoginCancel }></LoginModal>
+        <Grid fluid>
+          { tabs_row }
+          { views_row }
+        </Grid>
+      </div>
       );
   }
 });
