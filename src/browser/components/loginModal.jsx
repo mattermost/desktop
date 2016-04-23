@@ -11,12 +11,13 @@ const Col = ReactBootstrap.Col;
 const Button = ReactBootstrap.Button;
 
 const LoginModal = React.createClass({
-  handleLogin: function() {
-    if (this.props.onLogin) {
-      const username = ReactDOM.findDOMNode(this.refs.username).value;
-      const password = ReactDOM.findDOMNode(this.refs.password).value;
-      this.props.onLogin(this.props.request, username, password);
-    }
+  handleSubmit: function(event) {
+    event.preventDefault();
+    const usernameNode = ReactDOM.findDOMNode(this.refs.username);
+    const passwordNode = ReactDOM.findDOMNode(this.refs.password);
+    this.props.onLogin(this.props.request, usernameNode.value, passwordNode.value);
+    usernameNode.value = '';
+    passwordNode.value = '';
   },
   render: function() {
     return (
@@ -43,7 +44,7 @@ const LoginModal = React.createClass({
             <FormGroup>
               <Col sm={ 12 }>
               <div className="pull-right">
-                <Button bsStyle="primary" onClick={ this.handleLogin }>Login</Button>
+                <Button type="submit" bsStyle="primary">Login</Button>
                 { ' ' }
                 <Button onClick={ this.props.onCancel }>Cancel</Button>
               </div>
