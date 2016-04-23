@@ -25,16 +25,6 @@ const settings = require('../common/settings');
 
 remote.getCurrentWindow().removeAllListeners('focus');
 
-// New window should disable nodeIntergration.
-const originalWindowOpen = window.open;
-window.open = function(url, name, features) {
-  var f = 'nodeIntegration=no';
-  if (features !== null) {
-    f += ',' + features;
-  }
-  originalWindowOpen(url, name, f);
-};
-
 var MainPage = React.createClass({
   getInitialState: function() {
     return {
@@ -283,7 +273,8 @@ var MattermostView = React.createClass({
       var currentURL = url.parse(webview.getURL());
       var destURL = url.parse(e.url);
       if (currentURL.host === destURL.host) {
-        window.open(e.url, 'Mattermost');
+        // New window should disable nodeIntergration.
+        window.open(e.url, 'Mattermost', 'nodeIntegration=no');
       } else {
         // if the link is external, use default browser.
         require('shell').openExternal(e.url);
