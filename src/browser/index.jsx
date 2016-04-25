@@ -194,14 +194,17 @@ var MainPage = React.createClass({
 
     var request = null;
     var authServerURL = null;
+    var authInfo = null;
     if (this.state.loginQueue.length !== 0) {
       request = this.state.loginQueue[0].request;
       const tmp_url = url.parse(this.state.loginQueue[0].request.url);
       authServerURL = `${tmp_url.protocol}//${tmp_url.host}`;
+      authInfo = this.state.loginQueue[0].authInfo;
     }
     return (
       <div>
-        <LoginModal show={ this.state.loginQueue.length !== 0 } request={ request } authServerURL={ authServerURL } onLogin={ this.handleLogin } onCancel={ this.handleLoginCancel }></LoginModal>
+        <LoginModal show={ this.state.loginQueue.length !== 0 } request={ request } authInfo={ authInfo } authServerURL={ authServerURL } onLogin={ this.handleLogin }
+          onCancel={ this.handleLoginCancel }></LoginModal>
         <Grid fluid>
           { tabs_row }
           { views_row }

@@ -20,14 +20,24 @@ const LoginModal = React.createClass({
     passwordNode.value = '';
   },
   render: function() {
+    var serverType = '';
+    if (!this.props.show) {
+      serverType = '';
+    } else if (this.props.authInfo.isProxy) {
+      serverType = 'proxy';
+    } else {
+      serverType = 'server';
+    }
+    const message = `The ${serverType} ${this.props.authServerURL} requires a username and password.`;
     return (
       <Modal show={ this.props.show }>
         <Modal.Header>
           <Modal.Title>Authentication Required</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>The server
-            { ' ' + this.props.authServerURL } requires a username and password.</p>
+          <p>
+            { message }
+          </p>
           <Form horizontal onSubmit={ this.handleSubmit }>
             <FormGroup>
               <Col componentClass={ ControlLabel } sm={ 2 }>User&nbsp;Name</Col>
