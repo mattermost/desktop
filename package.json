@@ -52,7 +52,10 @@
     "webpack": "^1.12.15",
     "webpack-stream": "^3.1.0"
   },
-  "build":{
+  "build": {
+    "linux": {
+      "synopsis": "Mattermost Desktop"
+    }
   },
   "directories":{
     "buildResources": "resources",
