@@ -272,7 +272,7 @@ var MattermostView = React.createClass({
     webview.addEventListener('new-window', function(e) {
       var currentURL = url.parse(webview.getURL());
       var destURL = url.parse(e.url);
-      if (destURL.protocol !== 'http:' && destURL.protocol !== 'https:'){
+      if (destURL.protocol !== 'http:' && destURL.protocol !== 'https:') {
         return;
       }
       if (currentURL.host === destURL.host) {
