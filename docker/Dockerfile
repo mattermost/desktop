@@ -8,7 +8,7 @@ USER root
 RUN apt-get update && apt-get -y install wget bzip2 zip
 
 # electron-builder
-RUN apt-get -y install ruby ruby-dev gcc make icnsutils graphicsmagick xz-utils && gem install fpm
+RUN apt-get update && apt-get -y install ruby ruby-dev gcc make icnsutils graphicsmagick xz-utils && gem install fpm
 
 USER xclient
 # install Node.js
