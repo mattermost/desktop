@@ -5,6 +5,7 @@
 
 ### Improvements
 - Add **Allow insecure contents** option to render images with `http://`.
+- Add the login dialog for http authentication.
 
 #### OS X
 - Add the option to show the icon on menu bar
