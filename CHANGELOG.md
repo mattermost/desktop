@@ -9,6 +9,8 @@
 #### OS X
 - Add the option to show the icon on menu bar
 
+#### Linux
+- Add **.deb** packages to support install
 
 ## Release v1.1.1 (Beta)
 
