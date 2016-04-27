@@ -79,18 +79,6 @@ function shouldShowTrayIcon() {
   return false;
 }
 
-app.on('login', function(event, webContents, request, authInfo, callback) {
-  event.preventDefault();
-  var readlineSync = require('readline-sync');
-  console.log("HTTP basic auth requiring login, please provide login data.");
-  var username = readlineSync.question('Username: ');
-  var password = readlineSync.question('Password: ', {
-    hideEchoBack: true
-  });
-  console.log("Replacing default auth behaviour.");
-  callback(username, password);
-});
-
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
   // On OS X it is common for applications and their menu bar
@@ -149,6 +137,21 @@ app.on('certificate-error', function(event, webContents, url, error, certificate
     });
     callback(false);
   }
+});
+
+const loginCallbackMap = new Map();
+
+ipc.on('login-credentials', function(event, request, user, password) {
+  const callback = loginCallbackMap.get(JSON.stringify(request));
+  if (callback != null) {
+    callback(user, password);
+  }
+})
+
+app.on('login', function(event, webContents, request, authInfo, callback) {
+  event.preventDefault();
+  loginCallbackMap.set(JSON.stringify(request), callback);
+  mainWindow.webContents.send('login-request', request, authInfo);
 });
 
 // This method will be called when Electron has finished

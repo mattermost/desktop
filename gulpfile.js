@@ -85,7 +85,7 @@ gulp.task('build', ['sync-meta', 'webpack', 'copy'], function() {
 gulp.task('webpack', ['webpack:main', 'webpack:browser', 'webpack:webview']);
 
 gulp.task('webpack:browser', function() {
-  return gulp.src('src/browser/**/*.jsx')
+  return gulp.src('src/browser/*.jsx')
     .pipe(named())
     .pipe(webpack({
       module: {

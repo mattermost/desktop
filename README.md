@@ -57,8 +57,6 @@ Or you can set proxy by following command line options.
 * `--proxy-server=<SERVER>:<PORT>`
 * `--proxy-pac-url=<URL>`
 
-*Note: Authorization is not supported yet.*
-
 
 ## Testing and Development
 Node.js is required to test this app.
