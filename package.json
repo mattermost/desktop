@@ -33,7 +33,7 @@
     "electron-builder": "^3.11.0",
     "electron-connect": "^0.3.7",
     "electron-packager": "^5.1.0",
-    "electron-prebuilt": "0.37.3",
+    "electron-prebuilt": "0.37.7",
     "esformatter": "^0.9.3",
     "esformatter-jsx": "^5.0.0",
     "gulp": "^3.9.0",
