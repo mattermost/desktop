@@ -1,10 +1,11 @@
 const should = require('should');
 const fs = require('fs');
-const settings = require('../src/common/settings');
+const settings = require('../../src/common/settings');
 
-const config_file_path = '../test_config.json'
+const env = require('../modules/environment');
+//const env.configFilePath = '../../test_config.json'
 
-describe('settings.js', function() {
+describe('common/settings.js', function() {
 
   it('should upgrade v0 config file', function() {
     const v0_config = {

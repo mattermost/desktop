@@ -16,7 +16,7 @@
     "start": "electron dist",
     "watch": "gulp watch",
     "serve": "gulp watch",
-    "test": "gulp build && mocha && gulp prettify:verify",
+    "test": "gulp build && mocha --recursive test/specs && gulp prettify:verify",
     "package": "gulp package",
     "package:windows": "gulp package:windows",
     "package:osx": "gulp package:osx",
