@@ -81,8 +81,8 @@ var SettingsPage = React.createClass({
 
     var options = [];
     if (process.platform === 'win32' || process.platform === 'linux') {
-      options.push(<Input key="inputHideMenuBar" ref="hideMenuBar" type="checkbox" label="Hide Menu Bar (Press Alt to show Menu Bar)" checked={ this.state.hideMenuBar } onChange={ this.handleChangeHideMenuBar }
-                   />);
+      options.push(<Input key="inputHideMenuBar" id="inputHideMenuBar" ref="hideMenuBar" type="checkbox" label="Hide Menu Bar (Press Alt to show Menu Bar)" checked={ this.state.hideMenuBar }
+                     onChange={ this.handleChangeHideMenuBar } />);
     }
     if (process.platform === 'darwin') {
       options.push(<Input key="inputShowTrayIcon" ref="showTrayIcon" type="checkbox" label="Show Icon on Menu Bar (Need to restart the application)" checked={ this.state.showTrayIcon } onChange={ this.handleChangeShowTrayIcon }

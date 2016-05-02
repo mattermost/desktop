@@ -6,6 +6,12 @@ const fs = require('fs');
 
 const env = require('../../modules/environment');
 
+function initClient(client) {
+  return client
+    .init()
+    .url('file://' + path.join(env.sourceRootDir, 'dist/browser/settings.html'));
+}
+
 describe('browser/settings.html', function() {
   this.timeout(10000);
 
@@ -34,8 +40,6 @@ describe('browser/settings.html', function() {
 
   beforeEach(function() {
     fs.writeFileSync(env.configFilePath, JSON.stringify(config));
-    return client.init()
-      .url('file://' + path.join(env.sourceRootDir, 'dist/browser/settings.html'))
   });
 
   afterEach(function() {
@@ -47,7 +51,7 @@ describe('browser/settings.html', function() {
   });
 
   it('should show index.thml when Cancel button is clicked', function() {
-    return client
+    return initClient(client)
       .waitForExist('#btnCancel')
       .click('#btnCancel')
       .pause(1000)
@@ -59,7 +63,7 @@ describe('browser/settings.html', function() {
   });
 
   it('should show index.thml when Save button is clicked', function() {
-    return client
+    return initClient(client)
       .waitForExist('#btnSave')
       .click('#btnSave')
       .pause(1000)
@@ -68,5 +72,50 @@ describe('browser/settings.html', function() {
         url_split[url_split.length - 1].should.equal('index.html');
       })
       .end();
+  });
+
+  describe('Options', function() {
+    describe('Hide Menu Bar', function() {
+      it('should appear on win32 or linux', function() {
+        return initClient(client)
+          .isExisting('#inputHideMenuBar').then(function(isExisting) {
+            if (process.platform === 'win32' || process.platform === 'linux') {
+              isExisting.should.be.true();
+            }
+            else {
+              isExisting.should.be.false();
+            }
+          })
+          .end();
+      });
+
+      if (process.platform === 'win32' || process.platform === 'linux') {
+        [true, false].forEach(function(v) {
+          it(`should be loaded from config: ${v}`, function() {
+            var new_config = {};
+            Object.assign(new_config, config);
+            new_config.hideMenuBar = v;
+            fs.writeFileSync(env.configFilePath, JSON.stringify(new_config));
+            return initClient(client)
+              .isSelected('#inputHideMenuBar input').then(function(value) {
+                value.should.equal(v);
+              })
+              .end();
+          });
+        });
+
+        it('should be saved as config.json', function() {
+          return initClient(client)
+            .click('#inputHideMenuBar input')
+            .click('#btnSave')
+            .pause(1000)
+            .then(function() {
+              const saved_config = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+              saved_config.hideMenuBar.should.be.true();
+            })
+            .end();
+        });
+      }
+    });
   });
 });
