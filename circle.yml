@@ -14,9 +14,6 @@ dependencies:
     - "~/.electron"
     - "src/node_modules"
     - "~/docker_cache"
-  pre:
-    - npm -v
-    - npm install -g npm@3.8.3
   post:
     - ./docker/circle_docker_build.sh
     - mkdir -p ~/.electron
