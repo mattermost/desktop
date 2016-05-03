@@ -231,7 +231,12 @@ app.on('ready', function() {
     var window_state = window.getBounds();
     window_state.maximized = window.isMaximized();
     window_state.fullscreen = window.isFullScreen();
-    fs.writeFileSync(bounds_info_path, JSON.stringify(window_state));
+    try {
+      fs.writeFileSync(bounds_info_path, JSON.stringify(window_state));
+    }
+    catch (e) {
+      // [Linux] error happens only when the window state is changed before the config dir is creatied.
+    }
   };
 
   mainWindow.on('close', function(event) {
