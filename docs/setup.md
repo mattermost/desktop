@@ -39,6 +39,8 @@ For OS X 10.11 El Capitan. An older version of OS X has similar way.
 
 
 ### Linux
+
+#### Ubuntu
 For Ubuntu 16.04.
 
 1. Download [the latest release](https://github.com/mattermost/desktop/releases) of Mattermost Desktop
@@ -53,6 +55,14 @@ For Ubuntu 16.04.
 
    You should see a new application called **Mattermost Desktop** open.
 
+#### Other distributions
+1. Download [the latest release](https://github.com/mattermost/desktop/releases) of Mattermost Desktop
+
+   Find the file ending in `-linux-*.tar.gz`
+
+2. Extract the archive, then execute `Mattermost` which is located at inside of the extracted directory
+
+3. If you need the Desktop Entry, please refer https://wiki.archlinux.org/index.php/Desktop_entries
 
 ## Configuration
 You have to configure the application to interact with your teams.
