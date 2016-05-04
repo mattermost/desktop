@@ -3,17 +3,30 @@
 
 ## Release v1.2.0 (Beta)
 
+This release contains a security update and it is highly recommended that users upgrade to this version.
+
+### Fixes
+- Node.js environment is enabled in the new window.
+- The link other than `http://` and `https://` is opened by clicking.
+
+#### Linux
+- Desktop notification is shown as a dialog on Ubuntu 16.04.
+
 ### Improvements
+- Improve the style for tab badges.
 - Add **Allow insecure contents** option to render images with `http://`.
 - Add the login dialog for http authentication.
 
 #### OS X
-- Add the option to show the icon on menu bar
+- Add the option to show the icon on menu bar.
 
 #### Linux
-- Add **.deb** packages to support install
+- Add **.deb** packages to support installation.
+
 
 ## Release v1.1.1 (Beta)
+
+- **Released:** 2016-04-13
 
 ### Fixes
 
