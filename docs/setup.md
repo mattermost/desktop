@@ -78,7 +78,7 @@ You have to configure the application to interact with your teams.
 
 3. Click **Save** to save your setting
 
-You're now ready to use electron-mattermost to interact with multiple teams from one desktop application.
+You're now ready to use **Mattermost Desktop** to interact with multiple teams from one desktop application.
 
 
 ## Quit
