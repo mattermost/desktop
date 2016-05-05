@@ -9,11 +9,16 @@ To set up the Mattermost desktop application for Windows 7, 8 and 10:
 
    Find the file ending in `-win64.zip` if you're running a x64 version of Windows and `-win32.zip` if you're running an older 32-bit version.
 
-2. From the `/Downloads` directory right-click on the file and select "Extract All..."
+2. From the `\Downloads` directory right-click on the file and select "Extract All..."
 
-   A new directory should be created on your PC.
+   - Change the extract folder from `C:\Users\(currentuser)\Downloads\mattermost-desktop-1.1.1-win64` to `C:\Users\(currentuser)\AppData\Local` where `(currentuser)` will be the name of your user account.
+   - Check the "Show extracted files when complete" checkbox.
+   - Click the "Extract" button.
+   - Look for the new application directory at `C:\Users\(currentuser)\AppData\Local\mattermost-desktop...`.
+   - Remove the version number by renaming the `mattermost-desktop...` application directory to `mattermost-desktop`.
+   - If a `mattermost-desktop` directory already exists then you are upgrading Mattermost, and need to quit Mattermost if it is running and then delete the `mattermost-desktop` directory. After that you can rename the `mattermost-desktop...` directory to `mattermost-desktop`. Don't worry, no settings will be lost, they are stored elsewhere.
 
-3. Go to `/mattermost-desktop...` directory and find the file named `Mattermost`
+3. Go to the `\mattermost-desktop` application directory and find the file named `Mattermost`.
 
    - Right-click the file and select "Pin to Taskbar" to make the application available from your Windows task bar.
    - Right-click the file and select "Pin to Start Menu" to make the application available from your Windows Start menu.
@@ -119,7 +124,7 @@ The Settings Page is available from the **File** menu under **Settings** (Click 
 
 ## Menu Bar
 
-Click the `Alt` key to toggle the menu on and off.
+If **Hide Menu Bar** option is enabled, click the `Alt` key to toggle the menu on and off.
 
 Below lists menu options (shortcut keys are listed in brackets, `Ctrl` becomes `Command` on OS X):
 
