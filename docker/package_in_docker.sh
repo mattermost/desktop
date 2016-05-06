@@ -3,3 +3,4 @@
 set -ex
 cd electron-mattermost
 npm run package:all
+npm run package:linux

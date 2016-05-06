@@ -6,6 +6,7 @@ const BrowserWindow = electron.BrowserWindow; // Module to create native browser
 const Menu = electron.Menu;
 const Tray = electron.Tray;
 const ipc = electron.ipcMain;
+const nativeImage = electron.nativeImage;
 const fs = require('fs');
 const path = require('path');
 
@@ -48,19 +49,35 @@ catch (e) {
 // be closed automatically when the JavaScript object is garbage collected.
 var mainWindow = null;
 var trayIcon = null;
+const trayImages = function() {
+  switch (process.platform) {
+    case 'win32':
+      return {
+        normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/tray.png')),
+        unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/tray_unread.png')),
+        mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/tray_mention.png'))
+      };
+    case 'darwin':
+      return {
+        normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconTemplate.png')),
+        unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconUnreadTemplate.png')),
+        mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconMentionTemplate.png'))
+      };
+    default:
+      return {};
+  }
+}();
 var willAppQuit = false;
 
-app.on('login', function(event, webContents, request, authInfo, callback) {
-  event.preventDefault();
-  var readlineSync = require('readline-sync');
-  console.log("HTTP basic auth requiring login, please provide login data.");
-  var username = readlineSync.question('Username: ');
-  var password = readlineSync.question('Password: ', {
-    hideEchoBack: true
-  });
-  console.log("Replacing default auth behaviour.");
-  callback(username, password);
-});
+function shouldShowTrayIcon() {
+  if (process.platform === 'win32') {
+    return true;
+  }
+  if (process.platform === 'darwin' && config.showTrayIcon === true) {
+    return true;
+  }
+  return false;
+}
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
@@ -122,12 +139,27 @@ app.on('certificate-error', function(event, webContents, url, error, certificate
   }
 });
 
+const loginCallbackMap = new Map();
+
+ipc.on('login-credentials', function(event, request, user, password) {
+  const callback = loginCallbackMap.get(JSON.stringify(request));
+  if (callback != null) {
+    callback(user, password);
+  }
+})
+
+app.on('login', function(event, webContents, request, authInfo, callback) {
+  event.preventDefault();
+  loginCallbackMap.set(JSON.stringify(request), callback);
+  mainWindow.webContents.send('login-request', request, authInfo);
+});
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
-  if (process.platform === 'win32') {
-    // set up tray icon to show balloon
-    trayIcon = new Tray(path.resolve(__dirname, 'resources/tray.png'));
+  if (shouldShowTrayIcon()) {
+    // set up tray icon
+    trayIcon = new Tray(trayImages.normal);
     trayIcon.setToolTip(app.getName());
     var tray_menu = require('./main/menus/tray').createDefault();
     trayIcon.setContextMenu(tray_menu);
@@ -147,21 +179,21 @@ app.on('ready', function() {
 
     // Set overlay icon from dataURL
     // Set trayicon to show "dot"
-    ipc.on('win32-overlay', function(event, arg) {
-      const overlay = arg.overlayDataURL ? electron.nativeImage.createFromDataURL(arg.overlayDataURL) : null;
-      mainWindow.setOverlayIcon(overlay, arg.description);
+    ipc.on('update-unread', function(event, arg) {
+      if (process.platform === 'win32') {
+        const overlay = arg.overlayDataURL ? electron.nativeImage.createFromDataURL(arg.overlayDataURL) : null;
+        mainWindow.setOverlayIcon(overlay, arg.description);
+      }
 
-      var tray_image = null;
       if (arg.mentionCount > 0) {
-        tray_image = 'tray_mention.png';
+        trayIcon.setImage(trayImages.mention);
       }
       else if (arg.unreadCount > 0) {
-        tray_image = 'tray_unread.png';
+        trayIcon.setImage(trayImages.unread);
       }
       else {
-        tray_image = 'tray.png';
+        trayIcon.setImage(trayImages.normal);
       }
-      trayIcon.setImage(path.resolve(__dirname, 'resources', tray_image));
     });
   }
 
@@ -199,7 +231,12 @@ app.on('ready', function() {
     var window_state = window.getBounds();
     window_state.maximized = window.isMaximized();
     window_state.fullscreen = window.isFullScreen();
-    fs.writeFileSync(bounds_info_path, JSON.stringify(window_state));
+    try {
+      fs.writeFileSync(bounds_info_path, JSON.stringify(window_state));
+    }
+    catch (e) {
+      // [Linux] error happens only when the window state is changed before the config dir is creatied.
+    }
   };
 
   mainWindow.on('close', function(event) {

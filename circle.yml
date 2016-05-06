@@ -5,7 +5,7 @@ machine:
     - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 20
     - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 20
   node:
-    version: 5.1.0
+    version: 5.10.0
   services:
     - docker
 
@@ -13,11 +13,11 @@ dependencies:
   cache_directories:
     - "~/.electron"
     - "src/node_modules"
-  pre:
-    - npm install -g npm@3.3.12
+    - "~/docker_cache"
   post:
+    - ./docker/circle_docker_build.sh
     - mkdir -p ~/.electron
-    - docker run --rm -it -v `pwd`:/home/xclient/electron-mattermost -v ~/.electron:/home/xclient/.electron yuyaoc/em-builder:dev ./electron-mattermost/docker/package_in_docker.sh
+    - docker run --rm -it -v `pwd`:/home/xclient/electron-mattermost -v ~/.electron:/home/xclient/.electron yuya-oc/em-builder ./electron-mattermost/docker/package_in_docker.sh
     - mv release/Mattermost-win32-ia32 release/mattermost-desktop-win32
     - mv release/Mattermost-win32-x64  release/mattermost-desktop-win64
     - mv release/Mattermost-darwin-x64 release/mattermost-desktop-osx
@@ -28,6 +28,7 @@ dependencies:
     - tar zcvf $CIRCLE_ARTIFACTS/mattermost-desktop-osx.tar.gz -C release mattermost-desktop-osx
     - tar zcvf $CIRCLE_ARTIFACTS/mattermost-desktop-linux-ia32.tar.gz -C release mattermost-desktop-linux-ia32
     - tar zcvf $CIRCLE_ARTIFACTS/mattermost-desktop-linux-x64.tar.gz -C release mattermost-desktop-linux-x64
+    - cp release/*.deb $CIRCLE_ARTIFACTS/
 
 test:
   override:

@@ -1,10 +1,13 @@
 {
   "name": "mattermost-desktop",
   "productName": "Mattermost",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Mattermost Desktop application for Windows, Mac and Linux",
   "main": "main.js",
-  "author": "Yuya Ochiai",
+  "author": {
+    "name": "Yuya Ochiai",
+    "email": "yuya0321@gmail.com"
+  },
   "license": "MIT",
   "devDependencies": {
     "electron-connect": "^0.3.3"
@@ -12,10 +15,9 @@
   "dependencies": {
     "bootstrap": "^3.3.6",
     "os-locale": "^1.4.0",
-    "react": "^0.14.3",
-    "react-bootstrap": "^0.28.1",
-    "react-dom": "^0.14.3",
-    "readline-sync": "^1.4.1",
+    "react": "^15.0.1",
+    "react-bootstrap": "~0.29.0",
+    "react-dom": "^15.0.1",
     "yargs": "^3.31.0"
   }
 }

@@ -85,7 +85,7 @@ gulp.task('build', ['sync-meta', 'webpack', 'copy'], function() {
 gulp.task('webpack', ['webpack:main', 'webpack:browser', 'webpack:webview']);
 
 gulp.task('webpack:browser', function() {
-  return gulp.src('src/browser/**/*.jsx')
+  return gulp.src('src/browser/*.jsx')
     .pipe(named())
     .pipe(webpack({
       module: {
@@ -190,10 +190,10 @@ function makePackage(platform, arch, callback) {
     prune: true,
     overwrite: true,
     "app-version": packageJson.version,
-    icon: 'resources/appicon',
+    icon: 'resources/icon',
     "version-string": {
-      CompanyName: packageJson.author,
-      LegalCopyright: 'Copyright (c) 2015 ' + packageJson.author,
+      CompanyName: packageJson.author.name,
+      LegalCopyright: 'Copyright (c) 2015 ' + packageJson.author.name,
       FileDescription: packageJson.description,
       OriginalFilename: packageJson.productName + '.exe',
       ProductVersion: packageJson.version,

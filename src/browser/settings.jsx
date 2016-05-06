@@ -28,10 +28,7 @@ var SettingsPage = React.createClass({
     } catch (e) {
       config = settings.loadDefault();
     }
-    return {
-      teams: config.teams,
-      hideMenuBar: config.hideMenuBar
-    };
+    return config;
   },
   handleTeamsChange: function(teams) {
     this.setState({
@@ -42,6 +39,8 @@ var SettingsPage = React.createClass({
     var config = {
       teams: this.state.teams,
       hideMenuBar: this.state.hideMenuBar,
+      showTrayIcon: this.state.showTrayIcon,
+      disablewebsecurity: this.state.disablewebsecurity,
       version: settings.version
     };
     settings.writeFileSync(this.props.configFile, config);
@@ -55,9 +54,19 @@ var SettingsPage = React.createClass({
   handleCancel: function() {
     backToIndex();
   },
+  handleChangeDisableWebSecurity: function() {
+    this.setState({
+      disablewebsecurity: this.refs.disablewebsecurity.getChecked()
+    });
+  },
   handleChangeHideMenuBar: function() {
     this.setState({
       hideMenuBar: this.refs.hideMenuBar.getChecked()
+    });
+  },
+  handleChangeShowTrayIcon: function() {
+    this.setState({
+      showTrayIcon: this.refs.showTrayIcon.getChecked()
     });
   },
   render: function() {
@@ -72,8 +81,15 @@ var SettingsPage = React.createClass({
 
     var options = [];
     if (process.platform === 'win32' || process.platform === 'linux') {
-      options.push(<Input ref="hideMenuBar" type="checkbox" label="Hide Menu Bar (Press Alt to show Menu Bar)" checked={ this.state.hideMenuBar } onChange={ this.handleChangeHideMenuBar } />);
+      options.push(<Input key="inputHideMenuBar" id="inputHideMenuBar" ref="hideMenuBar" type="checkbox" label="Hide Menu Bar (Press Alt to show Menu Bar)" checked={ this.state.hideMenuBar }
+                     onChange={ this.handleChangeHideMenuBar } />);
     }
+    if (process.platform === 'darwin') {
+      options.push(<Input key="inputShowTrayIcon" ref="showTrayIcon" type="checkbox" label="Show Icon on Menu Bar (Need to restart the application)" checked={ this.state.showTrayIcon } onChange={ this.handleChangeShowTrayIcon }
+                   />);
+    }
+    options.push(<Input key="inputDisableWebSecurity" ref="disablewebsecurity" type="checkbox" label="Allow insecure contents (This allows not only insecure images, but also insecure scripts)"
+                   checked={ this.state.disablewebsecurity } onChange={ this.handleChangeDisableWebSecurity } />);
     var options_row = (options.length > 0) ? (
       <Row>
         <Col md={ 12 }>
@@ -118,7 +134,7 @@ var TeamList = React.createClass({
         thisObj.handleTeamRemove(i);
       };
       return (
-        <TeamListItem index={ i } name={ team.name } url={ team.url } onTeamRemove={ handleTeamRemove } />
+        <TeamListItem index={ i } key={ "teamListItem" + i } name={ team.name } url={ team.url } onTeamRemove={ handleTeamRemove } />
         );
     });
     return (

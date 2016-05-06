@@ -23,6 +23,8 @@ var loadDefault = function(version) {
       return {
         teams: [],
         hideMenuBar: false,
+        showTrayIcon: false,
+        disablewebsecurity: false,
         version: 1
       };
   }

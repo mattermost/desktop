@@ -13,8 +13,11 @@ const Badge = ReactBootstrap.Badge;
 const ListGroup = ReactBootstrap.ListGroup;
 const ListGroupItem = ReactBootstrap.ListGroupItem;
 
+const LoginModal = require('./components/loginModal.jsx');
+
 const electron = require('electron');
 const remote = electron.remote;
+const ipcRenderer = electron.ipcRenderer;
 
 const osLocale = require('os-locale');
 const fs = require('fs');
@@ -32,11 +35,26 @@ var MainPage = React.createClass({
       unreadCounts: new Array(this.props.teams.length),
       mentionCounts: new Array(this.props.teams.length),
       unreadAtActive: new Array(this.props.teams.length),
-      mentionAtActiveCounts: new Array(this.props.teams.length)
+      mentionAtActiveCounts: new Array(this.props.teams.length),
+      loginQueue: []
     };
   },
   componentDidMount: function() {
     var thisObj = this;
+    ipcRenderer.on('login-request', function(event, request, authInfo) {
+      thisObj.setState({
+        loginRequired: true
+      });
+      const loginQueue = thisObj.state.loginQueue;
+      loginQueue.push({
+        request: request,
+        authInfo: authInfo
+      });
+      thisObj.setState({
+        loginQueue: loginQueue
+      });
+    });
+
     var focusListener = function() {
       var webview = document.getElementById('mattermostView' + thisObj.state.key);
       webview.focus();
@@ -124,6 +142,18 @@ var MainPage = React.createClass({
       visibility: visibility
     };
   },
+
+  handleLogin: function(request, username, password) {
+    ipcRenderer.send('login-credentials', request, username, password);
+    const loginQueue = this.state.loginQueue;
+    loginQueue.shift();
+    this.setState(loginQueue);
+  },
+  handleLoginCancel: function() {
+    const loginQueue = this.state.loginQueue;
+    loginQueue.shift();
+    this.setState(loginQueue);
+  },
   render: function() {
     var thisObj = this;
 
@@ -144,17 +174,32 @@ var MainPage = React.createClass({
       var handleNotificationClick = function() {
         thisObj.handleSelect(index);
       }
-      return (<MattermostView id={ 'mattermostView' + index } style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } name={ team.name } onUnreadCountChange={ handleUnreadCountChange } onNotificationClick={ handleNotificationClick }
-              />)
+      var id = 'mattermostView' + index;
+      return (<MattermostView key={ id } id={ id } style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } name={ team.name } onUnreadCountChange={ handleUnreadCountChange }
+                onNotificationClick={ handleNotificationClick } />)
     });
     var views_row = (<Row>
                        { views }
                      </Row>);
+
+    var request = null;
+    var authServerURL = null;
+    var authInfo = null;
+    if (this.state.loginQueue.length !== 0) {
+      request = this.state.loginQueue[0].request;
+      const tmp_url = url.parse(this.state.loginQueue[0].request.url);
+      authServerURL = `${tmp_url.protocol}//${tmp_url.host}`;
+      authInfo = this.state.loginQueue[0].authInfo;
+    }
     return (
-      <Grid fluid>
-        { tabs_row }
-        { views_row }
-      </Grid>
+      <div>
+        <LoginModal show={ this.state.loginQueue.length !== 0 } request={ request } authInfo={ authInfo } authServerURL={ authServerURL } onLogin={ this.handleLogin }
+          onCancel={ this.handleLoginCancel }></LoginModal>
+        <Grid fluid>
+          { tabs_row }
+          { views_row }
+        </Grid>
+      </div>
       );
   }
 });
@@ -164,6 +209,33 @@ var TabBar = React.createClass({
     var thisObj = this;
     var tabs = this.props.teams.map(function(team, index) {
       var unreadCount = 0;
+      var badgeStyle = {
+        unread: {
+          background: '#383838',
+          float: 'right',
+          color: 'white',
+          textAlign: 'center',
+          marginTop: '5px',
+          width: '10px',
+          height: '10px',
+          marginLeft: '5px',
+          borderRadius: '50%',
+        },
+
+        mention: {
+          background: '#f1342c',
+          float: 'right',
+          color: 'white',
+          minWidth: '19px',
+          fontSize: '12px',
+          textAlign: 'center',
+          lineHeight: '20px',
+          height: '19px',
+          marginLeft: '5px',
+          borderRadius: '50%',
+        }
+      };
+
       if (thisObj.props.unreadCounts[index] > 0) {
         unreadCount = thisObj.props.unreadCounts[index];
       }
@@ -181,15 +253,14 @@ var TabBar = React.createClass({
 
       var badge;
       if (mentionCount != 0) {
-        badge = (<Badge>
+        badge = (<div style={ badgeStyle.mention }>
                    { mentionCount }
-                 </Badge>);
+                 </div>);
       } else if (unreadCount > 0) {
-        badge = (<Badge>
-                   •
-                 </Badge>);
+        badge = (<div style={ badgeStyle.unread }></div>);
       }
-      return (<NavItem className="teamTabItem" id={ 'teamTabItem' + index } eventKey={ index }>
+      var id = 'teamTabItem' + index;
+      return (<NavItem className="teamTabItem" key={ id } id={ id } eventKey={ index }>
                 { team.name }
                 { ' ' }
                 { badge }
@@ -219,6 +290,12 @@ var MattermostView = React.createClass({
     var thisObj = this;
     var webview = ReactDOM.findDOMNode(this.refs.webview);
 
+    // This option disables the same-origin policy and allows js/css/plugins not only content like images.
+    if (config.disablewebsecurity === true) {
+      // webview.setAttribute('disablewebsecurity', false) disables websecurity. (electron's bug?)
+      webview.setAttribute('disablewebsecurity', true);
+    }
+
     webview.addEventListener('did-fail-load', function(e) {
       console.log(thisObj.props.name, 'webview did-fail-load', e);
       if (e.errorCode === -3) { // An operation was aborted (due to user action).
@@ -239,8 +316,12 @@ var MattermostView = React.createClass({
     webview.addEventListener('new-window', function(e) {
       var currentURL = url.parse(webview.getURL());
       var destURL = url.parse(e.url);
+      if (destURL.protocol !== 'http:' && destURL.protocol !== 'https:') {
+        return;
+      }
       if (currentURL.host === destURL.host) {
-        window.open(e.url, 'Mattermost');
+        // New window should disable nodeIntergration.
+        window.open(e.url, 'Mattermost', 'nodeIntegration=no');
       } else {
         // if the link is external, use default browser.
         require('shell').openExternal(e.url);
@@ -371,7 +452,7 @@ var showUnreadBadgeWindows = function(unreadCount, mentionCount) {
   const sendBadge = function(dataURL, description) {
     // window.setOverlayIcon() does't work with NativeImage across remote boundaries.
     // https://github.com/atom/electron/issues/4011
-    electron.ipcRenderer.send('win32-overlay', {
+    electron.ipcRenderer.send('update-unread', {
       overlayDataURL: dataURL,
       description: description,
       unreadCount: unreadCount,
@@ -398,6 +479,11 @@ var showUnreadBadgeOSX = function(unreadCount, mentionCount) {
   } else {
     remote.app.dock.setBadge('');
   }
+
+  electron.ipcRenderer.send('update-unread', {
+    unreadCount: unreadCount,
+    mentionCount: mentionCount
+  });
 }
 
 var showUnreadBadge = function(unreadCount, mentionCount) {
