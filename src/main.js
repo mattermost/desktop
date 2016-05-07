@@ -64,7 +64,7 @@ const trayImages = function() {
         mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconMentionTemplate.png'))
       };
     case 'linux':
-      var resourcesDir = 'resources/linux/' + (config.trayIconTheme||'light') + '/';
+      var resourcesDir = 'resources/linux/' + (config.trayIconTheme || 'light') + '/';
       return {
         normal: nativeImage.createFromPath(path.resolve(__dirname, resourcesDir + 'MenuIconTemplate.png')),
         unread: nativeImage.createFromPath(path.resolve(__dirname, resourcesDir + 'MenuIconUnreadTemplate.png')),
