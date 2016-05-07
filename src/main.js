@@ -64,11 +64,12 @@ const trayImages = function() {
         mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconMentionTemplate.png'))
       };
     case 'linux':
-    return {
-      normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/linux/light/MenuIconTemplate.png')),
-      unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/linux/light/MenuIconUnreadTemplate.png')),
-      mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/linux/light/MenuIconMentionTemplate.png'))
-    };
+      var resourcesDir = 'resources/linux/' + (config.trayIconTheme||'light') + '/';
+      return {
+        normal: nativeImage.createFromPath(path.resolve(__dirname, resourcesDir + 'MenuIconTemplate.png')),
+        unread: nativeImage.createFromPath(path.resolve(__dirname, resourcesDir + 'MenuIconUnreadTemplate.png')),
+        mention: nativeImage.createFromPath(path.resolve(__dirname, resourcesDir + 'MenuIconMentionTemplate.png'))
+      };
     default:
       return {};
   }
