@@ -63,6 +63,12 @@ const trayImages = function() {
         unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconUnreadTemplate.png')),
         mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconMentionTemplate.png'))
       };
+    case 'linux':
+    return {
+      normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/linux/light/MenuIconTemplate.png')),
+      unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/linux/light/MenuIconUnreadTemplate.png')),
+      mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/linux/light/MenuIconMentionTemplate.png'))
+    };
     default:
       return {};
   }
@@ -73,7 +79,7 @@ function shouldShowTrayIcon() {
   if (process.platform === 'win32') {
     return true;
   }
-  if (process.platform === 'darwin' && config.showTrayIcon === true) {
+  if (['darwin', 'linux'].includes(process.platform) && config.showTrayIcon === true) {
     return true;
   }
   return false;

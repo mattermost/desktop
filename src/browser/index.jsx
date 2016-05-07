@@ -486,6 +486,21 @@ var showUnreadBadgeOSX = function(unreadCount, mentionCount) {
   });
 }
 
+var showUnreadBadgeLinux = function(unreadCount, mentionCount) {
+  /*if (mentionCount > 0) {
+    remote.app.dock.setBadge(mentionCount.toString());
+  } else if (unreadCount > 0) {
+    remote.app.dock.setBadge('•');
+  } else {
+    remote.app.dock.setBadge('');
+  }*/
+
+  electron.ipcRenderer.send('update-unread', {
+    unreadCount: unreadCount,
+    mentionCount: mentionCount
+  });
+}
+
 var showUnreadBadge = function(unreadCount, mentionCount) {
   switch (process.platform) {
     case 'win32':
@@ -493,6 +508,10 @@ var showUnreadBadge = function(unreadCount, mentionCount) {
       break;
     case 'darwin':
       showUnreadBadgeOSX(unreadCount, mentionCount);
+      break;
+    case 'linux':
+      console.log(unreadCount);
+      showUnreadBadgeLinux(unreadCount, mentionCount);
       break;
     default:
   }
