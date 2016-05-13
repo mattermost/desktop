@@ -25,7 +25,8 @@
     "package:osx": "gulp package:osx",
     "package:linux": "gulp build && build --platform linux --arch all -d deb",
     "package:all": "gulp package:all",
-    "prettify": "gulp prettify"
+    "prettify": "gulp prettify",
+    "installer": "node ./script/installer.js"
   },
   "devDependencies": {
     "babel-core": "^6.7.5",
@@ -33,10 +34,12 @@
     "babel-preset-react": "^6.5.0",
     "chromedriver": "^2.20.0",
     "del": "^2.2.0",
-    "electron-builder": "^3.11.0",
+    "electron-builder": "3.20.0",
     "electron-connect": "^0.3.7",
     "electron-packager": "^7.0.1",
     "electron-prebuilt": "0.37.8",
+    "electron-squirrel-startup": "^1.0.0",
+    "electron-winstaller": "^2.2.0",
     "esformatter": "^0.9.3",
     "esformatter-jsx": "^5.0.0",
     "gulp": "^3.9.0",
@@ -47,6 +50,7 @@
     "json-loader": "^0.5.4",
     "mocha": "^2.3.4",
     "mocha-circleci-reporter": "0.0.1",
+    "rimraf": "^2.5.2",
     "should": "^8.0.1",
     "style-loader": "^0.13.0",
     "through2": "^2.0.1",
@@ -56,11 +60,13 @@
     "webpack-stream": "^3.1.0"
   },
   "build": {
+    "app-bundle-id": "com.mattermost.desktop",
+    "app-category-type": "public.app-category.productivity",
     "linux": {
       "synopsis": "Mattermost Desktop"
     }
   },
-  "directories":{
+  "directories": {
     "buildResources": "resources",
     "app": "dist",
     "output": "release"
