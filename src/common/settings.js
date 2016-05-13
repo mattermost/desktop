@@ -24,7 +24,7 @@ var loadDefault = function(version) {
         teams: [],
         hideMenuBar: false,
         showTrayIcon: false,
-        disablewebsecurity: false,
+        disablewebsecurity: true,
         version: 1
       };
   }
