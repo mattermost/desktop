@@ -14,7 +14,7 @@ This release contains a security update and it is highly recommended that users 
 
 ### Improvements
 - Improve the style for tab badges.
-- Add **Allow insecure contents** option to render images with `http://`.
+- Add **Allow mixed content** option to render images with `http://`.
 - Add the login dialog for http authentication.
 
 #### OS X
