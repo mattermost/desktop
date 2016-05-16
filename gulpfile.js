@@ -15,7 +15,7 @@ var electron = require('electron-connect').server.create({
 });
 var packager = require('electron-packager');
 
-var sources = ['**/*.js', '**/*.css', '**/*.html', '!**/node_modules/**', '!dist/**', '!release/**'];
+var sources = ['**/*.js', '**/*.json', '**/*.css', '**/*.html', '!**/node_modules/**', '!dist/**', '!release/**', '!**/test_config.json'];
 
 gulp.task('prettify', ['prettify:sources', 'prettify:jsx']);
 gulp.task('prettify:verify', ['prettify:sources:verify', 'prettify:jsx:verify'])

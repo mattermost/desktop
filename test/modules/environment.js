@@ -13,7 +13,7 @@ const electron_binary_path = (function() {
     return path.join(source_root_dir, 'node_modules/electron-prebuilt/dist/electron' + exe_extension);
   }
 })();
-const config_file_path = path.join(source_root_dir, 'test_config.json');
+const config_file_path = path.join(source_root_dir, 'test/test_config.json');
 const mattermost_url = 'http://example.com/team';
 
 var options = {

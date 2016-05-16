@@ -60,7 +60,7 @@
       "synopsis": "Mattermost Desktop"
     }
   },
-  "directories":{
+  "directories": {
     "buildResources": "resources",
     "app": "dist",
     "output": "release"
