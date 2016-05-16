@@ -1,10 +1,13 @@
 {
   "name": "mattermost-desktop",
   "productName": "Mattermost",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Mattermost Desktop application for Windows, Mac and Linux",
   "main": "main.js",
-  "author": "Yuya Ochiai <yuya0321@gmail.com>",
+  "author": {
+    "name": "Yuya Ochiai",
+    "email": "yuya0321@gmail.com"
+  },
   "license": "MIT",
   "engines": {
     "node": ">=4.2.0"
@@ -32,8 +35,8 @@
     "del": "^2.2.0",
     "electron-builder": "^3.11.0",
     "electron-connect": "^0.3.7",
-    "electron-packager": "^5.1.0",
-    "electron-prebuilt": "0.37.7",
+    "electron-packager": "^7.0.1",
+    "electron-prebuilt": "0.37.8",
     "esformatter": "^0.9.3",
     "esformatter-jsx": "^5.0.0",
     "gulp": "^3.9.0",

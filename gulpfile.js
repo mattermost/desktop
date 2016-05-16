@@ -192,8 +192,8 @@ function makePackage(platform, arch, callback) {
     "app-version": packageJson.version,
     icon: 'resources/icon',
     "version-string": {
-      CompanyName: packageJson.author,
-      LegalCopyright: 'Copyright (c) 2015 ' + packageJson.author,
+      CompanyName: packageJson.author.name,
+      LegalCopyright: 'Copyright (c) 2015 ' + packageJson.author.name,
       FileDescription: packageJson.description,
       OriginalFilename: packageJson.productName + '.exe',
       ProductVersion: packageJson.version,
