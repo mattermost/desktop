@@ -1,7 +1,15 @@
 # Mattermost Desktop Application Changelog
 
+## Release v1.3.0 (Beta)
+
+### Improvements
+#### Linux
+- Add the option to show the icon on menu bar. (requires libappindicator1 on Ubuntu)
+
 
 ## Release v1.2.0 (Beta)
+
+- **Released:** 2016-05-17
 
 This release contains a security update and it is highly recommended that users upgrade to this version.
 

@@ -40,6 +40,7 @@ var SettingsPage = React.createClass({
       teams: this.state.teams,
       hideMenuBar: this.state.hideMenuBar,
       showTrayIcon: this.state.showTrayIcon,
+      trayIconTheme: this.state.trayIconTheme,
       disablewebsecurity: this.state.disablewebsecurity,
       version: settings.version
     };
@@ -69,6 +70,11 @@ var SettingsPage = React.createClass({
       showTrayIcon: this.refs.showTrayIcon.getChecked()
     });
   },
+  handleChangeTrayIconTheme: function() {
+    this.setState({
+      trayIconTheme: this.refs.trayIconTheme.getValue()
+    });
+  },
   render: function() {
     var teams_row = (
     <Row>
@@ -84,9 +90,15 @@ var SettingsPage = React.createClass({
       options.push(<Input key="inputHideMenuBar" id="inputHideMenuBar" ref="hideMenuBar" type="checkbox" label="Hide Menu Bar (Press Alt to show Menu Bar)" checked={ this.state.hideMenuBar }
                      onChange={ this.handleChangeHideMenuBar } />);
     }
-    if (process.platform === 'darwin') {
+    if (process.platform === 'darwin' || process.platform === 'linux') {
       options.push(<Input key="inputShowTrayIcon" ref="showTrayIcon" type="checkbox" label="Show Icon on Menu Bar (Need to restart the application)" checked={ this.state.showTrayIcon } onChange={ this.handleChangeShowTrayIcon }
                    />);
+    }
+    if (process.platform === 'linux') {
+      options.push(<Input key="inputTrayIconTheme" ref="trayIconTheme" type="select" label="Icon theme (Need to restart the application)" value={ this.state.trayIconTheme } onChange={ this.handleChangeTrayIconTheme }>
+                   <option value="light">Light</option>
+                   <option value="dark">Dark</option>
+                   </Input>);
     }
     options.push(<Input key="inputDisableWebSecurity" ref="disablewebsecurity" type="checkbox" label="Allow mixed content (Enabling allows both secure and insecure content, images and scripts to render and execute. Disabling allows only secure content.)"
                    checked={ this.state.disablewebsecurity } onChange={ this.handleChangeDisableWebSecurity } />);
