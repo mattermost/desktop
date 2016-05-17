@@ -135,6 +135,18 @@ var createTemplate = function(mainWindow) {
       }
     }, ]
   });
+  template.push({
+    label: '&Window',
+    submenu: [{
+      label: 'Close',
+      accelerator: 'CmdOrCtrl+W',
+      click: function(item, focusedWindow) {
+        if (focusedWindow) {
+          focusedWindow.close();
+        }
+      }
+    }]
+  });
   return template;
 };
 
