@@ -54,8 +54,15 @@ var MainPage = React.createClass({
         loginQueue: loginQueue
       });
     });
+    // can't switch tabs sequencially for some reason...
     ipcRenderer.on('switch-tab', (event, key) => {
       this.handleSelect(key);
+    });
+    ipcRenderer.on('select-next-tab', (event) => {
+      this.handleSelect(this.state.key + 1);
+    });
+    ipcRenderer.on('select-previous-tab', (event) => {
+      this.handleSelect(this.state.key - 1);
     });
 
     var focusListener = function() {
@@ -72,7 +79,7 @@ var MainPage = React.createClass({
     });
   },
   handleSelect: function(key) {
-    const newKey = key % this.props.teams.length;
+    const newKey = (this.props.teams.length + key) % this.props.teams.length;
     this.setState({
       key: newKey
     });

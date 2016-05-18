@@ -136,7 +136,8 @@ var createTemplate = function(mainWindow, config) {
       }
     }, ]
   });
-  template.push({
+
+  const window_menu = {
     label: '&Window',
     submenu: [{
       label: 'Minimize',
@@ -166,7 +167,27 @@ var createTemplate = function(mainWindow, config) {
         }
       };
     })]
-  });
+  }
+
+  if (config.teams.length > 1) {
+    window_menu.submenu = window_menu.submenu.concat([{
+      type: 'separator'
+    }, {
+      label: 'Select Next Team',
+      accelerator: (process.platform === 'darwin') ? 'Alt+Cmd+Right' : 'CmdOrCtrl+Tab',
+      click: () => {
+        mainWindow.webContents.send('select-next-tab');
+      }
+    }, {
+      label: 'Select Previous Team',
+      accelerator: (process.platform === 'darwin') ? 'Alt+Cmd+Left' : 'CmdOrCtrl+Shift+Tab',
+      click: () => {
+        mainWindow.webContents.send('select-previous-tab');
+      }
+    }]);
+  }
+  template.push(window_menu);
+
   return template;
 };
 
