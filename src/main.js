@@ -274,7 +274,7 @@ app.on('ready', function() {
     saveWindowState(bounds_info_path, mainWindow);
   });
 
-  var app_menu = appMenu.createMenu(mainWindow);
+  var app_menu = appMenu.createMenu(mainWindow, config);
   Menu.setApplicationMenu(app_menu);
 
   // Emitted when the window is closed.

@@ -54,6 +54,9 @@ var MainPage = React.createClass({
         loginQueue: loginQueue
       });
     });
+    ipcRenderer.on('switch-tab', (event, key) => {
+      this.handleSelect(key);
+    });
 
     var focusListener = function() {
       var webview = document.getElementById('mattermostView' + thisObj.state.key);
@@ -69,8 +72,9 @@ var MainPage = React.createClass({
     });
   },
   handleSelect: function(key) {
+    const newKey = key % this.props.teams.length;
     this.setState({
-      key: key
+      key: newKey
     });
     this.handleOnTeamFocused(key);
   },

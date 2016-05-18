@@ -3,7 +3,8 @@
 const electron = require('electron');
 const Menu = electron.Menu;
 
-var createTemplate = function(mainWindow) {
+var createTemplate = function(mainWindow, config) {
+  console.log(config);
   var app_name = electron.app.getName();
   var first_menu_name = (process.platform === 'darwin') ? app_name : 'File';
   var template = [];
@@ -153,13 +154,24 @@ var createTemplate = function(mainWindow) {
           focusedWindow.close();
         }
       }
-    }]
+    }, {
+      type: 'separator'
+    }, ...config.teams.slice(0, 9).map((team, i) => {
+      return {
+        label: team.name,
+        accelerator: `CmdOrCtrl+${i + 1}`,
+        click: (item, focusedWindow) => {
+          mainWindow.show(); // for OS X
+          mainWindow.webContents.send('switch-tab', i);
+        }
+      };
+    })]
   });
   return template;
 };
 
-var createMenu = function(mainWindow) {
-  return Menu.buildFromTemplate(createTemplate(mainWindow));
+var createMenu = function(mainWindow, config) {
+  return Menu.buildFromTemplate(createTemplate(mainWindow, config));
 };
 
 module.exports = {
