@@ -138,6 +138,14 @@ var createTemplate = function(mainWindow) {
   template.push({
     label: '&Window',
     submenu: [{
+      label: 'Minimize',
+      accelerator: 'CmdOrCtrl+M',
+      click: function(item, focusedWindow) {
+        if (focusedWindow) {
+          focusedWindow.minimize();
+        }
+      }
+    }, {
       label: 'Close',
       accelerator: 'CmdOrCtrl+W',
       click: function(item, focusedWindow) {
