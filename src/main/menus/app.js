@@ -4,7 +4,10 @@ const electron = require('electron');
 const Menu = electron.Menu;
 
 var createTemplate = function(mainWindow, config) {
-  console.log(config);
+  const separatorItem = {
+    type: 'separator'
+  };
+
   var app_name = electron.app.getName();
   var first_menu_name = (process.platform === 'darwin') ? app_name : 'File';
   var template = [];
@@ -134,7 +137,25 @@ var createTemplate = function(mainWindow, config) {
           focusedWindow.toggleDevTools();
         }
       }
-    }, ]
+    }, separatorItem, {
+      label: 'Actual size',
+      accelerator: 'CmdOrCtrl+0',
+      click: () => {
+        mainWindow.webContents.send('zoom-reset');
+      }
+    }, {
+      label: 'Zoom In',
+      accelerator: 'CmdOrCtrl+Plus',
+      click: () => {
+        mainWindow.webContents.send('zoom-in', 1);
+      }
+    }, {
+      label: 'Zoom Out',
+      accelerator: 'CmdOrCtrl+-',
+      click: () => {
+        mainWindow.webContents.send('zoom-in', -1);
+      }
+    }]
   });
 
   const window_menu = {

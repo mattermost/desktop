@@ -15,9 +15,7 @@ const ListGroupItem = ReactBootstrap.ListGroupItem;
 
 const LoginModal = require('./components/loginModal.jsx');
 
-const electron = require('electron');
-const remote = electron.remote;
-const ipcRenderer = electron.ipcRenderer;
+const {remote, ipcRenderer, webFrame} = require('electron');
 
 const osLocale = require('os-locale');
 const fs = require('fs');
@@ -463,7 +461,7 @@ var showUnreadBadgeWindows = function(unreadCount, mentionCount) {
   const sendBadge = function(dataURL, description) {
     // window.setOverlayIcon() does't work with NativeImage across remote boundaries.
     // https://github.com/atom/electron/issues/4011
-    electron.ipcRenderer.send('update-unread', {
+    ipcRenderer.send('update-unread', {
       overlayDataURL: dataURL,
       description: description,
       unreadCount: unreadCount,
@@ -491,7 +489,7 @@ var showUnreadBadgeOSX = function(unreadCount, mentionCount) {
     remote.app.dock.setBadge('');
   }
 
-  electron.ipcRenderer.send('update-unread', {
+  ipcRenderer.send('update-unread', {
     unreadCount: unreadCount,
     mentionCount: mentionCount
   });
@@ -506,7 +504,7 @@ var showUnreadBadgeLinux = function(unreadCount, mentionCount) {
     remote.app.dock.setBadge('');
   }*/
 
-  electron.ipcRenderer.send('update-unread', {
+  ipcRenderer.send('update-unread', {
     unreadCount: unreadCount,
     mentionCount: mentionCount
   });
@@ -532,3 +530,11 @@ ReactDOM.render(
   <MainPage teams={ config.teams } onUnreadCountChange={ showUnreadBadge } />,
   document.getElementById('content')
 );
+
+ipcRenderer.on('zoom-in', (event, increment) => {
+  webFrame.setZoomLevel(webFrame.getZoomLevel() + increment);
+});
+
+ipcRenderer.on('zoom-reset', (event) => {
+  webFrame.setZoomLevel(0);
+});
