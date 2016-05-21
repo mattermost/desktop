@@ -2,6 +2,9 @@
 
 const electron = require('electron');
 const app = electron.app; // Module to control application life.
+
+if (require('electron-squirrel-startup')) app.quit();
+
 const BrowserWindow = electron.BrowserWindow; // Module to create native browser window.
 const Menu = electron.Menu;
 const Tray = electron.Tray;

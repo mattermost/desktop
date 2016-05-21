@@ -86,5 +86,10 @@ $ npm run package:linux
 $ npm run package:all (Packages for all platform)
 ```
 
+Create a windows installer with the following command. It will appear in the `release\windows-installer` directory.
+```
+$ npm run installer
+```
+
 ## Contributing
 Please see [CONTRIBUTING.md](./CONTRIBUTING.md).
