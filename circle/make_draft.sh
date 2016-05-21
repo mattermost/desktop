@@ -16,7 +16,10 @@ make_zip()
 {
   OLDDIR=`pwd`
   ARCH=$1
-  cp -r release/mattermost-desktop-$ARCH /tmp/mattermost-desktop-$RELEASE_TAG-$ARCH
+  case "$ARCH" in
+    "win64" ) cp -r release/windows-installer /tmp/mattermost-desktop-$RELEASE_TAG-$ARCH ;;
+     "*" ) cp -r release/mattermost-desktop-$ARCH /tmp/mattermost-desktop-$RELEASE_TAG-$ARCH ;;
+  esac
   cd /tmp
   zip -9 -r mattermost-desktop-$RELEASE_TAG-$ARCH.zip mattermost-desktop-$RELEASE_TAG-$ARCH
   cd $OLDDIR
@@ -26,7 +29,10 @@ make_tar_gz()
 {
   OLDDIR=`pwd`
   ARCH=$1
-  cp -r release/mattermost-desktop-$ARCH /tmp/mattermost-desktop-$RELEASE_TAG-$ARCH
+  case "$ARCH" in
+    "win64" ) cp -r release/windows-installer /tmp/mattermost-desktop-$RELEASE_TAG-$ARCH ;;
+     "*" ) cp -r release/mattermost-desktop-$ARCH /tmp/mattermost-desktop-$RELEASE_TAG-$ARCH ;;
+  esac
   cd /tmp
   tar zcvf mattermost-desktop-$RELEASE_TAG-$ARCH.tar.gz mattermost-desktop-$RELEASE_TAG-$ARCH
   cd $OLDDIR
@@ -47,7 +53,6 @@ deploy()
 
 $GITHUB_RELEASE release --user $CIRCLE_PROJECT_USERNAME --repo $CIRCLE_PROJECT_REPONAME --tag $CIRCLE_TAG --draft
 
-deploy win32 zip
 deploy win64 zip
 deploy osx tar.gz
 deploy linux-ia32 tar.gz
