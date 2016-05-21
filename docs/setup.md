@@ -144,6 +144,15 @@ Below lists menu options (shortcut keys are listed in brackets, `Ctrl` becomes `
   - **Clear Cache and Reload** (Ctrl+Shift+R) - Clear cached content in application and reload page
   - **Toggle Full Screen** (F11) - Toggle application from window to full screen and back
   - **Toggle Developer Tools** (Ctrl+Shift+I) - Turn on and off sidebar showing developer tools
+  - **Actual Size** (Ctrl+0) - Reset zoom level
+  - **Zoom In** (Ctrl+Plus) - Enlarge the rendered contents size
+  - **Zoom In** (Ctrl+Minus) - Shrink the rendered contents size
+- **Window**
+  - **Close** (Ctrl+W) - Close the window (On Window and Linux, the main window is minimized)
+  - **Minimize** (Ctrl+M) - Minimize the window
+  - ***Team Name*** (Ctrl+{1-9}) - Open the *n*-th tab
+  - **Select Next Team** (Ctrl+Tab, Alt+Command+Right) - Open the right tab
+  - **Select Previous Team** (Ctrl+Shift+Tab, Alt+Command+Left) - Open the left tab
 
 
 ## Notifications

@@ -15,9 +15,7 @@ const ListGroupItem = ReactBootstrap.ListGroupItem;
 
 const LoginModal = require('./components/loginModal.jsx');
 
-const electron = require('electron');
-const remote = electron.remote;
-const ipcRenderer = electron.ipcRenderer;
+const {remote, ipcRenderer, webFrame} = require('electron');
 
 const osLocale = require('os-locale');
 const fs = require('fs');
@@ -54,6 +52,16 @@ var MainPage = React.createClass({
         loginQueue: loginQueue
       });
     });
+    // can't switch tabs sequencially for some reason...
+    ipcRenderer.on('switch-tab', (event, key) => {
+      this.handleSelect(key);
+    });
+    ipcRenderer.on('select-next-tab', (event) => {
+      this.handleSelect(this.state.key + 1);
+    });
+    ipcRenderer.on('select-previous-tab', (event) => {
+      this.handleSelect(this.state.key - 1);
+    });
 
     var focusListener = function() {
       var webview = document.getElementById('mattermostView' + thisObj.state.key);
@@ -69,8 +77,9 @@ var MainPage = React.createClass({
     });
   },
   handleSelect: function(key) {
+    const newKey = (this.props.teams.length + key) % this.props.teams.length;
     this.setState({
-      key: key
+      key: newKey
     });
     this.handleOnTeamFocused(key);
   },
@@ -331,6 +340,9 @@ var MattermostView = React.createClass({
     webview.addEventListener("dom-ready", function() {
       // webview.openDevTools();
 
+      // In order to apply the zoom level to webview.
+      webFrame.setZoomLevel(parseInt(localStorage.getItem('zoomLevel')));
+
       // Use 'Meiryo UI' and 'MS Gothic' to prevent CJK fonts on Windows(JP).
       if (process.platform === 'win32') {
         var applyCssFile = function(cssFile) {
@@ -452,7 +464,7 @@ var showUnreadBadgeWindows = function(unreadCount, mentionCount) {
   const sendBadge = function(dataURL, description) {
     // window.setOverlayIcon() does't work with NativeImage across remote boundaries.
     // https://github.com/atom/electron/issues/4011
-    electron.ipcRenderer.send('update-unread', {
+    ipcRenderer.send('update-unread', {
       overlayDataURL: dataURL,
       description: description,
       unreadCount: unreadCount,
@@ -480,7 +492,7 @@ var showUnreadBadgeOSX = function(unreadCount, mentionCount) {
     remote.app.dock.setBadge('');
   }
 
-  electron.ipcRenderer.send('update-unread', {
+  ipcRenderer.send('update-unread', {
     unreadCount: unreadCount,
     mentionCount: mentionCount
   });
@@ -495,7 +507,7 @@ var showUnreadBadgeLinux = function(unreadCount, mentionCount) {
     remote.app.dock.setBadge('');
   }*/
 
-  electron.ipcRenderer.send('update-unread', {
+  ipcRenderer.send('update-unread', {
     unreadCount: unreadCount,
     mentionCount: mentionCount
   });
@@ -516,6 +528,22 @@ var showUnreadBadge = function(unreadCount, mentionCount) {
     default:
   }
 }
+
+if (!localStorage.getItem('zoomLevel')) {
+  localStorage.setItem('zoomLevel', 0);
+}
+webFrame.setZoomLevel(parseInt(localStorage.getItem('zoomLevel')));
+
+ipcRenderer.on('zoom-in', (event, increment) => {
+  const zoomLevel = webFrame.getZoomLevel() + increment
+  webFrame.setZoomLevel(zoomLevel);
+  localStorage.setItem('zoomLevel', zoomLevel);
+});
+
+ipcRenderer.on('zoom-reset', (event) => {
+  webFrame.setZoomLevel(0);
+  localStorage.setItem('zoomLevel', 0);
+});
 
 ReactDOM.render(
   <MainPage teams={ config.teams } onUnreadCountChange={ showUnreadBadge } />,

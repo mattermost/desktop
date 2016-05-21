@@ -3,8 +3,25 @@
 ## Release v1.3.0 (Beta)
 
 ### Improvements
+- Add shortcuts
+  - Zoom
+    - Ctrl+0 (View -> Actual Size): Reset the zoom level.
+    - Ctrl+Plus (View -> Zoom In)
+    - Ctrl+Minus (View -> Zoom Out)
+  - Control window
+    - Ctrl+W (Window -> Close): On Windows and Linux, this works as minimize for the main window.
+    - Ctrl+M (Window -> Minimize)
+  - Switch teams (these shotcuts also reopen the main window)
+    - Ctrl+{1-9} (Window -> *Team name*): Open the *n*-th tab.
+    - Ctrl+Tab or Alt+Command+Right (Window -> Select Next Team): Open the right tab.
+    - Ctrl+Shift+Tab or Alt+Command+Left (Window -> Select Previous Team): Open the left tab.
+
 #### Linux
 - Add the option to show the icon on menu bar. (requires libappindicator1 on Ubuntu)
+
+### Known issues
+- The shortcuts can't switch teams twice in a raw.
+- The team pages are not correctly rendered until the window is resized when the zoom level is changed.
 
 
 ## Release v1.2.0 (Beta)
