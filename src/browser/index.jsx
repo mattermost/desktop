@@ -340,6 +340,9 @@ var MattermostView = React.createClass({
     webview.addEventListener("dom-ready", function() {
       // webview.openDevTools();
 
+      // In order to apply the zoom level to webview.
+      webFrame.setZoomLevel(parseInt(localStorage.getItem('zoomLevel')));
+
       // Use 'Meiryo UI' and 'MS Gothic' to prevent CJK fonts on Windows(JP).
       if (process.platform === 'win32') {
         var applyCssFile = function(cssFile) {
@@ -526,15 +529,23 @@ var showUnreadBadge = function(unreadCount, mentionCount) {
   }
 }
 
-ReactDOM.render(
-  <MainPage teams={ config.teams } onUnreadCountChange={ showUnreadBadge } />,
-  document.getElementById('content')
-);
+if (!localStorage.getItem('zoomLevel')) {
+  localStorage.setItem('zoomLevel', 0);
+}
+webFrame.setZoomLevel(parseInt(localStorage.getItem('zoomLevel')));
 
 ipcRenderer.on('zoom-in', (event, increment) => {
-  webFrame.setZoomLevel(webFrame.getZoomLevel() + increment);
+  const zoomLevel = webFrame.getZoomLevel() + increment
+  webFrame.setZoomLevel(zoomLevel);
+  localStorage.setItem('zoomLevel', zoomLevel);
 });
 
 ipcRenderer.on('zoom-reset', (event) => {
   webFrame.setZoomLevel(0);
+  localStorage.setItem('zoomLevel', 0);
 });
+
+ReactDOM.render(
+  <MainPage teams={ config.teams } onUnreadCountChange={ showUnreadBadge } />,
+  document.getElementById('content')
+);
