@@ -29,12 +29,9 @@ describe('browser/settings.html', function() {
   var chromedriver;
   var client;
   before(function(done) {
-    chromedriver = env.spawnChromeDriver();
-    client = env.getWebDriverIoClient();
-
+    this.app = env.getSpectronApp();
     fs.unlink(env.configFilePath, function(err) {
-      // waiting for chromedriver
-      setTimeout(done, 1000);
+      done();
     });
   });
 
@@ -43,50 +40,51 @@ describe('browser/settings.html', function() {
   });
 
   afterEach(function() {
-    return client.end();
-  });
-
-  after(function() {
-    chromedriver.kill();
+    if (this.app && this.app.isRunning()) {
+      return this.app.stop()
+    }
   });
 
   it('should show index.thml when Cancel button is clicked', function() {
-    return initClient(client)
-      .waitForExist('#btnCancel')
-      .click('#btnCancel')
-      .pause(1000)
-      .getUrl().then(function(url) {
-        var url_split = url.split('/');
-        url_split[url_split.length - 1].should.equal('index.html');
-      })
-      .end();
+    return this.app.start().then(() => {
+      initClient(this.app.client)
+        .waitForExist('#btnCancel')
+        .click('#btnCancel')
+        .pause(1000)
+        .getUrl().then(function(url) {
+          var url_split = url.split('/');
+          url_split[url_split.length - 1].should.equal('index.html');
+        });
+    });
   });
 
   it('should show index.thml when Save button is clicked', function() {
-    return initClient(client)
-      .waitForExist('#btnSave')
-      .click('#btnSave')
-      .pause(1000)
-      .getUrl().then(function(url) {
-        var url_split = url.split('/');
-        url_split[url_split.length - 1].should.equal('index.html');
-      })
-      .end();
+    return this.app.start().then(() => {
+      initClient(this.app.client)
+        .waitForExist('#btnSave')
+        .click('#btnSave')
+        .pause(1000)
+        .getUrl().then(function(url) {
+          var url_split = url.split('/');
+          url_split[url_split.length - 1].should.equal('index.html');
+        });
+    });
   });
 
   describe('Options', function() {
     describe('Hide Menu Bar', function() {
       it('should appear on win32 or linux', function() {
-        return initClient(client)
-          .isExisting('#inputHideMenuBar').then(function(isExisting) {
-            if (process.platform === 'win32' || process.platform === 'linux') {
-              isExisting.should.be.true();
-            }
-            else {
-              isExisting.should.be.false();
-            }
-          })
-          .end();
+        return this.app.start().then(() => {
+          initClient(this.app.client)
+            .isExisting('#inputHideMenuBar').then(function(isExisting) {
+              if (process.platform === 'win32' || process.platform === 'linux') {
+                isExisting.should.be.true();
+              }
+              else {
+                isExisting.should.be.false();
+              }
+            });
+        });
       });
 
       if (process.platform === 'win32' || process.platform === 'linux') {
@@ -96,24 +94,26 @@ describe('browser/settings.html', function() {
             Object.assign(new_config, config);
             new_config.hideMenuBar = v;
             fs.writeFileSync(env.configFilePath, JSON.stringify(new_config));
-            return initClient(client)
-              .isSelected('#inputHideMenuBar input').then(function(value) {
-                value.should.equal(v);
-              })
-              .end();
+            return this.app.start().then(() => {
+              initClient(this.app.client)
+                .isSelected('#inputHideMenuBar input').then(function(value) {
+                  value.should.equal(v);
+                });
+            });
           });
         });
 
         it('should be saved as config.json', function() {
-          return initClient(client)
-            .click('#inputHideMenuBar input')
-            .click('#btnSave')
-            .pause(1000)
-            .then(function() {
-              const saved_config = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-              saved_config.hideMenuBar.should.be.true();
-            })
-            .end();
+          return this.app.start().then(() => {
+            initClient(this.app.client)
+              .click('#inputHideMenuBar input')
+              .click('#btnSave')
+              .pause(1000)
+              .then(function() {
+                const saved_config = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+                saved_config.hideMenuBar.should.be.true();
+              });
+          });
         });
       }
     });
