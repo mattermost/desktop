@@ -461,10 +461,10 @@ var showUnreadBadgeWindows = function(unreadCount, mentionCount) {
   };
 
   if (mentionCount > 0) {
-    const dataURL = badge.createDataURL(mentionCount.toString());
+    const dataURL = badge.createDataURL(mentionCount.toString(), "#FF1744"); // Material Red A400
     sendBadge(dataURL, 'You have unread mention (' + mentionCount + ')');
   } else if (unreadCount > 0) {
-    const dataURL = badge.createDataURL('•');
+    const dataURL = badge.createDataURL('•', "#00e5ff"); // Material Cyan A400
     sendBadge(dataURL, 'You have unread channels');
   } else {
     sendBadge(null, 'You have no unread messages');
