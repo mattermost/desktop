@@ -231,6 +231,13 @@ app.on('ready', function() {
   // and load the index.html of the app.
   mainWindow.loadURL('file://' + __dirname + '/browser/index.html');
 
+  // Set application menu
+  ipc.on('update-menu', (event, config) => {
+    var app_menu = appMenu.createMenu(mainWindow, config);
+    Menu.setApplicationMenu(app_menu);
+  });
+  ipc.emit('update-menu', true, config);
+
   // Open the DevTools.
   // mainWindow.openDevTools();
 
@@ -273,9 +280,6 @@ app.on('ready', function() {
   mainWindow.on('blur', function() {
     saveWindowState(bounds_info_path, mainWindow);
   });
-
-  var app_menu = appMenu.createMenu(mainWindow, config);
-  Menu.setApplicationMenu(app_menu);
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function() {

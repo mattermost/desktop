@@ -138,7 +138,7 @@ var createTemplate = function(mainWindow, config) {
         }
       }
     }, separatorItem, {
-      label: 'Actual size',
+      label: 'Actual Size',
       accelerator: 'CmdOrCtrl+0',
       click: () => {
         mainWindow.webContents.send('zoom-reset');
@@ -187,25 +187,21 @@ var createTemplate = function(mainWindow, config) {
           mainWindow.webContents.send('switch-tab', i);
         }
       };
-    })]
-  }
-
-  if (config.teams.length > 1) {
-    window_menu.submenu = window_menu.submenu.concat([{
-      type: 'separator'
-    }, {
+    }), separatorItem, {
       label: 'Select Next Team',
       accelerator: (process.platform === 'darwin') ? 'Alt+Cmd+Right' : 'CmdOrCtrl+Tab',
       click: () => {
         mainWindow.webContents.send('select-next-tab');
-      }
+      },
+      enabled: (config.teams.length > 1)
     }, {
       label: 'Select Previous Team',
       accelerator: (process.platform === 'darwin') ? 'Alt+Cmd+Left' : 'CmdOrCtrl+Shift+Tab',
       click: () => {
         mainWindow.webContents.send('select-previous-tab');
-      }
-    }]);
+      },
+      enabled: (config.teams.length > 1)
+    }]
   }
   template.push(window_menu);
 

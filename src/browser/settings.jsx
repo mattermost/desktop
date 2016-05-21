@@ -1,6 +1,6 @@
 'use strict';
 
-const remote = require('electron').remote;
+const {remote, ipcRenderer} = require('electron');
 const settings = require('../common/settings');
 
 const React = require('react');
@@ -50,6 +50,7 @@ var SettingsPage = React.createClass({
       currentWindow.setAutoHideMenuBar(config.hideMenuBar);
       currentWindow.setMenuBarVisibility(!config.hideMenuBar);
     }
+    ipcRenderer.send('update-menu', config);
     backToIndex();
   },
   handleCancel: function() {
