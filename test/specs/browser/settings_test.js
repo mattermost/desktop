@@ -87,35 +87,36 @@ describe('browser/settings.html', function() {
         });
       });
 
-      if (process.platform === 'win32' || process.platform === 'linux') {
-        [true, false].forEach(function(v) {
-          it(`should be loaded from config: ${v}`, function() {
-            var new_config = {};
-            Object.assign(new_config, config);
-            new_config.hideMenuBar = v;
-            fs.writeFileSync(env.configFilePath, JSON.stringify(new_config));
-            return this.app.start().then(() => {
-              initClient(this.app.client)
-                .isSelected('#inputHideMenuBar input').then(function(value) {
-                  value.should.equal(v);
-                });
-            });
-          });
-        });
-
-        it('should be saved as config.json', function() {
+      [true, false].forEach(function(v) {
+        it(`should be loaded from config: ${v}`, function() {
+          env.shouldTestForPlatforms(this, ['win32', 'linux']);
+          var new_config = {};
+          Object.assign(new_config, config);
+          new_config.hideMenuBar = v;
+          fs.writeFileSync(env.configFilePath, JSON.stringify(new_config));
           return this.app.start().then(() => {
             initClient(this.app.client)
-              .click('#inputHideMenuBar input')
-              .click('#btnSave')
-              .pause(1000)
-              .then(function() {
-                const saved_config = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-                saved_config.hideMenuBar.should.be.true();
+              .isSelected('#inputHideMenuBar input').then(function(value) {
+                value.should.equal(v);
+                this.app.browserWindow.isMenuBarAutoHide().should.equal(v);
               });
           });
         });
-      }
+      });
+
+      it('should be saved as config.json', function() {
+        env.shouldTestForPlatforms(this, ['win32', 'linux']);
+        return this.app.start().then(() => {
+          initClient(this.app.client)
+            .click('#inputHideMenuBar input')
+            .click('#btnSave')
+            .pause(1000)
+            .then(function() {
+              const saved_config = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+              saved_config.hideMenuBar.should.be.true();
+            });
+        });
+      });
     });
   });
 });

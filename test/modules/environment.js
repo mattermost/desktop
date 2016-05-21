@@ -25,5 +25,13 @@ module.exports = {
       path: electron_binary_path,
       args: [`${path.join(source_root_dir, 'dist')}`, '--config-file=' + config_file_path]
     });
+  },
+  shouldTestForPlatforms: function(testCase, platforms) {
+    if (platforms.indexOf(process.platform) !== -1) {
+      return;
+    }
+    else {
+      testCase.skip();
+    }
   }
 }
