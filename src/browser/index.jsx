@@ -317,6 +317,7 @@ var MattermostView = React.createClass({
       var currentURL = url.parse(webview.getURL());
       var destURL = url.parse(e.url);
       if (destURL.protocol !== 'http:' && destURL.protocol !== 'https:') {
+        ipcRenderer.send('confirm-protocol', destURL.protocol, e.url);
         return;
       }
       if (currentURL.host === destURL.host) {
