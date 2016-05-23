@@ -164,8 +164,6 @@ app.on('ready', function() {
     // set up tray icon
     trayIcon = new Tray(trayImages.normal);
     trayIcon.setToolTip(app.getName());
-    var tray_menu = require('./main/menus/tray').createDefault();
-    trayIcon.setContextMenu(tray_menu);
     trayIcon.on('click', function() {
       mainWindow.focus();
     });
@@ -226,6 +224,12 @@ app.on('ready', function() {
 
   // and load the index.html of the app.
   mainWindow.loadURL('file://' + __dirname + '/browser/index.html');
+
+  // set up context menu for tray icon
+  if (shouldShowTrayIcon()) {
+    const tray_menu = require('./main/menus/tray').createDefault(mainWindow);
+    trayIcon.setContextMenu(tray_menu);
+  }
 
   // Open the DevTools.
   // mainWindow.openDevTools();

@@ -1,18 +1,25 @@
 'use strict';
 
-const electron = require('electron');
-const Menu = electron.Menu;
-const MenuItem = electron.MenuItem;
+const {
+  app,
+  Menu,
+  MenuItem
+} = require('electron');
 
-var createDefault = function() {
-  var menu = new Menu();
-  menu.append(new MenuItem({
+function createDefault(mainWindow) {
+  return Menu.buildFromTemplate([{
+    label: 'Open Mattermost',
+    click: () => {
+      mainWindow.show();
+    }
+  }, {
+    type: 'separator'
+  }, {
     label: 'Quit',
     click: function(item) {
-      require('app').quit();
+      app.quit();
     }
-  }));
-  return menu;
+  }]);
 }
 
 module.exports = {
