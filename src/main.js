@@ -13,6 +13,7 @@ const path = require('path');
 var settings = require('./common/settings');
 var certificateStore = require('./main/certificateStore').load(path.resolve(app.getPath('userData'), 'certificate.json'));
 var appMenu = require('./main/menus/app');
+const allowProtocolDialog = require('./main/allowProtocolDialog');
 
 var argv = require('yargs').argv;
 
@@ -154,47 +155,7 @@ app.on('login', function(event, webContents, request, authInfo, callback) {
   mainWindow.webContents.send('login-request', request, authInfo);
 });
 
-ipc.on('confirm-protocol', (event, protocol, URL) => {
-  const allowedProtocolFile = path.resolve(app.getPath('userData'), 'allowedProtocols.json')
-  fs.readFile(allowedProtocolFile, 'utf-8', (err, data) => {
-    var allowedProtocols = [];
-    if (!err) {
-      allowedProtocols = JSON.parse(data);
-    }
-    if (allowedProtocols.indexOf(protocol) !== -1) {
-      require('shell').openExternal(URL);
-    }
-    else {
-      electron.dialog.showMessageBox(mainWindow, {
-        title: 'Non http(s) protocol',
-        message: `${protocol} link requires an external application.`,
-        detail: `The requested link is ${URL} . Do you want to continue?`,
-        type: 'warning',
-        buttons: [
-          'Yes',
-          `Yes (Save ${protocol} as allowed)`,
-          'No'
-        ],
-        cancelId: 2,
-        noLink: true
-      }, (response) => {
-        switch (response) {
-          case 1:
-            allowedProtocols.push(protocol);
-            fs.writeFile(allowedProtocolFile, JSON.stringify(allowedProtocols), (err) => {
-              if (err) console.error(err);
-            });
-            // fallthrough
-          case 0:
-            require('shell').openExternal(URL);
-            break;
-          default:
-            break;
-        }
-      });
-    }
-  });
-});
+allowProtocolDialog.init(mainWindow);
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
