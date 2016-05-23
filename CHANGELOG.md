@@ -1,5 +1,14 @@
 # Mattermost Desktop Application Changelog
 
+## Release v1.2.1 (Beta)
+
+### Fixes
+- "Electron" appears on the title bar for a while on start up.
+
+### Improvements
+- Add a dialog to confirm the protocol when opening the link.
+- Add a menu item in order to open the main window from the tray icon.
+
 
 ## Release v1.2.0 (Beta)
 
