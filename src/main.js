@@ -167,6 +167,9 @@ app.on('ready', function() {
     trayIcon.on('click', function() {
       mainWindow.focus();
     });
+    trayIcon.on('right-click', () => {
+      trayIcon.popUpContextMenu();
+    });
     trayIcon.on('balloon-click', function() {
       mainWindow.focus();
     });

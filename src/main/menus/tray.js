@@ -8,7 +8,7 @@ const {
 
 function createDefault(mainWindow) {
   return Menu.buildFromTemplate([{
-    label: 'Open Mattermost',
+    label: `Open ${app.getName()}`,
     click: () => {
       mainWindow.show();
     }
