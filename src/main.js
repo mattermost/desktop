@@ -215,7 +215,7 @@ app.on('ready', function() {
     // On HiDPI Windows environment, the taskbar icon is pixelated. So this line is necessary.
     window_options.icon = path.resolve(__dirname, 'resources/appicon.png');
   }
-  window_options.fullScreenable = true;
+  window_options.title = app.getName();
   mainWindow = new BrowserWindow(window_options);
   mainWindow.setFullScreenable(true); // fullscreenable option has no effect.
   if (window_options.maximized) {
