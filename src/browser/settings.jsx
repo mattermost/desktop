@@ -97,15 +97,22 @@ var SettingsPage = React.createClass({
     }
   },
   render: function() {
+
+    var buttonStyle = {
+      marginTop: 20,
+    };
+
     var teams_row = (
     <Row>
+      <Col md={ 4 }>
+      <h2>Teams</h2>
+      </Col>
+      <Col md={ 8 }>
+      <Button className="pull-right" style={ buttonStyle } bsSize="small" onClick={ this.handleShowTeamForm }>
+        <Glyphicon glyph="plus" />
+      </Button>
+      </Col>
       <Col md={ 12 }>
-      <h2>
-                Teams
-                <Button className="pull-right" bsSize="small" onClick={ this.handleShowTeamForm }>
-                  <Glyphicon glyph="plus" />
-                </Button>
-              </h2>
       <TeamList teams={ this.state.teams } showAddTeamForm={ this.state.showAddTeamForm } onTeamsChange={ this.handleTeamsChange } />
       </Col>
     </Row>
