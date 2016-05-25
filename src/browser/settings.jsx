@@ -42,7 +42,7 @@ var SettingsPage = React.createClass({
 
     this.handleSave(false);
   },
-  handleSave: function(backToIndex) {
+  handleSave: function(toIndex) {
     var config = {
       teams: this.state.teams,
       hideMenuBar: this.state.hideMenuBar,
@@ -58,7 +58,7 @@ var SettingsPage = React.createClass({
       currentWindow.setMenuBarVisibility(!config.hideMenuBar);
     }
 
-    if (typeof backToIndex == 'undefined' || backToIndex) {
+    if (typeof toIndex == 'undefined' || toIndex) {
       backToIndex();
     }
   },
@@ -101,11 +101,11 @@ var SettingsPage = React.createClass({
     <Row>
       <Col md={ 12 }>
       <h2>
-        Teams
-        <Button className="pull-right" bsSize="small" onClick={ this.handleShowTeamForm }>
-          <Glyphicon glyph="plus" />
-        </Button>
-      </h2>
+                Teams
+                <Button className="pull-right" bsSize="small" onClick={ this.handleShowTeamForm }>
+                  <Glyphicon glyph="plus" />
+                </Button>
+              </h2>
       <TeamList teams={ this.state.teams } showAddTeamForm={ this.state.showAddTeamForm } onTeamsChange={ this.handleTeamsChange } />
       </Col>
     </Row>
@@ -209,7 +209,8 @@ var TeamList = React.createClass({
       };
 
       return (
-        <TeamListItem index={ i } key={ "teamListItem" + i } name={ team.name } url={ team.url } onTeamRemove={ handleTeamRemove } onTeamEditing={ handleTeamEditing } />
+        <TeamListItem index={ i } key={ "teamListItem" + i } name={ team.name } url={ team.url } onTeamRemove={ handleTeamRemove } onTeamEditing={ handleTeamEditing }
+        />
         );
     });
 
@@ -295,7 +296,8 @@ var TeamListItemNew = React.createClass({
     });
   },
   shouldEnableAddButton: function() {
-    return (this.state.name.trim() !== '' || this.props.teamName !== '') && (this.state.url.trim() !== '' || this.props.teamUrl !== '');
+    return (this.state.name.trim() !== '' || this.props.teamName !== '')
+      && (this.state.url.trim() !== '' || this.props.teamUrl !== '');
   },
   render: function() {
 
@@ -326,7 +328,9 @@ var TeamListItemNew = React.createClass({
             <input type="url" className="form-control" id="inputTeamURL" placeholder="https://example.com/team" value={ this.state.url } onChange={ this.handleURLChange } />
           </div>
           { ' ' }
-          <Button type="submit" disabled={ !this.shouldEnableAddButton() }>{ btnAddText }</Button>
+          <Button type="submit" disabled={ !this.shouldEnableAddButton() }>
+            { btnAddText }
+          </Button>
         </form>
       </ListGroupItem>
       );
