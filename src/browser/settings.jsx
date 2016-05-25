@@ -28,6 +28,11 @@ var SettingsPage = React.createClass({
     } catch (e) {
       config = settings.loadDefault();
     }
+
+    this.setState({
+      showAddTeamForm: false
+    });
+
     return config;
   },
   handleTeamsChange: function(teams) {
@@ -75,12 +80,28 @@ var SettingsPage = React.createClass({
       trayIconTheme: this.refs.trayIconTheme.getValue()
     });
   },
+  handleShowTeamForm: function() {
+    if (!this.state.showAddTeamForm) {
+      this.setState({
+        showAddTeamForm: true
+      });
+    } else {
+      this.setState({
+        showAddTeamForm: false
+      });
+    }
+  },
   render: function() {
     var teams_row = (
     <Row>
       <Col md={ 12 }>
-      <h2>Teams</h2>
-      <TeamList teams={ this.state.teams } onTeamsChange={ this.handleTeamsChange } />
+      <h2>
+        Teams
+        <Button className="pull-right" bsSize="small" onClick={ this.handleShowTeamForm }>
+          <Glyphicon glyph="plus" />
+        </Button>
+      </h2>
+      <TeamList teams={ this.state.teams } showAddTeamForm={ this.state.showAddTeamForm } onTeamsChange={ this.handleTeamsChange } />
       </Col>
     </Row>
     );
@@ -128,6 +149,11 @@ var SettingsPage = React.createClass({
 });
 
 var TeamList = React.createClass({
+  getInitialState: function() {
+    return {
+      showTeamListItemNew: false
+    };
+  },
   handleTeamRemove: function(index) {
     console.log(index);
     var teams = this.props.teams;
@@ -149,10 +175,18 @@ var TeamList = React.createClass({
         <TeamListItem index={ i } key={ "teamListItem" + i } name={ team.name } url={ team.url } onTeamRemove={ handleTeamRemove } />
         );
     });
+
+    var addTeamForm;
+    if (this.props.showAddTeamForm) {
+      addTeamForm = <TeamListItemNew onTeamAdd={ this.handleTeamAdd } />;
+    } else {
+      addTeamForm = '';
+    }
+
     return (
       <ListGroup class="teamList">
         { teamNodes }
-        <TeamListItemNew onTeamAdd={ this.handleTeamAdd } />
+        { addTeamForm }
       </ListGroup>
       );
   }
