@@ -26,17 +26,6 @@ var createTemplate = function(mainWindow) {
   template.push({
     label: '&' + first_menu_name,
     submenu: [{
-      label: 'About ' + app_name,
-      role: 'about',
-      click: function(item, focusedWindow) {
-        electron.dialog.showMessageBox(mainWindow, {
-          buttons: ["OK"],
-          message: `${app_name} Desktop ${electron.app.getVersion()}`
-        });
-      }
-    }, {
-      type: 'separator'
-    }, {
       label: (process.platform === 'darwin') ? 'Preferences...' : 'Settings',
       accelerator: 'CmdOrCtrl+,',
       click: function(item, focusedWindow) {
@@ -119,6 +108,8 @@ var createTemplate = function(mainWindow) {
         }
       }
     }, {
+      type: 'separator'
+    }, {
       label: 'Toggle Developer Tools',
       accelerator: (function() {
         if (process.platform === 'darwin') {
@@ -133,6 +124,13 @@ var createTemplate = function(mainWindow) {
           focusedWindow.toggleDevTools();
         }
       }
+    }, ]
+  });
+  template.push({
+    label: '&Help',
+    submenu: [{
+      label: `Version ${electron.app.getVersion()}`,
+      enabled: false
     }, ]
   });
   return template;
