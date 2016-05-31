@@ -189,7 +189,12 @@ var TeamList = React.createClass({
     }
 
     this.setState({
-      showTeamListItemNew: false
+      showTeamListItemNew: false,
+      team: {
+        url: '',
+        name: '',
+        index: false
+      }
     });
 
     this.props.onTeamsChange(teams);
@@ -288,7 +293,12 @@ var TeamListItemNew = React.createClass({
       url: this.state.url.trim(),
       index: this.state.index,
     });
-    this.setState(this.getInitialState());
+
+    this.setState({
+      name: '',
+      url: '',
+      index: ''
+    });
   },
   handleNameChange: function(e) {
     console.log('name');
