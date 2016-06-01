@@ -3,11 +3,11 @@
 ## Release v1.2.1 (Beta)
 
 ### Fixes
-- "Electron" appears on the title bar for a while on start up.
+- Fixed issue to remove "Electron" from appearing in the title bar on startup.
 
 ### Improvements
-- Add a dialog to confirm the protocol when opening the link.
-- Add a menu item in order to open the main window from the tray icon.
+- Added a dialog to confirm use of non-http(s) protocols prior to opening links. For example, clicking on a link to `file://test` will open a dialog to confirm the user intended to open a file.
+- Added a right-click menu option for tray icon to open the Desktop application on Windows and OS X.
 
 
 ## Release v1.2.0 (Beta)
