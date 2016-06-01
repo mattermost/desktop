@@ -16,6 +16,7 @@ const path = require('path');
 var settings = require('./common/settings');
 var certificateStore = require('./main/certificateStore').load(path.resolve(app.getPath('userData'), 'certificate.json'));
 var appMenu = require('./main/menus/app');
+const allowProtocolDialog = require('./main/allowProtocolDialog');
 
 var argv = require('yargs').argv;
 
@@ -164,6 +165,8 @@ app.on('login', function(event, webContents, request, authInfo, callback) {
   mainWindow.webContents.send('login-request', request, authInfo);
 });
 
+allowProtocolDialog.init(mainWindow);
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
@@ -171,10 +174,11 @@ app.on('ready', function() {
     // set up tray icon
     trayIcon = new Tray(trayImages.normal);
     trayIcon.setToolTip(app.getName());
-    var tray_menu = require('./main/menus/tray').createDefault();
-    trayIcon.setContextMenu(tray_menu);
     trayIcon.on('click', function() {
       mainWindow.focus();
+    });
+    trayIcon.on('right-click', () => {
+      trayIcon.popUpContextMenu();
     });
     trayIcon.on('balloon-click', function() {
       mainWindow.focus();
@@ -221,7 +225,7 @@ app.on('ready', function() {
     // On HiDPI Windows environment, the taskbar icon is pixelated. So this line is necessary.
     window_options.icon = path.resolve(__dirname, 'resources/appicon.png');
   }
-  window_options.fullScreenable = true;
+  window_options.title = app.getName();
   mainWindow = new BrowserWindow(window_options);
   mainWindow.setFullScreenable(true); // fullscreenable option has no effect.
   if (window_options.maximized) {
@@ -233,6 +237,12 @@ app.on('ready', function() {
 
   // and load the index.html of the app.
   mainWindow.loadURL('file://' + __dirname + '/browser/index.html');
+
+  // set up context menu for tray icon
+  if (shouldShowTrayIcon()) {
+    const tray_menu = require('./main/menus/tray').createDefault(mainWindow);
+    trayIcon.setContextMenu(tray_menu);
+  }
 
   // Open the DevTools.
   // mainWindow.openDevTools();

@@ -7,6 +7,16 @@
 - Add the option to show the icon on menu bar. (requires libappindicator1 on Ubuntu)
 
 
+## Release v1.2.1 (Beta)
+
+### Fixes
+- Fixed issue to remove "Electron" from appearing in the title bar on startup.
+
+### Improvements
+- Added a dialog to confirm use of non-http(s) protocols prior to opening links. For example, clicking on a link to `file://test` will open a dialog to confirm the user intended to open a file.
+- Added a right-click menu option for tray icon to open the Desktop application on Windows and OS X.
+
+
 ## Release v1.2.0 (Beta)
 
 - **Released:** 2016-05-17
