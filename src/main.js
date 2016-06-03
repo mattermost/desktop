@@ -197,12 +197,15 @@ app.on('ready', function() {
 
       if (arg.mentionCount > 0) {
         trayIcon.setImage(trayImages.mention);
+        trayIcon.setToolTip(arg.mentionCount + ' unread mentions');
       }
       else if (arg.unreadCount > 0) {
         trayIcon.setImage(trayImages.unread);
+        trayIcon.setToolTip(arg.unreadCount + ' unread channels');
       }
       else {
         trayIcon.setImage(trayImages.normal);
+        trayIcon.setToolTip(app.getName());
       }
     });
   }
