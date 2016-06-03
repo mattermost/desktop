@@ -99,19 +99,11 @@ var SettingsPage = React.createClass({
   render: function() {
 
     var buttonStyle = {
-      marginTop: 20,
+      marginTop: 20
     };
 
     var teams_row = (
     <Row>
-      <Col md={ 4 }>
-      <h2>Teams</h2>
-      </Col>
-      <Col md={ 8 }>
-      <Button className="pull-right" style={ buttonStyle } bsSize="small" onClick={ this.handleShowTeamForm }>
-        <Glyphicon glyph="plus" />
-      </Button>
-      </Col>
       <Col md={ 12 }>
       <TeamList teams={ this.state.teams } showAddTeamForm={ this.state.showAddTeamForm } onTeamsChange={ this.handleTeamsChange } />
       </Col>
@@ -146,6 +138,16 @@ var SettingsPage = React.createClass({
 
     return (
       <Grid className="settingsPage">
+        <Row>
+          <Col xs={ 4 } sm={ 1 } md={ 2 } lg={ 2 }>
+          <h2>Teams</h2>
+          </Col>
+          <Col xs={ 4 } sm={ 2 } md={ 1 } lg={ 1 } mdPull={ 1 }>
+          <Button className="pull-right" style={ buttonStyle } bsSize="small" onClick={ this.handleShowTeamForm }>
+            <Glyphicon glyph="plus" />
+          </Button>
+          </Col>
+        </Row>
         { teams_row }
         { options_row }
         <Row>
