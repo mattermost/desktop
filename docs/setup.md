@@ -79,9 +79,11 @@ You have to configure the application to interact with your teams.
    - OS X: Click `Mattermost` from the menu at the top of the screen, then click `Preferences...`.
    - Linux: Click `File -> Settings` on the menu.
 
-2. For each Mattermost team you'd like to use, enter its **Name** and **URL** then click **Add**
+2. Press `+` button next to the "Teams" label.
 
-3. Click **Save** to save your setting
+3. For each Mattermost team you'd like to use, enter its **Name** and **URL** then click **Add**
+
+4. Click **Save** to save your setting
 
 You're now ready to use **Mattermost Desktop** to interact with multiple teams from one desktop application.
 
