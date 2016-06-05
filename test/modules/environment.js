@@ -1,5 +1,12 @@
 'use strict';
 
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
+
+chai.should();
+chai.use(chaiAsPromised);
+
+
 const path = require('path');
 const Application = require('spectron').Application;
 
@@ -21,10 +28,12 @@ module.exports = {
   configFilePath: config_file_path,
   mattermostURL: mattermost_url,
   getSpectronApp: function() {
-    return new Application({
+    const app = new Application({
       path: electron_binary_path,
       args: [`${path.join(source_root_dir, 'dist')}`, '--config-file=' + config_file_path]
     });
+    chaiAsPromised.transferPromiseness = app.transferPromiseness
+    return app;
   },
   shouldTestForPlatforms: function(testCase, platforms) {
     if (platforms.indexOf(process.platform) !== -1) {
