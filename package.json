@@ -8,7 +8,7 @@
     "name": "Yuya Ochiai",
     "email": "yuya0321@gmail.com"
   },
-  "license": "MIT",
+  "license": "Apache-2.0",
   "engines": {
     "node": ">=4.2.0"
   },
