@@ -189,6 +189,10 @@ app.on('ready', function() {
         title: arg.title,
         content: arg.options.body
       });
+
+      if (config.notifications.flashWindow == 2) {
+        mainWindow.flashFrame(true);
+      }
     });
 
     // Set overlay icon from dataURL
@@ -209,6 +213,7 @@ app.on('ready', function() {
       }
       else {
         trayIcon.setImage(trayImages.normal);
+        mainWindow.flashFrame(false);
         trayIcon.setToolTip(app.getName());
       }
     });
