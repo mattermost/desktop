@@ -31,9 +31,6 @@ dependencies:
     - cp release/*.deb $CIRCLE_ARTIFACTS/
 
 test:
-  override:
-    - node_modules/.bin/mocha --reporter mocha-circleci-reporter
-    - node_modules/.bin/gulp prettify:verify
   post:
     - mv test-results.xml $CIRCLE_TEST_REPORTS/
 
