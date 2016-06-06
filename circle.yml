@@ -5,7 +5,7 @@ machine:
     - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 20
     - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 20
   node:
-    version: 5.10.0
+    version: 6.1.0
   services:
     - docker
 

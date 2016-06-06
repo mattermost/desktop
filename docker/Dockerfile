@@ -1,7 +1,7 @@
 FROM suchja/wine:latest
 MAINTAINER Yuya Ochiai <yuya0321@gmail.com>
 
-ENV NODE_VERSION=v5.10.0
+ENV NODE_VERSION=v6.1.0
 ENV PATH=$HOME/.nodebrew/current/bin:$PATH
 
 USER root
