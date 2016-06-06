@@ -57,9 +57,9 @@ const trayImages = function() {
   switch (process.platform) {
     case 'win32':
       return {
-        normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/tray.png')),
-        unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/tray_unread.png')),
-        mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/tray_mention.png'))
+        normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/windows/tray.ico')),
+        unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/windows/tray_unread.ico')),
+        mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/windows/tray_mention.ico'))
       };
     case 'darwin':
       return {
@@ -224,8 +224,7 @@ app.on('ready', function() {
     // follow Electron's defaults
     window_options = {};
   }
-  if (process.platform === 'win32' || process.platform === 'linux') {
-    // On HiDPI Windows environment, the taskbar icon is pixelated. So this line is necessary.
+  if (process.platform === 'linux') {
     window_options.icon = path.resolve(__dirname, 'resources/appicon.png');
   }
   window_options.title = app.getName();
