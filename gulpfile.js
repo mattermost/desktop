@@ -193,7 +193,7 @@ function makePackage(platform, arch, callback) {
     icon: 'resources/icon',
     "version-string": {
       CompanyName: packageJson.author.name,
-      LegalCopyright: 'Copyright (c) 2015 ' + packageJson.author.name,
+      LegalCopyright: 'Copyright (c) 2015 - 2016' + packageJson.author.name,
       FileDescription: packageJson.description,
       OriginalFilename: packageJson.productName + '.exe',
       ProductVersion: packageJson.version,

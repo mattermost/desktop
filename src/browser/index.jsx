@@ -326,6 +326,7 @@ var MattermostView = React.createClass({
       var currentURL = url.parse(webview.getURL());
       var destURL = url.parse(e.url);
       if (destURL.protocol !== 'http:' && destURL.protocol !== 'https:') {
+        ipcRenderer.send('confirm-protocol', destURL.protocol, e.url);
         return;
       }
       if (currentURL.host === destURL.host) {
@@ -473,11 +474,11 @@ var showUnreadBadgeWindows = function(unreadCount, mentionCount) {
   };
 
   if (mentionCount > 0) {
-    const dataURL = badge.createDataURL(mentionCount.toString());
-    sendBadge(dataURL, 'You have unread mention (' + mentionCount + ')');
+    const dataURL = badge.createDataURL(mentionCount.toString(), "#FF1744", "#580817"); // Material Red A400
+    sendBadge(dataURL, 'You have unread mentions (' + mentionCount + ')');
   } else if (unreadCount > 0) {
-    const dataURL = badge.createDataURL('•');
-    sendBadge(dataURL, 'You have unread channels');
+    const dataURL = badge.createDataURL('•', "#00e5ff", "#06545D"); // Material Cyan A400
+    sendBadge(dataURL, 'You have unread channels (' + unreadCount + ')');
   } else {
     sendBadge(null, 'You have no unread messages');
   }

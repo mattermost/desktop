@@ -1,6 +1,6 @@
 'use strict';
 
-var createDataURL = function(text) {
+var createDataURL = function(text, color, circleColor) {
   const scale = 2; // should rely display dpi
   const size = 16 * scale;
   const canvas = document.createElement('canvas');
@@ -9,10 +9,13 @@ var createDataURL = function(text) {
   const ctx = canvas.getContext('2d');
 
   // circle
-  ctx.fillStyle = "#FF1744"; // Material Red A400
+  ctx.fillStyle = color;
   ctx.beginPath();
   ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
   ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = circleColor;
+  ctx.stroke();
 
   // text
   ctx.fillStyle = "#ffffff"

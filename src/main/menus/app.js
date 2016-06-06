@@ -13,6 +13,25 @@ var createTemplate = function(mainWindow, config) {
   var template = [];
 
   const platformAppMenu = process.platform === 'darwin' ? [{
+    label: 'About ' + app_name,
+    role: 'about',
+    click: function(item, focusedWindow) {
+      electron.dialog.showMessageBox(mainWindow, {
+        buttons: ["OK"],
+        message: `${app_name} Desktop ${electron.app.getVersion()}`
+      });
+    }
+  }, {
+    type: 'separator'
+  }, {
+    label: 'Preferences...',
+    accelerator: 'CmdOrCtrl+,',
+    click: function(item, focusedWindow) {
+      mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
+    }
+  }, {
+    type: 'separator'
+  }, {
     label: 'Hide ' + app_name,
     accelerator: 'Command+H',
     selector: 'hide:'
@@ -25,36 +44,33 @@ var createTemplate = function(mainWindow, config) {
     selector: 'unhideAllApplications:'
   }, {
     type: 'separator'
-  }] : [];
+  }, {
+    label: 'Quit ' + app_name,
+    accelerator: 'CmdOrCtrl+Q',
+    click: function(item, focusedWindow) {
+      electron.app.quit();
+    }
+  }] : [{
+    label: 'Settings',
+    accelerator: 'CmdOrCtrl+,',
+    click: function(item, focusedWindow) {
+      mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
+    }
+  }, {
+    type: 'separator'
+  }, {
+    label: 'Quit',
+    accelerator: 'CmdOrCtrl+Q',
+    click: function(item, focusedWindow) {
+      electron.app.quit();
+    }
+  }];
 
   template.push({
     label: '&' + first_menu_name,
-    submenu: [{
-      label: 'About ' + app_name,
-      role: 'about',
-      click: function(item, focusedWindow) {
-        electron.dialog.showMessageBox(mainWindow, {
-          buttons: ["OK"],
-          message: `${app_name} Desktop ${electron.app.getVersion()}`
-        });
-      }
-    }, {
-      type: 'separator'
-    }, {
-      label: (process.platform === 'darwin') ? 'Preferences...' : 'Settings',
-      accelerator: 'CmdOrCtrl+,',
-      click: function(item, focusedWindow) {
-        mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
-      }
-    }, {
-      type: 'separator'
-    }, ...platformAppMenu, {
-      label: 'Quit',
-      accelerator: 'CmdOrCtrl+Q',
-      click: function(item, focusedWindow) {
-        electron.app.quit();
-      }
-    }]
+    submenu: [
+      ...platformAppMenu
+    ]
   });
   template.push({
     label: '&Edit',
@@ -122,6 +138,8 @@ var createTemplate = function(mainWindow, config) {
           focusedWindow.setFullScreen(!focusedWindow.isFullScreen());
         }
       }
+    }, {
+      type: 'separator'
     }, {
       label: 'Toggle Developer Tools',
       accelerator: (function() {
@@ -205,6 +223,13 @@ var createTemplate = function(mainWindow, config) {
   }
   template.push(window_menu);
 
+  template.push({
+    label: '&Help',
+    submenu: [{
+      label: `Version ${electron.app.getVersion()}`,
+      enabled: false
+    }, ]
+  });
   return template;
 };
 

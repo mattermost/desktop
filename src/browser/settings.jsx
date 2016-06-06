@@ -28,14 +28,21 @@ var SettingsPage = React.createClass({
     } catch (e) {
       config = settings.loadDefault();
     }
+
+    this.setState({
+      showAddTeamForm: false
+    });
+
     return config;
   },
   handleTeamsChange: function(teams) {
     this.setState({
       teams: teams
     });
+
+    this.handleSave(false);
   },
-  handleSave: function() {
+  handleSave: function(toIndex) {
     var config = {
       teams: this.state.teams,
       hideMenuBar: this.state.hideMenuBar,
@@ -50,8 +57,12 @@ var SettingsPage = React.createClass({
       currentWindow.setAutoHideMenuBar(config.hideMenuBar);
       currentWindow.setMenuBarVisibility(!config.hideMenuBar);
     }
+
     ipcRenderer.send('update-menu', config);
-    backToIndex();
+
+    if (typeof toIndex == 'undefined' || toIndex) {
+      backToIndex();
+    }
   },
   handleCancel: function() {
     backToIndex();
@@ -76,12 +87,27 @@ var SettingsPage = React.createClass({
       trayIconTheme: this.refs.trayIconTheme.getValue()
     });
   },
+  handleShowTeamForm: function() {
+    if (!this.state.showAddTeamForm) {
+      this.setState({
+        showAddTeamForm: true
+      });
+    } else {
+      this.setState({
+        showAddTeamForm: false
+      });
+    }
+  },
   render: function() {
+
+    var buttonStyle = {
+      marginTop: 20
+    };
+
     var teams_row = (
     <Row>
       <Col md={ 12 }>
-      <h2>Teams</h2>
-      <TeamList teams={ this.state.teams } onTeamsChange={ this.handleTeamsChange } />
+      <TeamList teams={ this.state.teams } showAddTeamForm={ this.state.showAddTeamForm } onTeamsChange={ this.handleTeamsChange } />
       </Col>
     </Row>
     );
@@ -114,6 +140,16 @@ var SettingsPage = React.createClass({
 
     return (
       <Grid className="settingsPage">
+        <Row>
+          <Col xs={ 4 } sm={ 1 } md={ 2 } lg={ 2 }>
+          <h2>Teams</h2>
+          </Col>
+          <Col xs={ 4 } sm={ 2 } md={ 1 } lg={ 1 } mdPull={ 1 }>
+          <Button className="pull-right" style={ buttonStyle } bsSize="small" onClick={ this.handleShowTeamForm }>
+            <Glyphicon glyph="plus" />
+          </Button>
+          </Col>
+        </Row>
         { teams_row }
         { options_row }
         <Row>
@@ -129,6 +165,16 @@ var SettingsPage = React.createClass({
 });
 
 var TeamList = React.createClass({
+  getInitialState: function() {
+    return {
+      showTeamListItemNew: false,
+      team: {
+        url: '',
+        name: '',
+        index: false
+      }
+    };
+  },
   handleTeamRemove: function(index) {
     console.log(index);
     var teams = this.props.teams;
@@ -137,8 +183,35 @@ var TeamList = React.createClass({
   },
   handleTeamAdd: function(team) {
     var teams = this.props.teams;
-    teams.push(team);
+
+    // check if team already exists and then change existing team or add new one
+    if (!team.index && teams[team.index]) {
+      teams[team.index].name = team.name;
+      teams[team.index].url = team.url;
+    } else {
+      teams.push(team);
+    }
+
+    this.setState({
+      showTeamListItemNew: false,
+      team: {
+        url: '',
+        name: '',
+        index: false
+      }
+    });
+
     this.props.onTeamsChange(teams);
+  },
+  handleTeamEditing: function(teamName, teamUrl, teamIndex) {
+    this.setState({
+      showTeamListItemNew: true,
+      team: {
+        url: teamUrl,
+        name: teamName,
+        index: teamIndex
+      }
+    })
   },
   render: function() {
     var thisObj = this;
@@ -146,14 +219,28 @@ var TeamList = React.createClass({
       var handleTeamRemove = function() {
         thisObj.handleTeamRemove(i);
       };
+
+      var handleTeamEditing = function() {
+        thisObj.handleTeamEditing(team.name, team.url, i);
+      };
+
       return (
-        <TeamListItem index={ i } key={ "teamListItem" + i } name={ team.name } url={ team.url } onTeamRemove={ handleTeamRemove } />
+        <TeamListItem index={ i } key={ "teamListItem" + i } name={ team.name } url={ team.url } onTeamRemove={ handleTeamRemove } onTeamEditing={ handleTeamEditing }
+        />
         );
     });
+
+    var addTeamForm;
+    if (this.props.showAddTeamForm || this.state.showTeamListItemNew) {
+      addTeamForm = <TeamListItemNew onTeamAdd={ this.handleTeamAdd } teamIndex={ this.state.team.index } teamName={ this.state.team.name } teamUrl={ this.state.team.url } />;
+    } else {
+      addTeamForm = '';
+    }
+
     return (
       <ListGroup class="teamList">
         { teamNodes }
-        <TeamListItemNew onTeamAdd={ this.handleTeamAdd } />
+        { addTeamForm }
       </ListGroup>
       );
   }
@@ -162,6 +249,9 @@ var TeamList = React.createClass({
 var TeamListItem = React.createClass({
   handleTeamRemove: function() {
     this.props.onTeamRemove();
+  },
+  handleTeamEditing: function() {
+    this.props.onTeamEditing();
   },
   render: function() {
     var style = {
@@ -178,6 +268,10 @@ var TeamListItem = React.createClass({
           </p>
         </div>
         <div className="pull-right">
+          <Button bsSize="xsmall" onClick={ this.handleTeamEditing }>
+            <Glyphicon glyph="pencil" />
+          </Button>
+          { ' ' }
           <Button bsSize="xsmall" onClick={ this.handleTeamRemove }>
             <Glyphicon glyph="remove" />
           </Button>
@@ -190,8 +284,9 @@ var TeamListItem = React.createClass({
 var TeamListItemNew = React.createClass({
   getInitialState: function() {
     return {
-      name: '',
-      url: ''
+      name: this.props.teamName,
+      url: this.props.teamUrl,
+      index: this.props.teamIndex
     };
   },
   handleSubmit: function(e) {
@@ -199,9 +294,15 @@ var TeamListItemNew = React.createClass({
     e.preventDefault();
     this.props.onTeamAdd({
       name: this.state.name.trim(),
-      url: this.state.url.trim()
+      url: this.state.url.trim(),
+      index: this.state.index,
     });
-    this.setState(this.getInitialState());
+
+    this.setState({
+      name: '',
+      url: '',
+      index: ''
+    });
   },
   handleNameChange: function(e) {
     console.log('name');
@@ -216,9 +317,23 @@ var TeamListItemNew = React.createClass({
     });
   },
   shouldEnableAddButton: function() {
-    return (this.state.name.trim() !== '') && (this.state.url.trim() !== '');
+    return (this.state.name.trim() !== '' || this.props.teamName !== '')
+      && (this.state.url.trim() !== '' || this.props.teamUrl !== '');
   },
   render: function() {
+
+    var existingTeam = false;
+    if (this.state.name !== '' && this.state.url !== '') {
+      existingTeam = true;
+    }
+
+    var btnAddText;
+    if (existingTeam) {
+      btnAddText = 'Save';
+    } else {
+      btnAddText = 'Add';
+    }
+
     return (
       <ListGroupItem>
         <form className="form-inline" onSubmit={ this.handleSubmit }>
@@ -234,7 +349,9 @@ var TeamListItemNew = React.createClass({
             <input type="url" className="form-control" id="inputTeamURL" placeholder="https://example.com/team" value={ this.state.url } onChange={ this.handleURLChange } />
           </div>
           { ' ' }
-          <Button type="submit" disabled={ !this.shouldEnableAddButton() }>Add</Button>
+          <Button type="submit" disabled={ !this.shouldEnableAddButton() }>
+            { btnAddText }
+          </Button>
         </form>
       </ListGroupItem>
       );

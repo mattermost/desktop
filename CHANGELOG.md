@@ -2,8 +2,11 @@
 
 ## Release v1.3.0 (Beta)
 
+### Changes
+- Changed the license, from MIT License to Apache License, Version 2.0.
+
 ### Improvements
-- Add shortcuts
+- Added shortcuts
   - Zoom
     - Ctrl+0 (View -> Actual Size): Reset the zoom level.
     - Ctrl+Plus (View -> Zoom In)
@@ -15,9 +18,26 @@
     - Ctrl+{1-9} (Window -> *Team name*): Open the *n*-th tab.
     - Ctrl+Tab or Alt+Command+Right (Window -> Select Next Team): Open the right tab.
     - Ctrl+Shift+Tab or Alt+Command+Left (Window -> Select Previous Team): Open the left tab.
+- Added **Add** button next to the "Teams" label on the Setting page.
+- Added **Edit** button on the team list on the Setting page.
+
+#### Windows
+- Added the tooltip for the tray icon in order to show count of unread channels/mantions.
 
 #### Linux
-- Add the option to show the icon on menu bar. (requires libappindicator1 on Ubuntu)
+- Added the option to show the icon on menu bar. (requires libappindicator1 on Ubuntu)
+
+
+## Release v1.2.1 (Beta)
+
+### Fixes
+- Fixed issue to remove "Electron" from appearing in the title bar on startup.
+
+### Improvements
+- Added a dialog to confirm use of non-http(s) protocols prior to opening links. For example, clicking on a link to `file://test` will open a dialog to confirm the user intended to open a file.
+
+#### Windows and OS X
+- Added a right-click menu option for tray icon to open the Desktop application on Windows and OS X.
 
 ### Known issues
 - The shortcuts can't switch teams twice in a raw.
