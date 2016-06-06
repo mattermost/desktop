@@ -1,6 +1,5 @@
 'use strict';
 
-const should = require('should');
 const path = require('path');
 const fs = require('fs');
 
@@ -20,87 +19,49 @@ describe('browser/index.html', function() {
     }]
   };
 
-  var chromedriver;
-  var client;
-  before(function(done) {
-    chromedriver = env.spawnChromeDriver();
-    client = env.getWebDriverIoClient();
-
-    fs.unlink(env.configFilePath, function(err) {
-      // waiting for chromedriver
-      setTimeout(done, 1000);
-    });
-  });
-
   beforeEach(function() {
     fs.writeFileSync(env.configFilePath, JSON.stringify(config));
+    this.app = env.getSpectronApp();
+    return this.app.start();
   });
 
   afterEach(function() {
-    return client.end();
-  });
-
-  after(function() {
-    chromedriver.kill();
+    if (this.app && this.app.isRunning()) {
+      return this.app.stop()
+    }
   });
 
   it('should NOT show tabs when there is one team', function() {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       url: env.mattermostURL
     }));
-    return client
-      .init()
-      .isExisting('#tabBar').then(function(isExisting) {
-        isExisting.should.be.false();
-      })
-      .end();
+    return this.app.restart().then(() => {
+      return this.app.client.waitUntilWindowLoaded()
+        .isExisting('#tabBar').should.eventually.be.false
+    });
   });
 
   it('should set src of webview from config file', function() {
-    return client
-      .init()
-      .getAttribute('#mattermostView0', 'src').then(function(attribute) {
-        attribute.should.equal(config.teams[0].url);
-      })
-      .getAttribute('#mattermostView1', 'src').then(function(attribute) {
-        attribute.should.equal(config.teams[1].url);
-      })
-      .isExisting('#mattermostView2').then(function(isExisting) {
-        isExisting.should.be.false();
-      })
-      .end();
+    return this.app.client.waitUntilWindowLoaded()
+      .getAttribute('#mattermostView0', 'src').should.eventually.equal(config.teams[0].url)
+      .getAttribute('#mattermostView1', 'src').should.eventually.equal(config.teams[1].url)
+      .isExisting('#mattermostView2').should.eventually.be.false
   });
 
   it('should set name of tab from config file', function() {
-    return client
-      .init()
-      .getText('#teamTabItem0').then(function(text) {
-        text.should.equal(config.teams[0].name);
-      })
-      .getText('#teamTabItem1').then(function(text) {
-        text.should.equal(config.teams[1].name);
-      })
-      .isExisting('#teamTabItem2').then(function(isExisting) {
-        isExisting.should.be.false();
-      })
-      .end();
+    return this.app.client.waitUntilWindowLoaded()
+      .getText('#teamTabItem0').should.eventually.equal(config.teams[0].name)
+      .getText('#teamTabItem1').should.eventually.equal(config.teams[1].name)
   });
 
   it('should show only the selected team', function() {
-    return client
-      .init()
-      .pause(1000)
-      .waitForVisible('#mattermostView0', 1000)
-      .isVisible('#mattermostView1').then(function(visility) {
-        visility.should.be.false();
-      })
+    return this.app.client.waitUntilWindowLoaded()
+      .isVisible('#mattermostView0').should.eventually.be.true
+      .isVisible('#mattermostView1').should.eventually.be.false
       .click('#teamTabItem1')
       .pause(1000)
-      .waitForVisible('#mattermostView1', 1000)
-      .isVisible('#mattermostView0').then(function(visility) {
-        visility.should.be.false();
-      })
-      .end();
+      .isVisible('#mattermostView1').should.eventually.be.true
+      .isVisible('#mattermostView0').should.eventually.be.false
   });
 
   it('should show error when using incorrect URL', function() {
@@ -112,9 +73,9 @@ describe('browser/index.html', function() {
         url: 'http://false'
       }]
     }));
-    return client
-      .init()
-      .waitForVisible('#mattermostView0-fail', 20000)
-      .end();
+    return this.app.restart().then(() => {
+      return this.app.client.waitUntilWindowLoaded()
+        .waitForVisible('#mattermostView0-fail', 20000)
+    });
   });
 });
