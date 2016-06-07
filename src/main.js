@@ -190,6 +190,7 @@ app.on('ready', function() {
         content: arg.options.body
       });
 
+      /* Todo: add idle here */
       if (config.notifications.flashWindow == 2) {
         mainWindow.flashFrame(true);
       }
@@ -213,8 +214,8 @@ app.on('ready', function() {
       }
       else {
         trayIcon.setImage(trayImages.normal);
-        mainWindow.flashFrame(false);
         trayIcon.setToolTip(app.getName());
+        mainWindow.flashFrame(false);
       }
     });
   }

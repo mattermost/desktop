@@ -151,10 +151,11 @@ var SettingsPage = React.createClass({
         label: 'Never',
         state: 0
       },
+      /* ToDo: Idle isn't implemented yet
       {
         label: 'Only when idle (after 10 seconds)',
         state: 1
-      },
+      },*/
       {
         label: 'Always',
         state: 2
@@ -165,19 +166,18 @@ var SettingsPage = React.createClass({
     var notificationElements = notificationSettings.map(function(item) {
       var boundClick = that.handleFlashWindowSetting.bind(that, item);
       return (
-          <Input key={ "flashWindow"  + item.state } name="handleFlashWindow" ref={ "flashWindow"  + item.state } type="radio"
-                 label={ item.label } value={ item.state } onChange={ boundClick }
-                 checked={ that.state.notifications.flashWindow == item.state ? "checked" : "" }/>
-      );
+        <Input key={ "flashWindow" + item.state } name="handleFlashWindow" ref={ "flashWindow" + item.state } type="radio" label={ item.label } value={ item.state } onChange={ boundClick }
+          checked={ that.state.notifications.flashWindow == item.state ? "checked" : "" } />
+        );
     });
 
     var notifications = (
-        <Row>
-          <Col md={ 12 }>
-            <h2>Notifications</h2>
-            { notificationElements }
-          </Col>
-        </Row>
+    <Row>
+      <Col md={ 12 }>
+      <h2>Notifications</h2> Configure, that the taskicon in the taskbar blinks when you were mentioned.
+      { notificationElements }
+      </Col>
+    </Row>
     )
 
     return (
