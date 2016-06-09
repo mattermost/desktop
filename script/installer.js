@@ -22,7 +22,7 @@ function getInstallerConfig() {
     //loadingGif: path.join(rootPath, 'assets', 'img', 'loading.gif'),
     noMsi: true,
     outputDirectory: path.join(outPath, 'windows-installer'),
-    setupExe: 'Mattermost.exe',
+    setupExe: 'mattermost-setup.exe',
     setupIcon: path.join(rootPath, 'resources', 'icon.ico'),
     skipUpdateIcon: true,
     exe: 'Mattermost.exe'
