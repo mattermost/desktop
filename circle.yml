@@ -15,7 +15,7 @@ dependencies:
     - "src/node_modules"
   post:
     - mkdir -p ~/.electron
-    - docker run --rm -it -v `pwd`:/project -v ~/.electron:/root/.electron electronuserland/electon-builder ./docker/package_in_docker.sh
+    - docker run --rm -it -v `pwd`:/project -v ~/.electron:/root/.electron electronuserland/electron-builder:wine ./docker/package_in_docker.sh
     - mv release/Mattermost-win32-ia32 release/mattermost-desktop-win32
     - mv release/Mattermost-win32-x64  release/mattermost-desktop-win64
     - mv release/Mattermost-darwin-x64 release/mattermost-desktop-osx
@@ -31,7 +31,7 @@ dependencies:
 
 test:
   override:
-    - docker run --rm -it -v `pwd`:/project -v ~/.electron:/root/.electron electronuserland/electon-builder /test.sh
+    - docker run --rm -it -v `pwd`:/project -v ~/.electron:/root/.electron electronuserland/electron-builder:wine /test.sh
   post:
     - mv test-results.xml $CIRCLE_TEST_REPORTS/
 
