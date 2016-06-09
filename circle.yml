@@ -13,11 +13,9 @@ dependencies:
   cache_directories:
     - "~/.electron"
     - "src/node_modules"
-    - "~/docker_cache"
   post:
-    - ./docker/circle_docker_build.sh
     - mkdir -p ~/.electron
-    - docker run --rm -it -v `pwd`:/home/xclient/electron-mattermost -v ~/.electron:/home/xclient/.electron yuya-oc/em-builder ./electron-mattermost/docker/package_in_docker.sh
+    - docker run --rm -it -v `pwd`:/project -v ~/.electron:/root/.electron electronuserland/electon-builder ./docker/package_in_docker.sh
     - mv release/Mattermost-win32-ia32 release/mattermost-desktop-win32
     - mv release/Mattermost-win32-x64  release/mattermost-desktop-win64
     - mv release/Mattermost-darwin-x64 release/mattermost-desktop-osx
@@ -32,6 +30,8 @@ dependencies:
     - cp release/windows-installer/mattermost-setup.exe $CIRCLE_ARTIFACTS/
 
 test:
+  override:
+    - docker run --rm -it -v `pwd`:/project -v ~/.electron:/root/.electron electronuserland/electon-builder /test.sh
   post:
     - mv test-results.xml $CIRCLE_TEST_REPORTS/
 
