@@ -2,6 +2,7 @@
 
 const electron = require('electron');
 const Menu = electron.Menu;
+const isDev = require('electron-is-dev');
 
 var createTemplate = function(mainWindow) {
   var app_name = electron.app.getName();
@@ -134,7 +135,12 @@ var createTemplate = function(mainWindow) {
           focusedWindow.setFullScreen(!focusedWindow.isFullScreen());
         }
       }
-    }, {
+    }, ]
+  });
+
+  if (isDev) {
+    const helpMenu = template[template.length - 1].submenu
+    helpMenu.push({
       type: 'separator'
     }, {
       label: 'Toggle Developer Tools',
@@ -151,8 +157,9 @@ var createTemplate = function(mainWindow) {
           focusedWindow.toggleDevTools();
         }
       }
-    }, ]
-  });
+    });
+  }
+
   template.push({
     label: '&Help',
     submenu: [{
