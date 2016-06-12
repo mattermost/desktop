@@ -52,5 +52,5 @@ deploy win64 zip
 deploy osx tar.gz
 deploy linux-ia32 tar.gz
 deploy linux-x64 tar.gz
-upload mattermost-desktop-$RELEASE_TAG-linux-i386.deb release/mattermost-desktop-$RELEASE_TAG-i386.deb
-upload mattermost-desktop-$RELEASE_TAG-linux-amd64.deb release/mattermost-desktop-$RELEASE_TAG-amd64.deb
+upload mattermost-desktop-$RELEASE_TAG-linux-ia32.deb release/mattermost-desktop-$RELEASE_TAG-ia32.deb
+upload mattermost-desktop-$RELEASE_TAG-linux-x64.deb release/mattermost-desktop-$RELEASE_TAG.deb
