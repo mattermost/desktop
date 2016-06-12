@@ -15,7 +15,7 @@ const ListGroupItem = ReactBootstrap.ListGroupItem;
 
 const LoginModal = require('./components/loginModal.jsx');
 
-const {remote, ipcRenderer, webFrame} = require('electron');
+const {remote, ipcRenderer, webFrame, shell} = require('electron');
 
 const osLocale = require('os-locale');
 const fs = require('fs');
@@ -334,7 +334,7 @@ var MattermostView = React.createClass({
         window.open(e.url, 'Mattermost', 'nodeIntegration=no');
       } else {
         // if the link is external, use default browser.
-        require('shell').openExternal(e.url);
+        shell.openExternal(e.url);
       }
     });
 

@@ -3,7 +3,8 @@
 const {
   app,
   dialog,
-  ipcMain
+  ipcMain,
+  shell
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -23,7 +24,7 @@ function init(mainWindow) {
 function initDialogEvent(mainWindow) {
   ipcMain.on('confirm-protocol', (event, protocol, URL) => {
     if (allowedProtocols.indexOf(protocol) !== -1) {
-      require('shell').openExternal(URL);
+      shell.openExternal(URL);
       return;
     }
     dialog.showMessageBox(mainWindow, {
@@ -47,7 +48,7 @@ function initDialogEvent(mainWindow) {
           });
           // fallthrough
         case 0:
-          require('shell').openExternal(URL);
+          shell.openExternal(URL);
           break;
         default:
           break;
