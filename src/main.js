@@ -63,9 +63,9 @@ const trayImages = function() {
       };
     case 'darwin':
       return {
-        normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconTemplate.png')),
-        unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconUnreadTemplate.png')),
-        mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconMentionTemplate.png'))
+        normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIcon.png')),
+        unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconUnread.png')),
+        mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconMention.png'))
       };
     case 'linux':
       var resourcesDir = 'resources/linux/' + (config.trayIconTheme || 'light') + '/';
