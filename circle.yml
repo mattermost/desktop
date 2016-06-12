@@ -31,8 +31,6 @@ dependencies:
     - cp release/windows-installer/mattermost-setup.exe $CIRCLE_ARTIFACTS/
 
 test:
-  override:
-    - docker run --rm -it -v `pwd`:/project -v ~/.electron:/root/.electron electronuserland/electron-builder:wine /test.sh
   post:
     - mv test-results.xml $CIRCLE_TEST_REPORTS/
 
