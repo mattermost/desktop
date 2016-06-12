@@ -65,7 +65,12 @@ const trayImages = function() {
       return {
         normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIcon.png')),
         unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconUnread.png')),
-        mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconMention.png'))
+        mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconMention.png')),
+        clicked: {
+          normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/ClickedMenuIcon.png')),
+          unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/ClickedMenuIconUnread.png')),
+          mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/ClickedMenuIconMention.png'))
+        }
       };
     case 'linux':
       var resourcesDir = 'resources/linux/' + (config.trayIconTheme || 'light') + '/';
@@ -173,6 +178,7 @@ app.on('ready', function() {
   if (shouldShowTrayIcon()) {
     // set up tray icon
     trayIcon = new Tray(trayImages.normal);
+    trayIcon.setPressedImage(trayImages.clicked.normal);
     trayIcon.setToolTip(app.getName());
     trayIcon.on('click', function() {
       mainWindow.focus();
@@ -201,14 +207,17 @@ app.on('ready', function() {
 
       if (arg.mentionCount > 0) {
         trayIcon.setImage(trayImages.mention);
+        trayIcon.setPressedImage(trayImages.clicked.mention);
         trayIcon.setToolTip(arg.mentionCount + ' unread mentions');
       }
       else if (arg.unreadCount > 0) {
         trayIcon.setImage(trayImages.unread);
+        trayIcon.setPressedImage(trayImages.clicked.unread);
         trayIcon.setToolTip(arg.unreadCount + ' unread channels');
       }
       else {
         trayIcon.setImage(trayImages.normal);
+        trayIcon.setPressedImage(trayImages.clicked.normal);
         trayIcon.setToolTip(app.getName());
       }
     });
