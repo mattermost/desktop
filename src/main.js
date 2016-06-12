@@ -1,15 +1,17 @@
 'use strict';
 
-const electron = require('electron');
-const app = electron.app; // Module to control application life.
+const {
+  app,
+  BrowserWindow,
+  Menu,
+  Tray,
+  ipcMain,
+  nativeImage,
+  dialog
+} = require('electron');
 
 if (require('electron-squirrel-startup')) app.quit();
 
-const BrowserWindow = electron.BrowserWindow; // Module to create native browser window.
-const Menu = electron.Menu;
-const Tray = electron.Tray;
-const ipc = electron.ipcMain;
-const nativeImage = electron.nativeImage;
 const fs = require('fs');
 const path = require('path');
 
@@ -134,7 +136,7 @@ app.on('certificate-error', function(event, webContents, url, error, certificate
       detail = `Certificate is different from previous one.\n\n` + detail;
     }
 
-    electron.dialog.showMessageBox(mainWindow, {
+    dialog.showMessageBox(mainWindow, {
       title: 'Certificate error',
       message: `Do you trust certificate from "${certificate.issuerName}"?`,
       detail: detail,
@@ -157,7 +159,7 @@ app.on('certificate-error', function(event, webContents, url, error, certificate
 
 const loginCallbackMap = new Map();
 
-ipc.on('login-credentials', function(event, request, user, password) {
+ipcMain.on('login-credentials', function(event, request, user, password) {
   const callback = loginCallbackMap.get(JSON.stringify(request));
   if (callback != null) {
     callback(user, password);
@@ -189,7 +191,7 @@ app.on('ready', function() {
     trayIcon.on('balloon-click', function() {
       mainWindow.focus();
     });
-    ipc.on('notified', function(event, arg) {
+    ipcMain.on('notified', function(event, arg) {
       trayIcon.displayBalloon({
         icon: path.resolve(__dirname, 'resources/appicon.png'),
         title: arg.title,
@@ -199,9 +201,9 @@ app.on('ready', function() {
 
     // Set overlay icon from dataURL
     // Set trayicon to show "dot"
-    ipc.on('update-unread', function(event, arg) {
+    ipcMain.on('update-unread', function(event, arg) {
       if (process.platform === 'win32') {
-        const overlay = arg.overlayDataURL ? electron.nativeImage.createFromDataURL(arg.overlayDataURL) : null;
+        const overlay = arg.overlayDataURL ? nativeImage.createFromDataURL(arg.overlayDataURL) : null;
         mainWindow.setOverlayIcon(overlay, arg.description);
       }
 
@@ -250,11 +252,11 @@ app.on('ready', function() {
   mainWindow.loadURL('file://' + __dirname + '/browser/index.html');
 
   // Set application menu
-  ipc.on('update-menu', (event, config) => {
+  ipcMain.on('update-menu', (event, config) => {
     var app_menu = appMenu.createMenu(mainWindow, config);
     Menu.setApplicationMenu(app_menu);
   });
-  ipc.emit('update-menu', true, config);
+  ipcMain.emit('update-menu', true, config);
 
   // set up context menu for tray icon
   if (shouldShowTrayIcon()) {
