@@ -7,7 +7,8 @@ const {
   Tray,
   ipcMain,
   nativeImage,
-  dialog
+  dialog,
+  systemPreferences
 } = require('electron');
 
 if (require('electron-squirrel-startup')) app.quit();
@@ -51,6 +52,20 @@ catch (e) {
   console.log('Failed to read or upgrade config.json');
 }
 
+// Only for OS X
+const switchMenuIconImages = function(icons, isDarkMode) {
+  if (isDarkMode) {
+    icons.normal = icons.clicked.normal;
+    icons.unread = icons.clicked.unread;
+    icons.mention = icons.clicked.mention;
+  }
+  else {
+    icons.normal = icons.light.normal;
+    icons.unread = icons.light.unread;
+    icons.mention = icons.light.mention;
+  }
+};
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 var mainWindow = null;
@@ -64,16 +79,20 @@ const trayImages = function() {
         mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/windows/tray_mention.ico'))
       };
     case 'darwin':
-      return {
-        normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIcon.png')),
-        unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconUnread.png')),
-        mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconMention.png')),
+      const icons = {
+        light: {
+          normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIcon.png')),
+          unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconUnread.png')),
+          mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconMention.png'))
+        },
         clicked: {
           normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/ClickedMenuIcon.png')),
           unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/ClickedMenuIconUnread.png')),
           mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/ClickedMenuIconMention.png'))
         }
       };
+      switchMenuIconImages(icons, systemPreferences.isDarkMode());
+      return icons;
     case 'linux':
       var resourcesDir = 'resources/linux/' + (config.trayIconTheme || 'light') + '/';
       return {
@@ -181,6 +200,11 @@ app.on('ready', function() {
     // set up tray icon
     trayIcon = new Tray(trayImages.normal);
     trayIcon.setPressedImage(trayImages.clicked.normal);
+    systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', (event, userInfo) => {
+      switchMenuIconImages(trayImages, systemPreferences.isDarkMode());
+      trayIcon.setImage(trayImages.normal);
+    });
+
     trayIcon.setToolTip(app.getName());
     trayIcon.on('click', function() {
       mainWindow.focus();
