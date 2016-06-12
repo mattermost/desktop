@@ -24,6 +24,9 @@
 #### Windows
 - Added the tooltip for the tray icon in order to show count of unread channels/mantions.
 
+#### OS X
+- Added colored badges to the menu icon when there are unread channels/mentions.
+
 #### Linux
 - Added the option to show the icon on menu bar. (requires libappindicator1 on Ubuntu)
 

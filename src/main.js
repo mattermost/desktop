@@ -1,15 +1,18 @@
 'use strict';
 
-const electron = require('electron');
-const app = electron.app; // Module to control application life.
+const {
+  app,
+  BrowserWindow,
+  Menu,
+  Tray,
+  ipcMain,
+  nativeImage,
+  dialog,
+  systemPreferences
+} = require('electron');
 
 if (require('electron-squirrel-startup')) app.quit();
 
-const BrowserWindow = electron.BrowserWindow; // Module to create native browser window.
-const Menu = electron.Menu;
-const Tray = electron.Tray;
-const ipc = electron.ipcMain;
-const nativeImage = electron.nativeImage;
 const fs = require('fs');
 const path = require('path');
 
@@ -49,6 +52,20 @@ catch (e) {
   console.log('Failed to read or upgrade config.json');
 }
 
+// Only for OS X
+const switchMenuIconImages = function(icons, isDarkMode) {
+  if (isDarkMode) {
+    icons.normal = icons.clicked.normal;
+    icons.unread = icons.clicked.unread;
+    icons.mention = icons.clicked.mention;
+  }
+  else {
+    icons.normal = icons.light.normal;
+    icons.unread = icons.light.unread;
+    icons.mention = icons.light.mention;
+  }
+};
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 var mainWindow = null;
@@ -62,11 +79,20 @@ const trayImages = function() {
         mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/windows/tray_mention.ico'))
       };
     case 'darwin':
-      return {
-        normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconTemplate.png')),
-        unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconUnreadTemplate.png')),
-        mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconMentionTemplate.png'))
+      const icons = {
+        light: {
+          normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIcon.png')),
+          unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconUnread.png')),
+          mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconMention.png'))
+        },
+        clicked: {
+          normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/ClickedMenuIcon.png')),
+          unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/ClickedMenuIconUnread.png')),
+          mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/ClickedMenuIconMention.png'))
+        }
       };
+      switchMenuIconImages(icons, systemPreferences.isDarkMode());
+      return icons;
     case 'linux':
       var resourcesDir = 'resources/linux/' + (config.trayIconTheme || 'light') + '/';
       return {
@@ -129,7 +155,7 @@ app.on('certificate-error', function(event, webContents, url, error, certificate
       detail = `Certificate is different from previous one.\n\n` + detail;
     }
 
-    electron.dialog.showMessageBox(mainWindow, {
+    dialog.showMessageBox(mainWindow, {
       title: 'Certificate error',
       message: `Do you trust certificate from "${certificate.issuerName}"?`,
       detail: detail,
@@ -152,7 +178,7 @@ app.on('certificate-error', function(event, webContents, url, error, certificate
 
 const loginCallbackMap = new Map();
 
-ipc.on('login-credentials', function(event, request, user, password) {
+ipcMain.on('login-credentials', function(event, request, user, password) {
   const callback = loginCallbackMap.get(JSON.stringify(request));
   if (callback != null) {
     callback(user, password);
@@ -173,6 +199,14 @@ app.on('ready', function() {
   if (shouldShowTrayIcon()) {
     // set up tray icon
     trayIcon = new Tray(trayImages.normal);
+    if (process.platform === 'darwin') {
+      trayIcon.setPressedImage(trayImages.clicked.normal);
+      systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', (event, userInfo) => {
+        switchMenuIconImages(trayImages, systemPreferences.isDarkMode());
+        trayIcon.setImage(trayImages.normal);
+      });
+    }
+
     trayIcon.setToolTip(app.getName());
     trayIcon.on('click', function() {
       mainWindow.focus();
@@ -183,7 +217,7 @@ app.on('ready', function() {
     trayIcon.on('balloon-click', function() {
       mainWindow.focus();
     });
-    ipc.on('notified', function(event, arg) {
+    ipcMain.on('notified', function(event, arg) {
       trayIcon.displayBalloon({
         icon: path.resolve(__dirname, 'resources/appicon.png'),
         title: arg.title,
@@ -193,22 +227,31 @@ app.on('ready', function() {
 
     // Set overlay icon from dataURL
     // Set trayicon to show "dot"
-    ipc.on('update-unread', function(event, arg) {
+    ipcMain.on('update-unread', function(event, arg) {
       if (process.platform === 'win32') {
-        const overlay = arg.overlayDataURL ? electron.nativeImage.createFromDataURL(arg.overlayDataURL) : null;
+        const overlay = arg.overlayDataURL ? nativeImage.createFromDataURL(arg.overlayDataURL) : null;
         mainWindow.setOverlayIcon(overlay, arg.description);
       }
 
       if (arg.mentionCount > 0) {
         trayIcon.setImage(trayImages.mention);
+        if (process.platform === 'darwin') {
+          trayIcon.setPressedImage(trayImages.clicked.mention);
+        }
         trayIcon.setToolTip(arg.mentionCount + ' unread mentions');
       }
       else if (arg.unreadCount > 0) {
         trayIcon.setImage(trayImages.unread);
+        if (process.platform === 'darwin') {
+          trayIcon.setPressedImage(trayImages.clicked.unread);
+        }
         trayIcon.setToolTip(arg.unreadCount + ' unread channels');
       }
       else {
         trayIcon.setImage(trayImages.normal);
+        if (process.platform === 'darwin') {
+          trayIcon.setPressedImage(trayImages.clicked.normal);
+        }
         trayIcon.setToolTip(app.getName());
       }
     });
@@ -241,11 +284,11 @@ app.on('ready', function() {
   mainWindow.loadURL('file://' + __dirname + '/browser/index.html');
 
   // Set application menu
-  ipc.on('update-menu', (event, config) => {
+  ipcMain.on('update-menu', (event, config) => {
     var app_menu = appMenu.createMenu(mainWindow, config);
     Menu.setApplicationMenu(app_menu);
   });
-  ipc.emit('update-menu', true, config);
+  ipcMain.emit('update-menu', true, config);
 
   // set up context menu for tray icon
   if (shouldShowTrayIcon()) {
