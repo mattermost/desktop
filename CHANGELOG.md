@@ -5,6 +5,15 @@
 ### Changes
 - Changed the license, from MIT License to Apache License, Version 2.0.
 
+### Fixes
+
+#### Windows
+- Fixed the pixelated app icon on the top left of the window.
+- Fixed the blurred tray icon.
+
+#### OS X
+- Fixed that two icons appear on a notification.
+
 ### Improvements
 - Added shortcuts
   - Zoom
@@ -20,9 +29,10 @@
     - Ctrl+Shift+Tab or Alt+Command+Left (Window -> Select Previous Team): Open the left tab.
 - Added **Add** button next to the "Teams" label on the Setting page.
 - Added **Edit** button on the team list on the Setting page.
+- Added **Help** menu to indicate the application version.
 
 #### Windows
-- Added the tooltip for the tray icon in order to show count of unread channels/mantions.
+- Added the tooltip text for the tray icon in order to show count of unread channels/mantions.
 
 #### OS X
 - Added colored badges to the menu icon when there are unread channels/mentions.

@@ -155,6 +155,8 @@ Below lists menu options (shortcut keys are listed in brackets, `Ctrl` becomes `
   - ***Team Name*** (Ctrl+{1-9}) - Open the *n*-th tab
   - **Select Next Team** (Ctrl+Tab, Alt+Command+Right) - Open the right tab
   - **Select Previous Team** (Ctrl+Shift+Tab, Alt+Command+Left) - Open the left tab
+- **Help**
+  - ***Version*** Indicate the application version
 
 
 ## Notifications
