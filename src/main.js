@@ -199,11 +199,13 @@ app.on('ready', function() {
   if (shouldShowTrayIcon()) {
     // set up tray icon
     trayIcon = new Tray(trayImages.normal);
-    trayIcon.setPressedImage(trayImages.clicked.normal);
-    systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', (event, userInfo) => {
-      switchMenuIconImages(trayImages, systemPreferences.isDarkMode());
-      trayIcon.setImage(trayImages.normal);
-    });
+    if (process.platform === 'darwin') {
+      trayIcon.setPressedImage(trayImages.clicked.normal);
+      systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', (event, userInfo) => {
+        switchMenuIconImages(trayImages, systemPreferences.isDarkMode());
+        trayIcon.setImage(trayImages.normal);
+      });
+    }
 
     trayIcon.setToolTip(app.getName());
     trayIcon.on('click', function() {
@@ -233,17 +235,23 @@ app.on('ready', function() {
 
       if (arg.mentionCount > 0) {
         trayIcon.setImage(trayImages.mention);
-        trayIcon.setPressedImage(trayImages.clicked.mention);
+        if (process.platform === 'darwin') {
+          trayIcon.setPressedImage(trayImages.clicked.mention);
+        }
         trayIcon.setToolTip(arg.mentionCount + ' unread mentions');
       }
       else if (arg.unreadCount > 0) {
         trayIcon.setImage(trayImages.unread);
-        trayIcon.setPressedImage(trayImages.clicked.unread);
+        if (process.platform === 'darwin') {
+          trayIcon.setPressedImage(trayImages.clicked.unread);
+        }
         trayIcon.setToolTip(arg.unreadCount + ' unread channels');
       }
       else {
         trayIcon.setImage(trayImages.normal);
-        trayIcon.setPressedImage(trayImages.clicked.normal);
+        if (process.platform === 'darwin') {
+          trayIcon.setPressedImage(trayImages.clicked.normal);
+        }
         trayIcon.setToolTip(app.getName());
       }
     });
