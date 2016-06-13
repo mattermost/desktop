@@ -286,7 +286,7 @@ var TabBar = React.createClass({
 var MattermostView = React.createClass({
   getInitialState: function() {
     return {
-      did_fail_load: null
+      errorInfo: null
     };
   },
   handleUnreadCountChange: function(unreadCount, mentionCount, isUnread, isMentioned) {
@@ -317,8 +317,14 @@ var MattermostView = React.createClass({
         icon: '../resources/appicon.png'
       });
       thisObj.setState({
-        did_fail_load: e
+        errorInfo: e
       });
+      setTimeout(() => {
+        thisObj.setState({
+          errorInfo: null
+        });
+        webview.reload();
+      }, 30000);
     });
 
     // Open link in browserWindow. for exmaple, attached files.
@@ -403,14 +409,16 @@ var MattermostView = React.createClass({
     });
   },
   render: function() {
+    const errorView = this.state.errorInfo ? (<ErrorView id={ this.props.id + '-fail' } style={ this.props.style } className="errorView" errorInfo={ this.state.errorInfo }></ErrorView>) : null;
     // 'disablewebsecurity' is necessary to display external images.
     // However, it allows also CSS/JavaScript.
     // So webview should use 'allowDisplayingInsecureContent' as same as BrowserWindow.
-    if (this.state.did_fail_load === null) {
-      return (<webview id={ this.props.id } className="mattermostView" style={ this.props.style } preload="webview/mattermost.js" src={ this.props.src } ref="webview"></webview>);
-    } else {
-      return (<ErrorView id={ this.props.id + '-fail' } className="errorView" errorInfo={ this.state.did_fail_load } style={ this.props.style }></ErrorView>)
-    }
+
+    // Need to keep webview mounted when failed to load.
+    return (<div>
+              { errorView }
+              <webview id={ this.props.id } className="mattermostView" style={ this.props.style } preload="webview/mattermost.js" src={ this.props.src } ref="webview"></webview>
+            </div>);
   }
 });
 
