@@ -30,6 +30,7 @@
 - Added **Add** button next to the "Teams" label on the Setting page.
 - Added **Edit** button on the team list on the Setting page.
 - Added **Help** menu to indicate the application version.
+- Added auto-reloading when the tab failed to load the team.
 
 #### Windows
 - Added the tooltip text for the tray icon in order to show count of unread channels/mantions.
