@@ -38,7 +38,7 @@
     "electron-builder": "3.20.0",
     "electron-connect": "^0.3.7",
     "electron-packager": "^7.0.1",
-    "electron-prebuilt": "1.2.1",
+    "electron-prebuilt": "1.2.2",
     "electron-winstaller": "^2.2.0",
     "esformatter": "^0.9.3",
     "esformatter-jsx": "^5.0.0",
