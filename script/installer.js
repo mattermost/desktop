@@ -21,6 +21,8 @@ function getInstallerConfig(arch) {
 
   return Promise.resolve({
     appDirectory: path.join(outPath, `Mattermost-win32-${arch}`),
+    authors: 'Mattermost, Inc.',
+    owners: 'Mattermost, Inc.',
     iconUrl: 'https://raw.githubusercontent.com/mattermost/desktop/master/resources/icon.ico',
     //loadingGif: path.join(rootPath, 'assets', 'img', 'loading.gif'),
     noMsi: true,

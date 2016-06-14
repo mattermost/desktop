@@ -14,6 +14,7 @@ var electron = require('electron-connect').server.create({
   path: './dist'
 });
 var packager = require('electron-packager');
+const fs = require('fs');
 
 var sources = ['**/*.js', '**/*.json', '**/*.css', '**/*.html', '!**/node_modules/**', '!dist/**', '!release/**', '!**/test_config.json'];
 
@@ -77,9 +78,15 @@ gulp.task('prettify:jsx:verify', function() {
 });
 
 
-gulp.task('build', ['sync-meta', 'webpack', 'copy'], function() {
-  return gulp.src('src/package.json')
-    .pipe(gulp.dest('dist'));
+gulp.task('build', ['sync-meta', 'webpack', 'copy'], function(cb) {
+  const appPackageJson = require('./src/package.json');
+  const distPackageJson = Object.assign({}, appPackageJson, {
+    author: {
+      name: 'Mattermost, Inc.',
+      email: 'noreply'
+    }
+  });
+  fs.writeFile('./dist/package.json', JSON.stringify(distPackageJson, null, '  '), cb);
 });
 
 gulp.task('webpack', ['webpack:main', 'webpack:browser', 'webpack:webview']);
@@ -239,6 +246,5 @@ gulp.task('sync-meta', function() {
   appPackageJson.description = packageJson.description;
   appPackageJson.author = packageJson.author;
   appPackageJson.license = packageJson.license;
-  var fs = require('fs');
   fs.writeFileSync('./src/package.json', JSON.stringify(appPackageJson, null, '  ') + '\n');
 });
