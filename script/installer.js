@@ -4,13 +4,16 @@ const createWindowsInstaller = require('electron-winstaller').createWindowsInsta
 const path = require('path')
 const rimraf = require('rimraf')
 
-deleteOutputFolder('x64')
-  .then(getInstallerConfig)
-  .then(createWindowsInstaller)
-  .catch((error) => {
-    console.error(error.message || error)
-    process.exit(1)
-  })
+const archList = ['ia32', 'x64'];
+archList.forEach((arch) => {
+  deleteOutputFolder(arch)
+    .then(getInstallerConfig)
+    .then(createWindowsInstaller)
+    .catch((error) => {
+      console.error(error.message || error)
+      process.exit(1)
+    })
+})
 
 function getInstallerConfig(arch) {
   const rootPath = path.join(__dirname, '..')
