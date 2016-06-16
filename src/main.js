@@ -3,7 +3,21 @@
 const electron = require('electron');
 const app = electron.app; // Module to control application life.
 
-if (require('electron-squirrel-startup')) app.quit();
+if (process.platform === 'win32') {
+  var cmd = process.argv[1];
+  if (cmd === '--squirrel-uninstall') {
+    var AutoLaunch = require('auto-launch');
+    var appLauncher = new AutoLaunch({
+      name: 'Mattermost'
+    });
+    appLauncher.isEnabled().then(function(enabled) {
+      if (enabled)
+        appLauncher.disable();
+    });
+  }
+}
+
+require('electron-squirrel-startup');
 
 const BrowserWindow = electron.BrowserWindow; // Module to create native browser window.
 const Menu = electron.Menu;
