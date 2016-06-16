@@ -122,6 +122,8 @@ The Settings Page is available from the **File** menu under **Settings** (Click 
    - **Allow insecure contents**
       - If your team is hosted on `https://`, images with `http://` are not rendered by default.
         This option allows such images to be rendered, but please be careful for security.
+   - **Start app on login** (Windows, Linux)
+      - This option starts the application when you login.
 
 
 ## Menu Bar
