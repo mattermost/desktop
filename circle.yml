@@ -28,8 +28,7 @@ dependencies:
     - tar zcvf $CIRCLE_ARTIFACTS/mattermost-desktop-linux-ia32.tar.gz -C release mattermost-desktop-linux-ia32
     - tar zcvf $CIRCLE_ARTIFACTS/mattermost-desktop-linux-x64.tar.gz -C release mattermost-desktop-linux-x64
     - cp release/*.deb $CIRCLE_ARTIFACTS/
-    - cp release/windows-installer-ia32/mattermost-setup-ia32.exe $CIRCLE_ARTIFACTS/
-    - cp release/windows-installer-x64/mattermost-setup-x64.exe $CIRCLE_ARTIFACTS/
+    - cp -r release/windows-installer-x64/ $CIRCLE_ARTIFACTS/
 
 test:
   post:
