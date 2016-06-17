@@ -34,9 +34,7 @@ var SettingsPage = React.createClass({
       config = settings.loadDefault();
     }
 
-    this.setState({
-      showAddTeamForm: false
-    });
+    config.showAddTeamForm = false;
 
     return config;
   },
@@ -54,10 +52,8 @@ var SettingsPage = React.createClass({
     this.setState({
       teams: teams
     });
-
-    this.handleSave(false);
   },
-  handleSave: function(toIndex) {
+  handleSave: function() {
     var config = {
       teams: this.state.teams,
       hideMenuBar: this.state.hideMenuBar,
@@ -88,9 +84,7 @@ var SettingsPage = React.createClass({
     ipcRenderer.send('update-menu', config);
     ipcRenderer.send('update-config');
 
-    if (typeof toIndex == 'undefined' || toIndex) {
-      backToIndex();
-    }
+    backToIndex();
   },
   handleCancel: function() {
     backToIndex();
@@ -120,16 +114,10 @@ var SettingsPage = React.createClass({
       autostart: this.refs.autostart.getChecked()
     });
   },
-  handleShowTeamForm: function() {
-    if (!this.state.showAddTeamForm) {
-      this.setState({
-        showAddTeamForm: true
-      });
-    } else {
-      this.setState({
-        showAddTeamForm: false
-      });
-    }
+  toggleShowTeamForm: function() {
+    this.setState({
+      showAddTeamForm: !this.state.showAddTeamForm
+    });
   },
   handleFlashWindowSetting: function(item) {
     this.setState({
@@ -169,7 +157,7 @@ var SettingsPage = React.createClass({
     }
     options.push(<Input key="inputDisableWebSecurity" ref="disablewebsecurity" type="checkbox" label="Allow mixed content (Enabling allows both secure and insecure content, images and scripts to render and execute. Disabling allows only secure content.)"
                    checked={ this.state.disablewebsecurity } onChange={ this.handleChangeDisableWebSecurity } />);
-    //OSX has an option in the tray, to set the app to autostart, so we choose to not support this option for OSX
+    //OSX has an option in the Dock, to set the app to autostart, so we choose to not support this option for OSX
     if (process.platform === 'win32' || process.platform === 'linux') {
       options.push(<Input key="inputAutoStart" ref="autostart" type="checkbox" label="Start app on login." checked={ this.state.autostart } onChange={ this.handleChangeAutoStart } />);
     }
@@ -223,7 +211,7 @@ var SettingsPage = React.createClass({
           <h2>Teams</h2>
           </Col>
           <Col xs={ 4 } sm={ 2 } md={ 1 } lg={ 1 } mdPull={ 1 }>
-          <Button className="pull-right" style={ buttonStyle } bsSize="small" onClick={ this.handleShowTeamForm }>
+          <Button className="pull-right" style={ buttonStyle } bsSize="small" onClick={ this.toggleShowTeamForm }>
             <Glyphicon glyph="plus" />
           </Button>
           </Col>
@@ -267,7 +255,7 @@ var TeamList = React.createClass({
     var teams = this.props.teams;
 
     // check if team already exists and then change existing team or add new one
-    if (!team.index && teams[team.index]) {
+    if ((team.index!==undefined) && teams[team.index]) {
       teams[team.index].name = team.name;
       teams[team.index].url = team.url;
     } else {
