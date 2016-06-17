@@ -16,6 +16,8 @@ var electron = require('electron-connect').server.create({
 var packager = require('electron-packager');
 const fs = require('fs');
 
+const distPackageAuthor = 'Mattermost, Inc.'
+
 var sources = ['**/*.js', '**/*.json', '**/*.css', '**/*.html', '!**/node_modules/**', '!dist/**', '!release/**', '!**/test_config.json'];
 
 gulp.task('prettify', ['prettify:sources', 'prettify:jsx']);
@@ -82,7 +84,7 @@ gulp.task('build', ['sync-meta', 'webpack', 'copy'], function(cb) {
   const appPackageJson = require('./src/package.json');
   const distPackageJson = Object.assign({}, appPackageJson, {
     author: {
-      name: 'Mattermost, Inc.',
+      name: distPackageAuthor,
       email: 'noreply'
     }
   });
@@ -199,8 +201,8 @@ function makePackage(platform, arch, callback) {
     "app-version": packageJson.version,
     icon: 'resources/icon',
     "version-string": {
-      CompanyName: packageJson.author.name,
-      LegalCopyright: 'Copyright (c) 2015 - 2016' + packageJson.author.name,
+      CompanyName: distPackageAuthor,
+      LegalCopyright: `Copyright (c) 2015 - 2016 ${packageJson.author.name}`,
       FileDescription: packageJson.description,
       OriginalFilename: packageJson.productName + '.exe',
       ProductVersion: packageJson.version,
