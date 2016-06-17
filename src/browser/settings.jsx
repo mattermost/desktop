@@ -64,7 +64,10 @@ var SettingsPage = React.createClass({
       showTrayIcon: this.state.showTrayIcon,
       trayIconTheme: this.state.trayIconTheme,
       disablewebsecurity: this.state.disablewebsecurity,
-      version: settings.version
+      version: settings.version,
+      notifications: {
+        flashWindow: this.state.notifications.flashWindow
+      }
     };
     settings.writeFileSync(this.props.configFile, config);
     if (process.platform === 'win32' || process.platform === 'linux') {
@@ -125,6 +128,13 @@ var SettingsPage = React.createClass({
       });
     }
   },
+  handleFlashWindowSetting: function(item) {
+    this.setState({
+      notifications: {
+        flashWindow: item.state
+      }
+    });
+  },
   render: function() {
 
     var buttonStyle = {
@@ -169,6 +179,40 @@ var SettingsPage = React.createClass({
       </Row>
       ) : null;
 
+    var notificationSettings = [
+      {
+        label: 'Never',
+        state: 0
+      },
+      /* ToDo: Idle isn't implemented yet
+      {
+        label: 'Only when idle (after 10 seconds)',
+        state: 1
+      },*/
+      {
+        label: 'Always',
+        state: 2
+      }
+    ];
+
+    var that = this;
+    var notificationElements = notificationSettings.map(function(item) {
+      var boundClick = that.handleFlashWindowSetting.bind(that, item);
+      return (
+        <Input key={ "flashWindow" + item.state } name="handleFlashWindow" ref={ "flashWindow" + item.state } type="radio" label={ item.label } value={ item.state } onChange={ boundClick }
+          checked={ that.state.notifications.flashWindow == item.state ? "checked" : "" } />
+        );
+    });
+
+    var notifications = (
+    <Row>
+      <Col md={ 12 }>
+      <h2>Notifications</h2> Configure, that the taskicon in the taskbar blinks when you were mentioned.
+      { notificationElements }
+      </Col>
+    </Row>
+    )
+
     return (
       <Grid className="settingsPage">
         <Row>
@@ -183,6 +227,10 @@ var SettingsPage = React.createClass({
         </Row>
         { teams_row }
         { options_row }
+        { notifications }
+        <div>
+          <hr />
+        </div>
         <Row>
           <Col md={ 12 }>
           <Button id="btnCancel" onClick={ this.handleCancel }>Cancel</Button>
