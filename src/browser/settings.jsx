@@ -6,6 +6,7 @@ const settings = require('../common/settings');
 const React = require('react');
 const ReactDOM = require('react-dom');
 const ReactBootstrap = require('react-bootstrap');
+var AutoLaunch = require('auto-launch');
 
 const Grid = ReactBootstrap.Grid;
 const Row = ReactBootstrap.Row;
@@ -15,6 +16,10 @@ const Button = ReactBootstrap.Button;
 const ListGroup = ReactBootstrap.ListGroup;
 const ListGroupItem = ReactBootstrap.ListGroupItem;
 const Glyphicon = ReactBootstrap.Glyphicon;
+
+var appLauncher = new AutoLaunch({
+  name: 'Mattermost'
+});
 
 function backToIndex() {
   remote.getCurrentWindow().loadURL('file://' + __dirname + '/index.html');
@@ -35,6 +40,16 @@ var SettingsPage = React.createClass({
 
     return config;
   },
+  componentDidMount: function() {
+    if (process.platform === 'win32' || process.platform === 'linux') {
+      var self = this;
+      appLauncher.isEnabled().then(function(enabled) {
+        self.setState({
+          autostart: enabled
+        });
+      });
+    }
+  },
   handleTeamsChange: function(teams) {
     this.setState({
       teams: teams
@@ -49,13 +64,25 @@ var SettingsPage = React.createClass({
       showTrayIcon: this.state.showTrayIcon,
       trayIconTheme: this.state.trayIconTheme,
       disablewebsecurity: this.state.disablewebsecurity,
-      version: settings.version
+      version: settings.version,
+      notifications: {
+        flashWindow: this.state.notifications.flashWindow
+      }
     };
     settings.writeFileSync(this.props.configFile, config);
     if (process.platform === 'win32' || process.platform === 'linux') {
       var currentWindow = remote.getCurrentWindow();
       currentWindow.setAutoHideMenuBar(config.hideMenuBar);
       currentWindow.setMenuBarVisibility(!config.hideMenuBar);
+
+      var autostart = this.state.autostart;
+      appLauncher.isEnabled().then(function(enabled) {
+        if (enabled && !autostart) {
+          appLauncher.disable();
+        } else if (!enabled && autostart) {
+          appLauncher.enable();
+        }
+      });
     }
 
     ipcRenderer.send('update-menu', config);
@@ -87,6 +114,11 @@ var SettingsPage = React.createClass({
       trayIconTheme: this.refs.trayIconTheme.getValue()
     });
   },
+  handleChangeAutoStart: function() {
+    this.setState({
+      autostart: this.refs.autostart.getChecked()
+    });
+  },
   handleShowTeamForm: function() {
     if (!this.state.showAddTeamForm) {
       this.setState({
@@ -97,6 +129,13 @@ var SettingsPage = React.createClass({
         showAddTeamForm: false
       });
     }
+  },
+  handleFlashWindowSetting: function(item) {
+    this.setState({
+      notifications: {
+        flashWindow: item.state
+      }
+    });
   },
   render: function() {
 
@@ -129,6 +168,10 @@ var SettingsPage = React.createClass({
     }
     options.push(<Input key="inputDisableWebSecurity" ref="disablewebsecurity" type="checkbox" label="Allow mixed content (Enabling allows both secure and insecure content, images and scripts to render and execute. Disabling allows only secure content.)"
                    checked={ this.state.disablewebsecurity } onChange={ this.handleChangeDisableWebSecurity } />);
+    //OSX has an option in the tray, to set the app to autostart, so we choose to not support this option for OSX
+    if (process.platform === 'win32' || process.platform === 'linux') {
+      options.push(<Input key="inputAutoStart" ref="autostart" type="checkbox" label="Start app on login." checked={ this.state.autostart } onChange={ this.handleChangeAutoStart } />);
+    }
     var options_row = (options.length > 0) ? (
       <Row>
         <Col md={ 12 }>
@@ -137,6 +180,40 @@ var SettingsPage = React.createClass({
         </Col>
       </Row>
       ) : null;
+
+    var notificationSettings = [
+      {
+        label: 'Never',
+        state: 0
+      },
+      /* ToDo: Idle isn't implemented yet
+      {
+        label: 'Only when idle (after 10 seconds)',
+        state: 1
+      },*/
+      {
+        label: 'Always',
+        state: 2
+      }
+    ];
+
+    var that = this;
+    var notificationElements = notificationSettings.map(function(item) {
+      var boundClick = that.handleFlashWindowSetting.bind(that, item);
+      return (
+        <Input key={ "flashWindow" + item.state } name="handleFlashWindow" ref={ "flashWindow" + item.state } type="radio" label={ item.label } value={ item.state } onChange={ boundClick }
+          checked={ that.state.notifications.flashWindow == item.state ? "checked" : "" } />
+        );
+    });
+
+    var notifications = (
+    <Row>
+      <Col md={ 12 }>
+      <h2>Notifications</h2> Configure, that the taskicon in the taskbar blinks when you were mentioned.
+      { notificationElements }
+      </Col>
+    </Row>
+    )
 
     return (
       <Grid className="settingsPage">
@@ -152,6 +229,10 @@ var SettingsPage = React.createClass({
         </Row>
         { teams_row }
         { options_row }
+        { notifications }
+        <div>
+          <hr />
+        </div>
         <Row>
           <Col md={ 12 }>
           <Button id="btnCancel" onClick={ this.handleCancel }>Cancel</Button>

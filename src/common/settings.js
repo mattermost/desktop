@@ -26,7 +26,10 @@ var loadDefault = function(version) {
         showTrayIcon: false,
         trayIconTheme: '',
         disablewebsecurity: true,
-        version: 1
+        version: 1,
+        notifications: {
+          flashWindow: 0 // 0 = flash never, 1 = only when idle (after 10 seconds), 2 = always
+        }
       };
   }
 }

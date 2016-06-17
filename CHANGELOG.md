@@ -34,6 +34,8 @@
 
 #### Windows
 - Added the tooltip text for the tray icon in order to show count of unread channels/mantions.
+- Added the option to launch the application on login.
+- Added the option to blink the taskbar icon when a new message has arrived.
 - Added installers (experimemtal)
 
 #### OS X
@@ -41,6 +43,7 @@
 
 #### Linux
 - Added the option to show the icon on menu bar. (requires libappindicator1 on Ubuntu)
+- Added the option to launch the application on login.
 
 
 ## Release v1.2.1 (Beta)
