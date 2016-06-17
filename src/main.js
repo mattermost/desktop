@@ -66,6 +66,9 @@ catch (e) {
   config = settings.loadDefault();
   console.log('Failed to read or upgrade config.json');
 }
+ipcMain.on('update-config', () => {
+  config = settings.readFileSync(configFile);
+});
 
 // Only for OS X
 const switchMenuIconImages = function(icons, isDarkMode) {

@@ -86,6 +86,7 @@ var SettingsPage = React.createClass({
     }
 
     ipcRenderer.send('update-menu', config);
+    ipcRenderer.send('update-config');
 
     if (typeof toIndex == 'undefined' || toIndex) {
       backToIndex();
