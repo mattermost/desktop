@@ -14,6 +14,9 @@ var electron = require('electron-connect').server.create({
   path: './dist'
 });
 var packager = require('electron-packager');
+const fs = require('fs');
+
+const distPackageAuthor = 'Mattermost, Inc.'
 
 var sources = ['**/*.js', '**/*.json', '**/*.css', '**/*.html', '!**/node_modules/**', '!dist/**', '!release/**', '!**/test_config.json'];
 
@@ -77,9 +80,15 @@ gulp.task('prettify:jsx:verify', function() {
 });
 
 
-gulp.task('build', ['sync-meta', 'webpack', 'copy'], function() {
-  return gulp.src('src/package.json')
-    .pipe(gulp.dest('dist'));
+gulp.task('build', ['sync-meta', 'webpack', 'copy'], function(cb) {
+  const appPackageJson = require('./src/package.json');
+  const distPackageJson = Object.assign({}, appPackageJson, {
+    author: {
+      name: distPackageAuthor,
+      email: 'noreply'
+    }
+  });
+  fs.writeFile('./dist/package.json', JSON.stringify(distPackageJson, null, '  '), cb);
 });
 
 gulp.task('webpack', ['webpack:main', 'webpack:browser', 'webpack:webview']);
@@ -192,8 +201,8 @@ function makePackage(platform, arch, callback) {
     "app-version": packageJson.version,
     icon: 'resources/icon',
     "version-string": {
-      CompanyName: packageJson.author.name,
-      LegalCopyright: 'Copyright (c) 2015 - 2016' + packageJson.author.name,
+      CompanyName: distPackageAuthor,
+      LegalCopyright: `Copyright (c) 2015 - 2016 ${packageJson.author.name}`,
       FileDescription: packageJson.description,
       OriginalFilename: packageJson.productName + '.exe',
       ProductVersion: packageJson.version,
@@ -239,6 +248,5 @@ gulp.task('sync-meta', function() {
   appPackageJson.description = packageJson.description;
   appPackageJson.author = packageJson.author;
   appPackageJson.license = packageJson.license;
-  var fs = require('fs');
   fs.writeFileSync('./src/package.json', JSON.stringify(appPackageJson, null, '  ') + '\n');
 });

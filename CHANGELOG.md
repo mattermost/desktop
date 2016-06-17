@@ -34,6 +34,7 @@
 
 #### Windows
 - Added the tooltip text for the tray icon in order to show count of unread channels/mantions.
+- Added installers (experimemtal)
 
 #### OS X
 - Added colored badges to the menu icon when there are unread channels/mentions.
