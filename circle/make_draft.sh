@@ -54,3 +54,5 @@ deploy linux-ia32 tar.gz
 deploy linux-x64 tar.gz
 upload mattermost-desktop-$RELEASE_TAG-linux-i386.deb release/mattermost-desktop-$RELEASE_TAG-i386.deb
 upload mattermost-desktop-$RELEASE_TAG-linux-amd64.deb release/mattermost-desktop-$RELEASE_TAG-amd64.deb
+upload mattermost-setup-$RELEASE_TAG-win32.exe release/windows-installer-ia32/mattermost-setup-ia32.exe
+upload mattermost-setup-$RELEASE_TAG-win64.exe release/windows-installer-x64/mattermost-setup-x64.exe
