@@ -255,7 +255,7 @@ var TeamList = React.createClass({
     var teams = this.props.teams;
 
     // check if team already exists and then change existing team or add new one
-    if ((team.index!==undefined) && teams[team.index]) {
+    if ((team.index !== undefined) && teams[team.index]) {
       teams[team.index].name = team.name;
       teams[team.index].url = team.url;
     } else {
