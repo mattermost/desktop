@@ -138,23 +138,6 @@ var createTemplate = function(mainWindow, config) {
           focusedWindow.setFullScreen(!focusedWindow.isFullScreen());
         }
       }
-    }, {
-      type: 'separator'
-    }, {
-      label: 'Toggle Developer Tools',
-      accelerator: (function() {
-        if (process.platform === 'darwin') {
-          return 'Alt+Command+I';
-        }
-        else {
-          return 'Ctrl+Shift+I';
-        }
-      })(),
-      click: function(item, focusedWindow) {
-        if (focusedWindow) {
-          focusedWindow.toggleDevTools();
-        }
-      }
     }, separatorItem, {
       label: 'Actual Size',
       accelerator: 'CmdOrCtrl+0',
@@ -172,6 +155,21 @@ var createTemplate = function(mainWindow, config) {
       accelerator: 'CmdOrCtrl+-',
       click: () => {
         mainWindow.webContents.send('zoom-in', -1);
+      }
+    }, separatorItem, {
+      label: 'Toggle Developer Tools',
+      accelerator: (function() {
+        if (process.platform === 'darwin') {
+          return 'Alt+Command+I';
+        }
+        else {
+          return 'Ctrl+Shift+I';
+        }
+      })(),
+      click: function(item, focusedWindow) {
+        if (focusedWindow) {
+          focusedWindow.toggleDevTools();
+        }
       }
     }]
   });
