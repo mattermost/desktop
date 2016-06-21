@@ -150,7 +150,7 @@ var SettingsPage = React.createClass({
                    <option value="dark">Dark</option>
                    </Input>);
     }
-    options.push(<Input key="inputDisableWebSecurity" ref="disablewebsecurity" type="checkbox" label="Allow mixed content (Enabling allows both secure and insecure content, images and scripts to render and execute. Disabling allows only secure content.)"
+    options.push(<Input key="inputDisableWebSecurity" id="inputDisableWebSecurity" ref="disablewebsecurity" type="checkbox" label="Allow mixed content (Enabling allows both secure and insecure content, images and scripts to render and execute. Disabling allows only secure content.)"
                    checked={ this.state.disablewebsecurity } onChange={ this.handleChangeDisableWebSecurity } />);
     //OSX has an option in the Dock, to set the app to autostart, so we choose to not support this option for OSX
     if (process.platform === 'win32' || process.platform === 'linux') {

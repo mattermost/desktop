@@ -11,6 +11,14 @@ function initClient(client) {
     .waitUntilWindowLoaded();
 }
 
+function addClientCommands(client) {
+  client.addCommand('loadSettingsPage', function() {
+    return this
+      .url('file://' + path.join(env.sourceRootDir, 'dist/browser/settings.html'))
+      .waitUntilWindowLoaded();
+  });
+}
+
 describe('browser/settings.html', function() {
   this.timeout(10000);
 
@@ -87,6 +95,51 @@ describe('browser/settings.html', function() {
             saved_config.hideMenuBar.should.be.true;
           });
       });
+    });
+
+    describe('Allow mixed content', function() {
+      [true, false].forEach(function(v) {
+        it(`should be loaded from config: ${v}`, function() {
+          var new_config = {};
+          Object.assign(new_config, config);
+          new_config.disablewebsecurity = v;
+          fs.writeFileSync(env.configFilePath, JSON.stringify(new_config));
+          return this.app.restart().then(() => {
+            addClientCommands(this.app.client);
+            return this.app.client
+              .getAttribute('.mattermostView', 'disablewebsecurity').then((disablewebsecurity) => {
+                // disablewebsecurity is an array of String
+                disablewebsecurity.forEach((d) => {
+                  v.toString().should.equal(d)
+                })
+              })
+              .loadSettingsPage()
+              .isSelected('#inputDisableWebSecurity input').should.eventually.equal(v);
+          });
+        });
+      });
+
+      [true, false].forEach(function(v) {
+        it(`should be saved as config.json: ${v}`, function() {
+          return this.app.restart().then(() => {
+            addClientCommands(this.app.client);
+            return this.app.client
+              .loadSettingsPage()
+              .isSelected('#inputDisableWebSecurity input').then((isSelected) => {
+                if (isSelected !== v) {
+                  return this.app.client.click('#inputDisableWebSecurity input')
+                }
+              })
+              .click('#btnSave')
+              .pause(1000)
+              .then(() => {
+                const saved_config = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+                saved_config.disablewebsecurity.should.equal(v);
+              });
+          });
+        });
+      });
+
     });
   });
 });
