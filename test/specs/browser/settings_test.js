@@ -84,20 +84,26 @@ describe('browser/settings.html', function() {
         });
       });
 
-      it('should be saved as config.json', function() {
-        env.shouldTestForPlatforms(this, ['win32', 'linux']);
-        return this.app.restart().then(() => {
+      [true, false].forEach(function(v) {
+        it(`should be saved as config.json: ${v}`, function() {
+          env.shouldTestForPlatforms(this, ['win32', 'linux']);
+          return this.app.restart().then(() => {
             addClientCommands(this.app.client);
             return this.app.client
               .loadSettingsPage()
-              .click('#inputHideMenuBar input')
+              .isSelected('#inputHideMenuBar input').then((isSelected) => {
+                if (isSelected !== v) {
+                  return this.app.client.click('#inputHideMenuBar input')
+                }
+              })
               .click('#btnSave')
               .pause(1000)
-          })
-          .then(() => {
-            const saved_config = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-            saved_config.hideMenuBar.should.be.true;
+              .then(() => {
+                const saved_config = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+                saved_config.hideMenuBar.should.equal(v);
+              });
           });
+        });
       });
     });
 
@@ -143,7 +149,36 @@ describe('browser/settings.html', function() {
           });
         });
       });
+    });
 
+    describe('Start app on login', function() {
+      it('should appear on win32 or linux', function() {
+        const expected = (process.platform === 'win32' || process.platform === 'linux');
+        addClientCommands(this.app.client);
+        return this.app.client
+          .loadSettingsPage()
+          .isExisting('#inputAutoStart').should.eventually.equal(expected)
+      });
+    });
+
+    describe('Show tray icon', function() {
+      it('should appear on darwin or linux', function() {
+        const expected = (process.platform === 'darwin' || process.platform === 'linux');
+        addClientCommands(this.app.client);
+        return this.app.client
+          .loadSettingsPage()
+          .isExisting('#inputShowTrayIcon').should.eventually.equal(expected)
+      });
+    });
+
+    describe('Notifications', function() {
+      it('should appear on win32', function() {
+        const expected = (process.platform === 'win32');
+        addClientCommands(this.app.client);
+        return this.app.client
+          .loadSettingsPage()
+          .isExisting('#notificationsRow').should.eventually.equal(expected)
+      });
     });
   });
 });
