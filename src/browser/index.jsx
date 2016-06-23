@@ -15,9 +15,7 @@ const ListGroupItem = ReactBootstrap.ListGroupItem;
 
 const LoginModal = require('./components/loginModal.jsx');
 
-const electron = require('electron');
-const remote = electron.remote;
-const ipcRenderer = electron.ipcRenderer;
+const {remote, ipcRenderer, webFrame, shell} = require('electron');
 
 const osLocale = require('os-locale');
 const fs = require('fs');
@@ -54,6 +52,16 @@ var MainPage = React.createClass({
         loginQueue: loginQueue
       });
     });
+    // can't switch tabs sequencially for some reason...
+    ipcRenderer.on('switch-tab', (event, key) => {
+      this.handleSelect(key);
+    });
+    ipcRenderer.on('select-next-tab', (event) => {
+      this.handleSelect(this.state.key + 1);
+    });
+    ipcRenderer.on('select-previous-tab', (event) => {
+      this.handleSelect(this.state.key - 1);
+    });
 
     var focusListener = function() {
       var webview = document.getElementById('mattermostView' + thisObj.state.key);
@@ -69,8 +77,9 @@ var MainPage = React.createClass({
     });
   },
   handleSelect: function(key) {
+    const newKey = (this.props.teams.length + key) % this.props.teams.length;
     this.setState({
-      key: key
+      key: newKey
     });
     this.handleOnTeamFocused(key);
   },
@@ -277,7 +286,7 @@ var TabBar = React.createClass({
 var MattermostView = React.createClass({
   getInitialState: function() {
     return {
-      did_fail_load: null
+      errorInfo: null
     };
   },
   handleUnreadCountChange: function(unreadCount, mentionCount, isUnread, isMentioned) {
@@ -308,8 +317,14 @@ var MattermostView = React.createClass({
         icon: '../resources/appicon.png'
       });
       thisObj.setState({
-        did_fail_load: e
+        errorInfo: e
       });
+      setTimeout(() => {
+        thisObj.setState({
+          errorInfo: null
+        });
+        webview.reload();
+      }, 30000);
     });
 
     // Open link in browserWindow. for exmaple, attached files.
@@ -325,12 +340,15 @@ var MattermostView = React.createClass({
         window.open(e.url, 'Mattermost', 'nodeIntegration=no');
       } else {
         // if the link is external, use default browser.
-        require('shell').openExternal(e.url);
+        shell.openExternal(e.url);
       }
     });
 
     webview.addEventListener("dom-ready", function() {
       // webview.openDevTools();
+
+      // In order to apply the zoom level to webview.
+      webFrame.setZoomLevel(parseInt(localStorage.getItem('zoomLevel')));
 
       // Use 'Meiryo UI' and 'MS Gothic' to prevent CJK fonts on Windows(JP).
       if (process.platform === 'win32') {
@@ -391,14 +409,16 @@ var MattermostView = React.createClass({
     });
   },
   render: function() {
+    const errorView = this.state.errorInfo ? (<ErrorView id={ this.props.id + '-fail' } style={ this.props.style } className="errorView" errorInfo={ this.state.errorInfo }></ErrorView>) : null;
     // 'disablewebsecurity' is necessary to display external images.
     // However, it allows also CSS/JavaScript.
     // So webview should use 'allowDisplayingInsecureContent' as same as BrowserWindow.
-    if (this.state.did_fail_load === null) {
-      return (<webview id={ this.props.id } className="mattermostView" style={ this.props.style } preload="webview/mattermost.js" src={ this.props.src } ref="webview"></webview>);
-    } else {
-      return (<ErrorView id={ this.props.id + '-fail' } className="errorView" errorInfo={ this.state.did_fail_load } style={ this.props.style }></ErrorView>)
-    }
+
+    // Need to keep webview mounted when failed to load.
+    return (<div>
+              { errorView }
+              <webview id={ this.props.id } className="mattermostView" style={ this.props.style } preload="webview/mattermost.js" src={ this.props.src } ref="webview"></webview>
+            </div>);
   }
 });
 
@@ -453,7 +473,7 @@ var showUnreadBadgeWindows = function(unreadCount, mentionCount) {
   const sendBadge = function(dataURL, description) {
     // window.setOverlayIcon() does't work with NativeImage across remote boundaries.
     // https://github.com/atom/electron/issues/4011
-    electron.ipcRenderer.send('update-unread', {
+    ipcRenderer.send('update-unread', {
       overlayDataURL: dataURL,
       description: description,
       unreadCount: unreadCount,
@@ -481,7 +501,7 @@ var showUnreadBadgeOSX = function(unreadCount, mentionCount) {
     remote.app.dock.setBadge('');
   }
 
-  electron.ipcRenderer.send('update-unread', {
+  ipcRenderer.send('update-unread', {
     unreadCount: unreadCount,
     mentionCount: mentionCount
   });
@@ -496,7 +516,7 @@ var showUnreadBadgeLinux = function(unreadCount, mentionCount) {
     remote.app.dock.setBadge('');
   }*/
 
-  electron.ipcRenderer.send('update-unread', {
+  ipcRenderer.send('update-unread', {
     unreadCount: unreadCount,
     mentionCount: mentionCount
   });
@@ -517,6 +537,22 @@ var showUnreadBadge = function(unreadCount, mentionCount) {
     default:
   }
 }
+
+if (!localStorage.getItem('zoomLevel')) {
+  localStorage.setItem('zoomLevel', 0);
+}
+webFrame.setZoomLevel(parseInt(localStorage.getItem('zoomLevel')));
+
+ipcRenderer.on('zoom-in', (event, increment) => {
+  const zoomLevel = webFrame.getZoomLevel() + increment
+  webFrame.setZoomLevel(zoomLevel);
+  localStorage.setItem('zoomLevel', zoomLevel);
+});
+
+ipcRenderer.on('zoom-reset', (event) => {
+  webFrame.setZoomLevel(0);
+  localStorage.setItem('zoomLevel', 0);
+});
 
 ReactDOM.render(
   <MainPage teams={ config.teams } onUnreadCountChange={ showUnreadBadge } />,

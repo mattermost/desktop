@@ -2,6 +2,10 @@ const OriginalNotification = Notification;
 
 function override(eventHandlers) {
   Notification = function(title, options) {
+    // Notification Center shows app's icon, so there were two icons on the notification.
+    if (process.platform === 'darwin') {
+      delete options.icon;
+    }
     this.notification = new OriginalNotification(title, options);
     if (eventHandlers.notification) {
       eventHandlers.notification(title, options);

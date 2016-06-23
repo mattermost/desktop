@@ -1,6 +1,5 @@
 'use strict';
 
-const should = require('should');
 const path = require('path');
 const fs = require('fs');
 
@@ -9,49 +8,43 @@ const env = require('../modules/environment');
 describe('application', function() {
   this.timeout(10000);
 
-  var chromedriver;
-  var client;
-  before(function(done) {
-    chromedriver = env.spawnChromeDriver();
-    client = env.getWebDriverIoClient();
-
-    fs.unlink(env.configFilePath, function(err) {
-      // waiting for chromedriver
-      setTimeout(done, 1000);
+  beforeEach(function(done) {
+    this.app = env.getSpectronApp();
+    fs.unlink(env.configFilePath, () => {
+      done();
     });
   });
 
   afterEach(function() {
-    return client.end();
+    if (this.app && this.app.isRunning()) {
+      return this.app.stop()
+    }
   });
 
-  after(function() {
-    chromedriver.kill();
+  it('should show a window', function() {
+    return this.app.start().then(() => {
+      return this.app.client.waitUntilWindowLoaded()
+        .getWindowCount().should.eventually.equal(1)
+        .browserWindow.isDevToolsOpened().should.eventually.be.false
+        .browserWindow.isVisible().should.eventually.be.true
+    });
   });
 
   it('should show settings.html when there is no config file', function() {
-    return client
-      .init()
-      .pause(1000)
-      .getUrl().then(function(url) {
-        var p = path.parse(url);
-        p.base.should.equal('settings.html');
-      })
-      .end();
+    return this.app.start().then(() => {
+      return this.app.client.waitUntilWindowLoaded()
+        .getUrl().should.eventually.match(/\/settings.html$/)
+    });
   });
 
   it('should show index.html when there is config file', function() {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       url: env.mattermostURL
     }));
-    return client
-      .init()
-      .pause(1000)
-      .getUrl().then(function(url) {
-        var p = path.parse(url);
-        p.base.should.equal('index.html');
-      })
-      .end();
+    return this.app.start().then(() => {
+      return this.app.client.waitUntilWindowLoaded()
+        .getUrl().should.eventually.match(/\/index.html$/)
+    });
   });
 
   it('should upgrade v0 config file', function() {
@@ -59,17 +52,13 @@ describe('application', function() {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       url: env.mattermostURL
     }));
-    return client
-      .init()
-      .pause(1000)
-      .getUrl().then(function(url) {
-        var p = path.parse(url);
-        p.base.should.equal('index.html');
-      })
-      .end().then(function() {
-        var str = fs.readFileSync(env.configFilePath, 'utf8');
-        var config = JSON.parse(str);
-        config.version.should.equal(settings.version);
-      });
+    return this.app.start().then(() => {
+      return this.app.client.waitUntilWindowLoaded()
+        .getUrl().should.eventually.match(/\/index.html$/)
+    }).then(function() {
+      var str = fs.readFileSync(env.configFilePath, 'utf8');
+      var config = JSON.parse(str);
+      config.version.should.equal(settings.version);
+    });
   });
 });

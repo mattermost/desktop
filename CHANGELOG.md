@@ -5,14 +5,41 @@
 ### Changes
 - Changed the license, from MIT License to Apache License, Version 2.0.
 
-### Improvements
-- Added **Add** button next to the "Teams" label on the Setting page.
-- Added **Edit** button on the team list on the Setting page.
+### Fixes
 
 #### Windows
-- Added the tooltip for the tray icon in order to show count of unread channels/mantions.
+- Fixed the pixelated app icon on the top left of the window.
+- Fixed the blurred tray icon.
+
+#### OS X
+- Fixed that two icons appear on a notification.
+
+### Improvements
+- Added shortcuts
+  - Zoom
+    - Ctrl+0 (View -> Actual Size): Reset the zoom level.
+    - Ctrl+Plus (View -> Zoom In)
+    - Ctrl+Minus (View -> Zoom Out)
+  - Control window
+    - Ctrl+W (Window -> Close): On Windows and Linux, this works as minimize for the main window.
+    - Ctrl+M (Window -> Minimize)
+  - Switch teams (these shotcuts also reopen the main window)
+    - Ctrl+{1-9} (Window -> *Team name*): Open the *n*-th tab.
+    - Ctrl+Tab or Alt+Command+Right (Window -> Select Next Team): Open the right tab.
+    - Ctrl+Shift+Tab or Alt+Command+Left (Window -> Select Previous Team): Open the left tab.
+- Added **Add** button next to the "Teams" label on the Setting page.
+- Added **Edit** button on the team list on the Setting page.
+- Added **Help** menu to indicate the application version.
+- Added auto-reloading when the tab failed to load the team.
+
+#### Windows
+- Added the tooltip text for the tray icon in order to show count of unread channels/mantions.
 - Added the option to launch the application on login.
 - Added the option to blink the taskbar icon when a new message has arrived.
+- Added installers (experimental)
+
+#### OS X
+- Added colored badges to the menu icon when there are unread channels/mentions.
 
 #### Linux
 - Added the option to show the icon on menu bar. (requires libappindicator1 on Ubuntu)
@@ -29,6 +56,10 @@
 
 #### Windows and OS X
 - Added a right-click menu option for tray icon to open the Desktop application on Windows and OS X.
+
+### Known issues
+- The shortcuts can't switch teams twice in a raw.
+- The team pages are not correctly rendered until the window is resized when the zoom level is changed.
 
 
 ## Release v1.2.0 (Beta)

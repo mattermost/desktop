@@ -3,7 +3,11 @@
 const electron = require('electron');
 const Menu = electron.Menu;
 
-var createTemplate = function(mainWindow) {
+var createTemplate = function(mainWindow, config) {
+  const separatorItem = {
+    type: 'separator'
+  };
+
   var app_name = electron.app.getName();
   var first_menu_name = (process.platform === 'darwin') ? app_name : 'File';
   var template = [];
@@ -134,9 +138,25 @@ var createTemplate = function(mainWindow) {
           focusedWindow.setFullScreen(!focusedWindow.isFullScreen());
         }
       }
+    }, separatorItem, {
+      label: 'Actual Size',
+      accelerator: 'CmdOrCtrl+0',
+      click: () => {
+        mainWindow.webContents.send('zoom-reset');
+      }
     }, {
-      type: 'separator'
+      label: 'Zoom In',
+      accelerator: 'CmdOrCtrl+Plus',
+      click: () => {
+        mainWindow.webContents.send('zoom-in', 1);
+      }
     }, {
+      label: 'Zoom Out',
+      accelerator: 'CmdOrCtrl+-',
+      click: () => {
+        mainWindow.webContents.send('zoom-in', -1);
+      }
+    }, separatorItem, {
       label: 'Toggle Developer Tools',
       accelerator: (function() {
         if (process.platform === 'darwin') {
@@ -151,8 +171,56 @@ var createTemplate = function(mainWindow) {
           focusedWindow.toggleDevTools();
         }
       }
-    }, ]
+    }]
   });
+
+  const window_menu = {
+    label: '&Window',
+    submenu: [{
+      label: 'Minimize',
+      accelerator: 'CmdOrCtrl+M',
+      click: function(item, focusedWindow) {
+        if (focusedWindow) {
+          focusedWindow.minimize();
+        }
+      }
+    }, {
+      label: 'Close',
+      accelerator: 'CmdOrCtrl+W',
+      click: function(item, focusedWindow) {
+        if (focusedWindow) {
+          focusedWindow.close();
+        }
+      }
+    }, {
+      type: 'separator'
+    }, ...config.teams.slice(0, 9).map((team, i) => {
+      return {
+        label: team.name,
+        accelerator: `CmdOrCtrl+${i + 1}`,
+        click: (item, focusedWindow) => {
+          mainWindow.show(); // for OS X
+          mainWindow.webContents.send('switch-tab', i);
+        }
+      };
+    }), separatorItem, {
+      label: 'Select Next Team',
+      accelerator: (process.platform === 'darwin') ? 'Alt+Cmd+Right' : 'CmdOrCtrl+Tab',
+      click: () => {
+        mainWindow.webContents.send('select-next-tab');
+      },
+      enabled: (config.teams.length > 1)
+    }, {
+      label: 'Select Previous Team',
+      accelerator: (process.platform === 'darwin') ? 'Alt+Cmd+Left' : 'CmdOrCtrl+Shift+Tab',
+      click: () => {
+        mainWindow.webContents.send('select-previous-tab');
+      },
+      enabled: (config.teams.length > 1)
+    }]
+  }
+  template.push(window_menu);
+
   template.push({
     label: '&Help',
     submenu: [{
@@ -163,8 +231,8 @@ var createTemplate = function(mainWindow) {
   return template;
 };
 
-var createMenu = function(mainWindow) {
-  return Menu.buildFromTemplate(createTemplate(mainWindow));
+var createMenu = function(mainWindow, config) {
+  return Menu.buildFromTemplate(createTemplate(mainWindow, config));
 };
 
 module.exports = {

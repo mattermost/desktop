@@ -1,4 +1,3 @@
-const should = require('should');
 const fs = require('fs');
 const settings = require('../../src/common/settings');
 
