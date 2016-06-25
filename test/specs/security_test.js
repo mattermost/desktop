@@ -66,9 +66,9 @@ describe('application', function() {
     env.addClientCommands(this.app.client);
     const client = this.app.client;
     return this.app.client
+      .windowByIndex(1) // in the first webview
       .execute(function() {
-        const webview = document.querySelector('webview');
-        webview.executeJavaScript('open_window();');
+        open_window();
       })
       .waitUntil(function async() {
         return client.windowHandles().then((handles) => {
