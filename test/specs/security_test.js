@@ -7,16 +7,19 @@ const http = require('http');
 const env = require('../modules/environment');
 
 describe('application', function() {
+  this.timeout(10000);
+
   const serverPort = 8181;
+  const testURL = `http://localhost:${serverPort}`
 
   const config = {
     version: 1,
     teams: [{
       name: 'example_1',
-      url: `http://localhost:${serverPort}`
+      url: testURL
     }, {
       name: 'example_2',
-      url: `http://localhost:${serverPort}`
+      url: testURL
     }]
   };
 
@@ -46,32 +49,27 @@ describe('application', function() {
   })
 
   it('should NOT be able to call Node.js API in webview', function() {
+    env.addClientCommands(this.app.client);
     return this.app.client
-      // Ideally, need to confirm actual behavior in webview by executing require('electron');
       .getAttribute('webview', 'nodeintegration').then((nodeintegration) => {
         // nodeintegration is an array of string
         nodeintegration.forEach((n) => {
           n.should.equal('false');
         });
-      });
+      })
+      // webview is handled as a window by chromedriver.
+      .windowByIndex(1).isNodeEnabled().should.eventually.be.false
+      .windowByIndex(2).isNodeEnabled().should.eventually.be.false;
   });
 
   it('should NOT be able to call Node.js API in a new window', function() {
+    env.addClientCommands(this.app.client);
     return this.app.client
       .execute(function() {
         const webview = document.querySelector('webview');
         webview.executeJavaScript('open_window();');
       })
-      .windowByIndex(1)
-      .execute(function() {
-        try {
-          return require('fs') ? true : false;
-        }
-        catch (e) {
-          return false;
-        }
-      }).then((require_fs_result) => {
-        require_fs_result.value.should.be.false;
-      });
+      .pause(500) // wait for the new window
+      .windowByIndex(3).isNodeEnabled().should.eventually.be.false;
   })
 });

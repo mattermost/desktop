@@ -35,6 +35,27 @@ module.exports = {
     chaiAsPromised.transferPromiseness = app.transferPromiseness
     return app;
   },
+
+  addClientCommands: function(client) {
+    client.addCommand('loadSettingsPage', function async() {
+      return this
+        .url('file://' + path.join(source_root_dir, 'dist/browser/settings.html'))
+        .waitUntilWindowLoaded();
+    });
+    client.addCommand('isNodeEnabled', function async() {
+      return this.execute(function() {
+        try {
+          return require('child_process') ? true : false;
+        }
+        catch (e) {
+          return false;
+        }
+      }).then((require_result) => {
+        return require_result.value;
+      });
+    });
+  },
+
   // execute the test only when `condition` is true
   shouldTest: function(it, condition) {
     return condition ? it : it.skip;

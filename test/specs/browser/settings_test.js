@@ -5,14 +5,6 @@ const fs = require('fs');
 
 const env = require('../../modules/environment');
 
-function addClientCommands(client) {
-  client.addCommand('loadSettingsPage', function() {
-    return this
-      .url('file://' + path.join(env.sourceRootDir, 'dist/browser/settings.html'))
-      .waitUntilWindowLoaded();
-  });
-}
-
 describe('browser/settings.html', function() {
   this.timeout(10000);
 
@@ -40,7 +32,7 @@ describe('browser/settings.html', function() {
   });
 
   it('should show index.thml when Cancel button is clicked', function() {
-    addClientCommands(this.app.client);
+    env.addClientCommands(this.app.client);
     return this.app.client
       .loadSettingsPage()
       .click('#btnCancel')
@@ -49,7 +41,7 @@ describe('browser/settings.html', function() {
   });
 
   it('should show index.thml when Save button is clicked', function() {
-    addClientCommands(this.app.client);
+    env.addClientCommands(this.app.client);
     return this.app.client
       .loadSettingsPage()
       .click('#btnSave')
@@ -61,7 +53,7 @@ describe('browser/settings.html', function() {
     describe('Hide Menu Bar', function() {
       it('should appear on win32 or linux', function() {
         const expected = (process.platform === 'win32' || process.platform === 'linux');
-        addClientCommands(this.app.client);
+        env.addClientCommands(this.app.client);
         return this.app.client
           .loadSettingsPage()
           .isExisting('#inputHideMenuBar').should.eventually.equal(expected)
@@ -70,7 +62,7 @@ describe('browser/settings.html', function() {
       [true, false].forEach(function(v) {
         env.shouldTest(it, env.isOneOf(['win32', 'linux']))
           (`should be saved and loaded: ${v}`, function() {
-            addClientCommands(this.app.client);
+            env.addClientCommands(this.app.client);
             return this.app.client
               .loadSettingsPage()
               .isSelected('#inputHideMenuBar input').then((isSelected) => {
@@ -87,7 +79,7 @@ describe('browser/settings.html', function() {
               .browserWindow.isMenuBarAutoHide().should.eventually.equal(v).then(() => {
                 return this.app.restart();
               }).then(() => {
-                addClientCommands(this.app.client);
+                env.addClientCommands(this.app.client);
                 return this.app.client
                   // confirm actual behavior
                   .browserWindow.isMenuBarAutoHide().should.eventually.equal(v)
@@ -101,7 +93,7 @@ describe('browser/settings.html', function() {
     describe('Allow mixed content', function() {
       [true, false].forEach(function(v) {
         it(`should be saved and loaded: ${v}`, function() {
-          addClientCommands(this.app.client);
+          env.addClientCommands(this.app.client);
           return this.app.client
             .loadSettingsPage()
             .isSelected('#inputDisableWebSecurity input').then((isSelected) => {
@@ -123,7 +115,7 @@ describe('browser/settings.html', function() {
             }).then(() => {
               return this.app.restart();
             }).then(() => {
-              addClientCommands(this.app.client);
+              env.addClientCommands(this.app.client);
               return this.app.client
                 // confirm actual behavior
                 .getAttribute('.mattermostView', 'disablewebsecurity').then((disablewebsecurity) => {
@@ -142,7 +134,7 @@ describe('browser/settings.html', function() {
     describe('Start app on login', function() {
       it('should appear on win32 or linux', function() {
         const expected = (process.platform === 'win32' || process.platform === 'linux');
-        addClientCommands(this.app.client);
+        env.addClientCommands(this.app.client);
         return this.app.client
           .loadSettingsPage()
           .isExisting('#inputAutoStart').should.eventually.equal(expected)
@@ -152,7 +144,7 @@ describe('browser/settings.html', function() {
     describe('Show tray icon', function() {
       it('should appear on darwin or linux', function() {
         const expected = (process.platform === 'darwin' || process.platform === 'linux');
-        addClientCommands(this.app.client);
+        env.addClientCommands(this.app.client);
         return this.app.client
           .loadSettingsPage()
           .isExisting('#inputShowTrayIcon').should.eventually.equal(expected)
@@ -162,7 +154,7 @@ describe('browser/settings.html', function() {
     describe('Notifications', function() {
       it('should appear on win32', function() {
         const expected = (process.platform === 'win32');
-        addClientCommands(this.app.client);
+        env.addClientCommands(this.app.client);
         return this.app.client
           .loadSettingsPage()
           .isExisting('#notificationsRow').should.eventually.equal(expected)
