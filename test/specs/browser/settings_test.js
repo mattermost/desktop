@@ -68,33 +68,33 @@ describe('browser/settings.html', function() {
       });
 
       [true, false].forEach(function(v) {
-        it(`should be saved and loaded: ${v}`, function() {
-          env.shouldTestForPlatforms(this, ['win32', 'linux']);
-          addClientCommands(this.app.client);
-          return this.app.client
-            .loadSettingsPage()
-            .isSelected('#inputHideMenuBar input').then((isSelected) => {
-              if (isSelected !== v) {
-                return this.app.client.click('#inputHideMenuBar input')
-              }
-            })
-            .click('#btnSave')
-            .pause(1000).then(() => {
-              const saved_config = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-              saved_config.hideMenuBar.should.equal(v);
-            })
-            // confirm actual behavior
-            .browserWindow.isMenuBarAutoHide().should.eventually.equal(v).then(() => {
-              return this.app.restart();
-            }).then(() => {
-              addClientCommands(this.app.client);
-              return this.app.client
-                // confirm actual behavior
-                .browserWindow.isMenuBarAutoHide().should.eventually.equal(v)
-                .loadSettingsPage()
-                .isSelected('#inputHideMenuBar input').should.eventually.equal(v);
-            });
-        });
+        env.shouldTest(it, env.isOneOf(['win32', 'linux']))
+          (`should be saved and loaded: ${v}`, function() {
+            addClientCommands(this.app.client);
+            return this.app.client
+              .loadSettingsPage()
+              .isSelected('#inputHideMenuBar input').then((isSelected) => {
+                if (isSelected !== v) {
+                  return this.app.client.click('#inputHideMenuBar input')
+                }
+              })
+              .click('#btnSave')
+              .pause(1000).then(() => {
+                const saved_config = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+                saved_config.hideMenuBar.should.equal(v);
+              })
+              // confirm actual behavior
+              .browserWindow.isMenuBarAutoHide().should.eventually.equal(v).then(() => {
+                return this.app.restart();
+              }).then(() => {
+                addClientCommands(this.app.client);
+                return this.app.client
+                  // confirm actual behavior
+                  .browserWindow.isMenuBarAutoHide().should.eventually.equal(v)
+                  .loadSettingsPage()
+                  .isSelected('#inputHideMenuBar input').should.eventually.equal(v);
+              });
+          });
       });
     });
 

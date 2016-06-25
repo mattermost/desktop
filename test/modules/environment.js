@@ -35,12 +35,11 @@ module.exports = {
     chaiAsPromised.transferPromiseness = app.transferPromiseness
     return app;
   },
-  shouldTestForPlatforms: function(testCase, platforms) {
-    if (platforms.indexOf(process.platform) !== -1) {
-      return;
-    }
-    else {
-      testCase.skip();
-    }
+  // execute the test only when `condition` is true
+  shouldTest: function(it, condition) {
+    return condition ? it : it.skip;
+  },
+  isOneOf(platforms) {
+    return (platforms.indexOf(process.platform) !== -1);
   }
 }
