@@ -64,12 +64,17 @@ describe('application', function() {
 
   it('should NOT be able to call Node.js API in a new window', function() {
     env.addClientCommands(this.app.client);
+    const client = this.app.client;
     return this.app.client
       .execute(function() {
         const webview = document.querySelector('webview');
         webview.executeJavaScript('open_window();');
       })
-      .pause(1000) // wait for the new window
+      .waitUntil(function async() {
+        return client.windowHandles().then((handles) => {
+          return handles.value.length === 4;
+        });
+      }, 5000, 'expected a new window')
       .windowByIndex(3).isNodeEnabled().should.eventually.be.false;
   })
 });
