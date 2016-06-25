@@ -69,7 +69,7 @@ describe('application', function() {
         const webview = document.querySelector('webview');
         webview.executeJavaScript('open_window();');
       })
-      .pause(500) // wait for the new window
+      .pause(1000) // wait for the new window
       .windowByIndex(3).isNodeEnabled().should.eventually.be.false;
   })
 });
