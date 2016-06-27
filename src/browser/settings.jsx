@@ -61,6 +61,7 @@ var SettingsPage = React.createClass({
       trayIconTheme: this.state.trayIconTheme,
       disablewebsecurity: this.state.disablewebsecurity,
       version: settings.version,
+      minimizeToTray: this.state.minimizeToTray,
       notifications: {
         flashWindow: this.state.notifications.flashWindow
       }
@@ -114,6 +115,11 @@ var SettingsPage = React.createClass({
       autostart: this.refs.autostart.getChecked()
     });
   },
+  handleChangeMinimizeToTray: function() {
+    this.setState({
+      minimizeToTray: this.refs.minimizeToTray.getChecked()
+    });
+  },
   toggleShowTeamForm: function() {
     this.setState({
       showAddTeamForm: !this.state.showAddTeamForm
@@ -155,6 +161,8 @@ var SettingsPage = React.createClass({
     //OSX has an option in the Dock, to set the app to autostart, so we choose to not support this option for OSX
     if (process.platform === 'win32' || process.platform === 'linux') {
       options.push(<Input key="inputAutoStart" id="inputAutoStart" ref="autostart" type="checkbox" label="Start app on login." checked={ this.state.autostart } onChange={ this.handleChangeAutoStart }
+                   />);
+      options.push(<Input key="inputMinimizeToTray" id="inputMinimizeToTray" ref="minimizeToTray" type="checkbox" label="Minimize app to tray." checked={ this.state.minimizeToTray } onChange={ this.handleChangeMinimizeToTray }
                    />);
     }
     var options_row = (options.length > 0) ? (

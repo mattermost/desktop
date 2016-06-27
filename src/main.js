@@ -156,6 +156,7 @@ app.on('browser-window-created', function(event, window) {
 // For OSX, show hidden mainWindow when clicking dock icon.
 app.on('activate', function(event) {
   mainWindow.show();
+  mainWindow.isHidden = false;
 });
 
 app.on('before-quit', function() {
@@ -227,14 +228,29 @@ app.on('ready', function() {
 
     trayIcon.setToolTip(app.getName());
     trayIcon.on('click', function() {
-      mainWindow.show();
+      if (process.platform === 'win32') {
+        if (config.minimizeToTray) {
+          if (mainWindow.isHidden) {
+            mainWindow.show();
+            mainWindow.isHidden = false;
+          } else {
+            mainWindow.hide();
+            mainWindow.isHidden = true;
+          }
+        }
+      }      
       mainWindow.focus();
     });
     trayIcon.on('right-click', () => {
       trayIcon.popUpContextMenu();
     });
     trayIcon.on('balloon-click', function() {
-      mainWindow.show();
+      if (process.platform === 'win32') {
+        if (config.minimizeToTray) {
+          mainWindow.show();
+          mainWindow.isHidden = false;
+        }
+      }
       mainWindow.focus();
     });
     ipcMain.on('notified', function(event, arg) {
@@ -348,7 +364,12 @@ app.on('ready', function() {
       event.preventDefault();
       switch (process.platform) {
         case 'win32':
-          mainWindow.hide();
+          if (config.minimizeToTray) {
+            mainWindow.hide();
+            mainWindow.isHidden = true;
+          } else {
+            mainWindow.minimize();
+          }        
           break;
         case 'linux':
           mainWindow.minimize();
@@ -360,6 +381,15 @@ app.on('ready', function() {
       }
     }
   });
+
+  if (process.platform === 'win32') {
+    mainWindow.on('minimize', function() {
+      if (config.minimizeToTray) {
+        mainWindow.hide();
+        mainWindow.isHidden = true;
+      }  
+    });
+  }
 
   // App should save bounds when a window is closed.
   // However, 'close' is not fired in some situations(shutdown, ctrl+c)

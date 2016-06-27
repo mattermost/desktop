@@ -26,6 +26,7 @@ var loadDefault = function(version) {
         showTrayIcon: false,
         trayIconTheme: '',
         disablewebsecurity: true,
+        minimizeToTray: false,
         version: 1,
         notifications: {
           flashWindow: 0 // 0 = flash never, 1 = only when idle (after 10 seconds), 2 = always
@@ -38,7 +39,7 @@ var upgradeV0toV1 = function(config_v0) {
   var config = loadDefault(1);
   config.teams.push({
     name: 'Primary team',
-    url: config_v0.url
+    url: config_v0.url    
   });
   return config;
 };
