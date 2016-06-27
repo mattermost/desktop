@@ -30,6 +30,7 @@
 - Added **Add** button next to the "Teams" label on the Setting page.
 - Added **Edit** button on the team list on the Setting page.
 - Added **Help** menu to indicate the application version.
+- Added **Mattermost Docs** menu item under **Help** linking to the mattermost docs.
 - Added auto-reloading when the tab failed to load the team.
 
 #### Windows

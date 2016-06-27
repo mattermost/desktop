@@ -158,6 +158,7 @@ Below lists menu options (shortcut keys are listed in brackets, `Ctrl` becomes `
   - **Select Next Team** (Ctrl+Tab, Alt+Command+Right) - Open the right tab
   - **Select Previous Team** (Ctrl+Shift+Tab, Alt+Command+Left) - Open the left tab
 - **Help**
+  - ***Mattermost Docs*** Links to the official mattermost documentation
   - ***Version*** Indicate the application version
 
 
