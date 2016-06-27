@@ -151,6 +151,16 @@ describe('browser/settings.html', function() {
       });
     });
 
+    describe('Minimize to tray', function() {
+      it('should appear win32', function() {
+        const expected = (process.platform === 'win32');
+        env.addClientCommands(this.app.client);
+        return this.app.client
+          .loadSettingsPage()
+          .isExisting('#inputMinimizeToTray').should.eventually.equal(expected)
+      });
+    });
+
     describe('Notifications', function() {
       it('should appear on win32', function() {
         const expected = (process.platform === 'win32');

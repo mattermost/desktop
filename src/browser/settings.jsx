@@ -162,6 +162,8 @@ var SettingsPage = React.createClass({
     if (process.platform === 'win32' || process.platform === 'linux') {
       options.push(<Input key="inputAutoStart" id="inputAutoStart" ref="autostart" type="checkbox" label="Start app on login." checked={ this.state.autostart } onChange={ this.handleChangeAutoStart }
                    />);
+    }
+    if (process.platform === 'win32') {
       options.push(<Input key="inputMinimizeToTray" id="inputMinimizeToTray" ref="minimizeToTray" type="checkbox" label="Minimize app to tray." checked={ this.state.minimizeToTray } onChange={ this.handleChangeMinimizeToTray }
                    />);
     }
