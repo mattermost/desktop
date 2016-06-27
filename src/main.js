@@ -227,12 +227,14 @@ app.on('ready', function() {
 
     trayIcon.setToolTip(app.getName());
     trayIcon.on('click', function() {
+      mainWindow.show();
       mainWindow.focus();
     });
     trayIcon.on('right-click', () => {
       trayIcon.popUpContextMenu();
     });
     trayIcon.on('balloon-click', function() {
+      mainWindow.show();
       mainWindow.focus();
     });
     ipcMain.on('notified', function(event, arg) {
@@ -346,6 +348,8 @@ app.on('ready', function() {
       event.preventDefault();
       switch (process.platform) {
         case 'win32':
+          mainWindow.hide();
+          break;
         case 'linux':
           mainWindow.minimize();
           break;
