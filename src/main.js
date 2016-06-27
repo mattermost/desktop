@@ -233,12 +233,13 @@ app.on('ready', function() {
           if (mainWindow.isHidden) {
             mainWindow.show();
             mainWindow.isHidden = false;
-          } else {
+          }
+          else {
             mainWindow.hide();
             mainWindow.isHidden = true;
           }
         }
-      }      
+      }
       mainWindow.focus();
     });
     trayIcon.on('right-click', () => {
@@ -367,9 +368,10 @@ app.on('ready', function() {
           if (config.minimizeToTray) {
             mainWindow.hide();
             mainWindow.isHidden = true;
-          } else {
+          }
+          else {
             mainWindow.minimize();
-          }        
+          }
           break;
         case 'linux':
           mainWindow.minimize();
@@ -387,7 +389,7 @@ app.on('ready', function() {
       if (config.minimizeToTray) {
         mainWindow.hide();
         mainWindow.isHidden = true;
-      }  
+      }
     });
   }
 

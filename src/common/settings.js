@@ -39,7 +39,7 @@ var upgradeV0toV1 = function(config_v0) {
   var config = loadDefault(1);
   config.teams.push({
     name: 'Primary team',
-    url: config_v0.url    
+    url: config_v0.url
   });
   return config;
 };
