@@ -161,6 +161,16 @@ describe('browser/settings.html', function() {
       });
     });
 
+    describe('Toggle window visibility when clicking on the tray icon', function() {
+      it('should appear win32', function() {
+        const expected = (process.platform === 'win32');
+        env.addClientCommands(this.app.client);
+        return this.app.client
+          .loadSettingsPage()
+          .isExisting('#inputToggleWindowOnTrayIconClick').should.eventually.equal(expected)
+      });
+    });
+
     describe('Notifications', function() {
       it('should appear on win32', function() {
         const expected = (process.platform === 'win32');
