@@ -183,8 +183,8 @@ var SettingsPage = React.createClass({
                    />);
     }
     if (process.platform === 'win32') {
-      options.push(<Input key="inputMinimizeToTray" id="inputMinimizeToTray" ref="minimizeToTray" type="checkbox" label="Minimize app to tray." checked={ this.state.minimizeToTray } onChange={ this.handleChangeMinimizeToTray }
-                   />);
+      options.push(<Input key="inputMinimizeToTray" id="inputMinimizeToTray" ref="minimizeToTray" type="checkbox" label="Leave app running in notification area when the window is closed"
+                     checked={ this.state.minimizeToTray } onChange={ this.handleChangeMinimizeToTray } />);
       options.push(<Input key="inputToggleWindowOnTrayIconClick" id="inputToggleWindowOnTrayIconClick" ref="toggleWindowOnTrayIconClick" type="checkbox" label="Toggle window visibility when clicking on the tray icon."
                      disabled={ !this.state.minimizeToTray } checked={ this.state.toggleWindowOnTrayIconClick } onChange={ this.handleChangeToggleWindowOnTrayIconClick } />);
     }
