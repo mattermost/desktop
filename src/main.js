@@ -234,7 +234,7 @@ app.on('ready', function() {
             mainWindow.show();
             mainWindow.isHidden = false;
           }
-          else {
+          else if (config.toggleWindowOnTrayIconClick) {
             mainWindow.hide();
             mainWindow.isHidden = true;
           }
