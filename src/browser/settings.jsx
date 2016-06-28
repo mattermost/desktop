@@ -132,11 +132,11 @@ var SettingsPage = React.createClass({
     if (this.refs.minimizeToTray.getChecked()) {
       this.setState({
         toggleWindowOnTrayIconClick: this.refs.toggleWindowOnTrayIconClick.getChecked()
-      });    
+      });
     } else {
       this.setState({
         toggleWindowOnTrayIconClick: false
-      });    
+      });
     }
   },
   toggleShowTeamForm: function() {
@@ -185,7 +185,8 @@ var SettingsPage = React.createClass({
     if (process.platform === 'win32') {
       options.push(<Input key="inputMinimizeToTray" id="inputMinimizeToTray" ref="minimizeToTray" type="checkbox" label="Minimize app to tray." checked={ this.state.minimizeToTray } onChange={ this.handleChangeMinimizeToTray }
                    />);
-      options.push(<Input key="inputToggleWindowOnTrayIconClick" id="inputToggleWindowOnTrayIconClick" ref="toggleWindowOnTrayIconClick" type="checkbox" label="Toggle window visibility when clicking on the tray icon." disabled={ !this.state.minimizeToTray } checked={ this.state.toggleWindowOnTrayIconClick } onChange={ this.handleChangeToggleWindowOnTrayIconClick }/>);
+      options.push(<Input key="inputToggleWindowOnTrayIconClick" id="inputToggleWindowOnTrayIconClick" ref="toggleWindowOnTrayIconClick" type="checkbox" label="Toggle window visibility when clicking on the tray icon."
+                     disabled={ !this.state.minimizeToTray } checked={ this.state.toggleWindowOnTrayIconClick } onChange={ this.handleChangeToggleWindowOnTrayIconClick } />);
     }
     var options_row = (options.length > 0) ? (
       <Row>
