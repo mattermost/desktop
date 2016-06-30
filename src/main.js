@@ -229,18 +229,21 @@ app.on('ready', function() {
     trayIcon.setToolTip(app.getName());
     trayIcon.on('click', function() {
       if (process.platform === 'win32') {
-        if (config.minimizeToTray) {
-          if (mainWindow.isHidden) {
-            mainWindow.show();
-            mainWindow.isHidden = false;
-          }
-          else if (config.toggleWindowOnTrayIconClick) {
-            mainWindow.hide();
-            mainWindow.isHidden = true;
-          }
+        if (mainWindow.isHidden || mainWindow.isMinimized()) {
+          mainWindow.show();
+          mainWindow.isHidden = false;
+          mainWindow.focus();
+        }
+        else if (config.toggleWindowOnTrayIconClick) {
+          mainWindow.minimize();
+        }
+        else {
+          mainWindow.focus();
         }
       }
-      mainWindow.focus();
+      else {
+        mainWindow.focus();
+      }
     });
     trayIcon.on('right-click', () => {
       trayIcon.popUpContextMenu();
@@ -383,15 +386,6 @@ app.on('ready', function() {
       }
     }
   });
-
-  if (process.platform === 'win32') {
-    mainWindow.on('minimize', function() {
-      if (config.minimizeToTray) {
-        mainWindow.hide();
-        mainWindow.isHidden = true;
-      }
-    });
-  }
 
   // App should save bounds when a window is closed.
   // However, 'close' is not fired in some situations(shutdown, ctrl+c)
