@@ -124,7 +124,7 @@ The Settings Page is available from the **File** menu under **Settings** (Click 
         This option allows such images to be rendered, but please be careful for security.
    - **Start app on login** (Windows, Linux)
       - This option starts the application when you login.
-   - **Leave app running in notification area when the window is closed** (Windows)
+   - **Leave app running in notification area when the window is closed** (Windows, OS X)
       - This option hides the window to the system tray, if the window is closed
    - **Toggle window visibility when clicking on the tray icon** (Windows)
       - If checked, then a click on the system tray icon leads to a toggling of the minimized/maximized state of the window

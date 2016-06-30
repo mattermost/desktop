@@ -102,9 +102,16 @@ var SettingsPage = React.createClass({
     });
   },
   handleChangeShowTrayIcon: function() {
+    var shouldShowTrayIcon = this.refs.showTrayIcon.getChecked();
     this.setState({
-      showTrayIcon: this.refs.showTrayIcon.getChecked()
+      showTrayIcon: shouldShowTrayIcon
     });
+
+    if (process.platform === 'darwin' && !shouldShowTrayIcon) {
+      this.setState({
+        minimizeToTray: false
+      });
+    }
   },
   handleChangeTrayIconTheme: function() {
     this.setState({
@@ -117,8 +124,11 @@ var SettingsPage = React.createClass({
     });
   },
   handleChangeMinimizeToTray: function() {
+    var shouldMinimizeToTray = (process.platform !== 'darwin' || this.refs.showTrayIcon.getChecked())
+    && this.refs.minimizeToTray.getChecked();
+
     this.setState({
-      minimizeToTray: this.refs.minimizeToTray.getChecked()
+      minimizeToTray: shouldMinimizeToTray
     });
   },
   handleChangeToggleWindowOnTrayIconClick: function() {
@@ -172,6 +182,12 @@ var SettingsPage = React.createClass({
     if (process.platform === 'win32') {
       options.push(<Input key="inputMinimizeToTray" id="inputMinimizeToTray" ref="minimizeToTray" type="checkbox" label="Leave app running in notification area when the window is closed"
                      checked={ this.state.minimizeToTray } onChange={ this.handleChangeMinimizeToTray } />);
+    } else if (process.platform === 'darwin') {
+      options.push(<Input key="inputMinimizeToTray" id="inputMinimizeToTray" ref="minimizeToTray" type="checkbox" label="Leave app running in notification area when the window is closed"
+                     disabled={ !this.state.showTrayIcon } checked={ this.state.minimizeToTray } onChange={ this.handleChangeMinimizeToTray } />);
+    }
+
+    if (process.platform === 'win32') {
       options.push(<Input key="inputToggleWindowOnTrayIconClick" id="inputToggleWindowOnTrayIconClick" ref="toggleWindowOnTrayIconClick" type="checkbox" label="Toggle window visibility when clicking on the tray icon."
                      checked={ this.state.toggleWindowOnTrayIconClick } onChange={ this.handleChangeToggleWindowOnTrayIconClick } />);
     }

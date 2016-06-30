@@ -241,10 +241,22 @@ app.on('ready', function() {
           mainWindow.focus();
         }
       }
+      else if (process.platform === 'darwin') {
+        if (mainWindow.isHidden || mainWindow.isMinimized()) {
+          mainWindow.show();
+          mainWindow.isHidden = false;
+          mainWindow.focus();
+          app.dock.show();
+        }
+        else {
+          mainWindow.focus();
+        }
+      }
       else {
         mainWindow.focus();
       }
     });
+
     trayIcon.on('right-click', () => {
       trayIcon.popUpContextMenu();
     });
@@ -380,7 +392,14 @@ app.on('ready', function() {
           mainWindow.minimize();
           break;
         case 'darwin':
-          mainWindow.hide();
+          if (config.minimizeToTray) {
+            mainWindow.hide();
+            app.dock.hide();
+            mainWindow.isHidden = true;
+          }
+          else {
+            mainWindow.minimize();
+          }
           break;
         default:
       }

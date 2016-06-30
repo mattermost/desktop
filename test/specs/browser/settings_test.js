@@ -152,8 +152,8 @@ describe('browser/settings.html', function() {
     });
 
     describe('Minimize to tray', function() {
-      it('should appear win32', function() {
-        const expected = (process.platform === 'win32');
+      it('should appear on win32 and darwin', function() {
+        const expected = (process.platform === 'win32' || process.platform === 'darwin');
         env.addClientCommands(this.app.client);
         return this.app.client
           .loadSettingsPage()
@@ -162,7 +162,7 @@ describe('browser/settings.html', function() {
     });
 
     describe('Toggle window visibility when clicking on the tray icon', function() {
-      it('should appear win32', function() {
+      it('should appear on win32', function() {
         const expected = (process.platform === 'win32');
         env.addClientCommands(this.app.client);
         return this.app.client
