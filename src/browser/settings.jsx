@@ -47,6 +47,19 @@ var SettingsPage = React.createClass({
         });
       });
     }
+
+    if (process.platform === 'darwin') {
+      var currentWindow = remote.getCurrentWindow();
+      if (currentWindow.tray) {
+        this.setState({
+          trayWasVisible: true
+        });
+      } else {
+        this.setState({
+          trayWasVisible: false
+        });
+      }
+    }
   },
   handleTeamsChange: function(teams) {
     this.setState({
@@ -181,8 +194,8 @@ var SettingsPage = React.createClass({
     }
 
     if (process.platform === 'darwin') {
-      options.push(<Input key="inputMinimizeToTray" id="inputMinimizeToTray" ref="minimizeToTray" type="checkbox" label="Leave app running in notification area when the window is closed"
-                     disabled={ !this.state.showTrayIcon } checked={ this.state.minimizeToTray } onChange={ this.handleChangeMinimizeToTray } />);
+      options.push(<Input key="inputMinimizeToTray" id="inputMinimizeToTray" ref="minimizeToTray" type="checkbox" label={ this.state.trayWasVisible || !this.state.showTrayIcon ? "Leave app running in notification area when the window is closed" : "Leave app running in notification area when the window is closed (available on next restart)" } disabled={ !this.state.showTrayIcon || !this.state.trayWasVisible } checked={ this.state.minimizeToTray }
+                     onChange={ this.handleChangeMinimizeToTray } />);
     }
 
     if (process.platform === 'win32') {

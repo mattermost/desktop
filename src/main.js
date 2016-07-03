@@ -358,6 +358,11 @@ app.on('ready', function() {
   if (shouldShowTrayIcon()) {
     const tray_menu = require('./main/menus/tray').createDefault(mainWindow);
     trayIcon.setContextMenu(tray_menu);
+    if (process.platform === 'darwin') {
+      // store a reference to the tray icon, for checking in the settings, if the application
+      // was restarted after setting "Show icon on menu bar"
+      mainWindow.tray = trayIcon;
+    }
   }
 
   // Open the DevTools.
