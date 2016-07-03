@@ -50,15 +50,9 @@ var SettingsPage = React.createClass({
 
     if (process.platform === 'darwin') {
       var currentWindow = remote.getCurrentWindow();
-      if (currentWindow.tray) {
-        this.setState({
-          trayWasVisible: true
-        });
-      } else {
-        this.setState({
-          trayWasVisible: false
-        });
-      }
+      this.setState({
+        trayWasVisible: currentWindow.trayWasVisible
+      });
     }
   },
   handleTeamsChange: function(teams) {

@@ -359,9 +359,12 @@ app.on('ready', function() {
     const tray_menu = require('./main/menus/tray').createDefault(mainWindow);
     trayIcon.setContextMenu(tray_menu);
     if (process.platform === 'darwin') {
-      // store a reference to the tray icon, for checking in the settings, if the application
+      // store the information, if the tray was initialized, for checking in the settings, if the application
       // was restarted after setting "Show icon on menu bar"
-      mainWindow.tray = trayIcon;
+      if (trayIcon)
+        mainWindow.trayWasVisible = true;
+      else
+        mainWindow.trayWasVisible = false;
     }
   }
 
