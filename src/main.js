@@ -391,8 +391,10 @@ app.on('ready', function() {
           break;
         case 'darwin':
           mainWindow.hide();
-          app.dock.hide();
-          mainWindow.isHidden = true;
+          if (config.minimizeToTray) {
+            app.dock.hide();
+            mainWindow.isHidden = true;
+          }
           break;
         default:
       }

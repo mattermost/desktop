@@ -15,7 +15,7 @@
 
 #### OS X
 - Fixed that two icons appear on a notification.
-- The main window is now hidden from dock on close
+- Added Option to hide Window from dock on close
 
 ### Improvements
 - Added shortcuts
