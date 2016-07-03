@@ -119,6 +119,8 @@ The Settings Page is available from the **File** menu under **Settings** (Click 
       - This option hides the menu bar. Press "Alt" to show it.
    - **Show Icon on Menu Bar** (OS X)
       - The icon apeears on menu bar to indicate whether there are new messages or mention.
+   - **Show and set focus to the window whether there are new messages or mention**
+      - This option show and set focus to the window whether there are new messages or metion.
    - **Allow insecure contents**
       - If your team is hosted on `https://`, images with `http://` are not rendered by default.
         This option allows such images to be rendered, but please be careful for security.
