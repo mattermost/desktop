@@ -10,6 +10,7 @@
 #### Windows
 - Fixed the pixelated app icon on the top left of the window.
 - Fixed the blurred tray icon.
+- Fixed that the redundant description appears in the pinned start menu on Windows 7.
 
 #### OS X
 - Fixed that two icons appear on a notification.
