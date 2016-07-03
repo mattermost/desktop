@@ -26,7 +26,6 @@ var loadDefault = function(version) {
         showTrayIcon: false,
         trayIconTheme: '',
         disablewebsecurity: true,
-        minimizeToTray: true,
         toggleWindowOnTrayIconClick: false,
         version: 1,
         notifications: {
