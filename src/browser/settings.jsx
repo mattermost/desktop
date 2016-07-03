@@ -50,6 +50,7 @@ var SettingsPage = React.createClass({
   },
   handleTeamsChange: function(teams) {
     this.setState({
+      showAddTeamForm: false,
       teams: teams
     });
   },
