@@ -10,12 +10,12 @@
 #### Windows
 - Fixed the pixelated app icon on the top left of the window.
 - Fixed the blurred tray icon.
-- Added Option to minimize Window to system tray on close
+- The main window is now minimized to system tray on close
 - Added Option to toggle minimize/restore on click on system tray icon
 
 #### OS X
 - Fixed that two icons appear on a notification.
-- Added Option to hide Window from dock on close
+- The main window is now hidden from dock on close
 
 ### Improvements
 - Added shortcuts

@@ -61,7 +61,6 @@ var SettingsPage = React.createClass({
       trayIconTheme: this.state.trayIconTheme,
       disablewebsecurity: this.state.disablewebsecurity,
       version: settings.version,
-      minimizeToTray: this.state.minimizeToTray,
       toggleWindowOnTrayIconClick: this.state.toggleWindowOnTrayIconClick,
       notifications: {
         flashWindow: this.state.notifications.flashWindow
@@ -106,12 +105,6 @@ var SettingsPage = React.createClass({
     this.setState({
       showTrayIcon: shouldShowTrayIcon
     });
-
-    if (process.platform === 'darwin' && !shouldShowTrayIcon) {
-      this.setState({
-        minimizeToTray: false
-      });
-    }
   },
   handleChangeTrayIconTheme: function() {
     this.setState({
@@ -121,14 +114,6 @@ var SettingsPage = React.createClass({
   handleChangeAutoStart: function() {
     this.setState({
       autostart: this.refs.autostart.getChecked()
-    });
-  },
-  handleChangeMinimizeToTray: function() {
-    var shouldMinimizeToTray = (process.platform !== 'darwin' || this.refs.showTrayIcon.getChecked())
-    && this.refs.minimizeToTray.getChecked();
-
-    this.setState({
-      minimizeToTray: shouldMinimizeToTray
     });
   },
   handleChangeToggleWindowOnTrayIconClick: function() {
@@ -179,18 +164,12 @@ var SettingsPage = React.createClass({
       options.push(<Input key="inputAutoStart" id="inputAutoStart" ref="autostart" type="checkbox" label="Start app on login." checked={ this.state.autostart } onChange={ this.handleChangeAutoStart }
                    />);
     }
-    if (process.platform === 'win32') {
-      options.push(<Input key="inputMinimizeToTray" id="inputMinimizeToTray" ref="minimizeToTray" type="checkbox" label="Leave app running in notification area when the window is closed"
-                     checked={ this.state.minimizeToTray } onChange={ this.handleChangeMinimizeToTray } />);
-    } else if (process.platform === 'darwin') {
-      options.push(<Input key="inputMinimizeToTray" id="inputMinimizeToTray" ref="minimizeToTray" type="checkbox" label="Leave app running in notification area when the window is closed"
-                     disabled={ !this.state.showTrayIcon } checked={ this.state.minimizeToTray } onChange={ this.handleChangeMinimizeToTray } />);
-    }
 
     if (process.platform === 'win32') {
       options.push(<Input key="inputToggleWindowOnTrayIconClick" id="inputToggleWindowOnTrayIconClick" ref="toggleWindowOnTrayIconClick" type="checkbox" label="Toggle window visibility when clicking on the tray icon."
                      checked={ this.state.toggleWindowOnTrayIconClick } onChange={ this.handleChangeToggleWindowOnTrayIconClick } />);
     }
+
     var options_row = (options.length > 0) ? (
       <Row>
         <Col md={ 12 }>

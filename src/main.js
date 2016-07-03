@@ -261,12 +261,15 @@ app.on('ready', function() {
       trayIcon.popUpContextMenu();
     });
     trayIcon.on('balloon-click', function() {
-      if (process.platform === 'win32') {
-        if (config.minimizeToTray) {
-          mainWindow.show();
-          mainWindow.isHidden = false;
-        }
+      if (process.platform === 'win32' || process.platform === 'darwin') {
+        mainWindow.show();
+        mainWindow.isHidden = false;
       }
+
+      if (process.platform === 'darwin') {
+        app.dock.show();
+      }
+
       mainWindow.focus();
     });
     ipcMain.on('notified', function(event, arg) {
@@ -380,26 +383,16 @@ app.on('ready', function() {
       event.preventDefault();
       switch (process.platform) {
         case 'win32':
-          if (config.minimizeToTray) {
-            mainWindow.hide();
-            mainWindow.isHidden = true;
-          }
-          else {
-            mainWindow.minimize();
-          }
+          mainWindow.hide();
+          mainWindow.isHidden = true;
           break;
         case 'linux':
           mainWindow.minimize();
           break;
         case 'darwin':
-          if (config.minimizeToTray) {
-            mainWindow.hide();
-            app.dock.hide();
-            mainWindow.isHidden = true;
-          }
-          else {
-            mainWindow.minimize();
-          }
+          mainWindow.hide();
+          app.dock.hide();
+          mainWindow.isHidden = true;
           break;
         default:
       }
