@@ -31,8 +31,9 @@ Please see http://www.mattermost.org/feature-requests/ .
 Pull requests are welcome. Thank you for your great work!
 
 1. When you edit the code, please run `npm run prettify` to format your code before `git commit`.
-2. In the description of your pull request, please include:
+2. Please update `CHANGELOG.md` and `docs/*.md` if it's necessary.
+3. In the description of your pull request, please include:
    * Operating System version on which you tested
    * Mattermost server version on which you tested
    * New or updated unit tests for your changes
-3. Please complete the [Mattermost CLA](http://www.mattermost.org/mattermost-contributor-agreement/) prior to submitting a PR.
+4. Please complete the [Mattermost CLA](http://www.mattermost.org/mattermost-contributor-agreement/) prior to submitting a PR.
