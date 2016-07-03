@@ -101,9 +101,8 @@ var SettingsPage = React.createClass({
     });
   },
   handleChangeShowTrayIcon: function() {
-    var shouldShowTrayIcon = this.refs.showTrayIcon.getChecked();
     this.setState({
-      showTrayIcon: shouldShowTrayIcon
+      showTrayIcon: this.refs.showTrayIcon.getChecked()
     });
   },
   handleChangeTrayIconTheme: function() {
