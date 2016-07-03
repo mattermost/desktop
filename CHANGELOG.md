@@ -31,6 +31,7 @@
     - Ctrl+{1-9} (Window -> *Team name*): Open the *n*-th tab.
     - Ctrl+Tab or Alt+Command+Right (Window -> Select Next Team): Open the right tab.
     - Ctrl+Shift+Tab or Alt+Command+Left (Window -> Select Previous Team): Open the left tab.
+    - Right click on the tray item, to see an overview of all your teams. You can also select one and jump right into it.
 - Added **Add** button next to the "Teams" label on the Setting page.
 - Added **Edit** button on the team list on the Setting page.
 - Added **Help** menu to indicate the application version.
