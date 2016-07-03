@@ -21,17 +21,13 @@ var createTemplate = function(mainWindow, config) {
         message: `${app_name} Desktop ${electron.app.getVersion()}`
       });
     }
-  }, {
-    type: 'separator'
-  }, {
+  }, separatorItem, {
     label: 'Preferences...',
     accelerator: 'CmdOrCtrl+,',
     click: function(item, focusedWindow) {
       mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
     }
-  }, {
-    type: 'separator'
-  }, {
+  }, separatorItem, {
     label: 'Hide ' + app_name,
     accelerator: 'Command+H',
     selector: 'hide:'
@@ -42,9 +38,7 @@ var createTemplate = function(mainWindow, config) {
   }, {
     label: 'Show All',
     selector: 'unhideAllApplications:'
-  }, {
-    type: 'separator'
-  }, {
+  }, separatorItem, {
     label: 'Quit ' + app_name,
     accelerator: 'CmdOrCtrl+Q',
     click: function(item, focusedWindow) {
@@ -56,9 +50,7 @@ var createTemplate = function(mainWindow, config) {
     click: function(item, focusedWindow) {
       mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
     }
-  }, {
-    type: 'separator'
-  }, {
+  }, separatorItem, {
     label: 'Quit',
     accelerator: 'CmdOrCtrl+Q',
     click: function(item, focusedWindow) {
@@ -82,9 +74,7 @@ var createTemplate = function(mainWindow, config) {
       label: 'Redo',
       accelerator: 'Shift+CmdOrCtrl+Z',
       role: 'redo'
-    }, {
-      type: 'separator'
-    }, {
+    }, separatorItem, {
       label: 'Cut',
       accelerator: 'CmdOrCtrl+X',
       role: 'cut'
@@ -192,9 +182,7 @@ var createTemplate = function(mainWindow, config) {
           focusedWindow.close();
         }
       }
-    }, {
-      type: 'separator'
-    }, ...config.teams.slice(0, 9).map((team, i) => {
+    }, separatorItem, ...config.teams.slice(0, 9).map((team, i) => {
       return {
         label: team.name,
         accelerator: `CmdOrCtrl+${i + 1}`,
