@@ -35,6 +35,7 @@
     "chai": "^3.5.0",
     "chai-as-promised": "^5.3.0",
     "del": "^2.2.0",
+    "devtron": "^1.2.1",
     "electron-builder": "5.2.1",
     "electron-connect": "^0.3.7",
     "electron-packager": "^7.0.1",
