@@ -224,6 +224,13 @@ var createTemplate = function(mainWindow, config) {
   template.push({
     label: '&Help',
     submenu: [{
+      label: `${app_name} Docs`,
+      click: function() {
+        electron.shell.openExternal('http://docs.mattermost.com')
+      }
+    }, {
+      type: 'separator'
+    }, {
       label: `Version ${electron.app.getVersion()}`,
       enabled: false
     }, ]
