@@ -385,7 +385,9 @@ var MattermostView = React.createClass({
           thisObj.handleUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned);
           if (config.showWindowOnNewMessage === true) {
             var win = remote.getCurrentWindow();
-            win.show();
+            if (!win.isFocused()) {
+              win.show();
+            }
           }
           break;
         case 'onNotificationClick':
