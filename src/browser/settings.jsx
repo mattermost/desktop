@@ -50,6 +50,7 @@ var SettingsPage = React.createClass({
   },
   handleTeamsChange: function(teams) {
     this.setState({
+      showAddTeamForm: false,
       teams: teams
     });
   },
@@ -301,7 +302,8 @@ var TeamList = React.createClass({
 
     var addTeamForm;
     if (this.props.showAddTeamForm || this.state.showTeamListItemNew) {
-      addTeamForm = <TeamListItemNew onTeamAdd={ this.handleTeamAdd } teamIndex={ this.state.team.index } teamName={ this.state.team.name } teamUrl={ this.state.team.url } />;
+      addTeamForm = <TeamListItemNew key={ this.state.team.index } onTeamAdd={ this.handleTeamAdd } teamIndex={ this.state.team.index } teamName={ this.state.team.name } teamUrl={ this.state.team.url }
+                    />;
     } else {
       addTeamForm = '';
     }
