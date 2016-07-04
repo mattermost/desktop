@@ -11,6 +11,12 @@ function createDefault(mainWindow) {
     label: `Open ${app.getName()}`,
     click: () => {
       mainWindow.show();
+      mainWindow.isHidden = false;
+
+      if (process.platform === 'darwin') {
+        app.dock.show();
+        mainWindow.focus();
+      }
     }
   }, {
     type: 'separator'

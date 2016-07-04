@@ -11,9 +11,12 @@
 - Fixed the pixelated app icon on the top left of the window.
 - Fixed the blurred tray icon.
 - Fixed that the redundant description appears in the pinned start menu on Windows 7.
+- The main window is now minimized to system tray on close
+- Added Option to toggle minimize/restore on click on system tray icon
 
 #### OS X
 - Fixed that two icons appear on a notification.
+- Added Option to hide Window from dock on close
 
 ### Improvements
 - Added shortcuts

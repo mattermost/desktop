@@ -156,6 +156,7 @@ app.on('browser-window-created', function(event, window) {
 // For OSX, show hidden mainWindow when clicking dock icon.
 app.on('activate', function(event) {
   mainWindow.show();
+  mainWindow.isHidden = false;
 });
 
 app.on('before-quit', function() {
@@ -227,12 +228,48 @@ app.on('ready', function() {
 
     trayIcon.setToolTip(app.getName());
     trayIcon.on('click', function() {
-      mainWindow.focus();
+      if (process.platform === 'win32') {
+        if (mainWindow.isHidden || mainWindow.isMinimized()) {
+          mainWindow.show();
+          mainWindow.isHidden = false;
+          mainWindow.focus();
+        }
+        else if (config.toggleWindowOnTrayIconClick) {
+          mainWindow.minimize();
+        }
+        else {
+          mainWindow.focus();
+        }
+      }
+      else if (process.platform === 'darwin') {
+        if (mainWindow.isHidden || mainWindow.isMinimized()) {
+          mainWindow.show();
+          mainWindow.isHidden = false;
+          mainWindow.focus();
+          app.dock.show();
+        }
+        else {
+          mainWindow.focus();
+        }
+      }
+      else {
+        mainWindow.focus();
+      }
     });
+
     trayIcon.on('right-click', () => {
       trayIcon.popUpContextMenu();
     });
     trayIcon.on('balloon-click', function() {
+      if (process.platform === 'win32' || process.platform === 'darwin') {
+        mainWindow.show();
+        mainWindow.isHidden = false;
+      }
+
+      if (process.platform === 'darwin') {
+        app.dock.show();
+      }
+
       mainWindow.focus();
     });
     ipcMain.on('notified', function(event, arg) {
@@ -321,6 +358,14 @@ app.on('ready', function() {
   if (shouldShowTrayIcon()) {
     const tray_menu = require('./main/menus/tray').createDefault(mainWindow);
     trayIcon.setContextMenu(tray_menu);
+    if (process.platform === 'darwin') {
+      // store the information, if the tray was initialized, for checking in the settings, if the application
+      // was restarted after setting "Show icon on menu bar"
+      if (trayIcon)
+        mainWindow.trayWasVisible = true;
+      else
+        mainWindow.trayWasVisible = false;
+    }
   }
 
   // Open the DevTools.
@@ -346,11 +391,18 @@ app.on('ready', function() {
       event.preventDefault();
       switch (process.platform) {
         case 'win32':
+          mainWindow.hide();
+          mainWindow.isHidden = true;
+          break;
         case 'linux':
           mainWindow.minimize();
           break;
         case 'darwin':
           mainWindow.hide();
+          if (config.minimizeToTray) {
+            app.dock.hide();
+            mainWindow.isHidden = true;
+          }
           break;
         default:
       }
