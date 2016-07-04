@@ -25,10 +25,7 @@ function createTemplate(mainWindow, config) {
     }), {
       type: 'separator'
     }, {
-      label: 'Quit',
-      click: function(item) {
-        app.quit();
-      }
+      role: 'quit'
     }
   ];
   return template;

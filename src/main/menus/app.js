@@ -39,11 +39,7 @@ var createTemplate = function(mainWindow, config) {
     label: 'Show All',
     selector: 'unhideAllApplications:'
   }, separatorItem, {
-    label: 'Quit ' + app_name,
-    accelerator: 'CmdOrCtrl+Q',
-    click: function(item, focusedWindow) {
-      electron.app.quit();
-    }
+    role: 'quit'
   }] : [{
     label: 'Settings',
     accelerator: 'CmdOrCtrl+,',
@@ -51,11 +47,7 @@ var createTemplate = function(mainWindow, config) {
       mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
     }
   }, separatorItem, {
-    label: 'Quit',
-    accelerator: 'CmdOrCtrl+Q',
-    click: function(item, focusedWindow) {
-      electron.app.quit();
-    }
+    role: 'quit'
   }];
 
   template.push({
