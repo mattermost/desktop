@@ -11,6 +11,10 @@ const {
   systemPreferences
 } = require('electron');
 
+process.on('uncaughtException', (error) => {
+  console.error(error);
+});
+
 if (process.platform === 'win32') {
   var cmd = process.argv[1];
   if (cmd === '--squirrel-uninstall') {
@@ -336,6 +340,15 @@ app.on('ready', function() {
   }
   window_options.title = app.getName();
   mainWindow = new BrowserWindow(window_options);
+
+  mainWindow.webContents.on('crashed', () => {
+    console.log('The application has crashed.');
+  });
+
+  mainWindow.on('unresponsive', () => {
+    console.log('The application has become unresponsive.')
+  });
+
   mainWindow.setFullScreenable(true); // fullscreenable option has no effect.
   if (window_options.maximized) {
     mainWindow.maximize();
