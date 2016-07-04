@@ -163,6 +163,10 @@ app.on('activate', function(event) {
 });
 
 app.on('before-quit', function() {
+  // Make sure tray icon gets removed if the user exits via CTRL-Q
+  if (process.platform === 'win32') {
+    trayIcon.destroy();
+  }
   willAppQuit = true;
 });
 

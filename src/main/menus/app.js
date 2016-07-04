@@ -28,16 +28,11 @@ var createTemplate = function(mainWindow, config) {
       mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
     }
   }, separatorItem, {
-    label: 'Hide ' + app_name,
-    accelerator: 'Command+H',
-    selector: 'hide:'
+    role: 'hide'
   }, {
-    label: 'Hide Others',
-    accelerator: 'Command+Shift+H',
-    selector: 'hideOtherApplications:'
+    role: 'hideothers'
   }, {
-    label: 'Show All',
-    selector: 'unhideAllApplications:'
+    role: 'unhide'
   }, separatorItem, {
     role: 'quit'
   }] : [{
@@ -47,7 +42,11 @@ var createTemplate = function(mainWindow, config) {
       mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
     }
   }, separatorItem, {
-    role: 'quit'
+    role: 'quit',
+    accelerator: 'CmdOrCtrl+Q',
+    click: function(item, focusedWindow) {
+      electron.app.quit();
+    }
   }];
 
   template.push({
@@ -59,28 +58,16 @@ var createTemplate = function(mainWindow, config) {
   template.push({
     label: '&Edit',
     submenu: [{
-      label: 'Undo',
-      accelerator: 'CmdOrCtrl+Z',
       role: 'undo'
     }, {
-      label: 'Redo',
-      accelerator: 'Shift+CmdOrCtrl+Z',
       role: 'redo'
     }, separatorItem, {
-      label: 'Cut',
-      accelerator: 'CmdOrCtrl+X',
       role: 'cut'
     }, {
-      label: 'Copy',
-      accelerator: 'CmdOrCtrl+C',
       role: 'copy'
     }, {
-      label: 'Paste',
-      accelerator: 'CmdOrCtrl+V',
       role: 'paste'
     }, {
-      label: 'Select All',
-      accelerator: 'CmdOrCtrl+A',
       role: 'selectall'
     }, ]
   });
@@ -155,21 +142,9 @@ var createTemplate = function(mainWindow, config) {
   const window_menu = {
     label: '&Window',
     submenu: [{
-      label: 'Minimize',
-      accelerator: 'CmdOrCtrl+M',
-      click: function(item, focusedWindow) {
-        if (focusedWindow) {
-          focusedWindow.minimize();
-        }
-      }
+      role: 'minimize'
     }, {
-      label: 'Close',
-      accelerator: 'CmdOrCtrl+W',
-      click: function(item, focusedWindow) {
-        if (focusedWindow) {
-          focusedWindow.close();
-        }
-      }
+      role: 'close'
     }, separatorItem, ...config.teams.slice(0, 9).map((team, i) => {
       return {
         label: team.name,
