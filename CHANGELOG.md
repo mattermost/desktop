@@ -11,12 +11,9 @@
 - Fixed the pixelated app icon on the top left of the window.
 - Fixed the blurred tray icon.
 - Fixed that the redundant description appears in the pinned start menu on Windows 7.
-- The main window is now minimized to system tray on close
-- Added Option to toggle minimize/restore on click on system tray icon
 
 #### OS X
 - Fixed that two icons appear on a notification.
-- Added Option to hide Window from dock on close
 
 ### Improvements
 - Added shortcuts
@@ -42,14 +39,18 @@
 - Added the tooltip text for the tray icon in order to show count of unread channels/mantions.
 - Added the option to launch the application on login.
 - Added the option to blink the taskbar icon when a new message has arrived.
+- The main window is now minimized to system tray on close
+- Added Option to toggle minimize/restore on click on system tray icon
 - Added installers (experimental)
 
 #### OS X
 - Added colored badges to the menu icon when there are unread channels/mentions.
+- Added Option to hide Window from dock on close
 
 #### Linux
 - Added the option to show the icon on menu bar. (requires libappindicator1 on Ubuntu)
 - Added the option to launch the application on login.
+- Added Option to hide Window into tray icon on close
 
 
 ## Release v1.2.1 (Beta)
