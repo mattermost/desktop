@@ -152,8 +152,8 @@ describe('browser/settings.html', function() {
     });
 
     describe('Minimize to tray', function() {
-      it('should appear on darwin', function() {
-        const expected = (process.platform === 'darwin');
+      it('should appear on darwin or linux', function() {
+        const expected = (process.platform === 'darwin' || process.platform === 'linux');
         env.addClientCommands(this.app.client);
         return this.app.client
           .loadSettingsPage()

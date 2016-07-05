@@ -232,7 +232,7 @@ app.on('ready', function() {
 
     trayIcon.setToolTip(app.getName());
     trayIcon.on('click', function() {
-      if (process.platform === 'win32') {
+      if (process.platform === 'win32' || process.platform === 'linux') {
         if (mainWindow.isHidden || mainWindow.isMinimized()) {
           mainWindow.show();
           mainWindow.isHidden = false;
@@ -407,7 +407,13 @@ app.on('ready', function() {
           mainWindow.isHidden = true;
           break;
         case 'linux':
-          mainWindow.minimize();
+          if (config.minimizeToTray) {
+            mainWindow.hide();
+            mainWindow.isHidden = true;
+          }
+          else {
+            mainWindow.minimize();
+          }
           break;
         case 'darwin':
           mainWindow.hide();
