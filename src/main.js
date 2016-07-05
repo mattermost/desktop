@@ -160,7 +160,6 @@ app.on('browser-window-created', function(event, window) {
 // For OSX, show hidden mainWindow when clicking dock icon.
 app.on('activate', function(event) {
   mainWindow.show();
-  mainWindow.isHidden = false;
 });
 
 app.on('before-quit', function() {
@@ -233,9 +232,8 @@ app.on('ready', function() {
     trayIcon.setToolTip(app.getName());
     trayIcon.on('click', function() {
       if (process.platform === 'win32' || process.platform === 'linux') {
-        if (mainWindow.isHidden || mainWindow.isMinimized()) {
+        if (!mainWindow.isVisible() || mainWindow.isMinimized()) {
           mainWindow.show();
-          mainWindow.isHidden = false;
           mainWindow.focus();
         }
         else if (config.toggleWindowOnTrayIconClick) {
@@ -246,18 +244,14 @@ app.on('ready', function() {
         }
       }
       else if (process.platform === 'darwin') {
-        if (mainWindow.isHidden || mainWindow.isMinimized()) {
+        if (!mainWindow.isVisible() || mainWindow.isMinimized()) {
           mainWindow.show();
-          mainWindow.isHidden = false;
           mainWindow.focus();
           app.dock.show();
         }
         else {
           mainWindow.focus();
         }
-      }
-      else {
-        mainWindow.focus();
       }
     });
 
@@ -267,7 +261,6 @@ app.on('ready', function() {
     trayIcon.on('balloon-click', function() {
       if (process.platform === 'win32' || process.platform === 'darwin') {
         mainWindow.show();
-        mainWindow.isHidden = false;
       }
 
       if (process.platform === 'darwin') {
@@ -404,12 +397,10 @@ app.on('ready', function() {
       switch (process.platform) {
         case 'win32':
           mainWindow.hide();
-          mainWindow.isHidden = true;
           break;
         case 'linux':
           if (config.minimizeToTray) {
             mainWindow.hide();
-            mainWindow.isHidden = true;
           }
           else {
             mainWindow.minimize();
@@ -419,7 +410,6 @@ app.on('ready', function() {
           mainWindow.hide();
           if (config.minimizeToTray) {
             app.dock.hide();
-            mainWindow.isHidden = true;
           }
           break;
         default:

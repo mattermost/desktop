@@ -15,7 +15,6 @@ function createTemplate(mainWindow, config) {
         click: (item, focusedWindow) => {
           mainWindow.show(); // for OS X
           mainWindow.webContents.send('switch-tab', i);
-          mainWindow.isHidden = false;
 
           if (process.platform === 'darwin') {
             app.dock.show();
