@@ -33,6 +33,7 @@ require('electron-squirrel-startup');
 
 const fs = require('fs');
 const path = require('path');
+const autoUpdater = require('./auto-updater');
 
 var settings = require('./common/settings');
 const osVersion = require('./common/osVersion');
@@ -219,6 +220,7 @@ allowProtocolDialog.init(mainWindow);
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
+  autoUpdater.initialize()
   if (shouldShowTrayIcon()) {
     // set up tray icon
     trayIcon = new Tray(trayImages.normal);

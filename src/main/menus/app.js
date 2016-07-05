@@ -2,6 +2,7 @@
 
 const electron = require('electron');
 const Menu = electron.Menu;
+const autoUpdater = require('./../../auto-updater');
 
 var createTemplate = function(mainWindow, config) {
   const separatorItem = {
@@ -233,7 +234,26 @@ var createTemplate = function(mainWindow, config) {
     }, {
       label: `Version ${electron.app.getVersion()}`,
       enabled: false
-    }, ]
+    }, {
+      label: 'Checking for Update',
+      enabled: false,
+      key: 'checkingForUpdate'
+    }, {
+      label: 'Check for Update',
+      visible: false,
+      key: 'checkForUpdate',
+      click: function() {
+        autoUpdater.checkForUpdates()
+      }
+    }, {
+      label: 'Restart and Install Update',
+      enabled: true,
+      visible: false,
+      key: 'restartToUpdate',
+      click: function() {
+        autoUpdater.quitAndInstall()
+      }
+    }]
   });
   return template;
 };
