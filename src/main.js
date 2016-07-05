@@ -231,27 +231,18 @@ app.on('ready', function() {
 
     trayIcon.setToolTip(app.getName());
     trayIcon.on('click', function() {
-      if (process.platform === 'win32' || process.platform === 'linux') {
-        if (!mainWindow.isVisible() || mainWindow.isMinimized()) {
-          mainWindow.show();
-          mainWindow.focus();
-        }
-        else if (config.toggleWindowOnTrayIconClick) {
-          mainWindow.minimize();
-        }
-        else {
-          mainWindow.focus();
-        }
-      }
-      else if (process.platform === 'darwin') {
-        if (!mainWindow.isVisible() || mainWindow.isMinimized()) {
-          mainWindow.show();
-          mainWindow.focus();
+      if (!mainWindow.isVisible() || mainWindow.isMinimized()) {
+        mainWindow.show();
+        mainWindow.focus();
+        if (process.platform === 'darwin') {
           app.dock.show();
         }
-        else {
-          mainWindow.focus();
-        }
+      }
+      else if ((process.platform === 'win32') && config.toggleWindowOnTrayIconClick) {
+        mainWindow.minimize();
+      }
+      else {
+        mainWindow.focus();
       }
     });
 
