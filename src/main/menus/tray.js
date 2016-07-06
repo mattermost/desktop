@@ -6,28 +6,39 @@ const {
   MenuItem
 } = require('electron');
 
-function createDefault(mainWindow) {
-  return Menu.buildFromTemplate([{
-    label: `Open ${app.getName()}`,
-    click: () => {
-      mainWindow.show();
-      mainWindow.isHidden = false;
+function createTemplate(mainWindow, config) {
+  var template = [
+    ...config.teams.slice(0, 9).map((team, i) => {
+      return {
+        label: team.name,
+        accelerator: `CmdOrCtrl+${i + 1}`,
+        click: (item, focusedWindow) => {
+          mainWindow.show(); // for OS X
+          mainWindow.webContents.send('switch-tab', i);
+          mainWindow.isHidden = false;
 
-      if (process.platform === 'darwin') {
-        app.dock.show();
-        mainWindow.focus();
+          if (process.platform === 'darwin') {
+            app.dock.show();
+            mainWindow.focus();
+          }
+        }
+      };
+    }), {
+      type: 'separator'
+    }, {
+      label: 'Quit',
+      click: function(item) {
+        app.quit();
       }
     }
-  }, {
-    type: 'separator'
-  }, {
-    label: 'Quit',
-    click: function(item) {
-      app.quit();
-    }
-  }]);
+  ];
+  return template;
 }
 
+var createMenu = function(mainWindow, config) {
+  return Menu.buildFromTemplate(createTemplate(mainWindow, config));
+};
+
 module.exports = {
-  createDefault: createDefault
+  createMenu: createMenu
 };

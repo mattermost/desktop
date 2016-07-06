@@ -364,22 +364,21 @@ app.on('ready', function() {
   ipcMain.on('update-menu', (event, config) => {
     var app_menu = appMenu.createMenu(mainWindow, config);
     Menu.setApplicationMenu(app_menu);
+    // set up context menu for tray icon
+    if (shouldShowTrayIcon()) {
+      const tray_menu = require('./main/menus/tray').createMenu(mainWindow, config);
+      trayIcon.setContextMenu(tray_menu);
+      if (process.platform === 'darwin') {
+        // store the information, if the tray was initialized, for checking in the settings, if the application
+        // was restarted after setting "Show icon on menu bar"
+        if (trayIcon)
+          mainWindow.trayWasVisible = true;
+        else
+          mainWindow.trayWasVisible = false;
+      }
+    }
   });
   ipcMain.emit('update-menu', true, config);
-
-  // set up context menu for tray icon
-  if (shouldShowTrayIcon()) {
-    const tray_menu = require('./main/menus/tray').createDefault(mainWindow);
-    trayIcon.setContextMenu(tray_menu);
-    if (process.platform === 'darwin') {
-      // store the information, if the tray was initialized, for checking in the settings, if the application
-      // was restarted after setting "Show icon on menu bar"
-      if (trayIcon)
-        mainWindow.trayWasVisible = true;
-      else
-        mainWindow.trayWasVisible = false;
-    }
-  }
 
   // Open the DevTools.
   // mainWindow.openDevTools();
