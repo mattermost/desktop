@@ -27,16 +27,17 @@ function backToIndex() {
 
 var SettingsPage = React.createClass({
   getInitialState: function() {
-    var config;
+    var initialState;
     try {
-      config = settings.readFileSync(this.props.configFile);
+      initialState = settings.readFileSync(this.props.configFile);
     } catch (e) {
-      config = settings.loadDefault();
+      initialState = settings.loadDefault();
     }
 
-    config.showAddTeamForm = false;
+    initialState.showAddTeamForm = false;
+    initialState.trayWasVisible = remote.getCurrentWindow().trayWasVisible;
 
-    return config;
+    return initialState;
   },
   componentDidMount: function() {
     if (process.platform === 'win32' || process.platform === 'linux') {
@@ -45,13 +46,6 @@ var SettingsPage = React.createClass({
         self.setState({
           autostart: enabled
         });
-      });
-    }
-
-    if (process.platform === 'darwin') {
-      var currentWindow = remote.getCurrentWindow();
-      this.setState({
-        trayWasVisible: currentWindow.trayWasVisible
       });
     }
   },
@@ -188,7 +182,7 @@ var SettingsPage = React.createClass({
                    />);
     }
 
-    if (process.platform === 'darwin') {
+    if (process.platform === 'darwin' || process.platform === 'linux') {
       options.push(<Input key="inputMinimizeToTray" id="inputMinimizeToTray" ref="minimizeToTray" type="checkbox" label={ this.state.trayWasVisible || !this.state.showTrayIcon ? "Leave app running in notification area when the window is closed" : "Leave app running in notification area when the window is closed (available on next restart)" } disabled={ !this.state.showTrayIcon || !this.state.trayWasVisible } checked={ this.state.minimizeToTray }
                      onChange={ this.handleChangeMinimizeToTray } />);
     }
