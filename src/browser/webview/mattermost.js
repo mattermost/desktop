@@ -107,12 +107,18 @@ notification.override({
   },
   // Show window even if it is hidden/minimized when notification is clicked.
   onclick: function() {
+    const currentWindow = electron.remote.getCurrentWindow();
     if (process.platform === 'win32') {
       // show() breaks Aero Snap state.
-      electron.remote.getCurrentWindow().focus();
+      if (currentWindow.isVisible()) {
+        currentWindow.focus();
+      }
+      else {
+        currentWindow.show();
+      }
     }
     else {
-      electron.remote.getCurrentWindow().show();
+      currentWindow.show();
     }
     ipc.sendToHost('onNotificationClick');
   }
