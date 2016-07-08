@@ -2,56 +2,65 @@
 
 ## Release v1.3.0 (Beta)
 
-### Changes
-- Changed the license, from MIT License to Apache License, Version 2.0.
-
-### Fixes
-
-#### Windows
-- Fixed the pixelated app icon on the top left of the window.
-- Fixed the blurred tray icon.
-- Fixed that the redundant description appears in the pinned start menu on Windows 7.
-
-#### OS X
-- Fixed that two icons appear on a notification.
+Expected release date: 2016-07-16
 
 ### Improvements
-- Added shortcuts
-  - Zoom
-    - Ctrl+0 (View -> Actual Size): Reset the zoom level.
-    - Ctrl+Plus (View -> Zoom In)
-    - Ctrl+Minus (View -> Zoom Out)
-  - Control window
-    - Ctrl+W (Window -> Close): On Windows and Linux, this works as minimize for the main window.
-    - Ctrl+M (Window -> Minimize)
-  - Switch teams (these shotcuts also reopen the main window)
-    - Ctrl+{1-9} (Window -> *Team name*): Open the *n*-th tab.
-    - Ctrl+Tab or Alt+Command+Right (Window -> Select Next Team): Open the right tab.
-    - Ctrl+Shift+Tab or Alt+Command+Left (Window -> Select Previous Team): Open the left tab.
-    - Right click on the tray item, to see an overview of all your teams. You can also select one and jump right into it.
-- Added **Add** button next to the "Teams" label on the Setting page.
-- Added **Edit** button on the team list on the Setting page.
-- Added **Help** menu to indicate the application version.
-- Added **Mattermost Docs** menu item under **Help** linking to the mattermost docs.
-- Added auto-reloading when the tab failed to load the team.
 
 #### Windows
-- Added the tooltip text for the tray icon in order to show count of unread channels/mantions.
-- Added the option to launch the application on login.
-- Added the option to blink the taskbar icon when a new message has arrived.
-- The main window is now minimized to system tray on close
-- Added Option to toggle minimize/restore on click on system tray icon
-- Added installers (experimental)
+- The app now minimizes to the system tray when closed.
+- Added an option to launch application on login.
+- Added an option to blink the taskbar icon when a new message has arrived.
+- Added tooltip text for the system tray icon in order to show count of unread channels/mentions.
+- Added an option to toggle the app to minimize/restore when clicking on the system tray icon.
+- Added auto-reloading when the tab failed to load the team.
+- Added the ability to access all of your teams by right clicking the system tray icon.
+- Added an initial, experimental version of the installers.
 
 #### OS X
 - Added colored badges to the menu icon when there are unread channels/mentions.
-- Added Option to hide Window from dock on close
+- Added an option to minimize the app to the system tray when closed.
+- Added auto-reloading when the tab failed to load the team.
+- Added the ability to access all of your teams by right clicking the system tray icon.
 
 #### Linux
-- Added the option to show the icon on menu bar. (requires libappindicator1 on Ubuntu)
-- Added the option to launch the application on login.
-- Added Option to hide Window into tray icon on close
+- Added an option to show the icon on menu bar (requires libappindicator1 on Ubuntu).
+- Added an option to launch application on login.
+- Added an option to minimize the app to the system tray when closed.
+- Added auto-reloading when the tab failed to load the team.
+- Added the ability to access all of your teams by right clicking the system tray icon.
 
+#### Menu Bar
+- New Keyboard Shortcuts
+  - Adjust text size
+    - Ctrl+0 (Menu Bar -> View -> Actual Size): Reset the zoom level.
+    - Ctrl+Plus (Menu Bar -> View -> Zoom In): Increase text size
+    - Ctrl+Minus (Menu Bar -> View -> Zoom Out): Decrease text size
+  - Control window
+    - Ctrl+W (Menu Bar -> Window -> Close): On Linux, this minimizes the main window.
+    - Ctrl+M (Menu Bar -> Window -> Minimize)
+  - Switch teams (these shotcuts also reopen the main window)
+    - Ctrl+{1-9} (Menu Bar -> Window -> *Team name*): Open the *n*-th tab.
+    - Ctrl+Tab or Alt+Command+Right (Menu Bar -> Window -> Select Next Team): Switch to the next window.
+    - Ctrl+Shift+Tab or Alt+Command+Left (Menu Bar -> Window -> Select Previous Team): Switch to the previous window.
+    - Right click on the tray item, to see an overview of all your teams. You can also select one and jump right into it.
+- Added **Add** button next to the "Teams" label on the Settings page.
+- Added **Edit** button on the team list on the Settings page.
+- Added **Help** to the Menu Bar, which includes
+    - Link to [**Mattermost Docs**](docs.mattermost.com) 
+    - Field to indicate the application version number.
+
+### Other Changes
+- Application license changed from MIT License to Apache License, Version 2.0.
+
+### Bug Fixes
+
+#### Windows
+- Fixed the pixelated app icon on the top left of the main window.
+- Fixed the blurred system tray icon.
+- Fixed a redundant description appearing in the pinned start menu on Windows 7.
+
+#### OS X
+- Fixed two icons appearing on a notification.
 
 ## Release v1.2.1 (Beta)
 
