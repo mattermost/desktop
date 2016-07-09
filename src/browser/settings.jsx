@@ -231,7 +231,7 @@ var SettingsPage = React.createClass({
       notifications_row = (
         <Row id="notificationsRow">
           <Col md={ 12 }>
-          <h3>Notifications</h3> Configure, that the taskicon in the taskbar blinks when new message arrives.
+          <h3>Notifications</h3> Flash the taskbar icon when a new message is received.
           { notificationElements }
           </Col>
         </Row>
