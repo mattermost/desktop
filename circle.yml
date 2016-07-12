@@ -34,13 +34,3 @@ dependencies:
 test:
   post:
     - mv test-results.xml $CIRCLE_TEST_REPORTS/
-
-deployment:
-  release:
-    tag: /v[0-9]+(\.[0-9]+)*/
-    commands:
-      - ./circle/make_draft.sh
-  release-candidate:
-    tag: /v[0-9]+(\.[0-9]+)*-rc[0-9]*/
-    commands:
-      - ./circle/make_draft.sh
