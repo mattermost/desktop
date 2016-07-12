@@ -261,10 +261,13 @@ app.on('ready', function() {
       mainWindow.focus();
     });
     ipcMain.on('notified', function(event, arg) {
-      if (process.platform === 'win32') {
+      if (process.platform === 'win32' || process.platform == 'linux') {
         if (config.notifications.flashWindow === 2) {
           mainWindow.flashFrame(true);
         }
+      }
+
+      if (process.platform === 'win32') {
         // On Windows 8.1 and Windows 8, a shortcut with a Application User Model ID must be installed to the Start screen.
         // In current version, use tray balloon for notification
         if (osVersion.isLowerThanOrEqualWindows8_1()) {

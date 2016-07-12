@@ -172,8 +172,8 @@ describe('browser/settings.html', function() {
     });
 
     describe('Notifications', function() {
-      it('should appear on win32', function() {
-        const expected = (process.platform === 'win32');
+      it('should appear on win32 and linux', function() {
+        const expected = (process.platform === 'win32' || process.platform === 'linux');
         env.addClientCommands(this.app.client);
         return this.app.client
           .loadSettingsPage()

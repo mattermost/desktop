@@ -202,7 +202,7 @@ var SettingsPage = React.createClass({
       ) : null;
 
     var notifications_row = null;
-    if (process.platform === 'win32') {
+    if (process.platform === 'win32' || process.platform === 'linux') {
       var notificationSettings = [
         {
           label: 'Never',
