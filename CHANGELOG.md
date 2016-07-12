@@ -46,13 +46,16 @@ Expected release date: 2016-07-16
 - Added **Add** button next to the "Teams" label on the Settings page.
 - Added **Edit** button on the team list on the Settings page.
 - Added **Help** to the Menu Bar, which includes
-    - Link to [**Mattermost Docs**](docs.mattermost.com) 
+    - Link to [**Mattermost Docs**](docs.mattermost.com)
     - Field to indicate the application version number.
 
 ### Other Changes
 - Application license changed from MIT License to Apache License, Version 2.0.
 
 ### Bug Fixes
+
+#### All platforms
+- Fixed authentication dialog not working for proxy.
 
 #### Windows
 - Fixed the pixelated app icon on the top left of the main window.

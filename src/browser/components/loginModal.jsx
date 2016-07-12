@@ -24,7 +24,7 @@ const LoginModal = React.createClass({
     if (!this.props.show) {
       theServer = '';
     } else if (this.props.authInfo.isProxy) {
-      theServer = `The proxy ${authInfo.host}:${authInfo.port}`;
+      theServer = `The proxy ${this.props.authInfo.host}:${this.props.authInfo.port}`;
     } else {
       theServer = `The server ${this.props.authServerURL}`;
     }
