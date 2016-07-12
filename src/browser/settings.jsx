@@ -161,11 +161,11 @@ var SettingsPage = React.createClass({
 
     var options = [];
     if (process.platform === 'win32' || process.platform === 'linux') {
-      options.push(<Input key="inputHideMenuBar" id="inputHideMenuBar" ref="hideMenuBar" type="checkbox" label="Hide Menu Bar (Press Alt to show Menu Bar)" checked={ this.state.hideMenuBar }
+      options.push(<Input key="inputHideMenuBar" id="inputHideMenuBar" ref="hideMenuBar" type="checkbox" label="Hide menu bar (Press Alt to show menu bar)" checked={ this.state.hideMenuBar }
                      onChange={ this.handleChangeHideMenuBar } />);
     }
     if (process.platform === 'darwin' || process.platform === 'linux') {
-      options.push(<Input key="inputShowTrayIcon" id="inputShowTrayIcon" ref="showTrayIcon" type="checkbox" label="Show Icon on Menu Bar (Need to restart the application)" checked={ this.state.showTrayIcon }
+      options.push(<Input key="inputShowTrayIcon" id="inputShowTrayIcon" ref="showTrayIcon" type="checkbox" label="Show icon on menu bar (Need to restart the application)" checked={ this.state.showTrayIcon }
                      onChange={ this.handleChangeShowTrayIcon } />);
     }
     if (process.platform === 'linux') {
@@ -231,7 +231,7 @@ var SettingsPage = React.createClass({
       notifications_row = (
         <Row id="notificationsRow">
           <Col md={ 12 }>
-          <h3>Notifications</h3> Configure, that the taskicon in the taskbar blinks when new message arrives.
+          <h3>Notifications</h3> Flash the taskbar icon when a new message is received.
           { notificationElements }
           </Col>
         </Row>
