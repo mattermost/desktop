@@ -319,7 +319,9 @@ app.on('ready', function() {
     // follow Electron's defaults
     window_options = {};
   }
-  if (process.platform === 'linux') {
+  if (process.platform === 'win32' || process.platform === 'linux') {
+    // On HiDPI(125%) Windows environment, the taskbar icon is pixelated. So this line is necessary. See #192.
+    // As the side effect, #98 reoccurs.
     window_options.icon = path.resolve(__dirname, 'resources/appicon.png');
   }
   window_options.title = app.getName();

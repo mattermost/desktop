@@ -58,7 +58,6 @@ Expected release date: 2016-07-16
 - Fixed authentication dialog not working for proxy.
 
 #### Windows
-- Fixed the pixelated app icon on the top left of the main window.
 - Fixed the blurred system tray icon.
 - Fixed a redundant description appearing in the pinned start menu on Windows 7.
 
