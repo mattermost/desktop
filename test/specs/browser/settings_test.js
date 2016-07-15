@@ -180,5 +180,15 @@ describe('browser/settings.html', function() {
           .isExisting('#notificationsRow').should.eventually.equal(expected)
       });
     });
+
+    describe('Show red icon for unread', function() {
+      it('should appear on darwin or win32', function() {
+        const expected = (process.platform === 'darwin' || process.platform === 'win32');
+        env.addClientCommands(this.app.client);
+        return this.app.client
+          .loadSettingsPage()
+          .isExisting('#inputShowUnreadBadge').should.eventually.equal(expected)
+      });
+    });
   });
 });

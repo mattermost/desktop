@@ -67,7 +67,8 @@ var SettingsPage = React.createClass({
       toggleWindowOnTrayIconClick: this.state.toggleWindowOnTrayIconClick,
       notifications: {
         flashWindow: this.state.notifications.flashWindow
-      }
+      },
+      showUnreadBadge: this.state.showUnreadBadge
     };
     settings.writeFileSync(this.props.configFile, config);
     if (process.platform === 'win32' || process.platform === 'linux') {
@@ -150,6 +151,11 @@ var SettingsPage = React.createClass({
       }
     });
   },
+  handleShowUnreadBadge: function() {
+    this.setState({
+      showUnreadBadge: this.refs.showUnreadBadge.getChecked()
+    });
+  },
   render: function() {
     var teams_row = (
     <Row>
@@ -190,6 +196,11 @@ var SettingsPage = React.createClass({
     if (process.platform === 'win32') {
       options.push(<Input key="inputToggleWindowOnTrayIconClick" id="inputToggleWindowOnTrayIconClick" ref="toggleWindowOnTrayIconClick" type="checkbox" label="Toggle window visibility when clicking on the tray icon."
                      checked={ this.state.toggleWindowOnTrayIconClick } onChange={ this.handleChangeToggleWindowOnTrayIconClick } />);
+    }
+
+    if (process.platform === 'darwin' || process.platform === 'win32') {
+      options.push(<Input key="inputShowUnreadBadge" id="inputShowUnreadBadge" ref="showUnreadBadge" type="checkbox" label="Show red badge on taskbar icon to indicate unread messages. Regardless of this setting, mentions are always indicated with a red badge and item count on the taskbar icon."
+                     checked={ this.state.showUnreadBadge } onChange={ this.handleShowUnreadBadge } />);
     }
 
     var options_row = (options.length > 0) ? (
