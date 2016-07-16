@@ -1,5 +1,12 @@
 # Mattermost Desktop Application Changelog
 
+## Release v1.4.0 (Beta)
+
+### Improvements
+
+### Bug Fixes
+
+
 ## Release v1.3.0 (Beta)
 
 Expected release date: 2016-07-16
@@ -63,6 +70,7 @@ Expected release date: 2016-07-16
 
 #### OS X
 - Fixed two icons appearing on a notification.
+
 
 ## Release v1.2.1 (Beta)
 
