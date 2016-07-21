@@ -3,6 +3,7 @@
 ## Release v1.4.0 (Beta)
 
 ### Improvements
+- Changed display of unread messages on the team tabbar, they are now shown as bold text
 
 ### Bug Fixes
 
