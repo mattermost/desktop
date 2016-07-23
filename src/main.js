@@ -261,7 +261,7 @@ app.on('ready', function() {
       mainWindow.focus();
     });
     ipcMain.on('notified', function(event, arg) {
-      if (process.platform === 'win32' || process.platform == 'linux') {
+      if (process.platform === 'win32' || process.platform === 'linux') {
         if (config.notifications.flashWindow === 2) {
           mainWindow.flashFrame(true);
         }
