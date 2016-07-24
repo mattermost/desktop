@@ -7,33 +7,35 @@
 ### Bug Fixes
 
 
-## Release v1.3.0 (Beta)
+# Mattermost Desktop Application Changelog
 
-Expected release date: 2016-07-16
+## Release v1.3.0
+
+Release date: 2016-07-18
 
 ### Improvements
 
 #### Windows
+- Added an installer for better install experience.
 - The app now minimizes to the system tray when closed.
 - Added an option to launch application on login.
 - Added an option to blink the taskbar icon when a new message has arrived.
 - Added tooltip text for the system tray icon in order to show count of unread channels/mentions.
 - Added an option to toggle the app to minimize/restore when clicking on the system tray icon.
-- Added auto-reloading when the tab failed to load the team.
+- Added auto-reloading when tab fails to load the team.
 - Added the ability to access all of your teams by right clicking the system tray icon.
-- Added an initial, experimental version of the installers.
 
 #### OS X
 - Added colored badges to the menu icon when there are unread channels/mentions.
 - Added an option to minimize the app to the system tray when closed.
-- Added auto-reloading when the tab failed to load the team.
+- Added auto-reloading when tab fails to load the team.
 - Added the ability to access all of your teams by right clicking the system tray icon.
 
-#### Linux
+#### Linux (Beta)
 - Added an option to show the icon on menu bar (requires libappindicator1 on Ubuntu).
 - Added an option to launch application on login.
 - Added an option to minimize the app to the system tray when closed.
-- Added auto-reloading when the tab failed to load the team.
+- Added auto-reloading when tab fails to load the team.
 - Added the ability to access all of your teams by right clicking the system tray icon.
 
 #### Menu Bar
@@ -50,11 +52,13 @@ Expected release date: 2016-07-16
     - Ctrl+Tab or Alt+Command+Right (Menu Bar -> Window -> Select Next Team): Switch to the next window.
     - Ctrl+Shift+Tab or Alt+Command+Left (Menu Bar -> Window -> Select Previous Team): Switch to the previous window.
     - Right click on the tray item, to see an overview of all your teams. You can also select one and jump right into it.
-- Added **Add** button next to the "Teams" label on the Settings page.
-- Added **Edit** button on the team list on the Settings page.
-- Added **Help** to the Menu Bar, which includes
+  - Added **Help** to the Menu Bar, which includes
     - Link to [**Mattermost Docs**](docs.mattermost.com)
     - Field to indicate the application version number.
+
+#### Settings Page
+- Added a "+" button next to the **Teams** label, which allows you to add more teams.
+- Added the ability to edit team information by clicking on the pencil icon to the right of the team name.
 
 ### Other Changes
 - Application license changed from MIT License to Apache License, Version 2.0.
@@ -71,6 +75,17 @@ Expected release date: 2016-07-16
 #### OS X
 - Fixed two icons appearing on a notification.
 
+### Known Issues
+
+#### Linux
+- [Ubuntu - 64 bit] Right clicking taskbar icon and choosing **Quit** only minimizes the app
+- [Ubuntu - 64 bit] [Direct message notification comes as a streak of line instead of a pop up](https://github.com/mattermost/platform/issues/3589)
+
+### Contributors
+
+Many thanks to all our contributors. In alphabetical order:
+ 
+- [CarmDam](https://github.com/CarmDam), [it33](https://github.com/it33), [jasonblais](https://github.com/jasonblais), [jnugh](https://github.com/jnugh), [magicmonty](https://github.com/magicmonty), [MetalCar](https://github.com/MetalCar), [Razzeee](https://github.com/Razzeee), [yuya-oc](https://github.com/yuya-oc)
 
 ## Release v1.2.1 (Beta)
 
@@ -112,6 +127,11 @@ This release contains a security update and it is highly recommended that users 
 #### Linux
 - Add **.deb** packages to support installation.
 
+### Contributors
+
+Many thanks to all our contributors. In alphabetical order:
+ 
+- [asaadmahmoodspin](https://github.com/asaadmahmoodspin), [jeremycook](https://github.com/jeremycook), [jnugh](https://github.com/jnugh), [jwilander](https://github.com/jwilander), [mgielda](https://github.com/mgielda), [lloeki](https://github.com/lloeki), [yuya-oc](https://github.com/yuya-oc)
 
 ## Release v1.1.1 (Beta)
 
@@ -179,3 +199,4 @@ The `electron-mattermost` project is now the official desktop application for th
 
 #### Windows
 - Application does not appear properly in Windows volume mixer.
+
