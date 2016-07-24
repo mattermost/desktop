@@ -1,9 +1,15 @@
 const OriginalNotification = Notification;
 
+const appIconURL = `file:///${require('electron').remote.app.getAppPath()}/resources/appicon.png`;
+
 function override(eventHandlers) {
   Notification = function(title, options) {
-    // Notification Center shows app's icon, so there were two icons on the notification.
-    if (process.platform === 'darwin') {
+    if (process.platform === 'win32') {
+      // Replace with application icon.
+      options.icon = appIconURL;
+    }
+    else if (process.platform === 'darwin') {
+      // Notification Center shows app's icon, so there were two icons on the notification.
       delete options.icon;
     }
     this.notification = new OriginalNotification(title, options);
