@@ -7,8 +7,6 @@
 #### Linux
  - Added an option to make the taskbar icon flash on new messages
 
-### Improvements
-
 ### Bug Fixes
 
 
