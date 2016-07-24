@@ -7,8 +7,6 @@
 ### Bug Fixes
 
 
-# Mattermost Desktop Application Changelog
-
 ## Release v1.3.0
 
 Release date: 2016-07-18
@@ -84,7 +82,7 @@ Release date: 2016-07-18
 ### Contributors
 
 Many thanks to all our contributors. In alphabetical order:
- 
+
 - [CarmDam](https://github.com/CarmDam), [it33](https://github.com/it33), [jasonblais](https://github.com/jasonblais), [jnugh](https://github.com/jnugh), [magicmonty](https://github.com/magicmonty), [MetalCar](https://github.com/MetalCar), [Razzeee](https://github.com/Razzeee), [yuya-oc](https://github.com/yuya-oc)
 
 ## Release v1.2.1 (Beta)
@@ -130,7 +128,7 @@ This release contains a security update and it is highly recommended that users 
 ### Contributors
 
 Many thanks to all our contributors. In alphabetical order:
- 
+
 - [asaadmahmoodspin](https://github.com/asaadmahmoodspin), [jeremycook](https://github.com/jeremycook), [jnugh](https://github.com/jnugh), [jwilander](https://github.com/jwilander), [mgielda](https://github.com/mgielda), [lloeki](https://github.com/lloeki), [yuya-oc](https://github.com/yuya-oc)
 
 ## Release v1.1.1 (Beta)
@@ -199,4 +197,3 @@ The `electron-mattermost` project is now the official desktop application for th
 
 #### Windows
 - Application does not appear properly in Windows volume mixer.
-
