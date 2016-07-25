@@ -218,6 +218,13 @@ allowProtocolDialog.init(mainWindow);
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
+  ipcMain.on('notified', function(event, arg) {
+    if (process.platform === 'win32' || process.platform === 'linux') {
+      if (config.notifications.flashWindow === 2) {
+        mainWindow.flashFrame(true);
+      }
+    }
+  });
   if (shouldShowTrayIcon()) {
     // set up tray icon
     trayIcon = new Tray(trayImages.normal);
@@ -261,12 +268,6 @@ app.on('ready', function() {
       mainWindow.focus();
     });
     ipcMain.on('notified', function(event, arg) {
-      if (process.platform === 'win32' || process.platform === 'linux') {
-        if (config.notifications.flashWindow === 2) {
-          mainWindow.flashFrame(true);
-        }
-      }
-
       if (process.platform === 'win32') {
         // On Windows 8.1 and Windows 8, a shortcut with a Application User Model ID must be installed to the Start screen.
         // In current version, use tray balloon for notification
