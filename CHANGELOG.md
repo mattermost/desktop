@@ -1,13 +1,17 @@
 # Mattermost Desktop Application Changelog
 
-## Release v1.4.0 (Beta)
+## UNDER DEVELOPMENT v1.4.0
+
+The "UNDER DEVELOPMENT" section of the Mattermost Desktop changelog appears in the product's `master` branch to note key changes committed to `master` and are on their way to the next stable release. When a stable release is pushed, "UNDER DEVELOPMENT" heading is removed from the final changelog of the release.
+
+Release date: TBD
 
 ### Improvements
 
 #### Windows
-- Use the application icon for desktop notifications in Windows 10.
+- Update Mattermost icon for desktop notifications in Windows 10.
 
-#### Linux
+#### Linux (Beta)
 - Added an option to make the taskbar icon flash on new messages
 
 ### Bug Fixes
