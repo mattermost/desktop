@@ -4,8 +4,11 @@
 
 ### Improvements
 
+#### Windows
+- Use the application icon for desktop notifications in Windows 10.
+
 #### Linux
- - Added an option to make the taskbar icon flash on new messages
+- Added an option to make the taskbar icon flash on new messages
 
 ### Bug Fixes
 
