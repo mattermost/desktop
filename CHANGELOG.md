@@ -21,6 +21,8 @@ Release date: TBD
 
 Release date: 2016-07-18
 
+[Download the latest version here](https://about.mattermost.com/downloads/).
+
 ### Improvements
 
 #### Windows
