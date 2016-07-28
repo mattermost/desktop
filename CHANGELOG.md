@@ -7,7 +7,10 @@ The "UNDER DEVELOPMENT" section of the Mattermost Desktop changelog appears in t
 Release date: TBD
 
 ### Improvements
+
+#### All platforms
 - Changed display of unread messages on the team tabbar, they are now shown as bold text
+- Reload only the selected tab and keep its URL on "Reload" and "Clear Cache and Reload".
 
 #### Windows
 - Update Mattermost icon for desktop notifications in Windows 10.
