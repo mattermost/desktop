@@ -219,30 +219,16 @@ var TabBar = React.createClass({
     var tabs = this.props.teams.map(function(team, index) {
       var unreadCount = 0;
       var badgeStyle = {
-        unread: {
-          background: '#383838',
-          float: 'right',
-          color: 'white',
-          textAlign: 'center',
-          marginTop: '5px',
-          width: '10px',
-          height: '10px',
-          marginLeft: '5px',
-          borderRadius: '50%',
-        },
-
-        mention: {
-          background: '#f1342c',
-          float: 'right',
-          color: 'white',
-          minWidth: '19px',
-          fontSize: '12px',
-          textAlign: 'center',
-          lineHeight: '20px',
-          height: '19px',
-          marginLeft: '5px',
-          borderRadius: '50%',
-        }
+        background: '#FF1744',
+        float: 'right',
+        color: 'white',
+        minWidth: '19px',
+        fontSize: '12px',
+        textAlign: 'center',
+        lineHeight: '20px',
+        height: '19px',
+        marginLeft: '5px',
+        borderRadius: '50%',
       };
 
       if (thisObj.props.unreadCounts[index] > 0) {
@@ -262,18 +248,25 @@ var TabBar = React.createClass({
 
       var badge;
       if (mentionCount != 0) {
-        badge = (<div style={ badgeStyle.mention }>
+        badge = (<div style={ badgeStyle }>
                    { mentionCount }
                  </div>);
-      } else if (unreadCount > 0) {
-        badge = (<div style={ badgeStyle.unread }></div>);
       }
-      var id = 'teamTabItem' + index;
-      return (<NavItem className="teamTabItem" key={ id } id={ id } eventKey={ index }>
-                { team.name }
-                { ' ' }
-                { badge }
-              </NavItem>);
+      if (unreadCount == 0) {
+        var id = 'teamTabItem' + index;
+        return (<NavItem className="teamTabItem" key={ id } id={ id } eventKey={ index }>
+                  { team.name }
+                  { ' ' }
+                  { badge }
+                </NavItem>);
+      } else {
+        var id = 'teamTabItem' + index;
+        return (<NavItem className="teamTabItem" key={ id } id={ id } eventKey={ index }>
+                  <b>{ team.name }</b>
+                  { ' ' }
+                  { badge }
+                </NavItem>);
+      }
     });
     return (
       <Nav id={ this.props.id } bsStyle="tabs" activeKey={ this.props.activeKey } onSelect={ this.props.onSelect }>
