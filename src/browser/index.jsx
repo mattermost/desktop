@@ -477,7 +477,7 @@ var showUnreadBadgeWindows = function(unreadCount, mentionCount) {
   if (mentionCount > 0) {
     const dataURL = badge.createDataURL(mentionCount.toString());
     sendBadge(dataURL, 'You have unread mentions (' + mentionCount + ')');
-  } else if (unreadCount > 0) {
+  } else if (unreadCount > 0 && config.showUnreadBadge) {
     const dataURL = badge.createDataURL('•');
     sendBadge(dataURL, 'You have unread channels (' + unreadCount + ')');
   } else {
@@ -488,7 +488,7 @@ var showUnreadBadgeWindows = function(unreadCount, mentionCount) {
 var showUnreadBadgeOSX = function(unreadCount, mentionCount) {
   if (mentionCount > 0) {
     remote.app.dock.setBadge(mentionCount.toString());
-  } else if (unreadCount > 0) {
+  } else if (unreadCount > 0 && config.showUnreadBadge) {
     remote.app.dock.setBadge('•');
   } else {
     remote.app.dock.setBadge('');
@@ -524,7 +524,6 @@ var showUnreadBadge = function(unreadCount, mentionCount) {
       showUnreadBadgeOSX(unreadCount, mentionCount);
       break;
     case 'linux':
-      console.log(unreadCount);
       showUnreadBadgeLinux(unreadCount, mentionCount);
       break;
     default:

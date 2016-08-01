@@ -128,6 +128,8 @@ The Settings Page is available from the **File** menu under **Settings** (Click 
       - This option hides the window from the dock, if the window is closed
    - **Toggle window visibility when clicking on the tray icon** (Windows)
       - If checked, then a click on the system tray icon leads to a toggling of the minimized/maximized state of the window
+   - **Show the red badge for unread messages.** (Windows, OS X)
+      - If this is checked it will show the red dot on your task bar when you have unread messages.
 
 
 ## Menu Bar
