@@ -63,6 +63,14 @@ var MainPage = React.createClass({
       this.handleSelect(this.state.key - 1);
     });
 
+    // reload the activated tab
+    ipcRenderer.on('reload-tab', (event) => {
+      this.refs[`mattermostView${this.state.key}`].reload();
+    });
+    ipcRenderer.on('clear-cache-and-reload-tab', (event) => {
+      this.refs[`mattermostView${this.state.key}`].clearCacheAndReload();
+    });
+
     var focusListener = function() {
       var webview = document.getElementById('mattermostView' + thisObj.state.key);
       webview.focus();
@@ -185,7 +193,7 @@ var MainPage = React.createClass({
       }
       var id = 'mattermostView' + index;
       return (<MattermostView key={ id } id={ id } style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } name={ team.name } onUnreadCountChange={ handleUnreadCountChange }
-                onNotificationClick={ handleNotificationClick } />)
+                onNotificationClick={ handleNotificationClick } ref={ id } />)
     });
     var views_row = (<Row>
                        { views }
@@ -399,6 +407,16 @@ var MattermostView = React.createClass({
           console.log(message);
           break;
       }
+    });
+  },
+  reload: function() {
+    var webview = ReactDOM.findDOMNode(this.refs.webview);
+    webview.reload();
+  },
+  clearCacheAndReload() {
+    var webContents = ReactDOM.findDOMNode(this.refs.webview).getWebContents();
+    webContents.session.clearCache(() => {
+      webContents.reload();
     });
   },
   render: function() {

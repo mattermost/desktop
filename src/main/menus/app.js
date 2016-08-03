@@ -99,18 +99,27 @@ var createTemplate = function(mainWindow, config) {
       accelerator: 'CmdOrCtrl+R',
       click: function(item, focusedWindow) {
         if (focusedWindow) {
-          focusedWindow.reload();
+          if (focusedWindow === mainWindow) {
+            mainWindow.webContents.send('reload-tab');
+          }
+          else {
+            focusedWindow.reload();
+          }
         }
       }
     }, {
       label: 'Clear Cache and Reload',
       accelerator: 'Shift+CmdOrCtrl+R',
       click: function(item, focusedWindow) {
-        // TODO: should reload the selected tab only
         if (focusedWindow) {
-          focusedWindow.webContents.session.clearCache(function() {
-            focusedWindow.reload();
-          });
+          if (focusedWindow === mainWindow) {
+            mainWindow.webContents.send('clear-cache-and-reload-tab');
+          }
+          else {
+            focusedWindow.webContents.session.clearCache(function() {
+              focusedWindow.reload();
+            });
+          }
         }
       }
     }, {
