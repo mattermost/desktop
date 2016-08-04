@@ -17,6 +17,7 @@ Release date: TBD
 
 #### Linux (Beta)
 - Added an option to make the taskbar icon flash on new messages
+- Added the badge to count mentions for Unity.
 
 #### OS X
 - Added an option to toggle the red dot icon for unread messages (default is on).
