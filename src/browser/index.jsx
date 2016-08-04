@@ -519,13 +519,9 @@ var showUnreadBadgeOSX = function(unreadCount, mentionCount) {
 }
 
 var showUnreadBadgeLinux = function(unreadCount, mentionCount) {
-  /*if (mentionCount > 0) {
-    remote.app.dock.setBadge(mentionCount.toString());
-  } else if (unreadCount > 0) {
-    remote.app.dock.setBadge('•');
-  } else {
-    remote.app.dock.setBadge('');
-  }*/
+  if (remote.app.isUnityRunning()) {
+    remote.app.setBadgeCount(mentionCount);
+  }
 
   ipcRenderer.send('update-unread', {
     unreadCount: unreadCount,
