@@ -76,5 +76,30 @@ describe('application', function() {
         });
       }, 5000, 'expected a new window')
       .windowByIndex(3).isNodeEnabled().should.eventually.be.false;
-  })
+  });
+
+  it('should NOT be able to call eval() in any window', function() {
+    env.addClientCommands(this.app.client);
+    const tryEval = (index) => {
+      return this.app.client
+        .windowByIndex(index)
+        .execute(function() {
+          return eval('1 + 1');
+        }).should.eventually.be.rejected;
+    };
+    const tryEvalInSettingsPage = () => {
+      return this.app.client
+        .windowByIndex(0)
+        .loadSettingsPage()
+        .execute(function() {
+          return eval('1 + 1');
+        }).should.eventually.be.rejected;
+    };
+    return Promise.all([
+      tryEval(0),
+      tryEval(1),
+      tryEval(2),
+      tryEvalInSettingsPage()
+    ]);
+  });
 });

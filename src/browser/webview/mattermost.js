@@ -4,6 +4,10 @@ const electron = require('electron');
 const ipc = electron.ipcRenderer;
 const notification = require('../js/notification');
 
+window.eval = global.eval = function() {
+  throw new Error("Sorry, Mattermost does not support window.eval() for security reasons.");
+}
+
 var hasClass = function(element, className) {
   var rclass = /[\t\r\n\f]/g;
   if ((' ' + element.className + ' ').replace(rclass, ' ').indexOf(className) > -1) {

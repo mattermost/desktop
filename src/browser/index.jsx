@@ -1,5 +1,9 @@
 'use strict';
 
+window.eval = global.eval = function() {
+  throw new Error("Sorry, Mattermost does not support window.eval() for security reasons.");
+}
+
 const React = require('react');
 const ReactDOM = require('react-dom');
 const ReactBootstrap = require('react-bootstrap');
@@ -428,7 +432,7 @@ var MattermostView = React.createClass({
     // Need to keep webview mounted when failed to load.
     return (<div>
               { errorView }
-              <webview id={ this.props.id } className="mattermostView" style={ this.props.style } preload="webview/mattermost.js" src={ this.props.src } ref="webview"></webview>
+              <webview id={ this.props.id } className="mattermostView" style={ this.props.style } preload="webview/mattermost.js" src={ this.props.src } ref="webview" nodeintegration="false"></webview>
             </div>);
   }
 });
