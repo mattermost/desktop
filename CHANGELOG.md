@@ -3,6 +3,7 @@
 ## Release v1.4.0 (Beta)
 
 ### Improvements
+- Disabled `eval()` function for security improvements.
 
 ### Bug Fixes
 
