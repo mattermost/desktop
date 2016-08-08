@@ -1,5 +1,9 @@
 'use strict';
 
+window.eval = global.eval = function() {
+  throw new Error("Sorry, Mattermost does not support window.eval() for security reasons.");
+}
+
 const {remote, ipcRenderer} = require('electron');
 const settings = require('../common/settings');
 

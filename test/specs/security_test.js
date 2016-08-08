@@ -78,12 +78,28 @@ describe('application', function() {
       .windowByIndex(3).isNodeEnabled().should.eventually.be.false;
   });
 
-  it('should NOT be able to call eval in any window', function() {
+  it('should NOT be able to call eval() in any window', function() {
     env.addClientCommands(this.app.client);
-    const client = this.app.client;
-    return this.app.client
-      .windowByIndex(1) // in the first webview
-      .eval()
-      .should.be.rejected;
+    const tryEval = (index) => {
+      return this.app.client
+        .windowByIndex(index)
+        .execute(function() {
+          return eval('1 + 1');
+        }).should.eventually.be.rejected;
+    };
+    const tryEvalInSettingsPage = () => {
+      return this.app.client
+        .windowByIndex(0)
+        .loadSettingsPage()
+        .execute(function() {
+          return eval('1 + 1');
+        }).should.eventually.be.rejected;
+    };
+    return Promise.all([
+      tryEval(0),
+      tryEval(1),
+      tryEval(2),
+      tryEvalInSettingsPage()
+    ]);
   });
 });
