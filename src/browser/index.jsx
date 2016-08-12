@@ -94,6 +94,11 @@ var MainPage = React.createClass({
       key: newKey
     });
     this.handleOnTeamFocused(key);
+
+    var webview = document.getElementById('mattermostView' + key);
+    ipcRenderer.send('update-title', {
+      title: webview.getTitle()
+    });
   },
   handleUnreadCountChange: function(index, unreadCount, mentionCount, isUnread, isMentioned) {
     var unreadCounts = this.state.unreadCounts;
@@ -401,6 +406,12 @@ var MattermostView = React.createClass({
           thisObj.props.onNotificationClick();
           break;
       }
+    });
+
+    webview.addEventListener('page-title-updated', function(event) {
+      ipcRenderer.send('update-title', {
+        title: event.title
+      });
     });
 
     webview.addEventListener('console-message', (e) => {
