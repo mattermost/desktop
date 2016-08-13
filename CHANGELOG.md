@@ -13,6 +13,7 @@ Release date: TBD
 - Reload only the selected tab and keep its URL on "Reload" and "Clear Cache and Reload".
 - Disabled `eval()` function for security improvements.
 - Invalidate cache before load, to make server upgrades easy
+- Removed misleading shortcuts from tray menu, as they didn't work
 
 #### Windows
 - Update Mattermost icon for desktop notifications in Windows 10.

@@ -11,7 +11,6 @@ function createTemplate(mainWindow, config) {
     ...config.teams.slice(0, 9).map((team, i) => {
       return {
         label: team.name,
-        accelerator: `CmdOrCtrl+${i + 1}`,
         click: (item, focusedWindow) => {
           mainWindow.show(); // for OS X
           mainWindow.webContents.send('switch-tab', i);
