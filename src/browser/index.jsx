@@ -75,6 +75,12 @@ var MainPage = React.createClass({
       this.refs[`mattermostView${this.state.key}`].clearCacheAndReload();
     });
 
+    // activate search box in current tab
+    ipcRenderer.on('activate-search-box', (event) => {
+      let webview = document.getElementById('mattermostView' + thisObj.state.key);
+      webview.send('activate-search-box');
+    });
+
     var focusListener = function() {
       var webview = document.getElementById('mattermostView' + thisObj.state.key);
       webview.focus();

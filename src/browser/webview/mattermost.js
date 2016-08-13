@@ -127,3 +127,16 @@ notification.override({
     ipc.sendToHost('onNotificationClick');
   }
 });
+
+// get the last of href for the current channel in the sidebar.
+function getCurrentChannelString() {
+  const active_channel_link = document.querySelector('.active a.sidebar-channel');
+  const url_elements = active_channel_link.href.split('/');
+  return url_elements[url_elements.length - 1];
+}
+
+ipc.on('activate-search-box', (event) => {
+  const search_box = document.getElementsByClassName('search-bar')[0]; // should use id
+  search_box.focus();
+  console.log(getCurrentChannelString());
+});

@@ -69,7 +69,15 @@ var createTemplate = function(mainWindow, config) {
       role: 'paste'
     }, {
       role: 'selectall'
-    }, ]
+    }, separatorItem, {
+      label: 'Search in Current Channel',
+      accelerator: 'CmdOrCtrl+F',
+      click: (item, focusedWindow) => {
+        if (focusedWindow) {
+          focusedWindow.webContents.send('activate-search-box');
+        }
+      }
+    }]
   });
   template.push({
     label: '&View',
