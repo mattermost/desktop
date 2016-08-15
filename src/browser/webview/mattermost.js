@@ -136,7 +136,11 @@ function getCurrentChannelString() {
 }
 
 ipc.on('activate-search-box', (event) => {
-  const search_box = document.getElementsByClassName('search-bar')[0]; // should use id
+  const search_boxes = document.getElementsByClassName('search-bar'); // should use id
+  if (search_boxes.length === 0) {
+    return;
+  }
+  const search_box = search_boxes[0];
   search_box.focus();
-  console.log(getCurrentChannelString());
+  search_box.value = `in:${getCurrentChannelString()} `;
 });
