@@ -33,6 +33,9 @@ Release date: TBD
 ### Bug Fixes
 - Fixed an issue where the maximized state of the app window was lost in some cases.
 
+#### Windows
+- Fixed pixelated application icons in top left of the window.
+
 
 ## Release v1.3.0
 
