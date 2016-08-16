@@ -15,8 +15,8 @@ Issue in one concise sentence.
 
 Please include: 
 - Operating System
-- Mattermost Desktop App version (See File > About Mattermost) 
-- Mattermost Server version (See Main Menu > About Mattermost) 
+- Mattermost Desktop App version (See **Help > Version Number**) 
+- Mattermost Server version (See **Mattermost Menu > About Mattermost**, where **Mattermost Menu** can be accessed by clicking on three dots next to your profile picture) 
 - Clear steps to reproduce the issue
 
 #### Expected behavior
