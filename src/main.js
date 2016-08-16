@@ -129,12 +129,12 @@ const trayImages = function() {
 var willAppQuit = false;
 
 // If there is already an instance, activate the window in the existing instace and quit this one
-if(app.makeSingleInstance((commandLine, workingDirectory) => {
-  // Someone tried to run a second instance, we should focus our window.
-  if (mainWindow) {
-    mainWindow.show()
-  }
-})) {
+if (app.makeSingleInstance((commandLine, workingDirectory) => {
+    // Someone tried to run a second instance, we should focus our window.
+    if (mainWindow) {
+      mainWindow.show()
+    }
+  })) {
   app.quit()
 }
 
