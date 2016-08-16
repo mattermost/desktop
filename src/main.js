@@ -242,8 +242,13 @@ app.on('ready', function() {
 
     trayIcon.setToolTip(app.getName());
     trayIcon.on('click', function() {
-      if (!mainWindow.isVisible() || mainWindow.isMinimized()) {
-        mainWindow.show();
+      if (!mainWindow.isVisible()) {
+        if (mainWindow.isMinimized()) {
+          mainWindow.restore();
+        }
+        else {
+          mainWindow.show();
+        }
         mainWindow.focus();
         if (process.platform === 'darwin') {
           app.dock.show();
@@ -262,7 +267,8 @@ app.on('ready', function() {
     });
     trayIcon.on('balloon-click', function() {
       if (process.platform === 'win32' || process.platform === 'darwin') {
-        mainWindow.show();
+        if (mainWindow.isMinimized()) mainWindow.restore()
+        else mainWindow.show();
       }
 
       if (process.platform === 'darwin') {

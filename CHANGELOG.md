@@ -14,9 +14,6 @@ Release date: TBD
 - Disabled `eval()` function for security improvements.
 - Invalidate cache before load, to make server upgrades easy
 
-#### Windows
-- Update Mattermost icon for desktop notifications in Windows 10.
-
 #### Linux (Beta)
 - Added an option to make the taskbar icon flash on new messages
 - Added the badge to count mentions for Unity.
@@ -25,11 +22,12 @@ Release date: TBD
 - Added an option to toggle the red dot icon for unread messages (default is on).
 
 #### Windows
+- Update Mattermost icon for desktop notifications in Windows 10.
 - Added an option to toogle the red dot icon for unread messages (default is on).
 
 
 ### Bug Fixes
-
+- Fixed an issue where the maximized state of the app window was lost in some cases.
 
 ## Release v1.3.0
 

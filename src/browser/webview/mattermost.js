@@ -117,9 +117,15 @@ notification.override({
       if (currentWindow.isVisible()) {
         currentWindow.focus();
       }
+      else if (currentWindow.isMinimized()) {
+        currentWindow.restore();
+      }
       else {
         currentWindow.show();
       }
+    }
+    else if (currentWindow.isMinimized()) {
+      currentWindow.restore();
     }
     else {
       currentWindow.show();

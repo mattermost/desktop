@@ -13,7 +13,12 @@ function createTemplate(mainWindow, config) {
         label: team.name,
         accelerator: `CmdOrCtrl+${i + 1}`,
         click: (item, focusedWindow) => {
-          mainWindow.show(); // for OS X
+          if (mainWindow.isMinimized()) {
+            mainWindow.restore();
+          }
+          else {
+            mainWindow.show();
+          }
           mainWindow.webContents.send('switch-tab', i);
 
           if (process.platform === 'darwin') {
