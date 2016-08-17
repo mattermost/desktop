@@ -30,6 +30,8 @@ Release date: TBD
 
 ### Bug Fixes
 
+#### All platforms
+- An existing application instance will be reused instead of starting another instance.
 
 ## Release v1.3.0
 
