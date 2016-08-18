@@ -466,29 +466,67 @@ var MattermostView = React.createClass({
 });
 
 // ErrorCode: https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
-// FIXME: need better wording in English
+const errorPage = {
+  tableStyle: {
+    display: 'table',
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    top: '0',
+    left: '0'
+  },
+
+  cellStyle: {
+    display: 'table-cell',
+    verticalAlign: 'middle'
+  },
+
+  bullets: {
+    paddingLeft: '15px',
+    lineHeight: '1.7'
+  },
+
+  techInfo: {
+    fontSize: '12px',
+    color: '#aaa'
+  },
+};
+
 var ErrorView = React.createClass({
   render: function() {
     return (
       <Grid id={ this.props.id } style={ this.props.style }>
-        <h1>Failed to load the URL</h1>
-        <p>
-          { 'URL: ' }
-          { this.props.errorInfo.validatedURL }
-        </p>
-        <p>
-          { 'Error code: ' }
-          { this.props.errorInfo.errorCode }
-        </p>
-        <p>
-          { this.props.errorInfo.errorDescription }
-        </p>
-        <p>Please check below. Then, reload this window. (Ctrl+R or Command+R)</p>
-        <ListGroup>
-          <ListGroupItem>Is your computer online?</ListGroupItem>
-          <ListGroupItem>Is the server alive?</ListGroupItem>
-          <ListGroupItem>Is the URL correct?</ListGroupItem>
-        </ListGroup>
+        <div style={ errorPage.tableStyle }>
+          <div style={ errorPage.cellStyle }>
+            <Row>
+              <Col xs={ 0 } sm={ 1 } md={ 1 } lg={ 2 } />
+              <Col xs={ 12 } sm={ 10 } md={ 10 } lg={ 8 }>
+              <h2>Cannot connect to Mattermost</h2>
+              <hr />
+              <p>We're having trouble connecting to Mattermost. If refreshing this page (Ctrl+R or Command+R) does not work please verify that:</p>
+              <br />
+              <ul style={ errorPage.bullets }>
+                <li>Your computer is connected to the internet.</li>
+                <li>The Mattermost URL
+                  { ' ' }
+                  <a href={ this.props.errorInfo.validatedURL }>
+                    { this.props.errorInfo.validatedURL }
+                  </a> is correct.</li>
+                <li>You can reach
+                  { ' ' }
+                  <a href={ this.props.errorInfo.validatedURL }>
+                    { this.props.errorInfo.validatedURL }
+                  </a> from a browser window.</li>
+              </ul>
+              <br />
+              <div style={ errorPage.techInfo }>
+                { this.props.errorInfo.errorDescription } (
+                { this.props.errorInfo.errorCode })</div>
+              </Col>
+              <Col xs={ 0 } sm={ 1 } md={ 1 } lg={ 2 } />
+            </Row>
+          </div>
+        </div>
       </Grid>
       );
   }
