@@ -17,7 +17,7 @@ Release date: TBD
 #### Windows
 - Update Mattermost icon for desktop notifications in Windows 10.
 - An existing application instance will be reused instead of starting another instance.
-- 
+
 #### Linux (Beta)
 - Added an option to make the taskbar icon flash on new messages
 - Added the badge to count mentions for Unity.
