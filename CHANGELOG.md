@@ -16,10 +16,12 @@ Release date: TBD
 
 #### Windows
 - Update Mattermost icon for desktop notifications in Windows 10.
-
+- An existing application instance will be reused instead of starting another instance.
+- 
 #### Linux (Beta)
 - Added an option to make the taskbar icon flash on new messages
 - Added the badge to count mentions for Unity.
+- An existing application instance will be reused instead of starting another instance.
 
 #### OS X
 - Added an option to toggle the red dot icon for unread messages (default is on).
@@ -29,9 +31,6 @@ Release date: TBD
 
 
 ### Bug Fixes
-
-#### All platforms
-- An existing application instance will be reused instead of starting another instance.
 
 ## Release v1.3.0
 
