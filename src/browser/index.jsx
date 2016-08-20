@@ -201,8 +201,9 @@ var MainPage = React.createClass({
         thisObj.handleSelect(index);
       }
       var id = 'mattermostView' + index;
-      return (<MattermostView key={ id } id={ id } style={ thisObj.visibleStyle(thisObj.state.key === index) } src={ team.url } name={ team.name } onUnreadCountChange={ handleUnreadCountChange }
-                onNotificationClick={ handleNotificationClick } ref={ id } />)
+      var is_active = thisObj.state.key === index;
+      return (<MattermostView key={ id } id={ id } style={ thisObj.visibleStyle(is_active) } src={ team.url } name={ team.name } onUnreadCountChange={ handleUnreadCountChange }
+                onNotificationClick={ handleNotificationClick } ref={ id } active={ is_active } />)
     });
     var views_row = (<Row>
                        { views }
@@ -409,9 +410,11 @@ var MattermostView = React.createClass({
     });
 
     webview.addEventListener('page-title-updated', function(event) {
-      ipcRenderer.send('update-title', {
-        title: event.title
-      });
+      if (thisObj.props.active) {
+        ipcRenderer.send('update-title', {
+          title: event.title
+        });
+      }
     });
 
     webview.addEventListener('console-message', (e) => {
