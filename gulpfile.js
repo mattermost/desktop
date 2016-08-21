@@ -2,6 +2,7 @@
 
 var gulp = require('gulp');
 var prettify = require('gulp-jsbeautifier');
+var diff = require('gulp-diff');
 var babel = require('gulp-babel');
 var webpack = require('webpack-stream');
 var named = require('vinyl-named');
@@ -25,32 +26,41 @@ gulp.task('prettify:verify', ['prettify:sources:verify', 'prettify:jsx:verify'])
 
 var prettify_options = {
   html: {
-    eol: '\n',
-    indentSize: 2
+    indent_size: 2,
+    end_with_newline: true
   },
   css: {
-    eol: '\n',
-    indentSize: 2
+    indent_size: 2,
+    end_with_newline: true
   },
   js: {
-    eol: '\n',
-    indentSize: 2,
-    braceStyle: "end-expand"
+    indent_size: 2,
+    brace_style: "end-expand",
+    end_with_newline: true
   }
 };
 
 gulp.task('prettify:sources', ['sync-meta'], function() {
-  prettify_options.mode = "VERIFY_AND_WRITE";
   return gulp.src(sources)
     .pipe(prettify(prettify_options))
+    .pipe(prettify.reporter())
+    .pipe(diff())
+    .pipe(diff.reporter({
+      quiet: true,
+      fail: false
+    }))
     .pipe(gulp.dest('.'));
 });
 
 gulp.task('prettify:sources:verify', function() {
-  prettify_options.mode = "VERIFY_ONLY";
-  prettify_options.showDiff = false;
   return gulp.src(sources)
-    .pipe(prettify(prettify_options));
+    .pipe(prettify(prettify_options))
+    .pipe(prettify.reporter())
+    .pipe(diff())
+    .pipe(diff.reporter({
+      quiet: true,
+      fail: true
+    }));
 });
 
 

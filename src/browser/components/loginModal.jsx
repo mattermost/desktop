@@ -40,7 +40,7 @@ const LoginModal = React.createClass({
           </p>
           <Form horizontal onSubmit={ this.handleSubmit }>
             <FormGroup>
-              <Col componentClass={ ControlLabel } sm={ 2 }>User&nbsp;Name</Col>
+              <Col componentClass={ ControlLabel } sm={ 2 }>User Name</Col>
               <Col sm={ 10 }>
               <FormControl type="text" placeholder="User Name" ref="username" />
               </Col>
