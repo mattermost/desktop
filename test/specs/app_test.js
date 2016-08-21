@@ -61,4 +61,21 @@ describe('application', function() {
       config.version.should.equal(settings.version);
     });
   });
+
+  it('should be stopped when the app instance already exists', function(done) {
+    this.app.start().then(() => {
+      const secondApp = env.getSpectronApp();
+      secondApp.start().then(() => {
+        clearTimeout(timer);
+        return secondApp.stop();
+      }).then(() => {
+        done(new Error('Second app instance exists'));
+      });
+      // In the correct case, 'start().then' is not called.
+      // So need to use setTimeout in order to finish this test.
+      const timer = setTimeout(() => {
+        done();
+      }, 3000);
+    });
+  });
 });
