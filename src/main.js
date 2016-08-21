@@ -229,6 +229,11 @@ app.on('ready', function() {
       }
     }
   });
+
+  ipcMain.on('update-title', function(event, arg) {
+    mainWindow.setTitle(arg.title);
+  });
+
   if (shouldShowTrayIcon()) {
     // set up tray icon
     trayIcon = new Tray(trayImages.normal);
