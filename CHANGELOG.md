@@ -18,20 +18,17 @@ Release date: TBD
 - Ctrl/Command+F puts cursor in search box to search in current channel.
 
 #### Windows
+- Added an option to toogle the red dot icon for unread messages (default is on).
 - Update Mattermost icon for desktop notifications in Windows 10.
-- An existing application instance will be reused instead of starting another instance.
-
-#### Linux (Beta)
-- Added an option to make the taskbar icon flash on new messages
-- Added the badge to count mentions for Unity.
 - An existing application instance will be reused instead of starting another instance.
 
 #### OS X
 - Added an option to toggle the red dot icon for unread messages (default is on).
 
-#### Windows
-- Added an option to toogle the red dot icon for unread messages (default is on).
-
+#### Linux (Beta)
+- Added an option to make the taskbar icon flash on new messages
+- Added the badge to count mentions for Unity.
+- An existing application instance will be reused instead of starting another instance.
 
 ### Bug Fixes
 - Fixed an issue where the maximized state of the app window was lost in some cases.
