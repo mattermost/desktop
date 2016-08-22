@@ -127,3 +127,20 @@ notification.override({
     ipc.sendToHost('onNotificationClick');
   }
 });
+
+// get the last of href for the current channel in the sidebar.
+function getCurrentChannelString() {
+  const active_channel_link = document.querySelector('.active a.sidebar-channel');
+  const url_elements = active_channel_link.href.split('/');
+  return url_elements[url_elements.length - 1];
+}
+
+ipc.on('activate-search-box', (event) => {
+  const search_boxes = document.getElementsByClassName('search-bar'); // should use id
+  if (search_boxes.length === 0) {
+    return;
+  }
+  const search_box = search_boxes[0];
+  search_box.focus();
+  search_box.value = `in:${getCurrentChannelString()} `;
+});
