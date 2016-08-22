@@ -34,6 +34,8 @@ Release date: TBD
 
 
 ### Bug Fixes
+- Fixed an issue where the maximized state of the app window was lost in some cases.
+
 
 ## Release v1.3.0
 
