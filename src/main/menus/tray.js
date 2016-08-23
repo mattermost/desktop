@@ -29,6 +29,14 @@ function createTemplate(mainWindow, config) {
     }), {
       type: 'separator'
     }, {
+      label: 'Settings',
+      click: () => {
+        mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
+        mainWindow.show();
+      }
+    }, {
+      type: 'separator'
+    }, {
       role: 'quit'
     }
   ];
