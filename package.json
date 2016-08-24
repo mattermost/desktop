@@ -23,7 +23,8 @@
     "package": "gulp package",
     "package:windows": "gulp package:windows",
     "package:osx": "gulp package:osx",
-    "package:linux": "gulp build && build --platform linux --arch all",
+    "package:linux": "gulp build && build --platform linux --arch all && npm run linux-additions",
+    "linux-additions": "cp resources/icon.png resources/linux/create_desktop_file.sh release/linux/ && cp resources/icon.png resources/linux/create_desktop_file.sh release/linux-ia32/",
     "package:all": "gulp package:all",
     "prettify": "gulp prettify",
     "installer": "node ./script/installer.js"
