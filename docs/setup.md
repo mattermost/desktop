@@ -78,7 +78,7 @@ You have to configure the application to interact with your teams.
    - Windows: Press `Alt` key to bring up the menu at the top of the window, then click `File -> Settings`.
    - OS X: Click `Mattermost` from the menu at the top of the screen, then click `Preferences...`.
    - Linux: Click `File -> Settings` on the menu.
-   - If tray menu : Right-click on tray icon and click `Settings`
+   - All : right-click on tray icon and click `Settings`
 
 2. Press `+` button next to the "Teams" label.
 
