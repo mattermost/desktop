@@ -16,6 +16,7 @@ Release date: TBD
 - Invalidate cache before load, to make server upgrades easy
 - Removed misleading shortcuts from tray menu, as they didn't work
 - Ctrl/Command+F puts cursor in search box to search in current channel.
+- Add access to settings through tray menu
 
 #### Windows
 - Added an option to toogle the red dot icon for unread messages (default is on).

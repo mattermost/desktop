@@ -12,12 +12,7 @@ function createTemplate(mainWindow, config) {
       return {
         label: team.name,
         click: (item, focusedWindow) => {
-          if (mainWindow.isMinimized()) {
-            mainWindow.restore();
-          }
-          else {
-            mainWindow.show();
-          }
+          showOrRestore(mainWindow);
           mainWindow.webContents.send('switch-tab', i);
 
           if (process.platform === 'darwin') {
@@ -29,6 +24,14 @@ function createTemplate(mainWindow, config) {
     }), {
       type: 'separator'
     }, {
+      label: 'Settings',
+      click: () => {
+        mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
+        showOrRestore(mainWindow);
+      }
+    }, {
+      type: 'separator'
+    }, {
       role: 'quit'
     }
   ];
@@ -38,6 +41,10 @@ function createTemplate(mainWindow, config) {
 var createMenu = function(mainWindow, config) {
   return Menu.buildFromTemplate(createTemplate(mainWindow, config));
 };
+
+function showOrRestore(window) {
+  window.isMinimized() ? window.restore() : window.show()
+}
 
 module.exports = {
   createMenu: createMenu
