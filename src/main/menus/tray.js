@@ -24,10 +24,15 @@ function createTemplate(mainWindow, config) {
     }), {
       type: 'separator'
     }, {
-      label: 'Settings',
+      label: process.platform !== 'darwin' ? 'Settings' : 'Preferences...',
       click: () => {
         mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
         showOrRestore(mainWindow);
+
+        if (process.platform === 'darwin') {
+          app.dock.show();
+          mainWindow.focus();
+        }
       }
     }, {
       type: 'separator'
