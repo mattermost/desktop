@@ -329,20 +329,18 @@ var MattermostView = React.createClass({
         return;
       }
 
-      // should use permanent way to indicate
-      var did_fail_load_notification = new Notification(`Failed to load "${thisObj.props.name}"`, {
-        body: `ErrorCode: ${e.errorCode}`,
-        icon: '../resources/appicon.png'
-      });
       thisObj.setState({
         errorInfo: e
       });
-      setTimeout(() => {
-        thisObj.setState({
-          errorInfo: null
-        });
-        webview.reload();
-      }, 30000);
+      const reload = () => {
+        window.removeEventListener('online', reload);
+        thisObj.reload();
+      };
+      if (navigator.onLine) {
+        setTimeout(reload, 30000);
+      } else {
+        window.addEventListener('online', reload);
+      }
     });
 
     // Open link in browserWindow. for exmaple, attached files.
@@ -442,10 +440,16 @@ var MattermostView = React.createClass({
     });
   },
   reload: function() {
+    this.setState({
+      errorInfo: null
+    });
     var webview = ReactDOM.findDOMNode(this.refs.webview);
     webview.reload();
   },
   clearCacheAndReload() {
+    this.setState({
+      errorInfo: null
+    });
     var webContents = ReactDOM.findDOMNode(this.refs.webview).getWebContents();
     webContents.session.clearCache(() => {
       webContents.reload();
