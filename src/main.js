@@ -415,20 +415,24 @@ app.on('ready', function() {
     }
     else { // Minimize or hide the window for close button.
       event.preventDefault();
+      const hide_window = (window) => {
+        window.hide();
+        window.blur(); // To move focus to the next top-level window in Windows
+      };
       switch (process.platform) {
         case 'win32':
-          mainWindow.hide();
+          hide_window(mainWindow);
           break;
         case 'linux':
           if (config.minimizeToTray) {
-            mainWindow.hide();
+            hide_window(mainWindow);
           }
           else {
             mainWindow.minimize();
           }
           break;
         case 'darwin':
-          mainWindow.hide();
+          hide_window(mainWindow);
           if (config.minimizeToTray) {
             app.dock.hide();
           }
