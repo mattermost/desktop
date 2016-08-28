@@ -39,6 +39,7 @@ Release date: TBD
 
 #### Windows
 - Fixed pixelated application icons in top left of the window.
+- Fixed that the application keeps focus after closing the window.
 
 
 ## Release v1.3.0
