@@ -32,6 +32,7 @@ Release date: TBD
 - Added an option to make the taskbar icon flash on new messages
 - Added the badge to count mentions for Unity.
 - An existing application instance will be reused instead of starting another instance.
+- Added a script to create `Mattermost.desktop` desktop entry file.
 
 ### Bug Fixes
 - Fixed an issue where the maximized state of the app window was lost in some cases.

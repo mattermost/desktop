@@ -224,7 +224,28 @@ function makePackage(platform, arch, callback) {
       callback(err);
     }
     else {
-      callback();
+      if (arch === 'linux' || arch === 'all') {
+        const dest_32 = 'release/Mattermost-linux-ia32';
+        const dest_64 = 'release/Mattermost-linux-x64';
+        fs.createReadStream('resources/icon.png').pipe(fs.createWriteStream(`${dest_32}/icon.png`));
+        fs.createReadStream('resources/icon.png').pipe(fs.createWriteStream(`${dest_64}/icon.png`));
+        fs.createReadStream('resources/linux/create_desktop_file.sh')
+          .pipe(fs.createWriteStream(`${dest_32}/create_desktop_file.sh`))
+          .on('finish', () => {
+            fs.chmodSync(`${dest_32}/create_desktop_file.sh`, '755');
+          });
+        fs.createReadStream('resources/linux/create_desktop_file.sh')
+          .pipe(fs.createWriteStream(`${dest_64}/create_desktop_file.sh`))
+          .on('finish', () => {
+            fs.chmodSync(`${dest_64}/create_desktop_file.sh`, '755');
+          });
+        setTimeout(() => {
+          callback();
+        }, 1000); // should wait all pipes
+      }
+      else {
+        callback();
+      }
     }
   });
 };

@@ -67,7 +67,9 @@ For Ubuntu 16.04.
 
 2. Extract the archive, then execute `Mattermost` which is located at inside of the extracted directory
 
-3. If you need the Desktop Entry, please refer https://wiki.archlinux.org/index.php/Desktop_entries
+3. If you need the Desktop Entry, please execute `create_desktop_file.sh`. It creates `Mattermost.desktop`.
+
+    Please refer https://wiki.archlinux.org/index.php/Desktop_entries
 
 ## Configuration
 You have to configure the application to interact with your teams.
