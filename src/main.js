@@ -258,7 +258,7 @@ app.on('ready', function() {
 
     trayIcon.setToolTip(app.getName());
     trayIcon.on('click', function() {
-      if (!mainWindow.isVisible()) {
+      if (!mainWindow.isVisible() || mainWindow.isMinimized()) {
         if (mainWindow.isMinimized()) {
           mainWindow.restore();
         }
