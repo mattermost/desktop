@@ -1,3 +1,5 @@
+'use strict';
+
 var os = require('os');
 var release_split = os.release().split('.');
 

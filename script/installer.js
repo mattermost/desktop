@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 
-const createWindowsInstaller = require('electron-winstaller').createWindowsInstaller
-const path = require('path')
-const rimraf = require('rimraf')
+'use strict';
+
+const createWindowsInstaller = require('electron-winstaller').createWindowsInstaller;
+const path = require('path');
+const rimraf = require('rimraf');
 
 const archList = ['ia32', 'x64'];
 archList.forEach((arch) => {
@@ -10,14 +12,14 @@ archList.forEach((arch) => {
     .then(getInstallerConfig)
     .then(createWindowsInstaller)
     .catch((error) => {
-      console.error(error.message || error)
-      process.exit(1)
-    })
-})
+      console.error(error.message || error);
+      process.exit(1);
+    });
+});
 
 function getInstallerConfig(arch) {
-  const rootPath = path.join(__dirname, '..')
-  const outPath = path.join(rootPath, 'release')
+  const rootPath = path.join(__dirname, '..');
+  const outPath = path.join(rootPath, 'release');
 
   return Promise.resolve({
     appDirectory: path.join(outPath, `Mattermost-win32-${arch}`),
@@ -31,13 +33,13 @@ function getInstallerConfig(arch) {
     setupIcon: path.join(rootPath, 'resources', 'icon.ico'),
     skipUpdateIcon: true,
     exe: 'Mattermost.exe'
-  })
+  });
 }
 
 function deleteOutputFolder(arch) {
   return new Promise((resolve, reject) => {
     rimraf(path.join(__dirname, '..', 'out', `windows-installer-${arch}`), (error) => {
-      error ? reject(error) : resolve(arch)
-    })
-  })
+      error ? reject(error) : resolve(arch);
+    });
+  });
 }

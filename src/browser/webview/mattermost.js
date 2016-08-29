@@ -6,7 +6,7 @@ const notification = require('../js/notification');
 
 window.eval = global.eval = function() {
   throw new Error("Sorry, Mattermost does not support window.eval() for security reasons.");
-}
+};
 
 var hasClass = function(element, className) {
   var rclass = /[\t\r\n\f]/g;
@@ -16,7 +16,7 @@ var hasClass = function(element, className) {
   return false;
 };
 
-var unreadCountTimer = setInterval(function() {
+setInterval(function() {
   if (!this.unreadCount) {
     this.unreadCount = 0;
   }
@@ -28,7 +28,7 @@ var unreadCountTimer = setInterval(function() {
   // Note: the active channel doesn't have '.unread-title'.
   var unreadCount = document.getElementsByClassName('unread-title').length;
   // mentionCount in sidebar
-  var elem = document.getElementsByClassName('badge')
+  var elem = document.getElementsByClassName('badge');
   var mentionCount = 0;
   for (var i = 0; i < elem.length; i++) {
     if (isElementVisible(elem[i]) && !hasClass(elem[i], 'badge-notify')) {
@@ -50,9 +50,9 @@ var unreadCountTimer = setInterval(function() {
       return;
     }
     var post = null;
-    for (var i = 0; i < postLists.length; i++) {
-      if (isElementVisible(postLists[i])) {
-        post = postLists[i].children[0];
+    for (var j = 0; j < postLists.length; j++) {
+      if (isElementVisible(postLists[j])) {
+        post = postLists[j].children[0];
       }
     }
     if (post === null) {

@@ -2,8 +2,7 @@
 
 const {
   app,
-  Menu,
-  MenuItem
+  Menu
 } = require('electron');
 
 function createTemplate(mainWindow, config) {
@@ -48,7 +47,7 @@ var createMenu = function(mainWindow, config) {
 };
 
 function showOrRestore(window) {
-  window.isMinimized() ? window.restore() : window.show()
+  window.isMinimized() ? window.restore() : window.show();
 }
 
 module.exports = {

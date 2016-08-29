@@ -16,7 +16,7 @@ var merge = function(base, target) {
 
 var loadDefault = function(version) {
   if (version == null) {
-    version = settingsVersion
+    version = settingsVersion;
   }
   switch (version) {
     case 1:
@@ -34,7 +34,7 @@ var loadDefault = function(version) {
         showUnreadBadge: true
       };
   }
-}
+};
 
 var upgradeV0toV1 = function(config_v0) {
   var config = loadDefault(1);
