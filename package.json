@@ -47,6 +47,8 @@
     "electron-prebuilt": "1.4.2",
     "esformatter": "^0.9.6",
     "esformatter-jsx": "^7.0.1",
+    "eslint": "^3.4.0",
+    "eslint-plugin-react": "^6.2.0",
     "gulp": "^3.9.1",
     "gulp-diff": "^1.0.0",
     "gulp-esformatter": "^6.0.0",
