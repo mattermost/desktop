@@ -54,7 +54,7 @@ if (argv['config-file']) {
   global['config-file'] = argv['config-file'];
 }
 else {
-  global['config-file'] = app.getPath('userData') + '/config.json'
+  global['config-file'] = app.getPath('userData') + '/config.json';
 }
 
 var config = {};
@@ -136,7 +136,7 @@ if (app.makeSingleInstance((commandLine, workingDirectory) => {
       else mainWindow.show();
     }
   })) {
-  app.quit()
+  app.quit();
 }
 
 function shouldShowTrayIcon() {
@@ -220,7 +220,7 @@ ipcMain.on('login-credentials', function(event, request, user, password) {
   if (callback != null) {
     callback(user, password);
   }
-})
+});
 
 app.on('login', function(event, webContents, request, authInfo, callback) {
   event.preventDefault();
@@ -283,7 +283,7 @@ app.on('ready', function() {
     });
     trayIcon.on('balloon-click', function() {
       if (process.platform === 'win32' || process.platform === 'darwin') {
-        if (mainWindow.isMinimized()) mainWindow.restore()
+        if (mainWindow.isMinimized()) mainWindow.restore();
         else mainWindow.show();
       }
 
@@ -360,7 +360,7 @@ app.on('ready', function() {
   });
 
   mainWindow.on('unresponsive', () => {
-    console.log('The application has become unresponsive.')
+    console.log('The application has become unresponsive.');
   });
 
   mainWindow.setFullScreenable(true); // fullscreenable option has no effect.

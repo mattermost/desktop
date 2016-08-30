@@ -3,26 +3,23 @@
 var gulp = require('gulp');
 var prettify = require('gulp-jsbeautifier');
 var diff = require('gulp-diff');
-var babel = require('gulp-babel');
 var webpack = require('webpack-stream');
 var named = require('vinyl-named');
-var changed = require('gulp-changed');
 var esformatter = require('gulp-esformatter');
 var esformatter_origin = require('esformatter');
 var through = require('through2');
-var del = require('del');
 var electron = require('electron-connect').server.create({
   path: './dist'
 });
 var packager = require('electron-packager');
 const fs = require('fs');
 
-const distPackageAuthor = 'Mattermost, Inc.'
+const distPackageAuthor = 'Mattermost, Inc.';
 
 var sources = ['**/*.js', '**/*.json', '**/*.css', '**/*.html', '!**/node_modules/**', '!dist/**', '!release/**', '!**/test_config.json'];
 
 gulp.task('prettify', ['prettify:sources', 'prettify:jsx']);
-gulp.task('prettify:verify', ['prettify:sources:verify', 'prettify:jsx:verify'])
+gulp.task('prettify:verify', ['prettify:sources:verify', 'prettify:jsx:verify']);
 
 var prettify_options = {
   html: {
@@ -164,7 +161,7 @@ gulp.task('webpack:webview', function() {
       },
       target: 'electron'
     }))
-    .pipe(gulp.dest('dist/browser/webview'))
+    .pipe(gulp.dest('dist/browser/webview'));
 });
 
 gulp.task('copy', ['copy:resources', 'copy:html/css', 'copy:modules']);
@@ -181,7 +178,7 @@ gulp.task('copy:html/css', function() {
 
 gulp.task('copy:modules', function() {
   return gulp.src(['src/node_modules/bootstrap/dist/**'])
-    .pipe(gulp.dest('dist/browser/modules/bootstrap'))
+    .pipe(gulp.dest('dist/browser/modules/bootstrap'));
 });
 
 gulp.task('watch', ['build'], function() {
@@ -248,7 +245,7 @@ function makePackage(platform, arch, callback) {
       }
     }
   });
-};
+}
 
 gulp.task('package', ['build'], function(cb) {
   makePackage(process.platform, 'all', cb);

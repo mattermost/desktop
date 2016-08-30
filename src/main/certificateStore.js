@@ -25,7 +25,7 @@ function getHost(targetURL) {
 }
 
 var CertificateStore = function(storeFile) {
-  this.storeFile = storeFile
+  this.storeFile = storeFile;
   try {
     this.data = JSON.parse(fs.readFileSync(storeFile, 'utf-8'));
   }

@@ -19,7 +19,7 @@ var createDefault = function() {
     role: 'selectall'
   }));
   return menu;
-}
+};
 
 module.exports = {
   createDefault: createDefault

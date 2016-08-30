@@ -1,3 +1,5 @@
+'use strict';
+
 const OriginalNotification = Notification;
 
 const appIconURL = `file:///${require('electron').remote.app.getAppPath()}/resources/appicon.png`;
@@ -64,9 +66,9 @@ function override(eventHandlers) {
         else {
           originalCallback();
         }
-      }
+      };
     });
-  }
+  };
   defineEventHandler('onclick', eventHandlers.onclick);
   defineEventHandler('onerror', eventHandlers.onerror);
 

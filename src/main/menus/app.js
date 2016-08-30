@@ -177,7 +177,7 @@ var createTemplate = function(mainWindow, config) {
       },
       enabled: (config.teams.length > 1)
     }]
-  }
+  };
   template.push(window_menu);
 
   template.push({
@@ -185,7 +185,7 @@ var createTemplate = function(mainWindow, config) {
     submenu: [{
       label: `${app_name} Docs`,
       click: function() {
-        electron.shell.openExternal('http://docs.mattermost.com')
+        electron.shell.openExternal('http://docs.mattermost.com');
       }
     }, {
       type: 'separator'

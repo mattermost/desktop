@@ -15,7 +15,7 @@ var createDataURL = function(text) {
   ctx.fill();
 
   // text
-  ctx.fillStyle = "#ffffff"
+  ctx.fillStyle = "#ffffff";
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.font = (11 * scale) + "px sans-serif";
