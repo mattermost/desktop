@@ -52,7 +52,7 @@ Release date: 2016-07-18
 
 #### Windows
 - Added an installer for better install experience.
-- The app now minimizes to the system tray when closed.
+- The app now minimizes to the system tray when application window is closed.
 - Added an option to launch application on login.
 - Added an option to blink the taskbar icon when a new message has arrived.
 - Added tooltip text for the system tray icon in order to show count of unread channels/mentions.
@@ -62,14 +62,14 @@ Release date: 2016-07-18
 
 #### OS X
 - Added colored badges to the menu icon when there are unread channels/mentions.
-- Added an option to minimize the app to the system tray when closed.
+- Added an option to minimize the app to the system tray when application window is closed.
 - Added auto-reloading when tab fails to load the team.
 - Added the ability to access all of your teams by right clicking the system tray icon.
 
 #### Linux (Beta)
 - Added an option to show the icon on menu bar (requires libappindicator1 on Ubuntu).
 - Added an option to launch application on login.
-- Added an option to minimize the app to the system tray when closed.
+- Added an option to minimize the app to the system tray when application window is closed.
 - Added auto-reloading when tab fails to load the team.
 - Added the ability to access all of your teams by right clicking the system tray icon.
 
