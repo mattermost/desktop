@@ -171,6 +171,26 @@ describe('browser/settings.html', function() {
       });
     });
 
+    describe('Show window on new message', function() {
+      [true, false].forEach(function(v) {
+        it(`should be saved and loaded: ${v}`, function() {
+          env.addClientCommands(this.app.client);
+          return this.app.client
+            .loadSettingsPage()
+            .isSelected('#inputShowWindowOnNewMessage input').then((isSelected) => {
+              if (isSelected !== v) {
+                return this.app.client.click('#inputShowWindowOnNewMessage input')
+              }
+            })
+            .click('#btnSave')
+            .pause(1000).then(() => {
+              const saved_config = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+              saved_config.showWindowOnNewMessage.should.equal(v);
+            })
+        });
+      });
+    });
+
     describe('Notifications', function() {
       it('should appear on win32 and linux', function() {
         const expected = (process.platform === 'win32' || process.platform === 'linux');

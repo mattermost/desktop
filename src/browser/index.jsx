@@ -406,6 +406,12 @@ var MattermostView = React.createClass({
           var isUnread = event.args[2];
           var isMentioned = event.args[3];
           thisObj.handleUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned);
+          if (config.showWindowOnNewMessage === true) {
+            var win = remote.getCurrentWindow();
+            if (!win.isFocused()) {
+              win.show();
+            }
+          }
           break;
         case 'onNotificationClick':
           thisObj.props.onNotificationClick();

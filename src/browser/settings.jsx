@@ -66,6 +66,7 @@ var SettingsPage = React.createClass({
       showTrayIcon: this.state.showTrayIcon,
       trayIconTheme: this.state.trayIconTheme,
       disablewebsecurity: this.state.disablewebsecurity,
+      showWindowOnNewMessage: this.state.showWindowOnNewMessage,
       version: settings.version,
       minimizeToTray: this.state.minimizeToTray,
       toggleWindowOnTrayIconClick: this.state.toggleWindowOnTrayIconClick,
@@ -101,6 +102,11 @@ var SettingsPage = React.createClass({
   handleChangeDisableWebSecurity: function() {
     this.setState({
       disablewebsecurity: this.refs.disablewebsecurity.getChecked()
+    });
+  },
+  handleChangeShowWindowOnNewMessage: function() {
+    this.setState({
+      showWindowOnNewMessage: this.refs.showWindowOnNewMessage.getChecked()
     });
   },
   handleChangeHideMenuBar: function() {
@@ -186,6 +192,8 @@ var SettingsPage = React.createClass({
     }
     options.push(<Input key="inputDisableWebSecurity" id="inputDisableWebSecurity" ref="disablewebsecurity" type="checkbox" label="Allow mixed content (Enabling allows both secure and insecure content, images and scripts to render and execute. Disabling allows only secure content.)"
                    checked={ this.state.disablewebsecurity } onChange={ this.handleChangeDisableWebSecurity } />);
+    options.push(<Input key="inputShowWindowOnNewMessage" id="inputShowWindowOnNewMessage" ref="showWindowOnNewMessage" type="checkbox" label="Show and set focus to the window whether there are new messages or mention"
+                   checked={ this.state.showWindowOnNewMessage } onChange={ this.handleChangeShowWindowOnNewMessage } />);
     //OSX has an option in the Dock, to set the app to autostart, so we choose to not support this option for OSX
     if (process.platform === 'win32' || process.platform === 'linux') {
       options.push(<Input key="inputAutoStart" id="inputAutoStart" ref="autostart" type="checkbox" label="Start app on login." checked={ this.state.autostart } onChange={ this.handleChangeAutoStart }
