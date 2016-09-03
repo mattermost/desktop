@@ -97,6 +97,21 @@ var MainPage = React.createClass({
     window.addEventListener('beforeunload', function() {
       currentWindow.removeListener('focus', focusListener);
     });
+
+    //goBack and goForward
+    ipcRenderer.on('go-back', () => {
+      const mattermost = thisObj.refs[`mattermostView${thisObj.state.key}`];
+      if (mattermost.canGoBack()) {
+        mattermost.goBack();
+      }
+    });
+
+    ipcRenderer.on('go-forward', () => {
+      const mattermost = thisObj.refs[`mattermostView${thisObj.state.key}`];
+      if (mattermost.canGoForward()) {
+        mattermost.goForward();
+      }
+    });
   },
   componentDidUpdate: function() {
     this.refs[`mattermostView${this.state.key}`].focusOnWebView();
@@ -462,6 +477,7 @@ var MattermostView = React.createClass({
       webContents.reload();
     });
   },
+
   focusOnWebView: function() {
     const webview = ReactDOM.findDOMNode(this.refs.webview);
     if (!webview.getWebContents().isFocused()) {
@@ -469,6 +485,27 @@ var MattermostView = React.createClass({
       webview.getWebContents().focus();
     }
   },
+
+  canGoBack() {
+    const webview = ReactDOM.findDOMNode(this.refs.webview);
+    return webview.getWebContents().canGoBack();
+  },
+
+  canGoForward() {
+    const webview = ReactDOM.findDOMNode(this.refs.webview);
+    return webview.getWebContents().canGoForward();
+  },
+
+  goBack() {
+    const webview = ReactDOM.findDOMNode(this.refs.webview);
+    webview.getWebContents().goBack();
+  },
+
+  goForward() {
+    const webview = ReactDOM.findDOMNode(this.refs.webview);
+    webview.getWebContents().goForward();
+  },
+
   render: function() {
     const errorView = this.state.errorInfo ? (<ErrorView id={ this.props.id + '-fail' } style={ this.props.style } className="errorView" errorInfo={ this.state.errorInfo }></ErrorView>) : null;
     // 'disablewebsecurity' is necessary to display external images.
