@@ -145,7 +145,14 @@ var createTemplate = function(mainWindow, config) {
       }
     }, {
       label: 'Zoom In',
+      accelerator: 'CmdOrCtrl+Plus',
+      click: () => {
+        mainWindow.webContents.send('zoom-in', 1);
+      }
+    }, {
+      label: 'Zoom In (hidden)',
       accelerator: 'CmdOrCtrl+=',
+      visible: false,
       click: () => {
         mainWindow.webContents.send('zoom-in', 1);
       }
