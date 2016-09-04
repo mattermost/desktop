@@ -152,7 +152,8 @@ Below lists menu options (shortcut keys are listed in brackets, `Ctrl` becomes `
   - **Copy** (Ctrl+C) - Copies selected text
   - **Paste** (Ctrl+V) - Pastes text from clipboard
   - **Select All** (Ctrl+A) - Select all text in input box
-  - **Search in Channel** (Ctrl+F) - Puts cursor in search box to search in current channel
+  - **Search in Team** (Ctrl+S) - Puts cursor in search box to search in the current team
+  - **Search in Channel** (Shift+Ctrl+S) - Puts cursor in search box to search in current channel
 - **View**
   - **Reload** (Ctrl+R) - Reload page from the server
   - **Clear Cache and Reload** (Ctrl+Shift+R) - Clear cached content in application and reload page
