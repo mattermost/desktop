@@ -162,6 +162,9 @@ Below lists menu options (shortcut keys are listed in brackets, `Ctrl` becomes `
   - **Actual Size** (Ctrl+0) - Reset zoom level
   - **Zoom In** (Ctrl+Plus) - Enlarge the rendered contents size
   - **Zoom In** (Ctrl+Minus) - Shrink the rendered contents size
+- **History**
+  - **Back** (Alt+Left, Command+[ on OS X) - Go back to previous web page in the current tab
+  - **Forward** (Alt+Right, Command+] on OS X) - Go forward to next web page in the current tab
 - **Window**
   - **Close** (Ctrl+W) - Close the window (On Window and Linux, the main window is minimized)
   - **Minimize** (Ctrl+M) - Minimize the window

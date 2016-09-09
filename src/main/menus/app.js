@@ -161,6 +161,37 @@ var createTemplate = function(mainWindow, config) {
       }
     }]
   });
+  template.push({
+    label: '&History',
+    submenu: [{
+      label: 'Back',
+      accelerator: process.platform === 'darwin' ? 'Cmd+[' : 'Alt+Left',
+      click: (item, focusedWindow) => {
+        if (focusedWindow === mainWindow) {
+          mainWindow.webContents.send('go-back');
+        }
+        else {
+          if (focusedWindow.webContents.canGoBack()) {
+            focusedWindow.goBack();
+          }
+        }
+      }
+    }, {
+      label: 'Forward',
+      accelerator: process.platform === 'darwin' ? 'Cmd+]' : 'Alt+Right',
+      click: (item, focusedWindow) => {
+        if (focusedWindow === mainWindow) {
+          mainWindow.webContents.send('go-forward');
+        }
+        else {
+          if (focusedWindow.webContents.canGoForward()) {
+            focusedWindow.goForward();
+          }
+        }
+      }
+    }]
+  });
+
 
   const window_menu = {
     label: '&Window',
