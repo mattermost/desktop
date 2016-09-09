@@ -82,10 +82,8 @@ var MainPage = React.createClass({
     });
 
     var focusListener = function() {
-      var webview = document.getElementById('mattermostView' + thisObj.state.key);
-      webview.focus();
-
       thisObj.handleOnTeamFocused(thisObj.state.key);
+      thisObj.refs[`mattermostView${thisObj.state.key}`].focusOnWebView();
     };
 
     var currentWindow = remote.getCurrentWindow();
@@ -94,14 +92,17 @@ var MainPage = React.createClass({
       currentWindow.removeListener('focus', focusListener);
     });
   },
+  componentDidUpdate: function() {
+    this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+  },
   handleSelect: function(key) {
     const newKey = (this.props.teams.length + key) % this.props.teams.length;
     this.setState({
       key: newKey
     });
-    this.handleOnTeamFocused(key);
+    this.handleOnTeamFocused(newKey);
 
-    var webview = document.getElementById('mattermostView' + key);
+    var webview = document.getElementById('mattermostView' + newKey);
     ipcRenderer.send('update-title', {
       title: webview.getTitle()
     });
@@ -454,6 +455,13 @@ var MattermostView = React.createClass({
     webContents.session.clearCache(() => {
       webContents.reload();
     });
+  },
+  focusOnWebView: function() {
+    const webview = ReactDOM.findDOMNode(this.refs.webview);
+    if (!webview.getWebContents().isFocused()) {
+      webview.focus();
+      webview.getWebContents().focus();
+    }
   },
   render: function() {
     const errorView = this.state.errorInfo ? (<ErrorView id={ this.props.id + '-fail' } style={ this.props.style } className="errorView" errorInfo={ this.state.errorInfo }></ErrorView>) : null;

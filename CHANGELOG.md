@@ -36,6 +36,7 @@ Release date: TBD
 
 ### Bug Fixes
 - Fixed an issue where the maximized state of the app window was lost in some cases.
+- Fixed an issue some shortcuts didn't work when switching applications or tabs in some cases.
 
 #### Windows
 - Fixed pixelated application icons in top left of the window.
