@@ -324,8 +324,7 @@ var MattermostView = React.createClass({
 
     webview.addEventListener('did-fail-load', function(e) {
       console.log(thisObj.props.name, 'webview did-fail-load', e);
-      if (e.errorCode === -3 || // An operation was aborted (due to user action).
-        e.errorCode === -300) { //The operation was aborted to invalidate application cache
+      if (e.errorCode === -3) { // An operation was aborted (due to user action).
         return;
       }
 
@@ -357,13 +356,6 @@ var MattermostView = React.createClass({
       } else {
         // if the link is external, use default browser.
         shell.openExternal(e.url);
-      }
-    });
-
-    webview.addEventListener("did-start-loading", function() {
-      if (!webview.cacheInvalidated) {
-        webview.reloadIgnoringCache();
-        webview.cacheInvalidated = true;
       }
     });
 
