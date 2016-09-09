@@ -81,6 +81,12 @@ var MainPage = React.createClass({
       webview.send('activate-search-box');
     });
 
+    // activate search box in current chunnel
+    ipcRenderer.on('activate-search-box-in-channel', (event) => {
+      let webview = document.getElementById('mattermostView' + thisObj.state.key);
+      webview.send('activate-search-box-in-channel');
+    });
+
     var focusListener = function() {
       thisObj.handleOnTeamFocused(thisObj.state.key);
       thisObj.refs[`mattermostView${thisObj.state.key}`].focusOnWebView();

@@ -70,11 +70,19 @@ var createTemplate = function(mainWindow, config) {
     }, {
       role: 'selectall'
     }, separatorItem, {
-      label: 'Search in Channel',
-      accelerator: 'CmdOrCtrl+F',
+      label: 'Search in Team',
+      accelerator: 'CmdOrCtrl+S',
       click: (item, focusedWindow) => {
         if (focusedWindow) {
           focusedWindow.webContents.send('activate-search-box');
+        }
+      }
+    }, {
+      label: 'Search in Channel',
+      accelerator: 'Shift+CmdOrCtrl+S',
+      click: (item, focusedWindow) => {
+        if (focusedWindow) {
+          focusedWindow.webContents.send('activate-search-box-in-channel');
         }
       }
     }]
