@@ -23,6 +23,7 @@ Release date: TBD
 - Added back/forward features for the current tab.
   - Windows and Linux: Alt+Left, Alt+Right
   - OS X: Command+[, Command+]
+- Added simple validation for Name and URL in the settings page.
 
 #### Windows
 - Added an option to toogle the red dot icon for unread messages (default is on).

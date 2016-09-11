@@ -9,17 +9,9 @@ const settings = require('../common/settings');
 
 const React = require('react');
 const ReactDOM = require('react-dom');
-const ReactBootstrap = require('react-bootstrap');
+const {Grid, Row, Col, Input, Button, ListGroup, ListGroupItem, Glyphicon, HelpBlock} = require('react-bootstrap');
 var AutoLaunch = require('auto-launch');
 
-const Grid = ReactBootstrap.Grid;
-const Row = ReactBootstrap.Row;
-const Col = ReactBootstrap.Col;
-const Input = ReactBootstrap.Input;
-const Button = ReactBootstrap.Button;
-const ListGroup = ReactBootstrap.ListGroup;
-const ListGroupItem = ReactBootstrap.ListGroupItem;
-const Glyphicon = ReactBootstrap.Glyphicon;
 
 var appLauncher = new AutoLaunch({
   name: 'Mattermost'
@@ -406,12 +398,21 @@ var TeamListItemNew = React.createClass({
     return {
       name: this.props.teamName,
       url: this.props.teamUrl,
-      index: this.props.teamIndex
+      index: this.props.teamIndex,
+      errorMessage: null
     };
   },
   handleSubmit: function(e) {
     console.log('submit');
     e.preventDefault();
+    const errorMessage = this.getValidationErrorMessage();
+    if (errorMessage) {
+      this.setState({
+        errorMessage
+      });
+      return;
+    }
+
     this.props.onTeamAdd({
       name: this.state.name.trim(),
       url: this.state.url.trim(),
@@ -421,7 +422,8 @@ var TeamListItemNew = React.createClass({
     this.setState({
       name: '',
       url: '',
-      index: ''
+      index: '',
+      errorMessage: null
     });
   },
   handleNameChange: function(e) {
@@ -436,10 +438,30 @@ var TeamListItemNew = React.createClass({
       url: e.target.value
     });
   },
-  shouldEnableAddButton: function() {
-    return (this.state.name.trim() !== '' || this.props.teamName !== '')
-      && (this.state.url.trim() !== '' || this.props.teamUrl !== '');
+
+  getValidationErrorMessage: function() {
+    if (this.state.name.trim() === '') {
+      return 'Name is required.';
+    } else if (this.state.url.trim() === '') {
+      return 'URL is required.';
+    } else if (!(/^https?:\/\/.*/).test(this.state.url.trim())) {
+      return 'URL should start with http:// or https://.';
+    }
+    return null;
   },
+
+  componentDidMount: function() {
+    const inputTeamName = ReactDOM.findDOMNode(this.refs.inputTeamName);
+    const setErrorMessage = () => {
+      this.setState({
+        errorMessage: this.getValidationErrorMessage()
+      });
+    };
+    inputTeamName.addEventListener('invalid', setErrorMessage);
+    const inputTeamURL = ReactDOM.findDOMNode(this.refs.inputTeamURL);
+    inputTeamURL.addEventListener('invalid', setErrorMessage);
+  },
+
   render: function() {
 
     var existingTeam = false;
@@ -460,19 +482,29 @@ var TeamListItemNew = React.createClass({
           <div className="form-group">
             <label for="inputTeamName">Name</label>
             { ' ' }
-            <input type="text" className="form-control" id="inputTeamName" placeholder="Example team" value={ this.state.name } onChange={ this.handleNameChange } />
+            <input type="text" required className="form-control" id="inputTeamName" ref="inputTeamName" placeholder="Example team" value={ this.state.name } onChange={ this.handleNameChange }
+            />
           </div>
           { ' ' }
           <div className="form-group">
             <label for="inputTeamURL">URL</label>
             { ' ' }
-            <input type="url" className="form-control" id="inputTeamURL" placeholder="https://example.com/team" value={ this.state.url } onChange={ this.handleURLChange } />
+            <input type="url" required className="form-control" id="inputTeamURL" ref="inputTeamURL" placeholder="https://example.com/team" value={ this.state.url } onChange={ this.handleURLChange }
+            />
           </div>
           { ' ' }
-          <Button type="submit" disabled={ !this.shouldEnableAddButton() }>
+          <Button type="submit">
             { btnAddText }
           </Button>
         </form>
+        { (() => {
+            if (this.state.errorMessage !== null) {
+              return (<HelpBlock style={ { color: '#777777' } }>
+                        { this.state.errorMessage }
+                      </HelpBlock>);
+            }
+            return null;
+          })() }
       </ListGroupItem>
       );
   }
