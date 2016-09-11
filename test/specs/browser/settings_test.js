@@ -171,13 +171,13 @@ describe('browser/settings.html', function() {
       });
     });
 
-    describe('Notifications', function() {
+    describe('Flash taskbar icon on new messages', function() {
       it('should appear on win32 and linux', function() {
         const expected = (process.platform === 'win32' || process.platform === 'linux');
         env.addClientCommands(this.app.client);
         return this.app.client
           .loadSettingsPage()
-          .isExisting('#notificationsRow').should.eventually.equal(expected)
+          .isExisting('#inputflashWindow').should.eventually.equal(expected)
       });
     });
 
