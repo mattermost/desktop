@@ -14,7 +14,6 @@ Release date: TBD
 - Changed display of unread messages on the team tabbar, they are now shown as bold text
 - Reload only the selected tab and keep its URL on "Reload" and "Clear Cache and Reload".
 - Disabled `eval()` function for security improvements.
-- Invalidate cache before load, to make server upgrades easy
 - Removed misleading shortcuts from tray menu, as they didn't work
 - Ctrl/Command+S puts cursor in search box to search in current team.
 - Shift+Ctrl/Command+S puts cursor in search box to search in current channel.
