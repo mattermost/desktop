@@ -9,6 +9,7 @@ Release date: TBD
 ### Improvements
 
 #### All platforms
+- Use `electron-context-menu` to have a working and consistent context menu
 - Show current channel/team in window title
 - Changed display of unread messages on the team tabbar, they are now shown as bold text
 - Reload only the selected tab and keep its URL on "Reload" and "Clear Cache and Reload".
