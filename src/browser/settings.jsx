@@ -240,8 +240,8 @@ var SettingsPage = React.createClass({
 
     return (
       <div>
-        <Navbar className="navbar-fixed-top" style={settingsPage.navbar}>
-            <h1 style={ settingsPage.heading }>Settings</h1>
+        <Navbar className="navbar-fixed-top" style={ settingsPage.navbar }>
+          <h1 style={ settingsPage.heading }>Settings</h1>
         </Navbar>
         <Grid className="settingsPage" style={ { 'padding-top': '100px' } }>
           <Row>
