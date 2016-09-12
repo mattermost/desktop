@@ -204,10 +204,35 @@ var SettingsPage = React.createClass({
                      onChange={ this.handleFlashWindow } />);
     }
 
+    const settingsPage = {
+      navbar: {
+        backgroundColor: '#fff'
+      },
+      heading: {
+        textAlign: 'center',
+        fontSize: '24px',
+        margin: '0',
+        padding: '1em 0'
+      },
+      sectionHeading: {
+        fontSize: '20px',
+        margin: '0',
+        padding: '1em 0'
+      },
+      sectionHeadingLink: {
+        marginTop: '24px',
+        display: 'inline-block',
+        fontSize: '15px'
+      },
+      footer: {
+        padding: '0.4em 0'
+      }
+    }
+
     var options_row = (options.length > 0) ? (
       <Row>
         <Col md={ 12 }>
-        <h2>App options</h2>
+        <h2 style={ settingsPage.sectionHeading }>App options</h2>
         { options }
         </Col>
       </Row>
@@ -215,21 +240,20 @@ var SettingsPage = React.createClass({
 
     return (
       <div>
-        <Navbar className="navbar-fixed-top">
-          <Navbar.Header>
-            <h1>Settings</h1>
-          </Navbar.Header>
+        <Navbar className="navbar-fixed-top" style={settingsPage.navbar}>
+            <h1 style={ settingsPage.heading }>Settings</h1>
         </Navbar>
-        <Grid className="settingsPage" style={ { 'padding-top': '70px' } }>
+        <Grid className="settingsPage" style={ { 'padding-top': '100px' } }>
           <Row>
             <Col md={ 10 } xs={ 8 }>
-            <h2>Team Management</h2>
+            <h2 style={ settingsPage.sectionHeading }>Team Management</h2>
             </Col>
             <Col md={ 2 } xs={ 4 }>
-            <p className="text-right"><a href="#" onClick={ this.toggleShowTeamForm }>⊞ Add new team</a></p>
+            <p className="text-right"><a style={ settingsPage.sectionHeadingLink } href="#" onClick={ this.toggleShowTeamForm }>⊞ Add new team</a></p>
             </Col>
           </Row>
           { teams_row }
+          <hr/>
           { options_row }
           <div>
             <hr />
@@ -240,11 +264,11 @@ var SettingsPage = React.createClass({
           </Row>
         </Grid>
         <Navbar className="navbar-fixed-bottom">
-          <Nav className="navbar-right">
-            <button id="btnCancel" className="btn navbar-btn" onClick={ this.handleCancel }>Cancel</button>
+          <div className='text-right' style={ settingsPage.footer }>
+            <button id="btnCancel" className="btn btn-link" onClick={ this.handleCancel }>Cancel</button>
             { ' ' }
             <button id="btnSave" className="btn btn-primary navbar-btn" bsStyle="primary" onClick={ this.handleSave } disabled={ this.state.teams.length === 0 }>Save</button>
-          </Nav>
+          </div>
         </Navbar>
       </div>
       );
@@ -356,9 +380,9 @@ var TeamListItem = React.createClass({
           </p>
         </div>
         <div className="pull-right">
-          <small><a hre="#" onClick={ this.handleTeamEditing }>Edit</a></small>
+          <a hre="#" onClick={ this.handleTeamEditing }>Edit</a>
           { ' - ' }
-          <small><a hre="#" onClick={ this.handleTeamRemove }>Remove</a></small>
+          <a hre="#" onClick={ this.handleTeamRemove }>Remove</a>
         </div>
       </div>
       );
