@@ -9,7 +9,7 @@ const settings = require('../common/settings');
 
 const React = require('react');
 const ReactDOM = require('react-dom');
-const {Grid, Row, Col, Input, Button, ListGroup, ListGroupItem, Glyphicon, HelpBlock} = require('react-bootstrap');
+const {Grid, Row, Col, Input, Button, ListGroup, ListGroupItem, Glyphicon, HelpBlock, Navbar, Nav} = require('react-bootstrap');
 var AutoLaunch = require('auto-launch');
 
 
@@ -140,10 +140,10 @@ var SettingsPage = React.createClass({
       showAddTeamForm: !this.state.showAddTeamForm
     });
   },
-  handleFlashWindowSetting: function(item) {
+  handleFlashWindow: function() {
     this.setState({
       notifications: {
-        flashWindow: item.state
+        flashWindow: this.refs.flashWindow.getChecked() ? 2 : 0
       }
     });
   },
@@ -199,78 +199,78 @@ var SettingsPage = React.createClass({
                      checked={ this.state.showUnreadBadge } onChange={ this.handleShowUnreadBadge } />);
     }
 
+    if (process.platform === 'win32' || process.platform === 'linux') {
+      options.push(<Input key="flashWindow" id="inputflashWindow" ref="flashWindow" type="checkbox" label="Flash the taskbar icon when a new message is received." checked={ this.state.notifications.flashWindow === 2 }
+                     onChange={ this.handleFlashWindow } />);
+    }
+
+    const settingsPage = {
+      navbar: {
+        backgroundColor: '#fff'
+      },
+      heading: {
+        textAlign: 'center',
+        fontSize: '24px',
+        margin: '0',
+        padding: '1em 0'
+      },
+      sectionHeading: {
+        fontSize: '20px',
+        margin: '0',
+        padding: '1em 0'
+      },
+      sectionHeadingLink: {
+        marginTop: '24px',
+        display: 'inline-block',
+        fontSize: '15px'
+      },
+      footer: {
+        padding: '0.4em 0'
+      }
+    }
+
     var options_row = (options.length > 0) ? (
       <Row>
         <Col md={ 12 }>
-        <h2>Options</h2>
+        <h2 style={ settingsPage.sectionHeading }>App options</h2>
         { options }
         </Col>
       </Row>
       ) : null;
 
-    var notifications_row = null;
-    if (process.platform === 'win32' || process.platform === 'linux') {
-      var notificationSettings = [
-        {
-          label: 'Never',
-          state: 0
-        },
-        /* ToDo: Idle isn't implemented yet
-        {
-          label: 'Only when idle (after 10 seconds)',
-          state: 1
-        },*/
-        {
-          label: 'Always',
-          state: 2
-        }
-      ];
-
-      var that = this;
-      var notificationElements = notificationSettings.map(function(item) {
-        var boundClick = that.handleFlashWindowSetting.bind(that, item);
-        return (
-          <Input key={ "flashWindow" + item.state } name="handleFlashWindow" ref={ "flashWindow" + item.state } type="radio" label={ item.label } value={ item.state } onChange={ boundClick }
-            checked={ that.state.notifications.flashWindow == item.state ? "checked" : "" } />
-          );
-      });
-
-      notifications_row = (
-        <Row id="notificationsRow">
-          <Col md={ 12 }>
-          <h3>Notifications</h3> Flash the taskbar icon when a new message is received.
-          { notificationElements }
-          </Col>
-        </Row>
-      );
-    }
-
     return (
-      <Grid className="settingsPage">
-        <Row>
-          <Col xs={ 4 } sm={ 2 } md={ 2 } lg={ 1 }>
-          <h2>Teams</h2>
-          </Col>
-          <Col xs={ 8 } sm={ 10 } md={ 10 } lg={ 11 }>
-          <Button bsSize="small" style={ { marginTop: 20 } } onClick={ this.toggleShowTeamForm }>
-            <Glyphicon glyph="plus" />
-          </Button>
-          </Col>
-        </Row>
-        { teams_row }
-        { options_row }
-        { notifications_row }
-        <div>
-          <hr />
-        </div>
-        <Row>
-          <Col md={ 12 }>
-          <Button id="btnCancel" onClick={ this.handleCancel }>Cancel</Button>
-          { ' ' }
-          <Button id="btnSave" bsStyle="primary" onClick={ this.handleSave } disabled={ this.state.teams.length === 0 }>Save</Button>
-          </Col>
-        </Row>
-      </Grid>
+      <div>
+        <Navbar className="navbar-fixed-top" style={ settingsPage.navbar }>
+          <h1 style={ settingsPage.heading }>Settings</h1>
+        </Navbar>
+        <Grid className="settingsPage" style={ { 'padding-top': '100px' } }>
+          <Row>
+            <Col md={ 10 } xs={ 8 }>
+            <h2 style={ settingsPage.sectionHeading }>Team Management</h2>
+            </Col>
+            <Col md={ 2 } xs={ 4 }>
+            <p className="text-right"><a style={ settingsPage.sectionHeadingLink } href="#" onClick={ this.toggleShowTeamForm }>⊞ Add new team</a></p>
+            </Col>
+          </Row>
+          { teams_row }
+          <hr/>
+          { options_row }
+          <div>
+            <hr />
+          </div>
+          <Row>
+            <Col md={ 12 }>
+            </Col>
+          </Row>
+        </Grid>
+        <Navbar className="navbar-fixed-bottom">
+          <div className='text-right' style={ settingsPage.footer }>
+            <button id="btnCancel" className="btn btn-link" onClick={ this.handleCancel }>Cancel</button>
+            { ' ' }
+            <button id="btnSave" className="btn btn-primary navbar-btn" bsStyle="primary" onClick={ this.handleSave } disabled={ this.state.teams.length === 0 }>Save</button>
+          </div>
+        </Navbar>
+      </div>
       );
   }
 });
@@ -380,13 +380,9 @@ var TeamListItem = React.createClass({
           </p>
         </div>
         <div className="pull-right">
-          <Button bsSize="xsmall" onClick={ this.handleTeamEditing }>
-            <Glyphicon glyph="pencil" />
-          </Button>
-          { ' ' }
-          <Button bsSize="xsmall" onClick={ this.handleTeamRemove }>
-            <Glyphicon glyph="remove" />
-          </Button>
+          <a hre="#" onClick={ this.handleTeamEditing }>Edit</a>
+          { ' - ' }
+          <a hre="#" onClick={ this.handleTeamRemove }>Remove</a>
         </div>
       </div>
       );
