@@ -14,7 +14,7 @@
     "electron-connect": "~0.3.9"
   },
   "dependencies": {
-    "auto-launch": "^2.1.0",
+    "auto-launch": "^4.0.1",
     "bootstrap": "^3.3.7",
     "electron-context-menu": "^0.5.0",
     "electron-squirrel-startup": "^1.0.0",

@@ -14,7 +14,8 @@ var AutoLaunch = require('auto-launch');
 
 
 var appLauncher = new AutoLaunch({
-  name: 'Mattermost'
+  name: 'Mattermost',
+  isHidden: true
 });
 
 function backToIndex() {

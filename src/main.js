@@ -20,7 +20,8 @@ if (process.platform === 'win32') {
   if (cmd === '--squirrel-uninstall') {
     var AutoLaunch = require('auto-launch');
     var appLauncher = new AutoLaunch({
-      name: 'Mattermost'
+      name: 'Mattermost',
+      isHidden: true
     });
     appLauncher.isEnabled().then(function(enabled) {
       if (enabled)
@@ -40,7 +41,8 @@ var certificateStore = require('./main/certificateStore').load(path.resolve(app.
 var appMenu = require('./main/menus/app');
 const allowProtocolDialog = require('./main/allowProtocolDialog');
 
-var argv = require('yargs').argv;
+var argv = require('yargs')
+  .parse(process.argv.slice(1));
 
 var client = null;
 if (argv.livereload) {
@@ -50,6 +52,12 @@ if (argv.livereload) {
   });
 }
 
+var hideOnStartup;
+if (argv.hidden) {
+  hideOnStartup = true;
+}
+
+// TODO: We should document this if that hasn't been done already
 if (argv['config-file']) {
   global['config-file'] = argv['config-file'];
 }
@@ -364,11 +372,16 @@ app.on('ready', function() {
   });
 
   mainWindow.setFullScreenable(true); // fullscreenable option has no effect.
-  if (window_options.maximized) {
-    mainWindow.maximize();
+  if (hideOnStartup) {
+    mainWindow.minimize();
   }
-  if (window_options.fullscreen) {
-    mainWindow.setFullScreen(true);
+  else {
+    if (window_options.maximized) {
+      mainWindow.maximize();
+    }
+    if (window_options.fullscreen) {
+      mainWindow.setFullScreen(true);
+    }
   }
 
   // and load the index.html of the app.
