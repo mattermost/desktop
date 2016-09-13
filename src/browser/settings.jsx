@@ -207,13 +207,23 @@ var SettingsPage = React.createClass({
 
     const settingsPage = {
       navbar: {
-        backgroundColor: '#fff'
+        backgroundColor: '#fff',
+      },
+      close: {
+        position: 'absolute',
+        right: '0',
+        top: '20px',
+        fontSize: '1.3em',
+        fontWeight: 'normal',
+        color: '#bbb',
+        cursor: 'pointer'
       },
       heading: {
         textAlign: 'center',
         fontSize: '24px',
         margin: '0',
-        padding: '1em 0'
+        padding: '1em 0',
+        position: 'relative'
       },
       sectionHeading: {
         fontSize: '20px',
@@ -242,9 +252,14 @@ var SettingsPage = React.createClass({
     return (
       <div>
         <Navbar className="navbar-fixed-top" style={ settingsPage.navbar }>
-          <h1 style={ settingsPage.heading }>Settings</h1>
+          <h1 style={ settingsPage.heading }>
+            Settings
+            <div style={ settingsPage.close } onClick={ this.handleCancel }>
+              <span>×</span>
+            </div>
+          </h1>
         </Navbar>
-        <Grid className="settingsPage" style={ { 'padding-top': '100px', 'padding-bottom': '70px' } }>
+        <Grid className="settingsPage" style={ { 'padding': '100px 15px' } }>
           <Row>
             <Col md={ 10 } xs={ 8 }>
             <h2 style={ settingsPage.sectionHeading }>Team Management</h2>
@@ -257,8 +272,11 @@ var SettingsPage = React.createClass({
           <hr/>
           { options_row }
           <div>
-            <hr />
           </div>
+          <Row>
+            <Col md={ 12 }>
+            </Col>
+          </Row>
         </Grid>
         <Navbar className="navbar-fixed-bottom">
           <div className='text-right' style={ settingsPage.footer }>
