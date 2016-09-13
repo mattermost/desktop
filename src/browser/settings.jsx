@@ -73,20 +73,33 @@ var SettingsPage = React.createClass({
       currentWindow.setAutoHideMenuBar(config.hideMenuBar);
       currentWindow.setMenuBarVisibility(!config.hideMenuBar);
 
-      var autostart = this.state.autostart;
-      appLauncher.isEnabled().then(function(enabled) {
-        if (enabled && !autostart) {
-          appLauncher.disable();
-        } else if (!enabled && autostart) {
-          appLauncher.enable();
-        }
-      });
     }
 
-    ipcRenderer.send('update-menu', config);
-    ipcRenderer.send('update-config');
-
-    backToIndex();
+    if (process.platform === 'win32' || process.platform === 'linux') {
+      appLauncher.isEnabled().then((enabled) => {
+        if (enabled) {
+          if (this.state.autostart) {
+            return appLauncher.enable();
+          } else {
+            return appLauncher.disable();
+          }
+        } else if (this.state.autostart) {
+          return appLauncher.enable();
+        }
+      }).then((err) => {
+        if (err) {
+          console.log(err);
+          // should save new config if error exists.
+        }
+        ipcRenderer.send('update-menu', config);
+        ipcRenderer.send('update-config');
+        backToIndex();
+      });
+    } else {
+      ipcRenderer.send('update-menu', config);
+      ipcRenderer.send('update-config');
+      backToIndex();
+    }
   },
   handleCancel: function() {
     backToIndex();
