@@ -253,11 +253,11 @@ var SettingsPage = React.createClass({
       <div>
         <Navbar className="navbar-fixed-top" style={ settingsPage.navbar }>
           <h1 style={ settingsPage.heading }>
-            Settings
-            <div style={ settingsPage.close } onClick={ this.handleCancel }>
-              <span>×</span>
-            </div>
-          </h1>
+                  Settings
+                  <div style={ settingsPage.close } onClick={ this.handleCancel }>
+                    <span>×</span>
+                  </div>
+                </h1>
         </Navbar>
         <Grid className="settingsPage" style={ { 'padding': '100px 15px' } }>
           <Row>
