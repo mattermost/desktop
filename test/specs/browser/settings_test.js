@@ -65,6 +65,7 @@ describe('browser/settings.html', function() {
             env.addClientCommands(this.app.client);
             return this.app.client
               .loadSettingsPage()
+              .scroll('#inputHideMenuBar')
               .isSelected('#inputHideMenuBar input').then((isSelected) => {
                 if (isSelected !== v) {
                   return this.app.client.click('#inputHideMenuBar input')
@@ -96,6 +97,7 @@ describe('browser/settings.html', function() {
           env.addClientCommands(this.app.client);
           return this.app.client
             .loadSettingsPage()
+            .scroll('#inputDisableWebSecurity')
             .isSelected('#inputDisableWebSecurity input').then((isSelected) => {
               if (isSelected !== v) {
                 return this.app.client.click('#inputDisableWebSecurity input')
