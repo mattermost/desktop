@@ -243,7 +243,7 @@ var SettingsPage = React.createClass({
         <Navbar className="navbar-fixed-top" style={ settingsPage.navbar }>
           <h1 style={ settingsPage.heading }>Settings</h1>
         </Navbar>
-        <Grid className="settingsPage" style={ { 'padding-top': '100px' } }>
+        <Grid className="settingsPage" style={ { 'padding-top': '100px', 'padding-bottom': '70px' } }>
           <Row>
             <Col md={ 10 } xs={ 8 }>
             <h2 style={ settingsPage.sectionHeading }>Team Management</h2>
@@ -258,10 +258,6 @@ var SettingsPage = React.createClass({
           <div>
             <hr />
           </div>
-          <Row>
-            <Col md={ 12 }>
-            </Col>
-          </Row>
         </Grid>
         <Navbar className="navbar-fixed-bottom">
           <div className='text-right' style={ settingsPage.footer }>
