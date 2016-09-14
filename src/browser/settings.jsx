@@ -207,13 +207,13 @@ var SettingsPage = React.createClass({
 
     const settingsPage = {
       navbar: {
-        backgroundColor: '#fff',
+        backgroundColor: '#fff'
       },
       close: {
         position: 'absolute',
         right: '0',
-        top: '20px',
-        fontSize: '1.3em',
+        top: '10px',
+        fontSize: '35px',
         fontWeight: 'normal',
         color: '#bbb',
         cursor: 'pointer'
@@ -222,8 +222,7 @@ var SettingsPage = React.createClass({
         textAlign: 'center',
         fontSize: '24px',
         margin: '0',
-        padding: '1em 0',
-        position: 'relative'
+        padding: '1em 0'
       },
       sectionHeading: {
         fontSize: '20px',
@@ -252,12 +251,12 @@ var SettingsPage = React.createClass({
     return (
       <div>
         <Navbar className="navbar-fixed-top" style={ settingsPage.navbar }>
-          <h1 style={ settingsPage.heading }>
-                  Settings
-                  <div style={ settingsPage.close } onClick={ this.handleCancel }>
-                    <span>×</span>
-                  </div>
-                </h1>
+          <div style={ { 'position': 'relative' } }>
+            <h1 style={ settingsPage.heading }>Settings</h1>
+            <div style={ settingsPage.close } onClick={ this.handleCancel }>
+              <span>×</span>
+            </div>
+          </div>
         </Navbar>
         <Grid className="settingsPage" style={ { 'padding': '100px 15px' } }>
           <Row>
