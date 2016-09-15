@@ -17,15 +17,26 @@ process.on('uncaughtException', (error) => {
 
 if (process.platform === 'win32') {
   var cmd = process.argv[1];
+  var AutoLaunch = require('auto-launch');
+  var appLauncher = new AutoLaunch({
+    name: 'Mattermost',
+    isHidden: true
+  });
   if (cmd === '--squirrel-uninstall') {
-    var AutoLaunch = require('auto-launch');
-    var appLauncher = new AutoLaunch({
-      name: 'Mattermost',
-      isHidden: true
-    });
+    // If we're uninstalling, make sure we also delete our auto launch registry key
     appLauncher.isEnabled().then(function(enabled) {
       if (enabled)
         appLauncher.disable();
+    });
+  }
+  else if (cmd === '--squirrel-install' || cmd === '--squirrel-updated') {
+    // If we're updating and already have an registry entry for auto launch, make sure to update the path
+    appLauncher.isEnabled().then(function(enabled) {
+      if (enabled) {
+        return appLauncher.disable().then(function() {
+          return appLauncher.enable();
+        });
+      }
     });
   }
 }
