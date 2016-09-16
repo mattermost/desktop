@@ -221,7 +221,7 @@ function makePackage(platform, arch, callback) {
       callback(err);
     }
     else {
-      if (arch === 'linux' || arch === 'all') {
+      if (platform === 'linux' || platform === 'all') {
         const dest_32 = 'release/Mattermost-linux-ia32';
         const dest_64 = 'release/Mattermost-linux-x64';
         fs.createReadStream('resources/icon.png').pipe(fs.createWriteStream(`${dest_32}/icon.png`));
