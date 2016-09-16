@@ -30,6 +30,7 @@ if (process.platform === 'win32') {
   }
 }
 
+app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
 require('electron-squirrel-startup');
 
 const fs = require('fs');
