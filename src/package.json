@@ -3,12 +3,13 @@
   "productName": "Mattermost",
   "desktopName": "Mattermost.desktop",
   "version": "3.4.1",
-  "description": "Mattermost Desktop application for Windows, Mac and Linux",
+  "description": "Mattermost",
   "main": "main.js",
   "author": {
     "name": "Yuya Ochiai",
     "email": "yuya0321@gmail.com"
   },
+  "homepage": "https://about.mattermost.com",
   "license": "Apache-2.0",
   "devDependencies": {
     "electron-connect": "~0.6.0"
