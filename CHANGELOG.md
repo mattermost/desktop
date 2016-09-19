@@ -16,7 +16,6 @@ Release date: TBD
 - Disabled `eval()` function for security improvements.
 - Removed misleading shortcuts from tray menu, as they didn't work
 - Ctrl/Command+S puts cursor in search box to search in current team.
-- Shift+Ctrl/Command+S puts cursor in search box to search in current channel.
 - Add access to settings through tray menu
 - Removed unclear desktop notifications when failed to load tabs.
 - Reload automatically the failed tab when the computer becomes online.

@@ -77,14 +77,6 @@ var createTemplate = function(mainWindow, config) {
           focusedWindow.webContents.send('activate-search-box');
         }
       }
-    }, {
-      label: 'Search in Channel',
-      accelerator: 'Shift+CmdOrCtrl+S',
-      click: (item, focusedWindow) => {
-        if (focusedWindow) {
-          focusedWindow.webContents.send('activate-search-box-in-channel');
-        }
-      }
     }]
   });
   template.push({
