@@ -36,7 +36,7 @@ var createTemplate = function(mainWindow, config) {
   }, separatorItem, {
     role: 'quit'
   }] : [{
-    label: 'Settings',
+    label: 'Settings...',
     accelerator: 'CmdOrCtrl+,',
     click: function(item, focusedWindow) {
       mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
@@ -229,9 +229,9 @@ var createTemplate = function(mainWindow, config) {
   template.push({
     label: '&Help',
     submenu: [{
-      label: `${app_name} Docs`,
+      label: `Learn More...`,
       click: function() {
-        electron.shell.openExternal('http://docs.mattermost.com');
+        electron.shell.openExternal('https://docs.mattermost.com/help/apps/desktop-guide.html');
       }
     }, {
       type: 'separator'
