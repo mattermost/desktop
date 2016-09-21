@@ -2,34 +2,34 @@
 
 ## Release v3.4.0
 
-Release date: September 2016
+Release date: September 22, 2016
 
-This release contains a security update and it is highly recommended that users upgrade to this version. 
+This release contains a security update and it is highly recommended that users upgrade to this version.
+
+Version number updated to 3.4 to make numbering consistent with Mattermost server and mobile app releases. This change will not imply monthly releases.
 
 ### Improvements
 
 #### Windows
- - Current team and channel name shown in window caption
+ - Current team and channel name shown in window title bar
  - Team tab is bolded for unread messages and has a red dot with a count of unread mentions
  - Added an option to configure whether a red badge is shown on taskbar icon for unread messages
  - Added new shortcuts:
      - `CTRL + S`: sets focus on the Mattermost search box
-     - `CTRL + SHIFT + S`: sets focus on the Mattermost search box and adds `in:[channel_url]` to search in current channel
      - `ALT + Left Arrow`: go to previous page in history
      - `ALT + Right Arrow`: go to next page in history
  - Upgraded the Settings page user interface
  - Added access to the settings menu from the system tray icon
  - Added validation for name and URL when adding a new team on the Settings page
  - The app now tries to reconnect periodically if a page fails to load
- - The app now works as a single instance (an existing application instance will be used when launching a new one)
+ - Only one instance of the desktop application will now load at a time
 
 #### OS X
- - Current team and channel name shown in window caption
+ - Current team and channel name shown in window title bar
  - Team tab is bolded for unread messages and has a red dot with a count of unread mentions
  - Added an option to configure whether a red badge is shown on taskbar icon for unread messages
  - Added new shortcuts:
      - `CMD + S`: sets focus on the Mattermost search box
-     - `CMD + SHIFT + S`: sets focus on the Mattermost search box and adds `in:[channel_url]` to search in current channel
      - `CMD + [`: go to previous page in history
      - `CMD + ]`: go to next page in history
  - Upgraded the Settings page user interface
@@ -37,21 +37,20 @@ This release contains a security update and it is highly recommended that users 
  - Added validation for name and URL when adding a new team on the Settings page
 
 #### Linux (Beta)
- - Current team and channel name shown in window caption
+ - Current team and channel name shown in window title bar
  - Team tab is bolded for unread messages and has a red dot with a count of unread mentions
  - Added an option to flash taskbar icon when a new message is received
  - Added a red badge to count mentions on the taskbar icon (for Unity)
  - Added a script to create `Mattermost.desktop` desktop entry to help [integrate the application into a desktop environment](https://wiki.archlinux.org/index.php/Desktop_entries) more easily
  - Added new shortcuts:
      - `CTRL + S`: sets focus on the Mattermost search box
-     - `CTRL + SHIFT + S`: sets focus on the Mattermost search box and adds `in:[channel_url]` to search in current channel
      - `ALT + Left Arrow`: go to previous page in history
      - `ALT + Right Arrow`: go to next page in history
  - Upgraded the Settings page user interface
  - Added access to the settings menu from the system tray icon
  - The app now tries to reconnect periodically if a page fails to load
  - Added validation for name and URL when adding a new team on the Settings page
- - The app now works as a single instance (an existing application instance will be used when launching a new one)
+ - Only one instance of the desktop application will now load at a time
 
 ### Bug Fixes
 
@@ -65,7 +64,7 @@ This release contains a security update and it is highly recommended that users 
  - Fixed the Mattermost icon for desktop notifications in Windows 10
  - Fixed an issue where the maximized state of the app window was lost in some cases
  - Fixed an issue where shortcuts didn't work when switching applications or tabs in some cases
- - Fixed a pixelated application icon in top left of the window
+ - Fixed an issue where application icon at the top left of the window was pixelated
  - Fixed an issue where the application kept focus after closing the app window
 
 #### OS X
