@@ -11,7 +11,7 @@
   },
   "license": "Apache-2.0",
   "devDependencies": {
-    "electron-connect": "~0.3.9"
+    "electron-connect": "~0.6.0"
   },
   "dependencies": {
     "auto-launch": "^4.0.1",
