@@ -1,51 +1,109 @@
 # Mattermost Desktop Application Changelog
 
-## UNDER DEVELOPMENT v1.4.0
+## Release v3.4.0
 
-The "UNDER DEVELOPMENT" section of the Mattermost Desktop changelog appears in the product's `master` branch to note key changes committed to `master` and are on their way to the next stable release. When a stable release is pushed, "UNDER DEVELOPMENT" heading is removed from the final changelog of the release.
+Release date: September 22, 2016
 
-Release date: TBD
+This release contains a security update and it is highly recommended that users upgrade to this version.
+
+Version number updated to 3.4 to make numbering consistent with Mattermost server and mobile app releases. This change will not imply monthly releases.
 
 ### Improvements
 
-#### All platforms
-- Use `electron-context-menu` to have a working and consistent context menu
-- Show current channel/team in window title
-- Changed display of unread messages on the team tabbar, they are now shown as bold text
-- Reload only the selected tab and keep its URL on "Reload" and "Clear Cache and Reload".
-- Disabled `eval()` function for security improvements.
-- Removed misleading shortcuts from tray menu, as they didn't work
-- Ctrl/Command+S puts cursor in search box to search in current team.
-- Add access to settings through tray menu
-- Removed unclear desktop notifications when failed to load tabs.
-- Reload automatically the failed tab when the computer becomes online.
-- Added back/forward features for the current tab.
-  - Windows and Linux: Alt+Left, Alt+Right
-  - OS X: Command+[, Command+]
-- Added simple validation for Name and URL in the settings page.
-
 #### Windows
-- Added an option to toogle the red dot icon for unread messages (default is on).
-- Update Mattermost icon for desktop notifications in Windows 10.
-- An existing application instance will be reused instead of starting another instance.
+ - Current team and channel name shown in window title bar
+ - Team tab is bolded for unread messages and has a red dot with a count of unread mentions
+ - Added an option to configure whether a red badge is shown on taskbar icon for unread messages
+ - Added new shortcuts:
+     - `CTRL + S`: sets focus on the Mattermost search box
+     - `ALT + Left Arrow`: go to previous page in history
+     - `ALT + Right Arrow`: go to next page in history
+ - Upgraded the Settings page user interface
+ - Added access to the settings menu from the system tray icon
+ - Added validation for name and URL when adding a new team on the Settings page
+ - The app now tries to reconnect periodically if a page fails to load
+ - Only one instance of the desktop application will now load at a time
 
 #### OS X
-- Added an option to toggle the red dot icon for unread messages (default is on).
+ - Current team and channel name shown in window title bar
+ - Team tab is bolded for unread messages and has a red dot with a count of unread mentions
+ - Added an option to configure whether a red badge is shown on taskbar icon for unread messages
+ - Added new shortcuts:
+     - `CMD + S`: sets focus on the Mattermost search box
+     - `CMD + [`: go to previous page in history
+     - `CMD + ]`: go to next page in history
+ - Upgraded the Settings page user interface
+ - The app now tries to reconnect periodically if a page fails to load
+ - Added validation for name and URL when adding a new team on the Settings page
 
 #### Linux (Beta)
-- Added an option to make the taskbar icon flash on new messages
-- Added the badge to count mentions for Unity.
-- An existing application instance will be reused instead of starting another instance.
-- Added a script to create `Mattermost.desktop` desktop entry file.
+ - Current team and channel name shown in window title bar
+ - Team tab is bolded for unread messages and has a red dot with a count of unread mentions
+ - Added an option to flash taskbar icon when a new message is received
+ - Added a red badge to count mentions on the taskbar icon (for Unity)
+ - Added a script to create `Mattermost.desktop` desktop entry to help [integrate the application into a desktop environment](https://wiki.archlinux.org/index.php/Desktop_entries) more easily
+ - Added new shortcuts:
+     - `CTRL + S`: sets focus on the Mattermost search box
+     - `ALT + Left Arrow`: go to previous page in history
+     - `ALT + Right Arrow`: go to next page in history
+ - Upgraded the Settings page user interface
+ - Added access to the settings menu from the system tray icon
+ - The app now tries to reconnect periodically if a page fails to load
+ - Added validation for name and URL when adding a new team on the Settings page
+ - Only one instance of the desktop application will now load at a time
 
 ### Bug Fixes
-- Fixed an issue where the maximized state of the app window was lost in some cases.
-- Fixed an issue some shortcuts didn't work when switching applications or tabs in some cases.
 
 #### Windows
-- Fixed pixelated application icons in top left of the window.
-- Fixed that the application keeps focus after closing the window.
+ - Cut, copy and paste are shown in the user interface only when the commands are available
+ - Copying link addresses now work properly
+ - Saving images by right-clicking the image preview now works
+ - Refreshing the app page no longer takes you to the team selection page, but keeps you on the current channel
+ - Removed misleading shortcuts from the system tray menu
+ - Removed unclear desktop notifications when the application page fails to load
+ - Fixed the Mattermost icon for desktop notifications in Windows 10
+ - Fixed an issue where the maximized state of the app window was lost in some cases
+ - Fixed an issue where shortcuts didn't work when switching applications or tabs in some cases
+ - Fixed an issue where application icon at the top left of the window was pixelated
+ - Fixed an issue where the application kept focus after closing the app window
 
+#### OS X
+ - Cut, copy and paste are shown in the user interface only when the commands are available
+ - Copying link addresses now work properly
+ - Saving images by right-clicking the image preview now works
+ - Refreshing the app page no longer takes you to the team selection page, but keeps you on the current channel
+ - Fixed an issue where the maximized state of the app window was lost in some cases
+ - Fixed an issue where shortcuts didn't work when switching applications or tabs in some cases
+
+#### Linux (Beta)
+ - Cut, copy and paste are shown in the user interface only when the commands are available
+ - Copying link addresses now work properly
+ - Saving images by right-clicking the image preview now works
+ - Refreshing the app page no longer takes you to the team selection page, but keeps you on the current channel
+ - Removed misleading shortcuts from the system tray menu
+ - Removed unclear desktop notifications when the application page fails to load
+ - Fixed an issue where the maximized state of the app window was lost in some cases
+ - Fixed an issue where shortcuts didn't work when switching applications or tabs in some cases
+
+### Known Issues
+
+#### Windows
+ - Copying a link address and pasting it inside the app doesn't work
+ - YouTube videos do not work if mixed content is enabled from app settings
+
+#### OS X
+ - YouTube videos do not work if mixed content is enabled from app settings
+
+#### Linux
+ - YouTube videos do not work if mixed content is enabled from app settings
+ - [Ubuntu - 64 bit] Right clicking taskbar icon and choosing **Quit** only minimizes the app
+ - [Ubuntu - 64 bit] [Direct message notification comes as a streak of line instead of a pop up](https://github.com/mattermost/platform/issues/3589)
+
+### Contributors
+
+Many thanks to all our contributors. In alphabetical order:
+
+- [akashnimare](https://github.com/akashnimare), [asaadmahmood](https://github.com/asaadmahmood), [jasonblais](https://github.com/jasonblais), [jgis](https://github.com/jgis), [jnugh](https://github.com/jnugh), [Razzeee](https://github.com/Razzeee), [St-Ex](https://github.com/St-Ex), [timroes](https://github.com/timroes), [yuya-oc](https://github.com/yuya-oc)
 
 ## Release v1.3.0
 
