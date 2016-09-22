@@ -40,8 +40,8 @@ Version number updated to 3.4 to make numbering consistent with Mattermost serve
  - Current team and channel name shown in window title bar
  - Team tab is bolded for unread messages and has a red dot with a count of unread mentions
  - Added an option to flash taskbar icon when a new message is received
- - Added a red badge to count mentions on the taskbar icon (for Unity)
- - Added a script to create `Mattermost.desktop` desktop entry to help [integrate the application into a desktop environment](https://wiki.archlinux.org/index.php/Desktop_entries) more easily
+ - Added a badge to count mentions on the taskbar icon (for Unity)
+ - Added a script, `create_desktop_file.sh` to create `Mattermost.desktop` desktop entry to help [integrate the application into a desktop environment](https://wiki.archlinux.org/index.php/Desktop_entries) more easily
  - Added new shortcuts:
      - `CTRL + S`: sets focus on the Mattermost search box
      - `ALT + Left Arrow`: go to previous page in history
