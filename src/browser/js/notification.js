@@ -52,7 +52,7 @@ function override(eventHandlers) {
     defineReadProperty(event);
     Notification.prototype.__defineSetter__(event, function(originalCallback) {
       this.notification[event] = function() {
-        callbackevent = {
+        const callbackevent = {
           preventDefault: function() {
             this.isPrevented = true;
           }

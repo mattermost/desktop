@@ -153,7 +153,6 @@ Below lists menu options (shortcut keys are listed in brackets, `Ctrl` becomes `
   - **Paste** (Ctrl+V) - Pastes text from clipboard
   - **Select All** (Ctrl+A) - Select all text in input box
   - **Search in Team** (Ctrl+S) - Puts cursor in search box to search in the current team
-  - **Search in Channel** (Shift+Ctrl+S) - Puts cursor in search box to search in current channel
 - **View**
   - **Reload** (Ctrl+R) - Reload page from the server
   - **Clear Cache and Reload** (Ctrl+Shift+R) - Clear cached content in application and reload page
@@ -172,7 +171,7 @@ Below lists menu options (shortcut keys are listed in brackets, `Ctrl` becomes `
   - **Select Next Team** (Ctrl+Tab, Alt+Command+Right) - Open the right tab
   - **Select Previous Team** (Ctrl+Shift+Tab, Alt+Command+Left) - Open the left tab
 - **Help**
-  - ***Mattermost Docs*** Links to the official mattermost documentation
+  - ***Learn More*** Links to the official mattermost documentation
   - ***Version*** Indicate the application version
 
 

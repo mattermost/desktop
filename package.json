@@ -1,7 +1,7 @@
 {
-  "name": "mattermost-desktop",
+  "name": "mattermost",
   "productName": "Mattermost",
-  "version": "1.4.0",
+  "version": "3.4.0",
   "description": "Mattermost Desktop application for Windows, Mac and Linux",
   "main": "main.js",
   "author": {
