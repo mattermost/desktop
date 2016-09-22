@@ -24,6 +24,8 @@ Release date: TBD
 
 #### Linux (Beta)
 
+----
+
 ## Release v3.4.0
 
 Release date: September 22, 2016
@@ -129,6 +131,8 @@ Many thanks to all our contributors. In alphabetical order:
 
 - [akashnimare](https://github.com/akashnimare), [asaadmahmood](https://github.com/asaadmahmood), [jasonblais](https://github.com/jasonblais), [jgis](https://github.com/jgis), [jnugh](https://github.com/jnugh), [Razzeee](https://github.com/Razzeee), [St-Ex](https://github.com/St-Ex), [timroes](https://github.com/timroes), [yuya-oc](https://github.com/yuya-oc)
 
+----
+
 ## Release v1.3.0
 
 Release date: 2016-07-18
@@ -209,6 +213,8 @@ Many thanks to all our contributors. In alphabetical order:
 
 - [CarmDam](https://github.com/CarmDam), [it33](https://github.com/it33), [jasonblais](https://github.com/jasonblais), [jnugh](https://github.com/jnugh), [magicmonty](https://github.com/magicmonty), [MetalCar](https://github.com/MetalCar), [Razzeee](https://github.com/Razzeee), [yuya-oc](https://github.com/yuya-oc)
 
+----
+
 ## Release v1.2.1 (Beta)
 
 ### Fixes
@@ -224,6 +230,7 @@ Many thanks to all our contributors. In alphabetical order:
 - The shortcuts can't switch teams twice in a raw.
 - The team pages are not correctly rendered until the window is resized when the zoom level is changed.
 
+----
 
 ## Release v1.2.0 (Beta)
 
@@ -255,6 +262,8 @@ Many thanks to all our contributors. In alphabetical order:
 
 - [asaadmahmoodspin](https://github.com/asaadmahmoodspin), [jeremycook](https://github.com/jeremycook), [jnugh](https://github.com/jnugh), [jwilander](https://github.com/jwilander), [mgielda](https://github.com/mgielda), [lloeki](https://github.com/lloeki), [yuya-oc](https://github.com/yuya-oc)
 
+----
+
 ## Release v1.1.1 (Beta)
 
 - **Released:** 2016-04-13
@@ -267,6 +276,7 @@ Many thanks to all our contributors. In alphabetical order:
 #### Linux
 - Alt+Shift opens menu on Cinnamon desktop environment.
 
+----
 
 ## Release v1.1.0 (Beta)
 
