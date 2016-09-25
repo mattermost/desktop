@@ -4,19 +4,19 @@ const electron = require('electron');
 const ipc = electron.ipcRenderer;
 const notification = require('../js/notification');
 
-window.eval = global.eval = function() {
-  throw new Error("Sorry, Mattermost does not support window.eval() for security reasons.");
+window.eval = global.eval = () => {
+  throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
 };
 
-var hasClass = function(element, className) {
+function hasClass(element, className) {
   var rclass = /[\t\r\n\f]/g;
   if ((' ' + element.className + ' ').replace(rclass, ' ').indexOf(className) > -1) {
     return true;
   }
   return false;
-};
+}
 
-setInterval(function() {
+setInterval(function getUnreadCount() {
   if (!this.unreadCount) {
     this.unreadCount = 0;
   }
@@ -27,6 +27,7 @@ setInterval(function() {
   // unreadCount in sidebar
   // Note: the active channel doesn't have '.unread-title'.
   var unreadCount = document.getElementsByClassName('unread-title').length;
+
   // mentionCount in sidebar
   var elem = document.getElementsByClassName('badge');
   var mentionCount = 0;
@@ -58,18 +59,20 @@ setInterval(function() {
     if (post === null) {
       return;
     }
+
     // find latest post and save.
-    while (post = post.nextSibling) {
+    post = post.nextSibling;
+    while (post) {
       if (post.nextSibling === null) {
         if (post.getAttribute(postAttrName) !== null) {
           this.lastCheckedPostId = post.getAttribute(postAttrName);
         }
       }
+      post = post.nextSibling;
     }
-  }
-  else if (lastPostElem !== null) {
-    var newPostElem = lastPostElem;
-    while (newPostElem = newPostElem.nextSibling) {
+  } else if (lastPostElem !== null) {
+    var newPostElem = lastPostElem.nextSibling;
+    while (newPostElem) {
       this.lastCheckedPostId = newPostElem.getAttribute(postAttrName);
       isUnread = true;
       var activeChannel = document.querySelector('.active .sidebar-channel');
@@ -78,19 +81,19 @@ setInterval(function() {
         // If active channel is DM, all posts is treated as menion.
         isMentioned = true;
         break;
-      }
-      else {
+      } else {
         // If active channel is public/private channel, only mentioned post is treated as mention.
         var highlight = newPostElem.getElementsByClassName('mention-highlight');
-        if (highlight.length != 0 && isElementVisible(highlight[0])) {
+        if (highlight.length !== 0 && isElementVisible(highlight[0])) {
           isMentioned = true;
           break;
         }
       }
+      newPostElem = newPostElem.nextSibling;
     }
   }
 
-  if (this.unreadCount != unreadCount || this.mentionCount != mentionCount || isUnread || isMentioned) {
+  if (this.unreadCount !== unreadCount || this.mentionCount !== mentionCount || isUnread || isMentioned) {
     ipc.sendToHost('onUnreadCountChange', unreadCount, mentionCount, isUnread, isMentioned);
   }
   this.unreadCount = unreadCount;
@@ -102,32 +105,30 @@ function isElementVisible(elem) {
 }
 
 notification.override({
+
   // Send a notification event to the main process.
-  notification: function(title, options) {
+  notification(title, options) {
     ipc.send('notified', {
-      title: title,
-      options: options
+      title,
+      options
     });
   },
+
   // Show window even if it is hidden/minimized when notification is clicked.
-  onclick: function() {
+  onclick() {
     const currentWindow = electron.remote.getCurrentWindow();
     if (process.platform === 'win32') {
       // show() breaks Aero Snap state.
       if (currentWindow.isVisible()) {
         currentWindow.focus();
-      }
-      else if (currentWindow.isMinimized()) {
+      } else if (currentWindow.isMinimized()) {
         currentWindow.restore();
-      }
-      else {
+      } else {
         currentWindow.show();
       }
-    }
-    else if (currentWindow.isMinimized()) {
+    } else if (currentWindow.isMinimized()) {
       currentWindow.restore();
-    }
-    else {
+    } else {
       currentWindow.show();
     }
     ipc.sendToHost('onNotificationClick');
@@ -136,27 +137,27 @@ notification.override({
 
 // get the last of href for the current channel in the sidebar.
 function getCurrentChannelString() {
-  const active_channel_link = document.querySelector('.active a.sidebar-channel');
-  const url_elements = active_channel_link.href.split('/');
-  return url_elements[url_elements.length - 1];
+  const activeChannelLink = document.querySelector('.active a.sidebar-channel');
+  const urlElements = activeChannelLink.href.split('/');
+  return urlElements[urlElements.length - 1];
 }
 
-ipc.on('activate-search-box', (event) => {
-  const search_boxes = document.getElementsByClassName('search-bar'); // should use id
-  if (search_boxes.length === 0) {
+ipc.on('activate-search-box', () => {
+  const searchBoxes = document.getElementsByClassName('search-bar'); // should use id
+  if (searchBoxes.length === 0) {
     return;
   }
-  const search_box = search_boxes[0];
-  search_box.focus();
-  search_box.value = ``; //Clear the input box
+  const searchBox = searchBoxes[0];
+  searchBox.focus();
+  searchBox.value = ''; //Clear the input box
 });
 
-ipc.on('activate-search-box-in-channel', (event) => {
-  const search_boxes = document.getElementsByClassName('search-bar'); // should use id
-  if (search_boxes.length === 0) {
+ipc.on('activate-search-box-in-channel', () => {
+  const searchBoxes = document.getElementsByClassName('search-bar'); // should use id
+  if (searchBoxes.length === 0) {
     return;
   }
-  const search_box = search_boxes[0];
-  search_box.focus();
-  search_box.value = `in:${getCurrentChannelString()} `;
+  const searchBox = searchBoxes[0];
+  searchBox.focus();
+  searchBox.value = `in:${getCurrentChannelString()} `;
 });

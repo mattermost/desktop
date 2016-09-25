@@ -11,7 +11,7 @@ const Col = ReactBootstrap.Col;
 const Button = ReactBootstrap.Button;
 
 const LoginModal = React.createClass({
-  handleSubmit: function(event) {
+  handleSubmit(event) {
     event.preventDefault();
     const usernameNode = ReactDOM.findDOMNode(this.refs.username);
     const passwordNode = ReactDOM.findDOMNode(this.refs.password);
@@ -19,7 +19,7 @@ const LoginModal = React.createClass({
     usernameNode.value = '';
     passwordNode.value = '';
   },
-  render: function() {
+  render() {
     var theServer = '';
     if (!this.props.show) {
       theServer = '';
@@ -30,34 +30,54 @@ const LoginModal = React.createClass({
     }
     const message = `${theServer} requires a username and password.`;
     return (
-      <Modal show={ this.props.show }>
+      <Modal show={this.props.show}>
         <Modal.Header>
-          <Modal.Title>Authentication Required</Modal.Title>
+          <Modal.Title>{'Authentication Required'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <p>
             { message }
           </p>
-          <Form horizontal onSubmit={ this.handleSubmit }>
+          <Form
+            horizontal
+            onSubmit={this.handleSubmit}
+          >
             <FormGroup>
-              <Col componentClass={ ControlLabel } sm={ 2 }>User Name</Col>
-              <Col sm={ 10 }>
-              <FormControl type="text" placeholder="User Name" ref="username" />
+              <Col
+                componentClass={ControlLabel}
+                sm={2}
+              >{'User Name'}</Col>
+              <Col sm={10}>
+                <FormControl
+                  type='text'
+                  placeholder='User Name'
+                  ref='username'
+                />
               </Col>
             </FormGroup>
             <FormGroup>
-              <Col componentClass={ ControlLabel } sm={ 2 }>Password</Col>
-              <Col sm={ 10 }>
-              <FormControl type="password" placeholder="Password" ref="password" />
+              <Col
+                componentClass={ControlLabel}
+                sm={2}
+              >{'Password'}</Col>
+              <Col sm={10}>
+                <FormControl
+                  type='password'
+                  placeholder='Password'
+                  ref='password'
+                />
               </Col>
             </FormGroup>
             <FormGroup>
-              <Col sm={ 12 }>
-              <div className="pull-right">
-                <Button type="submit" bsStyle="primary">Login</Button>
-                { ' ' }
-                <Button onClick={ this.props.onCancel }>Cancel</Button>
-              </div>
+              <Col sm={12}>
+                <div className='pull-right'>
+                  <Button
+                    type='submit'
+                    bsStyle='primary'
+                  >{'Login'}</Button>
+                  { ' ' }
+                  <Button onClick={this.props.onCancel}>{'Cancel'}</Button>
+                </div>
               </Col>
             </FormGroup>
           </Form>

@@ -1,18 +1,18 @@
 'use strict';
 
 const OriginalNotification = Notification;
+const {remote} = require('electron');
 
-const appIconURL = `file:///${require('electron').remote.app.getAppPath()}/resources/appicon.png`;
+const appIconURL = `file:///${remote.app.getAppPath()}/resources/appicon.png`;
 
 function override(eventHandlers) {
-  Notification = function(title, options) {
+  Notification = function constructor(title, options) {
     if (process.platform === 'win32') {
       // Replace with application icon.
       options.icon = appIconURL;
-    }
-    else if (process.platform === 'darwin') {
+    } else if (process.platform === 'darwin') {
       // Notification Center shows app's icon, so there were two icons on the notification.
-      delete options.icon;
+      Reflect.deleteProperty(options, 'icon');
     }
     this.notification = new OriginalNotification(title, options);
     if (eventHandlers.notification) {
@@ -21,16 +21,16 @@ function override(eventHandlers) {
   };
 
   // static properties
-  Notification.__defineGetter__('permission', function() {
+  Notification.__defineGetter__('permission', () => {
     return OriginalNotification.permission;
   });
 
   // instance properties
-  var defineReadProperty = function(property) {
-    Notification.prototype.__defineGetter__(property, function() {
+  function defineReadProperty(property) {
+    Notification.prototype.__defineGetter__(property, function getter() {
       return this.notification[property];
     });
-  };
+  }
   defineReadProperty('title');
   defineReadProperty('dir');
   defineReadProperty('lang');
@@ -48,12 +48,12 @@ function override(eventHandlers) {
   defineReadProperty('vibrate');
 
   // event handlers
-  var defineEventHandler = function(event, callback) {
+  function defineEventHandler(event, callback) {
     defineReadProperty(event);
-    Notification.prototype.__defineSetter__(event, function(originalCallback) {
-      this.notification[event] = function() {
+    Notification.prototype.__defineSetter__(event, function setter(originalCallback) {
+      this.notification[event] = () => {
         const callbackevent = {
-          preventDefault: function() {
+          preventDefault() {
             this.isPrevented = true;
           }
         };
@@ -62,13 +62,12 @@ function override(eventHandlers) {
           if (!callbackevent.isPrevented) {
             originalCallback();
           }
-        }
-        else {
+        } else {
           originalCallback();
         }
       };
     });
-  };
+  }
   defineEventHandler('onclick', eventHandlers.onclick);
   defineEventHandler('onerror', eventHandlers.onerror);
 
@@ -77,16 +76,16 @@ function override(eventHandlers) {
   defineEventHandler('onshow', eventHandlers.onshow);
 
   // static methods
-  Notification.requestPermission = function(callback) {
+  Notification.requestPermission = (callback) => {
     OriginalNotification.requestPermission(callback);
   };
 
   // instance methods
-  Notification.prototype.close = function() {
+  Notification.prototype.close = function close() {
     this.notification.close();
   };
 }
 
 module.exports = {
-  override: override
+  override
 };

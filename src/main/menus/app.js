@@ -3,28 +3,28 @@
 const electron = require('electron');
 const Menu = electron.Menu;
 
-var createTemplate = function(mainWindow, config) {
+function createTemplate(mainWindow, config) {
   const separatorItem = {
     type: 'separator'
   };
 
-  var app_name = electron.app.getName();
-  var first_menu_name = (process.platform === 'darwin') ? app_name : 'File';
+  var appName = electron.app.getName();
+  var firstMenuName = (process.platform === 'darwin') ? appName : 'File';
   var template = [];
 
   const platformAppMenu = process.platform === 'darwin' ? [{
-    label: 'About ' + app_name,
+    label: 'About ' + appName,
     role: 'about',
-    click: function(item, focusedWindow) {
+    click() {
       electron.dialog.showMessageBox(mainWindow, {
-        buttons: ["OK"],
-        message: `${app_name} Desktop ${electron.app.getVersion()}`
+        buttons: ['OK'],
+        message: `${appName} Desktop ${electron.app.getVersion()}`
       });
     }
   }, separatorItem, {
     label: 'Preferences...',
     accelerator: 'CmdOrCtrl+,',
-    click: function(item, focusedWindow) {
+    click() {
       mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
     }
   }, separatorItem, {
@@ -38,19 +38,19 @@ var createTemplate = function(mainWindow, config) {
   }] : [{
     label: 'Settings...',
     accelerator: 'CmdOrCtrl+,',
-    click: function(item, focusedWindow) {
+    click() {
       mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
     }
   }, separatorItem, {
     role: 'quit',
     accelerator: 'CmdOrCtrl+Q',
-    click: function(item, focusedWindow) {
+    click() {
       electron.app.quit();
     }
   }];
 
   template.push({
-    label: '&' + first_menu_name,
+    label: '&' + firstMenuName,
     submenu: [
       ...platformAppMenu
     ]
@@ -84,12 +84,11 @@ var createTemplate = function(mainWindow, config) {
     submenu: [{
       label: 'Reload',
       accelerator: 'CmdOrCtrl+R',
-      click: function(item, focusedWindow) {
+      click(item, focusedWindow) {
         if (focusedWindow) {
           if (focusedWindow === mainWindow) {
             mainWindow.webContents.send('reload-tab');
-          }
-          else {
+          } else {
             focusedWindow.reload();
           }
         }
@@ -97,13 +96,12 @@ var createTemplate = function(mainWindow, config) {
     }, {
       label: 'Clear Cache and Reload',
       accelerator: 'Shift+CmdOrCtrl+R',
-      click: function(item, focusedWindow) {
+      click(item, focusedWindow) {
         if (focusedWindow) {
           if (focusedWindow === mainWindow) {
             mainWindow.webContents.send('clear-cache-and-reload-tab');
-          }
-          else {
-            focusedWindow.webContents.session.clearCache(function() {
+          } else {
+            focusedWindow.webContents.session.clearCache(() => {
               focusedWindow.reload();
             });
           }
@@ -124,15 +122,13 @@ var createTemplate = function(mainWindow, config) {
       role: 'zoomout'
     }, separatorItem, {
       label: 'Toggle Developer Tools',
-      accelerator: (function() {
+      accelerator: (() => {
         if (process.platform === 'darwin') {
           return 'Alt+Command+I';
         }
-        else {
-          return 'Ctrl+Shift+I';
-        }
+        return 'Ctrl+Shift+I';
       })(),
-      click: function(item, focusedWindow) {
+      click(item, focusedWindow) {
         if (focusedWindow) {
           focusedWindow.toggleDevTools();
         }
@@ -147,11 +143,8 @@ var createTemplate = function(mainWindow, config) {
       click: (item, focusedWindow) => {
         if (focusedWindow === mainWindow) {
           mainWindow.webContents.send('go-back');
-        }
-        else {
-          if (focusedWindow.webContents.canGoBack()) {
-            focusedWindow.goBack();
-          }
+        } else if (focusedWindow.webContents.canGoBack()) {
+          focusedWindow.goBack();
         }
       }
     }, {
@@ -160,18 +153,14 @@ var createTemplate = function(mainWindow, config) {
       click: (item, focusedWindow) => {
         if (focusedWindow === mainWindow) {
           mainWindow.webContents.send('go-forward');
-        }
-        else {
-          if (focusedWindow.webContents.canGoForward()) {
-            focusedWindow.goForward();
-          }
+        } else if (focusedWindow.webContents.canGoForward()) {
+          focusedWindow.goForward();
         }
       }
     }]
   });
 
-
-  const window_menu = {
+  const windowMenu = {
     label: '&Window',
     submenu: [{
       role: 'minimize'
@@ -181,7 +170,7 @@ var createTemplate = function(mainWindow, config) {
       return {
         label: team.name,
         accelerator: `CmdOrCtrl+${i + 1}`,
-        click: (item, focusedWindow) => {
+        click() {
           mainWindow.show(); // for OS X
           mainWindow.webContents.send('switch-tab', i);
         }
@@ -189,26 +178,26 @@ var createTemplate = function(mainWindow, config) {
     }), separatorItem, {
       label: 'Select Next Team',
       accelerator: (process.platform === 'darwin') ? 'Alt+Cmd+Right' : 'CmdOrCtrl+Tab',
-      click: () => {
+      click() {
         mainWindow.webContents.send('select-next-tab');
       },
       enabled: (config.teams.length > 1)
     }, {
       label: 'Select Previous Team',
       accelerator: (process.platform === 'darwin') ? 'Alt+Cmd+Left' : 'CmdOrCtrl+Shift+Tab',
-      click: () => {
+      click() {
         mainWindow.webContents.send('select-previous-tab');
       },
       enabled: (config.teams.length > 1)
     }]
   };
-  template.push(window_menu);
+  template.push(windowMenu);
 
   template.push({
     label: '&Help',
     submenu: [{
-      label: `Learn More...`,
-      click: function() {
+      label: 'Learn More...',
+      click() {
         electron.shell.openExternal('https://docs.mattermost.com/help/apps/desktop-guide.html');
       }
     }, {
@@ -216,15 +205,15 @@ var createTemplate = function(mainWindow, config) {
     }, {
       label: `Version ${electron.app.getVersion()}`,
       enabled: false
-    }, ]
+    }]
   });
   return template;
-};
+}
 
-var createMenu = function(mainWindow, config) {
+function createMenu(mainWindow, config) {
   return Menu.buildFromTemplate(createTemplate(mainWindow, config));
-};
+}
 
 module.exports = {
-  createMenu: createMenu
+  createMenu
 };
