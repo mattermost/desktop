@@ -31,11 +31,12 @@
     "package:mac": "build --mac --x64 --ia32",
     "package:linux": "build --linux --x64 --ia32 --em.name=mattermost-desktop",
     "manipulate-windows-zip": "node scripts/manipulate_windows_zip.js",
-    "prettify": "gulp prettify"
+    "lint:js": "eslint ."
   },
   "devDependencies": {
     "7zip-bin": "^2.0.1",
     "babel-core": "^6.7.5",
+    "babel-eslint": "^6.1.2",
     "babel-loader": "^6.2.4",
     "babel-preset-react": "^6.5.0",
     "chai": "^3.5.0",

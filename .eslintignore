@@ -1,2 +1,4 @@
-node_modules/*
-src/node_modules/*
+dist/
+node_modules/
+release/
+src/node_modules/
