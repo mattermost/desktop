@@ -104,7 +104,7 @@ describe('browser/index.html', function() {
       }]
     }));
     return this.app.restart().then(() => {
-        return this.app.client.waitUntilWindowLoaded().pause(500);
+        return this.app.client.waitUntilWindowLoaded().pause(1000);
       })
       .then(() => {
         return this.app.browserWindow.getTitle().should.eventually.equal('Mattermost Desktop testing html');

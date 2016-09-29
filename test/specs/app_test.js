@@ -62,7 +62,7 @@ describe('application', function() {
     });
   });
 
-  it('should be stopped when the app instance already exists', function(done) {
+  it.skip('should be stopped when the app instance already exists', function(done) {
     this.app.start().then(() => {
       const secondApp = env.getSpectronApp();
       secondApp.start().then(() => {
