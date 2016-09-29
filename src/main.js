@@ -407,7 +407,7 @@ app.on('ready', function() {
     if (shouldShowTrayIcon()) {
       const tray_menu = require('./main/menus/tray').createMenu(mainWindow, config);
       trayIcon.setContextMenu(tray_menu);
-      if (process.platform === 'darwin') {
+      if (process.platform === 'darwin' || process.platform === 'linux') {
         // store the information, if the tray was initialized, for checking in the settings, if the application
         // was restarted after setting "Show icon on menu bar"
         if (trayIcon)
