@@ -113,8 +113,10 @@ var MainPage = React.createClass({
       }
     });
   },
-  componentDidUpdate: function() {
-    this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+  componentDidUpdate: function(prevProps, prevState) {
+    if (prevState.key !== this.state.key) { // i.e. When tab has been changed
+      this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+    }
   },
   handleSelect: function(key) {
     const newKey = (this.props.teams.length + key) % this.props.teams.length;
