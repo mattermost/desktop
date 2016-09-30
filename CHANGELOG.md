@@ -6,7 +6,7 @@ Release date: TBD
 
 ### Bug Fixes
 
-#### macOS
+#### OS X
  - Fixed an issue where the app window pops up second to foreground when a new message is received
 
 ----
