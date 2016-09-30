@@ -2,7 +2,7 @@
 
 ## Release v3.4.1
 
-Release date: TBD
+Release date: September 30, 2016
 
 ### Bug Fixes
 
