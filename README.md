@@ -1,4 +1,4 @@
-# Mattermost Desktop (beta)
+# <a href="http://www.mattermost.org/" target="_blank"><img width="50" src="https://raw.githubusercontent.com/mattermost/desktop/master/resources/icon.png"></a>Mattermost Desktop (beta)
 
 Native desktop application for [Mattermost](http://www.mattermost.org/) running on Windows, Mac and Linux.
 
