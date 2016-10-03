@@ -1,11 +1,10 @@
-# Mattermost Desktop (beta)
+# Mattermost Desktop
 
 Native desktop application for [Mattermost](http://www.mattermost.org/) running on Windows, Mac and Linux.
 
 Originally created as "electron-mattermost" by Yuya Ochiai. Developed using [Electron](http://electron.atom.io/).
 
-![Mattermost Desktop Screenshot](docs/20160309_mattermost-desktop.gif)
-
+![20160922_mattermost_desktop](https://cloud.githubusercontent.com/assets/177788/18802327/f1b8d56a-819c-11e6-9b4b-e87b094b7929.png) 
 
 [![Circle CI](https://circleci.com/gh/mattermost/desktop.svg?style=svg)](https://circleci.com/gh/mattermost/desktop)
 
@@ -28,9 +27,9 @@ Packages are available on the [releases page](http://github.com/mattermost/deskt
 ## Usage
 
 ### Installation
-Detailed guides are available at [docs/setup.md](docs/setup.md).
+Detailed guides are available at [docs.mattermost.com](https://docs.mattermost.com/help/apps/desktop-guide.html).
 
-1. Download and unarchive a file from [release page](http://github.com/mattermost/desktop/releases).
+1. Download a file from the [downloads page](https://about.mattermost.com/downloads).
 2. Launch `Mattermost` in the unarchived folder.
 3. After first launching, please input name and URL for your Mattermost team. For example, `myteam : https://mattermost.example.com/team`.
 
