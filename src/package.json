@@ -16,7 +16,7 @@
   "dependencies": {
     "auto-launch": "^4.0.1",
     "bootstrap": "^3.3.7",
-    "electron-context-menu": "^0.5.0",
+    "electron-context-menu": "^0.6.0",
     "electron-squirrel-startup": "^1.0.0",
     "os-locale": "^1.4.0",
     "react": "^15.3.0",

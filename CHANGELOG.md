@@ -11,6 +11,7 @@ Release date: TBD
 ### Improvements
 
 #### Windows
+ - Copying a links address and pasting it inside the app now works
 
 #### macOS
 
