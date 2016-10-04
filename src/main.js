@@ -8,7 +8,8 @@ const {
   ipcMain,
   nativeImage,
   dialog,
-  systemPreferences
+  systemPreferences,
+  session
 } = require('electron');
 
 process.on('uncaughtException', (error) => {
@@ -374,6 +375,22 @@ app.on('ready', function() {
   }
   window_options.title = app.getName();
   mainWindow = new BrowserWindow(window_options);
+
+  if (process.platform === 'darwin') {
+    session.defaultSession.on('will-download', (event, item, webContents) => {
+      var filename = item.getFilename();
+      var savePath = dialog.showSaveDialog({
+        title: filename,
+        defaultPath: require('os').homedir() + '/Downloads/' + filename
+      });
+
+      if (savePath) {
+        item.setSavePath(savePath);
+      } else {
+        item.cancel();
+      }
+    });
+  }
 
   mainWindow.webContents.on('crashed', () => {
     console.log('The application has crashed.');
