@@ -386,7 +386,8 @@ app.on('ready', function() {
 
       if (savePath) {
         item.setSavePath(savePath);
-      } else {
+      }
+      else {
         item.cancel();
       }
     });
