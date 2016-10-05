@@ -26,7 +26,7 @@
     "test": "gulp build && mocha --reporter mocha-circleci-reporter --recursive test/specs && gulp prettify:verify",
     "package:all": "build -wml --x64 --ia32",
     "package:windows": "build --win --x64 --ia32",
-    "package:osx": "build --mac --x64 --ia32",
+    "package:mac": "build --mac --x64 --ia32",
     "package:linux": "build --linux --x64 --ia32",
     "prettify": "gulp prettify"
   },
