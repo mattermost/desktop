@@ -388,9 +388,9 @@ var TeamListItem = React.createClass({
           </p>
         </div>
         <div className="pull-right">
-          <a hre="#" onClick={ this.handleTeamEditing }>Edit</a>
+          <a href="#" onClick={ this.handleTeamEditing }>Edit</a>
           { ' - ' }
-          <a hre="#" onClick={ this.handleTeamRemove }>Remove</a>
+          <a href="#" onClick={ this.handleTeamRemove }>Remove</a>
         </div>
       </div>
       );
