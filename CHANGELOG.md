@@ -26,6 +26,16 @@ Release date: TBD
 
 #### Linux (Beta)
 
+### New Known Issues
+This part should be merged with "Known Issues" when releasing new version.
+
+#### Windows
+ - The vertical position of mouse cursor is randomly incorrect when using DPI of 150%
+
+#### OS X
+
+#### Linux
+
 ----
 
 ## Release v3.4.1
