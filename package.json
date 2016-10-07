@@ -24,13 +24,15 @@
     "watch": "gulp watch",
     "serve": "gulp watch",
     "test": "gulp build && mocha --reporter mocha-circleci-reporter --recursive test/specs && gulp prettify:verify",
-    "package:all": "build -wml --x64 --ia32",
-    "package:windows": "build --win --x64 --ia32",
+    "package:all": "build -wml --x64 --ia32 && npm run manipulate-windows-zip",
+    "package:windows": "build --win --x64 --ia32 && npm run manipulate-windows-zip",
     "package:mac": "build --mac --x64 --ia32",
     "package:linux": "build --linux --x64 --ia32",
+    "manipulate-windows-zip": "node scripts/manipulate_windows_zip.js",
     "prettify": "gulp prettify"
   },
   "devDependencies": {
+    "7zip-bin": "^2.0.1",
     "babel-core": "^6.7.5",
     "babel-loader": "^6.2.4",
     "babel-preset-react": "^6.5.0",
@@ -61,7 +63,10 @@
     "appId": "com.mattermost.desktop",
     "linux": {
       "category": "InstantMessaging",
-      "target": ["deb", "tar.gz"],
+      "target": [
+        "deb",
+        "tar.gz"
+      ],
       "synopsis": "Mattermost",
       "extraFiles": [{
         "from": "resources",
@@ -73,11 +78,16 @@
     },
     "mac": {
       "category": "public.app-category.productivity",
-      "target": ["tar.gz"]
+      "target": [
+        "tar.gz"
+      ]
     },
     "win": {
       "description": "Mattermost",
-      "target": ["squirrel", "zip"],
+      "target": [
+        "squirrel",
+        "zip"
+      ],
       "iconUrl": "https://raw.githubusercontent.com/mattermost/desktop/master/resources/icon.ico"
     }
   },
