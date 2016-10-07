@@ -147,7 +147,7 @@ Below lists menu options (shortcut keys are listed in brackets, `Ctrl` becomes `
   - **Quit** (Ctrl+Q) - Exits the application
 - **Edit**
   - **Undo** (Ctrl+Z) - Reverses previous action
-  - **Redo** (Ctrl+Shift+Z) - Replays most recent action
+  - **Redo** (Ctrl+Shift+Z, Ctrl+Y on Windows) - Replays most recent action
   - **Cut** (Ctrl+X) - Cuts selected text
   - **Copy** (Ctrl+C) - Copies selected text
   - **Paste** (Ctrl+V) - Pastes text from clipboard

@@ -20,6 +20,7 @@ Release date: TBD
 ### Bug Fixes
 
 #### Windows
+ - The accelerator of "Redo" is now shown as `Ctrl+Y`
 
 #### macOS
  - Fixed an issue where the default download folder was `Macintosh HD`
