@@ -22,6 +22,7 @@ Release date: TBD
 #### Windows
 
 #### macOS
+ - Fixed an issue where the default download folder was `Macintosh HD`
 
 #### Linux (Beta)
 
