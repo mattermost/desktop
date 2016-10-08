@@ -18,6 +18,7 @@ Release date: TBD
 #### Linux (Beta)
 
 ### Bug Fixes
+ - Fixed wrong cursor for "Edit" and "Remove" in Setting page
 
 #### Windows
  - The accelerator of "Redo" is now shown as `Ctrl+Y`
