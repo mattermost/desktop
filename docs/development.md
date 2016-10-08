@@ -24,6 +24,26 @@ $ npm run build
 
 After building is done, you can execute the application with `npm start`.
 
+### Packaging
+Package `dist/` directory as distributable formats with [`electron-builder`](https://github.com/electron-userland/electron-builder).
+Packages will be generated into `release/` directory.
+
+```
+$ npm run package:<all | windows | mac | linux>
+```
+
+#### Code signing
+Set environment variables to build trusted packages.
+Please see [electron-builder wiki](https://github.com/electron-userland/electron-builder/wiki/Code-Signing) for detailed description.
+
+**Quoted from the wiki:**
+
+| Env name | Description |
+|---|---|
+| `CSC_LINK` | The HTTPS link (or base64-encoded data, or `file://` link) to certificate (`*.p12` or `*.pfx` file). |
+| `CSC_KEY_PASSWORD` | The password to decrypt the certificate given in `CSC_LINK`. |
+| `CSC_NAME` | *macOS-only* Name of certificate (to retrieve from login.keychain). Useful on a development machine (not on CI) if you have several identities (otherwise don't specify it). |
+
 ### Tests
 Execute automated tests.
 
@@ -52,23 +72,6 @@ Reload the application automatically when you have saved source codes.
 
 #### `mpm run prettify`
 Format the source codes to pass `npm test`.
-
-#### `npm run package`
-You can package this application with following commands. Packages will be created in `release/` directory.
-
-```
-$ npm run package (for your platform)
-$ npm run package:windows (Requires Windows or Wine)
-$ npm run package:osx (Requires macOS or Linux)
-$ npm run package:linux
-$ npm run package:all (Packages for all platform)
-```
-
-Create a windows installer with the following command. It will appear in the `release\windows-installer` directory.
-
-```
-$ npm run installer
-```
 
 ## Directory Structure
 
