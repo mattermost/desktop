@@ -51,7 +51,6 @@
     "json-loader": "^0.5.4",
     "mocha": "^3.0.2",
     "mocha-circleci-reporter": "0.0.2",
-    "rimraf": "^2.5.4",
     "spectron": "~3.4.0",
     "style-loader": "^0.13.1",
     "through2": "^2.0.1",
