@@ -25,6 +25,7 @@ Release date: TBD
 
 #### macOS
  - Fixed an issue where the default download folder was `Macintosh HD`
+ - Removed the unexpected "Show Tab Bar" menu item on macOS 10.12
 
 #### Linux (Beta)
 
