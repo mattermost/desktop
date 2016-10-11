@@ -531,7 +531,8 @@ const errorPage = {
 
   cellStyle: {
     display: 'table-cell',
-    verticalAlign: 'middle'
+    verticalAlign: 'top',
+    paddingTop: '2em'
   },
 
   bullets: {
