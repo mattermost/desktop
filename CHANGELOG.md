@@ -9,6 +9,7 @@ When a stable release is pushed, "UNDER DEVELOPMENT" heading is removed from the
 Release date: TBD
 
 ### Improvements
+ - "Cannot connect to Mattermost" is now on top of the page
 
 #### Windows
  - Copying a links address and pasting it inside the app now works
