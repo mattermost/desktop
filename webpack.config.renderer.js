@@ -1,4 +1,9 @@
-module.exports = {
+'use strict';
+
+const merge = require('webpack-merge');
+const base = require('./webpack.config.base');
+
+module.exports = merge(base, {
   entry: {
     index: './src/browser/index.jsx',
     settings: './src/browser/settings.jsx',
@@ -25,4 +30,4 @@ module.exports = {
     __dirname: false
   },
   target: 'electron-renderer'
-};
+});

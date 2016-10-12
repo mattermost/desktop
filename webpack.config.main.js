@@ -1,4 +1,9 @@
-module.exports = {
+'use strict';
+
+const merge = require('webpack-merge');
+const base = require('./webpack.config.base');
+
+module.exports = merge(base, {
   entry: './src/main.js',
   output: {
     filename: './dist/main.js'
@@ -17,4 +22,4 @@ module.exports = {
   externals: {
     remote: true // for electron-connect
   }
-};
+});
