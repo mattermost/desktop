@@ -10,6 +10,7 @@ Release date: TBD
 
 ### Improvements
  - "Cannot connect to Mattermost" is now on top of the page
+ - Clear cache on desktop app update: The application cache will be purged whenever the desktop app version changes
 
 #### Windows
  - Copying a links address and pasting it inside the app now works
