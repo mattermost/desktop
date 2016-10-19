@@ -112,30 +112,16 @@ var createTemplate = function(mainWindow, config) {
     }, {
       role: 'togglefullscreen'
     }, separatorItem, {
-      label: 'Actual Size',
-      accelerator: 'CmdOrCtrl+0',
-      click: () => {
-        mainWindow.webContents.send('zoom-reset');
-      }
+      role: 'resetzoom'
     }, {
-      label: 'Zoom In',
-      accelerator: 'CmdOrCtrl+Plus',
-      click: () => {
-        mainWindow.webContents.send('zoom-in', 1);
-      }
+      role: 'zoomin'
     }, {
       label: 'Zoom In (hidden)',
       accelerator: 'CmdOrCtrl+=',
       visible: false,
-      click: () => {
-        mainWindow.webContents.send('zoom-in', 1);
-      }
+      role: 'zoomin'
     }, {
-      label: 'Zoom Out',
-      accelerator: 'CmdOrCtrl+-',
-      click: () => {
-        mainWindow.webContents.send('zoom-in', -1);
-      }
+      role: 'zoomout'
     }, separatorItem, {
       label: 'Toggle Developer Tools',
       accelerator: (function() {
