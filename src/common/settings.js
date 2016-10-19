@@ -45,8 +45,10 @@ var upgradeV0toV1 = function(config_v0) {
   return config;
 };
 
-var upgrade = function(config) {
+var upgrade = function(config, newAppVersion) {
   var config_version = config.version ? config.version : 0;
+  if (newAppVersion)
+    config.lastMattermostVersion = newAppVersion;
   switch (config_version) {
     case 0:
       return upgrade(upgradeV0toV1(config));

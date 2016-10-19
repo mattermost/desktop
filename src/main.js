@@ -82,14 +82,15 @@ var config = {};
 try {
   var configFile = global['config-file'];
   config = settings.readFileSync(configFile);
-  if (config.version != settings.version) {
-    config = settings.upgrade(config);
+  if (config.version != settings.version || wasUpdated()) {
+    clearAppCache();
+    config = settings.upgrade(config, app.getVersion());
     settings.writeFileSync(configFile, config);
   }
 }
 catch (e) {
   config = settings.loadDefault();
-  console.log('Failed to read or upgrade config.json');
+  console.log('Failed to read or upgrade config.json', e);
 }
 ipcMain.on('update-config', () => {
   config = settings.readFileSync(configFile);
@@ -168,6 +169,24 @@ function shouldShowTrayIcon() {
     return true;
   }
   return false;
+}
+
+function wasUpdated() {
+  return config.lastMattermostVersion != app.getVersion();
+}
+
+function clearAppCache() {
+  //Wait for mainWindow
+  if (!mainWindow) {
+    setTimeout(clearAppCache, 100);
+  }
+  else {
+    console.log('Clear cache after update');
+    mainWindow.webContents.session.clearCache(function() {
+      //Restart after cache clear
+      mainWindow.reload();
+    });
+  }
 }
 
 // Quit when all windows are closed.
