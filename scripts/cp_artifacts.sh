@@ -12,7 +12,7 @@ cp "${SRC}/win-ia32/Mattermost Setup ${VERSION}-ia32.exe" "${DEST}/mattermost-se
 
 cp "${SRC}/mac/Mattermost-${VERSION}-mac.tar.gz" "${DEST}/mattermost-desktop-${VERSION}-mac.tar.gz"
 
-cp "${SRC}/mattermost-${VERSION}.tar.gz" "${DEST}/mattermost-desktop-${VERSION}-linux-x64.tar.gz"
-cp "${SRC}/mattermost-${VERSION}-ia32.tar.gz" "${DEST}/mattermost-desktop-${VERSION}-linux-ia32.tar.gz"
-cp "${SRC}/mattermost-${VERSION}-amd64.deb" "${DEST}/mattermost-desktop-${VERSION}-linux-x64.deb"
-cp "${SRC}/mattermost-${VERSION}-ia32.deb" "${DEST}/mattermost-desktop-${VERSION}-linux-ia32.deb"
+cp "${SRC}/mattermost-desktop-${VERSION}.tar.gz" "${DEST}/mattermost-desktop-${VERSION}-linux-x64.tar.gz"
+cp "${SRC}/mattermost-desktop-${VERSION}-ia32.tar.gz" "${DEST}/mattermost-desktop-${VERSION}-linux-ia32.tar.gz"
+cp "${SRC}/mattermost-desktop-${VERSION}-amd64.deb" "${DEST}/mattermost-desktop-${VERSION}-linux-x64.deb"
+cp "${SRC}/mattermost-desktop-${VERSION}-ia32.deb" "${DEST}/mattermost-desktop-${VERSION}-linux-ia32.deb"
