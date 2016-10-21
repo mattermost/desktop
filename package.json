@@ -24,10 +24,10 @@
     "watch": "gulp watch",
     "serve": "gulp watch",
     "test": "gulp build && mocha --reporter mocha-circleci-reporter --recursive test/specs && gulp prettify:verify",
-    "package:all": "build -wml --x64 --ia32 && npm run manipulate-windows-zip",
-    "package:windows": "build --win --x64 --ia32 && npm run manipulate-windows-zip",
+    "package:all": "npm run package:windows && npm run package:mac && npm run package:linux",
+    "package:windows": "build --win --x64 --ia32 --em.name=mattermost && npm run manipulate-windows-zip",
     "package:mac": "build --mac --x64 --ia32",
-    "package:linux": "build --linux --x64 --ia32",
+    "package:linux": "build --linux --x64 --ia32 --em.name=mattermost-desktop",
     "manipulate-windows-zip": "node scripts/manipulate_windows_zip.js",
     "prettify": "gulp prettify"
   },
