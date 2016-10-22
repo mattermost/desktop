@@ -20,6 +20,7 @@ Release date: TBD
 
 ### Bug Fixes
  - Fixed wrong cursor for "Edit" and "Remove" in Setting page
+ - Fixed an issue where "Zoom in/out" does not properly work
 
 #### Windows
  - The accelerator of "Redo" is now shown as `Ctrl+Y`
@@ -32,6 +33,8 @@ Release date: TBD
 
 ### New Known Issues
 This part should be merged with "Known Issues" when releasing new version.
+
+ - "Zoom in/out" does not properly work when the tab bar has focus
 
 #### Windows
  - The vertical position of mouse cursor is randomly incorrect when using DPI of 150%
