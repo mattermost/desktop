@@ -10,6 +10,7 @@ Release date: TBD
 
 ### Improvements
  - "Cannot connect to Mattermost" is now on top of the page
+ - Suppressed verbose error which is related to certificates
 
 #### Windows
  - Copying a links address and pasting it inside the app now works

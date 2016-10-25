@@ -26,11 +26,18 @@ function getHost(targetURL) {
 
 var CertificateStore = function(storeFile) {
   this.storeFile = storeFile;
+  let storeStr;
   try {
-    this.data = JSON.parse(fs.readFileSync(storeFile, 'utf-8'));
+    storeStr = fs.readFileSync(storeFile, 'utf-8')
   }
   catch (e) {
-    console.log(e);
+    storeStr = '{}';
+  }
+  try {
+    this.data = JSON.parse(storeStr);
+  }
+  catch (e) {
+    console.log('Error when parsing', storeFile, ':', e);
     this.data = {};
   }
 };
