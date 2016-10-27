@@ -11,7 +11,7 @@ var through = require('through2');
 var electron = require('electron-connect').server.create({
   path: './dist'
 });
-var packager = require('electron-packager');
+
 const fs = require('fs');
 
 const distPackageAuthor = 'Mattermost, Inc.';
@@ -193,78 +193,6 @@ gulp.task('watch', ['build'], function() {
     electron.restart(options);
   });
   gulp.watch(['dist/browser/*.js'], electron.reload);
-});
-
-function makePackage(platform, arch, callback) {
-  var packageJson = require('./src/package.json');
-  packager({
-    dir: './dist',
-    platform: platform,
-    arch: arch,
-    version: require('./package.json').devDependencies['electron-prebuilt'],
-    out: './release',
-    prune: true,
-    overwrite: true,
-    "app-version": packageJson.version,
-    icon: 'resources/icon',
-    "version-string": {
-      CompanyName: distPackageAuthor,
-      LegalCopyright: `Copyright (c) 2015 - ${new Date().getFullYear()} ${packageJson.author.name}`,
-      FileDescription: packageJson.productName,
-      OriginalFilename: packageJson.productName + '.exe',
-      ProductVersion: packageJson.version,
-      ProductName: packageJson.productName,
-      InternalName: packageJson.name
-    }
-  }, function(err, appPath) {
-    if (err) {
-      callback(err);
-    }
-    else {
-      if (platform === 'linux' || platform === 'all') {
-        const dest_32 = 'release/Mattermost-linux-ia32';
-        const dest_64 = 'release/Mattermost-linux-x64';
-        fs.createReadStream('resources/icon.png').pipe(fs.createWriteStream(`${dest_32}/icon.png`));
-        fs.createReadStream('resources/icon.png').pipe(fs.createWriteStream(`${dest_64}/icon.png`));
-        fs.createReadStream('resources/linux/create_desktop_file.sh')
-          .pipe(fs.createWriteStream(`${dest_32}/create_desktop_file.sh`))
-          .on('finish', () => {
-            fs.chmodSync(`${dest_32}/create_desktop_file.sh`, '755');
-          });
-        fs.createReadStream('resources/linux/create_desktop_file.sh')
-          .pipe(fs.createWriteStream(`${dest_64}/create_desktop_file.sh`))
-          .on('finish', () => {
-            fs.chmodSync(`${dest_64}/create_desktop_file.sh`, '755');
-          });
-        setTimeout(() => {
-          callback();
-        }, 1000); // should wait all pipes
-      }
-      else {
-        callback();
-      }
-    }
-  });
-}
-
-gulp.task('package', ['build'], function(cb) {
-  makePackage(process.platform, 'all', cb);
-});
-
-gulp.task('package:all', ['build'], function(cb) {
-  makePackage('all', 'all', cb);
-});
-
-gulp.task('package:windows', ['build'], function(cb) {
-  makePackage('win32', 'all', cb);
-});
-
-gulp.task('package:osx', ['build'], function(cb) {
-  makePackage('darwin', 'all', cb);
-});
-
-gulp.task('package:linux', ['build'], function(cb) {
-  makePackage('linux', 'all', cb);
 });
 
 gulp.task('sync-meta', function() {

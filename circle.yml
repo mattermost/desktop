@@ -14,29 +14,14 @@ dependencies:
     - echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
 
     - sudo apt-get update
-    - sudo apt-get install --no-install-recommends -y icnsutils graphicsmagick xz-utils
+    - sudo apt-get install --no-install-recommends -y icnsutils graphicsmagick xz-utils jq
     - sudo apt-get install --no-install-recommends -y wine1.8 mono-devel ca-certificates-mono
     - sudo apt-get install --no-install-recommends -y gcc-multilib g++-multilib
     - unset DISPLAY && wineboot --init
 
     - npm run package:all
-    - npm run package:linux
-    - npm run installer
 
-    - mv release/Mattermost-win32-ia32 release/mattermost-desktop-win32
-    - mv release/Mattermost-win32-x64  release/mattermost-desktop-win64
-    - mv release/Mattermost-darwin-x64 release/mattermost-desktop-osx
-    - mv release/Mattermost-linux-ia32 release/mattermost-desktop-linux-ia32
-    - mv release/Mattermost-linux-x64  release/mattermost-desktop-linux-x64
-
-    - cd release && zip -9 -r $CIRCLE_ARTIFACTS/mattermost-desktop-win32.zip mattermost-desktop-win32
-    - cd release && zip -9 -r $CIRCLE_ARTIFACTS/mattermost-desktop-win64.zip mattermost-desktop-win64
-    - tar zcvf $CIRCLE_ARTIFACTS/mattermost-desktop-osx.tar.gz -C release mattermost-desktop-osx
-    - tar zcvf $CIRCLE_ARTIFACTS/mattermost-desktop-linux-ia32.tar.gz -C release mattermost-desktop-linux-ia32
-    - tar zcvf $CIRCLE_ARTIFACTS/mattermost-desktop-linux-x64.tar.gz -C release mattermost-desktop-linux-x64
-    - cp release/*.deb $CIRCLE_ARTIFACTS/
-    - cp release/windows-installer-ia32/mattermost-setup-ia32.exe $CIRCLE_ARTIFACTS/
-    - cp release/windows-installer-x64/mattermost-setup-x64.exe $CIRCLE_ARTIFACTS/
+    - sh -x ./scripts/cp_artifacts.sh release $CIRCLE_ARTIFACTS
 
 test:
   post:
