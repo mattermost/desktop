@@ -32,6 +32,7 @@ Release date: TBD
  - Removed the unexpected "Show Tab Bar" menu item on macOS 10.12
 
 #### Linux (Beta)
+ - Fixed an issue where the option "Leave app running in notification area when the window is closed" was never enabled.
 
 ### New Known Issues
 This part should be merged with "Known Issues" when releasing new version.
