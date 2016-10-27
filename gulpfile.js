@@ -3,8 +3,6 @@
 var gulp = require('gulp');
 var prettify = require('gulp-jsbeautifier');
 var diff = require('gulp-diff');
-var webpack = require('webpack-stream');
-var named = require('vinyl-named');
 var esformatter = require('gulp-esformatter');
 var esformatter_origin = require('esformatter');
 var through = require('through2');
@@ -13,6 +11,8 @@ var electron = require('electron-connect').server.create({
 });
 
 const fs = require('fs');
+const path = require('path');
+const spawn = require('child_process').spawn;
 
 const distPackageAuthor = 'Mattermost, Inc.';
 
@@ -87,7 +87,7 @@ gulp.task('prettify:jsx:verify', function() {
 });
 
 
-gulp.task('build', ['sync-meta', 'webpack', 'copy'], function(cb) {
+gulp.task('build', ['sync-meta', 'copy'], function(cb) {
   const appPackageJson = require('./src/package.json');
   const distPackageJson = Object.assign({}, appPackageJson, {
     author: {
@@ -96,72 +96,6 @@ gulp.task('build', ['sync-meta', 'webpack', 'copy'], function(cb) {
     }
   });
   fs.writeFile('./dist/package.json', JSON.stringify(distPackageJson, null, '  '), cb);
-});
-
-gulp.task('webpack', ['webpack:main', 'webpack:browser', 'webpack:webview']);
-
-gulp.task('webpack:browser', function() {
-  return gulp.src('src/browser/*.jsx')
-    .pipe(named())
-    .pipe(webpack({
-      module: {
-        loaders: [{
-          test: /\.json$/,
-          loader: 'json'
-        }, {
-          test: /\.jsx$/,
-          loader: 'babel',
-          query: {
-            presets: ['react']
-          }
-        }]
-      },
-      output: {
-        filename: '[name].js'
-      },
-      node: {
-        __filename: false,
-        __dirname: false
-      },
-      target: 'electron-renderer'
-    }))
-    .pipe(gulp.dest('dist/browser/'));
-});
-
-gulp.task('webpack:main', function() {
-  return gulp.src('src/main.js')
-    .pipe(webpack({
-      module: {
-        loaders: [{
-          test: /\.json$/,
-          loader: 'json'
-        }]
-      },
-      output: {
-        filename: '[name].js'
-      },
-      node: {
-        __filename: false,
-        __dirname: false
-      },
-      target: 'electron-main',
-      externals: {
-        remote: true // for electron-connect
-      }
-    }))
-    .pipe(gulp.dest('dist/'));
-});
-
-gulp.task('webpack:webview', function() {
-  return gulp.src('src/browser/webview/mattermost.js')
-    .pipe(named())
-    .pipe(webpack({
-      output: {
-        filename: '[name].js'
-      },
-      target: 'electron'
-    }))
-    .pipe(gulp.dest('dist/browser/webview'));
 });
 
 gulp.task('copy', ['copy:resources', 'copy:html/css', 'copy:modules']);
@@ -181,12 +115,29 @@ gulp.task('copy:modules', function() {
     .pipe(gulp.dest('dist/browser/modules/bootstrap'));
 });
 
-gulp.task('watch', ['build'], function() {
+function spawnWebpack(config, cb) {
+  const ext = process.platform === 'win32' ? '.cmd' : ''
+  spawn(path.resolve(`./node_modules/.bin/webpack${ext}`), ['--config', config], {
+    stdio: 'inherit'
+  }).on('exit', (code) => {
+    cb(code);
+  });
+}
+
+gulp.task('webpack:main', (cb) => {
+  spawnWebpack('webpack.config.main.js', cb);
+});
+
+gulp.task('webpack:renderer', (cb) => {
+  spawnWebpack('webpack.config.renderer.js', cb);
+});
+
+gulp.task('watch', ['build', 'webpack:main', 'webpack:renderer'], function() {
   var options = ['--livereload'];
   electron.start(options);
 
   gulp.watch(['src/main.js', 'src/main/**/*.js', 'src/common/**/*.js'], ['webpack:main']);
-  gulp.watch(['src/browser/**/*.js', 'src/browser/**/*.jsx'], ['webpack:browser', 'webpack:webview']);
+  gulp.watch(['src/browser/**/*.js', 'src/browser/**/*.jsx'], ['webpack:renderer']);
   gulp.watch(['src/browser/**/*.css', 'src/browser/**/*.html', 'src/resources/**/*.png'], ['copy']);
 
   gulp.watch(['dist/main.js', 'dist/resources/**'], function() {
