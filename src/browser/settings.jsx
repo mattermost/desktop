@@ -168,7 +168,7 @@ var SettingsPage = React.createClass({
                      onChange={ this.handleChangeHideMenuBar } />);
     }
     if (process.platform === 'darwin' || process.platform === 'linux') {
-      options.push(<Input key="inputShowTrayIcon" id="inputShowTrayIcon" ref="showTrayIcon" type="checkbox" label="Show icon on menu bar (Need to restart the application)" checked={ this.state.showTrayIcon }
+      options.push(<Input key="inputShowTrayIcon" id="inputShowTrayIcon" ref="showTrayIcon" type="checkbox" label={ process.platform === 'darwin' ? "Show icon on menu bar (need to restart the application)" : "Show icon in notification area (need to restart the application)" } checked={ this.state.showTrayIcon }
                      onChange={ this.handleChangeShowTrayIcon } />);
     }
     if (process.platform === 'linux') {
