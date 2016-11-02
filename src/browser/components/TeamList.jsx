@@ -96,7 +96,7 @@ const TeamList = React.createClass({
     }
 
     return (
-      <ListGroup class='teamList'>
+      <ListGroup className='teamList'>
         { teamNodes }
         { addTeamForm }
       </ListGroup>

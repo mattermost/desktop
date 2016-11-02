@@ -65,9 +65,9 @@ describe('browser/settings.html', function desc() {
           return this.app.client.
             loadSettingsPage().
             scroll('#inputHideMenuBar').
-            isSelected('#inputHideMenuBar input').then((isSelected) => {
+            isSelected('#inputHideMenuBar').then((isSelected) => {
               if (isSelected !== v) {
-                return this.app.client.click('#inputHideMenuBar input');
+                return this.app.client.click('#inputHideMenuBar');
               }
               return true;
             }).
@@ -83,7 +83,7 @@ describe('browser/settings.html', function desc() {
               return this.app.client. // confirm actual behavior
                 browserWindow.isMenuBarAutoHide().should.eventually.equal(v).
                 loadSettingsPage().
-                isSelected('#inputHideMenuBar input').should.eventually.equal(v);
+                isSelected('#inputHideMenuBar').should.eventually.equal(v);
             });
         });
       });
@@ -98,9 +98,9 @@ describe('browser/settings.html', function desc() {
           return this.app.client.
             loadSettingsPage().
             scroll('#inputDisableWebSecurity').
-            isSelected('#inputDisableWebSecurity input').then((isSelected) => {
+            isSelected('#inputDisableWebSecurity').then((isSelected) => {
               if (isSelected !== v) {
-                return this.app.client.click('#inputDisableWebSecurity input');
+                return this.app.client.click('#inputDisableWebSecurity');
               }
               return true;
             }).
@@ -125,7 +125,7 @@ describe('browser/settings.html', function desc() {
                   });
                 }).
                 loadSettingsPage().
-                isSelected('#inputDisableWebSecurity input').should.eventually.equal(v);
+                isSelected('#inputDisableWebSecurity').should.eventually.equal(v);
             });
         });
       });

@@ -1,5 +1,5 @@
 const React = require('react');
-const {Col, Grid, Navbar, Input, Row} = require('react-bootstrap');
+const {Button, Checkbox, Col, FormGroup, Grid, Navbar, Row} = require('react-bootstrap');
 
 const {ipcRenderer, remote} = require('electron');
 const AutoLaunch = require('auto-launch');
@@ -92,16 +92,16 @@ const SettingsPage = React.createClass({
   },
   handleChangeDisableWebSecurity() {
     this.setState({
-      disablewebsecurity: this.refs.disablewebsecurity.getChecked()
+      disablewebsecurity: !this.refs.disablewebsecurity.props.checked
     });
   },
   handleChangeHideMenuBar() {
     this.setState({
-      hideMenuBar: this.refs.hideMenuBar.getChecked()
+      hideMenuBar: !this.refs.hideMenuBar.props.checked
     });
   },
   handleChangeShowTrayIcon() {
-    var shouldShowTrayIcon = this.refs.showTrayIcon.getChecked();
+    var shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
     this.setState({
       showTrayIcon: shouldShowTrayIcon
     });
@@ -114,18 +114,18 @@ const SettingsPage = React.createClass({
   },
   handleChangeTrayIconTheme() {
     this.setState({
-      trayIconTheme: this.refs.trayIconTheme.getValue()
+      trayIconTheme: !this.refs.trayIconTheme.props.checked
     });
   },
   handleChangeAutoStart() {
     this.setState({
-      autostart: this.refs.autostart.getChecked()
+      autostart: !this.refs.autostart.props.checked
     });
   },
   handleChangeMinimizeToTray() {
     var shouldMinimizeToTray =
-      (process.platform !== 'darwin' || this.refs.showTrayIcon.getChecked()) &&
-      this.refs.minimizeToTray.getChecked();
+      (process.platform !== 'darwin' || !this.refs.showTrayIcon.props.checked) &&
+      !this.refs.minimizeToTray.props.checked;
 
     this.setState({
       minimizeToTray: shouldMinimizeToTray
@@ -133,7 +133,7 @@ const SettingsPage = React.createClass({
   },
   handleChangeToggleWindowOnTrayIconClick() {
     this.setState({
-      toggleWindowOnTrayIconClick: this.refs.toggleWindowOnTrayIconClick.getChecked()
+      toggleWindowOnTrayIconClick: !this.refs.toggleWindowOnTrayIconClick.props.checked
     });
   },
   toggleShowTeamForm() {
@@ -144,13 +144,13 @@ const SettingsPage = React.createClass({
   handleFlashWindow() {
     this.setState({
       notifications: {
-        flashWindow: this.refs.flashWindow.getChecked() ? 2 : 0
+        flashWindow: this.refs.flashWindow.props.checked ? 0 : 2
       }
     });
   },
   handleShowUnreadBadge() {
     this.setState({
-      showUnreadBadge: this.refs.showUnreadBadge.getChecked()
+      showUnreadBadge: !this.refs.showUnreadBadge.props.checked
     });
   },
   render() {
@@ -169,120 +169,103 @@ const SettingsPage = React.createClass({
     var options = [];
     if (process.platform === 'win32' || process.platform === 'linux') {
       options.push(
-        <Input
+        <Checkbox
           key='inputHideMenuBar'
           id='inputHideMenuBar'
           ref='hideMenuBar'
-          type='checkbox'
-          label='Hide menu bar (Press Alt to show menu bar)'
           checked={this.state.hideMenuBar}
           onChange={this.handleChangeHideMenuBar}
-        />);
+        >{'Hide menu bar (Press Alt to show menu bar)'}</Checkbox>);
     }
     if (process.platform === 'darwin' || process.platform === 'linux') {
       options.push(
-        <Input
+        <Checkbox
           key='inputShowTrayIcon'
           id='inputShowTrayIcon'
           ref='showTrayIcon'
-          type='checkbox'
-          label={process.platform === 'darwin' ?
-            'Show icon on menu bar (need to restart the application)' :
-            'Show icon in notification area (need to restart the application)'}
           checked={this.state.showTrayIcon}
           onChange={this.handleChangeShowTrayIcon}
-        />);
+        >{process.platform === 'darwin' ?
+          'Show icon on menu bar (need to restart the application)' :
+          'Show icon in notification area (need to restart the application)'}</Checkbox>);
     }
     if (process.platform === 'linux') {
       options.push(
-        <Input
+        <Checkbox
           key='inputTrayIconTheme'
           ref='trayIconTheme'
           type='select'
-          label='Icon theme (Need to restart the application)'
           value={this.state.trayIconTheme}
           onChange={this.handleChangeTrayIconTheme}
-        >
+        >{'Icon theme (Need to restart the application)'}
           <option value='light'>{'Light'}</option>
           <option value='dark'>{'Dark'}</option>
-        </Input>);
+        </Checkbox>);
     }
     options.push(
-      <Input
+      <Checkbox
         key='inputDisableWebSecurity'
         id='inputDisableWebSecurity'
         ref='disablewebsecurity'
-        type='checkbox'
-        label='Allow mixed content (Enabling allows both secure and insecure content, images and scripts to render and execute. Disabling allows only secure content.)'
         checked={this.state.disablewebsecurity}
         onChange={this.handleChangeDisableWebSecurity}
-      />);
+      >{'Allow mixed content (Enabling allows both secure and insecure content, images and scripts to render and execute. Disabling allows only secure content.)'}</Checkbox>);
 
     //OSX has an option in the Dock, to set the app to autostart, so we choose to not support this option for OSX
     if (process.platform === 'win32' || process.platform === 'linux') {
       options.push(
-        <Input
+        <Checkbox
           key='inputAutoStart'
           id='inputAutoStart'
           ref='autostart'
-          type='checkbox'
-          label='Start app on login.'
           checked={this.state.autostart}
           onChange={this.handleChangeAutoStart}
-        />);
+        >{'Start app on login.'}</Checkbox>);
     }
 
     if (process.platform === 'darwin' || process.platform === 'linux') {
       options.push(
-        <Input
+        <Checkbox
           key='inputMinimizeToTray'
           id='inputMinimizeToTray'
           ref='minimizeToTray'
-          type='checkbox'
-          label={this.state.trayWasVisible || !this.state.showTrayIcon ? 'Leave app running in notification area when the window is closed' : 'Leave app running in notification area when the window is closed (available on next restart)'}
           disabled={!this.state.showTrayIcon || !this.state.trayWasVisible}
           checked={this.state.minimizeToTray}
           onChange={this.handleChangeMinimizeToTray}
-        />);
+        >{this.state.trayWasVisible || !this.state.showTrayIcon ? 'Leave app running in notification area when the window is closed' : 'Leave app running in notification area when the window is closed (available on next restart)'}</Checkbox>);
     }
 
     if (process.platform === 'win32') {
       options.push(
-        <Input
+        <Checkbox
           key='inputToggleWindowOnTrayIconClick'
           id='inputToggleWindowOnTrayIconClick'
           ref='toggleWindowOnTrayIconClick'
-          type='checkbox'
-          label='Toggle window visibility when clicking on the tray icon.'
           checked={this.state.toggleWindowOnTrayIconClick}
           onChange={this.handleChangeToggleWindowOnTrayIconClick}
-        />);
+        >{'Toggle window visibility when clicking on the tray icon.'}</Checkbox>);
     }
 
     if (process.platform === 'darwin' || process.platform === 'win32') {
       options.push(
-        <Input
+        <Checkbox
           key='inputShowUnreadBadge'
           id='inputShowUnreadBadge'
           ref='showUnreadBadge'
-          type='checkbox'
-          label='Show red badge on taskbar icon to indicate unread messages. Regardless of this setting, mentions are always indicated with a red badge and item count on the taskbar icon.'
           checked={this.state.showUnreadBadge}
           onChange={this.handleShowUnreadBadge}
-        />);
+        >{'Show red badge on taskbar icon to indicate unread messages. Regardless of this setting, mentions are always indicated with a red badge and item count on the taskbar icon.'}</Checkbox>);
     }
 
     if (process.platform === 'win32' || process.platform === 'linux') {
       options.push(
-        <Input
+        <Checkbox
           key='flashWindow'
           id='inputflashWindow'
           ref='flashWindow'
-          type='checkbox'
-          label='Flash the taskbar icon when a new message is received.'
           checked={this.state.notifications.flashWindow === 2}
           onChange={this.handleFlashWindow}
-        />);
+        >{'Flash the taskbar icon when a new message is received.'}</Checkbox>);
     }
 
     const settingsPage = {
@@ -323,7 +306,11 @@ const SettingsPage = React.createClass({
       <Row>
         <Col md={12}>
           <h2 style={settingsPage.sectionHeading}>{'App options'}</h2>
-          { options }
+          { options.map((opt, i) => (
+            <FormGroup key={`fromGroup${i}`}>
+              {opt}
+            </FormGroup>
+          )) }
         </Col>
       </Row>
       ) : null;
@@ -377,19 +364,19 @@ const SettingsPage = React.createClass({
             className='text-right'
             style={settingsPage.footer}
           >
-            <button
+            <Button
               id='btnCancel'
-              className='btn btn-link'
+              className='btn-link'
               onClick={this.handleCancel}
-            >{'Cancel'}</button>
+            >{'Cancel'}</Button>
             { ' ' }
-            <button
+            <Button
               id='btnSave'
-              className='btn btn-primary navbar-btn'
+              className='navbar-btn'
               bsStyle='primary'
               onClick={this.handleSave}
               disabled={this.state.teams.length === 0}
-            >{'Save'}</button>
+            >{'Save'}</Button>
           </div>
         </Navbar>
       </div>
