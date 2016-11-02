@@ -1,7 +1,7 @@
 node_modules/
 dist/
 release/
-npm-debug.log
+npm-debug.log*
 
 test-results.xml
 test_config.json
