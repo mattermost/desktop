@@ -81,13 +81,13 @@ Mattermost Desktop
 ├── resources/ - Resources which are used outside of the application codes.
 ├── scripts/ - Helper scripts.
 ├── src/ - Application source code.
-│   ├── browser/ - Implemtation of Electron's renderer process.
+│   ├── browser/ - Implementation of Electron's renderer process.
 │   │   ├── components/ - React.js components.
 │   │   ├── css/ - Stylesheets.
 │   │   ├── js/ - Helper JavaScript modules.
 │   │   └── webview/ - Injection code for Electron's <webview> tag.
 │   ├── common/ - Common JavaScript modules for both Electron's processes.
-│   ├── main/ - Implemtation of Electron's main process.
+│   ├── main/ - Implementation of Electron's main process.
 │   │   └── menus/ - Application menu.
 │   └── resources/ - Resources which are loaded from the application codes.
 └── test/ - Automated tests.
