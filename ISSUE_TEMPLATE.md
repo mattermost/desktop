@@ -1,6 +1,7 @@
 I confirm (by marking "x" in the [ ] below): 
 
-- [ ] This is not a troubleshooting question. Troubleshooting questions go here: http://www.mattermost.org/troubleshoot/
+- [ ] This is not a troubleshooting question. [Troubleshooting questions go here: http://www.mattermost.org/troubleshoot/](http://www.mattermost.org/troubleshoot/).
+- [ ] This doesn't reproduce on web browsers (such as in Chrome). If it does, [issue reports go to the Mattermost Server repository](https://github.com/mattermost/platform/issues).
 - [ ] I have read [contributing guidelines](https://github.com/mattermost/desktop/blob/master/CONTRIBUTING.md). 
 
 ---
