@@ -24,6 +24,7 @@ Release date: TBD
 ### Bug Fixes
  - Fixed wrong cursor for "Edit" and "Remove" in Setting page
  - Fixed an issue where "Zoom in/out" does not properly work
+ - YouTube preview works, even if mixed content is allowed
 
 #### Windows
  - The accelerator of "Redo" is now shown as `Ctrl+Y`
