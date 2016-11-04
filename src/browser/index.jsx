@@ -392,10 +392,10 @@ var MattermostView = React.createClass({
     var self = this;
     var webview = ReactDOM.findDOMNode(this.refs.webview);
 
-    // This option disables the same-origin policy and allows js/css/plugins not only content like images.
+    // This option allows insecure content, when set to true it is possible to
+    // load content via HTTP while the mattermost server serves HTTPS
     if (config.disablewebsecurity === true) {
-      // webview.setAttribute('disablewebsecurity', false) disables websecurity. (electron's bug?)
-      webview.setAttribute('disablewebsecurity', true);
+      webview.setAttribute('webpreferences', 'allowDisplayingInsecureContent');
     }
 
     webview.addEventListener('did-fail-load', (e) => {
