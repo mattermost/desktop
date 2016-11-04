@@ -1,5 +1,3 @@
-Thank you for planning to submit a pull request and contributing to the Mattermost Desktop application!
-
 Before submitting, please confirm you've 
  - [ ] read and understood our [Contributing Guidelines](https://github.com/mattermost/desktop/blob/master/CONTRIBUTING.md)
  - [ ] completed [Mattermost Contributor Agreement](http://www.mattermost.org/mattermost-contributor-agreement/)
