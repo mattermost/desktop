@@ -6,7 +6,7 @@ const {remote} = require('electron');
 const appIconURL = `file:///${remote.app.getAppPath()}/resources/appicon.png`;
 
 function override(eventHandlers) {
-  Notification = function constructor(title, options) {
+  Notification = function constructor(title, options) { // eslint-disable-line no-global-assign, no-native-reassign
     if (process.platform === 'win32') {
       // Replace with application icon.
       options.icon = appIconURL;
