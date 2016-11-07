@@ -386,8 +386,8 @@ app.on('ready', function() {
     window_options = JSON.parse(fs.readFileSync(bounds_info_path, 'utf-8'));
   }
   catch (e) {
-    // follow Electron's defaults
-    window_options = {};
+    // follow Electron's defaults, except for window dimensions
+    window_options = {width: 1100, height: 800};
   }
   if (process.platform === 'linux') {
     window_options.icon = path.resolve(__dirname, 'resources/appicon.png');
