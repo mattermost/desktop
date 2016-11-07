@@ -12,10 +12,10 @@ const Application = require('spectron').Application;
 const sourceRootDir = path.join(__dirname, '../..');
 const electronBinaryPath = (() => {
   if (process.platform === 'darwin') {
-    return path.join(sourceRootDir, 'node_modules/electron-prebuilt/dist/Electron.app/Contents/MacOS/Electron');
+    return path.join(sourceRootDir, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron');
   }
   const exeExtension = (process.platform === 'win32') ? '.exe' : '';
-  return path.join(sourceRootDir, 'node_modules/electron-prebuilt/dist/electron' + exeExtension);
+  return path.join(sourceRootDir, 'node_modules/electron/dist/electron' + exeExtension);
 })();
 const configFilePath = path.join(sourceRootDir, 'test/test_config.json');
 const mattermostURL = 'http://example.com/team';
