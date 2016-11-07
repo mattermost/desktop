@@ -1,15 +1,16 @@
 'use strict';
 
 var os = require('os');
-var release_split = os.release().split('.');
+var releaseSplit = os.release().split('.');
 
 module.exports = {
-  major: parseInt(release_split[0]),
-  minor: parseInt(release_split[1]),
-  isLowerThanOrEqualWindows8_1: function() {
-    if (process.platform != 'win32') {
+  major: parseInt(releaseSplit[0], 10),
+  minor: parseInt(releaseSplit[1], 10),
+  isLowerThanOrEqualWindows8_1() {
+    if (process.platform !== 'win32') {
       return false;
     }
+
     // consider Windows 7 and later.
     return (this.major <= 6 && this.minor <= 3);
   }

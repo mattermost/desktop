@@ -6,61 +6,58 @@ const chaiAsPromised = require('chai-as-promised');
 chai.should();
 chai.use(chaiAsPromised);
 
-
 const path = require('path');
 const Application = require('spectron').Application;
 
-const source_root_dir = path.join(__dirname, '../..');
-const electron_binary_path = (function() {
+const sourceRootDir = path.join(__dirname, '../..');
+const electronBinaryPath = (() => {
   if (process.platform === 'darwin') {
-    return path.join(source_root_dir, 'node_modules/electron-prebuilt/dist/Electron.app/Contents/MacOS/Electron');
+    return path.join(sourceRootDir, 'node_modules/electron-prebuilt/dist/Electron.app/Contents/MacOS/Electron');
   }
-  else {
-    const exe_extension = (process.platform === 'win32') ? '.exe' : '';
-    return path.join(source_root_dir, 'node_modules/electron-prebuilt/dist/electron' + exe_extension);
-  }
+  const exeExtension = (process.platform === 'win32') ? '.exe' : '';
+  return path.join(sourceRootDir, 'node_modules/electron-prebuilt/dist/electron' + exeExtension);
 })();
-const config_file_path = path.join(source_root_dir, 'test/test_config.json');
-const mattermost_url = 'http://example.com/team';
+const configFilePath = path.join(sourceRootDir, 'test/test_config.json');
+const mattermostURL = 'http://example.com/team';
 
 module.exports = {
-  sourceRootDir: source_root_dir,
-  configFilePath: config_file_path,
-  mattermostURL: mattermost_url,
-  getSpectronApp: function() {
+  sourceRootDir,
+  configFilePath,
+  mattermostURL,
+  getSpectronApp() {
     const app = new Application({
-      path: electron_binary_path,
-      args: [`${path.join(source_root_dir, 'dist')}`, '--config-file=' + config_file_path]
+      path: electronBinaryPath,
+      args: [`${path.join(sourceRootDir, 'dist')}`, '--config-file=' + configFilePath]
     });
-    chaiAsPromised.transferPromiseness = app.transferPromiseness
+    chaiAsPromised.transferPromiseness = app.transferPromiseness;
     return app;
   },
 
-  addClientCommands: function(client) {
+  addClientCommands(client) {
     client.addCommand('loadSettingsPage', function async() {
-      return this
-        .url('file://' + path.join(source_root_dir, 'dist/browser/settings.html'))
-        .waitUntilWindowLoaded();
+      return this.url('file://' + path.join(sourceRootDir, 'dist/browser/settings.html')).waitUntilWindowLoaded();
     });
     client.addCommand('isNodeEnabled', function async() {
-      return this.execute(function() {
+      return this.execute(() => {
         try {
-          return require('child_process') ? true : false;
-        }
-        catch (e) {
+          if (require('child_process')) {
+            return true;
+          }
+          return false;
+        } catch (e) {
           return false;
         }
-      }).then((require_result) => {
-        return require_result.value;
+      }).then((requireResult) => {
+        return requireResult.value;
       });
     });
   },
 
   // execute the test only when `condition` is true
-  shouldTest: function(it, condition) {
+  shouldTest(it, condition) {
     return condition ? it : it.skip;
   },
   isOneOf(platforms) {
     return (platforms.indexOf(process.platform) !== -1);
   }
-}
+};

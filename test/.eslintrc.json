@@ -1,0 +1,14 @@
+{
+    "env": {
+        "mocha": true
+    },
+    "globals": {
+        "open_window": true
+    },
+    "rules": {
+        "global-require": 0,
+        "max-nested-callbacks": 0,
+        "no-eval": 0,
+        "no-magic-numbers": 0
+    }
+}

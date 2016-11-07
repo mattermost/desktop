@@ -30,7 +30,7 @@ Please see http://www.mattermost.org/feature-requests/ .
 ## Pull request
 Pull requests are welcome. Thank you for your great work!
 
-1. When you edit the code, please run `npm run prettify` to format your code before `git commit`.
+1. When you edit the code, please confirm `npm test` successfully finishes.
 2. Please update `CHANGELOG.md` and `docs/*.md` if it's necessary.
 3. In the description of your pull request, please include:
    * Operating System version on which you tested

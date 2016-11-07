@@ -1,0 +1,4 @@
+dist/
+node_modules/
+release/
+src/node_modules/

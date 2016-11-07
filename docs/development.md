@@ -62,7 +62,7 @@ $ npm run test:app
 Test coding style:
 
 ```
-$ npm run test:code
+$ npm run lint:js
 ```
 
 ### Helper commmands

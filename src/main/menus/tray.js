@@ -10,7 +10,7 @@ function createTemplate(mainWindow, config) {
     ...config.teams.slice(0, 9).map((team, i) => {
       return {
         label: team.name,
-        click: (item, focusedWindow) => {
+        click: () => {
           showOrRestore(mainWindow);
           mainWindow.webContents.send('switch-tab', i);
 
@@ -23,7 +23,7 @@ function createTemplate(mainWindow, config) {
     }), {
       type: 'separator'
     }, {
-      label: process.platform !== 'darwin' ? 'Settings' : 'Preferences...',
+      label: process.platform === 'darwin' ? 'Preferences...' : 'Settings',
       click: () => {
         mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
         showOrRestore(mainWindow);
@@ -42,14 +42,18 @@ function createTemplate(mainWindow, config) {
   return template;
 }
 
-var createMenu = function(mainWindow, config) {
+function createMenu(mainWindow, config) {
   return Menu.buildFromTemplate(createTemplate(mainWindow, config));
-};
+}
 
 function showOrRestore(window) {
-  window.isMinimized() ? window.restore() : window.show();
+  if (window.isMinimized()) {
+    window.restore();
+  } else {
+    window.show();
+  }
 }
 
 module.exports = {
-  createMenu: createMenu
+  createMenu
 };

@@ -24,37 +24,35 @@ function getHost(targetURL) {
   return url.parse(targetURL).host;
 }
 
-var CertificateStore = function(storeFile) {
+function CertificateStore(storeFile) {
   this.storeFile = storeFile;
   let storeStr;
   try {
-    storeStr = fs.readFileSync(storeFile, 'utf-8')
-  }
-  catch (e) {
+    storeStr = fs.readFileSync(storeFile, 'utf-8');
+  } catch (e) {
     storeStr = '{}';
   }
   try {
     this.data = JSON.parse(storeStr);
-  }
-  catch (e) {
+  } catch (e) {
     console.log('Error when parsing', storeFile, ':', e);
     this.data = {};
   }
-};
+}
 
-CertificateStore.prototype.save = function() {
+CertificateStore.prototype.save = function save() {
   fs.writeFileSync(this.storeFile, JSON.stringify(this.data, null, '  '));
 };
 
-CertificateStore.prototype.add = function(targetURL, certificate) {
+CertificateStore.prototype.add = function add(targetURL, certificate) {
   this.data[getHost(targetURL)] = comparableCertificate(certificate);
 };
 
-CertificateStore.prototype.isExisting = function(targetURL) {
+CertificateStore.prototype.isExisting = function isExisting(targetURL) {
   return this.data.hasOwnProperty(getHost(targetURL));
 };
 
-CertificateStore.prototype.isTrusted = function(targetURL, certificate) {
+CertificateStore.prototype.isTrusted = function isTrusted(targetURL, certificate) {
   var host = getHost(targetURL);
   if (!this.isExisting(targetURL)) {
     return false;
@@ -63,7 +61,7 @@ CertificateStore.prototype.isTrusted = function(targetURL, certificate) {
 };
 
 module.exports = {
-  load: function(storeFile) {
+  load(storeFile) {
     return new CertificateStore(storeFile);
   }
 };

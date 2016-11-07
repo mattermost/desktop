@@ -9,7 +9,7 @@ const {
 const path = require('path');
 const fs = require('fs');
 
-const allowedProtocolFile = path.resolve(app.getPath('userData'), 'allowedProtocols.json')
+const allowedProtocolFile = path.resolve(app.getPath('userData'), 'allowedProtocols.json');
 var allowedProtocols = [];
 
 function init(mainWindow) {
@@ -41,22 +41,27 @@ function initDialogEvent(mainWindow) {
       noLink: true
     }, (response) => {
       switch (response) {
-        case 1:
-          allowedProtocols.push(protocol);
-          fs.writeFile(allowedProtocolFile, JSON.stringify(allowedProtocols), (err) => {
-            if (err) console.error(err);
-          });
-          // fallthrough
-        case 0:
-          shell.openExternal(URL);
-          break;
-        default:
-          break;
+      case 1: {
+        allowedProtocols.push(protocol);
+        function handleError(err) {
+          if (err) {
+            console.error(err);
+          }
+        }
+        fs.writeFile(allowedProtocolFile, JSON.stringify(allowedProtocols), handleError);
+        shell.openExternal(URL);
+        break;
+      }
+      case 0:
+        shell.openExternal(URL);
+        break;
+      default:
+        break;
       }
     });
   });
 }
 
 module.exports = {
-  init: init
+  init
 };

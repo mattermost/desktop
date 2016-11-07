@@ -1,4 +1,4 @@
-Before submitting, please confirm you've 
+Before submitting, please confirm you've
  - [ ] read and understood our [Contributing Guidelines](https://github.com/mattermost/desktop/blob/master/CONTRIBUTING.md)
  - [ ] completed [Mattermost Contributor Agreement](http://www.mattermost.org/mattermost-contributor-agreement/)
  - [ ] executed `npm run prettify` for proper code formatting
