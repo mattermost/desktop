@@ -120,6 +120,11 @@ function createTemplate(mainWindow, config) {
       role: 'zoomin'
     }, {
       role: 'zoomout'
+    }, {
+      label: 'Zoom Out (hidden)',
+      accelerator: 'CmdOrCtrl+Shift+-',
+      visible: false,
+      role: 'zoomout'
     }, separatorItem, {
       label: 'Toggle Developer Tools',
       accelerator: (() => {
