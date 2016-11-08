@@ -293,7 +293,7 @@ var MainPage = React.createClass({
           { viewsRow }
         </Grid>
       </div>
-      );
+    );
   }
 });
 
@@ -372,7 +372,7 @@ var TabBar = React.createClass({
       >
         { tabs }
       </Nav>
-      );
+    );
   }
 });
 
@@ -664,7 +664,7 @@ var ErrorView = React.createClass({
           </div>
         </div>
       </Grid>
-      );
+    );
   }
 });
 

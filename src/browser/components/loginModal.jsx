@@ -83,7 +83,7 @@ const LoginModal = React.createClass({
           </Form>
         </Modal.Body>
       </Modal>
-      );
+    );
   }
 });
 

@@ -393,7 +393,7 @@ var SettingsPage = React.createClass({
           </div>
         </Navbar>
       </div>
-      );
+    );
   }
 });
 
@@ -466,7 +466,7 @@ var TeamList = React.createClass({
           onTeamRemove={handleTeamRemove}
           onTeamEditing={handleTeamEditing}
         />
-        );
+      );
     });
 
     var addTeamForm;
@@ -488,7 +488,7 @@ var TeamList = React.createClass({
         { teamNodes }
         { addTeamForm }
       </ListGroup>
-      );
+    );
   }
 });
 
@@ -525,7 +525,7 @@ var TeamListItem = React.createClass({
           >{'Remove'}</a>
         </div>
       </div>
-      );
+    );
   }
 });
 
@@ -661,7 +661,7 @@ var TeamListItemNew = React.createClass({
           return null;
         })() }
       </ListGroupItem>
-      );
+    );
   }
 });
 

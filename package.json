@@ -32,7 +32,7 @@
     "package:mac": "build --mac --x64 --ia32",
     "package:linux": "build --linux --x64 --ia32 --em.name=mattermost-desktop",
     "manipulate-windows-zip": "node scripts/manipulate_windows_zip.js",
-    "lint:js": "eslint ."
+    "lint:js": "eslint --ext .js --ext .jsx ."
   },
   "devDependencies": {
     "7zip-bin": "^2.0.1",
