@@ -68,11 +68,11 @@ gulp.task('build', ['sync-meta', 'copy'], (cb) => {
   fs.writeFile('./dist/package.json', JSON.stringify(distPackageJson, null, '  '), cb);
 });
 
-gulp.task('copy', ['copy:resources', 'copy:html/css', 'copy:modules']);
+gulp.task('copy', ['copy:assets', 'copy:html/css', 'copy:modules']);
 
-gulp.task('copy:resources', () => {
-  return gulp.src('src/resources/**').
-    pipe(gulp.dest('dist/resources'));
+gulp.task('copy:assets', () => {
+  return gulp.src('src/assets/**').
+    pipe(gulp.dest('dist/assets'));
 });
 
 gulp.task('copy:html/css', () => {
@@ -108,9 +108,9 @@ gulp.task('watch', ['build', 'webpack:main', 'webpack:renderer'], () => {
 
   gulp.watch(['src/main.js', 'src/main/**/*.js', 'src/common/**/*.js'], ['webpack:main']);
   gulp.watch(['src/browser/**/*.js', 'src/browser/**/*.jsx'], ['webpack:renderer']);
-  gulp.watch(['src/browser/**/*.css', 'src/browser/**/*.html', 'src/resources/**/*.png'], ['copy']);
+  gulp.watch(['src/browser/**/*.css', 'src/browser/**/*.html', 'src/assets/**/*.png'], ['copy']);
 
-  gulp.watch(['dist/main.js', 'dist/resources/**'], () => {
+  gulp.watch(['dist/main.js', 'dist/assets/**'], () => {
     electron.restart(options);
   });
   gulp.watch(['dist/browser/*.js'], electron.reload);

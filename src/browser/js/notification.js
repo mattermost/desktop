@@ -3,7 +3,7 @@
 const OriginalNotification = Notification;
 const {remote} = require('electron');
 
-const appIconURL = `file:///${remote.app.getAppPath()}/resources/appicon.png`;
+const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon.png`;
 
 function override(eventHandlers) {
   Notification = function constructor(title, options) { // eslint-disable-line no-global-assign, no-native-reassign

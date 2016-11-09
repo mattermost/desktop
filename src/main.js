@@ -58,6 +58,8 @@ const appMenu = require('./main/menus/app');
 const trayMenu = require('./main/menus/tray');
 const allowProtocolDialog = require('./main/allowProtocolDialog');
 
+const assetsDir = path.resolve(app.getAppPath(), 'assets');
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 var mainWindow = null;
@@ -122,34 +124,36 @@ const trayImages = (() => {
   switch (process.platform) {
   case 'win32':
     return {
-      normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/windows/tray.ico')),
-      unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/windows/tray_unread.ico')),
-      mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/windows/tray_mention.ico'))
+      normal: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray.ico')),
+      unread: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_unread.ico')),
+      mention: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_mention.ico'))
     };
   case 'darwin':
     {
       const icons = {
         light: {
-          normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIcon.png')),
-          unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconUnread.png')),
-          mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/MenuIconMention.png'))
+          normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIcon.png')),
+          unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconUnread.png')),
+          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconMention.png'))
         },
         clicked: {
-          normal: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/ClickedMenuIcon.png')),
-          unread: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/ClickedMenuIconUnread.png')),
-          mention: nativeImage.createFromPath(path.resolve(__dirname, 'resources/osx/ClickedMenuIconMention.png'))
+          normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIcon.png')),
+          unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconUnread.png')),
+          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconMention.png'))
         }
       };
       switchMenuIconImages(icons, systemPreferences.isDarkMode());
       return icons;
     }
   case 'linux':
-    var resourcesDir = 'resources/linux/' + (config.trayIconTheme || 'light') + '/';
-    return {
-      normal: nativeImage.createFromPath(path.resolve(__dirname, resourcesDir + 'MenuIconTemplate.png')),
-      unread: nativeImage.createFromPath(path.resolve(__dirname, resourcesDir + 'MenuIconUnreadTemplate.png')),
-      mention: nativeImage.createFromPath(path.resolve(__dirname, resourcesDir + 'MenuIconMentionTemplate.png'))
-    };
+    {
+      const theme = config.trayIconTheme || 'light';
+      return {
+        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconTemplate.png')),
+        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconUnreadTemplate.png')),
+        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconMentionTemplate.png'))
+      };
+    }
   default:
     return {};
   }
@@ -346,7 +350,7 @@ app.on('ready', () => {
         // In current version, use tray balloon for notification
         if (osVersion.isLowerThanOrEqualWindows8_1()) {
           trayIcon.displayBalloon({
-            icon: path.resolve(__dirname, 'resources/appicon.png'),
+            icon: path.resolve(assetsDir, 'appicon.png'),
             title: arg.title,
             content: arg.options.body
           });
@@ -394,7 +398,7 @@ app.on('ready', () => {
     windowOptions = {};
   }
   if (process.platform === 'linux') {
-    windowOptions.icon = path.resolve(__dirname, 'resources/appicon.png');
+    windowOptions.icon = path.resolve(assetsDir, 'appicon.png');
   }
   windowOptions.title = app.getName();
   mainWindow = new BrowserWindow(windowOptions);

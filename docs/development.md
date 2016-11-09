@@ -78,18 +78,18 @@ Format the source codes to pass `npm test`.
 ```
 Mattermost Desktop
 ├── docs/ - Documentations.
-├── resources/ - Resources which are used outside of the application codes.
+├── resources/ - Resources which are used outside of the application codes, and original images of assets.
 ├── scripts/ - Helper scripts.
 ├── src/ - Application source code.
+│   ├── assets/ - Assets which are loaded from the application codes.
 │   ├── browser/ - Implementation of Electron's renderer process.
 │   │   ├── components/ - React.js components.
 │   │   ├── css/ - Stylesheets.
 │   │   ├── js/ - Helper JavaScript modules.
 │   │   └── webview/ - Injection code for Electron's <webview> tag.
 │   ├── common/ - Common JavaScript modules for both Electron's processes.
-│   ├── main/ - Implementation of Electron's main process.
-│   │   └── menus/ - Application menu.
-│   └── resources/ - Resources which are loaded from the application codes.
+│   └── main/ - Implementation of Electron's main process.
+│       └── menus/ - Application menu.
 └── test/ - Automated tests.
     ├── modules/ - Scripts which are commonly used in tests.
     └── specs/ - Test scripts.
