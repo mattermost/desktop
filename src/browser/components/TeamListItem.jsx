@@ -1,6 +1,12 @@
 const React = require('react');
 
 class TeamListItem extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleTeamRemove = this.handleTeamRemove.bind(this);
+    this.handleTeamEditing = this.handleTeamEditing.bind(this);
+  }
+
   handleTeamRemove() {
     this.props.onTeamRemove();
   }

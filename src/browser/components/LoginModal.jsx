@@ -3,6 +3,11 @@ const ReactDOM = require('react-dom');
 const {Button, Col, ControlLabel, Form, FormGroup, FormControl, Modal} = require('react-bootstrap');
 
 class LoginModal extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
   handleSubmit(event) {
     event.preventDefault();
     const usernameNode = ReactDOM.findDOMNode(this.refs.username);
