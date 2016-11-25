@@ -7,6 +7,7 @@ const url = require('url');
 const LoginModal = require('./LoginModal.jsx');
 const MattermostView = require('./MattermostView.jsx');
 const TabBar = require('./TabBar.jsx');
+const HoveringURL = require('./HoveringURL.jsx');
 
 const MainPage = React.createClass({
   propTypes: {
@@ -22,7 +23,8 @@ const MainPage = React.createClass({
       mentionCounts: new Array(this.props.teams.length),
       unreadAtActive: new Array(this.props.teams.length),
       mentionAtActiveCounts: new Array(this.props.teams.length),
-      loginQueue: []
+      loginQueue: [],
+      targetURL: ''
     };
   },
   componentDidMount() {
@@ -196,6 +198,9 @@ const MainPage = React.createClass({
     loginQueue.shift();
     this.setState({loginQueue});
   },
+  handleTargetURLChange(targetURL) {
+    this.setState({targetURL});
+  },
   render() {
     var self = this;
 
@@ -234,6 +239,7 @@ const MainPage = React.createClass({
           src={team.url}
           name={team.name}
           disablewebsecurity={this.props.disablewebsecurity}
+          onTargetURLChange={self.handleTargetURLChange}
           onUnreadCountChange={handleUnreadCountChange}
           onNotificationClick={handleNotificationClick}
           ref={id}
@@ -268,6 +274,7 @@ const MainPage = React.createClass({
           { tabsRow }
           { viewsRow }
         </Grid>
+        <HoveringURL targetURL={this.state.targetURL}/>
       </div>
     );
   }
