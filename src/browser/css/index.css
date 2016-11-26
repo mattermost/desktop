@@ -1,0 +1,18 @@
+
+.hovering-enter {
+  opacity: 0.01;
+}
+
+.hovering-enter.hovering-enter-active {
+  opacity: 1;
+  transition: opacity 300ms ease-in-out;
+}
+
+.hovering-leave {
+  opacity: 1;
+}
+
+.hovering-leave.hovering-leave-active {
+  opacity: 0.01;
+  transition: opacity 500ms ease-in-out;
+}

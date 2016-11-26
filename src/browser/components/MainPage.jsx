@@ -1,4 +1,5 @@
 const React = require('react');
+const ReactCSSTransitionGroup = require('react-addons-css-transition-group');
 const {Grid, Row} = require('react-bootstrap');
 
 const {ipcRenderer, remote} = require('electron');
@@ -274,7 +275,18 @@ const MainPage = React.createClass({
           { tabsRow }
           { viewsRow }
         </Grid>
-        <HoveringURL targetURL={this.state.targetURL}/>
+        <ReactCSSTransitionGroup
+          transitionName='hovering'
+          transitionEnterTimeout={300}
+          transitionLeaveTimeout={500}
+        >
+          { (this.state.targetURL === '') ?
+            null :
+            <HoveringURL
+              key='hoveringURL'
+              targetURL={this.state.targetURL}
+            /> }
+        </ReactCSSTransitionGroup>
       </div>
     );
   }

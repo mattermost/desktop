@@ -21,6 +21,7 @@
     "electron-squirrel-startup": "^1.0.0",
     "os-locale": "^1.4.0",
     "react": "^15.3.0",
+    "react-addons-css-transition-group": "^15.3.0",
     "react-bootstrap": "~0.30.6",
     "react-dom": "^15.3.0",
     "yargs": "^3.32.0"
