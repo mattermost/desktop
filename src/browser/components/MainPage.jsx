@@ -200,7 +200,15 @@ const MainPage = React.createClass({
     this.setState({loginQueue});
   },
   handleTargetURLChange(targetURL) {
-    this.setState({targetURL});
+    clearTimeout(this.targetURLDisappearTimeout);
+    if (targetURL === '') {
+      // set delay to avoid momentary disappearance when hovering over multiple links
+      this.targetURLDisappearTimeout = setTimeout(() => {
+        this.setState({targetURL: ''});
+      }, 500);
+    } else {
+      this.setState({targetURL});
+    }
   },
   render() {
     var self = this;
