@@ -83,6 +83,11 @@ const MainPage = React.createClass({
       currentWindow.removeListener('focus', focusListener);
     });
 
+    // https://github.com/mattermost/desktop/pull/371#issuecomment-263072803
+    currentWindow.webContents.on('devtools-closed', () => {
+      focusListener();
+    });
+
     //goBack and goForward
     ipcRenderer.on('go-back', () => {
       const mattermost = self.refs[`mattermostView${self.state.key}`];
