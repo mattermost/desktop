@@ -13,6 +13,7 @@ Release date: TBD
  - Suppressed verbose error which is related to certificates
  - Clear cache on desktop app update: The application cache will be purged whenever the desktop app version changes
  - Added CTRL+SHIFT+MINUS as a shortcut for zooming out
+ - Show URL when the mouse cursor is hovering over links
 
 #### Windows
  - Copying a links address and pasting it inside the app now works
