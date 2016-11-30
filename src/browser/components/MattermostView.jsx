@@ -13,6 +13,7 @@ const MattermostView = React.createClass({
     disablewebsecurity: React.PropTypes.bool,
     name: React.PropTypes.string,
     id: React.PropTypes.string,
+    onTargetURLChange: React.PropTypes.func,
     onUnreadCountChange: React.PropTypes.func,
     src: React.PropTypes.string,
     style: React.PropTypes.object
@@ -106,6 +107,12 @@ const MattermostView = React.createClass({
       electronContextMenu({
         window: webview
       });
+    });
+
+    webview.addEventListener('update-target-url', (event) => {
+      if (self.props.onTargetURLChange) {
+        self.props.onTargetURLChange(event.url);
+      }
     });
 
     webview.addEventListener('ipc-message', (event) => {

@@ -1,4 +1,5 @@
 const React = require('react');
+const ReactCSSTransitionGroup = require('react-addons-css-transition-group');
 const {Grid, Row} = require('react-bootstrap');
 
 const {ipcRenderer, remote} = require('electron');
@@ -7,6 +8,29 @@ const url = require('url');
 const LoginModal = require('./LoginModal.jsx');
 const MattermostView = require('./MattermostView.jsx');
 const TabBar = require('./TabBar.jsx');
+const HoveringURL = require('./HoveringURL.jsx');
+
+// Todo: Need to consider better way to apply styles
+const styles = {
+  hoveringURL: {
+    color: 'gray',
+    backgroundColor: 'whitesmoke',
+    maxWidth: '95%',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    position: 'absolute',
+    bottom: 0,
+    paddingLeft: 4,
+    paddingRight: 16,
+    paddingTop: 2,
+    paddingBottom: 2,
+    borderTopRightRadius: 4,
+    borderTop: 'solid thin lightgray',
+    borderRight: 'solid thin lightgray',
+    pointerEvents: 'none'
+  }
+};
 
 const MainPage = React.createClass({
   propTypes: {
@@ -22,7 +46,8 @@ const MainPage = React.createClass({
       mentionCounts: new Array(this.props.teams.length),
       unreadAtActive: new Array(this.props.teams.length),
       mentionAtActiveCounts: new Array(this.props.teams.length),
-      loginQueue: []
+      loginQueue: [],
+      targetURL: ''
     };
   },
   componentDidMount() {
@@ -201,6 +226,17 @@ const MainPage = React.createClass({
     loginQueue.shift();
     this.setState({loginQueue});
   },
+  handleTargetURLChange(targetURL) {
+    clearTimeout(this.targetURLDisappearTimeout);
+    if (targetURL === '') {
+      // set delay to avoid momentary disappearance when hovering over multiple links
+      this.targetURLDisappearTimeout = setTimeout(() => {
+        this.setState({targetURL: ''});
+      }, 500);
+    } else {
+      this.setState({targetURL});
+    }
+  },
   render() {
     var self = this;
 
@@ -239,6 +275,7 @@ const MainPage = React.createClass({
           src={team.url}
           name={team.name}
           disablewebsecurity={this.props.disablewebsecurity}
+          onTargetURLChange={self.handleTargetURLChange}
           onUnreadCountChange={handleUnreadCountChange}
           onNotificationClick={handleNotificationClick}
           ref={id}
@@ -273,6 +310,19 @@ const MainPage = React.createClass({
           { tabsRow }
           { viewsRow }
         </Grid>
+        <ReactCSSTransitionGroup
+          transitionName='hovering'
+          transitionEnterTimeout={300}
+          transitionLeaveTimeout={500}
+        >
+          { (this.state.targetURL === '') ?
+            null :
+            <HoveringURL
+              key='hoveringURL'
+              style={styles.hoveringURL}
+              targetURL={this.state.targetURL}
+            /> }
+        </ReactCSSTransitionGroup>
       </div>
     );
   }
