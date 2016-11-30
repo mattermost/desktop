@@ -240,7 +240,7 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
   } else {
     var detail = `URL: ${url}\nError: ${error}`;
     if (certificateStore.isExisting(url)) {
-      detail = `Certificate is different from previous one.\n\n` + detail;
+      detail = 'Certificate is different from previous one.\n\n' + detail;
     }
 
     dialog.showMessageBox(mainWindow, {
