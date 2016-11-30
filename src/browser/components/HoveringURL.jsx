@@ -1,27 +1,9 @@
 const React = require('react');
 
-const style = {
-  color: 'gray',
-  backgroundColor: 'whitesmoke',
-  maxWidth: '95%',
-  whiteSpace: 'nowrap',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  position: 'absolute',
-  bottom: 0,
-  paddingLeft: 4,
-  paddingRight: 16,
-  paddingTop: 2,
-  paddingBottom: 2,
-  borderTopRightRadius: 4,
-  borderTop: 'solid thin lightgray',
-  borderRight: 'solid thin lightgray'
-};
-
 class HoveringURL extends React.Component {
   render() {
     return (
-      <div style={style}>
+      <div style={this.props.style}>
         {this.props.targetURL}
       </div>
     );
@@ -29,6 +11,7 @@ class HoveringURL extends React.Component {
 }
 
 HoveringURL.propTypes = {
+  style: React.PropTypes.object,
   targetURL: React.PropTypes.string
 };
 

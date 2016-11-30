@@ -10,6 +10,28 @@ const MattermostView = require('./MattermostView.jsx');
 const TabBar = require('./TabBar.jsx');
 const HoveringURL = require('./HoveringURL.jsx');
 
+// Todo: Need to consider better way to apply styles
+const styles = {
+  hoveringURL: {
+    color: 'gray',
+    backgroundColor: 'whitesmoke',
+    maxWidth: '95%',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    position: 'absolute',
+    bottom: 0,
+    paddingLeft: 4,
+    paddingRight: 16,
+    paddingTop: 2,
+    paddingBottom: 2,
+    borderTopRightRadius: 4,
+    borderTop: 'solid thin lightgray',
+    borderRight: 'solid thin lightgray',
+    pointerEvents: 'none'
+  }
+};
+
 const MainPage = React.createClass({
   propTypes: {
     disablewebsecurity: React.PropTypes.bool.isRequired,
@@ -292,6 +314,7 @@ const MainPage = React.createClass({
             null :
             <HoveringURL
               key='hoveringURL'
+              style={styles.hoveringURL}
               targetURL={this.state.targetURL}
             /> }
         </ReactCSSTransitionGroup>
