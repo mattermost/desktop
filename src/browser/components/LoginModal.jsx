@@ -1,16 +1,13 @@
 const React = require('react');
 const ReactDOM = require('react-dom');
-const ReactBootstrap = require('react-bootstrap');
-const Modal = ReactBootstrap.Modal;
-const Form = ReactBootstrap.Form;
-const FormGroup = ReactBootstrap.FormGroup;
-const FormControl = ReactBootstrap.FormControl;
-const ControlLabel = ReactBootstrap.ControlLabel;
-const Col = ReactBootstrap.Col;
+const {Button, Col, ControlLabel, Form, FormGroup, FormControl, Modal} = require('react-bootstrap');
 
-const Button = ReactBootstrap.Button;
+class LoginModal extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
 
-const LoginModal = React.createClass({
   handleSubmit(event) {
     event.preventDefault();
     const usernameNode = ReactDOM.findDOMNode(this.refs.username);
@@ -18,7 +15,8 @@ const LoginModal = React.createClass({
     this.props.onLogin(this.props.request, usernameNode.value, passwordNode.value);
     usernameNode.value = '';
     passwordNode.value = '';
-  },
+  }
+
   render() {
     var theServer = '';
     if (!this.props.show) {
@@ -39,7 +37,7 @@ const LoginModal = React.createClass({
             { message }
           </p>
           <Form
-            horizontal
+            horizontal={true}
             onSubmit={this.handleSubmit}
           >
             <FormGroup>
@@ -85,6 +83,15 @@ const LoginModal = React.createClass({
       </Modal>
     );
   }
-});
+}
+
+LoginModal.propTypes = {
+  authInfo: React.PropTypes.object,
+  authServerURL: React.PropTypes.string,
+  onCancel: React.PropTypes.func,
+  onLogin: React.PropTypes.func,
+  request: React.PropTypes.object,
+  show: React.PropTypes.bool
+};
 
 module.exports = LoginModal;
