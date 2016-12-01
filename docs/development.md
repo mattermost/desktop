@@ -32,6 +32,15 @@ Packages will be generated into `release/` directory.
 $ npm run package:<all | windows | mac | linux>
 ```
 
+#### Dependencies
+Need to install some software required by `electron-builder` to build packages.
+Please see [electron-builder wiki](https://github.com/electron-userland/electron-builder/wiki/Multi-Platform-Build) for detailed description.
+
+**Minimum requirements for current platform:**
+- Windows: Nothing.
+- macOS: Nothing.
+- Linux (64 bit): `icnsutils`, `graphicsmagick` and `xz-utils` if Ubuntu is used.
+
 #### Code signing
 Set environment variables to build trusted packages.
 Please see [electron-builder wiki](https://github.com/electron-userland/electron-builder/wiki/Code-Signing) for detailed description.
