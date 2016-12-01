@@ -1,53 +1,78 @@
 # Mattermost Desktop Application Changelog
 
-## UNDER DEVELOPMENT
+## Release v3.5.0
 
-The "UNDER DEVELOPMENT" section of the Mattermost Desktop changelog appears in the product's `master` branch
-to note key changes committed to `master` and are on their way to the next stable release.
-When a stable release is pushed, "UNDER DEVELOPMENT" heading is removed from the final changelog of the release.
-
-Release date: TBD
+Release date: December 14, 2016
 
 ### Improvements
- - "Cannot connect to Mattermost" is now on top of the page
- - Suppressed verbose error which is related to certificates
- - Clear cache on desktop app update: The application cache will be purged whenever the desktop app version changes
- - Added CTRL+SHIFT+MINUS as a shortcut for zooming out
- - Show URL when the mouse cursor is hovering over links
 
 #### Windows
- - Copying a links address and pasting it inside the app now works
-
-#### macOS
+ - URL address is shown when hovering over links with a mouse
+ - Link addresses can now be copied and pasted inside the app
+ - Added `CTRL+SHIFT+MINUS` as a shortcut for decreasing font size (zooming out)
+ - Reduce upgrade issues by properly clearing cache when updating the desktop app to a new version (the application cache will be purged whenever the desktop app version changes)
+ - When disconnected from Mattermost, the "Cannot connect to Mattermost" page is now properly aligned at the top of the window
+ - Suppressed verbose errors related to certificates
+ 
+#### Mac
+ - URL address is shown when hovering over links with a mouse
+ - Added `CTRL+SHIFT+MINUS` as a shortcut for decreasing font size (zooming out)
+ - Reduce upgrade issues by properly clearing cache when updating the desktop app to a new version (the application cache will be purged whenever the desktop app version changes)
+ - When disconnected from Mattermost, the "Cannot connect to Mattermost" page is now properly aligned at the top of the window
+ - Suppressed verbose errors related to certificates
 
 #### Linux (Beta)
-
-### Bug Fixes
- - Fixed wrong cursor for "Edit" and "Remove" in Setting page
- - Fixed an issue where "Zoom in/out" does not properly work
- - YouTube preview works, even if mixed content is allowed
+ - URL address is shown when hovering over links with a mouse
+ - Added `CTRL+SHIFT+MINUS` as a shortcut for decreasing font size (zooming out)
+ - Reduce upgrade issues by properly clearing cache when updating the desktop app to a new version (the application cache will be purged whenever the desktop app version changes)
+ - When disconnected from Mattermost, the "Cannot connect to Mattermost" page is now properly aligned at the top of the window
+ - Suppressed verbose errors related to certificates
 
 #### Windows
- - The accelerator of "Redo" is now shown as `Ctrl+Y`
-
-#### macOS
+ - YouTube previews now work, even if mixed content is allowed
+ - Fixed an incorrect cursor mode for "Edit" and "Remove" buttons on the Settings page
+ - Fixed an issue where "Zoom in/out" settings did not properly work
+ 
+#### Mac
+ - YouTube previews now work, even if mixed content is allowed
  - Fixed an issue where the default download folder was `Macintosh HD`
- - Removed the unexpected "Show Tab Bar" menu item on macOS 10.12
+ - Removed an unexpected "Show Tab Bar" menu item on Mac 10.12
+ - Fixed an incorrect cursor mode for "Edit" and "Remove" buttons on the Settings page
+ - Fixed an issue where "Zoom in/out" settings did not properly work
 
 #### Linux (Beta)
+ - YouTube previews now work, even if mixed content is allowed
  - Fixed an issue where the option "Leave app running in notification area when the window is closed" was never enabled.
+ - Fixed an incorrect cursor mode for "Edit" and "Remove" buttons on the Settings page
+ - Fixed an issue where "Zoom in/out" settings did not properly work
 
-### New Known Issues
-This part should be merged with "Known Issues" when releasing new version.
-
- - "Zoom in/out" does not properly work when the tab bar has focus
+### Known Issues
 
 #### Windows
- - The vertical position of mouse cursor is randomly incorrect when using DPI of 150%
+ - [If you click twice on the tab bar, and then attempt to use the "Zoom in/out" to change font size, the app window doesn't render properly](https://github.com/mattermost/desktop/issues/334)
+ - [Direct messages cause notification icons to appear on each team on the tab bar, which don't clear until you click on each team](https://github.com/mattermost/desktop/issues/160)
+ - [After right-clicking an image or a link, the "Copy Link" option sometimes moves around when clicking different places afterwards](https://github.com/mattermost/desktop/issues/340) 
+ - The vertical position of the mouse cursor is randomly incorrect if you use a DPI print resolution of 150%
+ - [Windows 7] [Sometimes the app tries to render the page inside the app instead of in a new browser tab when clicking links](https://github.com/mattermost/desktop/issues/369)
 
-#### OS X
+#### Mac
+ - [If you click twice on the tab bar, and then attempt to use the "Zoom in/out" to change font size, the app window doesn't render properly](https://github.com/mattermost/desktop/issues/334)
+ - [Direct messages cause notification icons to appear on each team on the tab bar, which don't clear until you click on each team](https://github.com/mattermost/desktop/issues/160)
+ - [After right-clicking an image or a link, the "Copy Link" option sometimes moves around when clicking different places afterwards](https://github.com/mattermost/desktop/issues/340) 
+ - [After uploading a file with a keyboard shortcut, focus isn't set back to the message box](https://github.com/mattermost/desktop/issues/341)
 
-#### Linux
+#### Linux (Beta)
+ - [If you click twice on the tab bar, and then attempt to use the "Zoom in/out" to change font size, the app window doesn't render properly](https://github.com/mattermost/desktop/issues/334)
+ - [Direct messages cause notification icons to appear on each team on the tab bar, which don't clear until you click on each team](https://github.com/mattermost/desktop/issues/160)
+ - [After right-clicking an image or a link, the "Copy Link" option sometimes moves around when clicking different places afterwards](https://github.com/mattermost/desktop/issues/340) 
+ - [Ubuntu - 64 bit] Right clicking taskbar icon and choosing **Quit** only minimizes the app
+ - [Ubuntu - 64 bit] [Direct message notification comes as a streak of line instead of a pop up](https://github.com/mattermost/platform/issues/3589)
+
+### Contributors
+
+Many thanks to all our contributors. In alphabetical order:
+
+- [itsmartin](https://github.com/itsmartin), [jasonblais](https://github.com/jasonblais), [jcomack](https://github.com/jcomack), [jnugh](https://github.com/jnugh), [kytwb](https://github.com/kytwb), [magicmonty](https://github.com/magicmonty), [Razzeee](https://github.com/Razzeee), [yuya-oc](https://github.com/yuya-oc)
 
 ----
 
@@ -57,7 +82,7 @@ Release date: September 30, 2016
 
 ### Bug Fixes
 
-#### OS X
+#### Mac
  - Fixed an issue where the app window pops up second to foreground when a new message is received
 
 ----
@@ -86,7 +111,7 @@ Version number updated to 3.4 to make numbering consistent with Mattermost serve
  - The app now tries to reconnect periodically if a page fails to load
  - Only one instance of the desktop application will now load at a time
 
-#### OS X
+#### Mac
  - Current team and channel name shown in window title bar
  - Team tab is bolded for unread messages and has a red dot with a count of unread mentions
  - Added an option to configure whether a red badge is shown on taskbar icon for unread messages
@@ -129,7 +154,7 @@ Version number updated to 3.4 to make numbering consistent with Mattermost serve
  - Fixed an issue where application icon at the top left of the window was pixelated
  - Fixed an issue where the application kept focus after closing the app window
 
-#### OS X
+#### Mac
  - Cut, copy and paste are shown in the user interface only when the commands are available
  - Copying link addresses now work properly
  - Saving images by right-clicking the image preview now works
@@ -153,7 +178,7 @@ Version number updated to 3.4 to make numbering consistent with Mattermost serve
  - Copying a link address and pasting it inside the app doesn't work
  - YouTube videos do not work if mixed content is enabled from app settings
 
-#### OS X
+#### Mac
  - YouTube videos do not work if mixed content is enabled from app settings
 
 #### Linux
@@ -187,7 +212,7 @@ Release date: 2016-07-18
 - Added auto-reloading when tab fails to load the team.
 - Added the ability to access all of your teams by right clicking the system tray icon.
 
-#### OS X
+#### Mac
 - Added colored badges to the menu icon when there are unread channels/mentions.
 - Added an option to minimize the app to the system tray when application window is closed.
 - Added auto-reloading when tab fails to load the team.
@@ -234,7 +259,7 @@ Release date: 2016-07-18
 - Fixed the blurred system tray icon.
 - Fixed a redundant description appearing in the pinned start menu on Windows 7.
 
-#### OS X
+#### Mac
 - Fixed two icons appearing on a notification.
 
 ### Known Issues
@@ -259,7 +284,7 @@ Many thanks to all our contributors. In alphabetical order:
 ### Improvements
 - Added a dialog to confirm use of non-http(s) protocols prior to opening links. For example, clicking on a link to `file://test` will open a dialog to confirm the user intended to open a file.
 
-#### Windows and OS X
+#### Windows and Mac
 - Added a right-click menu option for tray icon to open the Desktop application on Windows and OS X.
 
 ### Known issues
@@ -286,7 +311,7 @@ This release contains a security update and it is highly recommended that users 
 - Add **Allow mixed content** option to render images with `http://`.
 - Add the login dialog for http authentication.
 
-#### OS X
+#### Mac
 - Add the option to show the icon on menu bar.
 
 #### Linux
