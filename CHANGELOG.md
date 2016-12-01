@@ -6,68 +6,49 @@ Release date: December 14, 2016
 
 ### Improvements
 
-#### Windows
+#### All Platforms
  - URL address is shown when hovering over links with a mouse
  - Link addresses can now be copied and pasted inside the app
  - Added `CTRL+SHIFT+MINUS` as a shortcut for decreasing font size (zooming out)
  - Reduce upgrade issues by properly clearing cache when updating the desktop app to a new version (the application cache will be purged whenever the desktop app version changes)
  - When disconnected from Mattermost, the "Cannot connect to Mattermost" page is now properly aligned at the top of the window
- - Suppressed verbose errors related to certificates
- 
-#### Mac
- - URL address is shown when hovering over links with a mouse
- - Added `CMD+SHIFT+MINUS` as a shortcut for decreasing font size (zooming out)
- - Reduce upgrade issues by properly clearing cache when updating the desktop app to a new version (the application cache will be purged whenever the desktop app version changes)
- - When disconnected from Mattermost, the "Cannot connect to Mattermost" page is now properly aligned at the top of the window
- - Suppressed verbose errors related to certificates
+ - Suppressed error messages when launching the app from the command line and `certificate.json` is missing in the user data directory
 
-#### Linux (Beta)
- - URL address is shown when hovering over links with a mouse
- - Added `CTRL+SHIFT+MINUS` as a shortcut for decreasing font size (zooming out)
- - Reduce upgrade issues by properly clearing cache when updating the desktop app to a new version (the application cache will be purged whenever the desktop app version changes)
- - When disconnected from Mattermost, the "Cannot connect to Mattermost" page is now properly aligned at the top of the window
- - Suppressed verbose errors related to certificates
+#### Windows
+ - Link addresses can now be copied and pasted inside the app
 
 ### Bug Fixes
 
-#### Windows
+#### All Platforms
  - YouTube previews now work, even if mixed content is allowed
  - Fixed an incorrect cursor mode for "Edit" and "Remove" buttons on the Settings page
  - Fixed an issue where "Zoom in/out" settings did not properly work
+
+#### Windows
  - The menu bar option for "Redo" is now properly shown as `CTRL+Y`
  
 #### Mac
- - YouTube previews now work, even if mixed content is allowed
  - Fixed an issue where the default download folder was `Macintosh HD`
  - Removed an unexpected "Show Tab Bar" menu item on MacOS 10.12
- - Fixed an incorrect cursor mode for "Edit" and "Remove" buttons on the Settings page
- - Fixed an issue where "Zoom in/out" settings did not properly work
 
 #### Linux (Beta)
- - YouTube previews now work, even if mixed content is allowed
  - Fixed an issue where the option "Leave app running in notification area when the window is closed" was never enabled.
- - Fixed an incorrect cursor mode for "Edit" and "Remove" buttons on the Settings page
- - Fixed an issue where "Zoom in/out" settings did not properly work
 
 ### Known Issues
 
-#### Windows
+#### All Platforms
  - [If you click twice on the tab bar, and then attempt to use the "Zoom in/out" to change font size, the app window doesn't render properly](https://github.com/mattermost/desktop/issues/334)
  - [Direct messages cause notification icons to appear on each team on the tab bar, which don't clear until you click on each team](https://github.com/mattermost/desktop/issues/160)
  - [After right-clicking an image or a link, the "Copy Link" option sometimes moves around when clicking different places afterwards](https://github.com/mattermost/desktop/issues/340) 
+
+#### Windows
  - The vertical position of the mouse cursor is randomly incorrect if you use a DPI print resolution of 150%
  - [Windows 7] [Sometimes the app tries to render the page inside the app instead of in a new browser tab when clicking links](https://github.com/mattermost/desktop/issues/369)
 
 #### Mac
- - [If you click twice on the tab bar, and then attempt to use the "Zoom in/out" to change font size, the app window doesn't render properly](https://github.com/mattermost/desktop/issues/334)
- - [Direct messages cause notification icons to appear on each team on the tab bar, which don't clear until you click on each team](https://github.com/mattermost/desktop/issues/160)
- - [After right-clicking an image or a link, the "Copy Link" option sometimes moves around when clicking different places afterwards](https://github.com/mattermost/desktop/issues/340) 
  - [After uploading a file with a keyboard shortcut, focus isn't set back to the message box](https://github.com/mattermost/desktop/issues/341)
 
 #### Linux (Beta)
- - [If you click twice on the tab bar, and then attempt to use the "Zoom in/out" to change font size, the app window doesn't render properly](https://github.com/mattermost/desktop/issues/334)
- - [Direct messages cause notification icons to appear on each team on the tab bar, which don't clear until you click on each team](https://github.com/mattermost/desktop/issues/160)
- - [After right-clicking an image or a link, the "Copy Link" option sometimes moves around when clicking different places afterwards](https://github.com/mattermost/desktop/issues/340) 
  - [Ubuntu - 64 bit] Right clicking taskbar icon and choosing **Quit** only minimizes the app
  - [Ubuntu - 64 bit] [Direct message notification comes as a streak of line instead of a pop up](https://github.com/mattermost/platform/issues/3589)
 
@@ -100,92 +81,62 @@ Version number updated to 3.4 to make numbering consistent with Mattermost serve
 
 ### Improvements
 
-#### Windows
+#### All Platforms
  - Current team and channel name shown in window title bar
  - Team tab is bolded for unread messages and has a red dot with a count of unread mentions
- - Added an option to configure whether a red badge is shown on taskbar icon for unread messages
  - Added new shortcuts:
-     - `CTRL + S`: sets focus on the Mattermost search box
-     - `ALT + Left Arrow`: go to previous page in history
-     - `ALT + Right Arrow`: go to next page in history
+     - `CTRL+S`; `CMD+S` on Mac: sets focus on the Mattermost search box
+     - `ALT+Left Arrow`; `CMD+[` on Mac: go to previous page in history
+     - `ALT+Right Arrow`; `CMD+]` on Mac: go to next page in history
  - Upgraded the Settings page user interface
- - Added access to the settings menu from the system tray icon
- - Added validation for name and URL when adding a new team on the Settings page
  - The app now tries to reconnect periodically if a page fails to load
+ - Added validation for name and URL when adding a new team on the Settings page
+
+#### Windows
+ - Added access to the settings menu from the system tray icon
  - Only one instance of the desktop application will now load at a time
+ - Added an option to configure whether a red badge is shown on taskbar icon for unread messages
 
 #### Mac
- - Current team and channel name shown in window title bar
- - Team tab is bolded for unread messages and has a red dot with a count of unread mentions
  - Added an option to configure whether a red badge is shown on taskbar icon for unread messages
- - Added new shortcuts:
-     - `CMD + S`: sets focus on the Mattermost search box
-     - `CMD + [`: go to previous page in history
-     - `CMD + ]`: go to next page in history
- - Upgraded the Settings page user interface
- - The app now tries to reconnect periodically if a page fails to load
- - Added validation for name and URL when adding a new team on the Settings page
 
 #### Linux (Beta)
- - Current team and channel name shown in window title bar
- - Team tab is bolded for unread messages and has a red dot with a count of unread mentions
  - Added an option to flash taskbar icon when a new message is received
  - Added a badge to count mentions on the taskbar icon (for Unity)
  - Added a script, `create_desktop_file.sh` to create `Mattermost.desktop` desktop entry to help [integrate the application into a desktop environment](https://wiki.archlinux.org/index.php/Desktop_entries) more easily
- - Added new shortcuts:
-     - `CTRL + S`: sets focus on the Mattermost search box
-     - `ALT + Left Arrow`: go to previous page in history
-     - `ALT + Right Arrow`: go to next page in history
- - Upgraded the Settings page user interface
  - Added access to the settings menu from the system tray icon
- - The app now tries to reconnect periodically if a page fails to load
- - Added validation for name and URL when adding a new team on the Settings page
  - Only one instance of the desktop application will now load at a time
 
 ### Bug Fixes
 
-#### Windows
+#### All Platforms
  - Cut, copy and paste are shown in the user interface only when the commands are available
  - Copying link addresses now work properly
  - Saving images by right-clicking the image preview now works
  - Refreshing the app page no longer takes you to the team selection page, but keeps you on the current channel
+ - Fixed an issue where the maximized state of the app window was lost in some cases
+ - Fixed an issue where shortcuts didn't work when switching applications or tabs in some cases
+
+#### Windows
  - Removed misleading shortcuts from the system tray menu
  - Removed unclear desktop notifications when the application page fails to load
  - Fixed the Mattermost icon for desktop notifications in Windows 10
- - Fixed an issue where the maximized state of the app window was lost in some cases
- - Fixed an issue where shortcuts didn't work when switching applications or tabs in some cases
  - Fixed an issue where application icon at the top left of the window was pixelated
  - Fixed an issue where the application kept focus after closing the app window
 
-#### Mac
- - Cut, copy and paste are shown in the user interface only when the commands are available
- - Copying link addresses now work properly
- - Saving images by right-clicking the image preview now works
- - Refreshing the app page no longer takes you to the team selection page, but keeps you on the current channel
- - Fixed an issue where the maximized state of the app window was lost in some cases
- - Fixed an issue where shortcuts didn't work when switching applications or tabs in some cases
-
 #### Linux (Beta)
- - Cut, copy and paste are shown in the user interface only when the commands are available
- - Copying link addresses now work properly
- - Saving images by right-clicking the image preview now works
- - Refreshing the app page no longer takes you to the team selection page, but keeps you on the current channel
  - Removed misleading shortcuts from the system tray menu
  - Removed unclear desktop notifications when the application page fails to load
- - Fixed an issue where the maximized state of the app window was lost in some cases
- - Fixed an issue where shortcuts didn't work when switching applications or tabs in some cases
 
 ### Known Issues
 
+#### All Platforms
+ - YouTube videos do not work if mixed content is enabled from app settings
+
 #### Windows
  - Copying a link address and pasting it inside the app doesn't work
- - YouTube videos do not work if mixed content is enabled from app settings
-
-#### Mac
- - YouTube videos do not work if mixed content is enabled from app settings
 
 #### Linux
- - YouTube videos do not work if mixed content is enabled from app settings
  - [Ubuntu - 64 bit] Right clicking taskbar icon and choosing **Quit** only minimizes the app
  - [Ubuntu - 64 bit] [Direct message notification comes as a streak of line instead of a pop up](https://github.com/mattermost/platform/issues/3589)
 
@@ -205,30 +156,11 @@ Release date: 2016-07-18
 
 ### Improvements
 
-#### Windows
-- Added an installer for better install experience.
-- The app now minimizes to the system tray when application window is closed.
-- Added an option to launch application on login.
-- Added an option to blink the taskbar icon when a new message has arrived.
-- Added tooltip text for the system tray icon in order to show count of unread channels/mentions.
-- Added an option to toggle the app to minimize/restore when clicking on the system tray icon.
+#### All Platforms
 - Added auto-reloading when tab fails to load the team.
 - Added the ability to access all of your teams by right clicking the system tray icon.
 
-#### Mac
-- Added colored badges to the menu icon when there are unread channels/mentions.
-- Added an option to minimize the app to the system tray when application window is closed.
-- Added auto-reloading when tab fails to load the team.
-- Added the ability to access all of your teams by right clicking the system tray icon.
-
-#### Linux (Beta)
-- Added an option to show the icon on menu bar (requires libappindicator1 on Ubuntu).
-- Added an option to launch application on login.
-- Added an option to minimize the app to the system tray when application window is closed.
-- Added auto-reloading when tab fails to load the team.
-- Added the ability to access all of your teams by right clicking the system tray icon.
-
-#### Menu Bar
+##### Menu Bar
 - New Keyboard Shortcuts
   - Adjust text size
     - Ctrl+0 (Menu Bar -> View -> Actual Size): Reset the zoom level.
@@ -246,9 +178,26 @@ Release date: 2016-07-18
     - Link to [**Mattermost Docs**](docs.mattermost.com)
     - Field to indicate the application version number.
 
-#### Settings Page
+##### Settings Page
 - Added a "+" button next to the **Teams** label, which allows you to add more teams.
 - Added the ability to edit team information by clicking on the pencil icon to the right of the team name.
+
+#### Windows
+- Added an installer for better install experience.
+- The app now minimizes to the system tray when application window is closed.
+- Added an option to launch application on login.
+- Added an option to blink the taskbar icon when a new message has arrived.
+- Added tooltip text for the system tray icon in order to show count of unread channels/mentions.
+- Added an option to toggle the app to minimize/restore when clicking on the system tray icon.
+
+#### Mac
+- Added colored badges to the menu icon when there are unread channels/mentions.
+- Added an option to minimize the app to the system tray when application window is closed.
+
+#### Linux (Beta)
+- Added an option to show the icon on menu bar (requires libappindicator1 on Ubuntu).
+- Added an option to launch application on login.
+- Added an option to minimize the app to the system tray when application window is closed.
 
 ### Other Changes
 - Application license changed from MIT License to Apache License, Version 2.0.
