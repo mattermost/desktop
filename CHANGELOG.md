@@ -16,7 +16,7 @@ Release date: December 14, 2016
  
 #### Mac
  - URL address is shown when hovering over links with a mouse
- - Added `CTRL+SHIFT+MINUS` as a shortcut for decreasing font size (zooming out)
+ - Added `CMD+SHIFT+MINUS` as a shortcut for decreasing font size (zooming out)
  - Reduce upgrade issues by properly clearing cache when updating the desktop app to a new version (the application cache will be purged whenever the desktop app version changes)
  - When disconnected from Mattermost, the "Cannot connect to Mattermost" page is now properly aligned at the top of the window
  - Suppressed verbose errors related to certificates
@@ -28,15 +28,18 @@ Release date: December 14, 2016
  - When disconnected from Mattermost, the "Cannot connect to Mattermost" page is now properly aligned at the top of the window
  - Suppressed verbose errors related to certificates
 
+### Bug Fixes
+
 #### Windows
  - YouTube previews now work, even if mixed content is allowed
  - Fixed an incorrect cursor mode for "Edit" and "Remove" buttons on the Settings page
  - Fixed an issue where "Zoom in/out" settings did not properly work
+ - The menu bar option for "Redo" is now properly shown as `CTRL+Y`
  
 #### Mac
  - YouTube previews now work, even if mixed content is allowed
  - Fixed an issue where the default download folder was `Macintosh HD`
- - Removed an unexpected "Show Tab Bar" menu item on Mac 10.12
+ - Removed an unexpected "Show Tab Bar" menu item on MacOS 10.12
  - Fixed an incorrect cursor mode for "Edit" and "Remove" buttons on the Settings page
  - Fixed an issue where "Zoom in/out" settings did not properly work
 
