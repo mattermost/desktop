@@ -26,10 +26,10 @@ Release date: December 14, 2016
 
 #### Windows
  - The menu bar option for "Redo" is now properly shown as `CTRL+Y`
- 
+
 #### Mac
  - Fixed an issue where the default download folder was `Macintosh HD`
- - Removed an unexpected "Show Tab Bar" menu item on MacOS 10.12
+ - Removed an unexpected "Show Tab Bar" menu item on macOS 10.12
 
 #### Linux (Beta)
  - Fixed an issue where the option "Leave app running in notification area when the window is closed" was never enabled.
@@ -39,17 +39,17 @@ Release date: December 14, 2016
 #### All Platforms
  - [If you click twice on the tab bar, and then attempt to use the "Zoom in/out" to change font size, the app window doesn't render properly](https://github.com/mattermost/desktop/issues/334)
  - [Direct messages cause notification icons to appear on each team on the tab bar, which don't clear until you click on each team](https://github.com/mattermost/desktop/issues/160)
- - [After right-clicking an image or a link, the "Copy Link" option sometimes moves around when clicking different places afterwards](https://github.com/mattermost/desktop/issues/340) 
+ - [After right-clicking an image or a link, the "Copy Link" option sometimes moves around when clicking different places afterwards](https://github.com/mattermost/desktop/issues/340)
 
 #### Windows
- - The vertical position of the mouse cursor is randomly incorrect if you use a DPI print resolution of 150%
+ - [The vertical position of the mouse cursor is randomly incorrect if you use a DPI print resolution of 150%](https://github.com/mattermost/desktop/pull/307#issuecomment-251980757)
  - [Windows 7] [Sometimes the app tries to render the page inside the app instead of in a new browser tab when clicking links](https://github.com/mattermost/desktop/issues/369)
 
 #### Mac
  - [After uploading a file with a keyboard shortcut, focus isn't set back to the message box](https://github.com/mattermost/desktop/issues/341)
 
 #### Linux (Beta)
- - [Ubuntu - 64 bit] Right clicking taskbar icon and choosing **Quit** only minimizes the app
+ - [Ubuntu - 64 bit] [Right clicking taskbar icon and choosing **Quit** only minimizes the app](https://github.com/mattermost/desktop/issues/90#issuecomment-233712183)
  - [Ubuntu - 64 bit] [Direct message notification comes as a streak of line instead of a pop up](https://github.com/mattermost/platform/issues/3589)
 
 ### Contributors
