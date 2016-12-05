@@ -48,5 +48,5 @@ The following chart summarizes the operating systems which the Mattermost Deskto
 
 | Version | OS | Issues | Tester | Date |
 | :-- | :-- | :-- | :-- | :-- |
-| 3.4.1 | Windows 10 64-bit | None Observed | @tonyD-2016 | 2016-12-05 |
+| 3.4.1 | Windows 10 64-bit | None Observed | [@tonyD-2016](https://github.com/tonyD-2016) | 2016-12-05 |
 | 1.0.7 | Windows 7 SP1 64-bit | [#63](https://github.com/mattermost/desktop/issues/63) | [@it33](https://github.com/it33) | 2016-03-12 |
