@@ -9,7 +9,7 @@ cat <<EOS > Mattermost.desktop
 [Desktop Entry]
 Name=Mattermost
 Comment=Mattermost Desktop application for Linux
-Exec="${FULL_PATH}/Mattermost"
+Exec="${FULL_PATH}/mattermost-desktop"
 Terminal=false
 Type=Application
 Icon=${FULL_PATH}/icon.png
