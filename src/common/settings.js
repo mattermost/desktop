@@ -20,6 +20,7 @@ function loadDefault(version) {
       showTrayIcon: false,
       trayIconTheme: '',
       disablewebsecurity: true,
+      minimizeToTray: false,
       toggleWindowOnTrayIconClick: false,
       version: 1,
       notifications: {
