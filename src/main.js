@@ -64,6 +64,12 @@ const assetsDir = path.resolve(app.getAppPath(), 'assets');
 // be closed automatically when the JavaScript object is garbage collected.
 var mainWindow = null;
 
+// Fix confused cursor in HiDPI
+// https://github.com/electron/electron/issues/7655#issuecomment-259688853
+if (process.platform === 'win32') {
+  app.commandLine.appendSwitch('enable-use-zoom-for-dsf', 'false');
+}
+
 var argv = require('yargs').parse(process.argv.slice(1));
 
 const electronConnect = argv.livereload ? require('electron-connect') : null;
