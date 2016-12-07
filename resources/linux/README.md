@@ -66,4 +66,4 @@ See [contributing guidelines](https://github.com/mattermost/desktop/blob/master/
 
 ## License
 
-Apache Lisence, Version 2.0
+Apache License, Version 2.0
