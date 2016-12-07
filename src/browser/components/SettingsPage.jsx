@@ -123,9 +123,7 @@ const SettingsPage = React.createClass({
     });
   },
   handleChangeMinimizeToTray() {
-    var shouldMinimizeToTray =
-      (process.platform !== 'darwin' || !this.refs.showTrayIcon.props.checked) &&
-      !this.refs.minimizeToTray.props.checked;
+    const shouldMinimizeToTray = this.state.showTrayIcon && !this.refs.minimizeToTray.props.checked;
 
     this.setState({
       minimizeToTray: shouldMinimizeToTray
