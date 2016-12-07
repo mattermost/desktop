@@ -54,6 +54,7 @@ After launching, you need to configure the application to interact with your tea
 2. Click **Add new team** next to the right of Team Management section.
 3. Enter **Name** and a valid **URL**, which begins with either `http://` or `https://`.
 4. Click **Add**.
+5. Click **Save**.
 
 More guides are available at [Mattermost Documentation](https://docs.mattermost.com/help/apps/desktop-guide.html).
 
