@@ -61,7 +61,7 @@ More guides are available at [Mattermost Documentation](https://docs.mattermost.
 
 ## Contributing
 
-See [contributing guidlines](https://github.com/mattermost/desktop/blob/master/CONTRIBUTING.md) for reporting bugs, features or submitting pull requests.
+See [contributing guidelines](https://github.com/mattermost/desktop/blob/master/CONTRIBUTING.md) for reporting bugs, features or submitting pull requests.
 
 
 ## License
