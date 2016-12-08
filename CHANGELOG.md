@@ -42,7 +42,6 @@ Release date: December 14, 2016
  - [After right-clicking an image or a link, the "Copy Link" option sometimes moves around when clicking different places afterwards](https://github.com/mattermost/desktop/issues/340)
 
 #### Windows
- - [The vertical position of the mouse cursor is randomly incorrect if you use a DPI print resolution of 150%](https://github.com/mattermost/desktop/pull/307#issuecomment-251980757)
  - [Windows 7] [Sometimes the app tries to render the page inside the app instead of in a new browser tab when clicking links](https://github.com/mattermost/desktop/issues/369)
 
 #### Mac
