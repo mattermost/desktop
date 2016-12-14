@@ -1,5 +1,6 @@
 const React = require('react');
-const {Button, Checkbox, Col, FormGroup, Grid, Navbar, Row} = require('react-bootstrap');
+const ReactDOM = require('react-dom');
+const {Button, Checkbox, Col, FormGroup, FormControl, ControlLabel, Grid, Navbar, Row} = require('react-bootstrap');
 
 const {ipcRenderer, remote} = require('electron');
 const AutoLaunch = require('auto-launch');
@@ -114,7 +115,7 @@ const SettingsPage = React.createClass({
   },
   handleChangeTrayIconTheme() {
     this.setState({
-      trayIconTheme: !this.refs.trayIconTheme.props.checked
+      trayIconTheme: ReactDOM.findDOMNode(this.refs.trayIconTheme).value
     });
   },
   handleChangeAutoStart() {
@@ -123,9 +124,7 @@ const SettingsPage = React.createClass({
     });
   },
   handleChangeMinimizeToTray() {
-    var shouldMinimizeToTray =
-      (process.platform !== 'darwin' || !this.refs.showTrayIcon.props.checked) &&
-      !this.refs.minimizeToTray.props.checked;
+    const shouldMinimizeToTray = this.state.showTrayIcon && !this.refs.minimizeToTray.props.checked;
 
     this.setState({
       minimizeToTray: shouldMinimizeToTray
@@ -191,16 +190,19 @@ const SettingsPage = React.createClass({
     }
     if (process.platform === 'linux') {
       options.push(
-        <Checkbox
-          key='inputTrayIconTheme'
-          ref='trayIconTheme'
-          type='select'
-          value={this.state.trayIconTheme}
-          onChange={this.handleChangeTrayIconTheme}
-        >{'Icon theme (Need to restart the application)'}
-          <option value='light'>{'Light'}</option>
-          <option value='dark'>{'Dark'}</option>
-        </Checkbox>);
+        <FormGroup>
+          <ControlLabel>{'Icon theme (Need to restart the application)'}</ControlLabel>
+          <FormControl
+            componentClass='select'
+            key='inputTrayIconTheme'
+            ref='trayIconTheme'
+            value={this.state.trayIconTheme}
+            onChange={this.handleChangeTrayIconTheme}
+          >
+            <option value='light'>{'Light'}</option>
+            <option value='dark'>{'Dark'}</option>
+          </FormControl>
+        </FormGroup>);
     }
     options.push(
       <Checkbox
