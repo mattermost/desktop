@@ -8,7 +8,6 @@ Release date: December 14, 2016
 
 #### All Platforms
  - URL address is shown when hovering over links with a mouse
- - Link addresses can now be copied and pasted inside the app
  - Added `CTRL+SHIFT+MINUS` as a shortcut for decreasing font size (zooming out)
  - Reduce upgrade issues by properly clearing cache when updating the desktop app to a new version (the application cache will be purged whenever the desktop app version changes)
  - When disconnected from Mattermost, the "Cannot connect to Mattermost" page is now properly aligned at the top of the window
