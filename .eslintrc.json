@@ -1,5 +1,5 @@
 {
-    "extends": "./.eslintrc-platform-v3.4.0.json",
+    "extends": "./.eslintrc-platform.json",
     "rules": {
         "global-require": 1,
         "indent": [2, 2, {"SwitchCase": 0}],
