@@ -14,5 +14,5 @@ cp "${SRC}/mac/Mattermost-${VERSION}-mac.tar.gz" "${DEST}/mattermost-desktop-${V
 
 cp "${SRC}/mattermost-desktop-${VERSION}.tar.gz" "${DEST}/mattermost-desktop-${VERSION}-linux-x64.tar.gz"
 cp "${SRC}/mattermost-desktop-${VERSION}-ia32.tar.gz" "${DEST}/mattermost-desktop-${VERSION}-linux-ia32.tar.gz"
-cp "${SRC}/mattermost-desktop-${VERSION}-amd64.deb" "${DEST}/mattermost-desktop-${VERSION}-linux-x64.deb"
-cp "${SRC}/mattermost-desktop-${VERSION}-ia32.deb" "${DEST}/mattermost-desktop-${VERSION}-linux-ia32.deb"
+cp "${SRC}/mattermost-desktop_${VERSION}_amd64.deb" "${DEST}/mattermost-desktop-${VERSION}-linux-x64.deb"
+cp "${SRC}/mattermost-desktop_${VERSION}_i386.deb" "${DEST}/mattermost-desktop-${VERSION}-linux-i386.deb"
