@@ -18,6 +18,8 @@ process.on('uncaughtException', (error) => {
   console.error(error);
 });
 
+var willAppQuit = false;
+
 if (process.platform === 'win32') {
   var cmd = process.argv[1];
   var appLauncher = new AutoLaunch({
@@ -45,7 +47,9 @@ if (process.platform === 'win32') {
 }
 
 app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
-require('electron-squirrel-startup');
+if (require('electron-squirrel-startup')) {
+  willAppQuit = true;
+}
 
 const fs = require('fs');
 const os = require('os');
@@ -173,7 +177,6 @@ const trayImages = (() => {
     return {};
   }
 })();
-var willAppQuit = false;
 
 // If there is already an instance, activate the window in the existing instace and quit this one
 if (app.makeSingleInstance((/*commandLine, workingDirectory*/) => {
@@ -299,6 +302,9 @@ allowProtocolDialog.init(mainWindow);
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', () => {
+  if (willAppQuit) {
+    return;
+  }
   ipcMain.on('notified', () => {
     if (process.platform === 'win32' || process.platform === 'linux') {
       if (config.notifications.flashWindow === 2) {

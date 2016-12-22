@@ -14,6 +14,8 @@ Release date: TBD
 
 ### Bug Fixes
 
+#### Windows
+- Fixed an issue where an unexpected window appears while install/uninstalling
 
 ----
 
