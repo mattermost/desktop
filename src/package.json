@@ -17,13 +17,13 @@
   "dependencies": {
     "auto-launch": "^5.0.1",
     "bootstrap": "^3.3.7",
-    "electron-context-menu": "^0.6.0",
+    "electron-context-menu": "^0.8.0",
     "electron-squirrel-startup": "^1.0.0",
-    "os-locale": "^1.4.0",
-    "react": "^15.3.0",
-    "react-addons-css-transition-group": "^15.3.0",
-    "react-bootstrap": "~0.30.6",
-    "react-dom": "^15.3.0",
+    "os-locale": "^2.0.0",
+    "react": "^15.4.1",
+    "react-addons-css-transition-group": "^15.4.1",
+    "react-bootstrap": "~0.30.7",
+    "react-dom": "^15.4.1",
     "yargs": "^3.32.0"
   }
 }
