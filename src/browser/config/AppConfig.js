@@ -1,12 +1,22 @@
 const settings = require('../../common/settings');
 const {remote} = require('electron');
 
-var config;
-try {
-  const configFile = remote.app.getPath('userData') + '/config.json';
-  config = settings.readFileSync(configFile);
-} catch (e) {
-  config = {};
+class AppConfig {
+  constructor(file) {
+    this.fileName = file;
+    try {
+      this.data = settings.readFileSync(file);
+    } catch (e) {
+      this.data = {
+        teams: []
+      };
+    }
+  }
+
+  set(key, value) {
+    this.data[key] = value;
+    settings.writeFileSync(this.fileName, this.data);
+  }
 }
 
-module.exports = config;
+module.exports = new AppConfig(remote.app.getPath('userData') + '/config.json');

@@ -38,7 +38,8 @@ const MainPage = React.createClass({
   propTypes: {
     disablewebsecurity: React.PropTypes.bool.isRequired,
     onUnreadCountChange: React.PropTypes.func.isRequired,
-    teams: React.PropTypes.array.isRequired
+    teams: React.PropTypes.array.isRequired,
+    onTeamConfigChange: React.PropTypes.func.isRequired
   },
 
   getInitialState() {
@@ -319,6 +320,7 @@ const MainPage = React.createClass({
             });
             this.props.teams.push(newTeam);
             this.render();
+            this.props.onTeamConfigChange(this.props.teams);
           }}
         />
       );
