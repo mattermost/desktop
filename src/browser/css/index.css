@@ -16,3 +16,16 @@
   opacity: 0.01;
   transition: opacity 500ms ease-in-out;
 }
+
+.btn-tabButton {
+  margin-top: 3px;
+  color: #333;
+  background-color: #fff;
+  border-color: #ccc;
+}
+
+.btn-tabButton:hover {
+  color: #333;
+  background-color: #e6e6e6;
+  border-color: #adadad;
+}

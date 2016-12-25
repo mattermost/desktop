@@ -9,19 +9,12 @@ const ReactDOM = require('react-dom');
 const {remote, ipcRenderer} = require('electron');
 const MainPage = require('./components/MainPage.jsx');
 
-const settings = require('../common/settings');
+const AppConfig = require('./config/AppConfig.js');
 const badge = require('./js/badge');
 
 remote.getCurrentWindow().removeAllListeners('focus');
 
-var config;
-try {
-  const configFile = remote.app.getPath('userData') + '/config.json';
-  config = settings.readFileSync(configFile);
-} catch (e) {
-  window.location = 'settings.html';
-}
-if (config.teams.length === 0) {
+if (AppConfig.teams.length === 0) {
   window.location = 'settings.html';
 }
 

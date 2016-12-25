@@ -1,5 +1,5 @@
 const React = require('react');
-const {Nav, NavItem} = require('react-bootstrap');
+const {Nav, NavItem, Button} = require('react-bootstrap');
 
 class TabBar extends React.Component {
   render() {
@@ -75,7 +75,19 @@ class TabBar extends React.Component {
         onSelect={this.props.onSelect}
       >
         { tabs }
+        { this.renderAddTeamButton() }
       </Nav>
+    );
+  }
+
+  renderAddTeamButton() {
+    return (
+      <Button
+        onClick={this.props.onAddTeam}
+        bsStyle='tabButton'
+      >
+        {'+'}
+      </Button>
     );
   }
 }
@@ -84,7 +96,8 @@ TabBar.propTypes = {
   activeKey: React.PropTypes.number,
   id: React.PropTypes.string,
   onSelect: React.PropTypes.func,
-  teams: React.PropTypes.array
+  teams: React.PropTypes.array,
+  onAddTeam: React.PropTypes.func
 };
 
 module.exports = TabBar;

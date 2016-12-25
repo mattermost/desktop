@@ -10,6 +10,8 @@ const MattermostView = require('./MattermostView.jsx');
 const TabBar = require('./TabBar.jsx');
 const HoveringURL = require('./HoveringURL.jsx');
 
+const NewTeamModal = require('./NewTeamModal.jsx');
+
 // Todo: Need to consider better way to apply styles
 const styles = {
   hoveringURL: {
@@ -237,6 +239,11 @@ const MainPage = React.createClass({
       this.setState({targetURL});
     }
   },
+  addTeam() {
+    this.setState({
+      showNewTeamModal: true
+    });
+  },
   render() {
     var self = this;
 
@@ -253,6 +260,7 @@ const MainPage = React.createClass({
             mentionAtActiveCounts={this.state.mentionAtActiveCounts}
             activeKey={this.state.key}
             onSelect={this.handleSelect}
+            onAddTeam={this.addTeam}
           />
         </Row>
       );
@@ -296,6 +304,25 @@ const MainPage = React.createClass({
       authServerURL = `${tmpURL.protocol}//${tmpURL.host}`;
       authInfo = this.state.loginQueue[0].authInfo;
     }
+    var modal;
+    if (this.state.showNewTeamModal) {
+      modal = (
+        <NewTeamModal
+          onClose={() => {
+            this.setState({
+              showNewTeamModal: false
+            });
+          }}
+          onSave={(newTeam) => {
+            this.setState({
+              showNewTeamModal: false
+            });
+            this.props.teams.push(newTeam);
+            this.render();
+          }}
+        />
+      );
+    }
     return (
       <div>
         <LoginModal
@@ -323,6 +350,9 @@ const MainPage = React.createClass({
               targetURL={this.state.targetURL}
             /> }
         </ReactCSSTransitionGroup>
+        <div>
+          { modal }
+        </div>
       </div>
     );
   }
