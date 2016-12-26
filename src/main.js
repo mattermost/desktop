@@ -90,16 +90,13 @@ if (argv.hidden) {
   hideOnStartup = true;
 }
 
-// TODO: We should document this if that hasn't been done already
-if (argv['config-file']) {
-  global['config-file'] = argv['config-file'];
-} else {
-  global['config-file'] = app.getPath('userData') + '/config.json';
+if (argv['data-dir']) {
+  app.setPath('userData', path.resolve(argv['data-dir']));
 }
 
 var config = {};
 try {
-  const configFile = global['config-file'];
+  const configFile = app.getPath('userData') + '/config.json';
   config = settings.readFileSync(configFile);
   if (config.version !== settings.version || wasUpdated()) {
     clearAppCache();
@@ -112,7 +109,7 @@ try {
 }
 
 ipcMain.on('update-config', () => {
-  const configFile = global['config-file'];
+  const configFile = app.getPath('userData') + '/config.json';
   config = settings.readFileSync(configFile);
 });
 

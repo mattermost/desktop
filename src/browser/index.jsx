@@ -16,7 +16,7 @@ remote.getCurrentWindow().removeAllListeners('focus');
 
 var config;
 try {
-  var configFile = remote.getGlobal('config-file');
+  const configFile = remote.app.getPath('userData') + '/config.json';
   config = settings.readFileSync(configFile);
 } catch (e) {
   window.location = 'settings.html';

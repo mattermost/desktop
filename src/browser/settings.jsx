@@ -10,7 +10,7 @@ const React = require('react');
 const ReactDOM = require('react-dom');
 const SettingsPage = require('./components/SettingsPage.jsx');
 
-var configFile = remote.getGlobal('config-file');
+const configFile = remote.app.getPath('userData') + '/config.json';
 
 require('electron-context-menu')({
   window: remote.getCurrentWindow()

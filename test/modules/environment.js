@@ -17,7 +17,8 @@ const electronBinaryPath = (() => {
   const exeExtension = (process.platform === 'win32') ? '.exe' : '';
   return path.join(sourceRootDir, 'node_modules/electron/dist/electron' + exeExtension);
 })();
-const configFilePath = path.join(sourceRootDir, 'test/test_config.json');
+const userDataDir = path.join(sourceRootDir, 'test/testUserData/');
+const configFilePath = path.join(userDataDir, 'config.json');
 const mattermostURL = 'http://example.com/team';
 
 module.exports = {
@@ -27,7 +28,7 @@ module.exports = {
   getSpectronApp() {
     const app = new Application({
       path: electronBinaryPath,
-      args: [`${path.join(sourceRootDir, 'dist')}`, '--config-file=' + configFilePath]
+      args: [`${path.join(sourceRootDir, 'dist')}`, `--data-dir=${userDataDir}`]
     });
     chaiAsPromised.transferPromiseness = app.transferPromiseness;
     return app;
