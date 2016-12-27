@@ -12,6 +12,9 @@ Release date: TBD
 
 ### Improvements
 
+#### All Platforms
+- Suppress white screen which is displayed for a moment on startup
+
 ### Bug Fixes
 
 #### All Platforms

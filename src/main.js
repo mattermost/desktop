@@ -447,8 +447,11 @@ app.on('ready', () => {
   if (process.platform === 'linux') {
     windowOptions.icon = path.resolve(assetsDir, 'appicon.png');
   }
-  windowOptions.title = app.getName();
+  Object.assign(windowOptions, {title: app.getName(), show: false});
   mainWindow = new BrowserWindow(windowOptions);
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+  });
 
   if (process.platform === 'darwin') {
     session.defaultSession.on('will-download', (event, item) => {
