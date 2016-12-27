@@ -6,6 +6,7 @@ const chaiAsPromised = require('chai-as-promised');
 chai.should();
 chai.use(chaiAsPromised);
 
+const fs = require('fs');
 const path = require('path');
 const Application = require('spectron').Application;
 
@@ -19,12 +20,27 @@ const electronBinaryPath = (() => {
 })();
 const userDataDir = path.join(sourceRootDir, 'test/testUserData/');
 const configFilePath = path.join(userDataDir, 'config.json');
+const boundsInfoPath = path.join(userDataDir, 'bounds-info.json');
 const mattermostURL = 'http://example.com/team';
 
 module.exports = {
   sourceRootDir,
   configFilePath,
+  boundsInfoPath,
   mattermostURL,
+
+  cleanTestConfig() {
+    [configFilePath, boundsInfoPath].forEach((file) => {
+      try {
+        fs.unlinkSync(file);
+      } catch (err) {
+        if (err.code !== 'ENOENT') {
+          console.error(err);
+        }
+      }
+    });
+  },
+
   getSpectronApp() {
     const app = new Application({
       path: electronBinaryPath,

@@ -7,17 +7,18 @@ const env = require('../modules/environment');
 describe('application', function desc() {
   this.timeout(10000);
 
-  beforeEach((done) => {
+  beforeEach(() => {
+    env.cleanTestConfig();
     this.app = env.getSpectronApp();
-    fs.unlink(env.configFilePath, () => {
-      done();
-    });
   });
 
   afterEach(() => {
     if (this.app && this.app.isRunning()) {
-      return this.app.stop();
+      return this.app.stop().then(() => {
+        env.cleanTestConfig();
+      });
     }
+    env.cleanTestConfig();
     return true;
   });
 
@@ -28,6 +29,33 @@ describe('application', function desc() {
         getWindowCount().should.eventually.equal(1).
         browserWindow.isDevToolsOpened().should.eventually.be.false.
         browserWindow.isVisible().should.eventually.be.true;
+    });
+  });
+
+  it('should restore window bounds', () => {
+    const expectedBounds = {x: 100, y: 200, width: 300, height: 400};
+    fs.writeFileSync(env.boundsInfoPath, JSON.stringify(expectedBounds));
+    return this.app.start().then(() => {
+      return this.app.browserWindow.getBounds();
+    }).then((bounds) => {
+      bounds.should.deep.equal(expectedBounds);
+    });
+  });
+
+  it('should NOT restore window bounds if the origin is located on outside of viewarea', () => {
+    const expectedMinusBounds = {x: -100000, y: 200, width: 300, height: 400};
+    const expectedLargeBounds = {x: 100, y: 200000, width: 300, height: 400};
+
+    fs.writeFileSync(env.boundsInfoPath, JSON.stringify(expectedMinusBounds));
+    return this.app.start().then(() => {
+      return this.app.browserWindow.getBounds();
+    }).then((bounds) => {
+      bounds.should.not.deep.equal(expectedMinusBounds);
+    }).then(() => {
+      fs.writeFileSync(env.boundsInfoPath, JSON.stringify(expectedLargeBounds));
+      return this.app.restart();
+    }).then((bounds) => {
+      bounds.should.not.deep.equal(expectedLargeBounds);
     });
   });
 
