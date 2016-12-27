@@ -14,6 +14,9 @@ Release date: TBD
 
 ### Bug Fixes
 
+#### All Platforms
+- Do not place the application window outside of the viewable area anymore, if the display it has been on has been removed
+
 #### Windows
 - Fixed an issue where an unexpected window appears while install/uninstalling
 
