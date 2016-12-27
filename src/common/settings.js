@@ -18,7 +18,7 @@ function loadDefault(version) {
       teams: [],
       hideMenuBar: false,
       showTrayIcon: false,
-      trayIconTheme: '',
+      trayIconTheme: 'light',
       disablewebsecurity: true,
       minimizeToTray: false,
       toggleWindowOnTrayIconClick: false,

@@ -20,6 +20,9 @@ Release date: TBD
 #### Windows
 - Fixed an issue where an unexpected window appears while install/uninstalling
 
+#### Linux
+- Fixed missing initial theme of tray icon
+
 ----
 
 ## Release v3.5.0
