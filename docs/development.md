@@ -38,7 +38,7 @@ Please see [electron-builder wiki](https://github.com/electron-userland/electron
 
 **Minimum requirements for current platform:**
 - Windows: Nothing.
-- macOS: Nothing.
+- macOS: `brew install gnu-tar`
 - Linux (64 bit): `icnsutils`, `graphicsmagick` and `xz-utils` if Ubuntu is used.
 
 #### Code signing
