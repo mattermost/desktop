@@ -81,6 +81,10 @@ Many thanks to all our contributors. In alphabetical order:
 
 - [itsmartin](https://github.com/itsmartin), [jasonblais](https://github.com/jasonblais), [jcomack](https://github.com/jcomack), [jnugh](https://github.com/jnugh), [kytwb](https://github.com/kytwb), [magicmonty](https://github.com/magicmonty), [Razzeee](https://github.com/Razzeee), [yuya-oc](https://github.com/yuya-oc)
 
+Thanks also to those who reported bugs that benefited the release, in alphabetical order:
+
+- ellisd ([#383](https://github.com/mattermost/desktop/issues/383)), [it33](https://github.com/it33) ([#384](https://github.com/mattermost/desktop/issues/384)), [jnugh](https://github.com/jnugh) ([#392](https://github.com/mattermost/desktop/issues/392)), [lfbrock](https://github.com/lfbrock) ([#382](https://github.com/mattermost/desktop/issues/382)), [yuya-oc](https://github.com/yuya-oc) ([#391](https://github.com/mattermost/desktop/issues/391))
+
 ----
 
 ## Release v3.4.1
