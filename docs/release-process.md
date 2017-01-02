@@ -12,7 +12,7 @@ Notes:
 
 Pre-work for the current release begins at the code complete date of the previous release. See "Code Complete" section below for details.
 
-### B. (T-minus 20 working days) Release Announcement
+### B. (T-minus 20 working days) Release Date Announcement
 
 1. PM:
     - Post this checklist in Desktop App channel 
