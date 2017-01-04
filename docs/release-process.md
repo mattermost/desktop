@@ -10,7 +10,7 @@ Notes:
 
 ### A. (Code complete date of previous release) Beginning of release
 
-Pre-work for the current release begins at the code complete date of the previous release. See "Code Complete" section below for details.
+Pre-work for the current release begins at the code complete date of the previous release. See "Code Complete and Release Candidate Cut" section below for details.
 
 ### B. (T-minus 20 working days) Release Date Announcement
 
