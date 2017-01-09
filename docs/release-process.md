@@ -10,15 +10,18 @@ Notes:
 
 ### A. (Code complete date of previous release) Beginning of release
 
-Pre-work for the current release begins at the code complete date of the previous release. See "Code Complete" section below for details.
+Pre-work for the current release begins at the code complete date of the previous release. See "Code Complete and Release Candidate Cut" section below for details.
 
-### B. (T-minus 12 working days) Cut-off for merging major features
-
-No pull requests for major features should be **merged** to the current release after this date
+### B. (T-minus 20 working days) Release Date Announcement
 
 1. PM:
     - Post this checklist in Desktop App channel 
     - Confirm date of marketing announcement for the release and update Desktop App channel header if needed
+    - Create meta issue for release in GitHub to let contributors and users know about the upcoming release. See [example issue](https://github.com/mattermost/desktop/issues/271).
+    - Prepare JIRA tickets for the next release, with a corresponding vX.X prefix
+        - Cut the release candidate (RC1)
+        - Cut final release with code-signing for Windows and Mac builds
+    - Queue desktop app for a 15-minute team testing
 2. Dev/PM:
     - Prioritize reviewing, testing, and merging of pull requests for current release until there are no more tickets in the [pull request queue](https://github.com/mattermost/desktop/pulls) marked for the current release 
 
@@ -33,7 +36,7 @@ No pull requests for major features should be **merged** to the current release 
     - Coordinate testing:  
         - Update the RC Testing Spreadsheet to cover any changes or new features, confirm that known issues are listed in the relevant tests, and assign each area to a team member
         - Post in Desktop App channel alerting community of upcoming release and to ask help with testing the release candidate
-    - Create meta issue for release in GitHub with a link to the changelog
+    - Update meta issue for release in GitHub with a link to the changelog
 2. Dev/PM:
     - Submit changelog with updates for improvements, bug fixes, known issues, and contributors
     - Finalize roadmap for next release
@@ -67,8 +70,10 @@ No pull requests for major features should be **merged** to the current release 
 1. PM:
     - Post this checklist in Desktop App channel
     - Verify all items in the last posted release checklist are complete
-    - Check that known issues section of Changelog is updated
-    - Check that the contributors section of Changelog is updated
+    - Check that the following are updated in the Changelog:
+        - Known issues
+        - Contributors
+        - Release candidate bug reports
 2. Dev/PM:
     - Finish assigned areas of the Release Candidate Testing spreadsheet
     - Continue triaging hotfix candidates and decide on whether and when to cut next RC or final
