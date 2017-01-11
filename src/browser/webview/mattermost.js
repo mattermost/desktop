@@ -24,6 +24,14 @@ setInterval(function getUnreadCount() {
     this.mentionCount = 0;
   }
 
+  // LHS not found => Log out => Count should be 0.
+  if (document.getElementById('sidebar-left') === null) {
+    ipc.sendToHost('onUnreadCountChange', 0, 0, false, false);
+    this.unreadCount = 0;
+    this.mentionCount = 0;
+    return;
+  }
+
   // unreadCount in sidebar
   // Note: the active channel doesn't have '.unread-title'.
   var unreadCount = document.getElementsByClassName('unread-title').length;
