@@ -21,7 +21,8 @@ const MattermostView = React.createClass({
 
   getInitialState() {
     return {
-      errorInfo: null
+      errorInfo: null,
+      isContextMenuAdded: false
     };
   },
 
@@ -78,6 +79,8 @@ const MattermostView = React.createClass({
       }
     });
 
+    // 'dom-ready' means "content has been loaded"
+    // So this would be emitted again when reloading a webview
     webview.addEventListener('dom-ready', () => {
       // webview.openDevTools();
 
@@ -100,9 +103,12 @@ const MattermostView = React.createClass({
         });
       }
 
-      electronContextMenu({
-        window: webview
-      });
+      if (!this.state.isContextMenuAdded) {
+        electronContextMenu({
+          window: webview
+        });
+        this.setState({isContextMenuAdded: true});
+      }
     });
 
     webview.addEventListener('update-target-url', (event) => {
