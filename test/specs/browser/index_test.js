@@ -171,4 +171,11 @@ describe('browser/index.html', function desc() {
         browserWindow.getTitle().should.eventually.equal('Title 1');
     });
   });
+
+  it('should open the new server prompt after clicking the add button', () => {
+    // See settings_test for specs that cover the actual prompt
+    return this.app.client.waitUntilWindowLoaded().
+      click('#tabBarAddNewTeam').
+      isExisting('#newServerModal').should.eventually.be.true;
+  });
 });

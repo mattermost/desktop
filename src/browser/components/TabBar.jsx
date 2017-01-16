@@ -83,6 +83,7 @@ class TabBar extends React.Component {
   renderAddTeamButton() {
     return (
       <Button
+        id='tabBarAddNewTeam'
         onClick={this.props.onAddTeam}
         bsStyle='tabButton'
       >

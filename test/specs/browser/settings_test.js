@@ -245,4 +245,100 @@ describe('browser/settings.html', function desc() {
         isExisting(modalTitleSelector).should.eventually.false;
     });
   });
+
+  describe('NewTeamModal', () => {
+    beforeEach(() => {
+      env.addClientCommands(this.app.client);
+      return this.app.client.
+        loadSettingsPage().
+        click('#addNewServer');
+    });
+
+    it('should open the new server modal', () => {
+      return this.app.client.isExisting('#newServerModal').should.eventually.equal(true);
+    });
+
+    it('should close the window after clicking cancel', () => {
+      return this.app.client.
+        click('#cancelNewServerModal').
+        isExisting('#newServerModal').should.eventually.equal(false);
+    });
+
+    it('should not be valid if no team name has been set', () => {
+      return this.app.client.
+        isExisting('.has-error #teamNameInput').should.eventually.equal(true);
+    });
+
+    it('should not be valid if no server address has been set', () => {
+      return this.app.client.
+        isExisting('.has-error #teamUrlInput').should.eventually.equal(true);
+    });
+
+    describe('Valid server name', () => {
+      beforeEach(() => {
+        return this.app.client.
+            setValue('#teamNameInput', 'TestTeam');
+      });
+
+      it('should not be marked invalid', () => {
+        return this.app.client.
+            isExisting('.has-error #teamNameInput').should.eventually.equal(false);
+      });
+
+      it('should not be possible to click save', () => {
+        return this.app.client.
+          getAttribute('#saveNewServerModal', 'disabled').should.eventually.equal('true');
+      });
+    });
+
+    describe('Valid server url', () => {
+      beforeEach(() => {
+        return this.app.client.
+            setValue('#teamUrlInput', 'http://example.org');
+      });
+
+      it('should be valid', () => {
+        return this.app.client.
+          isExisting('.has-error #teamUrlInput').should.eventually.equal(false);
+      });
+
+      it('should not be possible to click save', () => {
+        return this.app.client.
+          getAttribute('#saveNewServerModal', 'disabled').should.eventually.equal('true');
+      });
+    });
+
+    it('should not be valid if an invalid server address has been set', () => {
+      return this.app.client.
+        setValue('#teamUrlInput', 'superInvalid url').
+        isExisting('.has-error #teamUrlInput').should.eventually.equal(true);
+    });
+
+    describe('Valid Team Settings', () => {
+      beforeEach(() => {
+        return this.app.client.
+            setValue('#teamUrlInput', 'http://example.org').
+            setValue('#teamNameInput', 'TestTeam');
+      });
+
+      it('should be possible to click add', () => {
+        return this.app.client.
+          getAttribute('#saveNewServerModal', 'disabled').should.eventually.equal(null);
+      });
+
+      it('should add the team to the config file', (done) => {
+        this.app.client.
+          click('#saveNewServerModal').
+          click('#btnSave');
+        this.app.client.pause(1000).then(() => {
+          const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+          savedConfig.teams.should.contain({
+            name: 'TestTeam',
+            url: 'http://example.org'
+          });
+          return done();
+        });
+      });
+    });
+  });
 });

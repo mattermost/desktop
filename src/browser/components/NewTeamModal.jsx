@@ -49,7 +49,9 @@ class NewTeamModal extends React.Component {
 
   render() {
     return (
-      <Modal.Dialog>
+      <Modal.Dialog
+        id='newServerModal'
+      >
         <Modal.Header>
           <Modal.Title>{'Add a new Team'}</Modal.Title>
         </Modal.Header>
@@ -62,6 +64,7 @@ class NewTeamModal extends React.Component {
             >
               <ControlLabel>{'Server Display Name'}</ControlLabel>
               <FormControl
+                id='teamNameInput'
                 type='text'
                 value={this.state.teamName}
                 placeholder='Server Name'
@@ -75,6 +78,7 @@ class NewTeamModal extends React.Component {
             >
               <ControlLabel>{'Team URL'}</ControlLabel>
               <FormControl
+                id='teamUrlInput'
                 type='text'
                 value={this.state.teamUrl}
                 placeholder='https://example.org'
@@ -88,9 +92,11 @@ class NewTeamModal extends React.Component {
 
         <Modal.Footer>
           <Button
+            id='cancelNewServerModal'
             onClick={this.props.onClose}
           >{'Cancel'}</Button>
           <Button
+            id='saveNewServerModal'
             onClick={() => {
               this.props.onSave({
                 url: this.state.teamUrl,
