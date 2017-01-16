@@ -1,14 +1,15 @@
 const React = require('react');
 const {ListGroup} = require('react-bootstrap');
 const TeamListItem = require('./TeamListItem.jsx');
-const TeamListItemNew = require('./TeamListItemNew.jsx');
+const NewTeamModal = require('./NewTeamModal.jsx');
 const RemoveServerModal = require('./RemoveServerModal.jsx');
 
 const TeamList = React.createClass({
   propTypes: {
     onTeamsChange: React.PropTypes.func,
     showAddTeamForm: React.PropTypes.bool,
-    teams: React.PropTypes.array
+    teams: React.PropTypes.array,
+    toggleAddTeamForm: React.PropTypes.func
   },
 
   getInitialState() {
@@ -95,12 +96,17 @@ const TeamList = React.createClass({
     var addTeamForm;
     if (this.props.showAddTeamForm || this.state.showTeamListItemNew) {
       addTeamForm = (
-        <TeamListItemNew
-          key={this.state.team.index}
-          onTeamAdd={this.handleTeamAdd}
-          teamIndex={this.state.team.index}
-          teamName={this.state.team.name}
-          teamUrl={this.state.team.url}
+        <NewTeamModal
+          onClose={this.props.toggleAddTeamForm}
+          onSave={(newTeam) => {
+            this.setState({
+              showNewTeamModal: false
+            });
+            this.props.teams.push(newTeam);
+            this.render();
+
+            this.props.onTeamsChange(this.props.teams);
+          }}
         />);
     } else {
       addTeamForm = '';

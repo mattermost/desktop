@@ -159,6 +159,7 @@ const SettingsPage = React.createClass({
           <TeamList
             teams={this.state.teams}
             showAddTeamForm={this.state.showAddTeamForm}
+            toggleAddTeamForm={this.toggleShowTeamForm}
             onTeamsChange={this.handleTeamsChange}
           />
         </Col>
@@ -351,6 +352,7 @@ const SettingsPage = React.createClass({
               <p className='text-right'>
                 <a
                   style={settingsPage.sectionHeadingLink}
+                  id='addNewServer'
                   href='#'
                   onClick={this.toggleShowTeamForm}
                 >{'⊞ Add new team'}</a>

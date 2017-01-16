@@ -55,20 +55,20 @@ class NewTeamModal extends React.Component {
         </Modal.Header>
 
         <Modal.Body>
-          {'Please specify a team name and a valid Mattermost URL'}
+          {'Please specify a server name and a valid Mattermost URL'}
           <form>
             <FormGroup
               validationState={this.getTeamNameValidationState()}
             >
-              <ControlLabel>{'Team Display Name'}</ControlLabel>
+              <ControlLabel>{'Server Display Name'}</ControlLabel>
               <FormControl
                 type='text'
                 value={this.state.teamName}
-                placeholder='Team Name'
+                placeholder='Server Name'
                 onChange={this.handleTeamNameChange.bind(this)}
               />
               <FormControl.Feedback/>
-              <HelpBlock>{'Team Name must not be empty'}</HelpBlock>
+              <HelpBlock>{'The name of the server displayed on your desktop app tab bar.'}</HelpBlock>
             </FormGroup>
             <FormGroup
               validationState={this.getTeamUrlValidationState()}
@@ -81,7 +81,7 @@ class NewTeamModal extends React.Component {
                 onChange={this.handleTeamUrlChange.bind(this)}
               />
               <FormControl.Feedback/>
-              <HelpBlock>{'Must be a valid URL'}</HelpBlock>
+              <HelpBlock>{'The URL of your Mattermost server. Must start with http:// or https://.'}</HelpBlock>
             </FormGroup>
           </form>
         </Modal.Body>
