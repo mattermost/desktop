@@ -447,7 +447,12 @@ app.on('ready', () => {
   if (process.platform === 'linux') {
     windowOptions.icon = path.resolve(assetsDir, 'appicon.png');
   }
-  Object.assign(windowOptions, {title: app.getName(), show: false});
+  Object.assign(windowOptions, {
+    title: app.getName(),
+    show: false,
+    minWidth: 400,
+    minHeight: 240
+  });
   mainWindow = new BrowserWindow(windowOptions);
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();

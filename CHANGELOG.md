@@ -21,6 +21,7 @@ Release date: TBD
 - Do not place the application window outside of the viewable area anymore, if the display it has been on has been removed
 - Remove remaining badges after logging out of the team
 - Fixed an issue where context menu appears many times after reloading
+- Fixed an issue where minimum window size is not set
 
 #### Windows
 - Fixed an issue where an unexpected window appears while install/uninstalling
