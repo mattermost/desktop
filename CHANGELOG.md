@@ -14,6 +14,7 @@ Release date: TBD
 
 #### All Platforms
 - Suppress white screen which is displayed for a moment on startup
+- Support unread indications in team sidebar of Mattermost server 3.6
 
 ### Bug Fixes
 

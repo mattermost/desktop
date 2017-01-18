@@ -36,6 +36,12 @@ setInterval(function getUnreadCount() {
   // Note: the active channel doesn't have '.unread-title'.
   var unreadCount = document.getElementsByClassName('unread-title').length;
 
+  // unreadCount in team sidebar
+  const teamSideBar = document.getElementsByClassName('team-sidebar'); // team-sidebar doesn't have id
+  if (teamSideBar.length === 1) {
+    unreadCount += teamSideBar[0].getElementsByClassName('unread').length;
+  }
+
   // mentionCount in sidebar
   var elem = document.getElementsByClassName('badge');
   var mentionCount = 0;
