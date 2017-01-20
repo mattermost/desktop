@@ -441,8 +441,8 @@ app.on('ready', () => {
   try {
     windowOptions = getValidWindowPosition(JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8')));
   } catch (e) {
-    // follow Electron's defaults
-    windowOptions = {};
+    // Follow Electron's defaults, except for window dimensions which targets 1024x768 screen resolution.
+    windowOptions = {width: 1000, height: 700};
   }
   if (process.platform === 'linux') {
     windowOptions.icon = path.resolve(assetsDir, 'appicon.png');
