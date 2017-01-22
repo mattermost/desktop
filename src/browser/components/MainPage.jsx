@@ -315,10 +315,11 @@ const MainPage = React.createClass({
             });
           }}
           onSave={(newTeam) => {
-            this.setState({
-              showNewTeamModal: false
-            });
             this.props.teams.push(newTeam);
+            this.setState({
+              showNewTeamModal: false,
+              key: this.props.teams.length - 1
+            });
             this.render();
             this.props.onTeamConfigChange(this.props.teams);
           }}
