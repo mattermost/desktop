@@ -53,11 +53,10 @@ class NewTeamModal extends React.Component {
         id='newServerModal'
       >
         <Modal.Header>
-          <Modal.Title>{'Add a new Team'}</Modal.Title>
+          <Modal.Title>{'Add Server'}</Modal.Title>
         </Modal.Header>
 
         <Modal.Body>
-          {'Please specify a server name and a valid Mattermost URL'}
           <form>
             <FormGroup
               validationState={this.getTeamNameValidationState()}
@@ -81,7 +80,7 @@ class NewTeamModal extends React.Component {
                 id='teamUrlInput'
                 type='text'
                 value={this.state.teamUrl}
-                placeholder='https://example.org'
+                placeholder='https://example.com'
                 onChange={this.handleTeamUrlChange.bind(this)}
               />
               <FormControl.Feedback/>
