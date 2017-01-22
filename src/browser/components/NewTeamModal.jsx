@@ -12,10 +12,6 @@ class NewTeamModal extends React.Component {
     };
   }
 
-  shouldComponentUpdate() {
-    return true;
-  }
-
   getTeamNameValidationState() {
     return this.state.teamName.length > 0 ? '' : 'error';
   }
@@ -47,10 +43,35 @@ class NewTeamModal extends React.Component {
            this.getTeamUrlValidationState() === '';
   }
 
+  save() {
+    if (this.validateForm()) {
+      this.props.onSave({
+        url: this.state.teamUrl,
+        name: this.state.teamName
+      });
+    }
+  }
+
   render() {
     return (
-      <Modal.Dialog
+      <Modal
+        show={true}
         id='newServerModal'
+        onHide={this.props.onClose}
+        onKeyDown={(e) => {
+          switch (e.key) {
+          case 'Enter':
+            this.save();
+
+            // The add button from behind this might still be focused
+            e.preventDefault();
+            e.stopPropagation();
+            break;
+          case 'Escape':
+            this.props.onClose();
+            break;
+          }
+        }}
       >
         <Modal.Header>
           <Modal.Title>{'Add Server'}</Modal.Title>
@@ -96,18 +117,13 @@ class NewTeamModal extends React.Component {
           >{'Cancel'}</Button>
           <Button
             id='saveNewServerModal'
-            onClick={() => {
-              this.props.onSave({
-                url: this.state.teamUrl,
-                name: this.state.teamName
-              });
-            }}
+            onClick={this.save.bind(this)}
             disabled={!this.validateForm()}
             bsStyle='primary'
           >{'Add'}</Button>
         </Modal.Footer>
 
-      </Modal.Dialog>
+      </Modal>
     );
   }
 }
