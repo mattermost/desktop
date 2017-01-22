@@ -484,6 +484,9 @@ app.on('ready', () => {
 
   mainWindow.setFullScreenable(true); // fullscreenable option has no effect.
   if (hideOnStartup) {
+    if (windowOptions.maximized) {
+      mainWindow.maximize();
+    }
     mainWindow.minimize();
   } else {
     if (windowOptions.maximized) {
