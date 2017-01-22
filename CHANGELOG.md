@@ -26,9 +26,11 @@ Release date: TBD
 
 #### Windows
 - Fixed an issue where an unexpected window appears while install/uninstalling
+- Fixed an issue where the maximized state is not restored when the application is started by "Start app on Login"
 
 #### Linux
 - Fixed missing initial theme of tray icon
+- Fixed an issue where the maximized state is not restored when the application is started by "Start app on Login"
 
 ----
 
