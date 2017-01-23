@@ -449,6 +449,7 @@ app.on('ready', () => {
   }
   Object.assign(windowOptions, {
     title: app.getName(),
+    fullscreenable: true,
     show: false,
     minWidth: 400,
     minHeight: 240
@@ -486,7 +487,6 @@ app.on('ready', () => {
     console.log('The application has become unresponsive.');
   });
 
-  mainWindow.setFullScreenable(true); // fullscreenable option has no effect.
   if (hideOnStartup) {
     if (windowOptions.maximized) {
       mainWindow.maximize();
