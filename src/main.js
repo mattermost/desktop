@@ -455,7 +455,11 @@ app.on('ready', () => {
   });
   mainWindow = new BrowserWindow(windowOptions);
   mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
+    if (process.platform !== 'darwin') {
+      mainWindow.show();
+    } else if (hideOnStartup !== true) {
+      mainWindow.show();
+    }
   });
 
   if (process.platform === 'darwin') {
@@ -484,14 +488,16 @@ app.on('ready', () => {
 
   mainWindow.setFullScreenable(true); // fullscreenable option has no effect.
   if (hideOnStartup) {
-    mainWindow.minimize();
-  } else {
     if (windowOptions.maximized) {
       mainWindow.maximize();
     }
-    if (windowOptions.fullscreen) {
-      mainWindow.setFullScreen(true);
+
+    // on MacOS, the window is already hidden until 'ready-to-show'
+    if (process.platform !== 'darwin') {
+      mainWindow.minimize();
     }
+  } else if (windowOptions.maximized) {
+    mainWindow.maximize();
   }
 
   // and load the index.html of the app.
