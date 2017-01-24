@@ -191,4 +191,58 @@ describe('browser/settings.html', function desc() {
       });
     });
   });
+
+  describe('RemoveServerModal', () => {
+    const modalTitleSelector = '.modal-title=Remove Server';
+
+    beforeEach(() => {
+      env.addClientCommands(this.app.client);
+      return this.app.client.
+        loadSettingsPage().
+        isExisting(modalTitleSelector).should.eventually.false.
+        isVisible(modalTitleSelector).should.eventually.false.
+        click('=Remove').
+        waitForVisible(modalTitleSelector);
+    });
+
+    it('should remove existing team on click Remove', (done) => {
+      this.app.client.
+        element('.modal-dialog').click('.btn=Remove').
+        pause(500).
+        isExisting(modalTitleSelector).should.eventually.false.
+        click('#btnSave').
+        pause(500).then(() => {
+          const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+          savedConfig.teams.should.deep.equal(config.teams.slice(1));
+          done();
+        });
+    });
+
+    it('should NOT remove existing team on click Cancel', (done) => {
+      this.app.client.
+        element('.modal-dialog').click('.btn=Cancel').
+        pause(500).
+        isExisting(modalTitleSelector).should.eventually.false.
+        click('#btnSave').
+        pause(500).then(() => {
+          const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+          savedConfig.teams.should.deep.equal(config.teams);
+          done();
+        });
+    });
+
+    it('should disappear on click Close', () => {
+      return this.app.client.
+        click('.modal-dialog button.close').
+        pause(500).
+        isExisting(modalTitleSelector).should.eventually.false;
+    });
+
+    it('should disappear on click background', () => {
+      return this.app.client.
+        click('body').
+        pause(500).
+        isExisting(modalTitleSelector).should.eventually.false;
+    });
+  });
 });
