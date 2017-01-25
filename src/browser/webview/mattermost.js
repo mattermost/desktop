@@ -8,6 +8,8 @@ window.eval = global.eval = () => {
   throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
 };
 
+Reflect.deleteProperty(global.Buffer); // http://electron.atom.io/docs/tutorial/security/#buffer-global
+
 function hasClass(element, className) {
   var rclass = /[\t\r\n\f]/g;
   if ((' ' + element.className + ' ').replace(rclass, ' ').indexOf(className) > -1) {
