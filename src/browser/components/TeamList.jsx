@@ -2,6 +2,7 @@ const React = require('react');
 const {ListGroup} = require('react-bootstrap');
 const TeamListItem = require('./TeamListItem.jsx');
 const TeamListItemNew = require('./TeamListItemNew.jsx');
+const RemoveServerModal = require('./RemoveServerModal.jsx');
 
 const TeamList = React.createClass({
   propTypes: {
@@ -13,6 +14,7 @@ const TeamList = React.createClass({
   getInitialState() {
     return {
       showTeamListItemNew: false,
+      indexToRemoveServer: -1,
       team: {
         url: '',
         name: '',
@@ -58,11 +60,20 @@ const TeamList = React.createClass({
       }
     });
   },
+
+  openServerRemoveModal(indexForServer) {
+    this.setState({indexToRemoveServer: indexForServer});
+  },
+
+  closeServerRemoveModal() {
+    this.setState({indexToRemoveServer: -1});
+  },
+
   render() {
     var self = this;
     var teamNodes = this.props.teams.map((team, i) => {
       function handleTeamRemove() {
-        self.handleTeamRemove(i);
+        self.openServerRemoveModal(i);
       }
 
       function handleTeamEditing() {
@@ -95,10 +106,25 @@ const TeamList = React.createClass({
       addTeamForm = '';
     }
 
+    const removeServer = this.props.teams[this.state.indexToRemoveServer];
+    const removeServerModal = (
+      <RemoveServerModal
+        show={this.state.indexToRemoveServer !== -1}
+        serverName={removeServer ? removeServer.name : ''}
+        onHide={this.closeServerRemoveModal}
+        onCancel={this.closeServerRemoveModal}
+        onAccept={() => {
+          this.handleTeamRemove(this.state.indexToRemoveServer);
+          this.closeServerRemoveModal();
+        }}
+      />
+    );
+
     return (
       <ListGroup className='teamList'>
         { teamNodes }
         { addTeamForm }
+        { removeServerModal}
       </ListGroup>
     );
   }

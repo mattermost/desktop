@@ -21,7 +21,8 @@ module.exports = merge(base, {
       test: /\.jsx$/,
       loader: 'babel',
       query: {
-        presets: ['react']
+        presets: ['react'],
+        plugins: ['transform-object-rest-spread']
       }
     }]
   },
