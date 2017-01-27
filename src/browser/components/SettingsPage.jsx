@@ -342,7 +342,7 @@ const SettingsPage = React.createClass({
               md={10}
               xs={8}
             >
-              <h2 style={settingsPage.sectionHeading}>{'Team Management'}</h2>
+              <h2 style={settingsPage.sectionHeading}>{'Server Management'}</h2>
             </Col>
             <Col
               md={2}
@@ -353,7 +353,7 @@ const SettingsPage = React.createClass({
                   style={settingsPage.sectionHeadingLink}
                   href='#'
                   onClick={this.toggleShowTeamForm}
-                >{'⊞ Add new team'}</a>
+                >{'⊞ Add new server'}</a>
               </p>
             </Col>
           </Row>
