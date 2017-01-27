@@ -91,6 +91,21 @@ const SettingsPage = React.createClass({
   handleCancel() {
     backToIndex();
   },
+
+  handleClose(e) {
+    let savedConfig;
+    try {
+      savedConfig = settings.readFileSync(this.props.configFile);
+    } catch (err) {
+      savedConfig = settings.loadDefault();
+    }
+    if (savedConfig.teams.length === 0) {
+      e.preventDefault();
+    } else {
+      backToIndex();
+    }
+  },
+
   handleChangeDisableWebSecurity() {
     this.setState({
       disablewebsecurity: !this.refs.disablewebsecurity.props.checked
@@ -327,7 +342,7 @@ const SettingsPage = React.createClass({
             <h1 style={settingsPage.heading}>{'Settings'}</h1>
             <div
               style={settingsPage.close}
-              onClick={this.handleCancel}
+              onClick={this.handleClose}
             >
               <span>{'×'}</span>
             </div>
