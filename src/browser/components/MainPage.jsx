@@ -39,12 +39,13 @@ const MainPage = React.createClass({
     disablewebsecurity: React.PropTypes.bool.isRequired,
     onUnreadCountChange: React.PropTypes.func.isRequired,
     teams: React.PropTypes.array.isRequired,
-    onTeamConfigChange: React.PropTypes.func.isRequired
+    onTeamConfigChange: React.PropTypes.func.isRequired,
+    initialIndex: React.PropTypes.number.isRequired
   },
 
   getInitialState() {
     return {
-      key: 0,
+      key: this.props.initialIndex,
       unreadCounts: new Array(this.props.teams.length),
       mentionCounts: new Array(this.props.teams.length),
       unreadAtActive: new Array(this.props.teams.length),

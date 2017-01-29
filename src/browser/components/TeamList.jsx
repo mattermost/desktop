@@ -12,7 +12,8 @@ const TeamList = React.createClass({
     addServer: React.PropTypes.func,
     updateTeam: React.PropTypes.func,
     toggleAddTeamForm: React.PropTypes.func,
-    setAddTeamFormVisibility: React.PropTypes.func
+    setAddTeamFormVisibility: React.PropTypes.func,
+    onTeamClick: React.PropTypes.func
   },
 
   getInitialState() {
@@ -92,6 +93,7 @@ const TeamList = React.createClass({
           url={team.url}
           onTeamRemove={handleTeamRemove}
           onTeamEditing={handleTeamEditing}
+          onTeamClick={this.props.onTeamClick.bind(this, i)}
         />
       );
     });

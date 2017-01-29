@@ -14,8 +14,9 @@ const appLauncher = new AutoLaunch({
   isHidden: true
 });
 
-function backToIndex() {
-  remote.getCurrentWindow().loadURL('file://' + __dirname + '/index.html');
+function backToIndex(index) {
+  const target = typeof index === 'undefined' ? 0 : index;
+  remote.getCurrentWindow().loadURL(`file://${__dirname}/index.html?index=${target}`);
 }
 
 const SettingsPage = React.createClass({
@@ -182,6 +183,7 @@ const SettingsPage = React.createClass({
             onTeamsChange={this.handleTeamsChange}
             updateTeam={this.updateTeam}
             addServer={this.addServer}
+            onTeamClick={backToIndex}
           />
         </Col>
       </Row>
