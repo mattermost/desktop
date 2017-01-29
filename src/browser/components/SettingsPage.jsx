@@ -33,6 +33,7 @@ const SettingsPage = React.createClass({
 
     initialState.showAddTeamForm = false;
     initialState.trayWasVisible = remote.getCurrentWindow().trayWasVisible;
+    initialState.disableClose = initialState.teams.length === 0;
 
     return initialState;
   },
@@ -91,21 +92,6 @@ const SettingsPage = React.createClass({
   handleCancel() {
     backToIndex();
   },
-
-  handleClose(e) {
-    let savedConfig;
-    try {
-      savedConfig = settings.readFileSync(this.props.configFile);
-    } catch (err) {
-      savedConfig = settings.loadDefault();
-    }
-    if (savedConfig.teams.length === 0) {
-      e.preventDefault();
-    } else {
-      backToIndex();
-    }
-  },
-
   handleChangeDisableWebSecurity() {
     this.setState({
       disablewebsecurity: !this.refs.disablewebsecurity.props.checked
@@ -290,13 +276,13 @@ const SettingsPage = React.createClass({
         backgroundColor: '#fff'
       },
       close: {
+        textDecoration: 'none',
         position: 'absolute',
         right: '0',
-        top: '10px',
+        top: '5px',
         fontSize: '35px',
         fontWeight: 'normal',
-        color: '#bbb',
-        cursor: 'pointer'
+        color: '#bbb'
       },
       heading: {
         textAlign: 'center',
@@ -340,12 +326,14 @@ const SettingsPage = React.createClass({
         >
           <div style={{position: 'relative'}}>
             <h1 style={settingsPage.heading}>{'Settings'}</h1>
-            <div
+            <Button
+              bsStyle='link'
               style={settingsPage.close}
-              onClick={this.handleClose}
+              onClick={this.handleCancel}
+              disabled={this.state.disableClose}
             >
               <span>{'×'}</span>
-            </div>
+            </Button>
           </div>
         </Navbar>
         <Grid
