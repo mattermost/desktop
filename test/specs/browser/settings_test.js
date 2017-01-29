@@ -37,7 +37,7 @@ describe('browser/settings.html', function desc() {
       loadSettingsPage().
       click('#btnCancel').
       pause(1000).
-      getUrl().should.eventually.match(/\/index.html$/);
+      getUrl().should.eventually.match(/\/index.html(\?.+)?$/);
   });
 
   it('should show index.html when Save button is clicked', () => {
@@ -46,7 +46,7 @@ describe('browser/settings.html', function desc() {
       loadSettingsPage().
       click('#btnSave').
       pause(1000).
-      getUrl().should.eventually.match(/\/index.html$/);
+      getUrl().should.eventually.match(/\/index.html(\?.+)?$/);
   });
 
   it('should show NewServerModal after all servers are removed', () => {
