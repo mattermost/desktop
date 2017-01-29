@@ -65,6 +65,28 @@ describe('browser/settings.html', function desc() {
       isExisting('#newServerModal').should.eventually.equal(true);
   });
 
+  describe('Server list', () => {
+    it('should open the corresponding tab when a server list item is clicked', () => {
+      env.addClientCommands(this.app.client);
+      return this.app.client.
+      loadSettingsPage().
+      click('h4=example_1').
+      pause(100).
+      waitUntilWindowLoaded().
+      getUrl().should.eventually.match(/\/index.html(\?.+)?$/).
+      isVisible('#mattermostView0').should.eventually.be.true.
+      isVisible('#mattermostView1').should.eventually.be.false.
+
+      loadSettingsPage().
+      click('h4=example_2').
+      pause(100).
+      waitUntilWindowLoaded().
+      getUrl().should.eventually.match(/\/index.html(\?.+)?$/).
+      isVisible('#mattermostView0').should.eventually.be.false.
+      isVisible('#mattermostView1').should.eventually.be.true;
+    });
+  });
+
   describe('Options', () => {
     describe.skip('Hide Menu Bar', () => {
       it('should appear on win32 or linux', () => {
