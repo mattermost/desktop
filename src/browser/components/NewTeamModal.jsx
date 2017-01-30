@@ -13,11 +13,15 @@ class NewTeamModal extends React.Component {
     };
   }
 
-  getTeamNameValidationState() {
+  getTeamNameValidationError() {
     if (!this.state.saveStarted) {
-      return '';
+      return null;
     }
-    return this.state.teamName.length > 0 ? '' : 'error';
+    return this.state.teamName.length > 0 ? null : 'Name is required.';
+  }
+
+  getTeamNameValidationState() {
+    return this.getTeamNameValidationError() === null ? null : 'error';
   }
 
   handleTeamNameChange(e) {
@@ -26,17 +30,21 @@ class NewTeamModal extends React.Component {
     });
   }
 
-  getTeamUrlValidationState() {
+  getTeamUrlValidationError() {
     if (!this.state.saveStarted) {
-      return '';
+      return null;
     }
     if (this.state.teamUrl.length === 0) {
-      return 'error';
+      return 'URL is required.';
     }
     if (!validUrl.isUri(this.state.teamUrl)) {
-      return 'error';
+      return 'URL should start with http:// or https://.';
     }
-    return '';
+    return null;
+  }
+
+  getTeamUrlValidationState() {
+    return this.getTeamUrlValidationError() === null ? null : 'error';
   }
 
   handleTeamUrlChange(e) {
@@ -45,9 +53,13 @@ class NewTeamModal extends React.Component {
     });
   }
 
+  getError() {
+    return this.getTeamNameValidationError() || this.getTeamUrlValidationError();
+  }
+
   validateForm() {
-    return this.getTeamNameValidationState() === '' &&
-           this.getTeamUrlValidationState() === '';
+    return this.getTeamNameValidationState() === null &&
+           this.getTeamUrlValidationState() === null;
   }
 
   save() {
@@ -122,6 +134,12 @@ class NewTeamModal extends React.Component {
         </Modal.Body>
 
         <Modal.Footer>
+          <div
+            className='pull-left'
+          >
+            {this.getError()}
+          </div>
+
           <Button
             id='cancelNewServerModal'
             onClick={this.props.onClose}
