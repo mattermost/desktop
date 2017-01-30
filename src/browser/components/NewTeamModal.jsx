@@ -8,11 +8,15 @@ class NewTeamModal extends React.Component {
     super();
     this.state = {
       teamName: '',
-      teamUrl: ''
+      teamUrl: '',
+      saveStarted: false
     };
   }
 
   getTeamNameValidationState() {
+    if (!this.state.saveStarted) {
+      return '';
+    }
     return this.state.teamName.length > 0 ? '' : 'error';
   }
 
@@ -23,6 +27,9 @@ class NewTeamModal extends React.Component {
   }
 
   getTeamUrlValidationState() {
+    if (!this.state.saveStarted) {
+      return '';
+    }
     if (this.state.teamUrl.length === 0) {
       return 'error';
     }
@@ -44,12 +51,16 @@ class NewTeamModal extends React.Component {
   }
 
   save() {
-    if (this.validateForm()) {
-      this.props.onSave({
-        url: this.state.teamUrl,
-        name: this.state.teamName
-      });
-    }
+    this.setState({
+      saveStarted: true
+    }, () => {
+      if (this.validateForm()) {
+        this.props.onSave({
+          url: this.state.teamUrl,
+          name: this.state.teamName
+        });
+      }
+    });
   }
 
   render() {

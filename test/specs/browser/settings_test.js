@@ -266,18 +266,21 @@ describe('browser/settings.html', function desc() {
 
     it('should not be valid if no team name has been set', () => {
       return this.app.client.
+        click('#saveNewServerModal').
         isExisting('.has-error #teamNameInput').should.eventually.equal(true);
     });
 
     it('should not be valid if no server address has been set', () => {
       return this.app.client.
+        click('#saveNewServerModal').
         isExisting('.has-error #teamUrlInput').should.eventually.equal(true);
     });
 
     describe('Valid server name', () => {
       beforeEach(() => {
         return this.app.client.
-            setValue('#teamNameInput', 'TestTeam');
+            setValue('#teamNameInput', 'TestTeam').
+            click('#saveNewServerModal');
       });
 
       it('should not be marked invalid', () => {
@@ -294,7 +297,8 @@ describe('browser/settings.html', function desc() {
     describe('Valid server url', () => {
       beforeEach(() => {
         return this.app.client.
-            setValue('#teamUrlInput', 'http://example.org');
+            setValue('#teamUrlInput', 'http://example.org').
+            click('#saveNewServerModal');
       });
 
       it('should be valid', () => {
@@ -311,6 +315,7 @@ describe('browser/settings.html', function desc() {
     it('should not be valid if an invalid server address has been set', () => {
       return this.app.client.
         setValue('#teamUrlInput', 'superInvalid url').
+        click('#saveNewServerModal').
         isExisting('.has-error #teamUrlInput').should.eventually.equal(true);
     });
 
