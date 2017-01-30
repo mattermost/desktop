@@ -130,6 +130,10 @@ const MainPage = React.createClass({
         mattermost.goForward();
       }
     });
+
+    ipcRenderer.on('add-server', () => {
+      this.addServer();
+    });
   },
   componentDidUpdate(prevProps, prevState) {
     if (prevState.key !== this.state.key) { // i.e. When tab has been changed
@@ -240,7 +244,7 @@ const MainPage = React.createClass({
       this.setState({targetURL});
     }
   },
-  addTeam() {
+  addServer() {
     this.setState({
       showNewTeamModal: true
     });
@@ -261,7 +265,7 @@ const MainPage = React.createClass({
             mentionAtActiveCounts={this.state.mentionAtActiveCounts}
             activeKey={this.state.key}
             onSelect={this.handleSelect}
-            onAddTeam={this.addTeam}
+            onAddServer={this.addServer}
           />
         </Row>
       );

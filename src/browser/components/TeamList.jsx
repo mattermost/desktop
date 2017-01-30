@@ -9,8 +9,9 @@ const TeamList = React.createClass({
     onTeamsChange: React.PropTypes.func,
     showAddTeamForm: React.PropTypes.bool,
     teams: React.PropTypes.array,
-    addTeam: React.PropTypes.func,
-    updateTeam: React.PropTypes.func
+    addServer: React.PropTypes.func,
+    updateTeam: React.PropTypes.func,
+    toggleAddTeamForm: React.PropTypes.func
   },
 
   getInitialState() {
@@ -94,24 +95,24 @@ const TeamList = React.createClass({
       );
     });
 
-    var addTeamForm;
+    var addServerForm;
     if (this.props.showAddTeamForm || this.state.showEditTeamForm) {
-      addTeamForm = (
+      addServerForm = (
         <NewTeamModal
           onClose={() => {
             this.setState({
               showNewTeamModal: false,
-              showEditTeamForm: false,
               team: {
                 name: '',
                 url: '',
                 index: false
               }
             });
+            this.props.toggleAddTeamForm();
           }}
           onSave={(newTeam) => {
             if (this.props.showAddTeamForm) {
-              this.props.addTeam(newTeam);
+              this.props.addServer(newTeam);
             } else {
               this.props.updateTeam(newTeam.index, newTeam);
             }
@@ -131,7 +132,7 @@ const TeamList = React.createClass({
           team={this.state.team}
         />);
     } else {
-      addTeamForm = '';
+      addServerForm = '';
     }
 
     const removeServer = this.props.teams[this.state.indexToRemoveServer];
@@ -151,7 +152,7 @@ const TeamList = React.createClass({
     return (
       <ListGroup className='teamList'>
         { teamNodes }
-        { addTeamForm }
+        { addServerForm }
         { removeServerModal}
       </ListGroup>
     );

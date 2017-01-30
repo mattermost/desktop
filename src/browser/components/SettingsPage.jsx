@@ -45,6 +45,11 @@ const SettingsPage = React.createClass({
         });
       });
     }
+    ipcRenderer.on('add-server', () => {
+      this.setState({
+        showAddTeamForm: true
+      });
+    });
   },
   handleTeamsChange(teams) {
     this.setState({
@@ -161,7 +166,7 @@ const SettingsPage = React.createClass({
     });
   },
 
-  addTeam(team) {
+  addServer(team) {
     var teams = this.state.teams;
     teams.push(team);
     this.setState({
@@ -179,7 +184,7 @@ const SettingsPage = React.createClass({
             toggleAddTeamForm={this.toggleShowTeamForm}
             onTeamsChange={this.handleTeamsChange}
             updateTeam={this.updateTeam}
-            addTeam={this.addTeam}
+            addServer={this.addServer}
           />
         </Col>
       </Row>

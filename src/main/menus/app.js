@@ -27,6 +27,11 @@ function createTemplate(mainWindow, config) {
     click() {
       mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
     }
+  }, {
+    label: 'Sign in to Another Server',
+    click() {
+      mainWindow.webContents.send('add-server');
+    }
   }, separatorItem, {
     role: 'hide'
   }, {
@@ -40,6 +45,11 @@ function createTemplate(mainWindow, config) {
     accelerator: 'CmdOrCtrl+,',
     click() {
       mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
+    }
+  }, {
+    label: 'Sign in to Another Server',
+    click() {
+      mainWindow.webContents.send('add-server');
     }
   }, separatorItem, {
     role: 'quit',

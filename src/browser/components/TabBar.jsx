@@ -84,7 +84,7 @@ class TabBar extends React.Component {
     return (
       <Button
         id='tabBarAddNewTeam'
-        onClick={this.props.onAddTeam}
+        onClick={this.props.onAddServer}
         bsStyle='tabButton'
       >
         {'+'}
@@ -98,7 +98,7 @@ TabBar.propTypes = {
   id: React.PropTypes.string,
   onSelect: React.PropTypes.func,
   teams: React.PropTypes.array,
-  onAddTeam: React.PropTypes.func
+  onAddServer: React.PropTypes.func
 };
 
 module.exports = TabBar;
