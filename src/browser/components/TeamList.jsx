@@ -9,7 +9,8 @@ const TeamList = React.createClass({
     onTeamsChange: React.PropTypes.func,
     showAddTeamForm: React.PropTypes.bool,
     teams: React.PropTypes.array,
-    toggleAddTeamForm: React.PropTypes.func
+    addTeam: React.PropTypes.func,
+    updateTeam: React.PropTypes.func
   },
 
   getInitialState() {
@@ -110,9 +111,9 @@ const TeamList = React.createClass({
           }}
           onSave={(newTeam) => {
             if (this.props.showAddTeamForm) {
-              this.props.teams.push(newTeam);
+              this.props.addTeam(newTeam);
             } else {
-              this.props.teams[newTeam.index] = newTeam;
+              this.props.updateTeam(newTeam.index, newTeam);
             }
             this.setState({
               showNewTeamModal: false,

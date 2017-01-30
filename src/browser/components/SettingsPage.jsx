@@ -152,6 +152,23 @@ const SettingsPage = React.createClass({
       showUnreadBadge: !this.refs.showUnreadBadge.props.checked
     });
   },
+
+  updateTeam(index, newData) {
+    var teams = this.state.teams;
+    teams[index] = newData;
+    this.setState({
+      teams
+    });
+  },
+
+  addTeam(team) {
+    var teams = this.state.teams;
+    teams.push(team);
+    this.setState({
+      teams
+    });
+  },
+
   render() {
     var teamsRow = (
       <Row>
@@ -161,6 +178,8 @@ const SettingsPage = React.createClass({
             showAddTeamForm={this.state.showAddTeamForm}
             toggleAddTeamForm={this.toggleShowTeamForm}
             onTeamsChange={this.handleTeamsChange}
+            updateTeam={this.updateTeam}
+            addTeam={this.addTeam}
           />
         </Col>
       </Row>
