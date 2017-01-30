@@ -111,10 +111,14 @@ const TeamList = React.createClass({
             this.props.toggleAddTeamForm();
           }}
           onSave={(newTeam) => {
+            var teamData = {
+              name: newTeam.name,
+              url: newTeam.url
+            };
             if (this.props.showAddTeamForm) {
-              this.props.addServer(newTeam);
+              this.props.addServer(teamData);
             } else {
-              this.props.updateTeam(newTeam.index, newTeam);
+              this.props.updateTeam(newTeam.index, teamData);
             }
             this.setState({
               showNewTeamModal: false,
