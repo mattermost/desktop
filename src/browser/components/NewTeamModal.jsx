@@ -135,7 +135,7 @@ class NewTeamModal extends React.Component {
 
         <Modal.Footer>
           <div
-            className='pull-left'
+            className='pull-left modal-error'
           >
             {this.getError()}
           </div>

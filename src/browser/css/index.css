@@ -29,3 +29,12 @@
   background-color: #e6e6e6;
   border-color: #adadad;
 }
+
+.has-error .control-label,
+.has-error .help-block {
+  color: #333;
+}
+
+.modal-error {
+  color: #a94442;
+}
