@@ -14,7 +14,7 @@ const TeamList = React.createClass({
 
   getInitialState() {
     return {
-      showTeamListItemNew: false,
+      showEditTeamForm: false,
       indexToRemoveServer: -1,
       team: {
         url: '',
@@ -41,7 +41,7 @@ const TeamList = React.createClass({
     }
 
     this.setState({
-      showTeamListItemNew: false,
+      showEditTeamForm: false,
       team: {
         url: '',
         name: '',
@@ -53,7 +53,7 @@ const TeamList = React.createClass({
   },
   handleTeamEditing(teamName, teamUrl, teamIndex) {
     this.setState({
-      showTeamListItemNew: true,
+      showEditTeamForm: true,
       team: {
         url: teamUrl,
         name: teamName,
@@ -94,19 +94,40 @@ const TeamList = React.createClass({
     });
 
     var addTeamForm;
-    if (this.props.showAddTeamForm || this.state.showTeamListItemNew) {
+    if (this.props.showAddTeamForm || this.state.showEditTeamForm) {
       addTeamForm = (
         <NewTeamModal
-          onClose={this.props.toggleAddTeamForm}
-          onSave={(newTeam) => {
+          onClose={() => {
             this.setState({
-              showNewTeamModal: false
+              showNewTeamModal: false,
+              showEditTeamForm: false,
+              team: {
+                name: '',
+                url: '',
+                index: false
+              }
             });
-            this.props.teams.push(newTeam);
+          }}
+          onSave={(newTeam) => {
+            if (this.props.showAddTeamForm) {
+              this.props.teams.push(newTeam);
+            } else {
+              this.props.teams[newTeam.index] = newTeam;
+            }
+            this.setState({
+              showNewTeamModal: false,
+              showEditTeamForm: false,
+              team: {
+                name: '',
+                url: '',
+                index: false
+              }
+            });
             this.render();
 
             this.props.onTeamsChange(this.props.teams);
           }}
+          team={this.state.team}
         />);
     } else {
       addTeamForm = '';

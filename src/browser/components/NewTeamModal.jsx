@@ -13,6 +13,15 @@ class NewTeamModal extends React.Component {
     };
   }
 
+  componentWillMount() {
+    this.state = {
+      teamName: this.props.team ? this.props.team.name : '',
+      teamUrl: this.props.team ? this.props.team.url : '',
+      teamIndex: this.props.team ? this.props.team.index : false,
+      saveStarted: false
+    };
+  }
+
   getTeamNameValidationError() {
     if (!this.state.saveStarted) {
       return null;
@@ -69,7 +78,8 @@ class NewTeamModal extends React.Component {
       if (this.validateForm()) {
         this.props.onSave({
           url: this.state.teamUrl,
-          name: this.state.teamName
+          name: this.state.teamName,
+          index: this.state.teamIndex
         });
       }
     });
@@ -159,7 +169,8 @@ class NewTeamModal extends React.Component {
 
 NewTeamModal.propTypes = {
   onClose: React.PropTypes.func,
-  onSave: React.PropTypes.func
+  onSave: React.PropTypes.func,
+  team: React.PropTypes.object
 };
 
 module.exports = NewTeamModal;
