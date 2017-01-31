@@ -145,6 +145,11 @@ const SettingsPage = React.createClass({
       showAddTeamForm: !this.state.showAddTeamForm
     });
   },
+  setShowTeamFormVisibility(val) {
+    this.setState({
+      showAddTeamForm: val
+    });
+  },
   handleFlashWindow() {
     this.setState({
       notifications: {
@@ -182,6 +187,7 @@ const SettingsPage = React.createClass({
             teams={this.state.teams}
             showAddTeamForm={this.state.showAddTeamForm}
             toggleAddTeamForm={this.toggleShowTeamForm}
+            setAddTeamFormVisibility={this.setShowTeamFormVisibility}
             onTeamsChange={this.handleTeamsChange}
             updateTeam={this.updateTeam}
             addServer={this.addServer}

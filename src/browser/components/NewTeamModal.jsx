@@ -85,6 +85,20 @@ class NewTeamModal extends React.Component {
     });
   }
 
+  getSaveButtonLabel() {
+    if (this.props.editMode) {
+      return 'Save';
+    }
+    return 'Add';
+  }
+
+  getModalTitle() {
+    if (this.props.editMode) {
+      return 'Edit Server';
+    }
+    return 'Add Server';
+  }
+
   render() {
     return (
       <Modal
@@ -107,7 +121,7 @@ class NewTeamModal extends React.Component {
         }}
       >
         <Modal.Header>
-          <Modal.Title>{'Add Server'}</Modal.Title>
+          <Modal.Title>{this.getModalTitle()}</Modal.Title>
         </Modal.Header>
 
         <Modal.Body>
@@ -159,7 +173,7 @@ class NewTeamModal extends React.Component {
             onClick={this.save.bind(this)}
             disabled={!this.validateForm()}
             bsStyle='primary'
-          >{'Add'}</Button>
+          >{this.getSaveButtonLabel()}</Button>
         </Modal.Footer>
 
       </Modal>
@@ -170,7 +184,8 @@ class NewTeamModal extends React.Component {
 NewTeamModal.propTypes = {
   onClose: React.PropTypes.func,
   onSave: React.PropTypes.func,
-  team: React.PropTypes.object
+  team: React.PropTypes.object,
+  editMode: React.PropTypes.boolean
 };
 
 module.exports = NewTeamModal;

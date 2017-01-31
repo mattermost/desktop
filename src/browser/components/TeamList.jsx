@@ -11,7 +11,8 @@ const TeamList = React.createClass({
     teams: React.PropTypes.array,
     addServer: React.PropTypes.func,
     updateTeam: React.PropTypes.func,
-    toggleAddTeamForm: React.PropTypes.func
+    toggleAddTeamForm: React.PropTypes.func,
+    setAddTeamFormVisibility: React.PropTypes.func
   },
 
   getInitialState() {
@@ -99,16 +100,17 @@ const TeamList = React.createClass({
     if (this.props.showAddTeamForm || this.state.showEditTeamForm) {
       addServerForm = (
         <NewTeamModal
+          editMode={this.state.showEditTeamForm}
           onClose={() => {
             this.setState({
-              showNewTeamModal: false,
+              showEditTeamForm: false,
               team: {
                 name: '',
                 url: '',
                 index: false
               }
             });
-            this.props.toggleAddTeamForm();
+            this.props.setAddTeamFormVisibility(false);
           }}
           onSave={(newTeam) => {
             var teamData = {
@@ -130,8 +132,7 @@ const TeamList = React.createClass({
               }
             });
             this.render();
-
-            this.props.onTeamsChange(this.props.teams);
+            this.props.setAddTeamFormVisibility(false);
           }}
           team={this.state.team}
         />);
