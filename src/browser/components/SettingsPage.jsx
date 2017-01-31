@@ -33,6 +33,7 @@ const SettingsPage = React.createClass({
 
     initialState.showAddTeamForm = false;
     initialState.trayWasVisible = remote.getCurrentWindow().trayWasVisible;
+    initialState.disableClose = initialState.teams.length === 0;
 
     return initialState;
   },
@@ -275,13 +276,13 @@ const SettingsPage = React.createClass({
         backgroundColor: '#fff'
       },
       close: {
+        textDecoration: 'none',
         position: 'absolute',
         right: '0',
-        top: '10px',
+        top: '5px',
         fontSize: '35px',
         fontWeight: 'normal',
-        color: '#bbb',
-        cursor: 'pointer'
+        color: '#bbb'
       },
       heading: {
         textAlign: 'center',
@@ -325,12 +326,14 @@ const SettingsPage = React.createClass({
         >
           <div style={{position: 'relative'}}>
             <h1 style={settingsPage.heading}>{'Settings'}</h1>
-            <div
+            <Button
+              bsStyle='link'
               style={settingsPage.close}
               onClick={this.handleCancel}
+              disabled={this.state.disableClose}
             >
               <span>{'×'}</span>
-            </div>
+            </Button>
           </div>
         </Navbar>
         <Grid
@@ -342,7 +345,7 @@ const SettingsPage = React.createClass({
               md={10}
               xs={8}
             >
-              <h2 style={settingsPage.sectionHeading}>{'Team Management'}</h2>
+              <h2 style={settingsPage.sectionHeading}>{'Server Management'}</h2>
             </Col>
             <Col
               md={2}
@@ -353,7 +356,7 @@ const SettingsPage = React.createClass({
                   style={settingsPage.sectionHeadingLink}
                   href='#'
                   onClick={this.toggleShowTeamForm}
-                >{'⊞ Add new team'}</a>
+                >{'⊞ Add new server'}</a>
               </p>
             </Col>
           </Row>
