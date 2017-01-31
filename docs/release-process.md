@@ -12,7 +12,7 @@ Notes:
 
 Pre-work for the current release begins at the code complete date of the previous release. See "Code Complete and Release Candidate Cut" section below for details.
 
-### B. (T-minus 20 working days) Release Date Announcement
+### B. (T-minus 12 working days) Release Date Announcement
 
 1. PM:
     - Post this checklist in Desktop App channel 
@@ -25,7 +25,7 @@ Pre-work for the current release begins at the code complete date of the previou
 2. Dev/PM:
     - Prioritize reviewing, testing, and merging of pull requests for current release until there are no more tickets in the [pull request queue](https://github.com/mattermost/desktop/pulls) marked for the current release 
 
-### C. (T-minus 10 working days) Code Complete and Release Candidate Cut
+### C. (T-minus 7 working days) Code Complete and Release Candidate Cut
 
 **Stabilization** period begins when all features for release have been committed. During this period, only **bugs** can be committed to the release branch. Non-bug pull requests are tagged for the next version.
 
@@ -46,7 +46,7 @@ Pre-work for the current release begins at the code complete date of the previou
     - Tweet announcement that RC1 is ready
     - Queue art work for Twitter announcement
  
-### D. (T-minus 9 working days) Release Candidate Testing 
+### D. (T-minus 6 working days) Release Candidate Testing 
 
 1. PM:
     - Post this checklist in Desktop App channel
@@ -65,7 +65,7 @@ Pre-work for the current release begins at the code complete date of the previou
     - Test the new RC to verify fixes merged to the release branch work and post in Desktop App channel after testing 
     - Update the meta issue with download links to the new RCs and a list of approved fixes
 
-### E. (T-minus 5 working days) Release Candidate Testing Finished 
+### E. (T-minus 4 working days) Release Candidate Testing Finished 
 
 1. PM:
     - Post this checklist in Desktop App channel
@@ -128,7 +128,7 @@ If a bug fix release is required, run through the following steps again:
     - Delete RCs after final version is shipped    
     - Check if any libraries need to be updated for the next release, and if so bring up in weekly team meeting
 
-### H. (T-plus 5 working days) Release Updates
+### H. (T-plus 10 working days) Release Updates
 
 1. PM:
     - Post this checklist in Desktop App channel 
