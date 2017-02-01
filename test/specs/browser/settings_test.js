@@ -50,7 +50,7 @@ describe('browser/settings.html', function desc() {
   });
 
   describe('Options', () => {
-    describe('Hide Menu Bar', () => {
+    describe.skip('Hide Menu Bar', () => {
       it('should appear on win32 or linux', () => {
         const expected = (process.platform === 'win32' || process.platform === 'linux');
         env.addClientCommands(this.app.client);
@@ -152,8 +152,8 @@ describe('browser/settings.html', function desc() {
     });
 
     describe('Minimize to tray', () => {
-      it('should appear on darwin or linux', () => {
-        const expected = (process.platform === 'darwin' || process.platform === 'linux');
+      it('should appear on linux', () => {
+        const expected = (process.platform === 'linux');
         env.addClientCommands(this.app.client);
         return this.app.client.
           loadSettingsPage().
@@ -161,7 +161,7 @@ describe('browser/settings.html', function desc() {
       });
     });
 
-    describe('Toggle window visibility when clicking on the tray icon', () => {
+    describe.skip('Toggle window visibility when clicking on the tray icon', () => {
       it('should appear on win32', () => {
         const expected = (process.platform === 'win32');
         env.addClientCommands(this.app.client);

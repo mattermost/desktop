@@ -198,16 +198,6 @@ const SettingsPage = React.createClass({
     );
 
     var options = [];
-    if (process.platform === 'win32' || process.platform === 'linux') {
-      options.push(
-        <Checkbox
-          key='inputHideMenuBar'
-          id='inputHideMenuBar'
-          ref='hideMenuBar'
-          checked={this.state.hideMenuBar}
-          onChange={this.handleChangeHideMenuBar}
-        >{'Hide menu bar (Press Alt to show menu bar)'}</Checkbox>);
-    }
     if (process.platform === 'darwin' || process.platform === 'linux') {
       options.push(
         <Checkbox
@@ -257,7 +247,7 @@ const SettingsPage = React.createClass({
         >{'Start app on login.'}</Checkbox>);
     }
 
-    if (process.platform === 'darwin' || process.platform === 'linux') {
+    if (process.platform === 'linux') {
       options.push(
         <Checkbox
           key='inputMinimizeToTray'
@@ -267,17 +257,6 @@ const SettingsPage = React.createClass({
           checked={this.state.minimizeToTray}
           onChange={this.handleChangeMinimizeToTray}
         >{this.state.trayWasVisible || !this.state.showTrayIcon ? 'Leave app running in notification area when the window is closed' : 'Leave app running in notification area when the window is closed (available on next restart)'}</Checkbox>);
-    }
-
-    if (process.platform === 'win32') {
-      options.push(
-        <Checkbox
-          key='inputToggleWindowOnTrayIconClick'
-          id='inputToggleWindowOnTrayIconClick'
-          ref='toggleWindowOnTrayIconClick'
-          checked={this.state.toggleWindowOnTrayIconClick}
-          onChange={this.handleChangeToggleWindowOnTrayIconClick}
-        >{'Toggle window visibility when clicking on the tray icon.'}</Checkbox>);
     }
 
     if (process.platform === 'darwin' || process.platform === 'win32') {
