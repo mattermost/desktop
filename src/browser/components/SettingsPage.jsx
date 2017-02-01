@@ -1,6 +1,6 @@
 const React = require('react');
 const ReactDOM = require('react-dom');
-const {Button, Checkbox, Col, FormGroup, FormControl, ControlLabel, Grid, Navbar, Row} = require('react-bootstrap');
+const {Button, Checkbox, Col, FormGroup, FormControl, ControlLabel, Grid, HelpBlock, Navbar, Row} = require('react-bootstrap');
 
 const {ipcRenderer, remote} = require('electron');
 const AutoLaunch = require('auto-launch');
@@ -99,7 +99,7 @@ const SettingsPage = React.createClass({
   },
   handleChangeDisableWebSecurity() {
     this.setState({
-      disablewebsecurity: !this.refs.disablewebsecurity.props.checked
+      disablewebsecurity: this.refs.disablewebsecurity.props.checked
     });
   },
   handleChangeHideMenuBar() {
@@ -198,6 +198,70 @@ const SettingsPage = React.createClass({
     );
 
     var options = [];
+
+    // MacOS has an option in the Dock, to set the app to autostart, so we choose to not support this option for OSX
+    if (process.platform === 'win32' || process.platform === 'linux') {
+      options.push(
+        <Checkbox
+          key='inputAutoStart'
+          id='inputAutoStart'
+          ref='autostart'
+          checked={this.state.autostart}
+          onChange={this.handleChangeAutoStart}
+        >{'Start app on login'}
+          <HelpBlock>
+            {'Enabling automatically starts the app when you log in to your machine.'}
+            {' '}
+            {'The app will initially start minimized and appear on the taskbar.'}
+          </HelpBlock>
+        </Checkbox>);
+    }
+
+    options.push(
+      <Checkbox
+        key='inputDisableWebSecurity'
+        id='inputDisableWebSecurity'
+        ref='disablewebsecurity'
+        checked={!this.state.disablewebsecurity}
+        onChange={this.handleChangeDisableWebSecurity}
+      >{'Display secure content only'}
+        <HelpBlock>
+          {'Enabling allows only secure (HTTPS/SSL) content.'}
+          {' '}
+          {'Disabling allows the app to display non-secure (HTTP) content such as images.'}
+        </HelpBlock>
+      </Checkbox>);
+
+    if (process.platform === 'darwin' || process.platform === 'win32') {
+      options.push(
+        <Checkbox
+          key='inputShowUnreadBadge'
+          id='inputShowUnreadBadge'
+          ref='showUnreadBadge'
+          checked={this.state.showUnreadBadge}
+          onChange={this.handleShowUnreadBadge}
+        >{'Show red badge on taskbar icon to indicate unread messages'}
+          <HelpBlock>
+            {'Regardless of this setting, mentions are always indicated with a red badge and item count on the taskbar icon.'}
+          </HelpBlock>
+        </Checkbox>);
+    }
+
+    if (process.platform === 'win32' || process.platform === 'linux') {
+      options.push(
+        <Checkbox
+          key='flashWindow'
+          id='inputflashWindow'
+          ref='flashWindow'
+          checked={this.state.notifications.flashWindow === 2}
+          onChange={this.handleFlashWindow}
+        >{'Flash taskbar icon when a new message is received'}
+          <HelpBlock>
+            {'Taskbar icon flashes for a few seconds when a new message is received.'}
+          </HelpBlock>
+        </Checkbox>);
+    }
+
     if (process.platform === 'darwin' || process.platform === 'linux') {
       options.push(
         <Checkbox
@@ -207,8 +271,12 @@ const SettingsPage = React.createClass({
           checked={this.state.showTrayIcon}
           onChange={this.handleChangeShowTrayIcon}
         >{process.platform === 'darwin' ?
-          'Show icon on menu bar (need to restart the application)' :
-          'Show icon in notification area (need to restart the application)'}</Checkbox>);
+          'Show Mattermost icon in the menu bar' :
+          'Show icon in the notification area'}
+          <HelpBlock>
+            {'Setting takes effect after restarting the app.'}
+          </HelpBlock>
+        </Checkbox>);
     }
     if (process.platform === 'linux') {
       options.push(
@@ -226,26 +294,6 @@ const SettingsPage = React.createClass({
           </FormControl>
         </FormGroup>);
     }
-    options.push(
-      <Checkbox
-        key='inputDisableWebSecurity'
-        id='inputDisableWebSecurity'
-        ref='disablewebsecurity'
-        checked={this.state.disablewebsecurity}
-        onChange={this.handleChangeDisableWebSecurity}
-      >{'Allow mixed content (Enabling allows both secure and insecure content, images and scripts to render and execute. Disabling allows only secure content.)'}</Checkbox>);
-
-    //OSX has an option in the Dock, to set the app to autostart, so we choose to not support this option for OSX
-    if (process.platform === 'win32' || process.platform === 'linux') {
-      options.push(
-        <Checkbox
-          key='inputAutoStart'
-          id='inputAutoStart'
-          ref='autostart'
-          checked={this.state.autostart}
-          onChange={this.handleChangeAutoStart}
-        >{'Start app on login.'}</Checkbox>);
-    }
 
     if (process.platform === 'linux') {
       options.push(
@@ -256,29 +304,13 @@ const SettingsPage = React.createClass({
           disabled={!this.state.showTrayIcon || !this.state.trayWasVisible}
           checked={this.state.minimizeToTray}
           onChange={this.handleChangeMinimizeToTray}
-        >{this.state.trayWasVisible || !this.state.showTrayIcon ? 'Leave app running in notification area when the window is closed' : 'Leave app running in notification area when the window is closed (available on next restart)'}</Checkbox>);
-    }
-
-    if (process.platform === 'darwin' || process.platform === 'win32') {
-      options.push(
-        <Checkbox
-          key='inputShowUnreadBadge'
-          id='inputShowUnreadBadge'
-          ref='showUnreadBadge'
-          checked={this.state.showUnreadBadge}
-          onChange={this.handleShowUnreadBadge}
-        >{'Show red badge on taskbar icon to indicate unread messages. Regardless of this setting, mentions are always indicated with a red badge and item count on the taskbar icon.'}</Checkbox>);
-    }
-
-    if (process.platform === 'win32' || process.platform === 'linux') {
-      options.push(
-        <Checkbox
-          key='flashWindow'
-          id='inputflashWindow'
-          ref='flashWindow'
-          checked={this.state.notifications.flashWindow === 2}
-          onChange={this.handleFlashWindow}
-        >{'Flash the taskbar icon when a new message is received.'}</Checkbox>);
+        >
+          {'Leave app running in notification area when application window is closed'}
+          <HelpBlock>
+            {'Enabling will leave the app running in the notification center when app window is closed.'}
+            {this.state.trayWasVisible || !this.state.showTrayIcon ? '' : ' Setting takes effect after restarting the app.'}
+          </HelpBlock>
+        </Checkbox>);
     }
 
     const settingsPage = {
