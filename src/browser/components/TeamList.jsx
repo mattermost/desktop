@@ -85,6 +85,10 @@ const TeamList = React.createClass({
         self.handleTeamEditing(team.name, team.url, i);
       }
 
+      function handleTeamClick() {
+        self.props.onTeamClick(i);
+      }
+
       return (
         <TeamListItem
           index={i}
@@ -93,7 +97,7 @@ const TeamList = React.createClass({
           url={team.url}
           onTeamRemove={handleTeamRemove}
           onTeamEditing={handleTeamEditing}
-          onTeamClick={this.props.onTeamClick.bind(this, i)}
+          onTeamClick={handleTeamClick}
         />
       );
     });
