@@ -1,6 +1,6 @@
 const React = require('react');
 const ReactDOM = require('react-dom');
-const {Button, Checkbox, Col, FormGroup, FormControl, ControlLabel, Grid, HelpBlock, Navbar, Row} = require('react-bootstrap');
+const {Button, Checkbox, Col, FormGroup, FormControl, ControlLabel, Grid, HelpBlock, Navbar, Radio, Row} = require('react-bootstrap');
 
 const {ipcRenderer, remote} = require('electron');
 const AutoLaunch = require('auto-launch');
@@ -280,19 +280,32 @@ const SettingsPage = React.createClass({
     }
     if (process.platform === 'linux') {
       options.push(
-        <FormGroup>
-          <ControlLabel>{'Icon theme (Need to restart the application)'}</ControlLabel>
-          <FormControl
-            componentClass='select'
-            key='inputTrayIconTheme'
-            ref='trayIconTheme'
-            value={this.state.trayIconTheme}
-            onChange={this.handleChangeTrayIconTheme}
-          >
-            <option value='light'>{'Light'}</option>
-            <option value='dark'>{'Dark'}</option>
-          </FormControl>
-        </FormGroup>);
+        <FormGroup
+          key='trayIconTheme'
+          style={{marginLeft: '20px'}}
+        >
+          {'Icon theme: '}
+          <Radio
+            inline={true}
+            name='trayIconTheme'
+            value='light'
+            defaultChecked={this.state.trayIconTheme === 'light' || this.state.trayIconTheme === ''}
+            onChange={() => {
+              this.setState({trayIconTheme: 'light'});
+            }}
+          >{'Light'}</Radio>
+          {' '}
+          <Radio
+            inline={true}
+            name='trayIconTheme'
+            value='dark'
+            defaultChecked={this.state.trayIconTheme === 'dark'}
+            onChange={() => {
+              this.setState({trayIconTheme: 'dark'});
+            }}
+          >{'Dark'}</Radio>
+        </FormGroup>
+      );
     }
 
     if (process.platform === 'linux') {
