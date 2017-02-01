@@ -65,7 +65,7 @@ const SettingsPage = React.createClass({
       this.setState({showAddTeamForm: true});
     }
   },
-  handleSave() {
+  handleSave(index) {
     var config = {
       teams: this.state.teams,
       showTrayIcon: this.state.showTrayIcon,
@@ -93,10 +93,13 @@ const SettingsPage = React.createClass({
     ipcRenderer.send('update-menu', config);
     ipcRenderer.send('update-config');
 
-    backToIndex();
+    backToIndex(index);
   },
   handleCancel() {
     backToIndex();
+  },
+  backToIndexWithSave(index) {
+    this.handleSave(index);
   },
   handleChangeDisableWebSecurity() {
     this.setState({
@@ -183,7 +186,7 @@ const SettingsPage = React.createClass({
             onTeamsChange={this.handleTeamsChange}
             updateTeam={this.updateTeam}
             addServer={this.addServer}
-            onTeamClick={backToIndex}
+            onTeamClick={this.backToIndexWithSave}
           />
         </Col>
       </Row>
