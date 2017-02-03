@@ -261,6 +261,7 @@ describe('browser/settings.html', function desc() {
     it('should close the window after clicking cancel', () => {
       return this.app.client.
         click('#cancelNewServerModal').
+        pause(1000). // Animation
         isExisting('#newServerModal').should.eventually.equal(false);
     });
 
@@ -334,15 +335,16 @@ describe('browser/settings.html', function desc() {
       it('should add the team to the config file', (done) => {
         this.app.client.
           click('#saveNewServerModal').
-          click('#btnSave');
-        this.app.client.pause(1000).then(() => {
-          const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-          savedConfig.teams.should.contain({
-            name: 'TestTeam',
-            url: 'http://example.org'
+          pause(1000). // Animation
+          click('#btnSave').
+          pause(1000).then(() => {
+            const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+            savedConfig.teams.should.contain({
+              name: 'TestTeam',
+              url: 'http://example.org'
+            });
+            return done();
           });
-          return done();
-        });
       });
     });
   });

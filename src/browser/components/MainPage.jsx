@@ -309,27 +309,25 @@ const MainPage = React.createClass({
       authServerURL = `${tmpURL.protocol}//${tmpURL.host}`;
       authInfo = this.state.loginQueue[0].authInfo;
     }
-    var modal;
-    if (this.state.showNewTeamModal) {
-      modal = (
-        <NewTeamModal
-          onClose={() => {
-            this.setState({
-              showNewTeamModal: false
-            });
-          }}
-          onSave={(newTeam) => {
-            this.props.teams.push(newTeam);
-            this.setState({
-              showNewTeamModal: false,
-              key: this.props.teams.length - 1
-            });
-            this.render();
-            this.props.onTeamConfigChange(this.props.teams);
-          }}
-        />
-      );
-    }
+    var modal = (
+      <NewTeamModal
+        show={this.state.showNewTeamModal}
+        onClose={() => {
+          this.setState({
+            showNewTeamModal: false
+          });
+        }}
+        onSave={(newTeam) => {
+          this.props.teams.push(newTeam);
+          this.setState({
+            showNewTeamModal: false,
+            key: this.props.teams.length - 1
+          });
+          this.render();
+          this.props.onTeamConfigChange(this.props.teams);
+        }}
+      />
+    );
     return (
       <div>
         <LoginModal

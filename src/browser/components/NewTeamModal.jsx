@@ -3,9 +3,10 @@ const {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} = require
 const validUrl = require('valid-url');
 
 class NewTeamModal extends React.Component {
-
   constructor() {
     super();
+
+    this.wasShown = false;
     this.state = {
       teamName: '',
       teamUrl: '',
@@ -14,6 +15,10 @@ class NewTeamModal extends React.Component {
   }
 
   componentWillMount() {
+    this.initializeOnShow();
+  }
+
+  initializeOnShow() {
     this.state = {
       teamName: this.props.team ? this.props.team.name : '',
       teamUrl: this.props.team ? this.props.team.url : '',
@@ -105,9 +110,14 @@ class NewTeamModal extends React.Component {
       'margin-bottom': 0
     };
 
+    if (this.wasShown !== this.props.show && this.props.show) {
+      this.initializeOnShow();
+    }
+    this.wasShown = this.props.show;
+
     return (
       <Modal
-        show={true}
+        show={this.props.show}
         id='newServerModal'
         onHide={this.props.onClose}
         onKeyDown={(e) => {
@@ -193,7 +203,8 @@ NewTeamModal.propTypes = {
   onClose: React.PropTypes.func,
   onSave: React.PropTypes.func,
   team: React.PropTypes.object,
-  editMode: React.PropTypes.boolean
+  editMode: React.PropTypes.boolean,
+  show: React.PropTypes.boolean
 };
 
 module.exports = NewTeamModal;
