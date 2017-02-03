@@ -24,7 +24,6 @@
     "react-addons-css-transition-group": "^15.4.1",
     "react-bootstrap": "~0.30.7",
     "react-dom": "^15.4.1",
-    "valid-url": "^1.0.9",
     "yargs": "^3.32.0"
   }
 }

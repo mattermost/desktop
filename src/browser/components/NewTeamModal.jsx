@@ -1,6 +1,5 @@
 const React = require('react');
 const {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} = require('react-bootstrap');
-const validUrl = require('valid-url');
 
 class NewTeamModal extends React.Component {
   constructor() {
@@ -51,7 +50,7 @@ class NewTeamModal extends React.Component {
     if (this.state.teamUrl.length === 0) {
       return 'URL is required.';
     }
-    if (!validUrl.isUri(this.state.teamUrl)) {
+    if (!(/^https?:\/\/.*/).test(this.state.teamUrl.trim())) {
       return 'URL should start with http:// or https://.';
     }
     return null;
