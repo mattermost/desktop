@@ -143,7 +143,7 @@ class NewTeamModal extends React.Component {
             <FormGroup
               validationState={this.getTeamUrlValidationState()}
             >
-              <ControlLabel>{'Team URL'}</ControlLabel>
+              <ControlLabel>{'Server URL'}</ControlLabel>
               <FormControl
                 id='teamUrlInput'
                 type='text'
