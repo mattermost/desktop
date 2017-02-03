@@ -1,4 +1,8 @@
 
+.teamListItem:hover {
+  background: #eee;
+}
+
 .checkbox > label {
   width: 100%;
 }

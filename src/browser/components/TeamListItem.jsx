@@ -17,6 +17,7 @@ class TeamListItem extends React.Component {
     var style = {
       left: {
         display: 'inline-block',
+        width: 'calc(100% - 100px)',
         cursor: 'pointer'
       }
     };
