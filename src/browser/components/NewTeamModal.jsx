@@ -100,6 +100,11 @@ class NewTeamModal extends React.Component {
   }
 
   render() {
+    const noBottomSpaceing = {
+      'padding-bottom': 0,
+      'margin-bottom': 0
+    };
+
     return (
       <Modal
         show={true}
@@ -142,6 +147,7 @@ class NewTeamModal extends React.Component {
             </FormGroup>
             <FormGroup
               validationState={this.getTeamUrlValidationState()}
+              style={noBottomSpaceing}
             >
               <ControlLabel>{'Server URL'}</ControlLabel>
               <FormControl
@@ -152,7 +158,9 @@ class NewTeamModal extends React.Component {
                 onChange={this.handleTeamUrlChange.bind(this)}
               />
               <FormControl.Feedback/>
-              <HelpBlock>{'The URL of your Mattermost server. Must start with http:// or https://.'}</HelpBlock>
+              <HelpBlock
+                style={noBottomSpaceing}
+              >{'The URL of your Mattermost server. Must start with http:// or https://.'}</HelpBlock>
             </FormGroup>
           </form>
         </Modal.Body>
