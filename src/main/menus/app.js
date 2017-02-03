@@ -69,14 +69,6 @@ function createTemplate(mainWindow, config) {
       role: 'paste'
     }, {
       role: 'selectall'
-    }, separatorItem, {
-      label: 'Search in Team',
-      accelerator: 'CmdOrCtrl+S',
-      click: (item, focusedWindow) => {
-        if (focusedWindow) {
-          focusedWindow.webContents.send('activate-search-box');
-        }
-      }
     }]
   });
   template.push({
