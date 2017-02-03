@@ -4,10 +4,6 @@ const electron = require('electron');
 const ipc = electron.ipcRenderer;
 const notification = require('../js/notification');
 
-window.eval = global.eval = () => {
-  throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
-};
-
 Reflect.deleteProperty(global.Buffer); // http://electron.atom.io/docs/tutorial/security/#buffer-global
 
 function hasClass(element, className) {

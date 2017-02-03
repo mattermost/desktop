@@ -99,8 +99,6 @@ describe('application', function desc() {
     };
     return Promise.all([
       tryEval(0),
-      tryEval(1),
-      tryEval(2),
       tryEvalInSettingsPage()
     ]);
   });
