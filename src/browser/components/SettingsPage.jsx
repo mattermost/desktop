@@ -363,7 +363,7 @@ const SettingsPage = React.createClass({
     var optionsRow = (options.length > 0) ? (
       <Row>
         <Col md={12}>
-          <h2 style={settingsPage.sectionHeading}>{'App options'}</h2>
+          <h2 style={settingsPage.sectionHeading}>{'App Options'}</h2>
           { options.map((opt, i) => (
             <FormGroup key={`fromGroup${i}`}>
               {opt}
