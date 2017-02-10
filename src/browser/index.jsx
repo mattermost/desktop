@@ -12,7 +12,6 @@ const MainPage = require('./components/MainPage.jsx');
 const AppConfig = require('./config/AppConfig.js');
 const url = require('url');
 
-const settings = require('../common/settings');
 const badge = require('./js/badge');
 
 remote.getCurrentWindow().removeAllListeners('focus');
