@@ -11,6 +11,7 @@ from the final changelog of the release.
 Release date: TBD
 
 ### Improvements
+- Added a new team button next to the team tabs
 
 #### All Platforms
 - Suppress white screen which is displayed for a moment on startup

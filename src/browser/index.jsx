@@ -9,19 +9,12 @@ const ReactDOM = require('react-dom');
 const {remote, ipcRenderer} = require('electron');
 const MainPage = require('./components/MainPage.jsx');
 
-const settings = require('../common/settings');
+const AppConfig = require('./config/AppConfig.js');
 const badge = require('./js/badge');
 
 remote.getCurrentWindow().removeAllListeners('focus');
 
-var config;
-try {
-  const configFile = remote.app.getPath('userData') + '/config.json';
-  config = settings.readFileSync(configFile);
-} catch (e) {
-  window.location = 'settings.html';
-}
-if (config.teams.length === 0) {
+if (AppConfig.data.teams.length === 0) {
   window.location = 'settings.html';
 }
 
@@ -40,7 +33,7 @@ function showUnreadBadgeWindows(unreadCount, mentionCount) {
   if (mentionCount > 0) {
     const dataURL = badge.createDataURL(mentionCount.toString());
     sendBadge(dataURL, 'You have unread mentions (' + mentionCount + ')');
-  } else if (unreadCount > 0 && config.showUnreadBadge) {
+  } else if (unreadCount > 0 && AppConfig.data.showUnreadBadge) {
     const dataURL = badge.createDataURL('•');
     sendBadge(dataURL, 'You have unread channels (' + unreadCount + ')');
   } else {
@@ -51,7 +44,7 @@ function showUnreadBadgeWindows(unreadCount, mentionCount) {
 function showUnreadBadgeOSX(unreadCount, mentionCount) {
   if (mentionCount > 0) {
     remote.app.dock.setBadge(mentionCount.toString());
-  } else if (unreadCount > 0 && config.showUnreadBadge) {
+  } else if (unreadCount > 0 && AppConfig.data.showUnreadBadge) {
     remote.app.dock.setBadge('•');
   } else {
     remote.app.dock.setBadge('');
@@ -89,11 +82,16 @@ function showUnreadBadge(unreadCount, mentionCount) {
   }
 }
 
+function teamConfigChange(teams) {
+  AppConfig.set('teams', teams);
+}
+
 ReactDOM.render(
   <MainPage
-    disablewebsecurity={config.disablewebsecurity}
-    teams={config.teams}
+    disablewebsecurity={AppConfig.data.disablewebsecurity}
+    teams={AppConfig.data.teams}
     onUnreadCountChange={showUnreadBadge}
+    onTeamConfigChange={teamConfigChange}
   />,
   document.getElementById('content')
 );

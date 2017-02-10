@@ -1,19 +1,23 @@
 const React = require('react');
 const {ListGroup} = require('react-bootstrap');
 const TeamListItem = require('./TeamListItem.jsx');
-const TeamListItemNew = require('./TeamListItemNew.jsx');
+const NewTeamModal = require('./NewTeamModal.jsx');
 const RemoveServerModal = require('./RemoveServerModal.jsx');
 
 const TeamList = React.createClass({
   propTypes: {
     onTeamsChange: React.PropTypes.func,
     showAddTeamForm: React.PropTypes.bool,
-    teams: React.PropTypes.array
+    teams: React.PropTypes.array,
+    addServer: React.PropTypes.func,
+    updateTeam: React.PropTypes.func,
+    toggleAddTeamForm: React.PropTypes.func,
+    setAddTeamFormVisibility: React.PropTypes.func
   },
 
   getInitialState() {
     return {
-      showTeamListItemNew: false,
+      showEditTeamForm: false,
       indexToRemoveServer: -1,
       team: {
         url: '',
@@ -40,7 +44,7 @@ const TeamList = React.createClass({
     }
 
     this.setState({
-      showTeamListItemNew: false,
+      showEditTeamForm: false,
       team: {
         url: '',
         name: '',
@@ -52,7 +56,7 @@ const TeamList = React.createClass({
   },
   handleTeamEditing(teamName, teamUrl, teamIndex) {
     this.setState({
-      showTeamListItemNew: true,
+      showEditTeamForm: true,
       team: {
         url: teamUrl,
         name: teamName,
@@ -92,19 +96,45 @@ const TeamList = React.createClass({
       );
     });
 
-    var addTeamForm;
-    if (this.props.showAddTeamForm || this.state.showTeamListItemNew) {
-      addTeamForm = (
-        <TeamListItemNew
-          key={this.state.team.index}
-          onTeamAdd={this.handleTeamAdd}
-          teamIndex={this.state.team.index}
-          teamName={this.state.team.name}
-          teamUrl={this.state.team.url}
-        />);
-    } else {
-      addTeamForm = '';
-    }
+    var addServerForm = (
+      <NewTeamModal
+        show={this.props.showAddTeamForm || this.state.showEditTeamForm}
+        editMode={this.state.showEditTeamForm}
+        onClose={() => {
+          this.setState({
+            showEditTeamForm: false,
+            team: {
+              name: '',
+              url: '',
+              index: false
+            }
+          });
+          this.props.setAddTeamFormVisibility(false);
+        }}
+        onSave={(newTeam) => {
+          var teamData = {
+            name: newTeam.name,
+            url: newTeam.url
+          };
+          if (this.props.showAddTeamForm) {
+            this.props.addServer(teamData);
+          } else {
+            this.props.updateTeam(newTeam.index, teamData);
+          }
+          this.setState({
+            showNewTeamModal: false,
+            showEditTeamForm: false,
+            team: {
+              name: '',
+              url: '',
+              index: false
+            }
+          });
+          this.render();
+          this.props.setAddTeamFormVisibility(false);
+        }}
+        team={this.state.team}
+      />);
 
     const removeServer = this.props.teams[this.state.indexToRemoveServer];
     const removeServerModal = (
@@ -123,7 +153,7 @@ const TeamList = React.createClass({
     return (
       <ListGroup className='teamList'>
         { teamNodes }
-        { addTeamForm }
+        { addServerForm }
         { removeServerModal}
       </ListGroup>
     );

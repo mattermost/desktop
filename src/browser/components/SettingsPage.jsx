@@ -46,6 +46,11 @@ const SettingsPage = React.createClass({
         });
       });
     }
+    ipcRenderer.on('add-server', () => {
+      this.setState({
+        showAddTeamForm: true
+      });
+    });
   },
   handleTeamsChange(teams) {
     this.setState({
@@ -141,6 +146,11 @@ const SettingsPage = React.createClass({
       showAddTeamForm: !this.state.showAddTeamForm
     });
   },
+  setShowTeamFormVisibility(val) {
+    this.setState({
+      showAddTeamForm: val
+    });
+  },
   handleFlashWindow() {
     this.setState({
       notifications: {
@@ -153,6 +163,23 @@ const SettingsPage = React.createClass({
       showUnreadBadge: !this.refs.showUnreadBadge.props.checked
     });
   },
+
+  updateTeam(index, newData) {
+    var teams = this.state.teams;
+    teams[index] = newData;
+    this.setState({
+      teams
+    });
+  },
+
+  addServer(team) {
+    var teams = this.state.teams;
+    teams.push(team);
+    this.setState({
+      teams
+    });
+  },
+
   render() {
     var teamsRow = (
       <Row>
@@ -160,7 +187,11 @@ const SettingsPage = React.createClass({
           <TeamList
             teams={this.state.teams}
             showAddTeamForm={this.state.showAddTeamForm}
+            toggleAddTeamForm={this.toggleShowTeamForm}
+            setAddTeamFormVisibility={this.setShowTeamFormVisibility}
             onTeamsChange={this.handleTeamsChange}
+            updateTeam={this.updateTeam}
+            addServer={this.addServer}
           />
         </Col>
       </Row>
@@ -354,6 +385,7 @@ const SettingsPage = React.createClass({
               <p className='text-right'>
                 <a
                   style={settingsPage.sectionHeadingLink}
+                  id='addNewServer'
                   href='#'
                   onClick={this.toggleShowTeamForm}
                 >{'⊞ Add new server'}</a>

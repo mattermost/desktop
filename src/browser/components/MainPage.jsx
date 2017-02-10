@@ -10,6 +10,8 @@ const MattermostView = require('./MattermostView.jsx');
 const TabBar = require('./TabBar.jsx');
 const HoveringURL = require('./HoveringURL.jsx');
 
+const NewTeamModal = require('./NewTeamModal.jsx');
+
 // Todo: Need to consider better way to apply styles
 const styles = {
   hoveringURL: {
@@ -36,7 +38,8 @@ const MainPage = React.createClass({
   propTypes: {
     disablewebsecurity: React.PropTypes.bool.isRequired,
     onUnreadCountChange: React.PropTypes.func.isRequired,
-    teams: React.PropTypes.array.isRequired
+    teams: React.PropTypes.array.isRequired,
+    onTeamConfigChange: React.PropTypes.func.isRequired
   },
 
   getInitialState() {
@@ -126,6 +129,10 @@ const MainPage = React.createClass({
       if (mattermost.canGoForward()) {
         mattermost.goForward();
       }
+    });
+
+    ipcRenderer.on('add-server', () => {
+      this.addServer();
     });
   },
   componentDidUpdate(prevProps, prevState) {
@@ -237,6 +244,11 @@ const MainPage = React.createClass({
       this.setState({targetURL});
     }
   },
+  addServer() {
+    this.setState({
+      showNewTeamModal: true
+    });
+  },
   render() {
     var self = this;
 
@@ -253,6 +265,7 @@ const MainPage = React.createClass({
             mentionAtActiveCounts={this.state.mentionAtActiveCounts}
             activeKey={this.state.key}
             onSelect={this.handleSelect}
+            onAddServer={this.addServer}
           />
         </Row>
       );
@@ -296,6 +309,25 @@ const MainPage = React.createClass({
       authServerURL = `${tmpURL.protocol}//${tmpURL.host}`;
       authInfo = this.state.loginQueue[0].authInfo;
     }
+    var modal = (
+      <NewTeamModal
+        show={this.state.showNewTeamModal}
+        onClose={() => {
+          this.setState({
+            showNewTeamModal: false
+          });
+        }}
+        onSave={(newTeam) => {
+          this.props.teams.push(newTeam);
+          this.setState({
+            showNewTeamModal: false,
+            key: this.props.teams.length - 1
+          });
+          this.render();
+          this.props.onTeamConfigChange(this.props.teams);
+        }}
+      />
+    );
     return (
       <div>
         <LoginModal
@@ -323,6 +355,9 @@ const MainPage = React.createClass({
               targetURL={this.state.targetURL}
             /> }
         </ReactCSSTransitionGroup>
+        <div>
+          { modal }
+        </div>
       </div>
     );
   }
