@@ -16,12 +16,10 @@ function loadDefault(version) {
   case 1:
     return {
       teams: [],
-      hideMenuBar: false,
       showTrayIcon: false,
       trayIconTheme: 'light',
       disablewebsecurity: true,
       minimizeToTray: false,
-      toggleWindowOnTrayIconClick: false,
       version: 1,
       notifications: {
         flashWindow: 0 // 0 = flash never, 1 = only when idle (after 10 seconds), 2 = always

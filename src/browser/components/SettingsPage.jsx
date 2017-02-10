@@ -61,13 +61,11 @@ const SettingsPage = React.createClass({
   handleSave() {
     var config = {
       teams: this.state.teams,
-      hideMenuBar: this.state.hideMenuBar,
       showTrayIcon: this.state.showTrayIcon,
       trayIconTheme: this.state.trayIconTheme,
       disablewebsecurity: this.state.disablewebsecurity,
       version: settings.version,
       minimizeToTray: this.state.minimizeToTray,
-      toggleWindowOnTrayIconClick: this.state.toggleWindowOnTrayIconClick,
       notifications: {
         flashWindow: this.state.notifications.flashWindow
       },
@@ -75,10 +73,6 @@ const SettingsPage = React.createClass({
     };
     settings.writeFileSync(this.props.configFile, config);
     if (process.platform === 'win32' || process.platform === 'linux') {
-      var currentWindow = remote.getCurrentWindow();
-      currentWindow.setAutoHideMenuBar(config.hideMenuBar);
-      currentWindow.setMenuBarVisibility(!config.hideMenuBar);
-
       var autostart = this.state.autostart;
       appLauncher.isEnabled().then((enabled) => {
         if (enabled && !autostart) {
@@ -100,11 +94,6 @@ const SettingsPage = React.createClass({
   handleChangeDisableWebSecurity() {
     this.setState({
       disablewebsecurity: this.refs.disablewebsecurity.props.checked
-    });
-  },
-  handleChangeHideMenuBar() {
-    this.setState({
-      hideMenuBar: !this.refs.hideMenuBar.props.checked
     });
   },
   handleChangeShowTrayIcon() {
@@ -134,11 +123,6 @@ const SettingsPage = React.createClass({
 
     this.setState({
       minimizeToTray: shouldMinimizeToTray
-    });
-  },
-  handleChangeToggleWindowOnTrayIconClick() {
-    this.setState({
-      toggleWindowOnTrayIconClick: !this.refs.toggleWindowOnTrayIconClick.props.checked
     });
   },
   toggleShowTeamForm() {
