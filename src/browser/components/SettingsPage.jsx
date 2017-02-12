@@ -194,7 +194,7 @@ const SettingsPage = React.createClass({
           onChange={this.handleChangeAutoStart}
         >{'Start app on login'}
           <HelpBlock>
-            {'Enabling automatically starts the app when you log in to your machine.'}
+            {'If enabled, the app starts automatically when you log in to your machine.'}
             {' '}
             {'The app will initially start minimized and appear on the taskbar.'}
           </HelpBlock>
@@ -210,9 +210,9 @@ const SettingsPage = React.createClass({
         onChange={this.handleChangeDisableWebSecurity}
       >{'Display secure content only'}
         <HelpBlock>
-          {'Enabling allows only secure (HTTPS/SSL) content.'}
+          {'If enabled, the app only displays secure (HTTPS/SSL) content.'}
           {' '}
-          {'Disabling allows the app to display non-secure (HTTP) content such as images.'}
+          {'If disabled, the app displays secure and non-secure (HTTP) content such as images.'}
         </HelpBlock>
       </Checkbox>);
 
@@ -241,7 +241,7 @@ const SettingsPage = React.createClass({
           onChange={this.handleFlashWindow}
         >{'Flash taskbar icon when a new message is received'}
           <HelpBlock>
-            {'Taskbar icon flashes for a few seconds when a new message is received.'}
+            {'If enabled, taskbar icon flashes for a few seconds when a new message is received.'}
           </HelpBlock>
         </Checkbox>);
     }
@@ -304,7 +304,7 @@ const SettingsPage = React.createClass({
         >
           {'Leave app running in notification area when application window is closed'}
           <HelpBlock>
-            {'Enabling will leave the app running in the notification center when app window is closed.'}
+            {'If enabled, the app stays running in the notification area after app window is closed.'}
             {this.state.trayWasVisible || !this.state.showTrayIcon ? '' : ' Setting takes effect after restarting the app.'}
           </HelpBlock>
         </Checkbox>);
