@@ -68,7 +68,8 @@ describe('application', function desc() {
     return this.app.start().then(() => {
       return this.app.client.
         waitUntilWindowLoaded().
-        getUrl().should.eventually.match(/\/settings.html$/);
+        getUrl().should.eventually.match(/\/settings.html$/).
+        isExisting('#newServerModal').should.eventually.equal(true);
     });
   });
 

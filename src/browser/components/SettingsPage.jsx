@@ -34,6 +34,9 @@ const SettingsPage = React.createClass({
     initialState.showAddTeamForm = false;
     initialState.trayWasVisible = remote.getCurrentWindow().trayWasVisible;
     initialState.disableClose = initialState.teams.length === 0;
+    if (initialState.teams.length === 0) {
+      initialState.showAddTeamForm = true;
+    }
 
     return initialState;
   },
@@ -57,6 +60,9 @@ const SettingsPage = React.createClass({
       showAddTeamForm: false,
       teams
     });
+    if (teams.length === 0) {
+      this.setState({showAddTeamForm: true});
+    }
   },
   handleSave() {
     var config = {
