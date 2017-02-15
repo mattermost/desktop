@@ -417,6 +417,7 @@ const SettingsPage = React.createClass({
           <div style={{position: 'relative'}}>
             <h1 style={settingsPage.heading}>{'Settings'}</h1>
             <Button
+              id='btnClose'
               bsStyle='link'
               style={settingsPage.close}
               onClick={this.handleCancel}
