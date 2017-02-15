@@ -7,16 +7,16 @@ function AutoSaveIndicator(props) {
     <Alert
       className='AutoSaveIndicator'
       {...rest}
-      bsStyle={props.savingState === 'error' ? 'danger' : 'info'}
+      bsStyle={savingState === 'error' ? 'danger' : 'info'}
     >
       {(() => {
-        switch (props.savingState) {
+        switch (savingState) {
         case 'saving':
           return 'Saving...';
         case 'saved':
           return 'Saved!';
         case 'error':
-          return props.errorMessage;
+          return errorMessage;
         default:
           return '';
         }
