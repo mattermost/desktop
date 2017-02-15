@@ -3,6 +3,39 @@
   background: #eee;
 }
 
+.IndicatorContainer {
+  pointer-events: none;
+  position: fixed;
+  top: 100px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-flow: row;
+  justify-content: center;
+}
+
+.IndicatorContainer * {
+  pointer-events: auto;
+}
+
+.AutoSaveIndicator-enter {
+  opacity: 0.01;
+}
+
+.AutoSaveIndicator-enter.AutoSaveIndicator-enter-active {
+  opacity: 1;
+  transition: opacity 0ms;
+}
+
+.AutoSaveIndicator-leave {
+  opacity: 1;
+}
+
+.AutoSaveIndicator-leave.AutoSaveIndicator-leave-active {
+  opacity: 0.01;
+  transition: opacity 1s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
 .checkbox > label {
   width: 100%;
 }
