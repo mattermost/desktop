@@ -16,6 +16,7 @@ class TabBar extends React.Component {
         lineHeight: '20px',
         height: '19px',
         marginLeft: '5px',
+        marginTop: '6px',
         borderRadius: '50%'
       };
 
@@ -100,6 +101,7 @@ class TabBar extends React.Component {
         onClick={this.props.onAddServer}
         style={tabButton}
         bsStyle='tabButton'
+        title='Add a new server'
       >
         {'+'}
       </Button>
