@@ -414,6 +414,15 @@ const SettingsPage = React.createClass({
           className='navbar-fixed-top'
           style={settingsPage.navbar}
         >
+          <div className='IndicatorContainer'>
+            <ReactCSSTransitionGroup
+              transitionName='AutoSaveIndicator'
+              transitionEnterTimeout={500}
+              transitionLeaveTimeout={1000}
+            >
+              { this.state.savingState === 'done' ? null : <AutoSaveIndicator savingState={this.state.savingState}/> }
+            </ReactCSSTransitionGroup>
+          </div>
           <div style={{position: 'relative'}}>
             <h1 style={settingsPage.heading}>{'Settings'}</h1>
             <Button
@@ -456,15 +465,6 @@ const SettingsPage = React.createClass({
           <hr/>
           { optionsRow }
         </Grid>
-        <div className='IndicatorContainer'>
-          <ReactCSSTransitionGroup
-            transitionName='AutoSaveIndicator'
-            transitionEnterTimeout={500}
-            transitionLeaveTimeout={1000}
-          >
-            { this.state.savingState === 'done' ? null : <AutoSaveIndicator savingState={this.state.savingState}/> }
-          </ReactCSSTransitionGroup>
-        </div>
       </div>
     );
   }

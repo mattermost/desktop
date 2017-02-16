@@ -4,18 +4,16 @@
 }
 
 .IndicatorContainer {
-  pointer-events: none;
-  position: fixed;
-  top: 100px;
-  left: 0;
-  right: 0;
+  position: absolute;
+  height: 100%;
   display: flex;
   flex-flow: row;
-  justify-content: center;
+  justify-content: flex-start;
+  align-items: center;
 }
 
-.IndicatorContainer * {
-  pointer-events: auto;
+.AutoSaveIndicator {
+  margin: 0;
 }
 
 .AutoSaveIndicator-enter {
