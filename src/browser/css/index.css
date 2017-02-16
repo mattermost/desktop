@@ -18,10 +18,10 @@
 }
 
 .btn-tabButton {
-  margin-top: 3px;
-  color: #333;
   background-color: #fff;
   border-color: #ccc;
+  color: #333;
+  margin-top: 3px;
 }
 
 .btn-tabButton:hover {
@@ -29,6 +29,19 @@
   background-color: #e6e6e6;
   border-color: #adadad;
 }
+
+.nav-tabs>li>a {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 2px 2px 0 0;
+  border: 1px solid #ddd;
+  color: #888;
+  height: 35px;
+  line-height: 32px;
+  margin-right: -1px;
+  margin-top: 7px;
+  padding: 0 15px;
+}
+
 
 .has-error .control-label,
 .has-error .help-block {

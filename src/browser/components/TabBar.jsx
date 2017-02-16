@@ -16,6 +16,7 @@ class TabBar extends React.Component {
         lineHeight: '20px',
         height: '19px',
         marginLeft: '5px',
+        marginTop: '6px',
         borderRadius: '50%'
       };
 
@@ -81,11 +82,26 @@ class TabBar extends React.Component {
   }
 
   renderAddTeamButton() {
+    var tabButton = {
+      border: 'none',
+      fontSize: '20px',
+      height: '35px',
+      padding: '0 0 4px 0',
+      width: '40px',
+      color: '#999',
+      fontWeight: 'bold',
+      margin: '6px 0 0',
+      borderRadius: '2px 2px 0 0',
+      outline: 'none'
+    };
+
     return (
       <Button
         id='tabBarAddNewTeam'
         onClick={this.props.onAddServer}
+        style={tabButton}
         bsStyle='tabButton'
+        title='Add new server'
       >
         {'+'}
       </Button>
