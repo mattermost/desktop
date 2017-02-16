@@ -173,13 +173,11 @@ const SettingsPage = React.createClass({
     this.setState({
       showAddTeamForm: !this.state.showAddTeamForm
     });
-    setImmediate(this.saveConfig);
   },
   setShowTeamFormVisibility(val) {
     this.setState({
       showAddTeamForm: val
     });
-    setImmediate(this.saveConfig);
   },
   handleFlashWindow() {
     this.setState({
