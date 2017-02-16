@@ -100,6 +100,7 @@ describe('browser/settings.html', function desc() {
               }
               return true;
             }).
+            pause(600).
             click('#btnClose').
             pause(1000).then(() => {
               const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
@@ -133,6 +134,7 @@ describe('browser/settings.html', function desc() {
               }
               return true;
             }).
+            pause(600).
             click('#btnClose').
             pause(1000).then(() => {
               const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));

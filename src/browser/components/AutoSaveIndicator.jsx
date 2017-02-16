@@ -14,7 +14,7 @@ function AutoSaveIndicator(props) {
         case 'saving':
           return 'Saving...';
         case 'saved':
-          return 'Saved!';
+          return 'Saved';
         case 'error':
           return errorMessage;
         default:

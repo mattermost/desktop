@@ -62,15 +62,30 @@ const SettingsPage = React.createClass({
   },
 
   setSavingState(state) {
-    if (!this.setSavingStateDone) {
-      this.setSavingStateDone = debounce(() => {
-        this.setState({savingState: 'done'});
-      }, 2000);
+    if (!this.setSavingStateSaved) {
+      this.setSavingStateSaved = debounce(() => {
+        this.saveConfig((err) => {
+          if (err) {
+            this.setState({savingState: 'error'});
+          } else {
+            this.setState({savingState: 'saved'});
+          }
+          this.setSavingStateDoneTimer = setTimeout(this.setState.bind(this, {savingState: 'done'}), 2000);
+        });
+      }, 500);
+    }
+    if (this.setSavingStateDoneTimer) {
+      clearTimeout(this.setSavingStateDoneTimer);
+      this.setSavingStateDoneTimer = null;
     }
     this.setState({savingState: state});
-    if (state === 'saved') {
-      this.setSavingStateDone();
+    if (state === 'saving') {
+      this.setSavingStateSaved();
     }
+  },
+
+  startSaveConfig() {
+    this.setSavingState('saving');
   },
 
   handleTeamsChange(teams) {
@@ -81,10 +96,10 @@ const SettingsPage = React.createClass({
     if (teams.length === 0) {
       this.setState({showAddTeamForm: true});
     }
-    setImmediate(this.saveConfig);
+    setImmediate(this.startSaveConfig);
   },
-  saveConfig() {
-    this.setSavingState('saving');
+
+  saveConfig(callback) {
     var config = {
       teams: this.state.teams,
       showTrayIcon: this.state.showTrayIcon,
@@ -97,29 +112,39 @@ const SettingsPage = React.createClass({
       },
       showUnreadBadge: this.state.showUnreadBadge
     };
-    settings.writeFileSync(this.props.configFile, config);
-    if (process.platform === 'win32' || process.platform === 'linux') {
-      var autostart = this.state.autostart;
-      appLauncher.isEnabled().then((enabled) => {
-        if (enabled && !autostart) {
-          appLauncher.disable().then(() => {
-            this.setSavingState('saved');
-          });
-        } else if (!enabled && autostart) {
-          appLauncher.enable().then(() => {
-            this.setSavingState('saved');
-          });
-        } else {
-          this.setSavingState('saved');
-        }
-      });
-    } else {
-      this.setSavingState('saved');
-    }
 
     ipcRenderer.send('update-menu', config);
     ipcRenderer.send('update-config');
+    settings.writeFile(this.props.configFile, config, (err) => {
+      if (err) {
+        callback(err);
+        return;
+      }
+      if (process.platform === 'win32' || process.platform === 'linux') {
+        const autostart = this.state.autostart;
+        this.saveAutoStart(autostart, callback);
+      } else {
+        callback();
+      }
+    });
   },
+
+  saveAutoStart(autostart, callback) {
+    appLauncher.isEnabled().then((enabled) => {
+      if (enabled && !autostart) {
+        appLauncher.disable().then(() => {
+          callback();
+        }).catch(callback);
+      } else if (!enabled && autostart) {
+        appLauncher.enable().then(() => {
+          callback();
+        }).catch(callback);
+      } else {
+        callback();
+      }
+    }).catch(callback);
+  },
+
   handleCancel() {
     backToIndex();
   },
@@ -127,13 +152,13 @@ const SettingsPage = React.createClass({
     this.setState({
       disablewebsecurity: this.refs.disablewebsecurity.props.checked
     });
-    setImmediate(this.saveConfig);
+    setImmediate(this.startSaveConfig);
   },
   handleChangeHideMenuBar() {
     this.setState({
       hideMenuBar: this.refs.hideMenuBar.props.checked
     });
-    setImmediate(this.saveConfig);
+    setImmediate(this.startSaveConfig);
   },
   handleChangeShowTrayIcon() {
     var shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
@@ -147,19 +172,19 @@ const SettingsPage = React.createClass({
       });
     }
 
-    setImmediate(this.saveConfig);
+    setImmediate(this.startSaveConfig);
   },
   handleChangeTrayIconTheme() {
     this.setState({
       trayIconTheme: ReactDOM.findDOMNode(this.refs.trayIconTheme).value
     });
-    setImmediate(this.saveConfig);
+    setImmediate(this.startSaveConfig);
   },
   handleChangeAutoStart() {
     this.setState({
       autostart: !this.refs.autostart.props.checked
     });
-    setImmediate(this.saveConfig);
+    setImmediate(this.startSaveConfig);
   },
   handleChangeMinimizeToTray() {
     const shouldMinimizeToTray = this.state.showTrayIcon && !this.refs.minimizeToTray.props.checked;
@@ -167,7 +192,7 @@ const SettingsPage = React.createClass({
     this.setState({
       minimizeToTray: shouldMinimizeToTray
     });
-    setImmediate(this.saveConfig);
+    setImmediate(this.startSaveConfig);
   },
   toggleShowTeamForm() {
     this.setState({
@@ -185,13 +210,13 @@ const SettingsPage = React.createClass({
         flashWindow: this.refs.flashWindow.props.checked ? 0 : 2
       }
     });
-    setImmediate(this.saveConfig);
+    setImmediate(this.startSaveConfig);
   },
   handleShowUnreadBadge() {
     this.setState({
       showUnreadBadge: !this.refs.showUnreadBadge.props.checked
     });
-    setImmediate(this.saveConfig);
+    setImmediate(this.startSaveConfig);
   },
 
   updateTeam(index, newData) {
@@ -200,7 +225,7 @@ const SettingsPage = React.createClass({
     this.setState({
       teams
     });
-    setImmediate(this.saveConfig);
+    setImmediate(this.startSaveConfig);
   },
 
   addServer(team) {
@@ -209,7 +234,7 @@ const SettingsPage = React.createClass({
     this.setState({
       teams
     });
-    setImmediate(this.saveConfig);
+    setImmediate(this.startSaveConfig);
   },
 
   render() {
@@ -418,7 +443,10 @@ const SettingsPage = React.createClass({
               transitionEnterTimeout={500}
               transitionLeaveTimeout={1000}
             >
-              { this.state.savingState === 'done' ? null : <AutoSaveIndicator savingState={this.state.savingState}/> }
+              { this.state.savingState === 'done' ? null : <AutoSaveIndicator
+                savingState={this.state.savingState}
+                errorMessage={'Can\'t save your changes. Please try again.'}
+                                                           /> }
             </ReactCSSTransitionGroup>
           </div>
           <div style={{position: 'relative'}}>

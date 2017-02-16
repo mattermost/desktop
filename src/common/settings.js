@@ -67,6 +67,14 @@ module.exports = {
     return config;
   },
 
+  writeFile(configFile, config, callback) {
+    if (config.version !== settingsVersion) {
+      throw new Error('version ' + config.version + ' is not equal to ' + settingsVersion);
+    }
+    var data = JSON.stringify(config, null, '  ');
+    fs.writeFile(configFile, data, 'utf8', callback);
+  },
+
   writeFileSync(configFile, config) {
     if (config.version !== settingsVersion) {
       throw new Error('version ' + config.version + ' is not equal to ' + settingsVersion);
