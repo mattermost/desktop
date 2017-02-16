@@ -49,6 +49,22 @@ describe('browser/settings.html', function desc() {
       getUrl().should.eventually.match(/\/index.html$/);
   });
 
+  it('should show NewServerModal after all servers are removed', () => {
+    const modalTitleSelector = '.modal-title=Remove Server';
+    env.addClientCommands(this.app.client);
+    return this.app.client.
+      loadSettingsPage().
+      click('=Remove').
+      waitForVisible(modalTitleSelector).
+      element('.modal-dialog').click('.btn=Remove').
+      pause(500).
+      click('=Remove').
+      waitForVisible(modalTitleSelector).
+      element('.modal-dialog').click('.btn=Remove').
+      pause(500).
+      isExisting('#newServerModal').should.eventually.equal(true);
+  });
+
   describe('Options', () => {
     describe('Hide Menu Bar', () => {
       it('should appear on win32 or linux', () => {
