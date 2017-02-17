@@ -1,6 +1,6 @@
 const React = require('react');
 const ReactDOM = require('react-dom');
-const {Button, Checkbox, Col, FormGroup, FormControl, ControlLabel, Grid, Navbar, Row} = require('react-bootstrap');
+const {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} = require('react-bootstrap');
 
 const {ipcRenderer, remote} = require('electron');
 const AutoLaunch = require('auto-launch');
@@ -67,13 +67,11 @@ const SettingsPage = React.createClass({
   handleSave() {
     var config = {
       teams: this.state.teams,
-      hideMenuBar: this.state.hideMenuBar,
       showTrayIcon: this.state.showTrayIcon,
       trayIconTheme: this.state.trayIconTheme,
       disablewebsecurity: this.state.disablewebsecurity,
       version: settings.version,
       minimizeToTray: this.state.minimizeToTray,
-      toggleWindowOnTrayIconClick: this.state.toggleWindowOnTrayIconClick,
       notifications: {
         flashWindow: this.state.notifications.flashWindow
       },
@@ -81,10 +79,6 @@ const SettingsPage = React.createClass({
     };
     settings.writeFileSync(this.props.configFile, config);
     if (process.platform === 'win32' || process.platform === 'linux') {
-      var currentWindow = remote.getCurrentWindow();
-      currentWindow.setAutoHideMenuBar(config.hideMenuBar);
-      currentWindow.setMenuBarVisibility(!config.hideMenuBar);
-
       var autostart = this.state.autostart;
       appLauncher.isEnabled().then((enabled) => {
         if (enabled && !autostart) {
@@ -105,12 +99,7 @@ const SettingsPage = React.createClass({
   },
   handleChangeDisableWebSecurity() {
     this.setState({
-      disablewebsecurity: !this.refs.disablewebsecurity.props.checked
-    });
-  },
-  handleChangeHideMenuBar() {
-    this.setState({
-      hideMenuBar: !this.refs.hideMenuBar.props.checked
+      disablewebsecurity: this.refs.disablewebsecurity.props.checked
     });
   },
   handleChangeShowTrayIcon() {
@@ -140,11 +129,6 @@ const SettingsPage = React.createClass({
 
     this.setState({
       minimizeToTray: shouldMinimizeToTray
-    });
-  },
-  handleChangeToggleWindowOnTrayIconClick() {
-    this.setState({
-      toggleWindowOnTrayIconClick: !this.refs.toggleWindowOnTrayIconClick.props.checked
     });
   },
   toggleShowTeamForm() {
@@ -204,54 +188,8 @@ const SettingsPage = React.createClass({
     );
 
     var options = [];
-    if (process.platform === 'win32' || process.platform === 'linux') {
-      options.push(
-        <Checkbox
-          key='inputHideMenuBar'
-          id='inputHideMenuBar'
-          ref='hideMenuBar'
-          checked={this.state.hideMenuBar}
-          onChange={this.handleChangeHideMenuBar}
-        >{'Hide menu bar (Press Alt to show menu bar)'}</Checkbox>);
-    }
-    if (process.platform === 'darwin' || process.platform === 'linux') {
-      options.push(
-        <Checkbox
-          key='inputShowTrayIcon'
-          id='inputShowTrayIcon'
-          ref='showTrayIcon'
-          checked={this.state.showTrayIcon}
-          onChange={this.handleChangeShowTrayIcon}
-        >{process.platform === 'darwin' ?
-          'Show icon on menu bar (need to restart the application)' :
-          'Show icon in notification area (need to restart the application)'}</Checkbox>);
-    }
-    if (process.platform === 'linux') {
-      options.push(
-        <FormGroup>
-          <ControlLabel>{'Icon theme (Need to restart the application)'}</ControlLabel>
-          <FormControl
-            componentClass='select'
-            key='inputTrayIconTheme'
-            ref='trayIconTheme'
-            value={this.state.trayIconTheme}
-            onChange={this.handleChangeTrayIconTheme}
-          >
-            <option value='light'>{'Light'}</option>
-            <option value='dark'>{'Dark'}</option>
-          </FormControl>
-        </FormGroup>);
-    }
-    options.push(
-      <Checkbox
-        key='inputDisableWebSecurity'
-        id='inputDisableWebSecurity'
-        ref='disablewebsecurity'
-        checked={this.state.disablewebsecurity}
-        onChange={this.handleChangeDisableWebSecurity}
-      >{'Allow mixed content (Enabling allows both secure and insecure content, images and scripts to render and execute. Disabling allows only secure content.)'}</Checkbox>);
 
-    //OSX has an option in the Dock, to set the app to autostart, so we choose to not support this option for OSX
+    // MacOS has an option in the Dock, to set the app to autostart, so we choose to not support this option for OSX
     if (process.platform === 'win32' || process.platform === 'linux') {
       options.push(
         <Checkbox
@@ -260,31 +198,29 @@ const SettingsPage = React.createClass({
           ref='autostart'
           checked={this.state.autostart}
           onChange={this.handleChangeAutoStart}
-        >{'Start app on login.'}</Checkbox>);
+        >{'Start app on login'}
+          <HelpBlock>
+            {'If enabled, the app starts automatically when you log in to your machine.'}
+            {' '}
+            {'The app will initially start minimized and appear on the taskbar.'}
+          </HelpBlock>
+        </Checkbox>);
     }
 
-    if (process.platform === 'darwin' || process.platform === 'linux') {
-      options.push(
-        <Checkbox
-          key='inputMinimizeToTray'
-          id='inputMinimizeToTray'
-          ref='minimizeToTray'
-          disabled={!this.state.showTrayIcon || !this.state.trayWasVisible}
-          checked={this.state.minimizeToTray}
-          onChange={this.handleChangeMinimizeToTray}
-        >{this.state.trayWasVisible || !this.state.showTrayIcon ? 'Leave app running in notification area when the window is closed' : 'Leave app running in notification area when the window is closed (available on next restart)'}</Checkbox>);
-    }
-
-    if (process.platform === 'win32') {
-      options.push(
-        <Checkbox
-          key='inputToggleWindowOnTrayIconClick'
-          id='inputToggleWindowOnTrayIconClick'
-          ref='toggleWindowOnTrayIconClick'
-          checked={this.state.toggleWindowOnTrayIconClick}
-          onChange={this.handleChangeToggleWindowOnTrayIconClick}
-        >{'Toggle window visibility when clicking on the tray icon.'}</Checkbox>);
-    }
+    options.push(
+      <Checkbox
+        key='inputDisableWebSecurity'
+        id='inputDisableWebSecurity'
+        ref='disablewebsecurity'
+        checked={!this.state.disablewebsecurity}
+        onChange={this.handleChangeDisableWebSecurity}
+      >{'Display secure content only'}
+        <HelpBlock>
+          {'If enabled, the app only displays secure (HTTPS/SSL) content.'}
+          {' '}
+          {'If disabled, the app displays secure and non-secure (HTTP) content such as images.'}
+        </HelpBlock>
+      </Checkbox>);
 
     if (process.platform === 'darwin' || process.platform === 'win32') {
       options.push(
@@ -294,7 +230,11 @@ const SettingsPage = React.createClass({
           ref='showUnreadBadge'
           checked={this.state.showUnreadBadge}
           onChange={this.handleShowUnreadBadge}
-        >{'Show red badge on taskbar icon to indicate unread messages. Regardless of this setting, mentions are always indicated with a red badge and item count on the taskbar icon.'}</Checkbox>);
+        >{'Show red badge on taskbar icon to indicate unread messages'}
+          <HelpBlock>
+            {'Regardless of this setting, mentions are always indicated with a red badge and item count on the taskbar icon.'}
+          </HelpBlock>
+        </Checkbox>);
     }
 
     if (process.platform === 'win32' || process.platform === 'linux') {
@@ -305,7 +245,75 @@ const SettingsPage = React.createClass({
           ref='flashWindow'
           checked={this.state.notifications.flashWindow === 2}
           onChange={this.handleFlashWindow}
-        >{'Flash the taskbar icon when a new message is received.'}</Checkbox>);
+        >{'Flash taskbar icon when a new message is received'}
+          <HelpBlock>
+            {'If enabled, taskbar icon flashes for a few seconds when a new message is received.'}
+          </HelpBlock>
+        </Checkbox>);
+    }
+
+    if (process.platform === 'darwin' || process.platform === 'linux') {
+      options.push(
+        <Checkbox
+          key='inputShowTrayIcon'
+          id='inputShowTrayIcon'
+          ref='showTrayIcon'
+          checked={this.state.showTrayIcon}
+          onChange={this.handleChangeShowTrayIcon}
+        >{process.platform === 'darwin' ?
+          'Show Mattermost icon in the menu bar' :
+          'Show icon in the notification area'}
+          <HelpBlock>
+            {'Setting takes effect after restarting the app.'}
+          </HelpBlock>
+        </Checkbox>);
+    }
+    if (process.platform === 'linux') {
+      options.push(
+        <FormGroup
+          key='trayIconTheme'
+          style={{marginLeft: '20px'}}
+        >
+          {'Icon theme: '}
+          <Radio
+            inline={true}
+            name='trayIconTheme'
+            value='light'
+            defaultChecked={this.state.trayIconTheme === 'light' || this.state.trayIconTheme === ''}
+            onChange={() => {
+              this.setState({trayIconTheme: 'light'});
+            }}
+          >{'Light'}</Radio>
+          {' '}
+          <Radio
+            inline={true}
+            name='trayIconTheme'
+            value='dark'
+            defaultChecked={this.state.trayIconTheme === 'dark'}
+            onChange={() => {
+              this.setState({trayIconTheme: 'dark'});
+            }}
+          >{'Dark'}</Radio>
+        </FormGroup>
+      );
+    }
+
+    if (process.platform === 'linux') {
+      options.push(
+        <Checkbox
+          key='inputMinimizeToTray'
+          id='inputMinimizeToTray'
+          ref='minimizeToTray'
+          disabled={!this.state.showTrayIcon || !this.state.trayWasVisible}
+          checked={this.state.minimizeToTray}
+          onChange={this.handleChangeMinimizeToTray}
+        >
+          {'Leave app running in notification area when application window is closed'}
+          <HelpBlock>
+            {'If enabled, the app stays running in the notification area after app window is closed.'}
+            {this.state.trayWasVisible || !this.state.showTrayIcon ? '' : ' Setting takes effect after restarting the app.'}
+          </HelpBlock>
+        </Checkbox>);
     }
 
     const settingsPage = {
@@ -345,7 +353,7 @@ const SettingsPage = React.createClass({
     var optionsRow = (options.length > 0) ? (
       <Row>
         <Col md={12}>
-          <h2 style={settingsPage.sectionHeading}>{'App options'}</h2>
+          <h2 style={settingsPage.sectionHeading}>{'App Options'}</h2>
           { options.map((opt, i) => (
             <FormGroup key={`fromGroup${i}`}>
               {opt}

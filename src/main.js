@@ -254,16 +254,6 @@ app.on('window-all-closed', () => {
   }
 });
 
-// For win32, auto-hide menu bar.
-app.on('browser-window-created', (event, window) => {
-  if (process.platform === 'win32' || process.platform === 'linux') {
-    if (config.hideMenuBar) {
-      window.setAutoHideMenuBar(true);
-      window.setMenuBarVisibility(false);
-    }
-  }
-});
-
 // For OSX, show hidden mainWindow when clicking dock icon.
 app.on('activate', () => {
   mainWindow.show();
@@ -366,8 +356,6 @@ app.on('ready', () => {
         if (process.platform === 'darwin') {
           app.dock.show();
         }
-      } else if ((process.platform === 'win32') && config.toggleWindowOnTrayIconClick) {
-        mainWindow.minimize();
       } else {
         mainWindow.focus();
       }
@@ -561,9 +549,6 @@ app.on('ready', () => {
         break;
       case 'darwin':
         hideWindow(mainWindow);
-        if (config.minimizeToTray) {
-          app.dock.hide();
-        }
         break;
       default:
       }

@@ -66,7 +66,7 @@ describe('browser/settings.html', function desc() {
   });
 
   describe('Options', () => {
-    describe('Hide Menu Bar', () => {
+    describe.skip('Hide Menu Bar', () => {
       it('should appear on win32 or linux', () => {
         const expected = (process.platform === 'win32' || process.platform === 'linux');
         env.addClientCommands(this.app.client);
@@ -105,10 +105,10 @@ describe('browser/settings.html', function desc() {
       });
     });
 
-    describe('Allow mixed content', () => {
+    describe('Display secure content only', () => {
       [true, false].forEach((v) => {
         it(`should be saved and loaded: ${v}`, () => {
-          const webPreferences = v ? 'allowDisplayingInsecureContent' : '';
+          const webPreferences = v ? '' : 'allowDisplayingInsecureContent';
           env.addClientCommands(this.app.client);
 
           return this.app.client.
@@ -123,7 +123,7 @@ describe('browser/settings.html', function desc() {
             click('#btnSave').
             pause(1000).then(() => {
               const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-              savedConfig.disablewebsecurity.should.equal(v);
+              savedConfig.disablewebsecurity.should.equal(!v);
             }).
             getAttribute('.mattermostView', 'webpreferences').then((disablewebsecurity) => { // confirm actual behavior
               // disablewebsecurity is an array of String
@@ -157,7 +157,7 @@ describe('browser/settings.html', function desc() {
       });
     });
 
-    describe('Show tray icon', () => {
+    describe('Show icon in menu bar / notification area', () => {
       it('should appear on darwin or linux', () => {
         const expected = (process.platform === 'darwin' || process.platform === 'linux');
         env.addClientCommands(this.app.client);
@@ -167,9 +167,9 @@ describe('browser/settings.html', function desc() {
       });
     });
 
-    describe('Minimize to tray', () => {
-      it('should appear on darwin or linux', () => {
-        const expected = (process.platform === 'darwin' || process.platform === 'linux');
+    describe('Leave app running in notification area when application window is closed', () => {
+      it('should appear on linux', () => {
+        const expected = (process.platform === 'linux');
         env.addClientCommands(this.app.client);
         return this.app.client.
           loadSettingsPage().
@@ -177,7 +177,7 @@ describe('browser/settings.html', function desc() {
       });
     });
 
-    describe('Toggle window visibility when clicking on the tray icon', () => {
+    describe.skip('Toggle window visibility when clicking on the tray icon', () => {
       it('should appear on win32', () => {
         const expected = (process.platform === 'win32');
         env.addClientCommands(this.app.client);
@@ -187,7 +187,7 @@ describe('browser/settings.html', function desc() {
       });
     });
 
-    describe('Flash taskbar icon on new messages', () => {
+    describe('Flash taskbar icon when a new message is received', () => {
       it('should appear on win32 and linux', () => {
         const expected = (process.platform === 'win32' || process.platform === 'linux');
         env.addClientCommands(this.app.client);
@@ -197,7 +197,7 @@ describe('browser/settings.html', function desc() {
       });
     });
 
-    describe('Show red icon for unread', () => {
+    describe('Show red badge on taskbar icon to indicate unread messages', () => {
       it('should appear on darwin or win32', () => {
         const expected = (process.platform === 'darwin' || process.platform === 'win32');
         env.addClientCommands(this.app.client);
