@@ -7,7 +7,6 @@ Release date: February 28, 2017
 Upgrading to Mattermost server 3.6 or later is recommended, as new features for the desktop app have been added following the release of the team sidebar.
 
 ### Improvements
-Added a new team button
  - Added support for unread indicators following the release of team sidebar in Mattermost server 3.6
  - Removed a confusing `CTRL/CMD+S` shortcut for searching within a Mattermost team
  - Added support for SAML OneLogin and Google authentication for Enterprise users
