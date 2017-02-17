@@ -1,6 +1,5 @@
 const React = require('react');
 const ReactDOM = require('react-dom');
-const ReactCSSTransitionGroup = require('react-addons-css-transition-group');
 const {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} = require('react-bootstrap');
 
 const {ipcRenderer, remote} = require('electron');
@@ -432,16 +431,10 @@ const SettingsPage = React.createClass({
           style={settingsPage.navbar}
         >
           <div className='IndicatorContainer'>
-            <ReactCSSTransitionGroup
-              transitionName='AutoSaveIndicator'
-              transitionEnterTimeout={500}
-              transitionLeaveTimeout={1000}
-            >
-              { this.state.savingState === 'done' ? null : <AutoSaveIndicator
-                savingState={this.state.savingState}
-                errorMessage={'Can\'t save your changes. Please try again.'}
-                                                           /> }
-            </ReactCSSTransitionGroup>
+            <AutoSaveIndicator
+              savingState={this.state.savingState}
+              errorMessage={'Can\'t save your changes. Please try again.'}
+            />
           </div>
           <div style={{position: 'relative'}}>
             <h1 style={settingsPage.heading}>{'Settings'}</h1>

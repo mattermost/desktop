@@ -16,21 +16,8 @@
   margin: 0;
 }
 
-.AutoSaveIndicator-enter {
-  opacity: 0.01;
-}
-
-.AutoSaveIndicator-enter.AutoSaveIndicator-enter-active {
-  opacity: 1;
-  transition: opacity 0ms;
-}
-
-.AutoSaveIndicator-leave {
-  opacity: 1;
-}
-
-.AutoSaveIndicator-leave.AutoSaveIndicator-leave-active {
-  opacity: 0.01;
+.AutoSaveIndicator.AutoSaveIndicator-Leave {
+  opacity: 0;
   transition: opacity 1s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
