@@ -26,6 +26,7 @@ Release date: TBD
 - Fixed an issue where context menu appears many times after reloading
 - Fixed an issue where minimum window size is not set
 - Fixed an issue where Google login form is not working
+- Fixed an issue where application menu is not updated when the config is saved in the settings page
 
 #### Windows
 - Fixed an issue where an unexpected window appears while install/uninstalling

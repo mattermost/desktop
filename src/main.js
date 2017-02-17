@@ -493,7 +493,7 @@ app.on('ready', () => {
 
   // Set application menu
   ipcMain.on('update-menu', (event, configData) => {
-    var aMenu = appMenu.createMenu(mainWindow, config);
+    var aMenu = appMenu.createMenu(mainWindow, configData);
     Menu.setApplicationMenu(aMenu);
 
     // set up context menu for tray icon
