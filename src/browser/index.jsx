@@ -10,6 +10,8 @@ const {remote, ipcRenderer} = require('electron');
 const MainPage = require('./components/MainPage.jsx');
 
 const AppConfig = require('./config/AppConfig.js');
+const url = require('url');
+
 const badge = require('./js/badge');
 
 remote.getCurrentWindow().removeAllListeners('focus');
@@ -86,10 +88,14 @@ function teamConfigChange(teams) {
   AppConfig.set('teams', teams);
 }
 
+const parsedURL = url.parse(window.location.href, true);
+const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : 0;
+
 ReactDOM.render(
   <MainPage
     disablewebsecurity={AppConfig.data.disablewebsecurity}
     teams={AppConfig.data.teams}
+    initialIndex={initialIndex}
     onUnreadCountChange={showUnreadBadge}
     onTeamConfigChange={teamConfigChange}
   />,

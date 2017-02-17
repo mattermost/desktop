@@ -4,18 +4,21 @@ const {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} = 
 
 const {ipcRenderer, remote} = require('electron');
 const AutoLaunch = require('auto-launch');
+const {debounce} = require('underscore');
 
 const settings = require('../../common/settings');
 
 const TeamList = require('./TeamList.jsx');
+const AutoSaveIndicator = require('./AutoSaveIndicator.jsx');
 
 const appLauncher = new AutoLaunch({
   name: 'Mattermost',
   isHidden: true
 });
 
-function backToIndex() {
-  remote.getCurrentWindow().loadURL('file://' + __dirname + '/index.html');
+function backToIndex(index) {
+  const target = typeof index === 'undefined' ? 0 : index;
+  remote.getCurrentWindow().loadURL(`file://${__dirname}/index.html?index=${target}`);
 }
 
 const SettingsPage = React.createClass({
@@ -37,6 +40,7 @@ const SettingsPage = React.createClass({
     if (initialState.teams.length === 0) {
       initialState.showAddTeamForm = true;
     }
+    initialState.savingState = 'done';
 
     return initialState;
   },
@@ -55,6 +59,34 @@ const SettingsPage = React.createClass({
       });
     });
   },
+
+  setSavingState(state) {
+    if (!this.setSavingStateSaved) {
+      this.setSavingStateSaved = debounce(() => {
+        this.saveConfig((err) => {
+          if (err) {
+            this.setState({savingState: 'error'});
+          } else {
+            this.setState({savingState: 'saved'});
+          }
+          this.setSavingStateDoneTimer = setTimeout(this.setState.bind(this, {savingState: 'done'}), 2000);
+        });
+      }, 500);
+    }
+    if (this.setSavingStateDoneTimer) {
+      clearTimeout(this.setSavingStateDoneTimer);
+      this.setSavingStateDoneTimer = null;
+    }
+    this.setState({savingState: state});
+    if (state === 'saving') {
+      this.setSavingStateSaved();
+    }
+  },
+
+  startSaveConfig() {
+    this.setSavingState('saving');
+  },
+
   handleTeamsChange(teams) {
     this.setState({
       showAddTeamForm: false,
@@ -63,8 +95,10 @@ const SettingsPage = React.createClass({
     if (teams.length === 0) {
       this.setState({showAddTeamForm: true});
     }
+    setImmediate(this.startSaveConfig);
   },
-  handleSave() {
+
+  saveConfig(callback) {
     var config = {
       teams: this.state.teams,
       showTrayIcon: this.state.showTrayIcon,
@@ -77,23 +111,39 @@ const SettingsPage = React.createClass({
       },
       showUnreadBadge: this.state.showUnreadBadge
     };
-    settings.writeFileSync(this.props.configFile, config);
-    if (process.platform === 'win32' || process.platform === 'linux') {
-      var autostart = this.state.autostart;
-      appLauncher.isEnabled().then((enabled) => {
-        if (enabled && !autostart) {
-          appLauncher.disable();
-        } else if (!enabled && autostart) {
-          appLauncher.enable();
-        }
-      });
-    }
 
     ipcRenderer.send('update-menu', config);
     ipcRenderer.send('update-config');
-
-    backToIndex();
+    settings.writeFile(this.props.configFile, config, (err) => {
+      if (err) {
+        callback(err);
+        return;
+      }
+      if (process.platform === 'win32' || process.platform === 'linux') {
+        const autostart = this.state.autostart;
+        this.saveAutoStart(autostart, callback);
+      } else {
+        callback();
+      }
+    });
   },
+
+  saveAutoStart(autostart, callback) {
+    appLauncher.isEnabled().then((enabled) => {
+      if (enabled && !autostart) {
+        appLauncher.disable().then(() => {
+          callback();
+        }).catch(callback);
+      } else if (!enabled && autostart) {
+        appLauncher.enable().then(() => {
+          callback();
+        }).catch(callback);
+      } else {
+        callback();
+      }
+    }).catch(callback);
+  },
+
   handleCancel() {
     backToIndex();
   },
@@ -101,6 +151,7 @@ const SettingsPage = React.createClass({
     this.setState({
       disablewebsecurity: this.refs.disablewebsecurity.props.checked
     });
+    setImmediate(this.startSaveConfig);
   },
   handleChangeShowTrayIcon() {
     var shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
@@ -113,16 +164,20 @@ const SettingsPage = React.createClass({
         minimizeToTray: false
       });
     }
+
+    setImmediate(this.startSaveConfig);
   },
   handleChangeTrayIconTheme() {
     this.setState({
       trayIconTheme: ReactDOM.findDOMNode(this.refs.trayIconTheme).value
     });
+    setImmediate(this.startSaveConfig);
   },
   handleChangeAutoStart() {
     this.setState({
       autostart: !this.refs.autostart.props.checked
     });
+    setImmediate(this.startSaveConfig);
   },
   handleChangeMinimizeToTray() {
     const shouldMinimizeToTray = this.state.showTrayIcon && !this.refs.minimizeToTray.props.checked;
@@ -130,6 +185,7 @@ const SettingsPage = React.createClass({
     this.setState({
       minimizeToTray: shouldMinimizeToTray
     });
+    setImmediate(this.startSaveConfig);
   },
   toggleShowTeamForm() {
     this.setState({
@@ -147,11 +203,13 @@ const SettingsPage = React.createClass({
         flashWindow: this.refs.flashWindow.props.checked ? 0 : 2
       }
     });
+    setImmediate(this.startSaveConfig);
   },
   handleShowUnreadBadge() {
     this.setState({
       showUnreadBadge: !this.refs.showUnreadBadge.props.checked
     });
+    setImmediate(this.startSaveConfig);
   },
 
   updateTeam(index, newData) {
@@ -160,6 +218,7 @@ const SettingsPage = React.createClass({
     this.setState({
       teams
     });
+    setImmediate(this.startSaveConfig);
   },
 
   addServer(team) {
@@ -168,6 +227,7 @@ const SettingsPage = React.createClass({
     this.setState({
       teams
     });
+    setImmediate(this.startSaveConfig);
   },
 
   render() {
@@ -182,6 +242,7 @@ const SettingsPage = React.createClass({
             onTeamsChange={this.handleTeamsChange}
             updateTeam={this.updateTeam}
             addServer={this.addServer}
+            onTeamClick={backToIndex}
           />
         </Col>
       </Row>
@@ -369,9 +430,16 @@ const SettingsPage = React.createClass({
           className='navbar-fixed-top'
           style={settingsPage.navbar}
         >
+          <div className='IndicatorContainer'>
+            <AutoSaveIndicator
+              savingState={this.state.savingState}
+              errorMessage={'Can\'t save your changes. Please try again.'}
+            />
+          </div>
           <div style={{position: 'relative'}}>
             <h1 style={settingsPage.heading}>{'Settings'}</h1>
             <Button
+              id='btnClose'
               bsStyle='link'
               style={settingsPage.close}
               onClick={this.handleCancel}
@@ -383,7 +451,7 @@ const SettingsPage = React.createClass({
         </Navbar>
         <Grid
           className='settingsPage'
-          style={{padding: '100px 15px'}}
+          style={{paddingTop: '100px'}}
         >
           <Row>
             <Col
@@ -410,26 +478,6 @@ const SettingsPage = React.createClass({
           <hr/>
           { optionsRow }
         </Grid>
-        <Navbar className='navbar-fixed-bottom'>
-          <div
-            className='text-right'
-            style={settingsPage.footer}
-          >
-            <Button
-              id='btnCancel'
-              className='btn-link'
-              onClick={this.handleCancel}
-            >{'Cancel'}</Button>
-            { ' ' }
-            <Button
-              id='btnSave'
-              className='navbar-btn'
-              bsStyle='primary'
-              onClick={this.handleSave}
-              disabled={this.state.teams.length === 0}
-            >{'Save'}</Button>
-          </div>
-        </Navbar>
       </div>
     );
   }

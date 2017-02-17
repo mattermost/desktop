@@ -16,12 +16,17 @@ class TeamListItem extends React.Component {
   render() {
     var style = {
       left: {
-        display: 'inline-block'
+        display: 'inline-block',
+        width: 'calc(100% - 100px)',
+        cursor: 'pointer'
       }
     };
     return (
       <div className='teamListItem list-group-item'>
-        <div style={style.left}>
+        <div
+          style={style.left}
+          onClick={this.props.onTeamClick}
+        >
           <h4 className='list-group-item-heading'>{ this.props.name }</h4>
           <p className='list-group-item-text'>
             { this.props.url }
@@ -47,6 +52,7 @@ TeamListItem.propTypes = {
   name: React.PropTypes.string,
   onTeamEditing: React.PropTypes.func,
   onTeamRemove: React.PropTypes.func,
+  onTeamClick: React.PropTypes.func,
   url: React.PropTypes.string
 };
 

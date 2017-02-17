@@ -31,22 +31,13 @@ describe('browser/settings.html', function desc() {
     return true;
   });
 
-  it('should show index.html when Cancel button is clicked', () => {
+  it('should show index.html when Close button is clicked', () => {
     env.addClientCommands(this.app.client);
     return this.app.client.
       loadSettingsPage().
-      click('#btnCancel').
+      click('#btnClose').
       pause(1000).
-      getUrl().should.eventually.match(/\/index.html$/);
-  });
-
-  it('should show index.html when Save button is clicked', () => {
-    env.addClientCommands(this.app.client);
-    return this.app.client.
-      loadSettingsPage().
-      click('#btnSave').
-      pause(1000).
-      getUrl().should.eventually.match(/\/index.html$/);
+      getUrl().should.eventually.match(/\/index.html(\?.+)?$/);
   });
 
   it('should show NewServerModal after all servers are removed', () => {
@@ -63,6 +54,28 @@ describe('browser/settings.html', function desc() {
       element('.modal-dialog').click('.btn=Remove').
       pause(500).
       isExisting('#newServerModal').should.eventually.equal(true);
+  });
+
+  describe('Server list', () => {
+    it('should open the corresponding tab when a server list item is clicked', () => {
+      env.addClientCommands(this.app.client);
+      return this.app.client.
+      loadSettingsPage().
+      click('h4=example_1').
+      pause(100).
+      waitUntilWindowLoaded().
+      getUrl().should.eventually.match(/\/index.html(\?.+)?$/).
+      isVisible('#mattermostView0').should.eventually.be.true.
+      isVisible('#mattermostView1').should.eventually.be.false.
+
+      loadSettingsPage().
+      click('h4=example_2').
+      pause(100).
+      waitUntilWindowLoaded().
+      getUrl().should.eventually.match(/\/index.html(\?.+)?$/).
+      isVisible('#mattermostView0').should.eventually.be.false.
+      isVisible('#mattermostView1').should.eventually.be.true;
+    });
   });
 
   describe('Options', () => {
@@ -87,7 +100,8 @@ describe('browser/settings.html', function desc() {
               }
               return true;
             }).
-            click('#btnSave').
+            pause(600).
+            click('#btnClose').
             pause(1000).then(() => {
               const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
               savedConfig.hideMenuBar.should.equal(v);
@@ -120,7 +134,8 @@ describe('browser/settings.html', function desc() {
               }
               return true;
             }).
-            click('#btnSave').
+            pause(600).
+            click('#btnClose').
             pause(1000).then(() => {
               const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
               savedConfig.disablewebsecurity.should.equal(!v);
@@ -226,7 +241,7 @@ describe('browser/settings.html', function desc() {
         element('.modal-dialog').click('.btn=Remove').
         pause(500).
         isExisting(modalTitleSelector).should.eventually.false.
-        click('#btnSave').
+        click('#btnClose').
         pause(500).then(() => {
           const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
           savedConfig.teams.should.deep.equal(config.teams.slice(1));
@@ -239,7 +254,7 @@ describe('browser/settings.html', function desc() {
         element('.modal-dialog').click('.btn=Cancel').
         pause(500).
         isExisting(modalTitleSelector).should.eventually.false.
-        click('#btnSave').
+        click('#btnClose').
         pause(500).then(() => {
           const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
           savedConfig.teams.should.deep.equal(config.teams);
@@ -352,7 +367,7 @@ describe('browser/settings.html', function desc() {
         this.app.client.
           click('#saveNewServerModal').
           pause(1000). // Animation
-          click('#btnSave').
+          click('#btnClose').
           pause(1000).then(() => {
             const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
             savedConfig.teams.should.contain({

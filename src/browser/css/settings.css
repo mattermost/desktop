@@ -1,4 +1,26 @@
 
+.teamListItem:hover {
+  background: #eee;
+}
+
+.IndicatorContainer {
+  position: absolute;
+  height: 100%;
+  display: flex;
+  flex-flow: row;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.AutoSaveIndicator {
+  margin: 0;
+}
+
+.AutoSaveIndicator.AutoSaveIndicator-Leave {
+  opacity: 0;
+  transition: opacity 1s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
 .checkbox > label {
   width: 100%;
 }
