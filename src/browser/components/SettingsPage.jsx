@@ -154,12 +154,6 @@ const SettingsPage = React.createClass({
     });
     setImmediate(this.startSaveConfig);
   },
-  handleChangeHideMenuBar() {
-    this.setState({
-      hideMenuBar: this.refs.hideMenuBar.props.checked
-    });
-    setImmediate(this.startSaveConfig);
-  },
   handleChangeShowTrayIcon() {
     var shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
     this.setState({
