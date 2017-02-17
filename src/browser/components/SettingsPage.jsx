@@ -112,13 +112,13 @@ const SettingsPage = React.createClass({
       showUnreadBadge: this.state.showUnreadBadge
     };
 
-    ipcRenderer.send('update-menu', config);
-    ipcRenderer.send('update-config');
     settings.writeFile(this.props.configFile, config, (err) => {
       if (err) {
         callback(err);
         return;
       }
+      ipcRenderer.send('update-menu', config);
+      ipcRenderer.send('update-config');
       if (process.platform === 'win32' || process.platform === 'linux') {
         const autostart = this.state.autostart;
         this.saveAutoStart(autostart, callback);

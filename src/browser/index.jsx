@@ -86,6 +86,8 @@ function showUnreadBadge(unreadCount, mentionCount) {
 
 function teamConfigChange(teams) {
   AppConfig.set('teams', teams);
+  ipcRenderer.send('update-menu', AppConfig.data);
+  ipcRenderer.send('update-config');
 }
 
 const parsedURL = url.parse(window.location.href, true);
