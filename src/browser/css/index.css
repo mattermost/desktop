@@ -42,6 +42,13 @@
   padding: 0 15px;
 }
 
+.nav-tabs>li.buttonTab>a {
+  border: none;
+  background: transparent;
+  margin-left: 1px; /*Has no border and would be placed above the last item's border due to it's margin-right: -1px */
+  padding: 0;
+  margin-bottom: 1px;
+}
 
 .has-error .control-label,
 .has-error .help-block {
