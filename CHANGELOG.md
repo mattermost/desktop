@@ -18,12 +18,12 @@ Upgrading to Mattermost server 3.6 or later is recommended, as new features for 
    - Clicking "Edit" next to a server on the Settings page opens a dialog
    - Clicking on a server on the Settings page opens the corresponding server tab
  - Simplified desktop app options:
-   - App options now auto-save when chaged
+   - App options now auto-save when changed
    - Added supporting help text for each option
    - Removed "Leave app running in menu bar when application window is closed" setting for Mac, which is not applicable for that platform
-   - Removed "Toggle window visibility when clicking on the tray icon" setting for Windows, given the behaviour is inconsistent with typical Windows app behaviour
+   - Removed "Toggle window visibility when clicking on the tray icon" setting for Windows, given the behavior is inconsistent with typical Windows app behavior
    - Removed "Hide menu bar" setting to avoid users not being able to use the menu bar and the Settings page.
- 
+
 ### Bug Fixes
 
 #### All Platforms
