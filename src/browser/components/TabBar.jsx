@@ -100,7 +100,7 @@ class TabBar extends React.Component {
         id='tabBarAddNewTeam'
         onClick={this.props.onAddServer}
         style={tabButton}
-        bsStyle='tabButton'
+        className='btn-tabButton'
         title='Add new server'
       >
         {'+'}

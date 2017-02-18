@@ -202,8 +202,8 @@ NewTeamModal.propTypes = {
   onClose: React.PropTypes.func,
   onSave: React.PropTypes.func,
   team: React.PropTypes.object,
-  editMode: React.PropTypes.boolean,
-  show: React.PropTypes.boolean
+  editMode: React.PropTypes.bool,
+  show: React.PropTypes.bool
 };
 
 module.exports = NewTeamModal;
