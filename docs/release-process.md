@@ -40,7 +40,8 @@ Pre-work for the current release begins at the code complete date of the previou
 2. Dev/PM:
     - Submit changelog with updates for improvements, bug fixes, known issues, and contributors
     - Finalize roadmap for next release
-3. Build:  
+3. Build:
+    - Verify `version` in [package.json](https://github.com/mattermost/desktop/blob/master/package.json) and [src/package.json](https://github.com/mattermost/desktop/blob/master/src/package.json) are updated to the new release version
     - Master is tagged and branched and "Release Candidate 1" is cut (e.g. 1.1.0-RC1)
 4. Marketing:
     - Tweet announcement that RC1 is ready
