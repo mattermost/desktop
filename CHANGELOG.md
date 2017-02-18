@@ -13,6 +13,7 @@ Upgrading to Mattermost server 3.6 or later is recommended, as new features for 
  - Streamlined desktop server management:
    - "Team Management" changed to "Server Management" following the release of team sidebar in Mattermost server 3.6
    - Added a "+" icon to the desktop server tab bar to more easily sign into a new Mattermost server
+   - Added an option to sign into another Mattermost server from **File > Sign in to Another Server**
    - Clicking "Add new server" on the Settings page opens a dialog instead of a new row
    - Clicking "Remove" next to a server now requires a confirmation to prevent a user from removing the server by accident
    - Clicking "Edit" next to a server on the Settings page opens a dialog
@@ -40,9 +41,9 @@ Upgrading to Mattermost server 3.6 or later is recommended, as new features for 
 - Fixed an issue where an unexpected window appears while installing or uninstalling
 - Fixed an issue where the maximized state of the application window was not restored on re-launch if "Start app on Login" setting is enabled
 
-#### Linux
-- Fixed an issue where tray icon wasn't shown by default
-- Fixed an issue where the maximized state of the application window was not restored on re-launch if "Start app on Login" setting is enabled
+#### Linux (Beta)
+- Fixed an issue where tray icon wasn't shown by default even when "Show icon in the notification area" setting is enabled
+- Fixed an issue where the maximized state of the application window was not restored on re-launch if "Start app on login" setting is enabled
 
 ### Known Issues
 
