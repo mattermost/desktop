@@ -58,6 +58,9 @@ const SettingsPage = React.createClass({
         showAddTeamForm: true
       });
     });
+    ipcRenderer.on('switch-tab', (event, key) => {
+      backToIndex(key);
+    });
   },
 
   setSavingState(state) {
