@@ -309,9 +309,9 @@ const SettingsPage = React.createClass({
           ref='flashWindow'
           checked={this.state.notifications.flashWindow === 2}
           onChange={this.handleFlashWindow}
-        >{'Flash taskbar icon when a new message is received'}
+        >{'Flash app window and taskbar icon when a new message is received'}
           <HelpBlock>
-            {'If enabled, taskbar icon flashes for a few seconds when a new message is received.'}
+            {'If enabled, app window and taskbar icon flashes for a few seconds when a new message is received.'}
           </HelpBlock>
         </Checkbox>);
     }
