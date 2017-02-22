@@ -30,6 +30,7 @@ Upgrading to Mattermost server 3.6 or later is recommended, as new features for 
 #### All Platforms
 - Mattermost window no longer opens on a display screen that has been disconnected
 - Mention badges no longer persist after logging out of a Mattermost server
+- Fixed an issue where selecting a server from the system tray icon while viewing the Settings page didn't work
 - After right-clicking an image or a link, the "Copy Link" option no longer moves around when clicking different places afterwards
 - Fixed an issue where minimum window size is not set
 - Changed target resolution size to 1000x700 to prevent unintended issues on the user interface
