@@ -10,6 +10,7 @@ Upgrading to Mattermost server 3.6 or later is recommended, as new features for 
  - Added support for unread indicators following the release of team sidebar in Mattermost server 3.6
  - Removed a confusing `CTRL/CMD+S` shortcut for searching within a Mattermost team
  - Added support for SAML OneLogin and Google authentication for Enterprise users
+ - Switching to a server from the system tray icon, from "Window" menu bar item, or through CTRL/CMD+{n} shortcut now works while viewing the Settings page works
  - Streamlined desktop server management:
    - "Team Management" changed to "Server Management" following the release of team sidebar in Mattermost server 3.6
    - Added a "+" icon to the desktop server tab bar to more easily sign into a new Mattermost server
@@ -30,7 +31,6 @@ Upgrading to Mattermost server 3.6 or later is recommended, as new features for 
 #### All Platforms
 - Mattermost window no longer opens on a display screen that has been disconnected
 - Mention badges no longer persist after logging out of a Mattermost server
-- Fixed an issue where selecting a server from the system tray icon while viewing the Settings page didn't work
 - After right-clicking an image or a link, the "Copy Link" option no longer moves around when clicking different places afterwards
 - Fixed an issue where minimum window size is not set
 - Changed target resolution size to 1000x700 to prevent unintended issues on the user interface
