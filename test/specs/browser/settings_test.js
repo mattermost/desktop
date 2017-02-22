@@ -202,7 +202,7 @@ describe('browser/settings.html', function desc() {
       });
     });
 
-    describe('Flash taskbar icon when a new message is received', () => {
+    describe('Flash app window and taskbar icon when a new message is received', () => {
       it('should appear on win32 and linux', () => {
         const expected = (process.platform === 'win32' || process.platform === 'linux');
         env.addClientCommands(this.app.client);
