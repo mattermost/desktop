@@ -287,6 +287,7 @@ const SettingsPage = React.createClass({
       </Checkbox>);
 
     if (process.platform === 'darwin' || process.platform === 'win32') {
+      const TASKBAR = process.platform === 'win32' ? 'taskbar' : 'Dock';
       options.push(
         <Checkbox
           key='inputShowUnreadBadge'
@@ -294,9 +295,9 @@ const SettingsPage = React.createClass({
           ref='showUnreadBadge'
           checked={this.state.showUnreadBadge}
           onChange={this.handleShowUnreadBadge}
-        >{'Show red badge on taskbar icon to indicate unread messages'}
+        >{`Show red badge on ${TASKBAR} icon to indicate unread messages`}
           <HelpBlock>
-            {'Regardless of this setting, mentions are always indicated with a red badge and item count on the taskbar icon.'}
+            {`Regardless of this setting, mentions are always indicated with a red badge and item count on the ${TASKBAR} icon.`}
           </HelpBlock>
         </Checkbox>);
     }
