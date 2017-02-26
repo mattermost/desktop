@@ -127,7 +127,7 @@ If a bug fix release is required, run through the following steps again:
     - Close the release milestone in GitHub
 2. Dev:
     - Delete RCs after final version is shipped    
-    - Check if any libraries need to be updated for the next release, and if so bring up in weekly team meeting
+    - Check if any libraries need to be updated for the next release
 
 ### H. (T-plus 10 working days) Release Updates
 
