@@ -348,6 +348,7 @@ const SettingsPage = React.createClass({
             defaultChecked={this.state.trayIconTheme === 'light' || this.state.trayIconTheme === ''}
             onChange={() => {
               this.setState({trayIconTheme: 'light'});
+              setImmediate(this.startSaveConfig);
             }}
           >{'Light'}</Radio>
           {' '}
@@ -358,6 +359,7 @@ const SettingsPage = React.createClass({
             defaultChecked={this.state.trayIconTheme === 'dark'}
             onChange={() => {
               this.setState({trayIconTheme: 'dark'});
+              setImmediate(this.startSaveConfig);
             }}
           >{'Dark'}</Radio>
         </FormGroup>
