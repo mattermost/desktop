@@ -54,13 +54,12 @@
     "gulp": "^3.9.1",
     "gulp-diff": "^1.0.0",
     "gulp-jsbeautifier": "^2.0.4",
-    "json-loader": "^0.5.4",
     "mocha": "^3.2.0",
     "mocha-circleci-reporter": "0.0.2",
     "npm-run-all": "^4.0.2",
     "spectron": "~3.4.1",
-    "webpack": "^1.14.0",
-    "webpack-merge": "^1.1.2"
+    "webpack": "^2.2.1",
+    "webpack-merge": "^3.0.0"
   },
   "build": {
     "appId": "com.mattermost.desktop",
