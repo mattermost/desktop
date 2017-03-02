@@ -106,7 +106,7 @@ describe('browser/index.html', function desc() {
       }]
     }));
     return this.app.restart().then(() => {
-      return this.app.client.waitUntilWindowLoaded().pause(1000);
+      return this.app.client.waitUntilWindowLoaded().pause(1500);
     }).then(() => {
       return this.app.browserWindow.getTitle().should.eventually.equal('Mattermost Desktop testing html');
     });
@@ -176,6 +176,7 @@ describe('browser/index.html', function desc() {
     // See settings_test for specs that cover the actual prompt
     return this.app.client.waitUntilWindowLoaded().
       click('#tabBarAddNewTeam').
+      pause(500).
       isExisting('#newServerModal').should.eventually.be.true;
   });
 });
