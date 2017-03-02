@@ -61,51 +61,5 @@
     "spectron": "~3.6.0",
     "webpack": "^2.2.1",
     "webpack-merge": "^3.0.0"
-  },
-  "build": {
-    "appId": "com.mattermost.desktop",
-    "directories": {
-      "buildResources": "resources",
-      "app": "dist",
-      "output": "release"
-    },
-    "deb": {
-      "synopsis": "Mattermost"
-    },
-    "linux": {
-      "category": "InstantMessaging",
-      "target": [
-        "deb",
-        "tar.gz"
-      ],
-      "extraFiles": [
-        {
-          "from": "resources",
-          "filter": "icon.png"
-        },
-        {
-          "from": "resources/linux",
-          "filter": [
-            "create_desktop_file.sh",
-            "README.md"
-          ]
-        }
-      ]
-    },
-    "mac": {
-      "category": "public.app-category.productivity",
-      "target": [
-        "tar.gz"
-      ]
-    },
-    "squirrelWindows": {
-      "iconUrl": "https://raw.githubusercontent.com/mattermost/desktop/master/resources/icon.ico"
-    },
-    "win": {
-      "target": [
-        "squirrel",
-        "zip"
-      ]
-    }
   }
 }
