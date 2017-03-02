@@ -47,7 +47,8 @@
     "cross-env": "^3.1.4",
     "devtron": "^1.4.0",
     "electron": "1.6.1",
-    "electron-builder": "^10.9.2",
+    "electron-builder": "^14.5.3",
+    "electron-builder-squirrel-windows": "^15.0.0",
     "electron-connect": "^0.6.1",
     "eslint": "^3.16.1",
     "eslint-plugin-react": "^6.10.0",
@@ -63,13 +64,20 @@
   },
   "build": {
     "appId": "com.mattermost.desktop",
+    "directories": {
+      "buildResources": "resources",
+      "app": "dist",
+      "output": "release"
+    },
+    "deb": {
+      "synopsis": "Mattermost"
+    },
     "linux": {
       "category": "InstantMessaging",
       "target": [
         "deb",
         "tar.gz"
       ],
-      "synopsis": "Mattermost",
       "extraFiles": [
         {
           "from": "resources",
@@ -90,18 +98,14 @@
         "tar.gz"
       ]
     },
+    "squirrelWindows": {
+      "iconUrl": "https://raw.githubusercontent.com/mattermost/desktop/master/resources/icon.ico"
+    },
     "win": {
-      "description": "Mattermost",
       "target": [
         "squirrel",
         "zip"
-      ],
-      "iconUrl": "https://raw.githubusercontent.com/mattermost/desktop/master/resources/icon.ico"
+      ]
     }
-  },
-  "directories": {
-    "buildResources": "resources",
-    "app": "dist",
-    "output": "release"
   }
 }
