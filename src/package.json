@@ -4,7 +4,7 @@
   "desktopName": "Mattermost.desktop",
   "version": "3.6.0",
   "description": "Mattermost",
-  "main": "main.js",
+  "main": "main_bundle.js",
   "author": {
     "name": "Yuya Ochiai",
     "email": "yuya0321@gmail.com"

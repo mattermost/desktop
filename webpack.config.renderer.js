@@ -10,8 +10,8 @@ module.exports = merge(base, {
     'webview/mattermost': './src/browser/webview/mattermost.js'
   },
   output: {
-    path: './dist/browser',
-    filename: '[name].js'
+    path: './src/browser',
+    filename: '[name]_bundle.js'
   },
   module: {
     rules: [{

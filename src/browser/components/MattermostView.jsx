@@ -1,12 +1,14 @@
 const React = require('react');
 const {findDOMNode} = require('react-dom');
-const {ipcRenderer, shell} = require('electron');
+const {ipcRenderer, remote, shell} = require('electron');
 const fs = require('fs');
 const url = require('url');
 const osLocale = require('os-locale');
 const electronContextMenu = require('electron-context-menu');
 
 const ErrorView = require('./ErrorView.jsx');
+
+const preloadJS = `file://${remote.app.getAppPath()}/browser/webview/mattermost_bundle.js`;
 
 const MattermostView = React.createClass({
   propTypes: {
@@ -228,7 +230,7 @@ const MattermostView = React.createClass({
           id={this.props.id}
           className='mattermostView'
           style={this.props.style}
-          preload='webview/mattermost.js'
+          preload={preloadJS}
           src={this.props.src}
           ref='webview'
           nodeintegration='false'
