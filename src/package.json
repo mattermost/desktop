@@ -18,6 +18,7 @@
     "auto-launch": "^5.0.1",
     "bootstrap": "^3.3.7",
     "electron-context-menu": "^0.8.0",
+    "electron-is-dev": "^0.1.2",
     "electron-squirrel-startup": "^1.0.0",
     "os-locale": "^2.0.0",
     "react": "^15.4.2",

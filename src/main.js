@@ -11,6 +11,7 @@ const {
   systemPreferences,
   session
 } = require('electron');
+const isDev = require('electron-is-dev');
 
 const AutoLaunch = require('auto-launch');
 
@@ -489,7 +490,11 @@ app.on('ready', () => {
   }
 
   // and load the index.html of the app.
-  mainWindow.loadURL('file://' + __dirname + '/browser/index.html');
+  if (isDev) {
+    mainWindow.loadURL('http://localhost:8080/browser/index.html');
+  } else {
+    mainWindow.loadURL('file://' + __dirname + '/browser/index.html');
+  }
 
   // Set application menu
   ipcMain.on('update-menu', (event, configData) => {
@@ -570,19 +575,5 @@ app.on('ready', () => {
     // in an array if your app supports multi windows, this is the time
     // when you should delete the corresponding element.
     mainWindow = null;
-  });
-
-  // Deny drag&drop navigation in mainWindow.
-  // Drag&drop is allowed in webview of index.html.
-  mainWindow.webContents.on('will-navigate', (event, url) => {
-    var dirname = __dirname;
-    if (process.platform === 'win32') {
-      dirname = '/' + dirname.replace(/\\/g, '/');
-    }
-
-    var index = url.indexOf('file://' + dirname);
-    if (index !== 0) {
-      event.preventDefault();
-    }
   });
 });

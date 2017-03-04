@@ -20,3 +20,7 @@ ReactDOM.render(
   <SettingsPage configFile={configFile}/>,
   document.getElementById('content')
 );
+
+// Deny drag&drop navigation in mainWindow.
+document.addEventListener('dragover', (event) => event.preventDefault());
+document.addEventListener('drop', (event) => event.preventDefault());

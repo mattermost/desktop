@@ -23,7 +23,8 @@
     "build:main": "cross-env NODE_ENV=production webpack --bail --config webpack.config.main.js",
     "build:renderer": "cross-env NODE_ENV=production webpack --bail --config webpack.config.renderer.js",
     "start": "electron src",
-    "watch": "gulp watch",
+    "watch": "run-s watch:*",
+    "watch:renderer": "webpack-dev-server --config webpack.config.renderer.js",
     "serve": "gulp watch",
     "test": "npm-run-all build test:* lint:*",
     "test:app": "mocha --reporter mocha-circleci-reporter --recursive test/specs",
@@ -59,6 +60,7 @@
     "npm-run-all": "^4.0.2",
     "spectron": "~3.6.0",
     "webpack": "^2.2.1",
+    "webpack-dev-server": "^2.4.1",
     "webpack-merge": "^3.0.0"
   }
 }
