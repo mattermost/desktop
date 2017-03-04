@@ -77,15 +77,6 @@ if (process.platform === 'win32') {
 
 var argv = require('yargs').parse(process.argv.slice(1));
 
-const electronConnect = argv.livereload ? require('electron-connect') : null;
-var client;
-if (argv.livereload) {
-  client = electronConnect.client.create();
-  client.on('reload', () => {
-    mainWindow.reload();
-  });
-}
-
 var hideOnStartup;
 if (argv.hidden) {
   hideOnStartup = true;
