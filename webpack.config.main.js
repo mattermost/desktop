@@ -12,8 +12,5 @@ module.exports = merge(base, {
     __filename: true,
     __dirname: true
   },
-  target: 'electron-main',
-  externals: {
-    remote: true // for electron-connect
-  }
+  target: 'electron-main'
 });
