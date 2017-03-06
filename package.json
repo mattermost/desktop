@@ -17,8 +17,7 @@
     "url": "git://github.com/mattermost/desktop.git"
   },
   "scripts": {
-    "install": "cd src && npm install",
-    "postinstall": "npm run build",
+    "postinstall": "install-app-deps",
     "build": "npm-run-all build:*",
     "build:main": "cross-env NODE_ENV=production webpack --bail --config webpack.config.main.js",
     "build:renderer": "cross-env NODE_ENV=production webpack --bail --config webpack.config.renderer.js",
