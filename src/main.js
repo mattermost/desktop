@@ -12,6 +12,7 @@ const {
   session
 } = require('electron');
 const isDev = require('electron-is-dev');
+const installExtension = require('electron-devtools-installer');
 
 const AutoLaunch = require('auto-launch');
 
@@ -315,6 +316,12 @@ app.on('ready', () => {
   if (willAppQuit) {
     return;
   }
+  if (global.isDev) {
+    installExtension.default(installExtension.REACT_DEVELOPER_TOOLS).
+      then((name) => console.log(`Added Extension:  ${name}`)).
+      catch((err) => console.log('An error occurred: ', err));
+  }
+
   ipcMain.on('notified', () => {
     if (process.platform === 'win32' || process.platform === 'linux') {
       if (config.notifications.flashWindow === 2) {
