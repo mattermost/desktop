@@ -87,7 +87,7 @@ if (argv['data-dir']) {
   app.setPath('userData', path.resolve(argv['data-dir']));
 }
 
-global.isDev = isDev && !argv.testMode;
+global.isDev = isDev && !argv.disableDevMode;
 
 var config = {};
 try {

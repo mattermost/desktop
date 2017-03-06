@@ -22,7 +22,7 @@
     "build": "npm-run-all build:*",
     "build:main": "cross-env NODE_ENV=production webpack --bail --config webpack.config.main.js",
     "build:renderer": "cross-env NODE_ENV=production webpack --bail --config webpack.config.renderer.js",
-    "start": "electron src",
+    "start": "electron src --disable-dev-mode",
     "watch": "run-p watch:*",
     "watch:main": "node scripts/watch_main_and_preload.js",
     "watch:renderer": "webpack-dev-server --config webpack.config.renderer.js",

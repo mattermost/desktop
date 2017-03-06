@@ -44,7 +44,7 @@ module.exports = {
   getSpectronApp() {
     const app = new Application({
       path: electronBinaryPath,
-      args: [`${path.join(sourceRootDir, 'src')}`, `--data-dir=${userDataDir}`, '--test-mode']
+      args: [`${path.join(sourceRootDir, 'src')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode']
     });
     chaiAsPromised.transferPromiseness = app.transferPromiseness;
     return app;
