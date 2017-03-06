@@ -481,7 +481,7 @@ app.on('ready', () => {
   }
 
   // and load the index.html of the app.
-  if (isDev) {
+  if (isDev && !argv.testMode) {
     mainWindow.loadURL('http://localhost:8080/browser/index.html');
   } else {
     mainWindow.loadURL('file://' + __dirname + '/browser/index.html');

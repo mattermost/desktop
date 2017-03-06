@@ -1,4 +1,4 @@
-dist/
+**/*_bundle.js
 node_modules/
 release/
 src/node_modules/
