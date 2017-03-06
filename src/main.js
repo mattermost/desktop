@@ -86,6 +86,8 @@ if (argv['data-dir']) {
   app.setPath('userData', path.resolve(argv['data-dir']));
 }
 
+global.isDev = isDev && !argv.testMode;
+
 var config = {};
 try {
   const configFile = app.getPath('userData') + '/config.json';
@@ -481,20 +483,17 @@ app.on('ready', () => {
   }
 
   // and load the index.html of the app.
-  if (isDev && !argv.testMode) {
-    mainWindow.loadURL('http://localhost:8080/browser/index.html');
-  } else {
-    mainWindow.loadURL('file://' + __dirname + '/browser/index.html');
-  }
+  const indexURL = global.isDev ? 'http://localhost:8080/browser/index.html' : 'file://' + __dirname + '/browser/index.html';
+  mainWindow.loadURL(indexURL);
 
   // Set application menu
   ipcMain.on('update-menu', (event, configData) => {
-    var aMenu = appMenu.createMenu(mainWindow, configData);
+    var aMenu = appMenu.createMenu(mainWindow, configData, global.isDev);
     Menu.setApplicationMenu(aMenu);
 
     // set up context menu for tray icon
     if (shouldShowTrayIcon()) {
-      const tMenu = trayMenu.createMenu(mainWindow, configData);
+      const tMenu = trayMenu.createMenu(mainWindow, configData, global.isDev);
       trayIcon.setContextMenu(tMenu);
       if (process.platform === 'darwin' || process.platform === 'linux') {
         // store the information, if the tray was initialized, for checking in the settings, if the application

@@ -5,7 +5,8 @@ const {
   Menu
 } = require('electron');
 
-function createTemplate(mainWindow, config) {
+function createTemplate(mainWindow, config, isDev) {
+  const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : `file://${__dirname}/browser/settings.html`;
   var template = [
     ...config.teams.slice(0, 9).map((team, i) => {
       return {
@@ -25,7 +26,7 @@ function createTemplate(mainWindow, config) {
     }, {
       label: process.platform === 'darwin' ? 'Preferences...' : 'Settings',
       click: () => {
-        mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
+        mainWindow.loadURL(settingsURL);
         showOrRestore(mainWindow);
 
         if (process.platform === 'darwin') {
@@ -42,8 +43,8 @@ function createTemplate(mainWindow, config) {
   return template;
 }
 
-function createMenu(mainWindow, config) {
-  return Menu.buildFromTemplate(createTemplate(mainWindow, config));
+function createMenu(mainWindow, config, isDev) {
+  return Menu.buildFromTemplate(createTemplate(mainWindow, config, isDev));
 }
 
 function showOrRestore(window) {

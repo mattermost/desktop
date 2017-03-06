@@ -3,7 +3,9 @@
 const electron = require('electron');
 const Menu = electron.Menu;
 
-function createTemplate(mainWindow, config) {
+function createTemplate(mainWindow, config, isDev) {
+  const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : 'file://' + __dirname + '/browser/settings.html';
+
   const separatorItem = {
     type: 'separator'
   };
@@ -25,7 +27,7 @@ function createTemplate(mainWindow, config) {
     label: 'Preferences...',
     accelerator: 'CmdOrCtrl+,',
     click() {
-      mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
+      mainWindow.loadURL(settingsURL);
     }
   }, {
     label: 'Sign in to Another Server',
@@ -44,7 +46,7 @@ function createTemplate(mainWindow, config) {
     label: 'Settings...',
     accelerator: 'CmdOrCtrl+,',
     click() {
-      mainWindow.loadURL('file://' + __dirname + '/browser/settings.html');
+      mainWindow.loadURL(settingsURL);
     }
   }, {
     label: 'Sign in to Another Server',
@@ -217,8 +219,8 @@ function createTemplate(mainWindow, config) {
   return template;
 }
 
-function createMenu(mainWindow, config) {
-  return Menu.buildFromTemplate(createTemplate(mainWindow, config));
+function createMenu(mainWindow, config, isDev) {
+  return Menu.buildFromTemplate(createTemplate(mainWindow, config, isDev));
 }
 
 module.exports = {
