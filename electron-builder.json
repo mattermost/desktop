@@ -2,9 +2,15 @@
   "appId": "com.mattermost.desktop",
   "directories": {
     "buildResources": "resources",
-    "app": "dist",
+    "app": "src",
     "output": "release"
   },
+  "files": [
+    "main_bundle.js",
+    "browser/**/*.{html,css,_bundle.js}",
+    "assets/**/*",
+    "node_modules/bootstrap/dist/**"
+  ],
   "deb": {
     "synopsis": "Mattermost"
   },
