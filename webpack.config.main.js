@@ -9,8 +9,8 @@ module.exports = merge(base, {
     filename: './src/[name]_bundle.js'
   },
   node: {
-    __filename: false,
-    __dirname: false
+    __filename: true,
+    __dirname: true
   },
   target: 'electron-main',
   externals: {

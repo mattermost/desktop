@@ -18,7 +18,7 @@ const appLauncher = new AutoLaunch({
 
 function backToIndex(index) {
   const target = typeof index === 'undefined' ? 0 : index;
-  const indexURL = remote.getGlobal('isDev') ? 'http://localhost:8080/browser/index.html' : `file://${__dirname}/index.html`;
+  const indexURL = remote.getGlobal('isDev') ? 'http://localhost:8080/browser/index.html' : `file://${remote.app.getAppPath()}/browser/index.html`;
   remote.getCurrentWindow().loadURL(`${indexURL}?index=${target}`);
 }
 

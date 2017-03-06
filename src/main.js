@@ -490,7 +490,7 @@ app.on('ready', () => {
   }
 
   // and load the index.html of the app.
-  const indexURL = global.isDev ? 'http://localhost:8080/browser/index.html' : 'file://' + __dirname + '/browser/index.html';
+  const indexURL = global.isDev ? 'http://localhost:8080/browser/index.html' : `file://${app.getAppPath()}/browser/index.html`;
   mainWindow.loadURL(indexURL);
 
   // Set application menu

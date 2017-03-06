@@ -100,7 +100,7 @@ const MattermostView = React.createClass({
 
         osLocale().then((locale) => {
           if (locale === 'ja_JP') {
-            applyCssFile(__dirname + '/css/jp_fonts.css');
+            applyCssFile(remote.app.getAppPath() + '/css/jp_fonts.css');
           }
         });
       }

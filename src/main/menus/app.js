@@ -4,7 +4,7 @@ const electron = require('electron');
 const Menu = electron.Menu;
 
 function createTemplate(mainWindow, config, isDev) {
-  const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : 'file://' + __dirname + '/browser/settings.html';
+  const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : `file://${electron.app.getAppPath()}/browser/settings.html`;
 
   const separatorItem = {
     type: 'separator'

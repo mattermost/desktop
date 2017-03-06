@@ -28,8 +28,8 @@ module.exports = merge(base, {
     }]
   },
   node: {
-    __filename: false,
-    __dirname: false
+    __filename: true,
+    __dirname: true
   },
   target: 'electron-renderer',
   devServer: {

@@ -6,7 +6,7 @@ const {
 } = require('electron');
 
 function createTemplate(mainWindow, config, isDev) {
-  const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : `file://${__dirname}/browser/settings.html`;
+  const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : `file://${app.getAppPath()}/browser/settings.html`;
   var template = [
     ...config.teams.slice(0, 9).map((team, i) => {
       return {
