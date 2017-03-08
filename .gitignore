@@ -3,7 +3,7 @@ Thumbs.db
 *.log
 
 node_modules/
-dist/
+*_bundle.js
 release/
 npm-debug.log*
 

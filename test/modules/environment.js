@@ -44,7 +44,7 @@ module.exports = {
   getSpectronApp() {
     const app = new Application({
       path: electronBinaryPath,
-      args: [`${path.join(sourceRootDir, 'dist')}`, `--data-dir=${userDataDir}`]
+      args: [`${path.join(sourceRootDir, 'src')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode']
     });
     chaiAsPromised.transferPromiseness = app.transferPromiseness;
     return app;
@@ -52,7 +52,7 @@ module.exports = {
 
   addClientCommands(client) {
     client.addCommand('loadSettingsPage', function async() {
-      return this.url('file://' + path.join(sourceRootDir, 'dist/browser/settings.html')).waitUntilWindowLoaded();
+      return this.url('file://' + path.join(sourceRootDir, 'src/browser/settings.html')).waitUntilWindowLoaded();
     });
     client.addCommand('isNodeEnabled', function async() {
       return this.execute(() => {

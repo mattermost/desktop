@@ -4,20 +4,19 @@
   "desktopName": "Mattermost.desktop",
   "version": "3.6.0",
   "description": "Mattermost",
-  "main": "main.js",
+  "main": "main_bundle.js",
   "author": {
     "name": "Yuya Ochiai",
     "email": "yuya0321@gmail.com"
   },
   "homepage": "https://about.mattermost.com",
   "license": "Apache-2.0",
-  "devDependencies": {
-    "electron-connect": "^0.6.1"
-  },
   "dependencies": {
     "auto-launch": "^5.0.1",
     "bootstrap": "^3.3.7",
     "electron-context-menu": "^0.8.0",
+    "electron-devtools-installer": "^2.1.0",
+    "electron-is-dev": "^0.1.2",
     "electron-squirrel-startup": "^1.0.0",
     "os-locale": "^2.0.0",
     "react": "^15.4.2",

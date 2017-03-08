@@ -6,14 +6,11 @@ const base = require('./webpack.config.base');
 module.exports = merge(base, {
   entry: './src/main.js',
   output: {
-    filename: './dist/main.js'
+    filename: './src/[name]_bundle.js'
   },
   node: {
-    __filename: false,
-    __dirname: false
+    __filename: true,
+    __dirname: true
   },
-  target: 'electron-main',
-  externals: {
-    remote: true // for electron-connect
-  }
+  target: 'electron-main'
 });

@@ -18,7 +18,8 @@ const appLauncher = new AutoLaunch({
 
 function backToIndex(index) {
   const target = typeof index === 'undefined' ? 0 : index;
-  remote.getCurrentWindow().loadURL(`file://${__dirname}/index.html?index=${target}`);
+  const indexURL = remote.getGlobal('isDev') ? 'http://localhost:8080/browser/index.html' : `file://${remote.app.getAppPath()}/browser/index.html`;
+  remote.getCurrentWindow().loadURL(`${indexURL}?index=${target}`);
 }
 
 const SettingsPage = React.createClass({

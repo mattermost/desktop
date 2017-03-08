@@ -11,6 +11,8 @@ const {
   systemPreferences,
   session
 } = require('electron');
+const isDev = require('electron-is-dev');
+const installExtension = require('electron-devtools-installer');
 
 const AutoLaunch = require('auto-launch');
 
@@ -70,15 +72,6 @@ var mainWindow = null;
 
 var argv = require('yargs').parse(process.argv.slice(1));
 
-const electronConnect = argv.livereload ? require('electron-connect') : null;
-var client;
-if (argv.livereload) {
-  client = electronConnect.client.create();
-  client.on('reload', () => {
-    mainWindow.reload();
-  });
-}
-
 var hideOnStartup;
 if (argv.hidden) {
   hideOnStartup = true;
@@ -87,6 +80,8 @@ if (argv.hidden) {
 if (argv['data-dir']) {
   app.setPath('userData', path.resolve(argv['data-dir']));
 }
+
+global.isDev = isDev && !argv.disableDevMode;
 
 var config = {};
 try {
@@ -315,6 +310,12 @@ app.on('ready', () => {
   if (willAppQuit) {
     return;
   }
+  if (global.isDev) {
+    installExtension.default(installExtension.REACT_DEVELOPER_TOOLS).
+      then((name) => console.log(`Added Extension:  ${name}`)).
+      catch((err) => console.log('An error occurred: ', err));
+  }
+
   ipcMain.on('notified', () => {
     if (process.platform === 'win32' || process.platform === 'linux') {
       if (config.notifications.flashWindow === 2) {
@@ -483,16 +484,17 @@ app.on('ready', () => {
   }
 
   // and load the index.html of the app.
-  mainWindow.loadURL('file://' + __dirname + '/browser/index.html');
+  const indexURL = global.isDev ? 'http://localhost:8080/browser/index.html' : `file://${app.getAppPath()}/browser/index.html`;
+  mainWindow.loadURL(indexURL);
 
   // Set application menu
   ipcMain.on('update-menu', (event, configData) => {
-    var aMenu = appMenu.createMenu(mainWindow, configData);
+    var aMenu = appMenu.createMenu(mainWindow, configData, global.isDev);
     Menu.setApplicationMenu(aMenu);
 
     // set up context menu for tray icon
     if (shouldShowTrayIcon()) {
-      const tMenu = trayMenu.createMenu(mainWindow, configData);
+      const tMenu = trayMenu.createMenu(mainWindow, configData, global.isDev);
       trayIcon.setContextMenu(tMenu);
       if (process.platform === 'darwin' || process.platform === 'linux') {
         // store the information, if the tray was initialized, for checking in the settings, if the application
@@ -564,19 +566,5 @@ app.on('ready', () => {
     // in an array if your app supports multi windows, this is the time
     // when you should delete the corresponding element.
     mainWindow = null;
-  });
-
-  // Deny drag&drop navigation in mainWindow.
-  // Drag&drop is allowed in webview of index.html.
-  mainWindow.webContents.on('will-navigate', (event, url) => {
-    var dirname = __dirname;
-    if (process.platform === 'win32') {
-      dirname = '/' + dirname.replace(/\\/g, '/');
-    }
-
-    var index = url.indexOf('file://' + dirname);
-    if (index !== 0) {
-      event.preventDefault();
-    }
   });
 });

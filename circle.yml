@@ -19,6 +19,7 @@ dependencies:
     - sudo apt-get install --no-install-recommends -y gcc-multilib g++-multilib
     - unset DISPLAY && wineboot --init
 
+    - npm run build
     - npm run package:all
 
     - sh -x ./scripts/cp_artifacts.sh release $CIRCLE_ARTIFACTS

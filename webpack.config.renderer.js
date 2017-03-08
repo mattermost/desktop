@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const merge = require('webpack-merge');
 const base = require('./webpack.config.base');
 
@@ -10,8 +11,9 @@ module.exports = merge(base, {
     'webview/mattermost': './src/browser/webview/mattermost.js'
   },
   output: {
-    path: './dist/browser',
-    filename: '[name].js'
+    path: path.join(__dirname, 'src/browser'),
+    publicPath: 'browser',
+    filename: '[name]_bundle.js'
   },
   module: {
     rules: [{
@@ -26,8 +28,13 @@ module.exports = merge(base, {
     }]
   },
   node: {
-    __filename: false,
-    __dirname: false
+    __filename: true,
+    __dirname: true
   },
-  target: 'electron-renderer'
+  target: 'electron-renderer',
+  devServer: {
+    contentBase: path.join(__dirname, 'src'),
+    inline: true,
+    publicPath: '/browser/'
+  }
 });

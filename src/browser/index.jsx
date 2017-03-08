@@ -103,3 +103,8 @@ ReactDOM.render(
   />,
   document.getElementById('content')
 );
+
+// Deny drag&drop navigation in mainWindow.
+// Drag&drop is allowed in webview of index.html.
+document.addEventListener('dragover', (event) => event.preventDefault());
+document.addEventListener('drop', (event) => event.preventDefault());
