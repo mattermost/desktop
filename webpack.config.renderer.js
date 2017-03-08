@@ -14,15 +14,14 @@ module.exports = merge(base, {
     filename: '[name].js'
   },
   module: {
-    loaders: [{
-      test: /\.json$/,
-      loader: 'json'
-    }, {
+    rules: [{
       test: /\.jsx$/,
-      loader: 'babel',
-      query: {
-        presets: ['react'],
-        plugins: ['transform-object-rest-spread']
+      use: {
+        loader: 'babel-loader',
+        options: {
+          presets: ['react'],
+          plugins: ['transform-object-rest-spread']
+        }
       }
     }]
   },

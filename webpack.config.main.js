@@ -8,12 +8,6 @@ module.exports = merge(base, {
   output: {
     filename: './dist/main.js'
   },
-  module: {
-    loaders: [{
-      test: /\.json$/,
-      loader: 'json'
-    }]
-  },
   node: {
     __filename: false,
     __dirname: false

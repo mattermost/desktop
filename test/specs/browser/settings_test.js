@@ -299,12 +299,14 @@ describe('browser/settings.html', function desc() {
     it('should not be valid if no team name has been set', () => {
       return this.app.client.
         click('#saveNewServerModal').
+        pause(500).
         isExisting('.has-error #teamNameInput').should.eventually.equal(true);
     });
 
     it('should not be valid if no server address has been set', () => {
       return this.app.client.
         click('#saveNewServerModal').
+        pause(500).
         isExisting('.has-error #teamUrlInput').should.eventually.equal(true);
     });
 
@@ -348,6 +350,7 @@ describe('browser/settings.html', function desc() {
       return this.app.client.
         setValue('#teamUrlInput', 'superInvalid url').
         click('#saveNewServerModal').
+        pause(500).
         isExisting('.has-error #teamUrlInput').should.eventually.equal(true);
     });
 
