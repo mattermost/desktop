@@ -9,14 +9,14 @@
 - Git
 
 ### Installing dependencies
-`npm install` is executed twice to install dependencies of `src/` directory.
+After installation, dependencies of `src/` directory are also installed.
 
 ```
 $ npm install
 ```
 
 ### Building
-Build JavaScript codes with `webpack`, and copy other assets into `dist/` directory.
+Build JavaScript codes with `webpack`.
 
 ```
 $ npm run build
@@ -25,7 +25,8 @@ $ npm run build
 After building is done, you can execute the application with `npm start`.
 
 ### Packaging
-Package `dist/` directory as distributable formats with [`electron-builder`](https://github.com/electron-userland/electron-builder).
+Package specific files of `src/` directory as distributable formats with [`electron-builder`](https://github.com/electron-userland/electron-builder).
+Files are defined in `electron-builder.json`.
 Packages will be generated into `release/` directory.
 
 ```
@@ -78,9 +79,7 @@ $ npm run lint:js
 
 #### `npm run watch`
 Reload the application automatically when you have saved source codes.
-
-#### `mpm run prettify`
-Format the source codes to pass `npm test`.
+When using this mode, you can use "React Developer Tools" in the Developer Tools window.
 
 ## Directory Structure
 
@@ -105,7 +104,6 @@ Mattermost Desktop
 ```
 
 ### Other directories
-- **dist/** - Built application code and asset.
-- **node_modules/** - Third party Node.js modules to build the application.
+- **node_modules/** - Third party Node.js modules to develop and build the application.
 - **release/** - Packaged distributable applications.
 - **src/node_modules/** - Third party Node.js modules to use in the application.
