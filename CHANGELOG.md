@@ -15,7 +15,7 @@ Release date: TBD
 ### Bug Fixes
 
 #### All Platforms
-- Fixed an issue where an unexpected row appeared after switching channels with `CTRL+K` shortcut (#426)
+- Fixed an issue where an unexpected row appeared after switching channels with `CTRL+K` shortcut. [#426](https://github.com/mattermost/desktop/issues/426)
 
 ----
 
