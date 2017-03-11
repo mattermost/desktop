@@ -17,6 +17,13 @@ Release date: TBD
 #### All Platforms
 - Fixed an issue where an unexpected row appeared after switching channels with `CTRL+K` shortcut. [#426](https://github.com/mattermost/desktop/issues/426)
 
+#### Windows
+- Fixed an issue where the main window still has focus and exists
+  in the classic Alt+Tab switcher after it's closed.
+  [#430](https://github.com/mattermost/desktop/issues/430)
+  [#431](https://github.com/mattermost/desktop/issues/431)
+
+
 ----
 
 ## Release v3.6.0
