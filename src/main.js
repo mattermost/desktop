@@ -529,8 +529,8 @@ app.on('ready', () => {
     } else { // Minimize or hide the window for close button.
       event.preventDefault();
       function hideWindow(window) {
-        window.hide();
         window.blur(); // To move focus to the next top-level window in Windows
+        window.hide();
       }
       switch (process.platform) {
       case 'win32':
