@@ -180,6 +180,28 @@ describe('browser/settings.html', function desc() {
           loadSettingsPage().
           isExisting('#inputShowTrayIcon').should.eventually.equal(expected);
       });
+
+      describe('Save tray icon theme on linux', () => {
+        env.shouldTest(it, process.platform === 'linux')('should be saved when it\'s selected', () => {
+          env.addClientCommands(this.app.client);
+          return this.app.client.
+            loadSettingsPage().
+            click('#inputShowTrayIcon').
+            click('input[value="light"]').
+            pause(700). // wait auto-save
+            then(() => {
+              const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+              config0.trayIconTheme.should.equal('light');
+              return this.app.client;
+            }).
+            click('input[value="dark"]').
+            pause(700). // wait auto-save
+            then(() => {
+              const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+              config1.trayIconTheme.should.equal('dark');
+            });
+        });
+      });
     });
 
     describe('Leave app running in notification area when application window is closed', () => {
