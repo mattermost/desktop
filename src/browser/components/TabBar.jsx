@@ -98,6 +98,8 @@ class TabBar extends React.Component {
     return (
       <NavItem
         className='buttonTab'
+        key='addServerButton'
+        eventKey='addServerButton'
       >
         <Button
           id='tabBarAddNewTeam'
