@@ -86,7 +86,7 @@ class TabBar extends React.Component {
       border: 'none',
       fontSize: '20px',
       height: '35px',
-      padding: '0 0 4px 0',
+      padding: '2px 0 0 0',
       width: '40px',
       color: '#999',
       fontWeight: 'bold',
