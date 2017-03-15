@@ -1,13 +1,11 @@
 const React = require('react');
 
-class HoveringURL extends React.Component {
-  render() {
-    return (
-      <div style={this.props.style}>
-        {this.props.targetURL}
-      </div>
-    );
-  }
+function HoveringURL(props) {
+  return (
+    <div style={props.style}>
+      {props.targetURL}
+    </div>
+  );
 }
 
 HoveringURL.propTypes = {
