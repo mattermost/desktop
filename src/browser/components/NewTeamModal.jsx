@@ -105,8 +105,8 @@ class NewTeamModal extends React.Component {
 
   render() {
     const noBottomSpaceing = {
-      'padding-bottom': 0,
-      'margin-bottom': 0
+      paddingBottom: 0,
+      marginBottom: 0
     };
 
     if (this.wasShown !== this.props.show && this.props.show) {
@@ -202,8 +202,8 @@ NewTeamModal.propTypes = {
   onClose: React.PropTypes.func,
   onSave: React.PropTypes.func,
   team: React.PropTypes.object,
-  editMode: React.PropTypes.boolean,
-  show: React.PropTypes.boolean
+  editMode: React.PropTypes.bool,
+  show: React.PropTypes.bool
 };
 
 module.exports = NewTeamModal;
