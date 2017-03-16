@@ -23,6 +23,9 @@ Release date: TBD
   [#430](https://github.com/mattermost/desktop/issues/430)
   [#431](https://github.com/mattermost/desktop/issues/431)
 
+#### Linux
+- Fixed an issue where the setting was not saved when changing tray icon theme.
+  [#456](https://github.com/mattermost/desktop/issues/456)
 
 ----
 
