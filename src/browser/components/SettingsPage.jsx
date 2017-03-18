@@ -107,7 +107,6 @@ const SettingsPage = React.createClass({
       teams: this.state.teams,
       showTrayIcon: this.state.showTrayIcon,
       trayIconTheme: this.state.trayIconTheme,
-      disablewebsecurity: this.state.disablewebsecurity,
       version: settings.version,
       minimizeToTray: this.state.minimizeToTray,
       notifications: {
@@ -150,12 +149,6 @@ const SettingsPage = React.createClass({
 
   handleCancel() {
     backToIndex();
-  },
-  handleChangeDisableWebSecurity() {
-    this.setState({
-      disablewebsecurity: this.refs.disablewebsecurity.props.checked
-    });
-    setImmediate(this.startSaveConfig);
   },
   handleChangeShowTrayIcon() {
     var shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
@@ -271,21 +264,6 @@ const SettingsPage = React.createClass({
           </HelpBlock>
         </Checkbox>);
     }
-
-    options.push(
-      <Checkbox
-        key='inputDisableWebSecurity'
-        id='inputDisableWebSecurity'
-        ref='disablewebsecurity'
-        checked={!this.state.disablewebsecurity}
-        onChange={this.handleChangeDisableWebSecurity}
-      >{'Display secure content only'}
-        <HelpBlock>
-          {'If enabled, the app only displays secure (HTTPS/SSL) content.'}
-          {' '}
-          {'If disabled, the app displays secure and non-secure (HTTP) content such as images.'}
-        </HelpBlock>
-      </Checkbox>);
 
     if (process.platform === 'darwin' || process.platform === 'win32') {
       const TASKBAR = process.platform === 'win32' ? 'taskbar' : 'Dock';

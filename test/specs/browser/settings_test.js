@@ -119,49 +119,6 @@ describe('browser/settings.html', function desc() {
       });
     });
 
-    describe('Display secure content only', () => {
-      [true, false].forEach((v) => {
-        it(`should be saved and loaded: ${v}`, () => {
-          const webPreferences = v ? '' : 'allowDisplayingInsecureContent';
-          env.addClientCommands(this.app.client);
-
-          return this.app.client.
-            loadSettingsPage().
-            scroll('#inputDisableWebSecurity').
-            isSelected('#inputDisableWebSecurity').then((isSelected) => {
-              if (isSelected !== v) {
-                return this.app.client.click('#inputDisableWebSecurity');
-              }
-              return true;
-            }).
-            pause(600).
-            click('#btnClose').
-            pause(1000).then(() => {
-              const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-              savedConfig.disablewebsecurity.should.equal(!v);
-            }).
-            getAttribute('.mattermostView', 'webpreferences').then((disablewebsecurity) => { // confirm actual behavior
-              // disablewebsecurity is an array of String
-              disablewebsecurity.forEach((d) => {
-                d.should.equal(webPreferences);
-              });
-            }).then(() => {
-              return this.app.restart();
-            }).then(() => {
-              env.addClientCommands(this.app.client);
-              return this.app.client. // confirm actual behavior
-                getAttribute('.mattermostView', 'webpreferences').then((disablewebsecurity) => { // disablewebsecurity is an array of String
-                  disablewebsecurity.forEach((d) => {
-                    d.should.equal(webPreferences);
-                  });
-                }).
-                loadSettingsPage().
-                isSelected('#inputDisableWebSecurity').should.eventually.equal(v);
-            });
-        });
-      });
-    });
-
     describe('Start app on login', () => {
       it('should appear on win32 or linux', () => {
         const expected = (process.platform === 'win32' || process.platform === 'linux');

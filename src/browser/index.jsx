@@ -95,7 +95,6 @@ const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10)
 
 ReactDOM.render(
   <MainPage
-    disablewebsecurity={AppConfig.data.disablewebsecurity}
     teams={AppConfig.data.teams}
     initialIndex={initialIndex}
     onUnreadCountChange={showUnreadBadge}

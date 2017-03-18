@@ -11,6 +11,7 @@ from the final changelog of the release.
 Release date: TBD
 
 ### Improvements
+- Removed "Display secure content only" option it's no longer necessary.
 
 ### Bug Fixes
 

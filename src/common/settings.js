@@ -18,7 +18,6 @@ function loadDefault(version) {
       teams: [],
       showTrayIcon: false,
       trayIconTheme: 'light',
-      disablewebsecurity: true,
       minimizeToTray: false,
       version: 1,
       notifications: {
