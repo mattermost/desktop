@@ -51,17 +51,18 @@ describe('application', function desc() {
 
   it('should NOT be able to call Node.js API in webview', () => {
     env.addClientCommands(this.app.client);
+
+    // webview is handled as a window by chromedriver.
     return this.app.client.
+      windowByIndex(1).isNodeEnabled().should.eventually.be.false.
+      windowByIndex(2).isNodeEnabled().should.eventually.be.false.
+      windowByIndex(0).
       getAttribute('webview', 'nodeintegration').then((nodeintegration) => {
         // nodeintegration is an array of string
         nodeintegration.forEach((n) => {
           n.should.equal('false');
         });
-      }).
-
-      // webview is handled as a window by chromedriver.
-      windowByIndex(1).isNodeEnabled().should.eventually.be.false.
-      windowByIndex(2).isNodeEnabled().should.eventually.be.false;
+      });
   });
 
   it('should NOT be able to call Node.js API in a new window', () => {

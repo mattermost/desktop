@@ -466,6 +466,10 @@ app.on('ready', () => {
     console.log('The application has crashed.');
   });
 
+  mainWindow.webContents.on('will-attach-webview', (event, webPreferences) => {
+    webPreferences.nodeIntegration = false;
+  });
+
   mainWindow.on('unresponsive', () => {
     console.log('The application has become unresponsive.');
   });

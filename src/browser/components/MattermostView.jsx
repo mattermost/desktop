@@ -233,7 +233,6 @@ const MattermostView = React.createClass({
           preload={preloadJS}
           src={this.props.src}
           ref='webview'
-          nodeintegration='false'
         />
       </div>);
   }
