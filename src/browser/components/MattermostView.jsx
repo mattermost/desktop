@@ -12,7 +12,6 @@ const preloadJS = `file://${remote.app.getAppPath()}/browser/webview/mattermost_
 
 const MattermostView = React.createClass({
   propTypes: {
-    disablewebsecurity: React.PropTypes.bool,
     name: React.PropTypes.string,
     id: React.PropTypes.string,
     onTargetURLChange: React.PropTypes.func,
@@ -37,12 +36,6 @@ const MattermostView = React.createClass({
   componentDidMount() {
     var self = this;
     var webview = findDOMNode(this.refs.webview);
-
-    // This option allows insecure content, when set to true it is possible to
-    // load content via HTTP while the mattermost server serves HTTPS
-    if (this.props.disablewebsecurity === true) {
-      webview.setAttribute('webpreferences', 'allowDisplayingInsecureContent');
-    }
 
     webview.addEventListener('did-fail-load', (e) => {
       console.log(self.props.name, 'webview did-fail-load', e);
@@ -217,10 +210,6 @@ const MattermostView = React.createClass({
         className='errorView'
         errorInfo={this.state.errorInfo}
       />) : null;
-
-    // 'disablewebsecurity' is necessary to display external images.
-    // However, it allows also CSS/JavaScript.
-    // So webview should use 'allowDisplayingInsecureContent' as same as BrowserWindow.
 
     // Need to keep webview mounted when failed to load.
     return (

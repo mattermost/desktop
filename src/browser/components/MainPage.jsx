@@ -36,7 +36,6 @@ const styles = {
 
 const MainPage = React.createClass({
   propTypes: {
-    disablewebsecurity: React.PropTypes.bool.isRequired,
     onUnreadCountChange: React.PropTypes.func.isRequired,
     teams: React.PropTypes.array.isRequired,
     onTeamConfigChange: React.PropTypes.func.isRequired,
@@ -291,7 +290,6 @@ const MainPage = React.createClass({
           style={self.visibleStyle(isActive)}
           src={team.url}
           name={team.name}
-          disablewebsecurity={this.props.disablewebsecurity}
           onTargetURLChange={self.handleTargetURLChange}
           onUnreadCountChange={handleUnreadCountChange}
           onNotificationClick={handleNotificationClick}
