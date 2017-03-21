@@ -2,7 +2,6 @@
 
 const {
   app,
-  BrowserWindow,
   Menu,
   Tray,
   ipcMain,
@@ -20,7 +19,7 @@ process.on('uncaughtException', (error) => {
   console.error(error);
 });
 
-var willAppQuit = false;
+global.willAppQuit = false;
 
 if (process.platform === 'win32') {
   var cmd = process.argv[1];
@@ -50,16 +49,16 @@ if (process.platform === 'win32') {
 
 app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
 if (require('electron-squirrel-startup')) {
-  willAppQuit = true;
+  global.willAppQuit = true;
 }
 
-const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
 var settings = require('./common/settings');
 const osVersion = require('./common/osVersion');
 var certificateStore = require('./main/certificateStore').load(path.resolve(app.getPath('userData'), 'certificate.json'));
+const {createMainWindow} = require('./main/mainWindow');
 const appMenu = require('./main/menus/app');
 const trayMenu = require('./main/menus/tray');
 const allowProtocolDialog = require('./main/allowProtocolDialog');
@@ -205,35 +204,6 @@ function clearAppCache() {
   }
 }
 
-function getValidWindowPosition(state) {
-  // Screen cannot be required before app is ready
-  const {screen} = require('electron');
-
-  // Check if the previous position is out of the viewable area
-  // (e.g. because the screen has been plugged off)
-  const displays = screen.getAllDisplays();
-  let minX = 0;
-  let maxX = 0;
-  let minY = 0;
-  let maxY = 0;
-  for (let i = 0; i < displays.length; i++) {
-    const display = displays[i];
-    maxX = Math.max(maxX, display.bounds.x + display.bounds.width);
-    maxY = Math.max(maxY, display.bounds.y + display.bounds.height);
-    minX = Math.min(minX, display.bounds.x);
-    minY = Math.min(minY, display.bounds.y);
-  }
-
-  if (state.x > maxX || state.y > maxY || state.x < minX || state.y < minY) {
-    Reflect.deleteProperty(state, 'x');
-    Reflect.deleteProperty(state, 'y');
-    Reflect.deleteProperty(state, 'width');
-    Reflect.deleteProperty(state, 'height');
-  }
-
-  return state;
-}
-
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
   // On OS X it is common for applications and their menu bar
@@ -253,7 +223,7 @@ app.on('before-quit', () => {
   if (process.platform === 'win32') {
     trayIcon.destroy();
   }
-  willAppQuit = true;
+  global.willAppQuit = true;
 });
 
 app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
@@ -307,7 +277,7 @@ allowProtocolDialog.init(mainWindow);
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', () => {
-  if (willAppQuit) {
+  if (global.willAppQuit) {
     return;
   }
   if (global.isDev) {
@@ -315,6 +285,23 @@ app.on('ready', () => {
       then((name) => console.log(`Added Extension:  ${name}`)).
       catch((err) => console.log('An error occurred: ', err));
   }
+
+  mainWindow = createMainWindow(config, {
+    hideOnStartup,
+    linuxAppIcon: path.join(assetsDir, 'appicon.png')
+  });
+  mainWindow.on('closed', () => {
+    // Dereference the window object, usually you would store windows
+    // in an array if your app supports multi windows, this is the time
+    // when you should delete the corresponding element.
+    mainWindow = null;
+  });
+  mainWindow.on('unresponsive', () => {
+    console.log('The application has become unresponsive.');
+  });
+  mainWindow.webContents.on('crashed', () => {
+    console.log('The application has crashed.');
+  });
 
   ipcMain.on('notified', () => {
     if (process.platform === 'win32' || process.platform === 'linux') {
@@ -393,58 +380,34 @@ app.on('ready', () => {
     ipcMain.on('update-unread', (event, arg) => {
       if (process.platform === 'win32') {
         const overlay = arg.overlayDataURL ? nativeImage.createFromDataURL(arg.overlayDataURL) : null;
-        mainWindow.setOverlayIcon(overlay, arg.description);
+        if (mainWindow) {
+          mainWindow.setOverlayIcon(overlay, arg.description);
+        }
       }
 
-      if (arg.mentionCount > 0) {
-        trayIcon.setImage(trayImages.mention);
-        if (process.platform === 'darwin') {
-          trayIcon.setPressedImage(trayImages.clicked.mention);
+      if (trayIcon) {
+        if (arg.mentionCount > 0) {
+          trayIcon.setImage(trayImages.mention);
+          if (process.platform === 'darwin') {
+            trayIcon.setPressedImage(trayImages.clicked.mention);
+          }
+          trayIcon.setToolTip(arg.mentionCount + ' unread mentions');
+        } else if (arg.unreadCount > 0) {
+          trayIcon.setImage(trayImages.unread);
+          if (process.platform === 'darwin') {
+            trayIcon.setPressedImage(trayImages.clicked.unread);
+          }
+          trayIcon.setToolTip(arg.unreadCount + ' unread channels');
+        } else {
+          trayIcon.setImage(trayImages.normal);
+          if (process.platform === 'darwin') {
+            trayIcon.setPressedImage(trayImages.clicked.normal);
+          }
+          trayIcon.setToolTip(app.getName());
         }
-        trayIcon.setToolTip(arg.mentionCount + ' unread mentions');
-      } else if (arg.unreadCount > 0) {
-        trayIcon.setImage(trayImages.unread);
-        if (process.platform === 'darwin') {
-          trayIcon.setPressedImage(trayImages.clicked.unread);
-        }
-        trayIcon.setToolTip(arg.unreadCount + ' unread channels');
-      } else {
-        trayIcon.setImage(trayImages.normal);
-        if (process.platform === 'darwin') {
-          trayIcon.setPressedImage(trayImages.clicked.normal);
-        }
-        trayIcon.setToolTip(app.getName());
       }
     });
   }
-
-  // Create the browser window.
-  var boundsInfoPath = path.resolve(app.getPath('userData'), 'bounds-info.json');
-  var windowOptions;
-  try {
-    windowOptions = getValidWindowPosition(JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8')));
-  } catch (e) {
-    // Follow Electron's defaults, except for window dimensions which targets 1024x768 screen resolution.
-    windowOptions = {width: 1000, height: 700};
-  }
-  if (process.platform === 'linux') {
-    windowOptions.icon = path.resolve(assetsDir, 'appicon.png');
-  }
-  Object.assign(windowOptions, {
-    title: app.getName(),
-    fullscreenable: true,
-    show: false,
-    minWidth: 400,
-    minHeight: 240
-  });
-  mainWindow = new BrowserWindow(windowOptions);
-  mainWindow.once('ready-to-show', () => {
-    if (process.platform !== 'darwin') {
-      mainWindow.show();
-    } else if (hideOnStartup !== true) {
-      mainWindow.show();
-    }
-  });
 
   if (process.platform === 'darwin') {
     session.defaultSession.on('will-download', (event, item) => {
@@ -461,35 +424,6 @@ app.on('ready', () => {
       }
     });
   }
-
-  mainWindow.webContents.on('crashed', () => {
-    console.log('The application has crashed.');
-  });
-
-  mainWindow.webContents.on('will-attach-webview', (event, webPreferences) => {
-    webPreferences.nodeIntegration = false;
-  });
-
-  mainWindow.on('unresponsive', () => {
-    console.log('The application has become unresponsive.');
-  });
-
-  if (hideOnStartup) {
-    if (windowOptions.maximized) {
-      mainWindow.maximize();
-    }
-
-    // on MacOS, the window is already hidden until 'ready-to-show'
-    if (process.platform !== 'darwin') {
-      mainWindow.minimize();
-    }
-  } else if (windowOptions.maximized) {
-    mainWindow.maximize();
-  }
-
-  // and load the index.html of the app.
-  const indexURL = global.isDev ? 'http://localhost:8080/browser/index.html' : `file://${app.getAppPath()}/browser/index.html`;
-  mainWindow.loadURL(indexURL);
 
   // Set application menu
   ipcMain.on('update-menu', (event, configData) => {
@@ -515,60 +449,4 @@ app.on('ready', () => {
 
   // Open the DevTools.
   // mainWindow.openDevTools();
-
-  function saveWindowState(file, window) {
-    var windowState = window.getBounds();
-    windowState.maximized = window.isMaximized();
-    windowState.fullscreen = window.isFullScreen();
-    try {
-      fs.writeFileSync(boundsInfoPath, JSON.stringify(windowState));
-    } catch (e) {
-      // [Linux] error happens only when the window state is changed before the config dir is creatied.
-    }
-  }
-
-  mainWindow.on('close', (event) => {
-    if (willAppQuit) { // when [Ctrl|Cmd]+Q
-      saveWindowState(boundsInfoPath, mainWindow);
-    } else { // Minimize or hide the window for close button.
-      event.preventDefault();
-      function hideWindow(window) {
-        window.blur(); // To move focus to the next top-level window in Windows
-        window.hide();
-      }
-      switch (process.platform) {
-      case 'win32':
-        hideWindow(mainWindow);
-        break;
-      case 'linux':
-        if (config.minimizeToTray) {
-          hideWindow(mainWindow);
-        } else {
-          mainWindow.minimize();
-        }
-        break;
-      case 'darwin':
-        hideWindow(mainWindow);
-        break;
-      default:
-      }
-    }
-  });
-
-  // App should save bounds when a window is closed.
-  // However, 'close' is not fired in some situations(shutdown, ctrl+c)
-  // because main process is killed in such situations.
-  // 'blur' event was effective in order to avoid this.
-  // Ideally, app should detect that OS is shutting down.
-  mainWindow.on('blur', () => {
-    saveWindowState(boundsInfoPath, mainWindow);
-  });
-
-  // Emitted when the window is closed.
-  mainWindow.on('closed', () => {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    mainWindow = null;
-  });
 });
