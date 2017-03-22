@@ -13,6 +13,9 @@ Release date: TBD
 ### Improvements
 - Removed "Display secure content only" option it's no longer necessary.
 
+#### Windows
+- Removed Japanese fonts support it's no longer necessary.
+
 ### Bug Fixes
 
 #### All Platforms

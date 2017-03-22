@@ -1,9 +1,7 @@
 const React = require('react');
 const {findDOMNode} = require('react-dom');
 const {ipcRenderer, remote, shell} = require('electron');
-const fs = require('fs');
 const url = require('url');
-const osLocale = require('os-locale');
 const electronContextMenu = require('electron-context-menu');
 
 const ErrorView = require('./ErrorView.jsx');
@@ -78,25 +76,6 @@ const MattermostView = React.createClass({
     // So this would be emitted again when reloading a webview
     webview.addEventListener('dom-ready', () => {
       // webview.openDevTools();
-
-      // Use 'Meiryo UI' and 'MS Gothic' to prevent CJK fonts on Windows(JP).
-      if (process.platform === 'win32') {
-        function applyCssFile(cssFile) {
-          fs.readFile(cssFile, 'utf8', (err, data) => {
-            if (err) {
-              console.log(err);
-              return;
-            }
-            webview.insertCSS(data);
-          });
-        }
-
-        osLocale().then((locale) => {
-          if (locale === 'ja_JP') {
-            applyCssFile(remote.app.getAppPath() + '/css/jp_fonts.css');
-          }
-        });
-      }
 
       if (!this.state.isContextMenuAdded) {
         electronContextMenu({
