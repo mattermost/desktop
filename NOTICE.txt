@@ -10,7 +10,7 @@ This document includes a list of open source components used in Mattermost Deskt
 
 ## auto-launch
 
-This product contains 'auto-launch', which allows one to launch any application or executable at startup, by Teamwork.
+This product contains 'auto-launch', which allows one to launch any application or executable at startup, by Teamwork.com.
 
 * HOMEPAGE:
   * https://github.com/Teamwork/node-auto-launch
@@ -44,7 +44,7 @@ SOFTWARE.
 ## bootstrap
 
 This product contains 'bootstrap', which is an HTML, CSS, and JavaScript framework for developing responsive, mobile first 
-projects on the web, by Bootstrap team.
+projects on the web, by Twitter, Inc. and Bootstrap Authors.
 
 * HOMEPAGE:
   * https://github.com/twbs/bootstrap
@@ -457,7 +457,8 @@ under section (i) of this paragraph due to such counterclaim.
 
 ## react-bootstrap
 
-This product contains 'react-bootstrap', a Bootstrap 3 components for front-end framework built with React, by react-bootstrap.
+This product contains 'react-bootstrap', a Bootstrap 3 components for front-end framework built with React, by Stephen J. Collings, 
+Matthew Honnibal, Pieter Vanderwerff and react-bootstrap.
 
 * HOMEPAGE:
   * https://github.com/react-bootstrap/react-bootstrap
@@ -491,7 +492,7 @@ THE SOFTWARE.
 ## underscore
 
 This product contains 'underscore', a utility-belt library for JavaScript that provides support for usual functional suspects
-without extending any core JavaScript objects, by Jeremy Ashkenas.
+without extending any core JavaScript objects, by Jeremy Ashkenas, DocumentCloud and Investigative.
 
 * HOMEPAGE:
   * https://github.com/jashkenas/underscore
@@ -527,7 +528,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 ## yargs
 
-This product contains 'yargs', a modern successor to optimist, by Yargs.
+This product contains 'yargs', a modern successor to optimist, by James Halliday and Yargs.
 
 * HOMEPAGE:
   * https://github.com/yargs/yargs
@@ -789,13 +790,263 @@ THE SOFTWARE.
 
 ---
 
-## eslint
+## eslint-plugin-react
 
-This product contains 'eslint', a tool for identifying and reporting on patterns found in ECMAScript/JavaScript code, by ESLint.
+This product contains 'eslint-plugin-react', a tool for React specific linting rules for ESLint, by Yannick Croissant.
 
 * HOMEPAGE:
-  * https://github.com/eslint/eslint
+  * https://github.com/yannickcr/eslint-plugin-react
 
 * LICENSE:
 
-Th
+The MIT License (MIT)
+
+Copyright (c) 2014 Yannick Croissant
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## mocha
+
+This product contains 'mocha', a simple, and flexible JavaScript test framework for Node.js and the browser, by Mocha.
+
+* HOMEPAGE:
+  * https://github.com/mochajs/mocha
+
+* LICENSE:
+
+(The MIT License)
+
+Copyright (c) 2011-2017 JS Foundation and contributors, https://js.foundation
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+'Software'), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+## mocha-circleci-reporter
+
+This product contains 'mocha-circleci-reporter', a mocha reporter that supports Circle CI, via a combined jUnit and Spec reporter 
+output, by Glenn Morton.
+
+* HOMEPAGE:
+  * https://github.com/sandcastle/mocha-circleci-reporter
+
+* LICENSE:
+
+The MIT License (MIT)
+
+Copyright (c) 2015 Glenn Morton
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## npm-run-all
+
+This product contains 'npm-run-all', a CLI tool to run multiple npm-scripts in parallel or sequential, by Toru Nagashima.
+
+* HOMEPAGE:
+  * https://github.com/mysticatea/npm-run-all
+
+* LICENSE:
+
+The MIT License (MIT)
+
+Copyright (c) 2015 Toru Nagashima
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## spectron
+
+This product contains 'spectron', a tool to test Electron apps using ChromeDriver, by Electron.
+
+* HOMEPAGE:
+  * https://github.com/electron/spectron
+
+* LICENSE:
+
+Copyright (c) 2016 GitHub Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+## webpack
+
+This product contains 'webpack', a bundler for JavaScript, by Webpack.
+
+* HOMEPAGE:
+  * https://github.com/webpack/webpack
+
+* LICENSE:
+
+Copyright JS Foundation and other contributors
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+'Software'), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+## webpack-dev-server
+
+This product contains 'webpack-dev-server', which provides fast in-memory access to the webpack asset, by Webpack.
+
+* HOMEPAGE:
+  * https://github.com/webpack/webpack-dev-server
+
+* LICENSE:
+
+Copyright JS Foundation and other contributors
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+'Software'), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+## webpack-merge
+
+This product contains 'webpack-merge', which concatenates arrays and merges objects creating a new object, useful in 
+configuring webpack, by Juho Vepsäläinen and SurviveJS.
+
+* HOMEPAGE:
+  * https://github.com/survivejs/webpack-merge
+
+* LICENSE:
+
+Copyright (c) 2015 Juho Vepsalainen
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
