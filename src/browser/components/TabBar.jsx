@@ -16,7 +16,7 @@ class TabBar extends React.Component {
         lineHeight: '20px',
         height: '19px',
         marginLeft: '5px',
-        marginTop: '6px',
+        marginTop: '5px',
         borderRadius: '50%'
       };
 
@@ -85,7 +85,7 @@ class TabBar extends React.Component {
     var tabButton = {
       border: 'none',
       fontSize: '20px',
-      height: '35px',
+      height: '31px',
       padding: '2px 0 0 0',
       width: '40px',
       color: '#999',
