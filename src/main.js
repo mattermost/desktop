@@ -1,5 +1,6 @@
 'use strict';
 
+const electron = require('electron');
 const {
   app,
   Menu,
@@ -9,7 +10,7 @@ const {
   dialog,
   systemPreferences,
   session
-} = require('electron');
+} = electron;
 const isDev = require('electron-is-dev');
 const installExtension = require('electron-devtools-installer');
 
@@ -446,6 +447,15 @@ app.on('ready', () => {
     }
   });
   ipcMain.emit('update-menu', true, config);
+
+  electron.powerMonitor.on('resume', () => {
+    const allWebContents = electron.webContents.getAllWebContents();
+    for (const webContents of allWebContents) {
+      if (webContents !== mainWindow.webContents) {
+        webContents.reload();
+      }
+    }
+  });
 
   // Open the DevTools.
   // mainWindow.openDevTools();
