@@ -15,7 +15,8 @@ const MattermostView = React.createClass({
     onTargetURLChange: React.PropTypes.func,
     onUnreadCountChange: React.PropTypes.func,
     src: React.PropTypes.string,
-    style: React.PropTypes.object
+    active: React.PropTypes.bool,
+    withTab: React.PropTypes.bool
   },
 
   getInitialState() {
@@ -185,19 +186,26 @@ const MattermostView = React.createClass({
     const errorView = this.state.errorInfo ? (
       <ErrorView
         id={this.props.id + '-fail'}
-        style={this.props.style}
         className='errorView'
         errorInfo={this.state.errorInfo}
+        active={this.props.active}
+        withTab={this.props.withTab}
       />) : null;
 
     // Need to keep webview mounted when failed to load.
+    const classNames = ['mattermostView'];
+    if (this.props.withTab) {
+      classNames.push('mattermostView-with-tab');
+    }
+    if (!this.props.active) {
+      classNames.push('mattermostView-hidden');
+    }
     return (
       <div>
         { errorView }
         <webview
           id={this.props.id}
-          className='mattermostView'
-          style={this.props.style}
+          className={classNames.join(' ')}
           preload={preloadJS}
           src={this.props.src}
           ref='webview'

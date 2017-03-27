@@ -201,18 +201,6 @@ const MainPage = React.createClass({
     this.markReadAtActive(index);
   },
 
-  visibleStyle(visible) {
-    var visibility = visible ? 'visible' : 'hidden';
-    return {
-      position: 'absolute',
-      top: (this.props.teams.length > 1) ? 32 : 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-      visibility
-    };
-  },
-
   handleLogin(request, username, password) {
     ipcRenderer.send('login-credentials', request, username, password);
     const loginQueue = this.state.loginQueue;
@@ -275,7 +263,7 @@ const MainPage = React.createClass({
         <MattermostView
           key={id}
           id={id}
-          style={self.visibleStyle(isActive)}
+          withTab={this.props.teams.length > 1}
           src={team.url}
           name={team.name}
           onTargetURLChange={self.handleTargetURLChange}
