@@ -452,7 +452,7 @@ app.on('ready', () => {
     const allWebContents = electron.webContents.getAllWebContents();
     for (const webContents of allWebContents) {
       if (webContents !== mainWindow.webContents) {
-        webContents.reload();
+        webContents.send('resume');
       }
     }
   });
