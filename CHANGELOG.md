@@ -12,6 +12,7 @@ Release date: TBD
 
 ### Improvements
 - Removed "Display secure content only" option it's no longer necessary.
+- Reload tabs to fetch latest messages when the computer resumes.
 
 #### Windows
 - Removed Japanese fonts support it's no longer necessary.
