@@ -54,8 +54,8 @@ describe('application', function desc() {
 
     // webview is handled as a window by chromedriver.
     return this.app.client.
-      windowByIndex(1).isNodeEnabled().should.eventually.be.false.
-      windowByIndex(2).isNodeEnabled().should.eventually.be.false.
+      windowByIndex(1).isNodeEnabled().then((enabled) => enabled.should.be.false).
+      windowByIndex(2).isNodeEnabled().then((enabled) => enabled.should.be.false).
       windowByIndex(0).
       getAttribute('webview', 'nodeintegration').then((nodeintegration) => {
         // nodeintegration is an array of string
@@ -78,7 +78,7 @@ describe('application', function desc() {
           return handles.value.length === 4;
         });
       }, 5000, 'expected a new window').
-      windowByIndex(3).isNodeEnabled().should.eventually.be.false;
+      windowByIndex(3).isNodeEnabled().then((enabled) => enabled.should.be.false);
   });
 
   it('should NOT be able to call eval() in any window', () => {
@@ -88,7 +88,9 @@ describe('application', function desc() {
         windowByIndex(index).
         execute(() => {
           return eval('1 + 1');
-        }).should.eventually.be.rejected;
+        }).then((result) => {
+          throw new Error(`Promise was unexpectedly fulfilled (result: ${result})`);
+        }, (error) => (error !== null).should.be.true);
     };
     const tryEvalInSettingsPage = () => {
       return this.app.client.
@@ -96,7 +98,9 @@ describe('application', function desc() {
         loadSettingsPage().
         execute(() => {
           return eval('1 + 1');
-        }).should.eventually.be.rejected;
+        }).then((result) => {
+          throw new Error(`Promise was unexpectedly fulfilled (result: ${result})`);
+        }, (error) => (error !== null).should.be.true);
     };
     return Promise.all([
       tryEval(0),

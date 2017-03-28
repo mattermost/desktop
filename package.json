@@ -43,7 +43,6 @@
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
     "babel-preset-react": "^6.23.0",
     "chai": "^3.5.0",
-    "chai-as-promised": "^6.0.0",
     "cross-env": "^3.1.4",
     "devtron": "^1.4.0",
     "electron": "1.6.1",

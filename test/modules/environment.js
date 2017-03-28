@@ -1,10 +1,7 @@
 'use strict';
 
 const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-
 chai.should();
-chai.use(chaiAsPromised);
 
 const fs = require('fs');
 const path = require('path');
@@ -42,12 +39,10 @@ module.exports = {
   },
 
   getSpectronApp() {
-    const app = new Application({
+    return new Application({
       path: electronBinaryPath,
       args: [`${path.join(sourceRootDir, 'src')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode']
     });
-    chaiAsPromised.transferPromiseness = app.transferPromiseness;
-    return app;
   },
 
   addClientCommands(client) {

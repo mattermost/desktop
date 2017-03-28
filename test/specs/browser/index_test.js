@@ -55,31 +55,31 @@ describe('browser/index.html', function desc() {
     }));
     return this.app.restart().then(() => {
       return this.app.client.waitUntilWindowLoaded().
-        isExisting('#tabBar').should.eventually.be.false;
+        isExisting('#tabBar').then((existing) => existing.should.be.false);
     });
   });
 
   it('should set src of webview from config file', () => {
     return this.app.client.waitUntilWindowLoaded().
-      getAttribute('#mattermostView0', 'src').should.eventually.equal(config.teams[0].url).
-      getAttribute('#mattermostView1', 'src').should.eventually.equal(config.teams[1].url).
-      isExisting('#mattermostView2').should.eventually.be.false;
+      getAttribute('#mattermostView0', 'src').then((src) => src.should.equal(config.teams[0].url)).
+      getAttribute('#mattermostView1', 'src').then((src) => src.should.equal(config.teams[1].url)).
+      isExisting('#mattermostView2').then((existing) => existing.should.be.false);
   });
 
   it('should set name of tab from config file', () => {
     return this.app.client.waitUntilWindowLoaded().
-      getText('#teamTabItem0').should.eventually.equal(config.teams[0].name).
-      getText('#teamTabItem1').should.eventually.equal(config.teams[1].name);
+      getText('#teamTabItem0').then((text) => text.should.equal(config.teams[0].name)).
+      getText('#teamTabItem1').then((text) => text.should.equal(config.teams[1].name));
   });
 
   it('should show only the selected team', () => {
     return this.app.client.waitUntilWindowLoaded().
-      isVisible('#mattermostView0').should.eventually.be.true.
-      isVisible('#mattermostView1').should.eventually.be.false.
+      isVisible('#mattermostView0').then((visible) => visible.should.be.true).
+      isVisible('#mattermostView1').then((visible) => visible.should.be.false).
       click('#teamTabItem1').
       pause(1000).
-      isVisible('#mattermostView1').should.eventually.be.true.
-      isVisible('#mattermostView0').should.eventually.be.false;
+      isVisible('#mattermostView1').then((visible) => visible.should.be.true).
+    isVisible('#mattermostView0').then((visible) => visible.should.be.false);
   });
 
   it('should show error when using incorrect URL', () => {
@@ -108,8 +108,8 @@ describe('browser/index.html', function desc() {
     return this.app.restart().then(() => {
       return this.app.client.waitUntilWindowLoaded().pause(1500);
     }).then(() => {
-      return this.app.browserWindow.getTitle().should.eventually.equal('Mattermost Desktop testing html');
-    });
+      return this.app.browserWindow.getTitle();
+    }).then((title) => title.should.equal('Mattermost Desktop testing html'));
   });
 
   it('should update window title when the activated tab\'s title is updated', () => {
@@ -132,13 +132,13 @@ describe('browser/index.html', function desc() {
           document.title = 'Title 0';
         }).
         windowByIndex(0).
-        browserWindow.getTitle().should.eventually.equal('Title 0').
+        browserWindow.getTitle().then((title) => title.should.equal('Title 0')).
         windowByIndex(2).
         execute(() => {
           document.title = 'Title 1';
         }).
         windowByIndex(0).
-        browserWindow.getTitle().should.eventually.equal('Title 0');
+        browserWindow.getTitle().then((title) => title.should.equal('Title 0'));
     });
   });
 
@@ -166,9 +166,9 @@ describe('browser/index.html', function desc() {
           document.title = 'Title 1';
         }).
         windowByIndex(0).
-        browserWindow.getTitle().should.eventually.equal('Title 0').
+        browserWindow.getTitle().then((title) => title.should.equal('Title 0')).
         click('#teamTabItem1').
-        browserWindow.getTitle().should.eventually.equal('Title 1');
+        browserWindow.getTitle().then((title) => title.should.equal('Title 1'));
     });
   });
 
@@ -177,6 +177,6 @@ describe('browser/index.html', function desc() {
     return this.app.client.waitUntilWindowLoaded().
       click('#tabBarAddNewTeam').
       pause(500).
-      isExisting('#newServerModal').should.eventually.be.true;
+      isExisting('#newServerModal').then((existing) => existing.should.be.true);
   });
 });
