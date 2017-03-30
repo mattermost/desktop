@@ -1,0 +1,15 @@
+.errorView {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+}
+
+.errorView-with-tab {
+  top: 42px;
+}
+
+.errorView-hidden {
+  visibility: hidden;
+}

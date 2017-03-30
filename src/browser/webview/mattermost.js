@@ -1,7 +1,6 @@
 'use strict';
 
-const electron = require('electron');
-const ipc = electron.ipcRenderer;
+const {ipcRenderer, remote} = require('electron');
 const notification = require('../js/notification');
 
 Reflect.deleteProperty(global.Buffer); // http://electron.atom.io/docs/tutorial/security/#buffer-global
@@ -24,7 +23,7 @@ setInterval(function getUnreadCount() {
 
   // LHS not found => Log out => Count should be 0.
   if (document.getElementById('sidebar-left') === null) {
-    ipc.sendToHost('onUnreadCountChange', 0, 0, false, false);
+    ipcRenderer.sendToHost('onUnreadCountChange', 0, 0, false, false);
     this.unreadCount = 0;
     this.mentionCount = 0;
     return;
@@ -106,7 +105,7 @@ setInterval(function getUnreadCount() {
   }
 
   if (this.unreadCount !== unreadCount || this.mentionCount !== mentionCount || isUnread || isMentioned) {
-    ipc.sendToHost('onUnreadCountChange', unreadCount, mentionCount, isUnread, isMentioned);
+    ipcRenderer.sendToHost('onUnreadCountChange', unreadCount, mentionCount, isUnread, isMentioned);
   }
   this.unreadCount = unreadCount;
   this.mentionCount = mentionCount;
@@ -120,7 +119,7 @@ notification.override({
 
   // Send a notification event to the main process.
   notification(title, options) {
-    ipc.send('notified', {
+    ipcRenderer.send('notified', {
       title,
       options
     });
@@ -128,7 +127,7 @@ notification.override({
 
   // Show window even if it is hidden/minimized when notification is clicked.
   onclick() {
-    const currentWindow = electron.remote.getCurrentWindow();
+    const currentWindow = remote.getCurrentWindow();
     if (process.platform === 'win32') {
       // show() breaks Aero Snap state.
       if (currentWindow.isVisible()) {
@@ -143,6 +142,18 @@ notification.override({
     } else {
       currentWindow.show();
     }
-    ipc.sendToHost('onNotificationClick');
+    ipcRenderer.sendToHost('onNotificationClick');
+  }
+});
+
+function reloadWebView() {
+  location.reload();
+}
+
+ipcRenderer.on('resume', () => {
+  if (navigator.onLine) {
+    location.reload();
+  } else {
+    window.addEventListener('online', reloadWebView);
   }
 });
