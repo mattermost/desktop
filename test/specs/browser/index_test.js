@@ -126,14 +126,16 @@ describe('browser/index.html', function desc() {
     return this.app.restart().then(() => {
       return this.app.client.waitUntilWindowLoaded().pause(500);
     }).then(() => {
+      // Note: Indices of webview are correct.
+      // Somehow they are swapped.
       return this.app.client.
-        windowByIndex(1).
+        windowByIndex(2).
         execute(() => {
           document.title = 'Title 0';
         }).
         windowByIndex(0).
         browserWindow.getTitle().then((title) => title.should.equal('Title 0')).
-        windowByIndex(2).
+        windowByIndex(1).
         execute(() => {
           document.title = 'Title 1';
         }).
@@ -154,14 +156,16 @@ describe('browser/index.html', function desc() {
       }]
     }));
     return this.app.restart().then(() => {
+      // Note: Indices of webview are correct.
+      // Somehow they are swapped.
       return this.app.client.
         waitUntilWindowLoaded().
         pause(500).
-        windowByIndex(1).
+        windowByIndex(2).
         execute(() => {
           document.title = 'Title 0';
         }).
-        windowByIndex(2).
+        windowByIndex(1).
         execute(() => {
           document.title = 'Title 1';
         }).
