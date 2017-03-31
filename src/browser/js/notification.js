@@ -2,8 +2,16 @@
 
 const OriginalNotification = Notification;
 const {remote} = require('electron');
+const {throttle} = require('underscore');
+const osVersion = require('../../common/osVersion');
+const dingDataURL = require('../../assets/ding.mp3'); // https://github.com/mattermost/platform/blob/v3.7.3/webapp/images/ding.mp3
 
 const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon.png`;
+
+const playDing = throttle(() => {
+  const ding = new Audio(dingDataURL);
+  ding.play();
+}, 3000, {trailing: false});
 
 function override(eventHandlers) {
   Notification = function constructor(title, options) { // eslint-disable-line no-global-assign, no-native-reassign
@@ -17,6 +25,12 @@ function override(eventHandlers) {
     this.notification = new OriginalNotification(title, options);
     if (eventHandlers.notification) {
       eventHandlers.notification(title, options);
+    }
+
+    if (process.platform === 'win32' && osVersion.isLowerThanOrEqualWindows8_1()) {
+      if (!options.silent) {
+        playDing();
+      }
     }
   };
 

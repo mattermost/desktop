@@ -15,6 +15,7 @@ Release date: TBD
 
 #### Windows
 - Removed Japanese fonts support it's no longer necessary.
+- Added support for sound notifications on Windows 7 and 8.
 
 ### Bug Fixes
 

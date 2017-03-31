@@ -25,6 +25,11 @@ module.exports = merge(base, {
           plugins: ['transform-object-rest-spread']
         }
       }
+    }, {
+      test: /\.mp3$/,
+      use: {
+        loader: 'url-loader'
+      }
     }]
   },
   node: {
