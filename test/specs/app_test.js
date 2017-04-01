@@ -26,9 +26,9 @@ describe('application', function desc() {
     return this.app.start().then(() => {
       return this.app.client.
         waitUntilWindowLoaded().
-        getWindowCount().should.eventually.equal(1).
-        browserWindow.isDevToolsOpened().should.eventually.be.false.
-        browserWindow.isVisible().should.eventually.be.true;
+        getWindowCount().then((count) => count.should.equal(1)).
+        browserWindow.isDevToolsOpened().then((opened) => opened.should.be.false).
+        browserWindow.isVisible().then((visible) => visible.should.be.true);
     });
   });
 
@@ -68,8 +68,8 @@ describe('application', function desc() {
     return this.app.start().then(() => {
       return this.app.client.
         waitUntilWindowLoaded().
-        getUrl().should.eventually.match(/\/settings.html$/).
-        isExisting('#newServerModal').should.eventually.equal(true);
+        getUrl().then((url) => url.should.match(/\/settings.html$/)).
+        isExisting('#newServerModal').then((existing) => existing.should.equal(true));
     });
   });
 
@@ -80,7 +80,7 @@ describe('application', function desc() {
     return this.app.start().then(() => {
       return this.app.client.
         waitUntilWindowLoaded().
-        getUrl().should.eventually.match(/\/index.html$/);
+        getUrl().then((url) => url.should.match(/\/index.html$/));
     });
   });
 
@@ -92,7 +92,7 @@ describe('application', function desc() {
     return this.app.start().then(() => {
       return this.app.client.
         waitUntilWindowLoaded().
-        getUrl().should.eventually.match(/\/index.html$/);
+        getUrl().then((url) => url.should.match(/\/index.html$/));
     }).then(() => {
       var str = fs.readFileSync(env.configFilePath, 'utf8');
       var config = JSON.parse(str);
