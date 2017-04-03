@@ -88,18 +88,6 @@ const MainPage = React.createClass({
       this.refs[`mattermostView${this.state.key}`].clearCacheAndReload();
     });
 
-    // activate search box in current tab
-    ipcRenderer.on('activate-search-box', () => {
-      const webview = document.getElementById('mattermostView' + self.state.key);
-      webview.send('activate-search-box');
-    });
-
-    // activate search box in current chunnel
-    ipcRenderer.on('activate-search-box-in-channel', () => {
-      const webview = document.getElementById('mattermostView' + self.state.key);
-      webview.send('activate-search-box-in-channel');
-    });
-
     function focusListener() {
       self.handleOnTeamFocused(self.state.key);
       self.refs[`mattermostView${self.state.key}`].focusOnWebView();
