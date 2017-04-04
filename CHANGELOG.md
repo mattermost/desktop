@@ -27,7 +27,9 @@ Release date: TBD
   in the classic Alt+Tab switcher after it's closed.
   [#430](https://github.com/mattermost/desktop/issues/430)
   [#431](https://github.com/mattermost/desktop/issues/431)
-- Fixed the application was not avaliable on the Dock after a reboot.
+
+#### Mac
+- Fixed an issue where the application was not avaliable on the Dock after a reboot.
   [#411](https://github.com/mattermost/desktop/issues/411)
 
 #### Linux
