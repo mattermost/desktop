@@ -457,7 +457,7 @@ under section (i) of this paragraph due to such counterclaim.
 
 ## react-bootstrap
 
-This product contains 'react-bootstrap', a Bootstrap 3 components for front-end framework built with React, by Stephen J. Collings, 
+This product contains 'react-bootstrap', Bootstrap 3 components for front-end framework built with React, by Stephen J. Collings, 
 Matthew Honnibal, Pieter Vanderwerff and react-bootstrap.
 
 * HOMEPAGE:
@@ -694,7 +694,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ## electron-builder
 
 This product contains 'electron-builder', a complete solution to package and build a ready for distribution Electron app
-with "auto update" support out of the box, by Electron Userland.
+with "auto update" support out of the box, and 'electron-builder-squirrel-windows', a plugin for electron-builder to build Squirrel.Windows installer, by Electron Userland.
 
 * HOMEPAGE:
   * https://github.com/electron-userland/electron-builder
@@ -792,7 +792,7 @@ THE SOFTWARE.
 
 ## eslint-plugin-react
 
-This product contains 'eslint-plugin-react', a tool for React specific linting rules for ESLint, by Yannick Croissant.
+This product contains 'eslint-plugin-react', React specific linting rules for ESLint, by Yannick Croissant.
 
 * HOMEPAGE:
   * https://github.com/yannickcr/eslint-plugin-react
@@ -990,7 +990,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## webpack-dev-server
 
-This product contains 'webpack-dev-server', which provides fast in-memory access to the webpack asset, by Webpack.
+This product contains 'webpack-dev-server', which serves a webpack app, by Webpack.
 
 * HOMEPAGE:
   * https://github.com/webpack/webpack-dev-server
@@ -1031,6 +1031,123 @@ configuring webpack, by Juho Vepsäläinen and SurviveJS.
 * LICENSE:
 
 Copyright (c) 2015 Juho Vepsalainen
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+## babel
+
+This product contains the following packages of 'babel', a compiler for writing next generation JavaScript: 'babel-core', a Babel compiler core, 'babel-plugin-transform-object-rest-spread', a plugin that allows Babel to transform rest properties for object destructuring assignment and spread properties for object literals, and 'babel-preset-react', a Babel preset for all React plugins.
+'react-addons-css-transition-group', by Babel.
+
+* HOMEPAGE:
+  * https://github.com/babel/babel/tree/master/packages/babel-core
+  * https://github.com/babel/babel/tree/master/packages/babel-plugin-transform-object-rest-spread
+  * https://github.com/babel/babel/tree/master/packages/babel-preset-react
+
+* LICENSE:
+
+MIT License
+
+Copyright (c) 2014-2017 Sebastian McKenzie <sebmck@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+## babel-eslint
+
+This product contains the following packages of 'babel-eslint', an ESLint using Babel as the parser, by Babel.
+
+* HOMEPAGE:
+  * https://github.com/babel/babel-eslint
+
+* LICENSE:
+
+Copyright (c) 2014-2016 Sebastian McKenzie <sebmck@gmail.com>
+
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+## babel-loader
+
+This product contains the following packages of 'babel-loader', a webpack plugin for Babel, by Babel.
+
+* HOMEPAGE:
+  * https://github.com/babel/babel-loader
+
+* LICENSE:
+
+Copyright (c) 2014-2016 Luís Couto <hello@luiscouto.pt>
+
+MIT License
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
