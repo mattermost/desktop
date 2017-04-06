@@ -35,16 +35,17 @@
   border-radius: 2px 2px 0 0;
   border: 1px solid #ddd;
   color: #888;
-  height: 35px;
-  line-height: 32px;
+  height: 31px;
+  line-height: 29px;
   margin-right: -1px;
-  margin-top: 7px;
+  margin-top: 0px;
   padding: 0 15px;
 }
 
 .nav-tabs>li.buttonTab>a {
   border: none;
   background: transparent;
+  margin: 0px;
   margin-left: 1px; /*Has no border and would be placed above the last item's border due to it's margin-right: -1px */
   padding: 0;
   margin-bottom: 1px;

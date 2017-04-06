@@ -205,7 +205,7 @@ const MainPage = React.createClass({
     var visibility = visible ? 'visible' : 'hidden';
     return {
       position: 'absolute',
-      top: (this.props.teams.length > 1) ? 42 : 0,
+      top: (this.props.teams.length > 1) ? 32 : 0,
       right: 0,
       bottom: 0,
       left: 0,
