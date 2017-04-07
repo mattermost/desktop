@@ -32,10 +32,18 @@ Release date: TBD
 #### Mac
 - Fixed an issue where the application was not avaliable on the Dock after a reboot.
   [#411](https://github.com/mattermost/desktop/issues/411)
+- Fixed an issue where Quick Look doesn't close in file upload dialog.
+  [#498](https://github.com/mattermost/desktop/issues/498)
 
 #### Linux
 - Fixed an issue where the setting was not saved when changing tray icon theme.
   [#456](https://github.com/mattermost/desktop/issues/456)
+
+### New known issues
+
+#### Mac
+- The application crashes when a file upload dialog is canceled without closing Quick Look.
+
 
 ----
 
