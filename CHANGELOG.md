@@ -24,6 +24,10 @@ Release date: TBD
  - Fixed mis-aligned `+` button of tab bar.
  [#541](https://github.com/mattermost/desktop/issues/541)
 
+#### Mac
+ - Fixed an issue where the text box didn't keep focus after uploading a file.
+ [#341](https://github.com/mattermost/desktop/issues/341)
+
 ---
 
 ## Release v3.7.0

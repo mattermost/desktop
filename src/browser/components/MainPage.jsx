@@ -104,6 +104,10 @@ const MainPage = createReactClass({
     ipcRenderer.on('add-server', () => {
       this.addServer();
     });
+
+    ipcRenderer.on('focus-on-webview', () => {
+      this.focusOnWebView();
+    });
   },
   componentDidUpdate(prevProps, prevState) {
     if (prevState.key !== this.state.key) { // i.e. When tab has been changed
@@ -207,6 +211,11 @@ const MainPage = createReactClass({
       showNewTeamModal: true
     });
   },
+
+  focusOnWebView() {
+    this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+  },
+
   render() {
     var self = this;
 

@@ -107,6 +107,10 @@ function createMainWindow(config, options) {
     }
   });
 
+  mainWindow.on('sheet-end', () => {
+    mainWindow.webContents.send('focus-on-webview');
+  });
+
   return mainWindow;
 }
 
