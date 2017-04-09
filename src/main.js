@@ -213,6 +213,55 @@ app.on('window-all-closed', () => {
   }
 });
 
+function getValidWindowPosition(state, screen) {
+  // Check if the previous position is out of the viewable area
+  // (e.g. because the screen has been plugged off)
+  const displays = screen.getAllDisplays();
+  let minX = 0;
+  let maxX = 0;
+  let minY = 0;
+  let maxY = 0;
+  for (let i = 0; i < displays.length; i++) {
+    const display = displays[i];
+    maxX = Math.max(maxX, display.bounds.x + display.bounds.width);
+    maxY = Math.max(maxY, display.bounds.y + display.bounds.height);
+    minX = Math.min(minX, display.bounds.x);
+    minY = Math.min(minY, display.bounds.y);
+  }
+
+  if (state.x > maxX || state.y > maxY || state.x < minX || state.y < minY) {
+    Reflect.deleteProperty(state, 'x');
+    Reflect.deleteProperty(state, 'y');
+    Reflect.deleteProperty(state, 'width');
+    Reflect.deleteProperty(state, 'height');
+  }
+
+  return state;
+}
+
+function handleScreenResize(screen, browserWindow) {
+  function handle() {
+    const position = browserWindow.getPosition();
+    const size = browserWindow.getSize();
+    const validPosition = getValidWindowPosition({
+      x: position[0],
+      y: position[1],
+      width: size[0],
+      height: size[1]
+    }, screen);
+    browserWindow.setPosition(validPosition.x || 0, validPosition.y || 0);
+  }
+
+  browserWindow.on('restore', handle);
+  handle();
+}
+
+app.on('browser-window-created', (e, newWindow) => {
+  // Screen cannot be required before app is ready
+  const {screen} = require('electron'); // eslint-disable-line global-require
+  handleScreenResize(screen, newWindow);
+});
+
 // For OSX, show hidden mainWindow when clicking dock icon.
 app.on('activate', () => {
   mainWindow.show();
