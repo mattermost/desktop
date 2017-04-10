@@ -10,7 +10,7 @@ This document includes a list of open source components used in Mattermost Deskt
 
 ## auto-launch
 
-This product contains 'auto-launch', which allows one to launch any application or executable at startup, by Teamwork.com.
+This product contains a modified portion of 'auto-launch', which allows one to launch any application or executable at startup, by Teamwork.com.
 
 * HOMEPAGE:
   * https://github.com/Teamwork/node-auto-launch
@@ -43,7 +43,7 @@ SOFTWARE.
 
 ## bootstrap
 
-This product contains 'bootstrap', which is an HTML, CSS, and JavaScript framework for developing responsive, mobile first 
+This product contains a modified portion of 'bootstrap', which is an HTML, CSS, and JavaScript framework for developing responsive, mobile first 
 projects on the web, by Twitter, Inc. and Bootstrap Authors.
 
 * HOMEPAGE:
@@ -78,7 +78,7 @@ THE SOFTWARE.
 
 ## electron-context-menu
 
-This product contains 'electron-context-menu', which provides a context menu for Electron apps, by Sindre Sorhus.
+This product contains a modified portion of 'electron-context-menu', which provides a context menu for Electron apps, by Sindre Sorhus.
 
 * HOMEPAGE:
   * https://github.com/sindresorhus/electron-context-menu
@@ -111,7 +111,7 @@ THE SOFTWARE.
 
 ## electron-devtools-installer
 
-This product contains 'electron-devtools-installer', which allows an easy way to ensure Chrome DevTools extensions into Electron, 
+This product contains a modified portion of 'electron-devtools-installer', which allows an easy way to ensure Chrome DevTools extensions into Electron, 
 by Samuel Attard.
 
 * HOMEPAGE:
@@ -138,7 +138,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## electron-is-dev
 
-This product contains 'electron-is-dev', which checks if Electron is running in development, by Sindre Sorhus.
+This product contains a modified portion of 'electron-is-dev', which checks if Electron is running in development, by Sindre Sorhus.
 
 * HOMEPAGE:
   * https://github.com/sindresorhus/electron-is-dev
@@ -171,7 +171,7 @@ THE SOFTWARE.
 
 ## electron-squirrel-startup
 
-This product contains 'electron-squirrel-startup', a default Squirrel.Windows event handler for Electron apps, by mongodb-js.
+This product contains a modified portion of 'electron-squirrel-startup', a default Squirrel.Windows event handler for Electron apps, by mongodb-js.
 
 * HOMEPAGE:
   * https://github.com/mongodb-js/electron-squirrel-startup
@@ -384,7 +384,7 @@ limitations under the License.
 
 ## react
 
-This product contains 'react', a declarative, efficient, and flexible JavaScript library for building user interfaces, 
+This product contains a modified portion of 'react', a declarative, efficient, and flexible JavaScript library for building user interfaces, 
 'react-addons-css-transition-group', the React CSSTransitionGroup add-on, and 'react-dom', the entry point of the DOM-related 
 rendering paths, by Facebook, Inc.
 
@@ -457,7 +457,7 @@ under section (i) of this paragraph due to such counterclaim.
 
 ## react-bootstrap
 
-This product contains 'react-bootstrap', Bootstrap 3 components for front-end framework built with React, by Stephen J. Collings, 
+This product contains a modified portion of 'react-bootstrap', Bootstrap 3 components for front-end framework built with React, by Stephen J. Collings, 
 Matthew Honnibal, Pieter Vanderwerff and react-bootstrap.
 
 * HOMEPAGE:
@@ -491,8 +491,8 @@ THE SOFTWARE.
 
 ## underscore
 
-This product contains 'underscore', a utility-belt library for JavaScript that provides support for usual functional suspects
-without extending any core JavaScript objects, by Jeremy Ashkenas, DocumentCloud and Investigative.
+This product contains a modified portion of 'underscore', a utility-belt library for JavaScript that provides support for usual functional suspects
+without extending any core JavaScript objects, by Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors.
 
 * HOMEPAGE:
   * https://github.com/jashkenas/underscore
@@ -528,7 +528,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 ## yargs
 
-This product contains 'yargs', a modern successor to optimist, by James Halliday and Yargs.
+This product contains a modified portion of 'yargs', a modern successor to optimist, by James Halliday and Yargs.
 
 * HOMEPAGE:
   * https://github.com/yargs/yargs
@@ -1056,7 +1056,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ## babel
 
 This product contains the following packages of 'babel', a compiler for writing next generation JavaScript: 'babel-core', a Babel compiler core, 'babel-plugin-transform-object-rest-spread', a plugin that allows Babel to transform rest properties for object destructuring assignment and spread properties for object literals, and 'babel-preset-react', a Babel preset for all React plugins.
-'react-addons-css-transition-group', by Babel.
 
 * HOMEPAGE:
   * https://github.com/babel/babel/tree/master/packages/babel-core
@@ -1096,7 +1095,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## babel-eslint
 
-This product contains the following packages of 'babel-eslint', an ESLint using Babel as the parser, by Babel.
+This product contains 'babel-eslint', an ESLint using Babel as the parser, by Babel.
 
 * HOMEPAGE:
   * https://github.com/babel/babel-eslint
@@ -1138,7 +1137,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## babel-loader
 
-This product contains the following packages of 'babel-loader', a webpack plugin for Babel, by Babel.
+This product contains 'babel-loader', a webpack plugin for Babel, by Babel.
 
 * HOMEPAGE:
   * https://github.com/babel/babel-loader
@@ -1172,7 +1171,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## url-loader
 
-This product contains the following packages of 'url-loader', a url loader module for webpack, by Webpack.
+This product contains 'url-loader', a url loader module for webpack, by Webpack community.
 
 * HOMEPAGE:
   * https://github.com/webpack-contrib/url-loader
