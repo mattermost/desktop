@@ -185,14 +185,14 @@ function createTemplate(mainWindow, config, isDev) {
         }
       };
     }), separatorItem, {
-      label: 'Select Next Team',
+      label: 'Select Next Server',
       accelerator: (process.platform === 'darwin') ? 'Alt+Cmd+Right' : 'CmdOrCtrl+Tab',
       click() {
         mainWindow.webContents.send('select-next-tab');
       },
       enabled: (config.teams.length > 1)
     }, {
-      label: 'Select Previous Team',
+      label: 'Select Previous Server',
       accelerator: (process.platform === 'darwin') ? 'Alt+Cmd+Left' : 'CmdOrCtrl+Shift+Tab',
       click() {
         mainWindow.webContents.send('select-previous-tab');
