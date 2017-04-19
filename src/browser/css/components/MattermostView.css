@@ -1,0 +1,17 @@
+.mattermostView {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+}
+
+.mattermostView-with-tab {
+  top: 32px;
+}
+
+.mattermostView-hidden {
+  flex: 0 1;
+  width: 0px;
+  height: 0px;
+}

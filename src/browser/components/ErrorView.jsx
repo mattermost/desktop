@@ -31,10 +31,17 @@ const errorPage = {
 };
 
 function ErrorView(props) {
+  const classNames = ['errorView'];
+  if (!props.active) {
+    classNames.push('errorView-hidden');
+  }
+  if (props.withTab) {
+    classNames.push('errorView-with-tab');
+  }
   return (
     <Grid
       id={props.id}
-      style={props.style}
+      bsClass={classNames.join(' ')}
     >
       <div style={errorPage.tableStyle}>
         <div style={errorPage.cellStyle}>
@@ -87,7 +94,8 @@ function ErrorView(props) {
 ErrorView.propTypes = {
   errorInfo: React.PropTypes.object,
   id: React.PropTypes.number,
-  style: React.PropTypes.object
+  active: React.PropTypes.bool,
+  withTab: React.PropTypes.bool
 };
 
 module.exports = ErrorView;
