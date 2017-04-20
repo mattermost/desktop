@@ -22,6 +22,7 @@
     "react-addons-css-transition-group": "^15.4.2",
     "react-bootstrap": "~0.30.7",
     "react-dom": "^15.4.2",
+    "simple-spellchecker": "git://github.com/jfmdev/simple-spellchecker.git#723062952a0290c6285aeaf02f14d9c74c41cadb",
     "underscore": "^1.8.3",
     "yargs": "^3.32.0"
   }

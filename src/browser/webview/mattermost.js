@@ -2,6 +2,7 @@
 
 const electron = require('electron');
 const ipc = electron.ipcRenderer;
+const webFrame = electron.webFrame;
 const notification = require('../js/notification');
 
 Reflect.deleteProperty(global.Buffer); // http://electron.atom.io/docs/tutorial/security/#buffer-global
@@ -144,5 +145,13 @@ notification.override({
       currentWindow.show();
     }
     ipc.sendToHost('onNotificationClick');
+  }
+});
+
+const spellCheckerLocale = ipc.sendSync('get-spellchecker-locale');
+webFrame.setSpellCheckProvider(spellCheckerLocale, false, {
+  spellCheck(text) {
+    const res = ipc.sendSync('checkspell', text);
+    return res === null ? true : res;
   }
 });

@@ -2,7 +2,7 @@ const React = require('react');
 const {findDOMNode} = require('react-dom');
 const {ipcRenderer, remote, shell} = require('electron');
 const url = require('url');
-const electronContextMenu = require('electron-context-menu');
+const contextMenu = require('../js/contextMenu');
 
 const ErrorView = require('./ErrorView.jsx');
 
@@ -79,9 +79,7 @@ const MattermostView = React.createClass({
       // webview.openDevTools();
 
       if (!this.state.isContextMenuAdded) {
-        electronContextMenu({
-          window: webview
-        });
+        contextMenu.setup(webview);
         this.setState({isContextMenuAdded: true});
       }
     });

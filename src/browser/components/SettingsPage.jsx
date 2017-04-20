@@ -1,6 +1,6 @@
 const React = require('react');
 const ReactDOM = require('react-dom');
-const {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} = require('react-bootstrap');
+const {Button, Checkbox, Col, FormControl, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} = require('react-bootstrap');
 
 const {ipcRenderer, remote} = require('electron');
 const AutoLaunch = require('auto-launch');
@@ -112,7 +112,9 @@ const SettingsPage = React.createClass({
       notifications: {
         flashWindow: this.state.notifications.flashWindow
       },
-      showUnreadBadge: this.state.showUnreadBadge
+      showUnreadBadge: this.state.showUnreadBadge,
+      useSpellChecker: this.state.useSpellChecker,
+      spellCheckerLocale: this.state.spellCheckerLocale
     };
 
     settings.writeFile(this.props.configFile, config, (err) => {
@@ -205,6 +207,20 @@ const SettingsPage = React.createClass({
   handleShowUnreadBadge() {
     this.setState({
       showUnreadBadge: !this.refs.showUnreadBadge.props.checked
+    });
+    setImmediate(this.startSaveConfig);
+  },
+
+  handleChangeUseSpellChecker() {
+    this.setState({
+      useSpellChecker: !this.refs.useSpellChecker.props.checked
+    });
+    setImmediate(this.startSaveConfig);
+  },
+
+  handleChangeSpellCheckerLocale(event) {
+    this.setState({
+      spellCheckerLocale: event.target.value
     });
     setImmediate(this.startSaveConfig);
   },
@@ -361,6 +377,33 @@ const SettingsPage = React.createClass({
           </HelpBlock>
         </Checkbox>);
     }
+
+    options.push(
+      <Checkbox
+        key='inputSpellChecker'
+        id='inputSpellChecker'
+        ref='useSpellChecker'
+        checked={this.state.useSpellChecker}
+        onChange={this.handleChangeUseSpellChecker}
+      >
+        {'Check spelling'}
+        <HelpBlock>
+          {'Highlight misspelled words in your messages.'}
+          {' Available for English, French, German, and Dutch.'}
+        </HelpBlock>
+        <FormControl
+          id='selectSpellCheckerLocale'
+          componentClass='select'
+          value={this.state.spellCheckerLocale}
+          onChange={this.handleChangeSpellCheckerLocale}
+          disabled={!this.state.useSpellChecker}
+        >
+          <option value='en-US'>{'English'}</option>
+          <option value='fr-FR'>{'French'}</option>
+          <option value='de-DE'>{'German'}</option>
+          <option value='nl-NL'>{'Dutch'}</option>
+        </FormControl>
+      </Checkbox>);
 
     const settingsPage = {
       navbar: {

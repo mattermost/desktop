@@ -9,7 +9,8 @@
     "main_bundle.js",
     "browser/**/*{.html,.css,_bundle.js}",
     "assets/**/*",
-    "node_modules/bootstrap/dist/**"
+    "node_modules/bootstrap/dist/**",
+    "node_modules/simple-spellchecker/dict/*.dic"
   ],
   "deb": {
     "synopsis": "Mattermost"
