@@ -31,7 +31,7 @@ const errorPage = {
 };
 
 function ErrorView(props) {
-  const classNames = ['errorView'];
+  const classNames = ['container', 'errorView'];
   if (!props.active) {
     classNames.push('errorView-hidden');
   }
