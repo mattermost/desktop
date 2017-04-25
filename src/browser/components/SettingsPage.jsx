@@ -281,6 +281,34 @@ const SettingsPage = React.createClass({
         </Checkbox>);
     }
 
+    options.push(
+      <Checkbox
+        key='inputSpellChecker'
+        id='inputSpellChecker'
+        ref='useSpellChecker'
+        checked={this.state.useSpellChecker}
+        onChange={this.handleChangeUseSpellChecker}
+      >
+        {'Check spelling'}
+        <HelpBlock>
+          {'Highlight misspelled words in your messages.'}
+          {' Available for English, French, German, Spanish, and Dutch.'}
+        </HelpBlock>
+        <FormControl
+          id='selectSpellCheckerLocale'
+          componentClass='select'
+          value={this.state.spellCheckerLocale}
+          onChange={this.handleChangeSpellCheckerLocale}
+          disabled={!this.state.useSpellChecker}
+        >
+          <option value='en-US'>{'English'}</option>
+          <option value='fr-FR'>{'French'}</option>
+          <option value='de-DE'>{'German'}</option>
+          <option value='es-ES'>{'Spanish'}</option>
+          <option value='nl-NL'>{'Dutch'}</option>
+        </FormControl>
+      </Checkbox>);
+
     if (process.platform === 'darwin' || process.platform === 'win32') {
       const TASKBAR = process.platform === 'win32' ? 'taskbar' : 'Dock';
       options.push(
@@ -377,33 +405,6 @@ const SettingsPage = React.createClass({
           </HelpBlock>
         </Checkbox>);
     }
-
-    options.push(
-      <Checkbox
-        key='inputSpellChecker'
-        id='inputSpellChecker'
-        ref='useSpellChecker'
-        checked={this.state.useSpellChecker}
-        onChange={this.handleChangeUseSpellChecker}
-      >
-        {'Check spelling'}
-        <HelpBlock>
-          {'Highlight misspelled words in your messages.'}
-          {' Available for English, French, German, and Dutch.'}
-        </HelpBlock>
-        <FormControl
-          id='selectSpellCheckerLocale'
-          componentClass='select'
-          value={this.state.spellCheckerLocale}
-          onChange={this.handleChangeSpellCheckerLocale}
-          disabled={!this.state.useSpellChecker}
-        >
-          <option value='en-US'>{'English'}</option>
-          <option value='fr-FR'>{'French'}</option>
-          <option value='de-DE'>{'German'}</option>
-          <option value='nl-NL'>{'Dutch'}</option>
-        </FormControl>
-      </Checkbox>);
 
     const settingsPage = {
       navbar: {

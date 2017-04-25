@@ -11,7 +11,7 @@ from the final changelog of the release.
 Release date: TBD
 
 ### Improvements
-- Added spell checker for English, French, German, and Dutch.
+- Added spell checker for English, French, German, Spanish, and Dutch.
 - Removed "Display secure content only" option it's no longer necessary.
 
 #### Windows
