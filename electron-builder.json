@@ -11,6 +11,14 @@
     "assets/**/*",
     "node_modules/bootstrap/dist/**"
   ],
+  "extraFiles": [
+    {
+      "filter": [
+        "LICENSE.txt",
+        "NOTICE.txt"
+      ]
+    }
+  ],
   "deb": {
     "synopsis": "Mattermost"
   },
