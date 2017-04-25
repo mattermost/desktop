@@ -14,7 +14,7 @@
   "extraFiles": [
     {
       "filter": [
-        "LICENSE",
+        "LICENSE.txt",
         "NOTICE.txt"
       ]
     }
