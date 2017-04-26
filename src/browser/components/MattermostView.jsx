@@ -16,7 +16,9 @@ const MattermostView = React.createClass({
     onUnreadCountChange: React.PropTypes.func,
     src: React.PropTypes.string,
     active: React.PropTypes.bool,
-    withTab: React.PropTypes.bool
+    withTab: React.PropTypes.bool,
+    useSpellChecker: React.PropTypes.bool,
+    onSelectSpellCheckerLocale: React.PropTypes.func
   },
 
   getInitialState() {
@@ -79,7 +81,15 @@ const MattermostView = React.createClass({
       // webview.openDevTools();
 
       if (!this.state.isContextMenuAdded) {
-        contextMenu.setup(webview);
+        contextMenu.setup(webview, {
+          useSpellChecker: this.props.useSpellChecker,
+          onSelectSpellCheckerLocale: (locale) => {
+            if (this.props.onSelectSpellCheckerLocale) {
+              this.props.onSelectSpellCheckerLocale(locale);
+            }
+            webview.send('set-spellcheker');
+          }
+        });
         this.setState({isContextMenuAdded: true});
       }
     });

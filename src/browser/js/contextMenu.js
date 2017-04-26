@@ -10,14 +10,49 @@ function getSuggestionsMenus(win, suggestions) {
   }));
 }
 
+function getSpellCheckerLocaleMenus(onSelectSpellCheckerLocale) {
+  const currentLocale = ipcRenderer.sendSync('get-spellchecker-locale');
+  const locales = [
+    {language: 'English', locale: 'en-US'},
+    {language: 'French', locale: 'fr-FR'},
+    {language: 'German', locale: 'de-DE'},
+    {language: 'Spanish', locale: 'es-ES'},
+    {language: 'Dutch', locale: 'nl-NL'}
+  ];
+  return locales.map((l) => ({
+    label: l.language,
+    type: 'checkbox',
+    checked: l.locale === currentLocale,
+    click() {
+      if (onSelectSpellCheckerLocale) {
+        onSelectSpellCheckerLocale(l.locale);
+      }
+    }
+  }));
+}
+
 module.exports = {
-  setup(win) {
+  setup(win, options) {
+    const defaultOptions = {
+      useSpellChecker: false,
+      onSelectSpellCheckerLocale: null
+    };
+    const actualOptions = Object.assign({}, defaultOptions, options);
     electronContextMenu({
       window: win,
       prepend(params) {
-        if (params.isEditable && params.misspelledWord !== '') {
-          const suggestions = ipcRenderer.sendSync('get-spelling-suggestions', params.misspelledWord);
-          return getSuggestionsMenus(win, suggestions);
+        if (actualOptions.useSpellChecker) {
+          const prependMenuItems = [];
+          if (params.isEditable && params.misspelledWord !== '') {
+            const suggestions = ipcRenderer.sendSync('get-spelling-suggestions', params.misspelledWord);
+            prependMenuItems.push(...getSuggestionsMenus(win, suggestions));
+          }
+          if (params.isEditable) {
+            prependMenuItems.push(
+              {type: 'separator'},
+              {label: 'Spelling Languages', submenu: getSpellCheckerLocaleMenus(actualOptions.onSelectSpellCheckerLocale)});
+          }
+          return prependMenuItems;
         }
         return [];
       }

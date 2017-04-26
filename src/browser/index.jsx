@@ -90,6 +90,13 @@ function teamConfigChange(teams) {
   ipcRenderer.send('update-config');
 }
 
+function handleSelectSpellCheckerLocale(locale) {
+  console.log(locale);
+  AppConfig.set('spellCheckerLocale', locale);
+  ipcRenderer.send('update-config');
+  ipcRenderer.send('update-dict');
+}
+
 const parsedURL = url.parse(window.location.href, true);
 const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : 0;
 
@@ -99,6 +106,8 @@ ReactDOM.render(
     initialIndex={initialIndex}
     onUnreadCountChange={showUnreadBadge}
     onTeamConfigChange={teamConfigChange}
+    useSpellChecker={AppConfig.data.useSpellChecker}
+    onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}
   />,
   document.getElementById('content')
 );

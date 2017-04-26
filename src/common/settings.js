@@ -7,7 +7,7 @@ function merge(base, target) {
   return Object.assign({}, base, target);
 }
 
-function loadDefault(version) {
+function loadDefault(version, spellCheckerLocale) {
   var ver = version;
   if (version == null) {
     ver = settingsVersion;
@@ -25,7 +25,7 @@ function loadDefault(version) {
       },
       showUnreadBadge: true,
       useSpellChecker: false,
-      spellCheckerLocale: 'en-US'
+      spellCheckerLocale: spellCheckerLocale || 'en-US'
     };
   default:
     return {};

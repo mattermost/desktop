@@ -148,10 +148,14 @@ notification.override({
   }
 });
 
-const spellCheckerLocale = ipc.sendSync('get-spellchecker-locale');
-webFrame.setSpellCheckProvider(spellCheckerLocale, false, {
-  spellCheck(text) {
-    const res = ipc.sendSync('checkspell', text);
-    return res === null ? true : res;
-  }
-});
+function setSpellChecker() {
+  const spellCheckerLocale = ipc.sendSync('get-spellchecker-locale');
+  webFrame.setSpellCheckProvider(spellCheckerLocale, false, {
+    spellCheck(text) {
+      const res = ipc.sendSync('checkspell', text);
+      return res === null ? true : res;
+    }
+  });
+}
+setSpellChecker();
+ipc.on('set-spellcheker', setSpellChecker);

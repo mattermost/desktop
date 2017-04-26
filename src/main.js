@@ -451,10 +451,10 @@ app.on('ready', () => {
   });
   ipcMain.emit('update-menu', true, config);
 
-  ipcMain.on('update-dict', (event, locale) => {
+  ipcMain.on('update-dict', () => {
     if (config.useSpellChecker) {
       spellChecker = new SpellChecker(
-      locale,
+      config.spellCheckerLocale,
       path.resolve(app.getAppPath(), 'node_modules/simple-spellchecker/dict'),
       (err) => {
         if (err) {
@@ -480,7 +480,7 @@ app.on('ready', () => {
   ipcMain.on('get-spellchecker-locale', (event) => {
     event.returnValue = config.spellCheckerLocale;
   });
-  ipcMain.emit('update-dict', true, config.spellCheckerLocale);
+  ipcMain.emit('update-dict');
 
   // Open the DevTools.
   // mainWindow.openDevTools();

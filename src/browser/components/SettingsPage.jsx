@@ -1,6 +1,6 @@
 const React = require('react');
 const ReactDOM = require('react-dom');
-const {Button, Checkbox, Col, FormControl, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} = require('react-bootstrap');
+const {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} = require('react-bootstrap');
 
 const {ipcRenderer, remote} = require('electron');
 const AutoLaunch = require('auto-launch');
@@ -218,13 +218,6 @@ const SettingsPage = React.createClass({
     setImmediate(this.startSaveConfig);
   },
 
-  handleChangeSpellCheckerLocale(event) {
-    this.setState({
-      spellCheckerLocale: event.target.value
-    });
-    setImmediate(this.startSaveConfig);
-  },
-
   updateTeam(index, newData) {
     var teams = this.state.teams;
     teams[index] = newData;
@@ -294,19 +287,6 @@ const SettingsPage = React.createClass({
           {'Highlight misspelled words in your messages.'}
           {' Available for English, French, German, Spanish, and Dutch.'}
         </HelpBlock>
-        <FormControl
-          id='selectSpellCheckerLocale'
-          componentClass='select'
-          value={this.state.spellCheckerLocale}
-          onChange={this.handleChangeSpellCheckerLocale}
-          disabled={!this.state.useSpellChecker}
-        >
-          <option value='en-US'>{'English'}</option>
-          <option value='fr-FR'>{'French'}</option>
-          <option value='de-DE'>{'German'}</option>
-          <option value='es-ES'>{'Spanish'}</option>
-          <option value='nl-NL'>{'Dutch'}</option>
-        </FormControl>
       </Checkbox>);
 
     if (process.platform === 'darwin' || process.platform === 'win32') {

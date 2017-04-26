@@ -206,15 +206,13 @@ describe('browser/settings.html', function desc() {
         env.addClientCommands(this.app.client);
         return this.app.client.
           loadSettingsPage().
-          isExisting('#selectSpellCheckerLocale').then((existing) => existing.should.equal(true)).
-          scroll('#selectSpellCheckerLocale').
+          isExisting('#inputSpellChecker').then((existing) => existing.should.equal(true)).
+          scroll('#inputSpellChecker').
           click('#inputSpellChecker').
-          element('#selectSpellCheckerLocale').selectByVisibleText('French').
           pause(700).
           then(() => {
             const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
             config1.useSpellChecker.should.equal(true);
-            config1.spellCheckerLocale.should.equal('fr-FR');
           });
       });
     });

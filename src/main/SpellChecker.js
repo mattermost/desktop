@@ -66,4 +66,23 @@ class SpellChecker {
   }
 }
 
+SpellChecker.getSpellCheckerLocale = (electronLocale) => {
+  if (electronLocale.match(/^en-?/)) {
+    return 'en-US';
+  }
+  if (electronLocale.match(/^fr-?/)) {
+    return 'fr-FR';
+  }
+  if (electronLocale.match(/^de-?/)) {
+    return 'de-DE';
+  }
+  if (electronLocale.match(/^es-?/)) {
+    return 'es-ES';
+  }
+  if (electronLocale.match(/^nl-?/)) {
+    return 'nl-NL';
+  }
+  return 'en-US';
+};
+
 module.exports = SpellChecker;
