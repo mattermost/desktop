@@ -112,7 +112,9 @@ const SettingsPage = React.createClass({
       notifications: {
         flashWindow: this.state.notifications.flashWindow
       },
-      showUnreadBadge: this.state.showUnreadBadge
+      showUnreadBadge: this.state.showUnreadBadge,
+      useSpellChecker: this.state.useSpellChecker,
+      spellCheckerLocale: this.state.spellCheckerLocale
     };
 
     settings.writeFile(this.props.configFile, config, (err) => {
@@ -209,6 +211,13 @@ const SettingsPage = React.createClass({
     setImmediate(this.startSaveConfig);
   },
 
+  handleChangeUseSpellChecker() {
+    this.setState({
+      useSpellChecker: !this.refs.useSpellChecker.props.checked
+    });
+    setImmediate(this.startSaveConfig);
+  },
+
   updateTeam(index, newData) {
     var teams = this.state.teams;
     teams[index] = newData;
@@ -264,6 +273,21 @@ const SettingsPage = React.createClass({
           </HelpBlock>
         </Checkbox>);
     }
+
+    options.push(
+      <Checkbox
+        key='inputSpellChecker'
+        id='inputSpellChecker'
+        ref='useSpellChecker'
+        checked={this.state.useSpellChecker}
+        onChange={this.handleChangeUseSpellChecker}
+      >
+        {'Check spelling'}
+        <HelpBlock>
+          {'Highlight misspelled words in your messages.'}
+          {' Available for English, French, German, Spanish, and Dutch.'}
+        </HelpBlock>
+      </Checkbox>);
 
     if (process.platform === 'darwin' || process.platform === 'win32') {
       const TASKBAR = process.platform === 'win32' ? 'taskbar' : 'Dock';

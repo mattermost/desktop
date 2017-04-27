@@ -200,6 +200,22 @@ describe('browser/settings.html', function desc() {
           isExisting('#inputShowUnreadBadge').then((existing) => existing.should.equal(expected));
       });
     });
+
+    describe('Check spelling', () => {
+      it('should appear and be selectable', () => {
+        env.addClientCommands(this.app.client);
+        return this.app.client.
+          loadSettingsPage().
+          isExisting('#inputSpellChecker').then((existing) => existing.should.equal(true)).
+          scroll('#inputSpellChecker').
+          click('#inputSpellChecker').
+          pause(700).
+          then(() => {
+            const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+            config1.useSpellChecker.should.equal(true);
+          });
+      });
+    });
   });
 
   describe('RemoveServerModal', () => {

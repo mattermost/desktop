@@ -39,7 +39,9 @@ const MainPage = React.createClass({
     onUnreadCountChange: React.PropTypes.func.isRequired,
     teams: React.PropTypes.array.isRequired,
     onTeamConfigChange: React.PropTypes.func.isRequired,
-    initialIndex: React.PropTypes.number.isRequired
+    initialIndex: React.PropTypes.number.isRequired,
+    useSpellChecker: React.PropTypes.bool.isRequired,
+    onSelectSpellCheckerLocale: React.PropTypes.func.isRequired
   },
 
   getInitialState() {
@@ -264,6 +266,8 @@ const MainPage = React.createClass({
           key={id}
           id={id}
           withTab={this.props.teams.length > 1}
+          useSpellChecker={this.props.useSpellChecker}
+          onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
           src={team.url}
           name={team.name}
           onTargetURLChange={self.handleTargetURLChange}

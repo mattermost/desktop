@@ -17,7 +17,8 @@
     "url": "git://github.com/mattermost/desktop.git"
   },
   "scripts": {
-    "postinstall": "install-app-deps",
+    "postinstall": "install-app-deps && npm run extract-dict",
+    "extract-dict": "cd src/node_modules/simple-spellchecker/dict && node ../../../../scripts/7zip-cli.js e -y '*.zip'",
     "build": "npm-run-all build:*",
     "build:main": "cross-env NODE_ENV=production webpack --bail --config webpack.config.main.js",
     "build:renderer": "cross-env NODE_ENV=production webpack --bail --config webpack.config.renderer.js",

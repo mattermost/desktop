@@ -2,7 +2,7 @@ const React = require('react');
 const {findDOMNode} = require('react-dom');
 const {ipcRenderer, remote, shell} = require('electron');
 const url = require('url');
-const electronContextMenu = require('electron-context-menu');
+const contextMenu = require('../js/contextMenu');
 
 const ErrorView = require('./ErrorView.jsx');
 
@@ -16,7 +16,9 @@ const MattermostView = React.createClass({
     onUnreadCountChange: React.PropTypes.func,
     src: React.PropTypes.string,
     active: React.PropTypes.bool,
-    withTab: React.PropTypes.bool
+    withTab: React.PropTypes.bool,
+    useSpellChecker: React.PropTypes.bool,
+    onSelectSpellCheckerLocale: React.PropTypes.func
   },
 
   getInitialState() {
@@ -79,8 +81,14 @@ const MattermostView = React.createClass({
       // webview.openDevTools();
 
       if (!this.state.isContextMenuAdded) {
-        electronContextMenu({
-          window: webview
+        contextMenu.setup(webview, {
+          useSpellChecker: this.props.useSpellChecker,
+          onSelectSpellCheckerLocale: (locale) => {
+            if (this.props.onSelectSpellCheckerLocale) {
+              this.props.onSelectSpellCheckerLocale(locale);
+            }
+            webview.send('set-spellcheker');
+          }
         });
         this.setState({isContextMenuAdded: true});
       }

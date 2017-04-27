@@ -9,12 +9,11 @@ const {remote} = require('electron');
 const React = require('react');
 const ReactDOM = require('react-dom');
 const SettingsPage = require('./components/SettingsPage.jsx');
+const contextMenu = require('./js/contextMenu');
 
 const configFile = remote.app.getPath('userData') + '/config.json';
 
-require('electron-context-menu')({
-  window: remote.getCurrentWindow()
-});
+contextMenu.setup(remote.getCurrentWindow());
 
 ReactDOM.render(
   <SettingsPage configFile={configFile}/>,
