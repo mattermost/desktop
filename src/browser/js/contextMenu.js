@@ -2,6 +2,12 @@ const {ipcRenderer} = require('electron');
 const electronContextMenu = require('electron-context-menu');
 
 function getSuggestionsMenus(win, suggestions) {
+  if (suggestions.length === 0) {
+    return [{
+      label: 'No Suggestions',
+      enabled: false
+    }];
+  }
   return suggestions.map((s) => ({
     label: s,
     click() {
