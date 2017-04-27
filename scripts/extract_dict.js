@@ -3,7 +3,10 @@
 const {spawn} = require('child_process');
 const {path7za} = require('7zip-bin');
 
-spawn(path7za, process.argv.slice(2), {
+const cwd = process.argv[2];
+
+spawn(path7za, ['e', '-y', '*.zip'], {
+  cwd,
   stdio: 'inherit'
 }).on('error', (err) => {
   console.error(err);
