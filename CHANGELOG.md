@@ -13,6 +13,7 @@ Release date: TBD
 ### Improvements
 - Added spell checker for English, French, German, Spanish, and Dutch.
 - Removed "Display secure content only" option it's no longer necessary.
+- Reset the window position if it's restored off-screen from minimized state.
 
 #### Windows
 - Removed Japanese fonts support it's no longer necessary.
