@@ -106,7 +106,7 @@ describe('browser/index.html', function desc() {
       }]
     }));
     return this.app.restart().then(() => {
-      return this.app.client.waitUntilWindowLoaded().pause(1500);
+      return this.app.client.waitUntilWindowLoaded().pause(2000);
     }).then(() => {
       return this.app.browserWindow.getTitle();
     }).then((title) => title.should.equal('Mattermost Desktop testing html'));
@@ -134,12 +134,14 @@ describe('browser/index.html', function desc() {
           document.title = 'Title 0';
         }).
         windowByIndex(0).
+        pause(500).
         browserWindow.getTitle().then((title) => title.should.equal('Title 0')).
         windowByIndex(1).
         execute(() => {
           document.title = 'Title 1';
         }).
         windowByIndex(0).
+        pause(500).
         browserWindow.getTitle().then((title) => title.should.equal('Title 0'));
     });
   });
@@ -170,8 +172,10 @@ describe('browser/index.html', function desc() {
           document.title = 'Title 1';
         }).
         windowByIndex(0).
+        pause(500).
         browserWindow.getTitle().then((title) => title.should.equal('Title 0')).
         click('#teamTabItem1').
+        pause(500).
         browserWindow.getTitle().then((title) => title.should.equal('Title 1'));
     });
   });
