@@ -14,35 +14,6 @@ function saveWindowState(file, window) {
   }
 }
 
-function getValidWindowPosition(state) {
-  // Screen cannot be required before app is ready
-  const {screen} = require('electron'); // eslint-disable-line global-require
-
-  // Check if the previous position is out of the viewable area
-  // (e.g. because the screen has been plugged off)
-  const displays = screen.getAllDisplays();
-  let minX = 0;
-  let maxX = 0;
-  let minY = 0;
-  let maxY = 0;
-  for (let i = 0; i < displays.length; i++) {
-    const display = displays[i];
-    maxX = Math.max(maxX, display.bounds.x + display.bounds.width);
-    maxY = Math.max(maxY, display.bounds.y + display.bounds.height);
-    minX = Math.min(minX, display.bounds.x);
-    minY = Math.min(minY, display.bounds.y);
-  }
-
-  if (state.x > maxX || state.y > maxY || state.x < minX || state.y < minY) {
-    Reflect.deleteProperty(state, 'x');
-    Reflect.deleteProperty(state, 'y');
-    Reflect.deleteProperty(state, 'width');
-    Reflect.deleteProperty(state, 'height');
-  }
-
-  return state;
-}
-
 function createMainWindow(config, options) {
   const defaultWindowWidth = 1000;
   const defaultWindowHeight = 700;
@@ -53,11 +24,12 @@ function createMainWindow(config, options) {
   const boundsInfoPath = path.join(app.getPath('userData'), 'bounds-info.json');
   var windowOptions;
   try {
-    windowOptions = getValidWindowPosition(JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8')));
+    windowOptions = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));
   } catch (e) {
     // Follow Electron's defaults, except for window dimensions which targets 1024x768 screen resolution.
     windowOptions = {width: defaultWindowWidth, height: defaultWindowHeight};
   }
+
   if (process.platform === 'linux') {
     windowOptions.icon = options.linuxAppIcon;
   }
