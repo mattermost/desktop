@@ -61,6 +61,7 @@ var certificateStore = require('./main/certificateStore').load(path.resolve(app.
 const {createMainWindow} = require('./main/mainWindow');
 const appMenu = require('./main/menus/app');
 const trayMenu = require('./main/menus/tray');
+const downloadURL = require('./main/downloadURL');
 const allowProtocolDialog = require('./main/allowProtocolDialog');
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
@@ -322,6 +323,14 @@ app.on('login', (event, webContents, request, authInfo, callback) => {
 });
 
 allowProtocolDialog.init(mainWindow);
+
+ipcMain.on('download-url', (event, URL) => {
+  downloadURL(mainWindow, URL, (err) => {
+    if (err) {
+      console.log(err);
+    }
+  });
+});
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
