@@ -112,7 +112,8 @@ describe('browser/index.html', function desc() {
     }).then((title) => title.should.equal('Mattermost Desktop testing html'));
   });
 
-  it('should update window title when the activated tab\'s title is updated', () => {
+  // Skip because it's very unstable in CI
+  it.skip('should update window title when the activated tab\'s title is updated', () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       version: 1,
       teams: [{
@@ -146,7 +147,8 @@ describe('browser/index.html', function desc() {
     });
   });
 
-  it('should update window title when a tab is selected', () => {
+  // Skip because it's very unstable in CI
+  it.skip('should update window title when a tab is selected', () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       version: 1,
       teams: [{
