@@ -327,6 +327,10 @@ allowProtocolDialog.init(mainWindow);
 ipcMain.on('download-url', (event, URL) => {
   downloadURL(mainWindow, URL, (err) => {
     if (err) {
+      dialog.showMessageBox(mainWindow, {
+        type: 'error',
+        message: err.toString()
+      });
       console.log(err);
     }
   });

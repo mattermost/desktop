@@ -35,7 +35,7 @@ function getAttachmentName(headers) {
 
 function saveResponseBody(response, filename, callback) {
   const output = fs.createWriteStream(filename);
-  output.on('close', callback).on('error', callback);
+  output.on('close', callback);
   switch (response.headers['content-encoding']) {
   case 'gzip':
     response.pipe(zlib.createGunzip()).pipe(output).on('error', callback);
