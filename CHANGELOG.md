@@ -24,6 +24,8 @@ Release date: TBD
 
 #### All Platforms
 - Fixed an issue where an unexpected row appeared after switching channels with `CTRL+K` shortcut. [#426](https://github.com/mattermost/desktop/issues/426)
+- Fixed an issue where an unexpected extra window opened when clicking the public link for an uploaded file.
+  [#390](https://github.com/mattermost/desktop/issues/390)
 
 #### Windows
 - Fixed an issue where the main window still has focus and exists

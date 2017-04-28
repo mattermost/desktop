@@ -66,9 +66,14 @@ const MattermostView = React.createClass({
         ipcRenderer.send('confirm-protocol', destURL.protocol, e.url);
         return;
       }
+
       if (currentURL.host === destURL.host) {
-        // New window should disable nodeIntergration.
-        window.open(e.url, 'Mattermost', 'nodeIntegration=no, show=yes');
+        if (destURL.path.match(/^\/api\/v[3-4]\/public\/files\//)) {
+          ipcRenderer.send('download-url', e.url);
+        } else {
+          // New window should disable nodeIntergration.
+          window.open(e.url, 'Mattermost', 'nodeIntegration=no, show=yes');
+        }
       } else {
         // if the link is external, use default browser.
         shell.openExternal(e.url);
