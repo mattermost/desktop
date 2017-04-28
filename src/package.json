@@ -2,7 +2,7 @@
   "name": "mattermost-desktop",
   "productName": "Mattermost",
   "desktopName": "Mattermost.desktop",
-  "version": "3.6.0",
+  "version": "3.7.0",
   "description": "Mattermost",
   "main": "main_bundle.js",
   "author": {
