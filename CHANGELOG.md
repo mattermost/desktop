@@ -41,6 +41,7 @@ Release date: May 9, 2017
 #### All Platforms
  - [If you click twice on the tab bar, and then attempt to use the "Zoom in/out" to change font size, the app window doesn't render properly](https://github.com/mattermost/desktop/issues/334)
  - [Holding down CTRL, SHIFT or ALT buttons and clicking a channel opens a new application window](https://github.com/mattermost/desktop/issues/406)
+ - [Unable to upload a SAML certificate file from the file upload dialog](https://github.com/mattermost/desktop/issues/497)
 
 #### Windows
  - [Windows 7] [Sometimes the app tries to render the page inside the app instead of in a new browser tab when clicking links](https://github.com/mattermost/desktop/issues/369)
