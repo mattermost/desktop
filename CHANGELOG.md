@@ -16,7 +16,7 @@ Release date: May 9, 2017
 #### Windows
  - [Windows 7/8] Added support for sound when a desktop notification is received. [#467](https://github.com/mattermost/desktop/issues/467)
  - Removed obsolete support for Japanese fonts.
- - Removed blurriness on the app window at 125% display resolution.
+ - The application window now respects 125% display resolution. [#489](https://github.com/mattermost/desktop/pull/489)
 
 ### Bug Fixes
 
