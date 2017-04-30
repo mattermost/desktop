@@ -10,7 +10,7 @@ Release date: May 9, 2017
  - Added an inline spell checker for English, French, German, Spanish, and Dutch. [#225](https://github.com/mattermost/desktop/issues/225)
  - Removed an obsolete "Display secure content only" option, following an [upgrade of the Electron app to Chrome v56](https://github.com/electron/electron/commit/2e0780308c7ef2258422efd34c968091d7cd5b65). [#469](https://github.com/mattermost/desktop/pull/469)
  - Reset app window position when restoring it off-screen from a minimized state. [#471](https://github.com/mattermost/desktop/issues/471)
- - Improved page loading and app view rendering when waking computer from sleep.
+ - Improved page loading and app view rendering. [#515](https://github.com/mattermost/desktop/pull/515)
 
 #### Windows
  - [Windows 7/8] Added support for sound when a desktop notification is received. [#467](https://github.com/mattermost/desktop/issues/467)
