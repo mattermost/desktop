@@ -542,6 +542,15 @@ app.on('ready', () => {
   ipcMain.on('get-spellchecker-locale', (event) => {
     event.returnValue = config.spellCheckerLocale;
   });
+  ipcMain.on('reply-on-spellchecker-is-ready', (event) => {
+    if (spellChecker.isReady()) {
+      event.sender.send('spellchecker-is-ready');
+      return;
+    }
+    spellChecker.once('ready', () => {
+      event.sender.send('spellchecker-is-ready');
+    });
+  });
   ipcMain.emit('update-dict');
 
   // Open the DevTools.
