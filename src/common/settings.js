@@ -24,7 +24,7 @@ function loadDefault(version, spellCheckerLocale) {
         flashWindow: 0 // 0 = flash never, 1 = only when idle (after 10 seconds), 2 = always
       },
       showUnreadBadge: true,
-      useSpellChecker: false,
+      useSpellChecker: true,
       spellCheckerLocale: spellCheckerLocale || 'en-US'
     };
   default:

@@ -96,7 +96,8 @@ try {
     settings.writeFileSync(configFile, config);
   }
 } catch (e) {
-  config = settings.loadDefault();
+  const spellCheckerLocale = SpellChecker.getSpellCheckerLocale(app.getLocale());
+  config = settings.loadDefault(null, spellCheckerLocale);
   console.log('Failed to read or upgrade config.json', e);
 }
 
