@@ -60,6 +60,10 @@ Many thanks to all our contributors. In alphabetical order:
 
  - [jasonblais](https://github.com/jasonblais), [jnugh](https://github.com/jnugh), [yuya-oc](https://github.com/yuya-oc)
 
+Thanks also to those who reported bugs that benefited the release, in alphabetical order:
+
+- esethna ([#524](https://github.com/mattermost/desktop/issues/524))
+
 ----
 
 ## Release v3.6.0
