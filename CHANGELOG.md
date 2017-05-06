@@ -62,7 +62,7 @@ Many thanks to all our contributors. In alphabetical order:
 
 Thanks also to those who reported bugs that benefited the release, in alphabetical order:
 
-- [esethna](https://github.com/esethna) ([#524](https://github.com/mattermost/desktop/issues/524))
+- [esethna](https://github.com/esethna) ([#524](https://github.com/mattermost/desktop/issues/524)), [hanzei](https://github.com/hanzei) ([#523](https://github.com/mattermost/desktop/issues/523))
 
 ----
 
