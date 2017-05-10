@@ -1,53 +1,68 @@
 # Mattermost Desktop Application Changelog
 
-## UNDER DEVELOPMENT
+## Release v3.7.0
 
-The "UNDER DEVELOPMENT" section of the Mattermost Desktop changelog appears
-in the product's `master` branch to note key changes committed to `master`
-and are on their way to the next stable release.
-When a stable release is pushed, "UNDER DEVELOPMENT" heading is removed
-from the final changelog of the release.
-
-Release date: TBD
+Release date: May 9, 2017
 
 ### Improvements
-- Added spell checker for English, French, German, Spanish, and Dutch.
-- Removed "Display secure content only" option it's no longer necessary.
-- Reset the window position if it's restored off-screen from minimized state.
+
+#### All Platforms
+ - Added an inline spell checker for English, French, German, Spanish, and Dutch. [#225](https://github.com/mattermost/desktop/issues/225)
+ - Removed an obsolete "Display secure content only" option, following an [upgrade of the Electron app to Chrome v56](https://github.com/electron/electron/commit/2e0780308c7ef2258422efd34c968091d7cd5b65). [#469](https://github.com/mattermost/desktop/pull/469)
+ - Reset app window position when restoring it off-screen from a minimized state. [#471](https://github.com/mattermost/desktop/issues/471)
+ - Improved page loading and app view rendering. [#515](https://github.com/mattermost/desktop/pull/515)
 
 #### Windows
-- Removed Japanese fonts support it's no longer necessary.
-- Added support for sound notifications on Windows 7 and 8.
-- The application now respects 125% of display scaling.
+ - [Windows 7/8] Added support for sound when a desktop notification is received. [#467](https://github.com/mattermost/desktop/issues/467)
+ - Removed obsolete support for Japanese fonts.
+ - The application window now respects 125% display resolution. [#489](https://github.com/mattermost/desktop/pull/489)
 
 ### Bug Fixes
 
 #### All Platforms
-- Fixed an issue where an unexpected row appeared after switching channels with `CTRL+K` shortcut. [#426](https://github.com/mattermost/desktop/issues/426)
-- Fixed an issue where an unexpected extra window opened when clicking the public link for an uploaded file.
-  [#390](https://github.com/mattermost/desktop/issues/390)
+ - An extra row is no longer added after switching channels with CTRL/CMD+K shortcut. [#426](https://github.com/mattermost/desktop/issues/426)
+ - Fixed an issue where an unexpected extra app window opened after clicking a public link of an uploaded file. [#390](https://github.com/mattermost/desktop/issues/390)
+ - Fixed JavaScript errors when refreshing the page. [#440](https://github.com/mattermost/desktop/issues/440), [#448](https://github.com/mattermost/desktop/issues/448)
+ - Fixed vertical alignment of the Add Server "+" button in the server tab bar. [#460](https://github.com/mattermost/desktop/issues/460)
 
 #### Windows
-- Fixed an issue where the main window still has focus and exists
-  in the classic Alt+Tab switcher after it's closed.
-  [#430](https://github.com/mattermost/desktop/issues/430)
-  [#431](https://github.com/mattermost/desktop/issues/431)
+ - Focus is now set to the next top-level window after closing the main app window. [#430](https://github.com/mattermost/desktop/issues/430)
+ - Fixed an issue where the app remained in the ["classic" ALT+TAB window switcher](http://www.askvg.com/how-to-get-windows-xp-styled-classic-alttab-screen-in-windows-vista-and-7/) after closing the main app window. [#431](https://github.com/mattermost/desktop/issues/431)
 
 #### Mac
-- Fixed an issue where the application was not avaliable on the Dock after a reboot.
-  [#411](https://github.com/mattermost/desktop/issues/411)
-- Fixed an issue where Quick Look doesn't close in file upload dialog.
-  [#498](https://github.com/mattermost/desktop/issues/498)
+ - Fixed an issue where the application was not available on the Dock after a computer reboot. [#411](https://github.com/mattermost/desktop/issues/411)
+ - Fixed an issue where Quick Look couldn't be closed after opening the file upload dialog. [#498](https://github.com/mattermost/desktop/issues/498)
 
-#### Linux
-- Fixed an issue where the setting was not saved when changing tray icon theme.
-  [#456](https://github.com/mattermost/desktop/issues/456)
+#### Linux (Beta)
+ - Fixed an issue where the setting was not saved after changing the tray icon theme. [#456](https://github.com/mattermost/desktop/issues/456)
 
-### New known issues
+### Known Issues
+
+#### All Platforms
+ - [If you click twice on the tab bar, and then attempt to use the "Zoom in/out" to change font size, the app window doesn't render properly](https://github.com/mattermost/desktop/issues/334)
+ - [Holding down CTRL, SHIFT or ALT buttons and clicking a channel opens a new application window](https://github.com/mattermost/desktop/issues/406)
+ - [Unable to upload a SAML certificate file from the file upload dialog](https://github.com/mattermost/desktop/issues/497)
+
+#### Windows
+ - [Windows 7] [Sometimes the app tries to render the page inside the app instead of in a new browser tab when clicking links](https://github.com/mattermost/desktop/issues/369)
 
 #### Mac
-- The application crashes when a file upload dialog is canceled without closing Quick Look.
+ - [After uploading a file with a keyboard shortcut, focus isn't set back to the message box](https://github.com/mattermost/desktop/issues/341)
+ - The application crashes when a file upload dialog is canceled without closing Quick Look.
 
+#### Linux (Beta)
+ - [Ubuntu - 64 bit] [Right clicking taskbar icon and choosing **Quit** only minimizes the app](https://github.com/mattermost/desktop/issues/90#issuecomment-233712183)
+ - [Ubuntu - 64 bit] [Direct message notification comes as a streak of line instead of a pop up](https://github.com/mattermost/platform/issues/3589)
+
+### Contributors
+
+Many thanks to all our contributors. In alphabetical order:
+
+ - [jasonblais](https://github.com/jasonblais), [jnugh](https://github.com/jnugh), [yuya-oc](https://github.com/yuya-oc)
+
+Thanks also to those who reported bugs that benefited the release, in alphabetical order:
+
+- [esethna](https://github.com/esethna) ([#524](https://github.com/mattermost/desktop/issues/524)), [hanzei](https://github.com/hanzei) ([#523](https://github.com/mattermost/desktop/issues/523))
 
 ----
 

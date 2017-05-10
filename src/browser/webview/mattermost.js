@@ -148,6 +148,17 @@ notification.override({
   }
 });
 
+function resetMisspelledState() {
+  ipc.once('spellchecker-is-ready', () => {
+    const element = document.activeElement;
+    if (element) {
+      element.blur();
+      element.focus();
+    }
+  });
+  ipc.send('reply-on-spellchecker-is-ready');
+}
+
 function setSpellChecker() {
   const spellCheckerLocale = ipc.sendSync('get-spellchecker-locale');
   webFrame.setSpellCheckProvider(spellCheckerLocale, false, {
@@ -156,6 +167,7 @@ function setSpellChecker() {
       return res === null ? true : res;
     }
   });
+  resetMisspelledState();
 }
 setSpellChecker();
 ipc.on('set-spellcheker', setSpellChecker);

@@ -208,11 +208,12 @@ describe('browser/settings.html', function desc() {
           loadSettingsPage().
           isExisting('#inputSpellChecker').then((existing) => existing.should.equal(true)).
           scroll('#inputSpellChecker').
+          isSelected('#inputSpellChecker').then((selected) => selected.should.equal(true)).
           click('#inputSpellChecker').
           pause(700).
           then(() => {
             const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-            config1.useSpellChecker.should.equal(true);
+            config1.useSpellChecker.should.equal(false);
           });
       });
     });

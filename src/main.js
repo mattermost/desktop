@@ -96,7 +96,8 @@ try {
     settings.writeFileSync(configFile, config);
   }
 } catch (e) {
-  config = settings.loadDefault();
+  const spellCheckerLocale = SpellChecker.getSpellCheckerLocale(app.getLocale());
+  config = settings.loadDefault(null, spellCheckerLocale);
   console.log('Failed to read or upgrade config.json', e);
 }
 
@@ -541,6 +542,15 @@ app.on('ready', () => {
   });
   ipcMain.on('get-spellchecker-locale', (event) => {
     event.returnValue = config.spellCheckerLocale;
+  });
+  ipcMain.on('reply-on-spellchecker-is-ready', (event) => {
+    if (spellChecker.isReady()) {
+      event.sender.send('spellchecker-is-ready');
+      return;
+    }
+    spellChecker.once('ready', () => {
+      event.sender.send('spellchecker-is-ready');
+    });
   });
   ipcMain.emit('update-dict');
 

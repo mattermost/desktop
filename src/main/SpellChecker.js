@@ -1,5 +1,6 @@
 'use strict';
 
+const EventEmitter = require('events');
 const simpleSpellChecker = require('simple-spellchecker');
 
 /// Following approach for contractions is derived from electron-spellchecker.
@@ -26,17 +27,20 @@ const contractionMap = contractions.reduce((acc, word) => {
 
 /// End: derived from electron-spellchecker.
 
-class SpellChecker {
+class SpellChecker extends EventEmitter {
   constructor(locale, dictDir, callback) {
+    super();
     this.dict = null;
     this.locale = locale;
     simpleSpellChecker.getDictionary(locale, dictDir, (err, dict) => {
       if (err) {
+        this.emit('error', err);
         if (callback) {
           callback(err);
         }
       } else {
         this.dict = dict;
+        this.emit('ready');
         if (callback) {
           callback(null, this);
         }
