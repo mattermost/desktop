@@ -1,4 +1,5 @@
 const React = require('react');
+const PropTypes = require('prop-types');
 
 class TeamListItem extends React.Component {
   constructor(props) {
@@ -49,11 +50,11 @@ class TeamListItem extends React.Component {
 }
 
 TeamListItem.propTypes = {
-  name: React.PropTypes.string,
-  onTeamEditing: React.PropTypes.func,
-  onTeamRemove: React.PropTypes.func,
-  onTeamClick: React.PropTypes.func,
-  url: React.PropTypes.string
+  name: PropTypes.string,
+  onTeamEditing: PropTypes.func,
+  onTeamRemove: PropTypes.func,
+  onTeamClick: PropTypes.func,
+  url: PropTypes.string
 };
 
 module.exports = TeamListItem;

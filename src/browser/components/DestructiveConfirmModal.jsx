@@ -1,4 +1,5 @@
 const React = require('react');
+const PropTypes = require('prop-types');
 const {Button, Modal} = require('react-bootstrap');
 
 function DestructiveConfirmationModal(props) {
@@ -31,12 +32,12 @@ function DestructiveConfirmationModal(props) {
 }
 
 DestructiveConfirmationModal.propTypes = {
-  title: React.PropTypes.string.isRequired,
-  body: React.PropTypes.node.isRequired,
-  acceptLabel: React.PropTypes.string.isRequired,
-  cancelLabel: React.PropTypes.string.isRequired,
-  onAccept: React.PropTypes.func.isRequired,
-  onCancel: React.PropTypes.func.isRequired
+  title: PropTypes.string.isRequired,
+  body: PropTypes.node.isRequired,
+  acceptLabel: PropTypes.string.isRequired,
+  cancelLabel: PropTypes.string.isRequired,
+  onAccept: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired
 };
 
 module.exports = DestructiveConfirmationModal;

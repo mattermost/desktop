@@ -1,4 +1,5 @@
 const React = require('react');
+const PropTypes = require('prop-types');
 const ReactDOM = require('react-dom');
 const {Button, Col, ControlLabel, Form, FormGroup, FormControl, Modal} = require('react-bootstrap');
 
@@ -86,12 +87,12 @@ class LoginModal extends React.Component {
 }
 
 LoginModal.propTypes = {
-  authInfo: React.PropTypes.object,
-  authServerURL: React.PropTypes.string,
-  onCancel: React.PropTypes.func,
-  onLogin: React.PropTypes.func,
-  request: React.PropTypes.object,
-  show: React.PropTypes.bool
+  authInfo: PropTypes.object,
+  authServerURL: PropTypes.string,
+  onCancel: PropTypes.func,
+  onLogin: PropTypes.func,
+  request: PropTypes.object,
+  show: PropTypes.bool
 };
 
 module.exports = LoginModal;

@@ -1,5 +1,7 @@
 const React = require('react');
-const ReactCSSTransitionGroup = require('react-addons-css-transition-group');
+const PropTypes = require('prop-types');
+const createReactClass = require('create-react-class');
+const ReactCSSTransitionGroup = require('react-transition-group/CSSTransitionGroup');
 const {Grid, Row} = require('react-bootstrap');
 
 const {ipcRenderer, remote} = require('electron');
@@ -34,14 +36,14 @@ const styles = {
   }
 };
 
-const MainPage = React.createClass({
+const MainPage = createReactClass({
   propTypes: {
-    onUnreadCountChange: React.PropTypes.func.isRequired,
-    teams: React.PropTypes.array.isRequired,
-    onTeamConfigChange: React.PropTypes.func.isRequired,
-    initialIndex: React.PropTypes.number.isRequired,
-    useSpellChecker: React.PropTypes.bool.isRequired,
-    onSelectSpellCheckerLocale: React.PropTypes.func.isRequired
+    onUnreadCountChange: PropTypes.func.isRequired,
+    teams: PropTypes.array.isRequired,
+    onTeamConfigChange: PropTypes.func.isRequired,
+    initialIndex: PropTypes.number.isRequired,
+    useSpellChecker: PropTypes.bool.isRequired,
+    onSelectSpellCheckerLocale: PropTypes.func.isRequired
   },
 
   getInitialState() {

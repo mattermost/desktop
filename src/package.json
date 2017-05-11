@@ -14,14 +14,16 @@
   "dependencies": {
     "auto-launch": "^5.0.1",
     "bootstrap": "^3.3.7",
+    "create-react-class": "^15.5.3",
     "electron-context-menu": "^0.9.0",
     "electron-devtools-installer": "^2.2.0",
     "electron-is-dev": "^0.1.2",
     "electron-squirrel-startup": "^1.0.0",
+    "prop-types": "^15.5.9",
     "react": "^15.5.4",
-    "react-addons-css-transition-group": "^15.5.2",
     "react-bootstrap": "~0.30.10",
     "react-dom": "^15.5.4",
+    "react-transition-group": "^1.1.1",
     "simple-spellchecker": "git://github.com/jfmdev/simple-spellchecker.git#723062952a0290c6285aeaf02f14d9c74c41cadb",
     "underscore": "^1.8.3",
     "yargs": "^3.32.0"

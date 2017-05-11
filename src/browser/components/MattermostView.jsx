@@ -1,4 +1,6 @@
 const React = require('react');
+const PropTypes = require('prop-types');
+const createReactClass = require('create-react-class');
 const {findDOMNode} = require('react-dom');
 const {ipcRenderer, remote, shell} = require('electron');
 const url = require('url');
@@ -8,17 +10,17 @@ const ErrorView = require('./ErrorView.jsx');
 
 const preloadJS = `file://${remote.app.getAppPath()}/browser/webview/mattermost_bundle.js`;
 
-const MattermostView = React.createClass({
+const MattermostView = createReactClass({
   propTypes: {
-    name: React.PropTypes.string,
-    id: React.PropTypes.string,
-    onTargetURLChange: React.PropTypes.func,
-    onUnreadCountChange: React.PropTypes.func,
-    src: React.PropTypes.string,
-    active: React.PropTypes.bool,
-    withTab: React.PropTypes.bool,
-    useSpellChecker: React.PropTypes.bool,
-    onSelectSpellCheckerLocale: React.PropTypes.func
+    name: PropTypes.string,
+    id: PropTypes.string,
+    onTargetURLChange: PropTypes.func,
+    onUnreadCountChange: PropTypes.func,
+    src: PropTypes.string,
+    active: PropTypes.bool,
+    withTab: PropTypes.bool,
+    useSpellChecker: PropTypes.bool,
+    onSelectSpellCheckerLocale: PropTypes.func
   },
 
   getInitialState() {

@@ -1,19 +1,21 @@
 const React = require('react');
+const PropTypes = require('prop-types');
+const createReactClass = require('create-react-class');
 const {ListGroup} = require('react-bootstrap');
 const TeamListItem = require('./TeamListItem.jsx');
 const NewTeamModal = require('./NewTeamModal.jsx');
 const RemoveServerModal = require('./RemoveServerModal.jsx');
 
-const TeamList = React.createClass({
+const TeamList = createReactClass({
   propTypes: {
-    onTeamsChange: React.PropTypes.func,
-    showAddTeamForm: React.PropTypes.bool,
-    teams: React.PropTypes.array,
-    addServer: React.PropTypes.func,
-    updateTeam: React.PropTypes.func,
-    toggleAddTeamForm: React.PropTypes.func,
-    setAddTeamFormVisibility: React.PropTypes.func,
-    onTeamClick: React.PropTypes.func
+    onTeamsChange: PropTypes.func,
+    showAddTeamForm: PropTypes.bool,
+    teams: PropTypes.array,
+    addServer: PropTypes.func,
+    updateTeam: PropTypes.func,
+    toggleAddTeamForm: PropTypes.func,
+    setAddTeamFormVisibility: PropTypes.func,
+    onTeamClick: PropTypes.func
   },
 
   getInitialState() {
