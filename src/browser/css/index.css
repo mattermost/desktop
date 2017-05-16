@@ -1,5 +1,4 @@
-@import url("components/MattermostView.css");
-@import url("components/ErrorView.css");
+@import url("components/index.css");
 
 .hovering-enter {
   opacity: 0.01;
@@ -17,40 +16,6 @@
 .hovering-leave.hovering-leave-active {
   opacity: 0.01;
   transition: opacity 500ms ease-in-out;
-}
-
-.btn-tabButton {
-  background-color: #fff;
-  border-color: #ccc;
-  color: #333;
-  margin-top: 3px;
-}
-
-.btn-tabButton:hover {
-  color: #333;
-  background-color: #e6e6e6;
-  border-color: #adadad;
-}
-
-.nav-tabs>li>a {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 2px 2px 0 0;
-  border: 1px solid #ddd;
-  color: #888;
-  height: 31px;
-  line-height: 29px;
-  margin-right: -1px;
-  margin-top: 0px;
-  padding: 0 15px;
-}
-
-.nav-tabs>li.buttonTab>a {
-  border: none;
-  background: transparent;
-  margin: 0px;
-  margin-left: 1px; /*Has no border and would be placed above the last item's border due to it's margin-right: -1px */
-  padding: 0;
-  margin-bottom: 1px;
 }
 
 .has-error .control-label,

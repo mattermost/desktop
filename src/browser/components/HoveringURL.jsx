@@ -3,14 +3,13 @@ const PropTypes = require('prop-types');
 
 function HoveringURL(props) {
   return (
-    <div style={props.style}>
+    <div className='HoveringURL HoveringURL-left'>
       {props.targetURL}
     </div>
   );
 }
 
 HoveringURL.propTypes = {
-  style: PropTypes.object,
   targetURL: PropTypes.string
 };
 

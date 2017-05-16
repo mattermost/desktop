@@ -1,0 +1,9 @@
+/*.mainPage,.mainPage > .container-fluid, .mainPage-viewsRow {
+  height: 100%;
+}*/
+
+.MainPage .HoveringURL {
+  max-width: 95%;
+  position: absolute;
+  bottom: 0px;
+}

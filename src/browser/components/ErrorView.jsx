@@ -4,48 +4,21 @@ const React = require('react');
 const PropTypes = require('prop-types');
 const {Grid, Row, Col} = require('react-bootstrap');
 
-const errorPage = {
-  tableStyle: {
-    display: 'table',
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
-    top: '0',
-    left: '0'
-  },
-
-  cellStyle: {
-    display: 'table-cell',
-    verticalAlign: 'top',
-    paddingTop: '2em'
-  },
-
-  bullets: {
-    paddingLeft: '15px',
-    lineHeight: '1.7'
-  },
-
-  techInfo: {
-    fontSize: '12px',
-    color: '#aaa'
-  }
-};
-
 function ErrorView(props) {
-  const classNames = ['container', 'errorView'];
+  const classNames = ['container', 'ErrorView'];
   if (!props.active) {
-    classNames.push('errorView-hidden');
+    classNames.push('ErrorView-hidden');
   }
   if (props.withTab) {
-    classNames.push('errorView-with-tab');
+    classNames.push('ErrorView-with-tab');
   }
   return (
     <Grid
       id={props.id}
       bsClass={classNames.join(' ')}
     >
-      <div style={errorPage.tableStyle}>
-        <div style={errorPage.cellStyle}>
+      <div className='ErrorView-table'>
+        <div className='ErrorView-cell'>
           <Row>
             <Col
               xs={0}
@@ -63,7 +36,7 @@ function ErrorView(props) {
               <hr/>
               <p>{'We\'re having trouble connecting to Mattermost. If refreshing this page (Ctrl+R or Command+R) does not work please verify that:'}</p>
               <br/>
-              <ul style={errorPage.bullets}>
+              <ul className='ErrorView-bullets' >
                 <li>{'Your computer is connected to the internet.'}</li>
                 <li>{'The Mattermost URL '}
                   <a href={props.errorInfo.validatedURL}>
@@ -75,7 +48,7 @@ function ErrorView(props) {
                   </a>{' from a browser window.'}</li>
               </ul>
               <br/>
-              <div style={errorPage.techInfo}>
+              <div className='ErrorView-techInfo'>
                 {props.errorInfo.errorDescription}{' ('}
                 {props.errorInfo.errorCode }{')'}</div>
             </Col>

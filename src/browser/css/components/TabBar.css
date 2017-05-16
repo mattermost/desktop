@@ -1,0 +1,61 @@
+.TabBar>li>a {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 2px 2px 0 0;
+  border: 1px solid #ddd;
+  color: #888;
+  height: 31px;
+  line-height: 29px;
+  margin-right: -1px;
+  margin-top: 0px;
+  padding: 0 15px;
+}
+
+.TabBar .AddServerButton>a {
+  border: none;
+  background: transparent;
+  margin: 0px;
+  margin-left: 1px; /*Has no border and would be placed above the last item's border due to it's margin-right: -1px */
+  padding: 0;
+  margin-bottom: 1px;
+}
+
+.TabBar .TabBar-badge {
+  background: #FF1744;
+  float: right;
+  color: white;
+  min-width: 19px;
+  font-size: 12px;
+  text-align: center;
+  line-height: 20px;
+  height: 19px;
+  margin-left: 5px;
+  margin-top: 5px;
+  border-radius: 50%;
+};
+
+
+.TabBar .AddServerButton-button {
+  background-color: #fff;
+  border-color: #ccc;
+  color: #333;
+  margin-top: 3px;
+}
+
+.TabBar .AddServerButton-button {
+  border: none;
+  font-size: 20px;
+  height: 31px;
+  padding: 2px 0 0 0;
+  width: 40px;
+  color: #999;
+  font-weight: bold;
+  margin: 0;
+  border-radius: 2px 2px 0 0;
+  outline: none;
+}
+
+.TabBar .AddServerButton-button:hover {
+  color: #333;
+  background-color: #e6e6e6;
+  border-color: #adadad;
+}
