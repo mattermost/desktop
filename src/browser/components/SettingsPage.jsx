@@ -1,4 +1,6 @@
 const React = require('react');
+const PropTypes = require('prop-types');
+const createReactClass = require('create-react-class');
 const ReactDOM = require('react-dom');
 const {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} = require('react-bootstrap');
 
@@ -22,9 +24,9 @@ function backToIndex(index) {
   remote.getCurrentWindow().loadURL(`${indexURL}?index=${target}`);
 }
 
-const SettingsPage = React.createClass({
+const SettingsPage = createReactClass({
   propTypes: {
-    configFile: React.PropTypes.string
+    configFile: PropTypes.string
   },
 
   getInitialState() {

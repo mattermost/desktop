@@ -1,4 +1,5 @@
 const React = require('react');
+const PropTypes = require('prop-types');
 
 function HoveringURL(props) {
   return (
@@ -9,8 +10,8 @@ function HoveringURL(props) {
 }
 
 HoveringURL.propTypes = {
-  style: React.PropTypes.object,
-  targetURL: React.PropTypes.string
+  style: PropTypes.object,
+  targetURL: PropTypes.string
 };
 
 module.exports = HoveringURL;

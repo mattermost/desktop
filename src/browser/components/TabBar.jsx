@@ -1,4 +1,5 @@
 const React = require('react');
+const PropTypes = require('prop-types');
 const {Nav, NavItem, Button} = require('react-bootstrap');
 
 class TabBar extends React.Component {
@@ -116,11 +117,11 @@ class TabBar extends React.Component {
 }
 
 TabBar.propTypes = {
-  activeKey: React.PropTypes.number,
-  id: React.PropTypes.string,
-  onSelect: React.PropTypes.func,
-  teams: React.PropTypes.array,
-  onAddServer: React.PropTypes.func
+  activeKey: PropTypes.number,
+  id: PropTypes.string,
+  onSelect: PropTypes.func,
+  teams: PropTypes.array,
+  onAddServer: PropTypes.func
 };
 
 module.exports = TabBar;

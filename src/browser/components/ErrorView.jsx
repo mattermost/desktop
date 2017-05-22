@@ -1,6 +1,7 @@
 // ErrorCode: https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
 
 const React = require('react');
+const PropTypes = require('prop-types');
 const {Grid, Row, Col} = require('react-bootstrap');
 
 const errorPage = {
@@ -92,10 +93,10 @@ function ErrorView(props) {
 }
 
 ErrorView.propTypes = {
-  errorInfo: React.PropTypes.object,
-  id: React.PropTypes.number,
-  active: React.PropTypes.bool,
-  withTab: React.PropTypes.bool
+  errorInfo: PropTypes.object,
+  id: PropTypes.number,
+  active: PropTypes.bool,
+  withTab: PropTypes.bool
 };
 
 module.exports = ErrorView;

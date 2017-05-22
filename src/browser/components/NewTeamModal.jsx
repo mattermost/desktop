@@ -1,4 +1,5 @@
 const React = require('react');
+const PropTypes = require('prop-types');
 const {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} = require('react-bootstrap');
 
 class NewTeamModal extends React.Component {
@@ -199,11 +200,11 @@ class NewTeamModal extends React.Component {
 }
 
 NewTeamModal.propTypes = {
-  onClose: React.PropTypes.func,
-  onSave: React.PropTypes.func,
-  team: React.PropTypes.object,
-  editMode: React.PropTypes.bool,
-  show: React.PropTypes.bool
+  onClose: PropTypes.func,
+  onSave: PropTypes.func,
+  team: PropTypes.object,
+  editMode: PropTypes.bool,
+  show: PropTypes.bool
 };
 
 module.exports = NewTeamModal;

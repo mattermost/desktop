@@ -1,4 +1,5 @@
 const React = require('react');
+const PropTypes = require('prop-types');
 const {Alert} = require('react-bootstrap');
 
 const baseClassName = 'AutoSaveIndicator';
@@ -34,8 +35,8 @@ function AutoSaveIndicator(props) {
 }
 
 AutoSaveIndicator.propTypes = {
-  savingState: React.PropTypes.string.isRequired,
-  errorMessage: React.PropTypes.string
+  savingState: PropTypes.string.isRequired,
+  errorMessage: PropTypes.string
 };
 
 module.exports = AutoSaveIndicator;
