@@ -26,6 +26,12 @@ module.exports = merge(base, {
         }
       }
     }, {
+      test: /\.css$/,
+      use: [
+        {loader: 'style-loader'},
+        {loader: 'css-loader'}
+      ]
+    }, {
       test: /\.mp3$/,
       use: {
         loader: 'url-loader'

@@ -15,17 +15,10 @@ class TeamListItem extends React.Component {
     this.props.onTeamEditing();
   }
   render() {
-    var style = {
-      left: {
-        display: 'inline-block',
-        width: 'calc(100% - 100px)',
-        cursor: 'pointer'
-      }
-    };
     return (
-      <div className='teamListItem list-group-item'>
+      <div className='TeamListItem list-group-item'>
         <div
-          style={style.left}
+          className='TeamListItem-left'
           onClick={this.props.onTeamClick}
         >
           <h4 className='list-group-item-heading'>{ this.props.name }</h4>

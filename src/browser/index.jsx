@@ -1,5 +1,7 @@
 'use strict';
 
+require('./css/index.css');
+
 window.eval = global.eval = () => {
   throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
 };

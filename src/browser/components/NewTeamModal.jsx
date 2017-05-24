@@ -105,11 +105,6 @@ class NewTeamModal extends React.Component {
   }
 
   render() {
-    const noBottomSpaceing = {
-      paddingBottom: 0,
-      marginBottom: 0
-    };
-
     if (this.wasShown !== this.props.show && this.props.show) {
       this.initializeOnShow();
     }
@@ -117,6 +112,8 @@ class NewTeamModal extends React.Component {
 
     return (
       <Modal
+        bsClass='modal'
+        className='NewTeamModal'
         show={this.props.show}
         id='newServerModal'
         onHide={this.props.onClose}
@@ -156,8 +153,8 @@ class NewTeamModal extends React.Component {
               <HelpBlock>{'The name of the server displayed on your desktop app tab bar.'}</HelpBlock>
             </FormGroup>
             <FormGroup
+              className='NewTeamModal-noBottomSpace'
               validationState={this.getTeamUrlValidationState()}
-              style={noBottomSpaceing}
             >
               <ControlLabel>{'Server URL'}</ControlLabel>
               <FormControl
@@ -168,9 +165,7 @@ class NewTeamModal extends React.Component {
                 onChange={this.handleTeamUrlChange.bind(this)}
               />
               <FormControl.Feedback/>
-              <HelpBlock
-                style={noBottomSpaceing}
-              >{'The URL of your Mattermost server. Must start with http:// or https://.'}</HelpBlock>
+              <HelpBlock className='NewTeamModal-noBottomSpace'>{'The URL of your Mattermost server. Must start with http:// or https://.'}</HelpBlock>
             </FormGroup>
           </form>
         </Modal.Body>
