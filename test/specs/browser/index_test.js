@@ -185,7 +185,7 @@ describe('browser/index.html', function desc() {
   it('should open the new server prompt after clicking the add button', () => {
     // See settings_test for specs that cover the actual prompt
     return this.app.client.waitUntilWindowLoaded().
-      click('#tabBarAddNewTeam').
+      click('#addServerButton').
       pause(500).
       isExisting('#newServerModal').then((existing) => existing.should.be.true);
   });
