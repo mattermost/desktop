@@ -111,9 +111,6 @@ const MainPage = createReactClass({
     }
   },
   handleSelect(key) {
-    if (key === 'addServerButton') {
-      return;
-    }
     const newKey = (this.props.teams.length + key) % this.props.teams.length;
     this.setState({
       key: newKey

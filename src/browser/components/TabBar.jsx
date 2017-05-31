@@ -1,29 +1,6 @@
 const React = require('react');
 const PropTypes = require('prop-types');
-const {Nav, NavItem, Button} = require('react-bootstrap');
-
-function AddServerButton(props) {
-  return (
-    <NavItem
-      className='AddServerButton'
-      key='addServerButton'
-      eventKey='addServerButton'
-    >
-      <Button
-        id='tabBarAddNewTeam'
-        onClick={props.onClick}
-        className='AddServerButton-button'
-        title='Add new server'
-      >
-        {'+'}
-      </Button>
-    </NavItem>
-  );
-}
-
-AddServerButton.propTypes = {
-  onClick: PropTypes.func
-};
+const {Glyphicon, Nav, NavItem} = require('react-bootstrap');
 
 function TabBar(props) {
   const tabs = props.teams.map((team, index) => {
@@ -76,16 +53,32 @@ function TabBar(props) {
         { badgeDiv }
       </NavItem>);
   });
+  tabs.push(
+    <NavItem
+      className='TabBar-addServerButton'
+      key='addServerButton'
+      id='addServerButton'
+      eventKey='addServerButton'
+      title='Add new server'
+    >
+      <Glyphicon glyph='plus'/>
+    </NavItem>
+  );
   return (
     <Nav
       className='TabBar'
       id={props.id}
       bsStyle='tabs'
       activeKey={props.activeKey}
-      onSelect={props.onSelect}
+      onSelect={(eventKey) => {
+        if (eventKey === 'addServerButton') {
+          props.onAddServer();
+        } else {
+          props.onSelect(eventKey);
+        }
+      }}
     >
       { tabs }
-      <AddServerButton onClick={props.onAddServer}/>
     </Nav>
   );
 }
