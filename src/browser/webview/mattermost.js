@@ -3,7 +3,9 @@
 const electron = require('electron');
 const ipc = electron.ipcRenderer;
 const webFrame = electron.webFrame;
-const notification = require('../js/notification');
+const EnhancedNotification = require('../js/notification');
+
+Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
 Reflect.deleteProperty(global.Buffer); // http://electron.atom.io/docs/tutorial/security/#buffer-global
 
@@ -116,37 +118,6 @@ setInterval(function getUnreadCount() {
 function isElementVisible(elem) {
   return elem.offsetHeight !== 0;
 }
-
-notification.override({
-
-  // Send a notification event to the main process.
-  notification(title, options) {
-    ipc.send('notified', {
-      title,
-      options
-    });
-  },
-
-  // Show window even if it is hidden/minimized when notification is clicked.
-  onclick() {
-    const currentWindow = electron.remote.getCurrentWindow();
-    if (process.platform === 'win32') {
-      // show() breaks Aero Snap state.
-      if (currentWindow.isVisible()) {
-        currentWindow.focus();
-      } else if (currentWindow.isMinimized()) {
-        currentWindow.restore();
-      } else {
-        currentWindow.show();
-      }
-    } else if (currentWindow.isMinimized()) {
-      currentWindow.restore();
-    } else {
-      currentWindow.show();
-    }
-    ipc.sendToHost('onNotificationClick');
-  }
-});
 
 function resetMisspelledState() {
   ipc.once('spellchecker-is-ready', () => {
