@@ -56,7 +56,6 @@ const os = require('os');
 const path = require('path');
 
 var settings = require('./common/settings');
-const osVersion = require('./common/osVersion');
 var certificateStore = require('./main/certificateStore').load(path.resolve(app.getPath('userData'), 'certificate.json'));
 const {createMainWindow} = require('./main/mainWindow');
 const appMenu = require('./main/menus/app');
@@ -427,19 +426,6 @@ app.on('ready', () => {
       }
 
       mainWindow.focus();
-    });
-    ipcMain.on('notified', (event, arg) => {
-      if (process.platform === 'win32') {
-        // On Windows 8.1 and Windows 8, a shortcut with a Application User Model ID must be installed to the Start screen.
-        // In current version, use tray balloon for notification
-        if (osVersion.isLowerThanOrEqualWindows8_1()) {
-          trayIcon.displayBalloon({
-            icon: path.resolve(assetsDir, 'appicon.png'),
-            title: arg.title,
-            content: arg.options.body
-          });
-        }
-      }
     });
 
     // Set overlay icon from dataURL
