@@ -12,6 +12,12 @@ Release date: TBD
 
 ### Improvements
 
+#### Windows
+ - [Windows 7/8] Added support to open the message when clicking desktop notification.
+ [#67](https://github.com/mattermost/desktop/issues/67)
+ - Added support for different DPI across monitors.
+ [#357](https://github.com/mattermost/desktop/issues/357)
+
 ### Bug Fixes
 
 ---
