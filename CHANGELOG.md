@@ -20,6 +20,10 @@ Release date: TBD
 
 ### Bug Fixes
 
+#### All Platforms
+ - Fixed mis-aligned `+` button of tab bar.
+ [#541](https://github.com/mattermost/desktop/issues/541)
+
 ---
 
 ## Release v3.7.0
