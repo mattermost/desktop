@@ -77,6 +77,7 @@ function createMainWindow(config, options) {
   // Ideally, app should detect that OS is shutting down.
   mainWindow.on('blur', () => {
     saveWindowState(boundsInfoPath, mainWindow);
+    mainWindow.blurWebView();
   });
 
   mainWindow.on('close', (event) => {

@@ -24,6 +24,10 @@ Release date: TBD
  - Fixed mis-aligned `+` button of tab bar.
  [#541](https://github.com/mattermost/desktop/issues/541)
 
+#### Windows
+ - Fixed desktop notifications not working when the window has been minimized from inactive state.
+ [#522](https://github.com/mattermost/desktop/issues/522)
+
 ---
 
 ## Release v3.7.0
