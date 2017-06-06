@@ -28,6 +28,10 @@ Release date: TBD
  - Fixed desktop notifications not working when the window has been minimized from inactive state.
  [#522](https://github.com/mattermost/desktop/issues/522)
 
+#### Mac
+ - Fixed an issue where the text box didn't keep focus after uploading a file.
+ [#341](https://github.com/mattermost/desktop/issues/341)
+
 ---
 
 ## Release v3.7.0
