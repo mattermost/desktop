@@ -4,10 +4,7 @@
   "version": "3.7.0",
   "description": "Mattermost",
   "main": "main.js",
-  "author": {
-    "name": "Yuya Ochiai",
-    "email": "yuya0321@gmail.com"
-  },
+  "author": "Mattermost, Inc. <feedback@mattermost.com>",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=4.2.0"

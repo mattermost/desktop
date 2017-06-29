@@ -25,6 +25,8 @@ Release date: TBD
  [#541](https://github.com/mattermost/desktop/issues/541)
  - Fixed the close button of the Settings page not working on first installation.
  [#552](https://github.com/mattermost/desktop/issues/552)
+ - Fixed the app publisher was not changed to Mattermost, Inc.
+ [#542](https://github.com/mattermost/desktop/issues/542)
 
 #### Windows
  - Fixed desktop notifications not working when the window has been minimized from inactive state.
