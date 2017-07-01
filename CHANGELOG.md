@@ -23,6 +23,8 @@ Release date: TBD
 #### All Platforms
  - Fixed mis-aligned `+` button of tab bar.
  [#541](https://github.com/mattermost/desktop/issues/541)
+ - Fixed the close button of the Settings page not working on first installation.
+ [#552](https://github.com/mattermost/desktop/issues/552)
 
 #### Windows
  - Fixed desktop notifications not working when the window has been minimized from inactive state.

@@ -39,7 +39,6 @@ const SettingsPage = createReactClass({
 
     initialState.showAddTeamForm = false;
     initialState.trayWasVisible = remote.getCurrentWindow().trayWasVisible;
-    initialState.disableClose = initialState.teams.length === 0;
     if (initialState.teams.length === 0) {
       initialState.showAddTeamForm = true;
     }
@@ -454,7 +453,7 @@ const SettingsPage = createReactClass({
               bsStyle='link'
               style={settingsPage.close}
               onClick={this.handleCancel}
-              disabled={this.state.disableClose}
+              disabled={this.state.teams.length === 0}
             >
               <span>{'×'}</span>
             </Button>
