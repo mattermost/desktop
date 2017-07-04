@@ -31,13 +31,41 @@ describe('browser/settings.html', function desc() {
     return true;
   });
 
-  it('should show index.html when Close button is clicked', () => {
-    env.addClientCommands(this.app.client);
-    return this.app.client.
-      loadSettingsPage().
-      click('#btnClose').
-      pause(1000).
-      getUrl().then((url) => url.should.match(/\/index.html(\?.+)?$/));
+  describe('Close button', () => {
+    it('should show index.html when it\'s clicked', () => {
+      env.addClientCommands(this.app.client);
+      return this.app.client.
+        loadSettingsPage().
+        click('#btnClose').
+        pause(1000).
+        getUrl().then((url) => url.should.match(/\/index.html(\?.+)?$/));
+    });
+
+    it('should be disabled when the number of servers is zero', () => {
+      return this.app.stop().then(() => {
+        env.cleanTestConfig();
+        return this.app.start();
+      }).then(() => {
+        return this.app.client.waitUntilWindowLoaded().
+          waitForVisible('#newServerModal').
+          click('#cancelNewServerModal').
+          isEnabled('#btnClose').then((enabled) => {
+            enabled.should.equal(false);
+          }).
+          waitForVisible('#newServerModal', true).
+          pause(250).
+          click('#addNewServer').
+          waitForVisible('#newServerModal').
+          setValue('#teamNameInput', 'TestTeam').
+          setValue('#teamUrlInput', 'http://example.org').
+          click('#saveNewServerModal').
+          waitForVisible('#newServerModal', true).
+          waitForVisible('.AutoSaveIndicator', true).
+          isEnabled('#btnClose').then((enabled) => {
+            enabled.should.equal(true);
+          });
+      });
+    });
   });
 
   it('should show NewServerModal after all servers are removed', () => {
