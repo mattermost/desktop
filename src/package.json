@@ -5,10 +5,7 @@
   "version": "3.7.0",
   "description": "Mattermost",
   "main": "main_bundle.js",
-  "author": {
-    "name": "Yuya Ochiai",
-    "email": "yuya0321@gmail.com"
-  },
+  "author": "Mattermost, Inc. <feedback@mattermost.com>",
   "homepage": "https://about.mattermost.com",
   "license": "Apache-2.0",
   "dependencies": {
