@@ -12,8 +12,7 @@ const {
 } = require('electron');
 const isDev = require('electron-is-dev');
 const installExtension = require('electron-devtools-installer');
-
-const AutoLaunch = require('auto-launch');
+const squirrelStartup = require('./main/squirrelStartup');
 
 process.on('uncaughtException', (error) => {
   console.error(error);
@@ -21,34 +20,8 @@ process.on('uncaughtException', (error) => {
 
 global.willAppQuit = false;
 
-if (process.platform === 'win32') {
-  var cmd = process.argv[1];
-  var appLauncher = new AutoLaunch({
-    name: 'Mattermost',
-    isHidden: true
-  });
-  if (cmd === '--squirrel-uninstall') {
-    // If we're uninstalling, make sure we also delete our auto launch registry key
-    appLauncher.isEnabled().then((enabled) => {
-      if (enabled) {
-        appLauncher.disable();
-      }
-    });
-  } else if (cmd === '--squirrel-install' || cmd === '--squirrel-updated') {
-    // If we're updating and already have an registry entry for auto launch, make sure to update the path
-    appLauncher.isEnabled().then((enabled) => {
-      if (enabled) {
-        return appLauncher.disable().then(() => {
-          return appLauncher.enable();
-        });
-      }
-      return true;
-    });
-  }
-}
-
 app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
-if (require('electron-squirrel-startup')) {
+if (squirrelStartup()) {
   global.willAppQuit = true;
 }
 

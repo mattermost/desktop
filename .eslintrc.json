@@ -1,7 +1,9 @@
 {
     "extends": "./.eslintrc-platform.json",
+    "parserOptions": {
+        "ecmaVersion": 2017
+    },
     "rules": {
-        "global-require": 1,
         "indent": [2, 2, {"SwitchCase": 0}],
         "no-console": 0,
         "no-eval": 1,
