@@ -1,4 +1,8 @@
 {
+  "publish": [{
+    "provider": "generic",
+    "url": "http://localhost:8081/"
+  }],
   "appId": "com.mattermost.desktop",
   "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
   "directories": {
@@ -71,7 +75,7 @@
   },
   "win": {
     "target": [
-      "squirrel",
+      "nsis",
       "zip"
     ],
     "extraFiles": [
