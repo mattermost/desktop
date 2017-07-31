@@ -19,12 +19,35 @@ const {
 } = electron;
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
+import {autoUpdater} from 'electron-updater';
 import {parse as parseArgv} from 'yargs';
 
 import {protocols} from '../electron-builder.json';
 
 import squirrelStartup from './main/squirrelStartup';
 import CriticalErrorHandler from './main/CriticalErrorHandler';
+
+autoUpdater.on('error', (err) => {
+  console.log('autoUpdater.on error');
+  console.error(err);
+}).on('checking-for-update', () => {
+  console.log('checking-for-update');
+}).on('update-available', (info) => {
+  console.log('update-available');
+  console.log(info);
+}).on('update-not-available', (info) => {
+  console.log('update-not-available');
+  console.log(info);
+}).on('download-progress', (progress) => {
+  console.log('download-progress');
+  console.log(progress);
+}).on('update-downloaded', (info) => {
+  console.log('update-downloaded');
+  console.log(info);
+  setTimeout(() => {
+    autoUpdater.quitAndInstall();
+  }, 5000);
+});
 
 const criticalErrorHandler = new CriticalErrorHandler();
 
@@ -408,6 +431,8 @@ app.on('ready', () => {
     clearAppCache();
   }
   appState.lastAppVersion = app.getVersion();
+
+  autoUpdater.checkForUpdates();
 
   if (global.isDev) {
     installExtension(REACT_DEVELOPER_TOOLS).
