@@ -42,6 +42,11 @@ function createMainWindow(config, options) {
   });
 
   const mainWindow = new BrowserWindow(windowOptions);
+
+  const indexURL = global.isDev ? 'http://localhost:8080/browser/index.html' : `file://${app.getAppPath()}/browser/index.html`;
+  mainWindow.loadURL(indexURL);
+
+  // This section should be called after loadURL() #570
   if (options.hideOnStartup) {
     if (windowOptions.maximized) {
       mainWindow.maximize();
@@ -58,9 +63,6 @@ function createMainWindow(config, options) {
   mainWindow.webContents.on('will-attach-webview', (event, webPreferences) => {
     webPreferences.nodeIntegration = false;
   });
-
-  const indexURL = global.isDev ? 'http://localhost:8080/browser/index.html' : `file://${app.getAppPath()}/browser/index.html`;
-  mainWindow.loadURL(indexURL);
 
   mainWindow.once('ready-to-show', () => {
     if (process.platform !== 'darwin') {
