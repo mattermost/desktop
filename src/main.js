@@ -24,8 +24,8 @@ import {parse as parseArgv} from 'yargs';
 
 import {protocols} from '../electron-builder.json';
 
-import squirrelStartup from './main/squirrelStartup';
 import CriticalErrorHandler from './main/CriticalErrorHandler';
+import {upgradeAutoLaunch} from './main/autoLaunch';
 
 autoUpdater.on('error', (err) => {
   console.log('autoUpdater.on error');
@@ -56,11 +56,7 @@ process.on('uncaughtException', criticalErrorHandler.processUncaughtExceptionHan
 global.willAppQuit = false;
 
 app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
-if (squirrelStartup(() => {
-  app.quit();
-})) {
-  global.willAppQuit = true;
-}
+
 import settings from './common/settings';
 import CertificateStore from './main/certificateStore';
 const certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
@@ -431,6 +427,10 @@ app.on('ready', () => {
     clearAppCache();
   }
   appState.lastAppVersion = app.getVersion();
+
+  if (!global.isDev) {
+    upgradeAutoLaunch();
+  }
 
   autoUpdater.checkForUpdates();
 
