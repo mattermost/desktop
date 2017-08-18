@@ -42,6 +42,9 @@ Release date: TBD
  - Fixed an issue where the text box didn't keep focus after uploading a file.
  [#341](https://github.com/mattermost/desktop/issues/341)
 
+#### Linux
+ - Fixed the main window not minimized when the app is launched via "Start app on Login" option.
+ [#570](https://github.com/mattermost/desktop/issues/570)
 ---
 
 ## Release v3.7.0
