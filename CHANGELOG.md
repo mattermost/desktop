@@ -12,6 +12,10 @@ Release date: TBD
 
 ### Improvements
 
+#### All Platforms
+ - Possible improvement when the app is in background state.
+ [#563](https://github.com/mattermost/desktop/issues/563)
+
 #### Windows
  - [Windows 7/8] Added support to open the message when clicking desktop notification.
  [#67](https://github.com/mattermost/desktop/issues/67)
