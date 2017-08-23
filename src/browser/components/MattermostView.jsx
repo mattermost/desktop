@@ -1,3 +1,6 @@
+// eslint-disable react/no-set-state
+// setState() is necessary for this component
+
 const React = require('react');
 const PropTypes = require('prop-types');
 const createReactClass = require('create-react-class');
@@ -26,7 +29,8 @@ const MattermostView = createReactClass({
   getInitialState() {
     return {
       errorInfo: null,
-      isContextMenuAdded: false
+      isContextMenuAdded: false,
+      reloadTimeoutID: null
     };
   },
 
@@ -54,7 +58,9 @@ const MattermostView = createReactClass({
         self.reload();
       }
       if (navigator.onLine) {
-        setTimeout(reload, 30000);
+        self.setState({
+          reloadTimeoutID: setTimeout(reload, 30000)
+        });
       } else {
         window.addEventListener('online', reload);
       }
@@ -152,8 +158,10 @@ const MattermostView = createReactClass({
   },
 
   reload() {
+    clearTimeout(this.state.reloadTimeoutID);
     this.setState({
-      errorInfo: null
+      errorInfo: null,
+      reloadTimeoutID: null
     });
     var webview = findDOMNode(this.refs.webview);
     webview.reload();
