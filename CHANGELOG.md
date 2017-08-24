@@ -31,6 +31,8 @@ Release date: TBD
  [#552](https://github.com/mattermost/desktop/issues/552)
  - Fixed the app publisher was not changed to Mattermost, Inc.
  [#542](https://github.com/mattermost/desktop/issues/542)
+ - Fixed an extra reloading when an error page is manually reloaded.
+ [#573](https://github.com/mattermost/desktop/issues/573)
 
 #### Windows
  - Fixed desktop notifications not working when the window has been minimized from inactive state.
