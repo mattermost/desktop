@@ -105,17 +105,27 @@ The final release is cut. If an urgent and important issue needs to be addressed
 5. Marketing:
     - Schedule Twitter announcement for 08:00 PST on the date of marketing announcement
 
-If a bug fix release is required, run through the following steps again: 
+If a bug fix release is required, run through the following steps:
 
-1. Build:  
-    - Tag a new release (e.g. 1.1.1) and run an official build  
-2. PM:  
+1. Dev:
+    - Submit, review and merge patches for the release branch
+    - Cut an RC containing all bug fixes
+2. PM:
+    - Verify each of the issues in the RC are fixed  
+3. Dev:  
+    - Tag a new release (e.g. 1.1.1) and run an official build including code-signing
+    - Publish the patch release in [GitHub repository](https://github.com/mattermost/desktop/releases) with SHA-256 checksums
+    - Delete RCs after final version is shipped
+    - Merge changes made to release branch into master
+4. PM:  
     - Update [Mattermost download page](https://mattermost.org/download)
     - Update the download links in [installation guides](https://docs.mattermost.com/install/desktop.html)
     - Update the changelog with notes on patch releases (see [example entry](https://docs.mattermost.com/help/apps/desktop-changelog.html#release-v3-4-1))  
-    - Verify each of the issues in the patch release are fixed  
-3. Dev:
-    - Publish the patch release in [GitHub repository](https://github.com/mattermost/desktop/releases)
+    - Draft [Mattermost Security Updates](http://about.mattermost.com/security-updates/) if applicable, but do not post until seven days after official release
+        - Check Security Issues spreadsheet and confirm disclosure text
+    - Contact owners of [community installers](http://www.mattermost.org/installation/) to update install version number
+5. Marketing:
+    - Schedule Twitter announcement for 08:00 PST on the date of marketing announcement
 
 ### G. (T-minus 0 working days) Release Day
 
