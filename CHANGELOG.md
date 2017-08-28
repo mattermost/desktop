@@ -10,8 +10,8 @@ This release contains a security update and it is highly recommended that users 
 
 #### Windows
 
- - [Windows 10] Client no longer freezes intermittently, such as when receiving desktop notifications. [#494](https://github.com/mattermost/desktop/issues/494), [#520](https://github.com/mattermost/desktop/issues/520)
-  - [Windows 10] Added support for running the desktop app across monitors of different DPI. [#357](https://github.com/mattermost/desktop/issues/357)
+ - Client no longer freezes intermittently, such as when receiving desktop notifications. [#494](https://github.com/mattermost/desktop/issues/494), [#520](https://github.com/mattermost/desktop/issues/520)
+ - [Windows 8.1/10] Added support for running the desktop app across monitors of different DPI. [#357](https://github.com/mattermost/desktop/issues/357)
  - [Windows 7/8] Clicking on a desktop notification now opens the message. [#67](https://github.com/mattermost/desktop/issues/67)
 
 ----
