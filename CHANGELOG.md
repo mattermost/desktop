@@ -4,7 +4,7 @@
 
 Release date: August 30, 2017
 
-This release contains a security update and it is highly recommended that users upgrade to this version.
+This release contains a security update for Windows, Mac and Linux, and it is highly recommended that users upgrade to this version.
 
 ### Improvements and Bug Fixes
 
