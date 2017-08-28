@@ -5,6 +5,8 @@ const ipc = electron.ipcRenderer;
 const webFrame = electron.webFrame;
 const notification = require('../js/notification');
 
+const UNREAD_COUNT_INTERVAL = 1000;
+
 Reflect.deleteProperty(global.Buffer); // http://electron.atom.io/docs/tutorial/security/#buffer-global
 
 function hasClass(element, className) {
@@ -15,7 +17,7 @@ function hasClass(element, className) {
   return false;
 }
 
-setInterval(function getUnreadCount() {
+function getUnreadCount() {
   if (!this.unreadCount) {
     this.unreadCount = 0;
   }
@@ -28,6 +30,7 @@ setInterval(function getUnreadCount() {
     ipc.sendToHost('onUnreadCountChange', 0, 0, false, false);
     this.unreadCount = 0;
     this.mentionCount = 0;
+    setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
     return;
   }
 
@@ -61,6 +64,7 @@ setInterval(function getUnreadCount() {
     // find active post-list.
     var postLists = document.querySelectorAll('div.post-list__content');
     if (postLists.length === 0) {
+      setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
       return;
     }
     var post = null;
@@ -70,6 +74,7 @@ setInterval(function getUnreadCount() {
       }
     }
     if (post === null) {
+      setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
       return;
     }
 
@@ -111,7 +116,9 @@ setInterval(function getUnreadCount() {
   }
   this.unreadCount = unreadCount;
   this.mentionCount = mentionCount;
-}, 1000);
+  setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
+}
+setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
 
 function isElementVisible(elem) {
   return elem.offsetHeight !== 0;
