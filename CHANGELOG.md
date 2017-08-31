@@ -12,16 +12,6 @@ Release date: TBD
 
 ### Improvements
 
-#### All Platforms
- - Possible improvement when the app is in background state.
- [#563](https://github.com/mattermost/desktop/pull/563)
-
-#### Windows
- - [Windows 7/8] Added support to open the message when clicking desktop notification.
- [#67](https://github.com/mattermost/desktop/issues/67)
- - Added support for different DPI across monitors.
- [#357](https://github.com/mattermost/desktop/issues/357)
-
 ### Bug Fixes
 
 #### All Platforms
@@ -47,7 +37,24 @@ Release date: TBD
 #### Linux
  - Fixed the main window not minimized when the app is launched via "Start app on Login" option.
  [#570](https://github.com/mattermost/desktop/issues/570)
----
+
+----
+
+## Release v3.7.1
+
+Release date: August 30, 2017
+
+This release contains a security update for Windows, Mac and Linux, and it is highly recommended that users upgrade to this version.
+
+### Improvements and Bug Fixes
+
+#### Windows
+
+ - Client no longer freezes intermittently, such as when receiving desktop notifications. [#494](https://github.com/mattermost/desktop/issues/494), [#520](https://github.com/mattermost/desktop/issues/520)
+ - [Windows 8.1/10] Added support for running the desktop app across monitors of different DPI. [#357](https://github.com/mattermost/desktop/issues/357)
+ - [Windows 7/8] Clicking on a desktop notification now opens the message. [#67](https://github.com/mattermost/desktop/issues/67)
+
+----
 
 ## Release v3.7.0
 
