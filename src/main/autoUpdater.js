@@ -1,4 +1,11 @@
-const {app, BrowserWindow, ipcMain} = require('electron');
+const {app, BrowserWindow, dialog, ipcMain, shell} = require('electron');
+const path = require('path');
+const {autoUpdater} = require('electron-updater');
+const semver = require('semver');
+
+const interval48hours = 172800000; // 48 * 60 * 60 * 1000
+
+let updaterWindow = null;
 
 function setEvent(win, eventName) {
   ipcMain.on(eventName, (event) => {
@@ -39,6 +46,56 @@ function createUpdaterWindow(options) {
   return win;
 }
 
+function isUpdateApplicable(appState, updateInfo) {
+  if (appState.updateCheckedDate.value - (new Date(updateInfo.releaseDate)).value < interval48hours) {
+    return false;
+  }
+  return (appState.skippedVersion !== null) && semver.gt(updateInfo.version, appState.skippedVersion);
+}
+
+function initialize(appState, mainWindow) {
+  const assetsDir = path.resolve(app.getAppPath(), 'assets');
+  autoUpdater.on('error', (err) => {
+    console.error('Error in autoUpdater:', err.message);
+  }).on('checking-for-update', () => {
+    appState.updateCheckedDate = new Date();
+  }).on('update-available', (info) => {
+    if (isUpdateApplicable(appState, info)) {
+      updaterWindow = createUpdaterWindow({linuxAppIcon: path.join(assetsDir, 'appicon.png'), nextVersion: '0.0.0'});
+      updaterWindow.on('close', () => {
+        updaterWindow = null;
+      });
+      updaterWindow.on('click-skip', () => {
+        appState.skippedVersion = info.version;
+        updaterWindow.close();
+      }).on('click-remind', () => {
+        setTimeout(autoUpdater.checkForUpdates, interval48hours);
+        updaterWindow.close();
+      }).on('click-install', () => {
+        autoUpdater.quitAndInstall();
+        updaterWindow.close();
+      }).on('click-release-notes', () => {
+        shell.openExternal(`https://github.com/mattermost/desktop/releases/v${info.version}`);
+      });
+    }
+  }).on('update-not-available', () => {
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      buttons: ['Close'],
+      title: 'Your Desktop App is up to date',
+      message: 'You have the latest version of the Mattermost Desktop App.'
+    }, () => {}); // eslint-disable-line no-empty-function
+    setTimeout(autoUpdater.checkForUpdates, interval48hours);
+  });
+}
+
+function checkForUpdates() {
+  if (!updaterWindow) {
+    autoUpdater.checkForUpdates();
+  }
+}
+
 module.exports = {
-  createUpdaterWindow
+  checkForUpdates,
+  initialize
 };

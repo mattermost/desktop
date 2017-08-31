@@ -26,29 +26,6 @@ import {protocols} from '../electron-builder.json';
 
 import CriticalErrorHandler from './main/CriticalErrorHandler';
 import {upgradeAutoLaunch} from './main/autoLaunch';
-import {createUpdaterWindow} from './main/autoUpdater';
-
-autoUpdater.on('error', (err) => {
-  console.log('autoUpdater.on error');
-  console.error(err);
-}).on('checking-for-update', () => {
-  console.log('checking-for-update');
-}).on('update-available', (info) => {
-  console.log('update-available');
-  console.log(info);
-}).on('update-not-available', (info) => {
-  console.log('update-not-available');
-  console.log(info);
-}).on('download-progress', (progress) => {
-  console.log('download-progress');
-  console.log(progress);
-}).on('update-downloaded', (info) => {
-  console.log('update-downloaded');
-  console.log(info);
-  setTimeout(() => {
-    autoUpdater.quitAndInstall();
-  }, 5000);
-});
 
 const criticalErrorHandler = new CriticalErrorHandler();
 
@@ -78,7 +55,6 @@ const assetsDir = path.resolve(app.getAppPath(), 'assets');
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 var mainWindow = null;
-let updaterWindow;
 let spellChecker = null;
 let deeplinkingUrl = null;
 let scheme = null;
@@ -674,6 +650,16 @@ app.on('ready', () => {
   const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => team.url);
   permissionManager = new PermissionManager(permissionFile, trustedURLs);
   session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionManager));
+
+  autoUpdater.initialize(appState, mainWindow);
+  ipcMain.on('check-for-updates', () => {
+    if (global.isDev) {
+      console.log('Development mode: Skip checking for updates');
+    } else {
+      autoUpdater.checkForUpdates();
+    }
+  });
+  ipcMain.emit('check-for-updates');
 
   // Open the DevTools.
   // mainWindow.openDevTools();
