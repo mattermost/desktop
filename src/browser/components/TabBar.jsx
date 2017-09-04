@@ -88,6 +88,8 @@ TabBar.propTypes = {
   id: PropTypes.string,
   onSelect: PropTypes.func,
   teams: PropTypes.array,
+  unreadCounts: PropTypes.array,
+  unreadAtActive: PropTypes.array,
   mentionCounts: PropTypes.array,
   mentionAtActiveCounts: PropTypes.array,
   onAddServer: PropTypes.func
