@@ -19,12 +19,12 @@ class NewTeamModal extends React.Component {
   }
 
   initializeOnShow() {
-    this.state = {
+    this.setState({
       teamName: this.props.team ? this.props.team.name : '',
       teamUrl: this.props.team ? this.props.team.url : '',
       teamIndex: this.props.team ? this.props.team.index : false,
       saveStarted: false
-    };
+    });
   }
 
   getTeamNameValidationError() {
