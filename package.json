@@ -1,7 +1,7 @@
 {
   "name": "mattermost-desktop",
   "productName": "Mattermost",
-  "version": "3.7.0",
+  "version": "3.7.1",
   "description": "Mattermost",
   "main": "main.js",
   "author": "Mattermost, Inc. <feedback@mattermost.com>",
@@ -44,7 +44,7 @@
     "cross-env": "^4.0.0",
     "css-loader": "^0.28.1",
     "devtron": "^1.4.0",
-    "electron": "1.6.10",
+    "electron": "1.6.11",
     "electron-builder": "17.4.0",
     "electron-builder-squirrel-windows": "17.4.0",
     "electron-connect": "^0.6.1",
