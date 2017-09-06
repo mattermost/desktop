@@ -5,6 +5,11 @@ machine:
 dependencies:
   cache_directories:
     - "src/node_modules"
+    - ~/.cache/yarn
+  override:
+    - yarn
+    - yarn check
+    - cd src && yarn check
   post:
     - sudo dpkg --add-architecture i386
     - sudo add-apt-repository ppa:ubuntu-wine/ppa -y
@@ -25,5 +30,7 @@ dependencies:
     - sh -x ./scripts/cp_artifacts.sh release $CIRCLE_ARTIFACTS
 
 test:
+  override:
+    - yarn test
   post:
     - mv test-results.xml $CIRCLE_TEST_REPORTS/
