@@ -86,5 +86,8 @@
         ]
       }
     ]
+  },
+  "nsis": {
+    "artifactName": "mattermost-setup-${version}.${ext}"
   }
 }
