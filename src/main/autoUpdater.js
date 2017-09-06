@@ -3,7 +3,7 @@ const path = require('path');
 const {autoUpdater} = require('electron-updater');
 const semver = require('semver');
 
-const interval48hours = 172800000; // 48 * 60 * 60 * 1000
+const interval48hours = 172800000; // 48 * 60 * 60 * 1000 [ms]
 
 let updaterWindow = null;
 
@@ -47,10 +47,15 @@ function createUpdaterWindow(options) {
 }
 
 function isUpdateApplicable(appState, updateInfo) {
-  if (appState.updateCheckedDate.value - (new Date(updateInfo.releaseDate)).value < interval48hours) {
+  const checkedTime = appState.updateCheckedDate.getTime();
+  const releaseTime = new Date(updateInfo.releaseDate).getTime();
+  if (checkedTime - releaseTime < interval48hours) {
     return false;
   }
-  return (appState.skippedVersion !== null) && semver.gt(updateInfo.version, appState.skippedVersion);
+  if (appState.skippedVersion === null) {
+    return true;
+  }
+  return semver.gt(updateInfo.version, appState.skippedVersion);
 }
 
 function initialize(appState, mainWindow) {
