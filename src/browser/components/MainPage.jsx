@@ -24,7 +24,8 @@ const MainPage = createReactClass({
     initialIndex: PropTypes.number.isRequired,
     useSpellChecker: PropTypes.bool.isRequired,
     onSelectSpellCheckerLocale: PropTypes.func.isRequired,
-    deeplinkingUrl: PropTypes.string
+    deeplinkingUrl: PropTypes.string,
+    showAddServerButton: PropTypes.bool.isRequired
   },
 
   getInitialState() {
@@ -258,6 +259,7 @@ const MainPage = createReactClass({
             activeKey={this.state.key}
             onSelect={this.handleSelect}
             onAddServer={this.addServer}
+            showAddServerButton={this.props.showAddServerButton}
           />
         </Row>
       );

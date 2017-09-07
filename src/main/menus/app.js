@@ -15,7 +15,7 @@ function createTemplate(mainWindow, config, isDev) {
   var firstMenuName = (process.platform === 'darwin') ? appName : 'File';
   var template = [];
 
-  const platformAppMenu = process.platform === 'darwin' ? [{
+  var platformAppMenu = process.platform === 'darwin' ? [{
     label: 'About ' + appName,
     role: 'about',
     click() {
@@ -30,37 +30,40 @@ function createTemplate(mainWindow, config, isDev) {
     click() {
       mainWindow.loadURL(settingsURL);
     }
-  }, {
-    label: 'Sign in to Another Server',
-    click() {
-      mainWindow.webContents.send('add-server');
-    }
-  }, separatorItem, {
-    role: 'hide'
-  }, {
-    role: 'hideothers'
-  }, {
-    role: 'unhide'
-  }, separatorItem, {
-    role: 'quit'
   }] : [{
     label: 'Settings...',
     accelerator: 'CmdOrCtrl+,',
     click() {
       mainWindow.loadURL(settingsURL);
     }
-  }, {
-    label: 'Sign in to Another Server',
-    click() {
-      mainWindow.webContents.send('add-server');
-    }
-  }, separatorItem, {
-    role: 'quit',
-    accelerator: 'CmdOrCtrl+Q',
-    click() {
-      electron.app.quit();
-    }
   }];
+
+  if (config.enableServerManagement === true || config.teams.length === 0) {
+    platformAppMenu.push({
+      label: 'Sign in to Another Server',
+      click() {
+        mainWindow.webContents.send('add-server');
+      }
+    });
+  }
+
+  platformAppMenu = platformAppMenu.concat(process.platform === 'darwin' ? [
+    separatorItem, {
+      role: 'hide'
+    }, {
+      role: 'hideothers'
+    }, {
+      role: 'unhide'
+    }, separatorItem, {
+      role: 'quit'
+    }] : [separatorItem, {
+      role: 'quit',
+      accelerator: 'CmdOrCtrl+Q',
+      click() {
+        electron.app.quit();
+      }
+    }]
+  );
 
   template.push({
     label: '&' + firstMenuName,

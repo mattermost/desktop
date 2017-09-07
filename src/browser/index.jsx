@@ -116,6 +116,7 @@ ReactDOM.render(
     useSpellChecker={AppConfig.data.useSpellChecker}
     onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}
     deeplinkingUrl={deeplinkingUrl}
+    showAddServerButton={AppConfig.data.enableServerManagement}
   />,
   document.getElementById('content')
 );

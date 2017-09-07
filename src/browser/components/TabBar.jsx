@@ -53,17 +53,19 @@ function TabBar(props) {
         { badgeDiv }
       </NavItem>);
   });
-  tabs.push(
-    <NavItem
-      className='TabBar-addServerButton'
-      key='addServerButton'
-      id='addServerButton'
-      eventKey='addServerButton'
-      title='Add new server'
-    >
-      <Glyphicon glyph='plus'/>
-    </NavItem>
-  );
+  if (props.showAddServerButton === true) {
+    tabs.push(
+      <NavItem
+        className='TabBar-addServerButton'
+        key='addServerButton'
+        id='addServerButton'
+        eventKey='addServerButton'
+        title='Add new server'
+      >
+        <Glyphicon glyph='plus'/>
+      </NavItem>
+    );
+  }
   return (
     <Nav
       className='TabBar'
@@ -92,7 +94,8 @@ TabBar.propTypes = {
   unreadAtActive: PropTypes.array,
   mentionCounts: PropTypes.array,
   mentionAtActiveCounts: PropTypes.array,
-  onAddServer: PropTypes.func
+  onAddServer: PropTypes.func,
+  showAddServerButton: PropTypes.bool
 };
 
 module.exports = TabBar;
