@@ -1,6 +1,7 @@
 'use strict';
 
 const electron = require('electron');
+
 const Menu = electron.Menu;
 
 function createTemplate(mainWindow, config, isDev) {
@@ -207,7 +208,7 @@ function createTemplate(mainWindow, config, isDev) {
     submenu: [{
       label: 'Learn More...',
       click() {
-        electron.shell.openExternal('https://docs.mattermost.com/help/apps/desktop-guide.html');
+        electron.shell.openExternal(config.helpLink);
       }
     }, {
       type: 'separator'

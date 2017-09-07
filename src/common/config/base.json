@@ -10,7 +10,8 @@
     },
     "showUnreadBadge": true,
     "useSpellChecker": true,
-    "spellCheckerLocale": "en-US"
+    "spellCheckerLocale": "en-US",
+    "helpLink": "https://docs.mattermost.com/help/apps/desktop-guide.html"
   },
   "1": {
     "teams": [],
@@ -23,6 +24,7 @@
     },
     "showUnreadBadge": true,
     "useSpellChecker": true,
-    "spellCheckerLocale": "en-US"
+    "spellCheckerLocale": "en-US",
+    "helpLink": "https://docs.mattermost.com/help/apps/desktop-guide.html"
   }
 }
