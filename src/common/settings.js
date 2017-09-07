@@ -1,10 +1,18 @@
 'use strict';
 
 const fs = require('fs');
+const deepmerge = require('deepmerge').default;
+
 const settingsVersion = 1;
+const baseConfig = require('./config/base.json');
+const overrideConfig = require('./config/override.json');
 
 function merge(base, target) {
   return Object.assign({}, base, target);
+}
+
+function deepMergeArray(dest) {
+  return dest;
 }
 
 function loadDefault(version, spellCheckerLocale) {
@@ -12,28 +20,19 @@ function loadDefault(version, spellCheckerLocale) {
   if (version == null) {
     ver = settingsVersion;
   }
-  switch (ver) {
-  case 1:
-    return {
-      teams: [],
-      showTrayIcon: false,
-      trayIconTheme: 'light',
-      minimizeToTray: false,
-      version: 1,
-      notifications: {
-        flashWindow: 0 // 0 = flash never, 1 = only when idle (after 10 seconds), 2 = always
-      },
-      showUnreadBadge: true,
-      useSpellChecker: true,
-      spellCheckerLocale: spellCheckerLocale || 'en-US'
-    };
-  default:
-    return {};
-  }
+
+  const base = baseConfig[ver] || baseConfig.default;
+  const override = overrideConfig[ver] || {};
+
+  const defaults = deepmerge(base, override, {clone: true, arrayMerge: deepMergeArray});
+
+  return Object.assign(defaults, {
+    spellCheckerLocale: spellCheckerLocale || defaults.spellCheckerLocale || 'en-US'
+  });
 }
 
 function upgradeV0toV1(configV0) {
-  var config = loadDefault(1);
+  var config = loadDefault('1');
   config.teams.push({
     name: 'Primary team',
     url: configV0.url
@@ -42,7 +41,7 @@ function upgradeV0toV1(configV0) {
 }
 
 function upgrade(config, newAppVersion) {
-  var configVersion = config.version ? config.version : 0;
+  var configVersion = config.version ? config.version : '1';
   if (newAppVersion) {
     config.lastMattermostVersion = newAppVersion;
   }
@@ -61,15 +60,19 @@ module.exports = {
 
   readFileSync(configFile) {
     var config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-    if (config.version === settingsVersion) {
+
+    // need to be able to compare 1 to '1'
+    if (config.version == settingsVersion) { // eslint-disable-line
       var defaultConfig = this.loadDefault();
       config = merge(defaultConfig, config);
     }
+
     return config;
   },
 
   writeFile(configFile, config, callback) {
-    if (config.version !== settingsVersion) {
+    // need to be able to compare 1 to '1'
+    if (config.version != settingsVersion) { // eslint-disable-line
       throw new Error('version ' + config.version + ' is not equal to ' + settingsVersion);
     }
     var data = JSON.stringify(config, null, '  ');
@@ -77,7 +80,8 @@ module.exports = {
   },
 
   writeFileSync(configFile, config) {
-    if (config.version !== settingsVersion) {
+    // need to be able to compare 1 to '1'
+    if (config.version != settingsVersion) { // eslint-disable-line
       throw new Error('version ' + config.version + ' is not equal to ' + settingsVersion);
     }
     var data = JSON.stringify(config, null, '  ');
