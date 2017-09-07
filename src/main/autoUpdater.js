@@ -5,21 +5,23 @@ const semver = require('semver');
 
 const INTERVAL_48_HOURS_IN_MS = 172800000; // 48 * 60 * 60 * 1000 [ms]
 
-let updaterWindow = null;
+let updaterModal = null;
 
-function setEvent(win, eventName) {
-  ipcMain.on(eventName, (event) => {
+function createEventListener(win, eventName) {
+  return (event) => {
     if (event.sender === win.webContents) {
       win.emit(eventName);
     }
-  });
+  };
 }
 
-function createUpdaterWindow(options) {
+function createUpdaterModal(parentWindow, options) {
   const windowWidth = 480;
   const windowHeight = 240;
   const windowOptions = {
     title: `${app.getName()} Updater`,
+    parent: parentWindow,
+    modal: true,
     maximizable: false,
     show: false,
     width: windowWidth,
@@ -31,19 +33,22 @@ function createUpdaterWindow(options) {
     windowOptions.icon = options.linuxAppIcon;
   }
 
-  const win = new BrowserWindow(windowOptions);
-  win.once('ready-to-show', () => {
-    win.show();
+  const modal = new BrowserWindow(windowOptions);
+  modal.once('ready-to-show', () => {
+    modal.show();
   });
   const updaterURL = (global.isDev ? 'http://localhost:8080' : `file://${app.getAppPath()}`) + '/browser/updater.html';
-  win.loadURL(updaterURL);
+  modal.loadURL(updaterURL);
 
-  setEvent(win, 'click-release-notes');
-  setEvent(win, 'click-skip');
-  setEvent(win, 'click-remind');
-  setEvent(win, 'click-install');
+  for (const eventName of ['click-release-notes', 'click-skip', 'click-remind', 'click-install']) {
+    const listener = createEventListener(modal, eventName);
+    ipcMain.on(eventName, listener);
+    modal.on('closed', () => {
+      ipcMain.removeListener(eventName, listener);
+    });
+  }
 
-  return win;
+  return modal;
 }
 
 function isUpdateApplicable(now, skippedVersion, updateInfo) {
@@ -74,24 +79,24 @@ function initialize(appState, mainWindow) {
     console.error('Error in autoUpdater:', err.message);
   }).on('update-available', (info) => {
     if (isUpdateApplicable(new Date(), appState.skippedVersion, info)) {
-      updaterWindow = createUpdaterWindow({linuxAppIcon: path.join(assetsDir, 'appicon.png'), nextVersion: '0.0.0'});
-      updaterWindow.on('close', () => {
-        updaterWindow = null;
+      updaterModal = createUpdaterModal(mainWindow, {linuxAppIcon: path.join(assetsDir, 'appicon.png'), nextVersion: '0.0.0'});
+      updaterModal.on('closed', () => {
+        updaterModal = null;
       });
-      updaterWindow.on('click-skip', () => {
+      updaterModal.on('click-skip', () => {
         appState.skippedVersion = info.version;
-        updaterWindow.close();
+        updaterModal.close();
       }).on('click-remind', () => {
         appState.updateCheckedDate = new Date();
         setTimeout(autoUpdater.checkForUpdates, INTERVAL_48_HOURS_IN_MS);
-        updaterWindow.close();
+        updaterModal.close();
       }).on('click-install', () => {
         downloadAndInstall();
-        updaterWindow.close();
+        updaterModal.close();
       }).on('click-release-notes', () => {
         shell.openExternal(`https://github.com/mattermost/desktop/releases/v${info.version}`);
       });
-      updaterWindow.focus();
+      updaterModal.focus();
     } else if (autoUpdater.isManual) {
       autoUpdater.emit('update-not-available');
     }
@@ -120,7 +125,7 @@ function shouldCheckForUpdatesOnStart(updateCheckedDate) {
 function checkForUpdates(isManual = false) {
   autoUpdater.isManual = isManual;
   autoUpdater.autoDownload = false;
-  if (!updaterWindow) {
+  if (!updaterModal) {
     autoUpdater.checkForUpdates();
   }
 }
