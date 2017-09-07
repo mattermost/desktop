@@ -14,6 +14,9 @@ const HoveringURL = require('./HoveringURL.jsx');
 
 const NewTeamModal = require('./NewTeamModal.jsx');
 
+const settings = require('../../common/settings');
+const defaultConfig = settings.loadDefault();
+
 const MainPage = createReactClass({
   propTypes: {
     onUnreadCountChange: PropTypes.func.isRequired,
@@ -315,12 +318,12 @@ const MainPage = createReactClass({
           transitionEnterTimeout={300}
           transitionLeaveTimeout={500}
         >
-          { (this.state.targetURL === '') ?
-            null :
+          { (defaultConfig.displayUrlOnHover === true && this.state.targetURL !== '') ?
             <HoveringURL
               key='hoveringURL'
               targetURL={this.state.targetURL}
-            /> }
+            /> :
+            null }
         </ReactCSSTransitionGroup>
         <div>
           { modal }
