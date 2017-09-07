@@ -652,13 +652,7 @@ app.on('ready', () => {
   session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionManager));
 
   autoUpdater.initialize(appState, mainWindow);
-  ipcMain.on('check-for-updates', (isManual) => {
-    if (global.isDev) {
-      console.log('Development mode: Skip checking for updates');
-    } else {
-      autoUpdater.checkForUpdates(isManual);
-    }
-  });
+  ipcMain.on('check-for-updates', autoUpdater.checkForUpdates);
   mainWindow.once('show', () => {
     if (autoUpdater.shouldCheckForUpdatesOnStart(appState.updateCheckedDate)) {
       ipcMain.emit('check-for-updates');
