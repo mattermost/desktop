@@ -162,7 +162,7 @@ const MainPage = createReactClass({
   },
   handleUnreadCountTotalChange() {
     if (this.props.onUnreadCountChange) {
-      var allUnreadCount = this.state.unreadCounts.reduce((prev, curr) => {
+      let allUnreadCount = this.state.unreadCounts.reduce((prev, curr) => {
         return prev + curr;
       }, 0);
       this.state.unreadAtActive.forEach((state) => {
@@ -170,7 +170,7 @@ const MainPage = createReactClass({
           allUnreadCount += 1;
         }
       });
-      var allMentionCount = this.state.mentionCounts.reduce((prev, curr) => {
+      let allMentionCount = this.state.mentionCounts.reduce((prev, curr) => {
         return prev + curr;
       }, 0);
       this.state.mentionAtActiveCounts.forEach((count) => {

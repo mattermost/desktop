@@ -87,7 +87,7 @@ function createMainWindow(config, options) {
       saveWindowState(boundsInfoPath, mainWindow);
     } else { // Minimize or hide the window for close button.
       event.preventDefault();
-      function hideWindow(window) {
+      const hideWindow = (window) => {
         window.blur(); // To move focus to the next top-level window in Windows
         window.hide();
       }

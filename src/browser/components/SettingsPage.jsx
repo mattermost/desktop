@@ -48,7 +48,7 @@ const SettingsPage = createReactClass({
   },
   componentDidMount() {
     if (process.platform === 'win32' || process.platform === 'linux') {
-      var self = this;
+      let self = this;
       appLauncher.isEnabled().then((enabled) => {
         self.setState({
           autostart: enabled
@@ -120,8 +120,7 @@ const SettingsPage = createReactClass({
 
     settings.writeFile(this.props.configFile, config, (err) => {
       if (err) {
-        callback(err);
-        return;
+        return callback(err);
       }
       ipcRenderer.send('update-menu', config);
       ipcRenderer.send('update-config');
@@ -129,8 +128,9 @@ const SettingsPage = createReactClass({
         const autostart = this.state.autostart;
         this.saveAutoStart(autostart, callback);
       } else {
-        callback();
+        return callback();
       }
+      return true;
     });
   },
 
@@ -145,8 +145,10 @@ const SettingsPage = createReactClass({
           callback();
         }).catch(callback);
       } else {
-        callback();
+        return callback();
       }
+
+      return true;
     }).catch(callback);
   },
 

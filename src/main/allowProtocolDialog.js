@@ -43,7 +43,7 @@ function initDialogEvent(mainWindow) {
       switch (response) {
       case 1: {
         allowedProtocols.push(protocol);
-        function handleError(err) {
+        const handleError = (err) => {
           if (err) {
             console.error(err);
           }

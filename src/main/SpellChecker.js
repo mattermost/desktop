@@ -36,15 +36,17 @@ class SpellChecker extends EventEmitter {
       if (err) {
         this.emit('error', err);
         if (callback) {
-          callback(err);
+          return callback(err);
         }
       } else {
         this.dict = dict;
         this.emit('ready');
         if (callback) {
-          callback(null, this);
+          return callback(null, this);
         }
       }
+
+      return true;
     });
   }
 

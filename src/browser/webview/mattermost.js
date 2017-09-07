@@ -49,7 +49,7 @@ function getUnreadCount() {
   // mentionCount in sidebar
   var elem = document.getElementsByClassName('badge');
   var mentionCount = 0;
-  for (var i = 0; i < elem.length; i++) {
+  for (let i = 0; i < elem.length; i++) {
     if (isElementVisible(elem[i]) && !hasClass(elem[i], 'badge-notify')) {
       mentionCount += Number(elem[i].innerHTML);
     }
@@ -64,13 +64,13 @@ function getUnreadCount() {
     // So we get latest post and save lastCheckedPostId.
 
     // find active post-list.
-    var postLists = document.querySelectorAll('div.post-list__content');
+    let postLists = document.querySelectorAll('div.post-list__content');
     if (postLists.length === 0) {
       setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
       return;
     }
-    var post = null;
-    for (var j = 0; j < postLists.length; j++) {
+    let post = null;
+    for (let j = 0; j < postLists.length; j++) {
       if (isElementVisible(postLists[j])) {
         post = postLists[j].children[0];
       }
@@ -91,19 +91,19 @@ function getUnreadCount() {
       post = post.nextSibling;
     }
   } else if (lastPostElem !== null) {
-    var newPostElem = lastPostElem.nextSibling;
+    let newPostElem = lastPostElem.nextSibling;
     while (newPostElem) {
       this.lastCheckedPostId = newPostElem.getAttribute(postAttrName);
       isUnread = true;
-      var activeChannel = document.querySelector('.active .sidebar-channel');
-      var closeButton = activeChannel.getElementsByClassName('btn-close');
+      let activeChannel = document.querySelector('.active .sidebar-channel');
+      let closeButton = activeChannel.getElementsByClassName('btn-close');
       if (closeButton.length === 1 && closeButton[0].getAttribute('aria-describedby') === 'remove-dm-tooltip') {
         // If active channel is DM, all posts is treated as menion.
         isMentioned = true;
         break;
       } else {
         // If active channel is public/private channel, only mentioned post is treated as mention.
-        var highlight = newPostElem.getElementsByClassName('mention-highlight');
+        let highlight = newPostElem.getElementsByClassName('mention-highlight');
         if (highlight.length !== 0 && isElementVisible(highlight[0])) {
           isMentioned = true;
           break;
