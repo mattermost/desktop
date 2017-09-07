@@ -251,10 +251,8 @@ const MainPage = createReactClass({
       var id = 'mattermostView' + index;
       var isActive = self.state.key === index;
 
-      var lastUrl;
-      if (this.state.lastUrl !== '' && this.state.lastUrl !== null) {
-        lastUrl = this.state.lastUrl;
-      } else {
+      var lastUrl = this.state.lastUrl;
+      if (this.state.lastUrl === null || this.state.lastUrl === '' || !this.state.lastUrl.includes(team.url)) {
         lastUrl = team.url;
       }
 
