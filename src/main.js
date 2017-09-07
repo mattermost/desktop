@@ -652,14 +652,22 @@ app.on('ready', () => {
   session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionManager));
 
   autoUpdater.initialize(appState, mainWindow);
-  ipcMain.on('check-for-updates', () => {
+  ipcMain.on('check-for-updates', (isManual) => {
     if (global.isDev) {
       console.log('Development mode: Skip checking for updates');
     } else {
-      autoUpdater.checkForUpdates();
+      autoUpdater.checkForUpdates(isManual);
     }
   });
-  ipcMain.emit('check-for-updates');
+  mainWindow.once('show', () => {
+    if (autoUpdater.shouldCheckForUpdatesOnStart(appState.updateCheckedDate)) {
+      ipcMain.emit('check-for-updates');
+    } else {
+      setTimeout(() => {
+        ipcMain.emit('check-for-updates');
+      }, autoUpdater.INTERVAL_48_HOURS_IN_MS);
+    }
+  });
 
   // Open the DevTools.
   // mainWindow.openDevTools();
