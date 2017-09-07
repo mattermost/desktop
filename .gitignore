@@ -7,6 +7,11 @@ node_modules/
 release/
 npm-debug.log*
 
+build/
+dist/
+package-lock.json
+src/package-lock.json
+
 test-results.xml
 test_config.json
 .idea
