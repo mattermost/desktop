@@ -50,7 +50,7 @@
     ]
   },
   "squirrelWindows": {
-    "iconUrl": "https://raw.githubusercontent.com/mattermost/desktop/master/resources/icon.ico"
+    "iconUrl": "file://resources/icon.ico"
   },
   "win": {
     "target": [
