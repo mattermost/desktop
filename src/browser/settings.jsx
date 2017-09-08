@@ -1,7 +1,8 @@
 'use strict';
+const appName = require('../package.json').productName;
 
 window.eval = global.eval = () => {
-  throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
+  throw new Error(`Sorry, ${appName} does not support window.eval() for security reasons.`);
 };
 
 const {remote} = require('electron');
