@@ -10,7 +10,7 @@ function shouldQuitApp(cmd) {
 
 async function setupAutoLaunch(cmd) {
   const appLauncher = new AutoLaunch({
-    name: appName, 
+    name: appName,
     isHidden: true
   });
   if (cmd === '--squirrel-uninstall') {
