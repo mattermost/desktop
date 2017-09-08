@@ -53,7 +53,7 @@
     "mocha": "^3.3.0",
     "mocha-circleci-reporter": "0.0.2",
     "npm-run-all": "^4.0.2",
-    "spectron": "~3.6.2",
+    "spectron": "^3.7.2",
     "style-loader": "^0.17.0",
     "url-loader": "^0.5.8",
     "webpack": "^2.5.1",
