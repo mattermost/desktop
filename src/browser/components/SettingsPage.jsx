@@ -9,13 +9,12 @@ const AutoLaunch = require('auto-launch');
 const {debounce} = require('underscore');
 
 const settings = require('../../common/settings');
-const appName = require('../../package.json').productName;
 
 const TeamList = require('./TeamList.jsx');
 const AutoSaveIndicator = require('./AutoSaveIndicator.jsx');
 
 const appLauncher = new AutoLaunch({
-  name: appName,
+  name: remote.app.getName(),
   isHidden: true
 });
 

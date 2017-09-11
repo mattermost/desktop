@@ -1,11 +1,9 @@
 'use strict';
-const appName = require('../package.json').productName;
+const {remote} = require('electron');
 
 window.eval = global.eval = () => {
-  throw new Error(`Sorry, ${appName} does not support window.eval() for security reasons.`);
+  throw new Error(`Sorry, ${remote.app.getName()} does not support window.eval() for security reasons.`);
 };
-
-const {remote} = require('electron');
 
 const React = require('react');
 const ReactDOM = require('react-dom');
