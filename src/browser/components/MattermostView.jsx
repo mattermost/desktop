@@ -66,6 +66,11 @@ const MattermostView = createReactClass({
       }
     });
 
+    //storing on localStorage last channel visited, so when the user comes back, the app loads that channel
+    webview.addEventListener('did-navigate-in-page', () => {
+      localStorage.setItem('lastUrl', webview.getURL());
+    });
+
     // Open link in browserWindow. for exmaple, attached files.
     webview.addEventListener('new-window', (e) => {
       var currentURL = url.parse(webview.getURL());

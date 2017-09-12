@@ -32,11 +32,14 @@ const MainPage = createReactClass({
       unreadAtActive: new Array(this.props.teams.length),
       mentionAtActiveCounts: new Array(this.props.teams.length),
       loginQueue: [],
-      targetURL: ''
+      targetURL: '',
+      lastUrl: ''
     };
   },
   componentDidMount() {
     var self = this;
+    self.setState({lastUrl: localStorage.getItem('lastUrl')});
+
     ipcRenderer.on('login-request', (event, request, authInfo) => {
       self.setState({
         loginRequired: true
@@ -247,6 +250,12 @@ const MainPage = createReactClass({
       }
       var id = 'mattermostView' + index;
       var isActive = self.state.key === index;
+
+      var lastUrl = this.state.lastUrl;
+      if (this.state.lastUrl === null || this.state.lastUrl === '' || !this.state.lastUrl.includes(team.url)) {
+        lastUrl = team.url;
+      }
+
       return (
         <MattermostView
           key={id}
@@ -254,7 +263,7 @@ const MainPage = createReactClass({
           withTab={this.props.teams.length > 1}
           useSpellChecker={this.props.useSpellChecker}
           onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
-          src={team.url}
+          src={lastUrl}
           name={team.name}
           onTargetURLChange={self.handleTargetURLChange}
           onUnreadCountChange={handleUnreadCountChange}
