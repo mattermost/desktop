@@ -6,7 +6,7 @@ Originally created as "electron-mattermost" by Yuya Ochiai. Developed using [Ele
 
 ![Mattermost Desktop Screenshot](docs/20160922_mattermost_desktop.png)
 
-[![Circle CI](https://circleci.com/gh/mattermost/desktop.svg?style=svg)](https://circleci.com/gh/mattermost/desktop)
+[![Circle CI](https://circleci.com/gh/mattermost/desktop.svg?style=shield)](https://circleci.com/gh/mattermost/desktop)
 
 ## Features
 
