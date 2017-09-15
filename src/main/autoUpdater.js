@@ -1,4 +1,5 @@
 const {app, BrowserWindow, dialog, ipcMain, shell} = require('electron');
+const fs = require('fs');
 const path = require('path');
 const {autoUpdater} = require('electron-updater');
 const semver = require('semver');
@@ -37,10 +38,14 @@ function createUpdaterModal(parentWindow, options) {
   modal.once('ready-to-show', () => {
     modal.show();
   });
-  const updaterURL = (global.isDev ? 'http://localhost:8080' : `file://${app.getAppPath()}`) + '/browser/updater.html';
+  let updaterURL = (global.isDev ? 'http://localhost:8080' : `file://${app.getAppPath()}`) + '/browser/updater.html';
+
+  if (options.notifyOnly) {
+    updaterURL += '?notifyOnly=true';
+  }
   modal.loadURL(updaterURL);
 
-  for (const eventName of ['click-release-notes', 'click-skip', 'click-remind', 'click-install']) {
+  for (const eventName of ['click-release-notes', 'click-skip', 'click-remind', 'click-install', 'click-download']) {
     const listener = createEventListener(modal, eventName);
     ipcMain.on(eventName, listener);
     modal.on('closed', () => {
@@ -73,13 +78,20 @@ function downloadAndInstall() {
   });
 }
 
-function initialize(appState, mainWindow) {
+function initialize(appState, mainWindow, notifyOnly = false) {
+  autoUpdater.notifyOnly = notifyOnly;
+  if (notifyOnly) {
+    autoUpdater.autoDownload = false;
+  }
   const assetsDir = path.resolve(app.getAppPath(), 'assets');
   autoUpdater.on('error', (err) => {
     console.error('Error in autoUpdater:', err.message);
   }).on('update-available', (info) => {
     if (isUpdateApplicable(new Date(), appState.skippedVersion, info)) {
-      updaterModal = createUpdaterModal(mainWindow, {linuxAppIcon: path.join(assetsDir, 'appicon.png'), nextVersion: '0.0.0'});
+      updaterModal = createUpdaterModal(mainWindow, {
+        linuxAppIcon: path.join(assetsDir, 'appicon.png'),
+        notifyOnly: autoUpdater.notifyOnly
+      });
       updaterModal.on('closed', () => {
         updaterModal = null;
       });
@@ -93,6 +105,8 @@ function initialize(appState, mainWindow) {
       }).on('click-install', () => {
         downloadAndInstall();
         updaterModal.close();
+      }).on('click-download', () => {
+        shell.openExternal('https://about.mattermost.com/download/#mattermostApps');
       }).on('click-release-notes', () => {
         shell.openExternal(`https://github.com/mattermost/desktop/releases/v${info.version}`);
       });
@@ -115,7 +129,7 @@ function initialize(appState, mainWindow) {
 
 function shouldCheckForUpdatesOnStart(updateCheckedDate) {
   if (updateCheckedDate) {
-    if (Date.now() - updateCheckedDate < INTERVAL_48_HOURS_IN_MS) {
+    if (Date.now() - updateCheckedDate.getTime() < INTERVAL_48_HOURS_IN_MS) {
       return false;
     }
   }
@@ -124,15 +138,36 @@ function shouldCheckForUpdatesOnStart(updateCheckedDate) {
 
 function checkForUpdates(isManual = false) {
   autoUpdater.isManual = isManual;
-  autoUpdater.autoDownload = false;
   if (!updaterModal) {
     autoUpdater.checkForUpdates();
   }
+}
+
+class AutoUpdaterConfig {
+  constructor(file) {
+    try {
+      this.data = JSON.parse(fs.readFileSync(file));
+    } catch (err) {
+      this.data = {};
+    }
+  }
+
+  isNotifyOnly() {
+    if (this.data.notifyOnly === true) {
+      return true;
+    }
+    return false;
+  }
+}
+
+function loadConfig(file) {
+  return new AutoUpdaterConfig(file);
 }
 
 module.exports = {
   INTERVAL_48_HOURS_IN_MS,
   checkForUpdates,
   shouldCheckForUpdatesOnStart,
-  initialize
+  initialize,
+  loadConfig
 };

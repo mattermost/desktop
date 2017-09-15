@@ -2,6 +2,25 @@ const React = require('react');
 const propTypes = require('prop-types');
 const {Button, Navbar} = require('react-bootstrap');
 
+function InstallButton(props) {
+  if (props.notifyOnly) {
+    return (<Button
+      bsStyle='primary'
+      onClick={props.onClickDownload}
+            >{'Download Update'}</Button>);
+  }
+  return (<Button
+    bsStyle='primary'
+    onClick={props.onClickInstall}
+          >{'Install Update'}</Button>);
+}
+
+InstallButton.propTypes = {
+  notifyOnly: propTypes.bool.isRequired,
+  onClickInstall: propTypes.func.isRequired,
+  onClickDownload: propTypes.func.isRequired
+};
+
 function UpdaterPage(props) {
   return (
     <div>
@@ -33,10 +52,11 @@ function UpdaterPage(props) {
             bsStyle='link'
             onClick={props.onClickRemind}
           >{'Remind me in 2 days'}</Button>
-          <Button
-            bsStyle='primary'
-            onClick={props.onClickInstall}
-          >{'Install Update'}</Button>
+          <InstallButton
+            notifyOnly={props.notifyOnly}
+            onClickInstall={props.onClickInstall}
+            onClickDownload={props.onClickDownload}
+          />
         </div>
       </Navbar>
     </div>
@@ -44,7 +64,9 @@ function UpdaterPage(props) {
 }
 
 UpdaterPage.propTypes = {
+  notifyOnly: propTypes.bool.isRequired,
   onClickInstall: propTypes.func.isRequired,
+  onClickDownload: propTypes.func.isRequired,
   onClickReleaseNotes: propTypes.func.isRequired,
   onClickRemind: propTypes.func.isRequired,
   onClickSkip: propTypes.func.isRequired
