@@ -14,7 +14,7 @@ const TeamList = require('./TeamList.jsx');
 const AutoSaveIndicator = require('./AutoSaveIndicator.jsx');
 
 const appLauncher = new AutoLaunch({
-  name: 'Mattermost',
+  name: remote.app.getName(),
   isHidden: true
 });
 

@@ -1,10 +1,9 @@
 'use strict';
+const {remote} = require('electron');
 
 window.eval = global.eval = () => {
-  throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
+  throw new Error(`Sorry, ${remote.app.getName()} does not support window.eval() for security reasons.`);
 };
-
-const {remote} = require('electron');
 
 const React = require('react');
 const ReactDOM = require('react-dom');

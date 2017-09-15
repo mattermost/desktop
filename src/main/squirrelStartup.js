@@ -1,4 +1,5 @@
 const AutoLaunch = require('auto-launch');
+const {app} = require('electron');
 
 function shouldQuitApp(cmd) {
   if (process.platform !== 'win32') {
@@ -9,7 +10,7 @@ function shouldQuitApp(cmd) {
 
 async function setupAutoLaunch(cmd) {
   const appLauncher = new AutoLaunch({
-    name: 'Mattermost',
+    name: app.getName(),
     isHidden: true
   });
   if (cmd === '--squirrel-uninstall') {
