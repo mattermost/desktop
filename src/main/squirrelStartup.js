@@ -1,5 +1,5 @@
 const AutoLaunch = require('auto-launch');
-const {remote} = require('electron');
+const {app} = require('electron');
 
 function shouldQuitApp(cmd) {
   if (process.platform !== 'win32') {
@@ -10,7 +10,7 @@ function shouldQuitApp(cmd) {
 
 async function setupAutoLaunch(cmd) {
   const appLauncher = new AutoLaunch({
-    name: remote.app.getName(),
+    name: app.getName(),
     isHidden: true
   });
   if (cmd === '--squirrel-uninstall') {
