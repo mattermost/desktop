@@ -31,7 +31,8 @@
     "package:mac": "npm run build && build --mac --publish=never",
     "package:linux": "npm run build && build --linux --x64 --ia32 --em.name=mattermost-desktop --publish=never",
     "manipulate-windows-zip": "node scripts/manipulate_windows_zip.js",
-    "lint:js": "eslint --ext .js --ext .jsx ."
+    "lint:js": "eslint --ext .js --ext .jsx .",
+    "eslint": "eslint --ext .js,.jsx src/browser src/common src/main"
   },
   "devDependencies": {
     "7zip-bin": "^2.0.4",

@@ -9,7 +9,7 @@ function merge(base, target) {
 
 function loadDefault(version, spellCheckerLocale) {
   var ver = version;
-  if (version == null) {
+  if (version === null) {
     ver = settingsVersion;
   }
   switch (ver) {
@@ -62,7 +62,7 @@ module.exports = {
   readFileSync(configFile) {
     var config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
     if (config.version === settingsVersion) {
-      var defaultConfig = this.loadDefault();
+      let defaultConfig = this.loadDefault();
       config = merge(defaultConfig, config);
     }
     return config;

@@ -256,9 +256,9 @@ app.on('before-quit', () => {
 app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
   if (certificateStore.isTrusted(url, certificate)) {
     event.preventDefault();
-    callback(true);
+    return callback(true);
   } else {
-    var detail = `URL: ${url}\nError: ${error}`;
+    let detail = `URL: ${url}\nError: ${error}`;
     if (certificateStore.isExisting(url)) {
       detail = 'Certificate is different from previous one.\n\n' + detail;
     }
@@ -280,7 +280,7 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
         webContents.loadURL(url);
       }
     });
-    callback(false);
+    return callback(false);
   }
 });
 
@@ -288,9 +288,11 @@ const loginCallbackMap = new Map();
 
 ipcMain.on('login-credentials', (event, request, user, password) => {
   const callback = loginCallbackMap.get(JSON.stringify(request));
-  if (callback != null) {
-    callback(user, password);
+  if (callback !== null) {
+    return callback(user, password);
   }
+
+  return true;
 });
 
 app.on('login', (event, webContents, request, authInfo, callback) => {
