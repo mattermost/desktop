@@ -23,6 +23,8 @@ Release date: TBD
  [#542](https://github.com/mattermost/desktop/issues/542)
  - Fixed an extra reloading when an error page is manually reloaded.
  [#573](https://github.com/mattermost/desktop/issues/573)
+ - Fixed file upload dialogs did not allow any file to be selected.
+ [#497](https://github.com/mattermost/desktop/issues/497)
 
 #### Windows
  - Fixed desktop notifications not working when the window has been minimized from inactive state.
