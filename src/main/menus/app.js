@@ -202,21 +202,21 @@ function createTemplate(mainWindow, config, isDev) {
     }]
   };
   template.push(windowMenu);
-
-  template.push({
-    label: '&Help',
-    submenu: [{
+  var submenu = [];
+  if (config.helpLink) {
+    submenu.push({
       label: 'Learn More...',
       click() {
         electron.shell.openExternal(config.helpLink);
       }
-    }, {
-      type: 'separator'
-    }, {
-      label: `Version ${electron.app.getVersion()}`,
-      enabled: false
-    }]
+    });
+    submenu.push(separatorItem);
+  }
+  submenu.push({
+    label: `Version ${electron.app.getVersion()}`,
+    enabled: false
   });
+  template.push({label: '&Help', submenu});
   return template;
 }
 
