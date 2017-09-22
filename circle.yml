@@ -19,7 +19,9 @@ dependencies:
     - unset DISPLAY && wineboot --init
 
     - npm run build
-    - npm run package:windows & npm run package:mac & npm run package:linux & wait
+    - npm run package:windows
+    - npm run package:mac
+    - npm run package:linux
     - sh -x ./scripts/cp_artifacts.sh release $CIRCLE_ARTIFACTS
 
 test:
