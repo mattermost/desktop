@@ -7,7 +7,7 @@ const path = require('path');
 const env = require('../../modules/environment');
 
 describe('browser/index.html', function desc() {
-  this.timeout(10000);
+  this.timeout(30000);
 
   const config = {
     version: 1,

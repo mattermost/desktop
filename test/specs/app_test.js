@@ -5,7 +5,7 @@ const fs = require('fs');
 const env = require('../modules/environment');
 
 describe('application', function desc() {
-  this.timeout(10000);
+  this.timeout(30000);
 
   beforeEach(() => {
     env.cleanTestConfig();

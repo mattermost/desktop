@@ -7,7 +7,7 @@ const http = require('http');
 const env = require('../modules/environment');
 
 describe('application', function desc() {
-  this.timeout(10000);
+  this.timeout(30000);
 
   const serverPort = 8181;
   const testURL = `http://localhost:${serverPort}`;
