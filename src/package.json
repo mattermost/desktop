@@ -12,7 +12,7 @@
     "auto-launch": "^5.0.1",
     "bootstrap": "^3.3.7",
     "create-react-class": "^15.5.3",
-    "deepmerge": "^1.5.1",
+    "deepmerge": "^1.5.2",
     "electron-context-menu": "^0.9.0",
     "electron-devtools-installer": "^2.2.0",
     "electron-is-dev": "^0.1.2",

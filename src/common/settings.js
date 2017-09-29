@@ -1,7 +1,10 @@
 'use strict';
 
 const fs = require('fs');
-const deepmerge = require('deepmerge').default;
+let deepmerge = require('deepmerge').default;
+if (process.env.TEST) {
+  deepmerge = require('deepmerge'); // eslint-disable-line
+}
 
 const settingsVersion = 1;
 const baseConfig = require('./config/base.json');
@@ -32,7 +35,7 @@ function loadDefault(version, spellCheckerLocale) {
 }
 
 function upgradeV0toV1(configV0) {
-  var config = loadDefault('1');
+  var config = loadDefault(1);
   config.teams.push({
     name: 'Primary team',
     url: configV0.url
@@ -41,7 +44,7 @@ function upgradeV0toV1(configV0) {
 }
 
 function upgrade(config, newAppVersion) {
-  var configVersion = config.version ? config.version : '1';
+  var configVersion = config.version ? config.version : 0;
   if (newAppVersion) {
     config.lastMattermostVersion = newAppVersion;
   }
