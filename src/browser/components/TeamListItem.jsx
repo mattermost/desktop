@@ -9,9 +9,11 @@ class TeamListItem extends React.Component {
   }
 
   handleTeamRemove() {
+    document.activeElement.blur();
     this.props.onTeamRemove();
   }
   handleTeamEditing() {
+    document.activeElement.blur();
     this.props.onTeamEditing();
   }
   render() {
