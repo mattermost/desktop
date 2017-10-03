@@ -37,6 +37,7 @@ const appMenu = require('./main/menus/app');
 const trayMenu = require('./main/menus/tray');
 const downloadURL = require('./main/downloadURL');
 const allowProtocolDialog = require('./main/allowProtocolDialog');
+const permissionRequestHandler = require('./main/permissionRequestHandler');
 
 const SpellChecker = require('./main/SpellChecker');
 
@@ -576,6 +577,9 @@ app.on('ready', () => {
     });
   });
   ipcMain.emit('update-dict');
+
+  const permissionFile = path.join(app.getPath('userData'), 'permission.json');
+  session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionFile));
 
   // Open the DevTools.
   // mainWindow.openDevTools();
