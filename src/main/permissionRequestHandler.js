@@ -40,11 +40,17 @@ class PermissionManager {
   }
 
   isGranted(origin, permission) {
-    return this.permissions[origin] && this.permissions[origin][permission] === PERMISSION_GRANTED;
+    if (this.permissions[origin]) {
+      return this.permissions[origin][permission] === PERMISSION_GRANTED;
+    }
+    return false;
   }
 
   isDenied(origin, permission) {
-    return this.permissions[origin] && this.permissions[origin][permission] === PERMISSION_DENIED;
+    if (this.permissions[origin]) {
+      return this.permissions[origin][permission] === PERMISSION_DENIED;
+    }
+    return false;
   }
 }
 
@@ -81,8 +87,11 @@ function permissionRequestHandler(mainWindow, permissionFile) {
       return;
     default:
       callback(false);
+
     }
   };
 }
+
+permissionRequestHandler.PermissionManager = PermissionManager;
 
 module.exports = permissionRequestHandler;
