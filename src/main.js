@@ -8,7 +8,8 @@ const {
   nativeImage,
   dialog,
   systemPreferences,
-  session
+  session,
+  webContents
 } = require('electron');
 const os = require('os');
 const path = require('path');
@@ -38,7 +39,7 @@ const trayMenu = require('./main/menus/tray');
 const downloadURL = require('./main/downloadURL');
 const allowProtocolDialog = require('./main/allowProtocolDialog');
 const permissionRequestHandler = require('./main/permissionRequestHandler');
-
+const NavigationManager = require('./main/NavigationManager');
 const SpellChecker = require('./main/SpellChecker');
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
@@ -49,6 +50,7 @@ var mainWindow = null;
 let spellChecker = null;
 let deeplinkingUrl = null;
 let scheme = null;
+const navigationManager = new NavigationManager();
 
 var argv = require('yargs').parse(process.argv.slice(1));
 
@@ -274,7 +276,7 @@ app.on('before-quit', () => {
   global.willAppQuit = true;
 });
 
-app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
+app.on('certificate-error', (event, eventWebContents, url, error, certificate, callback) => {
   if (certificateStore.isTrusted(url, certificate)) {
     event.preventDefault();
     callback(true);
@@ -298,7 +300,7 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
       if (response === 0) {
         certificateStore.add(url, certificate);
         certificateStore.save();
-        webContents.loadURL(url);
+        eventWebContents.loadURL(url);
       }
     });
     callback(false);
@@ -318,7 +320,7 @@ ipcMain.on('login-credentials', (event, request, user, password) => {
   }
 });
 
-app.on('login', (event, webContents, request, authInfo, callback) => {
+app.on('login', (event, _, request, authInfo, callback) => {
   event.preventDefault();
   loginCallbackMap.set(JSON.stringify(request), callback);
   mainWindow.webContents.send('login-request', request, authInfo);
@@ -580,6 +582,14 @@ app.on('ready', () => {
 
   const permissionFile = path.join(app.getPath('userData'), 'permission.json');
   session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionFile));
+
+  navigationManager.setWindowToPrompt(mainWindow);
+  ipcMain.on('did-webview-attach', (_, id) => {
+    webContents.fromId(id).on('will-navigate', navigationManager.onWillNavigate.bind(navigationManager));
+  });
+  ipcMain.on('allow-origin', (event, origin) => {
+    navigationManager.allowOrigin(origin);
+  });
 
   // Open the DevTools.
   // mainWindow.openDevTools();
