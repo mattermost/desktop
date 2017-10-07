@@ -191,6 +191,7 @@ const SettingsPage = createReactClass({
     this.setState({
       showAddTeamForm: !this.state.showAddTeamForm
     });
+    document.activeElement.blur();
   },
   setShowTeamFormVisibility(val) {
     this.setState({
