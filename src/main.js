@@ -503,6 +503,10 @@ app.on('ready', () => {
     event.returnValue = config.spellCheckerLocale;
   });
   ipcMain.on('reply-on-spellchecker-is-ready', (event) => {
+    if (!spellChecker) {
+      return;
+    }
+
     if (spellChecker.isReady()) {
       event.sender.send('spellchecker-is-ready');
       return;
