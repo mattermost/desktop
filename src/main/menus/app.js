@@ -186,14 +186,14 @@ function createTemplate(mainWindow, config, isDev) {
       };
     }), separatorItem, {
       label: 'Select Next Server',
-      accelerator: (process.platform === 'darwin') ? 'Alt+Cmd+Right' : 'CmdOrCtrl+Tab',
+      accelerator: 'Ctrl+Tab',
       click() {
         mainWindow.webContents.send('select-next-tab');
       },
       enabled: (config.teams.length > 1)
     }, {
       label: 'Select Previous Server',
-      accelerator: (process.platform === 'darwin') ? 'Alt+Cmd+Left' : 'CmdOrCtrl+Shift+Tab',
+      accelerator: 'Ctrl+Shift+Tab',
       click() {
         mainWindow.webContents.send('select-previous-tab');
       },
