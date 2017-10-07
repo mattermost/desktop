@@ -65,7 +65,7 @@ const SettingsPage = createReactClass({
     });
   },
 
-  setSavingState(state) {
+  setSavingState(state, type) {
     if (!this.setSavingStateSaved) {
       this.setSavingStateSaved = debounce(() => {
         this.saveConfig((err) => {
@@ -82,14 +82,14 @@ const SettingsPage = createReactClass({
       clearTimeout(this.setSavingStateDoneTimer);
       this.setSavingStateDoneTimer = null;
     }
-    this.setState({savingState: state});
+    this.setState({savingState: state, savingType: type});
     if (state === 'saving') {
       this.setSavingStateSaved();
     }
   },
 
-  startSaveConfig() {
-    this.setSavingState('saving');
+  startSaveConfig(type = 'app') {
+    this.setSavingState('saving', type);
   },
 
   handleTeamsChange(teams) {
@@ -100,7 +100,7 @@ const SettingsPage = createReactClass({
     if (teams.length === 0) {
       this.setState({showAddTeamForm: true});
     }
-    setImmediate(this.startSaveConfig);
+    setImmediate(this.startSaveConfig, 'server');
   },
 
   saveConfig(callback) {
@@ -226,7 +226,7 @@ const SettingsPage = createReactClass({
     this.setState({
       teams
     });
-    setImmediate(this.startSaveConfig);
+    setImmediate(this.startSaveConfig, 'server');
   },
 
   addServer(team) {
@@ -235,7 +235,7 @@ const SettingsPage = createReactClass({
     this.setState({
       teams
     });
-    setImmediate(this.startSaveConfig);
+    setImmediate(this.startSaveConfig, 'server');
   },
 
   render() {
@@ -410,7 +410,8 @@ const SettingsPage = createReactClass({
       sectionHeading: {
         fontSize: '20px',
         margin: '0',
-        padding: '1em 0'
+        padding: '1em 0',
+        float: 'left'
       },
       sectionHeadingLink: {
         marginTop: '24px',
@@ -426,6 +427,13 @@ const SettingsPage = createReactClass({
       <Row>
         <Col md={12}>
           <h2 style={settingsPage.sectionHeading}>{'App Options'}</h2>
+          <div className='IndicatorContainer'>
+            <AutoSaveIndicator
+              show={this.state.savingType === 'app'}
+              savingState={this.state.savingState}
+              errorMessage={'Can\'t save your changes. Please try again.'}
+            />
+          </div>
           { options.map((opt, i) => (
             <FormGroup key={`fromGroup${i}`}>
               {opt}
@@ -441,12 +449,6 @@ const SettingsPage = createReactClass({
           className='navbar-fixed-top'
           style={settingsPage.navbar}
         >
-          <div className='IndicatorContainer'>
-            <AutoSaveIndicator
-              savingState={this.state.savingState}
-              errorMessage={'Can\'t save your changes. Please try again.'}
-            />
-          </div>
           <div style={{position: 'relative'}}>
             <h1 style={settingsPage.heading}>{'Settings'}</h1>
             <Button
@@ -470,6 +472,13 @@ const SettingsPage = createReactClass({
               xs={8}
             >
               <h2 style={settingsPage.sectionHeading}>{'Server Management'}</h2>
+              <div className='IndicatorContainer'>
+                <AutoSaveIndicator
+                  show={this.state.savingType === 'server'}
+                  savingState={this.state.savingState}
+                  errorMessage={'Can\'t save your changes. Please try again.'}
+                />
+              </div>
             </Col>
             <Col
               md={2}
