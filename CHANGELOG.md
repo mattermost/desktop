@@ -25,6 +25,8 @@ Release date: TBD
  [#573](https://github.com/mattermost/desktop/issues/573)
  - Fixed file upload dialogs did not allow any file to be selected.
  [#497](https://github.com/mattermost/desktop/issues/497)
+ - Fixed an issue where unnecessary focus remains after closing dialogs on the settings page.
+ [#446](https://github.com/mattermost/desktop/issues/446)
 
 #### Windows
  - Fixed desktop notifications not working when the window has been minimized from inactive state.
