@@ -1,3 +1,6 @@
+.CloseButton:hover span {
+  color: #333;
+}
 
 .IndicatorContainer {
   position: absolute;
