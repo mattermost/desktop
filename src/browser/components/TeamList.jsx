@@ -80,10 +80,12 @@ const TeamList = createReactClass({
     var self = this;
     var teamNodes = this.props.teams.map((team, i) => {
       function handleTeamRemove() {
+        document.activeElement.blur();
         self.openServerRemoveModal(i);
       }
 
       function handleTeamEditing() {
+        document.activeElement.blur();
         self.handleTeamEditing(team.name, team.url, i);
       }
 
