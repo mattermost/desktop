@@ -8,8 +8,7 @@ const {
   nativeImage,
   dialog,
   systemPreferences,
-  session,
-  globalShortcut
+  session
 } = require('electron');
 const isDev = require('electron-is-dev');
 const installExtension = require('electron-devtools-installer');
@@ -345,12 +344,15 @@ app.on('ready', () => {
 
   // Add Alt+Cmd+(Right|Left) as alternative to switch between servers
   if (process.platform === 'darwin') {
-    globalShortcut.register('Alt+Cmd+Right', () => {
-      mainWindow.webContents.send('select-next-tab');
-    });
-
-    globalShortcut.register('Alt+Cmd+Left', () => {
-      mainWindow.webContents.send('select-previous-tab');
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      if (input.alt && input.meta) {
+        if (input.key === 'ArrowRight') {
+          mainWindow.webContents.send('select-next-tab');
+        }
+        if (input.key === 'ArrowLeft') {
+          mainWindow.webContents.send('select-previous-tab');
+        }
+      }
     });
   }
 
