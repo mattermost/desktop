@@ -154,7 +154,10 @@ if (app.makeSingleInstance((commandLine/*, workingDirectory*/) => {
   // argv: An array of the second instance’s (command line / deep linked) arguments
   if (process.platform === 'win32') {
     // Keep only command line / deep linked arguments
-    deeplinkingUrl = commandLine.slice(1);
+    if (Array.isArray(commandLine.slice(1)) && commandLine.slice(1).length > 0) {
+      setDeeplinkingUrl(commandLine.slice(1)[0]);
+      mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+    }
   }
 
   // Someone tried to run a second instance, we should focus our window.
@@ -327,12 +330,16 @@ ipcMain.on('download-url', (event, URL) => {
   });
 });
 
-app.setAsDefaultProtocolClient('Mattermost');
+app.setAsDefaultProtocolClient('mattermost');
+
+function setDeeplinkingUrl(url) {
+  deeplinkingUrl = url.replace('mattermost', 'https');
+}
 
 // Protocol handler for osx
-app.on('open-url', function(event, url) {
+app.on('open-url', (event, url) => {
   event.preventDefault();
-  deeplinkingUrl = url.replace('Mattermost', 'https');
+  setDeeplinkingUrl(url);
   mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
 });
 
@@ -351,7 +358,9 @@ app.on('ready', () => {
   // Protocol handler for win32
   if (process.platform === 'win32') {
     // Keep only command line / deep linked arguments
-    deeplinkingUrl = process.argv.slice(1);
+    if (Array.isArray(process.argv.slice(1)) && process.argv.slice(1).length > 0) {
+      setDeeplinkingUrl(process.argv.slice(1)[0]);
+    }
   }
 
   mainWindow = createMainWindow(config, {
@@ -359,6 +368,7 @@ app.on('ready', () => {
     linuxAppIcon: path.join(assetsDir, 'appicon.png'),
     deeplinkingUrl
   });
+
   mainWindow.on('closed', () => {
     // Dereference the window object, usually you would store windows
     // in an array if your app supports multi windows, this is the time
