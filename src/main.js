@@ -44,6 +44,7 @@ const assetsDir = path.resolve(app.getAppPath(), 'assets');
 // be closed automatically when the JavaScript object is garbage collected.
 var mainWindow = null;
 let spellChecker = null;
+let deeplinkingUrl = null;
 
 var argv = require('yargs').parse(process.argv.slice(1));
 
@@ -148,7 +149,14 @@ const trayImages = (() => {
 })();
 
 // If there is already an instance, activate the window in the existing instace and quit this one
-if (app.makeSingleInstance((/*commandLine, workingDirectory*/) => {
+if (app.makeSingleInstance((commandLine/*, workingDirectory*/) => {
+  // Protocol handler for win32
+  // argv: An array of the second instance’s (command line / deep linked) arguments
+  if (process.platform === 'win32') {
+    // Keep only command line / deep linked arguments
+    deeplinkingUrl = commandLine.slice(1);
+  }
+
   // Someone tried to run a second instance, we should focus our window.
   if (mainWindow) {
     if (mainWindow.isMinimized()) {
@@ -319,6 +327,15 @@ ipcMain.on('download-url', (event, URL) => {
   });
 });
 
+app.setAsDefaultProtocolClient('Mattermost');
+
+// Protocol handler for osx
+app.on('open-url', function(event, url) {
+  event.preventDefault();
+  deeplinkingUrl = url.replace('Mattermost', 'https');
+  mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+});
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', () => {
@@ -331,9 +348,16 @@ app.on('ready', () => {
       catch((err) => console.log('An error occurred: ', err));
   }
 
+  // Protocol handler for win32
+  if (process.platform === 'win32') {
+    // Keep only command line / deep linked arguments
+    deeplinkingUrl = process.argv.slice(1);
+  }
+
   mainWindow = createMainWindow(config, {
     hideOnStartup,
-    linuxAppIcon: path.join(assetsDir, 'appicon.png')
+    linuxAppIcon: path.join(assetsDir, 'appicon.png'),
+    deeplinkingUrl
   });
   mainWindow.on('closed', () => {
     // Dereference the window object, usually you would store windows

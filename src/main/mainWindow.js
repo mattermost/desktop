@@ -42,6 +42,7 @@ function createMainWindow(config, options) {
   });
 
   const mainWindow = new BrowserWindow(windowOptions);
+  mainWindow.deeplinkingUrl = options.deeplinkingUrl;
 
   const indexURL = global.isDev ? 'http://localhost:8080/browser/index.html' : `file://${app.getAppPath()}/browser/index.html`;
   mainWindow.loadURL(indexURL);

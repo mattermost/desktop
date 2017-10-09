@@ -20,6 +20,12 @@
       ]
     }
   ],
+  "protocols": [
+    {
+      "name": "Mattermost",
+      "schemes": ["mattermost"]
+    }
+  ],
   "deb": {
     "synopsis": "Mattermost"
   },
