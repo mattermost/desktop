@@ -342,20 +342,6 @@ app.on('ready', () => {
     console.log('The application has crashed.');
   });
 
-  // Add Alt+Cmd+(Right|Left) as alternative to switch between servers
-  if (process.platform === 'darwin') {
-    mainWindow.webContents.on('before-input-event', (event, input) => {
-      if (input.alt && input.meta) {
-        if (input.key === 'ArrowRight') {
-          mainWindow.webContents.send('select-next-tab');
-        }
-        if (input.key === 'ArrowLeft') {
-          mainWindow.webContents.send('select-previous-tab');
-        }
-      }
-    });
-  }
-
   ipcMain.on('notified', () => {
     if (process.platform === 'win32' || process.platform === 'linux') {
       if (config.notifications.flashWindow === 2) {
