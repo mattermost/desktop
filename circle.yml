@@ -1,11 +1,16 @@
 machine:
   node:
-    version: 6.1.0
+    version: 6.11.3
 
 dependencies:
   cache_directories:
     - "src/node_modules"
+    - ~/.cache/yarn
+  override:
+    - yarn
   post:
+    - if git status --short | grep yarn\.lock; then echo 'yarn.lock is not updated'; false; else true; fi
+
     - sudo dpkg --add-architecture i386
     - sudo add-apt-repository ppa:ubuntu-wine/ppa -y
     - sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
@@ -25,5 +30,7 @@ dependencies:
     - sh -x ./scripts/cp_artifacts.sh release $CIRCLE_ARTIFACTS
 
 test:
+  override:
+    - yarn test
   post:
     - mv test-results.xml $CIRCLE_TEST_REPORTS/
