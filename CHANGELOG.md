@@ -12,6 +12,10 @@ Release date: TBD
 
 ### Improvements
 
+#### Mac
+ - Added `Ctrl+Tab` and `Ctrl+Shift+Tab` shortcuts to switch tabs
+ [#512](https://github.com/mattermost/desktop/issues/512)
+
 ### Bug Fixes
 
 #### All Platforms
