@@ -114,6 +114,21 @@ function createMainWindow(config, options) {
     mainWindow.webContents.send('focus-on-webview');
   });
 
+  // Register keyboard shortcuts
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    // Add Alt+Cmd+(Right|Left) as alternative to switch between servers
+    if (process.platform === 'darwin') {
+      if (input.alt && input.meta) {
+        if (input.key === 'ArrowRight') {
+          mainWindow.webContents.send('select-next-tab');
+        }
+        if (input.key === 'ArrowLeft') {
+          mainWindow.webContents.send('select-previous-tab');
+        }
+      }
+    }
+  });
+
   return mainWindow;
 }
 
