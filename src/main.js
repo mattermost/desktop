@@ -71,6 +71,12 @@ try {
   const spellCheckerLocale = SpellChecker.getSpellCheckerLocale(app.getLocale());
   config = settings.loadDefault(null, spellCheckerLocale);
   console.log('Failed to read or upgrade config.json', e);
+  if (!config.teams.length && config.defaultTeam) {
+    config.teams.push(config.defaultTeam);
+
+    const configFile = app.getPath('userData') + '/config.json';
+    settings.writeFileSync(configFile, config);
+  }
 }
 
 ipcMain.on('update-config', () => {
