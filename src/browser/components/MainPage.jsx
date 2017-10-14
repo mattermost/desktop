@@ -14,6 +14,8 @@ const HoveringURL = require('./HoveringURL.jsx');
 
 const NewTeamModal = require('./NewTeamModal.jsx');
 
+const Utils = require('../../utils/util.js');
+
 const MainPage = createReactClass({
   propTypes: {
     onUnreadCountChange: PropTypes.func.isRequired,
@@ -25,14 +27,25 @@ const MainPage = createReactClass({
   },
 
   getInitialState() {
+    const deeplinkingUrl = remote.getCurrentWindow().deeplinkingUrl;
+    let key = this.props.initialIndex;
+    if (deeplinkingUrl !== null) {
+      for (var i = 0; i < this.props.teams.length; i++) {
+        if (deeplinkingUrl.includes(this.props.teams[i].url)) {
+          key = i;
+          break;
+        }
+      }
+    }
     return {
-      key: this.props.initialIndex,
+      key,
       unreadCounts: new Array(this.props.teams.length),
       mentionCounts: new Array(this.props.teams.length),
       unreadAtActive: new Array(this.props.teams.length),
       mentionAtActiveCounts: new Array(this.props.teams.length),
       loginQueue: [],
-      targetURL: ''
+      targetURL: '',
+      deeplinkingUrl
     };
   },
   componentDidMount() {
@@ -107,6 +120,20 @@ const MainPage = createReactClass({
 
     ipcRenderer.on('focus-on-webview', () => {
       this.focusOnWebView();
+    });
+
+    ipcRenderer.on('protocol-deeplink', (event, lastUrl) => {
+      const mattermostViews = document.getElementsByClassName('mattermostView mattermostView-with-tab');
+      const lastUrlDomain = Utils.getDomain(lastUrl);
+      for (var i = 0; i < mattermostViews.length; i++) {
+        if (lastUrlDomain === Utils.getDomain(mattermostViews[i].src)) {
+          self.refs[`mattermostView${i}`].handleDeepLink(lastUrl.replace(lastUrlDomain, ''));
+          if (this.state.key !== i) {
+            this.handleSelect(i);
+          }
+          break;
+        }
+      }
     });
   },
   componentDidUpdate(prevProps, prevState) {
@@ -247,6 +274,13 @@ const MainPage = createReactClass({
       }
       var id = 'mattermostView' + index;
       var isActive = self.state.key === index;
+
+      let teamUrl = team.url;
+      const deeplinkingUrl = this.state.deeplinkingUrl;
+      if (deeplinkingUrl !== null && deeplinkingUrl.includes(teamUrl)) {
+        teamUrl = deeplinkingUrl;
+      }
+
       return (
         <MattermostView
           key={id}
@@ -254,7 +288,8 @@ const MainPage = createReactClass({
           withTab={this.props.teams.length > 1}
           useSpellChecker={this.props.useSpellChecker}
           onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
-          team={team}
+          src={teamUrl}
+          name={team.name}
           onTargetURLChange={self.handleTargetURLChange}
           onUnreadCountChange={handleUnreadCountChange}
           onNotificationClick={handleNotificationClick}

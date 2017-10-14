@@ -15,10 +15,11 @@ const preloadJS = `file://${remote.app.getAppPath()}/browser/webview/mattermost_
 
 const MattermostView = createReactClass({
   propTypes: {
+    name: PropTypes.string,
     id: PropTypes.string,
     onTargetURLChange: PropTypes.func,
     onUnreadCountChange: PropTypes.func,
-    team: PropTypes.object,
+    src: PropTypes.string,
     active: PropTypes.bool,
     withTab: PropTypes.bool,
     useSpellChecker: PropTypes.bool,
@@ -43,18 +44,8 @@ const MattermostView = createReactClass({
     var self = this;
     var webview = findDOMNode(this.refs.webview);
 
-    ipcRenderer.on('protocol-deeplink', (event, lastUrl) => {
-      webview.executeJavaScript(
-        'history.pushState(null, null, "/' +
-        lastUrl.replace(lastUrl.match(/(?:[^/]*\/){3}/), '') + '");'
-      );
-      webview.executeJavaScript(
-        'dispatchEvent(new PopStateEvent("popstate", null));'
-      );
-    });
-
     webview.addEventListener('did-fail-load', (e) => {
-      console.log(self.props.team.name, 'webview did-fail-load', e);
+      console.log(self.props.name, 'webview did-fail-load', e);
       if (e.errorCode === -3) { // An operation was aborted (due to user action).
         return;
       }
@@ -148,7 +139,7 @@ const MattermostView = createReactClass({
     });
 
     webview.addEventListener('console-message', (e) => {
-      const message = `[${this.props.team.name}] ${e.message}`;
+      const message = `[${this.props.name}] ${e.message}`;
       switch (e.level) {
       case 0:
         console.log(message);
@@ -214,6 +205,16 @@ const MattermostView = createReactClass({
     webview.getWebContents().goForward();
   },
 
+  handleDeepLink(relativeUrl) {
+    const webview = findDOMNode(this.refs.webview);
+    webview.executeJavaScript(
+      'history.pushState(null, null, "/' + relativeUrl + '");'
+    );
+    webview.executeJavaScript(
+      'dispatchEvent(new PopStateEvent("popstate", null));'
+    );
+  },
+
   render() {
     const errorView = this.state.errorInfo ? (
       <ErrorView
@@ -233,9 +234,6 @@ const MattermostView = createReactClass({
       classNames.push('mattermostView-hidden');
     }
 
-    const deeplinkingUrl = remote.getCurrentWindow().deeplinkingUrl;
-    const lastUrl = (deeplinkingUrl === null ? this.props.team.url : deeplinkingUrl);
-
     return (
       <div>
         { errorView }
@@ -243,7 +241,7 @@ const MattermostView = createReactClass({
           id={this.props.id}
           className={classNames.join(' ')}
           preload={preloadJS}
-          src={lastUrl}
+          src={this.props.src}
           ref='webview'
         />
       </div>);
