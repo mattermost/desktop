@@ -14,6 +14,8 @@ const isDev = require('electron-is-dev');
 const installExtension = require('electron-devtools-installer');
 const squirrelStartup = require('./main/squirrelStartup');
 
+const protocols = require('../electron-builder.json').protocols;
+
 process.on('uncaughtException', (error) => {
   console.error(error);
 });
@@ -330,10 +332,18 @@ ipcMain.on('download-url', (event, URL) => {
   });
 });
 
-app.setAsDefaultProtocolClient('mattermost');
+let scheme;
+if (protocols && protocols[0] &&
+  protocols[0].schemes && protocols[0].schemes[0]
+) {
+  scheme = protocols[0].schemes[0];
+  app.setAsDefaultProtocolClient(scheme);
+}
 
 function setDeeplinkingUrl(url) {
-  deeplinkingUrl = url.replace('mattermost', 'https');
+  if (scheme) {
+    deeplinkingUrl = url.replace(scheme, 'https');
+  }
 }
 
 // Protocol handler for osx
