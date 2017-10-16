@@ -2,6 +2,14 @@ const settings = require('../../src/common/settings');
 const deepmerge = require('deepmerge');
 
 describe('common/settings.js', () => {
+  before(() => {
+    process.env.TEST = 1;
+  });
+
+  after(() => {
+    delete process.env.TEST;
+  });
+
   it('should upgrade v0 config file', () => {
     const v0Config = {
       url: 'https://example.com/team'
