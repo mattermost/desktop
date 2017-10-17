@@ -1,5 +1,4 @@
 'use strict';
-process.env.TEST = 'test';
 
 const chai = require('chai');
 chai.should();

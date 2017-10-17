@@ -3,10 +3,7 @@
 const fs = require('fs');
 
 const path = require('path');
-let deepmerge = require('deepmerge').default;
-if (process.env.TEST) {
-  deepmerge = require('deepmerge'); // eslint-disable-line
-}
+const deepmerge = require('./deepmerge');
 
 const settingsVersion = 1;
 const baseConfig = require('./config/base.json');
