@@ -471,7 +471,7 @@ app.on('ready', () => {
         }
       }
 
-      if (trayIcon) {
+      if (trayIcon && !trayIcon.isDestroyed()) {
         if (arg.mentionCount > 0) {
           trayIcon.setImage(trayImages.mention);
           if (process.platform === 'darwin') {
