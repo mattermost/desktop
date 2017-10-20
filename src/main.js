@@ -342,7 +342,7 @@ if (protocols && protocols[0] &&
 
 function setDeeplinkingUrl(url) {
   if (scheme) {
-    deeplinkingUrl = url.replace(scheme, 'https');
+    deeplinkingUrl = url.replace(new RegExp('^' + scheme), 'https');
   }
 }
 
@@ -351,6 +351,7 @@ app.on('open-url', (event, url) => {
   event.preventDefault();
   setDeeplinkingUrl(url);
   mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+  mainWindow.show();
 });
 
 // This method will be called when Electron has finished
@@ -367,9 +368,13 @@ app.on('ready', () => {
 
   // Protocol handler for win32
   if (process.platform === 'win32') {
-    // Keep only command line / deep linked arguments
-    if (Array.isArray(process.argv.slice(1)) && process.argv.slice(1).length > 0) {
-      setDeeplinkingUrl(process.argv.slice(1)[0]);
+    // Keep only command line / deep linked argument. Make sure it's not squirrel command
+    const tmpArgs = process.argv.slice(1);
+    if (
+      Array.isArray(tmpArgs) && tmpArgs.length > 0 &&
+      tmpArgs[0].match(/^--squirrel-/) === null
+    ) {
+      setDeeplinkingUrl(tmpArgs[0]);
     }
   }
 

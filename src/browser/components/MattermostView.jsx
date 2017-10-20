@@ -205,10 +205,15 @@ const MattermostView = createReactClass({
     webview.getWebContents().goForward();
   },
 
+  getSrc() {
+    const webview = findDOMNode(this.refs.webview);
+    return webview.src;
+  },
+
   handleDeepLink(relativeUrl) {
     const webview = findDOMNode(this.refs.webview);
     webview.executeJavaScript(
-      'history.pushState(null, null, "/' + relativeUrl + '");'
+      'history.pushState(null, null, "' + relativeUrl + '");'
     );
     webview.executeJavaScript(
       'dispatchEvent(new PopStateEvent("popstate", null));'

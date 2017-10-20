@@ -1,6 +1,10 @@
-const REGEXP_DOMAIN = /(?:[^/]*\/){3}/;
+const {URL} = require('url');
 
 export function getDomain(url) {
-  const matched = url.match(REGEXP_DOMAIN);
-  return matched ? matched[0] : null;
+  try {
+    const objectUrl = new URL(url);
+    return objectUrl.origin;
+  } catch (e) {
+    return null;
+  }
 }

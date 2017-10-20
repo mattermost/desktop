@@ -44,8 +44,7 @@ const MainPage = createReactClass({
       unreadAtActive: new Array(this.props.teams.length),
       mentionAtActiveCounts: new Array(this.props.teams.length),
       loginQueue: [],
-      targetURL: '',
-      deeplinkingUrl
+      targetURL: ''
     };
   },
   componentDidMount() {
@@ -122,15 +121,14 @@ const MainPage = createReactClass({
       this.focusOnWebView();
     });
 
-    ipcRenderer.on('protocol-deeplink', (event, lastUrl) => {
-      const mattermostViews = document.getElementsByClassName('mattermostView mattermostView-with-tab');
-      const lastUrlDomain = Utils.getDomain(lastUrl);
-      for (var i = 0; i < mattermostViews.length; i++) {
-        if (lastUrlDomain === Utils.getDomain(mattermostViews[i].src)) {
-          self.refs[`mattermostView${i}`].handleDeepLink(lastUrl.replace(lastUrlDomain, ''));
+    ipcRenderer.on('protocol-deeplink', (event, deepLinkUrl) => {
+      const lastUrlDomain = Utils.getDomain(deepLinkUrl);
+      for (var i = 0; i < this.props.teams.length; i++) {
+        if (lastUrlDomain === Utils.getDomain(self.refs[`mattermostView${i}`].getSrc())) {
           if (this.state.key !== i) {
             this.handleSelect(i);
           }
+          self.refs[`mattermostView${i}`].handleDeepLink(deepLinkUrl.replace(lastUrlDomain, ''));
           break;
         }
       }
@@ -276,7 +274,7 @@ const MainPage = createReactClass({
       var isActive = self.state.key === index;
 
       let teamUrl = team.url;
-      const deeplinkingUrl = this.state.deeplinkingUrl;
+      const deeplinkingUrl = remote.getCurrentWindow().deeplinkingUrl;
       if (deeplinkingUrl !== null && deeplinkingUrl.includes(teamUrl)) {
         teamUrl = deeplinkingUrl;
       }
