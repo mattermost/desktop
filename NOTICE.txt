@@ -43,7 +43,7 @@ SOFTWARE.
 
 ## bootstrap
 
-This product contains a modified portion of 'bootstrap', which is an HTML, CSS, and JavaScript framework for developing responsive, mobile first 
+This product contains a modified portion of 'bootstrap', which is an HTML, CSS, and JavaScript framework for developing responsive, mobile first
 projects on the web, by Twitter, Inc. and Bootstrap Authors.
 
 * HOMEPAGE:
@@ -111,7 +111,7 @@ THE SOFTWARE.
 
 ## electron-devtools-installer
 
-This product contains a modified portion of 'electron-devtools-installer', which allows an easy way to ensure Chrome DevTools extensions into Electron, 
+This product contains a modified portion of 'electron-devtools-installer', which allows an easy way to ensure Chrome DevTools extensions into Electron,
 by Samuel Attard.
 
 * HOMEPAGE:
@@ -500,7 +500,7 @@ under section (i) of this paragraph due to such counterclaim.
 
 ## react-bootstrap
 
-This product contains a modified portion of 'react-bootstrap', Bootstrap 3 components for front-end framework built with React, by Stephen J. Collings, 
+This product contains a modified portion of 'react-bootstrap', Bootstrap 3 components for front-end framework built with React, by Stephen J. Collings,
 Matthew Honnibal, Pieter Vanderwerff and react-bootstrap.
 
 * HOMEPAGE:
@@ -1363,7 +1363,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## mocha-circleci-reporter
 
-This product contains 'mocha-circleci-reporter', a mocha reporter that supports Circle CI, via a combined jUnit and Spec reporter 
+This product contains 'mocha-circleci-reporter', a mocha reporter that supports Circle CI, via a combined jUnit and Spec reporter
 output, by Glenn Morton.
 
 * HOMEPAGE:
@@ -1558,7 +1558,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## webpack-merge
 
-This product contains 'webpack-merge', which concatenates arrays and merges objects creating a new object, useful in 
+This product contains 'webpack-merge', which concatenates arrays and merges objects creating a new object, useful in
 configuring webpack, by Juho Vepsäläinen and SurviveJS.
 
 * HOMEPAGE:
