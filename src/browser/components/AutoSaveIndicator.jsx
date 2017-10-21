@@ -21,11 +21,8 @@ function getClassNameAndMessage(savingState, errorMessage) {
 }
 
 function AutoSaveIndicator(props) {
-  const {show, savingState, errorMessage, ...rest} = props;
+  const {savingState, errorMessage, ...rest} = props;
   const {className, message} = getClassNameAndMessage(savingState, errorMessage);
-  if (!show) {
-    return null;
-  }
 
   return (
     <Alert
@@ -39,7 +36,6 @@ function AutoSaveIndicator(props) {
 }
 
 AutoSaveIndicator.propTypes = {
-  show: PropTypes.bool,
   savingState: PropTypes.string.isRequired,
   errorMessage: PropTypes.string
 };

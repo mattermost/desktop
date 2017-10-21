@@ -6,7 +6,6 @@ const {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} = 
 
 const {ipcRenderer, remote} = require('electron');
 const AutoLaunch = require('auto-launch');
-const {debounce} = require('underscore');
 
 const settings = require('../../common/settings');
 
@@ -42,7 +41,10 @@ const SettingsPage = createReactClass({
     if (initialState.teams.length === 0) {
       initialState.showAddTeamForm = true;
     }
-    initialState.savingState = 'done';
+    initialState.status = {
+      app: 'done',
+      server: 'done'
+    };
 
     return initialState;
   },
@@ -65,31 +67,44 @@ const SettingsPage = createReactClass({
     });
   },
 
-  setSavingState(state, type) {
-    if (!this.setSavingStateSaved) {
-      this.setSavingStateSaved = debounce(() => {
-        this.saveConfig((err) => {
-          if (err) {
-            this.setState({savingState: 'error'});
-          } else {
-            this.setState({savingState: 'saved'});
-          }
-          this.setSavingStateDoneTimer = setTimeout(this.setState.bind(this, {savingState: 'done'}), 2000);
-        });
-      }, 500);
-    }
-    if (this.setSavingStateDoneTimer) {
-      clearTimeout(this.setSavingStateDoneTimer);
-      this.setSavingStateDoneTimer = null;
-    }
-    this.setState({savingState: state, savingType: type});
-    if (state === 'saving') {
-      this.setSavingStateSaved();
-    }
+  setSavingStatus(type) {
+    const status = this.state.status;
+    status[type] = 'saving';
+
+    this.setState({status}, () => {
+      this.saveConfig((err) => {
+        if (err) {
+          status[type] = 'error';
+        } else {
+          status[type] = 'saved';
+        }
+
+        this.setToDone(status, type);
+      });
+    });
+  },
+
+  setToDone(status, type) {
+    this.setState({status}, () => {
+      if (!this.doneTimeout) {
+        this.doneTimeout = [];
+      }
+
+      if (this.doneTimeout[type]) {
+        clearTimeout(this.doneTimeout[type]);
+      }
+
+      this.doneTimeout[type] = setTimeout(() => {
+        status[type] = 'done';
+        this.setState({status});
+      }, 2000);
+    });
   },
 
   startSaveConfig(type = 'app') {
-    this.setSavingState('saving', type);
+    if (this.state.status[type] !== 'saving') {
+      this.setSavingStatus(type);
+    }
   },
 
   handleTeamsChange(teams) {
@@ -429,8 +444,7 @@ const SettingsPage = createReactClass({
           <h2 style={settingsPage.sectionHeading}>{'App Options'}</h2>
           <div className='IndicatorContainer'>
             <AutoSaveIndicator
-              show={this.state.savingType === 'app'}
-              savingState={this.state.savingState}
+              savingState={this.state.status.app}
               errorMessage={'Can\'t save your changes. Please try again.'}
             />
           </div>
@@ -474,8 +488,7 @@ const SettingsPage = createReactClass({
               <h2 style={settingsPage.sectionHeading}>{'Server Management'}</h2>
               <div className='IndicatorContainer'>
                 <AutoSaveIndicator
-                  show={this.state.savingType === 'server'}
-                  savingState={this.state.savingState}
+                  savingState={this.state.status.server}
                   errorMessage={'Can\'t save your changes. Please try again.'}
                 />
               </div>
