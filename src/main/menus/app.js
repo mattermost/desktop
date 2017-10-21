@@ -1,6 +1,8 @@
 'use strict';
 
 const electron = require('electron');
+const settings = require('../../common/settings');
+const buildConfig = require('../../common/config/buildConfig');
 
 const Menu = electron.Menu;
 
@@ -173,13 +175,14 @@ function createTemplate(mainWindow, config, isDev) {
     }]
   });
 
+  const teams = settings.mergeDefaultTeams(config.teams);
   const windowMenu = {
     label: '&Window',
     submenu: [{
       role: 'minimize'
     }, {
       role: 'close'
-    }, separatorItem, ...config.teams.slice(0, 9).map((team, i) => {
+    }, separatorItem, ...teams.slice(0, 9).map((team, i) => {
       return {
         label: team.name,
         accelerator: `CmdOrCtrl+${i + 1}`,
@@ -194,23 +197,23 @@ function createTemplate(mainWindow, config, isDev) {
       click() {
         mainWindow.webContents.send('select-next-tab');
       },
-      enabled: (config.teams.length > 1)
+      enabled: (teams.length > 1)
     }, {
       label: 'Select Previous Server',
       accelerator: 'Ctrl+Shift+Tab',
       click() {
         mainWindow.webContents.send('select-previous-tab');
       },
-      enabled: (config.teams.length > 1)
+      enabled: (teams.length > 1)
     }]
   };
   template.push(windowMenu);
   var submenu = [];
-  if (config.helpLink) {
+  if (buildConfig.helpLink) {
     submenu.push({
       label: 'Learn More...',
       click() {
-        electron.shell.openExternal(config.helpLink);
+        electron.shell.openExternal(buildConfig.helpLink);
       }
     });
     submenu.push(separatorItem);

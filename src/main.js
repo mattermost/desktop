@@ -69,7 +69,7 @@ try {
   config = settings.readFileSync(configFile);
   if (config.version !== settings.version || wasUpdated()) {
     clearAppCache();
-    config = settings.upgrade(config, app.getVersion());
+    config = settings.upgrade(config);
     settings.writeFileSync(configFile, config);
   }
 } catch (e) {
