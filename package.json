@@ -35,7 +35,6 @@
     "lint:js": "eslint --ext .js --ext .jsx ."
   },
   "devDependencies": {
-    "deepmerge": "^1.5.2",
     "7zip-bin": "^2.0.4",
     "babel-core": "^6.24.1",
     "babel-eslint": "^7.2.3",
