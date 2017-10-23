@@ -23,15 +23,15 @@ const MainPage = createReactClass({
     onTeamConfigChange: PropTypes.func.isRequired,
     initialIndex: PropTypes.number.isRequired,
     useSpellChecker: PropTypes.bool.isRequired,
-    onSelectSpellCheckerLocale: PropTypes.func.isRequired
+    onSelectSpellCheckerLocale: PropTypes.func.isRequired,
+    deeplinkingUrl: PropTypes.string
   },
 
   getInitialState() {
-    const deeplinkingUrl = remote.getCurrentWindow().deeplinkingUrl;
     let key = this.props.initialIndex;
-    if (deeplinkingUrl !== null) {
+    if (this.props.deeplinkingUrl !== null) {
       for (var i = 0; i < this.props.teams.length; i++) {
-        if (deeplinkingUrl.includes(this.props.teams[i].url)) {
+        if (this.props.deeplinkingUrl.includes(this.props.teams[i].url)) {
           key = i;
           break;
         }
@@ -274,7 +274,7 @@ const MainPage = createReactClass({
       var isActive = self.state.key === index;
 
       let teamUrl = team.url;
-      const deeplinkingUrl = remote.getCurrentWindow().deeplinkingUrl;
+      const deeplinkingUrl = this.props.deeplinkingUrl;
       if (deeplinkingUrl !== null && deeplinkingUrl.includes(teamUrl)) {
         teamUrl = deeplinkingUrl;
       }
