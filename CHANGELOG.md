@@ -12,9 +12,15 @@ Release date: TBD
 
 ### Improvements
 
+#### Windows
+ - Added the feature to open the application via `mattermost://` link.
+ [#616](https://github.com/mattermost/desktop/pull/616)
+
 #### Mac
  - Added `Ctrl+Tab` and `Ctrl+Shift+Tab` shortcuts to switch tabs
  [#512](https://github.com/mattermost/desktop/issues/512)
+ - Added the feature to open the application via `mattermost://` link.
+ [#616](https://github.com/mattermost/desktop/pull/616)
 
 ### Bug Fixes
 

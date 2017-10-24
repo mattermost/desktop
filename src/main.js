@@ -14,6 +14,8 @@ const isDev = require('electron-is-dev');
 const installExtension = require('electron-devtools-installer');
 const squirrelStartup = require('./main/squirrelStartup');
 
+const protocols = require('../electron-builder.json').protocols;
+
 process.on('uncaughtException', (error) => {
   console.error(error);
 });
@@ -44,6 +46,7 @@ const assetsDir = path.resolve(app.getAppPath(), 'assets');
 // be closed automatically when the JavaScript object is garbage collected.
 var mainWindow = null;
 let spellChecker = null;
+let scheme = null;
 
 var argv = require('yargs').parse(process.argv.slice(1));
 
@@ -148,7 +151,19 @@ const trayImages = (() => {
 })();
 
 // If there is already an instance, activate the window in the existing instace and quit this one
-if (app.makeSingleInstance((/*commandLine, workingDirectory*/) => {
+if (app.makeSingleInstance((commandLine/*, workingDirectory*/) => {
+  // Protocol handler for win32
+  // argv: An array of the second instance’s (command line / deep linked) arguments
+  if (process.platform === 'win32') {
+    // Keep only command line / deep linked arguments
+    if (Array.isArray(commandLine.slice(1)) && commandLine.slice(1).length > 0) {
+      const deeplinkingUrl = getDeeplinkingUrl(commandLine.slice(1)[0]);
+      if (deeplinkingUrl) {
+        mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+      }
+    }
+  }
+
   // Someone tried to run a second instance, we should focus our window.
   if (mainWindow) {
     if (mainWindow.isMinimized()) {
@@ -319,6 +334,32 @@ ipcMain.on('download-url', (event, URL) => {
   });
 });
 
+if (isDev) {
+  console.log('In development mode, deeplinking is disabled');
+} else if (protocols && protocols[0] &&
+  protocols[0].schemes && protocols[0].schemes[0]
+) {
+  scheme = protocols[0].schemes[0];
+  app.setAsDefaultProtocolClient(scheme);
+}
+
+function getDeeplinkingUrl(url) {
+  if (scheme) {
+    return url.replace(new RegExp('^' + scheme), 'https');
+  }
+  return null;
+}
+
+// Protocol handler for osx
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  const deeplinkingUrl = getDeeplinkingUrl(url);
+  if (deeplinkingUrl) {
+    mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+  }
+  mainWindow.show();
+});
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', () => {
@@ -331,10 +372,26 @@ app.on('ready', () => {
       catch((err) => console.log('An error occurred: ', err));
   }
 
+  let deeplinkingUrl = null;
+
+  // Protocol handler for win32
+  if (process.platform === 'win32') {
+    // Keep only command line / deep linked argument. Make sure it's not squirrel command
+    const tmpArgs = process.argv.slice(1);
+    if (
+      Array.isArray(tmpArgs) && tmpArgs.length > 0 &&
+      tmpArgs[0].match(/^--squirrel-/) === null
+    ) {
+      deeplinkingUrl = getDeeplinkingUrl(tmpArgs[0]);
+    }
+  }
+
   mainWindow = createMainWindow(config, {
     hideOnStartup,
-    linuxAppIcon: path.join(assetsDir, 'appicon.png')
+    linuxAppIcon: path.join(assetsDir, 'appicon.png'),
+    deeplinkingUrl
   });
+
   mainWindow.on('closed', () => {
     // Dereference the window object, usually you would store windows
     // in an array if your app supports multi windows, this is the time

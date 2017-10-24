@@ -14,6 +14,8 @@ const HoveringURL = require('./HoveringURL.jsx');
 
 const NewTeamModal = require('./NewTeamModal.jsx');
 
+const Utils = require('../../utils/util.js');
+
 const MainPage = createReactClass({
   propTypes: {
     onUnreadCountChange: PropTypes.func.isRequired,
@@ -21,12 +23,22 @@ const MainPage = createReactClass({
     onTeamConfigChange: PropTypes.func.isRequired,
     initialIndex: PropTypes.number.isRequired,
     useSpellChecker: PropTypes.bool.isRequired,
-    onSelectSpellCheckerLocale: PropTypes.func.isRequired
+    onSelectSpellCheckerLocale: PropTypes.func.isRequired,
+    deeplinkingUrl: PropTypes.string
   },
 
   getInitialState() {
+    let key = this.props.initialIndex;
+    if (this.props.deeplinkingUrl !== null) {
+      for (var i = 0; i < this.props.teams.length; i++) {
+        if (this.props.deeplinkingUrl.includes(this.props.teams[i].url)) {
+          key = i;
+          break;
+        }
+      }
+    }
     return {
-      key: this.props.initialIndex,
+      key,
       unreadCounts: new Array(this.props.teams.length),
       mentionCounts: new Array(this.props.teams.length),
       unreadAtActive: new Array(this.props.teams.length),
@@ -107,6 +119,19 @@ const MainPage = createReactClass({
 
     ipcRenderer.on('focus-on-webview', () => {
       this.focusOnWebView();
+    });
+
+    ipcRenderer.on('protocol-deeplink', (event, deepLinkUrl) => {
+      const lastUrlDomain = Utils.getDomain(deepLinkUrl);
+      for (var i = 0; i < this.props.teams.length; i++) {
+        if (lastUrlDomain === Utils.getDomain(self.refs[`mattermostView${i}`].getSrc())) {
+          if (this.state.key !== i) {
+            this.handleSelect(i);
+          }
+          self.refs[`mattermostView${i}`].handleDeepLink(deepLinkUrl.replace(lastUrlDomain, ''));
+          break;
+        }
+      }
     });
   },
   componentDidUpdate(prevProps, prevState) {
@@ -247,6 +272,13 @@ const MainPage = createReactClass({
       }
       var id = 'mattermostView' + index;
       var isActive = self.state.key === index;
+
+      let teamUrl = team.url;
+      const deeplinkingUrl = this.props.deeplinkingUrl;
+      if (deeplinkingUrl !== null && deeplinkingUrl.includes(teamUrl)) {
+        teamUrl = deeplinkingUrl;
+      }
+
       return (
         <MattermostView
           key={id}
@@ -254,7 +286,7 @@ const MainPage = createReactClass({
           withTab={this.props.teams.length > 1}
           useSpellChecker={this.props.useSpellChecker}
           onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
-          src={team.url}
+          src={teamUrl}
           name={team.name}
           onTargetURLChange={self.handleTargetURLChange}
           onUnreadCountChange={handleUnreadCountChange}

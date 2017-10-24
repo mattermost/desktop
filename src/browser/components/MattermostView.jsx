@@ -205,6 +205,21 @@ const MattermostView = createReactClass({
     webview.getWebContents().goForward();
   },
 
+  getSrc() {
+    const webview = findDOMNode(this.refs.webview);
+    return webview.src;
+  },
+
+  handleDeepLink(relativeUrl) {
+    const webview = findDOMNode(this.refs.webview);
+    webview.executeJavaScript(
+      'history.pushState(null, null, "' + relativeUrl + '");'
+    );
+    webview.executeJavaScript(
+      'dispatchEvent(new PopStateEvent("popstate", null));'
+    );
+  },
+
   render() {
     const errorView = this.state.errorInfo ? (
       <ErrorView
@@ -223,6 +238,7 @@ const MattermostView = createReactClass({
     if (!this.props.active) {
       classNames.push('mattermostView-hidden');
     }
+
     return (
       <div>
         { errorView }

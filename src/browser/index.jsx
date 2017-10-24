@@ -102,6 +102,11 @@ function handleSelectSpellCheckerLocale(locale) {
 const parsedURL = url.parse(window.location.href, true);
 const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : 0;
 
+let deeplinkingUrl = null;
+if (!parsedURL.query.index || parsedURL.query.index === null) {
+  deeplinkingUrl = remote.getCurrentWindow().deeplinkingUrl;
+}
+
 ReactDOM.render(
   <MainPage
     teams={AppConfig.data.teams}
@@ -110,6 +115,7 @@ ReactDOM.render(
     onTeamConfigChange={teamConfigChange}
     useSpellChecker={AppConfig.data.useSpellChecker}
     onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}
+    deeplinkingUrl={deeplinkingUrl}
   />,
   document.getElementById('content')
 );
