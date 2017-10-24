@@ -334,7 +334,9 @@ ipcMain.on('download-url', (event, URL) => {
   });
 });
 
-if (protocols && protocols[0] &&
+if (isDev) {
+  console.log('In development mode, deeplinking is disabled');
+} else if (protocols && protocols[0] &&
   protocols[0].schemes && protocols[0].schemes[0]
 ) {
   scheme = protocols[0].schemes[0];
