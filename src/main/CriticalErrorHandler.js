@@ -1,4 +1,5 @@
-const {app, dialog, shell} = require('electron');
+const {app, dialog} = require('electron');
+const {spawn} = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -7,6 +8,20 @@ function createErrorReport(err) {
   return `Application: ${app.getName()} ${app.getVersion()}\n` +
          `Platform: ${os.type()} ${os.release()} ${os.arch()}\n` +
          `${err.stack}`;
+}
+
+function openDetachedExternal(url) {
+  const spawnOption = {detached: true, stdio: 'ignore'};
+  switch (process.platform) {
+  case 'win32':
+    return spawn('cmd', ['/C', 'start', url], spawnOption);
+  case 'darwin':
+    return spawn('open', [url], spawnOption);
+  case 'linux':
+    return spawn('xdg-open', [url], spawnOption);
+  default:
+    return null;
+  }
 }
 
 function bindWindowToShowMessageBox(win) {
@@ -54,7 +69,13 @@ class CriticalErrorHandler {
         defaultId: 0
       });
       if (result === 1) {
-        shell.openExternal(file);
+        const child = openDetachedExternal(file);
+        if (child) {
+          child.on('error', (spawnError) => {
+            console.log(spawnError);
+          });
+          child.unref();
+        }
       }
     }
     throw err;
