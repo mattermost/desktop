@@ -46,7 +46,7 @@ const assetsDir = path.resolve(app.getAppPath(), 'assets');
 // be closed automatically when the JavaScript object is garbage collected.
 var mainWindow = null;
 let spellChecker = null;
-let deeplinkingUrl = null;
+let scheme = null;
 
 var argv = require('yargs').parse(process.argv.slice(1));
 
@@ -157,8 +157,10 @@ if (app.makeSingleInstance((commandLine/*, workingDirectory*/) => {
   if (process.platform === 'win32') {
     // Keep only command line / deep linked arguments
     if (Array.isArray(commandLine.slice(1)) && commandLine.slice(1).length > 0) {
-      setDeeplinkingUrl(commandLine.slice(1)[0]);
-      mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+      const deeplinkingUrl = getDeeplinkingUrl(commandLine.slice(1)[0]);
+      if (deeplinkingUrl) {
+        mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+      }
     }
   }
 
@@ -332,7 +334,6 @@ ipcMain.on('download-url', (event, URL) => {
   });
 });
 
-let scheme;
 if (protocols && protocols[0] &&
   protocols[0].schemes && protocols[0].schemes[0]
 ) {
@@ -340,17 +341,20 @@ if (protocols && protocols[0] &&
   app.setAsDefaultProtocolClient(scheme);
 }
 
-function setDeeplinkingUrl(url) {
+function getDeeplinkingUrl(url) {
   if (scheme) {
-    deeplinkingUrl = url.replace(new RegExp('^' + scheme), 'https');
+    return url.replace(new RegExp('^' + scheme), 'https');
   }
+  return null;
 }
 
 // Protocol handler for osx
 app.on('open-url', (event, url) => {
   event.preventDefault();
-  setDeeplinkingUrl(url);
-  mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+  const deeplinkingUrl = getDeeplinkingUrl(url);
+  if (deeplinkingUrl) {
+    mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+  }
   mainWindow.show();
 });
 
@@ -366,6 +370,8 @@ app.on('ready', () => {
       catch((err) => console.log('An error occurred: ', err));
   }
 
+  let deeplinkingUrl = null;
+
   // Protocol handler for win32
   if (process.platform === 'win32') {
     // Keep only command line / deep linked argument. Make sure it's not squirrel command
@@ -374,7 +380,7 @@ app.on('ready', () => {
       Array.isArray(tmpArgs) && tmpArgs.length > 0 &&
       tmpArgs[0].match(/^--squirrel-/) === null
     ) {
-      setDeeplinkingUrl(tmpArgs[0]);
+      deeplinkingUrl = getDeeplinkingUrl(tmpArgs[0]);
     }
   }
 
