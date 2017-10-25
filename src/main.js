@@ -46,6 +46,7 @@ const assetsDir = path.resolve(app.getAppPath(), 'assets');
 // be closed automatically when the JavaScript object is garbage collected.
 var mainWindow = null;
 let spellChecker = null;
+let deeplinkingUrl = null;
 let scheme = null;
 
 var argv = require('yargs').parse(process.argv.slice(1));
@@ -157,10 +158,8 @@ if (app.makeSingleInstance((commandLine/*, workingDirectory*/) => {
   if (process.platform === 'win32') {
     // Keep only command line / deep linked arguments
     if (Array.isArray(commandLine.slice(1)) && commandLine.slice(1).length > 0) {
-      const deeplinkingUrl = getDeeplinkingUrl(commandLine.slice(1)[0]);
-      if (deeplinkingUrl) {
-        mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
-      }
+      setDeeplinkingUrl(commandLine.slice(1)[0]);
+      mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
     }
   }
 
@@ -343,20 +342,17 @@ if (isDev) {
   app.setAsDefaultProtocolClient(scheme);
 }
 
-function getDeeplinkingUrl(url) {
+function setDeeplinkingUrl(url) {
   if (scheme) {
-    return url.replace(new RegExp('^' + scheme), 'https');
+    deeplinkingUrl = url.replace(new RegExp('^' + scheme), 'https');
   }
-  return null;
 }
 
 // Protocol handler for osx
 app.on('open-url', (event, url) => {
   event.preventDefault();
-  const deeplinkingUrl = getDeeplinkingUrl(url);
-  if (deeplinkingUrl) {
-    mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
-  }
+  setDeeplinkingUrl(url);
+  mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
   mainWindow.show();
 });
 
@@ -372,8 +368,6 @@ app.on('ready', () => {
       catch((err) => console.log('An error occurred: ', err));
   }
 
-  let deeplinkingUrl = null;
-
   // Protocol handler for win32
   if (process.platform === 'win32') {
     // Keep only command line / deep linked argument. Make sure it's not squirrel command
@@ -382,7 +376,7 @@ app.on('ready', () => {
       Array.isArray(tmpArgs) && tmpArgs.length > 0 &&
       tmpArgs[0].match(/^--squirrel-/) === null
     ) {
-      deeplinkingUrl = getDeeplinkingUrl(tmpArgs[0]);
+      setDeeplinkingUrl(tmpArgs[0]);
     }
   }
 
