@@ -6,6 +6,7 @@ const {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} = 
 
 const {ipcRenderer, remote} = require('electron');
 const AutoLaunch = require('auto-launch');
+const {debounce} = require('underscore');
 
 const settings = require('../../common/settings');
 
@@ -22,6 +23,9 @@ function backToIndex(index) {
   const indexURL = remote.getGlobal('isDev') ? 'http://localhost:8080/browser/index.html' : `file://${remote.app.getAppPath()}/browser/index.html`;
   remote.getCurrentWindow().loadURL(`${indexURL}?index=${target}`);
 }
+
+const CONFIG_TYPE_SERVERS = 'servers';
+const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
 const SettingsPage = createReactClass({
   propTypes: {
@@ -41,9 +45,9 @@ const SettingsPage = createReactClass({
     if (initialState.teams.length === 0) {
       initialState.showAddTeamForm = true;
     }
-    initialState.status = {
-      app: 'done',
-      server: 'done'
+    initialState.savingState = {
+      appOptions: 'done',
+      servers: 'done'
     };
 
     return initialState;
@@ -67,44 +71,41 @@ const SettingsPage = createReactClass({
     });
   },
 
-  setSavingStatus(type) {
-    const status = this.state.status;
-    status[type] = 'saving';
-
-    this.setState({status}, () => {
-      this.saveConfig((err) => {
-        if (err) {
-          status[type] = 'error';
-        } else {
-          status[type] = 'saved';
-        }
-
-        this.setToDone(status, type);
-      });
-    });
-  },
-
-  setToDone(status, type) {
-    this.setState({status}, () => {
-      if (!this.doneTimeout) {
-        this.doneTimeout = [];
-      }
-
-      if (this.doneTimeout[type]) {
-        clearTimeout(this.doneTimeout[type]);
-      }
-
-      this.doneTimeout[type] = setTimeout(() => {
-        status[type] = 'done';
-        this.setState({status});
-      }, 2000);
-    });
-  },
-
-  startSaveConfig(type = 'app') {
-    if (this.state.status[type] !== 'saving') {
-      this.setSavingStatus(type);
+  startSaveConfig(configType) {
+    if (!this.startSaveConfigImpl) {
+      this.startSaveConfigImpl = {};
     }
+    if (!this.startSaveConfigImpl[configType]) {
+      this.startSaveConfigImpl[configType] = debounce(() => {
+        this.saveConfig((err) => {
+          if (err) {
+            console.error(err);
+          }
+          const savingState = Object.assign({}, this.state.savingState);
+          savingState[configType] = err ? 'error' : 'saved';
+          this.setState({savingState});
+          this.didSaveConfig(configType);
+        });
+      }, 500);
+    }
+    const savingState = Object.assign({}, this.state.savingState);
+    savingState[configType] = 'saving';
+    this.setState({savingState});
+    this.startSaveConfigImpl[configType]();
+  },
+
+  didSaveConfig(configType) {
+    if (!this.didSaveConfigImpl) {
+      this.didSaveConfigImpl = {};
+    }
+    if (!this.didSaveConfigImpl[configType]) {
+      this.didSaveConfigImpl[configType] = debounce(() => {
+        const savingState = Object.assign({}, this.state.savingState);
+        savingState[configType] = 'done';
+        this.setState({savingState});
+      }, 2000);
+    }
+    this.didSaveConfigImpl[configType]();
   },
 
   handleTeamsChange(teams) {
@@ -115,7 +116,7 @@ const SettingsPage = createReactClass({
     if (teams.length === 0) {
       this.setState({showAddTeamForm: true});
     }
-    setImmediate(this.startSaveConfig, 'server');
+    setImmediate(this.startSaveConfig, CONFIG_TYPE_SERVERS);
   },
 
   saveConfig(callback) {
@@ -180,19 +181,19 @@ const SettingsPage = createReactClass({
       });
     }
 
-    setImmediate(this.startSaveConfig);
+    setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   },
   handleChangeTrayIconTheme() {
     this.setState({
       trayIconTheme: ReactDOM.findDOMNode(this.refs.trayIconTheme).value
     });
-    setImmediate(this.startSaveConfig);
+    setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   },
   handleChangeAutoStart() {
     this.setState({
       autostart: !this.refs.autostart.props.checked
     });
-    setImmediate(this.startSaveConfig);
+    setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   },
   handleChangeMinimizeToTray() {
     const shouldMinimizeToTray = this.state.showTrayIcon && !this.refs.minimizeToTray.props.checked;
@@ -200,7 +201,7 @@ const SettingsPage = createReactClass({
     this.setState({
       minimizeToTray: shouldMinimizeToTray
     });
-    setImmediate(this.startSaveConfig);
+    setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   },
   toggleShowTeamForm() {
     this.setState({
@@ -219,20 +220,20 @@ const SettingsPage = createReactClass({
         flashWindow: this.refs.flashWindow.props.checked ? 0 : 2
       }
     });
-    setImmediate(this.startSaveConfig);
+    setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   },
   handleShowUnreadBadge() {
     this.setState({
       showUnreadBadge: !this.refs.showUnreadBadge.props.checked
     });
-    setImmediate(this.startSaveConfig);
+    setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   },
 
   handleChangeUseSpellChecker() {
     this.setState({
       useSpellChecker: !this.refs.useSpellChecker.props.checked
     });
-    setImmediate(this.startSaveConfig);
+    setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   },
 
   updateTeam(index, newData) {
@@ -241,7 +242,7 @@ const SettingsPage = createReactClass({
     this.setState({
       teams
     });
-    setImmediate(this.startSaveConfig, 'server');
+    setImmediate(this.startSaveConfig, CONFIG_TYPE_SERVERS);
   },
 
   addServer(team) {
@@ -250,7 +251,7 @@ const SettingsPage = createReactClass({
     this.setState({
       teams
     });
-    setImmediate(this.startSaveConfig, 'server');
+    setImmediate(this.startSaveConfig, CONFIG_TYPE_SERVERS);
   },
 
   render() {
@@ -367,7 +368,7 @@ const SettingsPage = createReactClass({
             defaultChecked={this.state.trayIconTheme === 'light' || this.state.trayIconTheme === ''}
             onChange={() => {
               this.setState({trayIconTheme: 'light'});
-              setImmediate(this.startSaveConfig);
+              setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
             }}
           >{'Light'}</Radio>
           {' '}
@@ -378,7 +379,7 @@ const SettingsPage = createReactClass({
             defaultChecked={this.state.trayIconTheme === 'dark'}
             onChange={() => {
               this.setState({trayIconTheme: 'dark'});
-              setImmediate(this.startSaveConfig);
+              setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
             }}
           >{'Dark'}</Radio>
         </FormGroup>
@@ -444,7 +445,7 @@ const SettingsPage = createReactClass({
           <h2 style={settingsPage.sectionHeading}>{'App Options'}</h2>
           <div className='IndicatorContainer'>
             <AutoSaveIndicator
-              savingState={this.state.status.app}
+              savingState={this.state.savingState.appOptions}
               errorMessage={'Can\'t save your changes. Please try again.'}
             />
           </div>
@@ -488,7 +489,7 @@ const SettingsPage = createReactClass({
               <h2 style={settingsPage.sectionHeading}>{'Server Management'}</h2>
               <div className='IndicatorContainer'>
                 <AutoSaveIndicator
-                  savingState={this.state.status.server}
+                  savingState={this.state.savingState.servers}
                   errorMessage={'Can\'t save your changes. Please try again.'}
                 />
               </div>
