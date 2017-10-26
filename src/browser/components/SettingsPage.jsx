@@ -46,8 +46,8 @@ const SettingsPage = createReactClass({
       initialState.showAddTeamForm = true;
     }
     initialState.savingState = {
-      appOptions: 'done',
-      servers: 'done'
+      appOptions: AutoSaveIndicator.SAVING_STATE_DONE,
+      servers: AutoSaveIndicator.SAVING_STATE_DONE
     };
 
     return initialState;
@@ -82,14 +82,14 @@ const SettingsPage = createReactClass({
             console.error(err);
           }
           const savingState = Object.assign({}, this.state.savingState);
-          savingState[configType] = err ? 'error' : 'saved';
+          savingState[configType] = err ? AutoSaveIndicator.SAVING_STATE_ERROR : AutoSaveIndicator.SAVING_STATE_SAVED;
           this.setState({savingState});
           this.didSaveConfig(configType);
         });
       }, 500);
     }
     const savingState = Object.assign({}, this.state.savingState);
-    savingState[configType] = 'saving';
+    savingState[configType] = AutoSaveIndicator.SAVING_STATE_SAVING;
     this.setState({savingState});
     this.startSaveConfigImpl[configType]();
   },
@@ -101,7 +101,7 @@ const SettingsPage = createReactClass({
     if (!this.didSaveConfigImpl[configType]) {
       this.didSaveConfigImpl[configType] = debounce(() => {
         const savingState = Object.assign({}, this.state.savingState);
-        savingState[configType] = 'done';
+        savingState[configType] = AutoSaveIndicator.SAVING_STATE_DONE;
         this.setState({savingState});
       }, 2000);
     }
