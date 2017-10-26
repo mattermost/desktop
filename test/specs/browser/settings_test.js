@@ -60,7 +60,7 @@ describe('browser/settings.html', function desc() {
           setValue('#teamUrlInput', 'http://example.org').
           click('#saveNewServerModal').
           waitForVisible('#newServerModal', true).
-          waitForVisible('.AutoSaveIndicator', true).
+          waitForVisible('.AutoSaveIndicator', 10000, true). // at least 2500 ms to disappear
           isEnabled('#btnClose').then((enabled) => {
             enabled.should.equal(true);
           });
