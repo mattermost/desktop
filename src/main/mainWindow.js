@@ -66,6 +66,7 @@ function createMainWindow(config, options) {
   });
 
   mainWindow.once('ready-to-show', () => {
+    mainWindow.webContents.setZoomLevel(0);
     if (process.platform !== 'darwin') {
       mainWindow.show();
     } else if (options.hideOnStartup !== true) {
