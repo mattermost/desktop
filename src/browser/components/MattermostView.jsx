@@ -30,7 +30,8 @@ const MattermostView = createReactClass({
     return {
       errorInfo: null,
       isContextMenuAdded: false,
-      reloadTimeoutID: null
+      reloadTimeoutID: null,
+      isLoaded: false
     };
   },
 
@@ -44,6 +45,12 @@ const MattermostView = createReactClass({
     var self = this;
     var webview = findDOMNode(this.refs.webview);
 
+    webview.addEventListener('did-finish-load', () => {
+      self.setState({
+        isLoaded: true
+      });
+    });
+
     webview.addEventListener('did-fail-load', (e) => {
       console.log(self.props.name, 'webview did-fail-load', e);
       if (e.errorCode === -3) { // An operation was aborted (due to user action).
@@ -51,7 +58,8 @@ const MattermostView = createReactClass({
       }
 
       self.setState({
-        errorInfo: e
+        errorInfo: e,
+        isLoaded: true
       });
       function reload() {
         window.removeEventListener('online', reload);
@@ -161,7 +169,8 @@ const MattermostView = createReactClass({
     clearTimeout(this.state.reloadTimeoutID);
     this.setState({
       errorInfo: null,
-      reloadTimeoutID: null
+      reloadTimeoutID: null,
+      isLoaded: false
     });
     var webview = findDOMNode(this.refs.webview);
     webview.reload();
@@ -235,16 +244,25 @@ const MattermostView = createReactClass({
     if (this.props.withTab) {
       classNames.push('mattermostView-with-tab');
     }
-    if (!this.props.active) {
+    if (!this.props.active || this.state.errorInfo) {
       classNames.push('mattermostView-hidden');
     }
 
+    const loadingImage = !this.state.errorInfo && this.props.active && !this.state.isLoaded ? (
+      <img
+        className='mattermostView-loadingImage'
+        src='../assets/loading.gif'
+      />
+    ) : null;
+
     return (
-      <div>
+      <div
+        className={classNames.join(' ')}
+      >
         { errorView }
+        { loadingImage }
         <webview
           id={this.props.id}
-          className={classNames.join(' ')}
           preload={preloadJS}
           src={this.props.src}
           ref='webview'

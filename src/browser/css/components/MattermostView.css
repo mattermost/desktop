@@ -1,4 +1,12 @@
 .mattermostView {
+  text-align: center;
+}
+
+.mattermostView .ErrorView {
+  text-align: left;
+}
+
+.mattermostView webview {
   position: absolute;
   top: 0px;
   right: 0px;
@@ -6,12 +14,17 @@
   left: 0px;
 }
 
-.mattermostView-with-tab {
-  top: 32px;
+.mattermostView-with-tab webview {
+  top: 31px;
 }
 
-.mattermostView-hidden {
+.mattermostView-hidden webview {
   flex: 0 1;
   width: 0px;
   height: 0px;
+}
+
+.mattermostView-loadingImage {
+  text-align: center;
+  margin-top: 64px;
 }
