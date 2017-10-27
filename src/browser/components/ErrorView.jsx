@@ -3,6 +3,7 @@
 const React = require('react');
 const PropTypes = require('prop-types');
 const {Grid, Row, Col} = require('react-bootstrap');
+const {shell} = require('electron');
 
 function ErrorView(props) {
   const classNames = ['container', 'ErrorView'];
@@ -11,6 +12,10 @@ function ErrorView(props) {
   }
   if (props.withTab) {
     classNames.push('ErrorView-with-tab');
+  }
+  function handleClick(event) {
+    event.preventDefault();
+    shell.openExternal(props.errorInfo.validatedURL);
   }
   return (
     <Grid
@@ -39,11 +44,17 @@ function ErrorView(props) {
               <ul className='ErrorView-bullets' >
                 <li>{'Your computer is connected to the internet.'}</li>
                 <li>{'The Mattermost URL '}
-                  <a href={props.errorInfo.validatedURL}>
+                  <a
+                    onClick={handleClick}
+                    href={props.errorInfo.validatedURL}
+                  >
                     {props.errorInfo.validatedURL}
                   </a>{' is correct.'}</li>
                 <li>{'You can reach '}
-                  <a href={props.errorInfo.validatedURL}>
+                  <a
+                    onClick={handleClick}
+                    href={props.errorInfo.validatedURL}
+                  >
                     {props.errorInfo.validatedURL}
                   </a>{' from a browser window.'}</li>
               </ul>
