@@ -12,6 +12,10 @@ Release date: TBD
 
 ### Improvements
 
+#### All Platforms
+ - Now "Saved" indicators appear for each preferences section.
+ [#500](https://github.com/mattermost/desktop/issues/500)
+
 #### Windows
  - Added the feature to open the application via `mattermost://` link.
  [#616](https://github.com/mattermost/desktop/pull/616)
