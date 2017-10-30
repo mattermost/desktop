@@ -3,16 +3,13 @@
 }
 
 .IndicatorContainer {
-  position: absolute;
-  height: 100%;
-  display: flex;
-  flex-flow: row;
-  justify-content: flex-start;
-  align-items: center;
+  float: left;
+  padding: 1em;
 }
 
 .AutoSaveIndicator {
-  margin: 0;
+  padding: 5px 15px;
+  margin: 0 0 0 10px;
 }
 
 .AutoSaveIndicator.AutoSaveIndicator-Leave {

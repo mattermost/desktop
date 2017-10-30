@@ -5,15 +5,20 @@ const {Alert} = require('react-bootstrap');
 const baseClassName = 'AutoSaveIndicator';
 const leaveClassName = `${baseClassName}-Leave`;
 
+const SAVING_STATE_SAVING = 'saving';
+const SAVING_STATE_SAVED = 'saved';
+const SAVING_STATE_ERROR = 'error';
+const SAVING_STATE_DONE = 'done';
+
 function getClassNameAndMessage(savingState, errorMessage) {
   switch (savingState) {
-  case 'saving':
+  case SAVING_STATE_SAVING:
     return {className: baseClassName, message: 'Saving...'};
-  case 'saved':
+  case SAVING_STATE_SAVED:
     return {className: baseClassName, message: 'Saved'};
-  case 'error':
+  case SAVING_STATE_ERROR:
     return {className: `${baseClassName}`, message: errorMessage};
-  case 'done':
+  case SAVING_STATE_DONE:
     return {className: `${baseClassName} ${leaveClassName}`, message: 'Saved'};
   default:
     return {className: `${baseClassName} ${leaveClassName}`, message: ''};
@@ -38,5 +43,12 @@ AutoSaveIndicator.propTypes = {
   savingState: PropTypes.string.isRequired,
   errorMessage: PropTypes.string
 };
+
+Object.assign(AutoSaveIndicator, {
+  SAVING_STATE_SAVING,
+  SAVING_STATE_SAVED,
+  SAVING_STATE_ERROR,
+  SAVING_STATE_DONE
+});
 
 module.exports = AutoSaveIndicator;
