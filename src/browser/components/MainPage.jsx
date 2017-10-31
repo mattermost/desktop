@@ -329,7 +329,10 @@ const MainPage = createReactClass({
       />
     );
     return (
-      <div className='MainPage'>
+      <div
+        className='MainPage'
+        onClick={this.focusOnWebView}
+      >
         <LoginModal
           show={this.state.loginQueue.length !== 0}
           request={request}
