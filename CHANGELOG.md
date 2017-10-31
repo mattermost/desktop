@@ -37,6 +37,8 @@ Release date: TBD
  [#497](https://github.com/mattermost/desktop/issues/497)
  - Fixed an issue where unnecessary focus remains after closing dialogs on the settings page.
  [#446](https://github.com/mattermost/desktop/issues/446)
+ - Fixed an issue where there is a case of that modified font size causes wrong rendering.
+ [#334](https://github.com/mattermost/desktop/issues/334)
 
 #### Windows
  - Fixed desktop notifications not working when the window has been minimized from inactive state.
