@@ -590,6 +590,7 @@ app.on('ready', () => {
   ipcMain.on('allow-origin', (event, origin) => {
     navigationManager.allowOrigin(origin);
   });
+  session.defaultSession.webRequest.onHeadersReceived(navigationManager.onHeadersReceived.bind(navigationManager));
 
   // Open the DevTools.
   // mainWindow.openDevTools();
