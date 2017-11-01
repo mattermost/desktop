@@ -43,7 +43,7 @@ class CriticalErrorHandler {
   windowUnresponsiveHandler() {
     const result = dialog.showMessageBox(this.mainWindow, {
       type: 'warning',
-      title: `Unresponsive - ${app.getName()}`,
+      title: app.getName(),
       message: 'The window is no longer responsive.\nDo you wait until the window becomes responsive again?',
       buttons: ['No', 'Yes'],
       defaultId: 0
@@ -63,12 +63,13 @@ class CriticalErrorHandler {
       const showMessageBox = bindWindowToShowMessageBox(this.mainWindow);
       const result = showMessageBox({
         type: 'error',
-        title: `Error - ${app.getName()}`,
-        message: `An internal error has occurred: ${err.message}\nThe application will quit.`,
-        buttons: ['OK', 'Show detail'],
-        defaultId: 0
+        title: app.getName(),
+        message: `The ${app.getName()} app quit unexpectedly. Click "Show Details" to learn more.\n\n Internal error: ${err.message}`,
+        buttons: ['Show details', 'OK'],
+        defaultId: 1,
+        noLink: true
       });
-      if (result === 1) {
+      if (result === 0) {
         const child = openDetachedExternal(file);
         if (child) {
           child.on('error', (spawnError) => {
