@@ -172,7 +172,7 @@ if (app.makeSingleInstance((commandLine/*, workingDirectory*/) => {
     }
   }
 })) {
-  app.quit();
+  app.exit();
 }
 
 function shouldShowTrayIcon() {
