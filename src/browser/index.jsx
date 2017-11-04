@@ -15,6 +15,7 @@ const AppConfig = require('./config/AppConfig.js');
 const url = require('url');
 
 const badge = require('./js/badge');
+const utils = require('../utils/util');
 
 remote.getCurrentWindow().removeAllListeners('focus');
 
@@ -86,11 +87,58 @@ function showUnreadBadge(unreadCount, mentionCount) {
   }
 }
 
+const permissionRequestQueue = [];
+const requestingPermission = new Array(AppConfig.data.teams.length);
+
 function teamConfigChange(teams) {
   AppConfig.set('teams', teams);
+  requestingPermission.length = teams.length;
   ipcRenderer.send('update-menu', AppConfig.data);
   ipcRenderer.send('update-config');
 }
+
+function feedPermissionRequest() {
+  const webviews = document.getElementsByTagName('webview');
+  const webviewOrigins = Array.from(webviews).map((w) => utils.getDomain(w.getAttribute('src')));
+  for (let index = 0; index < requestingPermission.length; index++) {
+    if (requestingPermission[index]) {
+      break;
+    }
+    for (const request of permissionRequestQueue) {
+      if (request.origin === webviewOrigins[index]) {
+        requestingPermission[index] = request;
+        break;
+      }
+    }
+  }
+}
+
+function handleClickPermissionDialog(index, status) {
+  const requesting = requestingPermission[index];
+  ipcRenderer.send('update-permission', requesting.origin, requesting.permission, status);
+  if (status === 'allow' || status === 'block') {
+    const newRequests = permissionRequestQueue.filter((request) => {
+      if (request.permission === requesting.permission && request.origin === requesting.origin) {
+        return false;
+      }
+      return true;
+    });
+    permissionRequestQueue.splice(0, permissionRequestQueue.length, ...newRequests);
+  } else if (status === 'close') {
+    const i = permissionRequestQueue.findIndex((e) => e.permission === requesting.permission && e.origin === requesting.origin);
+    permissionRequestQueue.splice(i, 1);
+  }
+  requestingPermission[index] = null;
+  feedPermissionRequest();
+}
+
+ipcRenderer.on('request-permission', (event, origin, permission) => {
+  if (permissionRequestQueue.length >= 100) {
+    return;
+  }
+  permissionRequestQueue.push({origin, permission});
+  feedPermissionRequest();
+});
 
 function handleSelectSpellCheckerLocale(locale) {
   console.log(locale);
@@ -117,6 +165,8 @@ ReactDOM.render(
     onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}
     deeplinkingUrl={deeplinkingUrl}
     showAddServerButton={AppConfig.data.enableServerManagement}
+    requestingPermission={requestingPermission}
+    onClickPermissionDialog={handleClickPermissionDialog}
   />,
   document.getElementById('content')
 );
