@@ -3,7 +3,6 @@ const {findDOMNode} = require('react-dom');
 const PropTypes = require('prop-types');
 const {Glyphicon, Nav, NavItem, Overlay} = require('react-bootstrap');
 const PermissionRequestDialog = require('./PermissionRequestDialog.jsx');
-const utils = require('../../utils/util');
 
 class TabBar extends React.Component { // need "this"
   render() {
