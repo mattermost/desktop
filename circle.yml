@@ -6,7 +6,8 @@ dependencies:
   cache_directories:
     - "src/node_modules"
     - ~/.cache/yarn
-    - ~/.electron
+    - ~/.cache/electron
+    - ~/.cache/electron-builder
   override:
     - yarn
   post:
