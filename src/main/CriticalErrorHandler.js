@@ -57,7 +57,6 @@ class CriticalErrorHandler {
     const file = path.join(app.getPath('userData'), `uncaughtException-${Date.now()}.txt`);
     const report = createErrorReport(err);
     fs.writeFileSync(file, report.replace(new RegExp('\\n', 'g'), os.EOL));
-    fs.writeSync(2, `See "${file}" to report the problem.\n`);
 
     if (app.isReady()) {
       const showMessageBox = bindWindowToShowMessageBox(this.mainWindow);
