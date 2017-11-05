@@ -39,6 +39,16 @@ function getTrustedOrigins(serverOrigin) {
   });
 }
 
+function getXVersionId(responseHeaders) {
+  const possibleKeys = ['X-Version-Id', 'x-version-id', 'X-VERSION-ID', 'X-Version-ID'];
+  for (const key of possibleKeys) {
+    if (responseHeaders[key]) {
+      return responseHeaders[key][0];
+    }
+  }
+  return null;
+}
+
 class NavigationManager {
   constructor() {
     this.allowedOrigin = [];
@@ -92,7 +102,7 @@ class NavigationManager {
   }
 
   onHeadersReceived(details, callback) {
-    const xVersionId = details.responseHeaders['X-Version-Id'] ? details.responseHeaders['X-Version-Id'][0] : null;
+    const xVersionId = getXVersionId(details.responseHeaders);
     if (xVersionId) {
       const origin = utils.getOrigin(details.url);
       if (!this.servers[origin]) {
