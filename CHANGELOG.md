@@ -15,6 +15,8 @@ Release date: TBD
 #### All Platforms
  - Now "Saved" indicators appear for each preferences section.
  [#500](https://github.com/mattermost/desktop/issues/500)
+ - Added the dialog to reopen the application when it quits unexpectedly.
+ [#626](https://github.com/mattermost/desktop/pull/626)
 
 #### Windows
  - Added the feature to open the application via `mattermost://` link.

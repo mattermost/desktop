@@ -10,15 +10,18 @@ const {
   systemPreferences,
   session
 } = require('electron');
+const os = require('os');
+const path = require('path');
 const isDev = require('electron-is-dev');
 const installExtension = require('electron-devtools-installer');
 const squirrelStartup = require('./main/squirrelStartup');
+const CriticalErrorHandler = require('./main/CriticalErrorHandler');
 
 const protocols = require('../electron-builder.json').protocols;
 
-process.on('uncaughtException', (error) => {
-  console.error(error);
-});
+const criticalErrorHandler = new CriticalErrorHandler();
+
+process.on('uncaughtException', criticalErrorHandler.processUncaughtExceptionHandler.bind(criticalErrorHandler));
 
 global.willAppQuit = false;
 
@@ -26,9 +29,6 @@ app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit App
 if (squirrelStartup()) {
   global.willAppQuit = true;
 }
-
-const os = require('os');
-const path = require('path');
 
 var settings = require('./common/settings');
 var certificateStore = require('./main/certificateStore').load(path.resolve(app.getPath('userData'), 'certificate.json'));
@@ -172,7 +172,7 @@ if (app.makeSingleInstance((commandLine/*, workingDirectory*/) => {
     }
   }
 })) {
-  app.quit();
+  app.exit();
 }
 
 function shouldShowTrayIcon() {
@@ -304,6 +304,10 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
   }
 });
 
+app.on('gpu-process-crashed', () => {
+  throw new Error('The GPU process has crached');
+});
+
 const loginCallbackMap = new Map();
 
 ipcMain.on('login-credentials', (event, request, user, password) => {
@@ -392,11 +396,10 @@ app.on('ready', () => {
     // when you should delete the corresponding element.
     mainWindow = null;
   });
-  mainWindow.on('unresponsive', () => {
-    console.log('The application has become unresponsive.');
-  });
+  criticalErrorHandler.setMainWindow(mainWindow);
+  mainWindow.on('unresponsive', criticalErrorHandler.windowUnresponsiveHandler.bind(criticalErrorHandler));
   mainWindow.webContents.on('crashed', () => {
-    console.log('The application has crashed.');
+    throw new Error('webContents \'crashed\' event has been emitted');
   });
 
   ipcMain.on('notified', () => {
@@ -468,7 +471,7 @@ app.on('ready', () => {
         }
       }
 
-      if (trayIcon) {
+      if (trayIcon && !trayIcon.isDestroyed()) {
         if (arg.mentionCount > 0) {
           trayIcon.setImage(trayImages.mention);
           if (process.platform === 'darwin') {
