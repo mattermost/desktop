@@ -4,6 +4,10 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+const BUTTON_OK = 'OK';
+const BUTTON_SHOW_DETAILS = 'Show Details';
+const BUTTON_REOPEN = 'Reopen';
+
 function createErrorReport(err) {
   return `Application: ${app.getName()} ${app.getVersion()}\n` +
          `Platform: ${os.type()} ${os.release()} ${os.arch()}\n` +
@@ -59,23 +63,34 @@ class CriticalErrorHandler {
     fs.writeFileSync(file, report.replace(new RegExp('\\n', 'g'), os.EOL));
 
     if (app.isReady()) {
+      const buttons = [BUTTON_SHOW_DETAILS, BUTTON_OK, BUTTON_REOPEN];
+      if (process.platform === 'darwin') {
+        buttons.reverse();
+      }
       const showMessageBox = bindWindowToShowMessageBox(this.mainWindow);
       const result = showMessageBox({
         type: 'error',
         title: app.getName(),
-        message: `The ${app.getName()} app quit unexpectedly. Click "Show Details" to learn more.\n\n Internal error: ${err.message}`,
-        buttons: ['Show details', 'OK'],
-        defaultId: 1,
+        message: `The ${app.getName()} app quit unexpectedly. Click "Show Details" to learn more or "Reopen" to open the application again.\n\n Internal error: ${err.message}`,
+        buttons,
+        defaultId: buttons.indexOf(BUTTON_REOPEN),
         noLink: true
       });
-      if (result === 0) {
-        const child = openDetachedExternal(file);
-        if (child) {
-          child.on('error', (spawnError) => {
-            console.log(spawnError);
-          });
-          child.unref();
+      switch (result) {
+      case buttons.indexOf(BUTTON_SHOW_DETAILS):
+        {
+          const child = openDetachedExternal(file);
+          if (child) {
+            child.on('error', (spawnError) => {
+              console.log(spawnError);
+            });
+            child.unref();
+          }
         }
+        break;
+      case buttons.indexOf(BUTTON_REOPEN):
+        app.relaunch();
+        break;
       }
     }
     throw err;
