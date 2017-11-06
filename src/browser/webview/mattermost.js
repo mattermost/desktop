@@ -11,6 +11,38 @@ Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no
 
 Reflect.deleteProperty(global.Buffer); // http://electron.atom.io/docs/tutorial/security/#buffer-global
 
+function isReactAppInitialized() {
+  const reactRoot = document.querySelector('div[data-reactroot]');
+  if (reactRoot === null) {
+    return false;
+  }
+  return reactRoot.children.length !== 0;
+}
+
+function watchReactAppUntilInitialized(callback) {
+  let count = 0;
+  const interval = 500;
+  const timeout = 30000;
+  const timer = setInterval(() => {
+    count += interval;
+    if (isReactAppInitialized() || count >= timeout) { // assumed as webapp has been initialized.
+      clearTimeout(timer);
+      callback();
+    }
+  }, interval);
+}
+
+window.addEventListener('load', () => {
+  if (document.getElementById('root') === null) {
+    console.log('The guest is not assumed as mattermost-webapp');
+    ipc.sendToHost('onGuestInitialized');
+    return;
+  }
+  watchReactAppUntilInitialized(() => {
+    ipc.sendToHost('onGuestInitialized');
+  });
+});
+
 function hasClass(element, className) {
   var rclass = /[\t\r\n\f]/g;
   if ((' ' + element.className + ' ').replace(rclass, ' ').indexOf(className) > -1) {

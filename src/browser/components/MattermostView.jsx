@@ -45,12 +45,6 @@ const MattermostView = createReactClass({
     var self = this;
     var webview = findDOMNode(this.refs.webview);
 
-    webview.addEventListener('did-finish-load', () => {
-      self.setState({
-        isLoaded: true
-      });
-    });
-
     webview.addEventListener('did-fail-load', (e) => {
       console.log(self.props.name, 'webview did-fail-load', e);
       if (e.errorCode === -3) { // An operation was aborted (due to user action).
@@ -123,6 +117,11 @@ const MattermostView = createReactClass({
 
     webview.addEventListener('ipc-message', (event) => {
       switch (event.channel) {
+      case 'onGuestInitialized':
+        self.setState({
+          isLoaded: true
+        });
+        break;
       case 'onUnreadCountChange':
         var unreadCount = event.args[0];
         var mentionCount = event.args[1];
@@ -249,10 +248,12 @@ const MattermostView = createReactClass({
     }
 
     const loadingImage = !this.state.errorInfo && this.props.active && !this.state.isLoaded ? (
-      <img
-        className='mattermostView-loadingImage'
-        src='../assets/loading.gif'
-      />
+      <div className='mattermostView-loadingScreen'>
+        <img
+          className='mattermostView-loadingImage'
+          src='../assets/loading.gif'
+        />
+      </div>
     ) : null;
 
     return (
@@ -260,13 +261,13 @@ const MattermostView = createReactClass({
         className={classNames.join(' ')}
       >
         { errorView }
-        { loadingImage }
         <webview
           id={this.props.id}
           preload={preloadJS}
           src={this.props.src}
           ref='webview'
         />
+        { loadingImage }
       </div>);
   }
 });
