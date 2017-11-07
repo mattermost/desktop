@@ -71,7 +71,7 @@ class CriticalErrorHandler {
       const result = showMessageBox({
         type: 'error',
         title: app.getName(),
-        message: `The ${app.getName()} app quit unexpectedly. Click "Show Details" to learn more or "Reopen" to open the application again.\n\n Internal error: ${err.message}`,
+        message: `The ${app.getName()} app quit unexpectedly. Click "Show Details" to learn more or "Reopen" to open the application again.\n\nInternal error: ${err.message}`,
         buttons,
         defaultId: buttons.indexOf(BUTTON_REOPEN),
         noLink: true
