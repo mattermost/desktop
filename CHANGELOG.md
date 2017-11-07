@@ -19,6 +19,8 @@ Release date: TBD
  [#626](https://github.com/mattermost/desktop/pull/626)
  - Show animation icon when loading a page.
  [#490](https://github.com/mattermost/desktop/issues/490)
+ - Show the dialog to confirm requested permissions.
+ [#609](https://github.com/mattermost/desktop/pull/609)
 
 #### Windows
  - Added the feature to open the application via `mattermost://` link.
