@@ -17,6 +17,8 @@ Release date: TBD
  [#500](https://github.com/mattermost/desktop/issues/500)
  - Added the dialog to reopen the application when it quits unexpectedly.
  [#626](https://github.com/mattermost/desktop/pull/626)
+ - Show animation icon when loading a page.
+ [#490](https://github.com/mattermost/desktop/issues/490)
 
 #### Windows
  - Added the feature to open the application via `mattermost://` link.
