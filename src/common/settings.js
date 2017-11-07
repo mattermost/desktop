@@ -69,7 +69,9 @@ module.exports = {
     if (hasBuildConfigDefaultTeams(buildConfig)) {
       newTeams.push(...JSON.parse(JSON.stringify(buildConfig.defaultTeams)));
     }
-    newTeams.push(...JSON.parse(JSON.stringify(teams)));
+    if (buildConfig.enableServerManagement) {
+      newTeams.push(...JSON.parse(JSON.stringify(teams)));
+    }
     return newTeams;
   }
 };

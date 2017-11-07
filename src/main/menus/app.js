@@ -40,7 +40,7 @@ function createTemplate(mainWindow, config, isDev) {
     }
   }];
 
-  if (buildConfig.enableServerManagement === true || config.teams.length === 0) {
+  if (buildConfig.enableServerManagement === true) {
     platformAppMenu.push({
       label: 'Sign in to Another Server',
       click() {

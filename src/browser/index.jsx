@@ -23,7 +23,7 @@ const teams = settings.mergeDefaultTeams(AppConfig.data.teams);
 
 remote.getCurrentWindow().removeAllListeners('focus');
 
-if (AppConfig.data.teams.length === 0) {
+if (teams.length === 0) {
   window.location = 'settings.html';
 }
 

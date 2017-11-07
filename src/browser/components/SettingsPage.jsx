@@ -343,7 +343,7 @@ const SettingsPage = createReactClass({
     );
 
     var srvMgmt;
-    if (this.props.enableServerManagement || this.state.teams.length === 0) {
+    if (this.props.enableServerManagement === true) {
       srvMgmt = (
         <div>
           {serversRow}
@@ -518,7 +518,7 @@ const SettingsPage = createReactClass({
               bsStyle='link'
               style={settingsPage.close}
               onClick={this.handleCancel}
-              disabled={this.state.teams.length === 0}
+              disabled={settings.mergeDefaultTeams(this.state.teams).length === 0}
             >
               <span>{'×'}</span>
             </Button>
