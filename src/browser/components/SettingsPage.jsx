@@ -255,6 +255,41 @@ const SettingsPage = createReactClass({
   },
 
   render() {
+    const settingsPage = {
+      navbar: {
+        backgroundColor: '#fff'
+      },
+      close: {
+        textDecoration: 'none',
+        position: 'absolute',
+        right: '0',
+        top: '5px',
+        fontSize: '35px',
+        fontWeight: 'normal',
+        color: '#bbb'
+      },
+      heading: {
+        textAlign: 'center',
+        fontSize: '24px',
+        margin: '0',
+        padding: '1em 0'
+      },
+      sectionHeading: {
+        fontSize: '20px',
+        margin: '0',
+        padding: '1em 0',
+        float: 'left'
+      },
+      sectionHeadingLink: {
+        marginTop: '24px',
+        display: 'inline-block',
+        fontSize: '15px'
+      },
+      footer: {
+        padding: '0.4em 0'
+      }
+    };
+
     var teamsRow = (
       <Row>
         <Col md={12}>
@@ -267,10 +302,52 @@ const SettingsPage = createReactClass({
             updateTeam={this.updateTeam}
             addServer={this.addServer}
             onTeamClick={backToIndex}
+            allowTeamEdit={this.state.enableTeamModification}
           />
         </Col>
       </Row>
     );
+
+    var serversRow = (
+      <Row>
+        <Col
+          md={10}
+          xs={8}
+        >
+          <h2 style={settingsPage.sectionHeading}>{'Server Management'}</h2>
+          <div className='IndicatorContainer'>
+            <AutoSaveIndicator
+              savingState={this.state.savingState.servers}
+              errorMessage={'Can\'t save your changes. Please try again.'}
+            />
+          </div>
+        </Col>
+        <Col
+          md={2}
+          xs={4}
+        >
+          <p className='text-right'>
+            <a
+              style={settingsPage.sectionHeadingLink}
+              id='addNewServer'
+              href='#'
+              onClick={this.toggleShowTeamForm}
+            >{'⊞ Add new server'}</a>
+          </p>
+        </Col>
+      </Row>
+    );
+
+    var srvMgmt;
+    if (this.state.enableServerManagement || this.state.teams.length === 0) {
+      srvMgmt = (
+        <div>
+          {serversRow}
+          {teamsRow}
+          <hr/>
+        </div>
+      );
+    }
 
     var options = [];
 
@@ -404,41 +481,6 @@ const SettingsPage = createReactClass({
         </Checkbox>);
     }
 
-    const settingsPage = {
-      navbar: {
-        backgroundColor: '#fff'
-      },
-      close: {
-        textDecoration: 'none',
-        position: 'absolute',
-        right: '0',
-        top: '5px',
-        fontSize: '35px',
-        fontWeight: 'normal',
-        color: '#bbb'
-      },
-      heading: {
-        textAlign: 'center',
-        fontSize: '24px',
-        margin: '0',
-        padding: '1em 0'
-      },
-      sectionHeading: {
-        fontSize: '20px',
-        margin: '0',
-        padding: '1em 0',
-        float: 'left'
-      },
-      sectionHeadingLink: {
-        marginTop: '24px',
-        display: 'inline-block',
-        fontSize: '15px'
-      },
-      footer: {
-        padding: '0.4em 0'
-      }
-    };
-
     var optionsRow = (options.length > 0) ? (
       <Row>
         <Col md={12}>
@@ -482,35 +524,7 @@ const SettingsPage = createReactClass({
           className='settingsPage'
           style={{paddingTop: '100px'}}
         >
-          <Row>
-            <Col
-              md={10}
-              xs={8}
-            >
-              <h2 style={settingsPage.sectionHeading}>{'Server Management'}</h2>
-              <div className='IndicatorContainer'>
-                <AutoSaveIndicator
-                  savingState={this.state.savingState.servers}
-                  errorMessage={'Can\'t save your changes. Please try again.'}
-                />
-              </div>
-            </Col>
-            <Col
-              md={2}
-              xs={4}
-            >
-              <p className='text-right'>
-                <a
-                  style={settingsPage.sectionHeadingLink}
-                  id='addNewServer'
-                  href='#'
-                  onClick={this.toggleShowTeamForm}
-                >{'⊞ Add new server'}</a>
-              </p>
-            </Col>
-          </Row>
-          { teamsRow }
-          <hr/>
+          { srvMgmt }
           { optionsRow }
         </Grid>
       </div>
