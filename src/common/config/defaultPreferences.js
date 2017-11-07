@@ -13,8 +13,7 @@ const defaultPreferences = {
   },
   showUnreadBadge: true,
   useSpellChecker: true,
-  spellCheckerLocale: 'en-US',
-  enableServerManagement: true
+  spellCheckerLocale: 'en-US'
 };
 
 module.exports = defaultPreferences;

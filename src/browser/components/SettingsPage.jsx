@@ -30,7 +30,8 @@ const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
 const SettingsPage = createReactClass({
   propTypes: {
-    configFile: PropTypes.string
+    configFile: PropTypes.string,
+    enableServerManagement: PropTypes.bool
   },
 
   getInitialState() {
@@ -342,7 +343,7 @@ const SettingsPage = createReactClass({
     );
 
     var srvMgmt;
-    if (this.state.enableServerManagement || this.state.teams.length === 0) {
+    if (this.props.enableServerManagement || this.state.teams.length === 0) {
       srvMgmt = (
         <div>
           {serversRow}

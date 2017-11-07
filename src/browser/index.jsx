@@ -169,7 +169,7 @@ ReactDOM.render(
     useSpellChecker={AppConfig.data.useSpellChecker}
     onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}
     deeplinkingUrl={deeplinkingUrl}
-    showAddServerButton={AppConfig.data.enableServerManagement}
+    showAddServerButton={buildConfig.enableServerManagement}
     requestingPermission={requestingPermission}
     onClickPermissionDialog={handleClickPermissionDialog}
   />,
