@@ -37,7 +37,3 @@
   margin-top: 5px;
   border-radius: 50%;
 }
-
-div[id*="-permissionDialog"] {
-  max-width: 350px;
-}
