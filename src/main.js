@@ -31,6 +31,7 @@ if (squirrelStartup()) {
 }
 
 var settings = require('./common/settings');
+const buildConfig = require('./common/config/buildConfig');
 var certificateStore = require('./main/certificateStore').load(path.resolve(app.getPath('userData'), 'certificate.json'));
 const {createMainWindow} = require('./main/mainWindow');
 const appMenu = require('./main/menus/app');
@@ -366,6 +367,14 @@ app.on('open-url', (event, url) => {
 app.on('ready', () => {
   if (global.willAppQuit) {
     return;
+  }
+  if (buildConfig.enableServerManagement === false && buildConfig.defaultTeams.length === 0) {
+    dialog.showMessageBox({
+      type: 'error',
+      title: 'Mattermost',
+      message: 'When "enableServerManagement: false" is specified in buildConfig.js,\n"defaultTeams" must have one team at least.'
+    });
+    app.exit();
   }
   if (global.isDev) {
     installExtension.default(installExtension.REACT_DEVELOPER_TOOLS).
