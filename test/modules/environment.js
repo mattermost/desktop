@@ -23,6 +23,7 @@ const mattermostURL = 'http://example.com/team';
 module.exports = {
   sourceRootDir,
   configFilePath,
+  userDataDir,
   boundsInfoPath,
   mattermostURL,
 

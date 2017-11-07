@@ -25,7 +25,9 @@ const MainPage = createReactClass({
     useSpellChecker: PropTypes.bool.isRequired,
     onSelectSpellCheckerLocale: PropTypes.func.isRequired,
     deeplinkingUrl: PropTypes.string,
-    showAddServerButton: PropTypes.bool.isRequired
+    showAddServerButton: PropTypes.bool.isRequired,
+    requestingPermission: TabBar.propTypes.requestingPermission,
+    onClickPermissionDialog: PropTypes.func
   },
 
   getInitialState() {
@@ -260,6 +262,8 @@ const MainPage = createReactClass({
             onSelect={this.handleSelect}
             onAddServer={this.addServer}
             showAddServerButton={this.props.showAddServerButton}
+            requestingPermission={this.props.requestingPermission}
+            onClickPermissionDialog={this.props.onClickPermissionDialog}
           />
         </Row>
       );
