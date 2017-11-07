@@ -77,9 +77,8 @@ describe('browser/index.html', function desc() {
       isVisible('#mattermostView0').then((visible) => visible.should.be.true).
       isVisible('#mattermostView1').then((visible) => visible.should.be.false).
       click('#teamTabItem1').
-      pause(1000).
-      isVisible('#mattermostView1').then((visible) => visible.should.be.true).
-    isVisible('#mattermostView0').then((visible) => visible.should.be.false);
+      waitForVisible('#mattermostView1', 2000).
+      isVisible('#mattermostView0').then((visible) => visible.should.be.false);
   });
 
   it('should show error when using incorrect URL', () => {

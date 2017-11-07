@@ -30,7 +30,8 @@ const MattermostView = createReactClass({
     return {
       errorInfo: null,
       isContextMenuAdded: false,
-      reloadTimeoutID: null
+      reloadTimeoutID: null,
+      isLoaded: false
     };
   },
 
@@ -51,7 +52,8 @@ const MattermostView = createReactClass({
       }
 
       self.setState({
-        errorInfo: e
+        errorInfo: e,
+        isLoaded: true
       });
       function reload() {
         window.removeEventListener('online', reload);
@@ -115,6 +117,11 @@ const MattermostView = createReactClass({
 
     webview.addEventListener('ipc-message', (event) => {
       switch (event.channel) {
+      case 'onGuestInitialized':
+        self.setState({
+          isLoaded: true
+        });
+        break;
       case 'onUnreadCountChange':
         var unreadCount = event.args[0];
         var mentionCount = event.args[1];
@@ -161,7 +168,8 @@ const MattermostView = createReactClass({
     clearTimeout(this.state.reloadTimeoutID);
     this.setState({
       errorInfo: null,
-      reloadTimeoutID: null
+      reloadTimeoutID: null,
+      isLoaded: false
     });
     var webview = findDOMNode(this.refs.webview);
     webview.reload();
@@ -235,20 +243,31 @@ const MattermostView = createReactClass({
     if (this.props.withTab) {
       classNames.push('mattermostView-with-tab');
     }
-    if (!this.props.active) {
+    if (!this.props.active || this.state.errorInfo) {
       classNames.push('mattermostView-hidden');
     }
 
+    const loadingImage = !this.state.errorInfo && this.props.active && !this.state.isLoaded ? (
+      <div className='mattermostView-loadingScreen'>
+        <img
+          className='mattermostView-loadingImage'
+          src='../assets/loading.gif'
+        />
+      </div>
+    ) : null;
+
     return (
-      <div>
+      <div
+        className={classNames.join(' ')}
+      >
         { errorView }
         <webview
           id={this.props.id}
-          className={classNames.join(' ')}
           preload={preloadJS}
           src={this.props.src}
           ref='webview'
         />
+        { loadingImage }
       </div>);
   }
 });
