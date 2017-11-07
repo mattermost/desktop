@@ -9,7 +9,12 @@ class PermissionManager {
   constructor(file) {
     this.file = file;
     if (fs.existsSync(file)) {
-      this.permissions = JSON.parse(fs.readFileSync(this.file, 'utf-8'));
+      try {
+        this.permissions = JSON.parse(fs.readFileSync(this.file, 'utf-8'));
+      } catch (err) {
+        console.error(err);
+        this.permissions = {};
+      }
     } else {
       this.permissions = {};
     }
