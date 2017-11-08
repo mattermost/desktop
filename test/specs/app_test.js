@@ -8,17 +8,15 @@ describe('application', function desc() {
   this.timeout(30000);
 
   beforeEach(() => {
+    env.createTestUserDataDir();
     env.cleanTestConfig();
     this.app = env.getSpectronApp();
   });
 
   afterEach(() => {
     if (this.app && this.app.isRunning()) {
-      return this.app.stop().then(() => {
-        env.cleanTestConfig();
-      });
+      return this.app.stop();
     }
-    env.cleanTestConfig();
     return true;
   });
 

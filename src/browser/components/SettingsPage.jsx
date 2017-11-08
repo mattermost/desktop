@@ -8,6 +8,7 @@ const {ipcRenderer, remote} = require('electron');
 const AutoLaunch = require('auto-launch');
 const {debounce} = require('underscore');
 
+const buildConfig = require('../../common/config/buildConfig');
 const settings = require('../../common/settings');
 
 const TeamList = require('./TeamList.jsx');
@@ -29,7 +30,8 @@ const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
 const SettingsPage = createReactClass({
   propTypes: {
-    configFile: PropTypes.string
+    configFile: PropTypes.string,
+    enableServerManagement: PropTypes.bool
   },
 
   getInitialState() {
@@ -301,8 +303,10 @@ const SettingsPage = createReactClass({
             onTeamsChange={this.handleTeamsChange}
             updateTeam={this.updateTeam}
             addServer={this.addServer}
-            onTeamClick={backToIndex}
             allowTeamEdit={this.state.enableTeamModification}
+            onTeamClick={(index) => {
+              backToIndex(index + buildConfig.defaultTeams.length);
+            }}
           />
         </Col>
       </Row>
@@ -339,7 +343,7 @@ const SettingsPage = createReactClass({
     );
 
     var srvMgmt;
-    if (this.state.enableServerManagement || this.state.teams.length === 0) {
+    if (this.props.enableServerManagement === true) {
       srvMgmt = (
         <div>
           {serversRow}
@@ -514,7 +518,7 @@ const SettingsPage = createReactClass({
               bsStyle='link'
               style={settingsPage.close}
               onClick={this.handleCancel}
-              disabled={this.state.teams.length === 0}
+              disabled={settings.mergeDefaultTeams(this.state.teams).length === 0}
             >
               <span>{'×'}</span>
             </Button>

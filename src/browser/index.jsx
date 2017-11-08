@@ -12,14 +12,18 @@ const {remote, ipcRenderer} = require('electron');
 const MainPage = require('./components/MainPage.jsx');
 
 const AppConfig = require('./config/AppConfig.js');
+const buildConfig = require('../common/config/buildConfig');
+const settings = require('../common/settings');
 const url = require('url');
 
 const badge = require('./js/badge');
 const utils = require('../utils/util');
 
+const teams = settings.mergeDefaultTeams(AppConfig.data.teams);
+
 remote.getCurrentWindow().removeAllListeners('focus');
 
-if (AppConfig.data.teams.length === 0) {
+if (teams.length === 0) {
   window.location = 'settings.html';
 }
 
@@ -90,8 +94,9 @@ function showUnreadBadge(unreadCount, mentionCount) {
 const permissionRequestQueue = [];
 const requestingPermission = new Array(AppConfig.data.teams.length);
 
-function teamConfigChange(teams) {
-  AppConfig.set('teams', teams);
+function teamConfigChange(updatedTeams) {
+  AppConfig.set('teams', updatedTeams.slice(buildConfig.defaultTeams.length));
+  teams.splice(0, teams.length, ...updatedTeams);
   requestingPermission.length = teams.length;
   ipcRenderer.send('update-menu', AppConfig.data);
   ipcRenderer.send('update-config');
@@ -157,14 +162,14 @@ if (!parsedURL.query.index || parsedURL.query.index === null) {
 
 ReactDOM.render(
   <MainPage
-    teams={AppConfig.data.teams}
+    teams={teams}
     initialIndex={initialIndex}
     onUnreadCountChange={showUnreadBadge}
     onTeamConfigChange={teamConfigChange}
     useSpellChecker={AppConfig.data.useSpellChecker}
     onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}
     deeplinkingUrl={deeplinkingUrl}
-    showAddServerButton={AppConfig.data.enableServerManagement}
+    showAddServerButton={buildConfig.enableServerManagement}
     requestingPermission={requestingPermission}
     onClickPermissionDialog={handleClickPermissionDialog}
   />,

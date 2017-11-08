@@ -1,15 +1,9 @@
 const settings = require('../../src/common/settings');
-const deepmerge = require('deepmerge');
+const buildConfig = require('../../src/common/config/buildConfig');
+const defaultPreferences = require('../../src/common/config/defaultPreferences');
+const pastDefaultPreferences = require('../../src/common/config/pastDefaultPreferences');
 
 describe('common/settings.js', () => {
-  before(() => {
-    process.env.TEST = 1;
-  });
-
-  after(() => {
-    delete process.env.TEST;
-  });
-
   it('should upgrade v0 config file', () => {
     const v0Config = {
       url: 'https://example.com/team'
@@ -20,13 +14,34 @@ describe('common/settings.js', () => {
     config.version.should.equal(settings.version);
   });
 
-  it('should loadDefault config for version 1', () => {
-    const baseConfig = require('../../src/common/config/base.json');
-    const overrideConfig = require('../../src/common/config/override.json');
-    const expectedDefaults = deepmerge(
-      baseConfig[1], overrideConfig[1] || {}, {clone: true, arrayMerge: settings.deepMergeArray}
-    );
-    const defaultConfig = settings.loadDefault();
-    defaultConfig.should.eql(expectedDefaults);
+  it('should merge teams with buildConfig.defaultTeams', () => {
+    const teams = [
+      {
+        name: 'test',
+        url: 'https://example.com'
+      }
+    ];
+
+    const mergedTeams = settings.mergeDefaultTeams(teams);
+    mergedTeams.should.deep.equal([
+      {
+        name: 'test',
+        url: 'https://example.com'
+      },
+      ...buildConfig.defaultTeams
+    ]);
+  });
+});
+
+describe('common/config/', () => {
+  it('pastDefaultPreferences should have each past version of defaultPreferences', () => {
+    for (let version = 0; version <= defaultPreferences.version; version++) {
+      pastDefaultPreferences[`${version}`].should.exist; // eslint-disable-line no-unused-expressions
+    }
+  });
+
+  it('defaultPreferences equal to one of pastDefaultPreferences', () => {
+    const pastPreferences = pastDefaultPreferences[`${defaultPreferences.version}`];
+    pastPreferences.should.deep.equal(defaultPreferences);
   });
 });

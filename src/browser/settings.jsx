@@ -9,13 +9,17 @@ const React = require('react');
 const ReactDOM = require('react-dom');
 const SettingsPage = require('./components/SettingsPage.jsx');
 const contextMenu = require('./js/contextMenu');
+const buildConfig = require('../common/config/buildConfig');
 
 const configFile = remote.app.getPath('userData') + '/config.json';
 
 contextMenu.setup(remote.getCurrentWindow());
 
 ReactDOM.render(
-  <SettingsPage configFile={configFile}/>,
+  <SettingsPage
+    configFile={configFile}
+    enableServerManagement={buildConfig.enableServerManagement}
+  />,
   document.getElementById('content')
 );
 
