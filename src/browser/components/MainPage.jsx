@@ -11,6 +11,7 @@ const LoginModal = require('./LoginModal.jsx');
 const MattermostView = require('./MattermostView.jsx');
 const TabBar = require('./TabBar.jsx');
 const HoveringURL = require('./HoveringURL.jsx');
+const PermissionRequestDialog = require('./PermissionRequestDialog.jsx');
 
 const NewTeamModal = require('./NewTeamModal.jsx');
 
@@ -347,6 +348,16 @@ const MainPage = createReactClass({
           onLogin={this.handleLogin}
           onCancel={this.handleLoginCancel}
         />
+        {this.props.teams.length === 1 && this.props.requestingPermission[0] ? // eslint-disable-line multiline-ternary
+          <PermissionRequestDialog
+            id='MainPage-permissionDialog'
+            placement='bottom'
+            {...this.props.requestingPermission[0]}
+            onClickAllow={this.props.onClickPermissionDialog.bind(null, 0, 'allow')}
+            onClickBlock={this.props.onClickPermissionDialog.bind(null, 0, 'block')}
+            onClickClose={this.props.onClickPermissionDialog.bind(null, 0, 'close')}
+          /> : null
+        }
         <Grid fluid={true}>
           { tabsRow }
           { viewsRow }
