@@ -305,8 +305,8 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
   }
 });
 
-app.on('gpu-process-crashed', () => {
-  throw new Error('The GPU process has crached');
+app.on('gpu-process-crashed', (event, killed) => {
+  console.log(`The GPU process has crached (killed = ${killed})`);
 });
 
 const loginCallbackMap = new Map();
