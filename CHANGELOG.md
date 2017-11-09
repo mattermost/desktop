@@ -9,27 +9,33 @@ This release contains multiple security updates for Windows, Mac and Linux, and 
 ### Improvements
 
 #### All Platforms
- - Added the dialog to reopen the application when it quits unexpectedly.
- [#626](https://github.com/mattermost/desktop/pull/626)xxx
- - Mattermost animation icon is now displayed when loading a page.
+ - Added a dialog to allow the user to reopen the desktop app if it quits unexpectedly.
+ [#626](https://github.com/mattermost/desktop/pull/626)
+ - Mattermost animation icon is now displayed when loading a page, instead of a blank screen.
  [#490](https://github.com/mattermost/desktop/issues/490)
  - Added a dialog to request permissions to show desktop notifications or to use microphone and video for [video calls](https://docs.mattermost.com/deployment/webrtc.html).
  [#609](https://github.com/mattermost/desktop/pull/609)
- - The "Saved" indicator now appears for both Server Management and App Options inon the Settings page.
+ - The "Saved" indicator now appears for both Server Management and App Options on the Settings page.
  [#500](https://github.com/mattermost/desktop/issues/500)
  - Close button on the Settings page now has a hover effect.
 [#439](https://github.com/mattermost/desktop/issues/439)
+ - Added new admin configuration settings ([#586](https://github.com/mattermost/desktop/pull/586) & [#633](https://github.com/mattermost/desktop/pull/633) for 
+   - Disabling server management where the user cannot add or edit the server URL [#600](https://github.com/mattermost/desktop/pull/600)
+   - Setting one or more pre-configured server URLs for the end user [#594](https://github.com/mattermost/desktop/pull/594)
+   - Customizing the link in **Help > Learn More..** [#593](https://github.com/mattermost/desktop/pull/593)
 
 #### Windows
  - Added support for protocol deep linking where the desktop app opens via `mattermost://` link if app is already installed.
  [#616](https://github.com/mattermost/desktop/pull/616)
+ - Added the ability to more easily whitelabel the Mattermost taskbar icon on custom builds.
+ [#592](https://github.com/mattermost/desktop/pull/592)
 
 #### Mac
- - Added `Ctrl+Tab` and `Ctrl+Shift+Tab` shortcuts to switch between server tabs,
- [#512](https://github.com/mattermost/desktop/issues/512)
  - Added support for protocol deep linking where the desktop app opens via `mattermost://` link if app is already installed.
  [#616](https://github.com/mattermost/desktop/pull/616)
- 
+ - Added `Ctrl+Tab` and `Ctrl+Shift+Tab` shortcuts to switch between server tabs,
+ [#512](https://github.com/mattermost/desktop/issues/512)
+
 ### Architectural Changes
  - Major version upgrade of Electron from v1.6.11 to v1.7.9. Electron is the underlying technology used to build the Desktop apps.
  [#602](https://github.com/mattermost/desktop/pull/602)
@@ -37,8 +43,12 @@ This release contains multiple security updates for Windows, Mac and Linux, and 
  [#540](https://github.com/mattermost/desktop/pull/540)
  - Yarn is now used to manage dependancies across Windows, Mac and Linux builds.
  [#485](https://github.com/mattermost/desktop/issues/485)
- - Build is now run automatically before packaging the apps with `npm run package`
+ - Build is now run automatically before packaging the apps with `npm run package`.
  [#590](https://github.com/mattermost/desktop/pull/590)
+ - Removed hardcoded product name references.
+ [#599](https://github.com/mattermost/desktop/pull/599)
+ - Added an `rm` command to `npm`, which removes all dynamically generated files to make it easy to reset the app between builds and branches.
+ [#597](https://github.com/mattermost/desktop/pull/597)
  
 ### Bug Fixes
 
@@ -50,11 +60,7 @@ This release contains multiple security updates for Windows, Mac and Linux, and 
  - Fixed font size not always persisting across app restarts.
  [#564](https://github.com/mattermost/desktop/issues/564)
  - Fixed an automatic reloading of the app when a DNS or network error page is manually reloaded with CTRL/CMD+R.
- [#573](https://github.com/mattermost/desktop/issues/573)xxx
- - Fixed file upload dialogs did not allow any file to be selected.
- [#497](https://github.com/mattermost/desktop/issues/497)xxx
- - Fixed an issue where unnecessary focus remains after closing dialogs on the settings page.
- [#446](https://github.com/mattermost/desktop/issues/446)xxx
+ [#573](https://github.com/mattermost/desktop/issues/573)
  - Fixed an issue where changing font size caused rendering issues on next restart.
  [#334](https://github.com/mattermost/desktop/issues/334)
  - Fixed an issue where after adding a server on the Settings page, focus remained on the "Add new server" link.
@@ -78,7 +84,7 @@ This release contains multiple security updates for Windows, Mac and Linux, and 
  - Fixed the main window not being minimized when the app is launched via "Start app on Login" option.
  [#570](https://github.com/mattermost/desktop/issues/570)
 
-### Known Issuesxxx
+### Known Issues
 
 #### All Platforms
  - [Insecure connection produces hundreds of log messages](https://github.com/mattermost/desktop/issues/569)
