@@ -9,7 +9,9 @@ const defaultPreferences = {
   trayIconTheme: 'light',
   minimizeToTray: false,
   notifications: {
-    flashWindow: 0
+    flashWindow: 0,
+    bounceIcon: 0,
+    bounceIconType: 'informational'
   },
   showUnreadBadge: true,
   useSpellChecker: true,

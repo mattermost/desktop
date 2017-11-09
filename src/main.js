@@ -409,6 +409,10 @@ app.on('ready', () => {
         mainWindow.flashFrame(true);
       }
     }
+
+    if (process.platform === 'darwin' && config.notifications.bounceIcon) {
+      app.dock.bounce(config.notifications.bounceIconType);
+    }
   });
 
   ipcMain.on('update-title', (event, arg) => {
