@@ -19,22 +19,33 @@ This release contains multiple security updates for Windows, Mac and Linux, and 
  [#500](https://github.com/mattermost/desktop/issues/500)
  - Close button on the Settings page now has a hover effect.
 [#439](https://github.com/mattermost/desktop/issues/439)
- - Added new admin configuration settings ([#586](https://github.com/mattermost/desktop/pull/586) & [#633](https://github.com/mattermost/desktop/pull/633) for 
-   - Disabling server management where the user cannot add or edit the server URL [#600](https://github.com/mattermost/desktop/pull/600)
-   - Setting one or more pre-configured server URLs for the end user [#594](https://github.com/mattermost/desktop/pull/594)
-   - Customizing the link in **Help > Learn More..** [#593](https://github.com/mattermost/desktop/pull/593)
+ - Added new admin configuration settings ([#586](https://github.com/mattermost/desktop/pull/586) & [#633](https://github.com/mattermost/desktop/pull/633)) for 
+   - Disabling server management where the user cannot add or edit the server URL.
+   [#600](https://github.com/mattermost/desktop/pull/600)
+   - Setting one or more pre-configured server URLs for the end user.
+   [#594](https://github.com/mattermost/desktop/pull/594)
+   - Customizing the link in **Help > Learn More..**.
+   [#593](https://github.com/mattermost/desktop/pull/593)
+ - (Scheduled but not yet merged) Allow admins to more easily pre-configure and deploy the desktop app silently to end users.
+ [#483](https://github.com/mattermost/desktop/pull/483)
+ - (Scheduled but not yet merged) Limit navigation to external webpages for increased security
+ [#611](https://github.com/mattermost/desktop/pull/611)
 
 #### Windows
  - Added support for protocol deep linking where the desktop app opens via `mattermost://` link if app is already installed.
  [#616](https://github.com/mattermost/desktop/pull/616)
  - Added the ability to more easily whitelabel the Mattermost taskbar icon on custom builds.
  [#592](https://github.com/mattermost/desktop/pull/592)
+ - (Scheduled but not yet merged) Automatically check for new desktop app updates and prompt the user when a new version is released.
+ [#15](https://github.com/mattermost/desktop/pull/15)
 
 #### Mac
  - Added support for protocol deep linking where the desktop app opens via `mattermost://` link if app is already installed.
  [#616](https://github.com/mattermost/desktop/pull/616)
  - Added `Ctrl+Tab` and `Ctrl+Shift+Tab` shortcuts to switch between server tabs,
  [#512](https://github.com/mattermost/desktop/issues/512)
+ - (Scheduled but not yet merged) Automatically check for new desktop app updates and prompt the user when a new version is released.
+ [#15](https://github.com/mattermost/desktop/pull/15)
 
 ### Architectural Changes
  - Major version upgrade of Electron from v1.6.11 to v1.7.9. Electron is the underlying technology used to build the Desktop apps.
