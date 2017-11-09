@@ -30,8 +30,6 @@ This release contains multiple security updates for Windows, Mac and Linux, and 
  [#483](https://github.com/mattermost/desktop/pull/483)
  - (Scheduled but not yet merged) Limit navigation to external webpages for increased security.
  [#611](https://github.com/mattermost/desktop/pull/611)
- - (Scheduled but not yet merged) Use of Mattermost APIv4 endpoints.
- [#611](https://github.com/mattermost/desktop/pull/611)
 
 #### Windows
  - Added support for protocol deep linking where the desktop app opens via `mattermost://` link if app is already installed.
@@ -52,6 +50,8 @@ This release contains multiple security updates for Windows, Mac and Linux, and 
 ### Architectural Changes
  - Major version upgrade of Electron from v1.6.11 to v1.7.9. Electron is the underlying technology used to build the Desktop apps.
  [#602](https://github.com/mattermost/desktop/pull/602)
+  - (Scheduled but not yet merged) The app now employs Mattermost APIv4 endpoints.
+ [#611](https://github.com/mattermost/desktop/pull/611)
  - The app now uses CSS to style the user interface. Styles are also divided to React's inline `style` and CSS.
  [#540](https://github.com/mattermost/desktop/pull/540)
  - Yarn is now used to manage dependancies across Windows, Mac and Linux builds.
