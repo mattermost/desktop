@@ -28,7 +28,9 @@ This release contains multiple security updates for Windows, Mac and Linux, and 
    [#593](https://github.com/mattermost/desktop/pull/593)
  - (Scheduled but not yet merged) Allow admins to more easily pre-configure and deploy the desktop app silently to end users.
  [#483](https://github.com/mattermost/desktop/pull/483)
- - (Scheduled but not yet merged) Limit navigation to external webpages for increased security
+ - (Scheduled but not yet merged) Limit navigation to external webpages for increased security.
+ [#611](https://github.com/mattermost/desktop/pull/611)
+ - (Scheduled but not yet merged) Use of Mattermost APIv4 endpoints.
  [#611](https://github.com/mattermost/desktop/pull/611)
 
 #### Windows
