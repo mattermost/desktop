@@ -10,7 +10,7 @@ const defaultPreferences = {
   minimizeToTray: false,
   notifications: {
     flashWindow: 0,
-    bounceIcon: 0,
+    bounceIcon: false,
     bounceIconType: 'informational'
   },
   showUnreadBadge: true,
