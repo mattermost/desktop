@@ -458,7 +458,10 @@ const SettingsPage = createReactClass({
             name='bounceIconType'
             value='informational'
             disabled={!this.state.notifications.bounceIcon}
-            defaultChecked={this.state.notifications.bounceIconType === 'informational'}
+            defaultChecked={
+              !this.state.notifications.bounceIconType ||
+              this.state.notifications.bounceIconType === 'informational'
+            }
             onChange={this.handleBounceIconType}
           >{'once'}</Radio>
           {' '}
