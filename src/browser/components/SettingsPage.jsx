@@ -451,7 +451,7 @@ const SettingsPage = createReactClass({
             checked={this.state.notifications.bounceIcon}
             onChange={this.handleBounceIcon}
             style={{marginRight: '10px'}}
-          >{'Bounce the dock icon'}
+          >{'Bounce the Dock icon'}
           </Checkbox>
           <Radio
             inline={true}
@@ -476,7 +476,7 @@ const SettingsPage = createReactClass({
           <HelpBlock
             style={{marginLeft: '20px'}}
           >
-            {'If enabled, the dock icon bounces once or until the user opens the app when a new message is received.'}
+            {'If enabled, the Dock icon bounces once or until the user opens the app when a new message is received.'}
           </HelpBlock>
         </FormGroup>
       );
