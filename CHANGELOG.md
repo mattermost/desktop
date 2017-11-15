@@ -31,6 +31,8 @@ Release date: TBD
  [#512](https://github.com/mattermost/desktop/issues/512)
  - Added the feature to open the application via `mattermost://` link.
  [#616](https://github.com/mattermost/desktop/pull/616)
+ - Added the option to bounce the Dock icon when receiving new messages.
+ [#514](https://github.com/mattermost/desktop/issues/514)
 
 ### Bug Fixes
 
