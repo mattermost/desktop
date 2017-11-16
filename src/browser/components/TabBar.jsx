@@ -37,7 +37,7 @@ class TabBar extends React.Component { // need "this"
           className='TabBar-permissionOverlay'
           placement='bottom'
           show={requestingPermission && this.props.activeKey === index}
-          target={() => findDOMNode(this.refs[id])}
+          target={() => this.refs[id]}
         >
           <PermissionRequestDialog
             id={`${id}-permissionDialog`}
