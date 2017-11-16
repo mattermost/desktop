@@ -31,48 +31,36 @@ class TabBar extends React.Component { // need "this"
           </div>);
       }
       const id = 'teamTabItem' + index;
-      const permissionOverlay = this.props.requestingPermission[index] ? (
+      const requestingPermission = this.props.requestingPermission[index];
+      const permissionOverlay = (
         <Overlay
           className='TabBar-permissionOverlay'
           placement='bottom'
-          show={this.props.activeKey === index}
+          show={requestingPermission && this.props.activeKey === index}
           target={() => findDOMNode(this.refs[id])}
         >
           <PermissionRequestDialog
             id={`${id}-permissionDialog`}
-            origin={this.props.requestingPermission[index].origin}
-            permission={this.props.requestingPermission[index].permission}
+            origin={requestingPermission ? requestingPermission.origin : null}
+            permission={requestingPermission ? requestingPermission.permission : null}
             onClickAllow={this.props.onClickPermissionDialog.bind(null, index, 'allow')}
             onClickBlock={this.props.onClickPermissionDialog.bind(null, index, 'block')}
             onClickClose={this.props.onClickPermissionDialog.bind(null, index, 'close')}
           />
         </Overlay>
-      ) : null;
-      if (unreadCount === 0) {
-        return (
-          <NavItem
-            className='teamTabItem'
-            key={id}
-            id={id}
-            eventKey={index}
-            ref={id}
-          >
-            { team.name }
-            { ' ' }
-            { badgeDiv }
-            {permissionOverlay}
-          </NavItem>);
-      }
+      );
       return (
         <NavItem
           className='teamTabItem'
           key={id}
           id={id}
           eventKey={index}
+          ref={id}
         >
-          <b>{ team.name }</b>
+          <span className={unreadCount === 0 ? '' : 'teamTabItem-label'}>{team.name}</span>
           { ' ' }
           { badgeDiv }
+          {permissionOverlay}
         </NavItem>);
     });
     if (this.props.showAddServerButton === true) {
