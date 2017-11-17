@@ -13,8 +13,8 @@ To contribute to the process of testing the Mattermost Desktop App:
 
 2. Install the latest Mattermost Desktop App
  - Download the latest Mattermost Desktop App from the [Mattermost Download page](https://about.mattermost.com/download/#mattermostApps)
- - Follow the [Desktop Application Install Guides](https://docs.mattermost.com/install/desktop.html) to install the app for your platform
- - Use the [Desktop Application's User Guide](https://docs.mattermost.com/help/apps/desktop-guide.html#id1) to add https://pre-release.mattermost.com/core as a new team
+ - Follow the [Desktop Application Install Guides](https://about.mattermost.com/default-desktop-app-install-documentation/) to install the app for your platform
+ - Use the [Desktop Application's User Guide](https://about.mattermost.com/default-desktop-app-documentation/) to add https://pre-release.mattermost.com/core as a new team
  - Hit "Save" and log in
 
 3. Go to the [Public Test Channel](https://pre-release.mattermost.com/core/channels/public-test-channel) and try the following:
