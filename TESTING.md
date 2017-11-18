@@ -13,17 +13,17 @@ To contribute to the process of testing the Mattermost Desktop App:
 
 2. Install the latest Mattermost Desktop App
  - Download the latest Mattermost Desktop App from the [Mattermost Download page](https://about.mattermost.com/download/#mattermostApps)
- - Follow the [Desktop Application Install Guides](https://docs.mattermost.com/install/desktop.html) to install the app for your platform
- - Use the [Desktop Application's User Guide](https://docs.mattermost.com/help/apps/desktop-guide.html#id1) to add https://pre-release.mattermost.com/core as a new team
+ - Follow the [Desktop Application Install Guides](https://about.mattermost.com/default-desktop-app-install-documentation/) to install the app for your platform
+ - Use the [Desktop Application's User Guide](https://about.mattermost.com/default-desktop-app-documentation/) to add https://pre-release.mattermost.com/core as a new team
  - Hit "Save" and log in
 
 3. Go to the [Public Test Channel](https://pre-release.mattermost.com/core/channels/public-test-channel) and try the following:
  - Post a message with information on what you're testing, for example: `Testing Mattermost Desktop App 3.4.1 on Windows 10 64-bit`
     - Reply to the post by clicking on "..." then "Reply" with This is a comment including files and upload five (5) files including at least one image, one sound file and one video clip from your Desktop App.
     - Search for the word "Desktop" and click "Jump" on the search result of your own post in Step 3.1. Click into the preview of the files you uploaded and try to download each one.
- - Verify [Team Management works as documented](https://docs.mattermost.com/help/apps/desktop-guide.html#id1).
- - Verify [App Options work as documented](https://docs.mattermost.com/help/apps/desktop-guide.html#id2).
- - Verify [Menu Bar options work as documented](https://docs.mattermost.com/help/apps/desktop-guide.html#id3).
+ - Verify [Team Management works as documented](https://about.mattermost.com/default-desktop-app-documentation/).
+ - Verify [App Options work as documented](https://about.mattermost.com/default-desktop-app-documentation/).
+ - Verify Menu Bar options work as documented.
  - Use the desktop app for another 15 minutes, trying different features and functionality on the user interface.
 
 4. For any bugs found, please [file a new issue report for each](https://github.com/mattermost/desktop/issues/new).

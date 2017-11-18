@@ -27,7 +27,7 @@ Packages are available on the [releases page](http://github.com/mattermost/deskt
 ## Usage
 
 ### Installation
-Detailed guides are available at [docs.mattermost.com](https://docs.mattermost.com/help/apps/desktop-guide.html).
+Detailed guides are available at [docs.mattermost.com](https://about.mattermost.com/default-desktop-app-documentation/).
 
 1. Download a file from the [downloads page](https://about.mattermost.com/downloads).
 2. Launch `Mattermost` in the unarchived folder.
