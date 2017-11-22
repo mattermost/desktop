@@ -11,11 +11,39 @@ function merge(base, target) {
 const defaultPreferences = require('./config/defaultPreferences');
 const upgradePreferences = require('./config/upgradePreferences');
 
-function loadDefault(spellCheckerLocale) {
-  const config = JSON.parse(JSON.stringify(defaultPreferences));
-  return Object.assign({}, config, {
+function getPreconfigFilePath(appName) {
+  const file = 'preconfig.json';
+  switch (process.platform) {
+  case 'win32':
+    return `C:\\ProgramData\\${appName}\\${file}`;
+  case 'darwin':
+    return `/Library/Application Support/${appName}/${file}`;
+  case 'linux':
+    return `/etc/${appName.toLowerCase()}/${file}`;
+  default:
+    return '';
+  }
+}
+
+function loadDefault(spellCheckerLocale, appName) {
+  let config = null;
+  const preconfigFile = getPreconfigFilePath(appName);
+  if (fs.existsSync(preconfigFile)) {
+    try {
+      const preconfig = JSON.parse(fs.readFileSync(preconfigFile));
+      config = upgradePreferences(preconfig);
+    } catch (err) {
+      console.log(err);
+    }
+  }
+  if (config === null) {
+    config = JSON.parse(JSON.stringify(defaultPreferences));
+  }
+
+  Object.assign(config, {
     spellCheckerLocale: spellCheckerLocale || defaultPreferences.spellCheckerLocale || 'en-US'
   });
+  return config;
 }
 
 function hasBuildConfigDefaultTeams(config) {
