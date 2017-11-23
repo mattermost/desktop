@@ -1,5 +1,6 @@
 const settings = require('../../common/settings');
 const {remote} = require('electron');
+const SpellChecker = require('../../main/SpellChecker');
 
 class AppConfig {
   constructor(file) {
@@ -7,9 +8,8 @@ class AppConfig {
     try {
       this.data = settings.readFileSync(file);
     } catch (e) {
-      this.data = {
-        teams: []
-      };
+      const spellCheckerLocale = SpellChecker.getSpellCheckerLocale(remote.app.getLocale());
+      this.data = settings.loadDefault(spellCheckerLocale, remote.app.getName());
     }
   }
 
