@@ -12,11 +12,11 @@ Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no
 Reflect.deleteProperty(global.Buffer); // http://electron.atom.io/docs/tutorial/security/#buffer-global
 
 function isReactAppInitialized() {
-  const reactRoot = document.querySelector('div[data-reactroot]');
-  if (reactRoot === null) {
+  const initializedRoot = document.querySelector('div[data-reactroot]') || document.querySelector('#root.channel-view');
+  if (initializedRoot === null) {
     return false;
   }
-  return reactRoot.children.length !== 0;
+  return initializedRoot.children.length !== 0;
 }
 
 function watchReactAppUntilInitialized(callback) {
