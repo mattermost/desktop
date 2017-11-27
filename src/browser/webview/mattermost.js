@@ -12,11 +12,14 @@ Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no
 Reflect.deleteProperty(global.Buffer); // http://electron.atom.io/docs/tutorial/security/#buffer-global
 
 function isReactAppInitialized() {
-  const reactRoot = document.querySelector('div[data-reactroot]');
-  if (reactRoot === null) {
+  const initializedRoot =
+    document.querySelector('#root.channel-view') || // React 16 webapp
+    document.querySelector('#root .signup-team__container') || // React 16 login
+    document.querySelector('div[data-reactroot]'); // Older React apps
+  if (initializedRoot === null) {
     return false;
   }
-  return reactRoot.children.length !== 0;
+  return initializedRoot.children.length !== 0;
 }
 
 function watchReactAppUntilInitialized(callback) {
