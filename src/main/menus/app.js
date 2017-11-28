@@ -230,12 +230,15 @@ function createTemplate(mainWindow, config, isDev) {
   submenu.push({
     label: `Version ${app.getVersion()}`,
     enabled: false,
-  }, {
-    label: 'Check for Updates...',
-    click() {
-      ipcMain.emit('check-for-updates', true);
-    },
   });
+  if (buildConfig.enableAutoUpdater) {
+    submenu.push({
+      label: 'Check for Updates...',
+      click() {
+        ipcMain.emit('check-for-updates', true);
+      },
+    });
+  }
   template.push({label: '&Help', submenu});
   return template;
 }
