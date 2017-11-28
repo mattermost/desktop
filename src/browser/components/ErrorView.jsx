@@ -3,7 +3,7 @@
 const React = require('react');
 const PropTypes = require('prop-types');
 const {Grid, Row, Col} = require('react-bootstrap');
-const {shell} = require('electron');
+const {shell, remote} = require('electron');
 
 function ErrorView(props) {
   const classNames = ['container', 'ErrorView'];
@@ -37,13 +37,13 @@ function ErrorView(props) {
               md={10}
               lg={8}
             >
-              <h2>{'Cannot connect to Mattermost'}</h2>
+              <h2>{`Cannot connect to ${remote.app.getName()}`}</h2>
               <hr/>
-              <p>{'We\'re having trouble connecting to Mattermost. If refreshing this page (Ctrl+R or Command+R) does not work please verify that:'}</p>
+              <p>{`We're having trouble connecting to ${remote.app.getName()}. If refreshing this page (Ctrl+R or Command+R) does not work please verify that:`}</p>
               <br/>
               <ul className='ErrorView-bullets' >
                 <li>{'Your computer is connected to the internet.'}</li>
-                <li>{'The Mattermost URL '}
+                <li>{`The ${remote.app.getName()} URL `}
                   <a
                     onClick={handleClick}
                     href={props.errorInfo.validatedURL}
