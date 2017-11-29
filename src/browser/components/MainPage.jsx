@@ -28,7 +28,8 @@ const MainPage = createReactClass({
     deeplinkingUrl: PropTypes.string,
     showAddServerButton: PropTypes.bool.isRequired,
     requestingPermission: TabBar.propTypes.requestingPermission,
-    onClickPermissionDialog: PropTypes.func
+    onClickPermissionDialog: PropTypes.func,
+    displayUrlOnHover: PropTypes.bool.isRequired
   },
 
   getInitialState() {
@@ -367,12 +368,12 @@ const MainPage = createReactClass({
           transitionEnterTimeout={300}
           transitionLeaveTimeout={500}
         >
-          { (this.state.targetURL === '') ?
-            null :
+          { (this.props.displayUrlOnHover === true && this.state.targetURL !== '') ?
             <HoveringURL
               key='hoveringURL'
               targetURL={this.state.targetURL}
-            /> }
+            /> :
+            null}
         </ReactCSSTransitionGroup>
         <div>
           { modal }
