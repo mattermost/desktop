@@ -30,7 +30,7 @@ function loadDefault(spellCheckerLocale, appName) {
   const preconfigFile = getPreconfigFilePath(appName);
   if (fs.existsSync(preconfigFile)) {
     try {
-      const preconfig = JSON.parse(fs.readFileSync(preconfigFile));
+      const preconfig = JSON.parse(fs.readFileSync(preconfigFile)).defaultPreferences;
       config = upgradePreferences(preconfig);
     } catch (err) {
       console.log(err);
