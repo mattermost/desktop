@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const env = require('../modules/environment');
-const {PermissionManager} = require('../../src/main/permissionRequestHandler');
+const PermissionManager = require('../../src/main/PermissionManager');
 
 const permissionFile = path.join(env.userDataDir, 'permission.json');
 
@@ -76,5 +76,12 @@ describe('PermissionManager', function() {
     const manager = new PermissionManager(permissionFile);
     manager.isDenied('origin', 'permission').should.be.true;
     manager.isGranted('origin_another', 'permission_another').should.be.true;
+  });
+
+  it('should allow permissions for trusted URLs', function() {
+    fs.writeFileSync(permissionFile, JSON.stringify({}));
+    const manager = new PermissionManager(permissionFile, ['https://example.com', 'https://example2.com/2']);
+    manager.isGranted('https://example.com', 'notifications').should.be.true;
+    manager.isGranted('https://example2.com', 'test').should.be.true;
   });
 });
