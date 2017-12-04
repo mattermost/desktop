@@ -8,6 +8,7 @@ const {findDOMNode} = require('react-dom');
 const {ipcRenderer, remote, shell} = require('electron');
 const url = require('url');
 const contextMenu = require('../js/contextMenu');
+const utils = require('../../common/utils');
 
 const ErrorView = require('./ErrorView.jsx');
 
@@ -29,7 +30,6 @@ const MattermostView = createReactClass({
   getInitialState() {
     return {
       errorInfo: null,
-      isContextMenuAdded: false,
       reloadTimeoutID: null,
       isLoaded: false
     };
@@ -91,23 +91,22 @@ const MattermostView = createReactClass({
     });
 
     // 'dom-ready' means "content has been loaded"
-    // So this would be emitted again when reloading a webview
+    // So this would be emitted again when reloading a webview when not using {once: true} option
     webview.addEventListener('dom-ready', () => {
       // webview.openDevTools();
 
-      if (!this.state.isContextMenuAdded) {
-        contextMenu.setup(webview, {
-          useSpellChecker: this.props.useSpellChecker,
-          onSelectSpellCheckerLocale: (locale) => {
-            if (this.props.onSelectSpellCheckerLocale) {
-              this.props.onSelectSpellCheckerLocale(locale);
-            }
-            webview.send('set-spellcheker');
+      contextMenu.setup(webview, {
+        useSpellChecker: this.props.useSpellChecker,
+        onSelectSpellCheckerLocale: (locale) => {
+          if (this.props.onSelectSpellCheckerLocale) {
+            this.props.onSelectSpellCheckerLocale(locale);
           }
-        });
-        this.setState({isContextMenuAdded: true});
-      }
-    });
+          webview.send('set-spellcheker');
+        }
+      });
+      ipcRenderer.send('did-webview-attach', webview.getWebContents().id);
+      ipcRenderer.send('allow-origin', utils.getOrigin(this.props.src));
+    }, {once: true});
 
     webview.addEventListener('update-target-url', (event) => {
       if (self.props.onTargetURLChange) {
