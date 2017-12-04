@@ -15,7 +15,8 @@ const defaultPreferences = {
   },
   showUnreadBadge: true,
   useSpellChecker: true,
-  spellCheckerLocale: 'en-US'
+  spellCheckerLocale: 'en-US',
+  autoStart: false
 };
 
 module.exports = defaultPreferences;

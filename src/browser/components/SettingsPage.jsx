@@ -5,7 +5,6 @@ const ReactDOM = require('react-dom');
 const {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} = require('react-bootstrap');
 
 const {ipcRenderer, remote} = require('electron');
-const AutoLaunch = require('auto-launch');
 const {debounce} = require('underscore');
 
 const buildConfig = require('../../common/config/buildConfig');
@@ -13,11 +12,6 @@ const settings = require('../../common/settings');
 
 const TeamList = require('./TeamList.jsx');
 const AutoSaveIndicator = require('./AutoSaveIndicator.jsx');
-
-const appLauncher = new AutoLaunch({
-  name: remote.app.getName(),
-  isHidden: true
-});
 
 function backToIndex(index) {
   const target = typeof index === 'undefined' ? 0 : index;
@@ -55,14 +49,6 @@ const SettingsPage = createReactClass({
     return initialState;
   },
   componentDidMount() {
-    if (process.platform === 'win32' || process.platform === 'linux') {
-      var self = this;
-      appLauncher.isEnabled().then((enabled) => {
-        self.setState({
-          autostart: enabled
-        });
-      });
-    }
     ipcRenderer.on('add-server', () => {
       this.setState({
         showAddTeamForm: true
@@ -135,7 +121,8 @@ const SettingsPage = createReactClass({
       },
       showUnreadBadge: this.state.showUnreadBadge,
       useSpellChecker: this.state.useSpellChecker,
-      spellCheckerLocale: this.state.spellCheckerLocale
+      spellCheckerLocale: this.state.spellCheckerLocale,
+      autoStart: this.state.autoStart
     };
 
     settings.writeFile(this.props.configFile, config, (err) => {
@@ -145,29 +132,8 @@ const SettingsPage = createReactClass({
       }
       ipcRenderer.send('update-menu', config);
       ipcRenderer.send('update-config');
-      if (process.platform === 'win32' || process.platform === 'linux') {
-        const autostart = this.state.autostart;
-        this.saveAutoStart(autostart, callback);
-      } else {
-        callback();
-      }
+      callback();
     });
-  },
-
-  saveAutoStart(autostart, callback) {
-    appLauncher.isEnabled().then((enabled) => {
-      if (enabled && !autostart) {
-        appLauncher.disable().then(() => {
-          callback();
-        }).catch(callback);
-      } else if (!enabled && autostart) {
-        appLauncher.enable().then(() => {
-          callback();
-        }).catch(callback);
-      } else {
-        callback();
-      }
-    }).catch(callback);
   },
 
   handleCancel() {
@@ -195,7 +161,7 @@ const SettingsPage = createReactClass({
   },
   handleChangeAutoStart() {
     this.setState({
-      autostart: !this.refs.autostart.props.checked
+      autoStart: !this.refs.autoStart.props.checked
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   },
@@ -376,14 +342,14 @@ const SettingsPage = createReactClass({
 
     var options = [];
 
-    // MacOS has an option in the Dock, to set the app to autostart, so we choose to not support this option for OSX
+    // MacOS has an option in the Dock, to set the app to autoStart, so we choose to not support this option for OSX
     if (process.platform === 'win32' || process.platform === 'linux') {
       options.push(
         <Checkbox
           key='inputAutoStart'
           id='inputAutoStart'
-          ref='autostart'
-          checked={this.state.autostart}
+          ref='autoStart'
+          checked={this.state.autoStart}
           onChange={this.handleChangeAutoStart}
         >{'Start app on login'}
           <HelpBlock>

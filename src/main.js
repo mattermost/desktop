@@ -14,6 +14,7 @@ const os = require('os');
 const path = require('path');
 const isDev = require('electron-is-dev');
 const installExtension = require('electron-devtools-installer');
+const AutoLaunch = require('auto-launch');
 const squirrelStartup = require('./main/squirrelStartup');
 const CriticalErrorHandler = require('./main/CriticalErrorHandler');
 
@@ -63,6 +64,33 @@ if (argv['data-dir']) {
 
 global.isDev = isDev && !argv.disableDevMode;
 
+function syncAutoStartState(state) {
+  if (process.platform === 'darwin') {
+    console.log('autoStart is not supported for Mac');
+    return new Promise((resolve) => {
+      resolve();
+    });
+  }
+  console.log('Synchronizing autoStart state');
+  const appLauncher = new AutoLaunch({
+    name: app.getName(),
+    isHidden: true
+  });
+  return appLauncher.isEnabled().then((enabled) => {
+    if (state === true && enabled === false) {
+      console.log('Enable autoStart');
+      return appLauncher.enable();
+    } else if (state === false && enabled === true) {
+      console.log('Disable autoStart');
+      return appLauncher.disable();
+    }
+    console.log('No update for autoStart');
+    return true;
+  }).then(() => {
+    console.log('autoStart state has been synced with config:', state);
+  });
+}
+
 var config = {};
 try {
   const configFile = app.getPath('userData') + '/config.json';
@@ -87,8 +115,15 @@ try {
 ipcMain.on('update-config', () => {
   const configFile = app.getPath('userData') + '/config.json';
   config = settings.readFileSync(configFile);
+  syncAutoStartState(config.autoStart).catch(console.log);
   ipcMain.emit('update-dict', true, config.spellCheckerLocale);
 });
+
+if (global.isDev) {
+  console.log('In development mode, autoStart is not synchronized with config.json');
+} else {
+  syncAutoStartState(config.autoStart).catch(console.log);
+}
 
 // Only for OS X
 function switchMenuIconImages(icons, isDarkMode) {
