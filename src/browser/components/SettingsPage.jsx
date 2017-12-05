@@ -9,6 +9,7 @@ const {debounce} = require('underscore');
 
 const buildConfig = require('../../common/config/buildConfig');
 const settings = require('../../common/settings');
+const SpellChecker = require('../../main/SpellChecker');
 
 const TeamList = require('./TeamList.jsx');
 const AutoSaveIndicator = require('./AutoSaveIndicator.jsx');
@@ -33,7 +34,8 @@ const SettingsPage = createReactClass({
     try {
       initialState = settings.readFileSync(this.props.configFile);
     } catch (e) {
-      initialState = settings.loadDefault();
+      const spellCheckerLocale = SpellChecker.getSpellCheckerLocale(remote.app.getLocale());
+      initialState = settings.loadDefault(spellCheckerLocale, remote.app.getName());
     }
 
     initialState.showAddTeamForm = false;
