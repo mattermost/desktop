@@ -129,7 +129,9 @@ const SettingsPage = createReactClass({
       version: settings.version,
       minimizeToTray: this.state.minimizeToTray,
       notifications: {
-        flashWindow: this.state.notifications.flashWindow
+        flashWindow: this.state.notifications.flashWindow,
+        bounceIcon: this.state.notifications.bounceIcon,
+        bounceIconType: this.state.notifications.bounceIconType
       },
       showUnreadBadge: this.state.showUnreadBadge,
       useSpellChecker: this.state.useSpellChecker,
@@ -219,7 +221,26 @@ const SettingsPage = createReactClass({
   handleFlashWindow() {
     this.setState({
       notifications: {
+        ...this.state.notifications,
         flashWindow: this.refs.flashWindow.props.checked ? 0 : 2
+      }
+    });
+    setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
+  },
+  handleBounceIcon() {
+    this.setState({
+      notifications: {
+        ...this.state.notifications,
+        bounceIcon: !this.refs.bounceIcon.props.checked
+      }
+    });
+    setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
+  },
+  handleBounceIconType(event) {
+    this.setState({
+      notifications: {
+        ...this.state.notifications,
+        bounceIconType: event.target.value
       }
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
@@ -419,6 +440,48 @@ const SettingsPage = createReactClass({
         </Checkbox>);
     }
 
+    if (process.platform === 'darwin') {
+      options.push(
+        <FormGroup>
+          <Checkbox
+            inline={true}
+            key='bounceIcon'
+            id='inputBounceIcon'
+            ref='bounceIcon'
+            checked={this.state.notifications.bounceIcon}
+            onChange={this.handleBounceIcon}
+            style={{marginRight: '10px'}}
+          >{'Bounce the Dock icon'}
+          </Checkbox>
+          <Radio
+            inline={true}
+            name='bounceIconType'
+            value='informational'
+            disabled={!this.state.notifications.bounceIcon}
+            defaultChecked={
+              !this.state.notifications.bounceIconType ||
+              this.state.notifications.bounceIconType === 'informational'
+            }
+            onChange={this.handleBounceIconType}
+          >{'once'}</Radio>
+          {' '}
+          <Radio
+            inline={true}
+            name='bounceIconType'
+            value='critical'
+            disabled={!this.state.notifications.bounceIcon}
+            defaultChecked={this.state.notifications.bounceIconType === 'critical'}
+            onChange={this.handleBounceIconType}
+          >{'until I open the app'}</Radio>
+          <HelpBlock
+            style={{marginLeft: '20px'}}
+          >
+            {'If enabled, the Dock icon bounces once or until the user opens the app when a new message is received.'}
+          </HelpBlock>
+        </FormGroup>
+      );
+    }
+
     if (process.platform === 'darwin' || process.platform === 'linux') {
       options.push(
         <Checkbox
@@ -428,7 +491,7 @@ const SettingsPage = createReactClass({
           checked={this.state.showTrayIcon}
           onChange={this.handleChangeShowTrayIcon}
         >{process.platform === 'darwin' ?
-          'Show Mattermost icon in the menu bar' :
+          `Show ${remote.app.getName()} icon in the menu bar` :
           'Show icon in the notification area'}
           <HelpBlock>
             {'Setting takes effect after restarting the app.'}

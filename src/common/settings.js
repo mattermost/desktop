@@ -14,7 +14,7 @@ const upgradePreferences = require('./config/upgradePreferences');
 function loadDefault(spellCheckerLocale) {
   const config = JSON.parse(JSON.stringify(defaultPreferences));
   return Object.assign({}, config, {
-    spellCheckerLocale: spellCheckerLocale || defaultPreferences.pellCheckerLocale || 'en-US'
+    spellCheckerLocale: spellCheckerLocale || defaultPreferences.spellCheckerLocale || 'en-US'
   });
 }
 

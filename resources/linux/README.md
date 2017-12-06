@@ -56,7 +56,7 @@ After launching, you need to configure the application to interact with your tea
 4. Click **Add**.
 5. Click **Save**.
 
-More guides are available at [Mattermost Documentation](https://docs.mattermost.com/help/apps/desktop-guide.html).
+More guides are available at [Mattermost Documentation](https://about.mattermost.com/default-desktop-app-documentation/).
 
 
 ## Contributing

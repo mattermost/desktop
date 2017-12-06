@@ -79,8 +79,8 @@ function PermissionRequestDialog(props) {
 }
 
 PermissionRequestDialog.propTypes = {
-  origin: PropTypes.string.isRequired,
-  permission: PropTypes.oneOf(['media', 'geolocation', 'notifications', 'midiSysex', 'pointerLock', 'fullscreen', 'openExternal']).isRequired,
+  origin: PropTypes.string,
+  permission: PropTypes.oneOf(['media', 'geolocation', 'notifications', 'midiSysex', 'pointerLock', 'fullscreen', 'openExternal']),
   onClickAllow: PropTypes.func,
   onClickBlock: PropTypes.func,
   onClickClose: PropTypes.func

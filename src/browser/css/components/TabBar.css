@@ -37,3 +37,7 @@
   margin-top: 5px;
   border-radius: 50%;
 }
+
+.TabBar .teamTabItem-label {
+  font-weight: bold;
+}

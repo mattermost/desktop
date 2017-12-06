@@ -1,10 +1,8 @@
-const {URL} = require('url');
+const url = require('url');
 
-export function getDomain(url) {
-  try {
-    const objectUrl = new URL(url);
-    return objectUrl.origin;
-  } catch (e) {
-    return null;
-  }
+function getDomain(inputURL) {
+  const parsedURL = url.parse(inputURL);
+  return `${parsedURL.protocol}//${parsedURL.host}`;
 }
+
+module.exports = {getDomain};

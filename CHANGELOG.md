@@ -19,7 +19,7 @@ This release contains multiple security updates for Windows, Mac and Linux, and 
  [#500](https://github.com/mattermost/desktop/issues/500)
  - Close button on the Settings page now has a hover effect.
 [#439](https://github.com/mattermost/desktop/issues/439)
- - Added new admin configuration settings ([#586](https://github.com/mattermost/desktop/pull/586) & [#633](https://github.com/mattermost/desktop/pull/633)) for 
+ - Added new admin configuration settings ([#586](https://github.com/mattermost/desktop/pull/586) & [#633](https://github.com/mattermost/desktop/pull/633)) for
    - Disabling server management where the user cannot add or edit the server URL.
    [#600](https://github.com/mattermost/desktop/pull/600)
    - Setting one or more pre-configured server URLs for the end user.
@@ -46,6 +46,8 @@ This release contains multiple security updates for Windows, Mac and Linux, and 
  [#512](https://github.com/mattermost/desktop/issues/512)
  - (Scheduled but not yet merged) Automatically check for new desktop app updates and prompt the user when a new version is released.
  [#15](https://github.com/mattermost/desktop/pull/15)
+ - Added the option to bounce the Dock icon when receiving new messages.
+ [#514](https://github.com/mattermost/desktop/issues/514)
 
 ### Architectural Changes
  - Major version upgrade of Electron from v1.6.11 to v1.7.9. Electron is the underlying technology used to build the Desktop apps.
@@ -62,7 +64,7 @@ This release contains multiple security updates for Windows, Mac and Linux, and 
  [#599](https://github.com/mattermost/desktop/pull/599)
  - Added an `rm` command to `npm`, which removes all dynamically generated files to make it easy to reset the app between builds and branches.
  [#597](https://github.com/mattermost/desktop/pull/597)
- 
+
 ### Bug Fixes
 
 #### All Platforms
