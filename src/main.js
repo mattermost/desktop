@@ -37,6 +37,7 @@ const appMenu = require('./main/menus/app');
 const trayMenu = require('./main/menus/tray');
 const downloadURL = require('./main/downloadURL');
 const allowProtocolDialog = require('./main/allowProtocolDialog');
+const PermissionManager = require('./main/PermissionManager');
 const permissionRequestHandler = require('./main/permissionRequestHandler');
 
 const SpellChecker = require('./main/SpellChecker');
@@ -49,6 +50,7 @@ var mainWindow = null;
 let spellChecker = null;
 let deeplinkingUrl = null;
 let scheme = null;
+let permissionManager = null;
 
 var argv = require('yargs').parse(process.argv.slice(1));
 
@@ -83,10 +85,11 @@ try {
     settings.writeFileSync(configFile, config);
   }
 }
-
 ipcMain.on('update-config', () => {
   const configFile = app.getPath('userData') + '/config.json';
   config = settings.readFileSync(configFile);
+  const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => team.url);
+  permissionManager.setTrustedURLs(trustedURLs);
   ipcMain.emit('update-dict', true, config.spellCheckerLocale);
 });
 
@@ -583,7 +586,9 @@ app.on('ready', () => {
   ipcMain.emit('update-dict');
 
   const permissionFile = path.join(app.getPath('userData'), 'permission.json');
-  session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionFile));
+  const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => team.url);
+  permissionManager = new PermissionManager(permissionFile, trustedURLs);
+  session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionManager));
 
   // Open the DevTools.
   // mainWindow.openDevTools();
