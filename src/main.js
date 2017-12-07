@@ -101,9 +101,10 @@ try {
     settings.writeFileSync(configFile, config);
   }
 } catch (e) {
+  console.log('Failed to read or upgrade config.json', e);
+  console.log('Load default config');
   const spellCheckerLocale = SpellChecker.getSpellCheckerLocale(app.getLocale());
   config = settings.loadDefault(spellCheckerLocale, app.getName());
-  console.log('Failed to read or upgrade config.json', e);
   if (!config.teams.length && config.defaultTeam) {
     config.teams.push(config.defaultTeam);
 

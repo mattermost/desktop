@@ -29,6 +29,7 @@ function loadDefault(spellCheckerLocale, appName) {
   let config = null;
   const preconfigFile = getPreconfigFilePath(appName);
   if (fs.existsSync(preconfigFile)) {
+    console.log('Found pre-config file:', preconfigFile);
     try {
       const preconfig = JSON.parse(fs.readFileSync(preconfigFile)).defaultPreferences;
       config = upgradePreferences(preconfig);
