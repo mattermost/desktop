@@ -102,8 +102,12 @@ function initialize(appState, mainWindow, notifyOnly = false) {
         }, INTERVAL_48_HOURS_IN_MS);
         updaterModal.close();
       }).on('click-install', () => {
+        updaterModal.webContents.send('start-download');
+        autoUpdater.signals.progress((data) => { // eslint-disable-line max-nested-callbacks
+          updaterModal.send('progress', Math.floor(data.percent));
+          console.log('progress:', data);
+        });
         downloadAndInstall();
-        updaterModal.close();
       }).on('click-download', () => {
         shell.openExternal('https://about.mattermost.com/download/#mattermostApps');
       }).on('click-release-notes', () => {

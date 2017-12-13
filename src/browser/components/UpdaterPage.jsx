@@ -1,6 +1,6 @@
 const React = require('react');
 const propTypes = require('prop-types');
-const {Button, Navbar} = require('react-bootstrap');
+const {Button, Navbar, ProgressBar} = require('react-bootstrap');
 
 function InstallButton(props) {
   if (props.notifyOnly) {
@@ -37,34 +37,49 @@ function UpdaterPage(props) {
           {' to learn more.'}
         </p>
       </div>
-      <Navbar
-        className='UpdaterPage-footer'
-        fixedBottom={true}
-        fluid={true}
-      >
-        <Button
-          className='UpdaterPage-skipButton'
-          bsStyle='link'
-          onClick={props.onClickSkip}
-        >{'Skip this version'}</Button>
-        <div className='pull-right'>
-          <Button
-            bsStyle='link'
-            onClick={props.onClickRemind}
-          >{'Remind me in 2 days'}</Button>
-          <InstallButton
-            notifyOnly={props.notifyOnly}
-            onClickInstall={props.onClickInstall}
-            onClickDownload={props.onClickDownload}
+      {props.isDownloading ?
+        <Navbar
+          className='UpdaterPage-footer'
+          fixedBottom={true}
+          fluid={true}
+        >
+          <ProgressBar
+            active={true}
+            now={props.progress}
+            label={`${props.progress}%`}
           />
-        </div>
-      </Navbar>
+        </Navbar> :
+        <Navbar
+          className='UpdaterPage-footer'
+          fixedBottom={true}
+          fluid={true}
+        >
+          <Button
+            className='UpdaterPage-skipButton'
+            bsStyle='link'
+            onClick={props.onClickSkip}
+          >{'Skip this version'}</Button>
+          <div className='pull-right'>
+            <Button
+              bsStyle='link'
+              onClick={props.onClickRemind}
+            >{'Remind me in 2 days'}</Button>
+            <InstallButton
+              notifyOnly={props.notifyOnly}
+              onClickInstall={props.onClickInstall}
+              onClickDownload={props.onClickDownload}
+            />
+          </div>
+        </Navbar>
+      }
     </div>
   );
 }
 
 UpdaterPage.propTypes = {
   notifyOnly: propTypes.bool.isRequired,
+  isDownloading: propTypes.bool.isRequired,
+  progress: propTypes.number,
   onClickInstall: propTypes.func.isRequired,
   onClickDownload: propTypes.func.isRequired,
   onClickReleaseNotes: propTypes.func.isRequired,
