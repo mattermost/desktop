@@ -100,7 +100,9 @@ function initialize(appState, mainWindow, notifyOnly = false) {
         updaterModal.close();
       }).on('click-remind', () => {
         appState.updateCheckedDate = new Date();
-        setTimeout(autoUpdater.checkForUpdates, INTERVAL_48_HOURS_IN_MS);
+        setTimeout(() => { // eslint-disable-line max-nested-callbacks
+          autoUpdater.checkForUpdates();
+        }, INTERVAL_48_HOURS_IN_MS);
         updaterModal.close();
       }).on('click-install', () => {
         downloadAndInstall();
@@ -123,7 +125,9 @@ function initialize(appState, mainWindow, notifyOnly = false) {
         message: 'You have the latest version of the Mattermost Desktop App.'
       }, () => {}); // eslint-disable-line no-empty-function
     }
-    setTimeout(autoUpdater.checkForUpdates, INTERVAL_48_HOURS_IN_MS);
+    setTimeout(() => {
+      autoUpdater.checkForUpdates();
+    }, INTERVAL_48_HOURS_IN_MS);
   });
 }
 
