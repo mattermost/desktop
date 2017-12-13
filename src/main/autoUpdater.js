@@ -79,10 +79,7 @@ function downloadAndInstall() {
 }
 
 function initialize(appState, mainWindow, notifyOnly = false) {
-  autoUpdater.notifyOnly = notifyOnly;
-  if (notifyOnly) {
-    autoUpdater.autoDownload = false;
-  }
+  autoUpdater.autoDownload = false; // To prevent upgrading on quit
   const assetsDir = path.resolve(app.getAppPath(), 'assets');
   autoUpdater.on('error', (err) => {
     console.error('Error in autoUpdater:', err.message);
@@ -90,7 +87,7 @@ function initialize(appState, mainWindow, notifyOnly = false) {
     if (isUpdateApplicable(new Date(), appState.skippedVersion, info)) {
       updaterModal = createUpdaterModal(mainWindow, {
         linuxAppIcon: path.join(assetsDir, 'appicon.png'),
-        notifyOnly: autoUpdater.notifyOnly
+        notifyOnly
       });
       updaterModal.on('closed', () => {
         updaterModal = null;
