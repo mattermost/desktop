@@ -48,7 +48,7 @@ This release contains multiple security updates for Windows, Mac and Linux, and 
  [#602](https://github.com/mattermost/desktop/pull/602)
  - The app now uses CSS to style the user interface. Styles are also divided to React's inline `style` and CSS.
  [#540](https://github.com/mattermost/desktop/pull/540)
- - Yarn is now used to manage dependancies across Windows, Mac and Linux builds.
+ - Yarn is now used to manage dependencies across Windows, Mac and Linux builds.
  [#485](https://github.com/mattermost/desktop/issues/485)
  - Build is now run automatically before packaging the apps with `npm run package`.
  [#590](https://github.com/mattermost/desktop/pull/590)
