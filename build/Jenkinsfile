@@ -33,8 +33,8 @@ pipeline {
                 sh 'npm run package:windows'
                 sh 'mv release/Mattermost-*-ia32-win.zip release/mattermost-desktop-win32.zip'
                 sh 'mv release/Mattermost-*-win.zip release/mattermost-desktop-win64.zip'
-                sh 'mv release/win-ia32/Mattermost\ Setup\ *-ia32.exe release/mattermost-setup-win32.exe'
-                sh 'mv release/win/Mattermost\ Setup\ *.exe release/mattermost-setup-win64.exe'
+                sh 'mv release/win-ia32/Mattermost\\ Setup\\ *-ia32.exe release/mattermost-setup-win32.exe'
+                sh 'mv release/win/Mattermost\\ Setup\\ *.exe release/mattermost-setup-win64.exe'
             }
         }
     }
