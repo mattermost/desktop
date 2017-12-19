@@ -7,7 +7,6 @@ node_modules/
 release/
 npm-debug.log*
 
-build/
 dist/
 package-lock.json
 src/package-lock.json
