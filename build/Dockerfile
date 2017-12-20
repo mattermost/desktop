@@ -17,4 +17,4 @@ RUN apt-get update && apt-get install --no-install-recommends -y git icnsutils g
 
 # Override the npm cache directory to avoid EACCES: permission denied, mkdir '/.npm'
 # See https://stackoverflow.com/a/43264045/591374
-ENV npm_config_cache=npm-cache HOME=.
+# ENV npm_config_cache=npm-cache HOME=.
