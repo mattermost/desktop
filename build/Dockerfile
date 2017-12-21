@@ -11,10 +11,6 @@ RUN apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/
 # install prerequisites
 RUN apt-get update && apt-get install --no-install-recommends -y git icnsutils graphicsmagick xz-utils jq winehq-stable mono-devel ca-certificates-mono gcc-multilib g++-multilib npm
 
-# Override the npm cache directory to avoid EACCES: permission denied, mkdir '/.npm'
-# See https://stackoverflow.com/a/43264045/591374
-#ENV npm_config_cache=npm-cache HOME=.
-
 # increase the npm log level in hopes of getting some insight into what's going wrong
 ENV npm_config_loglevel=verbose
 
