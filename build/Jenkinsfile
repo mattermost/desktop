@@ -11,7 +11,6 @@ pipeline {
         stage('Build') {
             steps {
                 sh 'npm install'
-                sh 'npm config ls -l'
                 sh 'npm run build'
             }
         }
