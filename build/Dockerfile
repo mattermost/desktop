@@ -13,9 +13,3 @@ RUN apt-get update && apt-get install --no-install-recommends -y git icnsutils g
 
 # increase the npm log level in hopes of getting some insight into what's going wrong
 ENV npm_config_loglevel=verbose
-
-# create and grant access to directories used by the build process
-# this is necessary because npm is executed by root. alternatively, we could su jenkins before install. See https://stackoverflow.com/a/46922630/591374
-# doing so would also avoid re-downloading the entire npm cache every time the build runs, because the jenkins user's home directory is mapped to a docker volume
-RUN mkdir /.npm && chmod 777 /.npm
-RUN mkdir /.cache && chmod 777 /.cache

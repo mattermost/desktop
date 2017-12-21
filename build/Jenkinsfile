@@ -11,6 +11,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh 'rm -rf release'
+                sh 'su jenkins'
                 sh 'npm install'
                 sh 'npm run build'
             }
