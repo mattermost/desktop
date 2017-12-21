@@ -9,7 +9,7 @@ RUN apt-key add Release.key
 RUN apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/
 
 # install prerequisites
-RUN apt-get update && apt-get install --no-install-recommends -y git icnsutils graphicsmagick xz-utils jq winehq-stable mono-devel ca-certificates-mono gcc-multilib g++-multilib npm
+RUN apt-get update && apt-get install --no-install-recommends -y git icnsutils graphicsmagick xz-utils jq winehq-stable mono-devel ca-certificates-mono gcc-multilib g++-multilib npm gosu
 
 # increase the npm log level in hopes of getting some insight into what's going wrong
 ENV npm_config_loglevel=verbose
