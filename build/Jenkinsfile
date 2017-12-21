@@ -25,12 +25,6 @@ pipeline {
                 sh 'mv release/mattermost-desktop_*_amd64.deb  release/mattermost-desktop-linux-amd64.deb'
             }
         }
-        stage('Package:MacOS') {
-            steps {
-                sh 'npm run package:mac'
-                sh 'mv release/mac/Mattermost-*-mac.tar.gz release/mattermost-desktop-osx.tar.gz'
-            }
-        }
         stage('Package:Windows') {
             steps {
                 sh 'npm run package:windows'
@@ -38,6 +32,12 @@ pipeline {
                 sh 'mv release/Mattermost-*-win.zip release/mattermost-desktop-win64.zip'
                 sh 'mv release/win-ia32/Mattermost\\ Setup\\ *-ia32.exe release/mattermost-setup-win32.exe'
                 sh 'mv release/win/Mattermost\\ Setup\\ *.exe release/mattermost-setup-win64.exe'
+            }
+        }
+        stage('Package:MacOS') {
+            steps {
+                sh 'npm run package:mac'
+                sh 'mv release/mac/Mattermost-*-mac.tar.gz release/mattermost-desktop-osx.tar.gz'
             }
         }
     }
