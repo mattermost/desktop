@@ -10,6 +10,7 @@ pipeline {
     stages {
         stage('Build') {
             steps {
+                sh 'rm -rf release'
                 sh 'npm install'
                 sh 'npm run build'
             }
