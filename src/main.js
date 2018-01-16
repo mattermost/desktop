@@ -360,8 +360,10 @@ function setDeeplinkingUrl(url) {
 app.on('open-url', (event, url) => {
   event.preventDefault();
   setDeeplinkingUrl(url);
-  mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
-  mainWindow.show();
+  if (mainWindow) { // 'open-url' is emitted before 'ready' when the app is launched by URL scheme.
+    mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+    mainWindow.show();
+  }
 });
 
 // This method will be called when Electron has finished
