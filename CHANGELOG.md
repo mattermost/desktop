@@ -2,7 +2,7 @@
 
 ## Release v4.0.0
 
-Release date: December, 2017
+Release date: January 23, 2018
 
 This release contains multiple security updates for Windows, Mac and Linux, and it is highly recommended that users upgrade to this version.
 
