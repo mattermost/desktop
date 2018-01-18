@@ -476,7 +476,7 @@ const SettingsPage = createReactClass({
           <HelpBlock
             style={{marginLeft: '20px'}}
           >
-            {'If enabled, the Dock icon bounces once or until the user opens the app when a new message is received.'}
+            {'If enabled, the Dock icon bounces once or until the user opens the app when a new notification is received.'}
           </HelpBlock>
         </FormGroup>
       );
