@@ -1,7 +1,7 @@
 {
   "name": "mattermost-desktop",
   "productName": "Mattermost",
-  "version": "3.7.1",
+  "version": "4.0",
   "description": "Mattermost",
   "main": "main.js",
   "author": "Mattermost, Inc. <feedback@mattermost.com>",
