@@ -38,13 +38,12 @@ This release contains multiple security updates for Windows, Mac and Linux, and 
  [#616](https://github.com/mattermost/desktop/pull/616)
  - Added `Ctrl+Tab` and `Ctrl+Shift+Tab` shortcuts to switch between server tabs,
  [#512](https://github.com/mattermost/desktop/issues/512)
- - Added the option to bounce the Dock icon when receiving new messages.
+ - Added the option to bounce the Dock icon when receiving a notification.
  [#514](https://github.com/mattermost/desktop/issues/514)
 
 ### Architectural Changes
  - Major version upgrade of Electron from v1.6.11 to v1.7.9. Electron is the underlying technology used to build the Desktop apps.
  [#602](https://github.com/mattermost/desktop/pull/602)
- - The app now employs Mattermost APIv4 endpoints.
  - The app now uses CSS to style the user interface. Styles are also divided to React's inline `style` and CSS.
  [#540](https://github.com/mattermost/desktop/pull/540)
  - Yarn is now used to manage dependencies across Windows, Mac and Linux builds.
