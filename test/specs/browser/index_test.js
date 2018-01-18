@@ -86,17 +86,11 @@ describe('browser/index.html', function desc() {
 
   it('should show only the selected team', () => {
     return this.app.client.waitUntilWindowLoaded().
-      isVisible('#mattermostView0').then((visible) => {
-        visible.should.be.true;
-      }).
-      isVisible('#mattermostView1').then((visible) => {
-        visible.should.be.false;
-      }).
+      waitForVisible('#mattermostView0', 2000).
+      waitForVisible('#mattermostView1', 2000, true).
       click('#teamTabItem1').
       waitForVisible('#mattermostView1', 2000).
-      isVisible('#mattermostView0').then((visible) => {
-        visible.should.be.false;
-      });
+      waitForVisible('#mattermostView0', 2000, true);
   });
 
   it('should show error when using incorrect URL', () => {
