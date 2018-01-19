@@ -1,14 +1,15 @@
 #!/usr/bin/env groovy
 
 pipeline {
-    agent {
-        dockerfile {
-            dir 'build'
-        }
-    }
+    agent none
 
     stages {
         stage('Build') {
+            agent {
+                dockerfile {
+                    dir 'build'
+                }
+            }
             steps {
                 sh 'rm -rf release'
                 sh 'npm install'
@@ -16,6 +17,11 @@ pipeline {
             }
         }
         stage('Package:Linux') {
+            agent {
+                dockerfile {
+                    dir 'build'
+                }
+            }
             steps {
                 sh 'npm run package:linux'
                 sh 'mv release/mattermost-desktop-*-ia32.tar.gz  release/tmp-linux-ia32.tar.gz'
@@ -26,6 +32,11 @@ pipeline {
             }
         }
         stage('Package:Windows') {
+            agent {
+                dockerfile {
+                    dir 'build'
+                }
+            }
             steps {
                 sh 'npm run package:windows'
                 sh 'mv release/Mattermost-*-ia32-win.zip release/mattermost-desktop-win32.zip'
@@ -38,7 +49,7 @@ pipeline {
             agent {
                 node {
                     label 'macOS'
-                    customWorkspace '/Users/administrator/go/src/github.com/mattermost/desktop'
+                    customWorkspace '/Users/administrator/go/src/github.com/mattermost'
                 }
             }
             steps {
