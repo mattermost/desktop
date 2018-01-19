@@ -361,9 +361,16 @@ app.on('will-finish-launching', () => {
   app.on('open-url', (event, url) => {
     event.preventDefault();
     setDeeplinkingUrl(url);
-    if (mainWindow) { // 'open-url' is emitted before 'ready' when the app is launched by URL scheme.
-      mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
-      mainWindow.show();
+    if (app.isReady()) {
+      function openDeepLink() {
+        try {
+          mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+          mainWindow.show();
+        } catch (err) {
+          setTimeout(openDeepLink, 1000);
+        }
+      }
+      openDeepLink();
     }
   });
 });
