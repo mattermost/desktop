@@ -4,40 +4,27 @@ pipeline {
     agent none
 
     stages {
-        stage('Build') {
+        stage('Build Windows/Linux') {
             agent {
                 dockerfile {
                     dir 'build'
                 }
             }
             steps {
+                echo 'Building Mattermost Desktop App'
                 sh 'rm -rf release'
                 sh 'npm install'
                 sh 'npm run build'
-            }
-        }
-        stage('Package:Linux') {
-            agent {
-                dockerfile {
-                    dir 'build'
-                }
-            }
-            steps {
+
+                echo 'Packaging for Linux'
                 sh 'npm run package:linux'
                 sh 'mv release/mattermost-desktop-*-ia32.tar.gz  release/tmp-linux-ia32.tar.gz'
                 sh 'mv release/mattermost-desktop-*.tar.gz release/mattermost-desktop-linux-x64.tar.gz'
                 sh 'mv release/tmp-linux-ia32.tar.gz release/mattermost-desktop-linux-ia32.tar.gz'
                 sh 'mv release/mattermost-desktop_*_i386.deb release/mattermost-desktop-linux-i386.deb'
                 sh 'mv release/mattermost-desktop_*_amd64.deb  release/mattermost-desktop-linux-amd64.deb'
-            }
-        }
-        stage('Package:Windows') {
-            agent {
-                dockerfile {
-                    dir 'build'
-                }
-            }
-            steps {
+
+                echo 'Packaging for Windows'
                 sh 'npm run package:windows'
                 sh 'mv release/Mattermost-*-ia32-win.zip release/mattermost-desktop-win32.zip'
                 sh 'mv release/Mattermost-*-win.zip release/mattermost-desktop-win64.zip'
@@ -45,7 +32,7 @@ pipeline {
                 sh 'mv release/win/Mattermost\\ Setup\\ *.exe release/mattermost-setup-win64.exe'
             }
         }
-        stage('Package/Sign:MacOS') {
+        stage('Build MacOS') {
             agent {
                 node {
                     label 'macOS'
@@ -53,6 +40,12 @@ pipeline {
                 }
             }
             steps {
+                echo 'Building Mattermost Desktop App'
+                sh 'rm -rf release'
+                sh 'npm install'
+                sh 'npm run build'
+
+                echo 'Packaging for MacOS'
                 sh 'npm run package:mac'
                 sh 'mv release/mac/Mattermost-*-mac.tar.gz release/mattermost-desktop-osx.tar.gz'
             }
