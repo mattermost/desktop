@@ -40,17 +40,16 @@ pipeline {
                 }
             }
             steps {
-                echo 'Ensuring that npm exists'
-                sh 'echo $PATH'
+                withEnv(['PATH=$PATH:/usr/bin/local/']) {
+                  echo 'Building Mattermost Desktop App'
+                  sh 'rm -rf release'
+                  sh 'npm install'
+                  sh 'npm run build'
 
-                echo 'Building Mattermost Desktop App'
-                sh 'rm -rf release'
-                sh 'npm install'
-                sh 'npm run build'
-
-                echo 'Packaging for MacOS'
-                sh 'npm run package:mac'
-                sh 'mv release/mac/Mattermost-*-mac.tar.gz release/mattermost-desktop-osx.tar.gz'
+                  echo 'Packaging for MacOS'
+                  sh 'npm run package:mac'
+                  sh 'mv release/mac/Mattermost-*-mac.tar.gz release/mattermost-desktop-osx.tar.gz'
+                }
             }
         }
     }
