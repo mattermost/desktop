@@ -12,14 +12,6 @@
     "node_modules/bootstrap/dist/**",
     "node_modules/simple-spellchecker/dict/*.dic"
   ],
-  "extraFiles": [
-    {
-      "filter": [
-        "LICENSE.txt",
-        "NOTICE.txt"
-      ]
-    }
-  ],
   "protocols": [
     {
       "name": "Mattermost",
@@ -37,6 +29,12 @@
     ],
     "extraFiles": [
       {
+        "filter": [
+          "LICENSE.txt",
+          "NOTICE.txt"
+        ]
+      },
+      {
         "from": "resources",
         "filter": "icon.png"
       },
@@ -53,6 +51,14 @@
     "category": "public.app-category.productivity",
     "target": [
       "tar.gz"
+    ],
+    "extraResources": [
+      {
+        "filter": [
+          "LICENSE.txt",
+          "NOTICE.txt"
+        ]
+      }
     ]
   },
   "squirrelWindows": {
@@ -62,6 +68,14 @@
     "target": [
       "squirrel",
       "zip"
+    ],
+    "extraFiles": [
+      {
+        "filter": [
+          "LICENSE.txt",
+          "NOTICE.txt"
+        ]
+      }
     ]
   }
 }

@@ -39,6 +39,7 @@ const downloadURL = require('./main/downloadURL');
 const allowProtocolDialog = require('./main/allowProtocolDialog');
 const PermissionManager = require('./main/PermissionManager');
 const permissionRequestHandler = require('./main/permissionRequestHandler');
+const AppStateManager = require('./main/AppStateManager');
 
 const SpellChecker = require('./main/SpellChecker');
 
@@ -50,6 +51,7 @@ var mainWindow = null;
 let spellChecker = null;
 let deeplinkingUrl = null;
 let scheme = null;
+let appState = null;
 let permissionManager = null;
 
 var argv = require('yargs').parse(process.argv.slice(1));
@@ -69,8 +71,7 @@ var config = {};
 try {
   const configFile = app.getPath('userData') + '/config.json';
   config = settings.readFileSync(configFile);
-  if (config.version !== settings.version || wasUpdated()) {
-    clearAppCache();
+  if (config.version !== settings.version) {
     config = settings.upgrade(config);
     settings.writeFileSync(configFile, config);
   }
@@ -189,8 +190,8 @@ function shouldShowTrayIcon() {
   return false;
 }
 
-function wasUpdated() {
-  return config.lastMattermostVersion !== app.getVersion();
+function wasUpdated(lastAppVersion) {
+  return lastAppVersion !== app.getVersion();
 }
 
 function clearAppCache() {
@@ -370,6 +371,14 @@ app.on('ready', () => {
   if (global.willAppQuit) {
     return;
   }
+
+  const appStateJson = path.join(app.getPath('userData'), 'app-state.json');
+  appState = new AppStateManager(appStateJson);
+  if (wasUpdated(appState.lastAppVersion)) {
+    clearAppCache();
+  }
+  appState.lastAppVersion = app.getVersion();
+
   if (global.isDev) {
     installExtension.default(installExtension.REACT_DEVELOPER_TOOLS).
       then((name) => console.log(`Added Extension:  ${name}`)).
