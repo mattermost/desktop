@@ -10,11 +10,11 @@ describe('browser/settings.html', function desc() {
   const config = {
     version: 1,
     teams: [{
-      name: 'example_1',
+      name: 'example',
       url: env.mattermostURL
     }, {
-      name: 'example_2',
-      url: env.mattermostURL
+      name: 'github',
+      url: 'https://github.com/'
     }]
   };
 
@@ -94,7 +94,7 @@ describe('browser/settings.html', function desc() {
       env.addClientCommands(this.app.client);
       return this.app.client.
       loadSettingsPage().
-      click('h4=example_1').
+      click('h4=example').
       pause(100).
       waitUntilWindowLoaded().
       getUrl().then((url) => {
@@ -108,7 +108,7 @@ describe('browser/settings.html', function desc() {
       }).
 
       loadSettingsPage().
-      click('h4=example_2').
+      click('h4=github').
       pause(100).
       waitUntilWindowLoaded().
       getUrl().then((url) => {

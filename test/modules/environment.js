@@ -18,7 +18,7 @@ const electronBinaryPath = (() => {
 const userDataDir = path.join(sourceRootDir, 'test/testUserData/');
 const configFilePath = path.join(userDataDir, 'config.json');
 const boundsInfoPath = path.join(userDataDir, 'bounds-info.json');
-const mattermostURL = 'http://example.com/team';
+const mattermostURL = 'http://example.com/';
 
 module.exports = {
   sourceRootDir,

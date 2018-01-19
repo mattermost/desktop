@@ -12,11 +12,11 @@ describe('browser/index.html', function desc() {
   const config = {
     version: 1,
     teams: [{
-      name: 'example_1',
-      url: env.mattermostURL + '1'
+      name: 'example',
+      url: env.mattermostURL
     }, {
-      name: 'example_2',
-      url: env.mattermostURL + '2'
+      name: 'github',
+      url: 'https://github.com/'
     }]
   };
 
