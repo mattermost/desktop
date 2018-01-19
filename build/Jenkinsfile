@@ -34,7 +34,13 @@ pipeline {
                 sh 'mv release/win/Mattermost\\ Setup\\ *.exe release/mattermost-setup-win64.exe'
             }
         }
-        stage('Package:MacOS') {
+        stage('Package/Sign:MacOS') {
+            agent {
+                node {
+                    label 'macOS'
+                    customWorkspace '/Users/administrator/go/src/github.com/mattermost/desktop'
+                }
+            }
             steps {
                 sh 'npm run package:mac'
                 sh 'mv release/mac/Mattermost-*-mac.tar.gz release/mattermost-desktop-osx.tar.gz'
