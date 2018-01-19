@@ -42,6 +42,7 @@ pipeline {
             steps {
                 echo 'Building Mattermost Desktop App'
                 sh 'rm -rf release'
+                sh 'which npm'
                 sh 'npm install'
                 sh 'npm run build'
 
