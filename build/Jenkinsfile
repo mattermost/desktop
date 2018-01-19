@@ -40,7 +40,7 @@ pipeline {
                 }
             }
             steps {
-                withEnv(['PATH=$PATH:/usr/bin/local/']) {
+                withEnv(['PATH+NPM=/usr/bin/local/']) {
                   echo 'Building Mattermost Desktop App'
                   sh 'rm -rf release'
                   sh 'npm install'
