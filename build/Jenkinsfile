@@ -49,7 +49,7 @@ pipeline {
             agent {
                 node {
                     label 'macOS'
-                    customWorkspace '/Users/administrator/go/src/github.com/mattermost'
+                    customWorkspace '/Users/administrator/go/src/github.com/mattermost/desktop'
                 }
             }
             steps {
