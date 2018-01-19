@@ -41,8 +41,7 @@ pipeline {
             }
             steps {
                 echo 'Ensuring that npm exists'
-                sh 'brew install npm'
-                sh 'which npm'
+                sh 'echo $PATH'
 
                 echo 'Building Mattermost Desktop App'
                 sh 'rm -rf release'
