@@ -8,6 +8,8 @@ const {findDOMNode} = require('react-dom');
 const {ipcRenderer, remote, shell} = require('electron');
 const url = require('url');
 const contextMenu = require('../js/contextMenu');
+const {protocols} = require('../../../electron-builder.json');
+const scheme = protocols[0].schemes[0];
 
 const ErrorView = require('./ErrorView.jsx');
 
@@ -72,7 +74,7 @@ const MattermostView = createReactClass({
     webview.addEventListener('new-window', (e) => {
       var currentURL = url.parse(webview.getURL());
       var destURL = url.parse(e.url);
-      if (destURL.protocol !== 'http:' && destURL.protocol !== 'https:') {
+      if (destURL.protocol !== 'http:' && destURL.protocol !== 'https:' && destURL.protocol !== `${scheme}:`) {
         ipcRenderer.send('confirm-protocol', destURL.protocol, e.url);
         return;
       }
