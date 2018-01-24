@@ -40,9 +40,7 @@ pipeline {
                 }
             }
             steps {
-                withEnv(['PATH+NPM=/usr/local/bin', 'DEBUG=electron-osx-sign*']) {
-                  sh 'security find-identity -v -p codesigning'
-
+                withEnv(['PATH+NPM=/usr/local/bin']) {
                   echo 'Unlocking the keychain'
                   sh 'security -v unlock-keychain -p $(cat /Users/administrator/keychain-password.txt)'
 
@@ -53,7 +51,6 @@ pipeline {
 
                   echo 'Packaging for MacOS'
                   sh 'npm run package:mac'
-                  sh 'mv release/mac/Mattermost-*-mac.tar.gz release/mattermost-desktop-osx.tar.gz'
                 }
             }
         }
