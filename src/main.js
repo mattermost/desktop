@@ -357,12 +357,23 @@ function setDeeplinkingUrl(url) {
   }
 }
 
-// Protocol handler for osx
-app.on('open-url', (event, url) => {
-  event.preventDefault();
-  setDeeplinkingUrl(url);
-  mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
-  mainWindow.show();
+app.on('will-finish-launching', () => {
+  // Protocol handler for osx
+  app.on('open-url', (event, url) => {
+    event.preventDefault();
+    setDeeplinkingUrl(url);
+    if (app.isReady()) {
+      function openDeepLink() {
+        try {
+          mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+          mainWindow.show();
+        } catch (err) {
+          setTimeout(openDeepLink, 1000);
+        }
+      }
+      openDeepLink();
+    }
+  });
 });
 
 // This method will be called when Electron has finished
