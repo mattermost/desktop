@@ -40,8 +40,8 @@ pipeline {
                 }
             }
             steps {
-                withEnv(['PATH+NPM=/usr/local/bin']) {
-                  sh 'echo $PATH'
+                withEnv(['PATH+NPM=/usr/local/bin', 'DEBUG=electron-osx-sign*']) {
+                  sh 'security find-identity -v -p codesigning'
 
                   echo 'Building Mattermost Desktop App'
                   sh 'rm -rf release'
