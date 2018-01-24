@@ -43,6 +43,9 @@ pipeline {
                 withEnv(['PATH+NPM=/usr/local/bin', 'DEBUG=electron-osx-sign*']) {
                   sh 'security find-identity -v -p codesigning'
 
+                  echo 'Unlocking the keychain'
+                  sh 'security -v unlock-keychain -p $(cat /Users/administrator/keychain-password.txt)'
+
                   echo 'Building Mattermost Desktop App'
                   sh 'rm -rf release'
                   sh 'npm install'
