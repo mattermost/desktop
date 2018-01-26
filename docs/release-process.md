@@ -92,6 +92,7 @@ The final release is cut. If an urgent and important issue needs to be addressed
 2. Build:
     - Tag a new release (e.g. 1.1.0) and run an official build which should be essentially identical to the last RC
     - Post in Desktop App channel with links to all supported distributions and SHA-256 checksum
+    - Complete code-signing and confirm that it worked well by testing the download links and keeping an eye out for any warnings or issues
 3. PM:
     - Update the links in [Mattermost download page](https://www.mattermost.org/download/) and [installation guides](https://docs.mattermost.com/install/desktop.html)
     - Draft [Mattermost Security Updates](http://about.mattermost.com/security-updates/) if applicable, but do not post until seven days after official release
