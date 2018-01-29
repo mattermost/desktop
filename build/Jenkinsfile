@@ -5,11 +5,7 @@ pipeline {
 
     stages {
         stage('Build Windows/Linux') {
-            agent {
-                dockerfile {
-                    dir 'build'
-                }
-            }
+            agent any
             steps {
                 echo 'Building Mattermost Desktop App'
                 sh 'rm -rf release'
