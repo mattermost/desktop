@@ -342,6 +342,7 @@ const SettingsPage = createReactClass({
           <h2 style={settingsPage.sectionHeading}>{'Server Management'}</h2>
           <div className='IndicatorContainer'>
             <AutoSaveIndicator
+              id='serversSaveIndicator'
               savingState={this.state.savingState.servers}
               errorMessage={'Can\'t save your changes. Please try again.'}
             />
@@ -554,6 +555,7 @@ const SettingsPage = createReactClass({
           <h2 style={settingsPage.sectionHeading}>{'App Options'}</h2>
           <div className='IndicatorContainer'>
             <AutoSaveIndicator
+              id='appOptionsSaveIndicator'
               savingState={this.state.savingState.appOptions}
               errorMessage={'Can\'t save your changes. Please try again.'}
             />

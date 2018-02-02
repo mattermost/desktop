@@ -62,7 +62,8 @@ describe('browser/settings.html', function desc() {
           setValue('#teamUrlInput', 'http://example.org').
           click('#saveNewServerModal').
           waitForVisible('#newServerModal', true).
-          waitForVisible('.AutoSaveIndicator', 10000, true). // at least 2500 ms to disappear
+          waitForVisible('#serversSaveIndicator').
+          waitForVisible('#serversSaveIndicator', 10000, true). // at least 2500 ms to disappear
           isEnabled('#btnClose').then((enabled) => {
             enabled.should.equal(true);
           });
@@ -465,15 +466,18 @@ describe('browser/settings.html', function desc() {
       it('should add the team to the config file', (done) => {
         this.app.client.
           click('#saveNewServerModal').
-          pause(1000). // Animation
-          click('#btnClose').
-          pause(1000).then(() => {
+          waitForVisible('#newServerModal', true).
+          waitForVisible('#serversSaveIndicator').
+          waitForVisible('#serversSaveIndicator', 10000, true). // at least 2500 ms to disappear
+          waitUntilWindowLoaded().then(() => {
             const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-            savedConfig.teams.should.contain({
+            savedConfig.teams.should.deep.contain({
               name: 'TestTeam',
               url: 'http://example.org'
             });
-            return done();
+            done();
+          }).catch((err) => {
+            done(err);
           });
       });
     });
