@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-expressions */
-
 const fs = require('fs');
 const path = require('path');
 const env = require('../modules/environment');
