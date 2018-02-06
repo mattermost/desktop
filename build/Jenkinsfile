@@ -35,7 +35,7 @@ pipeline {
                 sh """
                   unzip -d codesign-win32 release/Mattermost-*-ia32-win.zip
                   cd codesign-win32/Mattermost-*-win32
-                  osslsigncode -pkcs12 ../../mattermost-desktop-windows.pfx -pass {$MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD} -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in Mattermost.exe -out Mattermost.exe
+                  osslsigncode -pkcs12 ../../mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in Mattermost.exe -out Mattermost.exe
                   cd ../
                   zip -r ../release/mattermost-desktop-win32.zip Mattermost-*-win32/*
                   cd ../
