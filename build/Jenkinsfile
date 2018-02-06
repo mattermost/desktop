@@ -41,7 +41,8 @@ pipeline {
                   cd ../
                   zip -r ../release/mattermost-desktop-win32.zip Mattermost-*-win32/*
                   cd ../
-                  rm -Rf codesign-win32
+                  rm -rf codesign-win32
+                  rm release/Mattermost-*-ia32-win.zip
                 """
                 echo 'Signed Windows 32bit build is available at release/mattermost-desktop-win32.zip'
 
@@ -54,7 +55,8 @@ pipeline {
                   cd ../
                   zip -r ../release/mattermost-desktop-win64.zip Mattermost-*-win64/*
                   cd ../
-                  rm -Rf codesign-win64
+                  rm -rf codesign-win64
+                  rm release/Mattermost-*-win.zip
                 """
                 echo 'Signed Windows 64bit build is available at release/mattermost-desktop-win64.zip'
 
