@@ -40,6 +40,7 @@ function createMainWindow(config, options) {
     show: false,
     minWidth: minimumWindowWidth,
     minHeight: minimumWindowHeight,
+    webPreferences: {sandbox: true},
   });
 
   const mainWindow = new BrowserWindow(windowOptions);
