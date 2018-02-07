@@ -44,7 +44,7 @@ pipeline {
 
                 echo 'Code Signing for Windows 32bit'
                 sh """
-                  WIN_IA32_VERSION=$(awk -F'-' '{print $2 }' <<< $(ls release/Mattermost-*-ia32-win.zip))
+                  WIN_IA32_VERSION=\$(awk -F'-' '{print \$2 }' <<< \$(ls release/Mattermost-*-ia32-win.zip))
                   unzip -d codesign-win32 release/Mattermost-*-ia32-win.zip
                   cd codesign-win32/Mattermost-*-win32
                   osslsigncode -pkcs12 ../../mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in Mattermost.exe -out Mattermost-signed.exe
@@ -58,7 +58,7 @@ pipeline {
 
                 echo 'Code Signing for Windows 64bit'
                 sh """
-                  WIN_64_VERSION=$(awk -F'-' '{print $2 }' <<< $(ls release/Mattermost-*[^ia32]-win.zip))
+                  WIN_64_VERSION=\$(awk -F'-' '{print \$2 }' <<< \$(ls release/Mattermost-*[^ia32]-win.zip))
                   unzip -d codesign-win64 release/Mattermost-*[^ia32]-win.zip
                   cd codesign-win64/Mattermost-*-win64
                   osslsigncode -pkcs12 ../../mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in Mattermost.exe -out Mattermost-signed.exe
@@ -113,7 +113,7 @@ pipeline {
                   echo 'Packaging for MacOS'
                   sh """
                     npm run package:mac
-                    MACOS_VERSION=$(awk -F'-' '{print $2 }' <<< $(ls release/Mattermost-*-mac.tar.gz))
+                    MACOS_VERSION=\$(awk -F'-' '{print \$2 }' <<< \$(ls release/Mattermost-*-mac.tar.gz))
                     mv release/Mattermost-*-mac.tar.gz release/mattermost-desktop-$MACOS_VERSION-macos.tar.gz
                   """
 
