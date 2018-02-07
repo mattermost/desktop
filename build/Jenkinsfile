@@ -11,29 +11,28 @@ pipeline {
             agent any
             steps {
                 echo 'Building Mattermost Desktop App'
-                sh 'rm -rf release'
-                sh 'npm install'
-                sh 'npm run build'
+                sh """
+                  rm -rf release
+                  npm install
+                  npm run build
+                """
 
                 echo 'Packaging for Linux'
                 sh 'npm run package:linux'
-                sh 'mv release/mattermost-desktop-*-ia32.tar.gz  release/tmp-linux-ia32.tar.gz'
-                sh 'mv release/mattermost-desktop-*.tar.gz release/mattermost-desktop-linux-x64.tar.gz'
-                sh 'mv release/tmp-linux-ia32.tar.gz release/mattermost-desktop-linux-ia32.tar.gz'
-                sh 'mv release/mattermost-desktop_*_i386.deb release/mattermost-desktop-linux-i386.deb'
-                sh 'mv release/mattermost-desktop_*_amd64.deb  release/mattermost-desktop-linux-amd64.deb'
 
-                archiveArtifacts artifacts: 'release/tmp-linux-ia32.tar.gz,release/mattermost-desktop-linux-x64.tar.gz,release/mattermost-desktop-linux-ia32.tar.gz,release/mattermost-desktop-linux-i386.deb,release/mattermost-desktop-linux-amd64.deb'
+                archiveArtifacts artifacts: 'release/mattermost-desktop-*-ia32.tar.gz,release/mattermost-desktop-*.tar.gz,release/mattermost-desktop_*_i386.deb,release/mattermost-desktop_*_amd64.deb'
             }
         }
         stage('Build Windows) {
             agent any
             steps {
                 echo 'Building Mattermost Desktop App'
-                sh 'rm -rf release'
-                sh 'rm -rf codesign-*'
-                sh 'npm install'
-                sh 'npm run build'
+                sh """
+                  rm -rf release
+                  rm -rf codesign-*
+                  npm install
+                  npm run build
+                """
 
                 echo 'Packaging for Windows'
                 sh 'npm run package:windows'
@@ -45,47 +44,49 @@ pipeline {
 
                 echo 'Code Signing for Windows 32bit'
                 sh """
+                  WIN_IA32_VERSION=$(awk -F"-" '{print $2 }' <<< $(ls release/Mattermost-*-ia32-win.zip))
                   unzip -d codesign-win32 release/Mattermost-*-ia32-win.zip
                   cd codesign-win32/Mattermost-*-win32
                   osslsigncode -pkcs12 ../../mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in Mattermost.exe -out Mattermost-signed.exe
                   mv Mattermost-signed.exe Mattermost.exe
                   cd ../
-                  zip -r ../release/mattermost-desktop-win32.zip Mattermost-*-win32/*
+                  zip -r ../release/Mattermost-$WIN_IA32_VERSION-ia32-win.zip Mattermost-*-win32/*
                   cd ../
                   rm -rf codesign-win32
-                  rm release/Mattermost-*-ia32-win.zip
                 """
+                archiveArtifacts artifacts: 'release/Mattermost-*-ia32-win.zip'
 
                 echo 'Code Signing for Windows 64bit'
                 sh """
-                  unzip -d codesign-win64 release/Mattermost-*-win.zip
+                  WIN_64_VERSION=$(awk -F"-" '{print $2 }' <<< $(ls release/Mattermost-*[^ia32]-win.zip))
+                  unzip -d codesign-win64 release/Mattermost-*[^ia32]-win.zip
                   cd codesign-win64/Mattermost-*-win64
                   osslsigncode -pkcs12 ../../mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in Mattermost.exe -out Mattermost-signed.exe
                   mv Mattermost-signed.exe Mattermost.exe
                   cd ../
-                  zip -r ../release/mattermost-desktop-win64.zip Mattermost-*-win64/*
+                  zip -r ../release/Mattermost-$WIN_64_VERSION-win.zip Mattermost-*-win64/*
                   cd ../
                   rm -rf codesign-win64
-                  rm release/Mattermost-*-win.zip
                 """
+                archiveArtifacts artifacts: 'release/Mattermost-*[^ia32]-win.zip'
 
                 echo 'Code Signing for Windows 32bit Installer'
                 sh """
-                  mv release/win-ia32/Mattermost\\ Setup\\ *-ia32.exe release/mattermost-setup-win32.exe
-                  osslsigncode -pkcs12 mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in release/mattermost-setup-win32.exe -out release/mattermost-setup-win32-signed.exe
-                  mv release/mattermost-setup-win32-signed.exe release/mattermost-setup-win32.exe
+                  mv release/win-ia32/Mattermost\\ Setup\\ *-ia32.exe release/mattermost-setup-$WIN_IA32_VERSION-win32.exe
+                  osslsigncode -pkcs12 mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in release/mattermost-setup-$WIN_IA32_VERSION-win32.exe -out release/mattermost-setup-$WIN_IA32_VERSION-win32-signed.exe
+                  mv release/mattermost-setup-$WIN_IA32_VERSION-win32-signed.exe release/mattermost-setup-$WIN_IA32_VERSION-win32.exe
                 """
+                archiveArtifacts artifacts: 'release/mattermost-setup-$WIN_IA32_VERSION-win32.exe'
 
                 echo 'Code Signing for Windows 64bit Installer'
                 sh """
-                  mv release/win/Mattermost\\ Setup\\ *.exe release/mattermost-setup-win64.exe
-                  osslsigncode -pkcs12 mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in release/mattermost-setup-win64.exe -out release/mattermost-setup-win64-signed.exe
-                  mv release/mattermost-setup-win64-signed.exe release/mattermost-setup-win64.exe
+                  mv release/win/Mattermost\\ Setup\\ *.exe release/mattermost-setup-$WIN_64_VERSION-win64.exe
+                  osslsigncode -pkcs12 mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in release/mattermost-setup-$WIN_64_VERSION-win64.exe -out release/mattermost-setup-$WIN_64_VERSION-win64-signed.exe
+                  mv release/mattermost-setup-$WIN_64_VERSION-win64-signed.exe release/mattermost-setup-$WIN_64_VERSION-win64.exe
                 """
+                archiveArtifacts artifacts: 'release/mattermost-setup-$WIN_64_VERSION-win64.exe'
 
                 sh 'rm mattermost-desktop-windows.pfx'
-
-                archiveArtifacts artifacts: 'release/mattermost-desktop-win32.zip,release/mattermost-desktop-win64.zip,release/mattermost-setup-win32.exe,release/mattermost-setup-win64.exe'
             }
         }
         stage('Build MacOS') {
@@ -103,15 +104,20 @@ pipeline {
                   }
 
                   echo 'Building Mattermost Desktop App'
-                  sh 'rm -rf release'
-                  sh 'npm install'
-                  sh 'npm run build'
+                  sh """
+                    rm -rf release
+                    npm install
+                    npm run build
+                  """
 
                   echo 'Packaging for MacOS'
-                  sh 'npm run package:mac'
-                  sh 'mv release/Mattermost-*-mac.tar.gz release/mattermost-desktop-macos.tar.gz'
+                  sh """
+                    npm run package:mac
+                    MACOS_VERSION=$(awk -F"-" '{print $2 }' <<< $(ls release/Mattermost-*-mac.tar.gz))
+                    mv release/Mattermost-*-mac.tar.gz release/mattermost-desktop-$MACOS_VERSION-macos.tar.gz
+                  """
 
-                  archiveArtifacts artifacts: 'release/mattermost-desktop-macos.tar.gz'
+                  archiveArtifacts artifacts: 'release/mattermost-desktop-$MACOS_VERSION-macos.tar.gz'
                 }
             }
         }
