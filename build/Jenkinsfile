@@ -24,6 +24,8 @@ pipeline {
                 sh 'mv release/mattermost-desktop_*_i386.deb release/mattermost-desktop-linux-i386.deb'
                 sh 'mv release/mattermost-desktop_*_amd64.deb  release/mattermost-desktop-linux-amd64.deb'
 
+                archiveArtifacts artifacts: 'release/tmp-linux-ia32.tar.gz,release/mattermost-desktop-linux-x64.tar.gz,release/mattermost-desktop-linux-ia32.tar.gz,release/mattermost-desktop-linux-i386.deb,release/mattermost-desktop-linux-amd64.deb'
+
                 echo 'Packaging for Windows'
                 sh 'npm run package:windows'
 
@@ -68,17 +70,17 @@ pipeline {
                 """
                 echo 'Signed Windows 32bit Installer is available at release/mattermost-setup-win32.exe'
 
-                echo 'Code Signing for Windows 32bit Installer'
+                echo 'Code Signing for Windows 64bit Installer'
                 sh """
                   mv release/win/Mattermost\\ Setup\\ *.exe release/mattermost-setup-win64.exe
                   osslsigncode -pkcs12 mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in release/mattermost-setup-win64.exe -out release/mattermost-setup-win64-signed.exe
                   mv release/mattermost-setup-win64-signed.exe release/mattermost-setup-win64.exe
                 """
-                echo 'Signed Windows 32bit Installer is available at release/mattermost-setup-win32.exe'
+                echo 'Signed Windows 64bit Installer is available at release/mattermost-setup-win64.exe'
 
                 sh 'rm mattermost-desktop-windows.pfx'
 
-                // TODO: archive artifacts
+                archiveArtifacts artifacts: 'release/mattermost-desktop-win32.zip,release/mattermost-desktop-win64.zip,release/mattermost-setup-win32.exe,release/mattermost-setup-win64.exe'
             }
         }
         stage('Build MacOS') {
@@ -102,8 +104,9 @@ pipeline {
 
                   echo 'Packaging for MacOS'
                   sh 'npm run package:mac'
+                  sh 'mv release/Mattermost-*-mac.tar.gz release/mattermost-desktop-macos.tar.gz'
 
-                  // TODO: archive artifacts
+                  archiveArtifacts artifacts: 'release/mattermost-desktop-macos.tar.gz'
                 }
             }
         }
