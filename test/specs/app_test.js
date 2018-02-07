@@ -11,6 +11,7 @@ describe('application', function desc() {
     env.createTestUserDataDir();
     env.cleanTestConfig();
     this.app = env.getSpectronApp();
+    return this.app.start();
   });
 
   afterEach(() => {
@@ -21,19 +22,17 @@ describe('application', function desc() {
   });
 
   it('should show a window', () => {
-    return this.app.start().then(() => {
-      return this.app.client.
-        waitUntilWindowLoaded().
-        getWindowCount().then((count) => {
-          count.should.equal(1);
-        }).
-        browserWindow.isDevToolsOpened().then((opened) => {
-          opened.should.be.false;
-        }).
-        browserWindow.isVisible().then((visible) => {
-          visible.should.be.true;
-        });
-    });
+    return this.app.client.
+      waitUntilWindowLoaded().
+      getWindowCount().then((count) => {
+        count.should.equal(1);
+      }).
+      browserWindow.isDevToolsOpened().then((opened) => {
+        opened.should.be.false;
+      }).
+      browserWindow.isVisible().then((visible) => {
+        visible.should.be.true;
+      });
   });
 
   it.skip('should restore window bounds', () => {
@@ -42,7 +41,7 @@ describe('application', function desc() {
     // - CircleCI: NG
     const expectedBounds = {x: 100, y: 200, width: 300, height: 400};
     fs.writeFileSync(env.boundsInfoPath, JSON.stringify(expectedBounds));
-    return this.app.start().then(() => {
+    return this.app.restart().then(() => {
       return this.app.browserWindow.getBounds();
     }).then((bounds) => {
       bounds.should.deep.equal(expectedBounds);
@@ -54,7 +53,7 @@ describe('application', function desc() {
     // - Windows 10: OK
     // - CircleCI: NG
     fs.writeFileSync(env.boundsInfoPath, JSON.stringify({x: -100000, y: 200, width: 300, height: 400}));
-    return this.app.start().then(() => {
+    return this.app.restart().then(() => {
       return this.app.browserWindow.getBounds();
     }).then((bounds) => {
       bounds.x.should.satisfy((x) => (x > -10000));
@@ -69,28 +68,24 @@ describe('application', function desc() {
   });
 
   it('should show settings.html when there is no config file', () => {
-    return this.app.start().then(() => {
-      return this.app.client.
-        waitUntilWindowLoaded().
-        getUrl().then((url) => {
-          url.should.match(/\/settings.html$/);
-        }).
-        isExisting('#newServerModal').then((existing) => {
-          existing.should.equal(true);
-        });
-    });
+    return this.app.client.
+      waitUntilWindowLoaded().
+      getUrl().then((url) => {
+        url.should.match(/\/settings.html$/);
+      }).
+      isExisting('#newServerModal').then((existing) => {
+        existing.should.equal(true);
+      });
   });
 
   it('should show index.html when there is config file', () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       url: env.mattermostURL
     }));
-    return this.app.start().then(() => {
-      return this.app.client.
-        waitUntilWindowLoaded().
-        getUrl().then((url) => {
-          url.should.match(/\/index.html$/);
-        });
+    return this.app.restart().then(() => {
+      return this.app.client.waitUntilWindowLoaded().getUrl();
+    }).then((url) => {
+      url.should.match(/\/index.html$/);
     });
   });
 
@@ -99,12 +94,10 @@ describe('application', function desc() {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       url: env.mattermostURL
     }));
-    return this.app.start().then(() => {
-      return this.app.client.
-        waitUntilWindowLoaded().
-        getUrl().then((url) => {
-          url.should.match(/\/index.html$/);
-        });
+    return this.app.restart().then(() => {
+      return this.app.client.waitUntilWindowLoaded().getUrl();
+    }).then((url) => {
+      url.should.match(/\/index.html$/);
     }).then(() => {
       var str = fs.readFileSync(env.configFilePath, 'utf8');
       var config = JSON.parse(str);
@@ -113,20 +106,18 @@ describe('application', function desc() {
   });
 
   it.skip('should be stopped when the app instance already exists', (done) => {
-    this.app.start().then(() => {
-      const secondApp = env.getSpectronApp();
+    const secondApp = env.getSpectronApp();
 
-      // In the correct case, 'start().then' is not called.
-      // So need to use setTimeout in order to finish this test.
-      const timer = setTimeout(() => {
-        done();
-      }, 3000);
-      secondApp.start().then(() => {
-        clearTimeout(timer);
-        return secondApp.stop();
-      }).then(() => {
-        done(new Error('Second app instance exists'));
-      });
+    // In the correct case, 'start().then' is not called.
+    // So need to use setTimeout in order to finish this test.
+    const timer = setTimeout(() => {
+      done();
+    }, 3000);
+    secondApp.start().then(() => {
+      clearTimeout(timer);
+      return secondApp.stop();
+    }).then(() => {
+      done(new Error('Second app instance exists'));
     });
   });
 });
