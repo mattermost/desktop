@@ -76,6 +76,8 @@ pipeline {
                 """
                 echo 'Signed Windows 32bit Installer is available at release/mattermost-setup-win32.exe'
 
+                sh 'rm mattermost-desktop-windows.pfx'
+
                 // TODO: archive artifacts
             }
         }
@@ -89,7 +91,9 @@ pipeline {
             steps {
                 withEnv(['PATH+NPM=/usr/local/bin']) {
                   echo 'Unlocking the keychain'
-                  sh 'security -v unlock-keychain -p $(cat /Users/administrator/keychain-password.txt)'
+                  withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'macOS', usernameVariable: 'MACOS_USERNAME', passwordVariable: 'MACOS_PASSWORD']]) {
+                      sh 'security -v unlock-keychain -p $MACOS_PASSWORD'
+                  }
 
                   echo 'Building Mattermost Desktop App'
                   sh 'rm -rf release'
