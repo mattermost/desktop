@@ -45,12 +45,13 @@ pipeline {
                 echo 'Code Signing for Windows 32bit'
                 sh """
                   WIN_IA32_VERSION=\$(awk -F'-' '{print \$2 }' <<< \$(ls release/Mattermost-*-ia32-win.zip))
+                  echo '$WIN_IA32_VERSION'
                   unzip -d codesign-win32 release/Mattermost-*-ia32-win.zip
                   cd codesign-win32/Mattermost-*-win32
                   osslsigncode -pkcs12 ../../mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in Mattermost.exe -out Mattermost-signed.exe
                   mv Mattermost-signed.exe Mattermost.exe
                   cd ../
-                  zip -r ../release/Mattermost-$WIN_IA32_VERSION-ia32-win.zip Mattermost-*-win32/*
+                  zip -r '../release/Mattermost-$WIN_IA32_VERSION-ia32-win.zip' Mattermost-*-win32/*
                   cd ../
                   rm -rf codesign-win32
                 """
