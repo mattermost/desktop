@@ -23,7 +23,7 @@ pipeline {
                 archiveArtifacts artifacts: 'release/mattermost-desktop-*-ia32.tar.gz,release/mattermost-desktop-*.tar.gz,release/mattermost-desktop_*_i386.deb,release/mattermost-desktop_*_amd64.deb'
             }
         }
-        stage('Build Windows') {
+        stage('Build Windows) {
             agent any
             steps {
                 echo 'Building Mattermost Desktop App'
