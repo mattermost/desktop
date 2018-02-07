@@ -7,12 +7,11 @@ pipeline {
         MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD = credentials('mattermost-desktop-windows-pfx-password')
     }
     stages {
-        stage('Build Windows/Linux') {
+        stage('Build Linux') {
             agent any
             steps {
                 echo 'Building Mattermost Desktop App'
                 sh 'rm -rf release'
-                sh 'rm -rf codesign-*'
                 sh 'npm install'
                 sh 'npm run build'
 
@@ -25,6 +24,16 @@ pipeline {
                 sh 'mv release/mattermost-desktop_*_amd64.deb  release/mattermost-desktop-linux-amd64.deb'
 
                 archiveArtifacts artifacts: 'release/tmp-linux-ia32.tar.gz,release/mattermost-desktop-linux-x64.tar.gz,release/mattermost-desktop-linux-ia32.tar.gz,release/mattermost-desktop-linux-i386.deb,release/mattermost-desktop-linux-amd64.deb'
+            }
+        }
+        stage('Build Windows) {
+            agent any
+            steps {
+                echo 'Building Mattermost Desktop App'
+                sh 'rm -rf release'
+                sh 'rm -rf codesign-*'
+                sh 'npm install'
+                sh 'npm run build'
 
                 echo 'Packaging for Windows'
                 sh 'npm run package:windows'
@@ -46,7 +55,6 @@ pipeline {
                   rm -rf codesign-win32
                   rm release/Mattermost-*-ia32-win.zip
                 """
-                echo 'Signed Windows 32bit build is available at release/mattermost-desktop-win32.zip'
 
                 echo 'Code Signing for Windows 64bit'
                 sh """
@@ -60,7 +68,6 @@ pipeline {
                   rm -rf codesign-win64
                   rm release/Mattermost-*-win.zip
                 """
-                echo 'Signed Windows 64bit build is available at release/mattermost-desktop-win64.zip'
 
                 echo 'Code Signing for Windows 32bit Installer'
                 sh """
@@ -68,7 +75,6 @@ pipeline {
                   osslsigncode -pkcs12 mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in release/mattermost-setup-win32.exe -out release/mattermost-setup-win32-signed.exe
                   mv release/mattermost-setup-win32-signed.exe release/mattermost-setup-win32.exe
                 """
-                echo 'Signed Windows 32bit Installer is available at release/mattermost-setup-win32.exe'
 
                 echo 'Code Signing for Windows 64bit Installer'
                 sh """
@@ -76,7 +82,6 @@ pipeline {
                   osslsigncode -pkcs12 mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in release/mattermost-setup-win64.exe -out release/mattermost-setup-win64-signed.exe
                   mv release/mattermost-setup-win64-signed.exe release/mattermost-setup-win64.exe
                 """
-                echo 'Signed Windows 64bit Installer is available at release/mattermost-setup-win64.exe'
 
                 sh 'rm mattermost-desktop-windows.pfx'
 
