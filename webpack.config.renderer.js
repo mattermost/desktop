@@ -19,11 +19,7 @@ module.exports = merge(base, {
     rules: [{
       test: /\.jsx$/,
       use: {
-        loader: 'babel-loader',
-        options: {
-          presets: ['react'],
-          plugins: ['transform-object-rest-spread']
-        }
+        loader: 'babel-loader'
       }
     }, {
       test: /\.css$/,

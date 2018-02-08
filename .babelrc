@@ -1,0 +1,12 @@
+{
+  "presets": [
+    ["env", {
+      "targets": {
+        "browsers": ["Electron >= 1.7"],
+        "node": "7.9"
+      }
+    }],
+    "react"
+  ],
+  "plugins": ["transform-object-rest-spread"]
+}
