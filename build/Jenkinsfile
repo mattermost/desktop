@@ -95,7 +95,7 @@ pipeline {
                   echo "WIN_64_SETUP_VERSION is $WIN_64_SETUP_VERSION"
                   mv release/win/Mattermost\\ Setup\\ $WIN_64_SETUP_VERSION.exe release/mattermost-setup-$WIN_64_SETUP_VERSION-win64.exe
                   osslsigncode -pkcs12 mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in release/mattermost-setup-$WIN_64_SETUP_VERSION-win64.exe -out release/mattermost-setup-$WIN_64_SETUP_VERSION-win64-signed.exe
-                  mv release/mattermost-setup-$WIN_64_VERSION-win64-signed.exe release/mattermost-setup-$WIN_64_VERSION-win64.exe
+                  mv release/mattermost-setup-WIN_64_SETUP_VERSION-win64-signed.exe release/mattermost-setup-WIN_64_SETUP_VERSION-win64.exe
                 '''
                 archiveArtifacts artifacts: 'release/mattermost-setup-*-win64.exe'
 
