@@ -45,6 +45,9 @@ pipeline {
                 echo 'Code Signing for Windows 32bit'
                 sh '''#!/bin/bash
                   WIN_IA32_VERSION=$(awk -F'-' '{print $2 }' <<< $(ls release/Mattermost-*-ia32-win.zip))
+
+                  echo $WIN_IA32_VERSION
+
                   unzip -d codesign-win32 release/Mattermost-$WIN_IA32_VERSION-ia32-win.zip
                   cd codesign-win32/Mattermost-$WIN_IA32_VERSION-win32
                   osslsigncode -pkcs12 ../../mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in Mattermost.exe -out Mattermost-signed.exe
@@ -54,12 +57,17 @@ pipeline {
                   zip -r ../release/Mattermost-$WIN_IA32_VERSION-ia32-win.zip Mattermost-$WIN_IA32_VERSION-win32/*
                   cd ../
                   rm -rf codesign-win32
+
+                  ls release
                 '''
                 archiveArtifacts artifacts: 'release/Mattermost-*-ia32-win.zip'
 
                 echo 'Code Signing for Windows 64bit'
                 sh '''#!/bin/bash
                   WIN_64_VERSION=$(awk -F'-' '{print $2 }' <<< $(ls release/Mattermost-*[^ia32]-win.zip))
+
+                  echo $WIN_64_VERSION
+
                   unzip -d codesign-win64 release/Mattermost-$WIN_64_VERSION-win.zip
                   cd codesign-win64/Mattermost-$WIN_64_VERSION-win64
                   osslsigncode -pkcs12 ../../mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in Mattermost.exe -out Mattermost-signed.exe
@@ -69,6 +77,8 @@ pipeline {
                   zip -r ../release/Mattermost-$WIN_64_VERSION-win.zip Mattermost-$WIN_64_VERSION-win64/*
                   cd ../
                   rm -rf codesign-win64
+
+                  ls release
                 '''
                 archiveArtifacts artifacts: 'release/Mattermost-*[^ia32]-win.zip'
 
