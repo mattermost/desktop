@@ -55,7 +55,7 @@ pipeline {
                   cd ../
                   rm -rf codesign-win32
                 '''
-                archiveArtifacts artifacts: 'release/Mattermost-$WIN_IA32_VERSION-ia32-win.zip'
+                archiveArtifacts artifacts: 'release/Mattermost-*-ia32-win.zip'
 
                 echo 'Code Signing for Windows 64bit'
                 sh '''#!/bin/bash
@@ -70,23 +70,26 @@ pipeline {
                   cd ../
                   rm -rf codesign-win64
                 '''
-                archiveArtifacts artifacts: 'release/Mattermost-$WIN_64_VERSION-win.zip'
+                archiveArtifacts artifacts: 'release/Mattermost-*[^ia32]-win.zip'
 
                 echo 'Code Signing for Windows 32bit Installer'
                 sh '''#!/bin/bash
-                  mv release/win-ia32/Mattermost\\ Setup\\ $WIN_IA32_VERSION-ia32.exe release/mattermost-setup-$WIN_IA32_VERSION-win32.exe
-                  osslsigncode -pkcs12 mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in release/mattermost-setup-$WIN_IA32_VERSION-win32.exe -out release/mattermost-setup-$WIN_IA32_VERSION-win32-signed.exe
-                  mv release/mattermost-setup-$WIN_IA32_VERSION-win32-signed.exe release/mattermost-setup-$WIN_IA32_VERSION-win32.exe
+                  WIN_IA32_SETUP_VERSION=$(awk -F' ' '{print $3}' <<< $(awk -F'-' '{print $2}' <<< $(ls release/win-ia32/Mattermost\ Setup\ *-ia32.exe)))
+                  mv release/win-ia32/Mattermost\\ Setup\\ $WIN_IA32_SETUP_VERSION-ia32.exe release/mattermost-setup-$WIN_IA32_SETUP_VERSION-win32.exe
+                  osslsigncode -pkcs12 mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in release/mattermost-setup-$WIN_IA32_SETUP_VERSION-win32.exe -out release/mattermost-setup-$WIN_IA32_SETUP_VERSION-win32-signed.exe
+                  mv release/mattermost-setup-$WIN_IA32_SETUP_VERSION-win32-signed.exe release/mattermost-setup-$WIN_IA32_SETUP_VERSION-win32.exe
                 '''
-                archiveArtifacts artifacts: 'release/mattermost-setup-$WIN_IA32_VERSION-win32.exe'
+                archiveArtifacts artifacts: 'release/mattermost-setup-*-win32.exe'
 
                 echo 'Code Signing for Windows 64bit Installer'
                 sh '''#!/bin/bash
-                  mv release/win/Mattermost\\ Setup\\ $WIN_64_VERSION.exe release/mattermost-setup-$WIN_64_VERSION-win64.exe
-                  osslsigncode -pkcs12 mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in release/mattermost-setup-$WIN_64_VERSION-win64.exe -out release/mattermost-setup-$WIN_64_VERSION-win64-signed.exe
+                  TEMP_VERSION=$(awk -F' ' '{print $3}' <<< $(ls release/win/Mattermost\ Setup\ *[^ia32].exe))
+                  WIN_64_SETUP_VERSION=${TEMP_VERSION%%.exe}
+                  mv release/win/Mattermost\\ Setup\\ $WIN_64_SETUP_VERSION.exe release/mattermost-setup-$WIN_64_SETUP_VERSION-win64.exe
+                  osslsigncode -pkcs12 mattermost-desktop-windows.pfx -pass $MATTERMOST_DESKTOP_WINDOWS_PFX_PASSWORD -n 'Mattermost Desktop' -i https://mattermost.com -t http://timestamp.verisign.com/scripts/timstamp.dll -h sha2 -in release/mattermost-setup-$WIN_64_SETUP_VERSION-win64.exe -out release/mattermost-setup-$WIN_64_SETUP_VERSION-win64-signed.exe
                   mv release/mattermost-setup-$WIN_64_VERSION-win64-signed.exe release/mattermost-setup-$WIN_64_VERSION-win64.exe
                 '''
-                archiveArtifacts artifacts: 'release/mattermost-setup-$WIN_64_VERSION-win64.exe'
+                archiveArtifacts artifacts: 'release/mattermost-setup-*-win64.exe'
 
                 sh 'rm mattermost-desktop-windows.pfx'
             }
@@ -118,7 +121,7 @@ pipeline {
                     MACOS_VERSION=$(awk -F'-' '{print $2 }' <<< $(ls release/Mattermost-*-mac.tar.gz))
                     mv release/Mattermost-*-mac.tar.gz release/mattermost-desktop-$MACOS_VERSION-macos.tar.gz
                   '''
-                  archiveArtifacts artifacts: 'release/mattermost-desktop-$MACOS_VERSION-macos.tar.gz'
+                  archiveArtifacts artifacts: 'release/mattermost-desktop-*-macos.tar.gz'
                 }
             }
         }
