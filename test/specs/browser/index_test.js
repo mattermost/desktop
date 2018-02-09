@@ -12,11 +12,11 @@ describe('browser/index.html', function desc() {
   const config = {
     version: 1,
     teams: [{
-      name: 'example_1',
-      url: env.mattermostURL + '1'
+      name: 'example',
+      url: env.mattermostURL
     }, {
-      name: 'example_2',
-      url: env.mattermostURL + '2'
+      name: 'github',
+      url: 'https://github.com/'
     }]
   };
 
@@ -55,30 +55,42 @@ describe('browser/index.html', function desc() {
     }));
     return this.app.restart().then(() => {
       return this.app.client.waitUntilWindowLoaded().
-        isExisting('#tabBar').then((existing) => existing.should.be.false);
+        isExisting('#tabBar').then((existing) => {
+          existing.should.be.false;
+        });
     });
   });
 
   it('should set src of webview from config file', () => {
     return this.app.client.waitUntilWindowLoaded().
-      getAttribute('#mattermostView0', 'src').then((src) => src.should.equal(config.teams[0].url)).
-      getAttribute('#mattermostView1', 'src').then((src) => src.should.equal(config.teams[1].url)).
-      isExisting('#mattermostView2').then((existing) => existing.should.be.false);
+      getAttribute('#mattermostView0', 'src').then((src) => {
+        src.should.equal(config.teams[0].url);
+      }).
+      getAttribute('#mattermostView1', 'src').then((src) => {
+        src.should.equal(config.teams[1].url);
+      }).
+      isExisting('#mattermostView2').then((existing) => {
+        existing.should.be.false;
+      });
   });
 
   it('should set name of tab from config file', () => {
     return this.app.client.waitUntilWindowLoaded().
-      getText('#teamTabItem0').then((text) => text.should.equal(config.teams[0].name)).
-      getText('#teamTabItem1').then((text) => text.should.equal(config.teams[1].name));
+      getText('#teamTabItem0').then((text) => {
+        text.should.equal(config.teams[0].name);
+      }).
+      getText('#teamTabItem1').then((text) => {
+        text.should.equal(config.teams[1].name);
+      });
   });
 
   it('should show only the selected team', () => {
     return this.app.client.waitUntilWindowLoaded().
-      isVisible('#mattermostView0').then((visible) => visible.should.be.true).
-      isVisible('#mattermostView1').then((visible) => visible.should.be.false).
+      waitForVisible('#mattermostView0', 2000).
+      waitForVisible('#mattermostView1', 2000, true).
       click('#teamTabItem1').
       waitForVisible('#mattermostView1', 2000).
-      isVisible('#mattermostView0').then((visible) => visible.should.be.false);
+      waitForVisible('#mattermostView0', 2000, true);
   });
 
   it('should show error when using incorrect URL', () => {
@@ -108,7 +120,9 @@ describe('browser/index.html', function desc() {
       return this.app.client.waitUntilWindowLoaded().pause(2000);
     }).then(() => {
       return this.app.browserWindow.getTitle();
-    }).then((title) => title.should.equal('Mattermost Desktop testing html'));
+    }).then((title) => {
+      title.should.equal('Mattermost Desktop testing html');
+    });
   });
 
   // Skip because it's very unstable in CI
@@ -135,14 +149,18 @@ describe('browser/index.html', function desc() {
         }).
         windowByIndex(0).
         pause(500).
-        browserWindow.getTitle().then((title) => title.should.equal('Title 0')).
+        browserWindow.getTitle().then((title) => {
+          title.should.equal('Title 0');
+        }).
         windowByIndex(1).
         execute(() => {
           document.title = 'Title 1';
         }).
         windowByIndex(0).
         pause(500).
-        browserWindow.getTitle().then((title) => title.should.equal('Title 0'));
+        browserWindow.getTitle().then((title) => {
+          title.should.equal('Title 0');
+        });
     });
   });
 
@@ -174,10 +192,14 @@ describe('browser/index.html', function desc() {
         }).
         windowByIndex(0).
         pause(500).
-        browserWindow.getTitle().then((title) => title.should.equal('Title 0')).
+        browserWindow.getTitle().then((title) => {
+          title.should.equal('Title 0');
+        }).
         click('#teamTabItem1').
         pause(500).
-        browserWindow.getTitle().then((title) => title.should.equal('Title 1'));
+        browserWindow.getTitle().then((title) => {
+          title.should.equal('Title 1');
+        });
     });
   });
 
@@ -186,6 +208,8 @@ describe('browser/index.html', function desc() {
     return this.app.client.waitUntilWindowLoaded().
       click('#addServerButton').
       pause(500).
-      isExisting('#newServerModal').then((existing) => existing.should.be.true);
+      isExisting('#newServerModal').then((existing) => {
+        existing.should.be.true;
+      });
   });
 });

@@ -10,11 +10,11 @@ describe('browser/settings.html', function desc() {
   const config = {
     version: 1,
     teams: [{
-      name: 'example_1',
+      name: 'example',
       url: env.mattermostURL
     }, {
-      name: 'example_2',
-      url: env.mattermostURL
+      name: 'github',
+      url: 'https://github.com/'
     }]
   };
 
@@ -38,7 +38,9 @@ describe('browser/settings.html', function desc() {
         loadSettingsPage().
         click('#btnClose').
         pause(1000).
-        getUrl().then((url) => url.should.match(/\/index.html(\?.+)?$/));
+        getUrl().then((url) => {
+          url.should.match(/\/index.html(\?.+)?$/);
+        });
     });
 
     it('should be disabled when the number of servers is zero', () => {
@@ -60,7 +62,8 @@ describe('browser/settings.html', function desc() {
           setValue('#teamUrlInput', 'http://example.org').
           click('#saveNewServerModal').
           waitForVisible('#newServerModal', true).
-          waitForVisible('.AutoSaveIndicator', 10000, true). // at least 2500 ms to disappear
+          waitForVisible('#serversSaveIndicator').
+          waitForVisible('#serversSaveIndicator', 10000, true). // at least 2500 ms to disappear
           isEnabled('#btnClose').then((enabled) => {
             enabled.should.equal(true);
           });
@@ -81,7 +84,9 @@ describe('browser/settings.html', function desc() {
       waitForVisible(modalTitleSelector).
       element('.modal-dialog').click('.btn=Remove').
       pause(500).
-      isExisting('#newServerModal').then((existing) => existing.should.be.true);
+      isExisting('#newServerModal').then((existing) => {
+        existing.should.be.true;
+      });
   });
 
   describe('Server list', () => {
@@ -89,20 +94,32 @@ describe('browser/settings.html', function desc() {
       env.addClientCommands(this.app.client);
       return this.app.client.
       loadSettingsPage().
-      click('h4=example_1').
+      click('h4=example').
       pause(100).
       waitUntilWindowLoaded().
-      getUrl().then((url) => url.should.match(/\/index.html(\?.+)?$/)).
-      isVisible('#mattermostView0').then((visible) => visible.should.be.true).
-      isVisible('#mattermostView1').then((visible) => visible.should.be.false).
+      getUrl().then((url) => {
+        url.should.match(/\/index.html(\?.+)?$/);
+      }).
+      isVisible('#mattermostView0').then((visible) => {
+        visible.should.be.true;
+      }).
+      isVisible('#mattermostView1').then((visible) => {
+        visible.should.be.false;
+      }).
 
       loadSettingsPage().
-      click('h4=example_2').
+      click('h4=github').
       pause(100).
       waitUntilWindowLoaded().
-      getUrl().then((url) => url.should.match(/\/index.html(\?.+)?$/)).
-      isVisible('#mattermostView0').then((visible) => visible.should.be.false).
-      isVisible('#mattermostView1').then((visible) => visible.should.be.true);
+      getUrl().then((url) => {
+        url.should.match(/\/index.html(\?.+)?$/);
+      }).
+      isVisible('#mattermostView0').then((visible) => {
+        visible.should.be.false;
+      }).
+      isVisible('#mattermostView1').then((visible) => {
+        visible.should.be.true;
+      });
     });
   });
 
@@ -113,7 +130,9 @@ describe('browser/settings.html', function desc() {
         env.addClientCommands(this.app.client);
         return this.app.client.
         loadSettingsPage().
-        isExisting('#inputHideMenuBar').then((existing) => existing.should.equal(expected));
+        isExisting('#inputHideMenuBar').then((existing) => {
+          existing.should.equal(expected);
+        });
       });
 
       [true, false].forEach((v) => {
@@ -134,14 +153,20 @@ describe('browser/settings.html', function desc() {
               const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
               savedConfig.hideMenuBar.should.equal(v);
             }).
-            browserWindow.isMenuBarAutoHide().then((autoHide) => autoHide.should.equal(v)).then(() => { // confirm actual behavior
+            browserWindow.isMenuBarAutoHide().then((autoHide) => {
+              autoHide.should.equal(v);
+            }).then(() => { // confirm actual behavior
               return this.app.restart();
             }).then(() => {
               env.addClientCommands(this.app.client);
               return this.app.client. // confirm actual behavior
-                browserWindow.isMenuBarAutoHide().then((autoHide) => autoHide.should.equal(v)).
+                browserWindow.isMenuBarAutoHide().then((autoHide) => {
+                  autoHide.should.equal(v);
+                }).
                 loadSettingsPage().
-                isSelected('#inputHideMenuBar').then((autoHide) => autoHide.should.equal(v));
+                isSelected('#inputHideMenuBar').then((autoHide) => {
+                  autoHide.should.equal(v);
+                });
             });
         });
       });
@@ -153,7 +178,9 @@ describe('browser/settings.html', function desc() {
         env.addClientCommands(this.app.client);
         return this.app.client.
           loadSettingsPage().
-          isExisting('#inputAutoStart').then((existing) => existing.should.equal(expected));
+          isExisting('#inputAutoStart').then((existing) => {
+            existing.should.equal(expected);
+          });
       });
     });
 
@@ -163,7 +190,9 @@ describe('browser/settings.html', function desc() {
         env.addClientCommands(this.app.client);
         return this.app.client.
           loadSettingsPage().
-          isExisting('#inputShowTrayIcon').then((existing) => existing.should.equal(expected));
+          isExisting('#inputShowTrayIcon').then((existing) => {
+            existing.should.equal(expected);
+          });
       });
 
       describe('Save tray icon theme on linux', () => {
@@ -195,7 +224,9 @@ describe('browser/settings.html', function desc() {
         env.addClientCommands(this.app.client);
         return this.app.client.
           loadSettingsPage().
-          isExisting('#inputMinimizeToTray').then((existing) => existing.should.equal(expected));
+          isExisting('#inputMinimizeToTray').then((existing) => {
+            existing.should.equal(expected);
+          });
       });
     });
 
@@ -205,7 +236,9 @@ describe('browser/settings.html', function desc() {
         env.addClientCommands(this.app.client);
         return this.app.client.
           loadSettingsPage().
-          isExisting('#inputToggleWindowOnTrayIconClick').then((existing) => existing.should.equal(expected));
+          isExisting('#inputToggleWindowOnTrayIconClick').then((existing) => {
+            existing.should.equal(expected);
+          });
       });
     });
 
@@ -215,7 +248,9 @@ describe('browser/settings.html', function desc() {
         env.addClientCommands(this.app.client);
         return this.app.client.
           loadSettingsPage().
-          isExisting('#inputflashWindow').then((existing) => existing.should.equal(expected));
+          isExisting('#inputflashWindow').then((existing) => {
+            existing.should.equal(expected);
+          });
       });
     });
 
@@ -225,7 +260,9 @@ describe('browser/settings.html', function desc() {
         env.addClientCommands(this.app.client);
         return this.app.client.
           loadSettingsPage().
-          isExisting('#inputShowUnreadBadge').then((existing) => existing.should.equal(expected));
+          isExisting('#inputShowUnreadBadge').then((existing) => {
+            existing.should.equal(expected);
+          });
       });
     });
 
@@ -234,9 +271,13 @@ describe('browser/settings.html', function desc() {
         env.addClientCommands(this.app.client);
         return this.app.client.
           loadSettingsPage().
-          isExisting('#inputSpellChecker').then((existing) => existing.should.equal(true)).
+          isExisting('#inputSpellChecker').then((existing) => {
+            existing.should.equal(true);
+          }).
           scroll('#inputSpellChecker').
-          isSelected('#inputSpellChecker').then((selected) => selected.should.equal(true)).
+          isSelected('#inputSpellChecker').then((selected) => {
+            selected.should.equal(true);
+          }).
           click('#inputSpellChecker').
           pause(700).
           then(() => {
@@ -254,8 +295,12 @@ describe('browser/settings.html', function desc() {
       env.addClientCommands(this.app.client);
       return this.app.client.
         loadSettingsPage().
-        isExisting(modalTitleSelector).then((existing) => existing.should.be.false).
-        isVisible(modalTitleSelector).then((visible) => visible.should.be.false).
+        isExisting(modalTitleSelector).then((existing) => {
+          existing.should.be.false;
+        }).
+        isVisible(modalTitleSelector).then((visible) => {
+          visible.should.be.false;
+        }).
         click('=Remove').
         waitForVisible(modalTitleSelector);
     });
@@ -264,7 +309,9 @@ describe('browser/settings.html', function desc() {
       this.app.client.
         element('.modal-dialog').click('.btn=Remove').
         pause(500).
-        isExisting(modalTitleSelector).then((existing) => existing.should.be.false).
+        isExisting(modalTitleSelector).then((existing) => {
+          existing.should.be.false;
+        }).
         click('#btnClose').
         pause(500).then(() => {
           const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
@@ -277,7 +324,9 @@ describe('browser/settings.html', function desc() {
       this.app.client.
         element('.modal-dialog').click('.btn=Cancel').
         pause(500).
-        isExisting(modalTitleSelector).then((existing) => existing.should.be.false).
+        isExisting(modalTitleSelector).then((existing) => {
+          existing.should.be.false;
+        }).
         click('#btnClose').
         pause(500).then(() => {
           const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
@@ -290,14 +339,18 @@ describe('browser/settings.html', function desc() {
       return this.app.client.
         click('.modal-dialog button.close').
         pause(500).
-        isExisting(modalTitleSelector).then((existing) => existing.should.be.false);
+        isExisting(modalTitleSelector).then((existing) => {
+          existing.should.be.false;
+        });
     });
 
     it('should disappear on click background', () => {
       return this.app.client.
         click('body').
         pause(500).
-        isExisting(modalTitleSelector).then((existing) => existing.should.be.false);
+        isExisting(modalTitleSelector).then((existing) => {
+          existing.should.be.false;
+        });
     });
   });
 
@@ -310,28 +363,36 @@ describe('browser/settings.html', function desc() {
     });
 
     it('should open the new server modal', () => {
-      return this.app.client.isExisting('#newServerModal').then((existing) => existing.should.be.true);
+      return this.app.client.isExisting('#newServerModal').then((existing) => {
+        existing.should.be.true;
+      });
     });
 
     it('should close the window after clicking cancel', () => {
       return this.app.client.
         click('#cancelNewServerModal').
         pause(1000). // Animation
-        isExisting('#newServerModal').then((existing) => existing.should.be.false);
+        isExisting('#newServerModal').then((existing) => {
+          existing.should.be.false;
+        });
     });
 
     it('should not be valid if no team name has been set', () => {
       return this.app.client.
         click('#saveNewServerModal').
         pause(500).
-        isExisting('.has-error #teamNameInput').then((existing) => existing.should.be.true);
+        isExisting('.has-error #teamNameInput').then((existing) => {
+          existing.should.be.true;
+        });
     });
 
     it('should not be valid if no server address has been set', () => {
       return this.app.client.
         click('#saveNewServerModal').
         pause(500).
-        isExisting('.has-error #teamUrlInput').then((existing) => existing.should.be.true);
+        isExisting('.has-error #teamUrlInput').then((existing) => {
+          existing.should.be.true;
+        });
     });
 
     describe('Valid server name', () => {
@@ -343,12 +404,16 @@ describe('browser/settings.html', function desc() {
 
       it('should not be marked invalid', () => {
         return this.app.client.
-            isExisting('.has-error #teamNameInput').then((existing) => existing.should.be.false);
+            isExisting('.has-error #teamNameInput').then((existing) => {
+              existing.should.be.false;
+            });
       });
 
       it('should not be possible to click save', () => {
         return this.app.client.
-          getAttribute('#saveNewServerModal', 'disabled').then((disabled) => disabled.should.equal('true'));
+          getAttribute('#saveNewServerModal', 'disabled').then((disabled) => {
+            disabled.should.equal('true');
+          });
       });
     });
 
@@ -361,12 +426,16 @@ describe('browser/settings.html', function desc() {
 
       it('should be valid', () => {
         return this.app.client.
-          isExisting('.has-error #teamUrlInput').then((existing) => existing.should.be.false);
+          isExisting('.has-error #teamUrlInput').then((existing) => {
+            existing.should.be.false;
+          });
       });
 
       it('should not be possible to click save', () => {
         return this.app.client.
-          getAttribute('#saveNewServerModal', 'disabled').then((disabled) => disabled.should.equal('true'));
+          getAttribute('#saveNewServerModal', 'disabled').then((disabled) => {
+            disabled.should.equal('true');
+          });
       });
     });
 
@@ -375,7 +444,9 @@ describe('browser/settings.html', function desc() {
         setValue('#teamUrlInput', 'superInvalid url').
         click('#saveNewServerModal').
         pause(500).
-        isExisting('.has-error #teamUrlInput').then((existing) => existing.should.be.true);
+        isExisting('.has-error #teamUrlInput').then((existing) => {
+          existing.should.be.true;
+        });
     });
 
     describe('Valid Team Settings', () => {
@@ -387,21 +458,26 @@ describe('browser/settings.html', function desc() {
 
       it('should be possible to click add', () => {
         return this.app.client.
-          getAttribute('#saveNewServerModal', 'disabled').then((disabled) => (disabled === null).should.be.true);
+          getAttribute('#saveNewServerModal', 'disabled').then((disabled) => {
+            (disabled === null).should.be.true;
+          });
       });
 
       it('should add the team to the config file', (done) => {
         this.app.client.
           click('#saveNewServerModal').
-          pause(1000). // Animation
-          click('#btnClose').
-          pause(1000).then(() => {
+          waitForVisible('#newServerModal', true).
+          waitForVisible('#serversSaveIndicator').
+          waitForVisible('#serversSaveIndicator', 10000, true). // at least 2500 ms to disappear
+          waitUntilWindowLoaded().then(() => {
             const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-            savedConfig.teams.should.contain({
+            savedConfig.teams.should.deep.contain({
               name: 'TestTeam',
               url: 'http://example.org'
             });
-            return done();
+            done();
+          }).catch((err) => {
+            done(err);
           });
       });
     });

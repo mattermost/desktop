@@ -11,6 +11,7 @@
         "max-nested-callbacks": 0,
         "no-eval": 0,
         "no-magic-numbers": 0,
+        "no-unused-expressions": 0,
         "prefer-arrow-callback": 0
     }
 }
