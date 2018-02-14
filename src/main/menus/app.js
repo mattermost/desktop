@@ -59,9 +59,10 @@ function createTemplate(mainWindow, config, isDev) {
     }, separatorItem, {
       role: 'quit'
     }] : [separatorItem, {
-      role: 'quit',
+      label: 'Exit',
       accelerator: 'CmdOrCtrl+Q',
-      click() {
+      click: () => {
+        console.log('Ctrl+Q: The application finishes.');
         electron.app.quit();
       }
     }]
