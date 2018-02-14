@@ -2,8 +2,8 @@
   "presets": [
     ["env", {
       "targets": {
-        "browsers": ["Electron >= 1.7"],
-        "node": "7.9"
+        "browsers": ["Electron >= 1.8"],
+        "node": "8.2"
       }
     }],
     "react"
