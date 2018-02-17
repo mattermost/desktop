@@ -157,7 +157,33 @@ const MattermostView = createReactClass({
         console.warn(message);
         break;
       case 2:
-        console.error(message);
+        let match = e.message.match(/Not allowed to load local resource:\s*(.+)/);
+        let resURL = "";
+        let isNetworkDrive = false;
+
+        if (match != null) {
+          if (match.length == 2) {
+            resURL = match[1];
+
+            let u = url.parse(resURL);
+
+            // Is it on a network drive?
+            if (u.protocol === 'file:' && u.host) {
+              isNetworkDrive = true;
+            }
+          }
+        }
+
+        // Network drive: Should be allowed.
+        if (isNetworkDrive) {
+          if (!shell.openExternal(decodeURI(resURL))) {
+            console.log(`[${this.props.name}] shell.openExternal failed: ${resURL}`);
+          }
+        }
+        // Local drive such as 'C:\Windows': Should not be allowed.
+        else {
+          console.error(message);
+        }
         break;
       default:
         console.log(message);
