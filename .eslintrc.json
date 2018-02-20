@@ -1,5 +1,5 @@
 {
-    "extends": "./.eslintrc-platform.json",
+    "extends": "./.eslintrc-webapp.json",
     "parserOptions": {
         "ecmaVersion": 2017
     },
