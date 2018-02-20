@@ -1,8 +1,9 @@
-const {app, dialog} = require('electron');
 const {spawn} = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+
+const {app, dialog} = require('electron');
 
 const BUTTON_OK = 'OK';
 const BUTTON_SHOW_DETAILS = 'Show Details';

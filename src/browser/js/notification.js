@@ -3,6 +3,7 @@
 const OriginalNotification = Notification;
 const {ipcRenderer, remote} = require('electron');
 const {throttle} = require('underscore');
+
 const osVersion = require('../../common/osVersion');
 const dingDataURL = require('../../assets/ding.mp3'); // https://github.com/mattermost/platform/blob/v3.7.3/webapp/images/ding.mp3
 

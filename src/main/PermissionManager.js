@@ -1,4 +1,5 @@
 const fs = require('fs');
+
 const utils = require('../utils/util');
 
 const PERMISSION_GRANTED = 'granted';

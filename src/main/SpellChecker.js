@@ -1,6 +1,7 @@
 'use strict';
 
 const EventEmitter = require('events');
+
 const simpleSpellChecker = require('simple-spellchecker');
 
 /// Following approach for contractions is derived from electron-spellchecker.

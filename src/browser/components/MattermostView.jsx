@@ -1,12 +1,13 @@
-// eslint-disable react/no-set-state
+/* eslint-disable react/no-set-state */
 // setState() is necessary for this component
+const url = require('url');
 
 const React = require('react');
 const PropTypes = require('prop-types');
 const createReactClass = require('create-react-class');
 const {findDOMNode} = require('react-dom');
 const {ipcRenderer, remote, shell} = require('electron');
-const url = require('url');
+
 const contextMenu = require('../js/contextMenu');
 const {protocols} = require('../../../electron-builder.json');
 const scheme = protocols[0].schemes[0];

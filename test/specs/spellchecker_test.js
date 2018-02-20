@@ -1,5 +1,6 @@
-const SpellChecker = require('../../src/main/SpellChecker');
 const path = require('path');
+
+const SpellChecker = require('../../src/main/SpellChecker');
 
 describe('main/Spellchecker.js', function() {
   describe('en-US', function() {

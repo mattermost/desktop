@@ -14,10 +14,10 @@ async function setupAutoLaunch(cmd) {
     isHidden: true,
   });
   if (cmd === '--squirrel-uninstall') {
-      // If we're uninstalling, make sure we also delete our auto launch registry key
+    // If we're uninstalling, make sure we also delete our auto launch registry key
     return appLauncher.disable();
   } else if (cmd === '--squirrel-install' || cmd === '--squirrel-updated') {
-      // If we're updating and already have an registry entry for auto launch, make sure to update the path
+    // If we're updating and already have an registry entry for auto launch, make sure to update the path
     const enabled = await appLauncher.isEnabled();
     if (enabled) {
       return appLauncher.enable();

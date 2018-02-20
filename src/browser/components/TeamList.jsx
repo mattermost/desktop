@@ -2,6 +2,7 @@ const React = require('react');
 const PropTypes = require('prop-types');
 const createReactClass = require('create-react-class');
 const {ListGroup} = require('react-bootstrap');
+
 const TeamListItem = require('./TeamListItem.jsx');
 const NewTeamModal = require('./NewTeamModal.jsx');
 const RemoveServerModal = require('./RemoveServerModal.jsx');

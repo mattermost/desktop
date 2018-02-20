@@ -1,6 +1,7 @@
 'use strict';
 
 const electron = require('electron');
+
 const settings = require('../../common/settings');
 const buildConfig = require('../../common/config/buildConfig');
 
@@ -58,7 +59,8 @@ function createTemplate(mainWindow, config, isDev) {
       role: 'unhide',
     }, separatorItem, {
       role: 'quit',
-    }] : [separatorItem, {
+    }] : [
+    separatorItem, {
       role: 'quit',
       accelerator: 'CmdOrCtrl+Q',
       click() {
