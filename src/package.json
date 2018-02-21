@@ -18,7 +18,7 @@
     "electron-squirrel-startup": "^1.0.0",
     "prop-types": "^15.6.0",
     "react": "^16.2.0",
-    "react-bootstrap": "~0.31.5",
+    "react-bootstrap": "~0.32.1",
     "react-dom": "^16.2.0",
     "react-transition-group": "^2.2.1",
     "simple-spellchecker": "git://github.com/jfmdev/simple-spellchecker.git#723062952a0290c6285aeaf02f14d9c74c41cadb",
