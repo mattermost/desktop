@@ -157,31 +157,14 @@ const MattermostView = createReactClass({
         console.warn(message);
         break;
       case 2:
-        let match = e.message.match(/Not allowed to load local resource:\s*(.+)/);
-        let resURL = "";
-        let isNetworkDrive = false;
-
-        if (match != null) {
-          if (match.length == 2) {
-            resURL = match[1];
-
-            let u = url.parse(resURL);
-
-            // Is it on a network drive?
-            if (u.protocol === 'file:' && u.host) {
-              isNetworkDrive = true;
-            }
+        const fileURL = this.extractFileURL(e.message);
+        if (this.isNetworkDrive(fileURL)) {
+          // Network drive: Should be allowed.
+          if (!shell.openExternal(decodeURI(fileURL))) {
+            console.log(`[${this.props.name}] shell.openExternal failed: ${fileURL}`);
           }
-        }
-
-        // Network drive: Should be allowed.
-        if (isNetworkDrive) {
-          if (!shell.openExternal(decodeURI(resURL))) {
-            console.log(`[${this.props.name}] shell.openExternal failed: ${resURL}`);
-          }
-        }
-        // Local drive such as 'C:\Windows': Should not be allowed.
-        else {
+        } else {
+          // Local drive such as 'C:\Windows': Should not be allowed.
           console.error(message);
         }
         break;
@@ -254,6 +237,22 @@ const MattermostView = createReactClass({
     webview.executeJavaScript(
       'dispatchEvent(new PopStateEvent("popstate", null));'
     );
+  },
+
+  extractFileURL(message) {
+    const matched = message.match(/Not allowed to load local resource:\s*(.+)/);
+    if (matched) {
+      return matched[1];
+    }
+    return '';
+  },
+
+  isNetworkDrive(fileURL) {
+    const u = url.parse(fileURL);
+    if (u.protocol === 'file:' && u.host) {
+      return true;
+    }
+    return false;
   },
 
   render() {
