@@ -25,7 +25,7 @@ const MattermostView = createReactClass({
     active: PropTypes.bool,
     withTab: PropTypes.bool,
     useSpellChecker: PropTypes.bool,
-    onSelectSpellCheckerLocale: PropTypes.func
+    onSelectSpellCheckerLocale: PropTypes.func,
   },
 
   getInitialState() {
@@ -33,7 +33,7 @@ const MattermostView = createReactClass({
       errorInfo: null,
       isContextMenuAdded: false,
       reloadTimeoutID: null,
-      isLoaded: false
+      isLoaded: false,
     };
   },
 
@@ -55,7 +55,7 @@ const MattermostView = createReactClass({
 
       self.setState({
         errorInfo: e,
-        isLoaded: true
+        isLoaded: true,
       });
       function reload() {
         window.removeEventListener('online', reload);
@@ -63,7 +63,7 @@ const MattermostView = createReactClass({
       }
       if (navigator.onLine) {
         self.setState({
-          reloadTimeoutID: setTimeout(reload, 30000)
+          reloadTimeoutID: setTimeout(reload, 30000),
         });
       } else {
         window.addEventListener('online', reload);
@@ -105,7 +105,7 @@ const MattermostView = createReactClass({
               this.props.onSelectSpellCheckerLocale(locale);
             }
             webview.send('set-spellcheker');
-          }
+          },
         });
         this.setState({isContextMenuAdded: true});
       }
@@ -121,7 +121,7 @@ const MattermostView = createReactClass({
       switch (event.channel) {
       case 'onGuestInitialized':
         self.setState({
-          isLoaded: true
+          isLoaded: true,
         });
         break;
       case 'onUnreadCountChange':
@@ -142,7 +142,7 @@ const MattermostView = createReactClass({
     webview.addEventListener('page-title-updated', (event) => {
       if (self.props.active) {
         ipcRenderer.send('update-title', {
-          title: event.title
+          title: event.title,
         });
       }
     });
@@ -171,7 +171,7 @@ const MattermostView = createReactClass({
     this.setState({
       errorInfo: null,
       reloadTimeoutID: null,
-      isLoaded: false
+      isLoaded: false,
     });
     var webview = findDOMNode(this.refs.webview);
     webview.reload();
@@ -179,7 +179,7 @@ const MattermostView = createReactClass({
 
   clearCacheAndReload() {
     this.setState({
-      errorInfo: null
+      errorInfo: null,
     });
     var webContents = findDOMNode(this.refs.webview).getWebContents();
     webContents.session.clearCache(() => {
@@ -271,7 +271,7 @@ const MattermostView = createReactClass({
         />
         { loadingImage }
       </div>);
-  }
+  },
 });
 
 module.exports = MattermostView;

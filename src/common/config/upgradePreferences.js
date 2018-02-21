@@ -11,7 +11,7 @@ function upgradeV0toV1(configV0) {
   }
   config.teams.push({
     name: 'Primary team',
-    url: configV0.url
+    url: configV0.url,
   });
   return config;
 }

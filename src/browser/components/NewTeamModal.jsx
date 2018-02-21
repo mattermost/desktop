@@ -10,7 +10,7 @@ class NewTeamModal extends React.Component {
     this.state = {
       teamName: '',
       teamUrl: '',
-      saveStarted: false
+      saveStarted: false,
     };
   }
 
@@ -23,7 +23,7 @@ class NewTeamModal extends React.Component {
       teamName: this.props.team ? this.props.team.name : '',
       teamUrl: this.props.team ? this.props.team.url : '',
       teamIndex: this.props.team ? this.props.team.index : false,
-      saveStarted: false
+      saveStarted: false,
     });
   }
 
@@ -40,7 +40,7 @@ class NewTeamModal extends React.Component {
 
   handleTeamNameChange(e) {
     this.setState({
-      teamName: e.target.value
+      teamName: e.target.value,
     });
   }
 
@@ -63,7 +63,7 @@ class NewTeamModal extends React.Component {
 
   handleTeamUrlChange(e) {
     this.setState({
-      teamUrl: e.target.value
+      teamUrl: e.target.value,
     });
   }
 
@@ -78,13 +78,13 @@ class NewTeamModal extends React.Component {
 
   save() {
     this.setState({
-      saveStarted: true
+      saveStarted: true,
     }, () => {
       if (this.validateForm()) {
         this.props.onSave({
           url: this.state.teamUrl,
           name: this.state.teamName,
-          index: this.state.teamIndex
+          index: this.state.teamIndex,
         });
       }
     });
@@ -199,7 +199,7 @@ NewTeamModal.propTypes = {
   onSave: PropTypes.func,
   team: PropTypes.object,
   editMode: PropTypes.bool,
-  show: PropTypes.bool
+  show: PropTypes.bool,
 };
 
 module.exports = NewTeamModal;

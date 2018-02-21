@@ -8,7 +8,7 @@ const {
   nativeImage,
   dialog,
   systemPreferences,
-  session
+  session,
 } = require('electron');
 const os = require('os');
 const path = require('path');
@@ -114,7 +114,7 @@ const trayImages = (() => {
     return {
       normal: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray.ico')),
       unread: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_unread.ico')),
-      mention: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_mention.ico'))
+      mention: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_mention.ico')),
     };
   case 'darwin':
     {
@@ -122,13 +122,13 @@ const trayImages = (() => {
         light: {
           normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIcon.png')),
           unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconUnread.png')),
-          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconMention.png'))
+          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconMention.png')),
         },
         clicked: {
           normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIcon.png')),
           unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconUnread.png')),
-          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconMention.png'))
-        }
+          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconMention.png')),
+        },
       };
       switchMenuIconImages(icons, systemPreferences.isDarkMode());
       return icons;
@@ -140,14 +140,14 @@ const trayImages = (() => {
         return {
           normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconTemplate.png')),
           unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconUnreadTemplate.png')),
-          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconMentionTemplate.png'))
+          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconMentionTemplate.png')),
         };
       } catch (e) {
         //Fallback for invalid theme setting
         return {
           normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconTemplate.png')),
           unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconUnreadTemplate.png')),
-          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconMentionTemplate.png'))
+          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconMentionTemplate.png')),
         };
       }
     }
@@ -250,7 +250,7 @@ function handleScreenResize(screen, browserWindow) {
       x: position[0],
       y: position[1],
       width: size[0],
-      height: size[1]
+      height: size[1],
     }, screen);
     browserWindow.setPosition(validPosition.x || 0, validPosition.y || 0);
   }
@@ -295,9 +295,9 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
       type: 'warning',
       buttons: [
         'Yes',
-        'No'
+        'No',
       ],
-      cancelId: 1
+      cancelId: 1,
     }, (response) => {
       if (response === 0) {
         certificateStore.add(url, certificate);
@@ -335,7 +335,7 @@ ipcMain.on('download-url', (event, URL) => {
     if (err) {
       dialog.showMessageBox(mainWindow, {
         type: 'error',
-        message: err.toString()
+        message: err.toString(),
       });
       console.log(err);
     }
@@ -411,7 +411,7 @@ app.on('ready', () => {
   mainWindow = createMainWindow(config, {
     hideOnStartup,
     linuxAppIcon: path.join(assetsDir, 'appicon.png'),
-    deeplinkingUrl
+    deeplinkingUrl,
   });
 
   mainWindow.on('closed', () => {
@@ -528,7 +528,7 @@ app.on('ready', () => {
       var filename = item.getFilename();
       var savePath = dialog.showSaveDialog({
         title: filename,
-        defaultPath: os.homedir() + '/Downloads/' + filename
+        defaultPath: os.homedir() + '/Downloads/' + filename,
       });
 
       if (savePath) {

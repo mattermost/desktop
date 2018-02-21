@@ -11,7 +11,7 @@ function shouldQuitApp(cmd) {
 async function setupAutoLaunch(cmd) {
   const appLauncher = new AutoLaunch({
     name: app.getName(),
-    isHidden: true
+    isHidden: true,
   });
   if (cmd === '--squirrel-uninstall') {
       // If we're uninstalling, make sure we also delete our auto launch registry key

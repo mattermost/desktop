@@ -178,7 +178,7 @@ function setSpellChecker() {
     spellCheck(text) {
       const res = ipc.sendSync('checkspell', text);
       return res === null ? true : res;
-    }
+    },
   });
   resetMisspelledState();
 }

@@ -50,7 +50,7 @@ class CriticalErrorHandler {
       title: app.getName(),
       message: 'The window is no longer responsive.\nDo you wait until the window becomes responsive again?',
       buttons: ['No', 'Yes'],
-      defaultId: 0
+      defaultId: 0,
     });
     if (result === 0) {
       throw new Error('BrowserWindow \'unresponsive\' event has been emitted');
@@ -74,7 +74,7 @@ class CriticalErrorHandler {
         message: `The ${app.getName()} app quit unexpectedly. Click "Show Details" to learn more or "Reopen" to open the application again.\n\nInternal error: ${err.message}`,
         buttons,
         defaultId: buttons.indexOf(BUTTON_REOPEN),
-        noLink: true
+        noLink: true,
       });
       switch (result) {
       case buttons.indexOf(BUTTON_SHOW_DETAILS):

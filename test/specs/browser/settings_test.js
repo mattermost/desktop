@@ -11,11 +11,11 @@ describe('browser/settings.html', function desc() {
     version: 1,
     teams: [{
       name: 'example',
-      url: env.mattermostURL
+      url: env.mattermostURL,
     }, {
       name: 'github',
-      url: 'https://github.com/'
-    }]
+      url: 'https://github.com/',
+    }],
   };
 
   beforeEach(() => {
@@ -473,7 +473,7 @@ describe('browser/settings.html', function desc() {
             const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
             savedConfig.teams.should.deep.contain({
               name: 'TestTeam',
-              url: 'http://example.org'
+              url: 'http://example.org',
             });
             done();
           }).catch((err) => {

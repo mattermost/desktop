@@ -41,14 +41,14 @@ function AutoSaveIndicator(props) {
 
 AutoSaveIndicator.propTypes = {
   savingState: PropTypes.string.isRequired,
-  errorMessage: PropTypes.string
+  errorMessage: PropTypes.string,
 };
 
 Object.assign(AutoSaveIndicator, {
   SAVING_STATE_SAVING,
   SAVING_STATE_SAVED,
   SAVING_STATE_ERROR,
-  SAVING_STATE_DONE
+  SAVING_STATE_DONE,
 });
 
 module.exports = AutoSaveIndicator;

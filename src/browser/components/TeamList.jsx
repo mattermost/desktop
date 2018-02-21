@@ -15,7 +15,7 @@ const TeamList = createReactClass({
     updateTeam: PropTypes.func,
     toggleAddTeamForm: PropTypes.func,
     setAddTeamFormVisibility: PropTypes.func,
-    onTeamClick: PropTypes.func
+    onTeamClick: PropTypes.func,
   },
 
   getInitialState() {
@@ -25,8 +25,8 @@ const TeamList = createReactClass({
       team: {
         url: '',
         name: '',
-        index: false
-      }
+        index: false,
+      },
     };
   },
   handleTeamRemove(index) {
@@ -51,8 +51,8 @@ const TeamList = createReactClass({
       team: {
         url: '',
         name: '',
-        index: false
-      }
+        index: false,
+      },
     });
 
     this.props.onTeamsChange(teams);
@@ -63,8 +63,8 @@ const TeamList = createReactClass({
       team: {
         url: teamUrl,
         name: teamName,
-        index: teamIndex
-      }
+        index: teamIndex,
+      },
     });
   },
 
@@ -116,15 +116,15 @@ const TeamList = createReactClass({
             team: {
               name: '',
               url: '',
-              index: false
-            }
+              index: false,
+            },
           });
           this.props.setAddTeamFormVisibility(false);
         }}
         onSave={(newTeam) => {
           var teamData = {
             name: newTeam.name,
-            url: newTeam.url
+            url: newTeam.url,
           };
           if (this.props.showAddTeamForm) {
             this.props.addServer(teamData);
@@ -137,8 +137,8 @@ const TeamList = createReactClass({
             team: {
               name: '',
               url: '',
-              index: false
-            }
+              index: false,
+            },
           });
           this.render();
           this.props.setAddTeamFormVisibility(false);
@@ -167,7 +167,7 @@ const TeamList = createReactClass({
         { removeServerModal}
       </ListGroup>
     );
-  }
+  },
 });
 
 module.exports = TeamList;

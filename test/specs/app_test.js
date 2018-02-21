@@ -80,7 +80,7 @@ describe('application', function desc() {
 
   it('should show index.html when there is config file', () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
-      url: env.mattermostURL
+      url: env.mattermostURL,
     }));
     return this.app.restart().then(() => {
       return this.app.client.waitUntilWindowLoaded().getUrl();
@@ -92,7 +92,7 @@ describe('application', function desc() {
   it('should upgrade v0 config file', () => {
     const settings = require('../../src/common/settings');
     fs.writeFileSync(env.configFilePath, JSON.stringify({
-      url: env.mattermostURL
+      url: env.mattermostURL,
     }));
     return this.app.restart().then(() => {
       return this.app.client.waitUntilWindowLoaded().getUrl();

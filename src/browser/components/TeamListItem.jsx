@@ -47,7 +47,7 @@ TeamListItem.propTypes = {
   onTeamEditing: PropTypes.func,
   onTeamRemove: PropTypes.func,
   onTeamClick: PropTypes.func,
-  url: PropTypes.string
+  url: PropTypes.string,
 };
 
 module.exports = TeamListItem;

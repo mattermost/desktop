@@ -13,5 +13,5 @@ module.exports = {
 
     // consider Windows 7 and later.
     return (this.major <= 6 && this.minor <= 3);
-  }
+  },
 };

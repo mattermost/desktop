@@ -35,7 +35,7 @@ function showUnreadBadgeWindows(unreadCount, mentionCount) {
       overlayDataURL: dataURL,
       description,
       unreadCount,
-      mentionCount
+      mentionCount,
     });
   }
 
@@ -61,7 +61,7 @@ function showUnreadBadgeOSX(unreadCount, mentionCount) {
 
   ipcRenderer.send('update-unread', {
     unreadCount,
-    mentionCount
+    mentionCount,
   });
 }
 
@@ -72,7 +72,7 @@ function showUnreadBadgeLinux(unreadCount, mentionCount) {
 
   ipcRenderer.send('update-unread', {
     unreadCount,
-    mentionCount
+    mentionCount,
   });
 }
 

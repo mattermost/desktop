@@ -11,7 +11,7 @@ function downloadURL(browserWindow, URL, callback) {
   request.on('response', (response) => {
     const file = getAttachmentName(response.headers);
     const dialogOptions = {
-      defaultPath: path.join(app.getPath('downloads'), file)
+      defaultPath: path.join(app.getPath('downloads'), file),
     };
     dialog.showSaveDialog(browserWindow, dialogOptions, (filename) => {
       if (filename) {

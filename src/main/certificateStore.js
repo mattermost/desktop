@@ -6,7 +6,7 @@ const url = require('url');
 function comparableCertificate(certificate) {
   return {
     data: certificate.data.toString(),
-    issuerName: certificate.issuerName
+    issuerName: certificate.issuerName,
   };
 }
 
@@ -63,5 +63,5 @@ CertificateStore.prototype.isTrusted = function isTrusted(targetURL, certificate
 module.exports = {
   load(storeFile) {
     return new CertificateStore(storeFile);
-  }
+  },
 };

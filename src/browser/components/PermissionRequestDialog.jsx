@@ -5,32 +5,32 @@ const {Button, Glyphicon, Popover} = require('react-bootstrap');
 const PERMISSIONS = {
   media: {
     description: 'Use your camera and microphone',
-    glyph: 'facetime-video'
+    glyph: 'facetime-video',
   },
   geolocation: {
     description: 'Know your location',
-    glyph: 'map-marker'
+    glyph: 'map-marker',
   },
   notifications: {
     description: 'Show notifications',
-    glyph: 'bell'
+    glyph: 'bell',
   },
   midiSysex: {
     description: 'Use your MIDI devices',
-    glyph: 'music'
+    glyph: 'music',
   },
   pointerLock: {
     description: 'Lock your mouse cursor',
-    glyph: 'hand-up'
+    glyph: 'hand-up',
   },
   fullscreen: {
     description: 'Enter full screen',
-    glyph: 'resize-full'
+    glyph: 'resize-full',
   },
   openExternal: {
     description: 'Open external',
-    glyph: 'new-window'
-  }
+    glyph: 'new-window',
+  },
 };
 
 function glyph(permission) {
@@ -83,7 +83,7 @@ PermissionRequestDialog.propTypes = {
   permission: PropTypes.oneOf(['media', 'geolocation', 'notifications', 'midiSysex', 'pointerLock', 'fullscreen', 'openExternal']),
   onClickAllow: PropTypes.func,
   onClickBlock: PropTypes.func,
-  onClickClose: PropTypes.func
+  onClickClose: PropTypes.func,
 };
 
 module.exports = PermissionRequestDialog;

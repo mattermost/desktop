@@ -28,7 +28,7 @@ const MainPage = createReactClass({
     deeplinkingUrl: PropTypes.string,
     showAddServerButton: PropTypes.bool.isRequired,
     requestingPermission: TabBar.propTypes.requestingPermission,
-    onClickPermissionDialog: PropTypes.func
+    onClickPermissionDialog: PropTypes.func,
   },
 
   getInitialState() {
@@ -48,22 +48,22 @@ const MainPage = createReactClass({
       unreadAtActive: new Array(this.props.teams.length),
       mentionAtActiveCounts: new Array(this.props.teams.length),
       loginQueue: [],
-      targetURL: ''
+      targetURL: '',
     };
   },
   componentDidMount() {
     var self = this;
     ipcRenderer.on('login-request', (event, request, authInfo) => {
       self.setState({
-        loginRequired: true
+        loginRequired: true,
       });
       const loginQueue = self.state.loginQueue;
       loginQueue.push({
         request,
-        authInfo
+        authInfo,
       });
       self.setState({
-        loginQueue
+        loginQueue,
       });
     });
 
@@ -146,13 +146,13 @@ const MainPage = createReactClass({
   handleSelect(key) {
     const newKey = (this.props.teams.length + key) % this.props.teams.length;
     this.setState({
-      key: newKey
+      key: newKey,
     });
     this.handleOnTeamFocused(newKey);
 
     var webview = document.getElementById('mattermostView' + newKey);
     ipcRenderer.send('update-title', {
-      title: webview.getTitle()
+      title: webview.getTitle(),
     });
   },
   handleUnreadCountChange(index, unreadCount, mentionCount, isUnread, isMentioned) {
@@ -174,7 +174,7 @@ const MainPage = createReactClass({
       unreadCounts,
       mentionCounts,
       unreadAtActive,
-      mentionAtActiveCounts
+      mentionAtActiveCounts,
     });
     this.handleUnreadCountTotalChange();
   },
@@ -185,7 +185,7 @@ const MainPage = createReactClass({
     mentionAtActiveCounts[index] = 0;
     this.setState({
       unreadAtActive,
-      mentionAtActiveCounts
+      mentionAtActiveCounts,
     });
     this.handleUnreadCountTotalChange();
   },
@@ -237,7 +237,7 @@ const MainPage = createReactClass({
   },
   addServer() {
     this.setState({
-      showNewTeamModal: true
+      showNewTeamModal: true,
     });
   },
 
@@ -321,14 +321,14 @@ const MainPage = createReactClass({
         show={this.state.showNewTeamModal}
         onClose={() => {
           this.setState({
-            showNewTeamModal: false
+            showNewTeamModal: false,
           });
         }}
         onSave={(newTeam) => {
           this.props.teams.push(newTeam);
           this.setState({
             showNewTeamModal: false,
-            key: this.props.teams.length - 1
+            key: this.props.teams.length - 1,
           });
           this.render();
           this.props.onTeamConfigChange(this.props.teams);
@@ -379,7 +379,7 @@ const MainPage = createReactClass({
         </div>
       </div>
     );
-  }
+  },
 });
 
 module.exports = MainPage;

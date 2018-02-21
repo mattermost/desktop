@@ -16,7 +16,7 @@ const AutoSaveIndicator = require('./AutoSaveIndicator.jsx');
 
 const appLauncher = new AutoLaunch({
   name: remote.app.getName(),
-  isHidden: true
+  isHidden: true,
 });
 
 function backToIndex(index) {
@@ -31,7 +31,7 @@ const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 const SettingsPage = createReactClass({
   propTypes: {
     configFile: PropTypes.string,
-    enableServerManagement: PropTypes.bool
+    enableServerManagement: PropTypes.bool,
   },
 
   getInitialState() {
@@ -49,7 +49,7 @@ const SettingsPage = createReactClass({
     }
     initialState.savingState = {
       appOptions: AutoSaveIndicator.SAVING_STATE_DONE,
-      servers: AutoSaveIndicator.SAVING_STATE_DONE
+      servers: AutoSaveIndicator.SAVING_STATE_DONE,
     };
 
     return initialState;
@@ -59,13 +59,13 @@ const SettingsPage = createReactClass({
       var self = this;
       appLauncher.isEnabled().then((enabled) => {
         self.setState({
-          autostart: enabled
+          autostart: enabled,
         });
       });
     }
     ipcRenderer.on('add-server', () => {
       this.setState({
-        showAddTeamForm: true
+        showAddTeamForm: true,
       });
     });
     ipcRenderer.on('switch-tab', (event, key) => {
@@ -113,7 +113,7 @@ const SettingsPage = createReactClass({
   handleTeamsChange(teams) {
     this.setState({
       showAddTeamForm: false,
-      teams
+      teams,
     });
     if (teams.length === 0) {
       this.setState({showAddTeamForm: true});
@@ -131,11 +131,11 @@ const SettingsPage = createReactClass({
       notifications: {
         flashWindow: this.state.notifications.flashWindow,
         bounceIcon: this.state.notifications.bounceIcon,
-        bounceIconType: this.state.notifications.bounceIconType
+        bounceIconType: this.state.notifications.bounceIconType,
       },
       showUnreadBadge: this.state.showUnreadBadge,
       useSpellChecker: this.state.useSpellChecker,
-      spellCheckerLocale: this.state.spellCheckerLocale
+      spellCheckerLocale: this.state.spellCheckerLocale,
     };
 
     settings.writeFile(this.props.configFile, config, (err) => {
@@ -176,12 +176,12 @@ const SettingsPage = createReactClass({
   handleChangeShowTrayIcon() {
     var shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
     this.setState({
-      showTrayIcon: shouldShowTrayIcon
+      showTrayIcon: shouldShowTrayIcon,
     });
 
     if (process.platform === 'darwin' && !shouldShowTrayIcon) {
       this.setState({
-        minimizeToTray: false
+        minimizeToTray: false,
       });
     }
 
@@ -189,13 +189,13 @@ const SettingsPage = createReactClass({
   },
   handleChangeTrayIconTheme() {
     this.setState({
-      trayIconTheme: ReactDOM.findDOMNode(this.refs.trayIconTheme).value
+      trayIconTheme: ReactDOM.findDOMNode(this.refs.trayIconTheme).value,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   },
   handleChangeAutoStart() {
     this.setState({
-      autostart: !this.refs.autostart.props.checked
+      autostart: !this.refs.autostart.props.checked,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   },
@@ -203,27 +203,27 @@ const SettingsPage = createReactClass({
     const shouldMinimizeToTray = this.state.showTrayIcon && !this.refs.minimizeToTray.props.checked;
 
     this.setState({
-      minimizeToTray: shouldMinimizeToTray
+      minimizeToTray: shouldMinimizeToTray,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   },
   toggleShowTeamForm() {
     this.setState({
-      showAddTeamForm: !this.state.showAddTeamForm
+      showAddTeamForm: !this.state.showAddTeamForm,
     });
     document.activeElement.blur();
   },
   setShowTeamFormVisibility(val) {
     this.setState({
-      showAddTeamForm: val
+      showAddTeamForm: val,
     });
   },
   handleFlashWindow() {
     this.setState({
       notifications: {
         ...this.state.notifications,
-        flashWindow: this.refs.flashWindow.props.checked ? 0 : 2
-      }
+        flashWindow: this.refs.flashWindow.props.checked ? 0 : 2,
+      },
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   },
@@ -231,8 +231,8 @@ const SettingsPage = createReactClass({
     this.setState({
       notifications: {
         ...this.state.notifications,
-        bounceIcon: !this.refs.bounceIcon.props.checked
-      }
+        bounceIcon: !this.refs.bounceIcon.props.checked,
+      },
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   },
@@ -240,21 +240,21 @@ const SettingsPage = createReactClass({
     this.setState({
       notifications: {
         ...this.state.notifications,
-        bounceIconType: event.target.value
-      }
+        bounceIconType: event.target.value,
+      },
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   },
   handleShowUnreadBadge() {
     this.setState({
-      showUnreadBadge: !this.refs.showUnreadBadge.props.checked
+      showUnreadBadge: !this.refs.showUnreadBadge.props.checked,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   },
 
   handleChangeUseSpellChecker() {
     this.setState({
-      useSpellChecker: !this.refs.useSpellChecker.props.checked
+      useSpellChecker: !this.refs.useSpellChecker.props.checked,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   },
@@ -263,7 +263,7 @@ const SettingsPage = createReactClass({
     var teams = this.state.teams;
     teams[index] = newData;
     this.setState({
-      teams
+      teams,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_SERVERS);
   },
@@ -272,7 +272,7 @@ const SettingsPage = createReactClass({
     var teams = this.state.teams;
     teams.push(team);
     this.setState({
-      teams
+      teams,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_SERVERS);
   },
@@ -280,7 +280,7 @@ const SettingsPage = createReactClass({
   render() {
     const settingsPage = {
       navbar: {
-        backgroundColor: '#fff'
+        backgroundColor: '#fff',
       },
       close: {
         textDecoration: 'none',
@@ -289,28 +289,28 @@ const SettingsPage = createReactClass({
         top: '5px',
         fontSize: '35px',
         fontWeight: 'normal',
-        color: '#bbb'
+        color: '#bbb',
       },
       heading: {
         textAlign: 'center',
         fontSize: '24px',
         margin: '0',
-        padding: '1em 0'
+        padding: '1em 0',
       },
       sectionHeading: {
         fontSize: '20px',
         margin: '0',
         padding: '1em 0',
-        float: 'left'
+        float: 'left',
       },
       sectionHeadingLink: {
         marginTop: '24px',
         display: 'inline-block',
-        fontSize: '15px'
+        fontSize: '15px',
       },
       footer: {
-        padding: '0.4em 0'
-      }
+        padding: '0.4em 0',
+      },
     };
 
     var teamsRow = (
@@ -598,7 +598,7 @@ const SettingsPage = createReactClass({
         </Grid>
       </div>
     );
-  }
+  },
 });
 
 module.exports = SettingsPage;

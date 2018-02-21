@@ -49,7 +49,7 @@ function permissionRequestHandler(mainWindow, permissionManager) {
     requestQueue.push({
       origin: targetURL.origin,
       permission,
-      callback
+      callback,
     });
     mainWindow.webContents.send('request-permission', targetURL.origin, permission);
   };

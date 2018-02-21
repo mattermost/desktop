@@ -25,5 +25,5 @@ function createDataURL(text) {
 }
 
 module.exports = {
-  createDataURL
+  createDataURL,
 };

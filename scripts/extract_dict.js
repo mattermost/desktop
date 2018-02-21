@@ -7,7 +7,7 @@ const cwd = process.argv[2];
 
 spawn(path7za, ['e', '-y', '*.zip'], {
   cwd,
-  stdio: 'inherit'
+  stdio: 'inherit',
 }).on('error', (err) => {
   console.error(err);
   process.exit(1);

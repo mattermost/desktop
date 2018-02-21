@@ -27,7 +27,7 @@ function RemoveServerModal(props) {
 }
 
 RemoveServerModal.propTypes = {
-  serverName: PropTypes.string.isRequired
+  serverName: PropTypes.string.isRequired,
 };
 
 module.exports = RemoveServerModal;

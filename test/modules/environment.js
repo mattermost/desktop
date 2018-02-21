@@ -48,7 +48,7 @@ module.exports = {
   getSpectronApp() {
     return new Application({
       path: electronBinaryPath,
-      args: [`${path.join(sourceRootDir, 'src')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode']
+      args: [`${path.join(sourceRootDir, 'src')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode'],
     });
   },
 
@@ -78,5 +78,5 @@ module.exports = {
   },
   isOneOf(platforms) {
     return (platforms.indexOf(process.platform) !== -1);
-  }
+  },
 };

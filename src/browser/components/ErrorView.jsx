@@ -80,7 +80,7 @@ ErrorView.propTypes = {
   errorInfo: PropTypes.object,
   id: PropTypes.number,
   active: PropTypes.bool,
-  withTab: PropTypes.bool
+  withTab: PropTypes.bool,
 };
 
 module.exports = ErrorView;
