@@ -50,7 +50,7 @@
     "electron": "1.8.2",
     "electron-builder": "17.4.0",
     "electron-builder-squirrel-windows": "17.4.0",
-    "electron-connect": "^0.6.1",
+    "electron-connect": "^0.6.3",
     "eslint": "^4.18.0",
     "eslint-plugin-import": "^2.8.0",
     "eslint-plugin-react": "^7.7.0",

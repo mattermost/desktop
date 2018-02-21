@@ -2209,9 +2209,9 @@ electron-chromedriver@~1.8.0:
     electron-download "^4.1.0"
     extract-zip "^1.6.5"
 
-electron-connect@^0.6.1:
-  version "0.6.2"
-  resolved "https://registry.yarnpkg.com/electron-connect/-/electron-connect-0.6.2.tgz#83dc042ef26e2b6b3e1d0f44ec89ec4140646bc3"
+electron-connect@^0.6.3:
+  version "0.6.3"
+  resolved "https://registry.yarnpkg.com/electron-connect/-/electron-connect-0.6.3.tgz#2e0d361cb1c2b0b88e9bd385732882578b055b6d"
   dependencies:
     cross-spawn "^5.1.0"
     lodash "^4.17.4"

@@ -9,11 +9,11 @@
   "homepage": "https://about.mattermost.com",
   "license": "Apache-2.0",
   "dependencies": {
-    "auto-launch": "^5.0.1",
+    "auto-launch": "^5.0.5",
     "bootstrap": "^3.3.7",
     "create-react-class": "^15.6.2",
     "electron-context-menu": "^0.9.0",
-    "electron-devtools-installer": "^2.2.1",
+    "electron-devtools-installer": "^2.2.3",
     "electron-is-dev": "^0.3.0",
     "electron-squirrel-startup": "^1.0.0",
     "prop-types": "^15.6.0",
