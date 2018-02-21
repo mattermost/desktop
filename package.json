@@ -24,7 +24,6 @@
     "watch": "run-p watch:*",
     "watch:main": "node scripts/watch_main_and_preload.js",
     "watch:renderer": "webpack-dev-server --config webpack.config.renderer.js",
-    "serve": "gulp watch",
     "test": "npm-run-all test:* lint:*",
     "test:app": "npm run build && mocha --reporter mocha-circleci-reporter --recursive test/specs",
     "package:all": "cross-env NODE_ENV=production npm-run-all check-build-config package:windows package:mac package:linux",
