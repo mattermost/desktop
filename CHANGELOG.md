@@ -50,7 +50,7 @@ This release contains multiple security updates for Windows, Mac and Linux, and 
  [#514](https://github.com/mattermost/desktop/issues/514)
 
 ### Architectural Changes
- - Major version upgrade of Electron from v1.6.11 to v1.7.9. Electron is the underlying technology used to build the Desktop apps.
+ - Major version upgrade of Electron from v1.6.11 to v1.7.11. Electron is the underlying technology used to build the Desktop apps.
  [#602](https://github.com/mattermost/desktop/pull/602)
   - (Scheduled but not yet merged) The app now employs Mattermost APIv4 endpoints.
  [#611](https://github.com/mattermost/desktop/pull/611)
