@@ -11,8 +11,13 @@ from the final changelog of the release.
 Release date: TBD
 
 ### Improvements
+- [Windows 7/8] Desktop notifications now respect the duration setting of Control Panel.
+[#601](https://github.com/mattermost/desktop/issues/601)
 
 ### Architectural Changes
+- Major version upgrade of Electron to v1.7.x to v1.8.x. Electron is the underlying technology used to build the Desktop apps.
+[#711](https://github.com/mattermost/desktop/pull/711)
+<!-- Todo: Complete version number when cutting release -->
 
 ### Bug Fixes
 
