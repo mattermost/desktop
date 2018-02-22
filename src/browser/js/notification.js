@@ -27,7 +27,7 @@ class EnhancedNotification extends OriginalNotification {
 
     ipcRenderer.send('notified', {
       title,
-      options
+      options,
     });
 
     if (process.platform === 'win32' && osVersion.isLowerThanOrEqualWindows8_1()) {

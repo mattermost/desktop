@@ -92,7 +92,7 @@ LoginModal.propTypes = {
   onCancel: PropTypes.func,
   onLogin: PropTypes.func,
   request: PropTypes.object,
-  show: PropTypes.bool
+  show: PropTypes.bool,
 };
 
 module.exports = LoginModal;

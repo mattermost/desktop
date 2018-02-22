@@ -6,7 +6,7 @@ const pastDefaultPreferences = require('../../src/common/config/pastDefaultPrefe
 describe('common/settings.js', () => {
   it('should upgrade v0 config file', () => {
     const v0Config = {
-      url: 'https://example.com/team'
+      url: 'https://example.com/team',
     };
     const config = settings.upgrade(v0Config);
     config.teams.length.should.equal(1);
@@ -18,17 +18,17 @@ describe('common/settings.js', () => {
     const teams = [
       {
         name: 'test',
-        url: 'https://example.com'
-      }
+        url: 'https://example.com',
+      },
     ];
 
     const mergedTeams = settings.mergeDefaultTeams(teams);
     mergedTeams.should.deep.equal([
       {
         name: 'test',
-        url: 'https://example.com'
+        url: 'https://example.com',
       },
-      ...buildConfig.defaultTeams
+      ...buildConfig.defaultTeams,
     ]);
   });
 });

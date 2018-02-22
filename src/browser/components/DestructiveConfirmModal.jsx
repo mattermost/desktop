@@ -37,7 +37,7 @@ DestructiveConfirmationModal.propTypes = {
   acceptLabel: PropTypes.string.isRequired,
   cancelLabel: PropTypes.string.isRequired,
   onAccept: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired
+  onCancel: PropTypes.func.isRequired,
 };
 
 module.exports = DestructiveConfirmationModal;

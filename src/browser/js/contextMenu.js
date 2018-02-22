@@ -5,14 +5,14 @@ function getSuggestionsMenus(win, suggestions) {
   if (suggestions.length === 0) {
     return [{
       label: 'No Suggestions',
-      enabled: false
+      enabled: false,
     }];
   }
   return suggestions.map((s) => ({
     label: s,
     click() {
       (win.webContents || win.getWebContents()).replaceMisspelling(s);
-    }
+    },
   }));
 }
 
@@ -23,7 +23,7 @@ function getSpellCheckerLocaleMenus(onSelectSpellCheckerLocale) {
     {language: 'French', locale: 'fr-FR'},
     {language: 'German', locale: 'de-DE'},
     {language: 'Spanish', locale: 'es-ES'},
-    {language: 'Dutch', locale: 'nl-NL'}
+    {language: 'Dutch', locale: 'nl-NL'},
   ];
   return locales.map((l) => ({
     label: l.language,
@@ -33,7 +33,7 @@ function getSpellCheckerLocaleMenus(onSelectSpellCheckerLocale) {
       if (onSelectSpellCheckerLocale) {
         onSelectSpellCheckerLocale(l.locale);
       }
-    }
+    },
   }));
 }
 
@@ -41,7 +41,7 @@ module.exports = {
   setup(win, options) {
     const defaultOptions = {
       useSpellChecker: false,
-      onSelectSpellCheckerLocale: null
+      onSelectSpellCheckerLocale: null,
     };
     const actualOptions = Object.assign({}, defaultOptions, options);
     electronContextMenu({
@@ -61,7 +61,7 @@ module.exports = {
           return prependMenuItems;
         }
         return [];
-      }
+      },
     });
-  }
+  },
 };

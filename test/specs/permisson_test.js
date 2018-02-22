@@ -54,22 +54,22 @@ describe('PermissionManager', function() {
     manager.grant(ORIGIN + '_another', PERMISSION + '_another');
     JSON.parse(fs.readFileSync(permissionFile)).should.deep.equal({
       origin: {
-        permission: 'denied'
+        permission: 'denied',
       },
       origin_another: {
-        permission_another: 'granted'
-      }
+        permission_another: 'granted',
+      },
     });
   });
 
   it('should restore permissions from the file', function() {
     fs.writeFileSync(permissionFile, JSON.stringify({
       origin: {
-        permission: 'denied'
+        permission: 'denied',
       },
       origin_another: {
-        permission_another: 'granted'
-      }
+        permission_another: 'granted',
+      },
     }));
     const manager = new PermissionManager(permissionFile);
     manager.isDenied('origin', 'permission').should.be.true;

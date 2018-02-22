@@ -10,7 +10,7 @@ function HoveringURL(props) {
 }
 
 HoveringURL.propTypes = {
-  targetURL: PropTypes.string
+  targetURL: PropTypes.string,
 };
 
 module.exports = HoveringURL;

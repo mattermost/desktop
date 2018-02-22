@@ -108,10 +108,10 @@ TabBar.propTypes = {
   showAddServerButton: PropTypes.bool,
   requestingPermission: PropTypes.arrayOf(PropTypes.shape({
     origin: PropTypes.string,
-    permission: PropTypes.string
+    permission: PropTypes.string,
   })),
   onAddServer: PropTypes.func,
-  onClickPermissionDialog: PropTypes.func
+  onClickPermissionDialog: PropTypes.func,
 };
 
 module.exports = TabBar;

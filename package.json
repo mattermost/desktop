@@ -31,7 +31,8 @@
     "package:mac": "cross-env NODE_ENV=production npm-run-all check-build-config build && build --mac --publish=never",
     "package:linux": "cross-env NODE_ENV=production npm-run-all check-build-config build && build --linux --x64 --ia32 --em.name=mattermost-desktop --publish=never",
     "manipulate-windows-zip": "node scripts/manipulate_windows_zip.js",
-    "lint:js": "eslint --ext .js --ext .jsx .",
+    "lint:js": "eslint --ignore-path .gitignore --ignore-pattern node_modules --ext .js --ext .jsx .",
+    "fix:js": "eslint --ignore-path .gitignore --ignore-pattern node_modules --quiet --ext .js --ext .jsx . --fix",
     "check-build-config": "node scripts/check_build_config.js"
   },
   "devDependencies": {

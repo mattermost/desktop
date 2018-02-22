@@ -2,8 +2,8 @@ const defaultPreferences = require('./defaultPreferences');
 
 const pastDefaultPreferences = {
   0: {
-    url: ''
-  }
+    url: '',
+  },
 };
 
 pastDefaultPreferences[`${defaultPreferences.version}`] = defaultPreferences;

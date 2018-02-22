@@ -14,7 +14,7 @@ const upgradePreferences = require('./config/upgradePreferences');
 function loadDefault(spellCheckerLocale) {
   const config = JSON.parse(JSON.stringify(defaultPreferences));
   return Object.assign({}, config, {
-    spellCheckerLocale: spellCheckerLocale || defaultPreferences.spellCheckerLocale || 'en-US'
+    spellCheckerLocale: spellCheckerLocale || defaultPreferences.spellCheckerLocale || 'en-US',
   });
 }
 
@@ -73,5 +73,5 @@ module.exports = {
       newTeams.push(...JSON.parse(JSON.stringify(teams)));
     }
     return newTeams;
-  }
+  },
 };

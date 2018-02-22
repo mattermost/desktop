@@ -2,7 +2,7 @@
 
 const {
   app,
-  Menu
+  Menu,
 } = require('electron');
 const settings = require('../../common/settings');
 
@@ -21,10 +21,10 @@ function createTemplate(mainWindow, config, isDev) {
             app.dock.show();
             mainWindow.focus();
           }
-        }
+        },
       };
     }), {
-      type: 'separator'
+      type: 'separator',
     }, {
       label: process.platform === 'darwin' ? 'Preferences...' : 'Settings',
       click: () => {
@@ -35,12 +35,12 @@ function createTemplate(mainWindow, config, isDev) {
           app.dock.show();
           mainWindow.focus();
         }
-      }
+      },
     }, {
-      type: 'separator'
+      type: 'separator',
     }, {
-      role: 'quit'
-    }
+      role: 'quit',
+    },
   ];
   return template;
 }
@@ -58,5 +58,5 @@ function showOrRestore(window) {
 }
 
 module.exports = {
-  createMenu
+  createMenu,
 };

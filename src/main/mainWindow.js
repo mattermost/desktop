@@ -38,7 +38,7 @@ function createMainWindow(config, options) {
     fullscreenable: true,
     show: false,
     minWidth: minimumWindowWidth,
-    minHeight: minimumWindowHeight
+    minHeight: minimumWindowHeight,
   });
 
   const mainWindow = new BrowserWindow(windowOptions);

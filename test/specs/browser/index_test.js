@@ -13,11 +13,11 @@ describe('browser/index.html', function desc() {
     version: 1,
     teams: [{
       name: 'example',
-      url: env.mattermostURL
+      url: env.mattermostURL,
     }, {
       name: 'github',
-      url: 'https://github.com/'
-    }]
+      url: 'https://github.com/',
+    }],
   };
 
   const serverPort = 8181;
@@ -25,7 +25,7 @@ describe('browser/index.html', function desc() {
   before(() => {
     function serverCallback(req, res) {
       res.writeHead(200, {
-        'Content-Type': 'text/html'
+        'Content-Type': 'text/html',
       });
       res.end(fs.readFileSync(path.resolve(env.sourceRootDir, 'test/modules/test.html'), 'utf-8'));
     }
@@ -51,7 +51,7 @@ describe('browser/index.html', function desc() {
 
   it('should NOT show tabs when there is one team', () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
-      url: env.mattermostURL
+      url: env.mattermostURL,
     }));
     return this.app.restart().then(() => {
       return this.app.client.waitUntilWindowLoaded().
@@ -99,8 +99,8 @@ describe('browser/index.html', function desc() {
       version: 1,
       teams: [{
         name: 'error_1',
-        url: 'http://false'
-      }]
+        url: 'http://false',
+      }],
     }));
     return this.app.restart().then(() => {
       return this.app.client.waitUntilWindowLoaded().
@@ -113,8 +113,8 @@ describe('browser/index.html', function desc() {
       version: 1,
       teams: [{
         name: 'title_test',
-        url: `http://localhost:${serverPort}`
-      }]
+        url: `http://localhost:${serverPort}`,
+      }],
     }));
     return this.app.restart().then(() => {
       return this.app.client.waitUntilWindowLoaded().pause(2000);
@@ -131,11 +131,11 @@ describe('browser/index.html', function desc() {
       version: 1,
       teams: [{
         name: 'title_test_0',
-        url: `http://localhost:${serverPort}`
+        url: `http://localhost:${serverPort}`,
       }, {
         name: 'title_test_1',
-        url: `http://localhost:${serverPort}`
-      }]
+        url: `http://localhost:${serverPort}`,
+      }],
     }));
     return this.app.restart().then(() => {
       return this.app.client.waitUntilWindowLoaded().pause(500);
@@ -170,11 +170,11 @@ describe('browser/index.html', function desc() {
       version: 1,
       teams: [{
         name: 'title_test_0',
-        url: `http://localhost:${serverPort}`
+        url: `http://localhost:${serverPort}`,
       }, {
         name: 'title_test_1',
-        url: `http://localhost:${serverPort}`
-      }]
+        url: `http://localhost:${serverPort}`,
+      }],
     }));
     return this.app.restart().then(() => {
       // Note: Indices of webview are correct.

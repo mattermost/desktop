@@ -4,7 +4,7 @@ const {
   app,
   dialog,
   ipcMain,
-  shell
+  shell,
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -35,10 +35,10 @@ function initDialogEvent(mainWindow) {
       buttons: [
         'Yes',
         `Yes (Save ${protocol} as allowed)`,
-        'No'
+        'No',
       ],
       cancelId: 2,
-      noLink: true
+      noLink: true,
     }, (response) => {
       switch (response) {
       case 1: {
@@ -63,5 +63,5 @@ function initDialogEvent(mainWindow) {
 }
 
 module.exports = {
-  init
+  init,
 };

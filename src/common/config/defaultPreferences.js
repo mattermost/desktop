@@ -11,11 +11,11 @@ const defaultPreferences = {
   notifications: {
     flashWindow: 0,
     bounceIcon: false,
-    bounceIconType: 'informational'
+    bounceIconType: 'informational',
   },
   showUnreadBadge: true,
   useSpellChecker: true,
-  spellCheckerLocale: 'en-US'
+  spellCheckerLocale: 'en-US',
 };
 
 module.exports = defaultPreferences;

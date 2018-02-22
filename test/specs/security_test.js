@@ -16,17 +16,17 @@ describe('application', function desc() {
     version: 1,
     teams: [{
       name: 'example_1',
-      url: testURL
+      url: testURL,
     }, {
       name: 'example_2',
-      url: testURL
-    }]
+      url: testURL,
+    }],
   };
 
   before(() => {
     this.server = http.createServer((req, res) => {
       res.writeHead(200, {
-        'Content-Type': 'text/html'
+        'Content-Type': 'text/html',
       });
       res.end(fs.readFileSync(path.resolve(env.sourceRootDir, 'test/modules/test.html'), 'utf-8'));
     }).listen(serverPort, '127.0.0.1');
@@ -114,7 +114,7 @@ describe('application', function desc() {
     };
     return Promise.all([
       tryEval(0),
-      tryEvalInSettingsPage()
+      tryEvalInSettingsPage(),
     ]);
   });
 });
