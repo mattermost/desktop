@@ -42,7 +42,7 @@ This release contains multiple security updates for Windows, Mac and Linux, and 
  [#514](https://github.com/mattermost/desktop/issues/514)
 
 ### Architectural Changes
- - Major version upgrade of Electron from v1.6.11 to v1.7.9. Electron is the underlying technology used to build the Desktop apps.
+ - Major version upgrade of Electron from v1.6.11 to v1.7.11. Electron is the underlying technology used to build the Desktop apps.
  [#602](https://github.com/mattermost/desktop/pull/602)
  - The app now uses CSS to style the user interface. Styles are also divided to React's inline `style` and CSS.
  [#540](https://github.com/mattermost/desktop/pull/540)
