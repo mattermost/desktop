@@ -492,8 +492,8 @@ const SettingsPage = createReactClass({
           checked={this.state.showTrayIcon}
           onChange={this.handleChangeShowTrayIcon}
         >{process.platform === 'darwin' ?
-          `Show ${remote.app.getName()} icon in the menu bar` :
-          'Show icon in the notification area'}
+            `Show ${remote.app.getName()} icon in the menu bar` :
+            'Show icon in the notification area'}
           <HelpBlock>
             {'Setting takes effect after restarting the app.'}
           </HelpBlock>
@@ -567,7 +567,7 @@ const SettingsPage = createReactClass({
           )) }
         </Col>
       </Row>
-      ) : null;
+    ) : null;
 
     return (
       <div>

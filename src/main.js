@@ -1,5 +1,8 @@
 'use strict';
 
+const os = require('os');
+const path = require('path');
+
 const {
   app,
   Menu,
@@ -10,14 +13,14 @@ const {
   systemPreferences,
   session,
 } = require('electron');
-const os = require('os');
-const path = require('path');
 const isDev = require('electron-is-dev');
 const installExtension = require('electron-devtools-installer');
-const squirrelStartup = require('./main/squirrelStartup');
-const CriticalErrorHandler = require('./main/CriticalErrorHandler');
+const parseArgv = require('yargs').parse;
 
 const protocols = require('../electron-builder.json').protocols;
+
+const squirrelStartup = require('./main/squirrelStartup');
+const CriticalErrorHandler = require('./main/CriticalErrorHandler');
 
 const criticalErrorHandler = new CriticalErrorHandler();
 
@@ -54,7 +57,7 @@ let scheme = null;
 let appState = null;
 let permissionManager = null;
 
-var argv = require('yargs').parse(process.argv.slice(1));
+const argv = parseArgv(process.argv.slice(1));
 
 var hideOnStartup;
 if (argv.hidden) {
@@ -117,40 +120,40 @@ const trayImages = (() => {
       mention: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_mention.ico')),
     };
   case 'darwin':
-    {
-      const icons = {
-        light: {
-          normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIcon.png')),
-          unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconUnread.png')),
-          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconMention.png')),
-        },
-        clicked: {
-          normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIcon.png')),
-          unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconUnread.png')),
-          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconMention.png')),
-        },
-      };
-      switchMenuIconImages(icons, systemPreferences.isDarkMode());
-      return icons;
-    }
+  {
+    const icons = {
+      light: {
+        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIcon.png')),
+        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconUnread.png')),
+        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconMention.png')),
+      },
+      clicked: {
+        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIcon.png')),
+        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconUnread.png')),
+        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconMention.png')),
+      },
+    };
+    switchMenuIconImages(icons, systemPreferences.isDarkMode());
+    return icons;
+  }
   case 'linux':
-    {
-      const theme = config.trayIconTheme;
-      try {
-        return {
-          normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconTemplate.png')),
-          unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconUnreadTemplate.png')),
-          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconMentionTemplate.png')),
-        };
-      } catch (e) {
-        //Fallback for invalid theme setting
-        return {
-          normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconTemplate.png')),
-          unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconUnreadTemplate.png')),
-          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconMentionTemplate.png')),
-        };
-      }
+  {
+    const theme = config.trayIconTheme;
+    try {
+      return {
+        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconTemplate.png')),
+        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconUnreadTemplate.png')),
+        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconMentionTemplate.png')),
+      };
+    } catch (e) {
+      //Fallback for invalid theme setting
+      return {
+        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconTemplate.png')),
+        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconUnreadTemplate.png')),
+        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconMentionTemplate.png')),
+      };
     }
+  }
   default:
     return {};
   }
@@ -564,13 +567,13 @@ app.on('ready', () => {
   ipcMain.on('update-dict', () => {
     if (config.useSpellChecker) {
       spellChecker = new SpellChecker(
-      config.spellCheckerLocale,
-      path.resolve(app.getAppPath(), 'node_modules/simple-spellchecker/dict'),
-      (err) => {
-        if (err) {
-          console.error(err);
-        }
-      });
+        config.spellCheckerLocale,
+        path.resolve(app.getAppPath(), 'node_modules/simple-spellchecker/dict'),
+        (err) => {
+          if (err) {
+            console.error(err);
+          }
+        });
     }
   });
   ipcMain.on('checkspell', (event, word) => {

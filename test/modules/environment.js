@@ -1,11 +1,11 @@
 'use strict';
 
-const chai = require('chai');
-chai.should();
-
 const fs = require('fs');
 const path = require('path');
+
 const Application = require('spectron').Application;
+const chai = require('chai');
+chai.should();
 
 const sourceRootDir = path.join(__dirname, '../..');
 const electronBinaryPath = (() => {

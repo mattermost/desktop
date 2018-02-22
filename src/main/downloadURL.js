@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
+
 const electron = require('electron');
 const {app, dialog} = electron;
 

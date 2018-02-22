@@ -1,5 +1,6 @@
-const {ipcMain} = require('electron');
 const {URL} = require('url');
+
+const {ipcMain} = require('electron');
 
 function dequeueRequests(requestQueue, permissionManager, origin, permission, status) {
   switch (status) {

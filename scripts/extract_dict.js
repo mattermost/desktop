@@ -1,6 +1,7 @@
 /* eslint-disable no-process-exit */
 
 const {spawn} = require('child_process');
+
 const {path7za} = require('7zip-bin');
 
 const cwd = process.argv[2];

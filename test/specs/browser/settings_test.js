@@ -93,33 +93,33 @@ describe('browser/settings.html', function desc() {
     it('should open the corresponding tab when a server list item is clicked', () => {
       env.addClientCommands(this.app.client);
       return this.app.client.
-      loadSettingsPage().
-      click('h4=example').
-      pause(1000).
-      waitUntilWindowLoaded().
-      getUrl().then((url) => {
-        url.should.match(/\/index.html(\?.+)?$/);
-      }).
-      isVisible('#mattermostView0').then((visible) => {
-        visible.should.be.true;
-      }).
-      isVisible('#mattermostView1').then((visible) => {
-        visible.should.be.false;
-      }).
+        loadSettingsPage().
+        click('h4=example').
+        pause(100).
+        waitUntilWindowLoaded().
+        getUrl().then((url) => {
+          url.should.match(/\/index.html(\?.+)?$/);
+        }).
+        isVisible('#mattermostView0').then((visible) => {
+          visible.should.be.true;
+        }).
+        isVisible('#mattermostView1').then((visible) => {
+          visible.should.be.false;
+        }).
 
-      loadSettingsPage().
-      click('h4=github').
-      pause(1000).
-      waitUntilWindowLoaded().
-      getUrl().then((url) => {
-        url.should.match(/\/index.html(\?.+)?$/);
-      }).
-      isVisible('#mattermostView0').then((visible) => {
-        visible.should.be.false;
-      }).
-      isVisible('#mattermostView1').then((visible) => {
-        visible.should.be.true;
-      });
+        loadSettingsPage().
+        click('h4=github').
+        pause(100).
+        waitUntilWindowLoaded().
+        getUrl().then((url) => {
+          url.should.match(/\/index.html(\?.+)?$/);
+        }).
+        isVisible('#mattermostView0').then((visible) => {
+          visible.should.be.false;
+        }).
+        isVisible('#mattermostView1').then((visible) => {
+          visible.should.be.true;
+        });
     });
   });
 
@@ -129,10 +129,10 @@ describe('browser/settings.html', function desc() {
         const expected = (process.platform === 'win32' || process.platform === 'linux');
         env.addClientCommands(this.app.client);
         return this.app.client.
-        loadSettingsPage().
-        isExisting('#inputHideMenuBar').then((existing) => {
-          existing.should.equal(expected);
-        });
+          loadSettingsPage().
+          isExisting('#inputHideMenuBar').then((existing) => {
+            existing.should.equal(expected);
+          });
       });
 
       [true, false].forEach((v) => {
@@ -398,15 +398,15 @@ describe('browser/settings.html', function desc() {
     describe('Valid server name', () => {
       beforeEach(() => {
         return this.app.client.
-            setValue('#teamNameInput', 'TestTeam').
-            click('#saveNewServerModal');
+          setValue('#teamNameInput', 'TestTeam').
+          click('#saveNewServerModal');
       });
 
       it('should not be marked invalid', () => {
         return this.app.client.
-            isExisting('.has-error #teamNameInput').then((existing) => {
-              existing.should.be.false;
-            });
+          isExisting('.has-error #teamNameInput').then((existing) => {
+            existing.should.be.false;
+          });
       });
 
       it('should not be possible to click save', () => {
@@ -420,8 +420,8 @@ describe('browser/settings.html', function desc() {
     describe('Valid server url', () => {
       beforeEach(() => {
         return this.app.client.
-            setValue('#teamUrlInput', 'http://example.org').
-            click('#saveNewServerModal');
+          setValue('#teamUrlInput', 'http://example.org').
+          click('#saveNewServerModal');
       });
 
       it('should be valid', () => {
@@ -452,8 +452,8 @@ describe('browser/settings.html', function desc() {
     describe('Valid Team Settings', () => {
       beforeEach(() => {
         return this.app.client.
-            setValue('#teamUrlInput', 'http://example.org').
-            setValue('#teamNameInput', 'TestTeam');
+          setValue('#teamUrlInput', 'http://example.org').
+          setValue('#teamNameInput', 'TestTeam');
       });
 
       it('should be possible to click add', () => {

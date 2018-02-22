@@ -1,13 +1,14 @@
 'use strict';
 
+const path = require('path');
+const fs = require('fs');
+
 const {
   app,
   dialog,
   ipcMain,
   shell,
 } = require('electron');
-const path = require('path');
-const fs = require('fs');
 
 const allowedProtocolFile = path.resolve(app.getPath('userData'), 'allowedProtocols.json');
 var allowedProtocols = [];

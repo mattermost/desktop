@@ -1,3 +1,5 @@
+const url = require('url');
+
 const React = require('react');
 const PropTypes = require('prop-types');
 const createReactClass = require('create-react-class');
@@ -5,7 +7,8 @@ const ReactCSSTransitionGroup = require('react-transition-group/CSSTransitionGro
 const {Grid, Row} = require('react-bootstrap');
 
 const {ipcRenderer, remote} = require('electron');
-const url = require('url');
+
+const Utils = require('../../utils/util.js');
 
 const LoginModal = require('./LoginModal.jsx');
 const MattermostView = require('./MattermostView.jsx');
@@ -14,8 +17,6 @@ const HoveringURL = require('./HoveringURL.jsx');
 const PermissionRequestDialog = require('./PermissionRequestDialog.jsx');
 
 const NewTeamModal = require('./NewTeamModal.jsx');
-
-const Utils = require('../../utils/util.js');
 
 const MainPage = createReactClass({
   propTypes: {

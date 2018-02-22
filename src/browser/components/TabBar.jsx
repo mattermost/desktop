@@ -1,7 +1,7 @@
 const React = require('react');
-const {findDOMNode} = require('react-dom');
 const PropTypes = require('prop-types');
 const {Glyphicon, Nav, NavItem, Overlay} = require('react-bootstrap');
+
 const PermissionRequestDialog = require('./PermissionRequestDialog.jsx');
 
 class TabBar extends React.Component { // need "this"
@@ -74,7 +74,7 @@ class TabBar extends React.Component { // need "this"
         >
           <Glyphicon glyph='plus'/>
         </NavItem>
-    );
+      );
     }
     return (
       <Nav

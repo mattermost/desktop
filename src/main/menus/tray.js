@@ -4,6 +4,7 @@ const {
   app,
   Menu,
 } = require('electron');
+
 const settings = require('../../common/settings');
 
 function createTemplate(mainWindow, config, isDev) {

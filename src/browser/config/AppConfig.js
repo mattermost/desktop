@@ -1,5 +1,6 @@
-const settings = require('../../common/settings');
 const {remote} = require('electron');
+
+const settings = require('../../common/settings');
 
 class AppConfig {
   constructor(file) {

@@ -3,6 +3,7 @@
 const electron = require('electron');
 const ipc = electron.ipcRenderer;
 const webFrame = electron.webFrame;
+
 const EnhancedNotification = require('../js/notification');
 
 const UNREAD_COUNT_INTERVAL = 1000;

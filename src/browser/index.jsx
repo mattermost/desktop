@@ -2,22 +2,23 @@
 
 require('./css/index.css');
 
-window.eval = global.eval = () => {
+window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
   throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
 };
+
+const url = require('url');
 
 const React = require('react');
 const ReactDOM = require('react-dom');
 const {remote, ipcRenderer} = require('electron');
-const MainPage = require('./components/MainPage.jsx');
 
-const AppConfig = require('./config/AppConfig.js');
 const buildConfig = require('../common/config/buildConfig');
 const settings = require('../common/settings');
-const url = require('url');
-
-const badge = require('./js/badge');
 const utils = require('../utils/util');
+
+const MainPage = require('./components/MainPage.jsx');
+const AppConfig = require('./config/AppConfig.js');
+const badge = require('./js/badge');
 
 const teams = settings.mergeDefaultTeams(AppConfig.data.teams);
 

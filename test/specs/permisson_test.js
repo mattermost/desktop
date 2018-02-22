@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+
 const env = require('../modules/environment');
 const PermissionManager = require('../../src/main/PermissionManager');
 

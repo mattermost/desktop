@@ -1,6 +1,7 @@
-const {app, BrowserWindow} = require('electron');
 const fs = require('fs');
 const path = require('path');
+
+const {app, BrowserWindow} = require('electron');
 
 function saveWindowState(file, window) {
   var windowState = window.getBounds();
