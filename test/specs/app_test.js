@@ -83,7 +83,9 @@ describe('application', function desc() {
       url: env.mattermostURL,
     }));
     return this.app.restart().then(() => {
-      return this.app.client.waitUntilWindowLoaded().getUrl();
+      return this.app.client.waitUntilWindowLoaded();
+    }).then(() => {
+      return this.app.client.getUrl();
     }).then((url) => {
       url.should.match(/\/index.html$/);
     });
@@ -95,7 +97,9 @@ describe('application', function desc() {
       url: env.mattermostURL,
     }));
     return this.app.restart().then(() => {
-      return this.app.client.waitUntilWindowLoaded().getUrl();
+      return this.app.client.waitUntilWindowLoaded();
+    }).then(() => {
+      return this.app.client.getUrl();
     }).then((url) => {
       url.should.match(/\/index.html$/);
     }).then(() => {
