@@ -16,6 +16,25 @@ const ErrorView = require('./ErrorView.jsx');
 
 const preloadJS = `file://${remote.app.getAppPath()}/browser/webview/mattermost_bundle.js`;
 
+function extractFileURL(message) {
+  const matched = message.match(/Not allowed to load local resource:\s*(.+)/);
+  if (matched) {
+    return matched[1];
+  }
+  return '';
+}
+
+function isNetworkDrive(fileURL) {
+  const u = url.parse(fileURL);
+  if (u.protocol === 'file:' && u.host) {
+    // Disallow localhost, 127.0.0.1, ::1.
+    if (!u.host.match(/^localhost$|^127\.0\.0\.1$|^\[::1\]$/)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 const MattermostView = createReactClass({
   propTypes: {
     name: PropTypes.string,
@@ -157,9 +176,19 @@ const MattermostView = createReactClass({
       case 1:
         console.warn(message);
         break;
-      case 2:
-        console.error(message);
+      case 2: {
+        const fileURL = extractFileURL(e.message);
+        if (isNetworkDrive(fileURL)) {
+          // Network drive: Should be allowed.
+          if (!shell.openExternal(decodeURI(fileURL))) {
+            console.log(`[${this.props.name}] shell.openExternal failed: ${fileURL}`);
+          }
+        } else {
+          // Local drive such as 'C:\Windows': Should not be allowed.
+          console.error(message);
+        }
         break;
+      }
       default:
         console.log(message);
         break;
