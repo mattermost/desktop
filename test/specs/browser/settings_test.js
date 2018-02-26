@@ -195,6 +195,27 @@ describe('browser/settings.html', function desc() {
           });
       });
 
+      describe('Save tray icon setting on mac', () => {
+        env.shouldTest(it, env.isOneOf(['darwin', 'linux']))('should be saved when it\'s selected', () => {
+          env.addClientCommands(this.app.client);
+          return this.app.client.
+            loadSettingsPage().
+            click('#inputShowTrayIcon').
+            waitForAppOptionsAutoSaved().
+            then(() => {
+              const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+              config0.showTrayIcon.should.true;
+              return this.app.client;
+            }).
+            click('#inputShowTrayIcon').
+            waitForAppOptionsAutoSaved().
+            then(() => {
+              const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+              config0.showTrayIcon.should.false;
+            });
+        });
+      });
+
       describe('Save tray icon theme on linux', () => {
         env.shouldTest(it, process.platform === 'linux')('should be saved when it\'s selected', () => {
           env.addClientCommands(this.app.client);
