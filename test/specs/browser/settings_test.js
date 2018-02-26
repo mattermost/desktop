@@ -95,7 +95,7 @@ describe('browser/settings.html', function desc() {
       return this.app.client.
         loadSettingsPage().
         click('h4=example').
-        pause(100).
+        pause(1000).
         waitUntilWindowLoaded().
         getUrl().then((url) => {
           url.should.match(/\/index.html(\?.+)?$/);
@@ -109,7 +109,7 @@ describe('browser/settings.html', function desc() {
 
         loadSettingsPage().
         click('h4=github').
-        pause(100).
+        pause(1000).
         waitUntilWindowLoaded().
         getUrl().then((url) => {
           url.should.match(/\/index.html(\?.+)?$/);

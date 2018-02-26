@@ -18,15 +18,15 @@ asap@~2.0.3:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/asap/-/asap-2.0.6.tgz#e50347611d7e690943208bbdafebcbc2fb866d46"
 
-auto-launch@^5.0.1:
-  version "5.0.1"
-  resolved "https://registry.yarnpkg.com/auto-launch/-/auto-launch-5.0.1.tgz#2015a8a30384abe0e7f98cbdca8145cf154753ae"
+auto-launch@^5.0.5:
+  version "5.0.5"
+  resolved "https://registry.yarnpkg.com/auto-launch/-/auto-launch-5.0.5.tgz#d14bd002b1ef642f85e991a6195ff5300c8ad3c0"
   dependencies:
     applescript "^1.0.0"
     mkdirp "^0.5.1"
     path-is-absolute "^1.0.0"
     untildify "^3.0.2"
-    winreg "1.2.2"
+    winreg "1.2.4"
 
 babel-runtime@^6.11.6:
   version "6.26.0"
@@ -107,17 +107,9 @@ core-js@^2.4.0:
   version "2.5.1"
   resolved "https://registry.yarnpkg.com/core-js/-/core-js-2.5.1.tgz#ae6874dc66937789b80754ff5428df66819ca50b"
 
-create-react-class@^15.6.0:
-  version "15.6.0"
-  resolved "https://registry.yarnpkg.com/create-react-class/-/create-react-class-15.6.0.tgz#ab448497c26566e1e29413e883207d57cfe7bed4"
-  dependencies:
-    fbjs "^0.8.9"
-    loose-envify "^1.3.1"
-    object-assign "^4.1.1"
-
-create-react-class@^15.6.2:
-  version "15.6.2"
-  resolved "https://registry.yarnpkg.com/create-react-class/-/create-react-class-15.6.2.tgz#cf1ed15f12aad7f14ef5f2dfe05e6c42f91ef02a"
+create-react-class@^15.6.3:
+  version "15.6.3"
+  resolved "https://registry.yarnpkg.com/create-react-class/-/create-react-class-15.6.3.tgz#2d73237fb3f970ae6ebe011a9e66f46dbca80036"
   dependencies:
     fbjs "^0.8.9"
     loose-envify "^1.3.1"
@@ -152,9 +144,9 @@ electron-context-menu@^0.9.0:
     electron-dl "^1.2.0"
     electron-is-dev "^0.1.1"
 
-electron-devtools-installer@^2.2.1:
-  version "2.2.1"
-  resolved "https://registry.yarnpkg.com/electron-devtools-installer/-/electron-devtools-installer-2.2.1.tgz#0beb73ccbf65cbc4d09e706cebda638f839b8c55"
+electron-devtools-installer@^2.2.3:
+  version "2.2.3"
+  resolved "https://registry.yarnpkg.com/electron-devtools-installer/-/electron-devtools-installer-2.2.3.tgz#58b9a4ec507377bc46e091cd43714188e0c369be"
   dependencies:
     "7zip" "0.0.6"
     cross-unzip "0.0.2"
@@ -399,14 +391,14 @@ prop-types-extra@^1.0.1:
   dependencies:
     warning "^3.0.0"
 
-prop-types@^15.5.10, prop-types@^15.5.6:
+prop-types@^15.5.10:
   version "15.5.10"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.5.10.tgz#2797dfc3126182e3a95e3dfbb2e893ddd7456154"
   dependencies:
     fbjs "^0.8.9"
     loose-envify "^1.3.1"
 
-prop-types@^15.6.0:
+prop-types@^15.5.8, prop-types@^15.6.0:
   version "15.6.0"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.6.0.tgz#ceaf083022fc46b4a35f69e13ef75aed0d639856"
   dependencies:
@@ -418,9 +410,9 @@ pupa@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/pupa/-/pupa-1.0.0.tgz#9a9568a5af7e657b8462a6e9d5328743560ceff6"
 
-react-bootstrap@~0.31.5:
-  version "0.31.5"
-  resolved "https://registry.yarnpkg.com/react-bootstrap/-/react-bootstrap-0.31.5.tgz#57040fa8b1274e1e074803c21a1b895fdabea05a"
+react-bootstrap@~0.32.1:
+  version "0.32.1"
+  resolved "https://registry.yarnpkg.com/react-bootstrap/-/react-bootstrap-0.32.1.tgz#60624c1b48a39d773ef6cce6421a4f33ecc166bb"
   dependencies:
     babel-runtime "^6.11.6"
     classnames "^2.2.5"
@@ -429,48 +421,57 @@ react-bootstrap@~0.31.5:
     keycode "^2.1.2"
     prop-types "^15.5.10"
     prop-types-extra "^1.0.1"
-    react-overlays "^0.7.4"
+    react-overlays "^0.8.0"
+    react-prop-types "^0.4.0"
+    react-transition-group "^2.0.0"
     uncontrollable "^4.1.0"
     warning "^3.0.0"
 
-react-dom@^15.6.2:
-  version "15.6.2"
-  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-15.6.2.tgz#41cfadf693b757faf2708443a1d1fd5a02bef730"
+react-dom@^16.2.0:
+  version "16.2.0"
+  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-16.2.0.tgz#69003178601c0ca19b709b33a83369fe6124c044"
   dependencies:
-    fbjs "^0.8.9"
+    fbjs "^0.8.16"
     loose-envify "^1.1.0"
-    object-assign "^4.1.0"
-    prop-types "^15.5.10"
+    object-assign "^4.1.1"
+    prop-types "^15.6.0"
 
-react-overlays@^0.7.4:
-  version "0.7.4"
-  resolved "https://registry.yarnpkg.com/react-overlays/-/react-overlays-0.7.4.tgz#ef2ec652c3444ab8aa014262b18f662068e56d5c"
+react-overlays@^0.8.0:
+  version "0.8.3"
+  resolved "https://registry.yarnpkg.com/react-overlays/-/react-overlays-0.8.3.tgz#fad65eea5b24301cca192a169f5dddb0b20d3ac5"
   dependencies:
     classnames "^2.2.5"
     dom-helpers "^3.2.1"
     prop-types "^15.5.10"
     prop-types-extra "^1.0.1"
+    react-transition-group "^2.2.0"
     warning "^3.0.0"
 
-react-transition-group@^1.2.1:
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/react-transition-group/-/react-transition-group-1.2.1.tgz#e11f72b257f921b213229a774df46612346c7ca6"
+react-prop-types@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/react-prop-types/-/react-prop-types-0.4.0.tgz#f99b0bfb4006929c9af2051e7c1414a5c75b93d0"
+  dependencies:
+    warning "^3.0.0"
+
+react-transition-group@^2.0.0, react-transition-group@^2.2.0, react-transition-group@^2.2.1:
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/react-transition-group/-/react-transition-group-2.2.1.tgz#e9fb677b79e6455fd391b03823afe84849df4a10"
   dependencies:
     chain-function "^1.0.0"
+    classnames "^2.2.5"
     dom-helpers "^3.2.0"
     loose-envify "^1.3.1"
-    prop-types "^15.5.6"
+    prop-types "^15.5.8"
     warning "^3.0.0"
 
-react@^15.6.2:
-  version "15.6.2"
-  resolved "https://registry.yarnpkg.com/react/-/react-15.6.2.tgz#dba0434ab439cfe82f108f0f511663908179aa72"
+react@^16.2.0:
+  version "16.2.0"
+  resolved "https://registry.yarnpkg.com/react/-/react-16.2.0.tgz#a31bd2dab89bff65d42134fa187f24d054c273ba"
   dependencies:
-    create-react-class "^15.6.0"
-    fbjs "^0.8.9"
+    fbjs "^0.8.16"
     loose-envify "^1.1.0"
-    object-assign "^4.1.0"
-    prop-types "^15.5.10"
+    object-assign "^4.1.1"
+    prop-types "^15.6.0"
 
 regenerator-runtime@^0.11.0:
   version "0.11.0"
@@ -581,9 +582,9 @@ window-size@^0.1.4:
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/window-size/-/window-size-0.1.4.tgz#f8e1aa1ee5a53ec5bf151ffa09742a6ad7697876"
 
-winreg@1.2.2:
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/winreg/-/winreg-1.2.2.tgz#8509afa3b71c5bbd110a6d7c6247ec67736c598f"
+winreg@1.2.4:
+  version "1.2.4"
+  resolved "https://registry.yarnpkg.com/winreg/-/winreg-1.2.4.tgz#ba065629b7a925130e15779108cf540990e98d1b"
 
 wrap-ansi@^2.0.0:
   version "2.1.0"

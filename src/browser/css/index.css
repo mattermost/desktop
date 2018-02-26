@@ -9,11 +9,11 @@
   transition: opacity 300ms ease-in-out;
 }
 
-.hovering-leave {
+.hovering-exit {
   opacity: 1;
 }
 
-.hovering-leave.hovering-leave-active {
+.hovering-exit.hovering-exit-active {
   opacity: 0.01;
   transition: opacity 500ms ease-in-out;
 }
