@@ -11,6 +11,8 @@ from the final changelog of the release.
 Release date: TBD
 
 ### Improvements
+
+#### Windows
 - [Windows 7/8] Desktop notifications now respect the duration setting of Control Panel.
 [#601](https://github.com/mattermost/desktop/issues/601)
 
@@ -20,6 +22,10 @@ Release date: TBD
 <!-- Todo: Complete version number when cutting release -->
 
 ### Bug Fixes
+
+#### Windows
+- Fixed `file://` protocol not working. But localhost URL will not continue to work.
+[#579](https://github.com/mattermost/desktop/issues/579)
 
 ----
 
