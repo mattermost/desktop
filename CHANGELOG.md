@@ -27,6 +27,14 @@ Release date: TBD
 - Fixed `file://` protocol not working. But localhost URL will not continue to work.
 [#579](https://github.com/mattermost/desktop/issues/579)
 
+#### Mac
+- Fixed an issue where app crashed after toggling "Show Mattermost icon in menu bar" setting.
+[#706](https://github.com/mattermost/desktop/issues/706)
+
+#### Linux
+- Fixed an issue where app crashed after toggling "Show icon in the notification area" setting.
+[#706](https://github.com/mattermost/desktop/issues/706)
+
 ----
 
 ## Release v4.0.0
