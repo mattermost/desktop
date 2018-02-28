@@ -550,15 +550,17 @@ app.on('ready', () => {
     // set up context menu for tray icon
     if (shouldShowTrayIcon()) {
       const tMenu = trayMenu.createMenu(mainWindow, configData, global.isDev);
-      trayIcon.setContextMenu(tMenu);
       if (process.platform === 'darwin' || process.platform === 'linux') {
         // store the information, if the tray was initialized, for checking in the settings, if the application
         // was restarted after setting "Show icon on menu bar"
         if (trayIcon) {
+          trayIcon.setContextMenu(tMenu);
           mainWindow.trayWasVisible = true;
         } else {
           mainWindow.trayWasVisible = false;
         }
+      } else {
+        trayIcon.setContextMenu(tMenu);
       }
     }
   });

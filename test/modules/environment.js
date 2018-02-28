@@ -70,6 +70,13 @@ module.exports = {
         return requireResult.value;
       });
     });
+    client.addCommand('waitForAppOptionsAutoSaved', function async() {
+      const ID_APP_OPTIONS_SAVE_INDICATOR = '#appOptionsSaveIndicator';
+      const TIMEOUT = 5000;
+      return this.
+        waitForVisible(ID_APP_OPTIONS_SAVE_INDICATOR, TIMEOUT).
+        waitForVisible(ID_APP_OPTIONS_SAVE_INDICATOR, TIMEOUT, true);
+    });
   },
 
   // execute the test only when `condition` is true
