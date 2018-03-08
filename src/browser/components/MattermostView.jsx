@@ -104,7 +104,7 @@ const MattermostView = createReactClass({
           ipcRenderer.send('download-url', e.url);
         } else {
           // New window should disable nodeIntergration.
-          window.open(e.url, 'Mattermost', 'nodeIntegration=no, show=yes');
+          window.open(e.url, remote.app.getName(), 'nodeIntegration=no, show=yes');
         }
       } else {
         // if the link is external, use default browser.
