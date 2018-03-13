@@ -14,99 +14,83 @@ describe('application', function desc() {
     return this.app.start();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     if (this.app && this.app.isRunning()) {
-      return this.app.stop();
+      await this.app.stop();
     }
-    return true;
   });
 
-  it('should show a window', () => {
-    return this.app.client.
-      waitUntilWindowLoaded().
-      getWindowCount().then((count) => {
-        count.should.equal(1);
-      }).
-      browserWindow.isDevToolsOpened().then((opened) => {
-        opened.should.be.false;
-      }).
-      browserWindow.isVisible().then((visible) => {
-        visible.should.be.true;
-      });
+  it('should show a window', async () => {
+    await this.app.client.waitUntilWindowLoaded();
+    const count = await this.app.client.getWindowCount();
+    count.should.equal(1);
+
+    const opened = await this.app.browserWindow.isDevToolsOpened();
+    opened.should.be.false;
+
+    const visible = await this.app.browserWindow.isVisible();
+    visible.should.be.true;
   });
 
-  it.skip('should restore window bounds', () => {
+  it.skip('should restore window bounds', async () => {
     // bounds seems to be incorrectly calculated in some environments
     // - Windows 10: OK
     // - CircleCI: NG
     const expectedBounds = {x: 100, y: 200, width: 300, height: 400};
     fs.writeFileSync(env.boundsInfoPath, JSON.stringify(expectedBounds));
-    return this.app.restart().then(() => {
-      return this.app.browserWindow.getBounds();
-    }).then((bounds) => {
-      bounds.should.deep.equal(expectedBounds);
-    });
+    await this.app.restart();
+    const bounds = await this.app.browserWindow.getBounds();
+    bounds.should.deep.equal(expectedBounds);
   });
 
-  it('should NOT restore window bounds if the origin is located on outside of viewarea', () => {
+  it('should NOT restore window bounds if the origin is located on outside of viewarea', async () => {
     // bounds seems to be incorrectly calculated in some environments (e.g. CircleCI)
     // - Windows 10: OK
     // - CircleCI: NG
     fs.writeFileSync(env.boundsInfoPath, JSON.stringify({x: -100000, y: 200, width: 300, height: 400}));
-    return this.app.restart().then(() => {
-      return this.app.browserWindow.getBounds();
-    }).then((bounds) => {
-      bounds.x.should.satisfy((x) => (x > -10000));
-    }).then(() => {
-      fs.writeFileSync(env.boundsInfoPath, JSON.stringify({x: 100, y: 200000, width: 300, height: 400}));
-      return this.app.restart();
-    }).then(() => {
-      return this.app.browserWindow.getBounds();
-    }).then((bounds) => {
-      bounds.y.should.satisfy((y) => (y < 10000));
-    });
+    await this.app.restart();
+    let bounds = await this.app.browserWindow.getBounds();
+    bounds.x.should.satisfy((x) => (x > -10000));
+
+    fs.writeFileSync(env.boundsInfoPath, JSON.stringify({x: 100, y: 200000, width: 300, height: 400}));
+    await this.app.restart();
+    bounds = await this.app.browserWindow.getBounds();
+    bounds.y.should.satisfy((y) => (y < 10000));
   });
 
-  it('should show settings.html when there is no config file', () => {
-    return this.app.client.
-      waitUntilWindowLoaded().
-      getUrl().then((url) => {
-        url.should.match(/\/settings.html$/);
-      }).
-      isExisting('#newServerModal').then((existing) => {
-        existing.should.equal(true);
-      });
+  it('should show settings.html when there is no config file', async () => {
+    await this.app.client.waitUntilWindowLoaded();
+    const url = await this.app.client.getUrl();
+    url.should.match(/\/settings.html$/);
+
+    const existing = await this.app.client.isExisting('#newServerModal');
+    existing.should.equal(true);
   });
 
-  it('should show index.html when there is config file', () => {
+  it('should show index.html when there is config file', async () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       url: env.mattermostURL,
     }));
-    return this.app.restart().then(() => {
-      return this.app.client.waitUntilWindowLoaded();
-    }).then(() => {
-      return this.app.client.getUrl();
-    }).then((url) => {
-      url.should.match(/\/index.html$/);
-    });
+    await this.app.restart();
+    await this.app.client.waitUntilWindowLoaded();
+    const url = await this.app.client.getUrl();
+    url.should.match(/\/index.html$/);
   });
 
-  it('should upgrade v0 config file', () => {
+  it('should upgrade v0 config file', async () => {
     const settings = require('../../src/common/settings');
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       url: env.mattermostURL,
     }));
-    return this.app.restart().then(() => {
-      return this.app.client.waitUntilWindowLoaded();
-    }).then(() => {
-      return this.app.client.getUrl();
-    }).then((url) => {
-      url.should.match(/\/index.html$/);
-    }).then(() => {
-      var str = fs.readFileSync(env.configFilePath, 'utf8');
-      var config = JSON.parse(str);
-      config.version.should.equal(settings.version);
-    });
+    await this.app.restart();
+    await this.app.client.waitUntilWindowLoaded();
+
+    const url = await this.app.client.getUrl();
+    url.should.match(/\/index.html$/);
+
+    const str = fs.readFileSync(env.configFilePath, 'utf8');
+    const config = JSON.parse(str);
+    config.version.should.equal(settings.version);
   });
 
   it.skip('should be stopped when the app instance already exists', (done) => {
