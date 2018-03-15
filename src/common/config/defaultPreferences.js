@@ -15,7 +15,6 @@ const defaultPreferences = {
   },
   showUnreadBadge: true,
   useSpellChecker: true,
-  spellCheckerLocale: 'en-US',
 };
 
 module.exports = defaultPreferences;

@@ -3,6 +3,28 @@ const path = require('path');
 const SpellChecker = require('../../src/main/SpellChecker');
 
 describe('main/Spellchecker.js', function() {
+  describe('getSpellCheckerLocale()', () => {
+    it('should return recognized locale', () => {
+      SpellChecker.getSpellCheckerLocale('en').should.equal('en-US');
+      SpellChecker.getSpellCheckerLocale('en-US').should.equal('en-US');
+
+      SpellChecker.getSpellCheckerLocale('fr').should.equal('fr-FR');
+      SpellChecker.getSpellCheckerLocale('fr-FR').should.equal('fr-FR');
+
+      SpellChecker.getSpellCheckerLocale('de').should.equal('de-DE');
+      SpellChecker.getSpellCheckerLocale('de-DE').should.equal('de-DE');
+
+      SpellChecker.getSpellCheckerLocale('es').should.equal('es-ES');
+      SpellChecker.getSpellCheckerLocale('es-ES').should.equal('es-ES');
+
+      SpellChecker.getSpellCheckerLocale('nl').should.equal('nl-NL');
+      SpellChecker.getSpellCheckerLocale('nl-NL').should.equal('nl-NL');
+
+      SpellChecker.getSpellCheckerLocale('ja').should.equal('en-US');
+      SpellChecker.getSpellCheckerLocale('ja-JP').should.equal('en-US');
+    });
+  });
+
   describe('en-US', function() {
     let spellchecker = null;
 

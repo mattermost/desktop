@@ -79,8 +79,7 @@ try {
     settings.writeFileSync(configFile, config);
   }
 } catch (e) {
-  const spellCheckerLocale = SpellChecker.getSpellCheckerLocale(app.getLocale());
-  config = settings.loadDefault(null, spellCheckerLocale);
+  config = settings.loadDefault();
   console.log('Failed to read or upgrade config.json', e);
   if (!config.teams.length && config.defaultTeam) {
     config.teams.push(config.defaultTeam);
@@ -384,6 +383,12 @@ app.on('will-finish-launching', () => {
 app.on('ready', () => {
   if (global.willAppQuit) {
     return;
+  }
+
+  if (!config.spellCheckerLocale) {
+    config.spellCheckerLocale = SpellChecker.getSpellCheckerLocale(app.getLocale());
+    const configFile = app.getPath('userData') + '/config.json';
+    settings.writeFileSync(configFile, config);
   }
 
   const appStateJson = path.join(app.getPath('userData'), 'app-state.json');
