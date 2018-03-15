@@ -23,6 +23,10 @@ Release date: TBD
 
 ### Bug Fixes
 
+#### All Platforms
+- Fixed correct spellchecker language not used for non en-US locales on initial installation.
+[#632](https://github.com/mattermost/desktop/issues/632)
+
 #### Windows
 - Fixed `file://` protocol not working. But localhost URL will not continue to work.
 [#579](https://github.com/mattermost/desktop/issues/579)
