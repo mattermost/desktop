@@ -333,7 +333,7 @@ describe('browser/settings.html', function desc() {
     it('should disappear on click Close', async () => {
       await this.app.client.
         click('.modal-dialog button.close').
-        pause(500);
+        waitForVisible(modalTitleSelector, 5000, true);
       const existing = await this.app.client.isExisting(modalTitleSelector);
       existing.should.be.false;
     });
@@ -341,7 +341,7 @@ describe('browser/settings.html', function desc() {
     it('should disappear on click background', async () => {
       await this.app.client.
         click('body').
-        pause(500);
+        waitForVisible(modalTitleSelector, 5000, true);
       const existing = await this.app.client.isExisting(modalTitleSelector);
       existing.should.be.false;
     });
