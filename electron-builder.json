@@ -36,7 +36,9 @@
       },
       {
         "from": "resources",
-        "filter": "icon.png"
+        "filter": [
+           "icon.png"
+         ]
       },
       {
         "from": "resources/linux",
@@ -58,6 +60,12 @@
           "LICENSE.txt",
           "NOTICE.txt"
         ]
+      },
+      {
+         "from": "resources",
+         "filter": [
+            "ding.mp3"
+         ]
       }
     ]
   },
