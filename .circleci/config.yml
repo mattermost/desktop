@@ -38,6 +38,7 @@ jobs:
       - image: electronuserland/builder:wine-chrome
     steps:
       - checkout
+      - run: apt-get update && apt-get -y install --no-install-recommends libgconf-2-4
       - run: yarn
       # https://github.com/SeleniumHQ/docker-selenium/issues/222#issuecomment-221307583
       - run: DBUS_SESSION_BUS_ADDRESS=/dev/null xvfb-run npm test
