@@ -136,6 +136,7 @@ const SettingsPage = createReactClass({
       showUnreadBadge: this.state.showUnreadBadge,
       useSpellChecker: this.state.useSpellChecker,
       spellCheckerLocale: this.state.spellCheckerLocale,
+      enableHardwareAcceleration: this.state.enableHardwareAcceleration,
     };
 
     settings.writeFile(this.props.configFile, config, (err) => {
@@ -255,6 +256,13 @@ const SettingsPage = createReactClass({
   handleChangeUseSpellChecker() {
     this.setState({
       useSpellChecker: !this.refs.useSpellChecker.props.checked,
+    });
+    setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
+  },
+
+  handleChangeEnableHardwareAcceleration() {
+    this.setState({
+      enableHardwareAcceleration: !this.refs.enableHardwareAcceleration.props.checked,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   },
@@ -548,6 +556,23 @@ const SettingsPage = createReactClass({
           </HelpBlock>
         </Checkbox>);
     }
+
+    options.push(
+      <Checkbox
+        key='inputEnableHardwareAcceleration'
+        id='inputEnableHardwareAcceleration'
+        ref='enableHardwareAcceleration'
+        checked={this.state.enableHardwareAcceleration}
+        onChange={this.handleChangeEnableHardwareAcceleration}
+      >
+        {'Use GPU hardware acceleration'}
+        <HelpBlock>
+          {'Disable this setting if you see a blank page after logging in to Mattermost.'}
+          {' If enabled, the Mattermost UI is rendered more efficiently but can cause stability issues for some systems.'}
+          {' Setting takes affect after restarting the app.'}
+        </HelpBlock>
+      </Checkbox>
+    );
 
     var optionsRow = (options.length > 0) ? (
       <Row>

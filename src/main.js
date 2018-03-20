@@ -88,6 +88,10 @@ try {
     settings.writeFileSync(configFile, config);
   }
 }
+if (config.enableHardwareAcceleration === false) {
+  app.disableHardwareAcceleration();
+}
+
 ipcMain.on('update-config', () => {
   const configFile = app.getPath('userData') + '/config.json';
   config = settings.readFileSync(configFile);
