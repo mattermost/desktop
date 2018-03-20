@@ -272,7 +272,6 @@ describe('browser/settings.html', function desc() {
         const existing = await this.app.client.isExisting('#inputSpellChecker');
         existing.should.equal(true);
 
-        await this.app.client.scroll('#inputSpellChecker');
         const selected = await this.app.client.isSelected('#inputSpellChecker');
         selected.should.equal(true);
 
