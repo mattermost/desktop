@@ -272,13 +272,36 @@ describe('browser/settings.html', function desc() {
         const existing = await this.app.client.isExisting('#inputSpellChecker');
         existing.should.equal(true);
 
-        await this.app.client.scroll('#inputSpellChecker');
         const selected = await this.app.client.isSelected('#inputSpellChecker');
         selected.should.equal(true);
 
         await this.app.client.click('#inputSpellChecker').pause(700);
         const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
         config1.useSpellChecker.should.equal(false);
+      });
+    });
+
+    describe('Enable GPU hardware acceleration', () => {
+      it('should save selected option', async () => {
+        const ID_INPUT_ENABLE_HARDWARE_ACCELERATION = '#inputEnableHardwareAcceleration';
+        env.addClientCommands(this.app.client);
+        await this.app.client.
+          loadSettingsPage().
+          waitForExist(ID_INPUT_ENABLE_HARDWARE_ACCELERATION, 5000);
+        const selected = await this.app.client.isSelected(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
+        selected.should.equal(true);
+
+        await this.app.client.click(ID_INPUT_ENABLE_HARDWARE_ACCELERATION).
+          waitForVisible('#appOptionsSaveIndicator', 5000).
+          waitForVisible('#appOptionsSaveIndicator', 5000, true); // at least 2500 ms to disappear
+        const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+        config0.enableHardwareAcceleration.should.equal(false);
+
+        await this.app.client.click(ID_INPUT_ENABLE_HARDWARE_ACCELERATION).
+          waitForVisible('#appOptionsSaveIndicator', 5000).
+          waitForVisible('#appOptionsSaveIndicator', 5000, true); // at least 2500 ms to disappear
+        const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+        config1.enableHardwareAcceleration.should.equal(true);
       });
     });
   });

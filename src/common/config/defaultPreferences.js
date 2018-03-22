@@ -15,6 +15,7 @@ const defaultPreferences = {
   },
   showUnreadBadge: true,
   useSpellChecker: true,
+  enableHardwareAcceleration: true,
 };
 
 module.exports = defaultPreferences;
