@@ -12,6 +12,10 @@ Release date: TBD
 
 ### Improvements
 
+#### All Platforms
+- Added "Enable GPU hardware acceleration" option.
+[#734](https://github.com/mattermost/desktop/pull/734)
+
 #### Windows
 - [Windows 7/8] Desktop notifications now respect the duration setting of Control Panel.
 [#601](https://github.com/mattermost/desktop/issues/601)
