@@ -1,5 +1,16 @@
 # Mattermost Desktop Application Changelog
 
+## Release v4.0.1
+
+Release date: TBD
+
+This release contains multiple security updates for Windows, Mac and Linux, and it is highly recommended that users upgrade to this version.
+
+### Architectural Changes
+ - Minor version upgrade of Electron from v1.7.11 to v1.7.13. Electron is the underlying technology used to build the Desktop apps.
+
+----
+
 ## Release v4.0.0
 
 Release date: January 23, 2018
