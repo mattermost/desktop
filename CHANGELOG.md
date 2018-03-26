@@ -30,6 +30,8 @@ Release date: TBD
 #### All Platforms
 - Fixed correct spellchecker language not used for non en-US locales on initial installation.
 [#632](https://github.com/mattermost/desktop/issues/632)
+- Fixed an issue where error page appears when U2F device is used for multi-factor authentication through single sign-on.
+[#708](https://github.com/mattermost/desktop/issues/708)
 
 #### Windows
 - Fixed `file://` protocol not working. But localhost URL will not continue to work.
