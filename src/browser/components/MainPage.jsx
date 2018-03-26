@@ -372,6 +372,7 @@ const MainPage = createReactClass({
             >
               <HoveringURL
                 key='hoveringURL'
+                currentTeamURL={this.props.teams[this.state.key].url}
                 targetURL={this.state.targetURL}
               />
             </CSSTransition>
