@@ -16,6 +16,9 @@ const ErrorView = require('./ErrorView.jsx');
 
 const preloadJS = `file://${remote.app.getAppPath()}/browser/webview/mattermost_bundle.js`;
 
+const ERR_NOT_IMPLEMENTED = -11;
+const U2F_EXTENSION_URL = 'chrome-extension://kmendfapggjehodndflmmgagdbamhnfd/u2f-comms.html';
+
 function extractFileURL(message) {
   const matched = message.match(/Not allowed to load local resource:\s*(.+)/);
   if (matched) {
@@ -70,6 +73,11 @@ const MattermostView = createReactClass({
     webview.addEventListener('did-fail-load', (e) => {
       console.log(self.props.name, 'webview did-fail-load', e);
       if (e.errorCode === -3) { // An operation was aborted (due to user action).
+        return;
+      }
+      if (e.errorCode === ERR_NOT_IMPLEMENTED && e.validatedURL === U2F_EXTENSION_URL) {
+        // U2F device is not supported, but the guest page should fall back to PIN code in 2FA.
+        // https://github.com/mattermost/desktop/issues/708
         return;
       }
 
