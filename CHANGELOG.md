@@ -2,12 +2,18 @@
 
 ## Release v4.0.1
 
-Release date: TBD
+Release date: March 28, 2018
 
 This release contains multiple security updates for Windows, Mac and Linux, and it is highly recommended that users upgrade to this version.
 
 ### Architectural Changes
  - Minor version upgrade of Electron from v1.7.11 to v1.7.13. Electron is the underlying technology used to build the Desktop apps.
+
+### Bug Fixes
+
+#### All Platforms
+ - Disabled Certificate Transparency verification that produced unnecessary certificate errors.
+ [#743](https://github.com/mattermost/desktop/pull/743)
 
 ----
 
