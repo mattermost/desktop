@@ -7,7 +7,8 @@ const webFrame = electron.webFrame;
 const EnhancedNotification = require('../js/notification');
 
 const UNREAD_COUNT_INTERVAL = 1000;
-const CLEAR_CACHE_INTERVAL = 60 * 60 * 1000; // 1 hour
+//eslint-disable-next-line no-magic-numbers
+const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 
 Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
