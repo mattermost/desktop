@@ -59,7 +59,7 @@ Minor version upgrade of Electron from v1.7.11 to v1.7.13. Electron is the under
 
 #### All Platforms
 
-Disabled Certificate Transparency verification that produced unnecessary certificate errors.
+ - Disabled Certificate Transparency verification that produced unnecessary certificate errors.
 
 ## Release v4.0.0
 
