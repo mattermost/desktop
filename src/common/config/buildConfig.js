@@ -1,3 +1,5 @@
+// For detailed guides, please refer to https://docs.mattermost.com/deployment/desktop-app-deployment.html
+
 /**
  * Build-time configuration. End-users can't change these parameters.
  * @prop {Object[]} defaultTeams
