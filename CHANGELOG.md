@@ -15,6 +15,8 @@ Release date: TBD
 #### All Platforms
 - Added "Enable GPU hardware acceleration" option.
 [#734](https://github.com/mattermost/desktop/pull/734)
+- Enabled Certificate Transparency verification in HTTPS.
+[#741](https://github.com/mattermost/desktop/pull/741)
 
 #### Windows
 - [Windows 7/8] Desktop notifications now respect the duration setting of Control Panel.
@@ -23,6 +25,7 @@ Release date: TBD
 ### Architectural Changes
 - Major version upgrade of Electron to v1.7.x to v1.8.x. Electron is the underlying technology used to build the Desktop apps.
 [#711](https://github.com/mattermost/desktop/pull/711)
+[#741](https://github.com/mattermost/desktop/pull/741)
 <!-- Todo: Complete version number when cutting release -->
 
 ### Bug Fixes
