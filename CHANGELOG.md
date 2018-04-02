@@ -13,8 +13,9 @@ Release date: TBD
 ### Improvements
 
 #### All Platforms
-- Added "Enable GPU hardware acceleration" option.
+- Added "Enable GPU hardware acceleration" option. It's disabled by default for stability.
 [#734](https://github.com/mattermost/desktop/pull/734)
+[#750](https://github.com/mattermost/desktop/pull/750)
 - Enabled Certificate Transparency verification in HTTPS.
 [#741](https://github.com/mattermost/desktop/pull/741)
 - Clear memory cache at a certain interval in order to reduce memory usage.
