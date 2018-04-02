@@ -17,6 +17,8 @@ Release date: TBD
 [#734](https://github.com/mattermost/desktop/pull/734)
 - Enabled Certificate Transparency verification in HTTPS.
 [#741](https://github.com/mattermost/desktop/pull/741)
+- Clear memory cache at a certain interval in order to reduce memory usage.
+[#746](https://github.com/mattermost/desktop/pull/746)
 
 #### Windows
 - [Windows 7/8] Desktop notifications now respect the duration setting of Control Panel.
