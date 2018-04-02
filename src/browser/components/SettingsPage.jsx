@@ -567,8 +567,7 @@ const SettingsPage = createReactClass({
       >
         {'Use GPU hardware acceleration'}
         <HelpBlock>
-          {'If enabled, Mattermost UI is rendered more efficiently.'}
-          {' Enabling can lead to decreased stability for some systems.'}
+          {'If enabled, Mattermost UI is rendered more efficiently but can lead to decreased stability for some systems.'}
           {' Setting takes affect after restarting the app.'}
         </HelpBlock>
       </Checkbox>
