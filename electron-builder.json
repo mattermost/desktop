@@ -36,7 +36,7 @@
       },
       {
         "from": "resources",
-        "filter": "icon.png"
+        "filter": "linux/icon.png"
       },
       {
         "from": "resources/linux",
