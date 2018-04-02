@@ -567,8 +567,7 @@ const SettingsPage = createReactClass({
       >
         {'Use GPU hardware acceleration'}
         <HelpBlock>
-          {'Disable this setting if you see a blank page after logging in to Mattermost.'}
-          {' If enabled, the Mattermost UI is rendered more efficiently but can cause stability issues for some systems.'}
+          {'If enabled, Mattermost UI is rendered more efficiently but can lead to decreased stability for some systems.'}
           {' Setting takes affect after restarting the app.'}
         </HelpBlock>
       </Checkbox>
