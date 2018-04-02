@@ -15,7 +15,6 @@ const {
 } = require('electron');
 const isDev = require('electron-is-dev');
 const installExtension = require('electron-devtools-installer');
-const semver = require('semver');
 const parseArgv = require('yargs').parse;
 
 const protocols = require('../electron-builder.json').protocols;
@@ -624,20 +623,6 @@ app.on('ready', () => {
   const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => team.url);
   permissionManager = new PermissionManager(permissionFile, trustedURLs);
   session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionManager));
-
-  // Disable Certificate Transparency until Electron 1.8.3
-  // due to https://github.com/electron/electron/issues/11997
-  if (semver.lt(process.versions.electron, '1.8.3')) {
-    const SUCCESS_AND_DISABLE_CERTIFICATE_TRANSPARENCY = 0;
-    const USE_VERIFICATION_RESULT_FROM_CHROMIUM = -3;
-    session.defaultSession.setCertificateVerifyProc((request, callback) => {
-      if (request.verificationResult === 'net::OK') {
-        callback(SUCCESS_AND_DISABLE_CERTIFICATE_TRANSPARENCY);
-      } else {
-        callback(USE_VERIFICATION_RESULT_FROM_CHROMIUM);
-      }
-    });
-  }
 
   // Open the DevTools.
   // mainWindow.openDevTools();
