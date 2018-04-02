@@ -7,6 +7,8 @@ const webFrame = electron.webFrame;
 const EnhancedNotification = require('../js/notification');
 
 const UNREAD_COUNT_INTERVAL = 1000;
+//eslint-disable-next-line no-magic-numbers
+const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 
 Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
@@ -185,3 +187,10 @@ function setSpellChecker() {
 }
 setSpellChecker();
 ipc.on('set-spellcheker', setSpellChecker);
+
+// mattermost-webapp is SPA. So cache is not cleared due to no navigation.
+// We needed to manually clear cache to free memory in long-term-use.
+// http://seenaburns.com/debugging-electron-memory-usage/
+setInterval(() => {
+  webFrame.clearCache();
+}, CLEAR_CACHE_INTERVAL);
