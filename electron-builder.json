@@ -50,7 +50,7 @@
   "mac": {
     "category": "public.app-category.productivity",
     "target": [
-      "tar.gz"
+      "zip"
     ],
     "extraResources": [
       {
