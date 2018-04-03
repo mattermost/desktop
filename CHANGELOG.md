@@ -20,6 +20,8 @@ Release date: TBD
 [#741](https://github.com/mattermost/desktop/pull/741)
 - Clear memory cache at a certain interval in order to reduce memory usage.
 [#746](https://github.com/mattermost/desktop/pull/746)
+- Hide hovering URL bar for internal links.
+[#745](https://github.com/mattermost/desktop/pull/745)
 
 #### Windows
 - [Windows 7/8] Desktop notifications now respect the duration setting of Control Panel.
