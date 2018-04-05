@@ -35,13 +35,10 @@
         ]
       },
       {
-        "from": "resources",
-        "filter": "linux/icon.png"
-      },
-      {
         "from": "resources/linux",
         "filter": [
           "create_desktop_file.sh",
+          "icon.png",
           "README.md"
         ]
       }
