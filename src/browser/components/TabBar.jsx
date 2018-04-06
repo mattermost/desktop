@@ -49,6 +49,9 @@ class TabBar extends React.Component { // need "this"
           />
         </Overlay>
       );
+
+      // draggable=false is a workaround for https://github.com/mattermost/desktop/issues/667
+      // It would obstruct https://github.com/mattermost/desktop/issues/478
       return (
         <NavItem
           className='teamTabItem'
@@ -56,6 +59,7 @@ class TabBar extends React.Component { // need "this"
           id={id}
           eventKey={index}
           ref={id}
+          draggable={false}
         >
           <span className={unreadCount === 0 ? '' : 'teamTabItem-label'}>{team.name}</span>
           { ' ' }
@@ -71,6 +75,7 @@ class TabBar extends React.Component { // need "this"
           id='addServerButton'
           eventKey='addServerButton'
           title='Add new server'
+          draggable={false}
         >
           <Glyphicon glyph='plus'/>
         </NavItem>
