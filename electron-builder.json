@@ -35,13 +35,10 @@
         ]
       },
       {
-        "from": "resources",
-        "filter": "icon.png"
-      },
-      {
         "from": "resources/linux",
         "filter": [
           "create_desktop_file.sh",
+          "icon.png",
           "README.md"
         ]
       }
@@ -50,7 +47,7 @@
   "mac": {
     "category": "public.app-category.productivity",
     "target": [
-      "tar.gz"
+      "zip"
     ],
     "extraResources": [
       {
