@@ -40,6 +40,8 @@ Release date: TBD
 [#632](https://github.com/mattermost/desktop/issues/632)
 - Fixed an issue where error page appears when U2F device is used for multi-factor authentication through single sign-on.
 [#708](https://github.com/mattermost/desktop/issues/708)
+- Fixed an issue where the main screen opens a blank page when a tab is dropped into the screen.
+[#667](https://github.com/mattermost/desktop/issues/667)
 
 #### Windows
 - Fixed `file://` protocol not working. But localhost URL will not continue to work.
