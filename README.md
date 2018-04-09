@@ -49,13 +49,12 @@ Configuration will be saved into Electron's userData directory:
 Otherwise, you have to configure again.*
 
 ### Proxy
-Normally, the application will follow your system settings to use proxy.
-Or you can set proxy by following command line options.
+Normally, the application will follow your system settings to use proxy, or you can set proxy by following command line options.
 
 * `--proxy-server=<SERVER>:<PORT>`
 * `--proxy-pac-url=<URL>`
 
-On Windows, please make sure adding `--` before options. For example, `Mattermost.exe -- --proxy-server=...`.
+On Windows, please make sure to add `--` before options. For example, `Mattermost.exe -- --proxy-server=...`.
 
 ## Contributing
 Please see [CONTRIBUTING.md](./CONTRIBUTING.md).
