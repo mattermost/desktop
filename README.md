@@ -31,7 +31,7 @@ Detailed guides are available at [docs.mattermost.com](https://about.mattermost.
 
 1. Download a file from the [downloads page](https://about.mattermost.com/downloads).
 2. Launch `Mattermost` in the unarchived folder.
-3. After first launching, please input name and URL for your Mattermost server. For example, `myserver : https://mattermost.example.com`.
+3. On the first launch, please input name and URL for your Mattermost server. For example, `myserver : https://mattermost.example.com`.
 
 ### Quit
 Ctrl or Command + Q to quit.
@@ -49,7 +49,7 @@ Configuration will be saved into Electron's userData directory:
 Otherwise, you have to configure again.*
 
 ### Proxy
-Normally, the application will follow your system settings to use proxy, or you can set proxy by following command line options.
+Normally, the application will follow your system settings to use a proxy, or you can set up a proxy by the following command line options.
 
 * `--proxy-server=<SERVER>:<PORT>`
 * `--proxy-pac-url=<URL>`
