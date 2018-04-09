@@ -1,5 +1,5 @@
-const AutoLaunch = require('auto-launch');
-const {app} = require('electron');
+import AutoLaunch from 'auto-launch';
+import {app} from 'electron';
 
 function shouldQuitApp(cmd) {
   if (process.platform !== 'win32') {
@@ -26,7 +26,7 @@ async function setupAutoLaunch(cmd) {
   return async () => true;
 }
 
-function squirrelStartup() {
+export default function squirrelStartup() {
   if (process.platform === 'win32') {
     const cmd = process.argv[1];
     setupAutoLaunch(cmd).then(() => {
@@ -36,5 +36,3 @@ function squirrelStartup() {
   }
   return false;
 }
-
-module.exports = squirrelStartup;

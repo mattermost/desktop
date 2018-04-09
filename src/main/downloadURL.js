@@ -1,11 +1,11 @@
-const fs = require('fs');
-const path = require('path');
-const zlib = require('zlib');
+import fs from 'fs';
+import path from 'path';
+import zlib from 'zlib';
 
-const electron = require('electron');
+import electron from 'electron';
 const {app, dialog} = electron;
 
-function downloadURL(browserWindow, URL, callback) {
+export default function downloadURL(browserWindow, URL, callback) {
   const {net} = electron;
   const request = net.request(URL);
   request.setHeader('Accept-Encoding', 'gzip,deflate');
@@ -49,5 +49,3 @@ function saveResponseBody(response, filename, callback) {
     break;
   }
 }
-
-module.exports = downloadURL;

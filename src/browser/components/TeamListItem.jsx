@@ -1,7 +1,7 @@
-const React = require('react');
-const PropTypes = require('prop-types');
+import React from 'react';
+import PropTypes from 'prop-types';
 
-class TeamListItem extends React.Component {
+export default class TeamListItem extends React.Component {
   constructor(props) {
     super(props);
     this.handleTeamRemove = this.handleTeamRemove.bind(this);
@@ -49,5 +49,3 @@ TeamListItem.propTypes = {
   onTeamClick: PropTypes.func,
   url: PropTypes.string,
 };
-
-module.exports = TeamListItem;

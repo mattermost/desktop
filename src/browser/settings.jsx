@@ -1,17 +1,17 @@
 'use strict';
-const {remote} = require('electron');
+import {remote} from 'electron';
 
 window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
   throw new Error(`Sorry, ${remote.app.getName()} does not support window.eval() for security reasons.`);
 };
 
-const React = require('react');
-const ReactDOM = require('react-dom');
+import React from 'react';
+import ReactDOM from 'react-dom';
 
-const buildConfig = require('../common/config/buildConfig');
+import buildConfig from '../common/config/buildConfig';
 
-const SettingsPage = require('./components/SettingsPage.jsx');
-const contextMenu = require('./js/contextMenu');
+import SettingsPage from './components/SettingsPage.jsx';
+import contextMenu from './js/contextMenu';
 
 const configFile = remote.app.getPath('userData') + '/config.json';
 

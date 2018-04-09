@@ -1,10 +1,10 @@
-const React = require('react');
-const PropTypes = require('prop-types');
-const {Modal} = require('react-bootstrap');
+import React from 'react';
+import PropTypes from 'prop-types';
+import {Modal} from 'react-bootstrap';
 
-const DestructiveConfirmationModal = require('./DestructiveConfirmModal.jsx');
+import DestructiveConfirmationModal from './DestructiveConfirmModal.jsx';
 
-function RemoveServerModal(props) {
+export default function RemoveServerModal(props) {
   const {serverName, ...rest} = props;
   return (
     <DestructiveConfirmationModal
@@ -30,5 +30,3 @@ function RemoveServerModal(props) {
 RemoveServerModal.propTypes = {
   serverName: PropTypes.string.isRequired,
 };
-
-module.exports = RemoveServerModal;

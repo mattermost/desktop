@@ -1,11 +1,11 @@
-const fs = require('fs');
+import fs from 'fs';
 
-const utils = require('../utils/util');
+import utils from '../utils/util';
 
 const PERMISSION_GRANTED = 'granted';
 const PERMISSION_DENIED = 'denied';
 
-class PermissionManager {
+export default class PermissionManager {
   constructor(file, trustedURLs = []) {
     this.file = file;
     this.setTrustedURLs(trustedURLs);
@@ -70,5 +70,3 @@ class PermissionManager {
     }
   }
 }
-
-module.exports = PermissionManager;

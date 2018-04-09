@@ -1,8 +1,8 @@
-const React = require('react');
-const PropTypes = require('prop-types');
-const {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} = require('react-bootstrap');
+import React from 'react';
+import PropTypes from 'prop-types';
+import {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} from 'react-bootstrap';
 
-class NewTeamModal extends React.Component {
+export default class NewTeamModal extends React.Component {
   constructor() {
     super();
 
@@ -201,5 +201,3 @@ NewTeamModal.propTypes = {
   editMode: PropTypes.bool,
   show: PropTypes.bool,
 };
-
-module.exports = NewTeamModal;

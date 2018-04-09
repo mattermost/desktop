@@ -1,6 +1,6 @@
-const {URL} = require('url');
+import {URL} from 'url';
 
-const {ipcMain} = require('electron');
+import {ipcMain} from 'electron';
 
 function dequeueRequests(requestQueue, permissionManager, origin, permission, status) {
   switch (status) {
@@ -31,7 +31,7 @@ function dequeueRequests(requestQueue, permissionManager, origin, permission, st
   }
 }
 
-function permissionRequestHandler(mainWindow, permissionManager) {
+export default function permissionRequestHandler(mainWindow, permissionManager) {
   const requestQueue = [];
   ipcMain.on('update-permission', (event, origin, permission, status) => {
     dequeueRequests(requestQueue, permissionManager, origin, permission, status);
@@ -55,5 +55,3 @@ function permissionRequestHandler(mainWindow, permissionManager) {
     mainWindow.webContents.send('request-permission', targetURL.origin, permission);
   };
 }
-
-module.exports = permissionRequestHandler;

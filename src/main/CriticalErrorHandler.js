@@ -1,9 +1,9 @@
-const {spawn} = require('child_process');
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
+import {spawn} from 'child_process';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 
-const {app, dialog} = require('electron');
+import {app, dialog} from 'electron';
 
 const BUTTON_OK = 'OK';
 const BUTTON_SHOW_DETAILS = 'Show Details';
@@ -36,7 +36,7 @@ function bindWindowToShowMessageBox(win) {
   return dialog.showMessageBox;
 }
 
-class CriticalErrorHandler {
+export default class CriticalErrorHandler {
   constructor() {
     this.mainWindow = null;
   }
@@ -97,5 +97,3 @@ class CriticalErrorHandler {
     throw err;
   }
 }
-
-module.exports = CriticalErrorHandler;

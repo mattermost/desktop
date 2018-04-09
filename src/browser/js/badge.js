@@ -1,6 +1,6 @@
 'use strict';
 
-function createDataURL(text) {
+export function createDataURL(text) {
   const scale = 2; // should rely display dpi
   const size = 16 * scale;
   const canvas = document.createElement('canvas');
@@ -23,7 +23,3 @@ function createDataURL(text) {
 
   return canvas.toDataURL();
 }
-
-module.exports = {
-  createDataURL,
-};

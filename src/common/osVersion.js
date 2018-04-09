@@ -1,9 +1,9 @@
 'use strict';
 
-var os = require('os');
+import os from 'os';
 var releaseSplit = os.release().split('.');
 
-module.exports = {
+export default {
   major: parseInt(releaseSplit[0], 10),
   minor: parseInt(releaseSplit[1], 10),
   isLowerThanOrEqualWindows8_1() {

@@ -1,14 +1,9 @@
 'use strict';
 
-const path = require('path');
-const fs = require('fs');
+import path from 'path';
+import fs from 'fs';
 
-const {
-  app,
-  dialog,
-  ipcMain,
-  shell,
-} = require('electron');
+import {app, dialog, ipcMain, shell} from 'electron';
 
 const allowedProtocolFile = path.resolve(app.getPath('userData'), 'allowedProtocols.json');
 var allowedProtocols = [];
@@ -63,6 +58,6 @@ function initDialogEvent(mainWindow) {
   });
 }
 
-module.exports = {
+export default {
   init,
 };

@@ -1,6 +1,6 @@
-const React = require('react');
-const PropTypes = require('prop-types');
-const {Button, Glyphicon, Popover} = require('react-bootstrap');
+import React from 'react';
+import PropTypes from 'prop-types';
+import {Button, Glyphicon, Popover} from 'react-bootstrap';
 
 const PERMISSIONS = {
   media: {
@@ -49,7 +49,7 @@ function description(permission) {
   return `Be granted "${permission}" permission`;
 }
 
-function PermissionRequestDialog(props) {
+export default function PermissionRequestDialog(props) {
   const {origin, permission, onClickAllow, onClickBlock, onClickClose, ...reft} = props;
   return (
     <Popover
@@ -85,5 +85,3 @@ PermissionRequestDialog.propTypes = {
   onClickBlock: PropTypes.func,
   onClickClose: PropTypes.func,
 };
-
-module.exports = PermissionRequestDialog;

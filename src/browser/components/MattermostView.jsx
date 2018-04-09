@@ -1,18 +1,18 @@
 /* eslint-disable react/no-set-state */
 // setState() is necessary for this component
-const url = require('url');
+import url from 'url';
 
-const React = require('react');
-const PropTypes = require('prop-types');
-const createReactClass = require('create-react-class');
-const {findDOMNode} = require('react-dom');
-const {ipcRenderer, remote, shell} = require('electron');
+import React from 'react';
+import PropTypes from 'prop-types';
+import createReactClass from 'create-react-class';
+import {findDOMNode} from 'react-dom';
+import {ipcRenderer, remote, shell} from 'electron';
 
-const contextMenu = require('../js/contextMenu');
-const {protocols} = require('../../../electron-builder.json');
+import contextMenu from '../js/contextMenu';
+import {protocols} from '../../../electron-builder.json';
 const scheme = protocols[0].schemes[0];
 
-const ErrorView = require('./ErrorView.jsx');
+import ErrorView from './ErrorView.jsx';
 
 const preloadJS = `file://${remote.app.getAppPath()}/browser/webview/mattermost_bundle.js`;
 
@@ -312,4 +312,4 @@ const MattermostView = createReactClass({
   },
 });
 
-module.exports = MattermostView;
+export default MattermostView;

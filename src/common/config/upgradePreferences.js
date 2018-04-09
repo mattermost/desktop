@@ -1,4 +1,4 @@
-const pastDefaultPreferences = require('./pastDefaultPreferences');
+import pastDefaultPreferences from './pastDefaultPreferences';
 
 function deepCopy(object) {
   return JSON.parse(JSON.stringify(object));
@@ -16,7 +16,7 @@ function upgradeV0toV1(configV0) {
   return config;
 }
 
-function upgradeToLatest(config) {
+export default function upgradeToLatest(config) {
   var configVersion = config.version ? config.version : 0;
   switch (configVersion) {
   case 0:
@@ -25,5 +25,3 @@ function upgradeToLatest(config) {
     return config;
   }
 }
-
-module.exports = upgradeToLatest;

@@ -1,11 +1,11 @@
-const React = require('react');
-const PropTypes = require('prop-types');
-const createReactClass = require('create-react-class');
-const {ListGroup} = require('react-bootstrap');
+import React from 'react';
+import PropTypes from 'prop-types';
+import createReactClass from 'create-react-class';
+import {ListGroup} from 'react-bootstrap';
 
-const TeamListItem = require('./TeamListItem.jsx');
-const NewTeamModal = require('./NewTeamModal.jsx');
-const RemoveServerModal = require('./RemoveServerModal.jsx');
+import TeamListItem from './TeamListItem.jsx';
+import NewTeamModal from './NewTeamModal.jsx';
+import RemoveServerModal from './RemoveServerModal.jsx';
 
 const TeamList = createReactClass({
   propTypes: {
@@ -171,4 +171,4 @@ const TeamList = createReactClass({
   },
 });
 
-module.exports = TeamList;
+export default TeamList;

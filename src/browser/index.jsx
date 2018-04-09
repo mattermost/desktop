@@ -1,24 +1,24 @@
 'use strict';
 
-require('./css/index.css');
+import './css/index.css';
 
 window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
   throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
 };
 
-const url = require('url');
+import url from 'url';
 
-const React = require('react');
-const ReactDOM = require('react-dom');
-const {remote, ipcRenderer} = require('electron');
+import React from 'react';
+import ReactDOM from 'react-dom';
+import {remote, ipcRenderer} from 'electron';
 
-const buildConfig = require('../common/config/buildConfig');
-const settings = require('../common/settings');
-const utils = require('../utils/util');
+import buildConfig from '../common/config/buildConfig';
+import settings from '../common/settings';
+import utils from '../utils/util';
 
-const MainPage = require('./components/MainPage.jsx');
-const AppConfig = require('./config/AppConfig.js');
-const badge = require('./js/badge');
+import MainPage from './components/MainPage.jsx';
+import AppConfig from './config/AppConfig.js';
+import {createDataURL as createBadgeDataURL} from './js/badge';
 
 const teams = settings.mergeDefaultTeams(AppConfig.data.teams);
 
@@ -41,10 +41,10 @@ function showUnreadBadgeWindows(unreadCount, mentionCount) {
   }
 
   if (mentionCount > 0) {
-    const dataURL = badge.createDataURL(mentionCount.toString());
+    const dataURL = createBadgeDataURL(mentionCount.toString());
     sendBadge(dataURL, 'You have unread mentions (' + mentionCount + ')');
   } else if (unreadCount > 0 && AppConfig.data.showUnreadBadge) {
-    const dataURL = badge.createDataURL('•');
+    const dataURL = createBadgeDataURL('•');
     sendBadge(dataURL, 'You have unread channels (' + unreadCount + ')');
   } else {
     sendBadge(null, 'You have no unread messages');

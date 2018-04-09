@@ -1,5 +1,5 @@
-const {ipcRenderer} = require('electron');
-const electronContextMenu = require('electron-context-menu');
+import {ipcRenderer} from 'electron';
+import electronContextMenu from 'electron-context-menu';
 
 function getSuggestionsMenus(win, suggestions) {
   if (suggestions.length === 0) {
@@ -37,7 +37,7 @@ function getSpellCheckerLocaleMenus(onSelectSpellCheckerLocale) {
   }));
 }
 
-module.exports = {
+export default {
   setup(win, options) {
     const defaultOptions = {
       useSpellChecker: false,

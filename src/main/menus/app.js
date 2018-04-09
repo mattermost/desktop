@@ -1,20 +1,18 @@
 'use strict';
 
-const electron = require('electron');
+import {app, dialog, Menu, shell} from 'electron';
 
-const settings = require('../../common/settings');
-const buildConfig = require('../../common/config/buildConfig');
-
-const Menu = electron.Menu;
+import settings from '../../common/settings';
+import buildConfig from '../../common/config/buildConfig';
 
 function createTemplate(mainWindow, config, isDev) {
-  const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : `file://${electron.app.getAppPath()}/browser/settings.html`;
+  const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : `file://${app.getAppPath()}/browser/settings.html`;
 
   const separatorItem = {
     type: 'separator',
   };
 
-  var appName = electron.app.getName();
+  var appName = app.getName();
   var firstMenuName = (process.platform === 'darwin') ? appName : 'File';
   var template = [];
 
@@ -22,9 +20,9 @@ function createTemplate(mainWindow, config, isDev) {
     label: 'About ' + appName,
     role: 'about',
     click() {
-      electron.dialog.showMessageBox(mainWindow, {
+      dialog.showMessageBox(mainWindow, {
         buttons: ['OK'],
-        message: `${appName} Desktop ${electron.app.getVersion()}`,
+        message: `${appName} Desktop ${app.getVersion()}`,
       });
     },
   }, separatorItem, {
@@ -64,7 +62,7 @@ function createTemplate(mainWindow, config, isDev) {
       role: 'quit',
       accelerator: 'CmdOrCtrl+Q',
       click() {
-        electron.app.quit();
+        app.quit();
       },
     }]
   );
@@ -215,13 +213,13 @@ function createTemplate(mainWindow, config, isDev) {
     submenu.push({
       label: 'Learn More...',
       click() {
-        electron.shell.openExternal(buildConfig.helpLink);
+        shell.openExternal(buildConfig.helpLink);
       },
     });
     submenu.push(separatorItem);
   }
   submenu.push({
-    label: `Version ${electron.app.getVersion()}`,
+    label: `Version ${app.getVersion()}`,
     enabled: false,
   });
   template.push({label: '&Help', submenu});
@@ -232,6 +230,6 @@ function createMenu(mainWindow, config, isDev) {
   return Menu.buildFromTemplate(createTemplate(mainWindow, config, isDev));
 }
 
-module.exports = {
+export default {
   createMenu,
 };
