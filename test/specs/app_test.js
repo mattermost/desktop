@@ -78,7 +78,7 @@ describe('application', function desc() {
   });
 
   it('should upgrade v0 config file', async () => {
-    const settings = require('../../src/common/settings');
+    const settings = require('../../src/common/settings').default;
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       url: env.mattermostURL,
     }));

@@ -1,7 +1,7 @@
-const settings = require('../../src/common/settings');
-const buildConfig = require('../../src/common/config/buildConfig');
-const defaultPreferences = require('../../src/common/config/defaultPreferences');
-const pastDefaultPreferences = require('../../src/common/config/pastDefaultPreferences');
+import settings from '../../src/common/settings';
+import buildConfig from '../../src/common/config/buildConfig';
+import defaultPreferences from '../../src/common/config/defaultPreferences';
+import pastDefaultPreferences from '../../src/common/config/pastDefaultPreferences';
 
 describe('common/settings.js', () => {
   it('should upgrade v0 config file', () => {

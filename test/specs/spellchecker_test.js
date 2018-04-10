@@ -1,6 +1,6 @@
-const path = require('path');
+import path from 'path';
 
-const SpellChecker = require('../../src/main/SpellChecker');
+import SpellChecker from '../../src/main/SpellChecker';
 
 describe('main/Spellchecker.js', function() {
   describe('getSpellCheckerLocale()', () => {
