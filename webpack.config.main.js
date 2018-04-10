@@ -1,3 +1,4 @@
+/* eslint-disable import/no-commonjs */
 'use strict';
 
 const merge = require('webpack-merge');
