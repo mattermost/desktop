@@ -10,7 +10,7 @@ jobs:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "yarn.lock" }}
       - restore_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/yarn.lock" }}
-      - run: apt-get update && apt-get -y install --no-install-recommends jq icnsutils graphicsmagick
+      - run: apt-get update && apt-get -y install --no-install-recommends jq icnsutils graphicsmagick tzdata
       - run: yarn
       - run: npm run build
       - run: npm run package:windows
