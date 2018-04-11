@@ -32,6 +32,8 @@ Release date: TBD
 [#711](https://github.com/mattermost/desktop/pull/711)
 [#741](https://github.com/mattermost/desktop/pull/741)
 <!-- Todo: Complete version number when cutting release -->
+- `require` and `module.exports` were replaced with `import` and `export`.
+[#756](https://github.com/mattermost/desktop/pull/756)
 
 ### Bug Fixes
 
