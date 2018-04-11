@@ -1,22 +1,22 @@
-const url = require('url');
+import url from 'url';
 
-const React = require('react');
-const PropTypes = require('prop-types');
-const createReactClass = require('create-react-class');
-const {CSSTransition, TransitionGroup} = require('react-transition-group');
-const {Grid, Row} = require('react-bootstrap');
+import React from 'react';
+import PropTypes from 'prop-types';
+import createReactClass from 'create-react-class';
+import {CSSTransition, TransitionGroup} from 'react-transition-group';
+import {Grid, Row} from 'react-bootstrap';
 
-const {ipcRenderer, remote} = require('electron');
+import {ipcRenderer, remote} from 'electron';
 
-const Utils = require('../../utils/util.js');
+import Utils from '../../utils/util.js';
 
-const LoginModal = require('./LoginModal.jsx');
-const MattermostView = require('./MattermostView.jsx');
-const TabBar = require('./TabBar.jsx');
-const HoveringURL = require('./HoveringURL.jsx');
-const PermissionRequestDialog = require('./PermissionRequestDialog.jsx');
+import LoginModal from './LoginModal.jsx';
+import MattermostView from './MattermostView.jsx';
+import TabBar from './TabBar.jsx';
+import HoveringURL from './HoveringURL.jsx';
+import PermissionRequestDialog from './PermissionRequestDialog.jsx';
 
-const NewTeamModal = require('./NewTeamModal.jsx');
+import NewTeamModal from './NewTeamModal.jsx';
 
 const MainPage = createReactClass({
   propTypes: {
@@ -386,4 +386,4 @@ const MainPage = createReactClass({
   },
 });
 
-module.exports = MainPage;
+export default MainPage;

@@ -1,6 +1,6 @@
-const fs = require('fs');
+import fs from 'fs';
 
-class JsonFileManager {
+export default class JsonFileManager {
   constructor(file) {
     this.jsonFile = file;
     try {
@@ -32,5 +32,3 @@ class JsonFileManager {
     return this.json[key];
   }
 }
-
-module.exports = JsonFileManager;

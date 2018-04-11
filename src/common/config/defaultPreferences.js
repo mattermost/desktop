@@ -18,4 +18,4 @@ const defaultPreferences = {
   enableHardwareAcceleration: false,
 };
 
-module.exports = defaultPreferences;
+export default defaultPreferences;

@@ -1,7 +1,7 @@
 'use strict';
 
-const fs = require('fs');
-const url = require('url');
+import fs from 'fs';
+import url from 'url';
 
 function comparableCertificate(certificate) {
   return {
@@ -60,7 +60,7 @@ CertificateStore.prototype.isTrusted = function isTrusted(targetURL, certificate
   return areEqual(this.data[host], comparableCertificate(certificate));
 };
 
-module.exports = {
+export default {
   load(storeFile) {
     return new CertificateStore(storeFile);
   },

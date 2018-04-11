@@ -1,7 +1,7 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
-const {app, BrowserWindow} = require('electron');
+import {app, BrowserWindow} from 'electron';
 
 function saveWindowState(file, window) {
   var windowState = window.getBounds();
@@ -135,4 +135,4 @@ function createMainWindow(config, options) {
   return mainWindow;
 }
 
-module.exports = {createMainWindow};
+export default createMainWindow;

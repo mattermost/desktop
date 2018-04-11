@@ -1,9 +1,9 @@
-const React = require('react');
-const PropTypes = require('prop-types');
-const ReactDOM = require('react-dom');
-const {Button, Col, ControlLabel, Form, FormGroup, FormControl, Modal} = require('react-bootstrap');
+import React from 'react';
+import PropTypes from 'prop-types';
+import {findDOMNode} from 'react-dom';
+import {Button, Col, ControlLabel, Form, FormGroup, FormControl, Modal} from 'react-bootstrap';
 
-class LoginModal extends React.Component {
+export default class LoginModal extends React.Component {
   constructor(props) {
     super(props);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -11,8 +11,8 @@ class LoginModal extends React.Component {
 
   handleSubmit(event) {
     event.preventDefault();
-    const usernameNode = ReactDOM.findDOMNode(this.refs.username);
-    const passwordNode = ReactDOM.findDOMNode(this.refs.password);
+    const usernameNode = findDOMNode(this.refs.username);
+    const passwordNode = findDOMNode(this.refs.password);
     this.props.onLogin(this.props.request, usernameNode.value, passwordNode.value);
     usernameNode.value = '';
     passwordNode.value = '';
@@ -94,5 +94,3 @@ LoginModal.propTypes = {
   request: PropTypes.object,
   show: PropTypes.bool,
 };
-
-module.exports = LoginModal;

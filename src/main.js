@@ -1,8 +1,9 @@
 'use strict';
 
-const os = require('os');
-const path = require('path');
+import os from 'os';
+import path from 'path';
 
+import electron from 'electron';
 const {
   app,
   Menu,
@@ -12,15 +13,15 @@ const {
   dialog,
   systemPreferences,
   session,
-} = require('electron');
-const isDev = require('electron-is-dev');
-const installExtension = require('electron-devtools-installer');
-const parseArgv = require('yargs').parse;
+} = electron;
+import isDev from 'electron-is-dev';
+import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
+import {parse as parseArgv} from 'yargs';
 
-const protocols = require('../electron-builder.json').protocols;
+import {protocols} from '../electron-builder.json';
 
-const squirrelStartup = require('./main/squirrelStartup');
-const CriticalErrorHandler = require('./main/CriticalErrorHandler');
+import squirrelStartup from './main/squirrelStartup';
+import CriticalErrorHandler from './main/CriticalErrorHandler';
 
 const criticalErrorHandler = new CriticalErrorHandler();
 
@@ -32,19 +33,19 @@ app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit App
 if (squirrelStartup()) {
   global.willAppQuit = true;
 }
+import settings from './common/settings';
+import CertificateStore from './main/certificateStore';
+const certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
+import createMainWindow from './main/mainWindow';
+import appMenu from './main/menus/app';
+import trayMenu from './main/menus/tray';
+import downloadURL from './main/downloadURL';
+import allowProtocolDialog from './main/allowProtocolDialog';
+import PermissionManager from './main/PermissionManager';
+import permissionRequestHandler from './main/permissionRequestHandler';
+import AppStateManager from './main/AppStateManager';
 
-var settings = require('./common/settings');
-var certificateStore = require('./main/certificateStore').load(path.resolve(app.getPath('userData'), 'certificate.json'));
-const {createMainWindow} = require('./main/mainWindow');
-const appMenu = require('./main/menus/app');
-const trayMenu = require('./main/menus/tray');
-const downloadURL = require('./main/downloadURL');
-const allowProtocolDialog = require('./main/allowProtocolDialog');
-const PermissionManager = require('./main/PermissionManager');
-const permissionRequestHandler = require('./main/permissionRequestHandler');
-const AppStateManager = require('./main/AppStateManager');
-
-const SpellChecker = require('./main/SpellChecker');
+import SpellChecker from './main/SpellChecker';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
@@ -267,7 +268,7 @@ function handleScreenResize(screen, browserWindow) {
 
 app.on('browser-window-created', (e, newWindow) => {
   // Screen cannot be required before app is ready
-  const {screen} = require('electron'); // eslint-disable-line global-require
+  const {screen} = electron; // eslint-disable-line global-require
   handleScreenResize(screen, newWindow);
 });
 
@@ -403,7 +404,7 @@ app.on('ready', () => {
   appState.lastAppVersion = app.getVersion();
 
   if (global.isDev) {
-    installExtension.default(installExtension.REACT_DEVELOPER_TOOLS).
+    installExtension(REACT_DEVELOPER_TOOLS).
       then((name) => console.log(`Added Extension:  ${name}`)).
       catch((err) => console.log('An error occurred: ', err));
   }

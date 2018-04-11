@@ -1,6 +1,6 @@
-const {remote} = require('electron');
+import {remote} from 'electron';
 
-const settings = require('../../common/settings');
+import settings from '../../common/settings';
 
 class AppConfig {
   constructor(file) {
@@ -20,4 +20,4 @@ class AppConfig {
   }
 }
 
-module.exports = new AppConfig(remote.app.getPath('userData') + '/config.json');
+export default new AppConfig(remote.app.getPath('userData') + '/config.json');

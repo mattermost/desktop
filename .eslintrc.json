@@ -3,7 +3,11 @@
     "parserOptions": {
         "ecmaVersion": 2017
     },
+    "settings": {
+        "import/resolver": "node"
+    },
     "rules": {
+        "import/no-commonjs": 2,
         "indent": [2, 2, {"SwitchCase": 0}],
         "no-console": 0,
         "no-process-env": 0,

@@ -1,10 +1,10 @@
-const React = require('react');
-const PropTypes = require('prop-types');
-const {Glyphicon, Nav, NavItem, Overlay} = require('react-bootstrap');
+import React from 'react';
+import PropTypes from 'prop-types';
+import {Glyphicon, Nav, NavItem, Overlay} from 'react-bootstrap';
 
-const PermissionRequestDialog = require('./PermissionRequestDialog.jsx');
+import PermissionRequestDialog from './PermissionRequestDialog.jsx';
 
-class TabBar extends React.Component { // need "this"
+export default class TabBar extends React.Component { // need "this"
   render() {
     const tabs = this.props.teams.map((team, index) => {
       let unreadCount = 0;
@@ -118,5 +118,3 @@ TabBar.propTypes = {
   onAddServer: PropTypes.func,
   onClickPermissionDialog: PropTypes.func,
 };
-
-module.exports = TabBar;

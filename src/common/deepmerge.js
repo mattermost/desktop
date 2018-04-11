@@ -1,10 +1,5 @@
-const deepmerge = require('deepmerge');
+import deepmerge from 'deepmerge';
 
-function deepMergeProxy(x, y, options) {
-  if (process.env.TEST) {
-    return deepmerge(x, y, options);
-  }
-  return deepmerge.default(x, y, options); // due to webpack conversion
+export default function deepMergeProxy(x, y, options) {
+  return deepmerge(x, y, options); // due to webpack conversion
 }
-
-module.exports = deepMergeProxy;

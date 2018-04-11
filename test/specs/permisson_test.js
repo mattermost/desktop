@@ -1,8 +1,8 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
-const env = require('../modules/environment');
-const PermissionManager = require('../../src/main/PermissionManager');
+import env from '../modules/environment';
+import PermissionManager from '../../src/main/PermissionManager';
 
 const permissionFile = path.join(env.userDataDir, 'permission.json');
 

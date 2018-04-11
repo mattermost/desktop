@@ -1,8 +1,8 @@
-const React = require('react');
-const PropTypes = require('prop-types');
-const {Button, Modal} = require('react-bootstrap');
+import React from 'react';
+import PropTypes from 'prop-types';
+import {Button, Modal} from 'react-bootstrap';
 
-function DestructiveConfirmationModal(props) {
+export default function DestructiveConfirmationModal(props) {
   const {
     title,
     body,
@@ -39,5 +39,3 @@ DestructiveConfirmationModal.propTypes = {
   onAccept: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
 };
-
-module.exports = DestructiveConfirmationModal;

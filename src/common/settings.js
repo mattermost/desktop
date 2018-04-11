@@ -1,16 +1,16 @@
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
-const buildConfig = require('./config/buildConfig');
+import buildConfig from './config/buildConfig';
 
 function merge(base, target) {
   return Object.assign({}, base, target);
 }
 
-const defaultPreferences = require('./config/defaultPreferences');
-const upgradePreferences = require('./config/upgradePreferences');
+import defaultPreferences from './config/defaultPreferences';
+import upgradePreferences from './config/upgradePreferences';
 
 function loadDefault() {
   return JSON.parse(JSON.stringify(defaultPreferences));
@@ -24,7 +24,7 @@ function upgrade(config) {
   return upgradePreferences(config);
 }
 
-module.exports = {
+export default {
   version: defaultPreferences.version,
 
   upgrade,

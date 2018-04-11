@@ -1,6 +1,6 @@
-const JsonFileManager = require('../common/JsonFileManager');
+import JsonFileManager from '../common/JsonFileManager';
 
-class AppStateManager extends JsonFileManager {
+export default class AppStateManager extends JsonFileManager {
   set lastAppVersion(version) {
     this.setValue('lastAppVersion', version);
   }
@@ -9,5 +9,3 @@ class AppStateManager extends JsonFileManager {
     return this.getValue('lastAppVersion');
   }
 }
-
-module.exports = AppStateManager;

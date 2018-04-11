@@ -22,4 +22,4 @@ const buildConfig = {
   enableServerManagement: true,
 };
 
-module.exports = buildConfig;
+export default buildConfig;

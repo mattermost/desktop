@@ -1,10 +1,8 @@
 'use strict';
 
-const electron = require('electron');
-const ipc = electron.ipcRenderer;
-const webFrame = electron.webFrame;
+import {ipcRenderer, webFrame} from 'electron';
 
-const EnhancedNotification = require('../js/notification');
+import EnhancedNotification from '../js/notification';
 
 const UNREAD_COUNT_INTERVAL = 1000;
 //eslint-disable-next-line no-magic-numbers
@@ -41,11 +39,11 @@ function watchReactAppUntilInitialized(callback) {
 window.addEventListener('load', () => {
   if (document.getElementById('root') === null) {
     console.log('The guest is not assumed as mattermost-webapp');
-    ipc.sendToHost('onGuestInitialized');
+    ipcRenderer.sendToHost('onGuestInitialized');
     return;
   }
   watchReactAppUntilInitialized(() => {
-    ipc.sendToHost('onGuestInitialized');
+    ipcRenderer.sendToHost('onGuestInitialized');
   });
 });
 
@@ -67,7 +65,7 @@ function getUnreadCount() {
 
   // LHS not found => Log out => Count should be 0.
   if (document.getElementById('sidebar-left') === null) {
-    ipc.sendToHost('onUnreadCountChange', 0, 0, false, false);
+    ipcRenderer.sendToHost('onUnreadCountChange', 0, 0, false, false);
     this.unreadCount = 0;
     this.mentionCount = 0;
     setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
@@ -152,7 +150,7 @@ function getUnreadCount() {
   }
 
   if (this.unreadCount !== unreadCount || this.mentionCount !== mentionCount || isUnread || isMentioned) {
-    ipc.sendToHost('onUnreadCountChange', unreadCount, mentionCount, isUnread, isMentioned);
+    ipcRenderer.sendToHost('onUnreadCountChange', unreadCount, mentionCount, isUnread, isMentioned);
   }
   this.unreadCount = unreadCount;
   this.mentionCount = mentionCount;
@@ -165,28 +163,28 @@ function isElementVisible(elem) {
 }
 
 function resetMisspelledState() {
-  ipc.once('spellchecker-is-ready', () => {
+  ipcRenderer.once('spellchecker-is-ready', () => {
     const element = document.activeElement;
     if (element) {
       element.blur();
       element.focus();
     }
   });
-  ipc.send('reply-on-spellchecker-is-ready');
+  ipcRenderer.send('reply-on-spellchecker-is-ready');
 }
 
 function setSpellChecker() {
-  const spellCheckerLocale = ipc.sendSync('get-spellchecker-locale');
+  const spellCheckerLocale = ipcRenderer.sendSync('get-spellchecker-locale');
   webFrame.setSpellCheckProvider(spellCheckerLocale, false, {
     spellCheck(text) {
-      const res = ipc.sendSync('checkspell', text);
+      const res = ipcRenderer.sendSync('checkspell', text);
       return res === null ? true : res;
     },
   });
   resetMisspelledState();
 }
 setSpellChecker();
-ipc.on('set-spellcheker', setSpellChecker);
+ipcRenderer.on('set-spellcheker', setSpellChecker);
 
 // mattermost-webapp is SPA. So cache is not cleared due to no navigation.
 // We needed to manually clear cache to free memory in long-term-use.

@@ -1,6 +1,6 @@
-const React = require('react');
-const PropTypes = require('prop-types');
-const {Alert} = require('react-bootstrap');
+import React from 'react';
+import PropTypes from 'prop-types';
+import {Alert} from 'react-bootstrap';
 
 const baseClassName = 'AutoSaveIndicator';
 const leaveClassName = `${baseClassName}-Leave`;
@@ -25,7 +25,7 @@ function getClassNameAndMessage(savingState, errorMessage) {
   }
 }
 
-function AutoSaveIndicator(props) {
+export default function AutoSaveIndicator(props) {
   const {savingState, errorMessage, ...rest} = props;
   const {className, message} = getClassNameAndMessage(savingState, errorMessage);
   return (
@@ -50,5 +50,3 @@ Object.assign(AutoSaveIndicator, {
   SAVING_STATE_ERROR,
   SAVING_STATE_DONE,
 });
-
-module.exports = AutoSaveIndicator;

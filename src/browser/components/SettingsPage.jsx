@@ -1,18 +1,18 @@
-const React = require('react');
-const PropTypes = require('prop-types');
-const createReactClass = require('create-react-class');
-const ReactDOM = require('react-dom');
-const {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} = require('react-bootstrap');
+import React from 'react';
+import PropTypes from 'prop-types';
+import createReactClass from 'create-react-class';
+import ReactDOM from 'react-dom';
+import {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} from 'react-bootstrap';
 
-const {ipcRenderer, remote} = require('electron');
-const AutoLaunch = require('auto-launch');
-const {debounce} = require('underscore');
+import {ipcRenderer, remote} from 'electron';
+import AutoLaunch from 'auto-launch';
+import {debounce} from 'underscore';
 
-const buildConfig = require('../../common/config/buildConfig');
-const settings = require('../../common/settings');
+import buildConfig from '../../common/config/buildConfig';
+import settings from '../../common/settings';
 
-const TeamList = require('./TeamList.jsx');
-const AutoSaveIndicator = require('./AutoSaveIndicator.jsx');
+import TeamList from './TeamList.jsx';
+import AutoSaveIndicator from './AutoSaveIndicator.jsx';
 
 const appLauncher = new AutoLaunch({
   name: remote.app.getName(),
@@ -625,4 +625,4 @@ const SettingsPage = createReactClass({
   },
 });
 
-module.exports = SettingsPage;
+export default SettingsPage;

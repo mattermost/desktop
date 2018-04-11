@@ -1,7 +1,7 @@
-const React = require('react');
-const PropTypes = require('prop-types');
+import React from 'react';
+import PropTypes from 'prop-types';
 
-function HoveringURL(props) {
+export default function HoveringURL(props) {
   return (
     <div className='HoveringURL HoveringURL-left'>
       {props.targetURL}
@@ -12,5 +12,3 @@ function HoveringURL(props) {
 HoveringURL.propTypes = {
   targetURL: PropTypes.string,
 };
-
-module.exports = HoveringURL;

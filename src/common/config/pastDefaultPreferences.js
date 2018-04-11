@@ -1,4 +1,4 @@
-const defaultPreferences = require('./defaultPreferences');
+import defaultPreferences from './defaultPreferences';
 
 const pastDefaultPreferences = {
   0: {
@@ -8,4 +8,4 @@ const pastDefaultPreferences = {
 
 pastDefaultPreferences[`${defaultPreferences.version}`] = defaultPreferences;
 
-module.exports = pastDefaultPreferences;
+export default pastDefaultPreferences;

@@ -1,11 +1,8 @@
 'use strict';
 
-const {
-  app,
-  Menu,
-} = require('electron');
+import {app, Menu} from 'electron';
 
-const settings = require('../../common/settings');
+import settings from '../../common/settings';
 
 function createTemplate(mainWindow, config, isDev) {
   const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : `file://${app.getAppPath()}/browser/settings.html`;
@@ -58,6 +55,6 @@ function showOrRestore(window) {
   }
 }
 
-module.exports = {
+export default {
   createMenu,
 };
