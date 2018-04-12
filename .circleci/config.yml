@@ -31,6 +31,10 @@ jobs:
       - store_artifacts:
           path: /tmp/artifacts/
           destination: packages
+      - run: ./node_modules/.bin/build-storybook -c src/.storybook -o storybook
+      - store_artifacts:
+          path: storybook/
+          destination: storybook
 
   test:
     working_directory: ~/mattermost-desktop
