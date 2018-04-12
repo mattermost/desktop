@@ -482,8 +482,8 @@ describe('browser/settings.html', function desc() {
       it('should add the team to the config file', async () => {
         await this.app.client.
           click('#saveNewServerModal').
-          waitForVisible('#newServerModal', true).
-          waitForVisible('#serversSaveIndicator').
+          waitForVisible('#newServerModal', 10000, true).
+          waitForVisible('#serversSaveIndicator', 10000).
           waitForVisible('#serversSaveIndicator', 10000, true). // at least 2500 ms to disappear
           waitUntilWindowLoaded();
 
