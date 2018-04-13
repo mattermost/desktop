@@ -30,7 +30,9 @@ process.on('uncaughtException', criticalErrorHandler.processUncaughtExceptionHan
 global.willAppQuit = false;
 
 app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
-if (squirrelStartup()) {
+if (squirrelStartup(() => {
+  app.quit();
+})) {
   global.willAppQuit = true;
 }
 import settings from './common/settings';
@@ -279,7 +281,7 @@ app.on('activate', () => {
 
 app.on('before-quit', () => {
   // Make sure tray icon gets removed if the user exits via CTRL-Q
-  if (process.platform === 'win32') {
+  if (trayIcon && process.platform === 'win32') {
     trayIcon.destroy();
   }
   global.willAppQuit = true;
