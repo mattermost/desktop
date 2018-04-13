@@ -1,3 +1,11 @@
+.TabBar .teamTabItem span {
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 170px;
+}
+
 .TabBar>li>a {
   background: rgba(0, 0, 0, 0.05);
   border-radius: 2px 2px 0 0;
@@ -38,6 +46,6 @@
   border-radius: 50%;
 }
 
-.TabBar .teamTabItem-label {
+.TabBar .teamTabItem-unread {
   font-weight: bold;
 }
