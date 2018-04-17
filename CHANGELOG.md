@@ -22,6 +22,8 @@ Release date: TBD
 [#746](https://github.com/mattermost/desktop/pull/746)
 - Hide hovering URL bar for internal links.
 [#745](https://github.com/mattermost/desktop/pull/745)
+- Truncate long server names in server tabs.
+[#518](https://github.com/mattermost/desktop/issues/518)
 
 #### Windows
 - [Windows 7/8] Desktop notifications now respect the duration setting of Control Panel.
