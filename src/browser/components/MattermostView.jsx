@@ -292,6 +292,7 @@ const MattermostView = createReactClass({
         <img
           className='mattermostView-loadingImage'
           src='../assets/loading.gif'
+          srcSet='../assets/loading.gif 1x, ../assets/loading@2x.gif 2x'
         />
       </div>
     ) : null;
