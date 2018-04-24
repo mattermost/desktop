@@ -1,29 +1,25 @@
 # Mattermost Desktop Application Changelog
 
-## UNDER DEVELOPMENT
-
-The "UNDER DEVELOPMENT" section of the Mattermost Desktop changelog appears
-in the product's `master` branch to note key changes committed to `master`
-and are on their way to the next stable release.
-When a stable release is pushed, "UNDER DEVELOPMENT" heading is removed
-from the final changelog of the release.
+## Release v4.1.0
 
 Release date: TBD
 
 ### Improvements
 
 #### All Platforms
-- Added "Enable GPU hardware acceleration" option. It's disabled by default for stability.
+- Added "Enable GPU hardware acceleration" option. It is disabled by default for stability.
 [#734](https://github.com/mattermost/desktop/pull/734)
 [#750](https://github.com/mattermost/desktop/pull/750)
 - Enabled Certificate Transparency verification in HTTPS.
 [#741](https://github.com/mattermost/desktop/pull/741)
-- Clear memory cache at a certain interval in order to reduce memory usage.
+- Cleared memory cache at a certain interval in order to reduce memory usage.
 [#746](https://github.com/mattermost/desktop/pull/746)
-- Hide hovering URL bar for internal links.
+- Hid hovering URL bar for internal links.
 [#745](https://github.com/mattermost/desktop/pull/745)
-- Truncate long server names in server tabs.
+- Truncated long server names in server tabs.
 [#518](https://github.com/mattermost/desktop/issues/518)
+- Updated design for loading animation icon.
+[#748](https://github.com/mattermost/desktop/issues/748)
 
 #### Windows
 - [Windows 7/8] Desktop notifications now respect the duration setting of Control Panel.
@@ -40,15 +36,15 @@ Release date: TBD
 ### Bug Fixes
 
 #### All Platforms
-- Fixed correct spellchecker language not used for non en-US locales on initial installation.
+- Fixed an issue where correct spellchecker language was not used for non en-US locales on initial installation.
 [#632](https://github.com/mattermost/desktop/issues/632)
-- Fixed an issue where error page appears when U2F device is used for multi-factor authentication through single sign-on.
+- Fixed an issue where error page appeared when U2F device was used for multi-factor authentication through single sign-on.
 [#708](https://github.com/mattermost/desktop/issues/708)
-- Fixed an issue where the main screen opens a blank page when a tab is dropped into the screen.
+- Fixed an issue where the main screen opened a blank page when a tab was dropped into the screen.
 [#667](https://github.com/mattermost/desktop/issues/667)
 
 #### Windows
-- Fixed `file://` protocol not working. But localhost URL will not continue to work.
+- Fixed an issue where `file://` protocol was not working (localhost URL will not continue to work).
 [#579](https://github.com/mattermost/desktop/issues/579)
 - Fixed an issue where Windows installer crashed in some cases.
 [#728](https://github.com/mattermost/desktop/issues/728)
@@ -60,6 +56,33 @@ Release date: TBD
 #### Linux
 - Fixed an issue where app crashed after toggling "Show icon in the notification area" setting.
 [#706](https://github.com/mattermost/desktop/issues/706)
+
+### Known Issues
+
+#### All Platforms
+ - [Insecure connection produces hundreds of log messages](https://github.com/mattermost/desktop/issues/569)
+ - [When hovering over tab outline of tab should not disappear](https://github.com/mattermost/desktop/issues/717)
+ - [Right-clicking an image, then choosing "Save Image" does nothing](https://github.com/mattermost/desktop/issues/707)
+ 
+#### Windows
+ - [App window doesn't save "floating" app position](https://github.com/mattermost/desktop/issues/617)
+ - [Windows 7] [Sometimes the app tries to render the page inside the app instead of in a new browser tab when clicking links](https://github.com/mattermost/desktop/issues/369)
+ - [Windows 10] [Incorrect task name in Windows 10 startup list](https://github.com/mattermost/desktop/issues/559)
+ - [Bleed through of Mattermost over a file explorer](https://github.com/mattermost/desktop/issues/753)
+ - [Mattermost app is in Windows tab list after hidden auto-start](https://github.com/mattermost/desktop/issues/738)
+ 
+#### Mac
+ - The application crashes when a file upload dialog is canceled without closing Quick Look
+ - [When the app auto-starts, app page opens on screen instead of being minimized to Dock](https://github.com/mattermost/desktop/issues/583)
+ 
+#### Linux (Beta)
+ - [Zoomed window size disrupted on return from settings on desktop client](https://github.com/mattermost/desktop/issues/737)
+
+### Contributors
+
+Many thanks to all our contributors. In alphabetical order:
+
+ - [dmeza](https://github.com/dmeza), [hmhealey](https://github.com/hmhealey), [jasonblais](https://github.com/jasonblais), [kethinov](https://github.com/kethinov), [lieut-data](https://github.com/lieut-data), [lip-d](https://github.com/lip-d), [yuya-oc](https://github.com/yuya-oc)
 
 ----
 
