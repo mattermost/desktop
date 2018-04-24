@@ -24,6 +24,8 @@ Release date: TBD
 [#745](https://github.com/mattermost/desktop/pull/745)
 - Truncate long server names in server tabs.
 [#518](https://github.com/mattermost/desktop/issues/518)
+- Updated Mattermost animation icon which is displayed when loading a page.
+[#748](https://github.com/mattermost/desktop/issues/748)
 
 #### Windows
 - [Windows 7/8] Desktop notifications now respect the duration setting of Control Panel.
