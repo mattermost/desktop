@@ -61,7 +61,12 @@ export default class TabBar extends React.Component { // need "this"
           ref={id}
           draggable={false}
         >
-          <span title={team.name} className={unreadCount === 0 ? '' : 'teamTabItem-unread'}>{team.name}</span>
+          <span
+            title={team.name}
+            className={unreadCount === 0 ? '' : 'teamTabItem-unread'}
+          >
+            {team.name}
+          </span>
           { ' ' }
           { badgeDiv }
           {permissionOverlay}
