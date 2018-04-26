@@ -317,7 +317,6 @@ const MainPage = createReactClass({
       authServerURL = `${tmpURL.protocol}//${tmpURL.host}`;
       authInfo = this.state.loginQueue[0].authInfo;
     }
-    var currentTeamURL = this.props.teams[this.state.key].url;
     var modal = (
       <NewTeamModal
         show={this.state.showNewTeamModal}
@@ -365,7 +364,7 @@ const MainPage = createReactClass({
           { viewsRow }
         </Grid>
         <TransitionGroup>
-          { (this.state.targetURL === '' || this.state.targetURL.startsWith(currentTeamURL)) ?
+          { (this.state.targetURL === '') ?
             null :
             <CSSTransition
               classNames='hovering'
