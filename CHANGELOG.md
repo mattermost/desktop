@@ -22,8 +22,9 @@ Release date: TBD
 [#746](https://github.com/mattermost/desktop/pull/746)
 - Hide hovering URL bar for internal links.
 [#745](https://github.com/mattermost/desktop/pull/745)
-- Truncate long server names in server tabs.
+- Improved appearance of server tabs.
 [#518](https://github.com/mattermost/desktop/issues/518)
+[#717](https://github.com/mattermost/desktop/issues/717)
 - Updated Mattermost animation icon which is displayed when loading a page.
 [#748](https://github.com/mattermost/desktop/issues/748)
 
@@ -54,6 +55,8 @@ Release date: TBD
 [#579](https://github.com/mattermost/desktop/issues/579)
 - Fixed an issue where Windows installer crashed in some cases.
 [#728](https://github.com/mattermost/desktop/issues/728)
+- Fixed outline on tab bar disappearing on hover.
+[#717](https://github.com/mattermost/desktop/issues/717)
 
 #### Mac
 - Fixed an issue where app crashed after toggling "Show Mattermost icon in menu bar" setting.
