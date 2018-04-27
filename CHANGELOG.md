@@ -50,6 +50,8 @@ Release date: TBD
 [#707](https://github.com/mattermost/desktop/issues/707)
 - Fixed an issue that prevented typing in the form fields on the add server dialog when launched from the tab bar.
 [#780](https://github.com/mattermost/desktop/issues/780)
+- Fixed an issue that could cause an error message on the add new server dialog to be misleading.
+[#438](https://github.com/mattermost/desktop/issues/438)
 
 #### Windows
 - Fixed `file://` protocol not working. But localhost URL will not continue to work.
