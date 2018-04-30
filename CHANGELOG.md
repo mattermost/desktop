@@ -48,6 +48,8 @@ Release date: TBD
 [#708](https://github.com/mattermost/desktop/issues/708)
 - Fixed an issue where the main screen opens a blank page when a tab is dropped into the screen.
 [#667](https://github.com/mattermost/desktop/issues/667)
+- Fixed "Save Image" context menu not working.
+[#707](https://github.com/mattermost/desktop/issues/707)
 - Fixed an issue that prevented typing in the form fields on the add server dialog when launched from the tab bar.
 [#780](https://github.com/mattermost/desktop/issues/780)
 
