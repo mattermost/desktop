@@ -48,6 +48,8 @@ Release date: TBD
 [#708](https://github.com/mattermost/desktop/issues/708)
 - Fixed an issue where the main screen opens a blank page when a tab is dropped into the screen.
 [#667](https://github.com/mattermost/desktop/issues/667)
+- Fixed "Save Image" context menu not working.
+[#707](https://github.com/mattermost/desktop/issues/707)
 
 #### Windows
 - Fixed `file://` protocol not working. But localhost URL will not continue to work.
