@@ -137,9 +137,9 @@ dom-helpers@^3.2.0, dom-helpers@^3.2.1:
   version "3.2.1"
   resolved "https://registry.yarnpkg.com/dom-helpers/-/dom-helpers-3.2.1.tgz#3203e07fed217bd1f424b019735582fc37b2825a"
 
-electron-context-menu@^0.9.0:
-  version "0.9.1"
-  resolved "https://registry.yarnpkg.com/electron-context-menu/-/electron-context-menu-0.9.1.tgz#ed4df20c080491c3c996abfcb363159946a38058"
+electron-context-menu@0.9.0:
+  version "0.9.0"
+  resolved "https://registry.yarnpkg.com/electron-context-menu/-/electron-context-menu-0.9.0.tgz#8a66bef502f0524255a1350a2b4704dbaacfd503"
   dependencies:
     electron-dl "^1.2.0"
     electron-is-dev "^0.1.1"
