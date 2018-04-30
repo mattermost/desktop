@@ -13,7 +13,7 @@ pipeline {
                 echo 'Building Mattermost Desktop App'
                 sh '''#!/bin/bash
                   rm -rf release
-                  npm install
+                  yarn install
                   npm run build
                 '''
 
@@ -30,7 +30,7 @@ pipeline {
                 sh '''#!/bin/bash
                   rm -rf release
                   rm -rf codesign-*
-                  npm install
+                  yarn install
                   npm run build
                 '''
 
@@ -119,7 +119,7 @@ pipeline {
                   echo 'Building Mattermost Desktop App'
                   sh '''#!/bin/bash
                     rm -rf release
-                    npm install
+                    yarn install
                     npm run build
                   '''
 
