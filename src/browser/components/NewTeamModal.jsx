@@ -148,6 +148,9 @@ export default class NewTeamModal extends React.Component {
                 value={this.state.teamName}
                 placeholder='Server Name'
                 onChange={this.handleTeamNameChange.bind(this)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
               />
               <FormControl.Feedback/>
               <HelpBlock>{'The name of the server displayed on your desktop app tab bar.'}</HelpBlock>
@@ -163,6 +166,9 @@ export default class NewTeamModal extends React.Component {
                 value={this.state.teamUrl}
                 placeholder='https://example.com'
                 onChange={this.handleTeamUrlChange.bind(this)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
               />
               <FormControl.Feedback/>
               <HelpBlock className='NewTeamModal-noBottomSpace'>{'The URL of your Mattermost server. Must start with http:// or https://.'}</HelpBlock>

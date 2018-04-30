@@ -50,6 +50,8 @@ Release date: TBD
 [#667](https://github.com/mattermost/desktop/issues/667)
 - Fixed "Save Image" context menu not working.
 [#707](https://github.com/mattermost/desktop/issues/707)
+- Fixed an issue that prevented typing in the form fields on the add server dialog when launched from the tab bar.
+[#780](https://github.com/mattermost/desktop/issues/780)
 
 #### Windows
 - Fixed `file://` protocol not working. But localhost URL will not continue to work.

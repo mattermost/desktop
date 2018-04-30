@@ -45,6 +45,12 @@ Configuration will be saved into Electron's userData directory:
 * `~/Library/Application Support/Mattermost` on OS X
 * `~/.config/Mattermost` on Linux
 
+A custom data directory location can be specified with:
+
+* `Mattermost.exe -- --data-dir C:\my-mattermost-data` on Windows
+* `open /Applications/Mattermost.app/ --args --data-dir ~/my-mattermost-data/` on macOS 
+* `./mattermost-desktop --args --data-dir ~/my-mattermost-data/` on Linux
+
 *When you upgrade from electron-mattermost, please copy `config.json` from `electron-mattermost`.
 Otherwise, you have to configure again.*
 
