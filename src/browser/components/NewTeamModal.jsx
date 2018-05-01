@@ -68,7 +68,17 @@ export default class NewTeamModal extends React.Component {
   }
 
   getError() {
-    return this.getTeamNameValidationError() || this.getTeamUrlValidationError();
+    const nameError = this.getTeamNameValidationError();
+    const urlError = this.getTeamUrlValidationError();
+
+    if (nameError && urlError) {
+      return 'Name and URL are required.';
+    } else if (nameError) {
+      return nameError;
+    } else if (urlError) {
+      return urlError;
+    }
+    return null;
   }
 
   validateForm() {
