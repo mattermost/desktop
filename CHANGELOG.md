@@ -20,8 +20,6 @@ Release date: TBD
 [#741](https://github.com/mattermost/desktop/pull/741)
 - Clear memory cache at a certain interval in order to reduce memory usage.
 [#746](https://github.com/mattermost/desktop/pull/746)
-- Hide hovering URL bar for internal links.
-[#745](https://github.com/mattermost/desktop/pull/745)
 - Improved appearance of server tabs.
 [#518](https://github.com/mattermost/desktop/issues/518)
 [#717](https://github.com/mattermost/desktop/issues/717)
@@ -33,10 +31,9 @@ Release date: TBD
 [#601](https://github.com/mattermost/desktop/issues/601)
 
 ### Architectural Changes
-- Major version upgrade of Electron to v1.7.x to v1.8.x. Electron is the underlying technology used to build the Desktop apps.
+- Major version upgrade of Electron to v1.7.13 to v1.8.4. Electron is the underlying technology used to build the Desktop apps.
 [#711](https://github.com/mattermost/desktop/pull/711)
 [#741](https://github.com/mattermost/desktop/pull/741)
-<!-- Todo: Complete version number when cutting release -->
 - `require` and `module.exports` were replaced with `import` and `export`.
 [#756](https://github.com/mattermost/desktop/pull/756)
 
