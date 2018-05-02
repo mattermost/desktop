@@ -37,7 +37,14 @@ export default function permissionRequestHandler(mainWindow, permissionManager) 
     dequeueRequests(requestQueue, permissionManager, origin, permission, status);
   });
   return (webContents, permission, callback) => {
-    const targetURL = new URL(webContents.getURL());
+    let targetURL;
+    try {
+      targetURL = new URL(webContents.getURL());
+    } catch (err) {
+      console.log(err);
+      callback(false);
+      return;
+    }
     if (permissionManager.isDenied(targetURL.origin, permission)) {
       callback(false);
       return;
