@@ -14,8 +14,6 @@ Release date: TBD
 [#741](https://github.com/mattermost/desktop/pull/741)
 - Cleared memory cache at a certain interval in order to reduce memory usage.
 [#746](https://github.com/mattermost/desktop/pull/746)
-- Hid hovering URL bar for internal links.
-[#745](https://github.com/mattermost/desktop/pull/745)
 - Truncated long server names in server tabs.
 [#518](https://github.com/mattermost/desktop/issues/518)
 - Updated design for loading animation icon.
@@ -42,6 +40,12 @@ Release date: TBD
 [#708](https://github.com/mattermost/desktop/issues/708)
 - Fixed an issue where the main screen opened a blank page when a tab was dropped into the screen.
 [#667](https://github.com/mattermost/desktop/issues/667)
+- Fixed an issue where right-clicking an image, then choosing "Save Image", did nothing.
+[#774](https://github.com/mattermost/desktop/pull/774)
+- Fixed an issue where hovering over tab outline of tab disappeared.
+[#778](https://github.com/mattermost/desktop/pull/778)
+- Fixed an issue where only the name field should be highlighted and "Add" button shouldn't be disabled when a name was missing from "Add new server" dialog.
+[#779](https://github.com/mattermost/desktop/pull/779)
 
 #### Windows
 - Fixed an issue where `file://` protocol was not working (localhost URL will not continue to work).
