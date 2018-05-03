@@ -227,9 +227,10 @@ const MattermostView = createReactClass({
 
   focusOnWebView() {
     const webview = findDOMNode(this.refs.webview);
-    if (!webview.getWebContents().isFocused()) {
+    const webContents = webview.getWebContents(); // webContents might not be created yet.
+    if (webContents && webContents.isFocused()) {
       webview.focus();
-      webview.getWebContents().focus();
+      webContents.focus();
     }
   },
 
