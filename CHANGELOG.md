@@ -2,12 +2,14 @@
 
 ## Release v4.1.0
 
-Release date: TBD
+Release date: May ?, 2018
 
 ### Improvements
 
 #### All Platforms
-- Added "Enable GPU hardware acceleration" option. It is disabled by default for stability.
+- Updated design for loading animation icon.
+[#748](https://github.com/mattermost/desktop/issues/748)
+- Added an option for enabling GPU hardware acceleration. It is disabled by default for stability.
 [#734](https://github.com/mattermost/desktop/pull/734)
 [#750](https://github.com/mattermost/desktop/pull/750)
 - Enabled Certificate Transparency verification in HTTPS.
@@ -16,8 +18,6 @@ Release date: TBD
 [#746](https://github.com/mattermost/desktop/pull/746)
 - Truncated long server names in server tabs.
 [#518](https://github.com/mattermost/desktop/issues/518)
-- Updated design for loading animation icon.
-[#748](https://github.com/mattermost/desktop/issues/748)
 
 #### Windows
 - [Windows 7/8] Desktop notifications now respect the duration setting of Control Panel.
@@ -42,13 +42,13 @@ Release date: TBD
 [#667](https://github.com/mattermost/desktop/issues/667)
 - Fixed an issue where right-clicking an image, then choosing "Save Image", did nothing.
 [#774](https://github.com/mattermost/desktop/pull/774)
-- Fixed an issue where hovering over tab outline of tab disappeared.
+- Fixed an issue where tab outline disappeared when hovering over a tab.
 [#778](https://github.com/mattermost/desktop/pull/778)
 - Fixed an issue where only the name field should be highlighted and "Add" button shouldn't be disabled when a name was missing from "Add new server" dialog.
 [#779](https://github.com/mattermost/desktop/pull/779)
 
 #### Windows
-- Fixed an issue where `file://` protocol was not working (localhost URL will not continue to work).
+- Fixed an issue where `file://` protocol was not working. Localhost URL will not continue to work.
 [#579](https://github.com/mattermost/desktop/issues/579)
 - Fixed an issue where Windows installer crashed in some cases.
 [#728](https://github.com/mattermost/desktop/issues/728)
@@ -65,8 +65,6 @@ Release date: TBD
 
 #### All Platforms
  - [Insecure connection produces hundreds of log messages](https://github.com/mattermost/desktop/issues/569)
- - [When hovering over tab outline of tab should not disappear](https://github.com/mattermost/desktop/issues/717)
- - [Right-clicking an image, then choosing "Save Image" does nothing](https://github.com/mattermost/desktop/issues/707)
  
 #### Windows
  - [App window doesn't save "floating" app position](https://github.com/mattermost/desktop/issues/617)
