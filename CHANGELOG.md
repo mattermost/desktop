@@ -84,7 +84,7 @@ Release date: May ?, 2018
 
 Many thanks to all our contributors. In alphabetical order:
 
- - [dmeza](https://github.com/dmeza), [hmhealey](https://github.com/hmhealey), [jasonblais](https://github.com/jasonblais), [kethinov](https://github.com/kethinov), [lieut-data](https://github.com/lieut-data), [lip-d](https://github.com/lip-d), [yuya-oc](https://github.com/yuya-oc)
+ - [Autre31415](https://github.com/Autre31415), [dmeza](https://github.com/dmeza), [hmhealey](https://github.com/hmhealey), [jasonblais](https://github.com/jasonblais), [kethinov](https://github.com/kethinov), [lieut-data](https://github.com/lieut-data), [lip-d](https://github.com/lip-d), [mkraft](https://github.com/mkraft), [yuya-oc](https://github.com/yuya-oc)
 
 ----
 
