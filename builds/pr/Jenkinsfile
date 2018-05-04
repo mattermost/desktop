@@ -1,0 +1,7 @@
+#!/usr/bin/groovy
+
+@Library('shared-pipelines') _
+
+desktop_pr {
+    
+}
