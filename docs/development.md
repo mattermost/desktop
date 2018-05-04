@@ -38,10 +38,10 @@ $ npm run package:<all | windows | mac | linux>
 Need to install some software required by `electron-builder` to build packages.
 Please see [electron-builder wiki](https://github.com/electron-userland/electron-builder/wiki/Multi-Platform-Build) for detailed description.
 
-**Minimum requirements for current platform:**
-- Windows: Nothing.
-- macOS: `brew install gnu-tar`
-- Linux (64 bit): `icnsutils`, `graphicsmagick` and `xz-utils` if Ubuntu is used.
+**Requirements vary depending on the platform that you are building on:**
+- Windows: Nothing
+- macOS: `brew install gnu-tar`, `brew install wine`, `brew install graphicsmagick`
+- Linux (64 bit): `icnsutils`, `graphicsmagick` and `xz-utils` if Ubuntu is used
 
 #### Code signing
 Set environment variables to build trusted packages.
