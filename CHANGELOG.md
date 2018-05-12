@@ -16,18 +16,18 @@ Release date: May ?, 2018
 [#741](https://github.com/mattermost/desktop/pull/741)
 - Cleared memory cache at a certain interval in order to reduce memory usage.
 [#746](https://github.com/mattermost/desktop/pull/746)
-- Truncated long server names in server tabs.
+- Improved appearance of server tabs.
 [#518](https://github.com/mattermost/desktop/issues/518)
+[#717](https://github.com/mattermost/desktop/issues/717)
 
 #### Windows
 - [Windows 7/8] Desktop notifications now respect the duration setting of Control Panel.
 [#601](https://github.com/mattermost/desktop/issues/601)
 
 ### Architectural Changes
-- Major version upgrade of Electron to v1.7.x to v1.8.x. Electron is the underlying technology used to build the Desktop apps.
+- Major version upgrade of Electron to v1.7.3 to v1.8.4. Electron is the underlying technology used to build the Desktop apps.
 [#711](https://github.com/mattermost/desktop/pull/711)
 [#741](https://github.com/mattermost/desktop/pull/741)
-<!-- Todo: Complete version number when cutting release -->
 - `require` and `module.exports` were replaced with `import` and `export`.
 [#756](https://github.com/mattermost/desktop/pull/756)
 
@@ -44,14 +44,20 @@ Release date: May ?, 2018
 [#774](https://github.com/mattermost/desktop/pull/774)
 - Fixed an issue where tab outline disappeared when hovering over a tab.
 [#778](https://github.com/mattermost/desktop/pull/778)
-- Fixed an issue where only the name field should be highlighted and "Add" button shouldn't be disabled when a name was missing from "Add new server" dialog.
-[#779](https://github.com/mattermost/desktop/pull/779)
+- Fixed "Save Image" context menu not working.
+[#707](https://github.com/mattermost/desktop/issues/707)
+- Fixed an issue that prevented typing in the form fields on the add server dialog when launched from the tab bar.
+[#780](https://github.com/mattermost/desktop/issues/780)
+- Fixed an issue that could cause an error message on the add new server dialog to be misleading.
+[#438](https://github.com/mattermost/desktop/issues/438)
 
 #### Windows
 - Fixed an issue where `file://` protocol was not working. Localhost URL will not continue to work.
 [#579](https://github.com/mattermost/desktop/issues/579)
 - Fixed an issue where Windows installer crashed in some cases.
 [#728](https://github.com/mattermost/desktop/issues/728)
+- Fixed outline on tab bar disappearing on hover.
+[#717](https://github.com/mattermost/desktop/issues/717)
 
 #### Mac
 - Fixed an issue where app crashed after toggling "Show Mattermost icon in menu bar" setting.
