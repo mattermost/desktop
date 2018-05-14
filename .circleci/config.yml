@@ -13,6 +13,7 @@ jobs:
       - run: apt-get update && apt-get -y install --no-install-recommends jq icnsutils graphicsmagick tzdata
       - run: yarn
       - run: npm run build
+      - run: npm run lint:js
       - run: npm run package:windows
       - run: npm run package:mac
       - run: npm run package:linux
