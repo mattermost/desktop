@@ -49,7 +49,7 @@
     "cross-env": "^5.1.3",
     "css-loader": "^0.28.9",
     "devtron": "^1.4.0",
-    "electron": "1.8.4",
+    "electron": "2.0.1",
     "electron-builder": "20.8.1",
     "electron-builder-squirrel-windows": "~20.8.0",
     "electron-connect": "^0.6.3",
