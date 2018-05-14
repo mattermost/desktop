@@ -287,7 +287,8 @@ describe('browser/settings.html', function desc() {
         env.addClientCommands(this.app.client);
         await this.app.client.
           loadSettingsPage().
-          waitForExist(ID_INPUT_ENABLE_HARDWARE_ACCELERATION, 5000);
+          waitForExist(ID_INPUT_ENABLE_HARDWARE_ACCELERATION, 5000).
+          scroll(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
         const selected = await this.app.client.isSelected(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
         selected.should.equal(true); // default is true
 
