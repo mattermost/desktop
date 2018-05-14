@@ -25,7 +25,7 @@ Release date: May ?, 2018
 [#601](https://github.com/mattermost/desktop/issues/601)
 
 ### Architectural Changes
-- Major version upgrade of Electron to v1.7.3 to v1.8.4. Electron is the underlying technology used to build the Desktop apps.
+- Major version upgrade of Electron from v1.7.13 to v1.8.4. Electron is the underlying technology used to build the Desktop apps.
 [#711](https://github.com/mattermost/desktop/pull/711)
 [#741](https://github.com/mattermost/desktop/pull/741)
 - `require` and `module.exports` were replaced with `import` and `export`.
@@ -44,8 +44,6 @@ Release date: May ?, 2018
 [#774](https://github.com/mattermost/desktop/pull/774)
 - Fixed an issue where tab outline disappeared when hovering over a tab.
 [#778](https://github.com/mattermost/desktop/pull/778)
-- Fixed "Save Image" context menu not working.
-[#707](https://github.com/mattermost/desktop/issues/707)
 - Fixed an issue that prevented typing in the form fields on the add server dialog when launched from the tab bar.
 [#780](https://github.com/mattermost/desktop/issues/780)
 - Fixed an issue that could cause an error message on the add new server dialog to be misleading.
@@ -71,18 +69,18 @@ Release date: May ?, 2018
 
 #### All Platforms
  - [Insecure connection produces hundreds of log messages](https://github.com/mattermost/desktop/issues/569)
- 
+
 #### Windows
  - [App window doesn't save "floating" app position](https://github.com/mattermost/desktop/issues/617)
  - [Windows 7] [Sometimes the app tries to render the page inside the app instead of in a new browser tab when clicking links](https://github.com/mattermost/desktop/issues/369)
  - [Windows 10] [Incorrect task name in Windows 10 startup list](https://github.com/mattermost/desktop/issues/559)
  - [Bleed through of Mattermost over a file explorer](https://github.com/mattermost/desktop/issues/753)
  - [Mattermost app is in Windows tab list after hidden auto-start](https://github.com/mattermost/desktop/issues/738)
- 
+
 #### Mac
  - The application crashes when a file upload dialog is canceled without closing Quick Look
  - [When the app auto-starts, app page opens on screen instead of being minimized to Dock](https://github.com/mattermost/desktop/issues/583)
- 
+
 #### Linux (Beta)
  - [Zoomed window size disrupted on return from settings on desktop client](https://github.com/mattermost/desktop/issues/737)
 
