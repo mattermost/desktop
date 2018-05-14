@@ -17,11 +17,11 @@ Release date: May 16, 2018
    - Fixed Mac and Linux crashing after toggling "Show Mattermost icon in menu bar" app setting.
 - Updated design for loading animation icon.
 [#748](https://github.com/mattermost/desktop/issues/748)
- - Enabled Certificate Transparency verification in HTTPS.
-[#741](https://github.com/mattermost/desktop/pull/741)
  - Improved appearance of server tabs.
 [#518](https://github.com/mattermost/desktop/issues/518)
 [#717](https://github.com/mattermost/desktop/issues/717)
+ - Enabled [Certificate Transparency](https://www.certificate-transparency.org/what-is-ct) verification in HTTPS.
+[#741](https://github.com/mattermost/desktop/pull/741)
 
 #### Windows
  - [Windows 7/8] Desktop notifications now respect the duration setting set in the Control Panel.
