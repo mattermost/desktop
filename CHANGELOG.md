@@ -7,9 +7,9 @@ Release date: May 16, 2018
 ### Improvements
 
 #### All Platforms
+ - Added "Enable GPU hardware acceleration" option. It's enabled by default.
+ [#734](https://github.com/mattermost/desktop/pull/734)
  - Improved stability and performance
-   - Disabled GPU acceleration by default to reduce app crashes. It can be enabled in the App Settings. [#734](https://github.com/mattermost/desktop/pull/734)
-[#750](https://github.com/mattermost/desktop/pull/750)
    - Reduced memory usage by periodically clearing cache. [#746](https://github.com/mattermost/desktop/issues/710)
    - Fixed app crashing when a server tab was drag-and-dropped to the message view.
 [#667](https://github.com/mattermost/desktop/issues/667)
