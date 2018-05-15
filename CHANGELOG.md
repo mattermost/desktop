@@ -31,7 +31,7 @@ Release date: May 16, 2018
  - Major version upgrade of Electron from v1.7.13 to v1.8.4. Electron is the underlying technology used to build the Desktop apps.
 [#711](https://github.com/mattermost/desktop/pull/711)
 [#741](https://github.com/mattermost/desktop/pull/741)
- - ES6 `import` and `export` now replace the `require` and `modul.export` modules for better Reach development.
+ - ES6 `import` and `export` now replace the `require` and `modul.export` modules for better development.
 [#756](https://github.com/mattermost/desktop/pull/756)
  - Storybook added to more easily develop React componets without executing the desktop app. [#757](https://github.com/mattermost/desktop/pull/757)
 
