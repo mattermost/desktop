@@ -7,12 +7,11 @@ Release date: May 16, 2018
 ### Improvements
 
 #### All Platforms
- - Added "Enable GPU hardware acceleration" option. It's enabled by default.
- [#734](https://github.com/mattermost/desktop/pull/734)
  - Improved stability and performance
    - Reduced memory usage by periodically clearing cache. [#746](https://github.com/mattermost/desktop/issues/710)
    - Fixed app crashing when a server tab was drag-and-dropped to the message view.
 [#667](https://github.com/mattermost/desktop/issues/667)
+   - Added an option to disable GPU hardware acceleration in App Settings to improve stability in some systems. [#734](https://github.com/mattermost/desktop/pull/734)
    - Fixed Windows crash issues during installation. [#728](https://github.com/mattermost/desktop/issues/728)
    - Fixed Mac and Linux crashing after toggling "Show Mattermost icon in menu bar" app setting.
 - Updated design for loading animation icon.
@@ -31,6 +30,7 @@ Release date: May 16, 2018
  - Major version upgrade of Electron from v1.7.13 to v1.8.4. Electron is the underlying technology used to build the Desktop apps.
 [#711](https://github.com/mattermost/desktop/pull/711)
 [#741](https://github.com/mattermost/desktop/pull/741)
+ - Mac download files now use Zip packages rather than tar.gz files. [#749](https://github.com/mattermost/desktop/pull/749)
  - ES6 `import` and `export` now replace the `require` and `modul.export` modules for better development.
 [#756](https://github.com/mattermost/desktop/pull/756)
  - Storybook added to more easily develop React componets without executing the desktop app. [#757](https://github.com/mattermost/desktop/pull/757)
