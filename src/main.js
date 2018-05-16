@@ -46,6 +46,7 @@ import allowProtocolDialog from './main/allowProtocolDialog';
 import PermissionManager from './main/PermissionManager';
 import permissionRequestHandler from './main/permissionRequestHandler';
 import AppStateManager from './main/AppStateManager';
+import initCookieManager from './main/cookieManager';
 
 import SpellChecker from './main/SpellChecker';
 
@@ -422,6 +423,8 @@ app.on('ready', () => {
       setDeeplinkingUrl(tmpArgs[0]);
     }
   }
+
+  initCookieManager(session.defaultSession);
 
   mainWindow = createMainWindow(config, {
     hideOnStartup,

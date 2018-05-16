@@ -18,6 +18,12 @@
   padding: 0 15px;
 }
 
+.TabBar>li.teamTabItem:not(.active)>a:hover {
+  background-color: #e6e6e6;
+  border: 1px solid #ddd;
+  transition: background-color 0.2s ease;
+}
+
 .TabBar .TabBar-addServerButton>a {
   border: none;
   background: transparent;
@@ -30,6 +36,7 @@
   color: #333;
   background-color: #e6e6e6;
   border-color: #adadad;
+  transition: background-color 0.2s ease;
 }
 
 .TabBar .TabBar-badge {

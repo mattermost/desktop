@@ -289,19 +289,19 @@ describe('browser/settings.html', function desc() {
           loadSettingsPage().
           waitForExist(ID_INPUT_ENABLE_HARDWARE_ACCELERATION, 5000);
         const selected = await this.app.client.isSelected(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
-        selected.should.equal(false); // default is false
+        selected.should.equal(true); // default is true
 
         await this.app.client.click(ID_INPUT_ENABLE_HARDWARE_ACCELERATION).
           waitForVisible('#appOptionsSaveIndicator', 5000).
           waitForVisible('#appOptionsSaveIndicator', 5000, true); // at least 2500 ms to disappear
         const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-        config0.enableHardwareAcceleration.should.equal(true);
+        config0.enableHardwareAcceleration.should.equal(false);
 
         await this.app.client.click(ID_INPUT_ENABLE_HARDWARE_ACCELERATION).
           waitForVisible('#appOptionsSaveIndicator', 5000).
           waitForVisible('#appOptionsSaveIndicator', 5000, true); // at least 2500 ms to disappear
         const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-        config1.enableHardwareAcceleration.should.equal(false);
+        config1.enableHardwareAcceleration.should.equal(true);
       });
     });
   });

@@ -68,7 +68,17 @@ export default class NewTeamModal extends React.Component {
   }
 
   getError() {
-    return this.getTeamNameValidationError() || this.getTeamUrlValidationError();
+    const nameError = this.getTeamNameValidationError();
+    const urlError = this.getTeamUrlValidationError();
+
+    if (nameError && urlError) {
+      return 'Name and URL are required.';
+    } else if (nameError) {
+      return nameError;
+    } else if (urlError) {
+      return urlError;
+    }
+    return null;
   }
 
   validateForm() {
@@ -148,6 +158,9 @@ export default class NewTeamModal extends React.Component {
                 value={this.state.teamName}
                 placeholder='Server Name'
                 onChange={this.handleTeamNameChange.bind(this)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
               />
               <FormControl.Feedback/>
               <HelpBlock>{'The name of the server displayed on your desktop app tab bar.'}</HelpBlock>
@@ -163,6 +176,9 @@ export default class NewTeamModal extends React.Component {
                 value={this.state.teamUrl}
                 placeholder='https://example.com'
                 onChange={this.handleTeamUrlChange.bind(this)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
               />
               <FormControl.Feedback/>
               <HelpBlock className='NewTeamModal-noBottomSpace'>{'The URL of your Mattermost server. Must start with http:// or https://.'}</HelpBlock>
