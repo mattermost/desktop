@@ -8,7 +8,7 @@ This release contains multiple bug fixes for Mac due to an incorrect build for v
 
 ### Bug Fixes
 
-Each of these bugs are already fixed for Windows and Linux v4.1.0.
+Each of the issues listed below are already fixed for Windows and Linux v4.1.0.
 
 #### Mac
  - Fixed an issue where right-clicking an image, then choosing "Save Image", did nothing.
@@ -20,7 +20,7 @@ Each of these bugs are already fixed for Windows and Linux v4.1.0.
  - Fixed an issue where timestamps in message view showed no URL on hover. [#777](https://github.com/mattermost/desktop/pull/777)
  - Fixed an issue where quitting and reopening the app required the user to log back in to Mattermost. [#789](https://github.com/mattermost/desktop/pull/789)
  - Fixed an issue where adding a new server sometimes caused a blank page. [#787](https://github.com/mattermost/desktop/pull/787)
- - Fixed deep linking via mattermost:// protocol spawning a new copy of the Desktop App on the taskbar. [#771](https://github.com/mattermost/desktop/issues/771)
+ - Fixed deep linking via ``mattermost://`` protocol spawning a new copy of the Desktop App on the taskbar. [#771](https://github.com/mattermost/desktop/issues/771)
 
 ----
 
