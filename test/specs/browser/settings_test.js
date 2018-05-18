@@ -388,7 +388,7 @@ describe('browser/settings.html', function desc() {
     it('should close the window after clicking cancel', () => {
       return this.app.client.
         click('#cancelNewServerModal').
-        pause(1000). // Animation
+        waitForExist('#newServerModal', 10000, true).
         isExisting('#newServerModal').then((existing) => {
           existing.should.be.false;
         });
