@@ -1,5 +1,5 @@
 # Contributing Guidelines
-Thank you for your contributing! My requests are few things. Please read below.
+Thank you for your interest in contributing! Please see the guidelines below before contributing. and [join our "Desktop App" community channel](https://pre-release.mattermost.com/core/channels/desktop-app) to ask questions from community members and the Mattermost core team.
 
 ## Issue
 Thank you for feedback. When you report a problem, please pay attention to following points.
