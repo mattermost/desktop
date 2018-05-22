@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Create a report about an issue you found
 
 ---
 
@@ -23,8 +23,6 @@ Issue in one concise sentence.
 - Mattermost Server version: X.X.X <!-- See [Mattermost Menu] > [About Mattermost], where [Mattermost Menu] can be accessed by clicking on three dots next to your profile picture -->
 
 **Steps to reproduce**
-1. Do ...
-2. Then, ...
 
 **Expected behavior**
 
