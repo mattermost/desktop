@@ -51,6 +51,9 @@ export default class LoginModal extends React.Component {
                   type='text'
                   placeholder='User Name'
                   ref='username'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                 />
               </Col>
             </FormGroup>
@@ -64,6 +67,9 @@ export default class LoginModal extends React.Component {
                   type='password'
                   placeholder='Password'
                   ref='password'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                 />
               </Col>
             </FormGroup>
