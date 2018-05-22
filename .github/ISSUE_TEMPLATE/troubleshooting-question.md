@@ -1,7 +1,7 @@
 ---
 name: Troubleshooting question
-about: Ask a question about your problem
+about: Ask a question to solve installation and configuration issues 
 
 ---
 
-Please see https://www.mattermost.org/troubleshoot/
+For troubleshooting, see [https://www.mattermost.org/troubleshoot/](https://www.mattermost.org/troubleshoot/).
