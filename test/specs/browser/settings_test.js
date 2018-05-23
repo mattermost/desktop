@@ -370,6 +370,7 @@ describe('browser/settings.html', function desc() {
     });
 
     it('should disappear on click background', async () => {
+      await this.app.browserWindow.setSize(1024, 768); // Resize the window to click the center of <body>
       await this.app.client.
         click('body').
         waitForVisible(modalTitleSelector, 10000, true);
