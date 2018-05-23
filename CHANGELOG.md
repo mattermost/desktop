@@ -1,5 +1,17 @@
 # Mattermost Desktop Application Changelog
 
+## Release v4.1.2
+
+Release date: May 25, 2018
+
+### Bug Fixes
+
+#### All Platforms
+ - Fixed authentication dialog not working.
+ [#809](https://github.com/mattermost/desktop/issues/809)
+
+---
+
 ## Release v4.1.1
 
 Release date: May 17, 2018
