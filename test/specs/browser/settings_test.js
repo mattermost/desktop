@@ -275,7 +275,14 @@ describe('browser/settings.html', function desc() {
         const selected = await this.app.client.isSelected('#inputSpellChecker');
         selected.should.equal(true);
 
-        await this.app.client.click('#inputSpellChecker').pause(700);
+        const windowBounds = await this.app.browserWindow.getBounds();
+        const inputLocation = await this.app.client.getLocation('#inputSpellChecker');
+        const offset = (inputLocation.y - windowBounds.height) + 100;
+
+        await this.app.client.
+          scroll(0, offset).
+          click('#inputSpellChecker').
+          pause(5000);
         const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
         config1.useSpellChecker.should.equal(false);
       });
@@ -363,6 +370,7 @@ describe('browser/settings.html', function desc() {
     });
 
     it('should disappear on click background', async () => {
+      await this.app.browserWindow.setSize(1024, 768); // Resize the window to click the center of <body>
       await this.app.client.
         click('body').
         waitForVisible(modalTitleSelector, 10000, true);
@@ -388,7 +396,7 @@ describe('browser/settings.html', function desc() {
     it('should close the window after clicking cancel', () => {
       return this.app.client.
         click('#cancelNewServerModal').
-        pause(1000). // Animation
+        waitForExist('#newServerModal', 10000, true).
         isExisting('#newServerModal').then((existing) => {
           existing.should.be.false;
         });
