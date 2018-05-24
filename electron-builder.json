@@ -22,7 +22,7 @@
     "synopsis": "Mattermost"
   },
   "linux": {
-    "category": "InstantMessaging",
+    "category": "Network;InstantMessaging",
     "target": [
       "deb",
       "tar.gz"
