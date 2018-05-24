@@ -13,5 +13,6 @@ Exec="${FULL_PATH}/mattermost-desktop"
 Terminal=false
 Type=Application
 Icon=${FULL_PATH}/icon.png
+Categories=Network;InstantMessaging;
 EOS
 chmod +x Mattermost.desktop
