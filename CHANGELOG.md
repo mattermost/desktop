@@ -16,11 +16,19 @@ Release date: TBD
 
 ### Bug Fixes
 
+----
+
+## Release v4.1.2
+
+Release date: May 25, 2018
+
+### Bug Fixes
+
 #### All Platforms
- - Fixed authentication dialog not working.
+ - Fixed an issue where the popup dialog to authenticate a user to their proxy or server didn't work.
  [#809](https://github.com/mattermost/desktop/issues/809)
 
-----
+---
 
 ## Release v4.1.1
 
