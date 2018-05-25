@@ -15,6 +15,7 @@ Release date: TBD
 #### Linux
  - Updated categories in order to be listed under the appropriate submenu of the application starter.
  [#816](https://github.com/mattermost/desktop/pull/816)
+ [#818](https://github.com/mattermost/desktop/pull/818)
 
 ### Architectural Changes
 
