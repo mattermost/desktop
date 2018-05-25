@@ -17,8 +17,8 @@
     "postinstall": "electron-builder install-app-deps && npm run extract-dict",
     "extract-dict": "node scripts/extract_dict.js src/node_modules/simple-spellchecker/dict",
     "build": "npm-run-all build:*",
-    "build:main": "webpack --bail --config webpack.config.main.js",
-    "build:renderer": "webpack --bail --config webpack.config.renderer.js",
+    "build:main": "webpack-cli --bail --config webpack.config.main.js",
+    "build:renderer": "webpack-cli --bail --config webpack.config.renderer.js",
     "start": "electron src --disable-dev-mode",
     "storybook": "start-storybook -p 9001 -c src/.storybook",
     "clean": "rm -rf release/ node_modules/ src/node_modules/ && find src -name '*_bundle.js' | xargs rm",
@@ -66,6 +66,7 @@
     "style-loader": "^0.21.0",
     "url-loader": "^1.0.1",
     "webpack": "^4.8.3",
+    "webpack-cli": "^2.1.4",
     "webpack-dev-server": "^3.1.4",
     "webpack-merge": "^4.1.2"
   }
