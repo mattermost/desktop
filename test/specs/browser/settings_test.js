@@ -386,7 +386,8 @@ describe('browser/settings.html', function desc() {
       env.addClientCommands(this.app.client);
       return this.app.client.
         loadSettingsPage().
-        click('#addNewServer');
+        click('#addNewServer').
+        pause(1000);
     });
 
     it('should open the new server modal', () => {
@@ -407,7 +408,7 @@ describe('browser/settings.html', function desc() {
     it('should not be valid if no team name has been set', () => {
       return this.app.client.
         click('#saveNewServerModal').
-        pause(500).
+        waitForExist('.has-error #teamNameInput', 10000).
         isExisting('.has-error #teamNameInput').then((existing) => {
           existing.should.be.true;
         });
@@ -416,7 +417,7 @@ describe('browser/settings.html', function desc() {
     it('should not be valid if no server address has been set', () => {
       return this.app.client.
         click('#saveNewServerModal').
-        pause(500).
+        waitForExist('.has-error #teamUrlInput', 10000).
         isExisting('.has-error #teamUrlInput').then((existing) => {
           existing.should.be.true;
         });
