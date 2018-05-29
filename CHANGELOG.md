@@ -18,6 +18,8 @@ Release date: TBD
  [#818](https://github.com/mattermost/desktop/pull/818)
 
 ### Architectural Changes
+ - Major version upgrade of Electron to v2.0.2. Electron is the underlying technology used to build the Desktop apps.
+ [#820](https://github.com/mattermost/desktop/pull/820)
 
 ### Bug Fixes
 
