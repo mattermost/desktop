@@ -186,6 +186,7 @@ describe('browser/settings.html', function desc() {
       describe('Save tray icon setting on mac', () => {
         env.shouldTest(it, env.isOneOf(['darwin', 'linux']))('should be saved when it\'s selected', async () => {
           env.addClientCommands(this.app.client);
+          await this.app.browserWindow.setSize(1024, 768); // Resize the window to click the element
           await this.app.client.
             loadSettingsPage().
             click('#inputShowTrayIcon').
@@ -206,6 +207,7 @@ describe('browser/settings.html', function desc() {
       describe('Save tray icon theme on linux', () => {
         env.shouldTest(it, process.platform === 'linux')('should be saved when it\'s selected', async () => {
           env.addClientCommands(this.app.client);
+          await this.app.browserWindow.setSize(1024, 768); // Resize the window to click the element
           await this.app.client.
             loadSettingsPage().
             click('#inputShowTrayIcon').
