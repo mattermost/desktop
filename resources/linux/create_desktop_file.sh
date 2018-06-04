@@ -12,7 +12,7 @@ Comment=Mattermost Desktop application for Linux
 Exec="${FULL_PATH}/mattermost-desktop"
 Terminal=false
 Type=Application
-Icon=${FULL_PATH}/icon.png
+Icon=${FULL_PATH}/icon.svg
 Categories=Network;InstantMessaging;
 EOS
 chmod +x Mattermost.desktop
