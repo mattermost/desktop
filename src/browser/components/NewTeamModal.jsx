@@ -2,8 +2,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-/* eslint react/no-deprecated: 1 */
-
 import React from 'react';
 import PropTypes from 'prop-types';
 import {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} from 'react-bootstrap';
@@ -18,10 +16,6 @@ export default class NewTeamModal extends React.Component {
       teamUrl: '',
       saveStarted: false,
     };
-  }
-
-  componentWillMount() {
-    this.initializeOnShow();
   }
 
   initializeOnShow() {
