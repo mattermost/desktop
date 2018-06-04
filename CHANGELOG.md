@@ -13,7 +13,7 @@ Release date: TBD
 ### Improvements
 
 #### Linux
- - Use SVG icon for Linux application menus in place of PNG icon
+ - [tar.gz] Use SVG icon for Linux application menus in place of PNG icon
  [#815](https://github.com/mattermost/desktop/pull/815)
  - Updated categories in order to be listed under the appropriate submenu of the application starter.
  [#816](https://github.com/mattermost/desktop/pull/816)
