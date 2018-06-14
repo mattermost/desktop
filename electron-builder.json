@@ -1,5 +1,6 @@
 {
   "appId": "com.mattermost.desktop",
+  "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
   "directories": {
     "buildResources": "resources",
     "app": "src",
@@ -59,7 +60,8 @@
     ]
   },
   "squirrelWindows": {
-    "iconUrl": "file://resources/icon.ico"
+    "iconUrl": "file://resources/icon.ico",
+    "artifactName": "${name}-setup-${version}-${arch}.${ext}"
   },
   "win": {
     "target": [

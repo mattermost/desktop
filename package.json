@@ -28,7 +28,7 @@
     "test": "npm-run-all test:* lint:*",
     "test:app": "cross-env NODE_ENV=production npm run build && mocha -r babel-register --reporter mocha-circleci-reporter --recursive test/specs",
     "package:all": "cross-env NODE_ENV=production npm-run-all check-build-config package:windows package:mac package:linux",
-    "package:windows": "cross-env NODE_ENV=production npm-run-all check-build-config build && build --win --x64 --ia32 --config.extraMetadata.name=mattermost --publish=never && npm run manipulate-windows-zip",
+    "package:windows": "cross-env NODE_ENV=production npm-run-all check-build-config build && build --win --x64 --ia32 --config.extraMetadata.name=mattermost --publish=never",
     "package:mac": "cross-env NODE_ENV=production npm-run-all check-build-config build && build --mac --publish=never",
     "package:linux": "cross-env NODE_ENV=production npm-run-all check-build-config build && build --linux --x64 --ia32 --config.extraMetadata.name=mattermost-desktop --publish=never",
     "manipulate-windows-zip": "node scripts/manipulate_windows_zip.js",
