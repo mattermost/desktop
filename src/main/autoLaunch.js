@@ -1,4 +1,7 @@
-const AutoLaunch = require('auto-launch');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+import AutoLaunch from 'auto-launch';
 
 async function upgradeAutoLaunch() {
   if (process.platform === 'darwin') {
@@ -6,7 +9,7 @@ async function upgradeAutoLaunch() {
   }
   const appLauncher = new AutoLaunch({
     name: 'Mattermost',
-    isHidden: true
+    isHidden: true,
   });
   const enabled = await appLauncher.isEnabled();
   if (enabled) {
@@ -14,4 +17,4 @@ async function upgradeAutoLaunch() {
   }
 }
 
-module.exports = {upgradeAutoLaunch};
+export default upgradeAutoLaunch;

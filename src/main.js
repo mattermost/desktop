@@ -25,7 +25,7 @@ import {parse as parseArgv} from 'yargs';
 import {protocols} from '../electron-builder.json';
 
 import CriticalErrorHandler from './main/CriticalErrorHandler';
-import {upgradeAutoLaunch} from './main/autoLaunch';
+import upgradeAutoLaunch from './main/autoLaunch';
 import buildConfig from './common/config/buildConfig';
 
 const criticalErrorHandler = new CriticalErrorHandler();

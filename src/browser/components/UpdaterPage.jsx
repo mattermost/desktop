@@ -1,24 +1,31 @@
-const React = require('react');
-const propTypes = require('prop-types');
-const {Button, Navbar, ProgressBar} = require('react-bootstrap');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+import React from 'react';
+import propTypes from 'prop-types';
+import {Button, Navbar, ProgressBar} from 'react-bootstrap';
 
 function InstallButton(props) {
   if (props.notifyOnly) {
-    return (<Button
-      bsStyle='primary'
-      onClick={props.onClickDownload}
-            >{'Download Update'}</Button>);
+    return (
+      <Button
+        bsStyle='primary'
+        onClick={props.onClickDownload}
+      >{'Download Update'}</Button>
+    );
   }
-  return (<Button
-    bsStyle='primary'
-    onClick={props.onClickInstall}
-          >{'Install Update'}</Button>);
+  return (
+    <Button
+      bsStyle='primary'
+      onClick={props.onClickInstall}
+    >{'Install Update'}</Button>
+  );
 }
 
 InstallButton.propTypes = {
   notifyOnly: propTypes.bool.isRequired,
   onClickInstall: propTypes.func.isRequired,
-  onClickDownload: propTypes.func.isRequired
+  onClickDownload: propTypes.func.isRequired,
 };
 
 function UpdaterPage(props) {
@@ -84,7 +91,7 @@ UpdaterPage.propTypes = {
   onClickDownload: propTypes.func.isRequired,
   onClickReleaseNotes: propTypes.func.isRequired,
   onClickRemind: propTypes.func.isRequired,
-  onClickSkip: propTypes.func.isRequired
+  onClickSkip: propTypes.func.isRequired,
 };
 
-module.exports = UpdaterPage;
+export default UpdaterPage;

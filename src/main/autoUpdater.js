@@ -1,8 +1,14 @@
-const {app, BrowserWindow, dialog, ipcMain, shell} = require('electron');
-const fs = require('fs');
-const path = require('path');
-const {autoUpdater} = require('electron-updater');
-const semver = require('semver');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+import fs from 'fs';
+import path from 'path';
+
+import {app, BrowserWindow, dialog, ipcMain, shell} from 'electron';
+
+import {autoUpdater} from 'electron-updater';
+import semver from 'semver';
 
 const INTERVAL_48_HOURS_IN_MS = 172800000; // 48 * 60 * 60 * 1000 [ms]
 
@@ -28,7 +34,7 @@ function createUpdaterModal(parentWindow, options) {
     width: windowWidth,
     height: windowHeight,
     resizable: false,
-    autoHideMenuBar: true
+    autoHideMenuBar: true,
   };
   if (process.platform === 'linux') {
     windowOptions.icon = options.linuxAppIcon;
@@ -87,7 +93,7 @@ function initialize(appState, mainWindow, notifyOnly = false) {
     if (isUpdateApplicable(new Date(), appState.skippedVersion, info)) {
       updaterModal = createUpdaterModal(mainWindow, {
         linuxAppIcon: path.join(assetsDir, 'appicon.png'),
-        notifyOnly
+        notifyOnly,
       });
       updaterModal.on('closed', () => {
         updaterModal = null;
@@ -123,7 +129,7 @@ function initialize(appState, mainWindow, notifyOnly = false) {
         type: 'info',
         buttons: ['Close'],
         title: 'Your Desktop App is up to date',
-        message: 'You have the latest version of the Mattermost Desktop App.'
+        message: 'You have the latest version of the Mattermost Desktop App.',
       }, () => {}); // eslint-disable-line no-empty-function
     }
     setTimeout(() => {
@@ -169,10 +175,10 @@ function loadConfig(file) {
   return new AutoUpdaterConfig(file);
 }
 
-module.exports = {
+export default {
   INTERVAL_48_HOURS_IN_MS,
   checkForUpdates,
   shouldCheckForUpdatesOnStart,
   initialize,
-  loadConfig
+  loadConfig,
 };
