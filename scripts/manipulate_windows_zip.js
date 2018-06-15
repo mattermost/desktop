@@ -4,11 +4,8 @@
 'use strict';
 
 const spawnSync = require('child_process').spawnSync;
-<<<<<<< HEAD
-
-=======
 const path = require('path');
->>>>>>> 5611556... Add extra app-updater-config.json into Windows zip
+
 const path7za = require('7zip-bin').path7za;
 
 const pkg = require('../src/package.json');
@@ -31,6 +28,6 @@ function disableInstallUpdate(zipPath) {
 }
 
 console.log('Manipulating 64-bit zip...');
-disableInstallUpdate(`release/${name}-${appVersion}-win.zip`);
+disableInstallUpdate(`release/${name}-${appVersion}-win-x64.zip`);
 console.log('Manipulating 32-bit zip...');
 disableInstallUpdate(`release/${name}-${appVersion}-win-ia32.zip`);
