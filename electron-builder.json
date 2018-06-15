@@ -88,6 +88,6 @@
     ]
   },
   "nsis": {
-    "artifactName": "mattermost-setup-${version}.${ext}"
+    "artifactName": "${name}-setup-${version}-win.${ext}"
   }
 }
