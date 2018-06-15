@@ -19,13 +19,13 @@ const {
 } = electron;
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
-import {autoUpdater} from 'electron-updater';
 import {parse as parseArgv} from 'yargs';
 
 import {protocols} from '../electron-builder.json';
 
 import CriticalErrorHandler from './main/CriticalErrorHandler';
 import upgradeAutoLaunch from './main/autoLaunch';
+import autoUpdater from './main/autoUpdater';
 import buildConfig from './common/config/buildConfig';
 
 const criticalErrorHandler = new CriticalErrorHandler();
