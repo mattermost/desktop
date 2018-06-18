@@ -6,7 +6,7 @@ import url from 'url';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import propTypes from 'prop-types';
-import {ipcRenderer} from 'electron';
+import {ipcRenderer, remote} from 'electron';
 
 import UpdaterPage from './components/UpdaterPage.jsx';
 
@@ -35,6 +35,7 @@ class UpdaterPageContainer extends React.Component {
   render() {
     return (
       <UpdaterPage
+        appName={`${remote.app.getName()} Desktop App`}
         notifyOnly={this.props.notifyOnly}
         {...this.state}
         onClickReleaseNotes={() => {

@@ -35,7 +35,7 @@ function UpdaterPage(props) {
         <h1 className='UpdaterPage-heading'>{'New update is available'}</h1>
       </Navbar>
       <div className='container-fluid'>
-        <p>{'A new version of the Mattermost Desktop App is available!'}</p>
+        <p>{`A new version of the ${props.appName} is available!`}</p>
         <p>{'Read the '}
           <a
             href='#'
@@ -84,6 +84,7 @@ function UpdaterPage(props) {
 }
 
 UpdaterPage.propTypes = {
+  appName: propTypes.string.isRequired,
   notifyOnly: propTypes.bool.isRequired,
   isDownloading: propTypes.bool.isRequired,
   progress: propTypes.number,
