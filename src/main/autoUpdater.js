@@ -7,10 +7,14 @@ import path from 'path';
 
 import {app, BrowserWindow, dialog, ipcMain, shell} from 'electron';
 
+import logger from 'electron-log';
 import {autoUpdater} from 'electron-updater';
 import semver from 'semver';
 
 const INTERVAL_48_HOURS_IN_MS = 172800000; // 48 * 60 * 60 * 1000 [ms]
+
+autoUpdater.logger = logger;
+autoUpdater.logger.transports.file.level = 'info';
 
 let updaterModal = null;
 
