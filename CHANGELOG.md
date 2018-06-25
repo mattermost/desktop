@@ -12,6 +12,10 @@ Release date: TBD
 
 ### Improvements
 
+#### Mac
+ - Add **.dmg** package to support installation.
+ [#588](https://github.com/mattermost/desktop/pull/588)
+
 #### Linux
  - [tar.gz] Use SVG icon for Linux application menus in place of PNG icon
  [#815](https://github.com/mattermost/desktop/pull/815)
