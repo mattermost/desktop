@@ -11,7 +11,7 @@ import logger from 'electron-log';
 import {autoUpdater} from 'electron-updater';
 import semver from 'semver';
 
-const INTERVAL_48_HOURS_IN_MS = 172800000; // 48 * 60 * 60 * 1000 [ms]
+const INTERVAL_48_HOURS_IN_MS = 5 * 60 * 1000; // 5 min.
 
 autoUpdater.logger = logger;
 autoUpdater.logger.transports.file.level = 'info';
