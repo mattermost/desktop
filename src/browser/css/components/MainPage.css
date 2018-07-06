@@ -11,3 +11,64 @@
 div[id*="-permissionDialog"] {
   max-width: 350px;
 }
+
+.finder {
+  position: fixed;
+  top: 0;
+  right: 20px;
+  padding: 5px;
+  background: #eee;
+  border: 1px solid #d7d7d7;
+  border-top: none;
+  border-right: none;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  font-size: 0px;
+}
+
+.finder-input-wrapper {
+  display: inline-block;
+  position: relative;
+}
+
+.finder button {
+  border: 1px solid #d2d2d2;
+  border-radius: 3px;
+  background: white;
+  outline: none;
+  padding: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.finder button:hover {
+  background: #f0f0f0;
+}
+
+.finder-input {
+  border: 1px solid #d2d2d2;
+  border-radius: 3px;
+  padding: 5px;
+  outline: none;
+  font-size: 14px;
+}
+
+.finder-input:focus {
+  border-color: #35b5f4;
+  box-shadow: 0 0 1px #35b5f4;
+}
+
+.finder__hidden {
+  display: none;
+}
+
+.finder-progress__disabled {
+  display: none;
+}
+
+.finder-progress {
+    position: absolute;
+    font-size: 12px;
+    right: 10px;
+    top: 10px;
+}

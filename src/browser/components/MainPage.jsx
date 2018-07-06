@@ -11,6 +11,7 @@ import {Grid, Row} from 'react-bootstrap';
 
 import {ipcRenderer, remote} from 'electron';
 
+import Finder from '../../main/finder';
 import Utils from '../../utils/util.js';
 
 import LoginModal from './LoginModal.jsx';
@@ -45,6 +46,7 @@ const MainPage = createReactClass({
         }
       }
     }
+
     return {
       key,
       unreadCounts: new Array(this.props.teams.length),
@@ -141,10 +143,19 @@ const MainPage = createReactClass({
         }
       }
     });
+
+    const webview = document.getElementById('mattermostView' + this.state.key);
+    this.finder = new Finder(webview);
+    ipcRenderer.on('toggle-find', () => {
+      this.finder.toggle();
+    });
   },
   componentDidUpdate(prevProps, prevState) {
     if (prevState.key !== this.state.key) { // i.e. When tab has been changed
       this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+      this.finder.destroy();
+      const webview = document.getElementById('mattermostView' + this.state.key);
+      this.finder = new Finder(webview);
     }
   },
   handleSelect(key) {
@@ -152,13 +163,13 @@ const MainPage = createReactClass({
     this.setState({
       key: newKey,
     });
-    this.handleOnTeamFocused(newKey);
-
     var webview = document.getElementById('mattermostView' + newKey);
     ipcRenderer.send('update-title', {
       title: webview.getTitle(),
     });
+    this.handleOnTeamFocused(newKey);
   },
+
   handleUnreadCountChange(index, unreadCount, mentionCount, isUnread, isMentioned) {
     var unreadCounts = this.state.unreadCounts;
     var mentionCounts = this.state.mentionCounts;
