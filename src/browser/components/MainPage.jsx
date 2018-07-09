@@ -11,7 +11,6 @@ import {Grid, Row} from 'react-bootstrap';
 
 import {ipcRenderer, remote} from 'electron';
 
-import Finder from '../../main/finder';
 import Utils from '../../utils/util.js';
 
 import LoginModal from './LoginModal.jsx';
@@ -19,7 +18,7 @@ import MattermostView from './MattermostView.jsx';
 import TabBar from './TabBar.jsx';
 import HoveringURL from './HoveringURL.jsx';
 import PermissionRequestDialog from './PermissionRequestDialog.jsx';
-
+import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
 
 const MainPage = createReactClass({
@@ -144,24 +143,20 @@ const MainPage = createReactClass({
       }
     });
 
-    const webview = document.getElementById('mattermostView' + this.state.key);
-    this.finder = new Finder(webview);
     ipcRenderer.on('toggle-find', () => {
-      this.finder.toggle();
+      this.toggleFinder();
     });
   },
   componentDidUpdate(prevProps, prevState) {
     if (prevState.key !== this.state.key) { // i.e. When tab has been changed
       this.refs[`mattermostView${this.state.key}`].focusOnWebView();
-      this.finder.destroy();
-      const webview = document.getElementById('mattermostView' + this.state.key);
-      this.finder = new Finder(webview);
     }
   },
   handleSelect(key) {
     const newKey = (this.props.teams.length + key) % this.props.teams.length;
     this.setState({
       key: newKey,
+      finderVisible: false,
     });
     var webview = document.getElementById('mattermostView' + newKey);
     ipcRenderer.send('update-title', {
@@ -256,13 +251,20 @@ const MainPage = createReactClass({
     });
   },
 
-  focusOnWebView() {
-    this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+  focusOnWebView(e) {
+    if (e.target.className !== 'finder-input') {
+      this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+    }
+  },
+
+  toggleFinder() {
+    this.setState({
+      finderVisible: !this.state.finderVisible,
+    });
   },
 
   render() {
     var self = this;
-
     var tabsRow;
     if (this.props.teams.length > 1) {
       tabsRow = (
@@ -376,6 +378,12 @@ const MainPage = createReactClass({
         <Grid fluid={true}>
           { tabsRow }
           { viewsRow }
+          { this.state.finderVisible ? (
+            <Finder
+              webviewKey={this.state.key}
+              close={this.toggleFinder}
+            />
+          ) : null}
         </Grid>
         <TransitionGroup>
           { (this.state.targetURL === '') ?
