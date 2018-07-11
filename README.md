@@ -47,7 +47,7 @@ Configuration will be saved into Electron's userData directory:
 
 A custom data directory location can be specified with:
 
-* `Mattermost.exe -- --data-dir C:\my-mattermost-data` on Windows
+* `Mattermost.exe --args --data-dir C:\my-mattermost-data` on Windows
 * `open /Applications/Mattermost.app/ --args --data-dir ~/my-mattermost-data/` on macOS 
 * `./mattermost-desktop --args --data-dir ~/my-mattermost-data/` on Linux
 
