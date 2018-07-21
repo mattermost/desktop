@@ -84,6 +84,7 @@ function isUpdateApplicable(now, skippedVersion, updateInfo) {
 
 function downloadAndInstall() {
   autoUpdater.downloadUpdate().then(() => {
+    global.willAppQuit = true;
     autoUpdater.quitAndInstall();
   });
 }
