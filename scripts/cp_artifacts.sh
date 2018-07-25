@@ -7,6 +7,8 @@ DEST=$2
 
 cp "${SRC}/mattermost-${VERSION}-win-ia32.zip" "${DEST}/mattermost-desktop-${VERSION}-win-ia32.zip"
 cp "${SRC}/mattermost-${VERSION}-win-x64.zip" "${DEST}/mattermost-desktop-${VERSION}-win-x64.zip"
+cp "${SRC}/mattermost-${VERSION}-win-ia32.msi" "${DEST}/mattermost-desktop-${VERSION}-win-ia32.msi"
+cp "${SRC}/mattermost-${VERSION}-win.msi" "${DEST}/mattermost-desktop-${VERSION}-win-x64.msi"
 cp "${SRC}/squirrel-windows/mattermost-setup-${VERSION}.exe" "${DEST}/mattermost-setup-${VERSION}-x64.exe"
 cp "${SRC}"/squirrel-windows-ia32/*.exe "${DEST}/"
 cp "${SRC}"/mattermost-desktop-*.zip "${DEST}/"
