@@ -28,6 +28,12 @@ export default class Finder extends React.Component {
     this.searchInput.removeEventListener('keyup', this.handleKeyEvent);
   }
 
+  componentDidUpdate(prevProps) {
+    if (this.props.focusState && (this.props.focusState !== prevProps.focusState)) {
+      this.searchInput.focus();
+    }
+  }
+
   findNext = () => {
     this.webview.findInPage(this.state.searchTxt);
   };
@@ -78,6 +84,7 @@ export default class Finder extends React.Component {
               placeholder=''
               value={this.state.searchTxt}
               onChange={this.searchTxt}
+              onBlur={this.props.inputBlur}
               ref={(input) => {
                 this.searchInput = input;
               }}
@@ -87,15 +94,71 @@ export default class Finder extends React.Component {
           <button
             className='finder-prev'
             onClick={this.findPrev}
-          >{'↑'}</button>
+          >
+            <svg
+              xmlns='http://www.w3.org/2000/svg'
+              width='24'
+              height='24'
+              viewBox='0 0 24 24'
+              className='icon'
+              fill='none'
+              stroke='currentColor'
+              strokeWidth='2'
+              strokeLinecap='round'
+              strokeLinejoin='round'
+            >
+              <polyline points='18 15 12 9 6 15'/>
+            </svg>
+          </button>
           <button
             className='finder-next'
             onClick={this.findNext}
-          >{'↓'}</button>
+          >
+            <svg
+              xmlns='http://www.w3.org/2000/svg'
+              width='24'
+              height='24'
+              viewBox='0 0 24 24'
+              fill='none'
+              className='icon arrow-up'
+              stroke='currentColor'
+              strokeWidth='2'
+              strokeLinecap='round'
+              strokeLinejoin='round'
+            >
+              <polyline points='6 9 12 15 18 9'/>
+            </svg>
+          </button>
           <button
             className='finder-close'
             onClick={this.props.close}
-          >{'✕'}</button>
+          >
+            <svg
+              xmlns='http://www.w3.org/2000/svg'
+              width='24'
+              height='24'
+              viewBox='0 0 24 24'
+              fill='none'
+              className='icon'
+              stroke='currentColor'
+              strokeWidth='2'
+              strokeLinecap='round'
+              strokeLinejoin='round'
+            >
+              <line
+                x1='18'
+                y1='6'
+                x2='6'
+                y2='18'
+              />
+              <line
+                x1='6'
+                y1='6'
+                x2='18'
+                y2='18'
+              />
+            </svg>
+          </button>
         </div>
       </div>
     );
@@ -105,4 +168,6 @@ export default class Finder extends React.Component {
 Finder.propTypes = {
   close: PropTypes.func,
   webviewKey: PropTypes.number,
+  focusState: PropTypes.bool,
+  inputBlur: PropTypes.func,
 };

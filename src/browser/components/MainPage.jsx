@@ -144,7 +144,7 @@ const MainPage = createReactClass({
     });
 
     ipcRenderer.on('toggle-find', () => {
-      this.toggleFinder();
+      this.toggleFinder(true);
     });
   },
   componentDidUpdate(prevProps, prevState) {
@@ -257,9 +257,16 @@ const MainPage = createReactClass({
     }
   },
 
-  toggleFinder() {
+  toggleFinder(state) {
     this.setState({
-      finderVisible: !this.state.finderVisible,
+      finderVisible: state || !this.state.finderVisible,
+      focusFinder: true,
+    });
+  },
+
+  inputBlur() {
+    this.setState({
+      focusFinder: false,
     });
   },
 
@@ -382,6 +389,8 @@ const MainPage = createReactClass({
             <Finder
               webviewKey={this.state.key}
               close={this.toggleFinder}
+              focusState={this.state.focusFinder}
+              inputBlur={this.inputBlur}
             />
           ) : null}
         </Grid>
