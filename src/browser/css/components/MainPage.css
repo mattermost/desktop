@@ -16,7 +16,7 @@ div[id*="-permissionDialog"] {
   position: fixed;
   top: 0;
   right: 20px;
-  padding: 5px;
+  padding: 4px;
   background: #eee;
   border: 1px solid #d7d7d7;
   border-top: none;
