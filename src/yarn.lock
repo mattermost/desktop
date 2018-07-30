@@ -498,9 +498,9 @@ setimmediate@^1.0.5:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/setimmediate/-/setimmediate-1.0.5.tgz#290cbb232e306942d7d7ea9b83732ab7856f8285"
 
-simple-spellchecker@^0.9.5:
-  version "0.9.5"
-  resolved "https://registry.yarnpkg.com/simple-spellchecker/-/simple-spellchecker-0.9.5.tgz#4c6dce87e29488c29324b9613d3ad1f1bdac2e51"
+simple-spellchecker@^0.9.6:
+  version "0.9.6"
+  resolved "https://registry.yarnpkg.com/simple-spellchecker/-/simple-spellchecker-0.9.6.tgz#ecc68eb5d26c7495eae34932f2641b14a435d265"
   dependencies:
     binarysearch "^0.2.4"
     damerau-levenshtein "git://github.com/cbaatz/damerau-levenshtein.git"
