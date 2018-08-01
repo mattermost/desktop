@@ -83,10 +83,11 @@ function isUpdateApplicable(now, skippedVersion, updateInfo) {
 }
 
 function downloadAndInstall() {
-  autoUpdater.downloadUpdate().then(() => {
+  autoUpdater.on('update-downloaded', () => {
     global.willAppQuit = true;
     autoUpdater.quitAndInstall();
   });
+  autoUpdater.downloadUpdate();
 }
 
 function initialize(appState, mainWindow, notifyOnly = false) {
