@@ -95,6 +95,12 @@ function createTemplate(mainWindow, config, isDev) {
   template.push({
     label: '&View',
     submenu: [{
+      label: 'Find..',
+      accelerator: 'CmdOrCtrl+F',
+      click(item, focusedWindow) {
+        focusedWindow.webContents.send('toggle-find');
+      },
+    }, {
       label: 'Reload',
       accelerator: 'CmdOrCtrl+R',
       click(item, focusedWindow) {

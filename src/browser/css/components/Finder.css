@@ -1,0 +1,62 @@
+.finder-input-wrapper {
+  display: inline-block;
+  position: relative;
+  vertical-align: bottom;
+}
+
+.finder button {
+  border: none;
+  background: #d2d2d2;
+  outline: none;
+  cursor: pointer;
+  font-size: 18px;
+  height: 26px;
+}
+
+.finder button:hover {
+  background: #f0f0f0;
+}
+
+.finder-input {
+  border: 1px solid #d2d2d2;
+  border-radius: 3px;
+  width: 200px;
+  outline: none;
+  line-height: 24px;
+  font-size: 14px;
+  padding: 0px 35px 0px 5px;
+  vertical-align: baseline;
+}
+
+.finder-input:focus {
+  border-color: #35b5f4;
+  box-shadow: 0 0 1px #35b5f4;
+}
+
+.finder-progress__disabled {
+  display: none;
+}
+
+.finder-progress {
+  position: absolute;
+  font-size: 12px;
+  right: 8px;
+  top: 6px;
+  color: #7b7b7b;
+}
+
+.icon {
+  height: 18px;
+  width: 18px;
+}
+
+.finder .finder-close {
+    background: transparent;
+    border: none;
+}
+
+.finder-next {
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    margin-right: 2px;
+}

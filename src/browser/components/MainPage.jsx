@@ -18,7 +18,7 @@ import MattermostView from './MattermostView.jsx';
 import TabBar from './TabBar.jsx';
 import HoveringURL from './HoveringURL.jsx';
 import PermissionRequestDialog from './PermissionRequestDialog.jsx';
-
+import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
 
 const MainPage = createReactClass({
@@ -45,6 +45,7 @@ const MainPage = createReactClass({
         }
       }
     }
+
     return {
       key,
       unreadCounts: new Array(this.props.teams.length),
@@ -141,6 +142,10 @@ const MainPage = createReactClass({
         }
       }
     });
+
+    ipcRenderer.on('toggle-find', () => {
+      this.activateFinder(true);
+    });
   },
   componentDidUpdate(prevProps, prevState) {
     if (prevState.key !== this.state.key) { // i.e. When tab has been changed
@@ -151,14 +156,15 @@ const MainPage = createReactClass({
     const newKey = (this.props.teams.length + key) % this.props.teams.length;
     this.setState({
       key: newKey,
+      finderVisible: false,
     });
-    this.handleOnTeamFocused(newKey);
-
     var webview = document.getElementById('mattermostView' + newKey);
     ipcRenderer.send('update-title', {
       title: webview.getTitle(),
     });
+    this.handleOnTeamFocused(newKey);
   },
+
   handleUnreadCountChange(index, unreadCount, mentionCount, isUnread, isMentioned) {
     var unreadCounts = this.state.unreadCounts;
     var mentionCounts = this.state.mentionCounts;
@@ -245,13 +251,33 @@ const MainPage = createReactClass({
     });
   },
 
-  focusOnWebView() {
-    this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+  focusOnWebView(e) {
+    if (e.target.className !== 'finder-input') {
+      this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+    }
+  },
+
+  activateFinder() {
+    this.setState({
+      finderVisible: true,
+      focusFinder: true,
+    });
+  },
+
+  closeFinder() {
+    this.setState({
+      finderVisible: false,
+    });
+  },
+
+  inputBlur() {
+    this.setState({
+      focusFinder: false,
+    });
   },
 
   render() {
     var self = this;
-
     var tabsRow;
     if (this.props.teams.length > 1) {
       tabsRow = (
@@ -365,6 +391,14 @@ const MainPage = createReactClass({
         <Grid fluid={true}>
           { tabsRow }
           { viewsRow }
+          { this.state.finderVisible ? (
+            <Finder
+              webviewKey={this.state.key}
+              close={this.closeFinder}
+              focusState={this.state.focusFinder}
+              inputBlur={this.inputBlur}
+            />
+          ) : null}
         </Grid>
         <TransitionGroup>
           { (this.state.targetURL === '') ?
