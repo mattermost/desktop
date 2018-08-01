@@ -12,6 +12,10 @@ Release date: TBD
 
 ### Improvements
 
+#### All Platforms
+ - Added Portuguese spell checker
+ [#843](https://github.com/mattermost/desktop/pull/843)
+
 #### Mac
  - Add **.dmg** package to support installation.
  [#588](https://github.com/mattermost/desktop/pull/588)
