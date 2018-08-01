@@ -13,12 +13,12 @@ jobs:
       - run: apt-get update && apt-get -y install --no-install-recommends jq icnsutils graphicsmagick tzdata
       - run: yarn
       - run: npm run build
-      - run: npm run lint:js
       - run: npm run package:windows
       - run: npm run package:mac
       - run: npm run package:linux
       - run: mkdir -p /tmp/artifacts
       - run: sh -x ./scripts/cp_artifacts.sh release /tmp/artifacts
+      - run: npm run lint:js
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "yarn.lock" }}
           paths:
