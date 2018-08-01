@@ -411,8 +411,6 @@ app.on('ready', () => {
     upgradeAutoLaunch();
   }
 
-  autoUpdater.checkForUpdates();
-
   if (global.isDev) {
     installExtension(REACT_DEVELOPER_TOOLS).
       then((name) => console.log(`Added Extension:  ${name}`)).
@@ -449,6 +447,9 @@ app.on('ready', () => {
   mainWindow.on('unresponsive', criticalErrorHandler.windowUnresponsiveHandler.bind(criticalErrorHandler));
   mainWindow.webContents.on('crashed', () => {
     throw new Error('webContents \'crashed\' event has been emitted');
+  });
+  mainWindow.on('ready-to-show', () => {
+    autoUpdater.checkForUpdates();
   });
 
   ipcMain.on('notified', () => {
