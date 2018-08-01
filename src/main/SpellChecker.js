@@ -90,5 +90,8 @@ SpellChecker.getSpellCheckerLocale = (electronLocale) => {
   if (electronLocale.match(/^nl-?/)) {
     return 'nl-NL';
   }
+  if (electronLocale.match(/^pt-?/)) {
+    return 'pt-BR';
+  }
   return 'en-US';
 };
