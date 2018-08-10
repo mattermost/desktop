@@ -20,7 +20,7 @@ const defaultPreferences = {
   showUnreadBadge: true,
   useSpellChecker: true,
   enableHardwareAcceleration: true,
-  autostart: false,
+  autostart: true,
 };
 
 export default defaultPreferences;
