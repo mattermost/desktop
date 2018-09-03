@@ -50,6 +50,7 @@ import PermissionManager from './main/PermissionManager';
 import permissionRequestHandler from './main/permissionRequestHandler';
 import AppStateManager from './main/AppStateManager';
 import initCookieManager from './main/cookieManager';
+import {shouldBeHiddenOnStartup} from './main/utils';
 
 import SpellChecker from './main/SpellChecker';
 
@@ -65,11 +66,7 @@ let appState = null;
 let permissionManager = null;
 
 const argv = parseArgv(process.argv.slice(1));
-
-var hideOnStartup;
-if (argv.hidden) {
-  hideOnStartup = true;
-}
+const hideOnStartup = shouldBeHiddenOnStartup(argv);
 
 if (argv['data-dir']) {
   app.setPath('userData', path.resolve(argv['data-dir']));
