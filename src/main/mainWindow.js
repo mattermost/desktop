@@ -7,7 +7,7 @@ import path from 'path';
 import {app, BrowserWindow} from 'electron';
 
 function saveWindowState(file, window) {
-  var windowState = window.getBounds();
+  const windowState = window.getBounds();
   windowState.maximized = window.isMaximized();
   windowState.fullscreen = window.isFullScreen();
   try {
@@ -26,7 +26,7 @@ function createMainWindow(config, options) {
 
   // Create the browser window.
   const boundsInfoPath = path.join(app.getPath('userData'), 'bounds-info.json');
-  var windowOptions;
+  let windowOptions;
   try {
     windowOptions = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));
   } catch (e) {

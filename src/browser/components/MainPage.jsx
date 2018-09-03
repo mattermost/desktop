@@ -38,7 +38,7 @@ const MainPage = createReactClass({
   getInitialState() {
     let key = this.props.initialIndex;
     if (this.props.deeplinkingUrl !== null) {
-      for (var i = 0; i < this.props.teams.length; i++) {
+      for (let i = 0; i < this.props.teams.length; i++) {
         if (this.props.deeplinkingUrl.includes(this.props.teams[i].url)) {
           key = i;
           break;
@@ -57,7 +57,7 @@ const MainPage = createReactClass({
     };
   },
   componentDidMount() {
-    var self = this;
+    const self = this;
     ipcRenderer.on('login-request', (event, request, authInfo) => {
       self.setState({
         loginRequired: true,
@@ -96,7 +96,7 @@ const MainPage = createReactClass({
       self.refs[`mattermostView${self.state.key}`].focusOnWebView();
     }
 
-    var currentWindow = remote.getCurrentWindow();
+    const currentWindow = remote.getCurrentWindow();
     currentWindow.on('focus', focusListener);
     window.addEventListener('beforeunload', () => {
       currentWindow.removeListener('focus', focusListener);
@@ -132,7 +132,7 @@ const MainPage = createReactClass({
 
     ipcRenderer.on('protocol-deeplink', (event, deepLinkUrl) => {
       const lastUrlDomain = Utils.getDomain(deepLinkUrl);
-      for (var i = 0; i < this.props.teams.length; i++) {
+      for (let i = 0; i < this.props.teams.length; i++) {
         if (lastUrlDomain === Utils.getDomain(self.refs[`mattermostView${i}`].getSrc())) {
           if (this.state.key !== i) {
             this.handleSelect(i);
@@ -158,7 +158,7 @@ const MainPage = createReactClass({
       key: newKey,
       finderVisible: false,
     });
-    var webview = document.getElementById('mattermostView' + newKey);
+    const webview = document.getElementById('mattermostView' + newKey);
     ipcRenderer.send('update-title', {
       title: webview.getTitle(),
     });
@@ -166,10 +166,10 @@ const MainPage = createReactClass({
   },
 
   handleUnreadCountChange(index, unreadCount, mentionCount, isUnread, isMentioned) {
-    var unreadCounts = this.state.unreadCounts;
-    var mentionCounts = this.state.mentionCounts;
-    var unreadAtActive = this.state.unreadAtActive;
-    var mentionAtActiveCounts = this.state.mentionAtActiveCounts;
+    const unreadCounts = this.state.unreadCounts;
+    const mentionCounts = this.state.mentionCounts;
+    const unreadAtActive = this.state.unreadAtActive;
+    const mentionAtActiveCounts = this.state.mentionAtActiveCounts;
     unreadCounts[index] = unreadCount;
     mentionCounts[index] = mentionCount;
 
@@ -189,8 +189,8 @@ const MainPage = createReactClass({
     this.handleUnreadCountTotalChange();
   },
   markReadAtActive(index) {
-    var unreadAtActive = this.state.unreadAtActive;
-    var mentionAtActiveCounts = this.state.mentionAtActiveCounts;
+    const unreadAtActive = this.state.unreadAtActive;
+    const mentionAtActiveCounts = this.state.mentionAtActiveCounts;
     unreadAtActive[index] = false;
     mentionAtActiveCounts[index] = 0;
     this.setState({
@@ -201,7 +201,7 @@ const MainPage = createReactClass({
   },
   handleUnreadCountTotalChange() {
     if (this.props.onUnreadCountChange) {
-      var allUnreadCount = this.state.unreadCounts.reduce((prev, curr) => {
+      let allUnreadCount = this.state.unreadCounts.reduce((prev, curr) => {
         return prev + curr;
       }, 0);
       this.state.unreadAtActive.forEach((state) => {
@@ -209,7 +209,7 @@ const MainPage = createReactClass({
           allUnreadCount += 1;
         }
       });
-      var allMentionCount = this.state.mentionCounts.reduce((prev, curr) => {
+      let allMentionCount = this.state.mentionCounts.reduce((prev, curr) => {
         return prev + curr;
       }, 0);
       this.state.mentionAtActiveCounts.forEach((count) => {
@@ -277,8 +277,8 @@ const MainPage = createReactClass({
   },
 
   render() {
-    var self = this;
-    var tabsRow;
+    const self = this;
+    let tabsRow;
     if (this.props.teams.length > 1) {
       tabsRow = (
         <Row>
@@ -300,15 +300,15 @@ const MainPage = createReactClass({
       );
     }
 
-    var views = this.props.teams.map((team, index) => {
+    const views = this.props.teams.map((team, index) => {
       function handleUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned) {
         self.handleUnreadCountChange(index, unreadCount, mentionCount, isUnread, isMentioned);
       }
       function handleNotificationClick() {
         self.handleSelect(index);
       }
-      var id = 'mattermostView' + index;
-      var isActive = self.state.key === index;
+      const id = 'mattermostView' + index;
+      const isActive = self.state.key === index;
 
       let teamUrl = team.url;
       const deeplinkingUrl = this.props.deeplinkingUrl;
@@ -332,21 +332,21 @@ const MainPage = createReactClass({
           active={isActive}
         />);
     });
-    var viewsRow = (
+    const viewsRow = (
       <Row>
         {views}
       </Row>);
 
-    var request = null;
-    var authServerURL = null;
-    var authInfo = null;
+    let request = null;
+    let authServerURL = null;
+    let authInfo = null;
     if (this.state.loginQueue.length !== 0) {
       request = this.state.loginQueue[0].request;
       const tmpURL = url.parse(this.state.loginQueue[0].request.url);
       authServerURL = `${tmpURL.protocol}//${tmpURL.host}`;
       authInfo = this.state.loginQueue[0].authInfo;
     }
-    var modal = (
+    const modal = (
       <NewTeamModal
         show={this.state.showNewTeamModal}
         onClose={() => {

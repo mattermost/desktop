@@ -45,7 +45,7 @@ export default {
     if (config.version !== defaultPreferences.version) {
       throw new Error('version ' + config.version + ' is not equal to ' + defaultPreferences.version);
     }
-    var data = JSON.stringify(config, null, '  ');
+    const data = JSON.stringify(config, null, '  ');
     fs.writeFile(configFile, data, 'utf8', callback);
   },
 
@@ -59,7 +59,7 @@ export default {
       fs.mkdirSync(dir);
     }
 
-    var data = JSON.stringify(config, null, '  ');
+    const data = JSON.stringify(config, null, '  ');
     fs.writeFileSync(configFile, data, 'utf8');
   },
 

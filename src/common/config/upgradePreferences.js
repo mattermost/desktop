@@ -20,7 +20,7 @@ function upgradeV0toV1(configV0) {
 }
 
 export default function upgradeToLatest(config) {
-  var configVersion = config.version ? config.version : 0;
+  const configVersion = config.version ? config.version : 0;
   switch (configVersion) {
   case 0:
     return upgradeToLatest(upgradeV0toV1(config));
