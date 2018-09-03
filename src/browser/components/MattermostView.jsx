@@ -72,8 +72,8 @@ const MattermostView = createReactClass({
   },
 
   componentDidMount() {
-    var self = this;
-    var webview = findDOMNode(this.refs.webview);
+    const self = this;
+    const webview = findDOMNode(this.refs.webview);
 
     webview.addEventListener('did-fail-load', (e) => {
       console.log(self.props.name, 'webview did-fail-load', e);
@@ -105,8 +105,8 @@ const MattermostView = createReactClass({
 
     // Open link in browserWindow. for exmaple, attached files.
     webview.addEventListener('new-window', (e) => {
-      var currentURL = url.parse(webview.getURL());
-      var destURL = url.parse(e.url);
+      const currentURL = url.parse(webview.getURL());
+      const destURL = url.parse(e.url);
       if (destURL.protocol !== 'http:' && destURL.protocol !== 'https:' && destURL.protocol !== `${scheme}:`) {
         ipcRenderer.send('confirm-protocol', destURL.protocol, e.url);
         return;
@@ -157,15 +157,17 @@ const MattermostView = createReactClass({
           isLoaded: true,
         });
         break;
-      case 'onUnreadCountChange':
-        var unreadCount = event.args[0];
-        var mentionCount = event.args[1];
+      case 'onUnreadCountChange': {
+        const unreadCount = event.args[0];
+        const mentionCount = event.args[1];
 
         // isUnread and isMentioned is pulse flag.
-        var isUnread = event.args[2];
-        var isMentioned = event.args[3];
+        const isUnread = event.args[2];
+        const isMentioned = event.args[3];
         self.handleUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned);
+
         break;
+      }
       case 'onNotificationClick':
         self.props.onNotificationClick();
         break;
@@ -216,7 +218,7 @@ const MattermostView = createReactClass({
       reloadTimeoutID: null,
       isLoaded: false,
     });
-    var webview = findDOMNode(this.refs.webview);
+    const webview = findDOMNode(this.refs.webview);
     webview.reload();
   },
 
@@ -224,7 +226,7 @@ const MattermostView = createReactClass({
     this.setState({
       errorInfo: null,
     });
-    var webContents = findDOMNode(this.refs.webview).getWebContents();
+    const webContents = findDOMNode(this.refs.webview).getWebContents();
     webContents.session.clearCache(() => {
       webContents.reload();
     });

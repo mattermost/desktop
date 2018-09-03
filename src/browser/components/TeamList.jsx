@@ -35,12 +35,12 @@ const TeamList = createReactClass({
   },
   handleTeamRemove(index) {
     console.log(index);
-    var teams = this.props.teams;
+    const teams = this.props.teams;
     teams.splice(index, 1);
     this.props.onTeamsChange(teams);
   },
   handleTeamAdd(team) {
-    var teams = this.props.teams;
+    const teams = this.props.teams;
 
     // check if team already exists and then change existing team or add new one
     if ((typeof team.index !== 'undefined') && teams[team.index]) {
@@ -81,8 +81,8 @@ const TeamList = createReactClass({
   },
 
   render() {
-    var self = this;
-    var teamNodes = this.props.teams.map((team, i) => {
+    const self = this;
+    const teamNodes = this.props.teams.map((team, i) => {
       function handleTeamRemove() {
         document.activeElement.blur();
         self.openServerRemoveModal(i);
@@ -110,7 +110,7 @@ const TeamList = createReactClass({
       );
     });
 
-    var addServerForm = (
+    const addServerForm = (
       <NewTeamModal
         show={this.props.showAddTeamForm || this.state.showEditTeamForm}
         editMode={this.state.showEditTeamForm}
@@ -126,7 +126,7 @@ const TeamList = createReactClass({
           this.props.setAddTeamFormVisibility(false);
         }}
         onSave={(newTeam) => {
-          var teamData = {
+          const teamData = {
             name: newTeam.name,
             url: newTeam.url,
           };

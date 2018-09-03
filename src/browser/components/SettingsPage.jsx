@@ -38,7 +38,7 @@ const SettingsPage = createReactClass({
   },
 
   getInitialState() {
-    var initialState;
+    let initialState;
     try {
       initialState = settings.readFileSync(this.props.configFile);
     } catch (e) {
@@ -59,7 +59,7 @@ const SettingsPage = createReactClass({
   },
   componentDidMount() {
     if (process.platform === 'win32' || process.platform === 'linux') {
-      var self = this;
+      const self = this;
       appLauncher.isEnabled().then((enabled) => {
         self.setState({
           autostart: enabled,
@@ -125,7 +125,7 @@ const SettingsPage = createReactClass({
   },
 
   saveConfig(callback) {
-    var config = {
+    const config = {
       teams: this.state.teams,
       showTrayIcon: this.state.showTrayIcon,
       trayIconTheme: this.state.trayIconTheme,
@@ -178,7 +178,7 @@ const SettingsPage = createReactClass({
     backToIndex();
   },
   handleChangeShowTrayIcon() {
-    var shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
+    const shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
     this.setState({
       showTrayIcon: shouldShowTrayIcon,
     });
@@ -271,7 +271,7 @@ const SettingsPage = createReactClass({
   },
 
   updateTeam(index, newData) {
-    var teams = this.state.teams;
+    const teams = this.state.teams;
     teams[index] = newData;
     this.setState({
       teams,
@@ -280,7 +280,7 @@ const SettingsPage = createReactClass({
   },
 
   addServer(team) {
-    var teams = this.state.teams;
+    const teams = this.state.teams;
     teams.push(team);
     this.setState({
       teams,
@@ -324,7 +324,7 @@ const SettingsPage = createReactClass({
       },
     };
 
-    var teamsRow = (
+    const teamsRow = (
       <Row>
         <Col md={12}>
           <TeamList
@@ -344,7 +344,7 @@ const SettingsPage = createReactClass({
       </Row>
     );
 
-    var serversRow = (
+    const serversRow = (
       <Row>
         <Col
           md={10}
@@ -375,7 +375,7 @@ const SettingsPage = createReactClass({
       </Row>
     );
 
-    var srvMgmt;
+    let srvMgmt;
     if (this.props.enableServerManagement === true) {
       srvMgmt = (
         <div>
@@ -386,7 +386,7 @@ const SettingsPage = createReactClass({
       );
     }
 
-    var options = [];
+    const options = [];
 
     // MacOS has an option in the Dock, to set the app to autostart, so we choose to not support this option for OSX
     if (process.platform === 'win32' || process.platform === 'linux') {
@@ -576,7 +576,7 @@ const SettingsPage = createReactClass({
       </Checkbox>
     );
 
-    var optionsRow = (options.length > 0) ? (
+    const optionsRow = (options.length > 0) ? (
       <Row>
         <Col md={12}>
           <h2 style={settingsPage.sectionHeading}>{'App Options'}</h2>
