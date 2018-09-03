@@ -11,7 +11,6 @@
   "dependencies": {
     "auto-launch": "^5.0.5",
     "bootstrap": "^3.3.7",
-    "create-react-class": "^15.6.3",
     "electron-context-menu": "0.9.0",
     "electron-devtools-installer": "^2.2.4",
     "electron-is-dev": "^0.3.0",

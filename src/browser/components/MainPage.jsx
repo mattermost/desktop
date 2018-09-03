@@ -1,11 +1,13 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+
+/* eslint-disable react/no-set-state */
+
 import url from 'url';
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import createReactClass from 'create-react-class';
 import {CSSTransition, TransitionGroup} from 'react-transition-group';
 import {Grid, Row} from 'react-bootstrap';
 
@@ -21,21 +23,10 @@ import PermissionRequestDialog from './PermissionRequestDialog.jsx';
 import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
 
-const MainPage = createReactClass({
-  propTypes: {
-    onUnreadCountChange: PropTypes.func.isRequired,
-    teams: PropTypes.array.isRequired,
-    onTeamConfigChange: PropTypes.func.isRequired,
-    initialIndex: PropTypes.number.isRequired,
-    useSpellChecker: PropTypes.bool.isRequired,
-    onSelectSpellCheckerLocale: PropTypes.func.isRequired,
-    deeplinkingUrl: PropTypes.string,
-    showAddServerButton: PropTypes.bool.isRequired,
-    requestingPermission: TabBar.propTypes.requestingPermission,
-    onClickPermissionDialog: PropTypes.func,
-  },
+export default class MainPage extends React.Component {
+  constructor(props) {
+    super(props);
 
-  getInitialState() {
     let key = this.props.initialIndex;
     if (this.props.deeplinkingUrl !== null) {
       for (let i = 0; i < this.props.teams.length; i++) {
@@ -46,7 +37,7 @@ const MainPage = createReactClass({
       }
     }
 
-    return {
+    this.state = {
       key,
       unreadCounts: new Array(this.props.teams.length),
       mentionCounts: new Array(this.props.teams.length),
@@ -55,7 +46,22 @@ const MainPage = createReactClass({
       loginQueue: [],
       targetURL: '',
     };
-  },
+
+    this.activateFinder = this.activateFinder.bind(this);
+    this.addServer = this.addServer.bind(this);
+    this.closeFinder = this.closeFinder.bind(this);
+    this.focusOnWebView = this.focusOnWebView.bind(this);
+    this.handleLogin = this.handleLogin.bind(this);
+    this.handleLoginCancel = this.handleLoginCancel.bind(this);
+    this.handleOnTeamFocused = this.handleOnTeamFocused.bind(this);
+    this.handleSelect = this.handleSelect.bind(this);
+    this.handleTargetURLChange = this.handleTargetURLChange.bind(this);
+    this.handleUnreadCountChange = this.handleUnreadCountChange.bind(this);
+    this.handleUnreadCountTotalChange = this.handleUnreadCountTotalChange.bind(this);
+    this.inputBlur = this.inputBlur.bind(this);
+    this.markReadAtActive = this.markReadAtActive.bind(this);
+  }
+
   componentDidMount() {
     const self = this;
     ipcRenderer.on('login-request', (event, request, authInfo) => {
@@ -146,12 +152,14 @@ const MainPage = createReactClass({
     ipcRenderer.on('toggle-find', () => {
       this.activateFinder(true);
     });
-  },
+  }
+
   componentDidUpdate(prevProps, prevState) {
     if (prevState.key !== this.state.key) { // i.e. When tab has been changed
       this.refs[`mattermostView${this.state.key}`].focusOnWebView();
     }
-  },
+  }
+
   handleSelect(key) {
     const newKey = (this.props.teams.length + key) % this.props.teams.length;
     this.setState({
@@ -163,7 +171,7 @@ const MainPage = createReactClass({
       title: webview.getTitle(),
     });
     this.handleOnTeamFocused(newKey);
-  },
+  }
 
   handleUnreadCountChange(index, unreadCount, mentionCount, isUnread, isMentioned) {
     const unreadCounts = this.state.unreadCounts;
@@ -187,7 +195,8 @@ const MainPage = createReactClass({
       mentionAtActiveCounts,
     });
     this.handleUnreadCountTotalChange();
-  },
+  }
+
   markReadAtActive(index) {
     const unreadAtActive = this.state.unreadAtActive;
     const mentionAtActiveCounts = this.state.mentionAtActiveCounts;
@@ -198,7 +207,8 @@ const MainPage = createReactClass({
       mentionAtActiveCounts,
     });
     this.handleUnreadCountTotalChange();
-  },
+  }
+
   handleUnreadCountTotalChange() {
     if (this.props.onUnreadCountChange) {
       let allUnreadCount = this.state.unreadCounts.reduce((prev, curr) => {
@@ -217,23 +227,26 @@ const MainPage = createReactClass({
       });
       this.props.onUnreadCountChange(allUnreadCount, allMentionCount);
     }
-  },
+  }
+
   handleOnTeamFocused(index) {
     // Turn off the flag to indicate whether unread message of active channel contains at current tab.
     this.markReadAtActive(index);
-  },
+  }
 
   handleLogin(request, username, password) {
     ipcRenderer.send('login-credentials', request, username, password);
     const loginQueue = this.state.loginQueue;
     loginQueue.shift();
     this.setState({loginQueue});
-  },
+  }
+
   handleLoginCancel() {
     const loginQueue = this.state.loginQueue;
     loginQueue.shift();
     this.setState({loginQueue});
-  },
+  }
+
   handleTargetURLChange(targetURL) {
     clearTimeout(this.targetURLDisappearTimeout);
     if (targetURL === '') {
@@ -244,37 +257,38 @@ const MainPage = createReactClass({
     } else {
       this.setState({targetURL});
     }
-  },
+  }
+
   addServer() {
     this.setState({
       showNewTeamModal: true,
     });
-  },
+  }
 
   focusOnWebView(e) {
     if (e.target.className !== 'finder-input') {
       this.refs[`mattermostView${this.state.key}`].focusOnWebView();
     }
-  },
+  }
 
   activateFinder() {
     this.setState({
       finderVisible: true,
       focusFinder: true,
     });
-  },
+  }
 
   closeFinder() {
     this.setState({
       finderVisible: false,
     });
-  },
+  }
 
   inputBlur() {
     this.setState({
       focusFinder: false,
     });
-  },
+  }
 
   render() {
     const self = this;
@@ -419,7 +433,18 @@ const MainPage = createReactClass({
         </div>
       </div>
     );
-  },
-});
+  }
+}
 
-export default MainPage;
+MainPage.propTypes = {
+  onUnreadCountChange: PropTypes.func.isRequired,
+  teams: PropTypes.array.isRequired,
+  onTeamConfigChange: PropTypes.func.isRequired,
+  initialIndex: PropTypes.number.isRequired,
+  useSpellChecker: PropTypes.bool.isRequired,
+  onSelectSpellCheckerLocale: PropTypes.func.isRequired,
+  deeplinkingUrl: PropTypes.string,
+  showAddServerButton: PropTypes.bool.isRequired,
+  requestingPermission: TabBar.propTypes.requestingPermission,
+  onClickPermissionDialog: PropTypes.func,
+};

@@ -428,7 +428,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## react
 
 This product contains a modified portion of 'react', a declarative, efficient, and flexible JavaScript library for building user interfaces,
-'create-react-class', a drop-in replacement for React.createClass, and 'react-dom', the entry point of the DOM-related
+and 'react-dom', the entry point of the DOM-related
 rendering paths, by Facebook, Inc.
 
 * HOMEPAGE:
