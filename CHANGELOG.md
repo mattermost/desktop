@@ -21,6 +21,8 @@ Release date: TBD
 #### Mac
  - Add **.dmg** package to support installation.
  [#588](https://github.com/mattermost/desktop/pull/588)
+ - Support "Hide" option of Login Items in Preferences.
+ [#853](https://github.com/mattermost/desktop/pull/853)
 
 #### Linux
  - [tar.gz] Use SVG icon for Linux application menus in place of PNG icon
