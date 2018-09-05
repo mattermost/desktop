@@ -3,27 +3,17 @@
 // See LICENSE.txt for license information.
 import React from 'react';
 import PropTypes from 'prop-types';
-import createReactClass from 'create-react-class';
 import {ListGroup} from 'react-bootstrap';
 
 import TeamListItem from './TeamListItem.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
 import RemoveServerModal from './RemoveServerModal.jsx';
 
-const TeamList = createReactClass({
-  propTypes: {
-    onTeamsChange: PropTypes.func,
-    showAddTeamForm: PropTypes.bool,
-    teams: PropTypes.array,
-    addServer: PropTypes.func,
-    updateTeam: PropTypes.func,
-    toggleAddTeamForm: PropTypes.func,
-    setAddTeamFormVisibility: PropTypes.func,
-    onTeamClick: PropTypes.func,
-  },
+export default class TeamList extends React.Component {
+  constructor(props) {
+    super(props);
 
-  getInitialState() {
-    return {
+    this.state = {
       showEditTeamForm: false,
       indexToRemoveServer: -1,
       team: {
@@ -32,13 +22,21 @@ const TeamList = createReactClass({
         index: false,
       },
     };
-  },
+
+    this.handleTeamRemove = this.handleTeamRemove.bind(this);
+    this.handleTeamAdd = this.handleTeamAdd.bind(this);
+    this.handleTeamEditing = this.handleTeamEditing.bind(this);
+    this.openServerRemoveModal = this.openServerRemoveModal.bind(this);
+    this.closeServerRemoveModal = this.closeServerRemoveModal.bind(this);
+  }
+
   handleTeamRemove(index) {
     console.log(index);
     const teams = this.props.teams;
     teams.splice(index, 1);
     this.props.onTeamsChange(teams);
-  },
+  }
+
   handleTeamAdd(team) {
     const teams = this.props.teams;
 
@@ -60,7 +58,8 @@ const TeamList = createReactClass({
     });
 
     this.props.onTeamsChange(teams);
-  },
+  }
+
   handleTeamEditing(teamName, teamUrl, teamIndex) {
     this.setState({
       showEditTeamForm: true,
@@ -70,15 +69,15 @@ const TeamList = createReactClass({
         index: teamIndex,
       },
     });
-  },
+  }
 
   openServerRemoveModal(indexForServer) {
     this.setState({indexToRemoveServer: indexForServer});
-  },
+  }
 
   closeServerRemoveModal() {
     this.setState({indexToRemoveServer: -1});
-  },
+  }
 
   render() {
     const self = this;
@@ -171,7 +170,16 @@ const TeamList = createReactClass({
         { removeServerModal}
       </ListGroup>
     );
-  },
-});
+  }
+}
 
-export default TeamList;
+TeamList.propTypes = {
+  onTeamsChange: PropTypes.func,
+  showAddTeamForm: PropTypes.bool,
+  teams: PropTypes.array,
+  addServer: PropTypes.func,
+  updateTeam: PropTypes.func,
+  toggleAddTeamForm: PropTypes.func,
+  setAddTeamFormVisibility: PropTypes.func,
+  onTeamClick: PropTypes.func,
+};
