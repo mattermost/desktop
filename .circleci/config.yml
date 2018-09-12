@@ -1,0 +1,60 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/mattermost-desktop
+    docker:
+      - image: electronuserland/builder:wine-mono
+    steps:
+      - checkout
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "yarn.lock" }}
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/yarn.lock" }}
+      - run: apt-get update && apt-get -y install --no-install-recommends jq icnsutils graphicsmagick tzdata
+      - run: yarn
+      - run: npm run build
+      - run: npm run package:windows
+      - run: npm run package:mac
+      - run: npm run package:linux
+      - run: mkdir -p /tmp/artifacts
+      - run: sh -x ./scripts/cp_artifacts.sh release /tmp/artifacts
+      - run: npm run lint:js
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "yarn.lock" }}
+          paths:
+            - "node_modules"
+            - "~/.cache/electron"
+            - "~/.cache/electron-builder"
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/yarn.lock" }}
+          paths:
+            - "src/node_modules"
+      - store_artifacts:
+          path: /tmp/artifacts/
+          destination: packages
+      - run: ./node_modules/.bin/build-storybook -c src/.storybook -o storybook
+      - store_artifacts:
+          path: storybook/
+          destination: storybook
+
+  test:
+    working_directory: ~/mattermost-desktop
+    docker:
+      - image: electronuserland/builder:wine-chrome
+    steps:
+      - checkout
+      - run: apt-get update && apt-get -y install --no-install-recommends libgconf-2-4
+      - run: yarn
+      # https://github.com/SeleniumHQ/docker-selenium/issues/222#issuecomment-221307583
+      - run: DBUS_SESSION_BUS_ADDRESS=/dev/null xvfb-run npm test
+      - run: mkdir -p /tmp/test-results
+      - run: cp test-results.xml /tmp/test-results/
+      - store_test_results:
+          path: /tmp/test-results
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - test

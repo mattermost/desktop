@@ -1,7 +1,11 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 'use strict';
 
-const EventEmitter = require('events');
-const simpleSpellChecker = require('simple-spellchecker');
+import EventEmitter from 'events';
+
+import simpleSpellChecker from 'simple-spellchecker';
 
 /// Following approach for contractions is derived from electron-spellchecker.
 
@@ -17,7 +21,7 @@ const contractions = [
   "there're", "there's", "they'd", "they'd've", "they'll", "they're", "they've", "wasn't", "we'd", "we'd've",
   "we'll", "we're", "we've", "weren't", "what'll", "what're", "what's", "what've", "when's", "where'd",
   "where's", "where've", "who'd", "who'll", "who're", "who's", "who've", "why'll", "why're", "why's", "won't",
-  "would've", "wouldn't", "wouldn't've", "y'all", "y'all'd've", "you'd", "you'd've", "you'll", "you're", "you've"
+  "would've", "wouldn't", "wouldn't've", "y'all", "y'all'd've", "you'd", "you'd've", "you'll", "you're", "you've",
 ];
 
 const contractionMap = contractions.reduce((acc, word) => {
@@ -27,7 +31,7 @@ const contractionMap = contractions.reduce((acc, word) => {
 
 /// End: derived from electron-spellchecker.
 
-class SpellChecker extends EventEmitter {
+export default class SpellChecker extends EventEmitter {
   constructor(locale, dictDir, callback) {
     super();
     this.dict = null;
@@ -86,7 +90,8 @@ SpellChecker.getSpellCheckerLocale = (electronLocale) => {
   if (electronLocale.match(/^nl-?/)) {
     return 'nl-NL';
   }
+  if (electronLocale.match(/^pt-?/)) {
+    return 'pt-BR';
+  }
   return 'en-US';
 };
-
-module.exports = SpellChecker;

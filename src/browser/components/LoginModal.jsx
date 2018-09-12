@@ -1,9 +1,12 @@
-const React = require('react');
-const PropTypes = require('prop-types');
-const ReactDOM = require('react-dom');
-const {Button, Col, ControlLabel, Form, FormGroup, FormControl, Modal} = require('react-bootstrap');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+import React from 'react';
+import PropTypes from 'prop-types';
+import {findDOMNode} from 'react-dom';
+import {Button, Col, ControlLabel, Form, FormGroup, FormControl, Modal} from 'react-bootstrap';
 
-class LoginModal extends React.Component {
+export default class LoginModal extends React.Component {
   constructor(props) {
     super(props);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -11,15 +14,15 @@ class LoginModal extends React.Component {
 
   handleSubmit(event) {
     event.preventDefault();
-    const usernameNode = ReactDOM.findDOMNode(this.refs.username);
-    const passwordNode = ReactDOM.findDOMNode(this.refs.password);
+    const usernameNode = findDOMNode(this.refs.username);
+    const passwordNode = findDOMNode(this.refs.password);
     this.props.onLogin(this.props.request, usernameNode.value, passwordNode.value);
     usernameNode.value = '';
     passwordNode.value = '';
   }
 
   render() {
-    var theServer = '';
+    let theServer = '';
     if (!this.props.show) {
       theServer = '';
     } else if (this.props.authInfo.isProxy) {
@@ -51,6 +54,9 @@ class LoginModal extends React.Component {
                   type='text'
                   placeholder='User Name'
                   ref='username'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                 />
               </Col>
             </FormGroup>
@@ -64,6 +70,9 @@ class LoginModal extends React.Component {
                   type='password'
                   placeholder='Password'
                   ref='password'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                 />
               </Col>
             </FormGroup>
@@ -92,7 +101,5 @@ LoginModal.propTypes = {
   onCancel: PropTypes.func,
   onLogin: PropTypes.func,
   request: PropTypes.object,
-  show: PropTypes.bool
+  show: PropTypes.bool,
 };
-
-module.exports = LoginModal;

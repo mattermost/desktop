@@ -11,3 +11,17 @@
 div[id*="-permissionDialog"] {
   max-width: 350px;
 }
+
+.finder {
+  position: fixed;
+  top: 0;
+  right: 20px;
+  padding: 4px;
+  background: #eee;
+  border: 1px solid #d7d7d7;
+  border-top: none;
+  border-right: none;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  font-size: 0px;
+}

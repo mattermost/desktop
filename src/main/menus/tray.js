@@ -1,15 +1,16 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 'use strict';
 
-const {
-  app,
-  Menu
-} = require('electron');
-const settings = require('../../common/settings');
+import {app, Menu} from 'electron';
+
+import settings from '../../common/settings';
 
 function createTemplate(mainWindow, config, isDev) {
   const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : `file://${app.getAppPath()}/browser/settings.html`;
   const teams = settings.mergeDefaultTeams(config.teams);
-  var template = [
+  const template = [
     ...teams.slice(0, 9).map((team, i) => {
       return {
         label: team.name,
@@ -21,10 +22,10 @@ function createTemplate(mainWindow, config, isDev) {
             app.dock.show();
             mainWindow.focus();
           }
-        }
+        },
       };
     }), {
-      type: 'separator'
+      type: 'separator',
     }, {
       label: process.platform === 'darwin' ? 'Preferences...' : 'Settings',
       click: () => {
@@ -35,12 +36,12 @@ function createTemplate(mainWindow, config, isDev) {
           app.dock.show();
           mainWindow.focus();
         }
-      }
+      },
     }, {
-      type: 'separator'
+      type: 'separator',
     }, {
-      role: 'quit'
-    }
+      role: 'quit',
+    },
   ];
   return template;
 }
@@ -57,6 +58,6 @@ function showOrRestore(window) {
   }
 }
 
-module.exports = {
-  createMenu
+export default {
+  createMenu,
 };

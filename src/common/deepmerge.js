@@ -1,10 +1,8 @@
-const deepmerge = require('deepmerge');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+import deepmerge from 'deepmerge';
 
-function deepMergeProxy(x, y, options) {
-  if (process.env.TEST) {
-    return deepmerge(x, y, options);
-  }
-  return deepmerge.default(x, y, options); // due to webpack conversion
+export default function deepMergeProxy(x, y, options) {
+  return deepmerge(x, y, options); // due to webpack conversion
 }
-
-module.exports = deepMergeProxy;

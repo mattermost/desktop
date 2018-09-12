@@ -1,11 +1,15 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 'use strict';
 
-const electron = require('electron');
-const ipc = electron.ipcRenderer;
-const webFrame = electron.webFrame;
-const EnhancedNotification = require('../js/notification');
+import {ipcRenderer, webFrame} from 'electron';
+
+import EnhancedNotification from '../js/notification';
 
 const UNREAD_COUNT_INTERVAL = 1000;
+//eslint-disable-next-line no-magic-numbers
+const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 
 Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
@@ -38,16 +42,16 @@ function watchReactAppUntilInitialized(callback) {
 window.addEventListener('load', () => {
   if (document.getElementById('root') === null) {
     console.log('The guest is not assumed as mattermost-webapp');
-    ipc.sendToHost('onGuestInitialized');
+    ipcRenderer.sendToHost('onGuestInitialized');
     return;
   }
   watchReactAppUntilInitialized(() => {
-    ipc.sendToHost('onGuestInitialized');
+    ipcRenderer.sendToHost('onGuestInitialized');
   });
 });
 
 function hasClass(element, className) {
-  var rclass = /[\t\r\n\f]/g;
+  const rclass = /[\t\r\n\f]/g;
   if ((' ' + element.className + ' ').replace(rclass, ' ').indexOf(className) > -1) {
     return true;
   }
@@ -64,7 +68,7 @@ function getUnreadCount() {
 
   // LHS not found => Log out => Count should be 0.
   if (document.getElementById('sidebar-left') === null) {
-    ipc.sendToHost('onUnreadCountChange', 0, 0, false, false);
+    ipcRenderer.sendToHost('onUnreadCountChange', 0, 0, false, false);
     this.unreadCount = 0;
     this.mentionCount = 0;
     setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
@@ -73,7 +77,7 @@ function getUnreadCount() {
 
   // unreadCount in sidebar
   // Note: the active channel doesn't have '.unread-title'.
-  var unreadCount = document.getElementsByClassName('unread-title').length;
+  let unreadCount = document.getElementsByClassName('unread-title').length;
 
   // unreadCount in team sidebar
   const teamSideBar = document.getElementsByClassName('team-sidebar'); // team-sidebar doesn't have id
@@ -82,30 +86,30 @@ function getUnreadCount() {
   }
 
   // mentionCount in sidebar
-  var elem = document.getElementsByClassName('badge');
-  var mentionCount = 0;
-  for (var i = 0; i < elem.length; i++) {
+  const elem = document.getElementsByClassName('badge');
+  let mentionCount = 0;
+  for (let i = 0; i < elem.length; i++) {
     if (isElementVisible(elem[i]) && !hasClass(elem[i], 'badge-notify')) {
       mentionCount += Number(elem[i].innerHTML);
     }
   }
 
-  var postAttrName = 'data-reactid';
-  var lastPostElem = document.querySelector('div[' + postAttrName + '="' + this.lastCheckedPostId + '"]');
-  var isUnread = false;
-  var isMentioned = false;
+  const postAttrName = 'data-reactid';
+  const lastPostElem = document.querySelector('div[' + postAttrName + '="' + this.lastCheckedPostId + '"]');
+  let isUnread = false;
+  let isMentioned = false;
   if (lastPostElem === null || !isElementVisible(lastPostElem)) {
     // When load channel or change channel, this.lastCheckedPostId is invalid.
     // So we get latest post and save lastCheckedPostId.
 
     // find active post-list.
-    var postLists = document.querySelectorAll('div.post-list__content');
+    const postLists = document.querySelectorAll('div.post-list__content');
     if (postLists.length === 0) {
       setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
       return;
     }
-    var post = null;
-    for (var j = 0; j < postLists.length; j++) {
+    let post = null;
+    for (let j = 0; j < postLists.length; j++) {
       if (isElementVisible(postLists[j])) {
         post = postLists[j].children[0];
       }
@@ -126,19 +130,19 @@ function getUnreadCount() {
       post = post.nextSibling;
     }
   } else if (lastPostElem !== null) {
-    var newPostElem = lastPostElem.nextSibling;
+    let newPostElem = lastPostElem.nextSibling;
     while (newPostElem) {
       this.lastCheckedPostId = newPostElem.getAttribute(postAttrName);
       isUnread = true;
-      var activeChannel = document.querySelector('.active .sidebar-channel');
-      var closeButton = activeChannel.getElementsByClassName('btn-close');
+      const activeChannel = document.querySelector('.active .sidebar-channel');
+      const closeButton = activeChannel.getElementsByClassName('btn-close');
       if (closeButton.length === 1 && closeButton[0].getAttribute('aria-describedby') === 'remove-dm-tooltip') {
         // If active channel is DM, all posts is treated as menion.
         isMentioned = true;
         break;
       } else {
         // If active channel is public/private channel, only mentioned post is treated as mention.
-        var highlight = newPostElem.getElementsByClassName('mention-highlight');
+        const highlight = newPostElem.getElementsByClassName('mention-highlight');
         if (highlight.length !== 0 && isElementVisible(highlight[0])) {
           isMentioned = true;
           break;
@@ -149,7 +153,7 @@ function getUnreadCount() {
   }
 
   if (this.unreadCount !== unreadCount || this.mentionCount !== mentionCount || isUnread || isMentioned) {
-    ipc.sendToHost('onUnreadCountChange', unreadCount, mentionCount, isUnread, isMentioned);
+    ipcRenderer.sendToHost('onUnreadCountChange', unreadCount, mentionCount, isUnread, isMentioned);
   }
   this.unreadCount = unreadCount;
   this.mentionCount = mentionCount;
@@ -162,25 +166,32 @@ function isElementVisible(elem) {
 }
 
 function resetMisspelledState() {
-  ipc.once('spellchecker-is-ready', () => {
+  ipcRenderer.once('spellchecker-is-ready', () => {
     const element = document.activeElement;
     if (element) {
       element.blur();
       element.focus();
     }
   });
-  ipc.send('reply-on-spellchecker-is-ready');
+  ipcRenderer.send('reply-on-spellchecker-is-ready');
 }
 
 function setSpellChecker() {
-  const spellCheckerLocale = ipc.sendSync('get-spellchecker-locale');
+  const spellCheckerLocale = ipcRenderer.sendSync('get-spellchecker-locale');
   webFrame.setSpellCheckProvider(spellCheckerLocale, false, {
     spellCheck(text) {
-      const res = ipc.sendSync('checkspell', text);
+      const res = ipcRenderer.sendSync('checkspell', text);
       return res === null ? true : res;
-    }
+    },
   });
   resetMisspelledState();
 }
 setSpellChecker();
-ipc.on('set-spellcheker', setSpellChecker);
+ipcRenderer.on('set-spellcheker', setSpellChecker);
+
+// mattermost-webapp is SPA. So cache is not cleared due to no navigation.
+// We needed to manually clear cache to free memory in long-term-use.
+// http://seenaburns.com/debugging-electron-memory-usage/
+setInterval(() => {
+  webFrame.clearCache();
+}, CLEAR_CACHE_INTERVAL);

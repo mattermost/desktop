@@ -1,10 +1,13 @@
-const React = require('react');
-const {findDOMNode} = require('react-dom');
-const PropTypes = require('prop-types');
-const {Glyphicon, Nav, NavItem, Overlay} = require('react-bootstrap');
-const PermissionRequestDialog = require('./PermissionRequestDialog.jsx');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+import React from 'react';
+import PropTypes from 'prop-types';
+import {Glyphicon, Nav, NavItem, Overlay} from 'react-bootstrap';
 
-class TabBar extends React.Component { // need "this"
+import PermissionRequestDialog from './PermissionRequestDialog.jsx';
+
+export default class TabBar extends React.Component { // need "this"
   render() {
     const tabs = this.props.teams.map((team, index) => {
       let unreadCount = 0;
@@ -49,6 +52,9 @@ class TabBar extends React.Component { // need "this"
           />
         </Overlay>
       );
+
+      // draggable=false is a workaround for https://github.com/mattermost/desktop/issues/667
+      // It would obstruct https://github.com/mattermost/desktop/issues/478
       return (
         <NavItem
           className='teamTabItem'
@@ -56,8 +62,14 @@ class TabBar extends React.Component { // need "this"
           id={id}
           eventKey={index}
           ref={id}
+          draggable={false}
         >
-          <span className={unreadCount === 0 ? '' : 'teamTabItem-label'}>{team.name}</span>
+          <span
+            title={team.name}
+            className={unreadCount === 0 ? '' : 'teamTabItem-unread'}
+          >
+            {team.name}
+          </span>
           { ' ' }
           { badgeDiv }
           {permissionOverlay}
@@ -71,10 +83,11 @@ class TabBar extends React.Component { // need "this"
           id='addServerButton'
           eventKey='addServerButton'
           title='Add new server'
+          draggable={false}
         >
           <Glyphicon glyph='plus'/>
         </NavItem>
-    );
+      );
     }
     return (
       <Nav
@@ -108,10 +121,8 @@ TabBar.propTypes = {
   showAddServerButton: PropTypes.bool,
   requestingPermission: PropTypes.arrayOf(PropTypes.shape({
     origin: PropTypes.string,
-    permission: PropTypes.string
+    permission: PropTypes.string,
   })),
   onAddServer: PropTypes.func,
-  onClickPermissionDialog: PropTypes.func
+  onClickPermissionDialog: PropTypes.func,
 };
-
-module.exports = TabBar;

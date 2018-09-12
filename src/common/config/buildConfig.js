@@ -1,3 +1,9 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+// For detailed guides, please refer to https://docs.mattermost.com/deployment/desktop-app-deployment.html
+
 /**
  * Build-time configuration. End-users can't change these parameters.
  * @prop {Object[]} defaultTeams
@@ -17,7 +23,7 @@ const buildConfig = {
     }*/
   ],
   helpLink: 'https://about.mattermost.com/default-desktop-app-documentation/',
-  enableServerManagement: true
+  enableServerManagement: true,
 };
 
-module.exports = buildConfig;
+export default buildConfig;

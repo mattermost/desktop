@@ -1,43 +1,45 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 'use strict';
 
-const electron = require('electron');
-const settings = require('../../common/settings');
-const buildConfig = require('../../common/config/buildConfig');
+import {app, dialog, Menu, shell} from 'electron';
 
-const Menu = electron.Menu;
+import settings from '../../common/settings';
+import buildConfig from '../../common/config/buildConfig';
 
 function createTemplate(mainWindow, config, isDev) {
-  const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : `file://${electron.app.getAppPath()}/browser/settings.html`;
+  const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : `file://${app.getAppPath()}/browser/settings.html`;
 
   const separatorItem = {
-    type: 'separator'
+    type: 'separator',
   };
 
-  var appName = electron.app.getName();
-  var firstMenuName = (process.platform === 'darwin') ? appName : 'File';
-  var template = [];
+  const appName = app.getName();
+  const firstMenuName = (process.platform === 'darwin') ? appName : 'File';
+  const template = [];
 
-  var platformAppMenu = process.platform === 'darwin' ? [{
+  let platformAppMenu = process.platform === 'darwin' ? [{
     label: 'About ' + appName,
     role: 'about',
     click() {
-      electron.dialog.showMessageBox(mainWindow, {
+      dialog.showMessageBox(mainWindow, {
         buttons: ['OK'],
-        message: `${appName} Desktop ${electron.app.getVersion()}`
+        message: `${appName} Desktop ${app.getVersion()}`,
       });
-    }
+    },
   }, separatorItem, {
     label: 'Preferences...',
     accelerator: 'CmdOrCtrl+,',
     click() {
       mainWindow.loadURL(settingsURL);
-    }
+    },
   }] : [{
     label: 'Settings...',
     accelerator: 'CmdOrCtrl+,',
     click() {
       mainWindow.loadURL(settingsURL);
-    }
+    },
   }];
 
   if (buildConfig.enableServerManagement === true) {
@@ -45,53 +47,60 @@ function createTemplate(mainWindow, config, isDev) {
       label: 'Sign in to Another Server',
       click() {
         mainWindow.webContents.send('add-server');
-      }
+      },
     });
   }
 
   platformAppMenu = platformAppMenu.concat(process.platform === 'darwin' ? [
     separatorItem, {
-      role: 'hide'
+      role: 'hide',
     }, {
-      role: 'hideothers'
+      role: 'hideothers',
     }, {
-      role: 'unhide'
+      role: 'unhide',
     }, separatorItem, {
-      role: 'quit'
-    }] : [separatorItem, {
+      role: 'quit',
+    }] : [
+    separatorItem, {
       role: 'quit',
       accelerator: 'CmdOrCtrl+Q',
       click() {
-        electron.app.quit();
-      }
+        app.quit();
+      },
     }]
   );
 
   template.push({
     label: '&' + firstMenuName,
     submenu: [
-      ...platformAppMenu
-    ]
+      ...platformAppMenu,
+    ],
   });
   template.push({
     label: '&Edit',
     submenu: [{
-      role: 'undo'
+      role: 'undo',
     }, {
-      role: 'redo'
+      role: 'redo',
     }, separatorItem, {
-      role: 'cut'
+      role: 'cut',
     }, {
-      role: 'copy'
+      role: 'copy',
     }, {
-      role: 'paste'
+      role: 'paste',
     }, {
-      role: 'selectall'
-    }]
+      role: 'selectall',
+    }],
   });
   template.push({
     label: '&View',
     submenu: [{
+      label: 'Find..',
+      accelerator: 'CmdOrCtrl+F',
+      click(item, focusedWindow) {
+        focusedWindow.webContents.send('toggle-find');
+      },
+    }, {
       label: 'Reload',
       accelerator: 'CmdOrCtrl+R',
       click(item, focusedWindow) {
@@ -102,7 +111,7 @@ function createTemplate(mainWindow, config, isDev) {
             focusedWindow.reload();
           }
         }
-      }
+      },
     }, {
       label: 'Clear Cache and Reload',
       accelerator: 'Shift+CmdOrCtrl+R',
@@ -116,25 +125,25 @@ function createTemplate(mainWindow, config, isDev) {
             });
           }
         }
-      }
+      },
     }, {
-      role: 'togglefullscreen'
+      role: 'togglefullscreen',
     }, separatorItem, {
-      role: 'resetzoom'
+      role: 'resetzoom',
     }, {
-      role: 'zoomin'
+      role: 'zoomin',
     }, {
       label: 'Zoom In (hidden)',
       accelerator: 'CmdOrCtrl+=',
       visible: false,
-      role: 'zoomin'
+      role: 'zoomin',
     }, {
-      role: 'zoomout'
+      role: 'zoomout',
     }, {
       label: 'Zoom Out (hidden)',
       accelerator: 'CmdOrCtrl+Shift+-',
       visible: false,
-      role: 'zoomout'
+      role: 'zoomout',
     }, separatorItem, {
       label: 'Toggle Developer Tools',
       accelerator: (() => {
@@ -147,8 +156,8 @@ function createTemplate(mainWindow, config, isDev) {
         if (focusedWindow) {
           focusedWindow.toggleDevTools();
         }
-      }
-    }]
+      },
+    }],
   });
   template.push({
     label: '&History',
@@ -161,7 +170,7 @@ function createTemplate(mainWindow, config, isDev) {
         } else if (focusedWindow.webContents.canGoBack()) {
           focusedWindow.goBack();
         }
-      }
+      },
     }, {
       label: 'Forward',
       accelerator: process.platform === 'darwin' ? 'Cmd+]' : 'Alt+Right',
@@ -171,17 +180,17 @@ function createTemplate(mainWindow, config, isDev) {
         } else if (focusedWindow.webContents.canGoForward()) {
           focusedWindow.goForward();
         }
-      }
-    }]
+      },
+    }],
   });
 
   const teams = settings.mergeDefaultTeams(config.teams);
   const windowMenu = {
     label: '&Window',
     submenu: [{
-      role: 'minimize'
+      role: 'minimize',
     }, {
-      role: 'close'
+      role: 'close',
     }, separatorItem, ...teams.slice(0, 9).map((team, i) => {
       return {
         label: team.name,
@@ -189,7 +198,7 @@ function createTemplate(mainWindow, config, isDev) {
         click() {
           mainWindow.show(); // for OS X
           mainWindow.webContents.send('switch-tab', i);
-        }
+        },
       };
     }), separatorItem, {
       label: 'Select Next Server',
@@ -197,30 +206,30 @@ function createTemplate(mainWindow, config, isDev) {
       click() {
         mainWindow.webContents.send('select-next-tab');
       },
-      enabled: (teams.length > 1)
+      enabled: (teams.length > 1),
     }, {
       label: 'Select Previous Server',
       accelerator: 'Ctrl+Shift+Tab',
       click() {
         mainWindow.webContents.send('select-previous-tab');
       },
-      enabled: (teams.length > 1)
-    }]
+      enabled: (teams.length > 1),
+    }],
   };
   template.push(windowMenu);
-  var submenu = [];
+  const submenu = [];
   if (buildConfig.helpLink) {
     submenu.push({
       label: 'Learn More...',
       click() {
-        electron.shell.openExternal(buildConfig.helpLink);
-      }
+        shell.openExternal(buildConfig.helpLink);
+      },
     });
     submenu.push(separatorItem);
   }
   submenu.push({
-    label: `Version ${electron.app.getVersion()}`,
-    enabled: false
+    label: `Version ${app.getVersion()}`,
+    enabled: false,
   });
   template.push({label: '&Help', submenu});
   return template;
@@ -230,6 +239,6 @@ function createMenu(mainWindow, config, isDev) {
   return Menu.buildFromTemplate(createTemplate(mainWindow, config, isDev));
 }
 
-module.exports = {
-  createMenu
+export default {
+  createMenu,
 };

@@ -1,11 +1,14 @@
-const defaultPreferences = require('./defaultPreferences');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+import defaultPreferences from './defaultPreferences';
 
 const pastDefaultPreferences = {
   0: {
-    url: ''
-  }
+    url: '',
+  },
 };
 
 pastDefaultPreferences[`${defaultPreferences.version}`] = defaultPreferences;
 
-module.exports = pastDefaultPreferences;
+export default pastDefaultPreferences;

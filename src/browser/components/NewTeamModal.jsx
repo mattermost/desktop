@@ -1,8 +1,12 @@
-const React = require('react');
-const PropTypes = require('prop-types');
-const {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} = require('react-bootstrap');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 
-class NewTeamModal extends React.Component {
+import React from 'react';
+import PropTypes from 'prop-types';
+import {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} from 'react-bootstrap';
+
+export default class NewTeamModal extends React.Component {
   constructor() {
     super();
 
@@ -10,12 +14,8 @@ class NewTeamModal extends React.Component {
     this.state = {
       teamName: '',
       teamUrl: '',
-      saveStarted: false
+      saveStarted: false,
     };
-  }
-
-  componentWillMount() {
-    this.initializeOnShow();
   }
 
   initializeOnShow() {
@@ -23,7 +23,7 @@ class NewTeamModal extends React.Component {
       teamName: this.props.team ? this.props.team.name : '',
       teamUrl: this.props.team ? this.props.team.url : '',
       teamIndex: this.props.team ? this.props.team.index : false,
-      saveStarted: false
+      saveStarted: false,
     });
   }
 
@@ -40,7 +40,7 @@ class NewTeamModal extends React.Component {
 
   handleTeamNameChange(e) {
     this.setState({
-      teamName: e.target.value
+      teamName: e.target.value,
     });
   }
 
@@ -63,12 +63,22 @@ class NewTeamModal extends React.Component {
 
   handleTeamUrlChange(e) {
     this.setState({
-      teamUrl: e.target.value
+      teamUrl: e.target.value,
     });
   }
 
   getError() {
-    return this.getTeamNameValidationError() || this.getTeamUrlValidationError();
+    const nameError = this.getTeamNameValidationError();
+    const urlError = this.getTeamUrlValidationError();
+
+    if (nameError && urlError) {
+      return 'Name and URL are required.';
+    } else if (nameError) {
+      return nameError;
+    } else if (urlError) {
+      return urlError;
+    }
+    return null;
   }
 
   validateForm() {
@@ -78,13 +88,13 @@ class NewTeamModal extends React.Component {
 
   save() {
     this.setState({
-      saveStarted: true
+      saveStarted: true,
     }, () => {
       if (this.validateForm()) {
         this.props.onSave({
           url: this.state.teamUrl,
           name: this.state.teamName,
-          index: this.state.teamIndex
+          index: this.state.teamIndex,
         });
       }
     });
@@ -148,6 +158,9 @@ class NewTeamModal extends React.Component {
                 value={this.state.teamName}
                 placeholder='Server Name'
                 onChange={this.handleTeamNameChange.bind(this)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
               />
               <FormControl.Feedback/>
               <HelpBlock>{'The name of the server displayed on your desktop app tab bar.'}</HelpBlock>
@@ -163,6 +176,9 @@ class NewTeamModal extends React.Component {
                 value={this.state.teamUrl}
                 placeholder='https://example.com'
                 onChange={this.handleTeamUrlChange.bind(this)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
               />
               <FormControl.Feedback/>
               <HelpBlock className='NewTeamModal-noBottomSpace'>{'The URL of your Mattermost server. Must start with http:// or https://.'}</HelpBlock>
@@ -199,7 +215,5 @@ NewTeamModal.propTypes = {
   onSave: PropTypes.func,
   team: PropTypes.object,
   editMode: PropTypes.bool,
-  show: PropTypes.bool
+  show: PropTypes.bool,
 };
-
-module.exports = NewTeamModal;

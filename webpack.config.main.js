@@ -1,16 +1,25 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+/* eslint-disable import/no-commonjs */
 'use strict';
 
+const path = require('path');
+
 const merge = require('webpack-merge');
+
 const base = require('./webpack.config.base');
 
 module.exports = merge(base, {
   entry: './src/main.js',
   output: {
-    filename: './src/[name]_bundle.js'
+    path: path.join(__dirname, 'src'),
+    filename: '[name]_bundle.js',
   },
   node: {
     __filename: true,
-    __dirname: true
+    __dirname: true,
   },
-  target: 'electron-main'
+  target: 'electron-main',
 });

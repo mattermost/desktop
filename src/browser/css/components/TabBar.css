@@ -1,3 +1,11 @@
+.TabBar .teamTabItem span {
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 170px;
+}
+
 .TabBar>li>a {
   background: rgba(0, 0, 0, 0.05);
   border-radius: 2px 2px 0 0;
@@ -8,6 +16,12 @@
   margin-right: -1px;
   margin-top: 0px;
   padding: 0 15px;
+}
+
+.TabBar>li.teamTabItem:not(.active)>a:hover {
+  background-color: #e6e6e6;
+  border: 1px solid #ddd;
+  transition: background-color 0.2s ease;
 }
 
 .TabBar .TabBar-addServerButton>a {
@@ -22,6 +36,7 @@
   color: #333;
   background-color: #e6e6e6;
   border-color: #adadad;
+  transition: background-color 0.2s ease;
 }
 
 .TabBar .TabBar-badge {
@@ -38,6 +53,6 @@
   border-radius: 50%;
 }
 
-.TabBar .teamTabItem-label {
+.TabBar .teamTabItem-unread {
   font-weight: bold;
 }

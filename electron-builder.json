@@ -1,5 +1,6 @@
 {
   "appId": "com.mattermost.desktop",
+  "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
   "directories": {
     "buildResources": "resources",
     "app": "src",
@@ -12,14 +13,6 @@
     "node_modules/bootstrap/dist/**",
     "node_modules/simple-spellchecker/dict/*.dic"
   ],
-  "extraFiles": [
-    {
-      "filter": [
-        "LICENSE.txt",
-        "NOTICE.txt"
-      ]
-    }
-  ],
   "protocols": [
     {
       "name": "Mattermost",
@@ -30,20 +23,23 @@
     "synopsis": "Mattermost"
   },
   "linux": {
-    "category": "InstantMessaging",
+    "category": "Network;InstantMessaging",
     "target": [
       "deb",
       "tar.gz"
     ],
     "extraFiles": [
       {
-        "from": "resources",
-        "filter": "icon.png"
+        "filter": [
+          "LICENSE.txt",
+          "NOTICE.txt"
+        ]
       },
       {
         "from": "resources/linux",
         "filter": [
           "create_desktop_file.sh",
+          "icon.svg",
           "README.md"
         ]
       }
@@ -52,16 +48,39 @@
   "mac": {
     "category": "public.app-category.productivity",
     "target": [
-      "tar.gz"
+      "zip",
+      "dmg"
+    ],
+    "extraResources": [
+      {
+        "filter": [
+          "LICENSE.txt",
+          "NOTICE.txt"
+        ]
+      }
     ]
   },
+  "dmg": {
+    "background": "resources/osx/DMG_BG.png",
+    "iconSize": 140,
+    "iconTextSize": 18
+  },
   "squirrelWindows": {
-    "iconUrl": "file://resources/icon.ico"
+    "iconUrl": "file://resources/icon.ico",
+    "artifactName": "${name}-setup-${version}-${arch}.${ext}"
   },
   "win": {
     "target": [
       "squirrel",
       "zip"
+    ],
+    "extraFiles": [
+      {
+        "filter": [
+          "LICENSE.txt",
+          "NOTICE.txt"
+        ]
+      }
     ]
   }
 }

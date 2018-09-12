@@ -1,10 +1,15 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 'use strict';
 
 const OriginalNotification = Notification;
-const {ipcRenderer, remote} = require('electron');
-const {throttle} = require('underscore');
-const osVersion = require('../../common/osVersion');
-const dingDataURL = require('../../assets/ding.mp3'); // https://github.com/mattermost/platform/blob/v3.7.3/webapp/images/ding.mp3
+import {throttle} from 'underscore';
+
+import {ipcRenderer, remote} from 'electron';
+
+import osVersion from '../../common/osVersion';
+import dingDataURL from '../../assets/ding.mp3'; // https://github.com/mattermost/platform/blob/v3.7.3/webapp/images/ding.mp3
 
 const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon.png`;
 
@@ -13,7 +18,7 @@ const playDing = throttle(() => {
   ding.play();
 }, 3000, {trailing: false});
 
-class EnhancedNotification extends OriginalNotification {
+export default class EnhancedNotification extends OriginalNotification {
   constructor(title, options) {
     if (process.platform === 'win32') {
       // Replace with application icon.
@@ -27,7 +32,7 @@ class EnhancedNotification extends OriginalNotification {
 
     ipcRenderer.send('notified', {
       title,
-      options
+      options,
     });
 
     if (process.platform === 'win32' && osVersion.isLowerThanOrEqualWindows8_1()) {
@@ -63,5 +68,3 @@ class EnhancedNotification extends OriginalNotification {
     return super.onclick;
   }
 }
-
-module.exports = EnhancedNotification;

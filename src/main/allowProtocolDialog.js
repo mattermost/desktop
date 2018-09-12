@@ -1,16 +1,15 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 'use strict';
 
-const {
-  app,
-  dialog,
-  ipcMain,
-  shell
-} = require('electron');
-const path = require('path');
-const fs = require('fs');
+import path from 'path';
+import fs from 'fs';
+
+import {app, dialog, ipcMain, shell} from 'electron';
 
 const allowedProtocolFile = path.resolve(app.getPath('userData'), 'allowedProtocols.json');
-var allowedProtocols = [];
+let allowedProtocols = [];
 
 function init(mainWindow) {
   fs.readFile(allowedProtocolFile, 'utf-8', (err, data) => {
@@ -35,10 +34,10 @@ function initDialogEvent(mainWindow) {
       buttons: [
         'Yes',
         `Yes (Save ${protocol} as allowed)`,
-        'No'
+        'No',
       ],
       cancelId: 2,
-      noLink: true
+      noLink: true,
     }, (response) => {
       switch (response) {
       case 1: {
@@ -62,6 +61,6 @@ function initDialogEvent(mainWindow) {
   });
 }
 
-module.exports = {
-  init
+export default {
+  init,
 };

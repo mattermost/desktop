@@ -1,3 +1,6 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 'use strict';
 
 const path = require('path');
@@ -6,7 +9,7 @@ const http = require('http');
 
 const env = require('../modules/environment');
 
-describe('application', function desc() {
+describe.skip('application', function desc() {
   this.timeout(30000);
 
   const serverPort = 8181;
@@ -16,17 +19,17 @@ describe('application', function desc() {
     version: 1,
     teams: [{
       name: 'example_1',
-      url: testURL
+      url: testURL,
     }, {
       name: 'example_2',
-      url: testURL
-    }]
+      url: testURL,
+    }],
   };
 
   before(() => {
     this.server = http.createServer((req, res) => {
       res.writeHead(200, {
-        'Content-Type': 'text/html'
+        'Content-Type': 'text/html',
       });
       res.end(fs.readFileSync(path.resolve(env.sourceRootDir, 'test/modules/test.html'), 'utf-8'));
     }).listen(serverPort, '127.0.0.1');
@@ -54,8 +57,12 @@ describe('application', function desc() {
 
     // webview is handled as a window by chromedriver.
     return this.app.client.
-      windowByIndex(1).isNodeEnabled().then((enabled) => enabled.should.be.false).
-      windowByIndex(2).isNodeEnabled().then((enabled) => enabled.should.be.false).
+      windowByIndex(1).isNodeEnabled().then((enabled) => {
+        enabled.should.be.false;
+      }).
+      windowByIndex(2).isNodeEnabled().then((enabled) => {
+        enabled.should.be.false;
+      }).
       windowByIndex(0).
       getAttribute('webview', 'nodeintegration').then((nodeintegration) => {
         // nodeintegration is an array of string
@@ -78,7 +85,9 @@ describe('application', function desc() {
           return handles.value.length === 4;
         });
       }, 5000, 'expected a new window').
-      windowByIndex(3).isNodeEnabled().then((enabled) => enabled.should.be.false);
+      windowByIndex(3).isNodeEnabled().then((enabled) => {
+        enabled.should.be.false;
+      });
   });
 
   it('should NOT be able to call eval() in any window', () => {
@@ -90,7 +99,9 @@ describe('application', function desc() {
           return eval('1 + 1');
         }).then((result) => {
           throw new Error(`Promise was unexpectedly fulfilled (result: ${result})`);
-        }, (error) => (error !== null).should.be.true);
+        }, (error) => {
+          (error !== null).should.be.true;
+        });
     };
     const tryEvalInSettingsPage = () => {
       return this.app.client.
@@ -100,11 +111,13 @@ describe('application', function desc() {
           return eval('1 + 1');
         }).then((result) => {
           throw new Error(`Promise was unexpectedly fulfilled (result: ${result})`);
-        }, (error) => (error !== null).should.be.true);
+        }, (error) => {
+          (error !== null).should.be.true;
+        });
     };
     return Promise.all([
       tryEval(0),
-      tryEvalInSettingsPage()
+      tryEvalInSettingsPage(),
     ]);
   });
 });

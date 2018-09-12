@@ -1,7 +1,10 @@
-const React = require('react');
-const PropTypes = require('prop-types');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+import React from 'react';
+import PropTypes from 'prop-types';
 
-class TeamListItem extends React.Component {
+export default class TeamListItem extends React.Component {
   constructor(props) {
     super(props);
     this.handleTeamRemove = this.handleTeamRemove.bind(this);
@@ -47,7 +50,5 @@ TeamListItem.propTypes = {
   onTeamEditing: PropTypes.func,
   onTeamRemove: PropTypes.func,
   onTeamClick: PropTypes.func,
-  url: PropTypes.string
+  url: PropTypes.string,
 };
-
-module.exports = TeamListItem;

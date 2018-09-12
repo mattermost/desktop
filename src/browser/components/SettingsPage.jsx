@@ -1,18 +1,23 @@
-const React = require('react');
-const PropTypes = require('prop-types');
-const createReactClass = require('create-react-class');
-const ReactDOM = require('react-dom');
-const {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} = require('react-bootstrap');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 
-const {ipcRenderer, remote} = require('electron');
-const {debounce} = require('underscore');
+/* eslint-disable react/no-set-state */
 
-const buildConfig = require('../../common/config/buildConfig');
-const settings = require('../../common/settings');
-const SpellChecker = require('../../main/SpellChecker');
+import React from 'react';
+import PropTypes from 'prop-types';
+import ReactDOM from 'react-dom';
+import {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} from 'react-bootstrap';
 
-const TeamList = require('./TeamList.jsx');
-const AutoSaveIndicator = require('./AutoSaveIndicator.jsx');
+import {ipcRenderer, remote} from 'electron';
+import {debounce} from 'underscore';
+
+import buildConfig from '../../common/config/buildConfig';
+import settings from '../../common/settings';
+import SpellChecker from '../../main/SpellChecker';
+
+import TeamList from './TeamList.jsx';
+import AutoSaveIndicator from './AutoSaveIndicator.jsx';
 
 function backToIndex(index) {
   const target = typeof index === 'undefined' ? 0 : index;
@@ -23,21 +28,17 @@ function backToIndex(index) {
 const CONFIG_TYPE_SERVERS = 'servers';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
-const SettingsPage = createReactClass({
-  propTypes: {
-    configFile: PropTypes.string,
-    enableServerManagement: PropTypes.bool
-  },
+export default class SettingsPage extends React.Component {
+  constructor(props) {
+    super(props);
 
-  getInitialState() {
-    var initialState;
+    let initialState;
     try {
       initialState = settings.readFileSync(this.props.configFile);
     } catch (e) {
       const spellCheckerLocale = SpellChecker.getSpellCheckerLocale(remote.app.getLocale());
       initialState = settings.loadDefault(spellCheckerLocale, remote.app.getName());
     }
-
     initialState.showAddTeamForm = false;
     initialState.trayWasVisible = remote.getCurrentWindow().trayWasVisible;
     if (initialState.teams.length === 0) {
@@ -45,21 +46,41 @@ const SettingsPage = createReactClass({
     }
     initialState.savingState = {
       appOptions: AutoSaveIndicator.SAVING_STATE_DONE,
-      servers: AutoSaveIndicator.SAVING_STATE_DONE
+      servers: AutoSaveIndicator.SAVING_STATE_DONE,
     };
+    this.state = initialState;
 
-    return initialState;
-  },
+    this.startSaveConfig = this.startSaveConfig.bind(this);
+    this.didSaveConfig = this.didSaveConfig.bind(this);
+    this.handleTeamsChange = this.handleTeamsChange.bind(this);
+    this.saveConfig = this.saveConfig.bind(this);
+    this.handleCancel = this.handleCancel.bind(this);
+    this.handleChangeShowTrayIcon = this.handleChangeShowTrayIcon.bind(this);
+    this.handleChangeTrayIconTheme = this.handleChangeTrayIconTheme.bind(this);
+    this.handleChangeAutoStart = this.handleChangeAutoStart.bind(this);
+    this.handleChangeMinimizeToTray = this.handleChangeMinimizeToTray.bind(this);
+    this.toggleShowTeamForm = this.toggleShowTeamForm.bind(this);
+    this.setShowTeamFormVisibility = this.setShowTeamFormVisibility.bind(this);
+    this.handleFlashWindow = this.handleFlashWindow.bind(this);
+    this.handleBounceIcon = this.handleBounceIcon.bind(this);
+    this.handleBounceIconType = this.handleBounceIconType.bind(this);
+    this.handleShowUnreadBadge = this.handleShowUnreadBadge.bind(this);
+    this.handleChangeUseSpellChecker = this.handleChangeUseSpellChecker.bind(this);
+    this.handleChangeEnableHardwareAcceleration = this.handleChangeEnableHardwareAcceleration.bind(this);
+    this.updateTeam = this.updateTeam.bind(this);
+    this.addServer = this.addServer.bind(this);
+  }
+
   componentDidMount() {
     ipcRenderer.on('add-server', () => {
       this.setState({
-        showAddTeamForm: true
+        showAddTeamForm: true,
       });
     });
     ipcRenderer.on('switch-tab', (event, key) => {
       backToIndex(key);
     });
-  },
+  }
 
   startSaveConfig(configType) {
     if (!this.startSaveConfigImpl) {
@@ -82,7 +103,7 @@ const SettingsPage = createReactClass({
     savingState[configType] = AutoSaveIndicator.SAVING_STATE_SAVING;
     this.setState({savingState});
     this.startSaveConfigImpl[configType]();
-  },
+  }
 
   didSaveConfig(configType) {
     if (!this.didSaveConfigImpl) {
@@ -96,21 +117,21 @@ const SettingsPage = createReactClass({
       }, 2000);
     }
     this.didSaveConfigImpl[configType]();
-  },
+  }
 
   handleTeamsChange(teams) {
     this.setState({
       showAddTeamForm: false,
-      teams
+      teams,
     });
     if (teams.length === 0) {
       this.setState({showAddTeamForm: true});
     }
     setImmediate(this.startSaveConfig, CONFIG_TYPE_SERVERS);
-  },
+  }
 
   saveConfig(callback) {
-    var config = {
+    const config = {
       teams: this.state.teams,
       showTrayIcon: this.state.showTrayIcon,
       trayIconTheme: this.state.trayIconTheme,
@@ -119,12 +140,13 @@ const SettingsPage = createReactClass({
       notifications: {
         flashWindow: this.state.notifications.flashWindow,
         bounceIcon: this.state.notifications.bounceIcon,
-        bounceIconType: this.state.notifications.bounceIconType
+        bounceIconType: this.state.notifications.bounceIconType,
       },
       showUnreadBadge: this.state.showUnreadBadge,
       useSpellChecker: this.state.useSpellChecker,
       spellCheckerLocale: this.state.spellCheckerLocale,
-      autoStart: this.state.autoStart
+      enableHardwareAcceleration: this.state.enableHardwareAcceleration,
+      autostart: this.state.autostart,
     };
 
     settings.writeFile(this.props.configFile, config, (err) => {
@@ -136,119 +158,136 @@ const SettingsPage = createReactClass({
       ipcRenderer.send('update-config');
       callback();
     });
-  },
+  }
 
   handleCancel() {
     backToIndex();
-  },
+  }
+
   handleChangeShowTrayIcon() {
-    var shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
+    const shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
     this.setState({
-      showTrayIcon: shouldShowTrayIcon
+      showTrayIcon: shouldShowTrayIcon,
     });
 
     if (process.platform === 'darwin' && !shouldShowTrayIcon) {
       this.setState({
-        minimizeToTray: false
+        minimizeToTray: false,
       });
     }
 
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
+
   handleChangeTrayIconTheme() {
     this.setState({
-      trayIconTheme: ReactDOM.findDOMNode(this.refs.trayIconTheme).value
+      trayIconTheme: ReactDOM.findDOMNode(this.refs.trayIconTheme).value,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
+
   handleChangeAutoStart() {
     this.setState({
-      autoStart: !this.refs.autoStart.props.checked
+      autostart: !this.refs.autostart.props.checked,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
+
   handleChangeMinimizeToTray() {
     const shouldMinimizeToTray = this.state.showTrayIcon && !this.refs.minimizeToTray.props.checked;
 
     this.setState({
-      minimizeToTray: shouldMinimizeToTray
+      minimizeToTray: shouldMinimizeToTray,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
+
   toggleShowTeamForm() {
     this.setState({
-      showAddTeamForm: !this.state.showAddTeamForm
+      showAddTeamForm: !this.state.showAddTeamForm,
     });
     document.activeElement.blur();
-  },
+  }
+
   setShowTeamFormVisibility(val) {
     this.setState({
-      showAddTeamForm: val
+      showAddTeamForm: val,
     });
-  },
+  }
+
   handleFlashWindow() {
     this.setState({
       notifications: {
         ...this.state.notifications,
-        flashWindow: this.refs.flashWindow.props.checked ? 0 : 2
-      }
+        flashWindow: this.refs.flashWindow.props.checked ? 0 : 2,
+      },
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
+
   handleBounceIcon() {
     this.setState({
       notifications: {
         ...this.state.notifications,
-        bounceIcon: !this.refs.bounceIcon.props.checked
-      }
+        bounceIcon: !this.refs.bounceIcon.props.checked,
+      },
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
+
   handleBounceIconType(event) {
     this.setState({
       notifications: {
         ...this.state.notifications,
-        bounceIconType: event.target.value
-      }
+        bounceIconType: event.target.value,
+      },
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
+
   handleShowUnreadBadge() {
     this.setState({
-      showUnreadBadge: !this.refs.showUnreadBadge.props.checked
+      showUnreadBadge: !this.refs.showUnreadBadge.props.checked,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
 
   handleChangeUseSpellChecker() {
     this.setState({
-      useSpellChecker: !this.refs.useSpellChecker.props.checked
+      useSpellChecker: !this.refs.useSpellChecker.props.checked,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
+
+  handleChangeEnableHardwareAcceleration() {
+    this.setState({
+      enableHardwareAcceleration: !this.refs.enableHardwareAcceleration.props.checked,
+    });
+    setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
+  }
 
   updateTeam(index, newData) {
-    var teams = this.state.teams;
+    const teams = this.state.teams;
     teams[index] = newData;
     this.setState({
-      teams
+      teams,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_SERVERS);
-  },
+  }
 
   addServer(team) {
-    var teams = this.state.teams;
+    const teams = this.state.teams;
     teams.push(team);
     this.setState({
-      teams
+      teams,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_SERVERS);
-  },
+  }
 
   render() {
     const settingsPage = {
       navbar: {
-        backgroundColor: '#fff'
+        backgroundColor: '#fff',
       },
       close: {
         textDecoration: 'none',
@@ -257,31 +296,31 @@ const SettingsPage = createReactClass({
         top: '5px',
         fontSize: '35px',
         fontWeight: 'normal',
-        color: '#bbb'
+        color: '#bbb',
       },
       heading: {
         textAlign: 'center',
         fontSize: '24px',
         margin: '0',
-        padding: '1em 0'
+        padding: '1em 0',
       },
       sectionHeading: {
         fontSize: '20px',
         margin: '0',
         padding: '1em 0',
-        float: 'left'
+        float: 'left',
       },
       sectionHeadingLink: {
         marginTop: '24px',
         display: 'inline-block',
-        fontSize: '15px'
+        fontSize: '15px',
       },
       footer: {
-        padding: '0.4em 0'
-      }
+        padding: '0.4em 0',
+      },
     };
 
-    var teamsRow = (
+    const teamsRow = (
       <Row>
         <Col md={12}>
           <TeamList
@@ -301,7 +340,7 @@ const SettingsPage = createReactClass({
       </Row>
     );
 
-    var serversRow = (
+    const serversRow = (
       <Row>
         <Col
           md={10}
@@ -310,6 +349,7 @@ const SettingsPage = createReactClass({
           <h2 style={settingsPage.sectionHeading}>{'Server Management'}</h2>
           <div className='IndicatorContainer'>
             <AutoSaveIndicator
+              id='serversSaveIndicator'
               savingState={this.state.savingState.servers}
               errorMessage={'Can\'t save your changes. Please try again.'}
             />
@@ -331,7 +371,7 @@ const SettingsPage = createReactClass({
       </Row>
     );
 
-    var srvMgmt;
+    let srvMgmt;
     if (this.props.enableServerManagement === true) {
       srvMgmt = (
         <div>
@@ -342,7 +382,7 @@ const SettingsPage = createReactClass({
       );
     }
 
-    var options = [];
+    const options = [];
 
     // MacOS has an option in the Dock, to set the app to autoStart, so we choose to not support this option for OSX
     if (process.platform === 'win32' || process.platform === 'linux') {
@@ -373,7 +413,7 @@ const SettingsPage = createReactClass({
         {'Check spelling'}
         <HelpBlock>
           {'Highlight misspelled words in your messages.'}
-          {' Available for English, French, German, Spanish, and Dutch.'}
+          {' Available for English, French, German, Portuguese, Spanish, and Dutch.'}
         </HelpBlock>
       </Checkbox>);
 
@@ -444,7 +484,7 @@ const SettingsPage = createReactClass({
           <HelpBlock
             style={{marginLeft: '20px'}}
           >
-            {'If enabled, the Dock icon bounces once or until the user opens the app when a new message is received.'}
+            {'If enabled, the Dock icon bounces once or until the user opens the app when a new notification is received.'}
           </HelpBlock>
         </FormGroup>
       );
@@ -459,8 +499,8 @@ const SettingsPage = createReactClass({
           checked={this.state.showTrayIcon}
           onChange={this.handleChangeShowTrayIcon}
         >{process.platform === 'darwin' ?
-          `Show ${remote.app.getName()} icon in the menu bar` :
-          'Show icon in the notification area'}
+            `Show ${remote.app.getName()} icon in the menu bar` :
+            'Show icon in the notification area'}
           <HelpBlock>
             {'Setting takes effect after restarting the app.'}
           </HelpBlock>
@@ -516,12 +556,29 @@ const SettingsPage = createReactClass({
         </Checkbox>);
     }
 
-    var optionsRow = (options.length > 0) ? (
+    options.push(
+      <Checkbox
+        key='inputEnableHardwareAcceleration'
+        id='inputEnableHardwareAcceleration'
+        ref='enableHardwareAcceleration'
+        checked={this.state.enableHardwareAcceleration}
+        onChange={this.handleChangeEnableHardwareAcceleration}
+      >
+        {'Use GPU hardware acceleration'}
+        <HelpBlock>
+          {'If enabled, Mattermost UI is rendered more efficiently but can lead to decreased stability for some systems.'}
+          {' Setting takes affect after restarting the app.'}
+        </HelpBlock>
+      </Checkbox>
+    );
+
+    const optionsRow = (options.length > 0) ? (
       <Row>
         <Col md={12}>
           <h2 style={settingsPage.sectionHeading}>{'App Options'}</h2>
           <div className='IndicatorContainer'>
             <AutoSaveIndicator
+              id='appOptionsSaveIndicator'
               savingState={this.state.savingState.appOptions}
               errorMessage={'Can\'t save your changes. Please try again.'}
             />
@@ -533,7 +590,7 @@ const SettingsPage = createReactClass({
           )) }
         </Col>
       </Row>
-      ) : null;
+    ) : null;
 
     return (
       <div>
@@ -565,6 +622,9 @@ const SettingsPage = createReactClass({
       </div>
     );
   }
-});
+}
 
-module.exports = SettingsPage;
+SettingsPage.propTypes = {
+  configFile: PropTypes.string,
+  enableServerManagement: PropTypes.bool,
+};

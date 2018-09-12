@@ -154,6 +154,7 @@ Below lists menu options (shortcut keys are listed in brackets, `Ctrl` becomes `
   - **Select All** (Ctrl+A) - Select all text in input box
   - **Search in Team** (Ctrl+S) - Puts cursor in search box to search in the current team
 - **View**
+  - **Find..** (Ctrl+F)- Find in page
   - **Reload** (Ctrl+R) - Reload page from the server
   - **Clear Cache and Reload** (Ctrl+Shift+R) - Clear cached content in application and reload page
   - **Toggle Full Screen** (F11) - Toggle application from window to full screen and back

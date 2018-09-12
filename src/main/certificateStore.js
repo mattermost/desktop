@@ -1,12 +1,15 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 'use strict';
 
-const fs = require('fs');
-const url = require('url');
+import fs from 'fs';
+import url from 'url';
 
 function comparableCertificate(certificate) {
   return {
     data: certificate.data.toString(),
-    issuerName: certificate.issuerName
+    issuerName: certificate.issuerName,
   };
 }
 
@@ -53,15 +56,15 @@ CertificateStore.prototype.isExisting = function isExisting(targetURL) {
 };
 
 CertificateStore.prototype.isTrusted = function isTrusted(targetURL, certificate) {
-  var host = getHost(targetURL);
+  const host = getHost(targetURL);
   if (!this.isExisting(targetURL)) {
     return false;
   }
   return areEqual(this.data[host], comparableCertificate(certificate));
 };
 
-module.exports = {
+export default {
   load(storeFile) {
     return new CertificateStore(storeFile);
-  }
+  },
 };

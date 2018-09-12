@@ -1,36 +1,39 @@
-const React = require('react');
-const PropTypes = require('prop-types');
-const {Button, Glyphicon, Popover} = require('react-bootstrap');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+import React from 'react';
+import PropTypes from 'prop-types';
+import {Button, Glyphicon, Popover} from 'react-bootstrap';
 
 const PERMISSIONS = {
   media: {
     description: 'Use your camera and microphone',
-    glyph: 'facetime-video'
+    glyph: 'facetime-video',
   },
   geolocation: {
     description: 'Know your location',
-    glyph: 'map-marker'
+    glyph: 'map-marker',
   },
   notifications: {
     description: 'Show notifications',
-    glyph: 'bell'
+    glyph: 'bell',
   },
   midiSysex: {
     description: 'Use your MIDI devices',
-    glyph: 'music'
+    glyph: 'music',
   },
   pointerLock: {
     description: 'Lock your mouse cursor',
-    glyph: 'hand-up'
+    glyph: 'hand-up',
   },
   fullscreen: {
     description: 'Enter full screen',
-    glyph: 'resize-full'
+    glyph: 'resize-full',
   },
   openExternal: {
     description: 'Open external',
-    glyph: 'new-window'
-  }
+    glyph: 'new-window',
+  },
 };
 
 function glyph(permission) {
@@ -49,7 +52,7 @@ function description(permission) {
   return `Be granted "${permission}" permission`;
 }
 
-function PermissionRequestDialog(props) {
+export default function PermissionRequestDialog(props) {
   const {origin, permission, onClickAllow, onClickBlock, onClickClose, ...reft} = props;
   return (
     <Popover
@@ -83,7 +86,5 @@ PermissionRequestDialog.propTypes = {
   permission: PropTypes.oneOf(['media', 'geolocation', 'notifications', 'midiSysex', 'pointerLock', 'fullscreen', 'openExternal']),
   onClickAllow: PropTypes.func,
   onClickBlock: PropTypes.func,
-  onClickClose: PropTypes.func
+  onClickClose: PropTypes.func,
 };
-
-module.exports = PermissionRequestDialog;

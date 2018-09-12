@@ -1,15 +1,20 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 'use strict';
-const {remote} = require('electron');
+import {remote} from 'electron';
 
-window.eval = global.eval = () => {
+window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
   throw new Error(`Sorry, ${remote.app.getName()} does not support window.eval() for security reasons.`);
 };
 
-const React = require('react');
-const ReactDOM = require('react-dom');
-const SettingsPage = require('./components/SettingsPage.jsx');
-const contextMenu = require('./js/contextMenu');
-const buildConfig = require('../common/config/buildConfig');
+import React from 'react';
+import ReactDOM from 'react-dom';
+
+import buildConfig from '../common/config/buildConfig';
+
+import SettingsPage from './components/SettingsPage.jsx';
+import contextMenu from './js/contextMenu';
 
 const configFile = remote.app.getPath('userData') + '/config.json';
 

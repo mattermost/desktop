@@ -1,8 +1,11 @@
-const React = require('react');
-const PropTypes = require('prop-types');
-const {Button, Modal} = require('react-bootstrap');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+import React from 'react';
+import PropTypes from 'prop-types';
+import {Button, Modal} from 'react-bootstrap';
 
-function DestructiveConfirmationModal(props) {
+export default function DestructiveConfirmationModal(props) {
   const {
     title,
     body,
@@ -37,7 +40,5 @@ DestructiveConfirmationModal.propTypes = {
   acceptLabel: PropTypes.string.isRequired,
   cancelLabel: PropTypes.string.isRequired,
   onAccept: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired
+  onCancel: PropTypes.func.isRequired,
 };
-
-module.exports = DestructiveConfirmationModal;

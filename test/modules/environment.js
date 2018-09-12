@@ -1,11 +1,14 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 'use strict';
-
-const chai = require('chai');
-chai.should();
 
 const fs = require('fs');
 const path = require('path');
+
 const Application = require('spectron').Application;
+const chai = require('chai');
+chai.should();
 
 const sourceRootDir = path.join(__dirname, '../..');
 const electronBinaryPath = (() => {
@@ -18,7 +21,7 @@ const electronBinaryPath = (() => {
 const userDataDir = path.join(sourceRootDir, 'test/testUserData/');
 const configFilePath = path.join(userDataDir, 'config.json');
 const boundsInfoPath = path.join(userDataDir, 'bounds-info.json');
-const mattermostURL = 'http://example.com/team';
+const mattermostURL = 'http://example.com/';
 
 module.exports = {
   sourceRootDir,
@@ -48,7 +51,7 @@ module.exports = {
   getSpectronApp() {
     return new Application({
       path: electronBinaryPath,
-      args: [`${path.join(sourceRootDir, 'src')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode']
+      args: [`${path.join(sourceRootDir, 'src')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode'],
     });
   },
 
@@ -70,6 +73,13 @@ module.exports = {
         return requireResult.value;
       });
     });
+    client.addCommand('waitForAppOptionsAutoSaved', function async() {
+      const ID_APP_OPTIONS_SAVE_INDICATOR = '#appOptionsSaveIndicator';
+      const TIMEOUT = 5000;
+      return this.
+        waitForVisible(ID_APP_OPTIONS_SAVE_INDICATOR, TIMEOUT).
+        waitForVisible(ID_APP_OPTIONS_SAVE_INDICATOR, TIMEOUT, true);
+    });
   },
 
   // execute the test only when `condition` is true
@@ -78,5 +88,5 @@ module.exports = {
   },
   isOneOf(platforms) {
     return (platforms.indexOf(process.platform) !== -1);
-  }
+  },
 };

@@ -1,59 +1,94 @@
-// eslint-disable react/no-set-state
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+/* eslint-disable react/no-set-state */
 // setState() is necessary for this component
 
-const React = require('react');
-const PropTypes = require('prop-types');
-const createReactClass = require('create-react-class');
-const {findDOMNode} = require('react-dom');
-const {ipcRenderer, remote, shell} = require('electron');
-const url = require('url');
-const contextMenu = require('../js/contextMenu');
+import url from 'url';
 
-const ErrorView = require('./ErrorView.jsx');
+import React from 'react';
+import PropTypes from 'prop-types';
+import {findDOMNode} from 'react-dom';
+import {ipcRenderer, remote, shell} from 'electron';
+
+import contextMenu from '../js/contextMenu';
+import {protocols} from '../../../electron-builder.json';
+const scheme = protocols[0].schemes[0];
+
+import ErrorView from './ErrorView.jsx';
 
 const preloadJS = `file://${remote.app.getAppPath()}/browser/webview/mattermost_bundle.js`;
 
-const MattermostView = createReactClass({
-  propTypes: {
-    name: PropTypes.string,
-    id: PropTypes.string,
-    onTargetURLChange: PropTypes.func,
-    onUnreadCountChange: PropTypes.func,
-    src: PropTypes.string,
-    active: PropTypes.bool,
-    withTab: PropTypes.bool,
-    useSpellChecker: PropTypes.bool,
-    onSelectSpellCheckerLocale: PropTypes.func
-  },
+const ERR_NOT_IMPLEMENTED = -11;
+const U2F_EXTENSION_URL = 'chrome-extension://kmendfapggjehodndflmmgagdbamhnfd/u2f-comms.html';
 
-  getInitialState() {
-    return {
+function extractFileURL(message) {
+  const matched = message.match(/Not allowed to load local resource:\s*(.+)/);
+  if (matched) {
+    return matched[1];
+  }
+  return '';
+}
+
+function isNetworkDrive(fileURL) {
+  const u = url.parse(fileURL);
+  if (u.protocol === 'file:' && u.host) {
+    // Disallow localhost, 127.0.0.1, ::1.
+    if (!u.host.match(/^localhost$|^127\.0\.0\.1$|^\[::1\]$/)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export default class MattermostView extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
       errorInfo: null,
       isContextMenuAdded: false,
       reloadTimeoutID: null,
-      isLoaded: false
+      isLoaded: false,
     };
-  },
+
+    this.handleUnreadCountChange = this.handleUnreadCountChange.bind(this);
+    this.reload = this.reload.bind(this);
+    this.clearCacheAndReload = this.clearCacheAndReload.bind(this);
+    this.focusOnWebView = this.focusOnWebView.bind(this);
+    this.canGoBack = this.canGoBack.bind(this);
+    this.canGoForward = this.canGoForward.bind(this);
+    this.goBack = this.goBack.bind(this);
+    this.goForward = this.goForward.bind(this);
+    this.getSrc = this.getSrc.bind(this);
+    this.handleDeepLink = this.handleDeepLink.bind(this);
+  }
 
   handleUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned) {
     if (this.props.onUnreadCountChange) {
       this.props.onUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned);
     }
-  },
+  }
 
   componentDidMount() {
-    var self = this;
-    var webview = findDOMNode(this.refs.webview);
+    const self = this;
+    const webview = findDOMNode(this.refs.webview);
 
     webview.addEventListener('did-fail-load', (e) => {
       console.log(self.props.name, 'webview did-fail-load', e);
       if (e.errorCode === -3) { // An operation was aborted (due to user action).
         return;
       }
+      if (e.errorCode === ERR_NOT_IMPLEMENTED && e.validatedURL === U2F_EXTENSION_URL) {
+        // U2F device is not supported, but the guest page should fall back to PIN code in 2FA.
+        // https://github.com/mattermost/desktop/issues/708
+        return;
+      }
 
       self.setState({
         errorInfo: e,
-        isLoaded: true
+        isLoaded: true,
       });
       function reload() {
         window.removeEventListener('online', reload);
@@ -61,7 +96,7 @@ const MattermostView = createReactClass({
       }
       if (navigator.onLine) {
         self.setState({
-          reloadTimeoutID: setTimeout(reload, 30000)
+          reloadTimeoutID: setTimeout(reload, 30000),
         });
       } else {
         window.addEventListener('online', reload);
@@ -70,9 +105,9 @@ const MattermostView = createReactClass({
 
     // Open link in browserWindow. for exmaple, attached files.
     webview.addEventListener('new-window', (e) => {
-      var currentURL = url.parse(webview.getURL());
-      var destURL = url.parse(e.url);
-      if (destURL.protocol !== 'http:' && destURL.protocol !== 'https:') {
+      const currentURL = url.parse(webview.getURL());
+      const destURL = url.parse(e.url);
+      if (destURL.protocol !== 'http:' && destURL.protocol !== 'https:' && destURL.protocol !== `${scheme}:`) {
         ipcRenderer.send('confirm-protocol', destURL.protocol, e.url);
         return;
       }
@@ -82,7 +117,7 @@ const MattermostView = createReactClass({
           ipcRenderer.send('download-url', e.url);
         } else {
           // New window should disable nodeIntergration.
-          window.open(e.url, 'Mattermost', 'nodeIntegration=no, show=yes');
+          window.open(e.url, remote.app.getName(), 'nodeIntegration=no, show=yes');
         }
       } else {
         // if the link is external, use default browser.
@@ -103,7 +138,7 @@ const MattermostView = createReactClass({
               this.props.onSelectSpellCheckerLocale(locale);
             }
             webview.send('set-spellcheker');
-          }
+          },
         });
         this.setState({isContextMenuAdded: true});
       }
@@ -119,18 +154,20 @@ const MattermostView = createReactClass({
       switch (event.channel) {
       case 'onGuestInitialized':
         self.setState({
-          isLoaded: true
+          isLoaded: true,
         });
         break;
-      case 'onUnreadCountChange':
-        var unreadCount = event.args[0];
-        var mentionCount = event.args[1];
+      case 'onUnreadCountChange': {
+        const unreadCount = event.args[0];
+        const mentionCount = event.args[1];
 
         // isUnread and isMentioned is pulse flag.
-        var isUnread = event.args[2];
-        var isMentioned = event.args[3];
+        const isUnread = event.args[2];
+        const isMentioned = event.args[3];
         self.handleUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned);
+
         break;
+      }
       case 'onNotificationClick':
         self.props.onNotificationClick();
         break;
@@ -140,7 +177,7 @@ const MattermostView = createReactClass({
     webview.addEventListener('page-title-updated', (event) => {
       if (self.props.active) {
         ipcRenderer.send('update-title', {
-          title: event.title
+          title: event.title,
         });
       }
     });
@@ -154,69 +191,80 @@ const MattermostView = createReactClass({
       case 1:
         console.warn(message);
         break;
-      case 2:
-        console.error(message);
+      case 2: {
+        const fileURL = extractFileURL(e.message);
+        if (isNetworkDrive(fileURL)) {
+          // Network drive: Should be allowed.
+          if (!shell.openExternal(decodeURI(fileURL))) {
+            console.log(`[${this.props.name}] shell.openExternal failed: ${fileURL}`);
+          }
+        } else {
+          // Local drive such as 'C:\Windows': Should not be allowed.
+          console.error(message);
+        }
         break;
+      }
       default:
         console.log(message);
         break;
       }
     });
-  },
+  }
 
   reload() {
     clearTimeout(this.state.reloadTimeoutID);
     this.setState({
       errorInfo: null,
       reloadTimeoutID: null,
-      isLoaded: false
+      isLoaded: false,
     });
-    var webview = findDOMNode(this.refs.webview);
+    const webview = findDOMNode(this.refs.webview);
     webview.reload();
-  },
+  }
 
   clearCacheAndReload() {
     this.setState({
-      errorInfo: null
+      errorInfo: null,
     });
-    var webContents = findDOMNode(this.refs.webview).getWebContents();
+    const webContents = findDOMNode(this.refs.webview).getWebContents();
     webContents.session.clearCache(() => {
       webContents.reload();
     });
-  },
+  }
 
   focusOnWebView() {
     const webview = findDOMNode(this.refs.webview);
-    if (!webview.getWebContents().isFocused()) {
+    const webContents = webview.getWebContents(); // webContents might not be created yet.
+    if (webContents && !webContents.isFocused()) {
       webview.focus();
-      webview.getWebContents().focus();
+      webContents.focus();
     }
-  },
+  }
 
   canGoBack() {
     const webview = findDOMNode(this.refs.webview);
     return webview.getWebContents().canGoBack();
-  },
+  }
 
   canGoForward() {
     const webview = findDOMNode(this.refs.webview);
     return webview.getWebContents().canGoForward();
-  },
+  }
 
   goBack() {
     const webview = findDOMNode(this.refs.webview);
     webview.getWebContents().goBack();
-  },
+  }
 
   goForward() {
     const webview = findDOMNode(this.refs.webview);
     webview.getWebContents().goForward();
-  },
+  }
 
   getSrc() {
     const webview = findDOMNode(this.refs.webview);
     return webview.src;
-  },
+  }
 
   handleDeepLink(relativeUrl) {
     const webview = findDOMNode(this.refs.webview);
@@ -226,7 +274,7 @@ const MattermostView = createReactClass({
     webview.executeJavaScript(
       'dispatchEvent(new PopStateEvent("popstate", null));'
     );
-  },
+  }
 
   render() {
     const errorView = this.state.errorInfo ? (
@@ -252,6 +300,7 @@ const MattermostView = createReactClass({
         <img
           className='mattermostView-loadingImage'
           src='../assets/loading.gif'
+          srcSet='../assets/loading.gif 1x, ../assets/loading@2x.gif 2x'
         />
       </div>
     ) : null;
@@ -270,6 +319,16 @@ const MattermostView = createReactClass({
         { loadingImage }
       </div>);
   }
-});
+}
 
-module.exports = MattermostView;
+MattermostView.propTypes = {
+  name: PropTypes.string,
+  id: PropTypes.string,
+  onTargetURLChange: PropTypes.func,
+  onUnreadCountChange: PropTypes.func,
+  src: PropTypes.string,
+  active: PropTypes.bool,
+  withTab: PropTypes.bool,
+  useSpellChecker: PropTypes.bool,
+  onSelectSpellCheckerLocale: PropTypes.func,
+};

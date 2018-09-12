@@ -1,63 +1,9 @@
-const {ipcMain} = require('electron');
-const {URL} = require('url');
-const fs = require('fs');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+import {URL} from 'url';
 
-const PERMISSION_GRANTED = 'granted';
-const PERMISSION_DENIED = 'denied';
-
-class PermissionManager {
-  constructor(file) {
-    this.file = file;
-    if (fs.existsSync(file)) {
-      try {
-        this.permissions = JSON.parse(fs.readFileSync(this.file, 'utf-8'));
-      } catch (err) {
-        console.error(err);
-        this.permissions = {};
-      }
-    } else {
-      this.permissions = {};
-    }
-  }
-
-  writeFileSync() {
-    fs.writeFileSync(this.file, JSON.stringify(this.permissions, null, '  '));
-  }
-
-  grant(origin, permission) {
-    if (!this.permissions[origin]) {
-      this.permissions[origin] = {};
-    }
-    this.permissions[origin][permission] = PERMISSION_GRANTED;
-    this.writeFileSync();
-  }
-
-  deny(origin, permission) {
-    if (!this.permissions[origin]) {
-      this.permissions[origin] = {};
-    }
-    this.permissions[origin][permission] = PERMISSION_DENIED;
-    this.writeFileSync();
-  }
-
-  clear(origin, permission) {
-    delete this.permissions[origin][permission];
-  }
-
-  isGranted(origin, permission) {
-    if (this.permissions[origin]) {
-      return this.permissions[origin][permission] === PERMISSION_GRANTED;
-    }
-    return false;
-  }
-
-  isDenied(origin, permission) {
-    if (this.permissions[origin]) {
-      return this.permissions[origin][permission] === PERMISSION_DENIED;
-    }
-    return false;
-  }
-}
+import {ipcMain} from 'electron';
 
 function dequeueRequests(requestQueue, permissionManager, origin, permission, status) {
   switch (status) {
@@ -88,14 +34,20 @@ function dequeueRequests(requestQueue, permissionManager, origin, permission, st
   }
 }
 
-function permissionRequestHandler(mainWindow, permissionFile) {
-  const permissionManager = new PermissionManager(permissionFile);
+export default function permissionRequestHandler(mainWindow, permissionManager) {
   const requestQueue = [];
   ipcMain.on('update-permission', (event, origin, permission, status) => {
     dequeueRequests(requestQueue, permissionManager, origin, permission, status);
   });
   return (webContents, permission, callback) => {
-    const targetURL = new URL(webContents.getURL());
+    let targetURL;
+    try {
+      targetURL = new URL(webContents.getURL());
+    } catch (err) {
+      console.log(err);
+      callback(false);
+      return;
+    }
     if (permissionManager.isDenied(targetURL.origin, permission)) {
       callback(false);
       return;
@@ -108,12 +60,8 @@ function permissionRequestHandler(mainWindow, permissionFile) {
     requestQueue.push({
       origin: targetURL.origin,
       permission,
-      callback
+      callback,
     });
     mainWindow.webContents.send('request-permission', targetURL.origin, permission);
   };
 }
-
-permissionRequestHandler.PermissionManager = PermissionManager;
-
-module.exports = permissionRequestHandler;

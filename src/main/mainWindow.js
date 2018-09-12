@@ -1,9 +1,13 @@
-const {app, BrowserWindow} = require('electron');
-const fs = require('fs');
-const path = require('path');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+import fs from 'fs';
+import path from 'path';
+
+import {app, BrowserWindow} from 'electron';
 
 function saveWindowState(file, window) {
-  var windowState = window.getBounds();
+  const windowState = window.getBounds();
   windowState.maximized = window.isMaximized();
   windowState.fullscreen = window.isFullScreen();
   try {
@@ -22,7 +26,7 @@ function createMainWindow(config, options) {
 
   // Create the browser window.
   const boundsInfoPath = path.join(app.getPath('userData'), 'bounds-info.json');
-  var windowOptions;
+  let windowOptions;
   try {
     windowOptions = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));
   } catch (e) {
@@ -38,7 +42,7 @@ function createMainWindow(config, options) {
     fullscreenable: true,
     show: false,
     minWidth: minimumWindowWidth,
-    minHeight: minimumWindowHeight
+    minHeight: minimumWindowHeight,
   });
 
   const mainWindow = new BrowserWindow(windowOptions);
@@ -134,4 +138,4 @@ function createMainWindow(config, options) {
   return mainWindow;
 }
 
-module.exports = {createMainWindow};
+export default createMainWindow;

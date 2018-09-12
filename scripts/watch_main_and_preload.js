@@ -1,7 +1,11 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 const webpack = require('webpack');
+const electron = require('electron-connect').server.create({path: 'src'});
+
 const mainConfig = require('../webpack.config.main.js');
 const rendererConfig = require('../webpack.config.renderer.js');
-const electron = require('electron-connect').server.create({path: 'src'});
 
 let started = false;
 

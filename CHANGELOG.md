@@ -13,58 +13,284 @@ Release date: TBD
 ### Improvements
 
 #### All Platforms
- - Now "Saved" indicators appear for each preferences section.
- [#500](https://github.com/mattermost/desktop/issues/500)
- - Added the dialog to reopen the application when it quits unexpectedly.
- [#626](https://github.com/mattermost/desktop/pull/626)
- - Show animation icon when loading a page.
- [#490](https://github.com/mattermost/desktop/issues/490)
- - Show the dialog to confirm requested permissions.
- [#609](https://github.com/mattermost/desktop/pull/609)
-
-#### Windows
- - Added the feature to open the application via `mattermost://` link.
- [#616](https://github.com/mattermost/desktop/pull/616)
+ - Added Portuguese spell checker
+ [#843](https://github.com/mattermost/desktop/pull/843)
+ - Added `Ctrl/Cmd+F` shortcut to work as browser-like search.
+ [#399](https://github.com/mattermost/desktop/issues/399)
 
 #### Mac
- - Added `Ctrl+Tab` and `Ctrl+Shift+Tab` shortcuts to switch tabs
- [#512](https://github.com/mattermost/desktop/issues/512)
- - Added the feature to open the application via `mattermost://` link.
- [#616](https://github.com/mattermost/desktop/pull/616)
- - Added the option to bounce the Dock icon when receiving new messages.
- [#514](https://github.com/mattermost/desktop/issues/514)
+ - Add **.dmg** package to support installation.
+ [#588](https://github.com/mattermost/desktop/pull/588)
+ - Support "Hide" option of Login Items in Preferences.
+ [#853](https://github.com/mattermost/desktop/pull/853)
+
+#### Linux
+ - [tar.gz] Use SVG icon for Linux application menus in place of PNG icon
+ [#815](https://github.com/mattermost/desktop/pull/815)
+ - Updated categories in order to be listed under the appropriate submenu of the application starter.
+ [#816](https://github.com/mattermost/desktop/pull/816)
+ [#818](https://github.com/mattermost/desktop/pull/818)
+
+### Architectural Changes
+ - Major version upgrade of Electron to v2.0.8. Electron is the underlying technology used to build the Desktop apps.
+ [#820](https://github.com/mattermost/desktop/pull/820)
+ [#847](https://github.com/mattermost/desktop/pull/847)
+ - Artifact names are configured via `electron-builder.json`.
+ [#825](https://github.com/mattermost/desktop/pull/825)
+
+### Bug Fixes
+
+----
+
+## Release v4.1.2
+
+Release date: May 25, 2018
 
 ### Bug Fixes
 
 #### All Platforms
- - Fixed mis-aligned `+` button of tab bar.
- [#541](https://github.com/mattermost/desktop/issues/541)
- - Fixed the close button of the Settings page not working on first installation.
- [#552](https://github.com/mattermost/desktop/issues/552)
- - Fixed the app publisher was not changed to Mattermost, Inc.
- [#542](https://github.com/mattermost/desktop/issues/542)
- - Fixed an extra reloading when an error page is manually reloaded.
- [#573](https://github.com/mattermost/desktop/issues/573)
- - Fixed file upload dialogs did not allow any file to be selected.
- [#497](https://github.com/mattermost/desktop/issues/497)
- - Fixed an issue where unnecessary focus remains after closing dialogs on the settings page.
- [#446](https://github.com/mattermost/desktop/issues/446)
- - Fixed an issue where there is a case of that modified font size causes wrong rendering.
- [#334](https://github.com/mattermost/desktop/issues/334)
+ - Fixed an issue where the popup dialog to authenticate a user to their proxy or server didn't work.
+ [#809](https://github.com/mattermost/desktop/issues/809)
+
+---
+
+## Release v4.1.1
+
+Release date: May 17, 2018
+
+This release contains multiple bug fixes for Mac due to an incorrect build for v4.1.0. Windows and Linux apps are not affected.
+
+### Bug Fixes
+
+Each of the issues listed below are already fixed for Windows and Linux v4.1.0.
+
+#### Mac
+ - Fixed an issue where right-clicking an image, then choosing "Save Image", did nothing.
+[#774](https://github.com/mattermost/desktop/issues/707)
+ - Fixed an issue that prevented typing in the form fields on the add server dialog when launched from the server tab bar.
+[#780](https://github.com/mattermost/desktop/issues/780)
+ - Fixed an issue that could cause an error message on the add new server dialog to be misleading.
+[#438](https://github.com/mattermost/desktop/issues/438)
+ - Fixed an issue where timestamps in message view showed no URL on hover. [#777](https://github.com/mattermost/desktop/pull/777)
+ - Fixed an issue where quitting and reopening the app required the user to log back in to Mattermost. [#789](https://github.com/mattermost/desktop/pull/789)
+ - Fixed an issue where adding a new server sometimes caused a blank page. [#787](https://github.com/mattermost/desktop/pull/787)
+ - Fixed deep linking via ``mattermost://`` protocol spawning a new copy of the Desktop App on the taskbar. [#771](https://github.com/mattermost/desktop/issues/771)
+
+----
+
+## Release v4.1.0
+
+Release date: May 16, 2018
+
+### Improvements
+
+#### All Platforms
+ - Improved stability and performance
+   - Reduced memory usage by periodically clearing cache. [#746](https://github.com/mattermost/desktop/issues/710)
+   - Fixed app crashing when a server tab was drag-and-dropped to the message view.
+[#667](https://github.com/mattermost/desktop/issues/667)
+   - Added an option to disable GPU hardware acceleration in App Settings to improve stability in some systems. [#734](https://github.com/mattermost/desktop/pull/734)
+   - Fixed Windows crash issues during installation. [#728](https://github.com/mattermost/desktop/issues/728)
+   - Fixed Mac and Linux crashing after toggling "Show Mattermost icon in menu bar" app setting.
+- Updated design for loading animation icon.
+[#748](https://github.com/mattermost/desktop/issues/748)
+ - Improved appearance of server tabs.
+[#518](https://github.com/mattermost/desktop/issues/518)
+[#717](https://github.com/mattermost/desktop/issues/717)
+ - Enabled [Certificate Transparency](https://www.certificate-transparency.org/what-is-ct) verification in HTTPS.
+[#741](https://github.com/mattermost/desktop/pull/741)
 
 #### Windows
- - Fixed desktop notifications not working when the window has been minimized from inactive state.
+ - [Windows 7/8] Desktop notifications now respect the duration setting set in the Control Panel.
+[#601](https://github.com/mattermost/desktop/issues/601)
+
+### Architectural Changes
+ - Major version upgrade of Electron from v1.7.13 to v1.8.4. Electron is the underlying technology used to build the Desktop apps.
+[#711](https://github.com/mattermost/desktop/pull/711)
+[#741](https://github.com/mattermost/desktop/pull/741)
+ - Mac download files now use Zip packages rather than tar.gz files. [#749](https://github.com/mattermost/desktop/pull/749)
+ - ES6 `import` and `export` now replace the `require` and `modul.export` modules for better development.
+[#756](https://github.com/mattermost/desktop/pull/756)
+ - Storybook added to more easily develop React componets without executing the desktop app. [#757](https://github.com/mattermost/desktop/pull/757)
+
+### Bug Fixes
+
+#### All Platforms
+
+ - Fixed an issue where an incorrect spellchecker language was used for non `en-US` locales on initial installation.
+[#632](https://github.com/mattermost/desktop/issues/632)
+ - Fixed an issue where error page appeared when U2F device was used for multi-factor authentication through single sign-on.
+[#708](https://github.com/mattermost/desktop/issues/708)
+ - Fixed an issue where right-clicking an image, then choosing "Save Image", did nothing.
+[#774](https://github.com/mattermost/desktop/issues/707)
+ - Fixed an issue that prevented typing in the form fields on the add server dialog when launched from the server tab bar.
+[#780](https://github.com/mattermost/desktop/issues/780)
+ - Fixed an issue that could cause an error message on the add new server dialog to be misleading.
+[#438](https://github.com/mattermost/desktop/issues/438)
+
+#### Windows
+ - Fixed an issue where `file://` protocol was not working. Note that localhost URLs are not yet supported.
+[#579](https://github.com/mattermost/desktop/issues/579)
+
+### Known Issues
+
+#### All Platforms
+ - [Clicking on a video preview opens another Mattermost window in addition to downloading the file](https://github.com/mattermost/desktop/issues/792).
+ - [Insecure connection produces hundreds of log messages](https://github.com/mattermost/desktop/issues/569).
+
+#### Windows
+ - [App window doesn't save "floating" app position](https://github.com/mattermost/desktop/issues/617).
+ - [Windows 7] [Sometimes app tries to render a page inside the app instead of in a new browser tab when clicking links](https://github.com/mattermost/desktop/issues/369).
+ - [Windows 10] [Incorrect task name in Windows 10 startup list](https://github.com/mattermost/desktop/issues/559).
+ - [Mattermost UI sometimes bleeds over a file explorer](https://github.com/mattermost/desktop/issues/753).
+ - [When auto-starting the desktop app, the application window is included in Windows tab list](https://github.com/mattermost/desktop/issues/738).
+
+#### Mac
+ - The application crashes when a file upload dialog is canceled without closing Quick Look.
+ - [When the app auto-starts, app page opens on screen instead of being minimized to Dock](https://github.com/mattermost/desktop/issues/583).
+
+#### Linux (Beta)
+ - [Ubuntu - 64 bit] [Right clicking taskbar icon and choosing **Quit** only minimizes the app](https://github.com/mattermost/desktop/issues/90#issuecomment-233712183)
+ - [Ubuntu - 64 bit] [Direct message notification sometimes comes as a streak of line instead of a pop up](https://github.com/mattermost/platform/issues/3589)
+
+### Contributors
+
+Many thanks to all our contributors. In alphabetical order:
+
+ - [Autre31415](https://github.com/Autre31415), [dmeza](https://github.com/dmeza), [hmhealey](https://github.com/hmhealey), [jasonblais](https://github.com/jasonblais), [kethinov](https://github.com/kethinov), [lieut-data](https://github.com/lieut-data), [lip-d](https://github.com/lip-d), [mkraft](https://github.com/mkraft), [yuya-oc](https://github.com/yuya-oc)
+
+----
+
+## Release v4.0.1
+
+Release date: March 28, 2018
+
+This release contains multiple security updates for Windows, Mac and Linux, and it is highly recommended that users upgrade to this version.
+
+### Architectural Changes
+ - Minor version upgrade of Electron from v1.7.11 to v1.7.13. Electron is the underlying technology used to build the Desktop apps.
+
+### Bug Fixes
+
+#### All Platforms
+ - Disabled Certificate Transparency verification that produced unnecessary certificate errors.
+ [#743](https://github.com/mattermost/desktop/pull/743)
+
+----
+
+## Release v4.0.0
+
+Release date: January 29, 2018
+
+This release contains multiple security updates for Windows, Mac and Linux, and it is highly recommended that users upgrade to this version.
+
+### Improvements
+
+#### All Platforms
+ - Added a dialog to allow the user to reopen the desktop app if it quits unexpectedly.
+ [#626](https://github.com/mattermost/desktop/pull/626)
+ - Mattermost animation icon is now displayed when loading a page, instead of a blank screen.
+ [#490](https://github.com/mattermost/desktop/issues/490)
+ - Added a dialog to request permissions to show desktop notifications or to use microphone and video for [video calls](https://docs.mattermost.com/deployment/webrtc.html) from untrusted origins.
+ [#609](https://github.com/mattermost/desktop/pull/609)
+ - The "Saved" indicator now appears for both Server Management and App Options on the Settings page.
+ [#500](https://github.com/mattermost/desktop/issues/500)
+ - Close button on the Settings page now has a hover effect.
+[#439](https://github.com/mattermost/desktop/issues/439)
+ - Added new admin configuration settings ([#586](https://github.com/mattermost/desktop/pull/586) & [#633](https://github.com/mattermost/desktop/pull/633)) for
+   - Disabling server management where the user cannot add or edit the server URL.
+   [#600](https://github.com/mattermost/desktop/pull/600)
+   - Setting one or more pre-configured server URLs for the end user.
+   [#594](https://github.com/mattermost/desktop/pull/594)
+   - Customizing the link in **Help > Learn More..**.
+   [#593](https://github.com/mattermost/desktop/pull/593)
+
+#### Windows
+ - Added support for protocol deep linking where the desktop app opens via `mattermost://` link if app is already installed.
+ [#616](https://github.com/mattermost/desktop/pull/616)
+ - Added the ability to more easily whitelabel the Mattermost taskbar icon on custom builds.
+ [#592](https://github.com/mattermost/desktop/pull/592)
+
+#### Mac
+ - Added support for protocol deep linking where the desktop app opens via `mattermost://` link if app is already installed.
+ [#616](https://github.com/mattermost/desktop/pull/616)
+ - Added `Ctrl+Tab` and `Ctrl+Shift+Tab` shortcuts to switch between server tabs,
+ [#512](https://github.com/mattermost/desktop/issues/512)
+ - Added the option to bounce the Dock icon when receiving a notification.
+ [#514](https://github.com/mattermost/desktop/issues/514)
+
+### Architectural Changes
+ - Major version upgrade of Electron from v1.6.11 to v1.7.11. Electron is the underlying technology used to build the Desktop apps.
+ [#602](https://github.com/mattermost/desktop/pull/602)
+ - The app now uses CSS to style the user interface. Styles are also divided to React's inline `style` and CSS.
+ [#540](https://github.com/mattermost/desktop/pull/540)
+ - Yarn is now used to manage dependencies across Windows, Mac and Linux builds.
+ [#485](https://github.com/mattermost/desktop/issues/485)
+ - Build is now run automatically before packaging the apps with `npm run package`.
+ [#590](https://github.com/mattermost/desktop/pull/590)
+ - Removed hardcoded product name references.
+ [#599](https://github.com/mattermost/desktop/pull/599)
+ - Added an `rm` command to `npm`, which removes all dynamically generated files to make it easy to reset the app between builds and branches.
+ [#597](https://github.com/mattermost/desktop/pull/597)
+
+### Bug Fixes
+
+#### All Platforms
+ - Fixed the close button of the Settings page not working on first installation.
+ [#552](https://github.com/mattermost/desktop/issues/552)
+ - Fixed the app publisher referring to Yuya Ochiai instead of Mattermost, Inc.
+ [#542](https://github.com/mattermost/desktop/issues/542)
+ - Fixed font size not always persisting across app restarts.
+ [#564](https://github.com/mattermost/desktop/issues/564)
+ - Fixed an automatic reloading of the app when a DNS or network error page is manually reloaded with CTRL/CMD+R.
+ [#573](https://github.com/mattermost/desktop/issues/573)
+ - Fixed an issue where changing font size caused rendering issues on next restart.
+ [#334](https://github.com/mattermost/desktop/issues/334)
+ - Fixed an issue where after adding a server on the Settings page, focus remained on the "Add new server" link.
+ [#446](https://github.com/mattermost/desktop/issues/446)
+ - Fixed an issue where SAML certificate file couldn't be uploaded from the file upload dialog.
+ [#497](https://github.com/mattermost/desktop/issues/497)
+
+#### Windows
+ - Fixed desktop notifications not working when the window was minimized from an inactive state.
  [#522](https://github.com/mattermost/desktop/issues/522)
- - Fixed the uninstaller not removing files correctly.
+ - Fixed the uninstaller not removing all files correctly.
  [#551](https://github.com/mattermost/desktop/issues/551)
 
 #### Mac
- - Fixed an issue where the text box didn't keep focus after uploading a file.
+ - Fixed an issue where after uploading a file, focus wasn't put back to the text box.
  [#341](https://github.com/mattermost/desktop/issues/341)
+ - Fixed a mis-aligned `+` button in the server tab bar.
+ [#541](https://github.com/mattermost/desktop/issues/541)
 
 #### Linux
- - Fixed the main window not minimized when the app is launched via "Start app on Login" option.
+ - Fixed the main window not being minimized when the app is launched via "Start app on Login" option.
  [#570](https://github.com/mattermost/desktop/issues/570)
+
+### Known Issues
+
+#### All Platforms
+ - [Insecure connection produces hundreds of log messages](https://github.com/mattermost/desktop/issues/569)
+
+#### Windows
+ - [App window doesn't save "floating" app position](https://github.com/mattermost/desktop/issues/617)
+ - [Windows 7] [Sometimes the app tries to render the page inside the app instead of in a new browser tab when clicking links](https://github.com/mattermost/desktop/issues/369)
+ - [Windows 10] [Incorrect task name in Windows 10 startup list](https://github.com/mattermost/desktop/issues/559)
+
+#### Mac
+ - The application crashes when a file upload dialog is canceled without closing Quick Look
+ - [When the app auto-starts, app page opens on screen instead of being minimized to Dock](https://github.com/mattermost/desktop/issues/583)
+ - [You have to click twice when a window is out of focus to have actions performed](https://github.com/mattermost/desktop/issues/534)
+
+#### Linux (Beta)
+ - [Ubuntu - 64 bit] [Right clicking taskbar icon and choosing **Quit** only minimizes the app](https://github.com/mattermost/desktop/issues/90#issuecomment-233712183)
+ - [Ubuntu - 64 bit] [Direct message notification sometimes comes as a streak of line instead of a pop up](https://github.com/mattermost/platform/issues/3589)
+
+### Contributors
+
+Many thanks to all our contributors. In alphabetical order:
+
+ - [csduarte](https://github.com/csduarte), [dmeza](https://github.com/dmeza), [jasonblais](https://github.com/jasonblais), [jarredwitt](https://github.com/jarredwitt), [wvds](https://github.com/wvds), [yuya-oc](https://github.com/yuya-oc)
 
 ----
 

@@ -1,9 +1,13 @@
-const React = require('react');
-const PropTypes = require('prop-types');
-const {Modal} = require('react-bootstrap');
-const DestructiveConfirmationModal = require('./DestructiveConfirmModal.jsx');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+import React from 'react';
+import PropTypes from 'prop-types';
+import {Modal} from 'react-bootstrap';
 
-function RemoveServerModal(props) {
+import DestructiveConfirmationModal from './DestructiveConfirmModal.jsx';
+
+export default function RemoveServerModal(props) {
   const {serverName, ...rest} = props;
   return (
     <DestructiveConfirmationModal
@@ -27,7 +31,5 @@ function RemoveServerModal(props) {
 }
 
 RemoveServerModal.propTypes = {
-  serverName: PropTypes.string.isRequired
+  serverName: PropTypes.string.isRequired,
 };
-
-module.exports = RemoveServerModal;

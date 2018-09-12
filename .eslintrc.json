@@ -1,17 +1,26 @@
 {
-    "extends": "./.eslintrc-platform.json",
+    "extends": "./.eslintrc-webapp.json",
     "parserOptions": {
         "ecmaVersion": 2017
     },
+    "settings": {
+        "import/resolver": "node"
+    },
     "rules": {
+        "header/header": [2, "line", [
+            " Copyright (c) 2015-2016 Yuya Ochiai",
+            " Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.",
+            " See LICENSE.txt for license information."
+        ]],
+        "import/no-commonjs": 2,
         "indent": [2, 2, {"SwitchCase": 0}],
         "no-console": 0,
-        "no-eval": 1,
         "no-process-env": 0,
         "no-underscore-dangle": 1,
+        "no-var": 2,
         "react/jsx-indent": [2, 2],
         "react/jsx-indent-props": [2, 2],
-        "react/prefer-es6-class": 1,
-        "react/no-set-state": 1
+        "react/no-set-state": 1,
+        "react/require-optimization": 0
     }
 }

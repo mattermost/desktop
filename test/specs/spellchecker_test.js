@@ -1,7 +1,36 @@
-const SpellChecker = require('../../src/main/SpellChecker');
-const path = require('path');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+import path from 'path';
+
+import SpellChecker from '../../src/main/SpellChecker';
 
 describe('main/Spellchecker.js', function() {
+  describe('getSpellCheckerLocale()', () => {
+    it('should return recognized locale', () => {
+      SpellChecker.getSpellCheckerLocale('en').should.equal('en-US');
+      SpellChecker.getSpellCheckerLocale('en-US').should.equal('en-US');
+
+      SpellChecker.getSpellCheckerLocale('fr').should.equal('fr-FR');
+      SpellChecker.getSpellCheckerLocale('fr-FR').should.equal('fr-FR');
+
+      SpellChecker.getSpellCheckerLocale('de').should.equal('de-DE');
+      SpellChecker.getSpellCheckerLocale('de-DE').should.equal('de-DE');
+
+      SpellChecker.getSpellCheckerLocale('es').should.equal('es-ES');
+      SpellChecker.getSpellCheckerLocale('es-ES').should.equal('es-ES');
+
+      SpellChecker.getSpellCheckerLocale('nl').should.equal('nl-NL');
+      SpellChecker.getSpellCheckerLocale('nl-NL').should.equal('nl-NL');
+
+      SpellChecker.getSpellCheckerLocale('pt').should.equal('pt-BR');
+      SpellChecker.getSpellCheckerLocale('pt-BR').should.equal('pt-BR');
+
+      SpellChecker.getSpellCheckerLocale('ja').should.equal('en-US');
+      SpellChecker.getSpellCheckerLocale('ja-JP').should.equal('en-US');
+    });
+  });
+
   describe('en-US', function() {
     let spellchecker = null;
 

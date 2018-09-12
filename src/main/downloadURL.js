@@ -1,17 +1,21 @@
-const fs = require('fs');
-const path = require('path');
-const zlib = require('zlib');
-const electron = require('electron');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+import fs from 'fs';
+import path from 'path';
+import zlib from 'zlib';
+
+import electron from 'electron';
 const {app, dialog} = electron;
 
-function downloadURL(browserWindow, URL, callback) {
+export default function downloadURL(browserWindow, URL, callback) {
   const {net} = electron;
   const request = net.request(URL);
   request.setHeader('Accept-Encoding', 'gzip,deflate');
   request.on('response', (response) => {
     const file = getAttachmentName(response.headers);
     const dialogOptions = {
-      defaultPath: path.join(app.getPath('downloads'), file)
+      defaultPath: path.join(app.getPath('downloads'), file),
     };
     dialog.showSaveDialog(browserWindow, dialogOptions, (filename) => {
       if (filename) {
@@ -48,5 +52,3 @@ function saveResponseBody(response, filename, callback) {
     break;
   }
 }
-
-module.exports = downloadURL;

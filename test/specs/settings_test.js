@@ -1,12 +1,15 @@
-const settings = require('../../src/common/settings');
-const buildConfig = require('../../src/common/config/buildConfig');
-const defaultPreferences = require('../../src/common/config/defaultPreferences');
-const pastDefaultPreferences = require('../../src/common/config/pastDefaultPreferences');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+import settings from '../../src/common/settings';
+import buildConfig from '../../src/common/config/buildConfig';
+import defaultPreferences from '../../src/common/config/defaultPreferences';
+import pastDefaultPreferences from '../../src/common/config/pastDefaultPreferences';
 
 describe('common/settings.js', () => {
   it('should upgrade v0 config file', () => {
     const v0Config = {
-      url: 'https://example.com/team'
+      url: 'https://example.com/team',
     };
     const config = settings.upgrade(v0Config);
     config.teams.length.should.equal(1);
@@ -18,17 +21,17 @@ describe('common/settings.js', () => {
     const teams = [
       {
         name: 'test',
-        url: 'https://example.com'
-      }
+        url: 'https://example.com',
+      },
     ];
 
     const mergedTeams = settings.mergeDefaultTeams(teams);
     mergedTeams.should.deep.equal([
       {
         name: 'test',
-        url: 'https://example.com'
+        url: 'https://example.com',
       },
-      ...buildConfig.defaultTeams
+      ...buildConfig.defaultTeams,
     ]);
   });
 });

@@ -1,5 +1,5 @@
 # Contributing Guidelines
-Thank you for your contributing! My requests are few things. Please read below.
+Thank you for your interest in contributing! Please see the guidelines below before contributing and [join our "Desktop App" community channel](https://pre-release.mattermost.com/core/channels/desktop-app) to ask questions from community members and the Mattermost core team.
 
 ## Issue
 Thank you for feedback. When you report a problem, please pay attention to following points.
@@ -31,7 +31,7 @@ Please see http://www.mattermost.org/feature-requests/ .
 Pull requests are welcome. Thank you for your great work!
 
 1. When you edit the code, please confirm `npm test` successfully finishes.
-2. Please update `CHANGELOG.md` and `docs/*.md` if it's necessary.
+2. Please update `docs/*.md` if it's necessary.
 3. In the description of your pull request, please include:
    * Operating System version on which you tested
    * Mattermost server version on which you tested

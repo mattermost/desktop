@@ -1,5 +1,12 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 'use strict';
 
+import os from 'os';
+import path from 'path';
+
+import electron from 'electron';
 const {
   app,
   Menu,
@@ -8,17 +15,17 @@ const {
   nativeImage,
   dialog,
   systemPreferences,
-  session
-} = require('electron');
-const os = require('os');
-const path = require('path');
-const isDev = require('electron-is-dev');
-const installExtension = require('electron-devtools-installer');
-const AutoLaunch = require('auto-launch');
-const squirrelStartup = require('./main/squirrelStartup');
-const CriticalErrorHandler = require('./main/CriticalErrorHandler');
+  session,
+} = electron;
+import isDev from 'electron-is-dev';
+import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
+import {parse as parseArgv} from 'yargs';
 
-const protocols = require('../electron-builder.json').protocols;
+import {protocols} from '../electron-builder.json';
+
+import squirrelStartup from './main/squirrelStartup';
+import AutoLauncher from './main/AutoLauncher';
+import CriticalErrorHandler from './main/CriticalErrorHandler';
 
 const criticalErrorHandler = new CriticalErrorHandler();
 
@@ -27,36 +34,40 @@ process.on('uncaughtException', criticalErrorHandler.processUncaughtExceptionHan
 global.willAppQuit = false;
 
 app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
-if (squirrelStartup()) {
+if (squirrelStartup(() => {
+  app.quit();
+})) {
   global.willAppQuit = true;
 }
+import settings from './common/settings';
+import CertificateStore from './main/certificateStore';
+const certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
+import createMainWindow from './main/mainWindow';
+import appMenu from './main/menus/app';
+import trayMenu from './main/menus/tray';
+import downloadURL from './main/downloadURL';
+import allowProtocolDialog from './main/allowProtocolDialog';
+import PermissionManager from './main/PermissionManager';
+import permissionRequestHandler from './main/permissionRequestHandler';
+import AppStateManager from './main/AppStateManager';
+import initCookieManager from './main/cookieManager';
+import {shouldBeHiddenOnStartup} from './main/utils';
 
-var settings = require('./common/settings');
-var certificateStore = require('./main/certificateStore').load(path.resolve(app.getPath('userData'), 'certificate.json'));
-const {createMainWindow} = require('./main/mainWindow');
-const appMenu = require('./main/menus/app');
-const trayMenu = require('./main/menus/tray');
-const downloadURL = require('./main/downloadURL');
-const allowProtocolDialog = require('./main/allowProtocolDialog');
-const permissionRequestHandler = require('./main/permissionRequestHandler');
-
-const SpellChecker = require('./main/SpellChecker');
+import SpellChecker from './main/SpellChecker';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-var mainWindow = null;
+let mainWindow = null;
 let spellChecker = null;
 let deeplinkingUrl = null;
 let scheme = null;
+let appState = null;
+let permissionManager = null;
 
-var argv = require('yargs').parse(process.argv.slice(1));
-
-var hideOnStartup;
-if (argv.hidden) {
-  hideOnStartup = true;
-}
+const argv = parseArgv(process.argv.slice(1));
+const hideOnStartup = shouldBeHiddenOnStartup(argv);
 
 if (argv['data-dir']) {
   app.setPath('userData', path.resolve(argv['data-dir']));
@@ -64,39 +75,11 @@ if (argv['data-dir']) {
 
 global.isDev = isDev && !argv.disableDevMode;
 
-function syncAutoStartState(state) {
-  if (process.platform === 'darwin') {
-    console.log('autoStart is not supported for Mac');
-    return new Promise((resolve) => {
-      resolve();
-    });
-  }
-  console.log('Synchronizing autoStart state');
-  const appLauncher = new AutoLaunch({
-    name: app.getName(),
-    isHidden: true
-  });
-  return appLauncher.isEnabled().then((enabled) => {
-    if (state === true && enabled === false) {
-      console.log('Enable autoStart');
-      return appLauncher.enable();
-    } else if (state === false && enabled === true) {
-      console.log('Disable autoStart');
-      return appLauncher.disable();
-    }
-    console.log('No update for autoStart');
-    return true;
-  }).then(() => {
-    console.log('autoStart state has been synced with config:', state);
-  });
-}
-
-var config = {};
+let config = {};
 try {
   const configFile = app.getPath('userData') + '/config.json';
   config = settings.readFileSync(configFile);
-  if (config.version !== settings.version || wasUpdated()) {
-    clearAppCache();
+  if (config.version !== settings.version) {
     config = settings.upgrade(config);
     settings.writeFileSync(configFile, config);
   }
@@ -112,19 +95,26 @@ try {
     settings.writeFileSync(configFile, config);
   }
 }
+if (config.enableHardwareAcceleration === false) {
+  app.disableHardwareAcceleration();
+}
 
 ipcMain.on('update-config', () => {
   const configFile = app.getPath('userData') + '/config.json';
   config = settings.readFileSync(configFile);
-  syncAutoStartState(config.autoStart).catch(console.log);
+  if (process.platform === 'win32' || process.platform === 'linux') {
+    const appLauncher = new AutoLauncher();
+    const autoStartTask = config.autostart ? appLauncher.enable() : appLauncher.disable();
+    autoStartTask.then(() => {
+      console.log('config.autostart has been configured:', config.autostart);
+    }).catch((err) => {
+      console.log('error:', err);
+    });
+  }
+  const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => team.url);
+  permissionManager.setTrustedURLs(trustedURLs);
   ipcMain.emit('update-dict', true, config.spellCheckerLocale);
 });
-
-if (global.isDev) {
-  console.log('In development mode, autoStart is not synchronized with config.json');
-} else {
-  syncAutoStartState(config.autoStart).catch(console.log);
-}
 
 // Only for OS X
 function switchMenuIconImages(icons, isDarkMode) {
@@ -139,50 +129,50 @@ function switchMenuIconImages(icons, isDarkMode) {
   }
 }
 
-var trayIcon = null;
+let trayIcon = null;
 const trayImages = (() => {
   switch (process.platform) {
   case 'win32':
     return {
       normal: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray.ico')),
       unread: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_unread.ico')),
-      mention: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_mention.ico'))
+      mention: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_mention.ico')),
     };
   case 'darwin':
-    {
-      const icons = {
-        light: {
-          normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIcon.png')),
-          unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconUnread.png')),
-          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconMention.png'))
-        },
-        clicked: {
-          normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIcon.png')),
-          unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconUnread.png')),
-          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconMention.png'))
-        }
-      };
-      switchMenuIconImages(icons, systemPreferences.isDarkMode());
-      return icons;
-    }
+  {
+    const icons = {
+      light: {
+        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIcon.png')),
+        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconUnread.png')),
+        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconMention.png')),
+      },
+      clicked: {
+        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIcon.png')),
+        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconUnread.png')),
+        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconMention.png')),
+      },
+    };
+    switchMenuIconImages(icons, systemPreferences.isDarkMode());
+    return icons;
+  }
   case 'linux':
-    {
-      const theme = config.trayIconTheme;
-      try {
-        return {
-          normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconTemplate.png')),
-          unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconUnreadTemplate.png')),
-          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconMentionTemplate.png'))
-        };
-      } catch (e) {
-        //Fallback for invalid theme setting
-        return {
-          normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconTemplate.png')),
-          unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconUnreadTemplate.png')),
-          mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconMentionTemplate.png'))
-        };
-      }
+  {
+    const theme = config.trayIconTheme;
+    try {
+      return {
+        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconTemplate.png')),
+        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconUnreadTemplate.png')),
+        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconMentionTemplate.png')),
+      };
+    } catch (e) {
+      //Fallback for invalid theme setting
+      return {
+        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconTemplate.png')),
+        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconUnreadTemplate.png')),
+        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconMentionTemplate.png')),
+      };
     }
+  }
   default:
     return {};
   }
@@ -222,8 +212,8 @@ function shouldShowTrayIcon() {
   return false;
 }
 
-function wasUpdated() {
-  return config.lastMattermostVersion !== app.getVersion();
+function wasUpdated(lastAppVersion) {
+  return lastAppVersion !== app.getVersion();
 }
 
 function clearAppCache() {
@@ -282,7 +272,7 @@ function handleScreenResize(screen, browserWindow) {
       x: position[0],
       y: position[1],
       width: size[0],
-      height: size[1]
+      height: size[1],
     }, screen);
     browserWindow.setPosition(validPosition.x || 0, validPosition.y || 0);
   }
@@ -293,7 +283,7 @@ function handleScreenResize(screen, browserWindow) {
 
 app.on('browser-window-created', (e, newWindow) => {
   // Screen cannot be required before app is ready
-  const {screen} = require('electron'); // eslint-disable-line global-require
+  const {screen} = electron; // eslint-disable-line global-require
   handleScreenResize(screen, newWindow);
 });
 
@@ -304,7 +294,7 @@ app.on('activate', () => {
 
 app.on('before-quit', () => {
   // Make sure tray icon gets removed if the user exits via CTRL-Q
-  if (process.platform === 'win32') {
+  if (trayIcon && process.platform === 'win32') {
     trayIcon.destroy();
   }
   global.willAppQuit = true;
@@ -315,7 +305,7 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
     event.preventDefault();
     callback(true);
   } else {
-    var detail = `URL: ${url}\nError: ${error}`;
+    let detail = `URL: ${url}\nError: ${error}`;
     if (certificateStore.isExisting(url)) {
       detail = 'Certificate is different from previous one.\n\n' + detail;
     }
@@ -327,9 +317,9 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
       type: 'warning',
       buttons: [
         'Yes',
-        'No'
+        'No',
       ],
-      cancelId: 1
+      cancelId: 1,
     }, (response) => {
       if (response === 0) {
         certificateStore.add(url, certificate);
@@ -367,7 +357,7 @@ ipcMain.on('download-url', (event, URL) => {
     if (err) {
       dialog.showMessageBox(mainWindow, {
         type: 'error',
-        message: err.toString()
+        message: err.toString(),
       });
       console.log(err);
     }
@@ -389,12 +379,23 @@ function setDeeplinkingUrl(url) {
   }
 }
 
-// Protocol handler for osx
-app.on('open-url', (event, url) => {
-  event.preventDefault();
-  setDeeplinkingUrl(url);
-  mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
-  mainWindow.show();
+app.on('will-finish-launching', () => {
+  // Protocol handler for osx
+  app.on('open-url', (event, url) => {
+    event.preventDefault();
+    setDeeplinkingUrl(url);
+    if (app.isReady()) {
+      function openDeepLink() {
+        try {
+          mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+          mainWindow.show();
+        } catch (err) {
+          setTimeout(openDeepLink, 1000);
+        }
+      }
+      openDeepLink();
+    }
+  });
 });
 
 // This method will be called when Electron has finished
@@ -403,8 +404,22 @@ app.on('ready', () => {
   if (global.willAppQuit) {
     return;
   }
+
+  if (!config.spellCheckerLocale) {
+    config.spellCheckerLocale = SpellChecker.getSpellCheckerLocale(app.getLocale());
+    const configFile = app.getPath('userData') + '/config.json';
+    settings.writeFileSync(configFile, config);
+  }
+
+  const appStateJson = path.join(app.getPath('userData'), 'app-state.json');
+  appState = new AppStateManager(appStateJson);
+  if (wasUpdated(appState.lastAppVersion)) {
+    clearAppCache();
+  }
+  appState.lastAppVersion = app.getVersion();
+
   if (global.isDev) {
-    installExtension.default(installExtension.REACT_DEVELOPER_TOOLS).
+    installExtension(REACT_DEVELOPER_TOOLS).
       then((name) => console.log(`Added Extension:  ${name}`)).
       catch((err) => console.log('An error occurred: ', err));
   }
@@ -421,10 +436,12 @@ app.on('ready', () => {
     }
   }
 
+  initCookieManager(session.defaultSession);
+
   mainWindow = createMainWindow(config, {
     hideOnStartup,
     linuxAppIcon: path.join(assetsDir, 'appicon.png'),
-    deeplinkingUrl
+    deeplinkingUrl,
   });
 
   mainWindow.on('closed', () => {
@@ -538,10 +555,10 @@ app.on('ready', () => {
 
   if (process.platform === 'darwin') {
     session.defaultSession.on('will-download', (event, item) => {
-      var filename = item.getFilename();
-      var savePath = dialog.showSaveDialog({
+      const filename = item.getFilename();
+      const savePath = dialog.showSaveDialog({
         title: filename,
-        defaultPath: os.homedir() + '/Downloads/' + filename
+        defaultPath: os.homedir() + '/Downloads/' + filename,
       });
 
       if (savePath) {
@@ -554,21 +571,23 @@ app.on('ready', () => {
 
   // Set application menu
   ipcMain.on('update-menu', (event, configData) => {
-    var aMenu = appMenu.createMenu(mainWindow, configData, global.isDev);
+    const aMenu = appMenu.createMenu(mainWindow, configData, global.isDev);
     Menu.setApplicationMenu(aMenu);
 
     // set up context menu for tray icon
     if (shouldShowTrayIcon()) {
       const tMenu = trayMenu.createMenu(mainWindow, configData, global.isDev);
-      trayIcon.setContextMenu(tMenu);
       if (process.platform === 'darwin' || process.platform === 'linux') {
         // store the information, if the tray was initialized, for checking in the settings, if the application
         // was restarted after setting "Show icon on menu bar"
         if (trayIcon) {
+          trayIcon.setContextMenu(tMenu);
           mainWindow.trayWasVisible = true;
         } else {
           mainWindow.trayWasVisible = false;
         }
+      } else {
+        trayIcon.setContextMenu(tMenu);
       }
     }
   });
@@ -577,13 +596,13 @@ app.on('ready', () => {
   ipcMain.on('update-dict', () => {
     if (config.useSpellChecker) {
       spellChecker = new SpellChecker(
-      config.spellCheckerLocale,
-      path.resolve(app.getAppPath(), 'node_modules/simple-spellchecker/dict'),
-      (err) => {
-        if (err) {
-          console.error(err);
-        }
-      });
+        config.spellCheckerLocale,
+        path.resolve(app.getAppPath(), 'node_modules/simple-spellchecker/dict'),
+        (err) => {
+          if (err) {
+            console.error(err);
+          }
+        });
     }
   });
   ipcMain.on('checkspell', (event, word) => {
@@ -619,7 +638,9 @@ app.on('ready', () => {
   ipcMain.emit('update-dict');
 
   const permissionFile = path.join(app.getPath('userData'), 'permission.json');
-  session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionFile));
+  const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => team.url);
+  permissionManager = new PermissionManager(permissionFile, trustedURLs);
+  session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionManager));
 
   // Open the DevTools.
   // mainWindow.openDevTools();

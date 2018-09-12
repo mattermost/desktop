@@ -1,9 +1,11 @@
-/* eslint-disable no-unused-expressions */
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+import fs from 'fs';
+import path from 'path';
 
-const fs = require('fs');
-const path = require('path');
-const env = require('../modules/environment');
-const {PermissionManager} = require('../../src/main/permissionRequestHandler');
+import env from '../modules/environment';
+import PermissionManager from '../../src/main/PermissionManager';
 
 const permissionFile = path.join(env.userDataDir, 'permission.json');
 
@@ -56,25 +58,32 @@ describe('PermissionManager', function() {
     manager.grant(ORIGIN + '_another', PERMISSION + '_another');
     JSON.parse(fs.readFileSync(permissionFile)).should.deep.equal({
       origin: {
-        permission: 'denied'
+        permission: 'denied',
       },
       origin_another: {
-        permission_another: 'granted'
-      }
+        permission_another: 'granted',
+      },
     });
   });
 
   it('should restore permissions from the file', function() {
     fs.writeFileSync(permissionFile, JSON.stringify({
       origin: {
-        permission: 'denied'
+        permission: 'denied',
       },
       origin_another: {
-        permission_another: 'granted'
-      }
+        permission_another: 'granted',
+      },
     }));
     const manager = new PermissionManager(permissionFile);
     manager.isDenied('origin', 'permission').should.be.true;
     manager.isGranted('origin_another', 'permission_another').should.be.true;
+  });
+
+  it('should allow permissions for trusted URLs', function() {
+    fs.writeFileSync(permissionFile, JSON.stringify({}));
+    const manager = new PermissionManager(permissionFile, ['https://example.com', 'https://example2.com/2']);
+    manager.isGranted('https://example.com', 'notifications').should.be.true;
+    manager.isGranted('https://example2.com', 'test').should.be.true;
   });
 });

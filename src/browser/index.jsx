@@ -1,23 +1,27 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 'use strict';
 
-require('./css/index.css');
+import './css/index.css';
 
-window.eval = global.eval = () => {
+window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
   throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
 };
 
-const React = require('react');
-const ReactDOM = require('react-dom');
-const {remote, ipcRenderer} = require('electron');
-const MainPage = require('./components/MainPage.jsx');
+import url from 'url';
 
-const AppConfig = require('./config/AppConfig.js');
-const buildConfig = require('../common/config/buildConfig');
-const settings = require('../common/settings');
-const url = require('url');
+import React from 'react';
+import ReactDOM from 'react-dom';
+import {remote, ipcRenderer} from 'electron';
 
-const badge = require('./js/badge');
-const utils = require('../utils/util');
+import buildConfig from '../common/config/buildConfig';
+import settings from '../common/settings';
+import utils from '../utils/util';
+
+import MainPage from './components/MainPage.jsx';
+import AppConfig from './config/AppConfig.js';
+import {createDataURL as createBadgeDataURL} from './js/badge';
 
 const teams = settings.mergeDefaultTeams(AppConfig.data.teams);
 
@@ -35,15 +39,15 @@ function showUnreadBadgeWindows(unreadCount, mentionCount) {
       overlayDataURL: dataURL,
       description,
       unreadCount,
-      mentionCount
+      mentionCount,
     });
   }
 
   if (mentionCount > 0) {
-    const dataURL = badge.createDataURL(mentionCount.toString());
+    const dataURL = createBadgeDataURL(mentionCount.toString());
     sendBadge(dataURL, 'You have unread mentions (' + mentionCount + ')');
   } else if (unreadCount > 0 && AppConfig.data.showUnreadBadge) {
-    const dataURL = badge.createDataURL('•');
+    const dataURL = createBadgeDataURL('•');
     sendBadge(dataURL, 'You have unread channels (' + unreadCount + ')');
   } else {
     sendBadge(null, 'You have no unread messages');
@@ -61,7 +65,7 @@ function showUnreadBadgeOSX(unreadCount, mentionCount) {
 
   ipcRenderer.send('update-unread', {
     unreadCount,
-    mentionCount
+    mentionCount,
   });
 }
 
@@ -72,7 +76,7 @@ function showUnreadBadgeLinux(unreadCount, mentionCount) {
 
   ipcRenderer.send('update-unread', {
     unreadCount,
-    mentionCount
+    mentionCount,
   });
 }
 

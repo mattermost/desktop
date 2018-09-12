@@ -1,11 +1,15 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 // ErrorCode: https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
 
-const React = require('react');
-const PropTypes = require('prop-types');
-const {Grid, Row, Col} = require('react-bootstrap');
-const {shell, remote} = require('electron');
+import React from 'react';
+import PropTypes from 'prop-types';
+import {Grid, Row, Col} from 'react-bootstrap';
+import {shell, remote} from 'electron';
 
-function ErrorView(props) {
+export default function ErrorView(props) {
   const classNames = ['container', 'ErrorView'];
   if (!props.active) {
     classNames.push('ErrorView-hidden');
@@ -80,7 +84,5 @@ ErrorView.propTypes = {
   errorInfo: PropTypes.object,
   id: PropTypes.number,
   active: PropTypes.bool,
-  withTab: PropTypes.bool
+  withTab: PropTypes.bool,
 };
-
-module.exports = ErrorView;

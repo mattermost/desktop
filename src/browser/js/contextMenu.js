@@ -1,29 +1,33 @@
-const {ipcRenderer} = require('electron');
-const electronContextMenu = require('electron-context-menu');
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+import {ipcRenderer} from 'electron';
+import electronContextMenu from 'electron-context-menu';
 
 function getSuggestionsMenus(win, suggestions) {
   if (suggestions.length === 0) {
     return [{
       label: 'No Suggestions',
-      enabled: false
+      enabled: false,
     }];
   }
   return suggestions.map((s) => ({
     label: s,
     click() {
       (win.webContents || win.getWebContents()).replaceMisspelling(s);
-    }
+    },
   }));
 }
 
 function getSpellCheckerLocaleMenus(onSelectSpellCheckerLocale) {
   const currentLocale = ipcRenderer.sendSync('get-spellchecker-locale');
   const locales = [
-    {language: 'English', locale: 'en-US'},
+    {language: 'English (US)', locale: 'en-US'},
     {language: 'French', locale: 'fr-FR'},
     {language: 'German', locale: 'de-DE'},
     {language: 'Spanish', locale: 'es-ES'},
-    {language: 'Dutch', locale: 'nl-NL'}
+    {language: 'Dutch', locale: 'nl-NL'},
+    {language: 'Portuguese', locale: 'pt-BR'},
   ];
   return locales.map((l) => ({
     label: l.language,
@@ -33,15 +37,15 @@ function getSpellCheckerLocaleMenus(onSelectSpellCheckerLocale) {
       if (onSelectSpellCheckerLocale) {
         onSelectSpellCheckerLocale(l.locale);
       }
-    }
+    },
   }));
 }
 
-module.exports = {
+export default {
   setup(win, options) {
     const defaultOptions = {
       useSpellChecker: false,
-      onSelectSpellCheckerLocale: null
+      onSelectSpellCheckerLocale: null,
     };
     const actualOptions = Object.assign({}, defaultOptions, options);
     electronContextMenu({
@@ -61,7 +65,7 @@ module.exports = {
           return prependMenuItems;
         }
         return [];
-      }
+      },
     });
-  }
+  },
 };

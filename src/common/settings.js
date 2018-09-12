@@ -1,15 +1,19 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
-const buildConfig = require('./config/buildConfig');
+import fs from 'fs';
+import path from 'path';
+
+import buildConfig from './config/buildConfig';
 
 function merge(base, target) {
   return Object.assign({}, base, target);
 }
 
-const defaultPreferences = require('./config/defaultPreferences');
-const upgradePreferences = require('./config/upgradePreferences');
+import defaultPreferences from './config/defaultPreferences';
+import upgradePreferences from './config/upgradePreferences';
 
 function getPreconfigFilePath(appName) {
   const file = 'preconfig.json';
@@ -42,7 +46,7 @@ function loadDefault(spellCheckerLocale, appName) {
   }
 
   Object.assign(config, {
-    spellCheckerLocale: spellCheckerLocale || defaultPreferences.spellCheckerLocale || 'en-US'
+    spellCheckerLocale: spellCheckerLocale || defaultPreferences.spellCheckerLocale || 'en-US',
   });
   return config;
 }
@@ -55,7 +59,7 @@ function upgrade(config) {
   return upgradePreferences(config);
 }
 
-module.exports = {
+export default {
   version: defaultPreferences.version,
 
   upgrade,
@@ -73,7 +77,7 @@ module.exports = {
     if (config.version !== defaultPreferences.version) {
       throw new Error('version ' + config.version + ' is not equal to ' + defaultPreferences.version);
     }
-    var data = JSON.stringify(config, null, '  ');
+    const data = JSON.stringify(config, null, '  ');
     fs.writeFile(configFile, data, 'utf8', callback);
   },
 
@@ -87,7 +91,7 @@ module.exports = {
       fs.mkdirSync(dir);
     }
 
-    var data = JSON.stringify(config, null, '  ');
+    const data = JSON.stringify(config, null, '  ');
     fs.writeFileSync(configFile, data, 'utf8');
   },
 
@@ -102,5 +106,5 @@ module.exports = {
       newTeams.push(...JSON.parse(JSON.stringify(teams)));
     }
     return newTeams;
-  }
+  },
 };

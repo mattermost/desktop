@@ -1,7 +1,12 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 'use strict';
 
 const spawnSync = require('child_process').spawnSync;
+
 const path7za = require('7zip-bin').path7za;
+
 const pkg = require('../src/package.json');
 const appVersion = pkg.version;
 const productName = pkg.productName;
