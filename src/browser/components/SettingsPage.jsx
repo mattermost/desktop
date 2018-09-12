@@ -146,7 +146,7 @@ export default class SettingsPage extends React.Component {
       useSpellChecker: this.state.useSpellChecker,
       spellCheckerLocale: this.state.spellCheckerLocale,
       enableHardwareAcceleration: this.state.enableHardwareAcceleration,
-      autostart: this.state.autostart,
+      autoStart: this.state.autoStart,
     };
 
     settings.writeFile(this.props.configFile, config, (err) => {
@@ -188,7 +188,7 @@ export default class SettingsPage extends React.Component {
 
   handleChangeAutoStart() {
     this.setState({
-      autostart: !this.refs.autostart.props.checked,
+      autoStart: !this.refs.autoStart.props.checked,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   }

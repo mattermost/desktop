@@ -104,9 +104,9 @@ ipcMain.on('update-config', () => {
   config = settings.readFileSync(configFile);
   if (process.platform === 'win32' || process.platform === 'linux') {
     const appLauncher = new AutoLauncher();
-    const autoStartTask = config.autostart ? appLauncher.enable() : appLauncher.disable();
+    const autoStartTask = config.autoStart ? appLauncher.enable() : appLauncher.disable();
     autoStartTask.then(() => {
-      console.log('config.autostart has been configured:', config.autostart);
+      console.log('config.autoStart has been configured:', config.autoStart);
     }).catch((err) => {
       console.log('error:', err);
     });

@@ -24,7 +24,7 @@ export default class AutoLauncher {
 
   async enable() {
     if (isDev) {
-      console.log('In development mode, autostart config never effects');
+      console.log('In development mode, autoStart config never effects');
       return this.blankPromise();
     }
     const enabled = await this.isEnabled();
@@ -36,7 +36,7 @@ export default class AutoLauncher {
 
   async disable() {
     if (isDev) {
-      console.log('In development mode, autostart config never effects');
+      console.log('In development mode, autoStart config never effects');
       return this.blankPromise();
     }
     const enabled = await this.isEnabled();

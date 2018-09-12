@@ -21,7 +21,7 @@ const defaultPreferences = {
   useSpellChecker: true,
   spellCheckerLocale: 'en-US',
   enableHardwareAcceleration: true,
-  autostart: true,
+  autoStart: true,
 };
 
 export default defaultPreferences;
