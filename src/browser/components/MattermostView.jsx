@@ -9,7 +9,6 @@ import url from 'url';
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import createReactClass from 'create-react-class';
 import {findDOMNode} from 'react-dom';
 import {ipcRenderer, remote, shell} from 'electron';
 
@@ -43,37 +42,38 @@ function isNetworkDrive(fileURL) {
   return false;
 }
 
-const MattermostView = createReactClass({
-  propTypes: {
-    name: PropTypes.string,
-    id: PropTypes.string,
-    onTargetURLChange: PropTypes.func,
-    onUnreadCountChange: PropTypes.func,
-    src: PropTypes.string,
-    active: PropTypes.bool,
-    withTab: PropTypes.bool,
-    useSpellChecker: PropTypes.bool,
-    onSelectSpellCheckerLocale: PropTypes.func,
-  },
+export default class MattermostView extends React.Component {
+  constructor(props) {
+    super(props);
 
-  getInitialState() {
-    return {
+    this.state = {
       errorInfo: null,
       isContextMenuAdded: false,
       reloadTimeoutID: null,
       isLoaded: false,
     };
-  },
+
+    this.handleUnreadCountChange = this.handleUnreadCountChange.bind(this);
+    this.reload = this.reload.bind(this);
+    this.clearCacheAndReload = this.clearCacheAndReload.bind(this);
+    this.focusOnWebView = this.focusOnWebView.bind(this);
+    this.canGoBack = this.canGoBack.bind(this);
+    this.canGoForward = this.canGoForward.bind(this);
+    this.goBack = this.goBack.bind(this);
+    this.goForward = this.goForward.bind(this);
+    this.getSrc = this.getSrc.bind(this);
+    this.handleDeepLink = this.handleDeepLink.bind(this);
+  }
 
   handleUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned) {
     if (this.props.onUnreadCountChange) {
       this.props.onUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned);
     }
-  },
+  }
 
   componentDidMount() {
-    var self = this;
-    var webview = findDOMNode(this.refs.webview);
+    const self = this;
+    const webview = findDOMNode(this.refs.webview);
 
     webview.addEventListener('did-fail-load', (e) => {
       console.log(self.props.name, 'webview did-fail-load', e);
@@ -105,8 +105,8 @@ const MattermostView = createReactClass({
 
     // Open link in browserWindow. for exmaple, attached files.
     webview.addEventListener('new-window', (e) => {
-      var currentURL = url.parse(webview.getURL());
-      var destURL = url.parse(e.url);
+      const currentURL = url.parse(webview.getURL());
+      const destURL = url.parse(e.url);
       if (destURL.protocol !== 'http:' && destURL.protocol !== 'https:' && destURL.protocol !== `${scheme}:`) {
         ipcRenderer.send('confirm-protocol', destURL.protocol, e.url);
         return;
@@ -157,15 +157,17 @@ const MattermostView = createReactClass({
           isLoaded: true,
         });
         break;
-      case 'onUnreadCountChange':
-        var unreadCount = event.args[0];
-        var mentionCount = event.args[1];
+      case 'onUnreadCountChange': {
+        const unreadCount = event.args[0];
+        const mentionCount = event.args[1];
 
         // isUnread and isMentioned is pulse flag.
-        var isUnread = event.args[2];
-        var isMentioned = event.args[3];
+        const isUnread = event.args[2];
+        const isMentioned = event.args[3];
         self.handleUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned);
+
         break;
+      }
       case 'onNotificationClick':
         self.props.onNotificationClick();
         break;
@@ -207,7 +209,7 @@ const MattermostView = createReactClass({
         break;
       }
     });
-  },
+  }
 
   reload() {
     clearTimeout(this.state.reloadTimeoutID);
@@ -216,19 +218,19 @@ const MattermostView = createReactClass({
       reloadTimeoutID: null,
       isLoaded: false,
     });
-    var webview = findDOMNode(this.refs.webview);
+    const webview = findDOMNode(this.refs.webview);
     webview.reload();
-  },
+  }
 
   clearCacheAndReload() {
     this.setState({
       errorInfo: null,
     });
-    var webContents = findDOMNode(this.refs.webview).getWebContents();
+    const webContents = findDOMNode(this.refs.webview).getWebContents();
     webContents.session.clearCache(() => {
       webContents.reload();
     });
-  },
+  }
 
   focusOnWebView() {
     const webview = findDOMNode(this.refs.webview);
@@ -237,32 +239,32 @@ const MattermostView = createReactClass({
       webview.focus();
       webContents.focus();
     }
-  },
+  }
 
   canGoBack() {
     const webview = findDOMNode(this.refs.webview);
     return webview.getWebContents().canGoBack();
-  },
+  }
 
   canGoForward() {
     const webview = findDOMNode(this.refs.webview);
     return webview.getWebContents().canGoForward();
-  },
+  }
 
   goBack() {
     const webview = findDOMNode(this.refs.webview);
     webview.getWebContents().goBack();
-  },
+  }
 
   goForward() {
     const webview = findDOMNode(this.refs.webview);
     webview.getWebContents().goForward();
-  },
+  }
 
   getSrc() {
     const webview = findDOMNode(this.refs.webview);
     return webview.src;
-  },
+  }
 
   handleDeepLink(relativeUrl) {
     const webview = findDOMNode(this.refs.webview);
@@ -272,7 +274,7 @@ const MattermostView = createReactClass({
     webview.executeJavaScript(
       'dispatchEvent(new PopStateEvent("popstate", null));'
     );
-  },
+  }
 
   render() {
     const errorView = this.state.errorInfo ? (
@@ -316,7 +318,17 @@ const MattermostView = createReactClass({
         />
         { loadingImage }
       </div>);
-  },
-});
+  }
+}
 
-export default MattermostView;
+MattermostView.propTypes = {
+  name: PropTypes.string,
+  id: PropTypes.string,
+  onTargetURLChange: PropTypes.func,
+  onUnreadCountChange: PropTypes.func,
+  src: PropTypes.string,
+  active: PropTypes.bool,
+  withTab: PropTypes.bool,
+  useSpellChecker: PropTypes.bool,
+  onSelectSpellCheckerLocale: PropTypes.func,
+};

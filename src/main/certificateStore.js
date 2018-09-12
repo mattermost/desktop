@@ -56,7 +56,7 @@ CertificateStore.prototype.isExisting = function isExisting(targetURL) {
 };
 
 CertificateStore.prototype.isTrusted = function isTrusted(targetURL, certificate) {
-  var host = getHost(targetURL);
+  const host = getHost(targetURL);
   if (!this.isExisting(targetURL)) {
     return false;
   }

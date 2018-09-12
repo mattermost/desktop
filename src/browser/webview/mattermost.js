@@ -51,7 +51,7 @@ window.addEventListener('load', () => {
 });
 
 function hasClass(element, className) {
-  var rclass = /[\t\r\n\f]/g;
+  const rclass = /[\t\r\n\f]/g;
   if ((' ' + element.className + ' ').replace(rclass, ' ').indexOf(className) > -1) {
     return true;
   }
@@ -77,7 +77,7 @@ function getUnreadCount() {
 
   // unreadCount in sidebar
   // Note: the active channel doesn't have '.unread-title'.
-  var unreadCount = document.getElementsByClassName('unread-title').length;
+  let unreadCount = document.getElementsByClassName('unread-title').length;
 
   // unreadCount in team sidebar
   const teamSideBar = document.getElementsByClassName('team-sidebar'); // team-sidebar doesn't have id
@@ -86,30 +86,30 @@ function getUnreadCount() {
   }
 
   // mentionCount in sidebar
-  var elem = document.getElementsByClassName('badge');
-  var mentionCount = 0;
-  for (var i = 0; i < elem.length; i++) {
+  const elem = document.getElementsByClassName('badge');
+  let mentionCount = 0;
+  for (let i = 0; i < elem.length; i++) {
     if (isElementVisible(elem[i]) && !hasClass(elem[i], 'badge-notify')) {
       mentionCount += Number(elem[i].innerHTML);
     }
   }
 
-  var postAttrName = 'data-reactid';
-  var lastPostElem = document.querySelector('div[' + postAttrName + '="' + this.lastCheckedPostId + '"]');
-  var isUnread = false;
-  var isMentioned = false;
+  const postAttrName = 'data-reactid';
+  const lastPostElem = document.querySelector('div[' + postAttrName + '="' + this.lastCheckedPostId + '"]');
+  let isUnread = false;
+  let isMentioned = false;
   if (lastPostElem === null || !isElementVisible(lastPostElem)) {
     // When load channel or change channel, this.lastCheckedPostId is invalid.
     // So we get latest post and save lastCheckedPostId.
 
     // find active post-list.
-    var postLists = document.querySelectorAll('div.post-list__content');
+    const postLists = document.querySelectorAll('div.post-list__content');
     if (postLists.length === 0) {
       setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
       return;
     }
-    var post = null;
-    for (var j = 0; j < postLists.length; j++) {
+    let post = null;
+    for (let j = 0; j < postLists.length; j++) {
       if (isElementVisible(postLists[j])) {
         post = postLists[j].children[0];
       }
@@ -130,19 +130,19 @@ function getUnreadCount() {
       post = post.nextSibling;
     }
   } else if (lastPostElem !== null) {
-    var newPostElem = lastPostElem.nextSibling;
+    let newPostElem = lastPostElem.nextSibling;
     while (newPostElem) {
       this.lastCheckedPostId = newPostElem.getAttribute(postAttrName);
       isUnread = true;
-      var activeChannel = document.querySelector('.active .sidebar-channel');
-      var closeButton = activeChannel.getElementsByClassName('btn-close');
+      const activeChannel = document.querySelector('.active .sidebar-channel');
+      const closeButton = activeChannel.getElementsByClassName('btn-close');
       if (closeButton.length === 1 && closeButton[0].getAttribute('aria-describedby') === 'remove-dm-tooltip') {
         // If active channel is DM, all posts is treated as menion.
         isMentioned = true;
         break;
       } else {
         // If active channel is public/private channel, only mentioned post is treated as mention.
-        var highlight = newPostElem.getElementsByClassName('mention-highlight');
+        const highlight = newPostElem.getElementsByClassName('mention-highlight');
         if (highlight.length !== 0 && isElementVisible(highlight[0])) {
           isMentioned = true;
           break;

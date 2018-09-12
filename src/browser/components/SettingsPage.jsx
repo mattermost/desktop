@@ -1,9 +1,11 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+
+/* eslint-disable react/no-set-state */
+
 import React from 'react';
 import PropTypes from 'prop-types';
-import createReactClass from 'create-react-class';
 import ReactDOM from 'react-dom';
 import {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} from 'react-bootstrap';
 
@@ -25,20 +27,16 @@ function backToIndex(index) {
 const CONFIG_TYPE_SERVERS = 'servers';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
-const SettingsPage = createReactClass({
-  propTypes: {
-    configFile: PropTypes.string,
-    enableServerManagement: PropTypes.bool,
-  },
+export default class SettingsPage extends React.Component {
+  constructor(props) {
+    super(props);
 
-  getInitialState() {
-    var initialState;
+    let initialState;
     try {
       initialState = settings.readFileSync(this.props.configFile);
     } catch (e) {
       initialState = settings.loadDefault();
     }
-
     initialState.showAddTeamForm = false;
     initialState.trayWasVisible = remote.getCurrentWindow().trayWasVisible;
     if (initialState.teams.length === 0) {
@@ -48,9 +46,29 @@ const SettingsPage = createReactClass({
       appOptions: AutoSaveIndicator.SAVING_STATE_DONE,
       servers: AutoSaveIndicator.SAVING_STATE_DONE,
     };
+    this.state = initialState;
 
-    return initialState;
-  },
+    this.startSaveConfig = this.startSaveConfig.bind(this);
+    this.didSaveConfig = this.didSaveConfig.bind(this);
+    this.handleTeamsChange = this.handleTeamsChange.bind(this);
+    this.saveConfig = this.saveConfig.bind(this);
+    this.handleCancel = this.handleCancel.bind(this);
+    this.handleChangeShowTrayIcon = this.handleChangeShowTrayIcon.bind(this);
+    this.handleChangeTrayIconTheme = this.handleChangeTrayIconTheme.bind(this);
+    this.handleChangeAutoStart = this.handleChangeAutoStart.bind(this);
+    this.handleChangeMinimizeToTray = this.handleChangeMinimizeToTray.bind(this);
+    this.toggleShowTeamForm = this.toggleShowTeamForm.bind(this);
+    this.setShowTeamFormVisibility = this.setShowTeamFormVisibility.bind(this);
+    this.handleFlashWindow = this.handleFlashWindow.bind(this);
+    this.handleBounceIcon = this.handleBounceIcon.bind(this);
+    this.handleBounceIconType = this.handleBounceIconType.bind(this);
+    this.handleShowUnreadBadge = this.handleShowUnreadBadge.bind(this);
+    this.handleChangeUseSpellChecker = this.handleChangeUseSpellChecker.bind(this);
+    this.handleChangeEnableHardwareAcceleration = this.handleChangeEnableHardwareAcceleration.bind(this);
+    this.updateTeam = this.updateTeam.bind(this);
+    this.addServer = this.addServer.bind(this);
+  }
+
   componentDidMount() {
     ipcRenderer.on('add-server', () => {
       this.setState({
@@ -60,7 +78,7 @@ const SettingsPage = createReactClass({
     ipcRenderer.on('switch-tab', (event, key) => {
       backToIndex(key);
     });
-  },
+  }
 
   startSaveConfig(configType) {
     if (!this.startSaveConfigImpl) {
@@ -83,7 +101,7 @@ const SettingsPage = createReactClass({
     savingState[configType] = AutoSaveIndicator.SAVING_STATE_SAVING;
     this.setState({savingState});
     this.startSaveConfigImpl[configType]();
-  },
+  }
 
   didSaveConfig(configType) {
     if (!this.didSaveConfigImpl) {
@@ -97,7 +115,7 @@ const SettingsPage = createReactClass({
       }, 2000);
     }
     this.didSaveConfigImpl[configType]();
-  },
+  }
 
   handleTeamsChange(teams) {
     this.setState({
@@ -108,10 +126,10 @@ const SettingsPage = createReactClass({
       this.setState({showAddTeamForm: true});
     }
     setImmediate(this.startSaveConfig, CONFIG_TYPE_SERVERS);
-  },
+  }
 
   saveConfig(callback) {
-    var config = {
+    const config = {
       teams: this.state.teams,
       showTrayIcon: this.state.showTrayIcon,
       trayIconTheme: this.state.trayIconTheme,
@@ -138,13 +156,14 @@ const SettingsPage = createReactClass({
       ipcRenderer.send('update-config');
       callback();
     });
-  },
+  }
 
   handleCancel() {
     backToIndex();
-  },
+  }
+
   handleChangeShowTrayIcon() {
-    var shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
+    const shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
     this.setState({
       showTrayIcon: shouldShowTrayIcon,
     });
@@ -156,19 +175,22 @@ const SettingsPage = createReactClass({
     }
 
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
+
   handleChangeTrayIconTheme() {
     this.setState({
       trayIconTheme: ReactDOM.findDOMNode(this.refs.trayIconTheme).value,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
+
   handleChangeAutoStart() {
     this.setState({
       autostart: !this.refs.autostart.props.checked,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
+
   handleChangeMinimizeToTray() {
     const shouldMinimizeToTray = this.state.showTrayIcon && !this.refs.minimizeToTray.props.checked;
 
@@ -176,18 +198,21 @@ const SettingsPage = createReactClass({
       minimizeToTray: shouldMinimizeToTray,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
+
   toggleShowTeamForm() {
     this.setState({
       showAddTeamForm: !this.state.showAddTeamForm,
     });
     document.activeElement.blur();
-  },
+  }
+
   setShowTeamFormVisibility(val) {
     this.setState({
       showAddTeamForm: val,
     });
-  },
+  }
+
   handleFlashWindow() {
     this.setState({
       notifications: {
@@ -196,7 +221,8 @@ const SettingsPage = createReactClass({
       },
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
+
   handleBounceIcon() {
     this.setState({
       notifications: {
@@ -205,7 +231,8 @@ const SettingsPage = createReactClass({
       },
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
+
   handleBounceIconType(event) {
     this.setState({
       notifications: {
@@ -214,45 +241,46 @@ const SettingsPage = createReactClass({
       },
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
+
   handleShowUnreadBadge() {
     this.setState({
       showUnreadBadge: !this.refs.showUnreadBadge.props.checked,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
 
   handleChangeUseSpellChecker() {
     this.setState({
       useSpellChecker: !this.refs.useSpellChecker.props.checked,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
 
   handleChangeEnableHardwareAcceleration() {
     this.setState({
       enableHardwareAcceleration: !this.refs.enableHardwareAcceleration.props.checked,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
-  },
+  }
 
   updateTeam(index, newData) {
-    var teams = this.state.teams;
+    const teams = this.state.teams;
     teams[index] = newData;
     this.setState({
       teams,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_SERVERS);
-  },
+  }
 
   addServer(team) {
-    var teams = this.state.teams;
+    const teams = this.state.teams;
     teams.push(team);
     this.setState({
       teams,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_SERVERS);
-  },
+  }
 
   render() {
     const settingsPage = {
@@ -290,7 +318,7 @@ const SettingsPage = createReactClass({
       },
     };
 
-    var teamsRow = (
+    const teamsRow = (
       <Row>
         <Col md={12}>
           <TeamList
@@ -310,7 +338,7 @@ const SettingsPage = createReactClass({
       </Row>
     );
 
-    var serversRow = (
+    const serversRow = (
       <Row>
         <Col
           md={10}
@@ -341,7 +369,7 @@ const SettingsPage = createReactClass({
       </Row>
     );
 
-    var srvMgmt;
+    let srvMgmt;
     if (this.props.enableServerManagement === true) {
       srvMgmt = (
         <div>
@@ -352,7 +380,7 @@ const SettingsPage = createReactClass({
       );
     }
 
-    var options = [];
+    const options = [];
 
     // MacOS has an option in the Dock, to set the app to autostart, so we choose to not support this option for OSX
     if (process.platform === 'win32' || process.platform === 'linux') {
@@ -383,7 +411,7 @@ const SettingsPage = createReactClass({
         {'Check spelling'}
         <HelpBlock>
           {'Highlight misspelled words in your messages.'}
-          {' Available for English, French, German, Spanish, and Dutch.'}
+          {' Available for English, French, German, Portuguese, Spanish, and Dutch.'}
         </HelpBlock>
       </Checkbox>);
 
@@ -542,7 +570,7 @@ const SettingsPage = createReactClass({
       </Checkbox>
     );
 
-    var optionsRow = (options.length > 0) ? (
+    const optionsRow = (options.length > 0) ? (
       <Row>
         <Col md={12}>
           <h2 style={settingsPage.sectionHeading}>{'App Options'}</h2>
@@ -591,7 +619,10 @@ const SettingsPage = createReactClass({
         </Grid>
       </div>
     );
-  },
-});
+  }
+}
 
-export default SettingsPage;
+SettingsPage.propTypes = {
+  configFile: PropTypes.string,
+  enableServerManagement: PropTypes.bool,
+};

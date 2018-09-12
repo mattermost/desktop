@@ -9,7 +9,7 @@ import fs from 'fs';
 import {app, dialog, ipcMain, shell} from 'electron';
 
 const allowedProtocolFile = path.resolve(app.getPath('userData'), 'allowedProtocols.json');
-var allowedProtocols = [];
+let allowedProtocols = [];
 
 function init(mainWindow) {
   fs.readFile(allowedProtocolFile, 'utf-8', (err, data) => {

@@ -22,7 +22,7 @@ function getSuggestionsMenus(win, suggestions) {
 function getSpellCheckerLocaleMenus(onSelectSpellCheckerLocale) {
   const currentLocale = ipcRenderer.sendSync('get-spellchecker-locale');
   const locales = [
-    {language: 'English', locale: 'en-US'},
+    {language: 'English (US)', locale: 'en-US'},
     {language: 'French', locale: 'fr-FR'},
     {language: 'German', locale: 'de-DE'},
     {language: 'Spanish', locale: 'es-ES'},

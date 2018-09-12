@@ -4,7 +4,7 @@
 'use strict';
 
 import os from 'os';
-var releaseSplit = os.release().split('.');
+const releaseSplit = os.release().split('.');
 
 export default {
   major: parseInt(releaseSplit[0], 10),

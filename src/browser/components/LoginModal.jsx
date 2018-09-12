@@ -22,7 +22,7 @@ export default class LoginModal extends React.Component {
   }
 
   render() {
-    var theServer = '';
+    let theServer = '';
     if (!this.props.show) {
       theServer = '';
     } else if (this.props.authInfo.isProxy) {

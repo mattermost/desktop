@@ -17,10 +17,10 @@
         "no-console": 0,
         "no-process-env": 0,
         "no-underscore-dangle": 1,
+        "no-var": 2,
         "react/jsx-indent": [2, 2],
         "react/jsx-indent-props": [2, 2],
         "react/no-set-state": 1,
-        "react/prefer-es6-class": 1,
         "react/require-optimization": 0
     }
 }

@@ -21,6 +21,8 @@ Release date: TBD
 #### Mac
  - Add **.dmg** package to support installation.
  [#588](https://github.com/mattermost/desktop/pull/588)
+ - Support "Hide" option of Login Items in Preferences.
+ [#853](https://github.com/mattermost/desktop/pull/853)
 
 #### Linux
  - [tar.gz] Use SVG icon for Linux application menus in place of PNG icon
@@ -30,8 +32,9 @@ Release date: TBD
  [#818](https://github.com/mattermost/desktop/pull/818)
 
 ### Architectural Changes
- - Major version upgrade of Electron to v2.0.2. Electron is the underlying technology used to build the Desktop apps.
+ - Major version upgrade of Electron to v2.0.8. Electron is the underlying technology used to build the Desktop apps.
  [#820](https://github.com/mattermost/desktop/pull/820)
+ [#847](https://github.com/mattermost/desktop/pull/847)
  - Artifact names are configured via `electron-builder.json`.
  [#825](https://github.com/mattermost/desktop/pull/825)
 
