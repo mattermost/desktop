@@ -18,6 +18,10 @@ Release date: TBD
  - Added `Ctrl/Cmd+F` shortcut to work as browser-like search.
  [#399](https://github.com/mattermost/desktop/issues/399)
 
+#### Windows
+ - Set "app start on login" preference to default on and synchronize its state with config.json.
+ [#846](https://github.com/mattermost/desktop/pull/846)
+
 #### Mac
  - Add **.dmg** package to support installation.
  [#588](https://github.com/mattermost/desktop/pull/588)
@@ -30,6 +34,8 @@ Release date: TBD
  - Updated categories in order to be listed under the appropriate submenu of the application starter.
  [#816](https://github.com/mattermost/desktop/pull/816)
  [#818](https://github.com/mattermost/desktop/pull/818)
+ - Set "app start on login" preference to default on and synchronize its state with config.json.
+ [#846](https://github.com/mattermost/desktop/pull/846)
 
 ### Architectural Changes
  - Major version upgrade of Electron to v2.0.8. Electron is the underlying technology used to build the Desktop apps.
