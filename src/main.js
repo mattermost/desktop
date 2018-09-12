@@ -24,6 +24,7 @@ import {parse as parseArgv} from 'yargs';
 import {protocols} from '../electron-builder.json';
 
 import squirrelStartup from './main/squirrelStartup';
+import AutoLauncher from './main/AutoLauncher';
 import CriticalErrorHandler from './main/CriticalErrorHandler';
 
 const criticalErrorHandler = new CriticalErrorHandler();
@@ -99,6 +100,15 @@ if (config.enableHardwareAcceleration === false) {
 ipcMain.on('update-config', () => {
   const configFile = app.getPath('userData') + '/config.json';
   config = settings.readFileSync(configFile);
+  if (process.platform === 'win32' || process.platform === 'linux') {
+    const appLauncher = new AutoLauncher();
+    const autoStartTask = config.autostart ? appLauncher.enable() : appLauncher.disable();
+    autoStartTask.then(() => {
+      console.log('config.autostart has been configured:', config.autostart);
+    }).catch((err) => {
+      console.log('error:', err);
+    });
+  }
   const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => team.url);
   permissionManager.setTrustedURLs(trustedURLs);
   ipcMain.emit('update-dict', true, config.spellCheckerLocale);

@@ -10,7 +10,6 @@ import ReactDOM from 'react-dom';
 import {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} from 'react-bootstrap';
 
 import {ipcRenderer, remote} from 'electron';
-import AutoLaunch from 'auto-launch';
 import {debounce} from 'underscore';
 
 import buildConfig from '../../common/config/buildConfig';
@@ -18,11 +17,6 @@ import settings from '../../common/settings';
 
 import TeamList from './TeamList.jsx';
 import AutoSaveIndicator from './AutoSaveIndicator.jsx';
-
-const appLauncher = new AutoLaunch({
-  name: remote.app.getName(),
-  isHidden: true,
-});
 
 function backToIndex(index) {
   const target = typeof index === 'undefined' ? 0 : index;
@@ -58,7 +52,6 @@ export default class SettingsPage extends React.Component {
     this.didSaveConfig = this.didSaveConfig.bind(this);
     this.handleTeamsChange = this.handleTeamsChange.bind(this);
     this.saveConfig = this.saveConfig.bind(this);
-    this.saveAutoStart = this.saveAutoStart.bind(this);
     this.handleCancel = this.handleCancel.bind(this);
     this.handleChangeShowTrayIcon = this.handleChangeShowTrayIcon.bind(this);
     this.handleChangeTrayIconTheme = this.handleChangeTrayIconTheme.bind(this);
@@ -77,14 +70,6 @@ export default class SettingsPage extends React.Component {
   }
 
   componentDidMount() {
-    if (process.platform === 'win32' || process.platform === 'linux') {
-      const self = this;
-      appLauncher.isEnabled().then((enabled) => {
-        self.setState({
-          autostart: enabled,
-        });
-      });
-    }
     ipcRenderer.on('add-server', () => {
       this.setState({
         showAddTeamForm: true,
@@ -159,6 +144,7 @@ export default class SettingsPage extends React.Component {
       useSpellChecker: this.state.useSpellChecker,
       spellCheckerLocale: this.state.spellCheckerLocale,
       enableHardwareAcceleration: this.state.enableHardwareAcceleration,
+      autostart: this.state.autostart,
     };
 
     settings.writeFile(this.props.configFile, config, (err) => {
@@ -168,29 +154,8 @@ export default class SettingsPage extends React.Component {
       }
       ipcRenderer.send('update-menu', config);
       ipcRenderer.send('update-config');
-      if (process.platform === 'win32' || process.platform === 'linux') {
-        const autostart = this.state.autostart;
-        this.saveAutoStart(autostart, callback);
-      } else {
-        callback();
-      }
+      callback();
     });
-  }
-
-  saveAutoStart(autostart, callback) {
-    appLauncher.isEnabled().then((enabled) => {
-      if (enabled && !autostart) {
-        appLauncher.disable().then(() => {
-          callback();
-        }).catch(callback);
-      } else if (!enabled && autostart) {
-        appLauncher.enable().then(() => {
-          callback();
-        }).catch(callback);
-      } else {
-        callback();
-      }
-    }).catch(callback);
   }
 
   handleCancel() {
