@@ -6,7 +6,6 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import ReactDOM from 'react-dom';
 import {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} from 'react-bootstrap';
 
 import {ipcRenderer, remote} from 'electron';
@@ -67,6 +66,8 @@ export default class SettingsPage extends React.Component {
     this.handleChangeEnableHardwareAcceleration = this.handleChangeEnableHardwareAcceleration.bind(this);
     this.updateTeam = this.updateTeam.bind(this);
     this.addServer = this.addServer.bind(this);
+
+    this.trayIconThemeRef = React.createRef();
   }
 
   componentDidMount() {
@@ -179,7 +180,7 @@ export default class SettingsPage extends React.Component {
 
   handleChangeTrayIconTheme() {
     this.setState({
-      trayIconTheme: ReactDOM.findDOMNode(this.refs.trayIconTheme).value,
+      trayIconTheme: this.trayIconThemeRef.current.value,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   }
@@ -508,6 +509,7 @@ export default class SettingsPage extends React.Component {
       options.push(
         <FormGroup
           key='trayIconTheme'
+          ref={this.trayIconThemeRef}
           style={{marginLeft: '20px'}}
         >
           {'Icon theme: '}

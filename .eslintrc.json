@@ -20,6 +20,7 @@
         "no-var": 2,
         "react/jsx-indent": [2, 2],
         "react/jsx-indent-props": [2, 2],
+        "react/no-find-dom-node": 2,
         "react/no-set-state": 1,
         "react/require-optimization": 0
     }

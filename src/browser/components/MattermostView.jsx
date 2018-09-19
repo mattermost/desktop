@@ -9,7 +9,6 @@ import url from 'url';
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import {findDOMNode} from 'react-dom';
 import {ipcRenderer, remote, shell} from 'electron';
 
 import contextMenu from '../js/contextMenu';
@@ -63,6 +62,8 @@ export default class MattermostView extends React.Component {
     this.goForward = this.goForward.bind(this);
     this.getSrc = this.getSrc.bind(this);
     this.handleDeepLink = this.handleDeepLink.bind(this);
+
+    this.webviewRef = React.createRef();
   }
 
   handleUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned) {
@@ -73,7 +74,7 @@ export default class MattermostView extends React.Component {
 
   componentDidMount() {
     const self = this;
-    const webview = findDOMNode(this.refs.webview);
+    const webview = this.webviewRef.current;
 
     webview.addEventListener('did-fail-load', (e) => {
       console.log(self.props.name, 'webview did-fail-load', e);
@@ -218,7 +219,7 @@ export default class MattermostView extends React.Component {
       reloadTimeoutID: null,
       isLoaded: false,
     });
-    const webview = findDOMNode(this.refs.webview);
+    const webview = this.webviewRef.current;
     webview.reload();
   }
 
@@ -226,14 +227,14 @@ export default class MattermostView extends React.Component {
     this.setState({
       errorInfo: null,
     });
-    const webContents = findDOMNode(this.refs.webview).getWebContents();
+    const webContents = this.webviewRef.current.getWebContents();
     webContents.session.clearCache(() => {
       webContents.reload();
     });
   }
 
   focusOnWebView() {
-    const webview = findDOMNode(this.refs.webview);
+    const webview = this.webviewRef.current;
     const webContents = webview.getWebContents(); // webContents might not be created yet.
     if (webContents && !webContents.isFocused()) {
       webview.focus();
@@ -242,32 +243,32 @@ export default class MattermostView extends React.Component {
   }
 
   canGoBack() {
-    const webview = findDOMNode(this.refs.webview);
+    const webview = this.webviewRef.current;
     return webview.getWebContents().canGoBack();
   }
 
   canGoForward() {
-    const webview = findDOMNode(this.refs.webview);
+    const webview = this.webviewRef.current;
     return webview.getWebContents().canGoForward();
   }
 
   goBack() {
-    const webview = findDOMNode(this.refs.webview);
+    const webview = this.webviewRef.current;
     webview.getWebContents().goBack();
   }
 
   goForward() {
-    const webview = findDOMNode(this.refs.webview);
+    const webview = this.webviewRef.current;
     webview.getWebContents().goForward();
   }
 
   getSrc() {
-    const webview = findDOMNode(this.refs.webview);
+    const webview = this.webviewRef.current;
     return webview.src;
   }
 
   handleDeepLink(relativeUrl) {
-    const webview = findDOMNode(this.refs.webview);
+    const webview = this.webviewRef.current;
     webview.executeJavaScript(
       'history.pushState(null, null, "' + relativeUrl + '");'
     );
@@ -314,7 +315,7 @@ export default class MattermostView extends React.Component {
           id={this.props.id}
           preload={preloadJS}
           src={this.props.src}
-          ref='webview'
+          ref={this.webviewRef}
         />
         { loadingImage }
       </div>);

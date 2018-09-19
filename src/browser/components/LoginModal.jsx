@@ -3,19 +3,20 @@
 // See LICENSE.txt for license information.
 import React from 'react';
 import PropTypes from 'prop-types';
-import {findDOMNode} from 'react-dom';
 import {Button, Col, ControlLabel, Form, FormGroup, FormControl, Modal} from 'react-bootstrap';
 
 export default class LoginModal extends React.Component {
   constructor(props) {
     super(props);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.usernameRef = React.createRef();
+    this.passwordRef = React.createRef();
   }
 
   handleSubmit(event) {
     event.preventDefault();
-    const usernameNode = findDOMNode(this.refs.username);
-    const passwordNode = findDOMNode(this.refs.password);
+    const usernameNode = this.usernameRef.current;
+    const passwordNode = this.passwordRef.current;
     this.props.onLogin(this.props.request, usernameNode.value, passwordNode.value);
     usernameNode.value = '';
     passwordNode.value = '';
@@ -53,7 +54,7 @@ export default class LoginModal extends React.Component {
                 <FormControl
                   type='text'
                   placeholder='User Name'
-                  ref='username'
+                  ref={this.usernameRef}
                   onClick={(e) => {
                     e.stopPropagation();
                   }}
@@ -69,7 +70,7 @@ export default class LoginModal extends React.Component {
                 <FormControl
                   type='password'
                   placeholder='Password'
-                  ref='password'
+                  ref={this.passwordRef}
                   onClick={(e) => {
                     e.stopPropagation();
                   }}
