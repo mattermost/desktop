@@ -78,7 +78,7 @@ global.isDev = isDev && !argv.disableDevMode;
 let config = {};
 try {
   const configFile = app.getPath('userData') + '/config.json';
-  config = settings.readFileSync(configFile);
+  config = settings.readFileSync(configFile, app.getName());
   if (config.version !== settings.version) {
     config = settings.upgrade(config);
     settings.writeFileSync(configFile, config);
@@ -101,7 +101,7 @@ if (config.enableHardwareAcceleration === false) {
 
 ipcMain.on('update-config', () => {
   const configFile = app.getPath('userData') + '/config.json';
-  config = settings.readFileSync(configFile);
+  config = settings.readFileSync(configFile, app.getName());
   if (process.platform === 'win32' || process.platform === 'linux') {
     const appLauncher = new AutoLauncher();
     const autoStartTask = config.autoStart ? appLauncher.enable() : appLauncher.disable();

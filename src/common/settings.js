@@ -64,10 +64,10 @@ export default {
 
   upgrade,
 
-  readFileSync(configFile) {
+  readFileSync(configFile, appName) {
     const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
     if (config.version === defaultPreferences.version) {
-      const defaultConfig = loadDefault();
+      const defaultConfig = loadDefault(null, appName);
       return merge(defaultConfig, config);
     }
     return config;

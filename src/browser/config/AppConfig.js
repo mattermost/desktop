@@ -10,7 +10,7 @@ class AppConfig {
   constructor(file) {
     this.fileName = file;
     try {
-      this.data = settings.readFileSync(file);
+      this.data = settings.readFileSync(file, remote.app.getName());
     } catch (e) {
       const spellCheckerLocale = SpellChecker.getSpellCheckerLocale(remote.app.getLocale());
       this.data = settings.loadDefault(spellCheckerLocale, remote.app.getName());
