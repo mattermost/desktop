@@ -528,7 +528,14 @@ app.on('ready', () => {
       }
 
       if (trayIcon && !trayIcon.isDestroyed()) {
-        if (arg.mentionCount > 0) {
+        if (arg.sessionExpired) {
+          // reuse the mention icon when the session is expired
+          trayIcon.setImage(trayImages.mention);
+          if (process.platform === 'darwin') {
+            trayIcon.setPressedImage(trayImages.clicked.mention);
+          }
+          trayIcon.setToolTip('Session Expired: Please sign in to continue receiving notifications.');
+        } else if (arg.mentionCount > 0) {
           trayIcon.setImage(trayImages.mention);
           if (process.platform === 'darwin') {
             trayIcon.setPressedImage(trayImages.clicked.mention);
