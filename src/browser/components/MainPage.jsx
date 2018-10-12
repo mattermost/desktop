@@ -39,6 +39,7 @@ export default class MainPage extends React.Component {
 
     this.state = {
       key,
+      sessionsExpired: new Array(this.props.teams.length),
       unreadCounts: new Array(this.props.teams.length),
       mentionCounts: new Array(this.props.teams.length),
       unreadAtActive: new Array(this.props.teams.length),
@@ -56,8 +57,6 @@ export default class MainPage extends React.Component {
     this.handleOnTeamFocused = this.handleOnTeamFocused.bind(this);
     this.handleSelect = this.handleSelect.bind(this);
     this.handleTargetURLChange = this.handleTargetURLChange.bind(this);
-    this.handleUnreadCountChange = this.handleUnreadCountChange.bind(this);
-    this.handleUnreadCountTotalChange = this.handleUnreadCountTotalChange.bind(this);
     this.inputBlur = this.inputBlur.bind(this);
     this.markReadAtActive = this.markReadAtActive.bind(this);
   }
@@ -173,11 +172,13 @@ export default class MainPage extends React.Component {
     this.handleOnTeamFocused(newKey);
   }
 
-  handleUnreadCountChange(index, unreadCount, mentionCount, isUnread, isMentioned) {
+  handleBadgeChange = (index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) => {
+    const sessionsExpired = this.state.sessionsExpired;
     const unreadCounts = this.state.unreadCounts;
     const mentionCounts = this.state.mentionCounts;
     const unreadAtActive = this.state.unreadAtActive;
     const mentionAtActiveCounts = this.state.mentionAtActiveCounts;
+    sessionsExpired[index] = sessionExpired;
     unreadCounts[index] = unreadCount;
     mentionCounts[index] = mentionCount;
 
@@ -189,12 +190,13 @@ export default class MainPage extends React.Component {
       }
     }
     this.setState({
+      sessionsExpired,
       unreadCounts,
       mentionCounts,
       unreadAtActive,
       mentionAtActiveCounts,
     });
-    this.handleUnreadCountTotalChange();
+    this.handleBadgesChange();
   }
 
   markReadAtActive(index) {
@@ -206,11 +208,13 @@ export default class MainPage extends React.Component {
       unreadAtActive,
       mentionAtActiveCounts,
     });
-    this.handleUnreadCountTotalChange();
+    this.handleBadgesChange();
   }
 
-  handleUnreadCountTotalChange() {
-    if (this.props.onUnreadCountChange) {
+  handleBadgesChange = () => {
+    if (this.props.onBadgeChange) {
+      const someSessionsExpired = this.state.sessionsExpired.some((sessionExpired) => sessionExpired);
+
       let allUnreadCount = this.state.unreadCounts.reduce((prev, curr) => {
         return prev + curr;
       }, 0);
@@ -219,13 +223,15 @@ export default class MainPage extends React.Component {
           allUnreadCount += 1;
         }
       });
+
       let allMentionCount = this.state.mentionCounts.reduce((prev, curr) => {
         return prev + curr;
       }, 0);
       this.state.mentionAtActiveCounts.forEach((count) => {
         allMentionCount += count;
       });
-      this.props.onUnreadCountChange(allUnreadCount, allMentionCount);
+
+      this.props.onBadgeChange(someSessionsExpired, allUnreadCount, allMentionCount);
     }
   }
 
@@ -299,6 +305,7 @@ export default class MainPage extends React.Component {
           <TabBar
             id='tabBar'
             teams={this.props.teams}
+            sessionsExpired={this.state.sessionsExpired}
             unreadCounts={this.state.unreadCounts}
             mentionCounts={this.state.mentionCounts}
             unreadAtActive={this.state.unreadAtActive}
@@ -315,8 +322,8 @@ export default class MainPage extends React.Component {
     }
 
     const views = this.props.teams.map((team, index) => {
-      function handleUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned) {
-        self.handleUnreadCountChange(index, unreadCount, mentionCount, isUnread, isMentioned);
+      function handleBadgeChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) {
+        self.handleBadgeChange(index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
       }
       function handleNotificationClick() {
         self.handleSelect(index);
@@ -340,7 +347,7 @@ export default class MainPage extends React.Component {
           src={teamUrl}
           name={team.name}
           onTargetURLChange={self.handleTargetURLChange}
-          onUnreadCountChange={handleUnreadCountChange}
+          onBadgeChange={handleBadgeChange}
           onNotificationClick={handleNotificationClick}
           ref={id}
           active={isActive}
@@ -437,7 +444,7 @@ export default class MainPage extends React.Component {
 }
 
 MainPage.propTypes = {
-  onUnreadCountChange: PropTypes.func.isRequired,
+  onBadgeChange: PropTypes.func.isRequired,
   teams: PropTypes.array.isRequired,
   onTeamConfigChange: PropTypes.func.isRequired,
   initialIndex: PropTypes.number.isRequired,

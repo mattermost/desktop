@@ -53,6 +53,11 @@
   border-radius: 50%;
 }
 
+.TabBar .TabBar-badge.TabBar-badge-nomention {
+  font-size: 22pt;
+  line-height: 18px;
+}
+
 .TabBar .teamTabItem-unread {
   font-weight: bold;
 }

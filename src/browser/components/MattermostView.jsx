@@ -66,9 +66,9 @@ export default class MattermostView extends React.Component {
     this.webviewRef = React.createRef();
   }
 
-  handleUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned) {
-    if (this.props.onUnreadCountChange) {
-      this.props.onUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned);
+  handleUnreadCountChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) {
+    if (this.props.onBadgeChange) {
+      this.props.onBadgeChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
     }
   }
 
@@ -158,14 +158,13 @@ export default class MattermostView extends React.Component {
           isLoaded: true,
         });
         break;
-      case 'onUnreadCountChange': {
-        const unreadCount = event.args[0];
-        const mentionCount = event.args[1];
-
-        // isUnread and isMentioned is pulse flag.
-        const isUnread = event.args[2];
-        const isMentioned = event.args[3];
-        self.handleUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned);
+      case 'onBadgeChange': {
+        const sessionExpired = event.args[0];
+        const unreadCount = event.args[1];
+        const mentionCount = event.args[2];
+        const isUnread = event.args[3];
+        const isMentioned = event.args[4];
+        self.handleUnreadCountChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
 
         break;
       }
@@ -326,7 +325,7 @@ MattermostView.propTypes = {
   name: PropTypes.string,
   id: PropTypes.string,
   onTargetURLChange: PropTypes.func,
-  onUnreadCountChange: PropTypes.func,
+  onBadgeChange: PropTypes.func,
   src: PropTypes.string,
   active: PropTypes.bool,
   withTab: PropTypes.bool,

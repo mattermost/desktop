@@ -10,6 +10,8 @@ import PermissionRequestDialog from './PermissionRequestDialog.jsx';
 export default class TabBar extends React.Component { // need "this"
   render() {
     const tabs = this.props.teams.map((team, index) => {
+      const sessionExpired = this.props.sessionsExpired[index];
+
       let unreadCount = 0;
       if (this.props.unreadCounts[index] > 0) {
         unreadCount = this.props.unreadCounts[index];
@@ -27,11 +29,16 @@ export default class TabBar extends React.Component { // need "this"
       }
 
       let badgeDiv;
-      if (mentionCount !== 0) {
+      if (sessionExpired) {
+        badgeDiv = (
+          <div className='TabBar-badge TabBar-badge-nomention'>{'•'}</div>
+        );
+      } else if (mentionCount !== 0) {
         badgeDiv = (
           <div className='TabBar-badge'>
             {mentionCount}
-          </div>);
+          </div>
+        );
       }
       const id = 'teamTabItem' + index;
       const requestingPermission = this.props.requestingPermission[index];
@@ -114,6 +121,7 @@ TabBar.propTypes = {
   id: PropTypes.string,
   onSelect: PropTypes.func,
   teams: PropTypes.array,
+  sessionsExpired: PropTypes.array,
   unreadCounts: PropTypes.array,
   unreadAtActive: PropTypes.array,
   mentionCounts: PropTypes.array,
