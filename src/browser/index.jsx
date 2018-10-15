@@ -31,19 +31,23 @@ if (teams.length === 0) {
   window.location = 'settings.html';
 }
 
-function showUnreadBadgeWindows(unreadCount, mentionCount) {
+function showBadgeWindows(sessionExpired, unreadCount, mentionCount) {
   function sendBadge(dataURL, description) {
     // window.setOverlayIcon() does't work with NativeImage across remote boundaries.
     // https://github.com/atom/electron/issues/4011
     ipcRenderer.send('update-unread', {
       overlayDataURL: dataURL,
       description,
+      sessionExpired,
       unreadCount,
       mentionCount,
     });
   }
 
-  if (mentionCount > 0) {
+  if (sessionExpired) {
+    const dataURL = createBadgeDataURL('•');
+    sendBadge(dataURL, 'Session Expired: Please sign in to continue receiving notifications.');
+  } else if (mentionCount > 0) {
     const dataURL = createBadgeDataURL(mentionCount.toString());
     sendBadge(dataURL, 'You have unread mentions (' + mentionCount + ')');
   } else if (unreadCount > 0 && AppConfig.data.showUnreadBadge) {
@@ -54,8 +58,10 @@ function showUnreadBadgeWindows(unreadCount, mentionCount) {
   }
 }
 
-function showUnreadBadgeOSX(unreadCount, mentionCount) {
-  if (mentionCount > 0) {
+function showBadgeOSX(sessionExpired, unreadCount, mentionCount) {
+  if (sessionExpired) {
+    remote.app.dock.setBadge('•');
+  } else if (mentionCount > 0) {
     remote.app.dock.setBadge(mentionCount.toString());
   } else if (unreadCount > 0 && AppConfig.data.showUnreadBadge) {
     remote.app.dock.setBadge('•');
@@ -64,34 +70,39 @@ function showUnreadBadgeOSX(unreadCount, mentionCount) {
   }
 
   ipcRenderer.send('update-unread', {
+    sessionExpired,
     unreadCount,
     mentionCount,
   });
 }
 
-function showUnreadBadgeLinux(unreadCount, mentionCount) {
+function showBadgeLinux(sessionExpired, unreadCount, mentionCount) {
   if (remote.app.isUnityRunning()) {
-    remote.app.setBadgeCount(mentionCount);
+    if (sessionExpired) {
+      remote.app.setBadgeCount(mentionCount + 1);
+    } else {
+      remote.app.setBadgeCount(mentionCount);
+    }
   }
 
   ipcRenderer.send('update-unread', {
+    sessionExpired,
     unreadCount,
     mentionCount,
   });
 }
 
-function showUnreadBadge(unreadCount, mentionCount) {
+function showBadge(sessionExpired, unreadCount, mentionCount) {
   switch (process.platform) {
   case 'win32':
-    showUnreadBadgeWindows(unreadCount, mentionCount);
+    showBadgeWindows(sessionExpired, unreadCount, mentionCount);
     break;
   case 'darwin':
-    showUnreadBadgeOSX(unreadCount, mentionCount);
+    showBadgeOSX(sessionExpired, unreadCount, mentionCount);
     break;
   case 'linux':
-    showUnreadBadgeLinux(unreadCount, mentionCount);
+    showBadgeLinux(sessionExpired, unreadCount, mentionCount);
     break;
-  default:
   }
 }
 
@@ -168,7 +179,7 @@ ReactDOM.render(
   <MainPage
     teams={teams}
     initialIndex={initialIndex}
-    onUnreadCountChange={showUnreadBadge}
+    onBadgeChange={showBadge}
     onTeamConfigChange={teamConfigChange}
     useSpellChecker={AppConfig.data.useSpellChecker}
     onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}

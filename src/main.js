@@ -23,6 +23,7 @@ import {parse as parseArgv} from 'yargs';
 
 import {protocols} from '../electron-builder.json';
 
+import AutoLauncher from './main/AutoLauncher';
 import CriticalErrorHandler from './main/CriticalErrorHandler';
 import upgradeAutoLaunch from './main/autoLaunch';
 import autoUpdater from './main/autoUpdater';
@@ -48,6 +49,7 @@ import PermissionManager from './main/PermissionManager';
 import permissionRequestHandler from './main/permissionRequestHandler';
 import AppStateManager from './main/AppStateManager';
 import initCookieManager from './main/cookieManager';
+import {shouldBeHiddenOnStartup} from './main/utils';
 
 import SpellChecker from './main/SpellChecker';
 
@@ -55,7 +57,7 @@ const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-var mainWindow = null;
+let mainWindow = null;
 let spellChecker = null;
 let deeplinkingUrl = null;
 let scheme = null;
@@ -63,11 +65,7 @@ let appState = null;
 let permissionManager = null;
 
 const argv = parseArgv(process.argv.slice(1));
-
-var hideOnStartup;
-if (argv.hidden) {
-  hideOnStartup = true;
-}
+const hideOnStartup = shouldBeHiddenOnStartup(argv);
 
 if (argv['data-dir']) {
   app.setPath('userData', path.resolve(argv['data-dir']));
@@ -75,7 +73,7 @@ if (argv['data-dir']) {
 
 global.isDev = isDev && !argv.disableDevMode;
 
-var config = {};
+let config = {};
 try {
   const configFile = app.getPath('userData') + '/config.json';
   config = settings.readFileSync(configFile);
@@ -100,6 +98,15 @@ if (config.enableHardwareAcceleration === false) {
 ipcMain.on('update-config', () => {
   const configFile = app.getPath('userData') + '/config.json';
   config = settings.readFileSync(configFile);
+  if (process.platform === 'win32' || process.platform === 'linux') {
+    const appLauncher = new AutoLauncher();
+    const autoStartTask = config.autostart ? appLauncher.enable() : appLauncher.disable();
+    autoStartTask.then(() => {
+      console.log('config.autostart has been configured:', config.autostart);
+    }).catch((err) => {
+      console.log('error:', err);
+    });
+  }
   const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => team.url);
   permissionManager.setTrustedURLs(trustedURLs);
   ipcMain.emit('update-dict', true, config.spellCheckerLocale);
@@ -118,7 +125,7 @@ function switchMenuIconImages(icons, isDarkMode) {
   }
 }
 
-var trayIcon = null;
+let trayIcon = null;
 const trayImages = (() => {
   switch (process.platform) {
   case 'win32':
@@ -294,7 +301,7 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
     event.preventDefault();
     callback(true);
   } else {
-    var detail = `URL: ${url}\nError: ${error}`;
+    let detail = `URL: ${url}\nError: ${error}`;
     if (certificateStore.isExisting(url)) {
       detail = 'Certificate is different from previous one.\n\n' + detail;
     }
@@ -526,7 +533,14 @@ app.on('ready', () => {
       }
 
       if (trayIcon && !trayIcon.isDestroyed()) {
-        if (arg.mentionCount > 0) {
+        if (arg.sessionExpired) {
+          // reuse the mention icon when the session is expired
+          trayIcon.setImage(trayImages.mention);
+          if (process.platform === 'darwin') {
+            trayIcon.setPressedImage(trayImages.clicked.mention);
+          }
+          trayIcon.setToolTip('Session Expired: Please sign in to continue receiving notifications.');
+        } else if (arg.mentionCount > 0) {
           trayIcon.setImage(trayImages.mention);
           if (process.platform === 'darwin') {
             trayIcon.setPressedImage(trayImages.clicked.mention);
@@ -551,8 +565,8 @@ app.on('ready', () => {
 
   if (process.platform === 'darwin') {
     session.defaultSession.on('will-download', (event, item) => {
-      var filename = item.getFilename();
-      var savePath = dialog.showSaveDialog({
+      const filename = item.getFilename();
+      const savePath = dialog.showSaveDialog({
         title: filename,
         defaultPath: os.homedir() + '/Downloads/' + filename,
       });
@@ -567,7 +581,7 @@ app.on('ready', () => {
 
   // Set application menu
   ipcMain.on('update-menu', (event, configData) => {
-    var aMenu = appMenu.createMenu(mainWindow, configData, global.isDev);
+    const aMenu = appMenu.createMenu(mainWindow, configData, global.isDev);
     Menu.setApplicationMenu(aMenu);
 
     // set up context menu for tray icon

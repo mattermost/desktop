@@ -15,11 +15,11 @@ function createTemplate(mainWindow, config, isDev) {
     type: 'separator',
   };
 
-  var appName = app.getName();
-  var firstMenuName = (process.platform === 'darwin') ? appName : 'File';
-  var template = [];
+  const appName = app.getName();
+  const firstMenuName = (process.platform === 'darwin') ? appName : 'File';
+  const template = [];
 
-  var platformAppMenu = process.platform === 'darwin' ? [{
+  let platformAppMenu = process.platform === 'darwin' ? [{
     label: 'About ' + appName,
     role: 'about',
     click() {
@@ -217,7 +217,7 @@ function createTemplate(mainWindow, config, isDev) {
     }],
   };
   template.push(windowMenu);
-  var submenu = [];
+  const submenu = [];
   if (buildConfig.helpLink) {
     submenu.push({
       label: 'Learn More...',

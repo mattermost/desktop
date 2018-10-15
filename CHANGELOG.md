@@ -17,10 +17,18 @@ Release date: TBD
  [#843](https://github.com/mattermost/desktop/pull/843)
  - Added `Ctrl/Cmd+F` shortcut to work as browser-like search.
  [#399](https://github.com/mattermost/desktop/issues/399)
+ - Preserved case of first letter in spellcheck.
+ [#869](https://github.com/mattermost/desktop/pull/869)
+
+#### Windows
+ - Set "app start on login" preference to default on and synchronize its state with config.json.
+ [#846](https://github.com/mattermost/desktop/pull/846)
 
 #### Mac
  - Add **.dmg** package to support installation.
  [#588](https://github.com/mattermost/desktop/pull/588)
+ - Support "Hide" option of Login Items in Preferences.
+ [#853](https://github.com/mattermost/desktop/pull/853)
 
 #### Linux
  - [tar.gz] Use SVG icon for Linux application menus in place of PNG icon
@@ -28,10 +36,13 @@ Release date: TBD
  - Updated categories in order to be listed under the appropriate submenu of the application starter.
  [#816](https://github.com/mattermost/desktop/pull/816)
  [#818](https://github.com/mattermost/desktop/pull/818)
+ - Set "app start on login" preference to default on and synchronize its state with config.json.
+ [#846](https://github.com/mattermost/desktop/pull/846)
 
 ### Architectural Changes
- - Major version upgrade of Electron to v2.0.2. Electron is the underlying technology used to build the Desktop apps.
+ - Major version upgrade of Electron to v2.0.8. Electron is the underlying technology used to build the Desktop apps.
  [#820](https://github.com/mattermost/desktop/pull/820)
+ [#847](https://github.com/mattermost/desktop/pull/847)
  - Artifact names are configured via `electron-builder.json`.
  [#825](https://github.com/mattermost/desktop/pull/825)
 
