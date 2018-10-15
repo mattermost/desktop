@@ -17,6 +17,8 @@ Release date: TBD
  [#843](https://github.com/mattermost/desktop/pull/843)
  - Added `Ctrl/Cmd+F` shortcut to work as browser-like search.
  [#399](https://github.com/mattermost/desktop/issues/399)
+ - Preserved case of first letter in spellcheck.
+ [#869](https://github.com/mattermost/desktop/pull/869)
 
 #### Windows
  - Set "app start on login" preference to default on and synchronize its state with config.json.
