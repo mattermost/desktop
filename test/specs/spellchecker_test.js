@@ -67,6 +67,27 @@ describe('main/Spellchecker.js', function() {
       spellchecker.spellCheck('Mattermost').should.equal(true);
       spellchecker.spellCheck('mattermost').should.equal(true);
     });
+
+    it('should give at most the requested number of suggestions', function() {
+      // helllo known to give at least 4 suggestions
+      spellchecker.getSuggestions('helllo', 4).length.should.be.equal(4);
+      spellchecker.getSuggestions('helllo', 1).length.should.be.equal(1);
+    });
+
+    it('should give suggestions which preserve case of first letter', function() {
+      let suggestions = spellchecker.getSuggestions('carr', 4);
+      suggestions.length.should.not.be.equal(0);
+      let i;
+      for (i = 0; i < suggestions.length; i++) {
+        suggestions[i].charAt(0).should.be.equal('c');
+      }
+
+      suggestions = spellchecker.getSuggestions('Carr', 4);
+      suggestions.length.should.not.be.equal(0);
+      for (i = 0; i < suggestions.length; i++) {
+        suggestions[i].charAt(0).should.be.equal('C');
+      }
+    });
   });
 
   describe('en-GB', function() {
@@ -106,6 +127,21 @@ describe('main/Spellchecker.js', function() {
       spellchecker.spellCheck('1').should.equal(true);
       spellchecker.spellCheck('-100').should.equal(true);
       spellchecker.spellCheck('3.14').should.equal(true);
+    });
+
+    it('should give suggestions which preserve case of first letter', function() {
+      let suggestions = spellchecker.getSuggestions('gutenn', 4);
+      suggestions.length.should.not.be.equal(0);
+      let i;
+      for (i = 0; i < suggestions.length; i++) {
+        suggestions[i].charAt(0).should.be.equal('g');
+      }
+
+      suggestions = spellchecker.getSuggestions('Gutenn', 4);
+      suggestions.length.should.not.be.equal(0);
+      for (i = 0; i < suggestions.length; i++) {
+        suggestions[i].charAt(0).should.be.equal('G');
+      }
     });
   });
 });
