@@ -10,3 +10,7 @@
 .UpdaterPage-footer {
   padding: 1em 0;
 }
+
+.UpdaterPage .progress-bar {
+  min-width: 2em;
+}

@@ -30,7 +30,7 @@ InstallButton.propTypes = {
 
 function UpdaterPage(props) {
   return (
-    <div>
+    <div className='UpdaterPage'>
       <Navbar>
         <h1 className='UpdaterPage-heading'>{'New update is available'}</h1>
       </Navbar>
