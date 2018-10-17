@@ -55,6 +55,11 @@ function UpdaterPage(props) {
             now={props.progress}
             label={`${props.progress}%`}
           />
+          <div className='pull-right'>
+            <Button
+              onClick={props.onClickCancel}
+            >{'Cancel'}</Button>
+          </div>
         </Navbar> :
         <Navbar
           className='UpdaterPage-footer'
@@ -93,6 +98,7 @@ UpdaterPage.propTypes = {
   onClickReleaseNotes: propTypes.func.isRequired,
   onClickRemind: propTypes.func.isRequired,
   onClickSkip: propTypes.func.isRequired,
+  onClickCancel: propTypes.func.isRequired,
 };
 
 export default UpdaterPage;

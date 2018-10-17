@@ -48,5 +48,6 @@ storiesOf('UpdaterPage', module).
       appName={appName}
       isDownloading={true}
       progress={0}
+      onClickCancel={action('clicked cancel')}
     />
   ));

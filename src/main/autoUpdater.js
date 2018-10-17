@@ -8,7 +8,7 @@ import path from 'path';
 import {app, BrowserWindow, dialog, ipcMain, shell} from 'electron';
 
 import logger from 'electron-log';
-import {autoUpdater} from 'electron-updater';
+import {autoUpdater, CancellationToken} from 'electron-updater';
 import semver from 'semver';
 
 const INTERVAL_48_HOURS_IN_MS = 5 * 60 * 1000; // 5 min.
@@ -55,7 +55,7 @@ function createUpdaterModal(parentWindow, options) {
   }
   modal.loadURL(updaterURL);
 
-  for (const eventName of ['click-release-notes', 'click-skip', 'click-remind', 'click-install', 'click-download']) {
+  for (const eventName of ['click-release-notes', 'click-skip', 'click-remind', 'click-install', 'click-download', 'click-cancel']) {
     const listener = createEventListener(modal, eventName);
     ipcMain.on(eventName, listener);
     modal.on('closed', () => {
@@ -82,12 +82,12 @@ function isUpdateApplicable(now, skippedVersion, updateInfo) {
   return true;
 }
 
-function downloadAndInstall() {
+function downloadAndInstall(cancellationToken) {
   autoUpdater.on('update-downloaded', () => {
     global.willAppQuit = true;
     autoUpdater.quitAndInstall();
   });
-  autoUpdater.downloadUpdate();
+  autoUpdater.downloadUpdate(cancellationToken);
 }
 
 function initialize(appState, mainWindow, notifyOnly = false) {
@@ -96,6 +96,7 @@ function initialize(appState, mainWindow, notifyOnly = false) {
   autoUpdater.on('error', (err) => {
     console.error('Error in autoUpdater:', err.message);
   }).on('update-available', (info) => {
+    let cancellationToken = null;
     if (isUpdateApplicable(new Date(), appState.skippedVersion, info)) {
       updaterModal = createUpdaterModal(mainWindow, {
         linuxAppIcon: path.join(assetsDir, 'appicon.png'),
@@ -119,11 +120,15 @@ function initialize(appState, mainWindow, notifyOnly = false) {
           updaterModal.send('progress', Math.floor(data.percent));
           console.log('progress:', data);
         });
-        downloadAndInstall();
+        cancellationToken = new CancellationToken();
+        downloadAndInstall(cancellationToken);
       }).on('click-download', () => {
         shell.openExternal('https://about.mattermost.com/download/#mattermostApps');
       }).on('click-release-notes', () => {
         shell.openExternal(`https://github.com/mattermost/desktop/releases/v${info.version}`);
+      }).on('click-cancel', () => {
+        cancellationToken.cancel();
+        updaterModal.close();
       });
       updaterModal.focus();
     } else if (autoUpdater.isManual) {

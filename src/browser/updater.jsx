@@ -53,6 +53,9 @@ class UpdaterPageContainer extends React.Component {
         onClickDownload={() => {
           ipcRenderer.send('click-download');
         }}
+        onClickCancel={() => {
+          ipcRenderer.send('click-cancel');
+        }}
       />
     );
   }
