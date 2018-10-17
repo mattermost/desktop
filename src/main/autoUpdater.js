@@ -28,7 +28,7 @@ function createEventListener(win, eventName) {
 
 function createUpdaterModal(parentWindow, options) {
   const windowWidth = 480;
-  const windowHeight = 240;
+  const windowHeight = 280;
   const windowOptions = {
     title: `${app.getName()} Updater`,
     parent: parentWindow,

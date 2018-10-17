@@ -31,7 +31,7 @@ InstallButton.propTypes = {
 function UpdaterPage(props) {
   return (
     <div className='UpdaterPage'>
-      <Navbar>
+      <Navbar fluid={true} >
         <h1 className='UpdaterPage-heading'>{'New update is available'}</h1>
       </Navbar>
       <div className='container-fluid'>
