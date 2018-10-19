@@ -129,6 +129,24 @@ function createTemplate(mainWindow, config, isDev) {
     }, {
       role: 'togglefullscreen',
     }, separatorItem, {
+      label: 'Team',
+      submenu: [{
+        label: 'Team 1',
+        accelerator: 'CmdOrCtrl+1',
+        click(item, focusedWindow) {
+        },
+      }, {
+        label: 'Team 2',
+        accelerator: 'CmdOrCtrl+2',
+        click(item, focusedWindow) {
+        },
+      }, {
+        label: 'Team 3',
+        accelerator: 'CmdOrCtrl+3',
+        click(item, focusedWindow) {
+        },
+      }]
+    }, separatorItem, {
       role: 'resetzoom',
     }, {
       role: 'zoomin',
