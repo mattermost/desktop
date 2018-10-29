@@ -30,7 +30,8 @@
     "category": "Network;InstantMessaging",
     "target": [
       "deb",
-      "tar.gz"
+      "tar.gz",
+      "appimage"
     ],
     "extraFiles": [
       {

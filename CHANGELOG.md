@@ -23,6 +23,8 @@ Release date: TBD
 #### Windows
  - Set "app start on login" preference to default on and synchronize its state with config.json.
  [#846](https://github.com/mattermost/desktop/pull/846)
+ - Removed the ability to open UNC path and file:// links.
+ [#881](https://github.com/mattermost/desktop/pull/881)
 
 #### Mac
  - Add **.dmg** package to support installation.
@@ -38,6 +40,8 @@ Release date: TBD
  [#818](https://github.com/mattermost/desktop/pull/818)
  - Set "app start on login" preference to default on and synchronize its state with config.json.
  [#846](https://github.com/mattermost/desktop/pull/846)
+ - Added AppImage packages as unofficial build
+ [#864](https://github.com/mattermost/desktop/pull/864)
 
 ### Architectural Changes
  - Major version upgrade of Electron to v2.0.8. Electron is the underlying technology used to build the Desktop apps.
