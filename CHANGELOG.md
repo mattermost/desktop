@@ -44,9 +44,10 @@ Release date: TBD
  [#864](https://github.com/mattermost/desktop/pull/864)
 
 ### Architectural Changes
- - Major version upgrade of Electron to v2.0.8. Electron is the underlying technology used to build the Desktop apps.
+ - Major version upgrade of Electron to v2.0.12. Electron is the underlying technology used to build the Desktop apps.
  [#820](https://github.com/mattermost/desktop/pull/820)
  [#847](https://github.com/mattermost/desktop/pull/847)
+ [#882](https://github.com/mattermost/desktop/pull/882)
  - Artifact names are configured via `electron-builder.json`.
  [#825](https://github.com/mattermost/desktop/pull/825)
 
