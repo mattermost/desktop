@@ -32,6 +32,10 @@ build_script:
     yarn
     npm run build
     npm run package:windows
+    Write-Host "Cleaning build dir..."
+    Remove-Item .\release\win-ia32-unpacked\resources\app.asar.unpacked\ -Force -Recurse
+    Remove-Item .\release\win-unpacked\resources\app.asar.unpacked\ -Force -Recurse
+    
     # Convert license to RTF
     $license = Get-Content ./LICENSE.txt
     # We replace one backslash by two. Since the first arg is a regex,
@@ -78,6 +82,21 @@ build_script:
         $sw.Write([Environment]::NewLine + $licenseNewParagraph + $lineToAdd + "\par");
     }
     $sw.Close();
+    
+    Copy-Item .\scripts\msi-installer.wxs .\scripts\msi-installer.wxs.bak
+    Write-Host "Populating application files for 32 bits version..."
+    $xml = New-Object "System.Xml.XmlDocument";
+    $xml.Load("$(Get-Location)/scripts/msi-installer.wxs");
+    $xmlNode = $xml.Wix.Product.Directory.Directory.Directory.Directory.Component;
+    foreach ($item in Get-ChildItem .\release\win-ia32-unpacked\ -Recurse) {
+        if ($item.Attributes -eq "Directory") {
+            Write-Host "$($item.FullName) is a directory";
+            $xmlElement = New-Object "System.Xml.XmlDocument";
+        } else {
+            Write-Host "$($item.FullName) is a file";
+        }
+    }
+    
 test_script:
 - ps: |
     npm test
