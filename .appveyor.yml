@@ -1,0 +1,87 @@
+version: '{build}'
+init:
+- ps: |
+    # The $env:PATH is way too long; try to reduce it a bit.
+    # src.: https://gist.github.com/wget/a102f89c301014836aaa49a98dd06ee2
+    Write-Host "This is the path: $env:path"
+    Write-Host "Reducing too long PATH by removing all the stuff added in Program Files except Git"
+    [array]$newPath=($env:path -split ';') | Where-Object { $_ -notlike "C:\Program Files*"}
+    $newPath += ($env:path -split ';') | Where-Object { $_ -like "C:\Program Files*\*Git*"}
+    $env:path = $newPath -join ';'
+    [Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
+    [Environment]::SetEnvironmentVariable("INCLUDE", $env:INCLUDE, [System.EnvironmentVariableTarget]::User)
+    Write-Host "This is the new path: $env:path"
+    Write-Host "Updating choco..."
+    choco upgrade choco --yes
+    Write-Host "Installing yarn..."
+    choco install yarn --yes
+    Write-Host "Installing wixtoolset..."
+    choco install wixtoolset --yes
+    # As we are unable to determine install location for wixtoolset
+    # programmatically (even via Get-AppInstallLocation.ps1 from
+    # chocolatey-core.extension), let's detect it ourselves.
+    # Use null coalesce src.: https://stackoverflow.com/a/19015642/3514658
+    # Wixtoolset install by default in 32 bits Program Files directory.
+    $progFile = (${env:ProgramFiles(x86)}, ${env:ProgramFiles} -ne $null)[0]
+    $wixDirs = @(Get-ChildItem -Path $progFile -Recurse -Filter "*wix toolset*" -Attributes Directory -Depth 2)
+    $wixDir = Join-Path -Path "$progFile" -ChildPath "$($wixDirs[0])"
+    $wixDir = Join-Path -Path "$wixDir" -ChildPath "bin"
+    $env:Path += ";$wixDir"
+build_script:
+- ps: |
+    yarn
+    npm run build
+    npm run package:windows
+    # Convert license to RTF
+    $license = Get-Content ./LICENSE.txt
+    # We replace one backslash by two. Since the first arg is a regex,
+    # we need to escape it.
+    # src.: https://stackoverflow.com/a/31324570/3514658
+    $licenseTxtFile = "$(Get-Location)/LICENSE.txt";
+    $licenseRtfFile = "$(Get-Location)/resources/windows/license.rtf";
+    $licenseNewParagraph = "\par" + [Environment]::NewLine;
+    $sw = [System.IO.File]::CreateText($licenseRtfFile);
+    $sw.WriteLine("{\rtf1\ansi\deff0\nouicompat{\fonttbl{\f0\fnil\fcharset0 Courier New;}}\pard\qj\f0\fs18");
+    $lineToAdd = "";
+    $gapDetected = 0;
+    foreach($line in [System.IO.File]::ReadLines($licenseTxtFile)) {
+        # Here, trim() is equivalent to .replace("\ \s+", "")
+        $sanitizedLine = $line.trim().replace("\\", "\\").replace("{", "\{").replace("}", "\}");
+        # Print previous string gathered if gap detected.
+        if ([string]::IsNullOrEmpty($sanitizedLine)) {
+            $gapDetected++;
+            # For first line keep paragraph definition from document head.
+            if ($gapDetected -eq 1) {
+                $sw.Write($lineToAdd);
+            } elseif ($gapDetected -eq 2) {
+                $sw.Write($licenseNewParagraph + $lineToAdd);
+            } else {
+                $sw.Write($licenseNewParagraph + $lineToAdd + $licenseNewParagraph);
+            }
+            $lineToAdd = "";
+            continue;
+        }
+        # Keep carriage return for first two blocks comprising Copyright and
+        # license name statements.
+        if ($gapDetected -lt 3) {
+            $lineToAdd += $sanitizedLine + $licenseNewParagraph;
+            continue;
+        }
+        # Do not add heading space if the line begins a new paragraph.
+        if ($lineToAdd -eq "") {
+            $lineToAdd += $sanitizedLine;
+            continue;
+        }
+        $lineToAdd += " " + $sanitizedLine;
+    }
+    if ($lineToAdd -ne "") {
+        $sw.Write([Environment]::NewLine + $licenseNewParagraph + $lineToAdd + "\par");
+    }
+    $sw.Close();
+test_script:
+- ps: |
+    npm test
+# Please uncomment to have a RDP session, particularly useful to debug
+# src.: https://www.appveyor.com/docs/how-to/rdp-to-build-worker/
+#on_finish:
+#- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
