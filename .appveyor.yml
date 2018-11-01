@@ -12,6 +12,7 @@ init:
     [Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
     [Environment]::SetEnvironmentVariable("INCLUDE", $env:INCLUDE, [System.EnvironmentVariableTarget]::User)
     Write-Host "This is the new path: $env:path"
+    refreshenv
     
     Write-Host "Updating choco packages..."
     choco upgrade all --yes
