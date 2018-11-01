@@ -13,8 +13,9 @@ Release date: TBD
 ### Improvements
 
 #### All Platforms
- - Added Portuguese spell checker
+ - Added English (UK), Portuguese (BR), Spanish (ES) and Spanish (MX) spell checker
  [#843](https://github.com/mattermost/desktop/pull/843)
+ [#875](https://github.com/mattermost/desktop/pull/875)
  - Added `Ctrl/Cmd+F` shortcut to work as browser-like search.
  [#399](https://github.com/mattermost/desktop/issues/399)
  - Preserved case of first letter in spellcheck.
