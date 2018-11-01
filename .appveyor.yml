@@ -11,12 +11,16 @@ init:
     [Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
     [Environment]::SetEnvironmentVariable("INCLUDE", $env:INCLUDE, [System.EnvironmentVariableTarget]::User)
     Write-Host "This is the new path: $env:path"
-    Write-Host "Updating choco..."
-    choco upgrade choco --yes
+    
+    Write-Host "Updating choco packages..."
+    choco upgrade all --yes
+    
     Write-Host "Installing yarn..."
     choco install yarn --yes
+    
     Write-Host "Installing wixtoolset..."
     choco install wixtoolset --yes
+    
     # As we are unable to determine install location for wixtoolset
     # programmatically (even via Get-AppInstallLocation.ps1 from
     # chocolatey-core.extension), let's detect it ourselves.
@@ -29,9 +33,12 @@ init:
     $env:Path += ";$wixDir"
 build_script:
 - ps: |
-    yarn
-    npm run build
-    npm run package:windows
+    Write-Host "Working directory:"
+    Get-Location
+    Start-Process -FilePath "yarn" -NoNewWindow -Wait -Passthru
+    Start-Process -FilePath "npm" -ArgumentList "run build" -NoNewWindow -Wait -Passthru
+    Start-Process -FilePath "npm" -ArgumentList "run package:windows" -NoNewWindow -Wait -Passthru
+    
     Write-Host "Cleaning build dir..."
     Remove-Item .\release\win-ia32-unpacked\resources\app.asar.unpacked\ -Force -Recurse
     Remove-Item .\release\win-unpacked\resources\app.asar.unpacked\ -Force -Recurse
@@ -102,5 +109,5 @@ test_script:
     npm test
 # Please uncomment to have a RDP session, particularly useful to debug
 # src.: https://www.appveyor.com/docs/how-to/rdp-to-build-worker/
-#on_finish:
-#- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+on_finish:
+- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
