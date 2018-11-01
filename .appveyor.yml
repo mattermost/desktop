@@ -7,6 +7,7 @@ init:
     Write-Host "Reducing too long PATH by removing all the stuff added in Program Files except Git"
     [array]$newPath=($env:path -split ';') | Where-Object { $_ -notlike "C:\Program Files*"}
     $newPath += ($env:path -split ';') | Where-Object { $_ -like "C:\Program Files*\*Git*"}
+    $newPath += ($env:path -split ';') | Where-Object { $_ -like "C:\Program Files*\*Yarn*"}
     $env:path = $newPath -join ';'
     [Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
     [Environment]::SetEnvironmentVariable("INCLUDE", $env:INCLUDE, [System.EnvironmentVariableTarget]::User)
