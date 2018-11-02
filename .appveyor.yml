@@ -7,27 +7,37 @@ init:
     Write-Host "Reducing too long PATH by removing all the stuff added in Program Files except Git"
     [array]$newPath=($env:path -split ';') | Where-Object { $_ -notlike "C:\Program Files*"}
     $newPath += ($env:path -split ';') | Where-Object { $_ -like "C:\Program Files*\*Git*"}
-    $newPath += ($env:path -split ';') | Where-Object { $_ -like "C:\Program Files*\*Yarn*"}
     $env:path = $newPath -join ';'
     [Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
     [Environment]::SetEnvironmentVariable("INCLUDE", $env:INCLUDE, [System.EnvironmentVariableTarget]::User)
     Write-Host "This is the new path: $env:path"
-    refreshenv
     
     Write-Host "Updating choco packages..."
     choco upgrade all --yes
     
+    # As we are unable to programmatically determine the install location
+    #for the packages (even via Get-AppInstallLocation.ps1 from
+    # chocolatey-core.extension), let's detect it ourselves.
+    # We are using null coalesce.
+    # src.: https://stackoverflow.com/a/19015642/3514658
+    
     Write-Host "Installing yarn..."
     choco install yarn --yes
+    # Yarn is always installed as a 32 bits based program.
+    # C:\Program Files (x86)\Yarn\bin
+    $progFile = (${env:ProgramFiles(x86)}, ${env:ProgramFiles} -ne $null)[0]
+    $yarnDir = Join-Path -Path "$progFile" -ChildPath "Yarn/bin"
+    $env:Path += ";$yarnDir"
+    
+    # npm is always installed as a nodejs dependency. 64 bits version available.
+    # C:\Program Files\nodejs\node_modules\npm\bin
+    $progFile = ${env:ProgramFiles}
+    $npmDir = Join-Path -Path "$progFile" -ChildPath "nodejs\node_modules\npm\bin"
+    $env:Path += ";$npmDir"
     
     Write-Host "Installing wixtoolset..."
     choco install wixtoolset --yes
-    
-    # As we are unable to determine install location for wixtoolset
-    # programmatically (even via Get-AppInstallLocation.ps1 from
-    # chocolatey-core.extension), let's detect it ourselves.
-    # Use null coalesce src.: https://stackoverflow.com/a/19015642/3514658
-    # Wixtoolset install by default in 32 bits Program Files directory.
+    # Wixtoolset is always installed as a 32 bits based program.
     $progFile = (${env:ProgramFiles(x86)}, ${env:ProgramFiles} -ne $null)[0]
     $wixDirs = @(Get-ChildItem -Path $progFile -Recurse -Filter "*wix toolset*" -Attributes Directory -Depth 2)
     $wixDir = Join-Path -Path "$progFile" -ChildPath "$($wixDirs[0])"
