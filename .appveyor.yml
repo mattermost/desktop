@@ -32,7 +32,7 @@ init:
     # npm is always installed as a nodejs dependency. 64 bits version available.
     # C:\Program Files\nodejs\node_modules\npm\bin
     $progFile = ${env:ProgramFiles}
-    $npmDir = Join-Path -Path "$progFile" -ChildPath "nodejs\node_modules\npm\bin"
+    $npmDir = Join-Path -Path "$progFile" -ChildPath "nodejs"
     $env:Path += ";$npmDir"
     
     Write-Host "Installing wixtoolset..."
@@ -47,19 +47,21 @@ build_script:
 - ps: |
     Write-Host "Working directory:"
     Get-Location
-    Start-Process -FilePath "yarn" -NoNewWindow -Wait -Passthru
-    Start-Process -FilePath "npm" -ArgumentList "run build" -NoNewWindow -Wait -Passthru
-    Start-Process -FilePath "npm" -ArgumentList "run package:windows" -NoNewWindow -Wait -Passthru
+    Write-Host "Running yarn..."
+    yarn
+    Write-Host "Running npm run build..."
+    npm run build
+    Write-Host "Running npm run package:windows..."
+    npm run package:windows
+    #Start-Process -FilePath "yarn" -NoNewWindow -Wait -Passthru
+    #Start-Process -FilePath "npm" -ArgumentList "run build" -NoNewWindow -Wait -Passthru
+    #Start-Process -FilePath "npm" -ArgumentList "run package:windows" -NoNewWindow -Wait -Passthru
     
     Write-Host "Cleaning build dir..."
     Remove-Item .\release\win-ia32-unpacked\resources\app.asar.unpacked\ -Force -Recurse
     Remove-Item .\release\win-unpacked\resources\app.asar.unpacked\ -Force -Recurse
     
     # Convert license to RTF
-    $license = Get-Content ./LICENSE.txt
-    # We replace one backslash by two. Since the first arg is a regex,
-    # we need to escape it.
-    # src.: https://stackoverflow.com/a/31324570/3514658
     $licenseTxtFile = "$(Get-Location)/LICENSE.txt";
     $licenseRtfFile = "$(Get-Location)/resources/windows/license.rtf";
     $licenseNewParagraph = "\par" + [Environment]::NewLine;
@@ -67,8 +69,14 @@ build_script:
     $sw.WriteLine("{\rtf1\ansi\deff0\nouicompat{\fonttbl{\f0\fnil\fcharset0 Courier New;}}\pard\qj\f0\fs18");
     $lineToAdd = "";
     $gapDetected = 0;
+    # We are relying on introspected C#/.NET rather than the buggy Get-Content
+    # cmdlet because Get-Content considers by default a `-Delimiter` to '\n'
+    # and thus breaks the purpose of the parser.
     foreach($line in [System.IO.File]::ReadLines($licenseTxtFile)) {
-        # Here, trim() is equivalent to .replace("\ \s+", "")
+        # trim() is equivalent to .replace("\ \s+", "")
+        # We replace one backslash by two. Since the first arg is a regex,
+        # we need to escape it.
+        # src.: https://stackoverflow.com/a/31324570/3514658
         $sanitizedLine = $line.trim().replace("\\", "\\").replace("{", "\{").replace("}", "\}");
         # Print previous string gathered if gap detected.
         if ([string]::IsNullOrEmpty($sanitizedLine)) {
