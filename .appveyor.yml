@@ -1,6 +1,11 @@
 version: '{build}'
+image: Visual Studio 2017
 init:
 - ps: |
+    # Please uncomment to have a RDP session, particularly useful to debug
+    # src.: https://www.appveyor.com/docs/how-to/rdp-to-build-worker/
+    $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+    
     # The $env:PATH is way too long; try to reduce it a bit.
     # src.: https://gist.github.com/wget/a102f89c301014836aaa49a98dd06ee2
     Write-Host "This is the path: $env:path"
@@ -127,7 +132,3 @@ build_script:
 test_script:
 - ps: |
     npm test
-# Please uncomment to have a RDP session, particularly useful to debug
-# src.: https://www.appveyor.com/docs/how-to/rdp-to-build-worker/
-on_finish:
-- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
