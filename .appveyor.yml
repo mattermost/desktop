@@ -17,6 +17,9 @@ init:
     [Environment]::SetEnvironmentVariable("INCLUDE", $env:INCLUDE, [System.EnvironmentVariableTarget]::User)
     Write-Host "This is the new path: $env:path"
     
+    # Remove env variables clashing with our build process
+    Remove-Item Env:7zip
+    
     Write-Host "Updating choco packages..."
     choco upgrade all --yes
     
