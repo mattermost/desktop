@@ -27,14 +27,13 @@
   <?endif ?>
 
   <!-- 
-  The product GUID must be changed when:
+  The product GUID must not be changed except when:
   - the old and new versions have to coexist on the user's computer
   - the .msi filename change for any reason
   - any component GUID changes in the package
   - a component has been removed
   - there are any changes in the feature hierarchy (child
     feature moving out of a parent, or a parent feature getting a new child).
-
   -->
   <Product
     Id='*'
