@@ -6,19 +6,17 @@ init:
     # src.: https://www.appveyor.com/docs/how-to/rdp-to-build-worker/
     $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
     
-    # The $env:PATH is way too long; try to reduce it a bit.
+    # The $env:PATH is way too long, which prevents new path to be added to it.
+    #Remove all the stuff added in Program Files except Git.
     # src.: https://gist.github.com/wget/a102f89c301014836aaa49a98dd06ee2
-    Write-Host "This is the path: $env:path"
-    Write-Host "Reducing too long PATH by removing all the stuff added in Program Files except Git"
+    Write-Host "Old PATH: $env:path"
+    Write-Host "Reducing PATH..."
     [array]$newPath=($env:path -split ';') | Where-Object { $_ -notlike "C:\Program Files*"}
     $newPath += ($env:path -split ';') | Where-Object { $_ -like "C:\Program Files*\*Git*"}
     $env:path = $newPath -join ';'
     [Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
     [Environment]::SetEnvironmentVariable("INCLUDE", $env:INCLUDE, [System.EnvironmentVariableTarget]::User)
-    Write-Host "This is the new path: $env:path"
-    
-    # Remove env variables clashing with our build process
-    Remove-Item Env:7zip
+    Write-Host "New PATH: $env:path"
     
     Write-Host "Updating choco packages..."
     choco upgrade all --yes
@@ -29,8 +27,11 @@ init:
     # We are using null coalesce.
     # src.: https://stackoverflow.com/a/19015642/3514658
     
+    # Force yarn specific version, because latest build has regressions
+    # preventing this app from being built.
+    # src.: https://github.com/yarnpkg/yarn/issues/6622
     Write-Host "Installing yarn..."
-    choco install yarn --yes
+    choco install yarn --yes --version=1.10.1
     # Yarn is always installed as a 32 bits based program.
     # C:\Program Files (x86)\Yarn\bin
     $progFile = (${env:ProgramFiles(x86)}, ${env:ProgramFiles} -ne $null)[0]
@@ -61,9 +62,6 @@ build_script:
     npm run build
     Write-Host "Running npm run package:windows..."
     npm run package:windows
-    #Start-Process -FilePath "yarn" -NoNewWindow -Wait -Passthru
-    #Start-Process -FilePath "npm" -ArgumentList "run build" -NoNewWindow -Wait -Passthru
-    #Start-Process -FilePath "npm" -ArgumentList "run package:windows" -NoNewWindow -Wait -Passthru
     
     Write-Host "Cleaning build dir..."
     Remove-Item .\release\win-ia32-unpacked\resources\app.asar.unpacked\ -Force -Recurse
