@@ -128,6 +128,15 @@ test_script:
 - ps: |
     npm test
 
+deploy:
+  description: 'Deployment test'
+  provider: GitHub
+  auth_token:
+    secure: tf2cb9v2kDuXUd6G9jjrwXHCVXCcYk72BzpVhxLQssov6uLGiBlIRCvi4Wd0MWCV
+  artifact: release/.*\.msi
+  draft: false
+  prerelease: true
+
 on_finish:
 - ps:
     # Please uncomment to have a RDP session, particularly useful to debug
