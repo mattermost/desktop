@@ -22,7 +22,7 @@ init:
     choco upgrade all --yes
     
     # As we are unable to programmatically determine the install location
-    #for the packages (even via Get-AppInstallLocation.ps1 from
+    # for the packages (even via Get-AppInstallLocation.ps1 from
     # chocolatey-core.extension), let's detect it ourselves.
     # We are using null coalesce.
     # src.: https://stackoverflow.com/a/19015642/3514658
