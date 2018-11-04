@@ -116,13 +116,13 @@ build_script:
     }
     $sw.Close();
     
-    heat dir .\release\win-ia32-unpacked\ -o .\scripts\msi-installer-files.wxs -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t .\scripts\msi-installer-files-replace-id.xslt -dr INSTALLDIR
-    candle.exe -dPlatform=x86 .\scripts\msi-installer.wxs .\scripts\msi-installer-files.wxs -o .\scripts\
-    light.exe .\scripts\msi-installer.wixobj .\scripts\msi-installer-files.wixobj -loc .\resources\windows\msi_i18n\en_US.wxl -o .\release\mattermost-desktop-x86.msi -b ./release/win-ia32-unpacked/
+    heat dir .\release\win-ia32-unpacked\ -o .\scripts\msi_installer_files.wxs -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t .\scripts\msi_installer_files_replace_id.xslt -dr INSTALLDIR
+    candle.exe -dPlatform=x86 .\scripts\msi_installer.wxs .\scripts\msi_installer_files.wxs -o .\scripts\
+    light.exe .\scripts\msi_installer.wixobj .\scripts\msi_installer_files.wixobj -loc .\resources\windows\msi_i18n\en_US.wxl -o .\release\mattermost-desktop-x86.msi -b ./release/win-ia32-unpacked/
     
-    heat dir .\release\win-unpacked\ -o .\scripts\msi-installer-files.wxs -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t .\scripts\msi-installer-files-replace-id.xslt -dr INSTALLDIR
-    candle.exe -dPlatform=x64 .\scripts\msi-installer.wxs .\scripts\msi-installer-files.wxs -o .\scripts\
-    light.exe .\scripts\msi-installer.wixobj .\scripts\msi-installer-files.wixobj -loc .\resources\windows\msi_i18n\en_US.wxl -o .\release\mattermost-desktop-x64.msi -b ./release/win-unpacked/
+    heat dir .\release\win-unpacked\ -o .\scripts\msi_installer_files.wxs -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t .\scripts\msi_installer_files_replace_id.xslt -dr INSTALLDIR
+    candle.exe -dPlatform=x64 .\scripts\msi_installer.wxs .\scripts\msi_installer_files.wxs -o .\scripts\
+    light.exe .\scripts\msi_installer.wixobj .\scripts\msi_installer_files.wixobj -loc .\resources\windows\msi_i18n\en_US.wxl -o .\release\mattermost-desktop-x64.msi -b ./release/win-unpacked/
     
 test_script:
 - ps: |
