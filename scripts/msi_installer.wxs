@@ -82,7 +82,7 @@
 
     <!-- Retrieve previous installation path -->
     <Property Id="INSTALLDIR">
-      <RegistrySearch Id="DetermineInstallLocation" Type="raw" Root="HKLM" Key="Software\Mattermost\Desktop" Name="InstallLocation" />
+      <RegistrySearch Id="DetermineInstallLocation" Type="raw" Root="HKLM" Key="Software\Mattermost\Desktop" Name="InstallLocation" Win64="$(var.Win64)" />
     </Property>
 
     <Directory Id='TARGETDIR' Name='SourceDir'>
