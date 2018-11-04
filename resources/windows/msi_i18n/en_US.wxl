@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+  <String Id="LANG" Overridable="yes">1033</String>
+  
+  <String Id="OsRequirements" Overridable="yes">Windows 7 or higher is required to run [ProductName].</String>
+  
+  <String Id="WelcomeDlgInstructions" Overridable="yes">Welcome to the [ProductName] [Wizard]!
+
+Click Install to immediately proceed to the installation of [ProductName] or click Advanced if you want to customize the install process.</String>
+  <String Id="WelcomeDlgAcceptLicenseCheckBox" Overridable="yes">Accept the license agreement</String>
+  <String Id="AdvancedDlgInstructions" Overridable="yes">Welcome to the [ProductName] advanced [Wizard]!
+
+Change the installation directory to your likings, choose whether you want shortcuts and if you want to launch Mattermost after the installation process.</String>
+  <String Id="AdvancedDlgTitle" Overridable="yes">Mattermost Desktop Advanced install</String>
+  <String Id="AdvancedDlgLocationLabel" Overridable="yes">Location:</String>
+  <String Id="AdvancedDlgBrowse" Overridable="yes">Browse</String>
+  <String Id="AdvancedDlgAddDesktopShortcut" Overridable="yes">Add a shortcut to the desktop</String>
+  <String Id="AdvancedDlgAddStartMenuShortcut" Overridable="yes">Add a shortcut to the start menu</String>
+  <String Id="AdvancedDlgLaunchAppAfterInstall" Overridable="yes">Launch [ProductName] just after the installation process</String>
+  
+  <String Id="BrowseDlgInstructions" Overridable="yes">Select the directory you want Mattermost Desktop be installed to.</String>
+  <String Id="BrowseDlgNewFolder" Overridable="yes">Create a new folder</String>
+  <String Id="BrowseDlgUp" Overridable="yes">Go thte parent folder</String>
+  
+  <String Id="BrowseDlgPathLabel" Overridable="yes">Currently defined installation directory:</String>
+  
+  <String Id="CancelDlgText" Overridable="yes">Are you sure you want to cancel [ProductName] installation?</String>
+  
+  <String Id="UserExitDlgInstructions" Overridable="yes">We are sad to see you go :-(
+  
+[ProductName] setup was interrupted. Your system has not been modified.
+
+To install Mattermost Desktop at a later time, please run the installation again.
+
+Click the Finish button to exit the [Wizard].</String>
+  
+  <String Id="ProgressDlgInstructions" Overridable="yes">The [Wizard] [Progress2] [ProductName]. This may take several minutes.</String>
+  <String Id="ProgressDlgStatusLabel" Overridable="yes">Status:</String>
+  
+  <String Id="SuccessDlgInstructions" Overridable="yes">The installation process of Mattermost Desktop has been completed with succesful.
+
+You can now enjoy your corporate chat features.
+
+For any questions, we are always willing to help.
+
+Click the Finish button to exit the [Wizard].</String>
+
+
+</WixLocalization>

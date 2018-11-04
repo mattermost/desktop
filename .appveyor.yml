@@ -116,19 +116,13 @@ build_script:
     }
     $sw.Close();
     
-    Copy-Item .\scripts\msi-installer.wxs .\scripts\msi-installer.wxs.bak
-    Write-Host "Populating application files for 32 bits version..."
-    $xml = New-Object "System.Xml.XmlDocument";
-    $xml.Load("$(Get-Location)/scripts/msi-installer.wxs");
-    $xmlNode = $xml.Wix.Product.Directory.Directory.Directory.Directory.Component;
-    foreach ($item in Get-ChildItem .\release\win-ia32-unpacked\ -Recurse) {
-        if ($item.Attributes -eq "Directory") {
-            Write-Host "$($item.FullName) is a directory";
-            $xmlElement = New-Object "System.Xml.XmlDocument";
-        } else {
-            Write-Host "$($item.FullName) is a file";
-        }
-    }
+    heat dir .\release\win-ia32-unpacked\ -o .\scripts\msi-installer-files.wxs -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t .\scripts\msi-installer-files-replace-id.xslt -dr INSTALLDIR
+    candle.exe -dPlatform=x86 .\scripts\msi-installer.wxs .\scripts\msi-installer-files.wxs -o .\scripts\
+    light.exe .\scripts\msi-installer.wixobj .\scripts\msi-installer-files.wixobj -loc .\resources\windows\msi_i18n\en_US.wxl -o .\release\mattermost-desktop-x86.msi -b ./release/win-ia32-unpacked/
+    
+    heat dir .\release\win-unpacked\ -o .\scripts\msi-installer-files.wxs -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t .\scripts\msi-installer-files-replace-id.xslt -dr INSTALLDIR
+    candle.exe -dPlatform=x64 .\scripts\msi-installer.wxs .\scripts\msi-installer-files.wxs -o .\scripts\
+    light.exe .\scripts\msi-installer.wixobj .\scripts\msi-installer-files.wixobj -loc .\resources\windows\msi_i18n\en_US.wxl -o .\release\mattermost-desktop-x64.msi -b ./release/win-unpacked/
     
 test_script:
 - ps: |

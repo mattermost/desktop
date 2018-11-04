@@ -21,9 +21,11 @@
   <?if $(var.Platform) = x64 ?>
     <?define Win64 = "yes" ?>
     <?define ProgramFilesVersion = "ProgramFiles64Folder" ?>
+    <?define ReleaseDir = "../release/win-unpacked" ?>    
   <?else ?>
     <?define Win64 = "no" ?>
     <?define ProgramFilesVersion = "ProgramFilesFolder" ?>
+    <?define ReleaseDir = "../release/win-ia32-unpacked" ?>
   <?endif ?>
 
   <!-- 
@@ -88,9 +90,6 @@
       <Directory Id='$(var.ProgramFilesVersion)' Name='PFiles'>
         <Directory Id='MattermostFolder' Name='Mattermost'>
           <Directory Id='INSTALLDIR' Name='Desktop'>
-            <Component Id='MainExecutable' Guid='2988074A-AD67-44E6-A7FC-5FC0C1570B96' Win64="$(var.Win64)">
-              <File Id='MattermostDesktopEXE' Name='Mattermost.exe' DiskId='1' Source='Mattermost.exe' KeyPath='yes' />
-            </Component>
             <Component Id='MainExecutableShortcutDesktop' Guid='9C71385D-C892-48BA-A35D-D89A661D2952' Win64="$(var.Win64)">
               <Condition><![CDATA[ADDDESKTOPSHORTCUT = "true"]]></Condition>
               <RegistryValue Id="RegShortcutDesktop" Root="HKCU" Key="SOFTWARE\Mattermost\Desktop\settings" Name="MattermostDesktopShortcutDesktop" Value="1" Type="integer" KeyPath="yes" />
@@ -106,8 +105,7 @@
           </Directory>
         </Directory>
       </Directory>
-    
-    
+
       <Directory Id="ProgramMenuFolder" Name="Programs">
         <Directory Id="ProgramMenuDir" Name="Mattermost Desktop">
           <Component Id="ProgramMenuDir" Guid="CA5C6FAF-C004-4909-AF1C-AA0A5F53C245">
@@ -124,7 +122,8 @@
     desinstallation) because the purpose here is to remember the install
     location across updates (important when installing a newer version,
     because that is uninstall followed by install).
-    src.: http://robmensching.com/blog/posts/2010/5/2/the-wix-toolsets-remember-property-pattern/
+    src.: https://web.archive.org/web/20180322000314/http://robmensching.com/blog/posts/2010/5/2/the-wix-toolsets-remember-property-pattern/
+    src.: https://web.archive.org/web/20181104151047/https://helgeklein.com/blog/2014/09/real-world-example-wix-msi-application-installer/
     -->
       <Component Id="RegInstallLocation" Guid="BF67264A-28BB-44FF-A646-F118D814651E">
         <RegistryKey Root="HKLM" Key="Software\Mattermost\Desktop">
@@ -134,7 +133,10 @@
     </Directory>
     
     <Feature Id='Complete' Level='1' ConfigurableDirectory='INSTALLDIR'>
-      <ComponentRef Id='MainExecutable' />
+      <!-- Using heat to generate file and directory hierarchy
+           src.: https://stackoverflow.com/a/26558025/3514658
+      -->
+      <ComponentGroupRef Id="MattermostDesktopFiles" />
       <ComponentRef Id='MainExecutableShortcutDesktop' />
       <ComponentRef Id='MainExecutableShortcutStartMenu' />
       <ComponentRef Id='ProgramMenuDir' />
@@ -147,7 +149,7 @@
     </InstallExecuteSequence>
     <CustomAction Id='LaunchApp' FileKey='MattermostDesktopEXE' ExeCommand='' Return='asyncNoWait' />
 
-    <Icon Id="Mattermost.ico" SourceFile="Mattermost.ico" />
+    <Icon Id="Mattermost.ico" SourceFile="../resources/icon.ico" />
     <Property Id='ARPPRODUCTICON'>Mattermost.ico</Property>
     <Property Id='ARPCONTACT'>https://pre-release.mattermost.com</Property>
     <Property Id='ARPHELPLINK'>https://docs.mattermost.com/</Property>
