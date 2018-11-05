@@ -136,6 +136,7 @@ deploy:
   artifact: /release\/.*\.msi/
   draft: false
   prerelease: true
+  force_update: true
 
 on_finish:
 - ps:
