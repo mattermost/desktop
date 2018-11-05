@@ -4,7 +4,7 @@ init:
 - ps: |
     # Please uncomment to have a RDP session, particularly useful to debug
     # src.: https://www.appveyor.com/docs/how-to/rdp-to-build-worker/
-    $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+    #$blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
     
     # The $env:PATH is way too long, which prevents new path to be added to it.
     #Remove all the stuff added in Program Files except Git.
@@ -146,4 +146,4 @@ on_finish:
 - ps:
     # Please uncomment to have a RDP session, particularly useful to debug
     # src.: https://www.appveyor.com/docs/how-to/rdp-to-build-worker/
-    $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+    #$blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
