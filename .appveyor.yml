@@ -128,12 +128,16 @@ build_script:
 #- ps: |
 #    npm test
 
+artifacts:
+  - path: 'release\*.msi'
+    name: MsiInstallers
+
 deploy:
   description: 'Deployment test'
   provider: GitHub
   auth_token:
     secure: tf2cb9v2kDuXUd6G9jjrwXHCVXCcYk72BzpVhxLQssov6uLGiBlIRCvi4Wd0MWCV
-  artifact: /release\/.*\.msi/
+  artifact: MsiInstallers
   draft: false
   prerelease: true
   force_update: true
