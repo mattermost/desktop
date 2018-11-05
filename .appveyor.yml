@@ -133,7 +133,7 @@ deploy:
   provider: GitHub
   auth_token:
     secure: tf2cb9v2kDuXUd6G9jjrwXHCVXCcYk72BzpVhxLQssov6uLGiBlIRCvi4Wd0MWCV
-  artifact: release/.*\.msi
+  artifact: /release\/.*\.msi/
   draft: false
   prerelease: true
 
