@@ -11,7 +11,8 @@ import logger from 'electron-log';
 import {autoUpdater, CancellationToken} from 'electron-updater';
 import semver from 'semver';
 
-const INTERVAL_48_HOURS_IN_MS = 5 * 60 * 1000; // 5 min.
+// eslint-disable-next-line no-magic-numbers
+const UPDATER_INTERVAL_IN_MS = 48 * 60 * 60 * 1000; // 48 hours
 
 autoUpdater.logger = logger;
 autoUpdater.logger.transports.file.level = 'info';
@@ -70,7 +71,7 @@ function isUpdateApplicable(now, skippedVersion, updateInfo) {
   const releaseTime = new Date(updateInfo.releaseDate).getTime();
 
   // 48 hours after a new version is added to releases.mattermost.com, user receives a “New update is available” dialog
-  if (now.getTime() - releaseTime < INTERVAL_48_HOURS_IN_MS) {
+  if (now.getTime() - releaseTime < UPDATER_INTERVAL_IN_MS) {
     return false;
   }
 
@@ -112,7 +113,7 @@ function initialize(appState, mainWindow, notifyOnly = false) {
         appState.updateCheckedDate = new Date();
         setTimeout(() => { // eslint-disable-line max-nested-callbacks
           autoUpdater.checkForUpdates();
-        }, INTERVAL_48_HOURS_IN_MS);
+        }, UPDATER_INTERVAL_IN_MS);
         updaterModal.close();
       }).on('click-install', () => {
         updaterModal.webContents.send('start-download');
@@ -145,13 +146,13 @@ function initialize(appState, mainWindow, notifyOnly = false) {
     }
     setTimeout(() => {
       autoUpdater.checkForUpdates();
-    }, INTERVAL_48_HOURS_IN_MS);
+    }, UPDATER_INTERVAL_IN_MS);
   });
 }
 
 function shouldCheckForUpdatesOnStart(updateCheckedDate) {
   if (updateCheckedDate) {
-    if (Date.now() - updateCheckedDate.getTime() < INTERVAL_48_HOURS_IN_MS) {
+    if (Date.now() - updateCheckedDate.getTime() < UPDATER_INTERVAL_IN_MS) {
       return false;
     }
   }
@@ -187,7 +188,7 @@ function loadConfig(file) {
 }
 
 export default {
-  INTERVAL_48_HOURS_IN_MS,
+  UPDATER_INTERVAL_IN_MS,
   checkForUpdates,
   shouldCheckForUpdatesOnStart,
   initialize,

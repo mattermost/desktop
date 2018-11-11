@@ -662,7 +662,7 @@ app.on('ready', () => {
       } else {
         setTimeout(() => {
           ipcMain.emit('check-for-updates');
-        }, autoUpdater.INTERVAL_48_HOURS_IN_MS);
+        }, autoUpdater.UPDATER_INTERVAL_IN_MS);
       }
     });
   }
