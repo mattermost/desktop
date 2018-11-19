@@ -653,7 +653,7 @@ app.on('ready', () => {
   session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionManager));
 
   if (buildConfig.enableAutoUpdater) {
-    const updaterConfig = autoUpdater.loadConfig(path.resolve(app.getAppPath(), '../app-updater-config.json'));
+    const updaterConfig = autoUpdater.loadConfig();
     autoUpdater.initialize(appState, mainWindow, updaterConfig.isNotifyOnly());
     ipcMain.on('check-for-updates', autoUpdater.checkForUpdates);
     mainWindow.once('show', () => {

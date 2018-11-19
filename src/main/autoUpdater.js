@@ -2,7 +2,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import fs from 'fs';
 import path from 'path';
 
 import {app, BrowserWindow, dialog, ipcMain, shell} from 'electron';
@@ -167,15 +166,14 @@ function checkForUpdates(isManual = false) {
 }
 
 class AutoUpdaterConfig {
-  constructor(file) {
-    try {
-      this.data = JSON.parse(fs.readFileSync(file));
-    } catch (err) {
-      this.data = {};
-    }
+  constructor() {
+    this.data = {};
   }
 
   isNotifyOnly() {
+    if (process.platform === 'win32') {
+      return true;
+    }
     if (this.data.notifyOnly === true) {
       return true;
     }
@@ -183,8 +181,8 @@ class AutoUpdaterConfig {
   }
 }
 
-function loadConfig(file) {
-  return new AutoUpdaterConfig(file);
+function loadConfig() {
+  return new AutoUpdaterConfig();
 }
 
 export default {
