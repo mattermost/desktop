@@ -2,7 +2,7 @@
 
 ## Release v4.2.0
 
-Release date: TBD
+Release date: Nov 27, 2018
 
 - Mattermost v4.2.0 contains a high level security fix. [Upgrading](http://docs.mattermost.com/administration/upgrade.html) is highly recommended. Details will be posted on our [security updates page](https://about.mattermost.com/security-updates/) 30 days after release as per the [Mattermost Responsible Disclosure Policy](https://www.mattermost.org/responsible-disclosure-policy/).
 
