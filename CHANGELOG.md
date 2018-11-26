@@ -4,6 +4,8 @@
 
 Release date: TBD
 
+- Mattermost v4.2.0 contains a high level security fix. [Upgrading](http://docs.mattermost.com/administration/upgrade.html) is highly recommended. Details will be posted on our [security updates page](https://about.mattermost.com/security-updates/) 30 days after release as per the [Mattermost Responsible Disclosure Policy](https://www.mattermost.org/responsible-disclosure-policy/).
+
 ### Improvements
 
 #### All Platforms
@@ -20,8 +22,6 @@ Release date: TBD
 #### Windows
  - Set "app start on login" preference as enabled by default and synchronized its state with config.json.
  [#846](https://github.com/mattermost/desktop/pull/846)
- - Removed the ability to open UNC path and file:// links.
- [#881](https://github.com/mattermost/desktop/pull/881)
 
 #### Mac
  - Added **.dmg** package to support installation.
