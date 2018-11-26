@@ -1,47 +1,43 @@
 # Mattermost Desktop Application Changelog
 
-## UNDER DEVELOPMENT
+## Release v4.2.0
 
-The "UNDER DEVELOPMENT" section of the Mattermost Desktop changelog appears
-in the product's `master` branch to note key changes committed to `master`
-and are on their way to the next stable release.
-When a stable release is pushed, "UNDER DEVELOPMENT" heading is removed
-from the final changelog of the release.
+Release date: Nov 27, 2018
 
-Release date: TBD
+- Mattermost v4.2.0 contains a high level security fix. [Upgrading](http://docs.mattermost.com/administration/upgrade.html) is highly recommended. Details will be posted on our [security updates page](https://about.mattermost.com/security-updates/) 30 days after release as per the [Mattermost Responsible Disclosure Policy](https://www.mattermost.org/responsible-disclosure-policy/).
 
 ### Improvements
 
 #### All Platforms
- - Added English (UK), Portuguese (BR), Spanish (ES) and Spanish (MX) spell checker
+ - Added English (UK), Portuguese (BR), Spanish (ES) and Spanish (MX) to the spell checker.
  [#843](https://github.com/mattermost/desktop/pull/843)
  [#875](https://github.com/mattermost/desktop/pull/875)
  - Added `Ctrl/Cmd+F` shortcut to work as browser-like search.
  [#399](https://github.com/mattermost/desktop/issues/399)
  - Preserved case of first letter in spellcheck.
  [#869](https://github.com/mattermost/desktop/pull/869)
+ - Added support for session expiry notification.
+ [#866](https://github.com/mattermost/desktop/pull/866)
 
 #### Windows
- - Set "app start on login" preference to default on and synchronize its state with config.json.
+ - Set "app start on login" preference as enabled by default and synchronized its state with config.json.
  [#846](https://github.com/mattermost/desktop/pull/846)
- - Removed the ability to open UNC path and file:// links.
- [#881](https://github.com/mattermost/desktop/pull/881)
 
 #### Mac
- - Add **.dmg** package to support installation.
+ - Added **.dmg** package to support installation.
  [#588](https://github.com/mattermost/desktop/pull/588)
- - Support "Hide" option of Login Items in Preferences.
+ - Added "Hide" option to Login Items in Preferences.
  [#853](https://github.com/mattermost/desktop/pull/853)
 
 #### Linux
- - [tar.gz] Use SVG icon for Linux application menus in place of PNG icon
+ - [tar.gz] Added support for using SVG icons for Linux application menus in place of PNG icons.
  [#815](https://github.com/mattermost/desktop/pull/815)
  - Updated categories in order to be listed under the appropriate submenu of the application starter.
  [#816](https://github.com/mattermost/desktop/pull/816)
  [#818](https://github.com/mattermost/desktop/pull/818)
- - Set "app start on login" preference to default on and synchronize its state with config.json.
+ - Set "app start on login" preference as enabled by default and synchronized its state with config.json.
  [#846](https://github.com/mattermost/desktop/pull/846)
- - Added AppImage packages as unofficial build
+ - Added AppImage packages as an unofficial build.
  [#864](https://github.com/mattermost/desktop/pull/864)
 
 ### Architectural Changes
@@ -49,10 +45,14 @@ Release date: TBD
  [#820](https://github.com/mattermost/desktop/pull/820)
  [#847](https://github.com/mattermost/desktop/pull/847)
  [#882](https://github.com/mattermost/desktop/pull/882)
- - Artifact names are configured via `electron-builder.json`.
+ - Artifact names are now configured via `electron-builder.json`.
  [#825](https://github.com/mattermost/desktop/pull/825)
 
-### Bug Fixes
+### Contributors
+
+Many thanks to all our contributors. In alphabetical order:
+
+ - [danmaas](https://github.com/danmaas), [hmhealey](https://github.com/hmhealey), [j1mc](https://github.com/j1mc),[jasonblais](https://github.com/jasonblais), [lieut-data](https://github.com/lieut-data), [rodcorsi](https://github.com/rodcorsi), [scherno2](https://github.com/scherno2), [sudheerDev](https://github.com/sudheerDev), [svelle](https://github.com/svelle), [torlenor](https://github.com/torlenor), [yuya-oc](https://github.com/yuya-oc)
 
 ----
 
