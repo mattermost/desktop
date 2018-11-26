@@ -16,12 +16,12 @@ cat <<-MD
 The download links can be found below.
 
 #### Windows
-$(print_link "${BASE_URL}/mattermost-setup-${VERSION}-ia32.exe")
-$(print_link "${BASE_URL}/mattermost-setup-${VERSION}-x64.exe")
+$(print_link "${BASE_URL}/mattermost-setup-${VERSION}-win32.exe")
+$(print_link "${BASE_URL}/mattermost-setup-${VERSION}-win64.exe")
 
 #### Windows - zip files
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win-ia32.zip")
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win-x64.zip")
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win32.zip")
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win64.zip")
 
 #### Mac
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-mac.dmg")
