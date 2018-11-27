@@ -1,5 +1,23 @@
 # Mattermost Desktop Application Changelog
 
+## UNDER DEVELOPMENT
+
+The "UNDER DEVELOPMENT" section of the Mattermost Desktop changelog appears
+in the product's `master` branch to note key changes committed to `master`
+and are on their way to the next stable release.
+When a stable release is pushed, "UNDER DEVELOPMENT" heading is removed
+from the final changelog of the release.
+
+Release date: TBD
+
+### Improvements
+
+### Architectural Changes
+
+### Bug Fixes
+
+----
+
 ## Release v4.2.0
 
 Release date: Nov 27, 2018
