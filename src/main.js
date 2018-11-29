@@ -6,6 +6,8 @@
 import os from 'os';
 import path from 'path';
 
+import {URL} from 'url';
+
 import electron from 'electron';
 const {
   app,
@@ -307,22 +309,34 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
     if (certificateStore.isExisting(url)) {
       detail = 'Certificate is different from previous one.\n\n' + detail;
     }
-
     dialog.showMessageBox(mainWindow, {
-      title: 'Certificate error',
-      message: `Do you trust certificate from "${certificate.issuerName}"?`,
-      detail,
-      type: 'warning',
+      title: 'Certificate Error',
+      message: 'There is a configuration issue with the Mattermost server you are trying to connect to, or someone is trying to intercept your connection. You also may need to sign into the Wi-Fi you are connected to using your web browser.',
+      type: 'error',
       buttons: [
-        'Yes',
-        'No',
+        'More Details',
+        'Cancel Connection',
       ],
       cancelId: 1,
     }, (response) => {
       if (response === 0) {
-        certificateStore.add(url, certificate);
-        certificateStore.save();
-        webContents.loadURL(url);
+        dialog.showMessageBox(mainWindow, {
+          title: 'Certificate Error',
+          message: `Certificate from "${certificate.issuerName}" is not trusted.`,
+          detail,
+          type: 'error',
+          buttons: [
+            'Continue Insecurely',
+            'Cancel Connection',
+          ],
+          cancelId: 1,
+        }, (responseTwo) => { //eslint-disable-line max-nested-callbacks
+          if (responseTwo === 0) {
+            certificateStore.add(url, certificate);
+            certificateStore.save();
+            webContents.loadURL(url);
+          }
+        });
       }
     });
     callback(false);
@@ -350,8 +364,8 @@ app.on('login', (event, webContents, request, authInfo, callback) => {
 
 allowProtocolDialog.init(mainWindow);
 
-ipcMain.on('download-url', (event, URL) => {
-  downloadURL(mainWindow, URL, (err) => {
+ipcMain.on('download-url', (event, url) => {
+  downloadURL(mainWindow, url, (err) => {
     if (err) {
       dialog.showMessageBox(mainWindow, {
         type: 'error',
@@ -649,4 +663,30 @@ app.on('ready', () => {
 
   // Open the DevTools.
   // mainWindow.openDevTools();
+});
+
+app.on('web-contents-created', (dc, contents) => {
+  contents.on('will-attach-webview', (event, webPreferences) => {
+    webPreferences.nodeIntegration = false;
+    webPreferences.contextIsolation = true;
+  });
+  contents.on('will-navigate', (event, navigationUrl) => {
+    const parsedUrl = new URL(navigationUrl);
+    const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => new URL(team.url)); //eslint-disable-line max-nested-callbacks
+
+    let trusted = false;
+    for (const url of trustedURLs) {
+      if (parsedUrl.origin === url.origin) {
+        trusted = true;
+        break;
+      }
+    }
+
+    if (!trusted) {
+      event.preventDefault();
+    }
+  });
+  contents.on('new-window', (event) => {
+    event.preventDefault();
+  });
 });

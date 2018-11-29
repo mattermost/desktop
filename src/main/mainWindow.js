@@ -67,6 +67,7 @@ function createMainWindow(config, options) {
 
   mainWindow.webContents.on('will-attach-webview', (event, webPreferences) => {
     webPreferences.nodeIntegration = false;
+    webPreferences.contextIsolation = true;
   });
 
   mainWindow.once('ready-to-show', () => {
