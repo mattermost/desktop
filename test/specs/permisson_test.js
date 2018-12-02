@@ -16,7 +16,7 @@ describe('PermissionManager', function() {
     });
   });
 
-  it('should grant a permisson for an origin', function() {
+  it('should grant a permission for an origin', function() {
     const ORIGIN = 'origin';
     const PERMISSION = 'permission';
     const manager = new PermissionManager(permissionFile);
@@ -33,7 +33,7 @@ describe('PermissionManager', function() {
     manager.isGranted(ORIGIN, PERMISSION + '_another').should.be.false;
   });
 
-  it('should deny a permisson for an origin', function() {
+  it('should deny a permission for an origin', function() {
     const ORIGIN = 'origin';
     const PERMISSION = 'permission';
     const manager = new PermissionManager(permissionFile);
@@ -50,7 +50,7 @@ describe('PermissionManager', function() {
     manager.isDenied(ORIGIN, PERMISSION + '_another').should.be.false;
   });
 
-  it('should save permissons to the file', function() {
+  it('should save permissions to the file', function() {
     const ORIGIN = 'origin';
     const PERMISSION = 'permission';
     const manager = new PermissionManager(permissionFile);

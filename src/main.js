@@ -176,7 +176,7 @@ const trayImages = (() => {
   }
 })();
 
-// If there is already an instance, activate the window in the existing instace and quit this one
+// If there is already an instance, activate the window in the existing instance and quit this one
 if (app.makeSingleInstance((commandLine/*, workingDirectory*/) => {
   // Protocol handler for win32
   // argv: An array of the second instance’s (command line / deep linked) arguments
@@ -330,7 +330,7 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
 });
 
 app.on('gpu-process-crashed', (event, killed) => {
-  console.log(`The GPU process has crached (killed = ${killed})`);
+  console.log(`The GPU process has crashed (killed = ${killed})`);
 });
 
 const loginCallbackMap = new Map();
