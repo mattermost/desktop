@@ -119,7 +119,7 @@ export default class MattermostView extends React.Component {
             if (this.props.onSelectSpellCheckerLocale) {
               this.props.onSelectSpellCheckerLocale(locale);
             }
-            webview.send('set-spellcheker');
+            webview.send('set-spellchecker');
           },
         });
         this.setState({isContextMenuAdded: true});

@@ -192,7 +192,7 @@ function setSpellChecker() {
   resetMisspelledState();
 }
 setSpellChecker();
-ipcRenderer.on('set-spellcheker', setSpellChecker);
+ipcRenderer.on('set-spellchecker', setSpellChecker);
 
 // mattermost-webapp is SPA. So cache is not cleared due to no navigation.
 // We needed to manually clear cache to free memory in long-term-use.
