@@ -177,13 +177,18 @@ const trayImages = (() => {
 })();
 
 // If there is already an instance, activate the window in the existing instace and quit this one
-if (app.makeSingleInstance((commandLine/*, workingDirectory*/) => {
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.exit();
+  global.willAppQuit = true;
+}
+app.on('second-instance', (event, secondArgv) => {
   // Protocol handler for win32
   // argv: An array of the second instance’s (command line / deep linked) arguments
   if (process.platform === 'win32') {
     // Keep only command line / deep linked arguments
-    if (Array.isArray(commandLine.slice(1)) && commandLine.slice(1).length > 0) {
-      setDeeplinkingUrl(commandLine.slice(1)[0]);
+    if (Array.isArray(secondArgv.slice(1)) && secondArgv.slice(1).length > 0) {
+      setDeeplinkingUrl(secondArgv.slice(1)[0]);
       mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
     }
   }
@@ -196,9 +201,7 @@ if (app.makeSingleInstance((commandLine/*, workingDirectory*/) => {
       mainWindow.show();
     }
   }
-})) {
-  app.exit();
-}
+});
 
 function shouldShowTrayIcon() {
   if (process.platform === 'win32') {

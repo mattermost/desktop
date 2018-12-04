@@ -75,7 +75,7 @@ describe('application', function desc() {
       url: env.mattermostURL,
     }));
     await this.app.restart();
-    await this.app.client.waitUntilWindowLoaded();
+
     const url = await this.app.client.getUrl();
     url.should.match(/\/index.html$/);
   });
@@ -86,7 +86,6 @@ describe('application', function desc() {
       url: env.mattermostURL,
     }));
     await this.app.restart();
-    await this.app.client.waitUntilWindowLoaded();
 
     const url = await this.app.client.getUrl();
     url.should.match(/\/index.html$/);
