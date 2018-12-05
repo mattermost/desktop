@@ -3648,6 +3648,10 @@ escape-string-regexp@1.0.5, escape-string-regexp@^1.0.2, escape-string-regexp@^1
   resolved "https://registry.yarnpkg.com/escape-string-regexp/-/escape-string-regexp-1.0.5.tgz#1b61c0562190a8dff6ae3bb2cf0200ca130b86d4"
   integrity sha1-G2HAViGQqN/2rjuyzwIAyhMLhtQ=
 
+"eslint-config-mattermost@github:mattermost/eslint-config-mattermost":
+  version "1.0.0"
+  resolved "https://codeload.github.com/mattermost/eslint-config-mattermost/tar.gz/3ee77526c9c963877f3141b9c9090a236392bf82"
+
 eslint-import-resolver-node@^0.3.1:
   version "0.3.2"
   resolved "https://registry.yarnpkg.com/eslint-import-resolver-node/-/eslint-import-resolver-node-0.3.2.tgz#58f15fb839b8d0576ca980413476aab2472db66a"
@@ -3663,6 +3667,13 @@ eslint-module-utils@^2.2.0:
   dependencies:
     debug "^2.6.8"
     pkg-dir "^1.0.0"
+
+eslint-plugin-cypress@^2.1.2:
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-cypress/-/eslint-plugin-cypress-2.1.2.tgz#e4638f54235250ce264202001526537bac9d029e"
+  integrity sha512-53kluZnH8N1SKg0fLh1csQy87NOVnmsHE2iH17uq3z4PgKAacca0fVsn/qhjTB018t0/wIb9WlY9u78iIHzorQ==
+  dependencies:
+    globals "^11.0.1"
 
 eslint-plugin-header@^2.0.0:
   version "2.0.0"
@@ -4479,7 +4490,7 @@ global@^4.3.2:
     min-document "^2.19.0"
     process "~0.5.1"
 
-globals@^11.1.0, globals@^11.7.0:
+globals@^11.0.1, globals@^11.1.0, globals@^11.7.0:
   version "11.9.0"
   resolved "https://registry.yarnpkg.com/globals/-/globals-11.9.0.tgz#bde236808e987f290768a93d065060d78e6ab249"
   integrity sha512-5cJVtyXWH8PiJPVLZzzoIizXx944O4OmRro5MWKx5fT4MgcN7OfaMutPeaTdJCCURwbWdhhcCWcKIffPnmTzBg==
