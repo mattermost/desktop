@@ -14,6 +14,7 @@ jobs:
       - run: yarn
       - run: npm run build
       - run: npm run package:windows
+      - run: jq '.mac.target=["zip"]' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
       - run: npm run package:mac
       - run: npm run package:linux
       - run: mkdir -p /tmp/artifacts
