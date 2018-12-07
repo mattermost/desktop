@@ -311,7 +311,7 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
     }
     dialog.showMessageBox(mainWindow, {
       title: 'Certificate Error',
-      message: 'There is a configuration issue with the Mattermost server you are trying to connect to, or someone is trying to intercept your connection. You also may need to sign into the Wi-Fi you are connected to using your web browser.',
+      message: 'There is a configuration issue with this Mattermost server, or someone is trying to intercept your connection. You also may need to sign into the Wi-Fi you are connected to using your web browser.',
       type: 'error',
       buttons: [
         'More Details',
@@ -326,7 +326,7 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
           detail,
           type: 'error',
           buttons: [
-            'Continue Insecurely',
+            'Trust Insecure Certificate',
             'Cancel Connection',
           ],
           cancelId: 1,
