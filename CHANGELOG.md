@@ -13,6 +13,8 @@ Release date: TBD
 ### Improvements
 
 ### Architectural Changes
+ - Major version upgrade of Electron to v3.0.10. Electron is the underlying technology used to build the Desktop apps.
+ [#892](https://github.com/mattermost/desktop/pull/892)
 
 ### Bug Fixes
 

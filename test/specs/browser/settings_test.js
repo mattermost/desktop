@@ -6,6 +6,7 @@
 const fs = require('fs');
 
 const env = require('../../modules/environment');
+const {asyncSleep} = require('../../modules/utils');
 
 describe('browser/settings.html', function desc() {
   this.timeout(30000);
@@ -21,10 +22,11 @@ describe('browser/settings.html', function desc() {
     }],
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify(config));
+    await asyncSleep(1000);
     this.app = env.getSpectronApp();
-    return this.app.start();
+    await this.app.start();
   });
 
   afterEach(async () => {
@@ -34,7 +36,7 @@ describe('browser/settings.html', function desc() {
   });
 
   describe('Close button', async () => {
-    it('should show index.html when it\'s clicked', async () => {
+    it.skip('should show index.html when it\'s clicked', async () => {
       env.addClientCommands(this.app.client);
       await this.app.client.
         loadSettingsPage().
@@ -89,7 +91,7 @@ describe('browser/settings.html', function desc() {
   });
 
   describe('Server list', () => {
-    it('should open the corresponding tab when a server list item is clicked', async () => {
+    it.skip('should open the corresponding tab when a server list item is clicked', async () => {
       env.addClientCommands(this.app.client);
       await this.app.client.
         loadSettingsPage().
@@ -339,13 +341,9 @@ describe('browser/settings.html', function desc() {
     it('should remove existing team on click Remove', async () => {
       await this.app.client.
         element('.modal-dialog').click('.btn=Remove').
-        pause(500);
-      const existing = await this.app.client.isExisting(modalTitleSelector);
-      existing.should.be.false;
+        waitForExist(modalTitleSelector, 5000, true);
 
-      await this.app.client.
-        click('#btnClose').
-        pause(500);
+      await this.app.client.waitForVisible('#serversSaveIndicator', 10000, true);
 
       const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
       savedConfig.teams.should.deep.equal(config.teams.slice(1));
@@ -354,13 +352,9 @@ describe('browser/settings.html', function desc() {
     it('should NOT remove existing team on click Cancel', async () => {
       await this.app.client.
         element('.modal-dialog').click('.btn=Cancel').
-        pause(500);
-      const existing = await this.app.client.isExisting(modalTitleSelector);
-      existing.should.be.false;
+        waitForExist(modalTitleSelector, 5000, true);
 
-      await this.app.client.
-        click('#btnClose').
-        pause(500);
+      await this.app.client.waitForVisible('#serversSaveIndicator', 10000, true);
 
       const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
       savedConfig.teams.should.deep.equal(config.teams);
