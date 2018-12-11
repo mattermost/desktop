@@ -176,7 +176,7 @@ const trayImages = (() => {
   }
 })();
 
-// If there is already an instance, activate the window in the existing instace and quit this one
+// If there is already an instance, activate the window in the existing instance and quit this one
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.exit();
@@ -333,7 +333,7 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
 });
 
 app.on('gpu-process-crashed', (event, killed) => {
-  console.log(`The GPU process has crached (killed = ${killed})`);
+  console.log(`The GPU process has crashed (killed = ${killed})`);
 });
 
 const loginCallbackMap = new Map();
