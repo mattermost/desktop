@@ -17,6 +17,8 @@ Release date: TBD
  [#892](https://github.com/mattermost/desktop/pull/892)
 
 ### Bug Fixes
+ - Fixed several typos.
+ [#905](https://github.com/mattermost/desktop/pull/905)
 
 ----
 
