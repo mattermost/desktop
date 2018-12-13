@@ -12,6 +12,8 @@ git tag 'v4.2.0-win-portable'
 git push --tags origin
 
 npm install
+# https://github.com/webpack/webpack-cli/issues/607
+npm install -D 'webpack-cli@latest'
 npm run "package:windows"
 
 # upload portable windows executable to tagged release on github
