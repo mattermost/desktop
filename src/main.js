@@ -23,9 +23,11 @@ import {parse as parseArgv} from 'yargs';
 
 import {protocols} from '../electron-builder.json';
 
-import squirrelStartup from './main/squirrelStartup';
 import AutoLauncher from './main/AutoLauncher';
 import CriticalErrorHandler from './main/CriticalErrorHandler';
+import upgradeAutoLaunch from './main/autoLaunch';
+import autoUpdater from './main/autoUpdater';
+import buildConfig from './common/config/buildConfig';
 
 const criticalErrorHandler = new CriticalErrorHandler();
 
@@ -34,11 +36,7 @@ process.on('uncaughtException', criticalErrorHandler.processUncaughtExceptionHan
 global.willAppQuit = false;
 
 app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
-if (squirrelStartup(() => {
-  app.quit();
-})) {
-  global.willAppQuit = true;
-}
+
 import settings from './common/settings';
 import CertificateStore from './main/certificateStore';
 const certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
@@ -419,6 +417,10 @@ app.on('ready', () => {
   }
   appState.lastAppVersion = app.getVersion();
 
+  if (!global.isDev) {
+    upgradeAutoLaunch();
+  }
+
   if (global.isDev) {
     installExtension(REACT_DEVELOPER_TOOLS).
       then((name) => console.log(`Added Extension:  ${name}`)).
@@ -455,6 +457,9 @@ app.on('ready', () => {
   mainWindow.on('unresponsive', criticalErrorHandler.windowUnresponsiveHandler.bind(criticalErrorHandler));
   mainWindow.webContents.on('crashed', () => {
     throw new Error('webContents \'crashed\' event has been emitted');
+  });
+  mainWindow.on('ready-to-show', () => {
+    autoUpdater.checkForUpdates();
   });
 
   ipcMain.on('notified', () => {
@@ -649,6 +654,21 @@ app.on('ready', () => {
   const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => team.url);
   permissionManager = new PermissionManager(permissionFile, trustedURLs);
   session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionManager));
+
+  if (buildConfig.enableAutoUpdater) {
+    const updaterConfig = autoUpdater.loadConfig();
+    autoUpdater.initialize(appState, mainWindow, updaterConfig.isNotifyOnly());
+    ipcMain.on('check-for-updates', autoUpdater.checkForUpdates);
+    mainWindow.once('show', () => {
+      if (autoUpdater.shouldCheckForUpdatesOnStart(appState.updateCheckedDate)) {
+        ipcMain.emit('check-for-updates');
+      } else {
+        setTimeout(() => {
+          ipcMain.emit('check-for-updates');
+        }, autoUpdater.UPDATER_INTERVAL_IN_MS);
+      }
+    });
+  }
 
   // Open the DevTools.
   // mainWindow.openDevTools();

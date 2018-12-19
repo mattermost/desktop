@@ -1,4 +1,8 @@
 {
+  "publish": [{
+    "provider": "generic",
+    "url": "https://releases.mattermost.com/desktop/"
+  }],
   "appId": "com.mattermost.desktop",
   "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
   "directories": {
@@ -72,7 +76,7 @@
   },
   "win": {
     "target": [
-      "squirrel",
+      "nsis",
       "zip"
     ],
     "extraFiles": [
@@ -83,5 +87,8 @@
         ]
       }
     ]
+  },
+  "nsis": {
+    "artifactName": "${name}-setup-${version}-win.${ext}"
   }
 }
