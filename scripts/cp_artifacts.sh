@@ -5,8 +5,8 @@ VERSION=`cat package.json | jq -r '.version'`
 SRC=$1
 DEST=$2
 
-cp "${SRC}/mattermost-desktop-${VERSION}-win-ia32.zip" "${DEST}/"
-cp "${SRC}/mattermost-desktop-${VERSION}-win-x64.zip" "${DEST}/"
+cp "${SRC}/mattermost-desktop-${VERSION}-win-ia32.zip" "${DEST}/mattermost-desktop-${VERSION}-win32.zip"
+cp "${SRC}/mattermost-desktop-${VERSION}-win-x64.zip" "${DEST}/mattermost-desktop-${VERSION}-win64.zip"
 cp "${SRC}/mattermost-desktop-setup-${VERSION}-win.exe" "${DEST}/"
 cp "${SRC}"/mattermost-desktop-*.zip "${DEST}/"
 cp "${SRC}"/*.tar.gz "${DEST}/"

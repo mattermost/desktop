@@ -77,7 +77,7 @@ export default class MainPage extends React.Component {
       });
     });
 
-    // can't switch tabs sequencially for some reason...
+    // can't switch tabs sequentially for some reason...
     ipcRenderer.on('switch-tab', (event, key) => {
       this.handleSelect(key);
     });

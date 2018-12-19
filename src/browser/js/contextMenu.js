@@ -22,12 +22,14 @@ function getSuggestionsMenus(win, suggestions) {
 function getSpellCheckerLocaleMenus(onSelectSpellCheckerLocale) {
   const currentLocale = ipcRenderer.sendSync('get-spellchecker-locale');
   const locales = [
+    {language: 'English (UK)', locale: 'en-GB'},
     {language: 'English (US)', locale: 'en-US'},
     {language: 'French', locale: 'fr-FR'},
     {language: 'German', locale: 'de-DE'},
-    {language: 'Spanish', locale: 'es-ES'},
+    {language: 'Portuguese (BR)', locale: 'pt-BR'},
+    {language: 'Spanish (ES)', locale: 'es-ES'},
+    {language: 'Spanish (MX)', locale: 'es-MX'},
     {language: 'Dutch', locale: 'nl-NL'},
-    {language: 'Portuguese', locale: 'pt-BR'},
   ];
   return locales.map((l) => ({
     label: l.language,

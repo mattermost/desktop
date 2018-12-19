@@ -76,7 +76,7 @@ Test coding style:
 $ npm run lint:js
 ```
 
-### Helper commmands
+### Helper commands
 
 #### `npm run watch`
 Reload the application automatically when you have saved source codes.

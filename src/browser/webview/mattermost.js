@@ -141,7 +141,7 @@ function getUnreadCount() {
       const activeChannel = document.querySelector('.active .sidebar-channel');
       const closeButton = activeChannel.getElementsByClassName('btn-close');
       if (closeButton.length === 1 && closeButton[0].getAttribute('aria-describedby') === 'remove-dm-tooltip') {
-        // If active channel is DM, all posts is treated as menion.
+        // If active channel is DM, all posts is treated as mention.
         isMentioned = true;
         break;
       } else {
@@ -192,7 +192,7 @@ function setSpellChecker() {
   resetMisspelledState();
 }
 setSpellChecker();
-ipcRenderer.on('set-spellcheker', setSpellChecker);
+ipcRenderer.on('set-spellchecker', setSpellChecker);
 
 // mattermost-webapp is SPA. So cache is not cleared due to no navigation.
 // We needed to manually clear cache to free memory in long-term-use.

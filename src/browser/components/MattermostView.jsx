@@ -85,7 +85,7 @@ export default class MattermostView extends React.Component {
       }
     });
 
-    // Open link in browserWindow. for exmaple, attached files.
+    // Open link in browserWindow. for example, attached files.
     webview.addEventListener('new-window', (e) => {
       const currentURL = url.parse(webview.getURL());
       const destURL = url.parse(e.url);
@@ -98,7 +98,7 @@ export default class MattermostView extends React.Component {
         if (destURL.path.match(/^\/api\/v[3-4]\/public\/files\//)) {
           ipcRenderer.send('download-url', e.url);
         } else {
-          // New window should disable nodeIntergration.
+          // New window should disable nodeIntegration.
           window.open(e.url, remote.app.getName(), 'nodeIntegration=no, show=yes');
         }
       } else {
@@ -119,7 +119,7 @@ export default class MattermostView extends React.Component {
             if (this.props.onSelectSpellCheckerLocale) {
               this.props.onSelectSpellCheckerLocale(locale);
             }
-            webview.send('set-spellcheker');
+            webview.send('set-spellchecker');
           },
         });
         this.setState({isContextMenuAdded: true});
