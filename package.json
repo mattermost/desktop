@@ -53,7 +53,6 @@
     "devtron": "^1.4.0",
     "electron": "^3.0.10",
     "electron-builder": "20.38.2",
-    "electron-builder-squirrel-windows": "~20.38.2",
     "electron-connect": "^0.6.3",
     "eslint": "^5.9.0",
     "eslint-config-mattermost": "github:mattermost/eslint-config-mattermost",
