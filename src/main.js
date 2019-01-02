@@ -668,7 +668,6 @@ app.on('ready', () => {
 app.on('web-contents-created', (dc, contents) => {
   contents.on('will-attach-webview', (event, webPreferences) => {
     webPreferences.nodeIntegration = false;
-    webPreferences.contextIsolation = true;
   });
   contents.on('will-navigate', (event, navigationUrl) => {
     const parsedUrl = new URL(navigationUrl);
