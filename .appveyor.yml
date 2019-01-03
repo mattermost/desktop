@@ -131,9 +131,9 @@ build_script:
     candle.exe -dPlatform=x64 .\scripts\msi_installer.wxs .\scripts\msi_installer_files.wxs -o .\scripts\
     light.exe .\scripts\msi_installer.wixobj .\scripts\msi_installer_files.wixobj -loc .\resources\windows\msi_i18n\en_US.wxl -o .\release\mattermost-desktop-$($env:APPVEYOR_BUILD_NUMBER)-x64.msi -b ./release/win-unpacked/
     
-#test_script:
-#- ps: |
-#    npm test
+test_script:
+- ps: |
+    npm test
 
 artifacts:
   - path: 'release\*.msi'
