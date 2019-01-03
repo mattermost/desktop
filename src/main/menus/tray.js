@@ -9,11 +9,11 @@ import settings from '../../common/settings';
 
 function createTemplate(mainWindow, config, isDev) {
   const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : `file://${app.getAppPath()}/browser/settings.html`;
-  const teams = settings.mergeDefaultTeams(config.teams);
+  const servers = settings.mergeDefaultServers(config.servers);
   const template = [
-    ...teams.slice(0, 9).map((team, i) => {
+    ...servers.slice(0, 9).map((server, i) => {
       return {
-        label: team.name,
+        label: server.name,
         click: () => {
           showOrRestore(mainWindow);
           mainWindow.webContents.send('switch-tab', i);

@@ -23,11 +23,11 @@ import MainPage from './components/MainPage.jsx';
 import AppConfig from './config/AppConfig.js';
 import {createDataURL as createBadgeDataURL} from './js/badge';
 
-const teams = settings.mergeDefaultTeams(AppConfig.data.teams);
+const servers = settings.mergeDefaultServers(AppConfig.data.servers);
 
 remote.getCurrentWindow().removeAllListeners('focus');
 
-if (teams.length === 0) {
+if (servers.length === 0) {
   window.location = 'settings.html';
 }
 
@@ -107,12 +107,12 @@ function showBadge(sessionExpired, unreadCount, mentionCount) {
 }
 
 const permissionRequestQueue = [];
-const requestingPermission = new Array(AppConfig.data.teams.length);
+const requestingPermission = new Array(AppConfig.data.servers.length);
 
-function teamConfigChange(updatedTeams) {
-  AppConfig.set('teams', updatedTeams.slice(buildConfig.defaultTeams.length));
-  teams.splice(0, teams.length, ...updatedTeams);
-  requestingPermission.length = teams.length;
+function serverConfigChange(updatedServers) {
+  AppConfig.set('servers', updatedServers.slice(buildConfig.defaultServers.length));
+  servers.splice(0, servers.length, ...updatedServers);
+  requestingPermission.length = servers.length;
   ipcRenderer.send('update-menu', AppConfig.data);
   ipcRenderer.send('update-config');
 }
@@ -177,10 +177,10 @@ if (!parsedURL.query.index || parsedURL.query.index === null) {
 
 ReactDOM.render(
   <MainPage
-    teams={teams}
+    servers={servers}
     initialIndex={initialIndex}
     onBadgeChange={showBadge}
-    onTeamConfigChange={teamConfigChange}
+    onServerConfigChange={serverConfigChange}
     useSpellChecker={AppConfig.data.useSpellChecker}
     onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}
     deeplinkingUrl={deeplinkingUrl}

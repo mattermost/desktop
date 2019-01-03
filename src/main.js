@@ -84,8 +84,8 @@ try {
 } catch (e) {
   config = settings.loadDefault();
   console.log('Failed to read or upgrade config.json', e);
-  if (!config.teams.length && config.defaultTeam) {
-    config.teams.push(config.defaultTeam);
+  if (!config.servers.length && config.defaultServer) {
+    config.servers.push(config.defaultServer);
 
     const configFile = app.getPath('userData') + '/config.json';
     settings.writeFileSync(configFile, config);
@@ -107,7 +107,7 @@ ipcMain.on('update-config', () => {
       console.log('error:', err);
     });
   }
-  const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => team.url);
+  const trustedURLs = settings.mergeDefaultServers(config.servers).map((server) => server.url);
   permissionManager.setTrustedURLs(trustedURLs);
   ipcMain.emit('update-dict', true, config.spellCheckerLocale);
 });
@@ -651,7 +651,7 @@ app.on('ready', () => {
   ipcMain.emit('update-dict');
 
   const permissionFile = path.join(app.getPath('userData'), 'permission.json');
-  const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => team.url);
+  const trustedURLs = settings.mergeDefaultServers(config.servers).map((server) => server.url);
   permissionManager = new PermissionManager(permissionFile, trustedURLs);
   session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionManager));
 

@@ -19,8 +19,8 @@ function loadDefault() {
   return JSON.parse(JSON.stringify(defaultPreferences));
 }
 
-function hasBuildConfigDefaultTeams(config) {
-  return config.defaultTeams.length > 0;
+function hasBuildConfigDefaultServers(config) {
+  return config.defaultServers.length > 0;
 }
 
 function upgrade(config) {
@@ -65,14 +65,14 @@ export default {
 
   loadDefault,
 
-  mergeDefaultTeams(teams) {
-    const newTeams = [];
-    if (hasBuildConfigDefaultTeams(buildConfig)) {
-      newTeams.push(...JSON.parse(JSON.stringify(buildConfig.defaultTeams)));
+  mergeDefaultServers(servers) {
+    const newServers = [];
+    if (hasBuildConfigDefaultServers(buildConfig)) {
+      newServers.push(...JSON.parse(JSON.stringify(buildConfig.defaultServers)));
     }
     if (buildConfig.enableServerManagement) {
-      newTeams.push(...JSON.parse(JSON.stringify(teams)));
+      newServers.push(...JSON.parse(JSON.stringify(servers)));
     }
-    return newTeams;
+    return newServers;
   },
 };

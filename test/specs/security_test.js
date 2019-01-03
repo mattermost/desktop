@@ -17,7 +17,7 @@ describe.skip('application', function desc() {
 
   const config = {
     version: 1,
-    teams: [{
+    servers: [{
       name: 'example_1',
       url: testURL,
     }, {

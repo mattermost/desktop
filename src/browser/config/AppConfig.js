@@ -12,7 +12,7 @@ class AppConfig {
       this.data = settings.readFileSync(file);
     } catch (e) {
       this.data = {
-        teams: [],
+        servers: [],
       };
     }
   }

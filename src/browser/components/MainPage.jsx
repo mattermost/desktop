@@ -21,7 +21,7 @@ import TabBar from './TabBar.jsx';
 import HoveringURL from './HoveringURL.jsx';
 import PermissionRequestDialog from './PermissionRequestDialog.jsx';
 import Finder from './Finder.jsx';
-import NewTeamModal from './NewTeamModal.jsx';
+import NewServerModal from './NewServerModal.jsx';
 
 export default class MainPage extends React.Component {
   constructor(props) {
@@ -29,8 +29,8 @@ export default class MainPage extends React.Component {
 
     let key = this.props.initialIndex;
     if (this.props.deeplinkingUrl !== null) {
-      for (let i = 0; i < this.props.teams.length; i++) {
-        if (this.props.deeplinkingUrl.includes(this.props.teams[i].url)) {
+      for (let i = 0; i < this.props.servers.length; i++) {
+        if (this.props.deeplinkingUrl.includes(this.props.servers[i].url)) {
           key = i;
           break;
         }
@@ -39,11 +39,11 @@ export default class MainPage extends React.Component {
 
     this.state = {
       key,
-      sessionsExpired: new Array(this.props.teams.length),
-      unreadCounts: new Array(this.props.teams.length),
-      mentionCounts: new Array(this.props.teams.length),
-      unreadAtActive: new Array(this.props.teams.length),
-      mentionAtActiveCounts: new Array(this.props.teams.length),
+      sessionsExpired: new Array(this.props.servers.length),
+      unreadCounts: new Array(this.props.servers.length),
+      mentionCounts: new Array(this.props.servers.length),
+      unreadAtActive: new Array(this.props.servers.length),
+      mentionAtActiveCounts: new Array(this.props.servers.length),
       loginQueue: [],
       targetURL: '',
     };
@@ -54,7 +54,7 @@ export default class MainPage extends React.Component {
     this.focusOnWebView = this.focusOnWebView.bind(this);
     this.handleLogin = this.handleLogin.bind(this);
     this.handleLoginCancel = this.handleLoginCancel.bind(this);
-    this.handleOnTeamFocused = this.handleOnTeamFocused.bind(this);
+    this.handleOnServerFocused = this.handleOnServerFocused.bind(this);
     this.handleSelect = this.handleSelect.bind(this);
     this.handleTargetURLChange = this.handleTargetURLChange.bind(this);
     this.inputBlur = this.inputBlur.bind(this);
@@ -97,7 +97,7 @@ export default class MainPage extends React.Component {
     });
 
     function focusListener() {
-      self.handleOnTeamFocused(self.state.key);
+      self.handleOnServerFocused(self.state.key);
       self.refs[`mattermostView${self.state.key}`].focusOnWebView();
     }
 
@@ -137,7 +137,7 @@ export default class MainPage extends React.Component {
 
     ipcRenderer.on('protocol-deeplink', (event, deepLinkUrl) => {
       const lastUrlDomain = Utils.getDomain(deepLinkUrl);
-      for (let i = 0; i < this.props.teams.length; i++) {
+      for (let i = 0; i < this.props.servers.length; i++) {
         if (lastUrlDomain === Utils.getDomain(self.refs[`mattermostView${i}`].getSrc())) {
           if (this.state.key !== i) {
             this.handleSelect(i);
@@ -160,7 +160,7 @@ export default class MainPage extends React.Component {
   }
 
   handleSelect(key) {
-    const newKey = (this.props.teams.length + key) % this.props.teams.length;
+    const newKey = (this.props.servers.length + key) % this.props.servers.length;
     this.setState({
       key: newKey,
       finderVisible: false,
@@ -169,7 +169,7 @@ export default class MainPage extends React.Component {
     ipcRenderer.send('update-title', {
       title: webview.getTitle(),
     });
-    this.handleOnTeamFocused(newKey);
+    this.handleOnServerFocused(newKey);
   }
 
   handleBadgeChange = (index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) => {
@@ -235,7 +235,7 @@ export default class MainPage extends React.Component {
     }
   }
 
-  handleOnTeamFocused(index) {
+  handleOnServerFocused(index) {
     // Turn off the flag to indicate whether unread message of active channel contains at current tab.
     this.markReadAtActive(index);
   }
@@ -267,7 +267,7 @@ export default class MainPage extends React.Component {
 
   addServer() {
     this.setState({
-      showNewTeamModal: true,
+      showNewServerModal: true,
     });
   }
 
@@ -299,12 +299,12 @@ export default class MainPage extends React.Component {
   render() {
     const self = this;
     let tabsRow;
-    if (this.props.teams.length > 1) {
+    if (this.props.servers.length > 1) {
       tabsRow = (
         <Row>
           <TabBar
             id='tabBar'
-            teams={this.props.teams}
+            servers={this.props.servers}
             sessionsExpired={this.state.sessionsExpired}
             unreadCounts={this.state.unreadCounts}
             mentionCounts={this.state.mentionCounts}
@@ -321,7 +321,7 @@ export default class MainPage extends React.Component {
       );
     }
 
-    const views = this.props.teams.map((team, index) => {
+    const views = this.props.servers.map((server, index) => {
       function handleBadgeChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) {
         self.handleBadgeChange(index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
       }
@@ -331,21 +331,21 @@ export default class MainPage extends React.Component {
       const id = 'mattermostView' + index;
       const isActive = self.state.key === index;
 
-      let teamUrl = team.url;
+      let serverUrl = server.url;
       const deeplinkingUrl = this.props.deeplinkingUrl;
-      if (deeplinkingUrl !== null && deeplinkingUrl.includes(teamUrl)) {
-        teamUrl = deeplinkingUrl;
+      if (deeplinkingUrl !== null && deeplinkingUrl.includes(serverUrl)) {
+        serverUrl = deeplinkingUrl;
       }
 
       return (
         <MattermostView
           key={id}
           id={id}
-          withTab={this.props.teams.length > 1}
+          withTab={this.props.servers.length > 1}
           useSpellChecker={this.props.useSpellChecker}
           onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
-          src={teamUrl}
-          name={team.name}
+          src={serverUrl}
+          name={server.name}
           onTargetURLChange={self.handleTargetURLChange}
           onBadgeChange={handleBadgeChange}
           onNotificationClick={handleNotificationClick}
@@ -368,21 +368,21 @@ export default class MainPage extends React.Component {
       authInfo = this.state.loginQueue[0].authInfo;
     }
     const modal = (
-      <NewTeamModal
-        show={this.state.showNewTeamModal}
+      <NewServerModal
+        show={this.state.showNewServerModal}
         onClose={() => {
           this.setState({
-            showNewTeamModal: false,
+            showNewServerModal: false,
           });
         }}
-        onSave={(newTeam) => {
-          this.props.teams.push(newTeam);
+        onSave={(newServer) => {
+          this.props.servers.push(newServer);
           this.setState({
-            showNewTeamModal: false,
-            key: this.props.teams.length - 1,
+            showNewServerModal: false,
+            key: this.props.servers.length - 1,
           });
           this.render();
-          this.props.onTeamConfigChange(this.props.teams);
+          this.props.onServerConfigChange(this.props.servers);
         }}
       />
     );
@@ -399,7 +399,7 @@ export default class MainPage extends React.Component {
           onLogin={this.handleLogin}
           onCancel={this.handleLoginCancel}
         />
-        {this.props.teams.length === 1 && this.props.requestingPermission[0] ? // eslint-disable-line multiline-ternary
+        {this.props.servers.length === 1 && this.props.requestingPermission[0] ? // eslint-disable-line multiline-ternary
           <PermissionRequestDialog
             id='MainPage-permissionDialog'
             placement='bottom'
@@ -445,8 +445,8 @@ export default class MainPage extends React.Component {
 
 MainPage.propTypes = {
   onBadgeChange: PropTypes.func.isRequired,
-  teams: PropTypes.array.isRequired,
-  onTeamConfigChange: PropTypes.func.isRequired,
+  servers: PropTypes.array.isRequired,
+  onServerConfigChange: PropTypes.func.isRequired,
   initialIndex: PropTypes.number.isRequired,
   useSpellChecker: PropTypes.bool.isRequired,
   onSelectSpellCheckerLocale: PropTypes.func.isRequired,

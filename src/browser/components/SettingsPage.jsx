@@ -14,7 +14,7 @@ import {debounce} from 'underscore';
 import buildConfig from '../../common/config/buildConfig';
 import settings from '../../common/settings';
 
-import TeamList from './TeamList.jsx';
+import ServerList from './ServerList.jsx';
 import AutoSaveIndicator from './AutoSaveIndicator.jsx';
 
 function backToIndex(index) {
@@ -36,10 +36,10 @@ export default class SettingsPage extends React.Component {
     } catch (e) {
       initialState = settings.loadDefault();
     }
-    initialState.showAddTeamForm = false;
+    initialState.showAddServerForm = false;
     initialState.trayWasVisible = remote.getCurrentWindow().trayWasVisible;
-    if (initialState.teams.length === 0) {
-      initialState.showAddTeamForm = true;
+    if (initialState.servers.length === 0) {
+      initialState.showAddServerForm = true;
     }
     initialState.savingState = {
       appOptions: AutoSaveIndicator.SAVING_STATE_DONE,
@@ -49,22 +49,22 @@ export default class SettingsPage extends React.Component {
 
     this.startSaveConfig = this.startSaveConfig.bind(this);
     this.didSaveConfig = this.didSaveConfig.bind(this);
-    this.handleTeamsChange = this.handleTeamsChange.bind(this);
+    this.handleServersChange = this.handleServersChange.bind(this);
     this.saveConfig = this.saveConfig.bind(this);
     this.handleCancel = this.handleCancel.bind(this);
     this.handleChangeShowTrayIcon = this.handleChangeShowTrayIcon.bind(this);
     this.handleChangeTrayIconTheme = this.handleChangeTrayIconTheme.bind(this);
     this.handleChangeAutoStart = this.handleChangeAutoStart.bind(this);
     this.handleChangeMinimizeToTray = this.handleChangeMinimizeToTray.bind(this);
-    this.toggleShowTeamForm = this.toggleShowTeamForm.bind(this);
-    this.setShowTeamFormVisibility = this.setShowTeamFormVisibility.bind(this);
+    this.toggleShowServerForm = this.toggleShowServerForm.bind(this);
+    this.setShowServerFormVisibility = this.setShowServerFormVisibility.bind(this);
     this.handleFlashWindow = this.handleFlashWindow.bind(this);
     this.handleBounceIcon = this.handleBounceIcon.bind(this);
     this.handleBounceIconType = this.handleBounceIconType.bind(this);
     this.handleShowUnreadBadge = this.handleShowUnreadBadge.bind(this);
     this.handleChangeUseSpellChecker = this.handleChangeUseSpellChecker.bind(this);
     this.handleChangeEnableHardwareAcceleration = this.handleChangeEnableHardwareAcceleration.bind(this);
-    this.updateTeam = this.updateTeam.bind(this);
+    this.updateServer = this.updateServer.bind(this);
     this.addServer = this.addServer.bind(this);
 
     this.trayIconThemeRef = React.createRef();
@@ -73,7 +73,7 @@ export default class SettingsPage extends React.Component {
   componentDidMount() {
     ipcRenderer.on('add-server', () => {
       this.setState({
-        showAddTeamForm: true,
+        showAddServerForm: true,
       });
     });
     ipcRenderer.on('switch-tab', (event, key) => {
@@ -118,20 +118,20 @@ export default class SettingsPage extends React.Component {
     this.didSaveConfigImpl[configType]();
   }
 
-  handleTeamsChange(teams) {
+  handleServersChange(servers) {
     this.setState({
-      showAddTeamForm: false,
-      teams,
+      showAddServerForm: false,
+      servers,
     });
-    if (teams.length === 0) {
-      this.setState({showAddTeamForm: true});
+    if (servers.length === 0) {
+      this.setState({showAddServerForm: true});
     }
     setImmediate(this.startSaveConfig, CONFIG_TYPE_SERVERS);
   }
 
   saveConfig(callback) {
     const config = {
-      teams: this.state.teams,
+      servers: this.state.servers,
       showTrayIcon: this.state.showTrayIcon,
       trayIconTheme: this.state.trayIconTheme,
       version: settings.version,
@@ -201,16 +201,16 @@ export default class SettingsPage extends React.Component {
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   }
 
-  toggleShowTeamForm() {
+  toggleShowServerForm() {
     this.setState({
-      showAddTeamForm: !this.state.showAddTeamForm,
+      showAddServerForm: !this.state.showAddServerForm,
     });
     document.activeElement.blur();
   }
 
-  setShowTeamFormVisibility(val) {
+  setShowServerFormVisibility(val) {
     this.setState({
-      showAddTeamForm: val,
+      showAddServerForm: val,
     });
   }
 
@@ -265,20 +265,20 @@ export default class SettingsPage extends React.Component {
     setImmediate(this.startSaveConfig, CONFIG_TYPE_APP_OPTIONS);
   }
 
-  updateTeam(index, newData) {
-    const teams = this.state.teams;
-    teams[index] = newData;
+  updateServer(index, newData) {
+    const servers = this.state.servers;
+    servers[index] = newData;
     this.setState({
-      teams,
+      servers,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_SERVERS);
   }
 
-  addServer(team) {
-    const teams = this.state.teams;
-    teams.push(team);
+  addServer(server) {
+    const servers = this.state.servers;
+    servers.push(server);
     this.setState({
-      teams,
+      servers,
     });
     setImmediate(this.startSaveConfig, CONFIG_TYPE_SERVERS);
   }
@@ -319,20 +319,20 @@ export default class SettingsPage extends React.Component {
       },
     };
 
-    const teamsRow = (
+    const serverRow = (
       <Row>
         <Col md={12}>
-          <TeamList
-            teams={this.state.teams}
-            showAddTeamForm={this.state.showAddTeamForm}
-            toggleAddTeamForm={this.toggleShowTeamForm}
-            setAddTeamFormVisibility={this.setShowTeamFormVisibility}
-            onTeamsChange={this.handleTeamsChange}
-            updateTeam={this.updateTeam}
+          <ServerList
+            servers={this.state.servers}
+            showAddServerForm={this.state.showAddServerForm}
+            toggleAddServerForm={this.toggleShowServerForm}
+            setAddServerFormVisibility={this.setShowServerFormVisibility}
+            onServersChange={this.handleServersChange}
+            updateServer={this.updateServer}
             addServer={this.addServer}
-            allowTeamEdit={this.state.enableTeamModification}
-            onTeamClick={(index) => {
-              backToIndex(index + buildConfig.defaultTeams.length);
+            allowServerEdit={this.state.enableServerModification}
+            onServerClick={(index) => {
+              backToIndex(index + buildConfig.defaultServers.length);
             }}
           />
         </Col>
@@ -363,7 +363,7 @@ export default class SettingsPage extends React.Component {
               style={settingsPage.sectionHeadingLink}
               id='addNewServer'
               href='#'
-              onClick={this.toggleShowTeamForm}
+              onClick={this.toggleShowServerForm}
             >{'⊞ Add new server'}</a>
           </p>
         </Col>
@@ -375,7 +375,7 @@ export default class SettingsPage extends React.Component {
       srvMgmt = (
         <div>
           {serversRow}
-          {teamsRow}
+          {serverRow}
           <hr/>
         </div>
       );
@@ -606,7 +606,7 @@ export default class SettingsPage extends React.Component {
               bsStyle='link'
               style={settingsPage.close}
               onClick={this.handleCancel}
-              disabled={settings.mergeDefaultTeams(this.state.teams).length === 0}
+              disabled={settings.mergeDefaultServers(this.state.servers).length === 0}
             >
               <span>{'×'}</span>
             </Button>

@@ -12,8 +12,8 @@ function upgradeV0toV1(configV0) {
   if (config.version !== 1) {
     throw new Error('pastDefaultPreferences[\'1\'].version is not equal to 1');
   }
-  config.teams.push({
-    name: 'Primary team',
+  config.servers.push({
+    name: 'Primary server',
     url: configV0.url,
   });
   return config;

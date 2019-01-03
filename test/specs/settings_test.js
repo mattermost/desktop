@@ -9,29 +9,29 @@ import pastDefaultPreferences from '../../src/common/config/pastDefaultPreferenc
 describe('common/settings.js', () => {
   it('should upgrade v0 config file', () => {
     const v0Config = {
-      url: 'https://example.com/team',
+      url: 'https://example.com/server',
     };
     const config = settings.upgrade(v0Config);
-    config.teams.length.should.equal(1);
-    config.teams[0].url.should.equal(v0Config.url);
+    config.servers.length.should.equal(1);
+    config.servers[0].url.should.equal(v0Config.url);
     config.version.should.equal(settings.version);
   });
 
-  it('should merge teams with buildConfig.defaultTeams', () => {
-    const teams = [
+  it('should merge servers with buildConfig.defaultServers', () => {
+    const servers = [
       {
         name: 'test',
         url: 'https://example.com',
       },
     ];
 
-    const mergedTeams = settings.mergeDefaultTeams(teams);
-    mergedTeams.should.deep.equal([
+    const mergedServers = settings.mergeDefaultServers(servers);
+    mergedServers.should.deep.equal([
       {
         name: 'test',
         url: 'https://example.com',
       },
-      ...buildConfig.defaultTeams,
+      ...buildConfig.defaultServers,
     ]);
   });
 });

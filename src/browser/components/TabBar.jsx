@@ -9,7 +9,7 @@ import PermissionRequestDialog from './PermissionRequestDialog.jsx';
 
 export default class TabBar extends React.Component { // need "this"
   render() {
-    const tabs = this.props.teams.map((team, index) => {
+    const tabs = this.props.servers.map((server, index) => {
       const sessionExpired = this.props.sessionsExpired[index];
 
       let unreadCount = 0;
@@ -40,7 +40,7 @@ export default class TabBar extends React.Component { // need "this"
           </div>
         );
       }
-      const id = 'teamTabItem' + index;
+      const id = 'serverTabItem' + index;
       const requestingPermission = this.props.requestingPermission[index];
       const permissionOverlay = (
         <Overlay
@@ -64,7 +64,7 @@ export default class TabBar extends React.Component { // need "this"
       // It would obstruct https://github.com/mattermost/desktop/issues/478
       return (
         <NavItem
-          className='teamTabItem'
+          className='serverTabItem'
           key={id}
           id={id}
           eventKey={index}
@@ -72,10 +72,10 @@ export default class TabBar extends React.Component { // need "this"
           draggable={false}
         >
           <span
-            title={team.name}
-            className={unreadCount === 0 ? '' : 'teamTabItem-unread'}
+            title={server.name}
+            className={unreadCount === 0 ? '' : 'serverTabItem-unread'}
           >
-            {team.name}
+            {server.name}
           </span>
           { ' ' }
           { badgeDiv }
@@ -120,7 +120,7 @@ TabBar.propTypes = {
   activeKey: PropTypes.number,
   id: PropTypes.string,
   onSelect: PropTypes.func,
-  teams: PropTypes.array,
+  servers: PropTypes.array,
   sessionsExpired: PropTypes.array,
   unreadCounts: PropTypes.array,
   unreadAtActive: PropTypes.array,

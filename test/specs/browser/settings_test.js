@@ -13,7 +13,7 @@ describe('browser/settings.html', function desc() {
 
   const config = {
     version: 1,
-    teams: [{
+    servers: [{
       name: 'example',
       url: env.mattermostURL,
     }, {
@@ -62,8 +62,8 @@ describe('browser/settings.html', function desc() {
         pause(250).
         click('#addNewServer').
         waitForVisible('#newServerModal').
-        setValue('#teamNameInput', 'TestTeam').
-        setValue('#teamUrlInput', 'http://example.org').
+        setValue('#serverNameInput', 'TestServer').
+        setValue('#serverUrlInput', 'http://example.org').
         click('#saveNewServerModal').
         waitForVisible('#newServerModal', true).
         waitForVisible('#serversSaveIndicator').
@@ -338,7 +338,7 @@ describe('browser/settings.html', function desc() {
         waitForVisible(modalTitleSelector);
     });
 
-    it('should remove existing team on click Remove', async () => {
+    it('should remove existing server on click Remove', async () => {
       await this.app.client.
         element('.modal-dialog').click('.btn=Remove').
         waitForExist(modalTitleSelector, 5000, true);
@@ -346,10 +346,10 @@ describe('browser/settings.html', function desc() {
       await this.app.client.waitForVisible('#serversSaveIndicator', 10000, true);
 
       const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-      savedConfig.teams.should.deep.equal(config.teams.slice(1));
+      savedConfig.servers.should.deep.equal(config.servers.slice(1));
     });
 
-    it('should NOT remove existing team on click Cancel', async () => {
+    it('should NOT remove existing server on click Cancel', async () => {
       await this.app.client.
         element('.modal-dialog').click('.btn=Cancel').
         waitForExist(modalTitleSelector, 5000, true);
@@ -357,7 +357,7 @@ describe('browser/settings.html', function desc() {
       await this.app.client.waitForVisible('#serversSaveIndicator', 10000, true);
 
       const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-      savedConfig.teams.should.deep.equal(config.teams);
+      savedConfig.servers.should.deep.equal(config.servers);
     });
 
     it('should disappear on click Close', async () => {
@@ -378,7 +378,7 @@ describe('browser/settings.html', function desc() {
     });
   });
 
-  describe('NewTeamModal', () => {
+  describe('NewServerModal', () => {
     beforeEach(() => {
       env.addClientCommands(this.app.client);
       return this.app.client.
@@ -402,11 +402,11 @@ describe('browser/settings.html', function desc() {
         });
     });
 
-    it('should not be valid if no team name has been set', () => {
+    it('should not be valid if no server name has been set', () => {
       return this.app.client.
         click('#saveNewServerModal').
-        waitForExist('.has-error #teamNameInput', 10000).
-        isExisting('.has-error #teamNameInput').then((existing) => {
+        waitForExist('.has-error #serverNameInput', 10000).
+        isExisting('.has-error #serverNameInput').then((existing) => {
           existing.should.be.true;
         });
     });
@@ -414,8 +414,8 @@ describe('browser/settings.html', function desc() {
     it('should not be valid if no server address has been set', () => {
       return this.app.client.
         click('#saveNewServerModal').
-        waitForExist('.has-error #teamUrlInput', 10000).
-        isExisting('.has-error #teamUrlInput').then((existing) => {
+        waitForExist('.has-error #serverUrlInput', 10000).
+        isExisting('.has-error #serverUrlInput').then((existing) => {
           existing.should.be.true;
         });
     });
@@ -423,13 +423,13 @@ describe('browser/settings.html', function desc() {
     describe('Valid server name', () => {
       beforeEach(() => {
         return this.app.client.
-          setValue('#teamNameInput', 'TestTeam').
+          setValue('#serverNameInput', 'TestServer').
           click('#saveNewServerModal');
       });
 
       it('should not be marked invalid', () => {
         return this.app.client.
-          isExisting('.has-error #teamNameInput').then((existing) => {
+          isExisting('.has-error #serverNameInput').then((existing) => {
             existing.should.be.false;
           });
       });
@@ -445,13 +445,13 @@ describe('browser/settings.html', function desc() {
     describe('Valid server url', () => {
       beforeEach(() => {
         return this.app.client.
-          setValue('#teamUrlInput', 'http://example.org').
+          setValue('#serverUrlInput', 'http://example.org').
           click('#saveNewServerModal');
       });
 
       it('should be valid', () => {
         return this.app.client.
-          isExisting('.has-error #teamUrlInput').then((existing) => {
+          isExisting('.has-error #serverUrlInput').then((existing) => {
             existing.should.be.false;
           });
       });
@@ -466,19 +466,19 @@ describe('browser/settings.html', function desc() {
 
     it('should not be valid if an invalid server address has been set', () => {
       return this.app.client.
-        setValue('#teamUrlInput', 'superInvalid url').
+        setValue('#serverUrlInput', 'superInvalid url').
         click('#saveNewServerModal').
         pause(500).
-        isExisting('.has-error #teamUrlInput').then((existing) => {
+        isExisting('.has-error #serverUrlInput').then((existing) => {
           existing.should.be.true;
         });
     });
 
-    describe('Valid Team Settings', () => {
+    describe('Valid Terver Settings', () => {
       beforeEach(() => {
         return this.app.client.
-          setValue('#teamUrlInput', 'http://example.org').
-          setValue('#teamNameInput', 'TestTeam');
+          setValue('#serverUrlInput', 'http://example.org').
+          setValue('#serverNameInput', 'TestServer');
       });
 
       it('should be possible to click add', () => {
@@ -488,7 +488,7 @@ describe('browser/settings.html', function desc() {
           });
       });
 
-      it('should add the team to the config file', async () => {
+      it('should add the server to the config file', async () => {
         await this.app.client.
           click('#saveNewServerModal').
           waitForVisible('#newServerModal', 10000, true).
@@ -497,8 +497,8 @@ describe('browser/settings.html', function desc() {
           waitUntilWindowLoaded();
 
         const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-        savedConfig.teams.should.deep.contain({
-          name: 'TestTeam',
+        savedConfig.servers.should.deep.contain({
+          name: 'TestServer',
           url: 'http://example.org',
         });
       });

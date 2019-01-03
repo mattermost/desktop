@@ -15,7 +15,7 @@ describe('browser/index.html', function desc() {
 
   const config = {
     version: 1,
-    teams: [{
+    servers: [{
       name: 'example',
       url: env.mattermostURL,
     }, {
@@ -53,7 +53,7 @@ describe('browser/index.html', function desc() {
     this.server.close(done);
   });
 
-  it('should NOT show tabs when there is one team', async () => {
+  it('should NOT show tabs when there is one server', async () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       url: env.mattermostURL,
     }));
@@ -65,28 +65,28 @@ describe('browser/index.html', function desc() {
 
   it('should set src of webview from config file', async () => {
     const src0 = await this.app.client.getAttribute('#mattermostView0', 'src');
-    src0.should.equal(config.teams[0].url);
+    src0.should.equal(config.servers[0].url);
 
     const src1 = await this.app.client.getAttribute('#mattermostView1', 'src');
-    src1.should.equal(config.teams[1].url);
+    src1.should.equal(config.servers[1].url);
 
     const existing = await this.app.client.isExisting('#mattermostView2');
     existing.should.be.false;
   });
 
   it('should set name of tab from config file', async () => {
-    const tabName0 = await this.app.client.getText('#teamTabItem0');
-    tabName0.should.equal(config.teams[0].name);
+    const tabName0 = await this.app.client.getText('#serverTabItem0');
+    tabName0.should.equal(config.servers[0].name);
 
-    const tabName1 = await this.app.client.getText('#teamTabItem1');
-    tabName1.should.equal(config.teams[1].name);
+    const tabName1 = await this.app.client.getText('#serverTabItem1');
+    tabName1.should.equal(config.servers[1].name);
   });
 
-  it('should show only the selected team', () => {
+  it('should show only the selected server', () => {
     return this.app.client.
       waitForVisible('#mattermostView0', 2000).
       waitForVisible('#mattermostView1', 2000, true).
-      click('#teamTabItem1').
+      click('#serverTabItem1').
       waitForVisible('#mattermostView1', 2000).
       waitForVisible('#mattermostView0', 2000, true);
   });
@@ -95,7 +95,7 @@ describe('browser/index.html', function desc() {
     this.timeout(30000);
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       version: 1,
-      teams: [{
+      servers: [{
         name: 'error_1',
         url: 'http://false',
       }],
@@ -108,7 +108,7 @@ describe('browser/index.html', function desc() {
   it('should set window title by using webview\'s one', async () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       version: 1,
-      teams: [{
+      servers: [{
         name: 'title_test',
         url: `http://localhost:${serverPort}`,
       }],
@@ -123,7 +123,7 @@ describe('browser/index.html', function desc() {
   it.skip('should update window title when the activated tab\'s title is updated', async () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       version: 1,
-      teams: [{
+      servers: [{
         name: 'title_test_0',
         url: `http://localhost:${serverPort}`,
       }, {
@@ -159,7 +159,7 @@ describe('browser/index.html', function desc() {
   it.skip('should update window title when a tab is selected', async () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       version: 1,
-      teams: [{
+      servers: [{
         name: 'title_test_0',
         url: `http://localhost:${serverPort}`,
       }, {
@@ -188,7 +188,7 @@ describe('browser/index.html', function desc() {
     let windowTitle = await this.app.browserWindow.getTitle();
     windowTitle.should.equal('Title 0');
 
-    await this.app.client.click('#teamTabItem1').pause(500);
+    await this.app.client.click('#serverTabItem1').pause(500);
     windowTitle = await this.app.browserWindow.getTitle();
     windowTitle.should.equal('Title 1');
   });

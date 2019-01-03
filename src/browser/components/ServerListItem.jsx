@@ -4,25 +4,25 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-export default class TeamListItem extends React.Component {
+export default class ServerListItem extends React.Component {
   constructor(props) {
     super(props);
-    this.handleTeamRemove = this.handleTeamRemove.bind(this);
-    this.handleTeamEditing = this.handleTeamEditing.bind(this);
+    this.handleServerRemove = this.handleServerRemove.bind(this);
+    this.handleServerEditing = this.handleServerEditing.bind(this);
   }
 
-  handleTeamRemove() {
-    this.props.onTeamRemove();
+  handleServerRemove() {
+    this.props.onServerRemove();
   }
-  handleTeamEditing() {
-    this.props.onTeamEditing();
+  handleServerEditing() {
+    this.props.onServerEditing();
   }
   render() {
     return (
-      <div className='TeamListItem list-group-item'>
+      <div className='ServerListItem list-group-item'>
         <div
-          className='TeamListItem-left'
-          onClick={this.props.onTeamClick}
+          className='ServerListItem-left'
+          onClick={this.props.onServerClick}
         >
           <h4 className='list-group-item-heading'>{ this.props.name }</h4>
           <p className='list-group-item-text'>
@@ -32,12 +32,12 @@ export default class TeamListItem extends React.Component {
         <div className='pull-right'>
           <a
             href='#'
-            onClick={this.handleTeamEditing}
+            onClick={this.handleServerEditing}
           >{'Edit'}</a>
           {' - '}
           <a
             href='#'
-            onClick={this.handleTeamRemove}
+            onClick={this.handleServerRemove}
           >{'Remove'}</a>
         </div>
       </div>
@@ -45,10 +45,10 @@ export default class TeamListItem extends React.Component {
   }
 }
 
-TeamListItem.propTypes = {
+ServerListItem.propTypes = {
   name: PropTypes.string,
-  onTeamEditing: PropTypes.func,
-  onTeamRemove: PropTypes.func,
-  onTeamClick: PropTypes.func,
+  onServerEditing: PropTypes.func,
+  onServerRemove: PropTypes.func,
+  onServerClick: PropTypes.func,
   url: PropTypes.string,
 };

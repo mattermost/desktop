@@ -1,4 +1,4 @@
-.TabBar .teamTabItem span {
+.TabBar .serverTabItem span {
   display: inline-block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -18,7 +18,7 @@
   padding: 0 15px;
 }
 
-.TabBar>li.teamTabItem:not(.active)>a:hover {
+.TabBar>li.serverTabItem:not(.active)>a:hover {
   background-color: #e6e6e6;
   border: 1px solid #ddd;
   transition: background-color 0.2s ease;
@@ -58,6 +58,6 @@
   line-height: 18px;
 }
 
-.TabBar .teamTabItem-unread {
+.TabBar .serverTabItem-unread {
   font-weight: bold;
 }

@@ -184,16 +184,16 @@ function createTemplate(mainWindow, config, isDev) {
     }],
   });
 
-  const teams = settings.mergeDefaultTeams(config.teams);
+  const servers = settings.mergeDefaultServers(config.servers);
   const windowMenu = {
     label: '&Window',
     submenu: [{
       role: 'minimize',
     }, {
       role: 'close',
-    }, separatorItem, ...teams.slice(0, 9).map((team, i) => {
+    }, separatorItem, ...servers.slice(0, 9).map((server, i) => {
       return {
-        label: team.name,
+        label: server.name,
         accelerator: `CmdOrCtrl+${i + 1}`,
         click() {
           mainWindow.show(); // for OS X
@@ -206,14 +206,14 @@ function createTemplate(mainWindow, config, isDev) {
       click() {
         mainWindow.webContents.send('select-next-tab');
       },
-      enabled: (teams.length > 1),
+      enabled: (servers.length > 1),
     }, {
       label: 'Select Previous Server',
       accelerator: 'Ctrl+Shift+Tab',
       click() {
         mainWindow.webContents.send('select-previous-tab');
       },
-      enabled: (teams.length > 1),
+      enabled: (servers.length > 1),
     }],
   };
   template.push(windowMenu);

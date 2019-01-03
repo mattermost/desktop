@@ -8,7 +8,7 @@
  */
 const defaultPreferences = {
   version: 1,
-  teams: [],
+  servers: [],
   showTrayIcon: false,
   trayIconTheme: 'light',
   minimizeToTray: false,

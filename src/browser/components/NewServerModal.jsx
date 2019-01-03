@@ -6,70 +6,70 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} from 'react-bootstrap';
 
-export default class NewTeamModal extends React.Component {
+export default class NewServerModal extends React.Component {
   constructor() {
     super();
 
     this.wasShown = false;
     this.state = {
-      teamName: '',
-      teamUrl: '',
+      serverName: '',
+      serverUrl: '',
       saveStarted: false,
     };
   }
 
   initializeOnShow() {
     this.setState({
-      teamName: this.props.team ? this.props.team.name : '',
-      teamUrl: this.props.team ? this.props.team.url : '',
-      teamIndex: this.props.team ? this.props.team.index : false,
+      serverName: this.props.server ? this.props.server.name : '',
+      serverUrl: this.props.server ? this.props.server.url : '',
+      serverIndex: this.props.server ? this.props.server.index : false,
       saveStarted: false,
     });
   }
 
-  getTeamNameValidationError() {
+  getServerNameValidationError() {
     if (!this.state.saveStarted) {
       return null;
     }
-    return this.state.teamName.length > 0 ? null : 'Name is required.';
+    return this.state.serverName.length > 0 ? null : 'Name is required.';
   }
 
-  getTeamNameValidationState() {
-    return this.getTeamNameValidationError() === null ? null : 'error';
+  getServerNameValidationState() {
+    return this.getServerNameValidationError() === null ? null : 'error';
   }
 
-  handleTeamNameChange(e) {
+  handleServerNameChange(e) {
     this.setState({
-      teamName: e.target.value,
+      serverName: e.target.value,
     });
   }
 
-  getTeamUrlValidationError() {
+  getServerUrlValidationError() {
     if (!this.state.saveStarted) {
       return null;
     }
-    if (this.state.teamUrl.length === 0) {
+    if (this.state.serverUrl.length === 0) {
       return 'URL is required.';
     }
-    if (!(/^https?:\/\/.*/).test(this.state.teamUrl.trim())) {
+    if (!(/^https?:\/\/.*/).test(this.state.serverUrl.trim())) {
       return 'URL should start with http:// or https://.';
     }
     return null;
   }
 
-  getTeamUrlValidationState() {
-    return this.getTeamUrlValidationError() === null ? null : 'error';
+  getServerUrlValidationState() {
+    return this.getServerUrlValidationError() === null ? null : 'error';
   }
 
-  handleTeamUrlChange(e) {
+  handleServerUrlChange(e) {
     this.setState({
-      teamUrl: e.target.value,
+      serverUrl: e.target.value,
     });
   }
 
   getError() {
-    const nameError = this.getTeamNameValidationError();
-    const urlError = this.getTeamUrlValidationError();
+    const nameError = this.getServerNameValidationError();
+    const urlError = this.getServerUrlValidationError();
 
     if (nameError && urlError) {
       return 'Name and URL are required.';
@@ -82,8 +82,8 @@ export default class NewTeamModal extends React.Component {
   }
 
   validateForm() {
-    return this.getTeamNameValidationState() === null &&
-           this.getTeamUrlValidationState() === null;
+    return this.getServerNameValidationState() === null &&
+           this.getServerUrlValidationState() === null;
   }
 
   save() {
@@ -92,9 +92,9 @@ export default class NewTeamModal extends React.Component {
     }, () => {
       if (this.validateForm()) {
         this.props.onSave({
-          url: this.state.teamUrl,
-          name: this.state.teamName,
-          index: this.state.teamIndex,
+          url: this.state.serverUrl,
+          name: this.state.serverName,
+          index: this.state.serverIndex,
         });
       }
     });
@@ -123,7 +123,7 @@ export default class NewTeamModal extends React.Component {
     return (
       <Modal
         bsClass='modal'
-        className='NewTeamModal'
+        className='NewServerModal'
         show={this.props.show}
         id='newServerModal'
         onHide={this.props.onClose}
@@ -149,15 +149,15 @@ export default class NewTeamModal extends React.Component {
         <Modal.Body>
           <form>
             <FormGroup
-              validationState={this.getTeamNameValidationState()}
+              validationState={this.getServerNameValidationState()}
             >
               <ControlLabel>{'Server Display Name'}</ControlLabel>
               <FormControl
-                id='teamNameInput'
+                id='serverNameInput'
                 type='text'
-                value={this.state.teamName}
+                value={this.state.serverName}
                 placeholder='Server Name'
-                onChange={this.handleTeamNameChange.bind(this)}
+                onChange={this.handleServerNameChange.bind(this)}
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
@@ -166,22 +166,22 @@ export default class NewTeamModal extends React.Component {
               <HelpBlock>{'The name of the server displayed on your desktop app tab bar.'}</HelpBlock>
             </FormGroup>
             <FormGroup
-              className='NewTeamModal-noBottomSpace'
-              validationState={this.getTeamUrlValidationState()}
+              className='NewServerModal-noBottomSpace'
+              validationState={this.getServerUrlValidationState()}
             >
               <ControlLabel>{'Server URL'}</ControlLabel>
               <FormControl
-                id='teamUrlInput'
+                id='serverUrlInput'
                 type='text'
-                value={this.state.teamUrl}
+                value={this.state.serverUrl}
                 placeholder='https://example.com'
-                onChange={this.handleTeamUrlChange.bind(this)}
+                onChange={this.handleServerUrlChange.bind(this)}
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
               />
               <FormControl.Feedback/>
-              <HelpBlock className='NewTeamModal-noBottomSpace'>{'The URL of your Mattermost server. Must start with http:// or https://.'}</HelpBlock>
+              <HelpBlock className='NewServerModal-noBottomSpace'>{'The URL of your Mattermost server. Must start with http:// or https://.'}</HelpBlock>
             </FormGroup>
           </form>
         </Modal.Body>
@@ -210,10 +210,10 @@ export default class NewTeamModal extends React.Component {
   }
 }
 
-NewTeamModal.propTypes = {
+NewServerModal.propTypes = {
   onClose: PropTypes.func,
   onSave: PropTypes.func,
-  team: PropTypes.object,
+  server: PropTypes.object,
   editMode: PropTypes.bool,
   show: PropTypes.bool,
 };
