@@ -1,5 +1,9 @@
 version: '{build}'
 image: Visual Studio 2017
+branches:
+  only:
+    - master
+    - /release-.*/
 init:
 - ps: |
     # Please uncomment to have a RDP session, particularly useful to debug
@@ -9,14 +13,14 @@ init:
     # The $env:PATH is way too long, which prevents new path to be added to it.
     #Remove all the stuff added in Program Files except Git.
     # src.: https://gist.github.com/wget/a102f89c301014836aaa49a98dd06ee2
-    Write-Host "Old PATH: $env:path"
+    Write-Host "Old PATH: $env:Path"
     Write-Host "Reducing PATH..."
-    [array]$newPath=($env:path -split ';') | Where-Object { $_ -notlike "C:\Program Files*"}
-    $newPath += ($env:path -split ';') | Where-Object { $_ -like "C:\Program Files*\*Git*"}
-    $env:path = $newPath -join ';'
+    [array]$newPath=($env:Path -split ';') | Where-Object { $_ -notlike "C:\Program Files*"}
+    $newPath += ($env:Path -split ';') | Where-Object { $_ -like "C:\Program Files*\*Git*"}
+    $env:Path = $newPath -join ';'
     [Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
     [Environment]::SetEnvironmentVariable("INCLUDE", $env:INCLUDE, [System.EnvironmentVariableTarget]::User)
-    Write-Host "New PATH: $env:path"
+    Write-Host "New PATH: $env:Path"
     
     Write-Host "Updating choco packages..."
     choco upgrade all --yes
@@ -52,6 +56,9 @@ init:
     $wixDir = Join-Path -Path "$progFile" -ChildPath "$($wixDirs[0])"
     $wixDir = Join-Path -Path "$wixDir" -ChildPath "bin"
     $env:Path += ";$wixDir"
+
+    Write-Host "Getting build date..."
+    [Environment]::SetEnvironmentVariable("MATTERMOST_BUILD_DATE", (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd"), [System.EnvironmentVariableTarget]::User)
 build_script:
 - ps: |
     Write-Host "Working directory:"
@@ -118,11 +125,11 @@ build_script:
     
     heat dir .\release\win-ia32-unpacked\ -o .\scripts\msi_installer_files.wxs -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t .\scripts\msi_installer_files_replace_id.xslt -dr INSTALLDIR
     candle.exe -dPlatform=x86 .\scripts\msi_installer.wxs .\scripts\msi_installer_files.wxs -o .\scripts\
-    light.exe .\scripts\msi_installer.wixobj .\scripts\msi_installer_files.wixobj -loc .\resources\windows\msi_i18n\en_US.wxl -o .\release\mattermost-desktop-x86.msi -b ./release/win-ia32-unpacked/
+    light.exe .\scripts\msi_installer.wixobj .\scripts\msi_installer_files.wixobj -loc .\resources\windows\msi_i18n\en_US.wxl -o .\release\mattermost-desktop-$($env:APPVEYOR_BUILD_NUMBER)-x86.msi -b ./release/win-ia32-unpacked/
     
     heat dir .\release\win-unpacked\ -o .\scripts\msi_installer_files.wxs -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t .\scripts\msi_installer_files_replace_id.xslt -t .\scripts\msi_installer_files_set_win64.xslt -dr INSTALLDIR
     candle.exe -dPlatform=x64 .\scripts\msi_installer.wxs .\scripts\msi_installer_files.wxs -o .\scripts\
-    light.exe .\scripts\msi_installer.wixobj .\scripts\msi_installer_files.wixobj -loc .\resources\windows\msi_i18n\en_US.wxl -o .\release\mattermost-desktop-x64.msi -b ./release/win-unpacked/
+    light.exe .\scripts\msi_installer.wixobj .\scripts\msi_installer_files.wixobj -loc .\resources\windows\msi_i18n\en_US.wxl -o .\release\mattermost-desktop-$($env:APPVEYOR_BUILD_NUMBER)-x64.msi -b ./release/win-unpacked/
     
 #test_script:
 #- ps: |
@@ -133,14 +140,28 @@ artifacts:
     name: MsiInstallers
 
 deploy:
-  description: 'Deployment test'
-  provider: GitHub
-  auth_token:
-    secure: tf2cb9v2kDuXUd6G9jjrwXHCVXCcYk72BzpVhxLQssov6uLGiBlIRCvi4Wd0MWCV
-  artifact: MsiInstallers
-  draft: false
-  prerelease: true
-  force_update: true
+  # Nightly build
+  - provider: GitHub
+    auth_token:
+      secure: tf2cb9v2kDuXUd6G9jjrwXHCVXCcYk72BzpVhxLQssov6uLGiBlIRCvi4Wd0MWCV
+    release: $(APPVEYOR_BUILD_NUMBER) ($(APPVEYOR_REPO_COMMIT)) (via AppVeyor)
+    description: 'Dev version'
+    artifact: MsiInstallers
+    prerelease: true
+    force_update: true
+    on:
+      branch: master
+  # Taggued releases
+  - provider: GitHub
+    auth_token:
+      secure: tf2cb9v2kDuXUd6G9jjrwXHCVXCcYk72BzpVhxLQssov6uLGiBlIRCvi4Wd0MWCV
+    release: $(APPVEYOR_REPO_TAG_NAME) ($(MATTERMOST_BUILD_DATE)) (via AppVeyor)
+    description: 'Release'
+    artifact: MsiInstallers
+    draft: true
+    force_update: false
+    on:
+      APPVEYOR_REPO_TAG: true
 
 on_finish:
 - ps:
