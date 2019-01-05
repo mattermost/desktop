@@ -4,6 +4,7 @@ branches:
   only:
     - master
     - /release-.*/
+    - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
 init:
 - ps: |
     # Please uncomment to have a RDP session, particularly useful to debug
