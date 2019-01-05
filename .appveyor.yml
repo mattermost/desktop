@@ -3,7 +3,7 @@ image: Visual Studio 2017
 branches:
   only:
     - master
-    - /release-.*/
+    - /^release-.*$/
     - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
 init:
 - ps: |
