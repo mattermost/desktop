@@ -12,6 +12,10 @@ Release date: TBD
 
 ### Improvements
 
+#### All Platforms
+ - Improved the wording of the bad certificate dialog to make it scarier and harder to just allow.
+ [#900](https://github.com/mattermost/desktop/pull/900)
+
 #### Mac
  - Added auto-updater.
  [#582](https://github.com/mattermost/desktop/pull/582)
@@ -21,6 +25,10 @@ Release date: TBD
  [#892](https://github.com/mattermost/desktop/pull/892)
 
 ### Bug Fixes
+
+#### All Platforms
+ - Prevented the bug where the app would navigate to a random page.
+ [#900](https://github.com/mattermost/desktop/pull/900)
  - Fixed several typos.
  [#905](https://github.com/mattermost/desktop/pull/905)
 
