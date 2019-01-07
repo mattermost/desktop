@@ -18,7 +18,7 @@ Reflect.deleteProperty(global.Buffer); // http://electron.atom.io/docs/tutorial/
 function isReactAppInitialized() {
   const initializedRoot =
     document.querySelector('#root.channel-view') || // React 16 webapp
-    document.querySelector('#root .signup-team__container') || // React 16 login
+    document.querySelector('#root .signup-server__container') || // React 16 login
     document.querySelector('div[data-reactroot]'); // Older React apps
   if (initializedRoot === null) {
     return false;
@@ -83,10 +83,10 @@ function getUnreadCount() {
   // Note: the active channel doesn't have '.unread-title'.
   let unreadCount = document.getElementsByClassName('unread-title').length;
 
-  // unreadCount in team sidebar
-  const teamSideBar = document.getElementsByClassName('team-sidebar'); // team-sidebar doesn't have id
-  if (teamSideBar.length === 1) {
-    unreadCount += teamSideBar[0].getElementsByClassName('unread').length;
+  // unreadCount in server sidebar
+  const serverSideBar = document.getElementsByClassName('server-sidebar'); // server-sidebar doesn't have id
+  if (serverSideBar.length === 1) {
+    unreadCount += serverSideBar[0].getElementsByClassName('unread').length;
   }
 
   // mentionCount in sidebar
