@@ -7,6 +7,9 @@ const pastDefaultPreferences = {
   0: {
     url: '',
   },
+  1: {
+    teams: [],
+  },
 };
 
 pastDefaultPreferences[`${defaultPreferences.version}`] = defaultPreferences;
