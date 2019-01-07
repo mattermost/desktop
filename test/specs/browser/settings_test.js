@@ -52,7 +52,7 @@ describe('browser/settings.html', function desc() {
       await this.app.start();
 
       await this.app.client.waitUntilWindowLoaded().
-        waitForVisible('#newServerModal').
+        waitForVisible('#newServerModal', 10000).
         click('#cancelNewServerModal');
       let isCloseButtonEnabled = await this.app.client.isEnabled('#btnClose');
       isCloseButtonEnabled.should.equal(false);
