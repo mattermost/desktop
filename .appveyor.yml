@@ -26,22 +26,8 @@ init:
     Write-Host "Updating choco packages..."
     choco upgrade all --yes
     
-    # As we are unable to programmatically determine the install location
-    # for the packages (even via Get-AppInstallLocation.ps1 from
-    # chocolatey-core.extension), let's detect it ourselves.
-    # We are using null coalesce.
-    # src.: https://stackoverflow.com/a/19015642/3514658
-    
-    # Force yarn specific version, because latest build has regressions
-    # preventing this app from being built.
-    # src.: https://github.com/yarnpkg/yarn/issues/6622
-    Write-Host "Installing yarn..."
-    choco install yarn --yes --version=1.10.1
-    # Yarn is always installed as a 32 bits based program.
-    # C:\Program Files (x86)\Yarn\bin
-    $progFile = (${env:ProgramFiles(x86)}, ${env:ProgramFiles} -ne $null)[0]
-    $yarnDir = Join-Path -Path "$progFile" -ChildPath "Yarn/bin"
-    $env:Path += ";$yarnDir"
+    Write-Host "Installing nodejs-lts..."
+    choco install nodejs-lts --yes
     
     # npm is always installed as a nodejs dependency. 64 bits version available.
     # C:\Program Files\nodejs\node_modules\npm\bin
@@ -64,11 +50,11 @@ build_script:
 - ps: |
     Write-Host "Working directory:"
     Get-Location
-    Write-Host "Running yarn..."
-    yarn
-    Write-Host "Running npm run build..."
+    Write-Host "Installing dependencies (running npm install)..."
+    npm install
+    Write-Host "Building JS code (running npm run build)..."
     npm run build
-    Write-Host "Running npm run package:windows..."
+    Write-Host "Packaging for Windows (running npm run package:windows)..."
     npm run package:windows
     
     Write-Host "Cleaning build dir..."
