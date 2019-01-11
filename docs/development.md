@@ -6,14 +6,13 @@
 - C++ environment which supports C++11 (e.g. VS 2015, Xcode, GCC)
 - Python 2.7
 - Node.js 8.2.0 or later
-- Yarn
 - Git
 
 ### Installing dependencies
 After installation, dependencies of `src/` directory are also installed.
 
 ```
-$ yarn
+$ npm install
 ```
 
 ### Building
