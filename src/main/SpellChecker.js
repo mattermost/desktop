@@ -70,7 +70,24 @@ export default class SpellChecker extends EventEmitter {
   }
 
   getSuggestions(word, maxSuggestions) {
-    return this.dict.getSuggestions(word, maxSuggestions);
+    const suggestions = this.dict.getSuggestions(word, maxSuggestions);
+
+    const firstCharWord = word.charAt(0);
+    let i;
+    for (i = 0; i < suggestions.length; i++) {
+      if (suggestions[i].charAt(0).toUpperCase() === firstCharWord.toUpperCase()) {
+        suggestions[i] = firstCharWord + suggestions[i].slice(1);
+      }
+    }
+
+    const uniqueSuggestions = suggestions.reduce((a, b) => {
+      if (a.indexOf(b) < 0) {
+        a.push(b);
+      }
+      return a;
+    }, []);
+
+    return uniqueSuggestions;
   }
 }
 

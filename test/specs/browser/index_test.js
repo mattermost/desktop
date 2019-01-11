@@ -8,6 +8,7 @@ const http = require('http');
 const path = require('path');
 
 const env = require('../../modules/environment');
+const {asyncSleep} = require('../../modules/utils');
 
 describe('browser/index.html', function desc() {
   this.timeout(30000);
@@ -35,10 +36,11 @@ describe('browser/index.html', function desc() {
     this.server = http.createServer(serverCallback).listen(serverPort, '127.0.0.1');
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify(config));
+    await asyncSleep(1000);
     this.app = env.getSpectronApp();
-    return this.app.start();
+    await this.app.start();
   });
 
   afterEach(async () => {
@@ -56,15 +58,12 @@ describe('browser/index.html', function desc() {
       url: env.mattermostURL,
     }));
     await this.app.restart();
-    await this.app.client.waitUntilWindowLoaded();
 
     const existing = await this.app.client.isExisting('#tabBar');
     existing.should.be.false;
   });
 
   it('should set src of webview from config file', async () => {
-    await this.app.client.waitUntilWindowLoaded();
-
     const src0 = await this.app.client.getAttribute('#mattermostView0', 'src');
     src0.should.equal(config.teams[0].url);
 
@@ -76,8 +75,6 @@ describe('browser/index.html', function desc() {
   });
 
   it('should set name of tab from config file', async () => {
-    await this.app.client.waitUntilWindowLoaded();
-
     const tabName0 = await this.app.client.getText('#teamTabItem0');
     tabName0.should.equal(config.teams[0].name);
 
@@ -86,7 +83,7 @@ describe('browser/index.html', function desc() {
   });
 
   it('should show only the selected team', () => {
-    return this.app.client.waitUntilWindowLoaded().
+    return this.app.client.
       waitForVisible('#mattermostView0', 2000).
       waitForVisible('#mattermostView1', 2000, true).
       click('#teamTabItem1').
@@ -104,7 +101,7 @@ describe('browser/index.html', function desc() {
       }],
     }));
     await this.app.restart();
-    return this.app.client.waitUntilWindowLoaded().
+    return this.app.client.
       waitForVisible('#mattermostView0-fail', 20000);
   });
 
@@ -117,7 +114,7 @@ describe('browser/index.html', function desc() {
       }],
     }));
     await this.app.restart();
-    await this.app.client.waitUntilWindowLoaded().pause(2000);
+    await this.app.client.pause(2000);
     const windowTitle = await this.app.browserWindow.getTitle();
     windowTitle.should.equal('Mattermost Desktop testing html');
   });
@@ -135,7 +132,7 @@ describe('browser/index.html', function desc() {
       }],
     }));
     await this.app.restart();
-    await this.app.client.waitUntilWindowLoaded().pause(500);
+    await this.app.client.pause(500);
 
     // Note: Indices of webview are correct.
     // Somehow they are swapped.
@@ -174,7 +171,7 @@ describe('browser/index.html', function desc() {
 
     // Note: Indices of webview are correct.
     // Somehow they are swapped.
-    await this.app.client.waitUntilWindowLoaded().pause(500);
+    await this.app.client.pause(500);
 
     await this.app.client.
       windowByIndex(2).
@@ -198,7 +195,6 @@ describe('browser/index.html', function desc() {
 
   it('should open the new server prompt after clicking the add button', async () => {
     // See settings_test for specs that cover the actual prompt
-    await this.app.client.waitUntilWindowLoaded();
     await this.app.client.click('#addServerButton').pause(500);
     const isModalExisting = await this.app.client.isExisting('#newServerModal');
     isModalExisting.should.be.true;

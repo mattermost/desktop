@@ -4,24 +4,30 @@
 'use strict';
 
 const spawnSync = require('child_process').spawnSync;
+const path = require('path');
 
 const path7za = require('7zip-bin').path7za;
 
 const pkg = require('../src/package.json');
 const appVersion = pkg.version;
-const productName = pkg.productName;
+const name = pkg.name;
 
-function renameInZip(zipPath, oldName, newName) {
-  const result = spawnSync(path7za, ['rn', zipPath, oldName, newName]);
-  return result.status === 0;
+function disableInstallUpdate(zipPath) {
+  const zipFullPath = path.resolve(__dirname, '..', zipPath);
+  const appUpdaterConfigFile = 'app-updater-config.json';
+
+  const addResult = spawnSync(path7za, ['a', zipFullPath, appUpdaterConfigFile], {cwd: 'resources/windows'});
+  if (addResult.status !== 0) {
+    throw new Error(`7za a returned non-zero exit code for ${zipPath}`);
+  }
+
+  const renameResult = spawnSync(path7za, ['rn', zipFullPath, appUpdaterConfigFile, `resources/${appUpdaterConfigFile}`]);
+  if (renameResult.status !== 0) {
+    throw new Error(`7za rn returned non-zero exit code for ${zipPath}`);
+  }
 }
 
 console.log('Manipulating 64-bit zip...');
-if (!renameInZip(`release/${productName}-${appVersion}-win.zip`, 'win-unpacked', `${productName}-${appVersion}-win64`)) {
-  throw new Error('7za returned non-zero exit code for 64-bit zip');
-}
-
+disableInstallUpdate(`release/${name}-${appVersion}-win-x64.zip`);
 console.log('Manipulating 32-bit zip...');
-if (!renameInZip(`release/${productName}-${appVersion}-ia32-win.zip`, 'win-ia32-unpacked', `${productName}-${appVersion}-win32`)) {
-  throw new Error('7za returned non-zero exit code for 32-bit zip');
-}
+disableInstallUpdate(`release/${name}-${appVersion}-win-ia32.zip`);

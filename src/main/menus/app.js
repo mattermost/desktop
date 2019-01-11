@@ -3,7 +3,7 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {app, dialog, Menu, shell} from 'electron';
+import {app, dialog, ipcMain, Menu, shell} from 'electron';
 
 import settings from '../../common/settings';
 import buildConfig from '../../common/config/buildConfig';
@@ -231,6 +231,14 @@ function createTemplate(mainWindow, config, isDev) {
     label: `Version ${app.getVersion()}`,
     enabled: false,
   });
+  if (buildConfig.enableAutoUpdater) {
+    submenu.push({
+      label: 'Check for Updates...',
+      click() {
+        ipcMain.emit('check-for-updates', true);
+      },
+    });
+  }
   template.push({label: '&Help', submenu});
   return template;
 }

@@ -66,9 +66,13 @@ function getUnreadCount() {
     this.mentionCount = 0;
   }
 
-  // LHS not found => Log out => Count should be 0.
+  // LHS not found => Log out => Count should be 0, but session may be expired.
   if (document.getElementById('sidebar-left') === null) {
-    ipcRenderer.sendToHost('onUnreadCountChange', 0, 0, false, false);
+    const extraParam = (new URLSearchParams(window.location.search)).get('extra');
+    const sessionExpired = extraParam === 'expired';
+
+    ipcRenderer.sendToHost('onBadgeChange', sessionExpired, 0, 0, false, false);
+    this.sessionExpired = sessionExpired;
     this.unreadCount = 0;
     this.mentionCount = 0;
     setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
@@ -137,7 +141,7 @@ function getUnreadCount() {
       const activeChannel = document.querySelector('.active .sidebar-channel');
       const closeButton = activeChannel.getElementsByClassName('btn-close');
       if (closeButton.length === 1 && closeButton[0].getAttribute('aria-describedby') === 'remove-dm-tooltip') {
-        // If active channel is DM, all posts is treated as menion.
+        // If active channel is DM, all posts is treated as mention.
         isMentioned = true;
         break;
       } else {
@@ -152,11 +156,12 @@ function getUnreadCount() {
     }
   }
 
-  if (this.unreadCount !== unreadCount || this.mentionCount !== mentionCount || isUnread || isMentioned) {
-    ipcRenderer.sendToHost('onUnreadCountChange', unreadCount, mentionCount, isUnread, isMentioned);
+  if (this.sessionExpired || this.unreadCount !== unreadCount || this.mentionCount !== mentionCount || isUnread || isMentioned) {
+    ipcRenderer.sendToHost('onBadgeChange', false, unreadCount, mentionCount, isUnread, isMentioned);
   }
   this.unreadCount = unreadCount;
   this.mentionCount = mentionCount;
+  this.sessionExpired = false;
   setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
 }
 setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
@@ -187,7 +192,7 @@ function setSpellChecker() {
   resetMisspelledState();
 }
 setSpellChecker();
-ipcRenderer.on('set-spellcheker', setSpellChecker);
+ipcRenderer.on('set-spellchecker', setSpellChecker);
 
 // mattermost-webapp is SPA. So cache is not cleared due to no navigation.
 // We needed to manually clear cache to free memory in long-term-use.

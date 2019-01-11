@@ -105,7 +105,7 @@ The Mattermost desktop application offers:
 - Icon notifications from Windows Task Bar
 - Desktop notifications
 
-See the Mattermost [help documention](http://docs.mattermost.com/help/getting-started/signing-in.html) for how to use the Mattermost team site.
+See the Mattermost [help documentation](http://docs.mattermost.com/help/getting-started/signing-in.html) for how to use the Mattermost team site.
 
 
 ## Settings Page
@@ -121,7 +121,7 @@ The Settings Page is available from the **File** menu under **Settings** (Click 
    - **Hide Menu Bar** (Windows, Linux)
       - This option hides the menu bar. Press "Alt" to show it.
    - **Show Icon on Menu Bar** (OS X)
-      - The icon apeears on menu bar to indicate whether there are new messages or mention.
+      - The icon appears on menu bar to indicate whether there are new messages or mention.
    - **Allow insecure contents**
       - If your team is hosted on `https://`, images with `http://` are not rendered by default.
         This option allows such images to be rendered, but please be careful for security.
@@ -180,7 +180,7 @@ Below lists menu options (shortcut keys are listed in brackets, `Ctrl` becomes `
 
 Mattermost lets users configure [desktop notifications](http://docs.mattermost.com/help/getting-started/configuring-notifications.html#desktop-notifications) to alert users to new events in a team site.
 
-For the Mattermost Windows application, these appear as ballon notifications from the task bar on Windows 7 and Windows 8.1, and as a "toast" pop-up on Windows 10.
+For the Mattermost Windows application, these appear as balloon notifications from the task bar on Windows 7 and Windows 8.1, and as a "toast" pop-up on Windows 10.
 
 
 ## Start Menu and Task Bar shortcuts (Windows)

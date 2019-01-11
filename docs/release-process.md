@@ -61,7 +61,7 @@ Pre-work for the current release begins at the code complete date of the previou
     - Post links to final tickets for next RC to the Desktop App channel
     - Submit PRs for hotfixes against the release branch, and review, test and merge prior to next RC
 4. Build:
-    - Push next RC to acceptance and announce in Destkop App channel with new RC link
+    - Push next RC to acceptance and announce in Desktop App channel with new RC link
 5. PM:
     - Test the new RC to verify fixes merged to the release branch work and post in Desktop App channel after testing
     - Update the meta issue with download links to the new RCs and a list of approved fixes
@@ -152,4 +152,4 @@ If a bug fix release is required, run through the following steps:
     - Post and review [Mattermost Security Updates](https://about.mattermost.com/security-updates/) for the Desktop App
     - Update Security Issues spreadsheet with issue number from posted update (e.g. v3.2.0.1)
     - Confirm the Security Researchers list on the [Responsible Disclosure Policy](https://www.mattermost.org/responsible-disclosure-policy/) is up to date
-    - Review community installers for the Desktop App and update version numbers if there are any discrepencies https://www.mattermost.org/installation/
+    - Review community installers for the Desktop App and update version numbers if there are any discrepancies https://www.mattermost.org/installation/

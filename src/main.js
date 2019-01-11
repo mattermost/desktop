@@ -6,6 +6,8 @@
 import os from 'os';
 import path from 'path';
 
+import {URL} from 'url';
+
 import electron from 'electron';
 const {
   app,
@@ -23,9 +25,11 @@ import {parse as parseArgv} from 'yargs';
 
 import {protocols} from '../electron-builder.json';
 
-import squirrelStartup from './main/squirrelStartup';
 import AutoLauncher from './main/AutoLauncher';
 import CriticalErrorHandler from './main/CriticalErrorHandler';
+import upgradeAutoLaunch from './main/autoLaunch';
+import autoUpdater from './main/autoUpdater';
+import buildConfig from './common/config/buildConfig';
 
 const criticalErrorHandler = new CriticalErrorHandler();
 
@@ -34,11 +38,7 @@ process.on('uncaughtException', criticalErrorHandler.processUncaughtExceptionHan
 global.willAppQuit = false;
 
 app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
-if (squirrelStartup(() => {
-  app.quit();
-})) {
-  global.willAppQuit = true;
-}
+
 import settings from './common/settings';
 import CertificateStore from './main/certificateStore';
 const certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
@@ -176,14 +176,19 @@ const trayImages = (() => {
   }
 })();
 
-// If there is already an instance, activate the window in the existing instace and quit this one
-if (app.makeSingleInstance((commandLine/*, workingDirectory*/) => {
+// If there is already an instance, activate the window in the existing instance and quit this one
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.exit();
+  global.willAppQuit = true;
+}
+app.on('second-instance', (event, secondArgv) => {
   // Protocol handler for win32
   // argv: An array of the second instance’s (command line / deep linked) arguments
   if (process.platform === 'win32') {
     // Keep only command line / deep linked arguments
-    if (Array.isArray(commandLine.slice(1)) && commandLine.slice(1).length > 0) {
-      setDeeplinkingUrl(commandLine.slice(1)[0]);
+    if (Array.isArray(secondArgv.slice(1)) && secondArgv.slice(1).length > 0) {
+      setDeeplinkingUrl(secondArgv.slice(1)[0]);
       mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
     }
   }
@@ -196,9 +201,7 @@ if (app.makeSingleInstance((commandLine/*, workingDirectory*/) => {
       mainWindow.show();
     }
   }
-})) {
-  app.exit();
-}
+});
 
 function shouldShowTrayIcon() {
   if (process.platform === 'win32') {
@@ -307,22 +310,34 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
     if (certificateStore.isExisting(url)) {
       detail = 'Certificate is different from previous one.\n\n' + detail;
     }
-
     dialog.showMessageBox(mainWindow, {
-      title: 'Certificate error',
-      message: `Do you trust certificate from "${certificate.issuerName}"?`,
-      detail,
-      type: 'warning',
+      title: 'Certificate Error',
+      message: 'There is a configuration issue with this Mattermost server, or someone is trying to intercept your connection. You also may need to sign into the Wi-Fi you are connected to using your web browser.',
+      type: 'error',
       buttons: [
-        'Yes',
-        'No',
+        'More Details',
+        'Cancel Connection',
       ],
       cancelId: 1,
     }, (response) => {
       if (response === 0) {
-        certificateStore.add(url, certificate);
-        certificateStore.save();
-        webContents.loadURL(url);
+        dialog.showMessageBox(mainWindow, {
+          title: 'Certificate Error',
+          message: `Certificate from "${certificate.issuerName}" is not trusted.`,
+          detail,
+          type: 'error',
+          buttons: [
+            'Trust Insecure Certificate',
+            'Cancel Connection',
+          ],
+          cancelId: 1,
+        }, (responseTwo) => { //eslint-disable-line max-nested-callbacks
+          if (responseTwo === 0) {
+            certificateStore.add(url, certificate);
+            certificateStore.save();
+            webContents.loadURL(url);
+          }
+        });
       }
     });
     callback(false);
@@ -330,7 +345,7 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
 });
 
 app.on('gpu-process-crashed', (event, killed) => {
-  console.log(`The GPU process has crached (killed = ${killed})`);
+  console.log(`The GPU process has crashed (killed = ${killed})`);
 });
 
 const loginCallbackMap = new Map();
@@ -350,8 +365,8 @@ app.on('login', (event, webContents, request, authInfo, callback) => {
 
 allowProtocolDialog.init(mainWindow);
 
-ipcMain.on('download-url', (event, URL) => {
-  downloadURL(mainWindow, URL, (err) => {
+ipcMain.on('download-url', (event, url) => {
+  downloadURL(mainWindow, url, (err) => {
     if (err) {
       dialog.showMessageBox(mainWindow, {
         type: 'error',
@@ -416,6 +431,10 @@ app.on('ready', () => {
   }
   appState.lastAppVersion = app.getVersion();
 
+  if (!global.isDev) {
+    upgradeAutoLaunch();
+  }
+
   if (global.isDev) {
     installExtension(REACT_DEVELOPER_TOOLS).
       then((name) => console.log(`Added Extension:  ${name}`)).
@@ -452,6 +471,9 @@ app.on('ready', () => {
   mainWindow.on('unresponsive', criticalErrorHandler.windowUnresponsiveHandler.bind(criticalErrorHandler));
   mainWindow.webContents.on('crashed', () => {
     throw new Error('webContents \'crashed\' event has been emitted');
+  });
+  mainWindow.on('ready-to-show', () => {
+    autoUpdater.checkForUpdates();
   });
 
   ipcMain.on('notified', () => {
@@ -528,7 +550,14 @@ app.on('ready', () => {
       }
 
       if (trayIcon && !trayIcon.isDestroyed()) {
-        if (arg.mentionCount > 0) {
+        if (arg.sessionExpired) {
+          // reuse the mention icon when the session is expired
+          trayIcon.setImage(trayImages.mention);
+          if (process.platform === 'darwin') {
+            trayIcon.setPressedImage(trayImages.clicked.mention);
+          }
+          trayIcon.setToolTip('Session Expired: Please sign in to continue receiving notifications.');
+        } else if (arg.mentionCount > 0) {
           trayIcon.setImage(trayImages.mention);
           if (process.platform === 'darwin') {
             trayIcon.setPressedImage(trayImages.clicked.mention);
@@ -640,6 +669,46 @@ app.on('ready', () => {
   permissionManager = new PermissionManager(permissionFile, trustedURLs);
   session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionManager));
 
+  if (buildConfig.enableAutoUpdater) {
+    const updaterConfig = autoUpdater.loadConfig();
+    autoUpdater.initialize(appState, mainWindow, updaterConfig.isNotifyOnly());
+    ipcMain.on('check-for-updates', autoUpdater.checkForUpdates);
+    mainWindow.once('show', () => {
+      if (autoUpdater.shouldCheckForUpdatesOnStart(appState.updateCheckedDate)) {
+        ipcMain.emit('check-for-updates');
+      } else {
+        setTimeout(() => {
+          ipcMain.emit('check-for-updates');
+        }, autoUpdater.UPDATER_INTERVAL_IN_MS);
+      }
+    });
+  }
+
   // Open the DevTools.
   // mainWindow.openDevTools();
+});
+
+app.on('web-contents-created', (dc, contents) => {
+  contents.on('will-attach-webview', (event, webPreferences) => {
+    webPreferences.nodeIntegration = false;
+  });
+  contents.on('will-navigate', (event, navigationUrl) => {
+    const parsedUrl = new URL(navigationUrl);
+    const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => new URL(team.url)); //eslint-disable-line max-nested-callbacks
+
+    let trusted = false;
+    for (const url of trustedURLs) {
+      if (parsedUrl.origin === url.origin) {
+        trusted = true;
+        break;
+      }
+    }
+
+    if (!trusted) {
+      event.preventDefault();
+    }
+  });
+  contents.on('new-window', (event) => {
+    event.preventDefault();
+  });
 });

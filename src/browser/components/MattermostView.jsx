@@ -22,25 +22,6 @@ const preloadJS = `file://${remote.app.getAppPath()}/browser/webview/mattermost_
 const ERR_NOT_IMPLEMENTED = -11;
 const U2F_EXTENSION_URL = 'chrome-extension://kmendfapggjehodndflmmgagdbamhnfd/u2f-comms.html';
 
-function extractFileURL(message) {
-  const matched = message.match(/Not allowed to load local resource:\s*(.+)/);
-  if (matched) {
-    return matched[1];
-  }
-  return '';
-}
-
-function isNetworkDrive(fileURL) {
-  const u = url.parse(fileURL);
-  if (u.protocol === 'file:' && u.host) {
-    // Disallow localhost, 127.0.0.1, ::1.
-    if (!u.host.match(/^localhost$|^127\.0\.0\.1$|^\[::1\]$/)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 export default class MattermostView extends React.Component {
   constructor(props) {
     super(props);
@@ -66,9 +47,9 @@ export default class MattermostView extends React.Component {
     this.webviewRef = React.createRef();
   }
 
-  handleUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned) {
-    if (this.props.onUnreadCountChange) {
-      this.props.onUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned);
+  handleUnreadCountChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) {
+    if (this.props.onBadgeChange) {
+      this.props.onBadgeChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
     }
   }
 
@@ -104,7 +85,7 @@ export default class MattermostView extends React.Component {
       }
     });
 
-    // Open link in browserWindow. for exmaple, attached files.
+    // Open link in browserWindow. for example, attached files.
     webview.addEventListener('new-window', (e) => {
       const currentURL = url.parse(webview.getURL());
       const destURL = url.parse(e.url);
@@ -117,7 +98,7 @@ export default class MattermostView extends React.Component {
         if (destURL.path.match(/^\/api\/v[3-4]\/public\/files\//)) {
           ipcRenderer.send('download-url', e.url);
         } else {
-          // New window should disable nodeIntergration.
+          // New window should disable nodeIntegration.
           window.open(e.url, remote.app.getName(), 'nodeIntegration=no, show=yes');
         }
       } else {
@@ -138,7 +119,7 @@ export default class MattermostView extends React.Component {
             if (this.props.onSelectSpellCheckerLocale) {
               this.props.onSelectSpellCheckerLocale(locale);
             }
-            webview.send('set-spellcheker');
+            webview.send('set-spellchecker');
           },
         });
         this.setState({isContextMenuAdded: true});
@@ -158,14 +139,13 @@ export default class MattermostView extends React.Component {
           isLoaded: true,
         });
         break;
-      case 'onUnreadCountChange': {
-        const unreadCount = event.args[0];
-        const mentionCount = event.args[1];
-
-        // isUnread and isMentioned is pulse flag.
-        const isUnread = event.args[2];
-        const isMentioned = event.args[3];
-        self.handleUnreadCountChange(unreadCount, mentionCount, isUnread, isMentioned);
+      case 'onBadgeChange': {
+        const sessionExpired = event.args[0];
+        const unreadCount = event.args[1];
+        const mentionCount = event.args[2];
+        const isUnread = event.args[3];
+        const isMentioned = event.args[4];
+        self.handleUnreadCountChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
 
         break;
       }
@@ -192,19 +172,9 @@ export default class MattermostView extends React.Component {
       case 1:
         console.warn(message);
         break;
-      case 2: {
-        const fileURL = extractFileURL(e.message);
-        if (isNetworkDrive(fileURL)) {
-          // Network drive: Should be allowed.
-          if (!shell.openExternal(decodeURI(fileURL))) {
-            console.log(`[${this.props.name}] shell.openExternal failed: ${fileURL}`);
-          }
-        } else {
-          // Local drive such as 'C:\Windows': Should not be allowed.
-          console.error(message);
-        }
+      case 2:
+        console.error(message);
         break;
-      }
       default:
         console.log(message);
         break;
@@ -326,7 +296,7 @@ MattermostView.propTypes = {
   name: PropTypes.string,
   id: PropTypes.string,
   onTargetURLChange: PropTypes.func,
-  onUnreadCountChange: PropTypes.func,
+  onBadgeChange: PropTypes.func,
   src: PropTypes.string,
   active: PropTypes.bool,
   withTab: PropTypes.bool,

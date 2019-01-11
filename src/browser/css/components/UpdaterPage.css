@@ -1,0 +1,16 @@
+.UpdaterPage-heading {
+  font-size: 20pt;
+  margin: 10px 0px;
+}
+
+.UpdaterPage-skipButton {
+  padding-left: 0px;
+}
+
+.UpdaterPage-footer {
+  padding: 1em 0;
+}
+
+.UpdaterPage .progress-bar {
+  min-width: 2em;
+}
