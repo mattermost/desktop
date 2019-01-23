@@ -9,6 +9,7 @@
   "homepage": "https://about.mattermost.com",
   "license": "Apache-2.0",
   "dependencies": {
+    "@warren-bank/electron-portable-paths": "^3.0.8",
     "auto-launch": "^5.0.5",
     "bootstrap": "^3.3.7",
     "electron-context-menu": "^0.10.1",
