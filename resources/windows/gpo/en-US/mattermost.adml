@@ -11,6 +11,24 @@
 
 If this policy is disabled or not configured, the Mattermost Desktop Application receives updates.
 </string>
+      <string id="PreventAddNewServer">Prevent adding new Mattermost server</string>
+      <string id="PreventAddNewServer_Explain">If this policy is enabled, it is not possible to add new servers.
+
+If this policy is disabled or not configured, it is possible to add new servers.
+</string>
+      <string id="ServerURL">Server addresses</string>
+      <string id="ServerURL_Explain">If this policy is enabled, you can set one or more Mattermost server addresses. Use the syntax Servername,https://server.com|Servername2,https://server2.com
+
+If this policy is disabled or not configured, no servers are preconfigured.</string>
+    </stringTable>
+    <presentationTable>
+	<presentation id="ServerURL">
+        <text>URL:</text>
+        <textBox refId="ServerURL">
+          <label/>
+        </textBox>
+      </presentation>
+	  </presentationTable>
     </stringTable>
   </resources>
 </policyDefinitionResources>

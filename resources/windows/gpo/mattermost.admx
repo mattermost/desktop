@@ -24,5 +24,22 @@
         <decimal value="0"/>
       </disabledValue>
     </policy>
-   </policies>
+    <policy name="PreventAddNewServer" class="Both" displayName="$(string.PreventAddNewServer)" explainText="$(string.PreventAddNewServer_Explain)" key="Software\Policies\Mattermost" valueName="PreventAddNewServer">
+      <parentCategory ref="mattermost"/>
+      <supportedOn ref="SUPPORTED_MMD43"/>
+      <enabledValue>
+        <decimal value="1"/>
+      </enabledValue>
+      <disabledValue>
+        <decimal value="0"/>
+      </disabledValue>
+    </policy>
+    <policy name="ServerURL" class="Both" displayName="$(string.ServerURL)" explainText="$(string.ServerURL_Explain)" key="Software\Policies\Mattermost" presentation="$(presentation.ServerURL)" >
+      <parentCategory ref="mattermost"/>
+      <supportedOn ref="SUPPORTED_MMD43"/>
+      <elements >
+        <text id="ServerURL" valueName="URL" required="true" />
+      </elements>
+    </policy>
+  </policies>
 </policyDefinitions>
