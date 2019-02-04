@@ -15,6 +15,8 @@ Release date: TBD
 #### All Platforms
  - Improved the wording of the bad certificate dialog to make it scarier and harder to just allow.
  [#900](https://github.com/mattermost/desktop/pull/900)
+ - Improved the styling of the mention badge in tab bar.
+ [#924](https://github.com/mattermost/desktop/pull/924)
 
 #### Mac
  - Added auto-updater.
