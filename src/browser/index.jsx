@@ -28,7 +28,7 @@ const teams = settings.mergeDefaultTeams(AppConfig.data.teams);
 remote.getCurrentWindow().removeAllListeners('focus');
 
 if (teams.length === 0) {
-  window.location = 'settings.html';
+  remote.getCurrentWindow().loadFile('browser/settings.html');
 }
 
 function showBadgeWindows(sessionExpired, unreadCount, mentionCount) {
