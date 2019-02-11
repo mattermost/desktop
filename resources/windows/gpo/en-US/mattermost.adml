@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<policyDefinitionResources revision="0.1" schemaVersion="1.0" >
+  <displayName/>
+  <description/>
+  <resources >
+    <stringTable >
+      <string id="SUPPORTED_MMD43">Mattermost Desktop Application 4.3 or later</string>
+      <string id="mattermost">Mattermost</string>
+      <string id="DisableAutoUpdate">Disable Auto Updater</string>
+      <string id="DisableAutoUpdate_Explain">If this policy is enabled, the Mattermost Desktop Application does not receive udpates.
+
+If this policy is disabled or not configured, the Mattermost Desktop Application receives updates.
+</string>
+    </stringTable>
+  </resources>
+</policyDefinitionResources>
