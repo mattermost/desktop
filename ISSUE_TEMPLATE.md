@@ -37,4 +37,6 @@ If you can, link to the line of code that might be responsible for the problem.
 
 ---
 
-JIRA tickets are created for all valid issues and then Help Wanted GitHub issues are opened up for those JIRA tickets that our developer teams are not immediately working on. The internal goal is to bring the desktop repo into our day-day process with the hope that this process change will mean more frequent desktop releases with faster feature development and turnaround time on bug fixes.
+[JIRA tickets](https://mattermost.atlassian.net/browse/MM-14183?jql=labels%20%3D%20desktop) are created for all valid bug reports filed here. Bugs and features that the Mattermost core team are not immediately working on are opened as [Help Wanted GitHub issues](https://developers.mattermost.com/contribute/getting-started/contribution-checklist/) and welcome to contributions. 
+
+Our goal is to bring the Mattermost desktop repository into our day-to-day internal process with the hope of having more frequent desktop releases with faster feature development and turnaround time on bug fixes.
