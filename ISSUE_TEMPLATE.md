@@ -34,3 +34,7 @@ Please include relevant error messages and/or screenshots.
 <!--
 If you can, link to the line of code that might be responsible for the problem.
 -->
+
+---
+
+JIRA tickets are created for all valid issues and then Help Wanted GitHub issues are opened up for those JIRA tickets that our developer teams are not immediately working on. The internal goal is to bring the desktop repo into our day-day process with the hope that this process change will mean more frequent desktop releases with faster feature development and turnaround time on bug fixes.
