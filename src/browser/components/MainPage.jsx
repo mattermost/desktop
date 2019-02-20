@@ -112,6 +112,10 @@ export default class MainPage extends React.Component {
       focusListener();
     });
 
+    ipcRenderer.on('open-devtool', () => {
+      document.getElementById(`mattermostView${self.state.key}`).openDevTools();
+    });
+
     //goBack and goForward
     ipcRenderer.on('go-back', () => {
       const mattermost = self.refs[`mattermostView${self.state.key}`];
