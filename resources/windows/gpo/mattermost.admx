@@ -41,5 +41,15 @@
         <text id="ServerURL" valueName="URL" required="true" />
       </elements>
     </policy>
+    <policy name="PreventGPU" class="Machine" displayName="$(string.PreventGPU)" explainText="$(string.PreventGPU_Explain)" key="Software\Policies\Mattermost" valueName="PreventGPU">
+      <parentCategory ref="mattermost"/>
+      <supportedOn ref="SUPPORTED_MMD44"/>
+      <enabledValue>
+        <decimal value="1"/>
+      </enabledValue>
+      <disabledValue>
+        <decimal value="0"/>
+      </disabledValue>
+    </policy>
   </policies>
 </policyDefinitions>
