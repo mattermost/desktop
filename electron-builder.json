@@ -56,6 +56,7 @@
       "zip",
       "dmg"
     ],
+    "darkModeSupport": true,
     "extraResources": [
       {
         "filter": [
