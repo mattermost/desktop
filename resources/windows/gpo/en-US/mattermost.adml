@@ -21,7 +21,6 @@ If this policy is disabled or not configured, it is possible to add new servers.
       <string id="ServerURL_Explain">If this policy is enabled, you can set one or more Mattermost server addresses. Use the syntax Servername,https://server.com|Servername2,https://server2.com
 
 If this policy is disabled or not configured, no servers are preconfigured.</string>
-    </stringTable>
 	  <string id="PreventGPU">Disable GPU hardware acceleration</string>
       <string id="PreventGPU_Explain">If this policy is enabled, the Mattermost Desktop Application does not use the GPU for hardware acceleration.
 
@@ -35,6 +34,5 @@ If this policy is disabled or not configured, the Mattermost Desktop Application
         </textBox>
       </presentation>
 	  </presentationTable>
-    </stringTable>
-  </resources>
+	</resources>
 </policyDefinitionResources>
