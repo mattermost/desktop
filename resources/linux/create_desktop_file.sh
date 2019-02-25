@@ -14,5 +14,6 @@ Terminal=false
 Type=Application
 Icon=${FULL_PATH}/icon.svg
 Categories=Network;InstantMessaging;
+MimeType=x-scheme-handler/mattermost;
 EOS
 chmod +x Mattermost.desktop
