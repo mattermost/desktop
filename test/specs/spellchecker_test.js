@@ -19,6 +19,9 @@ describe('main/Spellchecker.js', function() {
 
       SpellChecker.getSpellCheckerLocale('es').should.equal('es-ES');
       SpellChecker.getSpellCheckerLocale('es-ES').should.equal('es-ES');
+      
+      SpellChecker.getSpellCheckerLocale('it').should.equal('it-IT');
+      SpellChecker.getSpellCheckerLocale('it-IT').should.equal('it-IT');
 
       SpellChecker.getSpellCheckerLocale('nl').should.equal('nl-NL');
       SpellChecker.getSpellCheckerLocale('nl-NL').should.equal('nl-NL');
