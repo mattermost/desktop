@@ -104,6 +104,9 @@ SpellChecker.getSpellCheckerLocale = (electronLocale) => {
   if (electronLocale.match(/^es-?/)) {
     return 'es-ES';
   }
+  if (electronLocale.match(/^it-?/)) {
+    return 'it-IT';
+  }
   if (electronLocale.match(/^nl-?/)) {
     return 'nl-NL';
   }
