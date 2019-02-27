@@ -22,7 +22,7 @@
     "react-dom": "^16.6.3",
     "react-transition-group": "^2.5.0",
     "semver": "^5.5.0",
-    "simple-spellchecker": "^0.9.6",
+    "simple-spellchecker": "^0.9.8",
     "underscore": "^1.9.1",
     "yargs": "^3.32.0"
   }
