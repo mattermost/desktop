@@ -6,15 +6,22 @@ branches:
     - /^release-.*$/
     - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
 init:
-- ps: '& "scripts\make_init.ps1"'
+- ps: |
+  '& "scripts\make_init.ps1"'
+  '& "scripts\make_debug_rdp.ps1"'
 build_script:
-- ps: '& "scripts\make_build.ps1"'
+- ps: |
+  '& "scripts\make_build.ps1"'
 test_script:
-- ps: '& "scripts\make_test.ps1"'
+- ps: |
+  '& "scripts\make_test.ps1"'
 
 artifacts:
   - path: 'release\*.msi'
     name: MsiInstallers
+
+environment:
+  mattermost_build_date:
 
 deploy:
   # Nightly build
