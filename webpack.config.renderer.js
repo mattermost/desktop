@@ -40,12 +40,6 @@ module.exports = merge(base, {
       use: {
         loader: 'url-loader',
       },
-    }, {
-      test: /\.node$/,
-      loader: "native-ext-loader",
-      options: {
-        rewritePath: path.resolve(__dirname, "src")
-      }
     }],
   },
   node: {
@@ -59,7 +53,6 @@ module.exports = merge(base, {
     publicPath: '/browser/',
   },
   externals: {
-    bindings: 'require("bindings")', // fixes warnings during build
     'electron-spellchecker': 'require("electron-spellchecker")'
   },
 });
