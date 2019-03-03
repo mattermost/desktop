@@ -160,13 +160,6 @@ ipcRenderer.on('request-permission', (event, origin, permission) => {
   feedPermissionRequest();
 });
 
-function handleSelectSpellCheckerLocale(locale) {
-  console.log(locale);
-  AppConfig.set('spellCheckerLocale', locale);
-  ipcRenderer.send('update-config');
-  ipcRenderer.send('update-dict');
-}
-
 const parsedURL = url.parse(window.location.href, true);
 const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : 0;
 
@@ -182,7 +175,6 @@ ReactDOM.render(
     onBadgeChange={showBadge}
     onTeamConfigChange={teamConfigChange}
     useSpellChecker={AppConfig.data.useSpellChecker}
-    onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}
     deeplinkingUrl={deeplinkingUrl}
     showAddServerButton={buildConfig.enableServerManagement}
     requestingPermission={requestingPermission}

@@ -53,14 +53,11 @@ import AppStateManager from './main/AppStateManager';
 import initCookieManager from './main/cookieManager';
 import {shouldBeHiddenOnStartup} from './main/utils';
 
-import SpellChecker from './main/SpellChecker';
-
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow = null;
-let spellChecker = null;
 let deeplinkingUrl = null;
 let scheme = null;
 let appState = null;
@@ -111,7 +108,6 @@ ipcMain.on('update-config', () => {
   }
   const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => team.url);
   permissionManager.setTrustedURLs(trustedURLs);
-  ipcMain.emit('update-dict', true, config.spellCheckerLocale);
 });
 
 // Only for OS X
@@ -418,11 +414,11 @@ app.on('ready', () => {
     return;
   }
 
-  if (!config.spellCheckerLocale) {
-    config.spellCheckerLocale = SpellChecker.getSpellCheckerLocale(app.getLocale());
-    const configFile = app.getPath('userData') + '/config.json';
-    settings.writeFileSync(configFile, config);
-  }
+  // if (!config.spellCheckerLocale) {
+  //   config.spellCheckerLocale = SpellChecker.getSpellCheckerLocale(app.getLocale());
+  //   const configFile = app.getPath('userData') + '/config.json';
+  //   settings.writeFileSync(configFile, config);
+  // }
 
   const appStateJson = path.join(app.getPath('userData'), 'app-state.json');
   appState = new AppStateManager(appStateJson);
@@ -620,49 +616,9 @@ app.on('ready', () => {
   });
   ipcMain.emit('update-menu', true, config);
 
-  ipcMain.on('update-dict', () => {
-    if (config.useSpellChecker) {
-      spellChecker = new SpellChecker(
-        config.spellCheckerLocale,
-        path.resolve(app.getAppPath(), 'node_modules/simple-spellchecker/dict'),
-        (err) => {
-          if (err) {
-            console.error(err);
-          }
-        });
-    }
-  });
-  ipcMain.on('checkspell', (event, word) => {
-    let res = null;
-    if (config.useSpellChecker && spellChecker.isReady() && word !== null) {
-      res = spellChecker.spellCheck(word);
-    }
-    event.returnValue = res;
-  });
-  ipcMain.on('get-spelling-suggestions', (event, word) => {
-    if (config.useSpellChecker && spellChecker.isReady() && word !== null) {
-      event.returnValue = spellChecker.getSuggestions(word, 10);
-    } else {
-      event.returnValue = [];
-    }
-  });
   ipcMain.on('get-spellchecker-locale', (event) => {
     event.returnValue = config.spellCheckerLocale;
   });
-  ipcMain.on('reply-on-spellchecker-is-ready', (event) => {
-    if (!spellChecker) {
-      return;
-    }
-
-    if (spellChecker.isReady()) {
-      event.sender.send('spellchecker-is-ready');
-      return;
-    }
-    spellChecker.once('ready', () => {
-      event.sender.send('spellchecker-is-ready');
-    });
-  });
-  ipcMain.emit('update-dict');
 
   const permissionFile = path.join(app.getPath('userData'), 'permission.json');
   const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => team.url);

@@ -170,30 +170,6 @@ function isElementVisible(elem) {
   return elem.offsetHeight !== 0;
 }
 
-function resetMisspelledState() {
-  ipcRenderer.once('spellchecker-is-ready', () => {
-    const element = document.activeElement;
-    if (element) {
-      element.blur();
-      element.focus();
-    }
-  });
-  ipcRenderer.send('reply-on-spellchecker-is-ready');
-}
-
-function setSpellChecker() {
-  const spellCheckerLocale = ipcRenderer.sendSync('get-spellchecker-locale');
-  webFrame.setSpellCheckProvider(spellCheckerLocale, false, {
-    spellCheck(text) {
-      const res = ipcRenderer.sendSync('checkspell', text);
-      return res === null ? true : res;
-    },
-  });
-  resetMisspelledState();
-}
-setSpellChecker();
-ipcRenderer.on('set-spellchecker', setSpellChecker);
-
 // mattermost-webapp is SPA. So cache is not cleared due to no navigation.
 // We needed to manually clear cache to free memory in long-term-use.
 // http://seenaburns.com/debugging-electron-memory-usage/

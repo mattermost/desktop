@@ -115,12 +115,6 @@ export default class MattermostView extends React.Component {
       if (!this.state.isContextMenuAdded) {
         contextMenu.setup(webview, {
           useSpellChecker: this.props.useSpellChecker,
-          onSelectSpellCheckerLocale: (locale) => {
-            if (this.props.onSelectSpellCheckerLocale) {
-              this.props.onSelectSpellCheckerLocale(locale);
-            }
-            webview.send('set-spellchecker');
-          },
         });
         this.setState({isContextMenuAdded: true});
       }
@@ -301,5 +295,4 @@ MattermostView.propTypes = {
   active: PropTypes.bool,
   withTab: PropTypes.bool,
   useSpellChecker: PropTypes.bool,
-  onSelectSpellCheckerLocale: PropTypes.func,
 };
