@@ -4,6 +4,7 @@
 'use strict';
 
 import {ipcRenderer, webFrame} from 'electron';
+import {SpellCheckHandler, ContextMenuListener, ContextMenuBuilder} from 'electron-spellchecker';
 
 import EnhancedNotification from '../js/notification';
 
@@ -169,6 +170,17 @@ setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
 function isElementVisible(elem) {
   return elem.offsetHeight !== 0;
 }
+
+window.spellCheckHandler = new SpellCheckHandler();
+window.spellCheckHandler.attachToInput();
+
+// Start off as US English, America #1 (lol)
+window.spellCheckHandler.switchLanguage('en-US');
+
+let contextMenuBuilder = new ContextMenuBuilder(window.spellCheckHandler);
+let contextMenuListener = new ContextMenuListener((info) => {
+  contextMenuBuilder.showPopupMenu(info);
+});
 
 // mattermost-webapp is SPA. So cache is not cleared due to no navigation.
 // We needed to manually clear cache to free memory in long-term-use.

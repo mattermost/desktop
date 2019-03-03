@@ -14,11 +14,8 @@ import ReactDOM from 'react-dom';
 import buildConfig from '../common/config/buildConfig';
 
 import SettingsPage from './components/SettingsPage.jsx';
-import contextMenu from './js/contextMenu';
 
 const configFile = remote.app.getPath('userData') + '/config.json';
-
-contextMenu.setup(remote.getCurrentWindow());
 
 ReactDOM.render(
   <SettingsPage

@@ -14,3 +14,4 @@ test-results.xml
 test_config.json
 .idea
 testUserData
+*.node
