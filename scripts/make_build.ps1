@@ -38,7 +38,6 @@ $signToolDir = Join-Path -Path "$progFile" -ChildPath "Windows Kits\10\bin\x64"
 $env:Path += ";$signToolDir"
 
 Write-Host "Getting build date..."
-[Environment]::SetEnvironmentVariable("MATTERMOST_BUILD_DATE", (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd"), [System.EnvironmentVariableTarget]::User)
 $env:MATTERMOST_BUILD_DATE = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")
 
 Write-Host "Working directory:"
