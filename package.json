@@ -14,7 +14,7 @@
     "url": "git://github.com/mattermost/desktop.git"
   },
   "scripts": {
-    "postinstall": "electron-builder install-app-deps",
+    "postinstall": "electron-builder install-app-deps && electron-rebuild",
     "build": "npm-run-all build:*",
     "build:main": "webpack-cli --bail --config webpack.config.main.js",
     "build:renderer": "webpack-cli --bail --config webpack.config.renderer.js",
