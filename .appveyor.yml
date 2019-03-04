@@ -50,7 +50,11 @@ deploy:
     artifact: MsiInstallers
     draft: true
     force_update: false
-    # Update the existing tag rather than creating a new one
+    # With `prerelease: true`, specifying the tag allows to merge automatically
+    # the release with the tag we made. When using `draft: true`, the draft is
+    # in a dedicated space not bound with any particular tag. When clicking on
+    # "Publish release" on GitHub, it will be linked against the tag we made
+    # by default.
     tag: $(APPVEYOR_REPO_TAG_NAME)
     on:
       APPVEYOR_REPO_TAG: true
