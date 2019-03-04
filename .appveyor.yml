@@ -6,7 +6,9 @@ branches:
     - /^release-.*$/
     - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
 init:
-- ps: .\scripts\make_init.ps1
+- ps: |
+    cd scripts    
+    .\make_init.ps1
 build_script:
 - ps: |
     Write-Host "Working directory in build:"
