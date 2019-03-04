@@ -25,15 +25,6 @@ environment:
   encrypted_cert_private_key:
     secure: kP+bhs38HreY0NCCl2t6QwGsxILhAKuzHmuSCriwP1g=
 
-install:
-- ps: |
-    # Decrypt the certificate. The decrypted version will be at
-    # .\resources\windows\certificate\mattermost-desktop-windows.pfx
-    iex ((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/appveyor/secure-file/master/install.ps1'))
-    ls .\resources\windows\certificate\
-    appveyor-tools\secure-file -decrypt .\resources\windows\certificate\mattermost-desktop-windows.pfx.enc -secret $env:encrypted_cert_private_key
-    ls .\resources\windows\certificate\
-
 artifacts:
   - path: 'release\*.msi'
     name: MsiInstallers
@@ -59,6 +50,8 @@ deploy:
     artifact: MsiInstallers
     draft: true
     force_update: false
+    # Update the existing tag rather than creating a new one
+    tag: $(APPVEYOR_REPO_TAG_NAME)
     on:
       APPVEYOR_REPO_TAG: true
 

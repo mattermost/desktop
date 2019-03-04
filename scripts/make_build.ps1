@@ -25,6 +25,7 @@ $env:Path += ";$npmDir"
 Write-Host "Installing wixtoolset..."
 choco install wixtoolset --yes
 # Wixtoolset is always installed as a 32 bits based program.
+# Note: We are using the coalesce syntax of Powershell here.
 $progFile = (${env:ProgramFiles(x86)}, ${env:ProgramFiles} -ne $null)[0]
 $wixDirs = @(Get-ChildItem -Path $progFile -Recurse -Filter "*wix toolset*" -Attributes Directory -Depth 2)
 $wixDir = Join-Path -Path "$progFile" -ChildPath "$($wixDirs[0])"
@@ -32,10 +33,12 @@ $wixDir = Join-Path -Path "$wixDir" -ChildPath "bin"
 $env:Path += ";$wixDir"
 
 # Add signtool to path
-$env:Path += ";C:\Program Files (x86)\Windows Kits\10\bin\x64"
+$signToolDir = Join-Path -Path "$progFile" -ChildPath "Windows Kits\10\bin\x64"
+$env:Path += ";$signToolDir"
 
 Write-Host "Getting build date..."
 [Environment]::SetEnvironmentVariable("MATTERMOST_BUILD_DATE", (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd"), [System.EnvironmentVariableTarget]::User)
+$env:MATTERMOST_BUILD_DATE = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")
 
 Write-Host "Working directory:"
 Get-Location
@@ -48,7 +51,7 @@ npm run package:windows
 
 # Only sign the executable and .dll if this is a release and not a pull request
 # check.
-# Note the C++ redistribuable files will be resigned again even if they have a
+# Note: The C++ redistribuable files will be resigned again even if they have a
 # correct signature from Microsoft. Windows doesn't seem to complain, but we
 # don't know whether this is authorized by the Microsoft EULA.
 if ($env:APPVEYOR_REPO_TAG -eq $true) {
@@ -60,15 +63,17 @@ if ($env:APPVEYOR_REPO_TAG -eq $true) {
     # Secure variables are never decoded during Pull Request
     # except if the repo is private and a secure org has been created
     # src.: https://www.appveyor.com/docs/build-configuration/#secure-variables
-    appveyor-tools\secure-file -decrypt .\resources\windows\certificate\mattermost-desktop-windows.pfx.enc -secret %encrypted_cert_private_key%
+    appveyor-tools\secure-file -decrypt .\resources\windows\certificate\mattermost-desktop-windows.pfx.enc -secret "$env:encrypted_cert_private_key"
 
     foreach ($archPath in "release\win-unpacked", "release\win-ia32-unpacked") {
         Get-ChildItem -path $archPath -recurse *.dll | ForEach-Object {
-            signtool.exe /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p %encrypted_cert_private_key% /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 $_.FullName
-            signtool.exe /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p %encrypted_cert_private_key% /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as $_.FullName
+            signtool.exe /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 $_.FullName
+            signtool.exe /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as $_.FullName
         }
-    }
 
+        signtool.exe /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 $archPath\Mattermost.exe
+        signtool.exe /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as $archPath\Mattermost.exe
+    }
 }
 
 
