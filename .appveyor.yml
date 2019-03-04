@@ -23,7 +23,7 @@ test_script:
 # src.: https://www.appveyor.com/docs/build-configuration/#secure-variables
 environment:
   encrypted_cert_private_key:
-    secure: kP+bhs38HreY0NCCl2t6QwGsxILhAKuzHmuSCriwP1g=
+    secure: OGm2pQKTbwb3g1q9uzUHow==
 
 artifacts:
   - path: 'release\*.msi'
