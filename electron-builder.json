@@ -74,22 +74,5 @@
   "squirrelWindows": {
     "iconUrl": "file://resources/icon.ico",
     "artifactName": "${name}-setup-${version}-${arch}.${ext}"
-  },
-  "win": {
-    "target": [
-      "nsis",
-      "zip"
-    ],
-    "extraFiles": [
-      {
-        "filter": [
-          "LICENSE.txt",
-          "NOTICE.txt"
-        ]
-      }
-    ]
-  },
-  "nsis": {
-    "artifactName": "${name}-setup-${version}-win.${ext}"
   }
 }
