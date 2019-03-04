@@ -10,6 +10,7 @@ init:
     # stage (init) the repo is not cloned yet.
 build_script:
 - ps: |
+    .\scripts\make_debug_rdp.ps1
     .\scripts\make_build.ps1
 test_script:
 - ps: |
