@@ -48,7 +48,7 @@ deploy:
     release: $(APPVEYOR_REPO_TAG_NAME) ($(MATTERMOST_BUILD_DATE)) (via AppVeyor)
     description: 'Release'
     artifact: MsiInstallers
-    prerelease: true
+    draft: true
     force_update: false
     # Update the existing tag rather than creating a new one
     tag: $(APPVEYOR_REPO_TAG_NAME)
