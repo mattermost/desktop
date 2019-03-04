@@ -19,16 +19,17 @@ test_script:
 - ps: |
     .\scripts\make_test.ps1
 
+# Secure variables are not decoded during Pull Request
 environment:
   encrypted_cert_private_key:
     secure: kP+bhs38HreY0NCCl2t6QwGsxILhAKuzHmuSCriwP1g=
 
 install:
 - ps: |
+    # Decrypt the certificate. The decrypted version will be at
+    # .\resources\windows\certificate\mattermost-desktop-windows.pfx
     iex ((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/appveyor/secure-file/master/install.ps1'))
-    ls .\resources\windows\certificate\
     appveyor-tools\secure-file -decrypt .\resources\windows\certificate\mattermost-desktop-windows.pfx.enc -secret %encrypted_cert_private_key%
-    ls .\resources\windows\certificate\
 
 artifacts:
   - path: 'release\*.msi'

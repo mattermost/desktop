@@ -31,6 +31,9 @@ $wixDir = Join-Path -Path "$progFile" -ChildPath "$($wixDirs[0])"
 $wixDir = Join-Path -Path "$wixDir" -ChildPath "bin"
 $env:Path += ";$wixDir"
 
+# Add signtool to path
+$env:Path += ";C:\Program Files (x86)\Windows Kits\10\bin\x64"
+
 Write-Host "Getting build date..."
 [Environment]::SetEnvironmentVariable("MATTERMOST_BUILD_DATE", (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd"), [System.EnvironmentVariableTarget]::User)
 
@@ -42,6 +45,25 @@ Write-Host "Building JS code (running npm run build)..."
 npm run build
 Write-Host "Packaging for Windows (running npm run package:windows)..."
 npm run package:windows
+
+# Only sign the executable and .dll if this is a release and not a pull request
+# check.
+# Note the C++ redistribuable files will be resigned again even if they have a
+# correct signature from Microsoft. Windows doesn't seem to complain, but we
+# don't know whether this is authorized by the Microsoft EULA.
+if ($env:APPVEYOR_REPO_TAG -eq $true) {
+    Write-Host "Enforcing signature of the executable and dll..."
+}
+
+# DEBUG: Move this foreach loop in the condition above when debugged
+foreach ($archPath in "release\win-unpacked", "release\win-ia32-unpacked") {
+    Get-ChildItem -path $archPath -recurse *.dll | ForEach-Object {
+        signtool.exe /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p %encrypted_cert_private_key% /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 $_.FullName
+        signtool.exe /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p %encrypted_cert_private_key% /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as $_.FullName
+    }
+}
+
+
 
 Write-Host "Cleaning build dir..."
 Remove-Item .\release\win-ia32-unpacked\resources\app.asar.unpacked\ -Force -Recurse
