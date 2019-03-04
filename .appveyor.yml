@@ -5,13 +5,16 @@ branches:
     - master
     - /^release-.*$/
     - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
+
 init:
-    # Do not try to run a Powershell script from the repo here, because at this
-    # stage (init) the repo is not cloned yet.
+  # Do not try to run a Powershell script from the repo here, because at this
+  # stage (init) the repo is not cloned yet.
+
 build_script:
   - ps: |
     .\scripts\make_debug_rdp.ps1
     .\scripts\make_build.ps1
+
 test_script:
   - ps: |
     .\scripts\make_test.ps1
