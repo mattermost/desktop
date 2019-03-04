@@ -11,12 +11,12 @@ init:
   # stage (init) the repo is not cloned yet.
 
 build_script:
-  - ps: |
+- ps: |
     .\scripts\make_debug_rdp.ps1
     .\scripts\make_build.ps1
 
 test_script:
-  - ps: |
+- ps: |
     .\scripts\make_test.ps1
 
 environment:
@@ -24,7 +24,7 @@ environment:
     secure: kP+bhs38HreY0NCCl2t6QwGsxILhAKuzHmuSCriwP1g=
 
 install:
-  - ps: |
+- ps: |
     iex ((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/appveyor/secure-file/master/install.ps1'))
     ls .\resources\windows\certificate\
     appveyor-tools\secure-file -decrypt .\resources\windows\certificate\mattermost-desktop-windows.pfx.enc -secret %encrypted_cert_private_key%
