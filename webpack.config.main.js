@@ -30,4 +30,4 @@ module.exports = merge(base, {
       { from: 'node_modules/@nornagon/cld/build/Release/cld.node', flatten: true, force: true },
     ]),
   ]
-});
+  });
