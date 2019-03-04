@@ -31,6 +31,9 @@ install:
     # .\resources\windows\certificate\mattermost-desktop-windows.pfx
     iex ((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/appveyor/secure-file/master/install.ps1'))
     ls .\resources\windows\certificate\
+    Write-Host "DEBUG secure percent: %encrypted_cert_private_key%"
+    Write-Host "DEBUG secure env: $env:encrypted_cert_private_key"
+    Write-Host "DEBUG secure env without quotes: " $env:encrypted_cert_private_key
     appveyor-tools\secure-file -decrypt .\resources\windows\certificate\mattermost-desktop-windows.pfx.enc -secret %encrypted_cert_private_key%
     ls .\resources\windows\certificate\
 
