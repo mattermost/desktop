@@ -1,5 +1,6 @@
-# The $env:PATH is way too long, which prevents new path to be added to it.
-#Remove all the stuff added in Program Files except Git.
+# The $env:PATH is way too long. This prevents new strings to be added to the
+# PATH env variable. We will remove all the stuff added for programs in
+# Program Files (64 bits and 32 bits variants) except Git.
 # src.: https://gist.github.com/wget/a102f89c301014836aaa49a98dd06ee2
 Write-Host "Old PATH: $env:Path"
 Write-Host "Reducing PATH..."
@@ -51,9 +52,6 @@ npm run package:windows
 
 # Only sign the executable and .dll if this is a release and not a pull request
 # check.
-# Note: The C++ redistribuable files will be resigned again even if they have a
-# correct signature from Microsoft. Windows doesn't seem to complain, but we
-# don't know whether this is authorized by the Microsoft EULA.
 if ($env:APPVEYOR_REPO_TAG -eq $true) {
     Write-Host "Enforcing signature of the executable and dll..."
 
@@ -66,17 +64,19 @@ if ($env:APPVEYOR_REPO_TAG -eq $true) {
     appveyor-tools\secure-file -decrypt .\resources\windows\certificate\mattermost-desktop-windows.pfx.enc -secret "$env:encrypted_cert_private_key"
 
     foreach ($archPath in "release\win-unpacked", "release\win-ia32-unpacked") {
+
+        # Note: The C++ redistribuable files will be resigned again even if they have a
+        # correct signature from Microsoft. Windows doesn't seem to complain, but we
+        # don't know whether this is authorized by the Microsoft EULA.
         Get-ChildItem -path $archPath -recurse *.dll | ForEach-Object {
-            signtool.exe /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 $_.FullName
-            signtool.exe /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as $_.FullName
+            signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 $_.FullName
+            signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as $_.FullName
         }
 
-        signtool.exe /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 $archPath\Mattermost.exe
-        signtool.exe /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as $archPath\Mattermost.exe
+        signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 $archPath\Mattermost.exe
+        signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as $archPath\Mattermost.exe
     }
 }
-
-
 
 Write-Host "Cleaning build dir..."
 Remove-Item .\release\win-ia32-unpacked\resources\app.asar.unpacked\ -Force -Recurse
