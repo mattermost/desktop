@@ -1,45 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <policyDefinitions revision="0.1" schemaVersion="1.0">
-  <policyNamespaces>
-    <target prefix="mattermost" namespace="Mattermost.Policies"/>
-  </policyNamespaces>
-  <resources minRequiredRevision="0.1"/>
-  <supportedOn>
-    <definitions>
-      <definition name="SUPPORTED_MMD43" displayName="$(string.SUPPORTED_MMD43)"/>
-    </definitions>
-  </supportedOn>
-  <categories>
-    <category displayName="$(string.mattermost)" name="mattermost">
-    </category>
-  </categories>
-  <policies>
-    <policy name="DisableAutoUpdate" class="Machine" displayName="$(string.DisableAutoUpdate)" explainText="$(string.DisableAutoUpdate_Explain)" key="Software\Policies\Mattermost" valueName="DisableAutoUpdate">
-      <parentCategory ref="mattermost"/>
-      <supportedOn ref="SUPPORTED_MMD43"/>
-      <enabledValue>
-        <decimal value="1"/>
-      </enabledValue>
-      <disabledValue>
-        <decimal value="0"/>
-      </disabledValue>
-    </policy>
-    <policy name="PreventAddNewServer" class="Both" displayName="$(string.PreventAddNewServer)" explainText="$(string.PreventAddNewServer_Explain)" key="Software\Policies\Mattermost" valueName="PreventAddNewServer">
-      <parentCategory ref="mattermost"/>
-      <supportedOn ref="SUPPORTED_MMD43"/>
-      <enabledValue>
-        <decimal value="1"/>
-      </enabledValue>
-      <disabledValue>
-        <decimal value="0"/>
-      </disabledValue>
-    </policy>
-    <policy name="ServerURL" class="Both" displayName="$(string.ServerURL)" explainText="$(string.ServerURL_Explain)" key="Software\Policies\Mattermost" presentation="$(presentation.ServerURL)" >
-      <parentCategory ref="mattermost"/>
-      <supportedOn ref="SUPPORTED_MMD43"/>
-      <elements >
-        <text id="ServerURL" valueName="URL" required="true" />
-      </elements>
-    </policy>
-  </policies>
+	<policyNamespaces>
+		<target prefix="mattermost" namespace="Mattermost.Policies"/>
+	</policyNamespaces>
+	<resources minRequiredRevision="0.1"/>
+	<supportedOn>
+		<definitions>
+			<definition name="SUPPORTED_MMD43" displayName="$(string.SUPPORTED_MMD43)"/>
+		</definitions>
+	</supportedOn>
+	<categories>
+		<category displayName="$(string.mattermost)" name="mattermost"></category>
+	</categories>
+	<policies>
+		<policy name="DisableAutoUpdate" class="Machine" displayName="$(string.DisableAutoUpdate)" explainText="$(string.DisableAutoUpdate_Explain)" key="Software\Policies\Mattermost" valueName="DisableAutoUpdate">
+			<parentCategory ref="mattermost"/>
+			<supportedOn ref="SUPPORTED_MMD43"/>
+			<enabledValue>
+				<decimal value="1"/>
+			</enabledValue>
+			<disabledValue>
+				<decimal value="0"/>
+			</disabledValue>
+		</policy>
+		<policy name="PreventAddNewServer" class="Both" displayName="$(string.PreventAddNewServer)" explainText="$(string.PreventAddNewServer_Explain)" key="Software\Policies\Mattermost" valueName="PreventAddNewServer">
+			<parentCategory ref="mattermost"/>
+			<supportedOn ref="SUPPORTED_MMD43"/>
+			<enabledValue>
+				<decimal value="1"/>
+			</enabledValue>
+			<disabledValue>
+				<decimal value="0"/>
+			</disabledValue>
+		</policy>
+		<policy name="ServerURL" class="Both" displayName="$(string.ServerURL)" explainText="$(string.ServerURL_Explain)" key="Software\Policies\Mattermost" presentation="$(presentation.ServerURL)" >
+			<parentCategory ref="mattermost"/>
+			<supportedOn ref="SUPPORTED_MMD43"/>
+			<elements >
+				<text id="ServerURL" valueName="URL" required="true" />
+			</elements>
+		</policy>
+		<policy name="PreventGPU" class="Machine" displayName="$(string.PreventGPU)" explainText="$(string.PreventGPU_Explain)" key="Software\Policies\Mattermost" valueName="PreventGPU">
+			<parentCategory ref="mattermost"/>
+			<supportedOn ref="SUPPORTED_MMD44"/>
+			<enabledValue>
+				<decimal value="1"/>
+			</enabledValue>
+			<disabledValue>
+				<decimal value="0"/>
+			</disabledValue>
+		</policy>
+	</policies>
 </policyDefinitions>

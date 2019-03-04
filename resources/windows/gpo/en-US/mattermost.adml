@@ -1,34 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <policyDefinitionResources revision="0.1" schemaVersion="1.0" >
-  <displayName/>
-  <description/>
-  <resources >
-    <stringTable >
-      <string id="SUPPORTED_MMD43">Mattermost Desktop Application 4.3 or later</string>
-      <string id="mattermost">Mattermost</string>
-      <string id="DisableAutoUpdate">Disable Auto Updater</string>
-      <string id="DisableAutoUpdate_Explain">If this policy is enabled, the Mattermost Desktop Application does not receive udpates.
+	<displayName/>
+	<description/>
+	<resources >
+		<stringTable >
+			<string id="SUPPORTED_MMD43">Mattermost Desktop Application 4.3 or later</string>
+			<string id="SUPPORTED_MMD44">Mattermost Desktop Application 4.4 or later</string>
+			<string id="mattermost">Mattermost</string>
+			<string id="DisableAutoUpdate">Disable Auto Updater</string>
+			<string id="DisableAutoUpdate_Explain">If this policy is enabled, the Mattermost Desktop Application does not receive udpates.
 
-If this policy is disabled or not configured, the Mattermost Desktop Application receives updates.
-</string>
-      <string id="PreventAddNewServer">Prevent adding new Mattermost server</string>
-      <string id="PreventAddNewServer_Explain">If this policy is enabled, it is not possible to add new servers.
+If this policy is disabled or not configured, the Mattermost Desktop Application receives updates.</string>
+			<string id="PreventAddNewServer">Prevent adding new Mattermost server</string>
+			<string id="PreventAddNewServer_Explain">If this policy is enabled, it is not possible to add new servers.
 
-If this policy is disabled or not configured, it is possible to add new servers.
-</string>
-      <string id="ServerURL">Server addresses</string>
-      <string id="ServerURL_Explain">If this policy is enabled, you can set one or more Mattermost server addresses. Use the syntax Servername,https://server.com|Servername2,https://server2.com
+If this policy is disabled or not configured, it is possible to add new servers.</string>
+			<string id="ServerURL">Server addresses</string>
+			<string id="ServerURL_Explain">If this policy is enabled, you can set one or more Mattermost server addresses.
+Use the syntax:
+Servername,https://server.com|Servername2,https://server2.com
 
 If this policy is disabled or not configured, no servers are preconfigured.</string>
-    </stringTable>
-    <presentationTable>
-	<presentation id="ServerURL">
-        <text>URL:</text>
-        <textBox refId="ServerURL">
-          <label/>
-        </textBox>
-      </presentation>
-	  </presentationTable>
-    </stringTable>
-  </resources>
+			<string id="PreventGPU">Disable GPU hardware acceleration</string>
+			<string id="PreventGPU_Explain">If this policy is enabled, the Mattermost Desktop Application does not use the GPU for hardware acceleration.
+
+If this policy is disabled or not configured, the Mattermost Desktop Application does use the GPU for hardware acceleration.</string>
+		</stringTable>
+		<presentationTable>
+			<presentation id="ServerURL">
+				<text>URL:</text>
+				<textBox refId="ServerURL">
+					<label/>
+				</textBox>
+			</presentation>
+		</presentationTable>
+	</resources>
 </policyDefinitionResources>
