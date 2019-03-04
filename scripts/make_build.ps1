@@ -53,14 +53,22 @@ npm run package:windows
 # don't know whether this is authorized by the Microsoft EULA.
 if ($env:APPVEYOR_REPO_TAG -eq $true) {
     Write-Host "Enforcing signature of the executable and dll..."
-}
 
-# DEBUG: Move this foreach loop in the condition above when debugged
-foreach ($archPath in "release\win-unpacked", "release\win-ia32-unpacked") {
-    Get-ChildItem -path $archPath -recurse *.dll | ForEach-Object {
-        signtool.exe /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p %encrypted_cert_private_key% /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 $_.FullName
-        signtool.exe /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p %encrypted_cert_private_key% /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as $_.FullName
+    # Decrypt the certificate. The decrypted version will be at
+    # .\resources\windows\certificate\mattermost-desktop-windows.pfx
+    iex ((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/appveyor/secure-file/master/install.ps1'))
+    # Secure variables are never decoded during Pull Request
+    # except if the repo is private and a secure org has been created
+    # src.: https://www.appveyor.com/docs/build-configuration/#secure-variables
+    appveyor-tools\secure-file -decrypt .\resources\windows\certificate\mattermost-desktop-windows.pfx.enc -secret %encrypted_cert_private_key%
+
+    foreach ($archPath in "release\win-unpacked", "release\win-ia32-unpacked") {
+        Get-ChildItem -path $archPath -recurse *.dll | ForEach-Object {
+            signtool.exe /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p %encrypted_cert_private_key% /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 $_.FullName
+            signtool.exe /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p %encrypted_cert_private_key% /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as $_.FullName
+        }
     }
+
 }
 
 
