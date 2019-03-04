@@ -9,6 +9,8 @@ const path = require('path');
 
 const merge = require('webpack-merge');
 
+const CopyPlugin = require('copy-webpack-plugin');
+
 const base = require('./webpack.config.base');
 
 module.exports = merge(base, {
@@ -22,4 +24,10 @@ module.exports = merge(base, {
     __dirname: true,
   },
   target: 'electron-main',
+  plugins: [
+    new CopyPlugin([
+      { from: 'node_modules/@nornagon/spellchecker/build/Release/spellchecker.node', flatten: true, force: true },
+      { from: 'node_modules/@nornagon/cld/build/Release/cld.node', flatten: true, force: true },
+    ]),
+  ]
 });
