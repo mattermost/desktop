@@ -79,8 +79,8 @@ if ($env:APPVEYOR_REPO_TAG -eq $true) {
         }
 
         Write-Host "Signing $archPath\Mattermost.exe"
-        signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 "$($archPath\Mattermost.exe)"
-        signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as "$($archPath\Mattermost.exe)"
+        signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 "$archPath\Mattermost.exe"
+        signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as "$archPath\Mattermost.exe"
     }
 }
 
