@@ -5,10 +5,7 @@ branches:
     - master
     - /^release-.*$/
     - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
-init:
-- ps: |
-    cd scripts    
-    .\make_init.ps1
+
 build_script:
 - ps: |
     Write-Host "Working directory in build:"
