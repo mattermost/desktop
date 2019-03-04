@@ -9,25 +9,33 @@ init:
     # Do not try to run a Powershell script from the repo here, because at this
     # stage (init) the repo is not cloned yet.
 build_script:
-- ps: |
+  - ps: |
     .\scripts\make_debug_rdp.ps1
     .\scripts\make_build.ps1
 test_script:
-- ps: |
+  - ps: |
     .\scripts\make_test.ps1
+
+environment:
+  encrypted_cert_private_key:
+    secure: kP+bhs38HreY0NCCl2t6QwGsxILhAKuzHmuSCriwP1g=
+
+install:
+  - ps: |
+    iex ((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/appveyor/secure-file/master/install.ps1'))
+    ls .\resources\windows\certificate\
+    appveyor-tools\secure-file -decrypt .\resources\windows\certificate\mattermost-desktop-windows.pfx.enc -secret %encrypted_cert_private_key%
+    ls .\resources\windows\certificate\
 
 artifacts:
   - path: 'release\*.msi'
     name: MsiInstallers
 
-environment:
-  mattermost_build_date:
-
 deploy:
   # Nightly build
   - provider: GitHub
     auth_token:
-      secure: tf2cb9v2kDuXUd6G9jjrwXHCVXCcYk72BzpVhxLQssov6uLGiBlIRCvi4Wd0MWCV
+      secure: I2wx9gajpvBjcxtEKYoYqqmyoH/2fWQflycpwlHZY9SD9sFkPlA4CNMcF29dcI4j
     release: $(APPVEYOR_BUILD_NUMBER) ($(APPVEYOR_REPO_COMMIT)) (via AppVeyor)
     description: 'Dev version'
     artifact: MsiInstallers
@@ -38,7 +46,7 @@ deploy:
   # Taggued releases
   - provider: GitHub
     auth_token:
-      secure: tf2cb9v2kDuXUd6G9jjrwXHCVXCcYk72BzpVhxLQssov6uLGiBlIRCvi4Wd0MWCV
+      secure: I2wx9gajpvBjcxtEKYoYqqmyoH/2fWQflycpwlHZY9SD9sFkPlA4CNMcF29dcI4j
     release: $(APPVEYOR_REPO_TAG_NAME) ($(MATTERMOST_BUILD_DATE)) (via AppVeyor)
     description: 'Release'
     artifact: MsiInstallers
