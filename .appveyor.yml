@@ -9,6 +9,7 @@ init:
 - ps: |
     Write-Host "Working directory in init:"
     Get-Location
+    Get-ChildItem
 
     #& "./scripts/make_init.ps1"
     #& "./scripts/make_debug_rdp.ps1"
@@ -16,6 +17,7 @@ build_script:
 - ps: |
     Write-Host "Working directory in build:"
     Get-Location
+    Get-ChildItem
     #& "./scripts/make_build.ps1"
 test_script:
 - ps: |
