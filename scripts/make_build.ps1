@@ -65,16 +65,19 @@ if ($env:APPVEYOR_REPO_TAG -eq $true) {
     appveyor-tools\secure-file -decrypt .\resources\windows\certificate\mattermost-desktop-windows.pfx.enc -secret "$env:encrypted_cert_private_key"
     ls .\resources\windows\certificate\
 
+    Write-Host "We are in: $(Get-Location)"
     foreach ($archPath in "release\win-unpacked", "release\win-ia32-unpacked") {
 
         # Note: The C++ redistribuable files will be resigned again even if they have a
         # correct signature from Microsoft. Windows doesn't seem to complain, but we
         # don't know whether this is authorized by the Microsoft EULA.
         Get-ChildItem -path $archPath -recurse *.dll | ForEach-Object {
+            Write-Host "Signing $($_.FullName)"
             signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 $_.FullName
             signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as $_.FullName
         }
 
+        Write-Host "Signing $archPath\Mattermost.exe"
         signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 $archPath\Mattermost.exe
         signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as $archPath\Mattermost.exe
     }
