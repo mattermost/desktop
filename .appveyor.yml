@@ -7,11 +7,15 @@ branches:
     - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
 init:
 - ps: |
-    ls
+    Write-Host "Working directory in init:"
+    Get-Location
+
     #& "./scripts/make_init.ps1"
     #& "./scripts/make_debug_rdp.ps1"
 build_script:
 - ps: |
+    Write-Host "Working directory in build:"
+    Get-Location
     #& "./scripts/make_build.ps1"
 test_script:
 - ps: |
