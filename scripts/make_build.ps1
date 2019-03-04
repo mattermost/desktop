@@ -61,6 +61,7 @@ if ($env:APPVEYOR_REPO_TAG -eq $true) {
     # except if the repo is private and a secure org has been created
     # src.: https://www.appveyor.com/docs/build-configuration/#secure-variables
     Write-Host "DEBUG PFX key: $($env:encrypted_cert_private_key[0]) - $($env:encrypted_cert_private_key[$env:encrypted_cert_private_key.length - 1])"
+    Write-Host "DEBUG PFX key: $($env:encrypted_cert_private_key)"
     ls .\resources\windows\certificate\
     appveyor-tools\secure-file -decrypt .\resources\windows\certificate\mattermost-desktop-windows.pfx.enc -secret "$env:encrypted_cert_private_key"
     ls .\resources\windows\certificate\
@@ -73,13 +74,13 @@ if ($env:APPVEYOR_REPO_TAG -eq $true) {
         # don't know whether this is authorized by the Microsoft EULA.
         Get-ChildItem -path $archPath -recurse *.dll | ForEach-Object {
             Write-Host "Signing $($_.FullName)"
-            signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 $_.FullName
-            signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as $_.FullName
+            signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 "$($_.FullName)"
+            signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as "$($_.FullName)"
         }
 
         Write-Host "Signing $archPath\Mattermost.exe"
-        signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 $archPath\Mattermost.exe
-        signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as $archPath\Mattermost.exe
+        signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha1 /td sha1 "$($archPath\Mattermost.exe)"
+        signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p "$env:encrypted_cert_private_key" /tr http://tsa.starfieldtech.com /fd sha256 /td sha256 /as "$($archPath\Mattermost.exe)"
     }
 }
 
