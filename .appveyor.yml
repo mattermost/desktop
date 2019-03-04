@@ -8,14 +8,14 @@ branches:
 init:
 - ps: |
     ls
-    & "./scripts/make_init.ps1"
-    & "./scripts/make_debug_rdp.ps1"
+    #& "./scripts/make_init.ps1"
+    #& "./scripts/make_debug_rdp.ps1"
 build_script:
 - ps: |
-    & "./scripts/make_build.ps1"
+    #& "./scripts/make_build.ps1"
 test_script:
 - ps: |
-    & "./scripts/make_test.ps1"
+    #& "./scripts/make_test.ps1"
 
 artifacts:
   - path: 'release\*.msi'
