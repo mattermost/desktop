@@ -18,8 +18,8 @@
 const buildConfig = {
   defaultTeams: [/*
     {
-      name: 'example',
-      url: 'https://example.com'
+      name: 'rent24',
+      url: 'https://chat.rent24.io'
     }*/
   ],
   helpLink: 'https://about.mattermost.com/default-desktop-app-documentation/',
