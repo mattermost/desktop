@@ -54,6 +54,7 @@ import initCookieManager from './main/cookieManager';
 import {shouldBeHiddenOnStartup} from './main/utils';
 
 import SpellChecker from './main/SpellChecker';
+import UserActivityMonitor from './main/UserActivityMonitor';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
@@ -65,6 +66,8 @@ let deeplinkingUrl = null;
 let scheme = null;
 let appState = null;
 let permissionManager = null;
+
+const userActivityMonitor = new UserActivityMonitor();
 
 const argv = parseArgv(process.argv.slice(1));
 const hideOnStartup = shouldBeHiddenOnStartup(argv);
@@ -454,6 +457,14 @@ app.on('ready', () => {
   }
 
   initCookieManager(session.defaultSession);
+
+  // start monitoring user activity
+  userActivityMonitor.startMonitoring();
+
+  // push status updates to renderer
+  userActivityMonitor.on('status', ({userIsActive, idleTime}) => {
+    mainWindow.webContents.send('user-status-update', userIsActive, idleTime);
+  });
 
   mainWindow = createMainWindow(config, {
     hideOnStartup,

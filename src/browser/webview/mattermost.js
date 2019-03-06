@@ -6,10 +6,13 @@
 import {ipcRenderer, webFrame} from 'electron';
 
 import EnhancedNotification from '../js/notification';
+import DesktopBridge from '../js/DesktopBridge';
 
 const UNREAD_COUNT_INTERVAL = 1000;
 //eslint-disable-next-line no-magic-numbers
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
+
+const desktopBridge = new DesktopBridge();
 
 Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
@@ -48,6 +51,8 @@ window.addEventListener('load', () => {
   watchReactAppUntilInitialized(() => {
     ipcRenderer.sendToHost('onGuestInitialized');
   });
+
+  desktopBridge.initialize();
 });
 
 function hasClass(element, className) {
@@ -193,6 +198,18 @@ function setSpellChecker() {
 }
 setSpellChecker();
 ipcRenderer.on('set-spellchecker', setSpellChecker);
+
+ipcRenderer.on('user-is-active', () => {
+  if (desktopBridge && desktopBridge.ready) {
+    desktopBridge.desktop.send('updateUserActivityStatus', true);
+  }
+});
+
+ipcRenderer.on('user-is-inactive', () => {
+  if (desktopBridge && desktopBridge.ready) {
+    desktopBridge.desktop.send('updateUserActivityStatus', false);
+  }
+});
 
 // mattermost-webapp is SPA. So cache is not cleared due to no navigation.
 // We needed to manually clear cache to free memory in long-term-use.

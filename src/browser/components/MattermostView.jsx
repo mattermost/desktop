@@ -247,6 +247,16 @@ export default class MattermostView extends React.Component {
     );
   }
 
+  // sends user activity status event to webview
+  updateUserStatus(userIsActive) {
+    const webview = this.webviewRef.current;
+    if (userIsActive) {
+      webview.send('user-is-active');
+    } else {
+      webview.send('user-is-inactive');
+    }
+  }
+
   render() {
     const errorView = this.state.errorInfo ? (
       <ErrorView

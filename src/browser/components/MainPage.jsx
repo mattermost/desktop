@@ -155,6 +155,14 @@ export default class MainPage extends React.Component {
     ipcRenderer.on('toggle-find', () => {
       this.activateFinder(true);
     });
+
+    // listen for status updates from main
+    ipcRenderer.on('user-status-update', (event, userIsActive) => {
+      // pass on updates to each loaded view
+      for (let i = 0; i < this.props.teams.length; i++) {
+        self.refs[`mattermostView${i}`].updateUserStatus(userIsActive);
+      }
+    });
   }
 
   componentDidUpdate(prevProps, prevState) {
