@@ -37,7 +37,7 @@
 			<parentCategory ref="mattermost" />
 			<supportedOn ref="SUPPORTED_MMD43" />
 			<elements>
-				<list id="ServerURL" key="Software\Policies\Mattermost\ServerList" additive="true" />
+				<list id="ServerURL" key="Software\Policies\Mattermost\DefaultServerList" additive="true" explicitValue="true" />
 			</elements>
 		</policy>
 		<policy name="PreventGPU" class="Machine" displayName="$(string.PreventGPU)" explainText="$(string.PreventGPU_Explain)" key="Software\Policies\Mattermost" valueName="PreventGPU">
