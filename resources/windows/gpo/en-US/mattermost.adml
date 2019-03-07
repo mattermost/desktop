@@ -5,7 +5,6 @@
 	<resources >
 		<stringTable >
 			<string id="SUPPORTED_MMD43">Mattermost Desktop Application 4.3 or later</string>
-			<string id="SUPPORTED_MMD44">Mattermost Desktop Application 4.4 or later</string>
 			<string id="mattermost">Mattermost</string>
 			<string id="DisableAutoUpdate">Disable Auto Updater</string>
 			<string id="DisableAutoUpdate_Explain">If this policy is enabled, the Mattermost Desktop Application does not receive udpates.
@@ -17,8 +16,6 @@ If this policy is disabled or not configured, the Mattermost Desktop Application
 If this policy is disabled or not configured, it is possible to add new servers.</string>
 			<string id="ServerURL">Server addresses</string>
 			<string id="ServerURL_Explain">If this policy is enabled, you can set one or more Mattermost server addresses.
-Use the syntax:
-Servername,https://server.com|Servername2,https://server2.com
 
 If this policy is disabled or not configured, no servers are preconfigured.</string>
 			<string id="PreventGPU">Disable GPU hardware acceleration</string>
@@ -28,10 +25,7 @@ If this policy is disabled or not configured, the Mattermost Desktop Application
 		</stringTable>
 		<presentationTable>
 			<presentation id="ServerURL">
-				<text>URL:</text>
-				<textBox refId="ServerURL">
-					<label/>
-				</textBox>
+				<listBox refId="ServerURL">List of servers:</listBox>
 			</presentation>
 		</presentationTable>
 	</resources>
