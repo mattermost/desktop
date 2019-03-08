@@ -33,16 +33,16 @@
 				<decimal value="0"/>
 			</disabledValue>
 		</policy>
-		<policy name="ServerURL" class="Both" displayName="$(string.ServerURL)" explainText="$(string.ServerURL_Explain)" key="Software\Policies\Mattermost" presentation="$(presentation.ServerURL)" >
-			<parentCategory ref="mattermost"/>
-			<supportedOn ref="SUPPORTED_MMD43"/>
-			<elements >
-				<text id="ServerURL" valueName="URL" required="true" />
+		<policy name="ServerURL" class="Both" displayName="$(string.ServerURL)" explainText="$(string.ServerURL_Explain)" presentation="$(presentation.ServerURL)" key="Software\Policies\Mattermost">
+			<parentCategory ref="mattermost" />
+			<supportedOn ref="SUPPORTED_MMD43" />
+			<elements>
+				<list id="ServerURL" key="Software\Policies\Mattermost\DefaultServerList" additive="true" explicitValue="true" />
 			</elements>
 		</policy>
 		<policy name="PreventGPU" class="Machine" displayName="$(string.PreventGPU)" explainText="$(string.PreventGPU_Explain)" key="Software\Policies\Mattermost" valueName="PreventGPU">
 			<parentCategory ref="mattermost"/>
-			<supportedOn ref="SUPPORTED_MMD44"/>
+			<supportedOn ref="SUPPORTED_MMD43"/>
 			<enabledValue>
 				<decimal value="1"/>
 			</enabledValue>
