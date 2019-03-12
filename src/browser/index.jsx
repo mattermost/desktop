@@ -28,7 +28,7 @@ const servers = settings.mergeDefaultServers(AppConfig.data.servers);
 remote.getCurrentWindow().removeAllListeners('focus');
 
 if (servers.length === 0) {
-  window.location = 'settings.html';
+  remote.getCurrentWindow().loadFile('browser/settings.html');
 }
 
 function showBadgeWindows(sessionExpired, unreadCount, mentionCount) {

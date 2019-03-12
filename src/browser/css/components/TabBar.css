@@ -43,19 +43,29 @@
   background: #FF1744;
   float: right;
   color: white;
-  min-width: 19px;
+  min-width: 18px;
   font-size: 12px;
   text-align: center;
   line-height: 20px;
-  height: 19px;
+  height: 18px;
   margin-left: 5px;
   margin-top: 5px;
   border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  padding-right: 1px;
+  font-weight: 600;
 }
 
-.TabBar .TabBar-badge.TabBar-badge-nomention {
-  font-size: 22pt;
-  line-height: 18px;
+.TabBar .TabBar-badge.TabBar-badge-nomention:after {
+  content: "";
+  width: 4px;
+  height: 4px;
+  background: #fff;
+  display: block;
+  border-radius: 50%;
 }
 
 .TabBar .serverTabItem-unread {

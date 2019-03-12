@@ -145,7 +145,7 @@ function createTemplate(mainWindow, config, isDev) {
       visible: false,
       role: 'zoomout',
     }, separatorItem, {
-      label: 'Toggle Developer Tools',
+      label: 'Developer Tools for Application Wrapper',
       accelerator: (() => {
         if (process.platform === 'darwin') {
           return 'Alt+Command+I';
@@ -156,6 +156,11 @@ function createTemplate(mainWindow, config, isDev) {
         if (focusedWindow) {
           focusedWindow.toggleDevTools();
         }
+      },
+    }, {
+      label: 'Developer Tools for Current Server',
+      click() {
+        mainWindow.webContents.send('open-devtool');
       },
     }],
   });

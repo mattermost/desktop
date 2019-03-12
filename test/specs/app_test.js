@@ -63,6 +63,7 @@ describe('application', function desc() {
 
   it('should show settings.html when there is no config file', async () => {
     await this.app.client.waitUntilWindowLoaded();
+    await this.app.client.pause(1000);
     const url = await this.app.client.getUrl();
     url.should.match(/\/settings.html$/);
 

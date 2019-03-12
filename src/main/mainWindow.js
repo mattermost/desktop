@@ -43,6 +43,7 @@ function createMainWindow(config, options) {
     show: false,
     minWidth: minimumWindowWidth,
     minHeight: minimumWindowHeight,
+    fullscreen: false,
   });
 
   const mainWindow = new BrowserWindow(windowOptions);

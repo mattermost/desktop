@@ -31,7 +31,7 @@ export default class TabBar extends React.Component { // need "this"
       let badgeDiv;
       if (sessionExpired) {
         badgeDiv = (
-          <div className='TabBar-badge TabBar-badge-nomention'>{'•'}</div>
+          <div className='TabBar-badge TabBar-badge-nomention'/>
         );
       } else if (mentionCount !== 0) {
         badgeDiv = (
