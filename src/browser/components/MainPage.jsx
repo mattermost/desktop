@@ -2,6 +2,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// This files uses setState().
 /* eslint-disable react/no-set-state */
 
 import url from 'url';
@@ -459,3 +460,5 @@ MainPage.propTypes = {
   requestingPermission: TabBar.propTypes.requestingPermission,
   onClickPermissionDialog: PropTypes.func,
 };
+
+/* eslint-enable react/no-set-state */

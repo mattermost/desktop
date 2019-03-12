@@ -1,5 +1,8 @@
 {
-    "extends": "./.eslintrc-webapp.json",
+    "extends": [
+      "./.eslintrc-webapp.json",
+      "plugin:eslint-comments/recommended"
+    ],
     "parserOptions": {
         "ecmaVersion": 2017
     },
@@ -7,6 +10,7 @@
         "import/resolver": "node"
     },
     "rules": {
+        "eslint-comments/no-unused-disable": "error",
         "header/header": [2, "line", [
             " Copyright (c) 2015-2016 Yuya Ochiai",
             " Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.",
