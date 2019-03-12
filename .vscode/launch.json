@@ -47,7 +47,7 @@
       "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
       "args": [
         "-r",
-        "babel-register",
+        "@babel/register",
         "--recursive",
         "--timeout",
         "999999",
