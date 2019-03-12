@@ -53,6 +53,6 @@ module.exports = merge(base, {
     publicPath: '/browser/',
   },
   externals: {
-    'electron-spellchecker': 'require("electron-spellchecker")'
+    'electron-spellchecker': 'require("electron-spellchecker")',
   },
 });
