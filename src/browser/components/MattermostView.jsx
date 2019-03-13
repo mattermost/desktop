@@ -2,8 +2,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// This file uses setState().
 /* eslint-disable react/no-set-state */
-// setState() is necessary for this component
 
 import url from 'url';
 
@@ -306,3 +306,5 @@ MattermostView.propTypes = {
   useSpellChecker: PropTypes.bool,
   onSelectSpellCheckerLocale: PropTypes.func,
 };
+
+/* eslint-enable react/no-set-state */

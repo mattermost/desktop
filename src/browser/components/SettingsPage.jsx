@@ -2,6 +2,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// This file uses setState().
 /* eslint-disable react/no-set-state */
 
 import React from 'react';
@@ -628,3 +629,5 @@ SettingsPage.propTypes = {
   configFile: PropTypes.string,
   enableServerManagement: PropTypes.bool,
 };
+
+/* eslint-enable react/no-set-state */

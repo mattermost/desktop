@@ -17,6 +17,8 @@ Release date: TBD
  [#900](https://github.com/mattermost/desktop/pull/900)
  - Improved the styling of the mention badge in tab bar.
  [#924](https://github.com/mattermost/desktop/pull/924)
+ - Updated spellchecker dictionaries for English.
+ [#938](https://github.com/mattermost/desktop/pull/938)
 
 #### Mac
  - Added auto-updater.

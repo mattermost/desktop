@@ -39,7 +39,7 @@ describe('common/settings.js', () => {
 describe('common/config/', () => {
   it('pastDefaultPreferences should have each past version of defaultPreferences', () => {
     for (let version = 0; version <= defaultPreferences.version; version++) {
-      pastDefaultPreferences[`${version}`].should.exist; // eslint-disable-line no-unused-expressions
+      pastDefaultPreferences[`${version}`].should.exist;
     }
   });
 
