@@ -284,7 +284,7 @@ function handleScreenResize(screen, browserWindow) {
 
 app.on('browser-window-created', (e, newWindow) => {
   // Screen cannot be required before app is ready
-  const {screen} = electron; // eslint-disable-line global-require
+  const {screen} = electron;
   handleScreenResize(screen, newWindow);
 });
 
