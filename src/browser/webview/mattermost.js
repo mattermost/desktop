@@ -46,7 +46,7 @@ window.addEventListener('load', () => {
     return;
   }
   watchReactAppUntilInitialized(() => {
-    ipcRenderer.sendToHost('onGuestInitialized');
+    ipcRenderer.sendToHost('onGuestInitialized', window.basename);
   });
 });
 
