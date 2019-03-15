@@ -1,5 +1,17 @@
 # Mattermost Desktop Application Changelog
 
+## Release v4.2.1
+
+Release date: March 15, 2019
+
+### Improvements
+
+#### All Platforms
+- Treat subpath links as internal when considering whether the URL must be opened with the external defined browser or as a new Electron window.
+[#946](https://github.com/mattermost/desktop/pull/946)
+
+----
+
 ## Release v4.2.0
 
 Release date: Nov 27, 2018
