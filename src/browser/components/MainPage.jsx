@@ -156,9 +156,9 @@ export default class MainPage extends React.Component {
       this.activateFinder(true);
     });
 
-    // listen for status updates from main
+    // listen for user status updates from main
     ipcRenderer.on('user-status-update', (event, userIsActive) => {
-      // pass on updates to each loaded view
+      // pass user status updates to each tab
       for (let i = 0; i < this.props.teams.length; i++) {
         self.refs[`mattermostView${i}`].updateUserStatus(userIsActive);
       }

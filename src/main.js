@@ -462,8 +462,8 @@ app.on('ready', () => {
   userActivityMonitor.startMonitoring();
 
   // push status updates to renderer
-  userActivityMonitor.on('status', ({userIsActive, idleTime}) => {
-    mainWindow.webContents.send('user-status-update', userIsActive, idleTime);
+  userActivityMonitor.on('status', ({userIsActive}) => {
+    mainWindow.webContents.send('user-status-update', userIsActive);
   });
 
   mainWindow = createMainWindow(config, {

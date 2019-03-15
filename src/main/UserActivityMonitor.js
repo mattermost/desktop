@@ -23,11 +23,13 @@ export default class UserActivityMonitor extends EventEmitter {
     this.systemIdleTimeIntervalID = -1;
 
     this.config = {
-      regularUpdateFrequencyMs: 1 * 1000,
-      statusUpdateThresholdMs: 5 * 1000,
+      internalUpdateFrequencyMs: 1 * 1000,
+      statusUpdateThresholdMs: 60 * 1000,
       userActivityTimeoutSec: 5 * 60,
     };
 
+    // NOTE: binding needed to prevent error, fat arrow methods don't work in current setup
+    // Error: "Error: async hook stack has become corrupted (actual: #, expected: #)"
     this.handleSuspend = this.handleSuspend.bind(this);
     this.handleResume = this.handleResume.bind(this);
     this.handleShutdown = this.handleShutdown.bind(this);
@@ -47,7 +49,7 @@ export default class UserActivityMonitor extends EventEmitter {
    * Begin monitoring system events and idle time at defined frequency
    *
    * @param {Object} config - overide internal configuration defaults
-   * @param {nunber} config.regularUpdateFrequencyMs
+   * @param {nunber} config.internalUpdateFrequencyMs
    * @param {nunber} config.statusUpdateThresholdMs
    * @param {nunber} config.userActivityTimeoutSec
    * @emits {error} emitted when method is called before the app is ready
@@ -81,7 +83,7 @@ export default class UserActivityMonitor extends EventEmitter {
       } catch (err) {
         console.log('Error getting system idle time:', err);
       }
-    }, this.config.regularUpdateFrequencyMs);
+    }, this.config.internalUpdateFrequencyMs);
   }
 
   /**

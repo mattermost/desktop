@@ -51,8 +51,6 @@ window.addEventListener('load', () => {
   watchReactAppUntilInitialized(() => {
     ipcRenderer.sendToHost('onGuestInitialized');
   });
-
-  desktopBridge.initialize();
 });
 
 function hasClass(element, className) {
@@ -199,16 +197,9 @@ function setSpellChecker() {
 setSpellChecker();
 ipcRenderer.on('set-spellchecker', setSpellChecker);
 
-ipcRenderer.on('user-is-active', () => {
-  if (desktopBridge && desktopBridge.ready) {
-    desktopBridge.desktop.send('updateUserActivityStatus', true);
-  }
-});
-
-ipcRenderer.on('user-is-inactive', () => {
-  if (desktopBridge && desktopBridge.ready) {
-    desktopBridge.desktop.send('updateUserActivityStatus', false);
-  }
+// pass user status updates to the desktop bridge
+ipcRenderer.on('user-status-update', (event, {userIsActive}) => {
+  desktopBridge.emit('user-status-update', {userIsActive});
 });
 
 // mattermost-webapp is SPA. So cache is not cleared due to no navigation.
