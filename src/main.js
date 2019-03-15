@@ -27,6 +27,7 @@ import {protocols} from '../electron-builder.json';
 
 import AutoLauncher from './main/AutoLauncher';
 import CriticalErrorHandler from './main/CriticalErrorHandler';
+import SystemActivityMonitor from './main/SystemActivityMonitor';
 import upgradeAutoLaunch from './main/autoLaunch';
 import autoUpdater from './main/autoUpdater';
 import buildConfig from './common/config/buildConfig';
@@ -417,6 +418,9 @@ app.on('ready', () => {
   if (global.willAppQuit) {
     return;
   }
+
+  const systemActivityMonitor = new SystemActivityMonitor();
+  systemActivityMonitor.start();
 
   if (!config.spellCheckerLocale) {
     config.spellCheckerLocale = SpellChecker.getSpellCheckerLocale(app.getLocale());

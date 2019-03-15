@@ -19,6 +19,7 @@ import ErrorView from './ErrorView.jsx';
 
 const preloadJS = `file://${remote.app.getAppPath()}/browser/webview/mattermost_bundle.js`;
 
+const CHECK_IDLE_INTERVAL = 30000;
 const ERR_NOT_IMPLEMENTED = -11;
 const U2F_EXTENSION_URL = 'chrome-extension://kmendfapggjehodndflmmgagdbamhnfd/u2f-comms.html';
 
@@ -45,6 +46,7 @@ export default class MattermostView extends React.Component {
     this.handleDeepLink = this.handleDeepLink.bind(this);
 
     this.webviewRef = React.createRef();
+    this.prevActiveState = true;
   }
 
   handleUnreadCountChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) {
@@ -111,6 +113,27 @@ export default class MattermostView extends React.Component {
     // So this would be emitted again when reloading a webview
     webview.addEventListener('dom-ready', () => {
       // webview.openDevTools();
+
+      const checkIdle = () => {
+        const idleState = ipcRenderer.sendSync('check-idle');
+        const stateChanged = idleState === this.prevIdleState;
+        let message;
+
+        this.prevIdleState = idleState;
+
+        if (idleState !== false) {
+          return;
+        }
+
+        if (stateChanged) {
+          message = 'send-ping';
+        } else {
+          message = 'restore-online';
+        }
+        webview.contentWindow.postMessage(message, '*');
+      };
+
+      setInterval(checkIdle, CHECK_IDLE_INTERVAL);
 
       if (!this.state.isContextMenuAdded) {
         contextMenu.setup(webview, {
