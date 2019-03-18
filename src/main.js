@@ -458,13 +458,13 @@ app.on('ready', () => {
 
   initCookieManager(session.defaultSession);
 
-  // start monitoring user activity
-  userActivityMonitor.startMonitoring();
-
-  // push status updates to renderer
+  // listem for status updates and push to renderer
   userActivityMonitor.on('status', ({userIsActive}) => {
     mainWindow.webContents.send('user-status-update', userIsActive);
   });
+
+  // start monitoring user activity
+  userActivityMonitor.startMonitoring();
 
   mainWindow = createMainWindow(config, {
     hideOnStartup,

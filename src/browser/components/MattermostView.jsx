@@ -43,6 +43,7 @@ export default class MattermostView extends React.Component {
     this.goForward = this.goForward.bind(this);
     this.getSrc = this.getSrc.bind(this);
     this.handleDeepLink = this.handleDeepLink.bind(this);
+    this.handleUserStatusUpdate = this.handleUserStatusUpdate.bind(this);
 
     this.webviewRef = React.createRef();
   }
@@ -180,6 +181,14 @@ export default class MattermostView extends React.Component {
         break;
       }
     });
+
+    // start listening for user status updates from main
+    ipcRenderer.on('user-status-update', this.handleUserStatusUpdate);
+  }
+
+  componentWillUnmount() {
+    // stop listening for user status updates from main
+    ipcRenderer.off('user-status-update', this.handleUserStatusUpdate);
   }
 
   reload() {
@@ -247,8 +256,8 @@ export default class MattermostView extends React.Component {
     );
   }
 
-  // pass user activity status update to the webview
-  updateUserStatus(userIsActive) {
+  handleUserStatusUpdate(event, userIsActive) {
+    // pass user activity status update to the webview
     this.webviewRef.current.send('user-status-update', {userIsActive});
   }
 

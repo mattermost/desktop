@@ -17,7 +17,7 @@ export default class UserActivityMonitor extends EventEmitter {
     super();
 
     this.isActive = true;
-    this.forceUserIsInactive = false;
+    this.forceInactive = false;
     this.idleTime = 0;
     this.lastStatusUpdate = 0;
     this.systemIdleTimeIntervalID = -1;
@@ -25,7 +25,7 @@ export default class UserActivityMonitor extends EventEmitter {
     this.config = {
       internalUpdateFrequencyMs: 1 * 1000,
       statusUpdateThresholdMs: 60 * 1000,
-      userActivityTimeoutSec: 5 * 60,
+      activityTimeoutSec: 5 * 60,
     };
 
     // NOTE: binding needed to prevent error, fat arrow methods don't work in current setup
@@ -38,7 +38,7 @@ export default class UserActivityMonitor extends EventEmitter {
   }
 
   get userIsActive() {
-    return this.forceUserIsInactive ? false : this.isActive;
+    return this.forceInactive ? false : this.isActive;
   }
 
   get userIdleTime() {
@@ -51,7 +51,7 @@ export default class UserActivityMonitor extends EventEmitter {
    * @param {Object} config - overide internal configuration defaults
    * @param {nunber} config.internalUpdateFrequencyMs
    * @param {nunber} config.statusUpdateThresholdMs
-   * @param {nunber} config.userActivityTimeoutSec
+   * @param {nunber} config.activityTimeoutSec
    * @emits {error} emitted when method is called before the app is ready
    * @emits {error} emitted when this method has previously been called but not subsequently stopped
    */
@@ -108,9 +108,9 @@ export default class UserActivityMonitor extends EventEmitter {
   updateIdleTime(idleTime) {
     this.idleTime = idleTime;
 
-    if (this.idleTime > this.config.userActivityTimeoutSec) {
+    if (this.idleTime > this.config.activityTimeoutSec) {
       this.updateUserActivityStatus(false);
-    } else if (!this.forceUserIsInactive && this.idleTime < this.config.userActivityTimeoutSec) {
+    } else if (!this.forceInactive && this.idleTime < this.config.activityTimeoutSec) {
       this.updateUserActivityStatus(true);
     }
   }
@@ -150,23 +150,23 @@ export default class UserActivityMonitor extends EventEmitter {
    * @private
    */
   handleSuspend() {
-    this.forceUserIsInactive = true;
+    this.forceInactive = true;
     this.updateUserActivityStatus(false);
   }
   handleResume() {
-    this.forceUserIsInactive = false;
+    this.forceInactive = false;
     this.updateUserActivityStatus(true);
   }
   handleShutdown() {
-    this.forceUserIsInactive = true;
+    this.forceInactive = true;
     this.updateUserActivityStatus(false);
   }
   handleLockScreen() {
-    this.forceUserIsInactive = true;
+    this.forceInactive = true;
     this.updateUserActivityStatus(false);
   }
   handleUnlockScreen() {
-    this.forceUserIsInactive = false;
+    this.forceInactive = false;
     this.updateUserActivityStatus(true);
   }
 }

@@ -155,14 +155,6 @@ export default class MainPage extends React.Component {
     ipcRenderer.on('toggle-find', () => {
       this.activateFinder(true);
     });
-
-    // listen for user status updates from main
-    ipcRenderer.on('user-status-update', (event, userIsActive) => {
-      // pass user status updates to each tab
-      for (let i = 0; i < this.props.teams.length; i++) {
-        self.refs[`mattermostView${i}`].updateUserStatus(userIsActive);
-      }
-    });
   }
 
   componentDidUpdate(prevProps, prevState) {
