@@ -27,13 +27,10 @@ export default class UserActivityMonitor extends EventEmitter {
       activityTimeoutSec: 5 * 60,
     };
 
-    // NOTE: binding needed to prevent error, fat arrow methods don't work in current setup
+    // NOTE: binding needed to prevent error; fat arrow class methods don't work in current setup
     // Error: "Error: async hook stack has become corrupted (actual: #, expected: #)"
-    this.handleSuspend = this.handleSuspend.bind(this);
-    this.handleResume = this.handleResume.bind(this);
-    this.handleShutdown = this.handleShutdown.bind(this);
-    this.handleLockScreen = this.handleLockScreen.bind(this);
-    this.handleUnlockScreen = this.handleUnlockScreen.bind(this);
+    this.handleSystemGoingAway = this.handleSystemGoingAway.bind(this);
+    this.handleSystemComingBack = this.handleSystemComingBack.bind(this);
   }
 
   get userIsActive() {
@@ -89,11 +86,11 @@ export default class UserActivityMonitor extends EventEmitter {
    * Stop monitoring system events and idle time
    */
   stopMonitoring() {
-    electron.powerMonitor.off('suspend', this.handleSuspend);
-    electron.powerMonitor.off('resume', this.handleResume);
-    electron.powerMonitor.off('shutdown', this.handleShutdown);
-    electron.powerMonitor.off('lock-screen', this.handleLockScreen);
-    electron.powerMonitor.off('unlock-screen', this.handleUnlockScreen);
+    electron.powerMonitor.off('suspend', this.handleSystemGoingAway);
+    electron.powerMonitor.off('resume', this.handleSystemComingBack);
+    electron.powerMonitor.off('shutdown', this.handleSystemGoingAway);
+    electron.powerMonitor.off('lock-screen', this.handleSystemGoingAway);
+    electron.powerMonitor.off('unlock-screen', this.handleSystemComingBack);
 
     clearInterval(this.systemIdleTimeIntervalID);
   }
@@ -121,11 +118,12 @@ export default class UserActivityMonitor extends EventEmitter {
    * @private
    */
   updateUserActivityStatus(isActive = false) {
+    const now = Date.now();
     if (isActive !== this.isActive) {
       this.isActive = isActive;
-      this.sendStatusUpdate();
-    } else if (new Date().getTime() - this.lastStatusUpdate > this.config.statusUpdateThresholdMs) {
-      this.sendStatusUpdate();
+      this.sendStatusUpdate(now);
+    } else if (now - this.lastStatusUpdate > this.config.statusUpdateThresholdMs) {
+      this.sendStatusUpdate(now);
     }
   }
 
@@ -135,8 +133,8 @@ export default class UserActivityMonitor extends EventEmitter {
    * @emits {status} emitted at regular, definable intervals providing an update on user active status and idle time
    * @private
    */
-  sendStatusUpdate() {
-    this.lastStatusUpdate = new Date().getTime();
+  sendStatusUpdate(now = Date.now()) {
+    this.lastStatusUpdate = now;
     this.emit('status', {
       userIsActive: this.isActive,
       idleTime: this.idleTime,
@@ -148,23 +146,11 @@ export default class UserActivityMonitor extends EventEmitter {
    *
    * @private
    */
-  handleSuspend() {
+  handleSystemGoingAway() {
     this.forceInactive = true;
     this.updateUserActivityStatus(false);
   }
-  handleResume() {
-    this.forceInactive = false;
-    this.updateUserActivityStatus(true);
-  }
-  handleShutdown() {
-    this.forceInactive = true;
-    this.updateUserActivityStatus(false);
-  }
-  handleLockScreen() {
-    this.forceInactive = true;
-    this.updateUserActivityStatus(false);
-  }
-  handleUnlockScreen() {
+  handleSystemComingBack() {
     this.forceInactive = false;
     this.updateUserActivityStatus(true);
   }
