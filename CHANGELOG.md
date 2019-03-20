@@ -47,7 +47,7 @@ Release date: March 20, 2019
 ### Bug Fixes
 
 #### All Platforms
-- Fixed an issue where the links to the same subdomain opened in a smaller window in the Mattermost app.
+- Fixed an issue where some links opened in a smaller window in the Mattermost app. This issue only affected installations with a [Site URL](https://docs.mattermost.com/administration/config-settings.html#site-url) configured to use a subpath.
 [#946](https://github.com/mattermost/desktop/pull/946)
 
 ### Contributors
