@@ -38,6 +38,26 @@ Release date: TBD
 
 ----
 
+## Release v4.2.1
+
+Release date: March 20, 2019
+
+- Mattermost v4.2.1 contains a bug fix for all platforms.
+
+### Bug Fixes
+
+#### All Platforms
+- Fixed an issue where the links to the same subdomain opened in a smaller window in the Mattermost app.
+[#946](https://github.com/mattermost/desktop/pull/946)
+
+### Contributors
+
+Many thanks to all our contributors. In alphabetical order:
+
+[lieut-data](https://github.com/lieut-data)
+
+----
+
 ## Release v4.2.0
 
 Release date: Nov 27, 2018
