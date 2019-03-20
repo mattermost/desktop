@@ -9,7 +9,6 @@ import {app, BrowserWindow} from 'electron';
 function saveWindowState(file, window) {
   const windowState = window.getBounds();
   windowState.maximized = window.isMaximized();
-  windowState.fullscreen = window.isFullScreen();
   try {
     fs.writeFileSync(file, JSON.stringify(windowState));
   } catch (e) {
