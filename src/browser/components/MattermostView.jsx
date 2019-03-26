@@ -99,6 +99,9 @@ export default class MattermostView extends React.Component {
       if (Utils.isInternalURL(destURL, currentURL, this.state.basename)) {
         if (destURL.path.match(/^\/api\/v[3-4]\/public\/files\//)) {
           ipcRenderer.send('download-url', e.url);
+        } else if (destURL.path.match(/^\/help\//)) {
+          // continue to open special case internal urls in default browser
+          shell.openExternal(e.url);
         } else {
           // New window should disable nodeIntegration.
           window.open(e.url, remote.app.getName(), 'nodeIntegration=no, show=yes');
