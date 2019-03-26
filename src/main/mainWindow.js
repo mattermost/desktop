@@ -110,7 +110,15 @@ function createMainWindow(config, options) {
         }
         break;
       case 'darwin':
-        hideWindow(mainWindow);
+        // need to leave fullscreen first, then hide the window
+        if (mainWindow.isFullScreen()) {
+          mainWindow.once('leave-full-screen', () => {
+            hideWindow(mainWindow);
+          });
+          mainWindow.setFullScreen(false);
+        } else {
+          hideWindow(mainWindow);
+        }
         break;
       default:
       }
