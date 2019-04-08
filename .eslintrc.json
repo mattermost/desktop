@@ -78,6 +78,7 @@
         "src/browser/settings.jsx",
         "src/browser/index.jsx",
         "src/common/deepmerge.js",
+        "src/common/config/index.js",
         "src/common/config/buildConfig.js",
         "src/common/config/pastDefaultPreferences.js",
         "src/common/config/upgradePreferences.js",

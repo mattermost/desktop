@@ -1,7 +1,6 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-'use strict';
 
 import './css/index.css';
 
@@ -15,20 +14,30 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import {remote, ipcRenderer} from 'electron';
 
-import buildConfig from '../common/config/buildConfig';
-import settings from '../common/settings';
 import utils from '../utils/util';
 
 import MainPage from './components/MainPage.jsx';
-import AppConfig from './config/AppConfig.js';
 import {createDataURL as createBadgeDataURL} from './js/badge';
 
-const teams = settings.mergeDefaultTeams(AppConfig.data.teams);
+let configData = ipcRenderer.sendSync('get-config-data');
+
+const teams = configData.teams;
 
 remote.getCurrentWindow().removeAllListeners('focus');
 
 if (teams.length === 0) {
   remote.getCurrentWindow().loadFile('browser/settings.html');
+}
+
+const permissionRequestQueue = [];
+const requestingPermission = new Array(teams.length);
+
+const parsedURL = url.parse(window.location.href, true);
+const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : 0;
+
+let deeplinkingUrl = null;
+if (!parsedURL.query.index || parsedURL.query.index === null) {
+  deeplinkingUrl = remote.getCurrentWindow().deeplinkingUrl;
 }
 
 function showBadgeWindows(sessionExpired, unreadCount, mentionCount) {
@@ -50,7 +59,7 @@ function showBadgeWindows(sessionExpired, unreadCount, mentionCount) {
   } else if (mentionCount > 0) {
     const dataURL = createBadgeDataURL(mentionCount.toString());
     sendBadge(dataURL, 'You have unread mentions (' + mentionCount + ')');
-  } else if (unreadCount > 0 && AppConfig.data.showUnreadBadge) {
+  } else if (unreadCount > 0 && configData.showUnreadBadge) {
     const dataURL = createBadgeDataURL('•');
     sendBadge(dataURL, 'You have unread channels (' + unreadCount + ')');
   } else {
@@ -63,7 +72,7 @@ function showBadgeOSX(sessionExpired, unreadCount, mentionCount) {
     remote.app.dock.setBadge('•');
   } else if (mentionCount > 0) {
     remote.app.dock.setBadge(mentionCount.toString());
-  } else if (unreadCount > 0 && AppConfig.data.showUnreadBadge) {
+  } else if (unreadCount > 0 && configData.showUnreadBadge) {
     remote.app.dock.setBadge('•');
   } else {
     remote.app.dock.setBadge('');
@@ -106,15 +115,8 @@ function showBadge(sessionExpired, unreadCount, mentionCount) {
   }
 }
 
-const permissionRequestQueue = [];
-const requestingPermission = new Array(AppConfig.data.teams.length);
-
 function teamConfigChange(updatedTeams) {
-  AppConfig.set('teams', updatedTeams.slice(buildConfig.defaultTeams.length));
-  teams.splice(0, teams.length, ...updatedTeams);
-  requestingPermission.length = teams.length;
-  ipcRenderer.send('update-menu', AppConfig.data);
-  ipcRenderer.send('update-config');
+  ipcRenderer.send('update-config', 'teams', updatedTeams);
 }
 
 function feedPermissionRequest() {
@@ -152,28 +154,23 @@ function handleClickPermissionDialog(index, status) {
   feedPermissionRequest();
 }
 
+function handleSelectSpellCheckerLocale(locale) {
+  ipcRenderer.send('update-config', 'spellCheckerLocale', locale);
+}
+
+ipcRenderer.on('config-updated', (event, args) => {
+  configData = args.configData;
+  teams.splice(0, teams.length, ...configData.teams);
+  requestingPermission.length = teams.length;
+});
+
 ipcRenderer.on('request-permission', (event, origin, permission) => {
-  if (permissionRequestQueue.length >= 100) {
+  if (permissionRequestQueue.length >= 100) { // eslint-disable-line no-magic-numbers
     return;
   }
   permissionRequestQueue.push({origin, permission});
   feedPermissionRequest();
 });
-
-function handleSelectSpellCheckerLocale(locale) {
-  console.log(locale);
-  AppConfig.set('spellCheckerLocale', locale);
-  ipcRenderer.send('update-config');
-  ipcRenderer.send('update-dict');
-}
-
-const parsedURL = url.parse(window.location.href, true);
-const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : 0;
-
-let deeplinkingUrl = null;
-if (!parsedURL.query.index || parsedURL.query.index === null) {
-  deeplinkingUrl = remote.getCurrentWindow().deeplinkingUrl;
-}
 
 ReactDOM.render(
   <MainPage
@@ -181,10 +178,10 @@ ReactDOM.render(
     initialIndex={initialIndex}
     onBadgeChange={showBadge}
     onTeamConfigChange={teamConfigChange}
-    useSpellChecker={AppConfig.data.useSpellChecker}
+    useSpellChecker={configData.useSpellChecker}
     onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}
     deeplinkingUrl={deeplinkingUrl}
-    showAddServerButton={buildConfig.enableServerManagement}
+    showAddServerButton={configData.enableServerManagement}
     requestingPermission={requestingPermission}
     onClickPermissionDialog={handleClickPermissionDialog}
   />,
