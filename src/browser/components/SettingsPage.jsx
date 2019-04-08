@@ -82,9 +82,10 @@ export default class SettingsPage extends React.Component {
       this.updateSaveState();
       this.setState(convertConfigDataToState(data, this.state));
     });
-    ipcRenderer.on('config-error', (event, error) => {
-      // TODO: Handle config save errors
-    });
+
+    // ipcRenderer.on('config-error', (event, error) => {
+    //   // TODO: Handle config save errors
+    // });
   }
 
   saveSetting({key, data}, configType) {
@@ -116,6 +117,7 @@ export default class SettingsPage extends React.Component {
       savingState[CONFIG_TYPE_SERVERS] = AutoSaveIndicator.SAVING_STATE_SAVING;
     } else if (queuedServerTypes === 0 && savingState[CONFIG_TYPE_SERVERS] === AutoSaveIndicator.SAVING_STATE_SAVING) {
       savingState[CONFIG_TYPE_SERVERS] = AutoSaveIndicator.SAVING_STATE_SAVED;
+
       // TODO: Need to handle this better
       setTimeout(() => {
         if (this.state.savingState[CONFIG_TYPE_SERVERS] !== AutoSaveIndicator.SAVING_STATE_SAVING) {
@@ -129,6 +131,7 @@ export default class SettingsPage extends React.Component {
       savingState[CONFIG_TYPE_APP_OPTIONS] = AutoSaveIndicator.SAVING_STATE_SAVING;
     } else if (queuedAppConfigTypes === 0 && savingState[CONFIG_TYPE_APP_OPTIONS] === AutoSaveIndicator.SAVING_STATE_SAVING) {
       savingState[CONFIG_TYPE_APP_OPTIONS] = AutoSaveIndicator.SAVING_STATE_SAVED;
+
       // TODO: Need to handle this better
       setTimeout(() => {
         if (this.state.savingState[CONFIG_TYPE_APP_OPTIONS] !== AutoSaveIndicator.SAVING_STATE_SAVING) {
@@ -633,7 +636,7 @@ export default class SettingsPage extends React.Component {
               bsStyle='link'
               style={settingsPage.close}
               onClick={this.handleCancel}
-              disabled={this.state.teams.length === 0}
+              disabled={this.state.localTeams.length === 0}
             >
               <span>{'×'}</span>
             </Button>

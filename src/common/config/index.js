@@ -168,6 +168,17 @@ export default class Config extends EventEmitter {
     return configData;
   }
 
+  loadGPOConfigData() {
+    const configData = {
+      teams: [],
+      enableServerManagement: true,
+    };
+    if (process.platform === 'win32') {
+      // load GPO data here
+    }
+    return configData;
+  }
+
   checkForConfigUpdates(data) {
     let configData = data;
     try {
@@ -178,17 +189,6 @@ export default class Config extends EventEmitter {
       }
     } catch (error) {
       console.log(`Failed to update configuration to version ${this.defaultConfigData.version}.`);
-    }
-    return configData;
-  }
-
-  loadGPOConfigData() {
-    const configData = {
-      teams: [],
-      enableServerManagement: true,
-    };
-    if (process.platform === 'win32') {
-      // load GPO data here
     }
     return configData;
   }
