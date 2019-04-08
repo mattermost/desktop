@@ -276,7 +276,7 @@ export default class SettingsPage extends React.Component {
   }
 
   updateTeam(index, newData) {
-    const teams = this.state.teams;
+    const teams = this.state.localTeams;
     teams[index] = newData;
     this.saveSetting({key: 'teams', data: teams}, CONFIG_TYPE_SERVERS);
     this.setState({
@@ -285,7 +285,7 @@ export default class SettingsPage extends React.Component {
   }
 
   addServer(team) {
-    const teams = this.state.teams;
+    const teams = this.state.localTeams;
     teams.push(team);
     this.saveSetting({key: 'teams', data: teams}, CONFIG_TYPE_SERVERS);
     this.setState({
@@ -333,7 +333,7 @@ export default class SettingsPage extends React.Component {
       <Row>
         <Col md={12}>
           <TeamList
-            teams={this.state.teams}
+            teams={this.state.localTeams}
             showAddTeamForm={this.state.showAddTeamForm}
             toggleAddTeamForm={this.toggleShowTeamForm}
             setAddTeamFormVisibility={this.setShowTeamFormVisibility}
@@ -342,7 +342,7 @@ export default class SettingsPage extends React.Component {
             addServer={this.addServer}
             allowTeamEdit={this.state.enableTeamModification}
             onTeamClick={(index) => {
-              backToIndex(index);
+              backToIndex(index + this.state.buildTeams.length + this.state.GPOTeams.length);
             }}
           />
           {/* <TeamList

@@ -197,6 +197,10 @@ export default class Config extends EventEmitter {
     // combine all config data in the correct order
     this.combinedData = Object.assign({}, this.defaultConfigData, this.localConfigData, this.buildConfigData, this.GPOConfigData);
 
+    // remove unecessary data from default and build config
+    delete this.combinedData.defaultTeam;
+    delete this.combinedData.defaultTeams;
+
     // IMPORTANT: properly combine teams from all sources
     const combinedTeams = [];
 
@@ -204,8 +208,6 @@ export default class Config extends EventEmitter {
     if (this.buildConfigData.defaultTeams && this.buildConfigData.defaultTeams.length) {
       combinedTeams.push(...this.deepCopy(this.buildConfigData.defaultTeams));
     }
-
-    console.log(this.GPOConfigData);
 
     // - add GPO defined teams, if any
     if (this.GPOConfigData.teams && this.GPOConfigData.teams.length) {
@@ -218,9 +220,9 @@ export default class Config extends EventEmitter {
     }
 
     this.combinedData.teams = combinedTeams;
-
-    // filter out duplicate teams by URL
-    this.combinedData.teams = this.filterOutDuplicateTeams(this.combinedData.teams);
+    this.combinedData.localTeams = this.localConfigData.teams;
+    this.combinedData.buildTeams = this.buildConfigData.defaultTeams;
+    this.combinedData.GPOTeams = this.GPOConfigData.teams;
   }
 
   filterOutDuplicateTeams(teams) {
