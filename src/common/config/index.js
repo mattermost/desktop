@@ -41,6 +41,8 @@ export default class Config extends EventEmitter {
     // pre-process data as needed before saving
     switch (key) {
     case 'teams':
+      newData = this.filterOutDuplicateTeams(newData);
+
       // remove teams already defined in buildConfig or GPOConfig
       newData = this.filterOutPredefinedTeams(newData);
       break;
@@ -150,7 +152,7 @@ export default class Config extends EventEmitter {
   loadConfigFile() {
     let configData = {};
     try {
-      configData = this.merge(this.defaultConfigData, this.readFileSync(configFilePath));
+      configData = this.readFileSync(configFilePath);
     } catch (e) {
       console.log('Failed to load configuration file from the filesystem. Using defaults.');
       configData = this.copy(this.defaultConfigData);
@@ -159,6 +161,7 @@ export default class Config extends EventEmitter {
       if (!configData.teams.length && this.defaultConfigData.defaultTeam) {
         configData.teams.push(this.defaultConfigData.defaultTeam);
       }
+      delete configData.defaultTeam;
 
       this.writeFileSync(configFilePath, configData);
     }
@@ -202,6 +205,8 @@ export default class Config extends EventEmitter {
       combinedTeams.push(...this.deepCopy(this.buildConfigData.defaultTeams));
     }
 
+    console.log(this.GPOConfigData);
+
     // - add GPO defined teams, if any
     if (this.GPOConfigData.teams && this.GPOConfigData.teams.length) {
       combinedTeams.push(...this.GPOConfigData.teams);
@@ -215,10 +220,16 @@ export default class Config extends EventEmitter {
     this.combinedData.teams = combinedTeams;
 
     // filter out duplicate teams by URL
+    this.combinedData.teams = this.filterOutDuplicateTeams(this.combinedData.teams);
+  }
+
+  filterOutDuplicateTeams(teams) {
+    let newTeams = teams;
     const uniqueURLs = new Set();
-    this.combinedData.teams = this.combinedData.teams.filter((team) => {
+    newTeams = newTeams.filter((team) => {
       return uniqueURLs.has(team.url) ? false : uniqueURLs.add(team.url);
     });
+    return newTeams;
   }
 
   filterOutPredefinedTeams(teams) {
@@ -235,8 +246,7 @@ export default class Config extends EventEmitter {
   // helper functions
 
   readFileSync(filePath) {
-    const config = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    return config;
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
   }
 
   writeFile(filePath, configData, callback) {
