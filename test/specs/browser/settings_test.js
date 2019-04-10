@@ -209,7 +209,7 @@ describe('browser/settings.html', function desc() {
         });
       });
 
-      describe('Save tray icon theme on linux', () => {
+      describe.skip('Save tray icon theme on linux', () => {
         env.shouldTest(it, process.platform === 'linux')('should be saved when it\'s selected', async () => {
           env.addClientCommands(this.app.client);
           await this.app.browserWindow.setSize(1024, 768); // Resize the window to click the element
