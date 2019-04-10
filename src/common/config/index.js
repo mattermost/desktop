@@ -184,14 +184,14 @@ export default class Config extends EventEmitter {
    * Returns a copy of the app's default config data
    */
   loadDefaultConfigData() {
-    return this.deepCopy(defaultPreferences);
+    return this.copy(defaultPreferences);
   }
 
   /**
    * Returns a copy of the app's build config data
    */
   loadBuildConfigData() {
-    return this.deepCopy(buildConfig);
+    return this.copy(buildConfig);
   }
 
   /**

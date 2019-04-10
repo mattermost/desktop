@@ -140,7 +140,7 @@ export default class SettingsPage extends React.Component {
   }, 2000);
 
   handleTeamsChange = (teams) => {
-    this.saveSetting(CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
+    setImmediate(this.saveSetting, CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
     this.setState({
       showAddTeamForm: false,
       teams,
@@ -156,7 +156,7 @@ export default class SettingsPage extends React.Component {
 
   handleChangeShowTrayIcon = () => {
     const shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
-    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'showTrayIcon', data: shouldShowTrayIcon});
+    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'showTrayIcon', data: shouldShowTrayIcon});
     this.setState({
       showTrayIcon: shouldShowTrayIcon,
     });
@@ -169,14 +169,14 @@ export default class SettingsPage extends React.Component {
   }
 
   handleChangeTrayIconTheme = (theme) => {
-    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'trayIconTheme', data: theme});
+    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'trayIconTheme', data: theme});
     this.setState({
       trayIconTheme: theme,
     });
   }
 
   handleChangeAutoStart = () => {
-    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'autostart', data: !this.refs.autostart.props.checked});
+    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'autostart', data: !this.refs.autostart.props.checked});
     this.setState({
       autostart: !this.refs.autostart.props.checked,
     });
@@ -185,7 +185,7 @@ export default class SettingsPage extends React.Component {
   handleChangeMinimizeToTray = () => {
     const shouldMinimizeToTray = this.state.showTrayIcon && !this.refs.minimizeToTray.props.checked;
 
-    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'minimizeToTray', data: shouldMinimizeToTray});
+    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'minimizeToTray', data: shouldMinimizeToTray});
     this.setState({
       minimizeToTray: shouldMinimizeToTray,
     });
@@ -205,7 +205,7 @@ export default class SettingsPage extends React.Component {
   }
 
   handleFlashWindow = () => {
-    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {
+    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {
       key: 'notifications',
       data: {
         ...this.state.notifications,
@@ -221,7 +221,7 @@ export default class SettingsPage extends React.Component {
   }
 
   handleBounceIcon = () => {
-    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {
+    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {
       key: 'notifications',
       data: {
         ...this.state.notifications,
@@ -237,7 +237,7 @@ export default class SettingsPage extends React.Component {
   }
 
   handleBounceIconType = (event) => {
-    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {
+    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {
       key: 'notifications',
       data: {
         ...this.state.notifications,
@@ -253,21 +253,21 @@ export default class SettingsPage extends React.Component {
   }
 
   handleShowUnreadBadge = () => {
-    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'showUnreadBadge', data: !this.refs.showUnreadBadge.props.checked});
+    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'showUnreadBadge', data: !this.refs.showUnreadBadge.props.checked});
     this.setState({
       showUnreadBadge: !this.refs.showUnreadBadge.props.checked,
     });
   }
 
   handleChangeUseSpellChecker = () => {
-    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'useSpellChecker', data: !this.refs.useSpellChecker.props.checked});
+    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'useSpellChecker', data: !this.refs.useSpellChecker.props.checked});
     this.setState({
       useSpellChecker: !this.refs.useSpellChecker.props.checked,
     });
   }
 
   handleChangeEnableHardwareAcceleration = () => {
-    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'enableHardwareAcceleration', data: !this.refs.enableHardwareAcceleration.props.checked});
+    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'enableHardwareAcceleration', data: !this.refs.enableHardwareAcceleration.props.checked});
     this.setState({
       enableHardwareAcceleration: !this.refs.enableHardwareAcceleration.props.checked,
     });
@@ -276,7 +276,7 @@ export default class SettingsPage extends React.Component {
   updateTeam = (index, newData) => {
     const teams = this.state.localTeams;
     teams[index] = newData;
-    this.saveSetting(CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
+    setImmediate(this.saveSetting, CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
     this.setState({
       teams,
     });
@@ -285,7 +285,7 @@ export default class SettingsPage extends React.Component {
   addServer = (team) => {
     const teams = this.state.localTeams;
     teams.push(team);
-    this.saveSetting(CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
+    setImmediate(this.saveSetting, CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
     this.setState({
       teams,
     });
