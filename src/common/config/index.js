@@ -11,6 +11,9 @@ import defaultPreferences from './defaultPreferences';
 import upgradeConfigData from './upgradePreferences';
 import buildConfig from './buildConfig';
 
+/**
+ * Handles loading and merging all sources of configuration as well as saving user provided config
+ */
 export default class Config extends EventEmitter {
   constructor(configFilePath) {
     super();
@@ -18,6 +21,13 @@ export default class Config extends EventEmitter {
     this.reload();
   }
 
+  /**
+   * Reload all sources of config data
+   *
+   * @param {boolean} synchronize determines whether or not to emit a synchronize event once config has been reloaded
+   * @emits {update} emitted once all data has been loaded and merged
+   * @emits {synchronize} emitted when requested by a call to method; used to notify other config instances of changes
+   */
   reload(synchronize = false) {
     this.defaultConfigData = this.loadDefaultConfigData();
     this.buildConfigData = this.loadBuildConfigData();
@@ -36,19 +46,30 @@ export default class Config extends EventEmitter {
     }
   }
 
+  /**
+   * Used to save a single config property
+   *
+   * @param {string} key name of config property to be saved
+   * @param {*} data value to save for provided key
+   */
   set(key, data) {
     if (key) {
-      this.processNewProperty(key, data);
+      this.localConfigData[key] = data;
       this.regenerateCombinedConfigData();
       this.saveLocalConfigData();
     }
   }
 
+  /**
+   * Used to save an array of config properties in one go
+   *
+   * @param {array} properties an array of config properties to save
+   */
   setMultiple(properties = []) {
     if (properties.length) {
       properties.forEach(({key, data}) => {
         if (key) {
-          this.processNewProperty(key, data);
+          this.localConfigData[key] = data;
         }
       });
       this.regenerateCombinedConfigData();
@@ -56,6 +77,11 @@ export default class Config extends EventEmitter {
     }
   }
 
+  /**
+   * Used to replace the existing config data with new config data
+   *
+   * @param {object} configData a new, config data object to completely replace the existing config data
+   */
   replace(configData) {
     const newConfigData = configData;
 
@@ -68,21 +94,12 @@ export default class Config extends EventEmitter {
     this.saveLocalConfigData();
   }
 
-  processNewProperty(key, data) {
-    let newData = data;
-
-    // pre-process by key as needed
-    switch (key) {
-    case 'teams':
-      newData = this.filterOutDuplicateTeams(newData);
-
-      // remove teams already defined in buildConfig or GPOConfig
-      newData = this.filterOutPredefinedTeams(newData);
-      break;
-    }
-    this.localConfigData[key] = newData;
-  }
-
+  /**
+   * Used to save the current set of local config data to disk
+   *
+   * @emits {update} emitted once all data has been saved
+   * @emits {synchronize} emitted once all data has been saved; used to notify other config instances of changes
+   */
   saveLocalConfigData() {
     try {
       this.writeFile(this.configFilePath, this.localConfigData, (error) => {
@@ -162,14 +179,23 @@ export default class Config extends EventEmitter {
 
   // initialization/processing methods
 
+  /**
+   * Returns a copy of the app's default config data
+   */
   loadDefaultConfigData() {
     return this.deepCopy(defaultPreferences);
   }
 
+  /**
+   * Returns a copy of the app's build config data
+   */
   loadBuildConfigData() {
     return this.deepCopy(buildConfig);
   }
 
+  /**
+   * Loads and returns locally stored config data from the filesystem or returns app defaults if no file is found
+   */
   loadConfigFile() {
     let configData = {};
     try {
@@ -189,17 +215,28 @@ export default class Config extends EventEmitter {
     return configData;
   }
 
+  /**
+   * Loads and returns config data defined in GPO for Windows
+   */
   loadGPOConfigData() {
     const configData = {
       teams: [],
       enableServerManagement: true,
+      enableAutoUpdater: true,
     };
     if (process.platform === 'win32') {
-      // load GPO data here
+      //
+      // TODO: GPO data needs to be retrieved here merged into the local `configData` variable for return
+      //
     }
     return configData;
   }
 
+  /**
+   * Determines if locally stored needs to be updated and upgrades as needed
+   *
+   * @param {*} data locally stored data
+   */
   checkForConfigUpdates(data) {
     let configData = data;
     try {
@@ -214,6 +251,9 @@ export default class Config extends EventEmitter {
     return configData;
   }
 
+  /**
+   * Properly combines all sources of data into a single, manageable set of all config data
+   */
   regenerateCombinedConfigData() {
     // combine all config data in the correct order
     this.combinedData = Object.assign({}, this.defaultConfigData, this.localConfigData, this.buildConfigData, this.GPOConfigData);
@@ -246,6 +286,11 @@ export default class Config extends EventEmitter {
     this.combinedData.GPOTeams = this.GPOConfigData.teams;
   }
 
+  /**
+   * Returns the provided list of teams with duplicates filtered out
+   *
+   * @param {array} teams array of teams to check for duplicates
+   */
   filterOutDuplicateTeams(teams) {
     let newTeams = teams;
     const uniqueURLs = new Set();
@@ -255,6 +300,10 @@ export default class Config extends EventEmitter {
     return newTeams;
   }
 
+  /**
+   * Returns the provided array fo teams with existing teams filtered out
+   * @param {array} teams array of teams to check for already defined teams
+   */
   filterOutPredefinedTeams(teams) {
     let newTeams = teams;
 
