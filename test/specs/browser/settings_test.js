@@ -209,25 +209,25 @@ describe('browser/settings.html', function desc() {
         });
       });
 
-      describe.skip('Save tray icon theme on linux', () => {
+      describe('Save tray icon theme on linux', () => {
         env.shouldTest(it, process.platform === 'linux')('should be saved when it\'s selected', async () => {
           env.addClientCommands(this.app.client);
           await this.app.browserWindow.setSize(1024, 768); // Resize the window to click the element
           await this.app.client.
             loadSettingsPage().
             click('#inputShowTrayIcon').
-            click('input[value="light"]').
-            pause(700); // wait auto-save
-
-          const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-          config0.trayIconTheme.should.equal('light');
-
-          await this.app.client.
             click('input[value="dark"]').
             pause(700); // wait auto-save
 
+          const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+          config0.trayIconTheme.should.equal('dark');
+
+          await this.app.client.
+            click('input[value="light"]').
+            pause(700); // wait auto-save
+
           const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-          config1.trayIconTheme.should.equal('dark');
+          config1.trayIconTheme.should.equal('light');
         });
       });
     });
