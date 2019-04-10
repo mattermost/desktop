@@ -351,8 +351,4 @@ export default class Config extends EventEmitter {
   copy(data) {
     return Object.assign({}, data);
   }
-
-  deepCopy(data) {
-    return JSON.parse(JSON.stringify(data));
-  }
 }
