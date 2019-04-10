@@ -134,6 +134,9 @@ export default class Config extends EventEmitter {
 
   // convenience getters
 
+  get version() {
+    return this.combinedData.version;
+  }
   get teams() {
     return this.combinedData.teams;
   }
