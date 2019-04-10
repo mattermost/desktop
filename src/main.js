@@ -74,13 +74,14 @@ if (argv['data-dir']) {
 
 global.isDev = isDev && !argv.disableDevMode;
 
-config = new Config();
+config = new Config(app.getPath('userData') + '/config.json');
+
+// can only call this before the app is ready
+if (config.enableHardwareAcceleration === false) {
+  app.disableHardwareAcceleration();
+}
 
 config.on('update', (configData) => {
-  if (config.enableHardwareAcceleration === false) {
-    app.disableHardwareAcceleration();
-  }
-
   if (process.platform === 'win32' || process.platform === 'linux') {
     const appLauncher = new AutoLauncher();
     const autoStartTask = config.autostart ? appLauncher.enable() : appLauncher.disable();
@@ -97,31 +98,17 @@ config.on('update', (configData) => {
     ipcMain.emit('update-dict', true, config.spellCheckerLocale);
   }
 
+  ipcMain.emit('update-menu', true, configData);
+});
+
+config.on('synchronize', () => {
   if (mainWindow) {
-    mainWindow.webContents.send('config-updated', configData);
-  }
-});
-config.on('error', (error) => {
-  if (mainWindow) {
-    mainWindow.webContents.send('config-error', error);
+    mainWindow.webContents.send('reload-config');
   }
 });
 
-ipcMain.on('get-config-data', (event) => {
-  event.returnValue = config.data;
-});
-
-ipcMain.on('update-config', (event, key, data) => {
-  config.set(key, data);
-
-  // perform key-specific actions as needed
-  switch (key) {
-  case 'spellCheckerLocale':
-    ipcMain.emit('update-dict');
-    break;
-  }
-
-  ipcMain.emit('update-menu', true, config.data);
+ipcMain.on('reload-config', () => {
+  config.reload();
 });
 
 // Only for OS X

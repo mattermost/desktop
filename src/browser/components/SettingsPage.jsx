@@ -9,6 +9,9 @@ import React from 'react';
 import {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} from 'react-bootstrap';
 
 import {ipcRenderer, remote} from 'electron';
+import {debounce} from 'underscore';
+
+import Config from '../../common/config';
 
 import TeamList from './TeamList.jsx';
 import AutoSaveIndicator from './AutoSaveIndicator.jsx';
@@ -16,33 +19,19 @@ import AutoSaveIndicator from './AutoSaveIndicator.jsx';
 const CONFIG_TYPE_SERVERS = 'servers';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
+const config = new Config(remote.app.getPath('userData') + '/config.json');
+
 function backToIndex(index) {
   const target = typeof index === 'undefined' ? 0 : index;
   const indexURL = remote.getGlobal('isDev') ? 'http://localhost:8080/browser/index.html' : `file://${remote.app.getAppPath()}/browser/index.html`;
   remote.getCurrentWindow().loadURL(`${indexURL}?index=${target}`);
 }
 
-function convertConfigDataToState(configData, currentState = {}) {
-  const newState = Object.assign({}, configData);
-  newState.showAddTeamForm = false;
-  newState.trayWasVisible = currentState.trayWasVisible || remote.getCurrentWindow().trayWasVisible;
-  if (newState.teams.length === 0) {
-    newState.showAddTeamForm = true;
-  }
-  newState.savingState = currentState.savingState || {
-    appOptions: AutoSaveIndicator.SAVING_STATE_DONE,
-    servers: AutoSaveIndicator.SAVING_STATE_DONE,
-  };
-  return newState;
-}
-
 export default class SettingsPage extends React.Component {
   constructor(props) {
     super(props);
 
-    const configData = ipcRenderer.sendSync('get-config-data');
-
-    this.state = convertConfigDataToState(configData);
+    this.state = this.convertConfigDataToState(config.data);
 
     this.handleTeamsChange = this.handleTeamsChange.bind(this);
     this.handleCancel = this.handleCancel.bind(this);
@@ -58,6 +47,8 @@ export default class SettingsPage extends React.Component {
     this.handleShowUnreadBadge = this.handleShowUnreadBadge.bind(this);
     this.handleChangeUseSpellChecker = this.handleChangeUseSpellChecker.bind(this);
     this.handleChangeEnableHardwareAcceleration = this.handleChangeEnableHardwareAcceleration.bind(this);
+    this.saveSetting = this.saveSetting.bind(this);
+    this.updateSaveState = this.updateSaveState.bind(this);
     this.updateTeam = this.updateTeam.bind(this);
     this.addServer = this.addServer.bind(this);
 
@@ -67,85 +58,106 @@ export default class SettingsPage extends React.Component {
   }
 
   componentDidMount() {
+    config.on('update', (configData) => {
+      this.updateSaveState();
+      this.setState(this.convertConfigDataToState(configData, this.state));
+    });
+
+    config.on('error', (error) => {
+      console.log('Config saving error: ', error);
+
+      const savingState = Object.assign({}, this.state.savingState);
+      Object.entries(savingState).forEach(([configType, currentState]) => {
+        if (currentState !== AutoSaveIndicator.SAVING_STATE_DONE) {
+          savingState[configType] = AutoSaveIndicator.SAVING_STATE_ERROR;
+          this.setState({savingState});
+        }
+      });
+    });
+
+    config.on('synchronize', () => {
+      ipcRenderer.send('reload-config');
+    });
+
+    ipcRenderer.on('reload-config', () => {
+      config.reload();
+    });
+
     ipcRenderer.on('add-server', () => {
       this.setState({
         showAddTeamForm: true,
       });
     });
+
     ipcRenderer.on('switch-tab', (event, key) => {
       backToIndex(key);
     });
-    ipcRenderer.on('config-updated', (event, data) => {
-      this.saveQueue = this.saveQueue.filter((savedItem) => {
-        return data[savedItem.key] !== savedItem.data;
-      });
-      this.updateSaveState();
-      this.setState(convertConfigDataToState(data, this.state));
-    });
-
-    // ipcRenderer.on('config-error', (event, error) => {
-    //   // TODO: Handle config save errors
-    // });
   }
 
-  saveSetting({key, data}, configType) {
+  convertConfigDataToState(configData, currentState = {}) {
+    const newState = Object.assign({}, configData);
+    newState.showAddTeamForm = currentState.showAddTeamForm || false;
+    newState.trayWasVisible = currentState.trayWasVisible || remote.getCurrentWindow().trayWasVisible;
+    if (newState.teams.length === 0 && currentState.firstRun !== false) {
+      newState.firstRun = false;
+      newState.showAddTeamForm = true;
+    }
+    newState.savingState = currentState.savingState || {
+      appOptions: AutoSaveIndicator.SAVING_STATE_DONE,
+      servers: AutoSaveIndicator.SAVING_STATE_DONE,
+    };
+    return newState;
+  }
+
+  saveSetting(configType, {key, data}) {
     this.saveQueue.push({
       configType,
       key,
       data,
     });
     this.updateSaveState();
-    ipcRenderer.send('update-config', key, data);
+    this.processSaveQueue();
   }
 
+  processSaveQueue = debounce(() => {
+    config.setMultiple(this.saveQueue.splice(0, this.saveQueue.length));
+  }, 500);
+
   updateSaveState() {
-    let queuedServerTypes = 0;
-    let queuedAppConfigTypes = 0;
-    this.saveQueue.forEach((savedItem) => {
-      switch (savedItem.configType) {
-      case CONFIG_TYPE_SERVERS:
-        queuedServerTypes++;
-        break;
-      case CONFIG_TYPE_APP_OPTIONS:
-        queuedAppConfigTypes++;
-        break;
-      }
-    });
+    let queuedUpdateCounts = {
+      [CONFIG_TYPE_SERVERS]: 0,
+      [CONFIG_TYPE_APP_OPTIONS]: 0,
+    };
+
+    queuedUpdateCounts = this.saveQueue.reduce((updateCounts, {configType}) => {
+      updateCounts[configType]++;
+      return updateCounts;
+    }, queuedUpdateCounts);
+
     const savingState = Object.assign({}, this.state.savingState);
 
-    if (queuedServerTypes > 0) {
-      savingState[CONFIG_TYPE_SERVERS] = AutoSaveIndicator.SAVING_STATE_SAVING;
-    } else if (queuedServerTypes === 0 && savingState[CONFIG_TYPE_SERVERS] === AutoSaveIndicator.SAVING_STATE_SAVING) {
-      savingState[CONFIG_TYPE_SERVERS] = AutoSaveIndicator.SAVING_STATE_SAVED;
-
-      // TODO: Need to handle this better
-      setTimeout(() => {
-        if (this.state.savingState[CONFIG_TYPE_SERVERS] !== AutoSaveIndicator.SAVING_STATE_SAVING) {
-          savingState[CONFIG_TYPE_SERVERS] = AutoSaveIndicator.SAVING_STATE_DONE;
-          this.setState({savingState});
-        }
-      }, 2000);
-    }
-
-    if (queuedAppConfigTypes > 0) {
-      savingState[CONFIG_TYPE_APP_OPTIONS] = AutoSaveIndicator.SAVING_STATE_SAVING;
-    } else if (queuedAppConfigTypes === 0 && savingState[CONFIG_TYPE_APP_OPTIONS] === AutoSaveIndicator.SAVING_STATE_SAVING) {
-      savingState[CONFIG_TYPE_APP_OPTIONS] = AutoSaveIndicator.SAVING_STATE_SAVED;
-
-      // TODO: Need to handle this better
-      setTimeout(() => {
-        if (this.state.savingState[CONFIG_TYPE_APP_OPTIONS] !== AutoSaveIndicator.SAVING_STATE_SAVING) {
-          savingState[CONFIG_TYPE_APP_OPTIONS] = AutoSaveIndicator.SAVING_STATE_DONE;
-          this.setState({savingState});
-        }
-      }, 2000);
-    }
+    Object.entries(queuedUpdateCounts).forEach(([configType, count]) => {
+      if (count > 0) {
+        savingState[configType] = AutoSaveIndicator.SAVING_STATE_SAVING;
+      } else if (count === 0 && savingState[configType] === AutoSaveIndicator.SAVING_STATE_SAVING) {
+        savingState[configType] = AutoSaveIndicator.SAVING_STATE_SAVED;
+        this.resetSaveState(configType);
+      }
+    });
 
     this.setState({savingState});
   }
 
+  resetSaveState = debounce((configType) => {
+    if (this.state.savingState[configType] !== AutoSaveIndicator.SAVING_STATE_SAVING) {
+      const savingState = Object.assign({}, this.state.savingState);
+      savingState[configType] = AutoSaveIndicator.SAVING_STATE_DONE;
+      this.setState({savingState});
+    }
+  }, 2000);
+
   handleTeamsChange(teams) {
-    this.saveSetting({key: 'teams', data: teams}, CONFIG_TYPE_SERVERS);
+    this.saveSetting(CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
     this.setState({
       showAddTeamForm: false,
       teams,
@@ -161,7 +173,7 @@ export default class SettingsPage extends React.Component {
 
   handleChangeShowTrayIcon() {
     const shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
-    this.saveSetting({key: 'showTrayIcon', data: shouldShowTrayIcon}, CONFIG_TYPE_APP_OPTIONS);
+    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'showTrayIcon', data: shouldShowTrayIcon});
     this.setState({
       showTrayIcon: shouldShowTrayIcon,
     });
@@ -174,14 +186,14 @@ export default class SettingsPage extends React.Component {
   }
 
   handleChangeTrayIconTheme(theme) {
-    this.saveSetting({key: 'trayIconTheme', data: theme}, CONFIG_TYPE_APP_OPTIONS);
+    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'trayIconTheme', data: theme});
     this.setState({
       trayIconTheme: theme,
     });
   }
 
   handleChangeAutoStart() {
-    this.saveSetting({key: 'autostart', data: !this.refs.autostart.props.checked}, CONFIG_TYPE_APP_OPTIONS);
+    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'autostart', data: !this.refs.autostart.props.checked});
     this.setState({
       autostart: !this.refs.autostart.props.checked,
     });
@@ -190,7 +202,7 @@ export default class SettingsPage extends React.Component {
   handleChangeMinimizeToTray() {
     const shouldMinimizeToTray = this.state.showTrayIcon && !this.refs.minimizeToTray.props.checked;
 
-    this.saveSetting({key: 'minimizeToTray', data: shouldMinimizeToTray}, CONFIG_TYPE_APP_OPTIONS);
+    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'minimizeToTray', data: shouldMinimizeToTray});
     this.setState({
       minimizeToTray: shouldMinimizeToTray,
     });
@@ -210,13 +222,13 @@ export default class SettingsPage extends React.Component {
   }
 
   handleFlashWindow() {
-    this.saveSetting({
+    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {
       key: 'notifications',
       data: {
         ...this.state.notifications,
         flashWindow: this.refs.flashWindow.props.checked ? 0 : 2,
       },
-    }, CONFIG_TYPE_APP_OPTIONS);
+    });
     this.setState({
       notifications: {
         ...this.state.notifications,
@@ -226,13 +238,13 @@ export default class SettingsPage extends React.Component {
   }
 
   handleBounceIcon() {
-    this.saveSetting({
+    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {
       key: 'notifications',
       data: {
         ...this.state.notifications,
         bounceIcon: !this.refs.bounceIcon.props.checked,
       },
-    }, CONFIG_TYPE_APP_OPTIONS);
+    });
     this.setState({
       notifications: {
         ...this.state.notifications,
@@ -242,13 +254,13 @@ export default class SettingsPage extends React.Component {
   }
 
   handleBounceIconType(event) {
-    this.saveSetting({
+    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {
       key: 'notifications',
       data: {
         ...this.state.notifications,
         bounceIconType: event.target.value,
       },
-    }, CONFIG_TYPE_APP_OPTIONS);
+    });
     this.setState({
       notifications: {
         ...this.state.notifications,
@@ -258,21 +270,21 @@ export default class SettingsPage extends React.Component {
   }
 
   handleShowUnreadBadge() {
-    this.saveSetting({key: 'showUnreadBadge', data: !this.refs.showUnreadBadge.props.checked}, CONFIG_TYPE_APP_OPTIONS);
+    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'showUnreadBadge', data: !this.refs.showUnreadBadge.props.checked});
     this.setState({
       showUnreadBadge: !this.refs.showUnreadBadge.props.checked,
     });
   }
 
   handleChangeUseSpellChecker() {
-    this.saveSetting({key: 'useSpellChecker', data: !this.refs.useSpellChecker.props.checked}, CONFIG_TYPE_APP_OPTIONS);
+    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'useSpellChecker', data: !this.refs.useSpellChecker.props.checked});
     this.setState({
       useSpellChecker: !this.refs.useSpellChecker.props.checked,
     });
   }
 
   handleChangeEnableHardwareAcceleration() {
-    this.saveSetting({key: 'enableHardwareAcceleration', data: !this.refs.enableHardwareAcceleration.props.checked}, CONFIG_TYPE_APP_OPTIONS);
+    this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'enableHardwareAcceleration', data: !this.refs.enableHardwareAcceleration.props.checked});
     this.setState({
       enableHardwareAcceleration: !this.refs.enableHardwareAcceleration.props.checked,
     });
@@ -281,7 +293,7 @@ export default class SettingsPage extends React.Component {
   updateTeam(index, newData) {
     const teams = this.state.localTeams;
     teams[index] = newData;
-    this.saveSetting({key: 'teams', data: teams}, CONFIG_TYPE_SERVERS);
+    this.saveSetting(CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
     this.setState({
       teams,
     });
@@ -290,7 +302,7 @@ export default class SettingsPage extends React.Component {
   addServer(team) {
     const teams = this.state.localTeams;
     teams.push(team);
-    this.saveSetting({key: 'teams', data: teams}, CONFIG_TYPE_SERVERS);
+    this.saveSetting(CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
     this.setState({
       teams,
     });
@@ -348,19 +360,6 @@ export default class SettingsPage extends React.Component {
               backToIndex(index + this.state.buildTeams.length + this.state.GPOTeams.length);
             }}
           />
-          {/* <TeamList
-            teams={this.state.teams}
-            showAddTeamForm={this.state.showAddTeamForm}
-            toggleAddTeamForm={this.toggleShowTeamForm}
-            setAddTeamFormVisibility={this.setShowTeamFormVisibility}
-            onTeamsChange={this.handleTeamsChange}
-            updateTeam={this.updateTeam}
-            addServer={this.addServer}
-            allowTeamEdit={this.state.enableTeamModification}
-            onTeamClick={(index) => {
-              backToIndex(index + buildConfig.defaultTeams.length);
-            }}
-          /> */}
         </Col>
       </Row>
     );

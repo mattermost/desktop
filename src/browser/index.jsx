@@ -16,12 +16,14 @@ import {remote, ipcRenderer} from 'electron';
 
 import utils from '../utils/util';
 
+import Config from '../common/config';
+
 import MainPage from './components/MainPage.jsx';
 import {createDataURL as createBadgeDataURL} from './js/badge';
 
-let configData = ipcRenderer.sendSync('get-config-data');
+const config = new Config(remote.app.getPath('userData') + '/config.json');
 
-const teams = configData.teams;
+const teams = config.teams;
 
 remote.getCurrentWindow().removeAllListeners('focus');
 
@@ -39,6 +41,19 @@ let deeplinkingUrl = null;
 if (!parsedURL.query.index || parsedURL.query.index === null) {
   deeplinkingUrl = remote.getCurrentWindow().deeplinkingUrl;
 }
+
+config.on('update', (configData) => {
+  teams.splice(0, teams.length, ...configData.teams);
+  requestingPermission.length = teams.length;
+});
+
+config.on('synchronize', () => {
+  ipcRenderer.send('reload-config');
+});
+
+ipcRenderer.on('reload-config', () => {
+  config.reload();
+});
 
 function showBadgeWindows(sessionExpired, unreadCount, mentionCount) {
   function sendBadge(dataURL, description) {
@@ -59,7 +74,7 @@ function showBadgeWindows(sessionExpired, unreadCount, mentionCount) {
   } else if (mentionCount > 0) {
     const dataURL = createBadgeDataURL(mentionCount.toString());
     sendBadge(dataURL, 'You have unread mentions (' + mentionCount + ')');
-  } else if (unreadCount > 0 && configData.showUnreadBadge) {
+  } else if (unreadCount > 0 && config.showUnreadBadge) {
     const dataURL = createBadgeDataURL('•');
     sendBadge(dataURL, 'You have unread channels (' + unreadCount + ')');
   } else {
@@ -72,7 +87,7 @@ function showBadgeOSX(sessionExpired, unreadCount, mentionCount) {
     remote.app.dock.setBadge('•');
   } else if (mentionCount > 0) {
     remote.app.dock.setBadge(mentionCount.toString());
-  } else if (unreadCount > 0 && configData.showUnreadBadge) {
+  } else if (unreadCount > 0 && config.showUnreadBadge) {
     remote.app.dock.setBadge('•');
   } else {
     remote.app.dock.setBadge('');
@@ -116,7 +131,7 @@ function showBadge(sessionExpired, unreadCount, mentionCount) {
 }
 
 function teamConfigChange(updatedTeams) {
-  ipcRenderer.send('update-config', 'teams', updatedTeams);
+  config.set('teams', updatedTeams);
 }
 
 function feedPermissionRequest() {
@@ -155,14 +170,8 @@ function handleClickPermissionDialog(index, status) {
 }
 
 function handleSelectSpellCheckerLocale(locale) {
-  ipcRenderer.send('update-config', 'spellCheckerLocale', locale);
+  config.set('spellCheckerLocale', locale);
 }
-
-ipcRenderer.on('config-updated', (event, args) => {
-  configData = args.configData;
-  teams.splice(0, teams.length, ...configData.teams);
-  requestingPermission.length = teams.length;
-});
 
 ipcRenderer.on('request-permission', (event, origin, permission) => {
   if (permissionRequestQueue.length >= 100) { // eslint-disable-line no-magic-numbers
@@ -178,10 +187,10 @@ ReactDOM.render(
     initialIndex={initialIndex}
     onBadgeChange={showBadge}
     onTeamConfigChange={teamConfigChange}
-    useSpellChecker={configData.useSpellChecker}
+    useSpellChecker={config.useSpellChecker}
     onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}
     deeplinkingUrl={deeplinkingUrl}
-    showAddServerButton={configData.enableServerManagement}
+    showAddServerButton={config.enableServerManagement}
     requestingPermission={requestingPermission}
     onClickPermissionDialog={handleClickPermissionDialog}
   />,

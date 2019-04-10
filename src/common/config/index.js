@@ -7,21 +7,18 @@ import path from 'path';
 
 import {EventEmitter} from 'events';
 
-import {app} from 'electron';
-
 import defaultPreferences from './defaultPreferences';
 import upgradeConfigData from './upgradePreferences';
 import buildConfig from './buildConfig';
 
-const configFilePath = app.getPath('userData') + '/config.json';
-
 export default class Config extends EventEmitter {
-  constructor() {
+  constructor(configFilePath) {
     super();
+    this.configFilePath = configFilePath;
     this.reload();
   }
 
-  reload() {
+  reload(synchronize = false) {
     this.defaultConfigData = this.loadDefaultConfigData();
     this.buildConfigData = this.loadBuildConfigData();
 
@@ -33,12 +30,48 @@ export default class Config extends EventEmitter {
     this.regenerateCombinedConfigData();
 
     this.emit('update', this.combinedData);
+
+    if (synchronize) {
+      this.emit('synchronize');
+    }
   }
 
   set(key, data) {
+    if (key) {
+      this.processNewProperty(key, data);
+      this.regenerateCombinedConfigData();
+      this.saveLocalConfigData();
+    }
+  }
+
+  setMultiple(properties = []) {
+    if (properties.length) {
+      properties.forEach(({key, data}) => {
+        if (key) {
+          this.processNewProperty(key, data);
+        }
+      });
+      this.regenerateCombinedConfigData();
+      this.saveLocalConfigData();
+    }
+  }
+
+  replace(configData) {
+    const newConfigData = configData;
+
+    // remove teams already defined in buildConfig or GPOConfig
+    newConfigData.teams = this.filterOutPredefinedTeams(newConfigData.teams);
+
+    this.localConfigData = Object.assign({}, this.localConfigData, newConfigData);
+
+    this.regenerateCombinedConfigData();
+    this.saveLocalConfigData();
+  }
+
+  processNewProperty(key, data) {
     let newData = data;
 
-    // pre-process data as needed before saving
+    // pre-process by key as needed
     switch (key) {
     case 'teams':
       newData = this.filterOutDuplicateTeams(newData);
@@ -47,30 +80,18 @@ export default class Config extends EventEmitter {
       newData = this.filterOutPredefinedTeams(newData);
       break;
     }
-
     this.localConfigData[key] = newData;
-    try {
-      this.writeFileSync(configFilePath, this.localConfigData);
-      this.regenerateCombinedConfigData();
-
-      this.emit('update', this.combinedData);
-    } catch (error) {
-      this.emit('error', error);
-    }
   }
 
-  replace(data) {
-    const newData = data;
-
-    // remove teams already defined in buildConfig or GPOConfig
-    newData.teams = this.filterOutPredefinedTeams(newData.teams);
-
-    this.localConfigData = Object.assign({}, this.localConfigData, newData);
+  saveLocalConfigData() {
     try {
-      this.writeFileSync(configFilePath, this.localConfigData);
-      this.regenerateCombinedConfigData();
-
-      this.emit('update', this.combinedData);
+      this.writeFile(this.configFilePath, this.localConfigData, (error) => {
+        if (error) {
+          throw new Error(error);
+        }
+        this.emit('update', this.combinedData);
+        this.emit('synchronize');
+      });
     } catch (error) {
       this.emit('error', error);
     }
@@ -152,7 +173,7 @@ export default class Config extends EventEmitter {
   loadConfigFile() {
     let configData = {};
     try {
-      configData = this.readFileSync(configFilePath);
+      configData = this.readFileSync(this.configFilePath);
     } catch (e) {
       console.log('Failed to load configuration file from the filesystem. Using defaults.');
       configData = this.copy(this.defaultConfigData);
@@ -163,7 +184,7 @@ export default class Config extends EventEmitter {
       }
       delete configData.defaultTeam;
 
-      this.writeFileSync(configFilePath, configData);
+      this.writeFileSync(this.configFilePath, configData);
     }
     return configData;
   }
@@ -184,7 +205,7 @@ export default class Config extends EventEmitter {
     try {
       if (configData.version !== this.defaultConfigData.version) {
         configData = upgradeConfigData(configData);
-        this.writeFileSync(configFilePath, configData);
+        this.writeFileSync(this.configFilePath, configData);
         console.log(`Configuration updated to version ${this.defaultConfigData.version} successfully.`);
       }
     } catch (error) {
