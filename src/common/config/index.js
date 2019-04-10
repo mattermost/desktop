@@ -85,9 +85,6 @@ export default class Config extends EventEmitter {
   replace(configData) {
     const newConfigData = configData;
 
-    // remove teams already defined in buildConfig or GPOConfig
-    newConfigData.teams = this.filterOutPredefinedTeams(newConfigData.teams);
-
     this.localConfigData = Object.assign({}, this.localConfigData, newConfigData);
 
     this.regenerateCombinedConfigData();
