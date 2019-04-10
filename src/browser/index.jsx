@@ -174,7 +174,7 @@ function handleSelectSpellCheckerLocale(locale) {
 }
 
 ipcRenderer.on('request-permission', (event, origin, permission) => {
-  if (permissionRequestQueue.length >= 100) { // eslint-disable-line no-magic-numbers
+  if (permissionRequestQueue.length >= 100) {
     return;
   }
   permissionRequestQueue.push({origin, permission});
