@@ -33,25 +33,6 @@ export default class SettingsPage extends React.Component {
 
     this.state = this.convertConfigDataToState(config.data);
 
-    this.handleTeamsChange = this.handleTeamsChange.bind(this);
-    this.handleCancel = this.handleCancel.bind(this);
-    this.handleChangeShowTrayIcon = this.handleChangeShowTrayIcon.bind(this);
-    this.handleChangeTrayIconTheme = this.handleChangeTrayIconTheme.bind(this);
-    this.handleChangeAutoStart = this.handleChangeAutoStart.bind(this);
-    this.handleChangeMinimizeToTray = this.handleChangeMinimizeToTray.bind(this);
-    this.toggleShowTeamForm = this.toggleShowTeamForm.bind(this);
-    this.setShowTeamFormVisibility = this.setShowTeamFormVisibility.bind(this);
-    this.handleFlashWindow = this.handleFlashWindow.bind(this);
-    this.handleBounceIcon = this.handleBounceIcon.bind(this);
-    this.handleBounceIconType = this.handleBounceIconType.bind(this);
-    this.handleShowUnreadBadge = this.handleShowUnreadBadge.bind(this);
-    this.handleChangeUseSpellChecker = this.handleChangeUseSpellChecker.bind(this);
-    this.handleChangeEnableHardwareAcceleration = this.handleChangeEnableHardwareAcceleration.bind(this);
-    this.saveSetting = this.saveSetting.bind(this);
-    this.updateSaveState = this.updateSaveState.bind(this);
-    this.updateTeam = this.updateTeam.bind(this);
-    this.addServer = this.addServer.bind(this);
-
     this.trayIconThemeRef = React.createRef();
 
     this.saveQueue = [];
@@ -75,10 +56,12 @@ export default class SettingsPage extends React.Component {
       });
     });
 
+    // when the config object changes here in the renderer process, tell the main process to reload its config object to get the changes
     config.on('synchronize', () => {
       ipcRenderer.send('reload-config');
     });
 
+    // listen for any config reload requests from the main process to reload configuration changes here in the renderer process
     ipcRenderer.on('reload-config', () => {
       config.reload();
     });
@@ -94,7 +77,7 @@ export default class SettingsPage extends React.Component {
     });
   }
 
-  convertConfigDataToState(configData, currentState = {}) {
+  convertConfigDataToState = (configData, currentState = {}) => {
     const newState = Object.assign({}, configData);
     newState.showAddTeamForm = currentState.showAddTeamForm || false;
     newState.trayWasVisible = currentState.trayWasVisible || remote.getCurrentWindow().trayWasVisible;
@@ -109,7 +92,7 @@ export default class SettingsPage extends React.Component {
     return newState;
   }
 
-  saveSetting(configType, {key, data}) {
+  saveSetting = (configType, {key, data}) => {
     this.saveQueue.push({
       configType,
       key,
@@ -123,7 +106,7 @@ export default class SettingsPage extends React.Component {
     config.setMultiple(this.saveQueue.splice(0, this.saveQueue.length));
   }, 500);
 
-  updateSaveState() {
+  updateSaveState = () => {
     let queuedUpdateCounts = {
       [CONFIG_TYPE_SERVERS]: 0,
       [CONFIG_TYPE_APP_OPTIONS]: 0,
@@ -156,7 +139,7 @@ export default class SettingsPage extends React.Component {
     }
   }, 2000);
 
-  handleTeamsChange(teams) {
+  handleTeamsChange = (teams) => {
     this.saveSetting(CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
     this.setState({
       showAddTeamForm: false,
@@ -167,11 +150,11 @@ export default class SettingsPage extends React.Component {
     }
   }
 
-  handleCancel() {
+  handleCancel = () => {
     backToIndex();
   }
 
-  handleChangeShowTrayIcon() {
+  handleChangeShowTrayIcon = () => {
     const shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
     this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'showTrayIcon', data: shouldShowTrayIcon});
     this.setState({
@@ -185,21 +168,21 @@ export default class SettingsPage extends React.Component {
     }
   }
 
-  handleChangeTrayIconTheme(theme) {
+  handleChangeTrayIconTheme = (theme) => {
     this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'trayIconTheme', data: theme});
     this.setState({
       trayIconTheme: theme,
     });
   }
 
-  handleChangeAutoStart() {
+  handleChangeAutoStart = () => {
     this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'autostart', data: !this.refs.autostart.props.checked});
     this.setState({
       autostart: !this.refs.autostart.props.checked,
     });
   }
 
-  handleChangeMinimizeToTray() {
+  handleChangeMinimizeToTray = () => {
     const shouldMinimizeToTray = this.state.showTrayIcon && !this.refs.minimizeToTray.props.checked;
 
     this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'minimizeToTray', data: shouldMinimizeToTray});
@@ -208,20 +191,20 @@ export default class SettingsPage extends React.Component {
     });
   }
 
-  toggleShowTeamForm() {
+  toggleShowTeamForm = () => {
     this.setState({
       showAddTeamForm: !this.state.showAddTeamForm,
     });
     document.activeElement.blur();
   }
 
-  setShowTeamFormVisibility(val) {
+  setShowTeamFormVisibility = (val) => {
     this.setState({
       showAddTeamForm: val,
     });
   }
 
-  handleFlashWindow() {
+  handleFlashWindow = () => {
     this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {
       key: 'notifications',
       data: {
@@ -237,7 +220,7 @@ export default class SettingsPage extends React.Component {
     });
   }
 
-  handleBounceIcon() {
+  handleBounceIcon = () => {
     this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {
       key: 'notifications',
       data: {
@@ -253,7 +236,7 @@ export default class SettingsPage extends React.Component {
     });
   }
 
-  handleBounceIconType(event) {
+  handleBounceIconType = (event) => {
     this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {
       key: 'notifications',
       data: {
@@ -269,28 +252,28 @@ export default class SettingsPage extends React.Component {
     });
   }
 
-  handleShowUnreadBadge() {
+  handleShowUnreadBadge = () => {
     this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'showUnreadBadge', data: !this.refs.showUnreadBadge.props.checked});
     this.setState({
       showUnreadBadge: !this.refs.showUnreadBadge.props.checked,
     });
   }
 
-  handleChangeUseSpellChecker() {
+  handleChangeUseSpellChecker = () => {
     this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'useSpellChecker', data: !this.refs.useSpellChecker.props.checked});
     this.setState({
       useSpellChecker: !this.refs.useSpellChecker.props.checked,
     });
   }
 
-  handleChangeEnableHardwareAcceleration() {
+  handleChangeEnableHardwareAcceleration = () => {
     this.saveSetting(CONFIG_TYPE_APP_OPTIONS, {key: 'enableHardwareAcceleration', data: !this.refs.enableHardwareAcceleration.props.checked});
     this.setState({
       enableHardwareAcceleration: !this.refs.enableHardwareAcceleration.props.checked,
     });
   }
 
-  updateTeam(index, newData) {
+  updateTeam = (index, newData) => {
     const teams = this.state.localTeams;
     teams[index] = newData;
     this.saveSetting(CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
@@ -299,7 +282,7 @@ export default class SettingsPage extends React.Component {
     });
   }
 
-  addServer(team) {
+  addServer = (team) => {
     const teams = this.state.localTeams;
     teams.push(team);
     this.saveSetting(CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});

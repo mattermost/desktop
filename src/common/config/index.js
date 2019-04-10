@@ -32,7 +32,7 @@ export default class Config extends EventEmitter {
     this.defaultConfigData = this.loadDefaultConfigData();
     this.buildConfigData = this.loadBuildConfigData();
 
-    this.localConfigData = this.loadConfigFile();
+    this.localConfigData = this.loadLocalConfigFile();
     this.localConfigData = this.checkForConfigUpdates(this.localConfigData);
 
     this.GPOConfigData = this.loadGPOConfigData();
@@ -96,6 +96,7 @@ export default class Config extends EventEmitter {
    *
    * @emits {update} emitted once all data has been saved
    * @emits {synchronize} emitted once all data has been saved; used to notify other config instances of changes
+   * @emits {error} emitted if saving local config data to file fails
    */
   saveLocalConfigData() {
     try {
@@ -196,7 +197,7 @@ export default class Config extends EventEmitter {
   /**
    * Loads and returns locally stored config data from the filesystem or returns app defaults if no file is found
    */
-  loadConfigFile() {
+  loadLocalConfigFile() {
     let configData = {};
     try {
       configData = this.readFileSync(this.configFilePath);
@@ -226,14 +227,14 @@ export default class Config extends EventEmitter {
     };
     if (process.platform === 'win32') {
       //
-      // TODO: GPO data needs to be retrieved here merged into the local `configData` variable for return
+      // TODO: GPO data needs to be retrieved here and merged into the local `configData` variable for return
       //
     }
     return configData;
   }
 
   /**
-   * Determines if locally stored needs to be updated and upgrades as needed
+   * Determines if locally stored data needs to be updated and upgrades as needed
    *
    * @param {*} data locally stored data
    */
@@ -258,7 +259,7 @@ export default class Config extends EventEmitter {
     // combine all config data in the correct order
     this.combinedData = Object.assign({}, this.defaultConfigData, this.localConfigData, this.buildConfigData, this.GPOConfigData);
 
-    // remove unecessary data from default and build config
+    // remove unecessary data pulled from default and build config
     delete this.combinedData.defaultTeam;
     delete this.combinedData.defaultTeams;
 
@@ -267,7 +268,7 @@ export default class Config extends EventEmitter {
 
     // - start by adding default teams from buildConfig, if any
     if (this.buildConfigData.defaultTeams && this.buildConfigData.defaultTeams.length) {
-      combinedTeams.push(...this.deepCopy(this.buildConfigData.defaultTeams));
+      combinedTeams.push(...this.buildConfigData.defaultTeams);
     }
 
     // - add GPO defined teams, if any

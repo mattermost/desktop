@@ -101,12 +101,14 @@ config.on('update', (configData) => {
   ipcMain.emit('update-menu', true, configData);
 });
 
+// when the config object changes here in the main process, tell the renderer process to reload any initialized config objects to get the changes
 config.on('synchronize', () => {
   if (mainWindow) {
     mainWindow.webContents.send('reload-config');
   }
 });
 
+// listen for any config reload requests from the renderer process to reload configuration changes here in the main process
 ipcMain.on('reload-config', () => {
   config.reload();
 });
