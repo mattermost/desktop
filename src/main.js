@@ -1,7 +1,6 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-'use strict';
 
 import os from 'os';
 import path from 'path';
@@ -29,7 +28,6 @@ import AutoLauncher from './main/AutoLauncher';
 import CriticalErrorHandler from './main/CriticalErrorHandler';
 import upgradeAutoLaunch from './main/autoLaunch';
 import autoUpdater from './main/autoUpdater';
-import buildConfig from './common/config/buildConfig';
 
 const criticalErrorHandler = new CriticalErrorHandler();
 
@@ -39,7 +37,7 @@ global.willAppQuit = false;
 
 app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
 
-import settings from './common/settings';
+import Config from './common/config';
 import CertificateStore from './main/certificateStore';
 const certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
 import createMainWindow from './main/mainWindow';
@@ -65,6 +63,7 @@ let deeplinkingUrl = null;
 let scheme = null;
 let appState = null;
 let permissionManager = null;
+let config = null;
 
 const argv = parseArgv(process.argv.slice(1));
 const hideOnStartup = shouldBeHiddenOnStartup(argv);
@@ -75,31 +74,14 @@ if (argv['data-dir']) {
 
 global.isDev = isDev && !argv.disableDevMode;
 
-let config = {};
-try {
-  const configFile = app.getPath('userData') + '/config.json';
-  config = settings.readFileSync(configFile);
-  if (config.version !== settings.version) {
-    config = settings.upgrade(config);
-    settings.writeFileSync(configFile, config);
-  }
-} catch (e) {
-  config = settings.loadDefault();
-  console.log('Failed to read or upgrade config.json', e);
-  if (!config.teams.length && config.defaultTeam) {
-    config.teams.push(config.defaultTeam);
+config = new Config(app.getPath('userData') + '/config.json');
 
-    const configFile = app.getPath('userData') + '/config.json';
-    settings.writeFileSync(configFile, config);
-  }
-}
+// can only call this before the app is ready
 if (config.enableHardwareAcceleration === false) {
   app.disableHardwareAcceleration();
 }
 
-ipcMain.on('update-config', () => {
-  const configFile = app.getPath('userData') + '/config.json';
-  config = settings.readFileSync(configFile);
+config.on('update', (configData) => {
   if (process.platform === 'win32' || process.platform === 'linux') {
     const appLauncher = new AutoLauncher();
     const autoStartTask = config.autostart ? appLauncher.enable() : appLauncher.disable();
@@ -109,9 +91,26 @@ ipcMain.on('update-config', () => {
       console.log('error:', err);
     });
   }
-  const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => team.url);
-  permissionManager.setTrustedURLs(trustedURLs);
-  ipcMain.emit('update-dict', true, config.spellCheckerLocale);
+
+  if (permissionManager) {
+    const trustedURLs = config.teams.map((team) => team.url);
+    permissionManager.setTrustedURLs(trustedURLs);
+    ipcMain.emit('update-dict', true, config.spellCheckerLocale);
+  }
+
+  ipcMain.emit('update-menu', true, configData);
+});
+
+// when the config object changes here in the main process, tell the renderer process to reload any initialized config objects to get the changes
+config.on('synchronize', () => {
+  if (mainWindow) {
+    mainWindow.webContents.send('reload-config');
+  }
+});
+
+// listen for any config reload requests from the renderer process to reload configuration changes here in the main process
+ipcMain.on('reload-config', () => {
+  config.reload();
 });
 
 // Only for OS X
@@ -419,9 +418,7 @@ app.on('ready', () => {
   }
 
   if (!config.spellCheckerLocale) {
-    config.spellCheckerLocale = SpellChecker.getSpellCheckerLocale(app.getLocale());
-    const configFile = app.getPath('userData') + '/config.json';
-    settings.writeFileSync(configFile, config);
+    config.set('spellCheckerLocale', SpellChecker.getSpellCheckerLocale(app.getLocale()));
   }
 
   const appStateJson = path.join(app.getPath('userData'), 'app-state.json');
@@ -455,7 +452,7 @@ app.on('ready', () => {
 
   initCookieManager(session.defaultSession);
 
-  mainWindow = createMainWindow(config, {
+  mainWindow = createMainWindow(config.data, {
     hideOnStartup,
     linuxAppIcon: path.join(assetsDir, 'appicon.png'),
     deeplinkingUrl,
@@ -618,7 +615,7 @@ app.on('ready', () => {
       }
     }
   });
-  ipcMain.emit('update-menu', true, config);
+  ipcMain.emit('update-menu', true, config.data);
 
   ipcMain.on('update-dict', () => {
     if (config.useSpellChecker) {
@@ -665,11 +662,11 @@ app.on('ready', () => {
   ipcMain.emit('update-dict');
 
   const permissionFile = path.join(app.getPath('userData'), 'permission.json');
-  const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => team.url);
+  const trustedURLs = config.teams.map((team) => team.url);
   permissionManager = new PermissionManager(permissionFile, trustedURLs);
   session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionManager));
 
-  if (buildConfig.enableAutoUpdater) {
+  if (config.enableAutoUpdater) {
     const updaterConfig = autoUpdater.loadConfig();
     autoUpdater.initialize(appState, mainWindow, updaterConfig.isNotifyOnly());
     ipcMain.on('check-for-updates', autoUpdater.checkForUpdates);
@@ -694,7 +691,7 @@ app.on('web-contents-created', (dc, contents) => {
   });
   contents.on('will-navigate', (event, navigationUrl) => {
     const parsedUrl = new URL(navigationUrl);
-    const trustedURLs = settings.mergeDefaultTeams(config.teams).map((team) => new URL(team.url)); //eslint-disable-line max-nested-callbacks
+    const trustedURLs = config.teams.map((team) => new URL(team.url)); //eslint-disable-line max-nested-callbacks
 
     let trusted = false;
     for (const url of trustedURLs) {

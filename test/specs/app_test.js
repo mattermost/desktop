@@ -82,7 +82,8 @@ describe('application', function desc() {
   });
 
   it('should upgrade v0 config file', async () => {
-    const settings = require('../../src/common/settings').default;
+    const Config = require('../../src/common/config').default;
+    const config = new Config(env.configFilePath);
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       url: env.mattermostURL,
     }));
@@ -92,8 +93,8 @@ describe('application', function desc() {
     url.should.match(/\/index.html$/);
 
     const str = fs.readFileSync(env.configFilePath, 'utf8');
-    const config = JSON.parse(str);
-    config.version.should.equal(settings.version);
+    const localConfigData = JSON.parse(str);
+    localConfigData.version.should.equal(config.defaultData.version);
   });
 
   it.skip('should be stopped when the app instance already exists', (done) => {

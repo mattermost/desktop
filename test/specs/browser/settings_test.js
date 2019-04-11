@@ -216,18 +216,18 @@ describe('browser/settings.html', function desc() {
           await this.app.client.
             loadSettingsPage().
             click('#inputShowTrayIcon').
-            click('input[value="light"]').
-            pause(700); // wait auto-save
-
-          const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-          config0.trayIconTheme.should.equal('light');
-
-          await this.app.client.
             click('input[value="dark"]').
             pause(700); // wait auto-save
 
+          const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+          config0.trayIconTheme.should.equal('dark');
+
+          await this.app.client.
+            click('input[value="light"]').
+            pause(700); // wait auto-save
+
           const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-          config1.trayIconTheme.should.equal('dark');
+          config1.trayIconTheme.should.equal('light');
         });
       });
     });
