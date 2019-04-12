@@ -7,9 +7,13 @@ import path from 'path';
 
 import {EventEmitter} from 'events';
 
+import WindowsRegistry from 'winreg';
+
 import defaultPreferences from './defaultPreferences';
 import upgradeConfigData from './upgradePreferences';
 import buildConfig from './buildConfig';
+
+const BASE_REGISTRY_KEY_PATH = '\\Software\\Policies\\Mattermost';
 
 /**
  * Handles loading and merging all sources of configuration as well as saving user provided config
@@ -222,13 +226,22 @@ export default class Config extends EventEmitter {
   loadGPOConfigData() {
     const configData = {
       teams: [],
-      enableServerManagement: true,
-      enableAutoUpdater: true,
     };
     if (process.platform === 'win32') {
-      //
-      // TODO: GPO data needs to be retrieved here and merged into the local `configData` variable for return
-      //
+      // extract DefaultServerList from the registry
+      configData.teams.push(this.getTeamsListFromRegistry());
+
+      // extract EnableServerManagement from the registry
+      const enableServerManagement = this.getEnableAutoUpdatorFromRegistry();
+      if (typeof enableServerManagement === 'boolean') {
+        configData.enableServerManagement = enableServerManagement;
+      }
+
+      // extract EnableAutoUpdater from the registry
+      const enableAutoUpdater = this.getEnableAutoUpdatorFromRegistry();
+      if (typeof enableAutoUpdater === 'boolean') {
+        configData.enableAutoUpdater = enableAutoUpdater;
+      }
     }
     return configData;
   }
@@ -316,6 +329,45 @@ export default class Config extends EventEmitter {
     return newTeams;
   }
 
+  getTeamsListFromRegistry() {
+    const servers = [];
+    try {
+      const defaultTeams = [...this.getRegistryEntry(BASE_REGISTRY_KEY_PATH)];
+      servers.push(...defaultTeams.reduce((teams, team) => {
+        teams.push({
+          name: team.name,
+          url: team.value,
+        });
+        return teams;
+      }, []));
+    } catch (error) {
+      console.log('[GPOConfig] Nothing set for \'DefaultServerList\'', error);
+    }
+    return servers;
+  }
+
+  getEnableServerManagementFromRegistry() {
+    let value;
+    try {
+      const entryValue = this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableServerManagement');
+      value = entryValue === '0x1';
+    } catch (error) {
+      console.log('[GPOConfig] Nothing set for \'EnableServerManagement\'', error);
+    }
+    return value;
+  }
+
+  getEnableAutoUpdatorFromRegistry() {
+    let value;
+    try {
+      const entryValue = this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableAutoUpdator');
+      value = entryValue === '0x1';
+    } catch (error) {
+      console.log('[GPOConfig] Nothing set for \'EnableAutoUpdater\'', error);
+    }
+    return value;
+  }
+
   // helper functions
 
   readFileSync(filePath) {
@@ -350,5 +402,32 @@ export default class Config extends EventEmitter {
 
   copy(data) {
     return Object.assign({}, data);
+  }
+
+  getRegistryEntry(key, name) {
+    let entry = null;
+    if (process.platform === 'win32') {
+      const regKey = new WindowsRegistry({
+        hive: WindowsRegistry.HKLM,
+        key,
+      });
+      regKey.values((error, items) => {
+        if (error) {
+          throw new Error(error);
+        }
+        if (name) {
+          items.forEach((item) => {
+            if (item.name === name) {
+              entry = item;
+            }
+          });
+        } else {
+          entry = items;
+        }
+      });
+    } else {
+      throw new Error(`Windows registry can only be accessed in a 'win32' environment. '${process.platform}' detected.`);
+    }
+    return entry;
   }
 }
