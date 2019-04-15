@@ -13,6 +13,7 @@ import defaultPreferences from './defaultPreferences';
 import upgradeConfigData from './upgradePreferences';
 import buildConfig from './buildConfig';
 
+const REGISTRY_HIVE_LIST = [WindowsRegistry.HKLM, WindowsRegistry.HKCU];
 const BASE_REGISTRY_KEY_PATH = '\\Software\\Policies\\Mattermost';
 
 /**
@@ -347,7 +348,7 @@ export default class Config extends EventEmitter {
   }
 
   getEnableServerManagementFromRegistry() {
-    let value;
+    let value = null;
     try {
       const entryValue = this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableServerManagement');
       value = entryValue === '0x1';
@@ -358,7 +359,7 @@ export default class Config extends EventEmitter {
   }
 
   getEnableAutoUpdatorFromRegistry() {
-    let value;
+    let value = null;
     try {
       const entryValue = this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableAutoUpdator');
       value = entryValue === '0x1';
@@ -407,26 +408,35 @@ export default class Config extends EventEmitter {
   getRegistryEntry(key, name) {
     let entry = null;
     if (process.platform === 'win32') {
-      const regKey = new WindowsRegistry({
-        hive: WindowsRegistry.HKLM,
-        key,
-      });
-      regKey.values((error, items) => {
-        if (error) {
-          throw new Error(error);
-        }
-        if (name) {
-          items.forEach((item) => {
-            if (item.name === name) {
-              entry = item;
+      let error = null;
+      REGISTRY_HIVE_LIST.forEach((hive) => {
+        const regKey = new WindowsRegistry({
+          hive,
+          key,
+        });
+        regKey.values((err, items) => {
+          if (err) {
+            error = err;
+            return;
+          }
+          if (name) {
+            // eslint-disable-next-line max-nested-callbacks
+            items.forEach((item) => {
+              if (item.name === name) {
+                entry = item;
+              }
+            });
+          } else {
+            if (!entry) {
+              entry = [];
             }
-          });
-        } else {
-          entry = items;
-        }
+            entry.push(...items);
+          }
+        });
       });
-    } else {
-      throw new Error(`Windows registry can only be accessed in a 'win32' environment. '${process.platform}' detected.`);
+      if (!entry && error) {
+        throw new Error(error);
+      }
     }
     return entry;
   }
