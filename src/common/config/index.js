@@ -230,7 +230,7 @@ export default class Config extends EventEmitter {
     };
     if (process.platform === 'win32') {
       // extract DefaultServerList from the registry
-      configData.teams.push(this.getTeamsListFromRegistry());
+      configData.teams.push(...this.getTeamsListFromRegistry());
 
       // extract EnableServerManagement from the registry
       const enableServerManagement = this.getEnableAutoUpdatorFromRegistry();
@@ -333,14 +333,16 @@ export default class Config extends EventEmitter {
   getTeamsListFromRegistry() {
     const servers = [];
     try {
-      const defaultTeams = [...this.getRegistryEntry(BASE_REGISTRY_KEY_PATH)];
-      servers.push(...defaultTeams.reduce((teams, team) => {
-        teams.push({
-          name: team.name,
-          url: team.value,
-        });
-        return teams;
-      }, []));
+      const defaultTeams = this.getRegistryEntry(`${BASE_REGISTRY_KEY_PATH}\\DefaultServerList`);
+      if (Array.isArray(defaultTeams)) {
+        servers.push(...defaultTeams.reduce((teams, team) => {
+          teams.push({
+            name: team.name,
+            url: team.value,
+          });
+          return teams;
+        }, []));
+      }
     } catch (error) {
       console.log('[GPOConfig] Nothing set for \'DefaultServerList\'', error);
     }
@@ -406,7 +408,7 @@ export default class Config extends EventEmitter {
   }
 
   getRegistryEntry(key, name) {
-    let entry = null;
+    let entry;
     if (process.platform === 'win32') {
       let error = null;
       REGISTRY_HIVE_LIST.forEach((hive) => {
