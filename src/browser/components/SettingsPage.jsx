@@ -19,8 +19,7 @@ import AutoSaveIndicator from './AutoSaveIndicator.jsx';
 const CONFIG_TYPE_SERVERS = 'servers';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
-const registryConfigData = remote.getCurrentWindow().registryConfigData;
-const config = new Config(remote.app.getPath('userData') + '/config.json', registryConfigData);
+const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
 
 function backToIndex(index) {
   const target = typeof index === 'undefined' ? 0 : index;

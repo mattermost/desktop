@@ -77,20 +77,19 @@ if (argv['data-dir']) {
 
 global.isDev = isDev && !argv.disableDevMode;
 
-registryConfig.on('update', (registryConfigData) => {
-  config.setRegistryConfigData(registryConfigData);
-  if (app.isReady() && mainWindow) {
-    mainWindow.registryConfigData = registryConfigData;
-    ipcMain.emit('update-menu', true, config.data);
-  }
-});
-
-registryConfig.init();
-
 // can only call this before the app is ready
 if (config.enableHardwareAcceleration === false) {
   app.disableHardwareAcceleration();
 }
+
+registryConfig.on('update', (registryConfigData) => {
+  config.setRegistryConfigData(registryConfigData);
+  if (app.isReady() && mainWindow) {
+    mainWindow.registryConfigData = registryConfigData;
+  }
+});
+
+registryConfig.init();
 
 config.on('update', (configData) => {
   if (process.platform === 'win32' || process.platform === 'linux') {
