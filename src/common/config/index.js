@@ -15,9 +15,10 @@ import buildConfig from './buildConfig';
  * Handles loading and merging all sources of configuration as well as saving user provided config
  */
 export default class Config extends EventEmitter {
-  constructor(configFilePath) {
+  constructor(configFilePath, registryConfigData = {teams: []}) {
     super();
     this.configFilePath = configFilePath;
+    this.registryConfigData = registryConfigData;
     this.reload();
   }
 
@@ -34,8 +35,6 @@ export default class Config extends EventEmitter {
 
     this.localConfigData = this.loadLocalConfigFile();
     this.localConfigData = this.checkForConfigUpdates(this.localConfigData);
-
-    this.GPOConfigData = this.loadGPOConfigData();
 
     this.regenerateCombinedConfigData();
 
@@ -75,6 +74,11 @@ export default class Config extends EventEmitter {
       this.regenerateCombinedConfigData();
       this.saveLocalConfigData();
     }
+  }
+
+  setRegistryConfigData(registryConfigData = {teams: []}) {
+    this.registryConfigData = Object.assign({}, registryConfigData);
+    this.reload();
   }
 
   /**
@@ -126,8 +130,8 @@ export default class Config extends EventEmitter {
   get buildData() {
     return this.buildConfigData;
   }
-  get GPOData() {
-    return this.GPOConfigData;
+  get registryData() {
+    return this.registryConfigData;
   }
 
   // convenience getters
@@ -142,7 +146,7 @@ export default class Config extends EventEmitter {
     return this.localConfigData.teams;
   }
   get predefinedTeams() {
-    return [...this.buildConfigData.defaultTeams, ...this.GPOConfigData.teams];
+    return [...this.buildConfigData.defaultTeams, ...this.registryConfigData.teams];
   }
   get enableHardwareAcceleration() {
     return this.combinedData.enableHardwareAcceleration;
@@ -217,23 +221,6 @@ export default class Config extends EventEmitter {
   }
 
   /**
-   * Loads and returns config data defined in GPO for Windows
-   */
-  loadGPOConfigData() {
-    const configData = {
-      teams: [],
-      enableServerManagement: true,
-      enableAutoUpdater: true,
-    };
-    if (process.platform === 'win32') {
-      //
-      // TODO: GPO data needs to be retrieved here and merged into the local `configData` variable for return
-      //
-    }
-    return configData;
-  }
-
-  /**
    * Determines if locally stored data needs to be updated and upgrades as needed
    *
    * @param {*} data locally stored data
@@ -257,7 +244,7 @@ export default class Config extends EventEmitter {
    */
   regenerateCombinedConfigData() {
     // combine all config data in the correct order
-    this.combinedData = Object.assign({}, this.defaultConfigData, this.localConfigData, this.buildConfigData, this.GPOConfigData);
+    this.combinedData = Object.assign({}, this.defaultConfigData, this.localConfigData, this.buildConfigData, this.registryConfigData);
 
     // remove unecessary data pulled from default and build config
     delete this.combinedData.defaultTeam;
@@ -271,9 +258,9 @@ export default class Config extends EventEmitter {
       combinedTeams.push(...this.buildConfigData.defaultTeams);
     }
 
-    // - add GPO defined teams, if any
-    if (this.GPOConfigData.teams && this.GPOConfigData.teams.length) {
-      combinedTeams.push(...this.GPOConfigData.teams);
+    // - add registry defined teams, if any
+    if (this.registryConfigData.teams && this.registryConfigData.teams.length) {
+      combinedTeams.push(...this.registryConfigData.teams);
     }
 
     // - add locally defined teams only if server management is enabled
@@ -284,7 +271,7 @@ export default class Config extends EventEmitter {
     this.combinedData.teams = combinedTeams;
     this.combinedData.localTeams = this.localConfigData.teams;
     this.combinedData.buildTeams = this.buildConfigData.defaultTeams;
-    this.combinedData.GPOTeams = this.GPOConfigData.teams;
+    this.combinedData.registryTeams = this.registryConfigData.teams;
   }
 
   /**

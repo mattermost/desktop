@@ -21,7 +21,7 @@ import Config from '../common/config';
 import MainPage from './components/MainPage.jsx';
 import {createDataURL as createBadgeDataURL} from './js/badge';
 
-const config = new Config(remote.app.getPath('userData') + '/config.json');
+const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
 
 const teams = config.teams;
 

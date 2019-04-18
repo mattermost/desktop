@@ -19,7 +19,7 @@ import AutoSaveIndicator from './AutoSaveIndicator.jsx';
 const CONFIG_TYPE_SERVERS = 'servers';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
-const config = new Config(remote.app.getPath('userData') + '/config.json');
+const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
 
 function backToIndex(index) {
   const target = typeof index === 'undefined' ? 0 : index;
@@ -340,7 +340,7 @@ export default class SettingsPage extends React.Component {
             addServer={this.addServer}
             allowTeamEdit={this.state.enableTeamModification}
             onTeamClick={(index) => {
-              backToIndex(index + this.state.buildTeams.length + this.state.GPOTeams.length);
+              backToIndex(index + this.state.buildTeams.length + this.state.registryTeams.length);
             }}
           />
         </Col>
@@ -618,7 +618,7 @@ export default class SettingsPage extends React.Component {
               bsStyle='link'
               style={settingsPage.close}
               onClick={this.handleCancel}
-              disabled={this.state.localTeams.length === 0}
+              disabled={this.state.teams.length === 0}
             >
               <span>{'×'}</span>
             </Button>

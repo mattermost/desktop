@@ -37,6 +37,7 @@ global.willAppQuit = false;
 
 app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
 
+import RegistryConfig from './common/config/RegistryConfig';
 import Config from './common/config';
 import CertificateStore from './main/certificateStore';
 const certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
@@ -63,7 +64,9 @@ let deeplinkingUrl = null;
 let scheme = null;
 let appState = null;
 let permissionManager = null;
-let config = null;
+
+const registryConfig = new RegistryConfig();
+const config = new Config(app.getPath('userData') + '/config.json');
 
 const argv = parseArgv(process.argv.slice(1));
 const hideOnStartup = shouldBeHiddenOnStartup(argv);
@@ -74,12 +77,19 @@ if (argv['data-dir']) {
 
 global.isDev = isDev && !argv.disableDevMode;
 
-config = new Config(app.getPath('userData') + '/config.json');
-
 // can only call this before the app is ready
 if (config.enableHardwareAcceleration === false) {
   app.disableHardwareAcceleration();
 }
+
+registryConfig.on('update', (registryConfigData) => {
+  config.setRegistryConfigData(registryConfigData);
+  if (app.isReady() && mainWindow) {
+    mainWindow.registryConfigData = registryConfigData;
+  }
+});
+
+registryConfig.init();
 
 config.on('update', (configData) => {
   if (process.platform === 'win32' || process.platform === 'linux') {
