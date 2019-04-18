@@ -80,6 +80,7 @@
         "src/common/config/buildConfig.js",
         "src/common/config/pastDefaultPreferences.js",
         "src/common/config/upgradePreferences.js",
+        "src/common/config/RegistryConfig.js",
         "src/common/osVersion.js",
         "src/common/config/defaultPreferences.js",
         "src/common/JsonFileManager.js",

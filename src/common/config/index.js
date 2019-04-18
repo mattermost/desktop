@@ -7,22 +7,18 @@ import path from 'path';
 
 import {EventEmitter} from 'events';
 
-import WindowsRegistry from 'winreg';
-
 import defaultPreferences from './defaultPreferences';
 import upgradeConfigData from './upgradePreferences';
 import buildConfig from './buildConfig';
-
-const REGISTRY_HIVE_LIST = [WindowsRegistry.HKLM, WindowsRegistry.HKCU];
-const BASE_REGISTRY_KEY_PATH = '\\Software\\Policies\\Mattermost';
 
 /**
  * Handles loading and merging all sources of configuration as well as saving user provided config
  */
 export default class Config extends EventEmitter {
-  constructor(configFilePath) {
+  constructor(configFilePath, registryConfigData = {teams: []}) {
     super();
     this.configFilePath = configFilePath;
+    this.registryConfigData = registryConfigData;
     this.reload();
   }
 
@@ -39,8 +35,6 @@ export default class Config extends EventEmitter {
 
     this.localConfigData = this.loadLocalConfigFile();
     this.localConfigData = this.checkForConfigUpdates(this.localConfigData);
-
-    this.GPOConfigData = this.loadGPOConfigData();
 
     this.regenerateCombinedConfigData();
 
@@ -80,6 +74,11 @@ export default class Config extends EventEmitter {
       this.regenerateCombinedConfigData();
       this.saveLocalConfigData();
     }
+  }
+
+  setRegistryConfigData(registryConfigData = {teams: []}) {
+    this.registryConfigData = Object.assign({}, registryConfigData);
+    this.reload();
   }
 
   /**
@@ -131,8 +130,8 @@ export default class Config extends EventEmitter {
   get buildData() {
     return this.buildConfigData;
   }
-  get GPOData() {
-    return this.GPOConfigData;
+  get registryData() {
+    return this.registryConfigData;
   }
 
   // convenience getters
@@ -147,7 +146,7 @@ export default class Config extends EventEmitter {
     return this.localConfigData.teams;
   }
   get predefinedTeams() {
-    return [...this.buildConfigData.defaultTeams, ...this.GPOConfigData.teams];
+    return [...this.buildConfigData.defaultTeams, ...this.registryConfigData.teams];
   }
   get enableHardwareAcceleration() {
     return this.combinedData.enableHardwareAcceleration;
@@ -222,32 +221,6 @@ export default class Config extends EventEmitter {
   }
 
   /**
-   * Loads and returns config data defined in GPO for Windows
-   */
-  loadGPOConfigData() {
-    const configData = {
-      teams: [],
-    };
-    if (process.platform === 'win32') {
-      // extract DefaultServerList from the registry
-      configData.teams.push(...this.getTeamsListFromRegistry());
-
-      // extract EnableServerManagement from the registry
-      const enableServerManagement = this.getEnableAutoUpdatorFromRegistry();
-      if (typeof enableServerManagement === 'boolean') {
-        configData.enableServerManagement = enableServerManagement;
-      }
-
-      // extract EnableAutoUpdater from the registry
-      const enableAutoUpdater = this.getEnableAutoUpdatorFromRegistry();
-      if (typeof enableAutoUpdater === 'boolean') {
-        configData.enableAutoUpdater = enableAutoUpdater;
-      }
-    }
-    return configData;
-  }
-
-  /**
    * Determines if locally stored data needs to be updated and upgrades as needed
    *
    * @param {*} data locally stored data
@@ -271,7 +244,7 @@ export default class Config extends EventEmitter {
    */
   regenerateCombinedConfigData() {
     // combine all config data in the correct order
-    this.combinedData = Object.assign({}, this.defaultConfigData, this.localConfigData, this.buildConfigData, this.GPOConfigData);
+    this.combinedData = Object.assign({}, this.defaultConfigData, this.localConfigData, this.buildConfigData, this.registryConfigData);
 
     // remove unecessary data pulled from default and build config
     delete this.combinedData.defaultTeam;
@@ -285,9 +258,9 @@ export default class Config extends EventEmitter {
       combinedTeams.push(...this.buildConfigData.defaultTeams);
     }
 
-    // - add GPO defined teams, if any
-    if (this.GPOConfigData.teams && this.GPOConfigData.teams.length) {
-      combinedTeams.push(...this.GPOConfigData.teams);
+    // - add registry defined teams, if any
+    if (this.registryConfigData.teams && this.registryConfigData.teams.length) {
+      combinedTeams.push(...this.registryConfigData.teams);
     }
 
     // - add locally defined teams only if server management is enabled
@@ -298,7 +271,7 @@ export default class Config extends EventEmitter {
     this.combinedData.teams = combinedTeams;
     this.combinedData.localTeams = this.localConfigData.teams;
     this.combinedData.buildTeams = this.buildConfigData.defaultTeams;
-    this.combinedData.GPOTeams = this.GPOConfigData.teams;
+    this.combinedData.registryTeams = this.registryConfigData.teams;
   }
 
   /**
@@ -328,47 +301,6 @@ export default class Config extends EventEmitter {
     });
 
     return newTeams;
-  }
-
-  getTeamsListFromRegistry() {
-    const servers = [];
-    try {
-      const defaultTeams = this.getRegistryEntry(`${BASE_REGISTRY_KEY_PATH}\\DefaultServerList`);
-      if (Array.isArray(defaultTeams)) {
-        servers.push(...defaultTeams.reduce((teams, team) => {
-          teams.push({
-            name: team.name,
-            url: team.value,
-          });
-          return teams;
-        }, []));
-      }
-    } catch (error) {
-      console.log('[GPOConfig] Nothing set for \'DefaultServerList\'', error);
-    }
-    return servers;
-  }
-
-  getEnableServerManagementFromRegistry() {
-    let value = null;
-    try {
-      const entryValue = this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableServerManagement');
-      value = entryValue === '0x1';
-    } catch (error) {
-      console.log('[GPOConfig] Nothing set for \'EnableServerManagement\'', error);
-    }
-    return value;
-  }
-
-  getEnableAutoUpdatorFromRegistry() {
-    let value = null;
-    try {
-      const entryValue = this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableAutoUpdator');
-      value = entryValue === '0x1';
-    } catch (error) {
-      console.log('[GPOConfig] Nothing set for \'EnableAutoUpdater\'', error);
-    }
-    return value;
   }
 
   // helper functions
@@ -405,41 +337,5 @@ export default class Config extends EventEmitter {
 
   copy(data) {
     return Object.assign({}, data);
-  }
-
-  getRegistryEntry(key, name) {
-    let entry;
-    if (process.platform === 'win32') {
-      let error = null;
-      REGISTRY_HIVE_LIST.forEach((hive) => {
-        const regKey = new WindowsRegistry({
-          hive,
-          key,
-        });
-        regKey.values((err, items) => {
-          if (err) {
-            error = err;
-            return;
-          }
-          if (name) {
-            // eslint-disable-next-line max-nested-callbacks
-            items.forEach((item) => {
-              if (item.name === name) {
-                entry = item;
-              }
-            });
-          } else {
-            if (!entry) {
-              entry = [];
-            }
-            entry.push(...items);
-          }
-        });
-      });
-      if (!entry && error) {
-        throw new Error(error);
-      }
-    }
-    return entry;
   }
 }
