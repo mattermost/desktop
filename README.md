@@ -62,8 +62,13 @@ Normally, the application will follow your system settings to use a proxy, or yo
 
 On Windows, please make sure to add `--` before options. For example, `Mattermost.exe -- --proxy-server=...`.
 
+## Custom App Deployments
+Our [docs provide a guide](https://docs.mattermost.com/deployment/desktop-app-deployment.html) on how to customize and distribute your own Mattermost Desktop App, including how to distribute the official Windows Desktop App silently to end users, pre-configured with the server URL and other app settings.
+
 ## Contributing
 Please see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Development
 Please see [docs/development.md](./docs/development.md).
+
+
