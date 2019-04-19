@@ -1,0 +1,66 @@
+version: '{build}'
+image: Visual Studio 2017
+branches:
+  only:
+    - master
+    - /^release-.*$/
+    - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
+
+init:
+  # Do not try to run a Powershell script from the repo here, because at this
+  # stage (init) the repo is not cloned yet.
+
+build_script:
+- ps: |
+    #.\scripts\make_debug_rdp.ps1
+    .\scripts\make_build.ps1
+
+test_script:
+- ps: |
+    .\scripts\make_test.ps1
+
+# Secure variables are not decoded during Pull Request
+# src.: https://www.appveyor.com/docs/build-configuration/#secure-variables
+environment:
+  certificate_private_key_encrypted:
+    secure: 9k3nvcEL+YDZTH15atlEvRBO664rBEofptMmeaf8BMN8bSGOq4Darz5UhMj4blO4
+  certificate_decryption_key_encrypted:
+    secure: GjvvWt6sGQBJu16BR2dpZMW2eXyNB3zT2tbWN/AQxGEqjNPkXZePHWVHS/5hAFmJ
+
+artifacts:
+  - path: 'release\*.msi'
+    name: MsiInstallers
+
+deploy:
+  # Nightly build
+  - provider: GitHub
+    auth_token:
+      secure: I2wx9gajpvBjcxtEKYoYqqmyoH/2fWQflycpwlHZY9SD9sFkPlA4CNMcF29dcI4j
+    release: $(APPVEYOR_BUILD_NUMBER) ($(APPVEYOR_REPO_COMMIT)) (via AppVeyor)
+    description: $(MATTERMOST_BUILD_CHANGELOG)
+    artifact: MsiInstallers
+    prerelease: true
+    force_update: true
+    on:
+      branch: master
+  # Taggued releases
+  - provider: GitHub
+    auth_token:
+      secure: I2wx9gajpvBjcxtEKYoYqqmyoH/2fWQflycpwlHZY9SD9sFkPlA4CNMcF29dcI4j
+    release: $(APPVEYOR_REPO_TAG_NAME) ($(MATTERMOST_BUILD_DATE)) (via AppVeyor)
+    description: $(MATTERMOST_BUILD_CHANGELOG)
+    artifact: MsiInstallers
+    draft: true
+    force_update: false
+    # With `prerelease: true`, specifying the tag allows to merge automatically
+    # the release with the tag we made. When using `draft: true`, the draft is
+    # in a dedicated space not bound with any particular tag. When clicking on
+    # "Publish release" on GitHub, it will be linked against the tag we made
+    # by default.
+    tag: $(APPVEYOR_REPO_TAG_NAME)
+    on:
+      APPVEYOR_REPO_TAG: true
+
+on_finish:
+- ps: |
+    # Some Powershell script to run at the end
