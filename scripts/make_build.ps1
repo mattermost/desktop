@@ -40,37 +40,37 @@ $env:Path += ";$signToolDir"
 Write-Host "Getting build date..."
 $env:MATTERMOST_BUILD_DATE = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")
 
-Write-Host "Getting latest git tag..."
-# Wix doesn't like to have tags like v4.3.0-rc0. We are thus forcing to
-# have a format like 4.3.0.rc0. This is ok for the package.json file.
-$env:MATTERMOST_BUILD_ID = [string]$(git describe --abbrev=0) -Replace '-','.' -Replace 'v'
+Write-Host "Getting build version..."
+# Wix and npm do require to have semver parsable versions. They do not like to
+# have versions like v4.3.0-rc0. We are thus forcing to have a format like
+# 4.3.0.rc0.
+$env:MATTERMOST_BUILD_ID = [string]$(git describe --abbrev=0)
+$env:MATTERMOST_BUILD_ID_SEMVER = [string]$(git describe --abbrev=0) -Replace '-','.'
+# Remove non number and . chars
+$env:MATTERMOST_BUILD_ID_SEMVER = $env:MATTERMOST_BUILD_ID_SEMVER -Replace '[^0-9.]'
+# Only take major.minor.build if any
+$env:MATTERMOST_BUILD_ID_SEMVER = $env:MATTERMOST_BUILD_ID_SEMVER.Split('.')[0..2] -Join '.'
 # If we are not building a tag, add the date
 if ($env:APPVEYOR_REPO_TAG -ne $true) {
-    $env:MATTERMOST_BUILD_ID += "." + (Get-Date).ToUniversalTime().ToString("yyyyMMddhhmmss")
+    $env:MATTERMOST_BUILD_ID += "-" + (Get-Date).ToUniversalTime().ToString("yyyyMMddhhmmss")
+    $env:MATTERMOST_BUILD_ID_SEMVER += "." + (Get-Date).ToUniversalTime().ToString("yyyyMMddhhmmss")
 }
 
 Write-Host "Patching version from msi xml descriptor..."
-# Wix wants 4 digits only. We might have 4.3.0.rc0.20190419124804 or 4.4.
-# Ensure to always have 4 digits.
-$xmlVersion = $env:MATTERMOST_BUILD_ID.Split('.')[0..2] -Join '.'
-# If we are not building a tag, add the date
-if ($env:APPVEYOR_REPO_TAG -ne $true) {
-    $xmlVersion += "." + (Get-Date).ToUniversalTime().ToString("yyyyMMddhhmmss")
-}
 $msiDescriptorFileName = Join-Path -Path "$(Get-Location)" -ChildPath "scripts\msi_installer.wxs"
 $msiDescriptor = [xml](Get-Content $msiDescriptorFileName)
-$msiDescriptor.Wix.Product.Version = [string]$xmlVersion
+$msiDescriptor.Wix.Product.Version = [string]$env:MATTERMOST_BUILD_ID_SEMVER
 $msiDescriptor.Save($msiDescriptorFileName)
 
 Write-Host "Patching version from electron package.json..."
 $packageFileName = Join-Path -Path "$(Get-Location)" -ChildPath "package.json"
 $package = Get-Content $packageFileName -Raw | ConvertFrom-Json
-$package.version = [string]$env:MATTERMOST_BUILD_ID
+$package.version = [string]$env:MATTERMOST_BUILD_ID_SEMVER
 $package | ConvertTo-Json | Set-Content $packageFileName
 Write-Host "Patching version from electron src\package.json..."
 $packageFileName = Join-Path -Path "$(Get-Location)" -ChildPath "src\package.json"
 $package = Get-Content $packageFileName -Raw | ConvertFrom-Json
-$package.version = [string]$env:MATTERMOST_BUILD_ID
+$package.version = [string]$env:MATTERMOST_BUILD_ID_SEMVER
 $package | ConvertTo-Json | Set-Content $packageFileName
 
 Write-Host "Getting list of commits for changelog..."
