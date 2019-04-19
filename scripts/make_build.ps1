@@ -41,27 +41,37 @@ Write-Host "Getting build date..."
 $env:MATTERMOST_BUILD_DATE = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")
 
 Write-Host "Getting latest git tag..."
-if ($env:APPVEYOR_REPO_TAG -eq $true) {
-    # Wix doesn't like to have tags like v4.3.0-rc0. We are thus forcing to
-    # have a format like 4.3.0.rc0.
-    $env:MATTERMOST_BUILD_ID = [string]$(git describe --abbrev=0) -Replace '-','.' -Replace 'v'
-} else {
-    $env:MATTERMOST_BUILD_ID = [string]"$(git describe).$env:MATTERMOST_BUILD_DATE" -Replace '-','.' -Replace 'v'
+# Wix doesn't like to have tags like v4.3.0-rc0. We are thus forcing to
+# have a format like 4.3.0.rc0. This is ok for the package.json file.
+$env:MATTERMOST_BUILD_ID = [string]$(git describe --abbrev=0) -Replace '-','.' -Replace 'v'
+# If we are not building a tag, add the date
+if ($env:APPVEYOR_REPO_TAG -ne $true) {
+    $env:MATTERMOST_BUILD_ID += "." + (Get-Date).ToUniversalTime().ToString("yyyyMMddhhmmss")
 }
 
 Write-Host "Patching version from msi xml descriptor..."
-# Wix wants 4 digits only. 4.3.0.rc0. becomes 4.3.0.0
-$xmlVersion = $env:MATTERMOST_BUILD_ID -Replace '([0-9.]*)[\D]*([0-9.]*)','$1$2'
+# Wix wants 4 digits only. We might have 4.3.0.rc0.20190419124804 or 4.4.
+# Ensure to always have 4 digits.
+$xmlVersion = $env:MATTERMOST_BUILD_ID.Split('.')[0..2] -Join '.'
+# If we are not building a tag, add the date
+if ($env:APPVEYOR_REPO_TAG -ne $true) {
+    $xmlVersion += "." + (Get-Date).ToUniversalTime().ToString("yyyyMMddhhmmss")
+}
 $msiDescriptorFileName = Join-Path -Path "$(Get-Location)" -ChildPath "scripts\msi_installer.wxs"
 $msiDescriptor = [xml](Get-Content $msiDescriptorFileName)
 $msiDescriptor.Wix.Product.Version = [string]$xmlVersion
 $msiDescriptor.Save($msiDescriptorFileName)
 
-#Write-Host "Patching version from electron package.json..."
-#$packageFileName = Join-Path -Path "$(Get-Location)" -ChildPath "src\package.json"
-#$package = Get-Content $packageFileName | ConvertFrom-Json
-#$package.version = [string]$env:MATTERMOST_BUILD_ID
-#$package | ConvertTo-Json | Set-Content $packageFileName
+Write-Host "Patching version from electron package.json..."
+$packageFileName = Join-Path -Path "$(Get-Location)" -ChildPath "package.json"
+$package = Get-Content $packageFileName -Raw | ConvertFrom-Json
+$package.version = [string]$env:MATTERMOST_BUILD_ID
+$package | ConvertTo-Json | Set-Content $packageFileName
+Write-Host "Patching version from electron src\package.json..."
+$packageFileName = Join-Path -Path "$(Get-Location)" -ChildPath "src\package.json"
+$package = Get-Content $packageFileName -Raw | ConvertFrom-Json
+$package.version = [string]$env:MATTERMOST_BUILD_ID
+$package | ConvertTo-Json | Set-Content $packageFileName
 
 Write-Host "Getting list of commits for changelog..."
 $previousTag = $(Invoke-Expression "git describe --abbrev=0 --tags $(git describe --abbrev=0)^")
