@@ -83,7 +83,7 @@ async function initialize() {
   // initialization that can run before the app is ready
   initializeConfig();
   initializeAppEventListeners();
-  initializeAppBeforeReady();
+  initializeBeforeAppReady();
 
   // wait for registry config data to load and app ready event
   await Promise.all([
@@ -98,7 +98,7 @@ async function initialize() {
 
   // initialization that should run once the app is ready
   initializeInterCommunicationEventListeners();
-  initializeAppWhenReady();
+  initializeAfterAppReady();
   initializeMainWindowListeners();
 }
 
@@ -133,7 +133,7 @@ function initializeAppEventListeners() {
   app.on('web-contents-created', handleAppWebContentsCreated);
 }
 
-function initializeAppBeforeReady() {
+function initializeBeforeAppReady() {
   // can only call this before the app is ready
   if (config.enableHardwareAcceleration === false) {
     app.disableHardwareAcceleration();
@@ -376,8 +376,7 @@ function handleAppWebContentsCreated(dc, contents) {
   });
 }
 
-function initializeAppWhenReady() {
-
+function initializeAfterAppReady() {
   const appStateJson = path.join(app.getPath('userData'), 'app-state.json');
   appState = new AppStateManager(appStateJson);
   if (wasUpdated(appState.lastAppVersion)) {
