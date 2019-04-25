@@ -57,10 +57,9 @@ export default class RegistryConfig extends EventEmitter {
       } catch (error) {
         console.log('[RegistryConfig] Nothing retrieved for \'EnableAutoUpdater\'', error);
       }
-
-      this.initialized = true;
-      this.emit('update', this.data);
     }
+    this.initialized = true;
+    this.emit('update', this.data);
   }
 
   /**
