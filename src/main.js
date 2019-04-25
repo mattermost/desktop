@@ -148,6 +148,10 @@ function initializeAppBeforeReady() {
     global.willAppQuit = true;
   }
 
+  if (!config.spellCheckerLocale) {
+    config.set('spellCheckerLocale', SpellChecker.getSpellCheckerLocale(app.getLocale()));
+  }
+
   allowProtocolDialog.init(mainWindow);
 
   if (isDev) {
@@ -213,9 +217,9 @@ function handleConfigUpdate(configData) {
   ipcMain.emit('update-menu', true, configData);
 }
 
-function handleConfigSynchronize({GPOConfigData}) {
+function handleConfigSynchronize() {
   if (mainWindow) {
-    mainWindow.webContents.send('reload-config', {GPOConfigData});
+    mainWindow.webContents.send('reload-config');
   }
 }
 
@@ -373,9 +377,6 @@ function handleAppWebContentsCreated(dc, contents) {
 }
 
 function initializeAppWhenReady() {
-  if (!config.spellCheckerLocale) {
-    config.set('spellCheckerLocale', SpellChecker.getSpellCheckerLocale(app.getLocale()));
-  }
 
   const appStateJson = path.join(app.getPath('userData'), 'app-state.json');
   appState = new AppStateManager(appStateJson);
