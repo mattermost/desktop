@@ -53,7 +53,7 @@ $env:MATTERMOST_BUILD_ID_SEMVER = $env:MATTERMOST_BUILD_ID_SEMVER.Split('.')[0..
 # If we are not building a tag, add the date
 if ($env:APPVEYOR_REPO_TAG -ne $true) {
     $env:MATTERMOST_BUILD_ID += "-" + (Get-Date).ToUniversalTime().ToString("yyyyMMddhhmmss")
-    $env:MATTERMOST_BUILD_ID_SEMVER += "." + (Get-Date).ToUniversalTime().ToString("yyyyMMddhhmmss")
+    $env:MATTERMOST_BUILD_ID_SEMVER += (Get-Date).ToUniversalTime().ToString("yyyyMMddhhmmss")
 }
 
 Write-Host "Patching version from msi xml descriptor..."
