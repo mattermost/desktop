@@ -168,7 +168,6 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('download-url', handleDownloadURLEvent);
   ipcMain.on('notified', handleNotifiedEvent);
   ipcMain.on('update-title', handleUpdateTitleEvent);
-  ipcMain.on('update-title', handleUpdateTitleEvent);
   ipcMain.on('update-menu', handleUpdateMenuEvent);
   ipcMain.on('update-dict', handleUpdateDictionaryEvent);
   ipcMain.on('checkspell', handleCheckSpellingEvent);
