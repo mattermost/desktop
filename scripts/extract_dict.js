@@ -2,6 +2,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// This file uses process.exit().
 /* eslint-disable no-process-exit */
 
 const {spawn} = require('child_process');
@@ -19,3 +20,5 @@ spawn(path7za, ['e', '-y', '*.zip'], {
 }).on('close', (code) => {
   process.exit(code);
 });
+
+/* eslint-enable no-process-exit */

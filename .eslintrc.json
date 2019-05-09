@@ -1,27 +1,114 @@
 {
-    "extends": "./.eslintrc-webapp.json",
-    "parserOptions": {
-        "ecmaVersion": 2017
-    },
-    "settings": {
-        "import/resolver": "node"
-    },
-    "rules": {
+  "extends": [
+    "./.eslintrc-webapp.json",
+    "plugin:eslint-comments/recommended"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 2017
+  },
+  "settings": {
+    "import/resolver": "node"
+  },
+  "rules": {
+    "header/header": [2, "line", [
+      " Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.",
+      " See LICENSE.txt for license information."
+    ]],
+    "import/no-commonjs": 2,
+    "indent": [2, 2, {"SwitchCase": 0}],
+    "no-console": 0,
+    "no-process-env": 0,
+    "no-underscore-dangle": 1,
+    "no-var": 2,
+    "react/jsx-indent": [2, 2],
+    "react/jsx-indent-props": [2, 2],
+    "react/no-find-dom-node": 2,
+    "react/no-set-state": 1,
+    "react/require-optimization": 0
+  },
+  "overrides": [
+    {
+      "files": [
+        "webpack.config.renderer.js",
+        "test/specs/spellchecker_test.js",
+        "test/specs/app_test.js",
+        "test/specs/security_test.js",
+        "test/specs/permisson_test.js",
+        "test/specs/browser/index_test.js",
+        "test/specs/browser/settings_test.js",
+        "test/modules/utils.js",
+        "test/modules/environment.js",
+        "webpack.config.main.js",
+        "CHANGELOG.md",
+        "webpack.config.base.js",
+        "babel.config.js",
+        "README.md",
+        "scripts/watch_main_and_preload.js",
+        "scripts/extract_dict.js",
+        "scripts/manipulate_windows_zip.js",
+        "scripts/check_build_config.js",
+        "LICENSE.txt",
+        "src/utils/util.js",
+        "src/main.js",
+        "src/browser/js/contextMenu.js",
+        "src/browser/updater.jsx",
+        "src/browser/js/notification.js",
+        "src/browser/js/badge.js",
+        "src/browser/webview/mattermost.js",
+        "src/browser/components/RemoveServerModal.jsx",
+        "src/browser/components/MainPage.jsx",
+        "src/browser/components/HoveringURL.jsx",
+        "src/browser/components/AutoSaveIndicator.jsx",
+        "src/browser/components/MattermostView.jsx",
+        "src/browser/components/TabBar.jsx",
+        "src/browser/components/DestructiveConfirmModal.jsx",
+        "src/browser/components/ErrorView.jsx",
+        "src/browser/components/UpdaterPage.jsx",
+        "src/browser/components/PermissionRequestDialog.jsx",
+        "src/browser/components/Finder.jsx",
+        "src/browser/components/SettingsPage.jsx",
+        "src/browser/components/TeamListItem.jsx",
+        "src/browser/components/UpdaterPage/UpdaterPage.stories.jsx",
+        "src/browser/components/Button/Button.stories.jsx",
+        "src/browser/components/TeamList.jsx",
+        "src/browser/components/LoginModal.jsx",
+        "src/browser/components/NewTeamModal.jsx",
+        "src/browser/settings.jsx",
+        "src/browser/index.jsx",
+        "src/common/deepmerge.js",
+        "src/common/config/index.js",
+        "src/common/config/buildConfig.js",
+        "src/common/config/pastDefaultPreferences.js",
+        "src/common/config/upgradePreferences.js",
+        "src/common/config/RegistryConfig.js",
+        "src/common/osVersion.js",
+        "src/common/config/defaultPreferences.js",
+        "src/common/JsonFileManager.js",
+        "src/main/certificateStore.js",
+        "src/main/mainWindow.js",
+        "src/main/allowProtocolDialog.js",
+        "src/main/permissionRequestHandler.js",
+        "src/main/squirrelStartup.js",
+        "src/main/autoLaunch.js",
+        "src/main/PermissionManager.js",
+        "src/main/AutoLauncher.js",
+        "src/main/AppStateManager.js",
+        "src/main/menus/tray.js",
+        "src/main/CriticalErrorHandler.js",
+        "src/main/cookieManager.js",
+        "src/main/utils.js",
+        "src/main/downloadURL.js",
+        "src/main/autoUpdater.js",
+        "src/main/SpellChecker.js",
+        "src/main/menus/app.js"
+      ],
+      "rules": {
         "header/header": [2, "line", [
-            " Copyright (c) 2015-2016 Yuya Ochiai",
-            " Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.",
-            " See LICENSE.txt for license information."
-        ]],
-        "import/no-commonjs": 2,
-        "indent": [2, 2, {"SwitchCase": 0}],
-        "no-console": 0,
-        "no-process-env": 0,
-        "no-underscore-dangle": 1,
-        "no-var": 2,
-        "react/jsx-indent": [2, 2],
-        "react/jsx-indent-props": [2, 2],
-        "react/no-find-dom-node": 2,
-        "react/no-set-state": 1,
-        "react/require-optimization": 0
+          " Copyright (c) 2015-2016 Yuya Ochiai",
+          " Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.",
+          " See LICENSE.txt for license information."
+        ]]
+      }
     }
+  ]
 }

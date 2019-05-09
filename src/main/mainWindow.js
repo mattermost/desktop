@@ -9,7 +9,6 @@ import {app, BrowserWindow} from 'electron';
 function saveWindowState(file, window) {
   const windowState = window.getBounds();
   windowState.maximized = window.isMaximized();
-  windowState.fullscreen = window.isFullScreen();
   try {
     fs.writeFileSync(file, JSON.stringify(windowState));
   } catch (e) {
@@ -110,7 +109,15 @@ function createMainWindow(config, options) {
         }
         break;
       case 'darwin':
-        hideWindow(mainWindow);
+        // need to leave fullscreen first, then hide the window
+        if (mainWindow.isFullScreen()) {
+          mainWindow.once('leave-full-screen', () => {
+            hideWindow(mainWindow);
+          });
+          mainWindow.setFullScreen(false);
+        } else {
+          hideWindow(mainWindow);
+        }
         break;
       default:
       }

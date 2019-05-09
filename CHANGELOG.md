@@ -17,6 +17,8 @@ Release date: TBD
  [#900](https://github.com/mattermost/desktop/pull/900)
  - Improved the styling of the mention badge in tab bar.
  [#924](https://github.com/mattermost/desktop/pull/924)
+ - Updated spellchecker dictionaries for English.
+ [#938](https://github.com/mattermost/desktop/pull/938)
 
 #### Mac
  - Added auto-updater.
@@ -33,6 +35,26 @@ Release date: TBD
  [#900](https://github.com/mattermost/desktop/pull/900)
  - Fixed several typos.
  [#905](https://github.com/mattermost/desktop/pull/905)
+
+----
+
+## Release v4.2.1
+
+Release date: March 20, 2019
+
+- Mattermost v4.2.1 contains a bug fix for all platforms.
+
+### Bug Fixes
+
+#### All Platforms
+- Fixed an issue where some links opened in a smaller window in the Mattermost app. This issue only affected installations with a [Site URL](https://docs.mattermost.com/administration/config-settings.html#site-url) configured to use a subpath.
+[#946](https://github.com/mattermost/desktop/pull/946)
+
+### Contributors
+
+Many thanks to all our contributors. In alphabetical order:
+
+[lieut-data](https://github.com/lieut-data)
 
 ----
 
