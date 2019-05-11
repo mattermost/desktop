@@ -8,16 +8,6 @@ import path from 'path';
 import {URL} from 'url';
 
 import electron from 'electron';
-const {
-  app,
-  Menu,
-  Tray,
-  ipcMain,
-  nativeImage,
-  dialog,
-  systemPreferences,
-  session,
-} = electron;
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import {parse as parseArgv} from 'yargs';
@@ -28,19 +18,9 @@ import AutoLauncher from './main/AutoLauncher';
 import CriticalErrorHandler from './main/CriticalErrorHandler';
 import upgradeAutoLaunch from './main/autoLaunch';
 import autoUpdater from './main/autoUpdater';
-
-const criticalErrorHandler = new CriticalErrorHandler();
-
-process.on('uncaughtException', criticalErrorHandler.processUncaughtExceptionHandler.bind(criticalErrorHandler));
-
-global.willAppQuit = false;
-
-app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
-
 import RegistryConfig from './common/config/RegistryConfig';
 import Config from './common/config';
 import CertificateStore from './main/certificateStore';
-const certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
 import createMainWindow from './main/mainWindow';
 import appMenu from './main/menus/app';
 import trayMenu from './main/menus/tray';
@@ -51,10 +31,26 @@ import permissionRequestHandler from './main/permissionRequestHandler';
 import AppStateManager from './main/AppStateManager';
 import initCookieManager from './main/cookieManager';
 import {shouldBeHiddenOnStartup} from './main/utils';
-
 import SpellChecker from './main/SpellChecker';
 
+// pull out required electron components like this
+// as not all components can be referenced before the app is ready
+const {
+  app,
+  Menu,
+  Tray,
+  ipcMain,
+  nativeImage,
+  dialog,
+  systemPreferences,
+  session,
+} = electron;
+const criticalErrorHandler = new CriticalErrorHandler();
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
+const argv = parseArgv(process.argv.slice(1));
+const hideOnStartup = shouldBeHiddenOnStartup(argv);
+const loginCallbackMap = new Map();
+const certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -64,34 +60,143 @@ let deeplinkingUrl = null;
 let scheme = null;
 let appState = null;
 let permissionManager = null;
+let registryConfig = null;
+let config = null;
+let trayIcon = null;
+let trayImages = null;
 
-const registryConfig = new RegistryConfig();
-const config = new Config(app.getPath('userData') + '/config.json');
+/**
+ * Main entry point for the application, ensures that everything initializes in the proper order
+ */
+async function initialize() {
+  process.on('uncaughtException', criticalErrorHandler.processUncaughtExceptionHandler.bind(criticalErrorHandler));
 
-const argv = parseArgv(process.argv.slice(1));
-const hideOnStartup = shouldBeHiddenOnStartup(argv);
+  global.willAppQuit = false;
+  global.isDev = isDev && !argv.disableDevMode;
 
-if (argv['data-dir']) {
-  app.setPath('userData', path.resolve(argv['data-dir']));
-}
+  app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
 
-global.isDev = isDev && !argv.disableDevMode;
-
-// can only call this before the app is ready
-if (config.enableHardwareAcceleration === false) {
-  app.disableHardwareAcceleration();
-}
-
-registryConfig.on('update', (registryConfigData) => {
-  config.setRegistryConfigData(registryConfigData);
-  if (app.isReady() && mainWindow) {
-    mainWindow.registryConfigData = registryConfigData;
+  if (argv['data-dir']) {
+    app.setPath('userData', path.resolve(argv['data-dir']));
   }
-});
 
-registryConfig.init();
+  // initialization that can run before the app is ready
+  initializeConfig();
+  initializeAppEventListeners();
+  initializeBeforeAppReady();
 
-config.on('update', (configData) => {
+  // wait for registry config data to load and app ready event
+  await Promise.all([
+    registryConfig.init(),
+    app.whenReady(),
+  ]);
+
+  // no need to continue initializing if app is quitting
+  if (global.willAppQuit) {
+    return;
+  }
+
+  // initialization that should run once the app is ready
+  initializeInterCommunicationEventListeners();
+  initializeAfterAppReady();
+  initializeMainWindowListeners();
+}
+
+// attempt to initialize the application
+try {
+  initialize();
+} catch (error) {
+  throw new Error(`App initialization failed: ${error.toString()}`);
+}
+
+//
+// initialization sub functions
+//
+
+function initializeConfig() {
+  registryConfig = new RegistryConfig();
+  config = new Config(app.getPath('userData') + '/config.json');
+  config.on('update', handleConfigUpdate);
+  config.on('synchronize', handleConfigSynchronize);
+}
+
+function initializeAppEventListeners() {
+  app.on('second-instance', handleAppSecondInstance);
+  app.on('window-all-closed', handleAppWindowAllClosed);
+  app.on('browser-window-created', handleAppBrowserWindowCreated);
+  app.on('activate', handleAppActivate);
+  app.on('before-quit', handleAppBeforeQuit);
+  app.on('certificate-error', handleAppCertificateError);
+  app.on('gpu-process-crashed', handleAppGPUProcessCrashed);
+  app.on('login', handleAppLogin);
+  app.on('will-finish-launching', handleAppWillFinishLaunching);
+  app.on('web-contents-created', handleAppWebContentsCreated);
+}
+
+function initializeBeforeAppReady() {
+  // can only call this before the app is ready
+  if (config.enableHardwareAcceleration === false) {
+    app.disableHardwareAcceleration();
+  }
+
+  trayImages = getTrayImages();
+
+  // If there is already an instance, quit this one
+  const gotTheLock = app.requestSingleInstanceLock();
+  if (!gotTheLock) {
+    app.exit();
+    global.willAppQuit = true;
+  }
+
+  if (!config.spellCheckerLocale) {
+    config.set('spellCheckerLocale', SpellChecker.getSpellCheckerLocale(app.getLocale()));
+  }
+
+  allowProtocolDialog.init(mainWindow);
+
+  if (isDev) {
+    console.log('In development mode, deeplinking is disabled');
+  } else if (protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0]) {
+    scheme = protocols[0].schemes[0];
+    app.setAsDefaultProtocolClient(scheme);
+  }
+}
+
+function initializeInterCommunicationEventListeners() {
+  ipcMain.on('reload-config', handleReloadConfig);
+  ipcMain.on('login-credentials', handleLoginCredentialsEvent);
+  ipcMain.on('download-url', handleDownloadURLEvent);
+  ipcMain.on('notified', handleNotifiedEvent);
+  ipcMain.on('update-title', handleUpdateTitleEvent);
+  ipcMain.on('update-menu', handleUpdateMenuEvent);
+  ipcMain.on('update-dict', handleUpdateDictionaryEvent);
+  ipcMain.on('checkspell', handleCheckSpellingEvent);
+  ipcMain.on('get-spelling-suggestions', handleGetSpellingSuggestionsEvent);
+  ipcMain.on('get-spellchecker-locale', handleGetSpellcheckerLocaleEvent);
+  ipcMain.on('reply-on-spellchecker-is-ready', handleReplyOnSpellcheckerIsReadyEvent);
+  if (shouldShowTrayIcon()) {
+    ipcMain.on('update-unread', handleUpdateUnreadEvent);
+  }
+  if (config.enableAutoUpdater) {
+    ipcMain.on('check-for-updates', autoUpdater.checkForUpdates);
+  }
+}
+
+function initializeMainWindowListeners() {
+  mainWindow.on('closed', handleMainWindowClosed);
+  mainWindow.on('unresponsive', criticalErrorHandler.windowUnresponsiveHandler.bind(criticalErrorHandler));
+  mainWindow.webContents.on('crashed', handleMainWindowWebContentsCrashed);
+  mainWindow.on('ready-to-show', handleMainWindowReadyToShow);
+  if (config.enableAutoUpdater) {
+    mainWindow.once('show', handleMainWindowShow);
+  }
+}
+
+//
+// config event handlers
+//
+
+function handleConfigUpdate(configData) {
   if (process.platform === 'win32' || process.platform === 'linux') {
     const appLauncher = new AutoLauncher();
     const autoStartTask = config.autostart ? appLauncher.enable() : appLauncher.disable();
@@ -109,89 +214,24 @@ config.on('update', (configData) => {
   }
 
   ipcMain.emit('update-menu', true, configData);
-});
+}
 
-// when the config object changes here in the main process, tell the renderer process to reload any initialized config objects to get the changes
-config.on('synchronize', () => {
+function handleConfigSynchronize() {
   if (mainWindow) {
     mainWindow.webContents.send('reload-config');
   }
-});
+}
 
-// listen for any config reload requests from the renderer process to reload configuration changes here in the main process
-ipcMain.on('reload-config', () => {
+function handleReloadConfig() {
   config.reload();
-});
-
-// Only for OS X
-function switchMenuIconImages(icons, isDarkMode) {
-  if (isDarkMode) {
-    icons.normal = icons.clicked.normal;
-    icons.unread = icons.clicked.unread;
-    icons.mention = icons.clicked.mention;
-  } else {
-    icons.normal = icons.light.normal;
-    icons.unread = icons.light.unread;
-    icons.mention = icons.light.mention;
-  }
 }
 
-let trayIcon = null;
-const trayImages = (() => {
-  switch (process.platform) {
-  case 'win32':
-    return {
-      normal: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray.ico')),
-      unread: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_unread.ico')),
-      mention: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_mention.ico')),
-    };
-  case 'darwin':
-  {
-    const icons = {
-      light: {
-        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIcon.png')),
-        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconUnread.png')),
-        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconMention.png')),
-      },
-      clicked: {
-        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIcon.png')),
-        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconUnread.png')),
-        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconMention.png')),
-      },
-    };
-    switchMenuIconImages(icons, systemPreferences.isDarkMode());
-    return icons;
-  }
-  case 'linux':
-  {
-    const theme = config.trayIconTheme;
-    try {
-      return {
-        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconTemplate.png')),
-        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconUnreadTemplate.png')),
-        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconMentionTemplate.png')),
-      };
-    } catch (e) {
-      //Fallback for invalid theme setting
-      return {
-        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconTemplate.png')),
-        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconUnreadTemplate.png')),
-        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconMentionTemplate.png')),
-      };
-    }
-  }
-  default:
-    return {};
-  }
-})();
+//
+// app event handlers
+//
 
-// If there is already an instance, activate the window in the existing instance and quit this one
-const gotTheLock = app.requestSingleInstanceLock();
-if (!gotTheLock) {
-  app.exit();
-  global.willAppQuit = true;
-}
-app.on('second-instance', (event, secondArgv) => {
+// activate first app instance, subsequent instances will quit themselves
+function handleAppSecondInstance(event, secondArgv) {
   // Protocol handler for win32
   // argv: An array of the second instance’s (command line / deep linked) arguments
   if (process.platform === 'win32') {
@@ -210,107 +250,35 @@ app.on('second-instance', (event, secondArgv) => {
       mainWindow.show();
     }
   }
-});
-
-function shouldShowTrayIcon() {
-  if (process.platform === 'win32') {
-    return true;
-  }
-  if (['darwin', 'linux'].includes(process.platform) && config.showTrayIcon === true) {
-    return true;
-  }
-  return false;
 }
 
-function wasUpdated(lastAppVersion) {
-  return lastAppVersion !== app.getVersion();
-}
-
-function clearAppCache() {
-  if (mainWindow) {
-    console.log('Clear cache after update');
-    mainWindow.webContents.session.clearCache(() => {
-      //Restart after cache clear
-      mainWindow.reload();
-    });
-  } else {
-    //Wait for mainWindow
-    setTimeout(clearAppCache, 100);
-  }
-}
-
-// Quit when all windows are closed.
-app.on('window-all-closed', () => {
+function handleAppWindowAllClosed() {
   // On OS X it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== 'darwin') {
     app.quit();
   }
-});
-
-function getValidWindowPosition(state, screen) {
-  // Check if the previous position is out of the viewable area
-  // (e.g. because the screen has been plugged off)
-  const displays = screen.getAllDisplays();
-  let minX = 0;
-  let maxX = 0;
-  let minY = 0;
-  let maxY = 0;
-  for (let i = 0; i < displays.length; i++) {
-    const display = displays[i];
-    maxX = Math.max(maxX, display.bounds.x + display.bounds.width);
-    maxY = Math.max(maxY, display.bounds.y + display.bounds.height);
-    minX = Math.min(minX, display.bounds.x);
-    minY = Math.min(minY, display.bounds.y);
-  }
-
-  if (state.x > maxX || state.y > maxY || state.x < minX || state.y < minY) {
-    Reflect.deleteProperty(state, 'x');
-    Reflect.deleteProperty(state, 'y');
-    Reflect.deleteProperty(state, 'width');
-    Reflect.deleteProperty(state, 'height');
-  }
-
-  return state;
 }
 
-function handleScreenResize(screen, browserWindow) {
-  function handle() {
-    const position = browserWindow.getPosition();
-    const size = browserWindow.getSize();
-    const validPosition = getValidWindowPosition({
-      x: position[0],
-      y: position[1],
-      width: size[0],
-      height: size[1],
-    }, screen);
-    browserWindow.setPosition(validPosition.x || 0, validPosition.y || 0);
-  }
-
-  browserWindow.on('restore', handle);
-  handle();
-}
-
-app.on('browser-window-created', (e, newWindow) => {
+function handleAppBrowserWindowCreated(error, newWindow) {
   // Screen cannot be required before app is ready
   const {screen} = electron;
-  handleScreenResize(screen, newWindow);
-});
+  resizeScreen(screen, newWindow);
+}
 
-// For OSX, show hidden mainWindow when clicking dock icon.
-app.on('activate', () => {
+function handleAppActivate() {
   mainWindow.show();
-});
+}
 
-app.on('before-quit', () => {
+function handleAppBeforeQuit() {
   // Make sure tray icon gets removed if the user exits via CTRL-Q
   if (trayIcon && process.platform === 'win32') {
     trayIcon.destroy();
   }
   global.willAppQuit = true;
-});
+}
 
-app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
+function handleAppCertificateError(event, webContents, url, error, certificate, callback) {
   if (certificateStore.isTrusted(url, certificate)) {
     event.preventDefault();
     callback(true);
@@ -351,57 +319,19 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
     });
     callback(false);
   }
-});
+}
 
-app.on('gpu-process-crashed', (event, killed) => {
+function handleAppGPUProcessCrashed(event, killed) {
   console.log(`The GPU process has crashed (killed = ${killed})`);
-});
+}
 
-const loginCallbackMap = new Map();
-
-ipcMain.on('login-credentials', (event, request, user, password) => {
-  const callback = loginCallbackMap.get(JSON.stringify(request));
-  if (callback != null) {
-    callback(user, password);
-  }
-});
-
-app.on('login', (event, webContents, request, authInfo, callback) => {
+function handleAppLogin(event, webContents, request, authInfo, callback) {
   event.preventDefault();
   loginCallbackMap.set(JSON.stringify(request), callback);
   mainWindow.webContents.send('login-request', request, authInfo);
-});
-
-allowProtocolDialog.init(mainWindow);
-
-ipcMain.on('download-url', (event, url) => {
-  downloadURL(mainWindow, url, (err) => {
-    if (err) {
-      dialog.showMessageBox(mainWindow, {
-        type: 'error',
-        message: err.toString(),
-      });
-      console.log(err);
-    }
-  });
-});
-
-if (isDev) {
-  console.log('In development mode, deeplinking is disabled');
-} else if (protocols && protocols[0] &&
-  protocols[0].schemes && protocols[0].schemes[0]
-) {
-  scheme = protocols[0].schemes[0];
-  app.setAsDefaultProtocolClient(scheme);
 }
 
-function setDeeplinkingUrl(url) {
-  if (scheme) {
-    deeplinkingUrl = url.replace(new RegExp('^' + scheme), 'https');
-  }
-}
-
-app.on('will-finish-launching', () => {
+function handleAppWillFinishLaunching() {
   // Protocol handler for osx
   app.on('open-url', (event, url) => {
     event.preventDefault();
@@ -418,19 +348,34 @@ app.on('will-finish-launching', () => {
       openDeepLink();
     }
   });
-});
+}
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-app.on('ready', () => {
-  if (global.willAppQuit) {
-    return;
-  }
+function handleAppWebContentsCreated(dc, contents) {
+  contents.on('will-attach-webview', (event, webPreferences) => {
+    webPreferences.nodeIntegration = false;
+  });
+  contents.on('will-navigate', (event, navigationUrl) => {
+    const parsedUrl = new URL(navigationUrl);
+    const trustedURLs = config.teams.map((team) => new URL(team.url)); //eslint-disable-line max-nested-callbacks
 
-  if (!config.spellCheckerLocale) {
-    config.set('spellCheckerLocale', SpellChecker.getSpellCheckerLocale(app.getLocale()));
-  }
+    let trusted = false;
+    for (const url of trustedURLs) {
+      if (parsedUrl.origin === url.origin) {
+        trusted = true;
+        break;
+      }
+    }
 
+    if (!trusted) {
+      event.preventDefault();
+    }
+  });
+  contents.on('new-window', (event) => {
+    event.preventDefault();
+  });
+}
+
+function initializeAfterAppReady() {
   const appStateJson = path.join(app.getPath('userData'), 'app-state.json');
   appState = new AppStateManager(appStateJson);
   if (wasUpdated(appState.lastAppVersion)) {
@@ -468,38 +413,12 @@ app.on('ready', () => {
     deeplinkingUrl,
   });
 
-  mainWindow.on('closed', () => {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    mainWindow = null;
-  });
   criticalErrorHandler.setMainWindow(mainWindow);
-  mainWindow.on('unresponsive', criticalErrorHandler.windowUnresponsiveHandler.bind(criticalErrorHandler));
-  mainWindow.webContents.on('crashed', () => {
-    throw new Error('webContents \'crashed\' event has been emitted');
-  });
-  mainWindow.on('ready-to-show', () => {
-    autoUpdater.checkForUpdates();
-  });
 
-  ipcMain.on('notified', () => {
-    if (process.platform === 'win32' || process.platform === 'linux') {
-      if (config.notifications.flashWindow === 2) {
-        mainWindow.flashFrame(true);
-      }
-    }
+  config.setRegistryConfigData(registryConfig.data);
+  mainWindow.registryConfigData = registryConfig.data;
 
-    if (process.platform === 'darwin' && config.notifications.bounceIcon) {
-      app.dock.bounce(config.notifications.bounceIconType);
-    }
-  });
-
-  ipcMain.on('update-title', (event, arg) => {
-    mainWindow.setTitle(arg.title);
-  });
-
-  if (shouldShowTrayIcon()) {
+  if (shouldShowTrayIcon) {
     // set up tray icon
     trayIcon = new Tray(trayImages.normal);
     if (process.platform === 'darwin') {
@@ -545,46 +464,6 @@ app.on('ready', () => {
 
       mainWindow.focus();
     });
-
-    // Set overlay icon from dataURL
-    // Set trayicon to show "dot"
-    ipcMain.on('update-unread', (event, arg) => {
-      if (process.platform === 'win32') {
-        const overlay = arg.overlayDataURL ? nativeImage.createFromDataURL(arg.overlayDataURL) : null;
-        if (mainWindow) {
-          mainWindow.setOverlayIcon(overlay, arg.description);
-        }
-      }
-
-      if (trayIcon && !trayIcon.isDestroyed()) {
-        if (arg.sessionExpired) {
-          // reuse the mention icon when the session is expired
-          trayIcon.setImage(trayImages.mention);
-          if (process.platform === 'darwin') {
-            trayIcon.setPressedImage(trayImages.clicked.mention);
-          }
-          trayIcon.setToolTip('Session Expired: Please sign in to continue receiving notifications.');
-        } else if (arg.mentionCount > 0) {
-          trayIcon.setImage(trayImages.mention);
-          if (process.platform === 'darwin') {
-            trayIcon.setPressedImage(trayImages.clicked.mention);
-          }
-          trayIcon.setToolTip(arg.mentionCount + ' unread mentions');
-        } else if (arg.unreadCount > 0) {
-          trayIcon.setImage(trayImages.unread);
-          if (process.platform === 'darwin') {
-            trayIcon.setPressedImage(trayImages.clicked.unread);
-          }
-          trayIcon.setToolTip(arg.unreadCount + ' unread channels');
-        } else {
-          trayIcon.setImage(trayImages.normal);
-          if (process.platform === 'darwin') {
-            trayIcon.setPressedImage(trayImages.clicked.normal);
-          }
-          trayIcon.setToolTip(app.getName());
-        }
-      }
-    });
   }
 
   if (process.platform === 'darwin') {
@@ -603,72 +482,8 @@ app.on('ready', () => {
     });
   }
 
-  // Set application menu
-  ipcMain.on('update-menu', (event, configData) => {
-    const aMenu = appMenu.createMenu(mainWindow, configData, global.isDev);
-    Menu.setApplicationMenu(aMenu);
-
-    // set up context menu for tray icon
-    if (shouldShowTrayIcon()) {
-      const tMenu = trayMenu.createMenu(mainWindow, configData, global.isDev);
-      if (process.platform === 'darwin' || process.platform === 'linux') {
-        // store the information, if the tray was initialized, for checking in the settings, if the application
-        // was restarted after setting "Show icon on menu bar"
-        if (trayIcon) {
-          trayIcon.setContextMenu(tMenu);
-          mainWindow.trayWasVisible = true;
-        } else {
-          mainWindow.trayWasVisible = false;
-        }
-      } else {
-        trayIcon.setContextMenu(tMenu);
-      }
-    }
-  });
   ipcMain.emit('update-menu', true, config.data);
 
-  ipcMain.on('update-dict', () => {
-    if (config.useSpellChecker) {
-      spellChecker = new SpellChecker(
-        config.spellCheckerLocale,
-        path.resolve(app.getAppPath(), 'node_modules/simple-spellchecker/dict'),
-        (err) => {
-          if (err) {
-            console.error(err);
-          }
-        });
-    }
-  });
-  ipcMain.on('checkspell', (event, word) => {
-    let res = null;
-    if (config.useSpellChecker && spellChecker.isReady() && word !== null) {
-      res = spellChecker.spellCheck(word);
-    }
-    event.returnValue = res;
-  });
-  ipcMain.on('get-spelling-suggestions', (event, word) => {
-    if (config.useSpellChecker && spellChecker.isReady() && word !== null) {
-      event.returnValue = spellChecker.getSuggestions(word, 10);
-    } else {
-      event.returnValue = [];
-    }
-  });
-  ipcMain.on('get-spellchecker-locale', (event) => {
-    event.returnValue = config.spellCheckerLocale;
-  });
-  ipcMain.on('reply-on-spellchecker-is-ready', (event) => {
-    if (!spellChecker) {
-      return;
-    }
-
-    if (spellChecker.isReady()) {
-      event.sender.send('spellchecker-is-ready');
-      return;
-    }
-    spellChecker.once('ready', () => {
-      event.sender.send('spellchecker-is-ready');
-    });
-  });
   ipcMain.emit('update-dict');
 
   const permissionFile = path.join(app.getPath('userData'), 'permission.json');
@@ -690,32 +505,319 @@ app.on('ready', () => {
       }
     });
   }
+}
 
-  // Open the DevTools.
-  // mainWindow.openDevTools();
-});
+//
+// ipc communication event handlers
+//
 
-app.on('web-contents-created', (dc, contents) => {
-  contents.on('will-attach-webview', (event, webPreferences) => {
-    webPreferences.nodeIntegration = false;
+function handleLoginCredentialsEvent(event, request, user, password) {
+  const callback = loginCallbackMap.get(JSON.stringify(request));
+  if (callback != null) {
+    callback(user, password);
+  }
+}
+
+function handleDownloadURLEvent(event, url) {
+  downloadURL(mainWindow, url, (err) => {
+    if (err) {
+      dialog.showMessageBox(mainWindow, {
+        type: 'error',
+        message: err.toString(),
+      });
+      console.log(err);
+    }
   });
-  contents.on('will-navigate', (event, navigationUrl) => {
-    const parsedUrl = new URL(navigationUrl);
-    const trustedURLs = config.teams.map((team) => new URL(team.url)); //eslint-disable-line max-nested-callbacks
+}
 
-    let trusted = false;
-    for (const url of trustedURLs) {
-      if (parsedUrl.origin === url.origin) {
-        trusted = true;
-        break;
+function handleNotifiedEvent() {
+  if (process.platform === 'win32' || process.platform === 'linux') {
+    if (config.notifications.flashWindow === 2) {
+      mainWindow.flashFrame(true);
+    }
+  }
+
+  if (process.platform === 'darwin' && config.notifications.bounceIcon) {
+    app.dock.bounce(config.notifications.bounceIconType);
+  }
+}
+
+function handleUpdateTitleEvent(event, arg) {
+  mainWindow.setTitle(arg.title);
+}
+
+function handleUpdateUnreadEvent(event, arg) {
+  if (process.platform === 'win32') {
+    const overlay = arg.overlayDataURL ? nativeImage.createFromDataURL(arg.overlayDataURL) : null;
+    if (mainWindow) {
+      mainWindow.setOverlayIcon(overlay, arg.description);
+    }
+  }
+
+  if (trayIcon && !trayIcon.isDestroyed()) {
+    if (arg.sessionExpired) {
+      // reuse the mention icon when the session is expired
+      trayIcon.setImage(trayImages.mention);
+      if (process.platform === 'darwin') {
+        trayIcon.setPressedImage(trayImages.clicked.mention);
       }
+      trayIcon.setToolTip('Session Expired: Please sign in to continue receiving notifications.');
+    } else if (arg.mentionCount > 0) {
+      trayIcon.setImage(trayImages.mention);
+      if (process.platform === 'darwin') {
+        trayIcon.setPressedImage(trayImages.clicked.mention);
+      }
+      trayIcon.setToolTip(arg.mentionCount + ' unread mentions');
+    } else if (arg.unreadCount > 0) {
+      trayIcon.setImage(trayImages.unread);
+      if (process.platform === 'darwin') {
+        trayIcon.setPressedImage(trayImages.clicked.unread);
+      }
+      trayIcon.setToolTip(arg.unreadCount + ' unread channels');
+    } else {
+      trayIcon.setImage(trayImages.normal);
+      if (process.platform === 'darwin') {
+        trayIcon.setPressedImage(trayImages.clicked.normal);
+      }
+      trayIcon.setToolTip(app.getName());
     }
+  }
+}
 
-    if (!trusted) {
-      event.preventDefault();
+function handleUpdateMenuEvent(event, configData) {
+  const aMenu = appMenu.createMenu(mainWindow, configData, global.isDev);
+  Menu.setApplicationMenu(aMenu);
+
+  // set up context menu for tray icon
+  if (shouldShowTrayIcon()) {
+    const tMenu = trayMenu.createMenu(mainWindow, configData, global.isDev);
+    if (process.platform === 'darwin' || process.platform === 'linux') {
+      // store the information, if the tray was initialized, for checking in the settings, if the application
+      // was restarted after setting "Show icon on menu bar"
+      if (trayIcon) {
+        trayIcon.setContextMenu(tMenu);
+        mainWindow.trayWasVisible = true;
+      } else {
+        mainWindow.trayWasVisible = false;
+      }
+    } else if (trayIcon) {
+      trayIcon.setContextMenu(tMenu);
     }
+  }
+}
+
+function handleUpdateDictionaryEvent() {
+  if (config.useSpellChecker) {
+    spellChecker = new SpellChecker(
+      config.spellCheckerLocale,
+      path.resolve(app.getAppPath(), 'node_modules/simple-spellchecker/dict'),
+      (err) => {
+        if (err) {
+          console.error(err);
+        }
+      });
+  }
+}
+
+function handleCheckSpellingEvent(event, word) {
+  let res = null;
+  if (config.useSpellChecker && spellChecker.isReady() && word !== null) {
+    res = spellChecker.spellCheck(word);
+  }
+  event.returnValue = res;
+}
+
+function handleGetSpellingSuggestionsEvent(event, word) {
+  if (config.useSpellChecker && spellChecker.isReady() && word !== null) {
+    event.returnValue = spellChecker.getSuggestions(word, 10);
+  } else {
+    event.returnValue = [];
+  }
+}
+
+function handleGetSpellcheckerLocaleEvent(event) {
+  event.returnValue = config.spellCheckerLocale;
+}
+
+function handleReplyOnSpellcheckerIsReadyEvent(event) {
+  if (!spellChecker) {
+    return;
+  }
+
+  if (spellChecker.isReady()) {
+    event.sender.send('spellchecker-is-ready');
+    return;
+  }
+  spellChecker.once('ready', () => {
+    event.sender.send('spellchecker-is-ready');
   });
-  contents.on('new-window', (event) => {
-    event.preventDefault();
-  });
-});
+}
+
+//
+// mainWindow event handlers
+//
+
+function handleMainWindowClosed() {
+  // Dereference the window object, usually you would store windows
+  // in an array if your app supports multi windows, this is the time
+  // when you should delete the corresponding element.
+  mainWindow = null;
+}
+
+function handleMainWindowWebContentsCrashed() {
+  throw new Error('webContents \'crashed\' event has been emitted');
+}
+
+function handleMainWindowReadyToShow() {
+  autoUpdater.checkForUpdates();
+}
+
+function handleMainWindowShow() {
+  if (autoUpdater.shouldCheckForUpdatesOnStart(appState.updateCheckedDate)) {
+    ipcMain.emit('check-for-updates');
+  } else {
+    setTimeout(() => {
+      ipcMain.emit('check-for-updates');
+    }, autoUpdater.UPDATER_INTERVAL_IN_MS);
+  }
+}
+
+//
+// helper functions
+//
+
+function getTrayImages() {
+  switch (process.platform) {
+  case 'win32':
+    return {
+      normal: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray.ico')),
+      unread: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_unread.ico')),
+      mention: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_mention.ico')),
+    };
+  case 'darwin':
+  {
+    const icons = {
+      light: {
+        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIcon.png')),
+        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconUnread.png')),
+        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconMention.png')),
+      },
+      clicked: {
+        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIcon.png')),
+        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconUnread.png')),
+        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconMention.png')),
+      },
+    };
+    switchMenuIconImages(icons, systemPreferences.isDarkMode());
+    return icons;
+  }
+  case 'linux':
+  {
+    const theme = config.trayIconTheme;
+    try {
+      return {
+        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconTemplate.png')),
+        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconUnreadTemplate.png')),
+        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconMentionTemplate.png')),
+      };
+    } catch (e) {
+      //Fallback for invalid theme setting
+      return {
+        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconTemplate.png')),
+        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconUnreadTemplate.png')),
+        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconMentionTemplate.png')),
+      };
+    }
+  }
+  default:
+    return {};
+  }
+}
+
+function switchMenuIconImages(icons, isDarkMode) {
+  if (isDarkMode) {
+    icons.normal = icons.clicked.normal;
+    icons.unread = icons.clicked.unread;
+    icons.mention = icons.clicked.mention;
+  } else {
+    icons.normal = icons.light.normal;
+    icons.unread = icons.light.unread;
+    icons.mention = icons.light.mention;
+  }
+}
+
+function setDeeplinkingUrl(url) {
+  if (scheme) {
+    deeplinkingUrl = url.replace(new RegExp('^' + scheme), 'https');
+  }
+}
+
+function shouldShowTrayIcon() {
+  if (process.platform === 'win32') {
+    return true;
+  }
+  if (['darwin', 'linux'].includes(process.platform) && config.showTrayIcon === true) {
+    return true;
+  }
+  return false;
+}
+
+function wasUpdated(lastAppVersion) {
+  return lastAppVersion !== app.getVersion();
+}
+
+function clearAppCache() {
+  if (mainWindow) {
+    console.log('Clear cache after update');
+    mainWindow.webContents.session.clearCache(() => {
+      //Restart after cache clear
+      mainWindow.reload();
+    });
+  } else {
+    //Wait for mainWindow
+    setTimeout(clearAppCache, 100);
+  }
+}
+
+function getValidWindowPosition(state, screen) {
+  // Check if the previous position is out of the viewable area
+  // (e.g. because the screen has been plugged off)
+  const displays = screen.getAllDisplays();
+  let minX = 0;
+  let maxX = 0;
+  let minY = 0;
+  let maxY = 0;
+  for (let i = 0; i < displays.length; i++) {
+    const display = displays[i];
+    maxX = Math.max(maxX, display.bounds.x + display.bounds.width);
+    maxY = Math.max(maxY, display.bounds.y + display.bounds.height);
+    minX = Math.min(minX, display.bounds.x);
+    minY = Math.min(minY, display.bounds.y);
+  }
+
+  if (state.x > maxX || state.y > maxY || state.x < minX || state.y < minY) {
+    Reflect.deleteProperty(state, 'x');
+    Reflect.deleteProperty(state, 'y');
+    Reflect.deleteProperty(state, 'width');
+    Reflect.deleteProperty(state, 'height');
+  }
+
+  return state;
+}
+
+function resizeScreen(screen, browserWindow) {
+  function handle() {
+    const position = browserWindow.getPosition();
+    const size = browserWindow.getSize();
+    const validPosition = getValidWindowPosition({
+      x: position[0],
+      y: position[1],
+      width: size[0],
+      height: size[1],
+    }, screen);
+    browserWindow.setPosition(validPosition.x || 0, validPosition.y || 0);
+  }
+
+  browserWindow.on('restore', handle);
+  handle();
+}

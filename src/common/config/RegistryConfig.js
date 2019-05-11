@@ -9,6 +9,9 @@ import WindowsRegistry from 'winreg';
 const REGISTRY_HIVE_LIST = [WindowsRegistry.HKLM, WindowsRegistry.HKCU];
 const BASE_REGISTRY_KEY_PATH = '\\Software\\Policies\\Mattermost';
 
+/**
+ * Handles loading config data from the Windows registry set manually or by GPO
+ */
 export default class RegistryConfig extends EventEmitter {
   constructor() {
     super();
@@ -17,6 +20,12 @@ export default class RegistryConfig extends EventEmitter {
       teams: [],
     };
   }
+
+  /**
+   * Triggers loading data from Windows registry, supports async/await
+   *
+   * @emits {update} emitted once all data has been loaded from the registry
+   */
   async init() {
     if (process.platform === 'win32') {
       // extract DefaultServerList from the registry
@@ -48,11 +57,14 @@ export default class RegistryConfig extends EventEmitter {
       } catch (error) {
         console.log('[RegistryConfig] Nothing retrieved for \'EnableAutoUpdater\'', error);
       }
-
-      this.initialized = true;
-      this.emit('update', this.data);
     }
+    this.initialized = true;
+    this.emit('update', this.data);
   }
+
+  /**
+   * Extracts a list of servers
+   */
   async getServersListFromRegistry() {
     const defaultTeams = await this.getRegistryEntry(`${BASE_REGISTRY_KEY_PATH}\\DefaultServerList`);
     return defaultTeams.flat(2).reduce((teams, team) => {
@@ -66,18 +78,30 @@ export default class RegistryConfig extends EventEmitter {
     }, []);
   }
 
+  /**
+   * Determines whether server management has been enabled, disabled or isn't configured
+   */
   async getEnableServerManagementFromRegistry() {
     const entries = (await this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableServerManagement'));
     const entry = entries.pop();
     return entry ? entry === '0x1' : null;
   }
 
+  /**
+   * Determines whether the auto updated has been enabled, disabled or isn't configured
+   */
   async getEnableAutoUpdatorFromRegistry() {
     const entries = (await this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableAutoUpdater'));
     const entry = entries.pop();
     return entry ? entry === '0x1' : null;
   }
 
+  /**
+   * Initiates retrieval of a specific key in the Windows registry
+   *
+   * @param {string} key Path to the registry key to return
+   * @param {string} name Name of specific entry in the registry key to retrieve (optional)
+   */
   async getRegistryEntry(key, name) {
     const results = [];
     for (const hive of REGISTRY_HIVE_LIST) {
@@ -87,6 +111,12 @@ export default class RegistryConfig extends EventEmitter {
     return entryValues.filter((value) => value);
   }
 
+  /**
+   * Handles actual retrieval of entries from a configured WindowsRegistry instance
+   *
+   * @param {WindowsRegistry} regKey A configured instance of the WindowsRegistry class
+   * @param {string} name Name of the specific entry to retrieve (optional)
+   */
   getRegistryEntryValues(regKey, name) {
     return new Promise((resolve) => {
       regKey.values((error, items) => {
