@@ -9,17 +9,23 @@ export default class LoginModal extends React.Component {
   constructor(props) {
     super(props);
     this.handleSubmit = this.handleSubmit.bind(this);
-    this.usernameRef = React.createRef();
-    this.passwordRef = React.createRef();
+    this.username = '';
+    this.password = '';
   }
 
   handleSubmit(event) {
     event.preventDefault();
-    const usernameNode = this.usernameRef.current;
-    const passwordNode = this.passwordRef.current;
-    this.props.onLogin(this.props.request, usernameNode.value, passwordNode.value);
-    usernameNode.value = '';
-    passwordNode.value = '';
+    this.props.onLogin(this.props.request, this.username, this.password);
+    this.username = '';
+    this.password = '';
+  }
+
+  setUsername = (e) => {
+    this.username = e.target.value;
+  }
+
+  setPassword = (e) => {
+    this.password = e.target.value;
   }
 
   render() {
@@ -54,7 +60,7 @@ export default class LoginModal extends React.Component {
                 <FormControl
                   type='text'
                   placeholder='User Name'
-                  ref={this.usernameRef}
+                  onChange={this.setUsername}
                   onClick={(e) => {
                     e.stopPropagation();
                   }}
@@ -70,7 +76,7 @@ export default class LoginModal extends React.Component {
                 <FormControl
                   type='password'
                   placeholder='Password'
-                  ref={this.passwordRef}
+                  onChange={this.setPassword}
                   onClick={(e) => {
                     e.stopPropagation();
                   }}
