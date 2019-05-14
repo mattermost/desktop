@@ -102,6 +102,16 @@
               <Shortcut Id="MattermostDesktopShortcutStartMenu" Directory="ProgramMenuDir" Name="Mattermost Desktop"
                 WorkingDirectory='INSTALLDIR' Icon="Mattermost.ico" IconIndex="0" Advertise="no" Target="[INSTALLDIR]Mattermost.exe" />
             </Component>
+            <Directory Id='GPOFiles' Name='gpo'>
+              <Component Id='GPODefinitionFile' Guid='BE30D350-8727-41CB-9F8D-9E0B7B9572A9' Win64='$(var.Win64)'>
+                <File Id="MattermostAdmxFile" Name="mattermost.admx" Source="../resources/windows/gpo/mattermost.admx" KeyPath="yes" />
+              </Component>
+              <Directory Id='GPOUSEnglishFiles' Name="en-US">
+                <Component Id='GPOUSEnglishFiles' Guid='1D49A24E-769C-4AF0-863E-0648628A4554' Win64='$(var.Win64)'>
+                  <File Id="MattermostAdmlFile" Name="mattermost.adml" Source="../resources/windows/gpo/en-US/mattermost.adml" KeyPath="yes" />
+                </Component>
+              </Directory>
+            </Directory>
           </Directory>
         </Directory>
       </Directory>
@@ -141,6 +151,8 @@
       <ComponentRef Id='MainExecutableShortcutStartMenu' />
       <ComponentRef Id='ProgramMenuDir' />
       <ComponentRef Id='RegInstallLocation' />
+      <ComponentRef Id='GPODefinitionFile' />
+      <ComponentRef Id='GPOUSEnglishFiles' />
     </Feature>   
     
     <InstallExecuteSequence>
