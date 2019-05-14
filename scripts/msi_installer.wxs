@@ -367,10 +367,8 @@
           <Text>!(loc.WelcomeDlgAcceptLicenseCheckBox)</Text>
         </Control>        
         
-        <Control Id="License" Type="PushButton" X="10" Y="243" Width="56" Height="17" TabSkip="yes" Hidden="yes" Property="AdvancedInstallation" Text="[ButtonText_License]">
+        <Control Id="License" Type="PushButton" X="10" Y="243" Width="56" Height="17" Property="AdvancedInstallation" Text="[ButtonText_License]">
           <Publish Event="NewDialog" Value="LicenseAgreementDlg"><![CDATA[1]]></Publish>
-          <Condition Action="hide"><![CDATA[AdvancedLicenseAccepted <> "true"]]></Condition>
-          <Condition Action="show"><![CDATA[AdvancedLicenseAccepted = "true"]]></Condition>
         </Control>
         <Control Id="Reset" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="[ButtonText_Reset]">
           <Publish Event="Reset" Value="0"><![CDATA[1]]></Publish>
