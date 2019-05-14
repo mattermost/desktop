@@ -3,6 +3,9 @@
   <String Id="LANG" Overridable="yes">1033</String>
   
   <String Id="OsRequirements" Overridable="yes">Windows 7 or higher is required to run [ProductName].</String>
+
+  <String Id="Requires64Bit" Overridable="yes">This install package only supports 64-bit operating systems</String>
+  <String Id="Requires32Bit" Overridable="yes">This install package only supports 32-bit operating systems</String>
   
   <String Id="WelcomeDlgInstructions" Overridable="yes">Welcome to the [ProductName] [Wizard]!
 
