@@ -699,10 +699,8 @@
           </Control>
 
           <!-- TabSkip is needed in order to hack the zindex and make the button appear above the background image -->
-          <Control Id="License" Type="PushButton" X="10" Y="243" Width="56" Height="17" TabSkip="yes" Hidden="yes" Text="[ButtonText_License]">
+          <Control Id="License" Type="PushButton" X="10" Y="243" Width="56" Height="17" Text="[ButtonText_License]">
             <Publish Event="NewDialog" Value="LicenseAgreementDlg"><![CDATA[1]]></Publish>
-            <Condition Action="hide"><![CDATA[LicenseAccepted <> "true"]]></Condition>
-            <Condition Action="show"><![CDATA[LicenseAccepted = "true"]]></Condition>
           </Control>
           <Control Id="Advanced" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="[ButtonText_AdvancedInstall]">
             <Publish Event="NewDialog" Value="AdvancedDlg"><![CDATA[1]]></Publish>
