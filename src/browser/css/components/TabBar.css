@@ -59,6 +59,10 @@
   font-weight: 600;
 }
 
+.TabBar .TabBar-badge.TabBar-badge-nomention {
+  padding-right: 0px;
+}
+
 .TabBar .TabBar-badge.TabBar-badge-nomention:after {
   content: "";
   width: 4px;
