@@ -363,22 +363,22 @@
           <Text>!(loc.AdvancedDlgLaunchAppAfterInstall)</Text>
         </Control>
 
-        <Control Id="AcceptLicenseCheckBox" Type="CheckBox" X="10" Y="220" Width="350" Height="20" Property="AdvancedLicenseAccepted" CheckBoxValue="true">
+        <Control Id="AcceptLicenseCheckBox" Type="CheckBox" X="10" Y="220" Width="350" Height="20" CheckBoxPropertyRef="LicenseAccepted" CheckBoxValue="true">
           <Text>!(loc.WelcomeDlgAcceptLicenseCheckBox)</Text>
         </Control>        
         
-        <Control Id="License" Type="PushButton" X="10" Y="243" Width="56" Height="17" TabSkip="yes" Hidden="yes" Property="AdvancedInstallation" Text="[ButtonText_License]">
+        <Control Id="License" Type="PushButton" X="10" Y="243" Width="56" Height="17" TabSkip="yes" Hidden="yes" Text="[ButtonText_License]">
           <Publish Event="NewDialog" Value="LicenseAgreementDlg"><![CDATA[1]]></Publish>
-          <Condition Action="hide"><![CDATA[AdvancedLicenseAccepted <> "true"]]></Condition>
-          <Condition Action="show"><![CDATA[AdvancedLicenseAccepted = "true"]]></Condition>
+          <Condition Action="hide"><![CDATA[LicenseAccepted <> "true"]]></Condition>
+          <Condition Action="show"><![CDATA[LicenseAccepted = "true"]]></Condition>
         </Control>
         <Control Id="Reset" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="[ButtonText_Reset]">
           <Publish Event="Reset" Value="0"><![CDATA[1]]></Publish>
         </Control>
         
         <Control Id="Install" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="[ButtonText_Install]" ElevationShield="yes">
-          <Condition Action="disable"><![CDATA[AdvancedLicenseAccepted <> "true"]]></Condition>
-          <Condition Action="enable"><![CDATA[AdvancedLicenseAccepted = "true"]]></Condition>
+          <Condition Action="disable"><![CDATA[LicenseAccepted <> "true"]]></Condition>
+          <Condition Action="enable"><![CDATA[LicenseAccepted = "true"]]></Condition>
           <Publish Event="EndDialog" Value="Return"><![CDATA[OutOfDiskSpace <> 1]]></Publish>
           <Publish Event="SpawnDialog" Value="OutOfRbDiskDlg"><![CDATA[OutOfDiskSpace = 1 AND OutOfNoRbDiskSpace = 0 AND (PROMPTROLLBACKCOST="P" OR NOT PROMPTROLLBACKCOST)]]></Publish>
           <Publish Event="EndDialog" Value="Return"><![CDATA[OutOfDiskSpace = 1 AND OutOfNoRbDiskSpace = 0 AND PROMPTROLLBACKCOST="D"]]></Publish>
@@ -463,7 +463,7 @@
         
         <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="[ButtonText_Back]">
           <Publish Event="NewDialog" Value="WelcomeDlg"><![CDATA[1]]></Publish>
-          <Publish Event="NewDialog" Value="AdvancedDlg"><![CDATA[AdvancedLicenseAccepted = "true"]]></Publish>
+          <Publish Event="NewDialog" Value="AdvancedDlg"><![CDATA[LicenseAccepted = "true"]]></Publish>
         </Control>
         <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="[ButtonText_Cancel]">
           <Publish Event="SpawnDialog" Value="CancelDlg"><![CDATA[1]]></Publish>
