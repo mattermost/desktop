@@ -173,7 +173,6 @@
     <Property Id="ComponentDownload"><![CDATA[https://releases.mattermost.com/desktop/4.1.2/mattermost-setup-4.1.2-win64.msi]]></Property>
     <Property Id="ADDDESKTOPSHORTCUT">true</Property>
     <Property Id="ADDSTARTMENUSHORTCUT">true</Property>
-    <Property Id="LAUNCHAPPAFTERINSTALL"></Property>
 
     <UI>
       <Publish Dialog="SuccessDlg" Control="Finish" Order="1" Event="DoAction" Value="LaunchApp">LAUNCHAPPAFTERINSTALL</Publish>
