@@ -77,14 +77,8 @@
       <![CDATA[Installed OR (VersionNT >= 601)]]>
     </Condition>
 
-    <?if $(var.Platform) = x64 ?>
-      <Condition Message="!(loc.Requires64Bit)">
-        <![CDATA[VersionNT64]]>
-      </Condition>
-    <?else ?>
-      <Condition Message="!(loc.Requires32Bit)">
-        <![CDATA[NOT VersionNT64]]>
-      </Condition>
+    <?if $(var.Platform) != x64 ?>
+      <Condition Message="!(loc.Requires32Bit)"><![CDATA[NOT VersionNT64]]></Condition>
     <?endif ?>
     
     <!--<MajorUpgrade
