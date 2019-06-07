@@ -122,10 +122,12 @@
       <ComponentRef Id="GPOUSEnglishFiles" />
     </Feature>
     <InstallExecuteSequence>
+      <Custom Action="KillApp" Before="InstallValidate" />
       <Custom Action="LaunchApp" After="InstallFinalize">Installed</Custom>
       <RemoveExistingProducts After="InstallFinalize" />
     </InstallExecuteSequence>
     <CustomAction Id="LaunchApp" FileKey="MattermostDesktopEXE" ExeCommand="" Return="asyncNoWait" />
+    <CustomAction Id="KillApp" Directory="INSTALLDIR" Return="ignore" ExeCommand="&quot;[SystemFolder]taskkill.exe&quot; /F /IM &quot;Mattermost.exe&quot;" />
     <Icon Id="Mattermost.ico" SourceFile="../resources/icon.ico" />
     <Property Id="ARPPRODUCTICON">Mattermost.ico</Property>
     <Property Id="ARPCONTACT">https://pre-release.mattermost.com</Property>
