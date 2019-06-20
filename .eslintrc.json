@@ -54,7 +54,6 @@
         "src/browser/updater.jsx",
         "src/browser/js/notification.js",
         "src/browser/js/badge.js",
-        "src/browser/js/WebappConnector.js",
         "src/browser/webview/mattermost.js",
         "src/browser/components/RemoveServerModal.jsx",
         "src/browser/components/MainPage.jsx",
@@ -101,7 +100,6 @@
         "src/main/downloadURL.js",
         "src/main/autoUpdater.js",
         "src/main/SpellChecker.js",
-        "src/main/UserActivityMonitor.js",
         "src/main/menus/app.js"
       ],
       "rules": {
