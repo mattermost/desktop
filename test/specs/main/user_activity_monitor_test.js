@@ -4,9 +4,8 @@ import assert from 'assert';
 
 import UserActivityMonitor from '../../../src/main/UserActivityMonitor';
 
-describe('UserActivityMonitor', () => { // mark
-
-  describe('updateIdleTime', () => { // mark
+describe('UserActivityMonitor', () => {
+  describe('updateIdleTime', () => {
     it('should set idle time to provided value', () => {
       const userActivityMonitor = new UserActivityMonitor();
       const idleTime = Math.round(Date.now() / 1000);
@@ -29,6 +28,26 @@ describe('UserActivityMonitor', () => { // mark
     it('should set user status to inactive', () => {
       userActivityMonitor.updateUserActivityStatus(false);
       assert.equal(userActivityMonitor.userIsActive, false);
+    });
+  });
+
+  describe('handleSystemGoingAway', () => {
+    it('should set user status to inactive and forceInactive to true', () => {
+      const userActivityMonitor = new UserActivityMonitor();
+      userActivityMonitor.isActive = true;
+      userActivityMonitor.forceInactive = false;
+      userActivityMonitor.handleSystemGoingAway();
+      assert.equal(!userActivityMonitor.userIsActive && userActivityMonitor.forceInactive, true);
+    });
+  });
+
+  describe('handleSystemComingBack', () => {
+    it('should set user status to active and forceInactive to false', () => {
+      const userActivityMonitor = new UserActivityMonitor();
+      userActivityMonitor.isActive = false;
+      userActivityMonitor.forceInactive = true;
+      userActivityMonitor.handleSystemComingBack();
+      assert.equal(userActivityMonitor.userIsActive && !userActivityMonitor.forceInactive, true);
     });
   });
 
