@@ -22,9 +22,9 @@ export default class UserActivityMonitor extends EventEmitter {
     this.systemIdleTimeIntervalID = -1;
 
     this.config = {
-      internalUpdateFrequencyMs: 1 * 1000,
-      statusUpdateThresholdMs: 60 * 1000,
-      activityTimeoutSec: 5 * 60,
+      internalUpdateFrequencyMs: 1 * 1000, // eslint-disable-line no-magic-numbers
+      statusUpdateThresholdMs: 60 * 1000, // eslint-disable-line no-magic-numbers
+      activityTimeoutSec: 5 * 60, // eslint-disable-line no-magic-numbers
     };
 
     // NOTE: binding needed to prevent error; fat arrow class methods don't work in current setup
