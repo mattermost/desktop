@@ -50,17 +50,13 @@
   height: 18px;
   margin-left: 5px;
   margin-top: 5px;
-  border-radius: 50%;
+  padding: 0 5px;
+  border-radius: 9px;
   display: flex;
   justify-content: center;
   align-items: center;
   font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  padding-right: 1px;
   font-weight: 600;
-}
-
-.TabBar .TabBar-badge.TabBar-badge-nomention {
-  padding-right: 0px;
 }
 
 .TabBar .TabBar-badge.TabBar-badge-nomention:after {
