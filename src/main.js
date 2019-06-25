@@ -32,6 +32,7 @@ import AppStateManager from './main/AppStateManager';
 import initCookieManager from './main/cookieManager';
 import {shouldBeHiddenOnStartup} from './main/utils';
 import SpellChecker from './main/SpellChecker';
+import UserActivityMonitor from './main/UserActivityMonitor';
 
 // pull out required electron components like this
 // as not all components can be referenced before the app is ready
@@ -51,6 +52,7 @@ const argv = parseArgv(process.argv.slice(1));
 const hideOnStartup = shouldBeHiddenOnStartup(argv);
 const loginCallbackMap = new Map();
 const certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
+const userActivityMonitor = new UserActivityMonitor();
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -417,6 +419,14 @@ function initializeAfterAppReady() {
 
   config.setRegistryConfigData(registryConfig.data);
   mainWindow.registryConfigData = registryConfig.data;
+
+  // listen for status updates and pass on to renderer
+  userActivityMonitor.on('status', (status) => {
+    mainWindow.webContents.send('user-activity-update', status);
+  });
+
+  // start monitoring user activity (needs to be started after the app is ready)
+  userActivityMonitor.startMonitoring();
 
   if (shouldShowTrayIcon) {
     // set up tray icon
