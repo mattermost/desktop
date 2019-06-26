@@ -186,10 +186,14 @@ function resetMisspelledState() {
 
 function setSpellChecker() {
   const spellCheckerLocale = ipcRenderer.sendSync('get-spellchecker-locale');
-  webFrame.setSpellCheckProvider(spellCheckerLocale, false, {
-    spellCheck(text) {
-      const res = ipcRenderer.sendSync('checkspell', text);
-      return res === null ? true : res;
+  webFrame.setSpellCheckProvider(spellCheckerLocale, {
+    spellCheck(words, callback) {
+      const misspeltWords = words.filter((text) => {
+        const res = ipcRenderer.sendSync('checkspell', text);
+        const isCorrect = (res === null) ? true : res;
+        return !isCorrect;
+      });
+      callback(misspeltWords);
     },
   });
   resetMisspelledState();
