@@ -191,6 +191,9 @@ function createTemplate(mainWindow, config, isDev) {
     label: '&Window',
     submenu: [{
       role: 'minimize',
+
+      // empty string removes shortcut on Windows; null will default by OS
+      accelerator: process.platform === 'win32' ? '' : null,
     }, {
       role: 'close',
     }, separatorItem, ...teams.slice(0, 9).map((team, i) => {
