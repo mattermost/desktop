@@ -7,19 +7,19 @@
 			<string id="RequiresMattermost43">Requires Mattermost Desktop 4.3 or later</string>
 			<string id="mattermost">Mattermost</string>
 			<string id="EnableAutoUpdater">EnableAutoUpdater</string>
-			<string id="EnableAutoUpdaterDescription">If this policy is enabled, Mattermost Desktop will receive notifications of new updates. The notification will open a dialog with a download link. There is still no auto updater feature on Windows as this requires a service running in the background to elevate privileges to apply the msi update.</string>
+			<string id="EnableAutoUpdaterDescription">If this policy is enabled, users will receive notifications when new versions of the desktop app are available. System Administrator privilages on the computer are required to install the update.</string>
 			<string id="EnableServerManagement">EnableServerManagement</string>
-			<string id="EnableServerManagementDescription">If this policy is enabled, the end user will be allowed to have his/her own server to the app even if default servers defined in DefaultServerList are configured.
+			<string id="EnableServerManagementDescription">If this policy is enabled, users can add or remove servers in their app settings, even if default servers are configured in DefaultServerList.
 
-If this policy is disabled, the end user will not be allowed to add his/her own servers to the application and only servers defined via GPO will be authorized.</string>
+If this policy is disabled, the Server Management section is hidden in the app settings and only servers defined by Group Policy can be used.</string>
 			<string id="DefaultServerList">DefaultServerList</string>
-			<string id="DefaultServerListDescription">If this policy is enabled, you can define one or several Mattermost servers that will be automatically populated to users of the Mattermost Desktop app in your domain.</string>
+			<string id="DefaultServerListDescription">If this policy is enabled, you can define one or more Mattermost servers that will be pre-configured for users when they launch the app.</string>
 			<string id="EnableGpuAcceleration">EnableGpuAcceleration</string>
-			<string id="EnableGpuAccelerationDescription">If this policy is enabled, the Mattermost Desktop Application will use the GPU for hardware acceleration even if the end user asked to disable it. If this policy is not configured, the Mattermost Desktop Application will use the GPU for hardware acceleration.</string>
+			<string id="EnableGpuAccelerationDescription">If this policy is enabled, the Mattermost Desktop Application will use the GPU for hardware acceleration.</string>
 		</stringTable>
 		<presentationTable>
 			<presentation id="DefaultServerList">
-				<listBox refId="DefaultServerList">Default server list of Mattermost servers:</listBox>
+				<listBox refId="DefaultServerList">List of default Mattermost servers:</listBox>
 			</presentation>
 		</presentationTable>
 	</resources>
