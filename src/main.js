@@ -33,6 +33,7 @@ import initCookieManager from './main/cookieManager';
 import {shouldBeHiddenOnStartup} from './main/utils';
 import SpellChecker from './main/SpellChecker';
 import UserActivityMonitor from './main/UserActivityMonitor';
+import Utils from './utils/util';
 
 // pull out required electron components like this
 // as not all components can be referenced before the app is ready
@@ -239,8 +240,10 @@ function handleAppSecondInstance(event, secondArgv) {
   if (process.platform === 'win32') {
     // Keep only command line / deep linked arguments
     if (Array.isArray(secondArgv.slice(1)) && secondArgv.slice(1).length > 0) {
-      setDeeplinkingUrl(secondArgv.slice(1)[0]);
-      mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+      deeplinkingUrl = getDeeplinkingUrl(secondArgv.slice(1)[0]);
+      if (deeplinkingUrl) {
+        mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+      }
     }
   }
 
@@ -337,12 +340,14 @@ function handleAppWillFinishLaunching() {
   // Protocol handler for osx
   app.on('open-url', (event, url) => {
     event.preventDefault();
-    setDeeplinkingUrl(url);
+    deeplinkingUrl = getDeeplinkingUrl(url);
     if (app.isReady()) {
       function openDeepLink() {
         try {
-          mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
-          mainWindow.show();
+          if (deeplinkingUrl) {
+            mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+            mainWindow.show();
+          }
         } catch (err) {
           setTimeout(openDeepLink, 1000);
         }
@@ -403,7 +408,7 @@ function initializeAfterAppReady() {
       Array.isArray(tmpArgs) && tmpArgs.length > 0 &&
       tmpArgs[0].match(/^--squirrel-/) === null
     ) {
-      setDeeplinkingUrl(tmpArgs[0]);
+      deeplinkingUrl = getDeeplinkingUrl(tmpArgs[0]);
     }
   }
 
@@ -756,10 +761,11 @@ function switchMenuIconImages(icons, isDarkMode) {
   }
 }
 
-function setDeeplinkingUrl(url) {
-  if (scheme) {
-    deeplinkingUrl = url.replace(new RegExp('^' + scheme), 'https');
+function getDeeplinkingUrl(url) {
+  if (!scheme || !Utils.isValidURL(url)) {
+    return null;
   }
+  return url.replace(new RegExp('^' + scheme), 'https');
 }
 
 function shouldShowTrayIcon() {
