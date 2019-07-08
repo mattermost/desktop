@@ -762,10 +762,10 @@ function switchMenuIconImages(icons, isDarkMode) {
 }
 
 function getDeeplinkingUrl(url) {
-  if (!scheme || !Utils.isValidURL(url)) {
-    return null;
+  if (scheme && Utils.isValidURL(url)) {
+    return url.replace(new RegExp('^' + scheme), 'https');
   }
-  return url.replace(new RegExp('^' + scheme), 'https');
+  return null;
 }
 
 function shouldShowTrayIcon() {
