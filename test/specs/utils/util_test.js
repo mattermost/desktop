@@ -8,6 +8,28 @@ import assert from 'assert';
 import Utils from '../../../src/utils/util';
 
 describe('Utils', () => {
+  describe('isValidURL', () => {
+    it('should be true for a valid web url', () => {
+      const testURL = 'https://developers.mattermost.com/';
+      assert.equal(Utils.isValidURL(testURL), true);
+    });
+    it('should be true for a file download url', () => {
+      const testURL = 'https://community.mattermost.com/api/v4/files/ka3xbfmb3ffnmgdmww8otkidfw?download=1';
+      assert.equal(Utils.isValidURL(testURL), true);
+    });
+    it('should be true for a permalink url', () => {
+      const testURL = 'https://community.mattermost.com/test-channel/pl/pdqowkij47rmbyk78m5hwc7r6r';
+      assert.equal(Utils.isValidURL(testURL), true);
+    });
+    it('should be true for a deeplink url', () => {
+      const testURL = 'mattermost://community-release.mattermost.com/core/channels/developers';
+      assert.equal(Utils.isValidURL(testURL), true);
+    });
+    it('should be false for a malicious url', () => {
+      const testURL = 'mattermost:///" --data-dir "\\deans-mbp\mattermost'; // eslint-disable-line no-useless-escape
+      assert.equal(Utils.isValidURL(testURL), false);
+    });
+  });
   describe('isInternalURL', () => {
     it('should be false for different hosts', () => {
       const currentURL = url.parse('http://localhost/team/channel1');
