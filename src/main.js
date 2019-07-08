@@ -375,10 +375,10 @@ if (isDev) {
 }
 
 function getDeeplinkingUrl(url) {
-  if (!scheme || !Utils.isValidURL(url)) {
-    return null;
+  if (scheme && Utils.isValidURL(url)) {
+    return url.replace(new RegExp('^' + scheme), 'https');
   }
-  return url.replace(new RegExp('^' + scheme), 'https');
+  return null;
 }
 
 app.on('will-finish-launching', () => {
