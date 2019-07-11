@@ -630,7 +630,6 @@ function Main {
         }
         "install-deps" {
             [array]$missing = Check-Deps
-            foreach ($item in $missing) { Print-Info $item}
             try {
                 Install-Deps $missing
             } catch {
