@@ -8,19 +8,41 @@ Param (
 ################################################################################
 # Common util functions
 ################################################################################
+#region
+
+function Print {
+     Param (
+        [String]$message,
+        [Switch]$NoNewLine
+    )
+    if ($NoNewLine) {
+        [Console]::Write($message)
+    } else {
+        [Console]::WriteLine($message)
+    }
+}
+
 function Print-Info {
     Param (
-        [String]$message
+        [String]$message,
+        [Switch]$NoNewLine,
+        [Switch]$NoPrefix
     )
     if ([String]::IsNullOrEmpty($message)) {
         return
     }
+
     [Console]::ResetColor()
     [Console]::Write("[")
     [Console]::ForegroundColor = 'green'
     [Console]::Write("+")
     [Console]::ResetColor()
-    [Console]::WriteLine("] " + $message)
+
+    if ($NoNewLine) {
+        [Console]::Write("] " + $message)
+    } else {
+        [Console]::WriteLine("] " + $message)
+    }
 }
 
 # Avoid stacktrace to be displayed along side the error message.
@@ -28,32 +50,25 @@ function Print-Info {
 # src.: https://stackoverflow.com/q/38064704/3514658
 function Print-Error {
     Param (
-        [String]$message
+        [String]$message,
+        [Switch]$NoNewLine,
+        [Switch]$NoPrefix
     )
     if ([String]::IsNullOrEmpty($message)) {
         return
     }
+
     [Console]::ResetColor()
     [Console]::Error.Write("[")
     [Console]::ForegroundColor = 'red'
     [Console]::Error.Write("-")
     [Console]::ResetColor()
-    [Console]::Error.WriteLine("] " + $message)
-}
 
-function Print-Info {
-    Param (
-        [String]$message
-    )
-    if ([String]::IsNullOrEmpty($message)) {
-        return
+    if ($NoNewLine) {
+        [Console]::Write("] " + $message)
+    } else {
+        [Console]::WriteLine("] " + $message)
     }
-    [Console]::ResetColor()
-    [Console]::Error.Write("[")
-    [Console]::ForegroundColor = 'green'
-    [Console]::Error.Write("+")
-    [Console]::ResetColor()
-    [Console]::Error.WriteLine("] " + $message)
 }
 
 function Is-AppVeyor {
@@ -122,6 +137,11 @@ function Get-GitVersionSemver {
     return $rev
 }
 
+function Get-GitDateRevision {
+    $rev = [string]$(git rev-list --count --first-parent HEAD)
+    return  (Get-Date).ToUniversalTime().ToString("yyyyMMdd") + "." + $rev + ".0"
+}
+
 function Check-Command($cmdname) {
     return [bool](Get-Command -Name $cmdname -ErrorAction SilentlyContinue)
 }
@@ -160,7 +180,8 @@ function Get-SignToolDir {
             }
         }
     )
-    if ($signToolExes[0] -eq $null) {
+    if ($signToolExes -eq $null -or
+        [string]::IsNullOrEmpty($signToolExes[0])) {
         return $null
     }
 
@@ -176,54 +197,84 @@ function Get-NpmDir {
     # C:\Program Files\nodejs\node_modules\npm\bin
     $progFile = ${env:ProgramFiles}
     $npmDir = Join-Path -Path "$progFile" -ChildPath "nodejs"
-    if (Test-Path $npmDir\npm) {
-        return Split-Path $npmDir
+    if ([System.IO.File]::Exists("$npmDir\npm.cmd")) {
+        return $npmDir
     }
     return $null
 }
+#endregion
 
 ################################################################################
 # Mattermost related functions
 ################################################################################
+#region
 function Check-Deps {
+    Param (
+        [Switch]
+        $verbose
+    )
+
     if ($PSVersionTable.PSVersion.Major -lt 5) {
         Print-Error "You need at least PowerShell 5.0 to execute this Makefile. Operation aborted."
         exit
     }
 
-    [array]$missing
+    [array]$missing = @()
 
-    Print-Info "Checking choco dependency..."
-    if (Check-Command "choco") {
-        Print-Error "choco dependency missing."
-        $missing += ("choco")
+    if ($verbose) { Print-Info "Checking choco dependency..." }
+    if (!(Check-Command "choco")) {
+        if ($verbose) { Print-Error "choco dependency missing." }
+        $missing += "choco"
     }
 
-    Print-Info "Checking git dependency..."
-    if (Check-Command "git") {
-        Print-Error "git dependency missing."
-        $missing += ("git")
+    if ($verbose) { Print-Info "Checking git dependency..." }
+    if (!(Check-Command "git")) {
+        if ($verbose) { Print-Error "git dependency missing." }
+        $missing += "git"
     }
 
-    Print-Info "Checking wix dependency..."
-    if ([string]::IsNullOrEmpty($(Get-WixDir))) {
-        Print-Error "wix dependency missing."
-        $missing += ("wix")
+    if ($verbose) { Print-Info "Checking nodejs/npm dependency..." }
+    # Testing if the folder is not empty first is needed otherwise if there is
+    # a file called like that in the path where the makefile is invocated, the
+    # check will succeed while it is plain wrong.
+    if ([string]::IsNullOrEmpty($(Get-NpmDir)) -or
+        # We could have used the builtin Test-Path cmdlet instead but it is
+        # tested for folders as well. We need to test for a file existence
+        # here.  
+        ![System.IO.File]::Exists("$(Get-NpmDir)\npm.cmd") -or
+        ![System.IO.File]::Exists("$(Get-NpmDir)\node.exe")) {
+            if ($verbose) { Print-Error "nodejs/npm dependency missing." }
+        $missing += "npm"
     }
 
-    Print-Info "Checking signtool dependency..."
-    if ([string]::IsNullOrEmpty($(Get-SignToolDir))) {
-        Print-Error "signtool dependency missing."
-        $missing += ("signtool")
+    if ($verbose) { Print-Info "Checking wix dependency..." }
+    if ([string]::IsNullOrEmpty($(Get-WixDir)) -or
+        ![System.IO.File]::Exists("$(Get-WixDir)\heat.exe") -or
+        ![System.IO.File]::Exists("$(Get-WixDir)\candle.exe") -or
+        ![System.IO.File]::Exists("$(Get-WixDir)\light.exe")) {
+        if ($verbose) { Print-Error "wix dependency missing." }
+        $missing += "wix"
     }
 
-    Print-Info "Checking nodejs/npm dependency..."
-    if ([string]::IsNullOrEmpty($(Get-NpmDir))) {
-        Print-Error "nodejs/npm dependency missing."
-        $missing += ("npm")
+    if ($verbose) { Print-Info "Checking signtool dependency..." }
+    if ([string]::IsNullOrEmpty($(Get-SignToolDir)) -or
+        ![System.IO.File]::Exists("$(Get-SignToolDir)\signtool.exe")) {
+        if ($verbose) { Print-Error "signtool dependency missing." }
+        $missing += "signtool"
     }
 
     return $missing
+}
+
+function Prepare-Path {
+
+    # Prepending ensures we are using our own path here to avoid the paths the
+    # user might have defined to interfere.
+
+    # Prepend the PATH with npm/nodejs dir
+    $env:Path = "$(Get-NpmDir)" + $env:Path
+    # Prepend the PATH with wix dir
+    $env:Path = "$(Get-WixDir)" + $env:Path
 }
 
 function Install-Deps {
@@ -235,6 +286,7 @@ function Install-Deps {
         [Switch]
         $forceInstall
     )
+
     if ($forceInstall) {
         $missing = ("choco", "git", "wix", "signtool", "npm")
     }
@@ -248,57 +300,65 @@ function Install-Deps {
         exit
     }
 
+    # As we are intending to install new dependencies, make sure the PATH env
+    # variable is not too large. Some CI envs like AppVeyor have already the
+    # PATH env variable defined at the maximum which prevents new strings to
+    # be added to it. We will remove all the stuff added for programs in
+    # Program Files (64 bits and 32 bits variants) except the path of our
+    # dependencies.
+    # src.: https://gist.github.com/wget/a102f89c301014836aaa49a98dd06ee2
+    $oldPath = $env:Path
+
+    [array]$newPath
+    # Cleanup the PATH from everything contained in Program Files...
+    $newPath = ($env:Path -split ';') | Where-Object { $_ -notlike "C:\Program Files*" }
+    # ...except from Git
+    $newPath += ($env:Path -split ';') | Where-Object { $_ -like "C:\Program Files*\*Git*" }
+    $env:Path = $newPath -join ';'
+    Print-Info "Reducing and reordering PATH from `n    ""$oldPath""`n    to`n    ""$env:Path"""
+
     foreach ($missingItem in $missing) {
         switch ($missingItem) {
             "choco" {
+                Print-Error "Installing chocolatey..."
                 Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
                 break;
             }
             "git" {
+                Print-Error "Installing git..."
                 choco install git --yes
                 break;
             }
             "wix" {
+                Print-Error "Installing wixtoolset..."
                 choco install wixtoolset --yes
-                $env:Path += ";$(Get-WixDir)"
                 break;
             }
             "signtool" {
+                Print-Error "Installing Windows 10 SDK (for signtool)..."
                 choco install windows-sdk-10.1 --yes
-                $env:Path += ";$(Get-SignToolDir)"
                 break;
             }
             "npm" {
+                Print-Error "Installing nodejs-lts (with npm)..."
                 choco install nodejs-lts --yes
-                $env:Path += ";$(Get-NpmDir)"
                 break;
             }
         }
     }
 }
 
-
 function Run-Build {
 
-    # The $env:PATH is way too long. This prevents new strings to be added to the
-    # PATH env variable. We will remove all the stuff added for programs in
-    # Program Files (64 bits and 32 bits variants) except Git.
-    # src.: https://gist.github.com/wget/a102f89c301014836aaa49a98dd06ee2
-    
-    $oldPath = $env:Path
-    [array]$newPath
-    # Remove everything contained in ProgramFiles...
-    $newPath  = ($env:Path -split ';') | Where-Object { $_ -notlike "C:\Program Files*"}
-    # ... except Git
-    $newPath += ($env:Path -split ';') | Where-Object { $_ -like "C:\Program Files*\*Git*"}
-    $env:Path = $newPath -join ';'
-    Print-Info "Reducing PATH from `n    ""$oldPath""`n    to`n    ""$env:Path"""
+    Prepare-Path
 
-    Print-Info "Getting build date..."
+    Print-Info -NoNewLine "Getting build date..."
     $env:MATTERMOST_BUILD_DATE = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")
+    Print " [$env:MATTERMOST_BUILD_DATE]"
 
-    Print-Info "Getting build version..."
-    # Wix and npm do require to have semver parsable versions;
+    # nodejs/npm does require to have semver parsable versions:
+    # major.minor.patch
+    # while wix support up to the revision dot syntax:
     # major.minor.patch.revision.
     # Which means chars other than numbers should be removed.
     # They do not like to have versions like v4.3.0-rc0. We are thus forcing to
@@ -306,6 +366,7 @@ function Run-Build {
     # When the last tag is not present or not a parsable semver version, we are
     # taking the number of revisions reachable from the HEAD of the current branch
     # (other branches are not taken into account).
+    # Example:
     # $ git rev-list --count --first-parent HEAD
     # 645
     # Using the date is unreliable, because this requires to have a precision at
@@ -315,29 +376,47 @@ function Run-Build {
     # Exception Type: System.OverflowException
     # Add the revision only if we are not building a tag
     if ($env:APPVEYOR_REPO_TAG) {
+        Print-Info -NoNewLine "Getting build id version..."
         $env:MATTERMOST_BUILD_ID = Get-GitVersion
-        $env:MATTERMOST_BUILD_ID_SEMVER = Get-GitSemverRevision
+        Print " [$env:MATTERMOST_BUILD_ID]"
+
+        Print-Info -NoNewLine "Getting build id version for msi..."
+        $env:MATTERMOST_BUILD_ID_MSI = Get-GitVersionSemver -WithRev
+        Print " [$env:MATTERMOST_BUILD_ID_MSI]"
+
+        Print-Info -NoNewLine "Getting build id version for node/npm..."
+        $env:MATTERMOST_BUILD_ID_NODE = Get-GitVersionSemver
+        Print " [$env:MATTERMOST_BUILD_ID_NODE]"
     } else {
-        $env:MATTERMOST_BUILD_ID = Get-GitVersion -WithRev
-        $env:MATTERMOST_BUILD_ID_SEMVER = Get-GitSemverRevision -WithRev
+        Print-Info -NoNewLine "Getting build id version..."
+        $env:MATTERMOST_BUILD_ID = Get-GitDateRevision
+        Print " [$env:MATTERMOST_BUILD_ID]"
+
+        Print-Info -NoNewLine "Getting build id version for msi..."
+        $env:MATTERMOST_BUILD_ID_MSI = Get-GitDateRevision
+        Print " [$env:MATTERMOST_BUILD_ID_MSI]"
+
+        Print-Info -NoNewLine "Getting build id version for node/npm..."
+        $env:MATTERMOST_BUILD_ID_NODE = Get-GitDateRevision
+        Print " [$env:MATTERMOST_BUILD_ID_NODE]"
     }
 
     Print-Info "Patching version from msi xml descriptor..."
     $msiDescriptorFileName = Join-Path -Path "$(Get-Location)" -ChildPath "scripts\msi_installer.wxs"
     $msiDescriptor = [xml](Get-Content $msiDescriptorFileName)
-    $msiDescriptor.Wix.Product.Version = [string]$env:MATTERMOST_BUILD_ID_SEMVER
+    $msiDescriptor.Wix.Product.Version = [string]$env:MATTERMOST_BUILD_ID_MSI
     $msiDescriptor.Save($msiDescriptorFileName)
 
     Print-Info "Patching version from electron package.json..."
     $packageFileName = Join-Path -Path "$(Get-Location)" -ChildPath "package.json"
     $package = Get-Content $packageFileName -Raw | ConvertFrom-Json
-    $package.version = [string]$env:MATTERMOST_BUILD_ID_SEMVER
+    $package.version = [string]$env:MATTERMOST_BUILD_ID_NODE
     $package | ConvertTo-Json | Set-Content $packageFileName
 
     Print-Info "Patching version from electron src\package.json..."
     $packageFileName = Join-Path -Path "$(Get-Location)" -ChildPath "src\package.json"
     $package = Get-Content $packageFileName -Raw | ConvertFrom-Json
-    $package.version = [string]$env:MATTERMOST_BUILD_ID_SEMVER
+    $package.version = [string]$env:MATTERMOST_BUILD_ID_NODE
     $package | ConvertTo-Json | Set-Content $packageFileName
 
     Print-Info "Getting list of commits for changelog..."
@@ -354,11 +433,11 @@ function Run-Build {
     }
     $env:MATTERMOST_BUILD_CHANGELOG = $changelog
 
-    Print-Info "Installing dependencies (running npm install)..."
+    Print-Info "Installing nodejs/electron dependencies (running npm install)..."
     npm install
-    Print-Info "Building JS code (running npm run build)..."
+    Print-Info "Building nodejs/electron code (running npm run build)..."
     npm run build
-    Print-Info "Packaging for Windows (running npm run package:windows)..."
+    Print-Info "Packaging nodejs/electron for Windows (running npm run package:windows)..."
     npm run package:windows
 
     # Only sign the executable and .dll if this is a release and not a pull request
@@ -415,7 +494,7 @@ function Run-Build {
     # We are relying on introspected C#/.NET rather than the buggy Get-Content
     # cmdlet because Get-Content considers by default a `-Delimiter` to '\n'
     # and thus breaks the purpose of the parser.
-    foreach($line in [System.IO.File]::ReadLines($licenseTxtFile)) {
+    foreach ($line in [System.IO.File]::ReadLines($licenseTxtFile)) {
         # trim() is equivalent to .replace("\ \s+", "")
         # We replace one backslash by two. Since the first arg is a regex,
         # we need to escape it.
@@ -463,7 +542,7 @@ function Run-Build {
 
     # Only sign the executable and .dll if this is a release and not a pull request
     # check.
-    if ($env:APPVEYOR_REPO_TAG -eq $true) {
+    if ($env:APPVEYOR_REPO_TAG) {
         Print-Info "Signing .\release\mattermost-desktop-$($env:MATTERMOST_BUILD_ID)-x86.msi (waiting for 15 seconds)..."
         Start-Sleep -s 15
         # Dual signing is not supported on msi files. Is it recommended to sign with 256 hash.
@@ -480,19 +559,27 @@ function Run-Build {
 function Run-Test {
     npm test
 }
+#endregion
 
 ################################################################################
 # Main function
 ################################################################################
+#region
 function Main {
     if ($makeRule -eq $null) {
         Print-Info "No argument passed to the make file. Executing ""all"" rule."
         $makeRule = "all"
     }
+
+    $pathBackup = $env:Path
+
     switch ($makeRule.toLower()) {
         "all" {
-            [array]$missing = Check-Deps
-            Install-Deps $missing
+            [array]$missing = Check-Deps -Verbose
+            if ($missing.Count -gt 0) {
+                Print-Error "The following dependencies are missing: $($missing -Join ', ').`n    Please install dependencies as an administrator:`n    # makefile.ps1 install-deps"
+                return
+            }
             Run-Build
             Run-Test
         }
@@ -518,12 +605,24 @@ function Main {
             Run-Test
         }
         "install-deps" {
-            Install-Deps $force=$True
+            [array]$missing = Check-Deps
+            try {
+                Install-Deps $missing
+            } catch {
+                Print-Error "The following error occurred when installing the dependencies: $_"
+            } finally {
+                [array]$missing = Check-Deps
+                $missingString = $missing -Join ', '
+                Print-Error "The following dependencies weren't properly installed: ${missingString}.`n    You may need to reinstall the dependencies as an administrator with:`n    # makefile.ps1 install-deps"
+            }
         }
         default {
             Print-Error "Make file argument ""$_"" is invalid. Build process aborted."
         }
     }
+
+    $env:Path = $pathBackup
 }
 
 Main
+#endregion
