@@ -350,8 +350,6 @@ function Install-Deps {
 
 function Run-Build {
 
-    Prepare-Path
-
     Print-Info -NoNewLine "Getting build date..."
     $env:MATTERMOST_BUILD_DATE = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")
     Print " [$env:MATTERMOST_BUILD_DATE]"
@@ -580,19 +578,26 @@ function Main {
                 Print-Error "The following dependencies are missing: $($missing -Join ', ').`n    Please install dependencies as an administrator:`n    # makefile.ps1 install-deps"
                 return
             }
+            Prepare-Path
             Run-Build
             Run-Test
         }
         "build" {
+            Prepare-Path
             Run-Build
         }
         "test" {
+            Prepare-Path
             Run-Test
         }
         "all-debug" {
             Enable-AppVeyorRDP
-            [array]$missing = Check-Deps
-            Install-Deps $missing
+            [array]$missing = Check-Deps -Verbose
+            if ($missing.Count -gt 0) {
+                Print-Error "The following dependencies are missing: $($missing -Join ', ').`n    Please install dependencies as an administrator:`n    # makefile.ps1 install-deps"
+                return
+            }
+            Prepare-Path
             Run-Build
             Run-Test
         }
@@ -602,6 +607,7 @@ function Main {
         }
         "test-debug" {
             Enable-AppVeyorRDP
+            Prepare-Path
             Run-Test
         }
         "install-deps" {
