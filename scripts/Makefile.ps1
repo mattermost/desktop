@@ -574,19 +574,36 @@ function Main {
     switch ($makeRule.toLower()) {
         "all" {
             [array]$missing = Check-Deps -Verbose
-            if ($missing.Count -gt 0) {
-                Print-Error "The following dependencies are missing: $($missing -Join ', ').`n    Please install dependencies as an administrator:`n    # makefile.ps1 install-deps"
-                return
+            try {
+                Install-Deps $missing
+            } catch {
+                Print-Error "The following error occurred when installing the dependencies: $_"
+            } finally {
+                [array]$missing = Check-Deps
+                if ($missing.Count -gt 0) {
+                    Print-Error "The following dependencies weren't properly installed: $($missing -Join ', ').`n    You may need to reinstall the dependencies as an administrator with:`n    # makefile.ps1 install-deps"
+                    return
+                }
             }
             Prepare-Path
             Run-Build
             Run-Test
         }
         "build" {
+            [array]$missing = Check-Deps -Verbose
+            if ($missing.Count -gt 0) {
+                Print-Error "The following dependencies are missing: $($missing -Join ', ').`n    Please install dependencies as an administrator:`n    # makefile.ps1 install-deps"
+                return
+            }
             Prepare-Path
             Run-Build
         }
         "test" {
+            [array]$missing = Check-Deps -Verbose
+            if ($missing.Count -gt 0) {
+                Print-Error "The following dependencies are missing: $($missing -Join ', ').`n    Please install dependencies as an administrator:`n    # makefile.ps1 install-deps"
+                return
+            }
             Prepare-Path
             Run-Test
         }
@@ -603,6 +620,7 @@ function Main {
         }
         "build-debug" {
             Enable-AppVeyorRDP
+            Prepare-Path
             Run-Build
         }
         "test-debug" {
@@ -618,8 +636,10 @@ function Main {
                 Print-Error "The following error occurred when installing the dependencies: $_"
             } finally {
                 [array]$missing = Check-Deps
-                $missingString = $missing -Join ', '
-                Print-Error "The following dependencies weren't properly installed: ${missingString}.`n    You may need to reinstall the dependencies as an administrator with:`n    # makefile.ps1 install-deps"
+                if ($missing.Count -gt 0) {
+                    Print-Error "The following dependencies weren't properly installed: $($missing -Join ', ').`n    You may need to reinstall the dependencies as an administrator with:`n    # makefile.ps1 install-deps"
+                    return
+                }
             }
         }
         default {
