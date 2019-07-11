@@ -576,18 +576,18 @@ function Main {
             [array]$missing = Check-Deps -Verbose
             try {
                 Install-Deps $missing
+                Prepare-Path
+                Run-Build
+                Run-Test
             } catch {
                 Print-Error "The following error occurred when installing the dependencies: $_"
             } finally {
                 [array]$missing = Check-Deps
                 if ($missing.Count -gt 0) {
                     Print-Error "The following dependencies weren't properly installed: $($missing -Join ', ').`n    You may need to reinstall the dependencies as an administrator with:`n    # makefile.ps1 install-deps"
-                    return
+                    # We are returning here
                 }
             }
-            Prepare-Path
-            Run-Build
-            Run-Test
         }
         "build" {
             [array]$missing = Check-Deps -Verbose
@@ -638,7 +638,7 @@ function Main {
                 [array]$missing = Check-Deps
                 if ($missing.Count -gt 0) {
                     Print-Error "The following dependencies weren't properly installed: $($missing -Join ', ').`n    You may need to reinstall the dependencies as an administrator with:`n    # makefile.ps1 install-deps"
-                    return
+                    # We are returning here
                 }
             }
         }
