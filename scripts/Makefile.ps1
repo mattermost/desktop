@@ -320,27 +320,27 @@ function Install-Deps {
     foreach ($missingItem in $missing) {
         switch ($missingItem) {
             "choco" {
-                Print-Error "Installing chocolatey..."
+                Print-Info "Installing chocolatey..."
                 Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
                 break;
             }
             "git" {
-                Print-Error "Installing git..."
+                Print-Info "Installing git..."
                 choco install git --yes
                 break;
             }
             "wix" {
-                Print-Error "Installing wixtoolset..."
+                Print-Info "Installing wixtoolset..."
                 choco install wixtoolset --yes
                 break;
             }
             "signtool" {
-                Print-Error "Installing Windows 10 SDK (for signtool)..."
+                Print-Info "Installing Windows 10 SDK (for signtool)..."
                 choco install windows-sdk-10.1 --yes
                 break;
             }
             "npm" {
-                Print-Error "Installing nodejs-lts (with npm)..."
+                Print-Info "Installing nodejs-lts (with npm)..."
                 choco install nodejs-lts --yes
                 break;
             }
@@ -630,6 +630,7 @@ function Main {
         }
         "install-deps" {
             [array]$missing = Check-Deps
+            foreach ($item in $missing) { Print-Info $item}
             try {
                 Install-Deps $missing
             } catch {
