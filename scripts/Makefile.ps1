@@ -272,9 +272,9 @@ function Prepare-Path {
     # user might have defined to interfere.
 
     # Prepend the PATH with npm/nodejs dir
-    $env:Path = "$(Get-NpmDir)" + $env:Path
+    $env:Path = "$(Get-NpmDir)" + ";" + $env:Path
     # Prepend the PATH with wix dir
-    $env:Path = "$(Get-WixDir)" + $env:Path
+    $env:Path = "$(Get-WixDir)" + ";" + $env:Path
 }
 
 function Install-Deps {
@@ -354,12 +354,23 @@ function Run-Build {
     $env:MATTERMOST_BUILD_DATE = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")
     Print " [$env:MATTERMOST_BUILD_DATE]"
 
+    # Generate build version ids
+    # 
     # nodejs/npm does require to have semver parsable versions:
     # major.minor.patch
-    # while wix support up to the revision dot syntax:
+    # Non number values seems to be allowed in patch.
+    #
+    # wix toolset supports semver up to the revision dot syntax:
     # major.minor.patch.revision.
-    # Which means chars other than numbers should be removed.
-    # They do not like to have versions like v4.3.0-rc0. We are thus forcing to
+    # ProductVersion Property is defined as
+    # [0-255].[0-255].[0-65535]
+    # 8      , 8     , 16 signed bit
+    # File Version is defined as
+    # [0-65535].[0-65535].[0-65535].[0-65535]
+    # 16       , 16      , 16      , 16 signed bit
+    #
+    # Other chars other than numbers should be removed.
+    # Versions like v4.3.0-rc0 shoud be. We are thus forcing to
     # have a format like 4.3.0.rc0.
     # When the last tag is not present or not a parsable semver version, we are
     # taking the number of revisions reachable from the HEAD of the current branch
@@ -373,31 +384,33 @@ function Run-Build {
     # candle.exe : error CNDL0001 : Value was either too large or too small for an Int32.
     # Exception Type: System.OverflowException
     # Add the revision only if we are not building a tag
+    
+    Print-Info -NoNewLine "Checking build id tag..."    
     if ($env:APPVEYOR_REPO_TAG) {
-        Print-Info -NoNewLine "Getting build id version..."
-        $env:MATTERMOST_BUILD_ID = Get-GitVersion
-        Print " [$env:MATTERMOST_BUILD_ID]"
-
-        Print-Info -NoNewLine "Getting build id version for msi..."
-        $env:MATTERMOST_BUILD_ID_MSI = Get-GitVersionSemver -WithRev
-        Print " [$env:MATTERMOST_BUILD_ID_MSI]"
-
-        Print-Info -NoNewLine "Getting build id version for node/npm..."
-        $env:MATTERMOST_BUILD_ID_NODE = Get-GitVersionSemver
-        Print " [$env:MATTERMOST_BUILD_ID_NODE]"
+        $version = $env:APPVEYOR_REPO_TAG
     } else {
-        Print-Info -NoNewLine "Getting build id version..."
-        $env:MATTERMOST_BUILD_ID = Get-GitDateRevision
-        Print " [$env:MATTERMOST_BUILD_ID]"
-
-        Print-Info -NoNewLine "Getting build id version for msi..."
-        $env:MATTERMOST_BUILD_ID_MSI = Get-GitDateRevision
-        Print " [$env:MATTERMOST_BUILD_ID_MSI]"
-
-        Print-Info -NoNewLine "Getting build id version for node/npm..."
-        $env:MATTERMOST_BUILD_ID_NODE = Get-GitDateRevision
-        Print " [$env:MATTERMOST_BUILD_ID_NODE]"
+        $version = $(git describe --tags $(git rev-list --tags --max-count=1))
     }
+
+    Print-Info -NoNewLine "Checking build id tag validity..."
+    [version]$appVersion = New-Object -TypeName System.Version
+    [void][version]::TryParse($version -Replace '-','.' -Replace '[^0-9.]', [ref]$appVersion)
+    if (!($appVersion)) {
+        Print-Error "Non parsable tag detected. Fallbacking to version 0.0.0."
+        $version = "0.0.0"
+    }
+
+    Print-Info -NoNewLine "Getting build id version..."
+    $env:MATTERMOST_BUILD_ID = $version
+    Print " [$env:MATTERMOST_BUILD_ID]"
+
+    Print-Info -NoNewLine "Getting build id version for msi..."
+    $env:MATTERMOST_BUILD_ID_MSI = $version -Replace '-','.' -Replace '[^0-9.]'
+    Print " [$env:MATTERMOST_BUILD_ID_MSI]"
+
+    Print-Info -NoNewLine "Getting build id version for node/npm..."
+    $env:MATTERMOST_BUILD_ID_NODE = ($version -Replace '-','.' -Replace '^v').Split('.')[0..2] -Join '.'
+    Print " [$env:MATTERMOST_BUILD_ID_NODE]"
 
     Print-Info "Patching version from msi xml descriptor..."
     $msiDescriptorFileName = Join-Path -Path "$(Get-Location)" -ChildPath "scripts\msi_installer.wxs"
