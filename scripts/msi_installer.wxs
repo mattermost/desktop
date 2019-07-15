@@ -71,7 +71,9 @@
             <Component Id="MainExecutableShortcutStartMenu" Guid="DF2028FF-7E03-407B-A46A-726E1B67DF83" Win64="$(var.Win64)">
               <Condition><![CDATA[ADDSTARTMENUSHORTCUT = "true"]]></Condition>
               <RegistryValue Id="RegShortcutStartMenu" Root="HKCU" Key="SOFTWARE\Mattermost\Desktop\settings" Name="MattermostDesktopShortcutStartMenu" Value="1" Type="integer" KeyPath="yes" />
-              <Shortcut Id="MattermostDesktopShortcutStartMenu" Directory="ProgramMenuDir" Name="Mattermost Desktop" WorkingDirectory="INSTALLDIR" Icon="Mattermost.ico" IconIndex="0" Advertise="no" Target="[INSTALLDIR]Mattermost.exe" />
+              <Shortcut Id="MattermostDesktopShortcutStartMenu" Directory="ProgramMenuDir" Name="Mattermost Desktop" WorkingDirectory="INSTALLDIR" Icon="Mattermost.ico" IconIndex="0" Advertise="no" Target="[INSTALLDIR]Mattermost.exe">
+                <ShortcutProperty Key="System.AppUserModel.ID" Value="Mattermost.Desktop">
+              </Shortcut>
             </Component>
             <Directory Id="GPOFiles" Name="gpo">
               <Component Id="GPODefinitionFile" Guid="BE30D350-8727-41CB-9F8D-9E0B7B9572A9" Win64="$(var.Win64)">
