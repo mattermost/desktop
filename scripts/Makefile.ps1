@@ -352,7 +352,7 @@ function Run-BuildId {
     if ($env:APPVEYOR_REPO_TAG) {
         $version = "$env:APPVEYOR_REPO_TAG"
     } else {
-        $version = "$(git describe --tags $(git rev-list --tags --max-count=1))"
+        $version = "$(git --git-dir=""$(Get-RootDir)/.git"" --work-tree=""$(Get-RootDir)"" describe --tags $(git --git-dir=""$(Get-RootDir)/.git"" --work-tree=""$(Get-RootDir)"" rev-list --tags --max-count=1))"
     }
 
     Print-Info "Checking build id tag validity..."
@@ -396,13 +396,13 @@ function Run-BuildId {
 
 function Run-BuildChangelog {
     Print-Info "Getting list of commits for changelog..."
-    $previousTag = $(Invoke-Expression "git describe --abbrev=0 --tags $(git describe --abbrev=0)^")
+    $previousTag = $(Invoke-Expression "git --git-dir=""$(Get-RootDir)/.git"" --work-tree=""$(Get-RootDir)"" describe --abbrev=0 --tags $(git --git-dir=""$(Get-RootDir)/.git"" --work-tree=""$(Get-RootDir)"" describe --abbrev=0)^")
     if ($env:APPVEYOR_REPO_TAG -eq $true) {
         $currentTag = [string]$(git describe --abbrev=0)
     } else {
         $currentTag = [string]"HEAD"
     }
-    $changelogRaw = $(git log --oneline --since="$(git log -1 "$previousTag" --pretty=%ad)" --until="$(git log -1 "$currentTag" --pretty=%ad)")
+    $changelogRaw = "$(git --git-dir=""$(Get-RootDir)/.git"" --work-tree=""$(Get-RootDir)"" log --oneline --since=""$(git --git-dir=""$(Get-RootDir)/.git"" --work-tree=""$(Get-RootDir)"" log -1 ""$previousTag"" --pretty=%ad)"" --until=""$(git --git-dir=""$(Get-RootDir)/.git"" --work-tree=""$(Get-RootDir)"" log -1 "$currentTag" --pretty=%ad)"")"
     $changelog = "";
     foreach ($i in $changelogRaw) {
         $changelog += "* $i`n"
