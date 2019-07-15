@@ -444,8 +444,8 @@ function Run-BuildForceSignature {
             # Note: The C++ redistribuable files will be resigned again even if they have a
             # correct signature from Microsoft. Windows doesn't seem to complain, but we
             # don't know whether this is authorized by the Microsoft EULA.
-            Get-ChildItem -path $archPath -recurse "$(Get-RootDir)\*.dll" | ForEach-Object {
-                Print-Info "Signing $($_.FullName) (waiting for 2 * 15 seconds)..."
+            Get-ChildItem -Path $archPath -recurse "*.dll" | ForEach-Object {
+                Print-Info "Signing $($_.Name) (waiting for 2 * 15 seconds)..."
                 # Waiting for at least 15 seconds is needed because these time
                 # servers usually have rate limits and signtool can fail with the
                 # following error message:
@@ -457,7 +457,7 @@ function Run-BuildForceSignature {
                 signtool.exe sign /f "$(Get-RootDir)\resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:certificate_private_key_encrypted" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /as "$($_.FullName)"
             }
 
-            Print-Info "Signing $archPath\Mattermost.exe (waiting for 2 * 15 seconds)..."
+            Print-Info "Signing Mattermost.exe (waiting for 2 * 15 seconds)..."
             Start-Sleep -s 15
             signtool.exe sign /f "$(Get-RootDir)\resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:certificate_private_key_encrypted" /tr "http://timestamp.digicert.com" /fd sha1 /td sha1 "$archPath\Mattermost.exe"
             Start-Sleep -s 15
