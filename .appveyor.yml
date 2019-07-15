@@ -12,15 +12,16 @@ init:
 
 build_script:
 - ps: |
-    .\scripts\Makefile.ps1 install-deps
-    # If you want to debug the build process on appveyor with an RDP connection
-    .\scripts\Makefile.ps1 build-debug
-    #.\scripts\Makefile.ps1 build
+    # If you want to debug the build process on AppVeyor, you can open an RDP
+    # connection with:
+    #.\scripts\Makefile.ps1 debug
+    .\scripts\Makefile.ps1
 
 test_script:
 - ps: |
-    # If you want to debug the test process on appveyor with an RDP connection
-    #.\scripts\Makefile.ps1 test-debug
+    # If you want to debug the build process on AppVeyor, you can open an RDP
+    # connection with:
+    #.\scripts\Makefile.ps1 debug
     .\scripts\Makefile.ps1 test
 
 # Secure variables are not decoded during Pull Request

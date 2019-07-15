@@ -9,7 +9,6 @@ Param (
 # Common util functions
 ################################################################################
 #region
-
 function Print {
      Param (
         [String]$message,
@@ -86,12 +85,19 @@ function Enable-AppVeyorRDP {
     # src.: https://www.appveyor.com/docs/how-to/rdp-to-build-worker/
     $blockRdp = $true;
     iex ((new-object net.webclient).DownloadString(
-        'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'
+        "https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1"
     ))
 }
 
 function Check-Command($cmdname) {
     return [bool](Get-Command -Name $cmdname -ErrorAction SilentlyContinue)
+}
+
+function Refresh-Path {
+    $env:Path =
+        [System.Environment]::GetEnvironmentVariable("Path", "Machine") +
+        ";" +
+        [System.Environment]::GetEnvironmentVariable("Path", "User")
 }
 
 # src: https://superuser.com/a/756696/456258
@@ -150,12 +156,17 @@ function Get-NpmDir {
     }
     return $null
 }
+
+function Get-RootDir {
+    return "$(Split-Path $PSCommandPath)\..\"
+}
 #endregion
 
 ################################################################################
 # Mattermost related functions
 ################################################################################
 #region
+
 function Check-Deps {
     Param (
         [Switch]
@@ -211,46 +222,17 @@ function Check-Deps {
         $missing += "signtool"
     }
 
+    if ($verbose -and $missing.Count -gt 0) {
+        
+        throw "makefile.deps.missing"
+    }
+
     return $missing
 }
 
 function Prepare-Path {
 
-    # Prepending ensures we are using our own path here to avoid the paths the
-    # user might have defined to interfere.
-
-    # Prepend the PATH with npm/nodejs dir
-    $env:Path = "$(Get-NpmDir)" + ";" + $env:Path
-    # Prepend the PATH with wix dir
-    $env:Path = "$(Get-WixDir)" + ";" + $env:Path
-    # Prepend the PATH with signtool dir
-    $env:Path = "$(Get-SignToolDir)" + ";" + $env:Path
-}
-
-function Install-Deps {
-    Param (
-        [parameter(Position=0)]
-        [Array[]]
-        $missing,
-
-        [Switch]
-        $forceInstall
-    )
-
-    if ($forceInstall) {
-        $missing = ("choco", "git", "wix", "signtool", "npm")
-    }
-
-    if ($missing -eq $null) {
-        return
-    }
-
-    if (-not (Is-Admin)) {
-        Print-Error "Installing dependencies requires admin privileges. Operation aborted.`n    Please reexecute this makefile as an administrator:`n    # makefile.ps1 install-deps"
-        exit
-    }
-
-    # As we are intending to install new dependencies, make sure the PATH env
+    # As we way need to install new dependencies, make sure the PATH env
     # variable is not too large. Some CI envs like AppVeyor have already the
     # PATH env variable defined at the maximum which prevents new strings to
     # be added to it. We will remove all the stuff added for programs in
@@ -266,6 +248,34 @@ function Install-Deps {
     $newPath += ($env:Path -split ';') | Where-Object { $_ -like "C:\Program Files*\*Git*" }
     $env:Path = $newPath -join ';'
     Print-Info "Reducing and reordering PATH from `n    ""$oldPath""`n    to`n    ""$env:Path"""
+
+    # Prepending ensures we are using our own path here to avoid the paths the
+    # user might have defined to interfere.
+
+    # Prepend the PATH with npm/nodejs dir
+    Print-Info "Checking if npm dir is already in the PATH..."
+    $env:Path = "$(Get-NpmDir)" + ";" + $env:Path
+
+    # Prepend the PATH with wix dir
+    Print-Info "Checking if wix dir is already in the PATH..."
+    $env:Path = "$(Get-WixDir)" + ";" + $env:Path
+
+    # Prepend the PATH with signtool dir
+    Print-Info "Checking if signtool dir is already in the PATH..."
+    $env:Path = "$(Get-SignToolDir)" + ";" + $env:Path
+}
+
+function Install-Deps {
+    [array]$missing = Check-Deps
+
+    if ($missing -eq $null) {
+        Print-Info "All dependencies met."
+        return
+    }
+
+    if (-not (Is-Admin)) {
+        throw "makefile.deps.notadmin"
+    }
 
     foreach ($missingItem in $missing) {
         switch ($missingItem) {
@@ -295,11 +305,13 @@ function Install-Deps {
                 break;
             }
         }
+
+        Print-Info "Refreshing PATH..."
+        Refresh-Path
     }
 }
 
-function Run-Build {
-
+function Run-BuildId {
     Print-Info -NoNewLine "Getting build date..."
     $env:MATTERMOST_BUILD_DATE = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")
     Print " [$env:MATTERMOST_BUILD_DATE]"
@@ -338,9 +350,9 @@ function Run-Build {
     
     Print-Info "Checking build id tag..."    
     if ($env:APPVEYOR_REPO_TAG) {
-        $version = $env:APPVEYOR_REPO_TAG
+        $version = "$env:APPVEYOR_REPO_TAG"
     } else {
-        $version = $(git describe --tags $(git rev-list --tags --max-count=1))
+        $version = "$(git describe --tags $(git rev-list --tags --max-count=1))"
     }
 
     Print-Info "Checking build id tag validity..."
@@ -364,23 +376,25 @@ function Run-Build {
     Print " [$env:MATTERMOST_BUILD_ID_NODE]"
 
     Print-Info "Patching version from msi xml descriptor..."
-    $msiDescriptorFileName = Join-Path -Path "$(Get-Location)" -ChildPath "scripts\msi_installer.wxs"
+    $msiDescriptorFileName = "$(Get-RootDir)\scripts\msi_installer.wxs"
     $msiDescriptor = [xml](Get-Content $msiDescriptorFileName)
     $msiDescriptor.Wix.Product.Version = [string]$env:MATTERMOST_BUILD_ID_MSI
     $msiDescriptor.Save($msiDescriptorFileName)
 
     Print-Info "Patching version from electron package.json..."
-    $packageFileName = Join-Path -Path "$(Get-Location)" -ChildPath "package.json"
+    $packageFileName = "$(Get-RootDir)\package.json"
     $package = Get-Content $packageFileName -Raw | ConvertFrom-Json
     $package.version = [string]$env:MATTERMOST_BUILD_ID_NODE
     $package | ConvertTo-Json | Set-Content $packageFileName
 
     Print-Info "Patching version from electron src\package.json..."
-    $packageFileName = Join-Path -Path "$(Get-Location)" -ChildPath "src\package.json"
+    $packageFileName = "$(Get-RootDir)\src\package.json"
     $package = Get-Content $packageFileName -Raw | ConvertFrom-Json
     $package.version = [string]$env:MATTERMOST_BUILD_ID_NODE
     $package | ConvertTo-Json | Set-Content $packageFileName
+}
 
+function Run-BuildChangelog {
     Print-Info "Getting list of commits for changelog..."
     $previousTag = $(Invoke-Expression "git describe --abbrev=0 --tags $(git describe --abbrev=0)^")
     if ($env:APPVEYOR_REPO_TAG -eq $true) {
@@ -394,7 +408,9 @@ function Run-Build {
         $changelog += "* $i`n"
     }
     $env:MATTERMOST_BUILD_CHANGELOG = $changelog
+}
 
+function Run-BuildElectron {
     Print-Info "Installing nodejs/electron dependencies (running npm install)..."
     npm install
     Print-Info "Building nodejs/electron code (running npm run build)..."
@@ -402,6 +418,12 @@ function Run-Build {
     Print-Info "Packaging nodejs/electron for Windows (running npm run package:windows)..."
     npm run package:windows
 
+    Print-Info "Cleaning build dir..."
+    Remove-Item "$(Get-RootDir)\release\win-ia32-unpacked\resources\app.asar.unpacked\" -Force -Recurse
+    Remove-Item "$(Get-RootDir)\release\win-unpacked\resources\app.asar.unpacked\" -Force -Recurse
+}
+
+function Run-BuildForceSignature {
     # Only sign the executable and .dll if this is a release and not a pull request
     # check.
     if ($env:APPVEYOR_REPO_TAG -eq $true) {
@@ -409,18 +431,20 @@ function Run-Build {
 
         # Decrypt the certificate. The decrypted version will be at
         # .\resources\windows\certificate\mattermost-desktop-windows.pfx
-        iex ((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/appveyor/secure-file/master/install.ps1'))
+        iex ((New-Object Net.WebClient).DownloadString(
+            "https://raw.githubusercontent.com/appveyor/secure-file/master/install.ps1"
+        ))
         # Secure variables are never decoded during Pull Request
         # except if the repo is private and a secure org has been created
         # src.: https://www.appveyor.com/docs/build-configuration/#secure-variables
-        appveyor-tools\secure-file -decrypt .\resources\windows\certificate\mattermost-desktop-windows.pfx.enc -secret "$env:certificate_decryption_key_encrypted"
+        & "$(Get-RootDir)\appveyor-tools\secure-file" -decrypt "resources\windows\certificate\mattermost-desktop-windows.pfx.enc" -secret "$env:certificate_decryption_key_encrypted"
 
-        foreach ($archPath in "release\win-unpacked", "release\win-ia32-unpacked") {
+        foreach ($archPath in "$(Get-RootDir)\release\win-unpacked", "$(Get-RootDir)\release\win-ia32-unpacked") {
 
             # Note: The C++ redistribuable files will be resigned again even if they have a
             # correct signature from Microsoft. Windows doesn't seem to complain, but we
             # don't know whether this is authorized by the Microsoft EULA.
-            Get-ChildItem -path $archPath -recurse *.dll | ForEach-Object {
+            Get-ChildItem -path $archPath -recurse "$(Get-RootDir)\*.dll" | ForEach-Object {
                 Print-Info "Signing $($_.FullName) (waiting for 2 * 15 seconds)..."
                 # Waiting for at least 15 seconds is needed because these time
                 # servers usually have rate limits and signtool can fail with the
@@ -428,26 +452,25 @@ function Run-Build {
                 # "SignTool Error: The specified timestamp server either could not be reached or returned an invalid response.
                 # src.: https://web.archive.org/web/20190306223053/https://github.com/electron-userland/electron-builder/issues/2795#issuecomment-466831315
                 Start-Sleep -s 15
-                signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p $env:certificate_private_key_encrypted /tr http://timestamp.digicert.com /fd sha1 /td sha1 $_.FullName
+                signtool.exe sign /f "$(Get-RootDir)\resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:certificate_private_key_encrypted" /tr "http://timestamp.digicert.com" /fd sha1 /td sha1 "$($_.FullName)"
                 Start-Sleep -s 15
-                signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p $env:certificate_private_key_encrypted /tr http://timestamp.digicert.com /fd sha256 /td sha256 /as $_.FullName
+                signtool.exe sign /f "$(Get-RootDir)\resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:certificate_private_key_encrypted" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /as "$($_.FullName)"
             }
 
             Print-Info "Signing $archPath\Mattermost.exe (waiting for 2 * 15 seconds)..."
             Start-Sleep -s 15
-            signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p $env:certificate_private_key_encrypted /tr http://timestamp.digicert.com /fd sha1 /td sha1 $archPath\Mattermost.exe
+            signtool.exe sign /f "$(Get-RootDir)\resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:certificate_private_key_encrypted" /tr "http://timestamp.digicert.com" /fd sha1 /td sha1 "$archPath\Mattermost.exe"
             Start-Sleep -s 15
-            signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p $env:certificate_private_key_encrypted /tr http://timestamp.digicert.com /fd sha256 /td sha256 /as $archPath\Mattermost.exe
+            signtool.exe sign /f "$(Get-RootDir)\resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:certificate_private_key_encrypted" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /as "$archPath\Mattermost.exe"
         }
     }
+}
 
-    Print-Info "Cleaning build dir..."
-    Remove-Item .\release\win-ia32-unpacked\resources\app.asar.unpacked\ -Force -Recurse
-    Remove-Item .\release\win-unpacked\resources\app.asar.unpacked\ -Force -Recurse
+function Run-BuildLicense {
 
     # Convert license to RTF
-    $licenseTxtFile = "$(Get-Location)/LICENSE.txt";
-    $licenseRtfFile = "$(Get-Location)/resources/windows/license.rtf";
+    $licenseTxtFile = "$(Get-RootDir)\LICENSE.txt";
+    $licenseRtfFile = "$(Get-RootDir)\resources/windows/license.rtf";
     $licenseNewParagraph = "\par" + [Environment]::NewLine;
     $sw = [System.IO.File]::CreateText($licenseRtfFile);
     $sw.WriteLine("{\rtf1\ansi\deff0\nouicompat{\fonttbl{\f0\fnil\fcharset0 Courier New;}}\pard\qj\f0\fs18");
@@ -493,34 +516,50 @@ function Run-Build {
         $sw.Write([Environment]::NewLine + $licenseNewParagraph + $lineToAdd + "\par");
     }
     $sw.Close();
+}
 
+function Run-BuildMsi {
     Print-Info "Building 32 bits msi installer..."
-    heat.exe dir .\release\win-ia32-unpacked\ -o .\scripts\msi_installer_files.wxs -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t .\scripts\msi_installer_files_replace_id.xslt -dr INSTALLDIR
-    candle.exe -dPlatform=x86 .\scripts\msi_installer.wxs .\scripts\msi_installer_files.wxs -o .\scripts\
-    light.exe .\scripts\msi_installer.wixobj .\scripts\msi_installer_files.wixobj -loc .\resources\windows\msi_i18n\en_US.wxl -o .\release\mattermost-desktop-$($env:MATTERMOST_BUILD_ID)-x86.msi -b ./release/win-ia32-unpacked/
+    heat.exe dir "$(Get-RootDir)\release\win-ia32-unpacked\" -o "$(Get-RootDir)\scripts\msi_installer_files.wxs" -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t "$(Get-RootDir)\scripts\msi_installer_files_replace_id.xslt" -dr INSTALLDIR
+    candle.exe -dPlatform=x86 "$(Get-RootDir)\scripts\msi_installer.wxs" "$(Get-RootDir)\scripts\msi_installer_files.wxs" -o "$(Get-RootDir)\scripts\"
+    light.exe "$(Get-RootDir)\scripts\msi_installer.wixobj" "$(Get-RootDir)\scripts\msi_installer_files.wixobj" -loc "$(Get-RootDir)\resources\windows\msi_i18n\en_US.wxl" -o "$(Get-RootDir)\release\mattermost-desktop-$($env:MATTERMOST_BUILD_ID)-x86.msi" -b "$(Get-RootDir)\release\win-ia32-unpacked\"
 
     Print-Info "Building 64 bits msi installer..."
-    heat.exe dir .\release\win-unpacked\ -o .\scripts\msi_installer_files.wxs -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t .\scripts\msi_installer_files_replace_id.xslt -t .\scripts\msi_installer_files_set_win64.xslt -dr INSTALLDIR
-    candle.exe -dPlatform=x64 .\scripts\msi_installer.wxs .\scripts\msi_installer_files.wxs -o .\scripts\
-    light.exe .\scripts\msi_installer.wixobj .\scripts\msi_installer_files.wixobj -loc .\resources\windows\msi_i18n\en_US.wxl -o .\release\mattermost-desktop-$($env:MATTERMOST_BUILD_ID)-x64.msi -b ./release/win-unpacked/
+    heat.exe dir "$(Get-RootDir)\release\win-unpacked\" -o "$(Get-RootDir)\scripts\msi_installer_files.wxs" -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t "$(Get-RootDir)\scripts\msi_installer_files_replace_id.xslt" -t "$(Get-RootDir)\scripts\msi_installer_files_set_win64.xslt" -dr INSTALLDIR
+    candle.exe -dPlatform=x64 "$(Get-RootDir)\scripts\msi_installer.wxs" "$(Get-RootDir)\scripts\msi_installer_files.wxs" -o "$(Get-RootDir)\scripts\"
+    light.exe "$(Get-RootDir)\scripts\msi_installer.wixobj" "$(Get-RootDir)\scripts\msi_installer_files.wixobj" -loc "$(Get-RootDir)\resources\windows\msi_i18n\en_US.wxl" -o "$(Get-RootDir)\release\mattermost-desktop-$($env:MATTERMOST_BUILD_ID)-x64.msi" -b "$(Get-RootDir)\release\win-unpacked\"
 
     # Only sign the executable and .dll if this is a release and not a pull request
     # check.
     if ($env:APPVEYOR_REPO_TAG) {
-        Print-Info "Signing .\release\mattermost-desktop-$($env:MATTERMOST_BUILD_ID)-x86.msi (waiting for 15 seconds)..."
+        Print-Info "Signing mattermost-desktop-$($env:MATTERMOST_BUILD_ID)-x86.msi (waiting for 15 seconds)..."
         Start-Sleep -s 15
         # Dual signing is not supported on msi files. Is it recommended to sign with 256 hash.
         # src.: https://security.stackexchange.com/a/124685/84134
         # src.: https://social.msdn.microsoft.com/Forums/windowsdesktop/en-us/d4b70ecd-a883-4289-8047-cc9cde28b492#0b3e3b80-6b3b-463f-ac1e-1bf0dc831952
-        signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p $env:certificate_private_key_encrypted /tr http://timestamp.digicert.com /fd sha256 /td sha256 .\release\mattermost-desktop-$($env:MATTERMOST_BUILD_ID)-x86.msi
+        signtool.exe sign /f "$(Get-RootDir)\resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:certificate_private_key_encrypted" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 "$(Get-RootDir)\release\mattermost-desktop-$($env:MATTERMOST_BUILD_ID)-x86.msi"
 
-        Print-Info "Signing .\release\mattermost-desktop-$($env:MATTERMOST_BUILD_ID)-x64.msi (waiting for 15 seconds)..."
+        Print-Info "Signing mattermost-desktop-$($env:MATTERMOST_BUILD_ID)-x64.msi (waiting for 15 seconds)..."
         Start-Sleep -s 15
-        signtool.exe sign /f .\resources\windows\certificate\mattermost-desktop-windows.pfx /p $env:certificate_private_key_encrypted /tr http://timestamp.digicert.com /fd sha256 /td sha256 .\release\mattermost-desktop-$($env:MATTERMOST_BUILD_ID)-x64.msi
+        signtool.exe sign /f "$(Get-RootDir)\resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:certificate_private_key_encrypted" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 "$(Get-RootDir)\release\mattermost-desktop-$($env:MATTERMOST_BUILD_ID)-x64.msi"
     }
 }
 
+function Run-Build {
+    Check-Deps -Verbose
+    Prepare-Path
+    Run-BuildId
+    Run-BuildChangelog
+    Run-BuildElectron
+    
+    Run-BuildForceSignature
+    Run-BuildLicense
+    Run-BuildMsi
+}
+
 function Run-Test {
+    Check-Deps -Verbose
+    Prepare-Path
     npm test
 }
 #endregion
@@ -537,79 +576,40 @@ function Main {
 
     $pathBackup = $env:Path
 
-    switch ($makeRule.toLower()) {
-        "all" {
-            [array]$missing = Check-Deps -Verbose
-            try {
-                Install-Deps $missing
-                Prepare-Path
+    try {
+        switch ($makeRule.toLower()) {
+            "all" {
+                Install-Deps
                 Run-Build
                 Run-Test
-            } catch {
-                Print-Error "The following error occurred when installing the dependencies: $_"
-            } finally {
-                [array]$missing = Check-Deps
-                if ($missing.Count -gt 0) {
-                    Print-Error "The following dependencies weren't properly installed: $($missing -Join ', ').`n    You may need to reinstall the dependencies as an administrator with:`n    # makefile.ps1 install-deps"
-                    # We are returning here
-                }
+            }
+            "build" {
+                Run-Build
+            }
+            "test" {
+                Run-Test
+            }
+            "install-deps" {
+                Install-Deps
+            }
+            "debug" {
+                Enable-AppVeyorRDP
+            }
+            default {
+                Print-Error "Make file argument ""$_"" is invalid. Build process aborted."
             }
         }
-        "build" {
-            [array]$missing = Check-Deps -Verbose
-            if ($missing.Count -gt 0) {
+    } catch {
+        switch ($_.Exception.Message) {
+            "makefile.deps.missing" {
                 Print-Error "The following dependencies are missing: $($missing -Join ', ').`n    Please install dependencies as an administrator:`n    # makefile.ps1 install-deps"
-                return
             }
-            Prepare-Path
-            Run-Build
-        }
-        "test" {
-            [array]$missing = Check-Deps -Verbose
-            if ($missing.Count -gt 0) {
-                Print-Error "The following dependencies are missing: $($missing -Join ', ').`n    Please install dependencies as an administrator:`n    # makefile.ps1 install-deps"
-                return
+            "makefile.deps.notadmin" {
+                Print-Error "Installing dependencies requires admin privileges. Operation aborted.`n    Please reexecute this makefile as an administrator:`n    # makefile.ps1 install-deps"
             }
-            Prepare-Path
-            Run-Test
-        }
-        "all-debug" {
-            Enable-AppVeyorRDP
-            [array]$missing = Check-Deps -Verbose
-            if ($missing.Count -gt 0) {
-                Print-Error "The following dependencies are missing: $($missing -Join ', ').`n    Please install dependencies as an administrator:`n    # makefile.ps1 install-deps"
-                return
+            default {          
+                Print-Error "Another error occurred: $_"
             }
-            Prepare-Path
-            Run-Build
-            Run-Test
-        }
-        "build-debug" {
-            Enable-AppVeyorRDP
-            Prepare-Path
-            Run-Build
-        }
-        "test-debug" {
-            Enable-AppVeyorRDP
-            Prepare-Path
-            Run-Test
-        }
-        "install-deps" {
-            [array]$missing = Check-Deps
-            try {
-                Install-Deps $missing
-            } catch {
-                Print-Error "The following error occurred when installing the dependencies: $_"
-            } finally {
-                [array]$missing = Check-Deps
-                if ($missing.Count -gt 0) {
-                    Print-Error "The following dependencies weren't properly installed: $($missing -Join ', ').`n    You may need to reinstall the dependencies as an administrator with:`n    # makefile.ps1 install-deps"
-                    # We are returning here
-                }
-            }
-        }
-        default {
-            Print-Error "Make file argument ""$_"" is invalid. Build process aborted."
         }
     }
 
