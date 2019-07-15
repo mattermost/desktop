@@ -14,8 +14,8 @@ build_script:
 - ps: |
     .\scripts\Makefile.ps1 install-deps
     # If you want to debug the build process on appveyor with an RDP connection
-    #.\scripts\Makefile.ps1 build-debug
-    .\scripts\Makefile.ps1 build
+    .\scripts\Makefile.ps1 build-debug
+    #.\scripts\Makefile.ps1 build
 
 test_script:
 - ps: |
@@ -30,6 +30,8 @@ environment:
     secure: 9k3nvcEL+YDZTH15atlEvRBO664rBEofptMmeaf8BMN8bSGOq4Darz5UhMj4blO4
   certificate_decryption_key_encrypted:
     secure: GjvvWt6sGQBJu16BR2dpZMW2eXyNB3zT2tbWN/AQxGEqjNPkXZePHWVHS/5hAFmJ
+  github_oauth_token_encrypted:
+    secure: I2wx9gajpvBjcxtEKYoYqqmyoH/2fWQflycpwlHZY9SD9sFkPlA4CNMcF29dcI4j
 
 artifacts:
   - path: 'release\*.msi'

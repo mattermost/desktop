@@ -223,6 +223,8 @@ function Prepare-Path {
     $env:Path = "$(Get-NpmDir)" + ";" + $env:Path
     # Prepend the PATH with wix dir
     $env:Path = "$(Get-WixDir)" + ";" + $env:Path
+    # Prepend the PATH with signtool dir
+    $env:Path = "$(Get-SignToolDir)" + ";" + $env:Path
 }
 
 function Install-Deps {
