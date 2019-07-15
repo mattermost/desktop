@@ -90,58 +90,6 @@ function Enable-AppVeyorRDP {
     ))
 }
 
-# Inspiration taken from here:
-# src.: https://wiki.archlinux.org/index.php/VCS_package_guidelines#Git
-function Get-GitVersion {
-    Param (
-        [Switch]$WithRev
-    )
-
-    $version = [string]$(git describe --abbrev=0)
-    $rev = [string]$(git rev-list --count --first-parent HEAD)
-
-    # Returns if the semver is parsable
-    if ($version) {
-        if ($WithRev) {
-            return $version + "." + $rev
-        }
-        return $version
-    }
-
-    # Otherwise returns the revision number (number of commits reachable from
-    # the root from the current branch)
-    return $rev
-}
-
-function Get-GitVersionSemver {
-    Param (
-        [Switch]$WithRev
-    )
-
-    # Try to get the major.minor.patch version from the latest reachable tag and sanitize it
-    $semver = [string]$(git describe --abbrev=0) -Replace '-','.' -Replace '[^0-9.]'
-    # Take the 3 first numbers
-    $semver = $semver.Split('.')[0..2] -Join '.'
-
-    [version]$appVersion = New-Object -TypeName System.Version
-    [void][version]::TryParse($semver, [ref]$appVersion)
-
-    $rev = [string]$(git rev-list --count --first-parent HEAD)
-    if ($appVersion) {
-        if ($WithRev) {
-            return $semver + "." + $rev
-        }
-        return $semver
-    }
-    
-    return $rev
-}
-
-function Get-GitDateRevision {
-    $rev = [string]$(git rev-list --count --first-parent HEAD)
-    return  (Get-Date).ToUniversalTime().ToString("yyyyMMdd") + "." + $rev + ".0"
-}
-
 function Check-Command($cmdname) {
     return [bool](Get-Command -Name $cmdname -ErrorAction SilentlyContinue)
 }
@@ -155,7 +103,7 @@ function Is-Admin {
 
 function Get-WixDir {
     $progFile = (${env:ProgramFiles(x86)}, ${env:ProgramFiles} -ne $null)[0]
-    $wixDirs = @(Get-ChildItem -Path $progFile -Recurse -Filter "*wix toolset*" -Attributes Directory -Depth 2)
+    $wixDirs = @(Get-ChildItem -Path $progFile -Recurse -Filter "*wix toolset*" -Attributes Directory -Depth 2 -ErrorAction SilentlyContinue)
     if ($wixDirs[0] -eq $null) {
         return $null
     }
@@ -358,7 +306,8 @@ function Run-Build {
     # 
     # nodejs/npm does require to have semver parsable versions:
     # major.minor.patch
-    # Non number values seems to be allowed in patch.
+    # Non number values are allowed only if they are not starting the dot verion.
+    # 4.3.0-rc2 is allowed but 4.3.rc2 is not
     #
     # wix toolset supports semver up to the revision dot syntax:
     # major.minor.patch.revision.
@@ -385,16 +334,16 @@ function Run-Build {
     # Exception Type: System.OverflowException
     # Add the revision only if we are not building a tag
     
-    Print-Info -NoNewLine "Checking build id tag..."    
+    Print-Info "Checking build id tag..."    
     if ($env:APPVEYOR_REPO_TAG) {
         $version = $env:APPVEYOR_REPO_TAG
     } else {
         $version = $(git describe --tags $(git rev-list --tags --max-count=1))
     }
 
-    Print-Info -NoNewLine "Checking build id tag validity..."
+    Print-Info "Checking build id tag validity..."
     [version]$appVersion = New-Object -TypeName System.Version
-    [void][version]::TryParse($version -Replace '-','.' -Replace '[^0-9.]', [ref]$appVersion)
+    [void][version]::TryParse($($version -Replace '-','.' -Replace '[^0-9.]'), [ref]$appVersion)
     if (!($appVersion)) {
         Print-Error "Non parsable tag detected. Fallbacking to version 0.0.0."
         $version = "0.0.0"
@@ -405,11 +354,11 @@ function Run-Build {
     Print " [$env:MATTERMOST_BUILD_ID]"
 
     Print-Info -NoNewLine "Getting build id version for msi..."
-    $env:MATTERMOST_BUILD_ID_MSI = $version -Replace '-','.' -Replace '[^0-9.]'
+    $env:MATTERMOST_BUILD_ID_MSI = ($version -Replace '-','.' -Replace '[^0-9.]').Split('.')[0..3] -Join '.'
     Print " [$env:MATTERMOST_BUILD_ID_MSI]"
 
     Print-Info -NoNewLine "Getting build id version for node/npm..."
-    $env:MATTERMOST_BUILD_ID_NODE = ($version -Replace '-','.' -Replace '^v').Split('.')[0..2] -Join '.'
+    $env:MATTERMOST_BUILD_ID_NODE = ($version -Replace '^v').Split('.')[0..2] -Join '.'
     Print " [$env:MATTERMOST_BUILD_ID_NODE]"
 
     Print-Info "Patching version from msi xml descriptor..."
@@ -543,10 +492,12 @@ function Run-Build {
     }
     $sw.Close();
 
+    Print-Info "Building 32 bits msi installer..."
     heat.exe dir .\release\win-ia32-unpacked\ -o .\scripts\msi_installer_files.wxs -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t .\scripts\msi_installer_files_replace_id.xslt -dr INSTALLDIR
     candle.exe -dPlatform=x86 .\scripts\msi_installer.wxs .\scripts\msi_installer_files.wxs -o .\scripts\
     light.exe .\scripts\msi_installer.wixobj .\scripts\msi_installer_files.wixobj -loc .\resources\windows\msi_i18n\en_US.wxl -o .\release\mattermost-desktop-$($env:MATTERMOST_BUILD_ID)-x86.msi -b ./release/win-ia32-unpacked/
 
+    Print-Info "Building 64 bits msi installer..."
     heat.exe dir .\release\win-unpacked\ -o .\scripts\msi_installer_files.wxs -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t .\scripts\msi_installer_files_replace_id.xslt -t .\scripts\msi_installer_files_set_win64.xslt -dr INSTALLDIR
     candle.exe -dPlatform=x64 .\scripts\msi_installer.wxs .\scripts\msi_installer_files.wxs -o .\scripts\
     light.exe .\scripts\msi_installer.wixobj .\scripts\msi_installer_files.wixobj -loc .\resources\windows\msi_i18n\en_US.wxl -o .\release\mattermost-desktop-$($env:MATTERMOST_BUILD_ID)-x64.msi -b ./release/win-unpacked/
