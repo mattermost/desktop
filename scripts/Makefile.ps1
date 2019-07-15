@@ -581,7 +581,6 @@ function Main {
             "all" {
                 Install-Deps
                 Run-Build
-                Run-Test
             }
             "build" {
                 Run-Build
