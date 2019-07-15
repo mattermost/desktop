@@ -27,11 +27,11 @@ test_script:
 # Secure variables are not decoded during Pull Request
 # src.: https://www.appveyor.com/docs/build-configuration/#secure-variables
 environment:
-  certificate_private_key_encrypted:
+  COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED:
     secure: 9k3nvcEL+YDZTH15atlEvRBO664rBEofptMmeaf8BMN8bSGOq4Darz5UhMj4blO4
-  certificate_decryption_key_encrypted:
+  COM_MATTERMOST_MAKEFILE_CERTIFICATE_DECRYPTION_KEY_ENCRYPTED:
     secure: GjvvWt6sGQBJu16BR2dpZMW2eXyNB3zT2tbWN/AQxGEqjNPkXZePHWVHS/5hAFmJ
-  github_oauth_token_encrypted:
+  COM_MATTERMOST_MAKEFILE_GITHUB_OAUTH_TOKEN_ENCRYPTED:
     secure: I2wx9gajpvBjcxtEKYoYqqmyoH/2fWQflycpwlHZY9SD9sFkPlA4CNMcF29dcI4j
 
 artifacts:
@@ -43,8 +43,8 @@ deploy:
   - provider: GitHub
     auth_token:
       secure: I2wx9gajpvBjcxtEKYoYqqmyoH/2fWQflycpwlHZY9SD9sFkPlA4CNMcF29dcI4j
-    release: $(APPVEYOR_BUILD_NUMBER) ($(APPVEYOR_REPO_COMMIT)) (via AppVeyor)
-    description: $(MATTERMOST_BUILD_CHANGELOG)
+    release: $(APPVEYOR_BUILD_NUMBER) ($(APPVEYOR_REPO_COMMIT))
+    description: $(COM_MATTERMOST_MAKEFILE_BUILD_CHANGELOG)
     artifact: MsiInstallers
     prerelease: true
     force_update: true
@@ -54,8 +54,8 @@ deploy:
   - provider: GitHub
     auth_token:
       secure: I2wx9gajpvBjcxtEKYoYqqmyoH/2fWQflycpwlHZY9SD9sFkPlA4CNMcF29dcI4j
-    release: $(APPVEYOR_REPO_TAG_NAME) ($(MATTERMOST_BUILD_DATE)) (via AppVeyor)
-    description: $(MATTERMOST_BUILD_CHANGELOG)
+    release: $(APPVEYOR_REPO_TAG_NAME) ($(COM_MATTERMOST_MAKEFILE_BUILD_DATE))
+    description: $(COM_MATTERMOST_MAKEFILE_BUILD_CHANGELOG)
     artifact: MsiInstallers
     draft: true
     force_update: false
