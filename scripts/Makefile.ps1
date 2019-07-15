@@ -466,11 +466,14 @@ function Run-BuildChangelog {
 
 function Run-BuildElectron {
     Print-Info "Installing nodejs/electron dependencies (running npm install)..."
-    npm install --prefix="$(Get-RootDir)" "$(Get-RootDir)"
+    npm install
+    #npm install --prefix="$(Get-RootDir)" "$(Get-RootDir)"
     Print-Info "Building nodejs/electron code (running npm run build)..."
-    npm run build --prefix="$(Get-RootDir)" "$(Get-RootDir)"
+    npm run build
+    #npm run build --prefix="$(Get-RootDir)" "$(Get-RootDir)"
     Print-Info "Packaging nodejs/electron for Windows (running npm run package:windows)..."
-    npm run package:windows --prefix="$(Get-RootDir)" "$(Get-RootDir)"
+    npm run package:windows
+    #npm run package:windows --prefix="$(Get-RootDir)" "$(Get-RootDir)"
 
     Print-Info "Cleaning build dir..."
     Remove-Item "$(Get-RootDir)\release\win-ia32-unpacked\resources\app.asar.unpacked\" -Force -Recurse
