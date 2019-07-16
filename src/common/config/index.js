@@ -7,6 +7,8 @@ import path from 'path';
 
 import {EventEmitter} from 'events';
 
+import * as Validator from '../../main/Validator';
+
 import defaultPreferences from './defaultPreferences';
 import upgradeConfigData from './upgradePreferences';
 import buildConfig from './buildConfig';
@@ -205,6 +207,10 @@ export default class Config extends EventEmitter {
     let configData = {};
     try {
       configData = this.readFileSync(this.configFilePath);
+      configData = Validator.validateConfigData(configData);
+      if (!configData) {
+        throw new Error("Loaded 'config.json' file does not validate, using defaults instead.");
+      }
     } catch (e) {
       console.log('Failed to load configuration file from the filesystem. Using defaults.');
       configData = this.copy(this.defaultConfigData);
