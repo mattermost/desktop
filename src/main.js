@@ -76,8 +76,6 @@ async function initialize() {
   global.willAppQuit = false;
   global.isDev = isDev && !argv.disableDevMode;
 
-  app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
-
   if (argv['data-dir']) {
     app.setPath('userData', path.resolve(argv['data-dir']));
   }
@@ -378,6 +376,11 @@ function handleAppWebContentsCreated(dc, contents) {
 }
 
 function initializeAfterAppReady() {
+
+  if (process.platform === 'win32') {      
+    app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
+  }
+
   const appStateJson = path.join(app.getPath('userData'), 'app-state.json');
   appState = new AppStateManager(appStateJson);
   if (wasUpdated(appState.lastAppVersion)) {
