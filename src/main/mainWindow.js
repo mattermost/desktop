@@ -32,7 +32,7 @@ function createMainWindow(config, options) {
     windowOptions = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));
     windowOptions = Validator.validateBoundsInfo(windowOptions);
     if (!windowOptions) {
-      throw new Error("Loaded 'bounds-info.json' file does not validate, using defaults instead.");
+      throw new Error('Provided bounds info file does not validate, using defaults instead.');
     }
   } catch (e) {
     // Follow Electron's defaults, except for window dimensions which targets 1024x768 screen resolution.

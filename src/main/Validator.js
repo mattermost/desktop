@@ -1,34 +1,30 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import Joi from '@hapi/joi';
-import { join } from 'path';
 
-const defaultOptions =  {
+const defaultOptions = {
   stripUnknown: true,
-}
+};
+
+const defaultWindowWidth = 1000;
+const defaultWindowHeight = 700;
+const minWindowWidth = 400;
+const minWindowHeight = 240;
 
 const boundsInfoSchema = Joi.object({
   x: Joi.number().integer().min(0),
   y: Joi.number().integer().min(0),
-  width: Joi.number().integer().min(400).required().default(1000),
-  height: Joi.number().integer().min(240).required().default(700),
+  width: Joi.number().integer().min(minWindowWidth).required().default(defaultWindowWidth),
+  height: Joi.number().integer().min(minWindowHeight).required().default(defaultWindowHeight),
   maximized: Joi.boolean().default(false),
   fullscreen: Joi.boolean().default(false),
 });
-
-export function validateBoundsInfo(data) {
-  return validateAgainstSchema(data, boundsInfoSchema);
-}
 
 const appStateSchema = Joi.object({
   lastAppVersion: Joi.string(),
   skippedVersion: Joi.string(),
   updateCheckedDate: Joi.string(),
 });
-
-export function validateAppState(data) {
-  return validateAgainstSchema(data, appStateSchema);
-}
 
 const configDataSchema = Joi.object({
   version: Joi.number().min(1).default(1),
@@ -38,7 +34,7 @@ const configDataSchema = Joi.object({
       scheme: [
         'http',
         'https',
-      ]
+      ],
     }).required(),
   })).default([]),
   showTrayIcon: Joi.boolean().default(false),
@@ -56,8 +52,48 @@ const configDataSchema = Joi.object({
   spellCheckerLocale: Joi.string().regex(/^[a-z]{2}-[A-Z]{2}$/).default('en-US'),
 });
 
+// eg. data['https://community.mattermost.com']['notifications'] = 'granted';
+// eg. data['http://localhost:8065']['notifications'] = 'denied';
+const permissionsSchema = Joi.object().pattern(
+  Joi.string().uri(),
+  Joi.object().pattern(
+    Joi.string(),
+    Joi.any().valid('granted', 'denied'),
+  ),
+);
+
+// eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};
+const certificateStoreSchema = Joi.object().pattern(
+  Joi.string().uri(),
+  Joi.object({
+    data: Joi.string(),
+    issuerName: Joi.string(),
+  })
+);
+
+// validate bounds_info.json
+export function validateBoundsInfo(data) {
+  return validateAgainstSchema(data, boundsInfoSchema);
+}
+
+// validate app_state.json
+export function validateAppState(data) {
+  return validateAgainstSchema(data, appStateSchema);
+}
+
+// validate config.json
 export function validateConfigData(data) {
   return validateAgainstSchema(data, configDataSchema);
+}
+
+// validate permission.json
+export function validatePermissionsList(data) {
+  return validateAgainstSchema(data, permissionsSchema);
+}
+
+// validate certificate.json
+export function validateCertificateStore(data) {
+  return validateAgainstSchema(data, certificateStoreSchema);
 }
 
 function validateAgainstSchema(data, schema) {

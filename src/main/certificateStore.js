@@ -6,6 +6,8 @@
 import fs from 'fs';
 import url from 'url';
 
+import * as Validator from './Validator';
+
 function comparableCertificate(certificate) {
   return {
     data: certificate.data.toString(),
@@ -32,6 +34,12 @@ function CertificateStore(storeFile) {
   let storeStr;
   try {
     storeStr = fs.readFileSync(storeFile, 'utf-8');
+
+    // ensure data loaded from file is valid
+    storeStr = Validator.validateCertificateStore(storeStr);
+    if (!storeStr) {
+      throw new Error('Provided certificate store file does not validate, using defaults instead.');
+    }
   } catch (e) {
     storeStr = '{}';
   }

@@ -209,7 +209,7 @@ export default class Config extends EventEmitter {
       configData = this.readFileSync(this.configFilePath);
       configData = Validator.validateConfigData(configData);
       if (!configData) {
-        throw new Error("Loaded 'config.json' file does not validate, using defaults instead.");
+        throw new Error('Provided configuration file does not validate, using defaults instead.');
       }
     } catch (e) {
       console.log('Failed to load configuration file from the filesystem. Using defaults.');
