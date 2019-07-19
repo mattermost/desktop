@@ -628,3 +628,5 @@ SettingsPage.propTypes = {
   configFile: PropTypes.string,
   enableServerManagement: PropTypes.bool,
 };
+
+/* eslint-enable react/no-set-state */

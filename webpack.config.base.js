@@ -19,3 +19,4 @@ module.exports = {
   ] : [],
   devtool: isProduction ? false : '#inline-source-map',
 };
+/* eslint-enable import/no-commonjs */

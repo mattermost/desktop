@@ -23,3 +23,4 @@ module.exports = merge(base, {
   },
   target: 'electron-main',
 });
+/* eslint-enable import/no-commonjs */

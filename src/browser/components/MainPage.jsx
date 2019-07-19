@@ -455,3 +455,5 @@ MainPage.propTypes = {
   requestingPermission: TabBar.propTypes.requestingPermission,
   onClickPermissionDialog: PropTypes.func,
 };
+
+/* eslint-enable react/no-set-state */

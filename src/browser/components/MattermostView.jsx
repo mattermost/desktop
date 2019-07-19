@@ -309,3 +309,5 @@ MattermostView.propTypes = {
   useSpellChecker: PropTypes.bool,
   onSelectSpellCheckerLocale: PropTypes.func,
 };
+
+/* eslint-enable react/no-set-state */

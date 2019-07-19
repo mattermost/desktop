@@ -52,3 +52,4 @@ module.exports = merge(base, {
     publicPath: '/browser/',
   },
 });
+/* eslint-enable import/no-commonjs */
