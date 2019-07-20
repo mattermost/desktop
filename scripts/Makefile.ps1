@@ -440,7 +440,7 @@ function Run-BuildId {
         $version = "$(git describe --tags $(git rev-list --tags --max-count=1))"
     }
 
-    Print-Info "Checking build id tag validity..."
+    Print-Info "Checking build id tag validity... [$version]"
     [version]$appVersion = New-Object -TypeName System.Version
     [void][version]::TryParse($($version -Replace '-','.' -Replace '[^0-9.]'), [ref]$appVersion)
     if (!($appVersion)) {
