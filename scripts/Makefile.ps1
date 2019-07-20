@@ -15,81 +15,75 @@ function Print {
         [Switch]$NoNewLine
     )
     if ($NoNewLine) {
-        [Console]::Write($message)
+        Write-Host " $message" -NoNewLine
     } else {
-        [Console]::WriteLine($message)
+        Write-Host " $message"
     }
 }
 
 function Print-Info {
     Param (
         [String]$message,
-        [Switch]$NoNewLine,
-        [Switch]$NoPrefix
+        [Switch]$NoNewLine
     )
     if ([String]::IsNullOrEmpty($message)) {
         return
     }
 
-    [Console]::ResetColor()
-    [Console]::Write("[")
-    [Console]::ForegroundColor = 'green'
-    [Console]::Write("+")
-    [Console]::ResetColor()
+    Write-Host "[" -NoNewLine
+    Write-Host "+" -NoNewLine -ForegroundColor Green
+    Write-Host "]" -NoNewLine
 
     if ($NoNewLine) {
-        [Console]::Write("] " + $message)
+        Write-Host " $message" -NoNewLine
     } else {
-        [Console]::WriteLine("] " + $message)
+        Write-Host " $message"
     }
 }
 
 function Print-Warning {
     Param (
         [String]$message,
-        [Switch]$NoNewLine,
-        [Switch]$NoPrefix
+        [Switch]$NoNewLine
     )
     if ([String]::IsNullOrEmpty($message)) {
         return
     }
 
-    [Console]::ResetColor()
-    [Console]::Write("[")
-    [Console]::ForegroundColor = 'orange'
-    [Console]::Write("!")
-    [Console]::ResetColor()
+    Write-Host "[" -NoNewLine
+    Write-Host "!" -NoNewLine -ForegroundColor Magenta
+    Write-Host "]" -NoNewLine
 
     if ($NoNewLine) {
-        [Console]::Write("] " + $message)
+        Write-Host " $message" -NoNewLine
     } else {
-        [Console]::WriteLine("] " + $message)
+        Write-Host " $message"
     }
 }
 
 # Avoid stacktrace to be displayed along side the error message.
 # We want things simplistic.
 # src.: https://stackoverflow.com/q/38064704/3514658
+# We won't use [Console]::*Write* not $host.ui.Write* statements
+# as they are UI items
+# src.: https://docs.microsoft.com/en-us/powershell/developer/cmdlet/types-of-cmdlet-output#accessing-the-output-functionality-of-a-host-application
 function Print-Error {
     Param (
         [String]$message,
-        [Switch]$NoNewLine,
-        [Switch]$NoPrefix
+        [Switch]$NoNewLine
     )
     if ([String]::IsNullOrEmpty($message)) {
         return
     }
 
-    [Console]::ResetColor()
-    [Console]::Error.Write("[")
-    [Console]::ForegroundColor = 'red'
-    [Console]::Error.Write("-")
-    [Console]::ResetColor()
+    Write-Host "[" -NoNewLine
+    Write-Host "-" -NoNewLine -ForegroundColor Red
+    Write-Host "]" -NoNewLine
 
     if ($NoNewLine) {
-        [Console]::Write("] " + $message)
+        Write-Host " $message" -NoNewLine
     } else {
-        [Console]::WriteLine("] " + $message)
+        Write-Host " $message"
     }
 }
 
@@ -289,6 +283,22 @@ function Prepare-Path {
     $env:Path = "$(Get-SignToolDir)" + ";" + $env:Path
 }
 
+function Catch-Interruption {
+    [console]::TreatControlCAsInput = $true
+    while ($true) {
+        if ([console]::KeyAvailable) {
+            $key = Read-Host
+            #$key = [system.console]::readkey($true)
+            if (($key.modifiers -band [consolemodifiers]"control") -and
+                ($key.key -eq "C")) {
+                Print-Warning "Ctrl-C pressed. Cancelling the build process and restoring computer state..."
+                Restore-ComputerState
+                exit
+            }
+        }
+    }
+}
+
 function Backup-ComputerState {
     $env:COM_MATTERMOST_MAKEFILE_PATH_BACKUP = $env:Path
 
@@ -297,6 +307,9 @@ function Backup-ComputerState {
     # process current path location
     #src.: https://stackoverflow.com/a/4725090/3514658
     [Environment]::CurrentDirectory = $PWD
+
+    # Refresh path because it might have been made durty in the current shell
+    Refresh-Path
 }
 
 function Restore-ComputerState {
@@ -644,14 +657,14 @@ function Run-Test {
 ################################################################################
 #region
 function Main {
-    if ($makeRule -eq $null) {
-        Print-Info "No argument passed to the make file. Executing ""all"" rule."
-        $makeRule = "all"
-    }
-
-    Backup-ComputerState
-
     try {
+        if ($makeRule -eq $null) {
+            Print-Info "No argument passed to the make file. Executing ""all"" rule."
+            $makeRule = "all"
+        }
+
+        Backup-ComputerState
+
         switch ($makeRule.toLower()) {
             "all" {
                 Install-Deps
@@ -676,6 +689,9 @@ function Main {
                 Print-Error "Make file argument ""$_"" is invalid. Build process aborted."
             }
         }
+
+        $env:COM_MATTERMOST_MAKEFILE_EXECUTION_SUCCESS = $true
+
     } catch {
         switch ($_.Exception.Message) {
             "com.mattermost.makefile.deps.missing" {
@@ -688,9 +704,12 @@ function Main {
                 Print-Error "Another error occurred: $_"
             }
         }
+    } finally {
+        if (!($env:COM_MATTERMOST_MAKEFILE_EXECUTION_SUCCESS)) {
+            Print-Warning "Makefile interrupted by Ctrl + C or by another interruption handler."
+        }
+        Restore-ComputerState
     }
-
-    Restore-ComputerState
 }
 
 Main
