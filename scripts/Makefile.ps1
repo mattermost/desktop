@@ -64,9 +64,14 @@ function Print-Warning {
 # Avoid stacktrace to be displayed along side the error message.
 # We want things simplistic.
 # src.: https://stackoverflow.com/q/38064704/3514658
+# src.: https://stackoverflow.com/a/38064769
 # We won't use [Console]::*Write* not $host.ui.Write* statements
 # as they are UI items
-# src.: https://docs.microsoft.com/en-us/powershell/developer/cmdlet/types-of-cmdlet-output#accessing-the-output-functionality-of-a-host-application
+# src.: https://web.archive.org/web/20190720224207/https://docs.microsoft.com/en-us/powershell/developer/cmdlet/types-of-cmdlet-output
+# Rewriting the error printing function in C# and calling it from Posh is not
+# working either because the redirection to stderr doesn't work under Posh but
+# is working when the Posh script is run from cmd.exe. We are giving up here
+# and simply using Write-Host without stderr redirection.
 function Print-Error {
     Param (
         [String]$message,
@@ -619,7 +624,7 @@ function Run-BuildMsi {
 
     # Only sign the executable and .dll if this is a release and not a pull request
     # check.
-    if ($env:APPVEYOR_REPO_TAG) {
+    if ($env:APPVEYOR_REPO_TAG -eq $true) {
         Print-Info "Signing mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi (waiting for 15 seconds)..."
         Start-Sleep -s 15
         # Dual signing is not supported on msi files. Is it recommended to sign with 256 hash.
