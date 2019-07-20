@@ -44,6 +44,29 @@ function Print-Info {
     }
 }
 
+function Print-Warning {
+    Param (
+        [String]$message,
+        [Switch]$NoNewLine,
+        [Switch]$NoPrefix
+    )
+    if ([String]::IsNullOrEmpty($message)) {
+        return
+    }
+
+    [Console]::ResetColor()
+    [Console]::Write("[")
+    [Console]::ForegroundColor = 'orange'
+    [Console]::Write("!")
+    [Console]::ResetColor()
+
+    if ($NoNewLine) {
+        [Console]::Write("] " + $message)
+    } else {
+        [Console]::WriteLine("] " + $message)
+    }
+}
+
 # Avoid stacktrace to be displayed along side the error message.
 # We want things simplistic.
 # src.: https://stackoverflow.com/q/38064704/3514658
@@ -170,7 +193,9 @@ function Get-RootDir {
 function Check-Deps {
     Param (
         [Switch]
-        $verbose
+        $verbose,
+        [Switch]
+        $throwable
     )
 
     if ($PSVersionTable.PSVersion.Major -lt 5) {
@@ -179,16 +204,6 @@ function Check-Deps {
     }
 
     [array]$missing = @()
-
-    if ($verbose) { Print-Info "Checking if Windows Search is running..." }
-    if ((Get-Service -Name "Windows Search").Status -eq "Running") {
-        $missing += "search"
-    }
-
-    if ($verbose) { Print-Info "Checking if Windows Defender realtime protection is running..." }
-    if (!(Get-MpPreference).DisableRealtimeMonitoring) {
-        $missing += "defender"
-    }
 
     if ($verbose) { Print-Info "Checking choco dependency..." }
     if (!(Check-Command "choco")) {
@@ -232,7 +247,7 @@ function Check-Deps {
         $missing += "signtool"
     }
 
-    if ($verbose -and $missing.Count -gt 0) {
+    if ($throwable -and $missing.Count -gt 0) {
         throw "com.mattermost.makefile.deps.missing"
     }
 
@@ -276,6 +291,12 @@ function Prepare-Path {
 
 function Backup-ComputerState {
     $env:COM_MATTERMOST_MAKEFILE_PATH_BACKUP = $env:Path
+
+    Push-Location "$(Get-RootDir)"
+    # Needed because for native apps, PowerShell doesn't change the
+    # process current path location
+    #src.: https://stackoverflow.com/a/4725090/3514658
+    [Environment]::CurrentDirectory = $PWD
 }
 
 function Restore-ComputerState {
@@ -283,35 +304,24 @@ function Restore-ComputerState {
     Print-Info "Restoring PATH..."
     $env:Path = $env:COM_MATTERMOST_MAKEFILE_PATH_BACKUP
 
-    if ($env:COM_MATTERMOST_MAKEFILE_WINDOWS_SEARCH_DISABLED) {
-        if (!(Is-Admin)) {
-            Print-Error "WARNING: This makefile disabled Windows Search, to reenable it type in an administror Powershell: Start-Service ""Windows Search"""
-        } else {
-            Start-Service "Windows Search"
-        }
-    }
-    if ($env:COM_MATTERMOST_MAKEFILE_WINDOWS_DEFENDER_DISABLED) {
-        if (!(Is-Admin)) {
-            Print-Error "WARNING: This makefile disabled Windows Defender realtime protection, to reenable it type in an administror Powershell: Set-MpPreference -DisableRealtimeMonitoring `$false"
-        } else {
-            Set-MpPreference -DisableRealtimeMonitoring $false
-        }
-    }
+    Print-Info "Restoring current working directory..."
+    Pop-location
+    [Environment]::CurrentDirectory = $PWD
 
     # Remove all COM_MATTERMOST_MAKEFILE_ prefixed env variable
     foreach ($item in (Get-Item -Path Env:*)) {
         if ($item.Name -imatch 'COM_MATTERMOST_MAKEFILE_') {
-            Print-Info "Removing Mattermost env variable $($item.Name)"
+            Print-Info "Removing Mattermost env variable: $($item.Name)..."
             Remove-Item env:\$($item.Name)
         }
     }
 }
 
 function Install-Deps {
-    [array]$missing = Check-Deps
+    [array]$missing = Check-Deps -Verbose
 
     if ($missing -eq $null) {
-        Print-Info "All dependencies met."
+        Print-Info "All dependencies met; exiting dependencies installation..."
         return
     }
 
@@ -321,18 +331,6 @@ function Install-Deps {
 
     foreach ($missingItem in $missing) {
         switch ($missingItem) {
-            "search" {
-                Print-Info "Disabling Windows Search indexing tool..."
-                Stop-Service "Windows Search"
-                $env:COM_MATTERMOST_MAKEFILE_WINDOWS_SEARCH_DISABLED = $true
-                break;
-            }
-            "defender" {
-                Print-Info "Disabling Windows Defender realtime protection..."
-                Set-MpPreference -DisableRealtimeMonitoring $true
-                $env:COM_MATTERMOST_MAKEFILE_WINDOWS_DEFENDER_DISABLED = $true
-                break;
-            }
             "choco" {
                 Print-Info "Installing chocolatey..."
                 Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
@@ -362,6 +360,26 @@ function Install-Deps {
 
         Print-Info "Refreshing PATH..."
         Refresh-Path
+    }
+}
+
+function Optimize-Build {
+    Print-Info "Checking if Windows Search is running..."
+    if ((Get-Service -Name "Windows Search").Status -eq "Running") {
+        Print-Info "Windows Search is running. Disabling it..."
+        Stop-Service "Windows Search"
+        Print-Warning "WARNING: This makefile disabled Windows Search, to reenable it, type in an administror Powershell: Start-Service ""Windows Search"""
+    } else {
+        Print-Info "Windows Search has already been disabled."
+    }
+
+    Print-Info "Checking if Windows Defender realtime protection is active..."
+    if (!(Get-MpPreference).DisableRealtimeMonitoring) {
+        Print-Info "Windows Defender realtime protection is active. Disabling it..."
+        Set-MpPreference -DisableRealtimeMonitoring $true
+        Print-Warning "WARNING: This makefile disabled Windows Defender realtime protection, to reenable it, type in an administror Powershell: Set-MpPreference -DisableRealtimeMonitoring `$false"
+    } else {
+        Print-Info "Windows Defender realtime protection has already been disabled."
     }
 }
 
@@ -404,9 +422,9 @@ function Run-BuildId {
     
     Print-Info "Checking build id tag..."    
     if ($env:APPVEYOR_REPO_TAG) {
-        $version = "$env:APPVEYOR_REPO_TAG"
+        $version = "$env:APPVEYOR_REPO_TAG_NAME"
     } else {
-        $version = "$(git --git-dir=""$(Get-RootDir)/.git"" --work-tree=""$(Get-RootDir)"" describe --tags $(git --git-dir=""$(Get-RootDir)/.git"" --work-tree=""$(Get-RootDir)"" rev-list --tags --max-count=1))"
+        $version = "$(git describe --tags $(git rev-list --tags --max-count=1))"
     }
 
     Print-Info "Checking build id tag validity..."
@@ -430,19 +448,19 @@ function Run-BuildId {
     Print " [$env:COM_MATTERMOST_MAKEFILE_BUILD_ID_NODE]"
 
     Print-Info "Patching version from msi xml descriptor..."
-    $msiDescriptorFileName = "$(Get-RootDir)\scripts\msi_installer.wxs"
+    $msiDescriptorFileName = "scripts\msi_installer.wxs"
     $msiDescriptor = [xml](Get-Content $msiDescriptorFileName)
     $msiDescriptor.Wix.Product.Version = [string]$env:COM_MATTERMOST_MAKEFILE_BUILD_ID_MSI
     $msiDescriptor.Save($msiDescriptorFileName)
 
     Print-Info "Patching version from electron package.json..."
-    $packageFileName = "$(Get-RootDir)\package.json"
+    $packageFileName = "package.json"
     $package = Get-Content $packageFileName -Raw | ConvertFrom-Json
     $package.version = [string]$env:COM_MATTERMOST_MAKEFILE_BUILD_ID_NODE
     $package | ConvertTo-Json | Set-Content $packageFileName
 
     Print-Info "Patching version from electron src\package.json..."
-    $packageFileName = "$(Get-RootDir)\src\package.json"
+    $packageFileName = "src\package.json"
     $package = Get-Content $packageFileName -Raw | ConvertFrom-Json
     $package.version = [string]$env:COM_MATTERMOST_MAKEFILE_BUILD_ID_NODE
     $package | ConvertTo-Json | Set-Content $packageFileName
@@ -450,13 +468,13 @@ function Run-BuildId {
 
 function Run-BuildChangelog {
     Print-Info "Getting list of commits for changelog..."
-    $previousTag = $(Invoke-Expression "git --git-dir=""$(Get-RootDir)/.git"" --work-tree=""$(Get-RootDir)"" describe --abbrev=0 --tags $(git --git-dir=""$(Get-RootDir)/.git"" --work-tree=""$(Get-RootDir)"" describe --abbrev=0)^")
+    $previousTag = $(Invoke-Expression "git describe --abbrev=0 --tags $(git describe --abbrev=0)^")
     if ($env:APPVEYOR_REPO_TAG -eq $true) {
         $currentTag = [string]$(git describe --abbrev=0)
     } else {
         $currentTag = [string]"HEAD"
     }
-    $changelogRaw = "$(git --git-dir=""$(Get-RootDir)/.git"" --work-tree=""$(Get-RootDir)"" log --oneline --since=""$(git --git-dir=""$(Get-RootDir)/.git"" --work-tree=""$(Get-RootDir)"" log -1 ""$previousTag"" --pretty=%ad)"" --until=""$(git --git-dir=""$(Get-RootDir)/.git"" --work-tree=""$(Get-RootDir)"" log -1 "$currentTag" --pretty=%ad)"")"
+    $changelogRaw = "$(git log --oneline --since=""$(git log -1 ""$previousTag"" --pretty=%ad)"" --until=""$(git log -1 "$currentTag" --pretty=%ad)"")"
     $changelog = "";
     foreach ($i in $changelogRaw) {
         $changelog += "* $i`n"
@@ -476,8 +494,8 @@ function Run-BuildElectron {
     #npm run package:windows --prefix="$(Get-RootDir)" "$(Get-RootDir)"
 
     Print-Info "Cleaning build dir..."
-    Remove-Item "$(Get-RootDir)\release\win-ia32-unpacked\resources\app.asar.unpacked\" -Force -Recurse
-    Remove-Item "$(Get-RootDir)\release\win-unpacked\resources\app.asar.unpacked\" -Force -Recurse
+    Remove-Item "release\win-ia32-unpacked\resources\app.asar.unpacked\" -Force -Recurse
+    Remove-Item "release\win-unpacked\resources\app.asar.unpacked\" -Force -Recurse
 }
 
 function Run-BuildForceSignature {
@@ -494,9 +512,9 @@ function Run-BuildForceSignature {
         # Secure variables are never decoded during Pull Request
         # except if the repo is private and a secure org has been created
         # src.: https://www.appveyor.com/docs/build-configuration/#secure-variables
-        & "$(Get-RootDir)\appveyor-tools\secure-file" -decrypt "resources\windows\certificate\mattermost-desktop-windows.pfx.enc" -secret "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_DECRYPTION_KEY_ENCRYPTED"
+        & "appveyor-tools\secure-file" -decrypt "resources\windows\certificate\mattermost-desktop-windows.pfx.enc" -secret "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_DECRYPTION_KEY_ENCRYPTED"
 
-        foreach ($archPath in "$(Get-RootDir)\release\win-unpacked", "$(Get-RootDir)\release\win-ia32-unpacked") {
+        foreach ($archPath in "release\win-unpacked", "release\win-ia32-unpacked") {
 
             # Note: The C++ redistribuable files will be resigned again even if they have a
             # correct signature from Microsoft. Windows doesn't seem to complain, but we
@@ -509,16 +527,16 @@ function Run-BuildForceSignature {
                 # "SignTool Error: The specified timestamp server either could not be reached or returned an invalid response.
                 # src.: https://web.archive.org/web/20190306223053/https://github.com/electron-userland/electron-builder/issues/2795#issuecomment-466831315
                 Start-Sleep -s 15
-                signtool.exe sign /f "$(Get-RootDir)\resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha1 /td sha1 "$($_.FullName)"
+                signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha1 /td sha1 "$($_.FullName)"
                 Start-Sleep -s 15
-                signtool.exe sign /f "$(Get-RootDir)\resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /as "$($_.FullName)"
+                signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /as "$($_.FullName)"
             }
 
             Print-Info "Signing Mattermost.exe (waiting for 2 * 15 seconds)..."
             Start-Sleep -s 15
-            signtool.exe sign /f "$(Get-RootDir)\resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha1 /td sha1 "$archPath\Mattermost.exe"
+            signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha1 /td sha1 "$archPath\Mattermost.exe"
             Start-Sleep -s 15
-            signtool.exe sign /f "$(Get-RootDir)\resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /as "$archPath\Mattermost.exe"
+            signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /as "$archPath\Mattermost.exe"
         }
     }
 }
@@ -526,8 +544,8 @@ function Run-BuildForceSignature {
 function Run-BuildLicense {
 
     # Convert license to RTF
-    $licenseTxtFile = "$(Get-RootDir)\LICENSE.txt";
-    $licenseRtfFile = "$(Get-RootDir)\resources/windows/license.rtf";
+    $licenseTxtFile = "LICENSE.txt";
+    $licenseRtfFile = "resources/windows/license.rtf";
     $licenseNewParagraph = "\par" + [Environment]::NewLine;
     $sw = [System.IO.File]::CreateText($licenseRtfFile);
     $sw.WriteLine("{\rtf1\ansi\deff0\nouicompat{\fonttbl{\f0\fnil\fcharset0 Courier New;}}\pard\qj\f0\fs18");
@@ -577,14 +595,14 @@ function Run-BuildLicense {
 
 function Run-BuildMsi {
     Print-Info "Building 32 bits msi installer..."
-    heat.exe dir "$(Get-RootDir)\release\win-ia32-unpacked\" -o "$(Get-RootDir)\scripts\msi_installer_files.wxs" -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t "$(Get-RootDir)\scripts\msi_installer_files_replace_id.xslt" -dr INSTALLDIR
-    candle.exe -dPlatform=x86 "$(Get-RootDir)\scripts\msi_installer.wxs" "$(Get-RootDir)\scripts\msi_installer_files.wxs" -o "$(Get-RootDir)\scripts\"
-    light.exe "$(Get-RootDir)\scripts\msi_installer.wixobj" "$(Get-RootDir)\scripts\msi_installer_files.wixobj" -loc "$(Get-RootDir)\resources\windows\msi_i18n\en_US.wxl" -o "$(Get-RootDir)\release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi" -b "$(Get-RootDir)\release\win-ia32-unpacked\"
+    heat.exe dir "release\win-ia32-unpacked\" -o "scripts\msi_installer_files.wxs" -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t "scripts\msi_installer_files_replace_id.xslt" -dr INSTALLDIR
+    candle.exe -dPlatform=x86 "scripts\msi_installer.wxs" "scripts\msi_installer_files.wxs" -o "scripts\"
+    light.exe "scripts\msi_installer.wixobj" "scripts\msi_installer_files.wixobj" -loc "resources\windows\msi_i18n\en_US.wxl" -o "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi" -b "release\win-ia32-unpacked\"
 
     Print-Info "Building 64 bits msi installer..."
-    heat.exe dir "$(Get-RootDir)\release\win-unpacked\" -o "$(Get-RootDir)\scripts\msi_installer_files.wxs" -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t "$(Get-RootDir)\scripts\msi_installer_files_replace_id.xslt" -t "$(Get-RootDir)\scripts\msi_installer_files_set_win64.xslt" -dr INSTALLDIR
-    candle.exe -dPlatform=x64 "$(Get-RootDir)\scripts\msi_installer.wxs" "$(Get-RootDir)\scripts\msi_installer_files.wxs" -o "$(Get-RootDir)\scripts\"
-    light.exe "$(Get-RootDir)\scripts\msi_installer.wixobj" "$(Get-RootDir)\scripts\msi_installer_files.wixobj" -loc "$(Get-RootDir)\resources\windows\msi_i18n\en_US.wxl" -o "$(Get-RootDir)\release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi" -b "$(Get-RootDir)\release\win-unpacked\"
+    heat.exe dir "release\win-unpacked\" -o "scripts\msi_installer_files.wxs" -scom -frag -srd -sreg -gg -cg MattermostDesktopFiles -t "scripts\msi_installer_files_replace_id.xslt" -t "scripts\msi_installer_files_set_win64.xslt" -dr INSTALLDIR
+    candle.exe -dPlatform=x64 "scripts\msi_installer.wxs" "scripts\msi_installer_files.wxs" -o "scripts\"
+    light.exe "scripts\msi_installer.wixobj" "scripts\msi_installer_files.wixobj" -loc "resources\windows\msi_i18n\en_US.wxl" -o "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi" -b "release\win-unpacked\"
 
     # Only sign the executable and .dll if this is a release and not a pull request
     # check.
@@ -594,16 +612,16 @@ function Run-BuildMsi {
         # Dual signing is not supported on msi files. Is it recommended to sign with 256 hash.
         # src.: https://security.stackexchange.com/a/124685/84134
         # src.: https://social.msdn.microsoft.com/Forums/windowsdesktop/en-us/d4b70ecd-a883-4289-8047-cc9cde28b492#0b3e3b80-6b3b-463f-ac1e-1bf0dc831952
-        signtool.exe sign /f "$(Get-RootDir)\resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 "$(Get-RootDir)\release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi"
+        signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi"
 
         Print-Info "Signing mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi (waiting for 15 seconds)..."
         Start-Sleep -s 15
-        signtool.exe sign /f "$(Get-RootDir)\resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 "$(Get-RootDir)\release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi"
+        signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi"
     }
 }
 
 function Run-Build {
-    Check-Deps -Verbose
+    Check-Deps -Verbose -Throwable
     Prepare-Path
     Run-BuildId
     Run-BuildChangelog
@@ -615,7 +633,7 @@ function Run-Build {
 }
 
 function Run-Test {
-    Check-Deps -Verbose
+    Check-Deps -Verbose -Throwable
     Prepare-Path
     npm test
 }
@@ -647,6 +665,9 @@ function Main {
             }
             "install-deps" {
                 Install-Deps
+            }
+            "optimize" {
+                Optimize-Build
             }
             "debug" {
                 Enable-AppVeyorRDP
