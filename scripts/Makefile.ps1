@@ -434,7 +434,7 @@ function Run-BuildId {
     # Add the revision only if we are not building a tag
     
     Print-Info "Checking build id tag..."    
-    if ($env:APPVEYOR_REPO_TAG) {
+    if ($env:APPVEYOR_REPO_TAG -eq $true) {
         $version = "$env:APPVEYOR_REPO_TAG_NAME"
     } else {
         $version = "$(git describe --tags $(git rev-list --tags --max-count=1))"
