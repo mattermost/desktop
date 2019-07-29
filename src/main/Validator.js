@@ -12,10 +12,6 @@ const minWindowWidth = 400;
 const minWindowHeight = 240;
 
 const argsSchema = Joi.object({
-  // 'squirrel-uninstall': Joi.boolean(),
-  // 'squirrel-install': Joi.boolean(),
-  // 'squirrel-updated': Joi.boolean(),
-  // 'squirrel-obsolete': Joi.boolean(),
   hidden: Joi.boolean(),
   'disable-dev-mode': Joi.boolean(),
   disableDevMode: Joi.boolean(),

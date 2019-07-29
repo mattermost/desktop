@@ -6,10 +6,6 @@ import yargs from 'yargs';
 import * as Validator from './Validator';
 
 const supportedArgKeys = [
-  // 'squirrel-uninstall',
-  // 'squirrel-install',
-  // 'squirrel-updated',
-  // 'squirrel-obsolete',
   'hidden',
   'disable-dev-mode',
   'disableDevMode',
@@ -25,10 +21,6 @@ export default function parse(args) {
 
 function getParsedArgs(args) {
   return yargs.
-    // boolean('squirrel-uninstall').
-    // boolean('squirrel-install').
-    // boolean('squirrel-updated').
-    // boolean('squirrel-obsolete').
     boolean('hidden').describe('hidden', 'Launch the app in hidden mode.').
     alias('disable-dev-mode', 'disableDevMode').boolean('disable-dev-mode').describe('disable-dev-mode', 'Disable dev mode.').
     alias('data-dir', 'dataDir').string('data-dir').describe('data-dir', 'Set the path to where user data is stored.').

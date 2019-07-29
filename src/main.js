@@ -393,7 +393,7 @@ function handleAppWebContentsCreated(dc, contents) {
 }
 
 function initializeAfterAppReady() {
-  app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
+  app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
 
   const appStateJson = path.join(app.getPath('userData'), 'app-state.json');
   appState = new AppStateManager(appStateJson);
@@ -414,14 +414,8 @@ function initializeAfterAppReady() {
 
   // Protocol handler for win32
   if (process.platform === 'win32') {
-    // Keep only command line / deep linked argument. Make sure it's not squirrel command
     const args = process.argv.slice(1);
-
-    // TODO: Determine if checking for squirrel is still needed
-    if (
-      Array.isArray(args) && args.length > 0 &&
-      args[0].match(/^--squirrel-/) === null
-    ) {
+    if (Array.isArray(args) && args.length > 0) {
       deeplinkingUrl = getDeeplinkingURL(args);
     }
   }
