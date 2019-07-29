@@ -8,13 +8,16 @@ import fs from 'fs';
 
 import {app, dialog, ipcMain, shell} from 'electron';
 
+import * as Validator from './Validator';
+
 const allowedProtocolFile = path.resolve(app.getPath('userData'), 'allowedProtocols.json');
 let allowedProtocols = [];
 
 function init(mainWindow) {
   fs.readFile(allowedProtocolFile, 'utf-8', (err, data) => {
     if (!err) {
-      allowedProtocols = JSON.parse(data);
+      const validatedData = Validator.validateAllowedProtocols(data) || [];
+      allowedProtocols = JSON.parse(validatedData);
     }
     initDialogEvent(mainWindow);
   });

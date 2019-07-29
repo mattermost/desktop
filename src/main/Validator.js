@@ -19,8 +19,8 @@ const argsSchema = Joi.object({
   hidden: Joi.boolean(),
   'disable-dev-mode': Joi.boolean(),
   disableDevMode: Joi.boolean(),
-  'data-dir': Joi.boolean(),
-  dataDir: Joi.boolean(),
+  'data-dir': Joi.string(),
+  dataDir: Joi.string(),
   version: Joi.boolean(),
 });
 

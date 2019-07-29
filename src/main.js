@@ -10,7 +10,6 @@ import {URL} from 'url';
 import electron from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
-import {parse as parseArgv} from 'yargs';
 
 import {protocols} from '../electron-builder.json';
 
@@ -34,6 +33,7 @@ import {shouldBeHiddenOnStartup} from './main/utils';
 import SpellChecker from './main/SpellChecker';
 import UserActivityMonitor from './main/UserActivityMonitor';
 import Utils from './utils/util';
+import parseArgs from './main/ParseArgs';
 
 // pull out required electron components like this
 // as not all components can be referenced before the app is ready
@@ -49,15 +49,14 @@ const {
 } = electron;
 const criticalErrorHandler = new CriticalErrorHandler();
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
-const argv = parseArgv(process.argv.slice(1));
-const hideOnStartup = shouldBeHiddenOnStartup(argv);
 const loginCallbackMap = new Map();
-const certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
 const userActivityMonitor = new UserActivityMonitor();
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow = null;
+let hideOnStartup = null;
+let certificateStore = null;
 let spellChecker = null;
 let deeplinkingUrl = null;
 let scheme = null;
@@ -75,15 +74,9 @@ async function initialize() {
   process.on('uncaughtException', criticalErrorHandler.processUncaughtExceptionHandler.bind(criticalErrorHandler));
 
   global.willAppQuit = false;
-  global.isDev = isDev && !argv.disableDevMode;
-
-  app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
-
-  if (argv['data-dir']) {
-    app.setPath('userData', path.resolve(argv['data-dir']));
-  }
 
   // initialization that can run before the app is ready
+  initializeArgs();
   initializeConfig();
   initializeAppEventListeners();
   initializeBeforeAppReady();
@@ -116,6 +109,24 @@ try {
 // initialization sub functions
 //
 
+function initializeArgs() {
+  global.args = parseArgs(process.argv.slice(1));
+
+  // output the application version via cli when requested (-v or --version)
+  if (global.args.version) {
+    process.stdout.write(`v.${app.getVersion()}\n`);
+    process.exit(0); // eslint-disable-line no-process-exit
+  }
+
+  hideOnStartup = shouldBeHiddenOnStartup(global.args);
+
+  global.isDev = isDev && !global.args.disableDevMode; // this doesn't seem to be right and isn't used as the single source of truth
+
+  if (global.args.dataDir) {
+    app.setPath('userData', path.resolve(global.args.dataDir));
+  }
+}
+
 function initializeConfig() {
   registryConfig = new RegistryConfig();
   config = new Config(app.getPath('userData') + '/config.json');
@@ -137,6 +148,8 @@ function initializeAppEventListeners() {
 }
 
 function initializeBeforeAppReady() {
+  certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
+
   // can only call this before the app is ready
   if (config.enableHardwareAcceleration === false) {
     app.disableHardwareAcceleration();
@@ -234,16 +247,13 @@ function handleReloadConfig() {
 //
 
 // activate first app instance, subsequent instances will quit themselves
-function handleAppSecondInstance(event, secondArgv) {
+function handleAppSecondInstance(event, argv) {
   // Protocol handler for win32
   // argv: An array of the second instance’s (command line / deep linked) arguments
   if (process.platform === 'win32') {
-    // Keep only command line / deep linked arguments
-    if (Array.isArray(secondArgv.slice(1)) && secondArgv.slice(1).length > 0) {
-      deeplinkingUrl = getDeeplinkingUrl(secondArgv.slice(1)[0]);
-      if (deeplinkingUrl) {
-        mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
-      }
+    deeplinkingUrl = getDeeplinkingURL(argv);
+    if (deeplinkingUrl) {
+      mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
     }
   }
 
@@ -340,7 +350,7 @@ function handleAppWillFinishLaunching() {
   // Protocol handler for osx
   app.on('open-url', (event, url) => {
     event.preventDefault();
-    deeplinkingUrl = getDeeplinkingUrl(url);
+    deeplinkingUrl = getDeeplinkingURL([url]);
     if (app.isReady()) {
       function openDeepLink() {
         try {
@@ -383,6 +393,8 @@ function handleAppWebContentsCreated(dc, contents) {
 }
 
 function initializeAfterAppReady() {
+  app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
+
   const appStateJson = path.join(app.getPath('userData'), 'app-state.json');
   appState = new AppStateManager(appStateJson);
   if (wasUpdated(appState.lastAppVersion)) {
@@ -403,12 +415,14 @@ function initializeAfterAppReady() {
   // Protocol handler for win32
   if (process.platform === 'win32') {
     // Keep only command line / deep linked argument. Make sure it's not squirrel command
-    const tmpArgs = process.argv.slice(1);
+    const args = process.argv.slice(1);
+
+    // TODO: Determine if checking for squirrel is still needed
     if (
-      Array.isArray(tmpArgs) && tmpArgs.length > 0 &&
-      tmpArgs[0].match(/^--squirrel-/) === null
+      Array.isArray(args) && args.length > 0 &&
+      args[0].match(/^--squirrel-/) === null
     ) {
-      deeplinkingUrl = getDeeplinkingUrl(tmpArgs[0]);
+      deeplinkingUrl = getDeeplinkingURL(args);
     }
   }
 
@@ -761,9 +775,14 @@ function switchMenuIconImages(icons, isDarkMode) {
   }
 }
 
-function getDeeplinkingUrl(url) {
-  if (scheme && Utils.isValidURL(url)) {
-    return url.replace(new RegExp('^' + scheme), 'https');
+function getDeeplinkingURL(args) {
+  if (Array.isArray(args) && args.length) {
+    // deeplink urls should always be the last argument, but may not be the first (i.e. Windows with the app already running)
+    const url = args[args.length - 1];
+    if (url && scheme && url.startsWith(scheme) && Utils.isValidURL(url)) {
+      return url;
+      // return url.replace(new RegExp(`^${scheme}://`), '');
+    }
   }
   return null;
 }
