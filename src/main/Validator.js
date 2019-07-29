@@ -11,6 +11,19 @@ const defaultWindowHeight = 700;
 const minWindowWidth = 400;
 const minWindowHeight = 240;
 
+const argsSchema = Joi.object({
+  // 'squirrel-uninstall': Joi.boolean(),
+  // 'squirrel-install': Joi.boolean(),
+  // 'squirrel-updated': Joi.boolean(),
+  // 'squirrel-obsolete': Joi.boolean(),
+  hidden: Joi.boolean(),
+  'disable-dev-mode': Joi.boolean(),
+  disableDevMode: Joi.boolean(),
+  'data-dir': Joi.boolean(),
+  dataDir: Joi.boolean(),
+  version: Joi.boolean(),
+});
+
 const boundsInfoSchema = Joi.object({
   x: Joi.number().integer().min(0),
   y: Joi.number().integer().min(0),
@@ -71,6 +84,13 @@ const certificateStoreSchema = Joi.object().pattern(
   })
 );
 
+const allowedProtocolsSchema = Joi.array().items(Joi.string().regex(/^[a-z-]+:$/i));
+
+// validate bounds_info.json
+export function validateArgs(data) {
+  return validateAgainstSchema(data, argsSchema);
+}
+
 // validate bounds_info.json
 export function validateBoundsInfo(data) {
   return validateAgainstSchema(data, boundsInfoSchema);
@@ -94,6 +114,11 @@ export function validatePermissionsList(data) {
 // validate certificate.json
 export function validateCertificateStore(data) {
   return validateAgainstSchema(data, certificateStoreSchema);
+}
+
+// validate allowedProtocols.json
+export function validateAllowedProtocols(data) {
+  return validateAgainstSchema(data, allowedProtocolsSchema);
 }
 
 function validateAgainstSchema(data, schema) {
