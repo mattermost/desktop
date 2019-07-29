@@ -193,7 +193,7 @@ function initializeInterCommunicationEventListeners() {
   if (shouldShowTrayIcon()) {
     ipcMain.on('update-unread', handleUpdateUnreadEvent);
   }
-  if (config.enableAutoUpdater) {
+  if (!isDev && config.enableAutoUpdater) {
     ipcMain.on('check-for-updates', autoUpdater.checkForUpdates);
   }
 }
@@ -203,7 +203,7 @@ function initializeMainWindowListeners() {
   mainWindow.on('unresponsive', criticalErrorHandler.windowUnresponsiveHandler.bind(criticalErrorHandler));
   mainWindow.webContents.on('crashed', handleMainWindowWebContentsCrashed);
   mainWindow.on('ready-to-show', handleMainWindowReadyToShow);
-  if (config.enableAutoUpdater) {
+  if (!isDev && config.enableAutoUpdater) {
     mainWindow.once('show', handleMainWindowShow);
   }
 }
@@ -520,7 +520,7 @@ function initializeAfterAppReady() {
   permissionManager = new PermissionManager(permissionFile, trustedURLs);
   session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionManager));
 
-  if (config.enableAutoUpdater) {
+  if (!isDev && config.enableAutoUpdater) {
     const updaterConfig = autoUpdater.loadConfig();
     autoUpdater.initialize(appState, mainWindow, updaterConfig.isNotifyOnly());
     ipcMain.on('check-for-updates', autoUpdater.checkForUpdates);
@@ -698,16 +698,20 @@ function handleMainWindowWebContentsCrashed() {
 }
 
 function handleMainWindowReadyToShow() {
-  autoUpdater.checkForUpdates();
+  if (!isDev) {
+    autoUpdater.checkForUpdates();
+  }
 }
 
 function handleMainWindowShow() {
-  if (autoUpdater.shouldCheckForUpdatesOnStart(appState.updateCheckedDate)) {
-    ipcMain.emit('check-for-updates');
-  } else {
-    setTimeout(() => {
+  if (!isDev) {
+    if (autoUpdater.shouldCheckForUpdatesOnStart(appState.updateCheckedDate)) {
       ipcMain.emit('check-for-updates');
-    }, autoUpdater.UPDATER_INTERVAL_IN_MS);
+    } else {
+      setTimeout(() => {
+        ipcMain.emit('check-for-updates');
+      }, autoUpdater.UPDATER_INTERVAL_IN_MS);
+    }
   }
 }
 
