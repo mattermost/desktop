@@ -29,11 +29,9 @@ export default class MainPage extends React.Component {
 
     let key = this.props.initialIndex;
     if (this.props.deeplinkingUrl !== null) {
-      for (let i = 0; i < this.props.teams.length; i++) {
-        if (this.props.deeplinkingUrl.includes(this.props.teams[i].url)) {
-          key = i;
-          break;
-        }
+      const parsedDeeplink = this.parseDeeplinkURL(this.props.deeplinkingUrl);
+      if (parsedDeeplink) {
+        key = parsedDeeplink.teamIndex;
       }
     }
 
@@ -59,6 +57,27 @@ export default class MainPage extends React.Component {
     this.handleTargetURLChange = this.handleTargetURLChange.bind(this);
     this.inputBlur = this.inputBlur.bind(this);
     this.markReadAtActive = this.markReadAtActive.bind(this);
+  }
+
+  parseDeeplinkURL(deeplink, teams = this.props.teams) {
+    if (deeplink && Array.isArray(teams) && teams.length) {
+      const deeplinkURL = url.parse(deeplink);
+      let parsedDeeplink = null;
+      teams.forEach((team, index) => {
+        const teamURL = url.parse(team.url);
+        if (deeplinkURL.host === teamURL.host) {
+          parsedDeeplink = {
+            teamURL,
+            teamIndex: index,
+            originalURL: deeplinkURL,
+            url: `${teamURL.protocol}//${teamURL.host}${deeplinkURL.pathname}`,
+            path: deeplinkURL.pathname,
+          };
+        }
+      });
+      return parsedDeeplink;
+    }
+    return null;
   }
 
   componentDidMount() {
@@ -136,15 +155,12 @@ export default class MainPage extends React.Component {
     });
 
     ipcRenderer.on('protocol-deeplink', (event, deepLinkUrl) => {
-      const lastUrlDomain = Utils.getDomain(deepLinkUrl);
-      for (let i = 0; i < this.props.teams.length; i++) {
-        if (lastUrlDomain === Utils.getDomain(self.refs[`mattermostView${i}`].getSrc())) {
-          if (this.state.key !== i) {
-            this.handleSelect(i);
-          }
-          self.refs[`mattermostView${i}`].handleDeepLink(deepLinkUrl.replace(lastUrlDomain, ''));
-          break;
+      const parsedDeeplink = this.parseDeeplinkURL(deepLinkUrl);
+      if (parsedDeeplink) {
+        if (this.state.key !== parsedDeeplink.teamIndex) {
+          this.handleSelect(parsedDeeplink.teamIndex);
         }
+        self.refs[`mattermostView${parsedDeeplink.teamIndex}`].handleDeepLink(parsedDeeplink.path);
       }
     });
 
@@ -332,9 +348,12 @@ export default class MainPage extends React.Component {
       const isActive = self.state.key === index;
 
       let teamUrl = team.url;
-      const deeplinkingUrl = this.props.deeplinkingUrl;
-      if (deeplinkingUrl !== null && deeplinkingUrl.includes(teamUrl)) {
-        teamUrl = deeplinkingUrl;
+
+      if (this.props.deeplinkingUrl) {
+        const parsedDeeplink = this.parseDeeplinkURL(this.props.deeplinkingUrl, [team]);
+        if (parsedDeeplink) {
+          teamUrl = parsedDeeplink.url;
+        }
       }
 
       return (

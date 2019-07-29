@@ -19,7 +19,6 @@ const {
 } = electron;
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
-import {parse as parseArgv} from 'yargs';
 
 import {protocols} from '../electron-builder.json';
 
@@ -39,9 +38,9 @@ if (squirrelStartup(() => {
 })) {
   global.willAppQuit = true;
 }
+import * as Validator from './main/Validator';
 import settings from './common/settings';
 import CertificateStore from './main/certificateStore';
-const certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
 import createMainWindow from './main/mainWindow';
 import appMenu from './main/menus/app';
 import trayMenu from './main/menus/tray';
@@ -55,6 +54,7 @@ import {shouldBeHiddenOnStartup} from './main/utils';
 
 import SpellChecker from './main/SpellChecker';
 import Utils from './utils/util';
+import parseArgs from './main/ParseArgs';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
@@ -67,19 +67,30 @@ let scheme = null;
 let appState = null;
 let permissionManager = null;
 
-const argv = parseArgv(process.argv.slice(1));
-const hideOnStartup = shouldBeHiddenOnStartup(argv);
+global.args = parseArgs(process.argv.slice(1));
 
-if (argv['data-dir']) {
-  app.setPath('userData', path.resolve(argv['data-dir']));
+// output the application version via cli when requested (-v or --version)
+if (global.args.version) {
+  process.stdout.write(`v.${app.getVersion()}\n`);
+  process.exit(0); // eslint-disable-line no-process-exit
 }
 
-global.isDev = isDev && !argv.disableDevMode;
+const hideOnStartup = shouldBeHiddenOnStartup(global.args);
+
+if (global.args.dataDir) {
+  app.setPath('userData', path.resolve(global.args.dataDir));
+}
+
+global.isDev = isDev && !global.args.disableDevMode;
 
 let config = {};
 try {
   const configFile = app.getPath('userData') + '/config.json';
   config = settings.readFileSync(configFile);
+  config = Validator.validateConfigData(config);
+  if (!config) {
+    throw new Error('Provided configuration file does not validate, using defaults instead.');
+  }
   if (config.version !== settings.version) {
     config = settings.upgrade(config);
     settings.writeFileSync(configFile, config);
@@ -94,13 +105,25 @@ try {
     settings.writeFileSync(configFile, config);
   }
 }
+
+const certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
+
 if (config.enableHardwareAcceleration === false) {
   app.disableHardwareAcceleration();
 }
 
 ipcMain.on('update-config', () => {
-  const configFile = app.getPath('userData') + '/config.json';
-  config = settings.readFileSync(configFile);
+  try {
+    const configFile = app.getPath('userData') + '/config.json';
+    config = settings.readFileSync(configFile);
+    config = Validator.validateConfigData(config);
+    if (!config) {
+      throw new Error('Provided configuration file does not validate, using defaults instead.');
+    }
+  } catch (e) {
+    config = settings.loadDefault();
+    console.log('Failed to read config.json', e);
+  }
   if (process.platform === 'win32' || process.platform === 'linux') {
     const appLauncher = new AutoLauncher();
     const autoStartTask = config.autostart ? appLauncher.enable() : appLauncher.disable();
@@ -178,16 +201,13 @@ const trayImages = (() => {
 })();
 
 // If there is already an instance, activate the window in the existing instace and quit this one
-if (app.makeSingleInstance((commandLine/*, workingDirectory*/) => {
+if (app.makeSingleInstance((argv/*, workingDirectory*/) => {
   // Protocol handler for win32
   // argv: An array of the second instance’s (command line / deep linked) arguments
   if (process.platform === 'win32') {
-    // Keep only command line / deep linked arguments
-    if (Array.isArray(commandLine.slice(1)) && commandLine.slice(1).length > 0) {
-      deeplinkingUrl = getDeeplinkingUrl(commandLine.slice(1)[0]);
-      if (deeplinkingUrl) {
-        mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
-      }
+    deeplinkingUrl = getDeeplinkingURL(argv);
+    if (deeplinkingUrl) {
+      mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
     }
   }
 
@@ -374,9 +394,13 @@ if (isDev) {
   app.setAsDefaultProtocolClient(scheme);
 }
 
-function getDeeplinkingUrl(url) {
-  if (scheme && Utils.isValidURL(url)) {
-    return url.replace(new RegExp('^' + scheme), 'https');
+function getDeeplinkingURL(args) {
+  if (Array.isArray(args) && args.length) {
+    // deeplink urls should always be the last argument, but may not be the first (i.e. Windows with the app already running)
+    const url = args[args.length - 1];
+    if (url && scheme && url.startsWith(scheme) && Utils.isValidURL(url)) {
+      return url;
+    }
   }
   return null;
 }
@@ -385,7 +409,7 @@ app.on('will-finish-launching', () => {
   // Protocol handler for osx
   app.on('open-url', (event, url) => {
     event.preventDefault();
-    deeplinkingUrl = getDeeplinkingUrl(url);
+    deeplinkingUrl = getDeeplinkingURL([url]);
     if (app.isReady()) {
       function openDeepLink() {
         try {
@@ -404,6 +428,7 @@ app.on('will-finish-launching', () => {
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
+/* eslint-disable complexity */
 app.on('ready', () => {
   if (global.willAppQuit) {
     return;
@@ -431,12 +456,12 @@ app.on('ready', () => {
   // Protocol handler for win32
   if (process.platform === 'win32') {
     // Keep only command line / deep linked argument. Make sure it's not squirrel command
-    const tmpArgs = process.argv.slice(1);
+    const args = process.argv.slice(1);
     if (
-      Array.isArray(tmpArgs) && tmpArgs.length > 0 &&
-      tmpArgs[0].match(/^--squirrel-/) === null
+      Array.isArray(args) && args.length > 0 &&
+      args[0].match(/^--squirrel-/) === null
     ) {
-      deeplinkingUrl = getDeeplinkingUrl(tmpArgs[0]);
+      deeplinkingUrl = getDeeplinkingURL(args);
     }
   }
 
@@ -656,3 +681,4 @@ app.on('ready', () => {
   // Open the DevTools.
   // mainWindow.openDevTools();
 });
+/* eslint-enable complexity */

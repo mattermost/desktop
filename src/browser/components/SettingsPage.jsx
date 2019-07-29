@@ -11,6 +11,7 @@ import {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} f
 import {ipcRenderer, remote} from 'electron';
 import {debounce} from 'underscore';
 
+import * as Validator from '../../main/Validator';
 import buildConfig from '../../common/config/buildConfig';
 import settings from '../../common/settings';
 
@@ -33,6 +34,10 @@ export default class SettingsPage extends React.Component {
     let initialState;
     try {
       initialState = settings.readFileSync(this.props.configFile);
+      initialState = Validator.validateConfigData(initialState);
+      if (!initialState) {
+        throw new Error('Provided configuration file does not validate, using defaults instead.');
+      }
     } catch (e) {
       initialState = settings.loadDefault();
     }
