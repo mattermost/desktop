@@ -779,7 +779,6 @@ function getDeeplinkingURL(args) {
     const url = args[args.length - 1];
     if (url && scheme && url.startsWith(scheme) && Utils.isValidURL(url)) {
       return url;
-      // return url.replace(new RegExp(`^${scheme}://`), '');
     }
   }
   return null;

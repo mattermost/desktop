@@ -16,8 +16,8 @@ let allowedProtocols = [];
 function init(mainWindow) {
   fs.readFile(allowedProtocolFile, 'utf-8', (err, data) => {
     if (!err) {
-      const validatedData = Validator.validateAllowedProtocols(data) || [];
-      allowedProtocols = JSON.parse(validatedData);
+      allowedProtocols = JSON.parse(data);
+      allowedProtocols = Validator.validateAllowedProtocols(allowedProtocols) || [];
     }
     initDialogEvent(mainWindow);
   });
