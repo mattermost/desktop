@@ -13,8 +13,6 @@ import {Grid, Row} from 'react-bootstrap';
 
 import {ipcRenderer, remote} from 'electron';
 
-import Utils from '../../utils/util.js';
-
 import LoginModal from './LoginModal.jsx';
 import MattermostView from './MattermostView.jsx';
 import TabBar from './TabBar.jsx';
