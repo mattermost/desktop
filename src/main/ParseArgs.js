@@ -3,9 +3,9 @@
 
 import yargs from 'yargs';
 
-import * as Validator from './Validator';
-
 import {protocols} from '../../electron-builder.json';
+
+import * as Validator from './Validator';
 
 export default function parse(args) {
   return validateArgs(parseArgs(triageArgs(args)));
@@ -15,11 +15,15 @@ function triageArgs(args) {
   // ensure any args following a possible deeplink are discarded
   if (protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0]) {
     const scheme = protocols[0].schemes[0];
+    let truncatedArgs;
     args.forEach((arg, index) => {
       if (arg.includes(`${scheme}://`)) {
-        return args.slice(0, index + 1);
+        truncatedArgs = args.slice(0, index + 1);
       }
     });
+    if (truncatedArgs) {
+      return truncatedArgs;
+    }
   }
   return args;
 }
