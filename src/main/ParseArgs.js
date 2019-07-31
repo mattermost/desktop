@@ -5,21 +5,26 @@ import yargs from 'yargs';
 
 import * as Validator from './Validator';
 
-const supportedArgKeys = [
-  'hidden',
-  'disable-dev-mode',
-  'disableDevMode',
-  'data-dir',
-  'dataDir',
-  'version',
-];
+import {protocols} from '../../electron-builder.json';
 
 export default function parse(args) {
-  const validatedArgs = validateSupportedArgs(getSupportedArgs(getParsedArgs(args)));
-  return validatedArgs;
+  return validateArgs(parseArgs(triageArgs(args)));
 }
 
-function getParsedArgs(args) {
+function triageArgs(args) {
+  // ensure any args following a possible deeplink are discarded
+  if (protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0]) {
+    const scheme = protocols[0].schemes[0];
+    args.forEach((arg, index) => {
+      if (arg.includes(`${scheme}://`)) {
+        return args.slice(0, index + 1);
+      }
+    });
+  }
+  return args;
+}
+
+function parseArgs(args) {
   return yargs.
     boolean('hidden').describe('hidden', 'Launch the app in hidden mode.').
     alias('disable-dev-mode', 'disableDevMode').boolean('disable-dev-mode').describe('disable-dev-mode', 'Disable dev mode.').
@@ -28,15 +33,6 @@ function getParsedArgs(args) {
     parse(args);
 }
 
-function getSupportedArgs(args) {
-  return Object.keys(args).
-    filter((key) => supportedArgKeys.includes(key)).
-    reduce((obj, key) => {
-      obj[key] = args[key];
-      return obj;
-    }, {});
-}
-
-function validateSupportedArgs(args) {
+function validateArgs(args) {
   return Validator.validateArgs(args) || {};
 }
