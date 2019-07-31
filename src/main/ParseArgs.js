@@ -17,7 +17,7 @@ function triageArgs(args) {
     const scheme = protocols[0].schemes[0];
     let truncatedArgs;
     args.forEach((arg, index) => {
-      if (arg.includes(`${scheme}://`)) {
+      if (arg.includes(`${scheme}:`)) {
         truncatedArgs = args.slice(0, index + 1);
       }
     });
