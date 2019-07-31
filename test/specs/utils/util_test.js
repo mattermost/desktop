@@ -26,7 +26,7 @@ describe('Utils', () => {
       assert.equal(Utils.isValidURL(testURL), true);
     });
     it('should be false for a malicious url', () => {
-      const testURL = 'mattermost:///" --data-dir "\\deans-mbp\mattermost'; // eslint-disable-line no-useless-escape
+      const testURL = String.raw`mattermost:///" --data-dir "\\deans-mbp\mattermost`;
       assert.equal(Utils.isValidURL(testURL), false);
     });
   });
