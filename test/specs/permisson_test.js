@@ -68,16 +68,16 @@ describe('PermissionManager', function() {
 
   it('should restore permissions from the file', function() {
     fs.writeFileSync(permissionFile, JSON.stringify({
-      origin: {
-        permission: 'denied',
+      'https://example.com': {
+        notifications: 'denied',
       },
-      origin_another: {
-        permission_another: 'granted',
+      'https://example2.com/2': {
+        test: 'granted',
       },
     }));
     const manager = new PermissionManager(permissionFile);
-    manager.isDenied('origin', 'permission').should.be.true;
-    manager.isGranted('origin_another', 'permission_another').should.be.true;
+    manager.isDenied('https://example.com', 'notifications').should.be.true;
+    manager.isGranted('https://example2.com/2', 'test').should.be.true;
   });
 
   it('should allow permissions for trusted URLs', function() {
