@@ -122,8 +122,8 @@ function initializeArgs() {
 
   global.isDev = isDev && !global.args.disableDevMode; // this doesn't seem to be right and isn't used as the single source of truth
 
-  if (global.args.dataDir) {
-    app.setPath('userData', path.resolve(global.args.dataDir));
+  if (global.args['data-dir']) {
+    app.setPath('userData', path.resolve(global.args['data-dir']));
   }
 }
 

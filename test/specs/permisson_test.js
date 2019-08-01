@@ -9,6 +9,15 @@ import PermissionManager from '../../src/main/PermissionManager';
 
 const permissionFile = path.join(env.userDataDir, 'permission.json');
 
+const ORIGIN1 = 'https://example.com';
+const PERMISSION1 = 'notifications';
+
+const ORIGIN2 = 'https://example2.com';
+const PERMISSION2 = 'test';
+
+const DENIED = 'denied';
+const GRANTED = 'granted';
+
 describe('PermissionManager', function() {
   beforeEach(function(done) {
     fs.unlink(permissionFile, () => {
@@ -17,73 +26,67 @@ describe('PermissionManager', function() {
   });
 
   it('should grant a permission for an origin', function() {
-    const ORIGIN = 'origin';
-    const PERMISSION = 'permission';
     const manager = new PermissionManager(permissionFile);
 
-    manager.isGranted(ORIGIN, PERMISSION).should.be.false;
-    manager.isDenied(ORIGIN, PERMISSION).should.be.false;
+    manager.isGranted(ORIGIN1, PERMISSION1).should.be.false;
+    manager.isDenied(ORIGIN1, PERMISSION1).should.be.false;
 
-    manager.grant(ORIGIN, PERMISSION);
+    manager.grant(ORIGIN1, PERMISSION1);
 
-    manager.isGranted(ORIGIN, PERMISSION).should.be.true;
-    manager.isDenied(ORIGIN, PERMISSION).should.be.false;
+    manager.isGranted(ORIGIN1, PERMISSION1).should.be.true;
+    manager.isDenied(ORIGIN1, PERMISSION1).should.be.false;
 
-    manager.isGranted(ORIGIN + '_another', PERMISSION).should.be.false;
-    manager.isGranted(ORIGIN, PERMISSION + '_another').should.be.false;
+    manager.isGranted(ORIGIN2, PERMISSION1).should.be.false;
+    manager.isGranted(ORIGIN1, PERMISSION2).should.be.false;
   });
 
   it('should deny a permission for an origin', function() {
-    const ORIGIN = 'origin';
-    const PERMISSION = 'permission';
     const manager = new PermissionManager(permissionFile);
 
-    manager.isGranted(ORIGIN, PERMISSION).should.be.false;
-    manager.isDenied(ORIGIN, PERMISSION).should.be.false;
+    manager.isGranted(ORIGIN1, PERMISSION1).should.be.false;
+    manager.isDenied(ORIGIN1, PERMISSION1).should.be.false;
 
-    manager.deny(ORIGIN, PERMISSION);
+    manager.deny(ORIGIN1, PERMISSION1);
 
-    manager.isGranted(ORIGIN, PERMISSION).should.be.false;
-    manager.isDenied(ORIGIN, PERMISSION).should.be.true;
+    manager.isGranted(ORIGIN1, PERMISSION1).should.be.false;
+    manager.isDenied(ORIGIN1, PERMISSION1).should.be.true;
 
-    manager.isDenied(ORIGIN + '_another', PERMISSION).should.be.false;
-    manager.isDenied(ORIGIN, PERMISSION + '_another').should.be.false;
+    manager.isDenied(ORIGIN2, PERMISSION1).should.be.false;
+    manager.isDenied(ORIGIN1, PERMISSION2).should.be.false;
   });
 
   it('should save permissions to the file', function() {
-    const ORIGIN = 'origin';
-    const PERMISSION = 'permission';
     const manager = new PermissionManager(permissionFile);
-    manager.deny(ORIGIN, PERMISSION);
-    manager.grant(ORIGIN + '_another', PERMISSION + '_another');
+    manager.deny(ORIGIN1, PERMISSION1);
+    manager.grant(ORIGIN2, PERMISSION2);
     JSON.parse(fs.readFileSync(permissionFile)).should.deep.equal({
-      origin: {
-        permission: 'denied',
+      [ORIGIN1]: {
+        [PERMISSION1]: DENIED,
       },
-      origin_another: {
-        permission_another: 'granted',
+      [ORIGIN2]: {
+        [PERMISSION2]: GRANTED,
       },
     });
   });
 
   it('should restore permissions from the file', function() {
     fs.writeFileSync(permissionFile, JSON.stringify({
-      'https://example.com': {
-        notifications: 'denied',
+      [ORIGIN1]: {
+        [PERMISSION1]: DENIED,
       },
-      'https://example2.com/2': {
-        test: 'granted',
+      [ORIGIN2]: {
+        [PERMISSION2]: GRANTED,
       },
     }));
     const manager = new PermissionManager(permissionFile);
-    manager.isDenied('https://example.com', 'notifications').should.be.true;
-    manager.isGranted('https://example2.com/2', 'test').should.be.true;
+    manager.isDenied(ORIGIN1, PERMISSION1).should.be.true;
+    manager.isGranted(ORIGIN2, PERMISSION2).should.be.true;
   });
 
   it('should allow permissions for trusted URLs', function() {
     fs.writeFileSync(permissionFile, JSON.stringify({}));
-    const manager = new PermissionManager(permissionFile, ['https://example.com', 'https://example2.com/2']);
-    manager.isGranted('https://example.com', 'notifications').should.be.true;
-    manager.isGranted('https://example2.com', 'test').should.be.true;
+    const manager = new PermissionManager(permissionFile, [ORIGIN1, ORIGIN2]);
+    manager.isGranted(ORIGIN1, PERMISSION1).should.be.true;
+    manager.isGranted(ORIGIN2, PERMISSION2).should.be.true;
   });
 });

@@ -22,6 +22,18 @@ describe('browser/index.html', function desc() {
       name: 'github',
       url: 'https://github.com/',
     }],
+    showTrayIcon: false,
+    trayIconTheme: 'light',
+    minimizeToTray: false,
+    notifications: {
+      flashWindow: 0,
+      bounceIcon: false,
+      bounceIconType: 'informational',
+    },
+    showUnreadBadge: true,
+    useSpellChecker: true,
+    enableHardwareAcceleration: true,
+    autostart: true,
   };
 
   const serverPort = 8181;

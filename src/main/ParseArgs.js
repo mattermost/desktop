@@ -14,8 +14,8 @@ export default function parse(args) {
 function triageArgs(args) {
   // ensure any args following a possible deeplink are discarded
   if (protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0]) {
-    const scheme = protocols[0].schemes[0];
-    const deeplinkIndex = args.findIndex((arg) => arg.includes(`${scheme}:`));
+    const scheme = protocols[0].schemes[0].toLowerCase();
+    const deeplinkIndex = args.findIndex((arg) => arg.toLowerCase().includes(`${scheme}:`));
     if (deeplinkIndex !== -1) {
       return args.slice(0, deeplinkIndex + 1);
     }
