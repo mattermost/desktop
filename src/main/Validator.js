@@ -20,7 +20,7 @@ const argsSchema = Joi.object({
   'disable-dev-mode': Joi.boolean(),
   disableDevMode: Joi.boolean(),
   'data-dir': Joi.string(),
-  dataDir: Joi.string(),
+  dataDir: Joi.array().items(Joi.string()),
   version: Joi.boolean(),
 });
 
@@ -39,7 +39,16 @@ const appStateSchema = Joi.object({
   updateCheckedDate: Joi.string(),
 });
 
-const configDataSchema = Joi.object({
+const configDataSchemaV0 = Joi.object({
+  url: Joi.string().uri({
+    scheme: [
+      'http',
+      'https',
+    ],
+  }).required(),
+});
+
+const configDataSchemaV1 = Joi.object({
   version: Joi.number().min(1).default(1),
   teams: Joi.array().items(Joi.object({
     name: Joi.string().required(),
@@ -101,9 +110,14 @@ export function validateAppState(data) {
   return validateAgainstSchema(data, appStateSchema);
 }
 
-// validate config.json
-export function validateConfigData(data) {
-  return validateAgainstSchema(data, configDataSchema);
+// validate v.0 config.json
+export function validateV0ConfigData(data) {
+  return validateAgainstSchema(data, configDataSchemaV0);
+}
+
+// validate v.1 config.json
+export function validateV1ConfigData(data) {
+  return validateAgainstSchema(data, configDataSchemaV1);
 }
 
 // validate permission.json

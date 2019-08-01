@@ -34,7 +34,7 @@ export default class SettingsPage extends React.Component {
     let initialState;
     try {
       initialState = settings.readFileSync(this.props.configFile);
-      initialState = Validator.validateConfigData(initialState);
+      initialState = Validator.validateV1ConfigData(initialState);
       if (!initialState) {
         throw new Error('Provided configuration file does not validate, using defaults instead.');
       }

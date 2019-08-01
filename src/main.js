@@ -77,8 +77,8 @@ if (global.args.version) {
 
 const hideOnStartup = shouldBeHiddenOnStartup(global.args);
 
-if (global.args.dataDir) {
-  app.setPath('userData', path.resolve(global.args.dataDir));
+if (global.args['data-dir']) {
+  app.setPath('userData', path.resolve(global.args['data-dir']));
 }
 
 global.isDev = isDev && !global.args.disableDevMode;
@@ -87,7 +87,15 @@ let config = {};
 try {
   const configFile = app.getPath('userData') + '/config.json';
   config = settings.readFileSync(configFile);
-  config = Validator.validateConfigData(config);
+
+  // validate based on config file version
+  switch (config.version) {
+  case 1:
+    config = Validator.validateV1ConfigData(config);
+    break;
+  default:
+    config = Validator.validateV0ConfigData(config);
+  }
   if (!config) {
     throw new Error('Provided configuration file does not validate, using defaults instead.');
   }
@@ -116,7 +124,7 @@ ipcMain.on('update-config', () => {
   try {
     const configFile = app.getPath('userData') + '/config.json';
     config = settings.readFileSync(configFile);
-    config = Validator.validateConfigData(config);
+    config = Validator.validateV1ConfigData(config);
     if (!config) {
       throw new Error('Provided configuration file does not validate, using defaults instead.');
     }

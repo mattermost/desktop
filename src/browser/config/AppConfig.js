@@ -11,7 +11,7 @@ class AppConfig {
     this.fileName = file;
     try {
       this.data = settings.readFileSync(file);
-      this.data = Validator.validateConfigData(this.data);
+      this.data = Validator.validateV1ConfigData(this.data);
       if (!this.data) {
         throw new Error('Provided configuration file does not validate, using defaults instead.');
       }
