@@ -89,6 +89,9 @@ export default class MattermostView extends React.Component {
 
     // Open link in browserWindow. for exmaple, attached files.
     webview.addEventListener('new-window', (e) => {
+      if (!Utils.isValidURL(e.url)) {
+        return;
+      }
       const currentURL = url.parse(webview.getURL());
       const destURL = url.parse(e.url);
       if (destURL.protocol !== 'http:' && destURL.protocol !== 'https:' && destURL.protocol !== `${scheme}:`) {
@@ -306,3 +309,5 @@ MattermostView.propTypes = {
   useSpellChecker: PropTypes.bool,
   onSelectSpellCheckerLocale: PropTypes.func,
 };
+
+/* eslint-enable react/no-set-state */

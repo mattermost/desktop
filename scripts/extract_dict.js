@@ -19,3 +19,5 @@ spawn(path7za, ['e', '-y', '*.zip'], {
 }).on('close', (code) => {
   process.exit(code);
 });
+
+/* eslint-enable no-process-exit */

@@ -15,6 +15,7 @@
     "electron-devtools-installer": "^2.2.4",
     "electron-is-dev": "^0.3.0",
     "electron-squirrel-startup": "^1.0.0",
+    "joi": "^14.3.1",
     "prop-types": "^15.6.1",
     "react": "^16.4.0",
     "react-bootstrap": "~0.32.1",
@@ -22,6 +23,7 @@
     "react-transition-group": "^2.3.1",
     "simple-spellchecker": "^0.9.6",
     "underscore": "^1.9.1",
+    "url-regex": "github:deanwhillier/url-regex#a04d206a11f513075f14861f9d124b82829b435a",
     "yargs": "^3.32.0"
   }
 }

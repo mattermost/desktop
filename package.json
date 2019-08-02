@@ -54,6 +54,7 @@
     "electron-builder-squirrel-windows": "~20.14.0",
     "electron-connect": "^0.6.3",
     "eslint": "^4.19.1",
+    "eslint-plugin-eslint-comments": "^3.1.2",
     "eslint-plugin-header": "^1.2.0",
     "eslint-plugin-import": "^2.12.0",
     "eslint-plugin-react": "^7.8.2",

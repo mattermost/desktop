@@ -9,7 +9,7 @@ const http = require('http');
 
 const env = require('../modules/environment');
 
-describe.skip('application', function desc() {
+describe.skip('security', function desc() {
   this.timeout(30000);
 
   const serverPort = 8181;
