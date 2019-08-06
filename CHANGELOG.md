@@ -1,5 +1,11 @@
 # Mattermost Desktop Application Changelog
 
+## Release v4.2.2
+
+Release date: August <TBD>, 2019
+
+This release contains multiple security updates for Windows, Mac and Linux, and it is highly recommended that users upgrade to this version.
+
 ## Release v4.2.1
 
 Release date: March 15, 2019
