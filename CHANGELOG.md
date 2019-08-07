@@ -38,6 +38,25 @@ Release date: TBD
 
 ----
 
+## Release v4.2.2
+
+Release date:
+
+- Mattermost v4.2.2 contains a bug fix for all platforms.
+
+### Bug Fixes
+
+#### All Platforms
+- Mattermost v4.2.2 contains high level security fixes. [Upgrading](https://mattermost.com/download/#mattermostApps) is recommended. Details will be posted on our [security updates page](https://about.mattermost.com/security-updates/) 30 days after release as per the [Mattermost Responsible Disclosure Policy](https://www.mattermost.org/responsible-disclosure-policy/).
+
+### Contributors
+
+Many thanks to all our contributors. In alphabetical order:
+
+[deanwhillier](https://github.com/deanwhillier), [DSchalla](https://github.com/DSchalla)
+
+----
+
 ## Release v4.2.1
 
 Release date: March 20, 2019
