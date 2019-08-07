@@ -40,7 +40,7 @@ Release date: TBD
 
 ## Release v4.2.2
 
-Release date:
+Release date: August 7, 2019
 
 - Mattermost v4.2.2 contains a bug fix for all platforms.
 
