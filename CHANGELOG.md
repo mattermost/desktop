@@ -38,6 +38,44 @@ Release date: TBD
 
 ----
 
+## Release v4.2.3
+
+Release date: August 9, 2019
+
+- Mattermost v4.2.3 contains a bug fix for all platforms.
+
+### Bug Fixes
+
+#### All Platforms
+- Fixed an issue where the server URL entry prior to v4.2.2 could include malformed URLs that failed in v4.2.2 and later due to stricter validation. [#1015](https://github.com/mattermost/desktop/pull/1015)
+
+### Contributors
+
+Many thanks to all our contributors. In alphabetical order:
+
+[deanwhillier](https://github.com/deanwhillier)
+
+----
+
+## Release v4.2.2
+
+Release date: August 7, 2019
+
+- Mattermost v4.2.2 contains a bug fix for all platforms.
+
+### Bug Fixes
+
+#### All Platforms
+- Mattermost v4.2.2 contains high level security fixes. [Upgrading](https://mattermost.com/download/#mattermostApps) is recommended. Details will be posted on our [security updates page](https://about.mattermost.com/security-updates/) 30 days after release as per the [Mattermost Responsible Disclosure Policy](https://www.mattermost.org/responsible-disclosure-policy/).
+
+### Contributors
+
+Many thanks to all our contributors. In alphabetical order:
+
+[deanwhillier](https://github.com/deanwhillier), [DSchalla](https://github.com/DSchalla)
+
+----
+
 ## Release v4.2.1
 
 Release date: March 20, 2019
