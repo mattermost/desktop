@@ -103,7 +103,8 @@ describe('browser/index.html', function desc() {
       waitForVisible('#mattermostView0', 2000, true);
   });
 
-  it('should show error when using incorrect URL', async () => {
+  // validation now prevents incorrect url's from being used
+  it.skip('should show error when using incorrect URL', async () => {
     this.timeout(30000);
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       version: 1,

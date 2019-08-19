@@ -17,8 +17,6 @@ export default class PermissionManager {
     if (fs.existsSync(file)) {
       try {
         this.permissions = JSON.parse(fs.readFileSync(this.file, 'utf-8'));
-
-        // ensure data loaded from file is valid
         this.permissions = Validator.validatePermissionsList(this.permissions);
         if (!this.permissions) {
           throw new Error('Provided permissions file does not validate, using defaults instead.');

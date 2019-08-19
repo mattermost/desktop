@@ -2,6 +2,8 @@
 // See LICENSE.txt for license information.
 import Joi from '@hapi/joi';
 
+import Utils from '../utils/util';
+
 const defaultOptions = {
   stripUnknown: true,
 };
@@ -56,12 +58,12 @@ const configDataSchemaV1 = Joi.object({
     }).required(),
   })).default([]),
   showTrayIcon: Joi.boolean().default(false),
-  trayIconTheme: Joi.any().valid('light', 'dark').default('light'),
+  trayIconTheme: Joi.any().allow('').valid('light', 'dark').default('light'),
   minimizeToTray: Joi.boolean().default(false),
   notifications: Joi.object({
     flashWindow: Joi.any().valid(0, 2).default(0),
     bounceIcon: Joi.boolean().default(false),
-    bounceIconType: Joi.any().valid('informational', 'critical').default('informational'),
+    bounceIconType: Joi.any().allow('').valid('informational', 'critical').default('informational'),
   }),
   showUnreadBadge: Joi.boolean().default(true),
   useSpellChecker: Joi.boolean().default(true),
@@ -113,6 +115,22 @@ export function validateV0ConfigData(data) {
 
 // validate v.1 config.json
 export function validateV1ConfigData(data) {
+  if (Array.isArray(data.teams) && data.teams.length) {
+    // first replace possible backslashes with forward slashes
+    let teams = data.teams.map(({name, url}) => {
+      let updatedURL = url;
+      if (updatedURL.includes('\\')) {
+        updatedURL = updatedURL.toLowerCase().replace(/\\/gi, '/');
+      }
+      return {name, url: updatedURL};
+    });
+
+    // next filter out urls that are still invalid so all is not lost
+    teams = teams.filter(({url}) => Utils.isValidURL(url));
+
+    // replace original teams
+    data.teams = teams;
+  }
   return validateAgainstSchema(data, configDataSchemaV1);
 }
 

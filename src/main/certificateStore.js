@@ -34,8 +34,6 @@ function CertificateStore(storeFile) {
   let storeStr;
   try {
     storeStr = fs.readFileSync(storeFile, 'utf-8');
-
-    // ensure data loaded from file is valid
     storeStr = Validator.validateCertificateStore(storeStr);
     if (!storeStr) {
       throw new Error('Provided certificate store file does not validate, using defaults instead.');
