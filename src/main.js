@@ -67,6 +67,22 @@ let config = null;
 let trayIcon = null;
 let trayImages = null;
 
+// monitoring for supported custom login activity (oath, saml)
+const customLoginRegexPaths = [
+  /^\/oauth\/authorize$/i,
+  /^\/oauth\/deauthorize$/i,
+  /^\/oauth\/access_token$/i,
+  /^\/oauth\/[A-Za-z0-9]+\/complete$/i,
+  /^\/oauth\/[A-Za-z0-9]+\/login$/i,
+  /^\/oauth\/[A-Za-z0-9]+\/signup$/i,
+  /^\/api\/v3\/oauth\/[A-Za-z0-9]+\/complete$/i,
+  /^\/signup\/[A-Za-z0-9]+\/complete$/i,
+  /^\/login\/[A-Za-z0-9]+\/complete$/i,
+  /^\/login\/sso\/saml$/i,
+];
+let customLoginInProgress = false;
+let customLoginHostname = null;
+
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
  */
@@ -356,20 +372,42 @@ function handleAppWebContentsCreated(dc, contents) {
   contents.on('will-attach-webview', (event, webPreferences) => {
     webPreferences.nodeIntegration = false;
   });
-  contents.on('will-navigate', (event, navigationUrl) => {
-    const parsedUrl = new URL(navigationUrl);
-    const trustedURLs = config.teams.map((team) => new URL(team.url)); //eslint-disable-line max-nested-callbacks
+  contents.on('will-navigate', (event, url) => {
+    const parsedUrl = new URL(url);
+    const urlIsTrusted = isTrustedURL(parsedUrl);
+    const urlIsCustomLoginPath = parsedUrl.hostname === customLoginHostname;
 
-    let trusted = false;
-    for (const url of trustedURLs) {
-      if (parsedUrl.origin === url.origin) {
-        trusted = true;
-        break;
-      }
-    }
-
-    if (!trusted) {
+    // don't prevent custom login attempts (oath, saml)
+    if (!urlIsTrusted && !urlIsCustomLoginPath) {
       event.preventDefault();
+    }
+  });
+
+  // handle custom login requests (oath, saml):
+  // 1. are we navigating to a supported local custom login path from the `/login` page? (did-start-navigation listener)
+  //    - indicate custom login is in progress
+  // 2. is a custom login in progress but we don't have the 3rd party hostname yet? (will-redirect listener)
+  //    - store 3rd party hostname to trust subsequent navigation changes within that hostname
+  // 3. are we finished with the custom login process? (did-start-navigation listener)
+  //    - indicate custom login is NOT in progress and clear any stored 3rd party hostname's
+  contents.on('did-start-navigation', (event, url) => {
+    const parsedUrl = new URL(url);
+    const urlIsTrusted = isTrustedURL(parsedUrl);
+    const urlIsCustomLoginPath = isCustomLoginURL(parsedUrl);
+    const triggerPage = event.sender.history[event.sender.history.length - 1];
+
+    if (urlIsTrusted && urlIsCustomLoginPath && !customLoginInProgress && triggerPage.includes('/login')) {
+      customLoginInProgress = true;
+    } else if (urlIsTrusted && customLoginInProgress && customLoginHostname) {
+      customLoginInProgress = false;
+      customLoginHostname = null;
+    }
+  });
+  contents.on('will-redirect', (event, url) => {
+    const parsedUrl = new URL(url);
+    const urlIsTrusted = isTrustedURL(parsedUrl);
+    if (!urlIsTrusted && customLoginInProgress && !customLoginHostname) {
+      customLoginHostname = parsedUrl.hostname;
     }
   });
   contents.on('new-window', (event) => {
@@ -695,6 +733,36 @@ function handleMainWindowShow() {
 //
 // helper functions
 //
+
+function isTrustedURL(url) {
+  let parsedUrl = url;
+  if (typeof url === 'string') {
+    parsedUrl = new URL(url);
+  }
+  const trustedURLs = config.teams.map((team) => new URL(team.url));
+
+  for (const trustedURL of trustedURLs) {
+    if (parsedUrl.origin === trustedURL.origin) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isCustomLoginURL(url) {
+  let parsedUrl = url;
+  if (typeof url === 'string') {
+    parsedUrl = new URL(url);
+  }
+  const urlPath = parsedUrl.pathname;
+  for (const regexPath of customLoginRegexPaths) {
+    if (urlPath.match(regexPath)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 function getTrayImages() {
   switch (process.platform) {
