@@ -3,7 +3,7 @@
 // See LICENSE.txt for license information.
 import url from 'url';
 
-import urlRegex from 'url-regex';
+import {isUri, isHttpUri, isHttpsUri} from 'valid-url';
 
 function getDomain(inputURL) {
   const parsedURL = url.parse(inputURL);
@@ -11,7 +11,11 @@ function getDomain(inputURL) {
 }
 
 function isValidURL(testURL) {
-  return urlRegex({exact: true}).test(testURL);
+  return Boolean(isHttpUri(testURL) || isHttpsUri(testURL));
+}
+
+function isValidURI(testURL) {
+  return Boolean(isUri(testURL));
 }
 
 // isInternalURL determines if the target url is internal to the application.
@@ -32,5 +36,6 @@ function isInternalURL(targetURL, currentURL, basename = '/') {
 export default {
   getDomain,
   isValidURL,
+  isValidURI,
   isInternalURL,
 };

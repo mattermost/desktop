@@ -777,7 +777,7 @@ function getDeeplinkingURL(args) {
   if (Array.isArray(args) && args.length) {
     // deeplink urls should always be the last argument, but may not be the first (i.e. Windows with the app already running)
     const url = args[args.length - 1];
-    if (url && scheme && url.startsWith(scheme) && Utils.isValidURL(url)) {
+    if (url && scheme && url.startsWith(scheme) && Utils.isValidURI(url)) {
       return url;
     }
   }

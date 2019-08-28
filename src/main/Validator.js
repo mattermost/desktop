@@ -38,24 +38,14 @@ const appStateSchema = Joi.object({
 });
 
 const configDataSchemaV0 = Joi.object({
-  url: Joi.string().uri({
-    scheme: [
-      'http',
-      'https',
-    ],
-  }).required(),
+  url: Joi.string().required(),
 });
 
 const configDataSchemaV1 = Joi.object({
   version: Joi.number().min(1).default(1),
   teams: Joi.array().items(Joi.object({
     name: Joi.string().required(),
-    url: Joi.string().uri({
-      scheme: [
-        'http',
-        'https',
-      ],
-    }).required(),
+    url: Joi.string().required(),
   })).default([]),
   showTrayIcon: Joi.boolean().default(false),
   trayIconTheme: Joi.any().allow('').valid('light', 'dark').default('light'),
