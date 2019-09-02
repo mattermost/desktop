@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+    win: circleci/windows@1.0.0
 executors:
   wine-chrome:
     working_directory: ~/mattermost-desktop
@@ -18,6 +20,18 @@ commands:
     steps:
       - run: apt-get update && apt-get -y install << parameters.apt_opts >>
       - run: npm install
+
+  win_make:
+    description: "Run mattermost's makefile.ps1 on ./scripts/"
+    parameters:
+      operation:
+        type: string
+        default: ""
+    steps:
+      - run:
+          command: ./scripts/Makefile.ps1 << parameters.operation >>
+          name: << parameters.operation >>
+          shell: powershell
 
 jobs:
   check:
@@ -75,6 +89,21 @@ jobs:
           path: storybook/
           destination: storybook
 
+  msi_installer:
+    executor: win/vs2019
+
+    steps:
+      - checkout
+      - win_make: 
+          operation: optimize
+      - win_make:
+          operation: "install-deps"
+      - win_make: 
+          operation: "build"
+      - store_artifacts:
+          path: ./release/
+          destination: msi
+
 workflows:
   version: 2
   build_and_test:
@@ -83,3 +112,8 @@ workflows:
       - build:
           requires:
             - check
+      # this should be conditional in the future
+      # conditions might be either github-tag or branch name
+      - msi_installer:
+          requires:
+            - build

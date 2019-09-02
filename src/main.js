@@ -376,8 +376,7 @@ function handleAppWebContentsCreated(dc, contents) {
 }
 
 function initializeAfterAppReady() {
-
-  if (process.platform === 'win32') {      
+  if (process.platform === 'win32') {
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
   }
 

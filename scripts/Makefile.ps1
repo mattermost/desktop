@@ -361,7 +361,7 @@ function Install-Deps {
             }
             "wix" {
                 Print-Info "Installing wixtoolset..."
-                choco install wixtoolset --yes
+                choco install wixtoolset --yes --version 3.10.3.300702
                 break;
             }
             "signtool" {
