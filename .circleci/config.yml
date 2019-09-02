@@ -98,12 +98,15 @@ jobs:
       # TODO: restore cache? what can be cached?
       - win-make: 
           operation: "optimize"
+
       - win-make:
           operation: "install-deps"
+
       # test are not needed, already tested on test job
       # maybe we can re-use the artifact from the build so we only need to do the build of the installer?
       - win-make: 
           operation: "build"
+          
       # TODO: store artifacts
 
 workflows:
@@ -116,6 +119,6 @@ workflows:
             - check
       # this should be conditional in the future
       # conditions might be either github-tag or branch name
-      - msi:
+      - msi_installer:
           requires:
             - build
