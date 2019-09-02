@@ -361,6 +361,8 @@ function Install-Deps {
             }
             "wix" {
                 Print-Info "Installing wixtoolset..."
+                choco install dotnet3.5 --yes # this will fail, but lets make that explicit to see if wix goes forward
+                Print-Info "Installing wixtoolset..."
                 choco install wixtoolset --yes
                 break;
             }
