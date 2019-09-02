@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+    win: circleci/windows@1.0.0
 executors:
   wine-chrome:
     working_directory: ~/mattermost-desktop
@@ -18,6 +20,18 @@ commands:
     steps:
       - run: apt-get update && apt-get -y install << parameters.apt_opts >>
       - run: npm install
+
+  win-make:
+    description: "Run mattermost's makefile.ps1 on ./scripts/"
+    parameters:
+      operation:
+        type: string
+        default: ""
+    steps:
+      - run:
+          command: ./scripts/Makefile.ps1 << parameters.operation >>
+          name: << paramters.operation >>
+          shell: powershell
 
 jobs:
   check:
@@ -75,6 +89,23 @@ jobs:
           path: storybook/
           destination: storybook
 
+  msi:
+    executor: win/vs2019
+    shell: powershell.exe
+
+    steps:
+      - checkout
+      # TODO: restore cache? what can be cached?
+      - win-make: 
+          operation: optimize
+      - win-make:
+          operation: install-deps
+      # test are not needed, already tested on test job
+      # maybe we can re-use the artifact from the build so we only need to do the build of the installer?
+      - win-make: 
+          operation: build
+      # TODO: store artifacts
+
 workflows:
   version: 2
   build_and_test:
@@ -83,3 +114,8 @@ workflows:
       - build:
           requires:
             - check
+      # this should be conditional in the future
+      # conditions might be either github-tag or branch name
+      - msi:
+          requires:
+            - build
