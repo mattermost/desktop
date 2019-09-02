@@ -21,7 +21,7 @@ commands:
       - run: apt-get update && apt-get -y install << parameters.apt_opts >>
       - run: npm install
 
-  win-make:
+  win_make:
     description: "Run mattermost's makefile.ps1 on ./scripts/"
     parameters:
       operation:
@@ -30,7 +30,7 @@ commands:
     steps:
       - run:
           command: ./scripts/Makefile.ps1 << parameters.operation >>
-          name: << paramters.operation >>
+          name: << parameters.operation >>
           shell: powershell
 
 jobs:
@@ -89,25 +89,17 @@ jobs:
           path: storybook/
           destination: storybook
 
-  msi:
+  msi_installer:
     executor: win/vs2019
-    shell: powershell.exe
 
     steps:
       - checkout
-      # TODO: restore cache? what can be cached?
-      - win-make: 
-          operation: "optimize"
-
-      - win-make:
+      - win_make: 
+          operation: optimize
+      - win_make:
           operation: "install-deps"
-
-      # test are not needed, already tested on test job
-      # maybe we can re-use the artifact from the build so we only need to do the build of the installer?
-      - win-make: 
+      - win_make: 
           operation: "build"
-          
-      # TODO: store artifacts
 
 workflows:
   version: 2
