@@ -20,7 +20,7 @@ commands:
       - run: npm install
 
 jobs:
-  lint:
+  check:
     executor: wine-chrome    
     steps:
       - checkout
@@ -28,7 +28,12 @@ jobs:
           apt_opts: "--no-install-recommends"
       - restore_cache:
           key: lint-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
-      - run: npm run lint:js
+      - run: npm run lint:js-quiet
+      - run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run npm run test:app
+      - run: mkdir -p /tmp/test-results
+      - run: cp test-results.xml /tmp/test-results/
+      - store_test_results:
+          path: /tmp/test-results
       - save_cache:
           key: lint-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -70,25 +75,11 @@ jobs:
           path: storybook/
           destination: storybook
 
-  test:
-    executor: wine-chrome
-    steps:
-      - checkout
-      - update_image:
-          apt_opts: "--no-install-recommends libgconf-2-4"
-      - run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run npm run test:app
-      - run: mkdir -p /tmp/test-results
-      - run: cp test-results.xml /tmp/test-results/
-      - store_test_results:
-          path: /tmp/test-results
-
 workflows:
   version: 2
   build_and_test:
     jobs:
-      - lint
-      - test
+      - check
       - build:
           requires:
-            - lint
-            - test
+            - check

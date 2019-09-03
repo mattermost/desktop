@@ -57,6 +57,8 @@ module.exports = {
       // chromeDriverLogPath: '../chromedriverlog.txt',
     };
     if (process.platform === 'darwin') {
+      // on a mac, debbuging port might conflict with other apps
+      // this changes the default debugging port so chromedriver can run without issues.
       options.chromeDriverArgs.push('remote-debugging-port=9222');
     }
     return new Application(options);
