@@ -10,6 +10,12 @@ from the final changelog of the release.
 
 Release date: TBD
 
+## Release v4.3.0
+
+Release date: TBD
+
+- Security
+
 ### Improvements
 
 #### All Platforms
