@@ -33,8 +33,7 @@ Release date: TBD
  [#924](https://github.com/mattermost/desktop/pull/924)
  - Improved the wording of the bad certificate dialog to make it scarier and harder to just allow.
  [#900](https://github.com/mattermost/desktop/pull/900)
- - Added support for Desktop menu bar accessibility improvements.
- https://mattermost.atlassian.net/browse/MM-16373
+ - Added support for Desktop menu bar accessibility improvements. This was fixed with the major version upgrade of Electron to v5.0.0.
 
 #### Mac
  - Added support for an auto-updater.
@@ -47,6 +46,8 @@ Release date: TBD
 ### Architectural Changes
  - Major version upgrade of Electron to v5.0.0. Electron is the underlying technology used to build the Desktop apps.
  [#996](https://github.com/mattermost/desktop/pull/996)
+ - Major version upgrade of Electron to v4.0.0.
+ - Major version upgrade of Electron to v3
 
 ### Bug Fixes
 
@@ -66,10 +67,16 @@ Release date: TBD
  [#954](https://github.com/mattermost/desktop/pull/954)
  - Prevented a bug where the app would navigate to a random page.
  [#900](https://github.com/mattermost/desktop/pull/900)
+ - Fixed an issue where clicking on some links in System Console opened the links on the app itself.
+ [#3444](https://github.com/mattermost/mattermost-webapp/pull/3444)
+ - Fixed an issue where opening the emoji picker froze the desktop app. This bug was fixed with the major version upgrade of Electron to v5.0.0.
+ - Fixed an issue where jumbo emoji didn't render for unsupported unicode emojis. This bug was fixed with the major version upgrade of Electron to v4.0.0.
  
 #### Mac
  - Fixed an issue where using the red Close button to close the window caused a blank screen when the window was maximized.
  [#953](https://github.com/mattermost/desktop/pull/953)
+ - Fixed an issue where ``Cmd + Option + Shift + v`` and ``Cmd + Shift + v`` didn't work on MacOS desktop app. This bug was fixed with the major version upgrade of Electron to v5.0.0.
+ - Fixed an issue where the timezones were incorrect in OSX High Sierra. This bug was fixed with the major version upgrade of Electron to v4.0.0.
  
 #### Windows
  - Fixed an issue where Ctrl+M shortcut minimized the Windows app and sent a message.
