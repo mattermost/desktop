@@ -29,10 +29,12 @@ Release date: TBD
  [#926](https://github.com/mattermost/desktop/pull/926)
  - Added support for preventing the app from restarting in full-screen mode.
  [#929](https://github.com/mattermost/desktop/pull/929)
- - Improved the styling of the mention badge in the tab bar.
+ - Improved the styling of the session expiry mention badge in the tab bar.
  [#924](https://github.com/mattermost/desktop/pull/924)
  - Improved the wording of the bad certificate dialog to make it scarier and harder to just allow.
  [#900](https://github.com/mattermost/desktop/pull/900)
+ - Added support for Desktop menu bar accessibility improvements.
+ https://mattermost.atlassian.net/browse/MM-16373
 
 #### Mac
  - Added support for an auto-updater.
@@ -49,6 +51,7 @@ Release date: TBD
 ### Bug Fixes
 
 #### All Platforms
+ - https://mattermost.atlassian.net/browse/MM-14028 **XXX no PR link**
  - Fixed an issue where the dot and mention counts in server tab jewels were not centered.
  [#995](https://github.com/mattermost/desktop/pull/995)
  - Fixed an issue where the unread count changed after opening the quick switcher.
@@ -71,6 +74,8 @@ Release date: TBD
 #### Windows
  - Fixed an issue where Ctrl+M shortcut minimized the Windows app and sent a message.
  [#971](https://github.com/mattermost/desktop/pull/971)
+ - Fixed an issue where clicking the tooltip button dismissed the tooltip.
+ [#2660](https://github.com/mattermost/mattermost-webapp/pull/2660)
  
 ----
 
