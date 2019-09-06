@@ -19,11 +19,11 @@ Release date: TBD
 ### Improvements
 
 #### All Platforms
- - Added support for maintaining a user's online status while the Desktop app is in the background as well as automatically setting the user to away/online if the screensaver goes on/off, the user locks/unlocks their computer or shuts down their computer.
+ - Added support for maintaining a user's online status while the Desktop app is in the background as well as automatically setting the user to away/online if the screensaver goes on/off, the user locks/unlocks their computer or shuts down their computer. **XXX Needs docs**
  [#993](https://github.com/mattermost/desktop/pull/993)
  - Updated spellchecker dictionaries for English.
  [#938](https://github.com/mattermost/desktop/pull/938)
- - Added a flag to enable MacOS dark mode title bar. **XXX Needs a ticket, needs docs**
+ - Added a flag to enable MacOS dark mode title bar. **XXX Needs docs**
  [#931](https://github.com/mattermost/desktop/pull/931)
  - Added support for exposing Webview Developer Tools via View Menu.
  [#926](https://github.com/mattermost/desktop/pull/926)
@@ -46,20 +46,21 @@ Release date: TBD
 ### Architectural Changes
  - Major version upgrade of Electron to v5.0.0. Electron is the underlying technology used to build the Desktop apps.
  [#996](https://github.com/mattermost/desktop/pull/996)
- - Major version upgrade of Electron to v4.0.0.
- - Major version upgrade of Electron to v3
+ - Major version upgrade of Electron to v4.2.4. Electron is the underlying technology used to build the Desktop apps.
+ [#989](https://github.com/mattermost/desktop/pull/989)
+ - Major version upgrade of Electron to v3.0.9. Electron is the underlying technology used to build the Desktop apps.
+ [#892](https://github.com/mattermost/desktop/pull/892)
 
 ### Bug Fixes
 
 #### All Platforms
- - https://mattermost.atlassian.net/browse/MM-14028 **XXX no PR link**
  - Fixed an issue where the dot and mention counts in server tab jewels were not centered.
  [#995](https://github.com/mattermost/desktop/pull/995)
  - Fixed an issue where the unread count changed after opening the quick switcher.
  [990](https://github.com/mattermost/desktop/pull/990)
  - Fixed an issue where the dot in notification badges was off centre.
  [#978](https://github.com/mattermost/desktop/pull/978)
- - Fixed an issue where username and password were not being passed for HTTP basic authentication. **XXX needs a ticket**
+ - Fixed an issue where username and password were not being passed for HTTP basic authentication.
  [#966](https://github.com/mattermost/desktop/pull/966)
  - Fixed an issue where the "Help" button opened in a new browser tab instead of below the textbox in the default system browser.
  [#956](https://github.com/mattermost/desktop/pull/956)
@@ -70,6 +71,7 @@ Release date: TBD
  - Fixed an issue where clicking on some links in System Console opened the links on the app itself.
  [#3444](https://github.com/mattermost/mattermost-webapp/pull/3444)
  - Fixed an issue where opening the emoji picker froze the desktop app. This bug was fixed with the major version upgrade of Electron to v5.0.0.
+ - Fixed an issue where switching server tabs on app load caused a visual size glitch. This bug was fixed with the major version upgrade of Electron to v4.0.0.
  - Fixed an issue where jumbo emoji didn't render for unsupported unicode emojis. This bug was fixed with the major version upgrade of Electron to v4.0.0.
  
 #### Mac
