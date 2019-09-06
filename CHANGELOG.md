@@ -19,29 +19,59 @@ Release date: TBD
 ### Improvements
 
 #### All Platforms
- - Improved the wording of the bad certificate dialog to make it scarier and harder to just allow.
- [#900](https://github.com/mattermost/desktop/pull/900)
- - Improved the styling of the mention badge in tab bar.
- [#924](https://github.com/mattermost/desktop/pull/924)
+ - Added support for maintaining a user's online status while the Desktop app is in the background as well as automatically setting the user to away/online if the screensaver goes on/off, the user locks/unlocks their computer or shuts down their computer.
+ [#993](https://github.com/mattermost/desktop/pull/993)
  - Updated spellchecker dictionaries for English.
  [#938](https://github.com/mattermost/desktop/pull/938)
+ - Added a flag to enable MacOS dark mode title bar. **XXX Needs a ticket, needs docs**
+ [#931](https://github.com/mattermost/desktop/pull/931)
+ - Added support for exposing Webview Developer Tools via View Menu.
+ [#926](https://github.com/mattermost/desktop/pull/926)
+ - Added support for preventing the app from restarting in full-screen mode.
+ [#929](https://github.com/mattermost/desktop/pull/929)
+ - Improved the styling of the mention badge in the tab bar.
+ [#924](https://github.com/mattermost/desktop/pull/924)
+ - Improved the wording of the bad certificate dialog to make it scarier and harder to just allow.
+ [#900](https://github.com/mattermost/desktop/pull/900)
 
 #### Mac
- - Added auto-updater.
+ - Added support for an auto-updater.
+ [#582](https://github.com/mattermost/desktop/pull/582)
+ 
+#### Windows
+ - Added support for an auto-updater.
  [#582](https://github.com/mattermost/desktop/pull/582)
 
 ### Architectural Changes
- - Major version upgrade of Electron to v3.0.10. Electron is the underlying technology used to build the Desktop apps.
- [#892](https://github.com/mattermost/desktop/pull/892)
+ - Major version upgrade of Electron to v5.0.0. Electron is the underlying technology used to build the Desktop apps.
+ [#996](https://github.com/mattermost/desktop/pull/996)
 
 ### Bug Fixes
 
 #### All Platforms
- - Prevented the bug where the app would navigate to a random page.
+ - Fixed an issue where the dot and mention counts in server tab jewels were not centered.
+ [#995](https://github.com/mattermost/desktop/pull/995)
+ - Fixed an issue where the unread count changed after opening the quick switcher.
+ [990](https://github.com/mattermost/desktop/pull/990)
+ - Fixed an issue where the dot in notification badges was off centre.
+ [#978](https://github.com/mattermost/desktop/pull/978)
+ - Fixed an issue where username and password were not being passed for HTTP basic authentication. **XXX needs a ticket**
+ [#966](https://github.com/mattermost/desktop/pull/966)
+ - Fixed an issue where the "Help" button opened in a new browser tab instead of below the textbox in the default system browser.
+ [#956](https://github.com/mattermost/desktop/pull/956)
+ - Fixed an issue where Mattermost opened both on fullscreen and on a smaller window when closing the app in fullscreen.
+ [#954](https://github.com/mattermost/desktop/pull/954)
+ - Prevented a bug where the app would navigate to a random page.
  [#900](https://github.com/mattermost/desktop/pull/900)
- - Fixed several typos.
- [#905](https://github.com/mattermost/desktop/pull/905)
-
+ 
+#### Mac
+ - Fixed an issue where using the red Close button to close the window caused a blank screen when the window was maximized.
+ [#953](https://github.com/mattermost/desktop/pull/953)
+ 
+#### Windows
+ - Fixed an issue where Ctrl+M shortcut minimized the Windows app and sent a message.
+ [#971](https://github.com/mattermost/desktop/pull/971)
+ 
 ----
 
 ## Release v4.2.3
