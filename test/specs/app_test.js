@@ -27,7 +27,6 @@ describe('application', function desc() {
     await this.app.client.waitUntilWindowLoaded();
     const count = await this.app.client.getWindowCount();
     count.should.equal(1);
-
     const opened = await this.app.browserWindow.isDevToolsOpened();
     opened.should.be.false;
 

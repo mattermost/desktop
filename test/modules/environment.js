@@ -49,10 +49,19 @@ module.exports = {
   },
 
   getSpectronApp() {
-    return new Application({
+    const options = {
       path: electronBinaryPath,
       args: [`${path.join(sourceRootDir, 'src')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode'],
-    });
+
+      // enable this if chromedriver hangs to see logs
+      // chromeDriverLogPath: '../chromedriverlog.txt',
+    };
+    if (process.platform === 'darwin') {
+      // on a mac, debbuging port might conflict with other apps
+      // this changes the default debugging port so chromedriver can run without issues.
+      options.chromeDriverArgs.push('remote-debugging-port=9222');
+    }
+    return new Application(options);
   },
 
   addClientCommands(client) {

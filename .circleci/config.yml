@@ -1,17 +1,55 @@
-version: 2
-jobs:
-  build:
+version: 2.1
+executors:
+  wine-chrome:
+    working_directory: ~/mattermost-desktop
+    docker:
+      - image: electronuserland/builder:wine-chrome
+  wine-mono:
     working_directory: ~/mattermost-desktop
     docker:
       - image: electronuserland/builder:wine-mono
+commands:
+  update_image:
+    description: "Update base image"
+    parameters:
+      apt_opts:
+        type: string
+        default: ""
+    steps:
+      - run: apt-get update && apt-get -y install << parameters.apt_opts >>
+      - run: npm install
+
+jobs:
+  check:
+    executor: wine-chrome    
+    steps:
+      - checkout
+      - update_image:
+          apt_opts: "--no-install-recommends"
+      - restore_cache:
+          key: lint-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+      - run: npm run lint:js-quiet
+      - run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run npm run test:app
+      - run: mkdir -p /tmp/test-results
+      - run: cp test-results.xml /tmp/test-results/
+      - store_test_results:
+          path: /tmp/test-results
+      - save_cache:
+          key: lint-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          paths:
+            - "node_modules"
+            - "src/node_modules"
+
+  build:
+    executor: wine-mono
     steps:
       - checkout
       - restore_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - restore_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
-      - run: apt-get update && apt-get -y install --no-install-recommends jq icnsutils graphicsmagick tzdata
-      - run: npm install
+      - update_image:
+          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
       - run: npm run build
       - run: npm run package:windows
       - run: jq '.mac.target=["zip"]' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
@@ -19,7 +57,6 @@ jobs:
       - run: npm run package:linux
       - run: mkdir -p /tmp/artifacts
       - run: sh -x ./scripts/cp_artifacts.sh release /tmp/artifacts
-      - run: npm run lint:js
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -38,24 +75,11 @@ jobs:
           path: storybook/
           destination: storybook
 
-  test:
-    working_directory: ~/mattermost-desktop
-    docker:
-      - image: electronuserland/builder:wine-chrome
-    steps:
-      - checkout
-      - run: apt-get update && apt-get -y install --no-install-recommends libgconf-2-4
-      - run: npm install
-      # https://github.com/SeleniumHQ/docker-selenium/issues/222#issuecomment-221307583
-      - run: DBUS_SESSION_BUS_ADDRESS=/dev/null xvfb-run npm test
-      - run: mkdir -p /tmp/test-results
-      - run: cp test-results.xml /tmp/test-results/
-      - store_test_results:
-          path: /tmp/test-results
-
 workflows:
   version: 2
   build_and_test:
     jobs:
-      - build
-      - test
+      - check
+      - build:
+          requires:
+            - check
