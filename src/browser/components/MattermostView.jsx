@@ -90,6 +90,9 @@ export default class MattermostView extends React.Component {
 
     // Open link in browserWindow. for example, attached files.
     webview.addEventListener('new-window', (e) => {
+      if (!Utils.isValidURL(e.url)) {
+        return;
+      }
       const currentURL = url.parse(webview.getURL());
       const destURL = url.parse(e.url);
       if (destURL.protocol !== 'http:' && destURL.protocol !== 'https:' && destURL.protocol !== `${scheme}:`) {

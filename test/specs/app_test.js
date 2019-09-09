@@ -71,9 +71,29 @@ describe('application', function desc() {
   });
 
   it('should show index.html when there is config file', async () => {
-    fs.writeFileSync(env.configFilePath, JSON.stringify({
-      url: env.mattermostURL,
-    }));
+    const config = {
+      version: 1,
+      teams: [{
+        name: 'example',
+        url: env.mattermostURL,
+      }, {
+        name: 'github',
+        url: 'https://github.com/',
+      }],
+      showTrayIcon: false,
+      trayIconTheme: 'light',
+      minimizeToTray: false,
+      notifications: {
+        flashWindow: 0,
+        bounceIcon: false,
+        bounceIconType: 'informational',
+      },
+      showUnreadBadge: true,
+      useSpellChecker: true,
+      enableHardwareAcceleration: true,
+      autostart: true,
+    };
+    fs.writeFileSync(env.configFilePath, JSON.stringify(config));
     await this.app.restart();
 
     const url = await this.app.client.getUrl();
@@ -82,18 +102,19 @@ describe('application', function desc() {
 
   it('should upgrade v0 config file', async () => {
     const Config = require('../../src/common/config').default;
-    const config = new Config(env.configFilePath);
-    fs.writeFileSync(env.configFilePath, JSON.stringify({
+    const newConfig = new Config(env.configFilePath);
+    const oldConfig = {
       url: env.mattermostURL,
-    }));
+    };
+    fs.writeFileSync(env.configFilePath, JSON.stringify(oldConfig));
     await this.app.restart();
 
     const url = await this.app.client.getUrl();
     url.should.match(/\/index.html$/);
 
     const str = fs.readFileSync(env.configFilePath, 'utf8');
-    const localConfigData = JSON.parse(str);
-    localConfigData.version.should.equal(config.defaultData.version);
+    const upgradedConfig = JSON.parse(str);
+    upgradedConfig.version.should.equal(newConfig.defaultData.version);
   });
 
   it.skip('should be stopped when the app instance already exists', (done) => {
