@@ -81,7 +81,7 @@ const customLoginRegexPaths = [
   /^\/login\/sso\/saml$/i,
 ];
 let customLoginInProgress = false;
-let customLoginHostname = null;
+let temporaryTrustedLoginHostname = null;
 
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
@@ -375,7 +375,7 @@ function handleAppWebContentsCreated(dc, contents) {
   contents.on('will-navigate', (event, url) => {
     const parsedUrl = new URL(url);
     const urlIsTrusted = isTrustedURL(parsedUrl);
-    const urlIsCustomLoginPath = parsedUrl.hostname === customLoginHostname;
+    const urlIsCustomLoginPath = parsedUrl.hostname === temporaryTrustedLoginHostname;
 
     // don't prevent custom login attempts (oath, saml)
     if (!urlIsTrusted && !urlIsCustomLoginPath) {
@@ -398,16 +398,16 @@ function handleAppWebContentsCreated(dc, contents) {
 
     if (urlIsTrusted && urlIsCustomLoginPath && !customLoginInProgress && triggerPage.includes('/login')) {
       customLoginInProgress = true;
-    } else if (urlIsTrusted && customLoginInProgress && customLoginHostname) {
+    } else if (urlIsTrusted && customLoginInProgress && temporaryTrustedLoginHostname) {
       customLoginInProgress = false;
-      customLoginHostname = null;
+      temporaryTrustedLoginHostname = null;
     }
   });
   contents.on('will-redirect', (event, url) => {
     const parsedUrl = new URL(url);
     const urlIsTrusted = isTrustedURL(parsedUrl);
-    if (!urlIsTrusted && customLoginInProgress && !customLoginHostname) {
-      customLoginHostname = parsedUrl.hostname;
+    if (!urlIsTrusted && customLoginInProgress && !temporaryTrustedLoginHostname) {
+      temporaryTrustedLoginHostname = parsedUrl.hostname;
     }
   });
   contents.on('new-window', (event) => {
