@@ -45,6 +45,7 @@ function createMainWindow(config, options) {
     fullscreen: false,
     webPreferences: {
       nodeIntegration: true,
+      contextIsolation: false,
       webviewTag: true,
     },
   });
@@ -71,6 +72,7 @@ function createMainWindow(config, options) {
 
   mainWindow.webContents.on('will-attach-webview', (event, webPreferences) => {
     webPreferences.nodeIntegration = false;
+    webPreferences.contextIsolation = true;
   });
 
   mainWindow.once('ready-to-show', () => {
