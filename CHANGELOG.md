@@ -14,7 +14,7 @@ Release date: TBD
 
 Release date: TBD
 
-- Security
+- Security **XXX**
 
 ### Improvements
 
@@ -23,12 +23,8 @@ Release date: TBD
  [#993](https://github.com/mattermost/desktop/pull/993)
  - Updated spellchecker dictionaries for English.
  [#938](https://github.com/mattermost/desktop/pull/938)
- - Added a flag to enable MacOS dark mode title bar. **XXX Needs docs**
- [#931](https://github.com/mattermost/desktop/pull/931)
  - Added support for exposing Webview Developer Tools via View Menu.
  [#926](https://github.com/mattermost/desktop/pull/926)
- - Added support for preventing the app from restarting in full-screen mode.
- [#929](https://github.com/mattermost/desktop/pull/929)
  - Improved the styling of the session expiry mention badge in the tab bar.
  [#924](https://github.com/mattermost/desktop/pull/924)
  - Improved the wording of the bad certificate dialog to make it scarier and harder to just allow.
@@ -36,6 +32,8 @@ Release date: TBD
  - Added support for Desktop menu bar accessibility improvements. This was fixed with the major version upgrade of Electron to v5.0.0.
 
 #### Mac
+ - Added a flag to enable MacOS dark mode title bar. **XXX Needs docs**
+ [#931](https://github.com/mattermost/desktop/pull/931)
  - Added support for an auto-updater.
  [#582](https://github.com/mattermost/desktop/pull/582)
  
@@ -66,6 +64,8 @@ Release date: TBD
  [#956](https://github.com/mattermost/desktop/pull/956)
  - Fixed an issue where Mattermost opened both on fullscreen and on a smaller window when closing the app in fullscreen.
  [#954](https://github.com/mattermost/desktop/pull/954)
+  - Fixed an issue to prevent the app from restarting in full-screen mode.
+ [#929](https://github.com/mattermost/desktop/pull/929)
  - Prevented a bug where the app would navigate to a random page.
  [#900](https://github.com/mattermost/desktop/pull/900)
  - Fixed an issue where clicking on some links in System Console opened the links on the app itself.
