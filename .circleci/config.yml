@@ -115,5 +115,5 @@ workflows:
       # this should be conditional in the future
       # conditions might be either github-tag or branch name
       - msi_installer:
-          requires:
-            - build
+         requires:
+           - build

@@ -5,92 +5,19 @@ Param (
     [parameter(Position=0)]$makeRule
 )
 
+# imports
+# these should be better with modules, but we would have to install them on circleci servers
+
+# import tools
+. .\scripts\tools.ps1
+
+# import dependencies functions
+. .\scripts\dependencies.ps1
+
 ################################################################################
-# Common util functions
+# Appveyor related functions
 ################################################################################
 #region
-function Print {
-     Param (
-        [String]$message,
-        [Switch]$NoNewLine
-    )
-    if ($NoNewLine) {
-        Write-Host " $message" -NoNewLine
-    } else {
-        Write-Host " $message"
-    }
-}
-
-function Print-Info {
-    Param (
-        [String]$message,
-        [Switch]$NoNewLine
-    )
-    if ([String]::IsNullOrEmpty($message)) {
-        return
-    }
-
-    Write-Host "[" -NoNewLine
-    Write-Host "+" -NoNewLine -ForegroundColor Green
-    Write-Host "]" -NoNewLine
-
-    if ($NoNewLine) {
-        Write-Host " $message" -NoNewLine
-    } else {
-        Write-Host " $message"
-    }
-}
-
-function Print-Warning {
-    Param (
-        [String]$message,
-        [Switch]$NoNewLine
-    )
-    if ([String]::IsNullOrEmpty($message)) {
-        return
-    }
-
-    Write-Host "[" -NoNewLine
-    Write-Host "!" -NoNewLine -ForegroundColor Magenta
-    Write-Host "]" -NoNewLine
-
-    if ($NoNewLine) {
-        Write-Host " $message" -NoNewLine
-    } else {
-        Write-Host " $message"
-    }
-}
-
-# Avoid stacktrace to be displayed along side the error message.
-# We want things simplistic.
-# src.: https://stackoverflow.com/q/38064704/3514658
-# src.: https://stackoverflow.com/a/38064769
-# We won't use [Console]::*Write* not $host.ui.Write* statements
-# as they are UI items
-# src.: https://web.archive.org/web/20190720224207/https://docs.microsoft.com/en-us/powershell/developer/cmdlet/types-of-cmdlet-output
-# Rewriting the error printing function in C# and calling it from Posh is not
-# working either because the redirection to stderr doesn't work under Posh but
-# is working when the Posh script is run from cmd.exe. We are giving up here
-# and simply using Write-Host without stderr redirection.
-function Print-Error {
-    Param (
-        [String]$message,
-        [Switch]$NoNewLine
-    )
-    if ([String]::IsNullOrEmpty($message)) {
-        return
-    }
-
-    Write-Host "[" -NoNewLine
-    Write-Host "-" -NoNewLine -ForegroundColor Red
-    Write-Host "]" -NoNewLine
-
-    if ($NoNewLine) {
-        Write-Host " $message" -NoNewLine
-    } else {
-        Write-Host " $message"
-    }
-}
 
 function Is-AppVeyor {
     if ($env:APPVEYOR -eq $True) {
@@ -111,77 +38,6 @@ function Enable-AppVeyorRDP {
     ))
 }
 
-function Check-Command($cmdname) {
-    return [bool](Get-Command -Name $cmdname -ErrorAction SilentlyContinue)
-}
-
-function Refresh-Path {
-    $env:Path =
-        [System.Environment]::GetEnvironmentVariable("Path", "Machine") +
-        ";" +
-        [System.Environment]::GetEnvironmentVariable("Path", "User")
-}
-
-# src: https://superuser.com/a/756696/456258
-function Is-Admin {
-    return ([Security.Principal.WindowsPrincipal] `
-            [Security.Principal.WindowsIdentity]::GetCurrent() `
-            ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-}
-
-function Get-WixDir {
-    $progFile = (${env:ProgramFiles(x86)}, ${env:ProgramFiles} -ne $null)[0]
-    $wixDirs = @(Get-ChildItem -Path $progFile -Recurse -Filter "*wix toolset*" -Attributes Directory -Depth 2 -ErrorAction SilentlyContinue)
-    if ($wixDirs[0] -eq $null) {
-        return $null
-    }
-    $wixDir = Join-Path -Path "$progFile" -ChildPath "$($wixDirs[0])"
-    $wixDir = Join-Path -Path "$wixDir" -ChildPath "bin"
-    return $wixDir
-}
-
-function Get-SignToolDir {
-    $progFile = (${env:ProgramFiles(x86)}, ${env:ProgramFiles} -ne $null)[0]
-    $signToolDir = Join-Path -Path "$progFile" -ChildPath "Windows Kits\10\bin\"
-    # Check if we are on 64 bits or not.
-    if ($env:PROCESSOR_ARCHITECTURE -ilike '*64*') {
-        $arch = "x64"
-    } else {
-        $arch = "x86"
-    }
-    [array]$signToolExes = (
-        Get-ChildItem -Path "$signToolDir" -Filter "signtool.exe" -Recurse -ErrorAction SilentlyContinue -Force | % {
-            if ($_.FullName -ilike '*x64*') {
-                return $_.FullName;
-            }
-        }
-    )
-    if ($signToolExes -eq $null -or
-        [string]::IsNullOrEmpty($signToolExes[0])) {
-        return $null
-    }
-
-    if (Test-Path $signToolExes[0]) {
-        return Split-Path $signToolExes[0]
-    }
-    return $null
-}
-
-function Get-NpmDir {
-    # npm is always installed as a nodejs dependency. 64 bits version available.
-    # C:\Program Files\nodejs\npm with a shortcut leading to
-    # C:\Program Files\nodejs\node_modules\npm\bin
-    $progFile = ${env:ProgramFiles}
-    $npmDir = Join-Path -Path "$progFile" -ChildPath "nodejs"
-    if ([System.IO.File]::Exists("$npmDir\npm.cmd")) {
-        return $npmDir
-    }
-    return $null
-}
-
-function Get-RootDir {
-    return "$(Split-Path $PSCommandPath)\..\"
-}
 #endregion
 
 ################################################################################
@@ -189,73 +45,9 @@ function Get-RootDir {
 ################################################################################
 #region
 
-function Check-Deps {
-    Param (
-        [Switch]
-        $verbose,
-        [Switch]
-        $throwable
-    )
-
-    if ($PSVersionTable.PSVersion.Major -lt 5) {
-        Print-Error "You need at least PowerShell 5.0 to execute this Makefile. Operation aborted."
-        exit
-    }
-
-    [array]$missing = @()
-
-    if ($verbose) { Print-Info "Checking choco dependency..." }
-    if (!(Check-Command "choco")) {
-        if ($verbose) { Print-Error "choco dependency missing." }
-        $missing += "choco"
-    }
-
-    if ($verbose) { Print-Info "Checking git dependency..." }
-    if (!(Check-Command "git")) {
-        if ($verbose) { Print-Error "git dependency missing." }
-        $missing += "git"
-    }
-
-    if ($verbose) { Print-Info "Checking nodejs/npm dependency..." }
-    # Testing if the folder is not empty first is needed otherwise if there is
-    # a file called like that in the path where the makefile is invocated, the
-    # check will succeed while it is plain wrong.
-    if ([string]::IsNullOrEmpty($(Get-NpmDir)) -or
-        # We could have used the builtin Test-Path cmdlet instead but it is
-        # tested for folders as well. We need to test for a file existence
-        # here.  
-        ![System.IO.File]::Exists("$(Get-NpmDir)\npm.cmd") -or
-        ![System.IO.File]::Exists("$(Get-NpmDir)\node.exe")) {
-            if ($verbose) { Print-Error "nodejs/npm dependency missing." }
-        $missing += "npm"
-    }
-
-    if ($verbose) { Print-Info "Checking wix dependency..." }
-    if ([string]::IsNullOrEmpty($(Get-WixDir)) -or
-        ![System.IO.File]::Exists("$(Get-WixDir)\heat.exe") -or
-        ![System.IO.File]::Exists("$(Get-WixDir)\candle.exe") -or
-        ![System.IO.File]::Exists("$(Get-WixDir)\light.exe")) {
-        if ($verbose) { Print-Error "wix dependency missing." }
-        $missing += "wix"
-    }
-
-    if ($verbose) { Print-Info "Checking signtool dependency..." }
-    if ([string]::IsNullOrEmpty($(Get-SignToolDir)) -or
-        ![System.IO.File]::Exists("$(Get-SignToolDir)\signtool.exe")) {
-        if ($verbose) { Print-Error "signtool dependency missing." }
-        $missing += "signtool"
-    }
-
-    if ($throwable -and $missing.Count -gt 0) {
-        throw "com.mattermost.makefile.deps.missing"
-    }
-
-    return $missing
-}
-
 function Prepare-Path {
 
-    # As we way need to install new dependencies, make sure the PATH env
+    # As we may need to install new dependencies, make sure the PATH env
     # variable is not too large. Some CI envs like AppVeyor have already the
     # PATH env variable defined at the maximum which prevents new strings to
     # be added to it. We will remove all the stuff added for programs in
@@ -335,51 +127,6 @@ function Restore-ComputerState {
     }
 }
 
-function Install-Deps {
-    [array]$missing = Check-Deps -Verbose
-
-    if ($missing -eq $null) {
-        Print-Info "All dependencies met; exiting dependencies installation..."
-        return
-    }
-
-    if (-not (Is-Admin)) {
-        throw "com.mattermost.makefile.deps.notadmin"
-    }
-
-    foreach ($missingItem in $missing) {
-        switch ($missingItem) {
-            "choco" {
-                Print-Info "Installing chocolatey..."
-                Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-                break;
-            }
-            "git" {
-                Print-Info "Installing git..."
-                choco install git --yes
-                break;
-            }
-            "wix" {
-                Print-Info "Installing wixtoolset..."
-                choco install wixtoolset --yes --version 3.10.3.300702
-                break;
-            }
-            "signtool" {
-                Print-Info "Installing Windows 10 SDK (for signtool)..."
-                choco install windows-sdk-10.1 --yes
-                break;
-            }
-            "npm" {
-                Print-Info "Installing nodejs-lts (with npm)..."
-                choco install nodejs-lts --yes
-                break;
-            }
-        }
-
-        Print-Info "Refreshing PATH..."
-        Refresh-Path
-    }
-}
 
 function Optimize-Build {
     Print-Info "Checking if Windows Search is running..."
@@ -691,22 +438,30 @@ function Main {
                 Enable-AppVeyorRDP
             }
             default {
-                Print-Error "Make file argument ""$_"" is invalid. Build process aborted."
+                Print-Error "Makefile argument ""$_"" is invalid. Build process aborted."
             }
         }
 
         $env:COM_MATTERMOST_MAKEFILE_EXECUTION_SUCCESS = $true
+        $exitcode = 0
 
     } catch {
         switch ($_.Exception.Message) {
             "com.mattermost.makefile.deps.missing" {
                 Print-Error "The following dependencies are missing: $($missing -Join ', ').`n    Please install dependencies as an administrator:`n    # makefile.ps1 install-deps"
+                $exitcode = -1
             }
             "com.mattermost.makefile.deps.notadmin" {
                 Print-Error "Installing dependencies requires admin privileges. Operation aborted.`n    Please reexecute this makefile as an administrator:`n    # makefile.ps1 install-deps"
+                $exitcode = -2
             }
+            "com.mattermost.makefile.deps.wix" {
+                Print-Error "There was nothing wrong with your source code,but we found a problem installing wix toolset and couldn't continue. please try re-running the job."
+                $exitcode = -3
+            }   
             default {          
                 Print-Error "Another error occurred: $_"
+                $exitcode = -100
             }
         }
     } finally {
@@ -714,6 +469,7 @@ function Main {
             Print-Warning "Makefile interrupted by Ctrl + C or by another interruption handler."
         }
         Restore-ComputerState
+        exit $exitcode
     }
 }
 
