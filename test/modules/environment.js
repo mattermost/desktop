@@ -52,6 +52,7 @@ module.exports = {
     const options = {
       path: electronBinaryPath,
       args: [`${path.join(sourceRootDir, 'src')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode'],
+      chromeDriverArgs: [],
 
       // enable this if chromedriver hangs to see logs
       // chromeDriverLogPath: '../chromedriverlog.txt',
