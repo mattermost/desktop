@@ -67,7 +67,7 @@ let config = null;
 let trayIcon = null;
 let trayImages = null;
 
-// monitoring for supported custom login activity (oath, saml)
+// supported custom login paths (oath, saml)
 const customLoginRegexPaths = [
   /^\/oauth\/authorize$/i,
   /^\/oauth\/deauthorize$/i,
@@ -80,8 +80,9 @@ const customLoginRegexPaths = [
   /^\/login\/[A-Za-z0-9]+\/complete$/i,
   /^\/login\/sso\/saml$/i,
 ];
-let customLoginInProgress = false;
-let temporaryTrustedLoginHostname = null;
+
+// tracking in progress custom logins
+const customLogins = {};
 
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
@@ -369,47 +370,76 @@ function handleAppWillFinishLaunching() {
 }
 
 function handleAppWebContentsCreated(dc, contents) {
+  // initialize custom login tracking
+  customLogins[contents.id] = {
+    inProgress: false,
+    startingURL: null,
+    externalHostname: null,
+  };
+
   contents.on('will-attach-webview', (event, webPreferences) => {
     webPreferences.nodeIntegration = false;
   });
+
   contents.on('will-navigate', (event, url) => {
+    const contentID = event.sender.id;
     const parsedUrl = new URL(url);
     const urlIsTrusted = isTrustedURL(parsedUrl);
-    const urlIsCustomLoginPath = parsedUrl.hostname === temporaryTrustedLoginHostname;
+    const urlIsTrustedExternalLoginPath = parsedUrl.hostname === customLogins[contentID].externalHostname;
 
     // don't prevent custom login attempts (oath, saml)
-    if (!urlIsTrusted && !urlIsCustomLoginPath) {
+    if (!urlIsTrusted && !urlIsTrustedExternalLoginPath) {
       event.preventDefault();
+
+      // reset custom login if in progress
+      if (customLogins[contentID].inProgress) {
+        customLogins[contentID].inProgress = false;
+        customLogins[contentID].externalHostname = null;
+
+        // redirect to starting url if set
+        if (customLogins[contentID].startingURL) {
+          event.sender.loadURL(customLogins[contentID].startingURL);
+          customLogins[contentID].startingURL = null;
+        }
+      }
     }
   });
 
   // handle custom login requests (oath, saml):
   // 1. are we navigating to a supported local custom login path from the `/login` page? (did-start-navigation listener)
-  //    - indicate custom login is in progress
+  //    - indicate custom login is in progress and store starting point for possible reset
   // 2. is a custom login in progress but we don't have the 3rd party hostname yet? (will-redirect listener)
   //    - store 3rd party hostname to trust subsequent navigation changes within that hostname
   // 3. are we finished with the custom login process? (did-start-navigation listener)
   //    - indicate custom login is NOT in progress and clear any stored 3rd party hostname's
   contents.on('did-start-navigation', (event, url) => {
+    const contentID = event.sender.id;
     const parsedUrl = new URL(url);
     const urlIsTrusted = isTrustedURL(parsedUrl);
     const urlIsCustomLoginPath = isCustomLoginURL(parsedUrl);
-    const triggerPage = event.sender.history[event.sender.history.length - 1];
+    const previousPage = event.sender.history[event.sender.history.length - 1];
 
-    if (urlIsTrusted && urlIsCustomLoginPath && !customLoginInProgress && triggerPage.includes('/login')) {
-      customLoginInProgress = true;
-    } else if (urlIsTrusted && customLoginInProgress && temporaryTrustedLoginHostname) {
-      customLoginInProgress = false;
-      temporaryTrustedLoginHostname = null;
+    if (urlIsTrusted && urlIsCustomLoginPath && !customLogins[contentID].inProgress && previousPage.endsWith('/login')) {
+      customLogins[contentID].inProgress = true;
+      customLogins[contentID].startingURL = event.sender.getURL();
+    } else if (urlIsTrusted && customLogins[contentID].inProgress && customLogins[contentID].externalHostname) {
+      customLogins[contentID].inProgress = false;
+      customLogins[contentID].externalHostname = null;
     }
   });
+
   contents.on('will-redirect', (event, url) => {
+    const contentID = event.sender.id;
     const parsedUrl = new URL(url);
     const urlIsTrusted = isTrustedURL(parsedUrl);
-    if (!urlIsTrusted && customLoginInProgress && !temporaryTrustedLoginHostname) {
-      temporaryTrustedLoginHostname = parsedUrl.hostname;
+    const previousPage = event.sender.history[event.sender.history.length - 1];
+    const previousPageIsTrusted = isTrustedURL(previousPage);
+
+    if (!urlIsTrusted && previousPageIsTrusted && customLogins[contentID].inProgress && !customLogins[contentID].externalHostname) {
+      customLogins[contentID].externalHostname = parsedUrl.hostname;
     }
   });
+
   contents.on('new-window', (event) => {
     event.preventDefault();
   });
@@ -751,6 +781,9 @@ function isTrustedURL(url) {
 }
 
 function isCustomLoginURL(url) {
+  if (!isTrustedURL(url)) {
+    return false;
+  }
   let parsedUrl = url;
   if (typeof url === 'string') {
     parsedUrl = new URL(url);
