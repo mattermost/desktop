@@ -237,16 +237,6 @@ function createTemplate(mainWindow, config, isDev) {
     enabled: false,
   });
 
-  // disable (auto)updater in v4.3
-  // if (config.enableAutoUpdater) {
-  //   submenu.push({
-  //     label: 'Check for Updates...',
-  //     click() {
-  //       ipcMain.emit('check-for-updates', true);
-  //     },
-  //   });
-  // }
-
   template.push({label: '&Help', submenu});
   return template;
 }

@@ -17,8 +17,6 @@ import AutoLauncher from './main/AutoLauncher';
 import CriticalErrorHandler from './main/CriticalErrorHandler';
 import upgradeAutoLaunch from './main/autoLaunch';
 
-// disable (auto)updater in v4.3
-// import autoUpdater from './main/autoUpdater';
 import RegistryConfig from './common/config/RegistryConfig';
 import Config from './common/config';
 import CertificateStore from './main/certificateStore';
@@ -195,23 +193,12 @@ function initializeInterCommunicationEventListeners() {
   if (shouldShowTrayIcon()) {
     ipcMain.on('update-unread', handleUpdateUnreadEvent);
   }
-
-  // disable (auto)updater in v4.3
-  // if (!isDev && config.enableAutoUpdater) {
-  //   ipcMain.on('check-for-updates', autoUpdater.checkForUpdates);
-  // }
 }
 
 function initializeMainWindowListeners() {
   mainWindow.on('closed', handleMainWindowClosed);
   mainWindow.on('unresponsive', criticalErrorHandler.windowUnresponsiveHandler.bind(criticalErrorHandler));
   mainWindow.webContents.on('crashed', handleMainWindowWebContentsCrashed);
-  mainWindow.on('ready-to-show', handleMainWindowReadyToShow);
-
-  // disable (auto)updater in v4.3
-  // if (!isDev && config.enableAutoUpdater) {
-  //   mainWindow.once('show', handleMainWindowShow);
-  // }
 }
 
 //
@@ -520,22 +507,6 @@ function initializeAfterAppReady() {
   const trustedURLs = config.teams.map((team) => team.url);
   permissionManager = new PermissionManager(permissionFile, trustedURLs);
   session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionManager));
-
-  // disable (auto)updater in v4.3
-  // if (!isDev && config.enableAutoUpdater) {
-  //   const updaterConfig = autoUpdater.loadConfig();
-  //   autoUpdater.initialize(appState, mainWindow, updaterConfig.isNotifyOnly());
-  //   ipcMain.on('check-for-updates', autoUpdater.checkForUpdates);
-  //   mainWindow.once('show', () => {
-  //     if (autoUpdater.shouldCheckForUpdatesOnStart(appState.updateCheckedDate)) {
-  //       ipcMain.emit('check-for-updates');
-  //     } else {
-  //       setTimeout(() => {
-  //         ipcMain.emit('check-for-updates');
-  //       }, autoUpdater.UPDATER_INTERVAL_IN_MS);
-  //     }
-  //   });
-  // }
 }
 
 //
@@ -698,27 +669,6 @@ function handleMainWindowClosed() {
 function handleMainWindowWebContentsCrashed() {
   throw new Error('webContents \'crashed\' event has been emitted');
 }
-
-function handleMainWindowReadyToShow() {
-
-  // disable (auto)updater in v4.3
-  // if (!isDev) {
-  //   autoUpdater.checkForUpdates();
-  // }
-}
-
-// disable (auto)updater in v4.3
-// function handleMainWindowShow() {
-//   if (!isDev) {
-//     if (autoUpdater.shouldCheckForUpdatesOnStart(appState.updateCheckedDate)) {
-//       ipcMain.emit('check-for-updates');
-//     } else {
-//       setTimeout(() => {
-//         ipcMain.emit('check-for-updates');
-//       }, autoUpdater.UPDATER_INTERVAL_IN_MS);
-//     }
-//   }
-// }
 
 //
 // helper functions
