@@ -34,12 +34,6 @@ Release date: TBD
 #### Mac
  - Added a flag to enable MacOS dark mode title bar. **XXX Needs docs**
  [#931](https://github.com/mattermost/desktop/pull/931)
- - Added support for an auto-updater.
- [#582](https://github.com/mattermost/desktop/pull/582)
- 
-#### Windows
- - Added support for an auto-updater.
- [#582](https://github.com/mattermost/desktop/pull/582)
 
 ### Architectural Changes
  - Major version upgrade of Electron to v5.0.0. Electron is the underlying technology used to build the Desktop apps.
