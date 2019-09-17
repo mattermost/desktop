@@ -73,7 +73,7 @@ jobs:
       - run: jq '.mac.target=["zip"]' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
       - run: npm run package:mac
       - run: npm run package:linux
-      - run: mkdir -p /tmp/artifacts
+      - run: mkdir -p /dist/artifacts
       - run: sh -x ./scripts/cp_artifacts.sh release /dist/artifacts
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
