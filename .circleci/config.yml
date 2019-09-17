@@ -181,7 +181,7 @@ jobs:
           name: Build .dmg
           # todo: add --forceCodeSigning=true once we get it working on circleci
           command: ./node_modules/.bin/build --mac --publish=never
-      - run: mkdir -p /dist/artifacts
+      - run: mkdir -p ./dist/artifacts
       - run: sh -x ./scripts/cp_artifacts.sh release ./dist/artifacts
       - store_artifacts:
           path: ./release/
