@@ -10,6 +10,10 @@ executors:
     working_directory: ~/mattermost-desktop
     docker:
       - image: electronuserland/builder:wine-mono
+  mac:
+    working_directory: ~/mattermost-desktop
+    macos:
+      xcode: "10.3"
 commands:
   update_image:
     description: "Update base image"
@@ -81,13 +85,17 @@ jobs:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
           paths:
             - "src/node_modules"
-      - store_artifacts:
-          path: /tmp/artifacts/
-          destination: packages
-      - run: ./node_modules/.bin/build-storybook -c src/.storybook -o storybook
-      - store_artifacts:
-          path: storybook/
-          destination: storybook
+      - persist_to_workspace:
+          root: ./build
+          paths: 
+            - "/tmp/artifacts/"
+#      - store_artifacts:
+#          path: /tmp/artifacts/
+#          destination: packages
+#      - run: ./node_modules/.bin/build-storybook -c src/.storybook -o storybook
+#      - store_artifacts:
+#          path: storybook/
+#          destination: storybook
 
   msi_installer:
     executor: win/vs2019
@@ -104,16 +112,87 @@ jobs:
           path: ./release/
           destination: msi
 
+  mac_installer:
+    executor: mac
+
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ./dist
+      - run:
+          name: Build .dmg
+          # todo: add --forceCodeSigning=true once we get it working on circleci
+          command: ./node_modules/.bin/build --mac --distribution=never
+
+      # - run:
+      #     name: decode Apple Certificates
+      #     command: base64 -D -o Certificates.p12 <<< $applecertificates
+      # - run:
+      #     name: make Provisioning Profiles directory
+      #     command: mkdir -pv ~/Library/MobileDevice/Provisioning\ Profiles/
+      # - run:
+      #     name: decode Provisioning Profiles
+      #     command: base64 -D -o ~/Library/MobileDevice/Provisioning\ Profiles/App_Store.mobileprovision <<< $App_Store_Profile
+
+  store:
+    executor: wine-chrome
+    steps:
+      - attach_workspace:
+          at: ./build
+      - store_artifacts:
+          path: ./build
+          destination: packages
+
+
 workflows:
   version: 2
-  build_and_test:
+  test_and_build:
     jobs:
       - check
       - build:
           requires:
             - check
-      # this should be conditional in the future
-      # conditions might be either github-tag or branch name
       - msi_installer:
-         requires:
-           - build
+          requires:
+            - build 
+          filters:
+            branch:
+              only: 
+              # only for release and release candidates
+              # v.XX.YY
+              # v.XX.YY.ZZ
+              # v.XX.YY.ZZ-rc-something
+                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+
+      - mac_installer:
+          requires:
+            - build
+          context: codesign-certificates
+          filters:
+            branch:
+              only:
+                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                # todo: once working remove this one
+                - mac_build
+      - store:
+          # for master builds
+          requires:
+            - build
+          filters:
+            branch:
+              ignore:
+                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                # todo: once working remove this one
+                - mac_build
+      - store:
+          # for release and rc builds
+          requires:
+            # todo: once working uncomment this
+            # - msi_installer
+            - mac_installer
+          filters:
+            branch:
+              only:
+                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                # todo: once working remove this one
+                - mac_build
