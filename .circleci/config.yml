@@ -172,10 +172,16 @@ jobs:
       - attach_workspace:
           at: ./dist
       - run:
+          name: Installing npm dependencies
+          command: npm install
+      - run:
           name: Build .dmg
           # todo: add --forceCodeSigning=true once we get it working on circleci
-          command: ./node_modules/.bin/build --mac --distribution=never
-
+          command: ./node_modules/.bin/build --mac --publish=never
+      - run: sh -x ./scripts/cp_artifacts.sh release /dist/artifacts
+      - store_artifacts:
+          path: ./release/
+          destination: mac
       # - run:
       #     name: decode Apple Certificates
       #     command: base64 -D -o Certificates.p12 <<< $applecertificates
@@ -190,9 +196,9 @@ jobs:
     executor: wine-chrome
     steps:
       - attach_workspace:
-          at: /build
+          at: ./dist
       - store_artifacts:
-          path: /build
+          path: ./dist
           destination: packages
 
 
@@ -243,7 +249,7 @@ workflows:
 
       - mac_installer:
           requires:
-            - build
+            - build-linux
           context: codesign-certificates
           filters:
             branches:
