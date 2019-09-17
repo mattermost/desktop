@@ -175,6 +175,9 @@ jobs:
           name: Installing npm dependencies
           command: npm install
       - run:
+          name: build js
+          command: npm run build
+      - run:
           name: Build .dmg
           # todo: add --forceCodeSigning=true once we get it working on circleci
           command: ./node_modules/.bin/build --mac --publish=never
