@@ -159,9 +159,10 @@ jobs:
           operation: "install-deps"
       - win_make: 
           operation: "build"
-      - store_artifacts:
-          path: ./release/
-          destination: msi
+      - persist_to_workspace:
+          root: ./release/
+          paths:
+            - .
 
   mac_installer:
     executor: mac
@@ -183,9 +184,10 @@ jobs:
           command: ./node_modules/.bin/build --mac --publish=never
       - run: mkdir -p ./dist/artifacts
       - run: sh -x ./scripts/cp_artifacts.sh release ./dist/artifacts
-      - store_artifacts:
-          path: ./release/
-          destination: mac
+      - persist_to_workspace:
+          root: ./dist
+          paths:
+            - ./release/
       # - run:
       #     name: decode Apple Certificates
       #     command: base64 -D -o Certificates.p12 <<< $applecertificates
