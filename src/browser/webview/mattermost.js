@@ -4,6 +4,7 @@
 'use strict';
 
 import {ipcRenderer, webFrame} from 'electron';
+import notifier from 'node-notifier';
 
 import EnhancedNotification from '../js/notification';
 
@@ -48,6 +49,39 @@ window.addEventListener('load', () => {
   watchReactAppUntilInitialized(() => {
     ipcRenderer.sendToHost('onGuestInitialized', window.basename);
   });
+
+  setInterval(() => {
+    console.log('notify');
+    notifier.notify({
+      appName: 'Mattermost.Desktop',
+      title: 'Test title',
+      message: 'This is a test message, it should work!',
+      wait: true,
+    });
+  }, 5000);
+});
+
+// handle communication from the webapp
+window.addEventListener('message', ({origin, data: {type, message} = {}} = {}) => {
+  if (origin !== window.location.origin) {
+    return;
+  }
+  switch (type) {
+  case 'desktop-notification':
+    const {title, body, url} = message; // eslint-disable-line no-case-declarations
+    if (!title || !body || !url) {
+      return;
+    }
+    console.log('[webapp] desktop-notification', {
+      origin,
+      type,
+      title,
+      body,
+      url,
+    });
+    window.postMessage({type: 'navigate-to-channel', message: {url}}, window.location.origin);
+    break;
+  }
 });
 
 function hasClass(element, className) {

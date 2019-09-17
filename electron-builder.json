@@ -3,7 +3,7 @@
     "provider": "generic",
     "url": "https://releases.mattermost.com/desktop/"
   }],
-  "appId": "com.mattermost.desktop",
+  "appId": "Mattermost.Desktop",
   "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
   "directories": {
     "buildResources": "resources",
@@ -17,6 +17,7 @@
     "node_modules/bootstrap/dist/**",
     "node_modules/simple-spellchecker/dict/*.dic"
   ],
+  "asar": false,
   "protocols": [
     {
       "name": "Mattermost",

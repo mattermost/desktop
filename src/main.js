@@ -10,6 +10,7 @@ import {URL} from 'url';
 import electron from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
+import notifier from 'node-notifier';
 
 import {protocols} from '../electron-builder.json';
 
@@ -456,6 +457,15 @@ function handleAppWebContentsCreated(dc, contents) {
 
 function initializeAfterAppReady() {
   app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
+
+  // setInterval(() => {
+  //   console.log('notify');
+  //   notifier.notify({
+  //     appName: 'Mattermost.Desktop',
+  //     title: 'Test title',
+  //     message: 'This is a test message, it should work!',
+  //   });
+  // }, 5000);
 
   const appStateJson = path.join(app.getPath('userData'), 'app-state.json');
   appState = new AppStateManager(appStateJson);
