@@ -117,9 +117,9 @@ jobs:
 
     steps:
       - checkout
-      - run: mkdir -p /dist
+      - run: mkdir -p ./dist
       - attach_workspace:
-          at: /dist
+          at: ./dist
       - run:
           name: Build .dmg
           # todo: add --forceCodeSigning=true once we get it working on circleci
@@ -149,10 +149,10 @@ workflows:
   version: 2
   test_and_build:
     jobs:
-      - check
-      - build:
-          requires:
-            - check
+      # - check
+      - build
+          # requires:
+          #   - check
       - msi_installer:
           requires:
             - build 
