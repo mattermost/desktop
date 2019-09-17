@@ -13,7 +13,7 @@ executors:
   mac:
     working_directory: ~/mattermost-desktop
     macos:
-      xcode: "10.3"
+      xcode: "10.3.0"
 commands:
   update_image:
     description: "Update base image"
