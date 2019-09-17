@@ -156,7 +156,7 @@ workflows:
           requires:
             - build 
           filters:
-            branch:
+            branches:
               only: 
               # only for release and release candidates
               # v.XX.YY
@@ -169,7 +169,7 @@ workflows:
             - build
           context: codesign-certificates
           filters:
-            branch:
+            branches:
               only:
                 - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
                 # todo: once working remove this one
@@ -179,7 +179,7 @@ workflows:
           requires:
             - build
           filters:
-            branch:
+            branches:
               ignore:
                 - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
                 # todo: once working remove this one
@@ -191,7 +191,7 @@ workflows:
             # - msi_installer
             - mac_installer
           filters:
-            branch:
+            branches:
               only:
                 - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
                 # todo: once working remove this one
