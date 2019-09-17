@@ -249,7 +249,7 @@ workflows:
 
       - mac_installer:
           requires:
-            - build-linux
+            - check
           context: codesign-certificates
           filters:
             branches:
