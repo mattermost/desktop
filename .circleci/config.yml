@@ -58,7 +58,7 @@ jobs:
             - "node_modules"
             - "src/node_modules"
 
-  build:
+  build-linux:
     executor: wine-mono
     steps:
       - checkout
@@ -69,9 +69,9 @@ jobs:
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
       - run: npm run build
-      - run: npm run package:windows
-      - run: jq '.mac.target=["zip"]' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
-      - run: npm run package:mac
+      # - run: npm run package:windows
+      # - run: jq '.mac.target=["zip"]' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
+      # - run: npm run package:mac
       - run: npm run package:linux
       - run: mkdir -p /dist/artifacts
       - run: sh -x ./scripts/cp_artifacts.sh release /dist/artifacts
@@ -89,13 +89,64 @@ jobs:
           root: /dist
           paths: 
             - "./artifacts/"
-#      - store_artifacts:
-#          path: /tmp/artifacts/
-#          destination: packages
-#      - run: ./node_modules/.bin/build-storybook -c src/.storybook -o storybook
-#      - store_artifacts:
-#          path: storybook/
-#          destination: storybook
+  build-win-no-installer:
+    executor: wine-mono
+    steps:
+      - checkout
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
+      - update_image:
+          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run: npm run build
+      - run: npm run package:windows
+      - run: mkdir -p /dist/artifacts
+      - run: sh -x ./scripts/cp_artifacts.sh release /dist/artifacts
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          paths:
+            - "node_modules"
+            - "~/.cache/electron"
+            - "~/.cache/electron-builder"
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
+          paths:
+            - "src/node_modules"
+      - persist_to_workspace:
+          root: /dist
+          paths: 
+            - "./artifacts/"
+
+  build-mac-no-dmg:
+    executor: wine-mono
+    steps:
+      - checkout
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
+      - update_image:
+          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run: npm run build
+      - run: jq '.mac.target=["zip"]' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
+      - run: npm run package:mac
+      - run: mkdir -p /dist/artifacts
+      - run: sh -x ./scripts/cp_artifacts.sh release /dist/artifacts
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          paths:
+            - "node_modules"
+            - "~/.cache/electron"
+            - "~/.cache/electron-builder"
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
+          paths:
+            - "src/node_modules"
+      - persist_to_workspace:
+          root: /dist
+          paths: 
+            - "./artifacts/"
 
   msi_installer:
     executor: win/vs2019
@@ -149,13 +200,38 @@ workflows:
   version: 2
   test_and_build:
     jobs:
-      # - check
-      - build
-          # requires:
-          #   - check
+      - check
+      - build-linux:
+          requires:
+             - check
+          filters:
+            branches:
+              ignore:
+                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                # todo: once working remove this one
+                - mac_build
+      - build-win-no-installer:
+          requires:
+             - check
+          filters:
+            branches:
+              ignore:
+                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                # todo: once working remove this one
+                - mac_build
+      - build-mac-no-dmg:
+          requires:
+             - check
+          filters:
+            branches:
+              ignore:
+                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                # todo: once working remove this one
+                - mac_build
+
       - msi_installer:
           requires:
-            - build 
+            - check
           filters:
             branches:
               only: 
@@ -178,7 +254,9 @@ workflows:
       - store:
           # for master builds
           requires:
-            - build
+            - build-linux
+            - build-win-no-installer
+            - build-mac-no-dmg
           filters:
             branches:
               ignore:
