@@ -74,7 +74,7 @@ jobs:
       - run: npm run package:mac
       - run: npm run package:linux
       - run: mkdir -p /tmp/artifacts
-      - run: sh -x ./scripts/cp_artifacts.sh release /tmp/artifacts
+      - run: sh -x ./scripts/cp_artifacts.sh release /dist/artifacts
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -86,9 +86,9 @@ jobs:
           paths:
             - "src/node_modules"
       - persist_to_workspace:
-          root: ./build
+          root: /dist
           paths: 
-            - "/tmp/artifacts/"
+            - "./artifacts/"
 #      - store_artifacts:
 #          path: /tmp/artifacts/
 #          destination: packages
@@ -118,7 +118,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: ./dist
+          at: /dist
       - run:
           name: Build .dmg
           # todo: add --forceCodeSigning=true once we get it working on circleci
@@ -138,9 +138,9 @@ jobs:
     executor: wine-chrome
     steps:
       - attach_workspace:
-          at: ./build
+          at: /build
       - store_artifacts:
-          path: ./build
+          path: /build
           destination: packages
 
 
