@@ -252,6 +252,8 @@ workflows:
               # v.XX.YY.ZZ
               # v.XX.YY.ZZ-rc-something
                 - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                # todo: once working remove this one
+                - mac_build
 
       - mac_installer:
           requires:
@@ -279,7 +281,7 @@ workflows:
           # for release and rc builds
           requires:
             # todo: once working uncomment this
-            # - msi_installer
+            - msi_installer
             - mac_installer
           filters:
             branches:
