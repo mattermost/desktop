@@ -28,6 +28,7 @@ fi
 if [[ -f "${SRC}"/mattermost-desktop-${VERSION}-mac.dmg ]]; then
     echo "Copying mac\n"
     cp "${SRC}"/mattermost-desktop-*-mac.* "${DEST}/"
+    cp "${SRC}"/*.blockmap "${DEST}/"
     SOMETHING_COPIED=`expr $SOMETHING_COPIED + 8`
 fi
 if [[ -f "${SRC}"/mattermost-desktop-${VERSION}-linux-x64.tar.gz ]]; then
@@ -41,7 +42,6 @@ if [[ $SOMETHING_COPIED -eq 0 ]]; then
 fi
 
 cp "${SRC}"/*.yml "${DEST}/"
-cp "${SRC}"/*.blockmap "${DEST}/"
 
 # exit $SOMETHING_COPIED
 exit 0
