@@ -43,4 +43,5 @@ fi
 cp "${SRC}"/*.yml "${DEST}/"
 cp "${SRC}"/*.blockmap "${DEST}/"
 
-exit $SOMETHING_COPIED
+# exit $SOMETHING_COPIED
+exit 0
