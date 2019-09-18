@@ -73,8 +73,8 @@ jobs:
       # - run: jq '.mac.target=["zip"]' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
       # - run: npm run package:mac
       - run: npm run package:linux
-      - run: mkdir -p /dist/artifacts
-      - run: sh -x ./scripts/cp_artifacts.sh release /dist/artifacts
+      - run: mkdir -p /dist/linux
+      - run: sh -x ./scripts/cp_artifacts.sh release /dist/linux
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -88,7 +88,7 @@ jobs:
       - persist_to_workspace:
           root: /dist
           paths: 
-            - "./artifacts/"
+            - "./linux/"
   build-win-no-installer:
     executor: wine-mono
     steps:
@@ -101,8 +101,8 @@ jobs:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
       - run: npm run build
       - run: npm run package:windows
-      - run: mkdir -p /dist/artifacts
-      - run: sh -x ./scripts/cp_artifacts.sh release /dist/artifacts
+      - run: mkdir -p /dist/win
+      - run: sh -x ./scripts/cp_artifacts.sh release /dist/win
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -116,7 +116,7 @@ jobs:
       - persist_to_workspace:
           root: /dist
           paths: 
-            - "./artifacts/"
+            - "./win/"
 
   build-mac-no-dmg:
     executor: wine-mono
@@ -131,8 +131,8 @@ jobs:
       - run: npm run build
       - run: jq '.mac.target=["zip"]' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
       - run: npm run package:mac
-      - run: mkdir -p /dist/artifacts
-      - run: sh -x ./scripts/cp_artifacts.sh release /dist/artifacts
+      - run: mkdir -p /dist/macos
+      - run: sh -x ./scripts/cp_artifacts.sh release /dist/macos
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -146,7 +146,7 @@ jobs:
       - persist_to_workspace:
           root: /dist
           paths: 
-            - "./artifacts/"
+            - "./macos/"
 
   msi_installer:
     executor: win/vs2019
@@ -182,12 +182,12 @@ jobs:
           name: Build .dmg
           # todo: add --forceCodeSigning=true once we get it working on circleci
           command: ./node_modules/.bin/build --mac --publish=never
-      - run: mkdir -p ./dist/artifacts
-      - run: sh -x ./scripts/cp_artifacts.sh release ./dist/artifacts
+      - run: mkdir -p ./dist/macos
+      - run: sh -x ./scripts/cp_artifacts.sh release ./dist/macos
       - persist_to_workspace:
           root: ./dist
           paths:
-            - ./release/
+            - ./macos/
       # - run:
       #     name: decode Apple Certificates
       #     command: base64 -D -o Certificates.p12 <<< $applecertificates
