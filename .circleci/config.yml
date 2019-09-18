@@ -166,10 +166,10 @@ jobs:
       - win_make: 
           operation: "build"
       - run: mkdir -p ./dist/win
-      - run: cp -r release/*.exe /dist/win
-      - run: cp -r release/*.zip /dist/win
-      - run: cp -r release/*.msi /dist/win
-      - run: cp -r release/*.blockmap /dist/win
+      - run: cp -r release/*.exe ./dist/win
+      - run: cp -r release/*.zip ./dist/win
+      - run: cp -r release/*.msi ./dist/win
+      - run: cp -r release/*.blockmap ./dist/win
 
       - persist_to_workspace:
           root: ./dist/
