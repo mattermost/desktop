@@ -62,6 +62,9 @@ jobs:
     executor: wine-mono
     steps:
       - checkout
+      - run: mkdir -p ./dist
+      - attach_workspace:
+          at: ./dist
       - restore_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - restore_cache:
@@ -153,6 +156,9 @@ jobs:
 
     steps:
       - checkout
+      - run: mkdir -p ./release/
+      - attach_workspace:
+          at: ./release
       - win_make: 
           operation: optimize
       - win_make:
