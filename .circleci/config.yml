@@ -216,12 +216,6 @@ workflows:
       - build-linux:
           requires:
              - check
-          filters:
-            branches:
-              ignore:
-                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
-                # todo: once working remove this one
-                - mac_build
       - build-win-no-installer:
           requires:
              - check
@@ -283,6 +277,7 @@ workflows:
             # todo: once working uncomment this
             - msi_installer
             - mac_installer
+            - build-linux
           filters:
             branches:
               only:
