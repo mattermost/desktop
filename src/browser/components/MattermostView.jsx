@@ -60,6 +60,18 @@ export default class MattermostView extends React.Component {
     const self = this;
     const webview = this.webviewRef.current;
 
+    // setInterval(() => {
+    //   // this should dispatch a desktop notification, but it doesn't
+    //   console.log('dispatch notification');
+    //   const myNotification = new Notification('Test notification', {
+    //     body: 'This is just a test notification',
+    //   });
+
+    //   myNotification.onclick = () => {
+    //     console.log('Notification clicked');
+    //   };
+    // }, 5000);
+
     webview.addEventListener('did-fail-load', (e) => {
       console.log(self.props.name, 'webview did-fail-load', e);
       if (e.errorCode === -3) { // An operation was aborted (due to user action).

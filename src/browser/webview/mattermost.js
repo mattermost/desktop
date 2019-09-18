@@ -4,7 +4,6 @@
 'use strict';
 
 import {ipcRenderer, webFrame} from 'electron';
-import notifier from 'node-notifier';
 
 import EnhancedNotification from '../js/notification';
 
@@ -50,15 +49,17 @@ window.addEventListener('load', () => {
     ipcRenderer.sendToHost('onGuestInitialized', window.basename);
   });
 
-  setInterval(() => {
-    console.log('notify');
-    notifier.notify({
-      appName: 'Mattermost.Desktop',
-      title: 'Test title',
-      message: 'This is a test message, it should work!',
-      wait: true,
-    });
-  }, 5000);
+  // setInterval(() => {
+  //   // this does dispatch a desktop notification, but only if webview is running form `https://`
+  //   console.log('dispatch notification');
+  //   const myNotification = new Notification('Test notification', {
+  //     body: 'This is just a test notification',
+  //   });
+
+  //   myNotification.onclick = () => {
+  //     console.log('Notification clicked');
+  //   };
+  // }, 5000);
 });
 
 // handle communication from the webapp
