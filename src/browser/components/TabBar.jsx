@@ -3,9 +3,7 @@
 // See LICENSE.txt for license information.
 import React from 'react';
 import PropTypes from 'prop-types';
-import {Glyphicon, Nav, NavItem, Overlay} from 'react-bootstrap';
-
-import PermissionRequestDialog from './PermissionRequestDialog.jsx';
+import {Glyphicon, Nav, NavItem} from 'react-bootstrap';
 
 export default class TabBar extends React.Component { // need "this"
   render() {
@@ -41,24 +39,6 @@ export default class TabBar extends React.Component { // need "this"
         );
       }
       const id = 'teamTabItem' + index;
-      const requestingPermission = this.props.requestingPermission[index];
-      const permissionOverlay = (
-        <Overlay
-          className='TabBar-permissionOverlay'
-          placement='bottom'
-          show={requestingPermission && this.props.activeKey === index}
-          target={() => this.refs[id]}
-        >
-          <PermissionRequestDialog
-            id={`${id}-permissionDialog`}
-            origin={requestingPermission ? requestingPermission.origin : null}
-            permission={requestingPermission ? requestingPermission.permission : null}
-            onClickAllow={this.props.onClickPermissionDialog.bind(null, index, 'allow')}
-            onClickBlock={this.props.onClickPermissionDialog.bind(null, index, 'block')}
-            onClickClose={this.props.onClickPermissionDialog.bind(null, index, 'close')}
-          />
-        </Overlay>
-      );
 
       // draggable=false is a workaround for https://github.com/mattermost/desktop/issues/667
       // It would obstruct https://github.com/mattermost/desktop/issues/478
@@ -79,7 +59,6 @@ export default class TabBar extends React.Component { // need "this"
           </span>
           { ' ' }
           { badgeDiv }
-          {permissionOverlay}
         </NavItem>);
     });
     if (this.props.showAddServerButton === true) {
@@ -127,10 +106,5 @@ TabBar.propTypes = {
   mentionCounts: PropTypes.array,
   mentionAtActiveCounts: PropTypes.array,
   showAddServerButton: PropTypes.bool,
-  requestingPermission: PropTypes.arrayOf(PropTypes.shape({
-    origin: PropTypes.string,
-    permission: PropTypes.string,
-  })),
   onAddServer: PropTypes.func,
-  onClickPermissionDialog: PropTypes.func,
 };
