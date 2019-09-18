@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 set -eu
 
 VERSION=`cat package.json | jq -r '.version'`
