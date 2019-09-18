@@ -6,8 +6,8 @@ executors:
     working_directory: ~/mattermost-desktop
     docker:
       - image: electronuserland/builder:wine-chrome
-    environment:
-      TAR_OPTIONS: --no-same-owner
+        environment:
+          TAR_OPTIONS: --no-same-owner
   wine-mono:
     working_directory: ~/mattermost-desktop
     docker:
