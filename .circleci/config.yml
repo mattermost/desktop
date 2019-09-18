@@ -156,19 +156,25 @@ jobs:
 
     steps:
       - checkout
-      - run: mkdir -p ./release/
+      - run: mkdir -p ./dist/
       - attach_workspace:
-          at: ./release
+          at: ./dist
       - win_make: 
           operation: optimize
       - win_make:
           operation: "install-deps"
       - win_make: 
           operation: "build"
+      - run: mkdir -p ./dist/win
+      - run: cp -r release/*.exe /dist/win
+      - run: cp -r release/*.zip /dist/win
+      - run: cp -r release/*.msi /dist/win
+      - run: cp -r release/*.blockmap /dist/win
+
       - persist_to_workspace:
-          root: ./release/
+          root: ./dist/
           paths:
-            - .
+            - "./win/"
 
   mac_installer:
     executor: mac
