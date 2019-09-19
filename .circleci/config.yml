@@ -1,13 +1,21 @@
 version: 2.1
+orbs:
+    win: circleci/windows@1.0.0
 executors:
   wine-chrome:
     working_directory: ~/mattermost-desktop
     docker:
       - image: electronuserland/builder:wine-chrome
+        environment:
+          TAR_OPTIONS: --no-same-owner
   wine-mono:
     working_directory: ~/mattermost-desktop
     docker:
       - image: electronuserland/builder:wine-mono
+  mac:
+    working_directory: ~/mattermost-desktop
+    macos:
+      xcode: "10.3.0"
 commands:
   update_image:
     description: "Update base image"
@@ -18,6 +26,18 @@ commands:
     steps:
       - run: apt-get update && apt-get -y install << parameters.apt_opts >>
       - run: npm install
+
+  win_make:
+    description: "Run mattermost's makefile.ps1 on ./scripts/"
+    parameters:
+      operation:
+        type: string
+        default: ""
+    steps:
+      - run:
+          command: ./scripts/Makefile.ps1 << parameters.operation >>
+          name: << parameters.operation >>
+          shell: powershell
 
 jobs:
   check:
@@ -40,7 +60,41 @@ jobs:
             - "node_modules"
             - "src/node_modules"
 
-  build:
+  build-linux:
+    executor: wine-mono
+    steps:
+      - checkout
+      - run: mkdir -p ./dist
+      - attach_workspace:
+          at: ./dist
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
+      - update_image:
+          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run: npm run build
+      # - run: npm run package:windows
+      # - run: jq '.mac.target=["zip"]' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
+      # - run: npm run package:mac
+      - run: npm run package:linux
+      - run: mkdir -p /dist/linux
+      - run: bash -x ./scripts/cp_artifacts.sh release /dist/linux
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          paths:
+            - "node_modules"
+            - "~/.cache/electron"
+            - "~/.cache/electron-builder"
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
+          paths:
+            - "src/node_modules"
+      - persist_to_workspace:
+          root: /dist
+          paths: 
+            - "./linux/"
+  build-win-no-installer:
     executor: wine-mono
     steps:
       - checkout
@@ -52,11 +106,8 @@ jobs:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
       - run: npm run build
       - run: npm run package:windows
-      - run: jq '.mac.target=["zip"]' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
-      - run: npm run package:mac
-      - run: npm run package:linux
-      - run: mkdir -p /tmp/artifacts
-      - run: sh -x ./scripts/cp_artifacts.sh release /tmp/artifacts
+      - run: mkdir -p /dist/win
+      - run: sh -x ./scripts/cp_artifacts.sh release /dist/win
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -67,19 +118,183 @@ jobs:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
           paths:
             - "src/node_modules"
+      - persist_to_workspace:
+          root: /dist
+          paths: 
+            - "./win/"
+
+  build-mac-no-dmg:
+    executor: wine-mono
+    steps:
+      - checkout
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
+      - update_image:
+          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run: npm run build
+      - run: jq '.mac.target=["zip"]' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
+      - run: npm run package:mac
+      - run: mkdir -p /dist/macos
+      - run: sh -x ./scripts/cp_artifacts.sh release /dist/macos
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          paths:
+            - "node_modules"
+            - "~/.cache/electron"
+            - "~/.cache/electron-builder"
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
+          paths:
+            - "src/node_modules"
+      - persist_to_workspace:
+          root: /dist
+          paths: 
+            - "./macos/"
+
+  msi_installer:
+    executor: win/vs2019
+
+    steps:
+      - checkout
+      - run: mkdir -p ./dist/
+      - attach_workspace:
+          at: ./dist
+      - win_make: 
+          operation: optimize
+      - win_make:
+          operation: "install-deps"
+      - win_make: 
+          operation: "build"
+      - run: mkdir -p ./dist/win
+      - run: cp -r release/*.exe ./dist/win
+      - run: cp -r release/*.zip ./dist/win
+      - run: cp -r release/*.msi ./dist/win
+      - run: cp -r release/*.blockmap ./dist/win
+
+      - persist_to_workspace:
+          root: ./dist/
+          paths:
+            - "./win/"
+
+  mac_installer:
+    executor: mac
+
+    steps:
+      - checkout
+      - run: mkdir -p ./dist
+      - attach_workspace:
+          at: ./dist
+      - run:
+          name: Installing npm dependencies
+          command: npm install
+      - run:
+          name: build js
+          command: npm run build
+      - run:
+          name: Build .dmg
+          # todo: add --forceCodeSigning=true once we get it working on circleci
+          command: ./node_modules/.bin/build --mac --publish=never
+      - run: mkdir -p ./dist/macos
+      - run: sh -x ./scripts/cp_artifacts.sh release ./dist/macos
+      - persist_to_workspace:
+          root: ./dist
+          paths:
+            - ./macos/
+      # - run:
+      #     name: decode Apple Certificates
+      #     command: base64 -D -o Certificates.p12 <<< $applecertificates
+      # - run:
+      #     name: make Provisioning Profiles directory
+      #     command: mkdir -pv ~/Library/MobileDevice/Provisioning\ Profiles/
+      # - run:
+      #     name: decode Provisioning Profiles
+      #     command: base64 -D -o ~/Library/MobileDevice/Provisioning\ Profiles/App_Store.mobileprovision <<< $App_Store_Profile
+
+  store:
+    executor: wine-chrome
+    steps:
+      - attach_workspace:
+          at: ./dist
       - store_artifacts:
-          path: /tmp/artifacts/
+          path: ./dist
           destination: packages
-      - run: ./node_modules/.bin/build-storybook -c src/.storybook -o storybook
-      - store_artifacts:
-          path: storybook/
-          destination: storybook
+
 
 workflows:
   version: 2
-  build_and_test:
+  test_and_build:
     jobs:
       - check
-      - build:
+      - build-linux:
+          requires:
+             - check
+      - build-win-no-installer:
+          requires:
+             - check
+          filters:
+            branches:
+              ignore:
+                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                # todo: once working remove this one
+                - mac_build
+      - build-mac-no-dmg:
+          requires:
+             - check
+          filters:
+            branches:
+              ignore:
+                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                # todo: once working remove this one
+                - mac_build
+
+      - msi_installer:
           requires:
             - check
+          filters:
+            branches:
+              only: 
+              # only for release and release candidates
+              # v.XX.YY
+              # v.XX.YY.ZZ
+              # v.XX.YY.ZZ-rc-something
+                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                # todo: once working remove this one
+                - mac_build
+
+      - mac_installer:
+          requires:
+            - check
+          context: codesign-certificates
+          filters:
+            branches:
+              only:
+                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                # todo: once working remove this one
+                - mac_build
+      - store:
+          # for master builds
+          requires:
+            - build-linux
+            - build-win-no-installer
+            - build-mac-no-dmg
+          filters:
+            branches:
+              ignore:
+                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                # todo: once working remove this one
+                - mac_build
+      - store:
+          # for release and rc builds
+          requires:
+            # todo: once working uncomment this
+            - msi_installer
+            - mac_installer
+            - build-linux
+          filters:
+            branches:
+              only:
+                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                # todo: once working remove this one
+                - mac_build

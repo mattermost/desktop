@@ -1,0 +1,73 @@
+version: '{build}'
+image: Visual Studio 2017
+branches:
+  only:
+    - master
+    - /^release-.*$/
+    - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
+
+init:
+  # Do not try to run a Powershell script from the repo here, because at this
+  # stage (init) the repo is not cloned yet.
+
+build_script:
+- ps: |
+    # If you want to debug the build process on AppVeyor, you can open an RDP
+    # connection with:
+    #.\scripts\Makefile.ps1 debug
+    .\scripts\Makefile.ps1
+
+test_script:
+- ps: |
+    # If you want to debug the build process on AppVeyor, you can open an RDP
+    # connection with:
+    #.\scripts\Makefile.ps1 debug
+    .\scripts\Makefile.ps1 test
+
+# Secure variables are not decoded during Pull Request
+# src.: https://www.appveyor.com/docs/build-configuration/#secure-variables
+environment:
+  COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED:
+    secure: 9k3nvcEL+YDZTH15atlEvRBO664rBEofptMmeaf8BMN8bSGOq4Darz5UhMj4blO4
+  COM_MATTERMOST_MAKEFILE_CERTIFICATE_DECRYPTION_KEY_ENCRYPTED:
+    secure: GjvvWt6sGQBJu16BR2dpZMW2eXyNB3zT2tbWN/AQxGEqjNPkXZePHWVHS/5hAFmJ
+  COM_MATTERMOST_MAKEFILE_GITHUB_OAUTH_TOKEN_ENCRYPTED:
+    secure: I2wx9gajpvBjcxtEKYoYqqmyoH/2fWQflycpwlHZY9SD9sFkPlA4CNMcF29dcI4j
+
+artifacts:
+  - path: 'release\*.msi'
+    name: MsiInstallers
+
+deploy:
+  # Nightly build
+  - provider: GitHub
+    auth_token:
+      secure: I2wx9gajpvBjcxtEKYoYqqmyoH/2fWQflycpwlHZY9SD9sFkPlA4CNMcF29dcI4j
+    release: $(APPVEYOR_BUILD_NUMBER) ($(APPVEYOR_REPO_COMMIT))
+    description: $(COM_MATTERMOST_MAKEFILE_BUILD_CHANGELOG)
+    artifact: MsiInstallers
+    prerelease: true
+    force_update: true
+    on:
+      branch: master
+  # Taggued releases
+  - provider: GitHub
+    auth_token:
+      secure: I2wx9gajpvBjcxtEKYoYqqmyoH/2fWQflycpwlHZY9SD9sFkPlA4CNMcF29dcI4j
+    release: $(APPVEYOR_REPO_TAG_NAME) ($(COM_MATTERMOST_MAKEFILE_BUILD_DATE))
+    description: $(COM_MATTERMOST_MAKEFILE_BUILD_CHANGELOG)
+    artifact: MsiInstallers
+    draft: true
+    force_update: false
+    # With `prerelease: true`, specifying the tag allows to merge automatically
+    # the release with the tag we made. When using `draft: true`, the draft is
+    # in a dedicated space not bound with any particular tag. When clicking on
+    # "Publish release" on GitHub, it will be linked against the tag we made
+    # by default.
+    tag: $(APPVEYOR_REPO_TAG_NAME)
+    on:
+      APPVEYOR_REPO_TAG: true
+
+on_finish:
+- ps: |
+    # Some Powershell script to run at the end
