@@ -120,7 +120,7 @@ export default class MattermostView extends React.Component {
           shell.openExternal(e.url);
         } else {
           // New window should disable nodeIntegration.
-          window.open(e.url, remote.app.getName(), 'nodeIntegration=no, show=yes');
+          window.open(e.url, remote.app.getName(), 'nodeIntegration=no, contextIsolation=yes, show=yes');
         }
       } else {
         // if the link is external, use default browser.
