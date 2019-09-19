@@ -38,7 +38,27 @@ commands:
           command: ./scripts/Makefile.ps1 << parameters.operation >>
           name: << parameters.operation >>
           shell: powershell
-
+  build:
+    description: "Building << parameters.os >> app"
+    parameters:
+      os:
+        type: string
+        default: "linux"
+      path:
+        type: string
+        default: "./dist/linux"
+      subpath:
+        type: string
+        default: linux
+    steps:
+      - run: npm run build
+      - run: npm run package:<< parameters.os >>
+      - run: mkdir -p << parameters.path >>
+      - run: bash -x ./scripts/cp_artifacts.sh release << parameters.path >>
+      - persist_to_workspace:
+          root: /dist
+          paths: 
+            - "./<< parameters.subpath >>/"
 jobs:
   check:
     executor: wine-chrome    
@@ -73,13 +93,7 @@ jobs:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
-      - run: npm run build
-      # - run: npm run package:windows
-      # - run: jq '.mac.target=["zip"]' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
-      # - run: npm run package:mac
-      - run: npm run package:linux
-      - run: mkdir -p /dist/linux
-      - run: bash -x ./scripts/cp_artifacts.sh release /dist/linux
+      - build
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -90,24 +104,24 @@ jobs:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
           paths:
             - "src/node_modules"
-      - persist_to_workspace:
-          root: /dist
-          paths: 
-            - "./linux/"
+
   build-win-no-installer:
     executor: wine-mono
     steps:
       - checkout
+      - run: mkdir -p ./dist
+      - attach_workspace:
+          at: ./dist
       - restore_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - restore_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
-      - run: npm run build
-      - run: npm run package:windows
-      - run: mkdir -p /dist/win
-      - run: sh -x ./scripts/cp_artifacts.sh release /dist/win
+      - build:
+          os: windows
+          path: ./dist/win
+          subpath: ./win/
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -118,10 +132,6 @@ jobs:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
           paths:
             - "src/node_modules"
-      - persist_to_workspace:
-          root: /dist
-          paths: 
-            - "./win/"
 
   build-mac-no-dmg:
     executor: wine-mono
@@ -133,11 +143,11 @@ jobs:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
-      - run: npm run build
       - run: jq '.mac.target=["zip"]' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
-      - run: npm run package:mac
-      - run: mkdir -p /dist/macos
-      - run: sh -x ./scripts/cp_artifacts.sh release /dist/macos
+      - build:
+          os: mac
+          path: ./dist/macos
+          subpath: ./macos/
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -148,10 +158,6 @@ jobs:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
           paths:
             - "src/node_modules"
-      - persist_to_workspace:
-          root: /dist
-          paths: 
-            - "./macos/"
 
   msi_installer:
     executor: win/vs2019
