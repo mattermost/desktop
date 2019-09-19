@@ -561,6 +561,41 @@ function initializeAfterAppReady() {
   ipcMain.emit('update-menu', true, config.data);
 
   ipcMain.emit('update-dict');
+
+  // supported permission types
+  const supportedPermissionTypes = [
+    'media',
+    'geolocation',
+    'notifications',
+    'fullscreen',
+    'openExternal',
+  ];
+
+  // handle permission requests
+  // - approve if a supported permission type and the request comes from the renderer or one of the defined servers
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    // is the requested permission type supported?
+    if (!supportedPermissionTypes.includes(permission)) {
+      callback(false);
+      return;
+    }
+
+    // is the request coming from the renderer?
+    if (webContents.id === mainWindow.webContents.id) {
+      callback(true);
+      return;
+    }
+
+    // get the requesting webContents url
+    const requestingURL = webContents.getURL();
+
+    // is the target url trusted?
+    config.teams.forEach((team) => {
+      if (requestingURL.startsWith(team.url)) {
+        callback(true);
+      }
+    });
+  });
 }
 
 //
