@@ -49,14 +49,14 @@ commands:
         default: "./dist/linux"
       subpath:
         type: string
-        default: linux
+        default: "./linux/"
     steps:
       - run: npm run build
       - run: npm run package:<< parameters.os >>
       - run: mkdir -p << parameters.path >>
       - run: bash -x ./scripts/cp_artifacts.sh release << parameters.path >>
       - persist_to_workspace:
-          root: /dist
+          root: ./dist
           paths: 
             - "./<< parameters.subpath >>/"
 jobs:
