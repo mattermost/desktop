@@ -36,6 +36,13 @@ if [[ -f "${SRC}"/mattermost-desktop-${VERSION}-linux-x64.tar.gz ]]; then
     cp "${SRC}"/mattermost-desktop-*-linux-* "${DEST}/"
     SOMETHING_COPIED=`expr $SOMETHING_COPIED + 16`
 fi
+if [[ -f "${SRC}"/mattermost-desktop-${VERSION}-win-x64.zip ]]; then
+    echo "Copying windows"
+    cp "${SRC}"/mattermost-desktop-*-win-* "${DEST}/"
+    cp "${SRC}"/latest.yml "${DEST}/"
+    SOMETHING_COPIED=`expr $SOMETHING_COPIED + 32`
+fi
+
 if [[ $SOMETHING_COPIED -eq 0 ]]; then
     echo "didn't find anything to copy, seems like something failed"
     exit -1
