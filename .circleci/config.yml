@@ -242,7 +242,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                - /^(v|V)\.\d+\.\d+(\.\d+)?(-(rc|RC)-.*/)?/
                 # todo: once working remove this one
                 - mac_build
       - build-mac-no-dmg:
@@ -251,7 +251,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                - /^(v|V)\.\d+\.\d+(\.\d+)?(-(rc|RC)-.*/)?/
                 # todo: once working remove this one
                 - mac_build
 
@@ -265,7 +265,7 @@ workflows:
               # v.XX.YY
               # v.XX.YY.ZZ
               # v.XX.YY.ZZ-rc-something
-                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                - /^(v|V)\.\d+\.\d+(\.\d+)?(-(rc|RC)-.*/)?/
                 # todo: once working remove this one
                 - mac_build
 
@@ -276,7 +276,7 @@ workflows:
           filters:
             branches:
               only:
-                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                - /^(v|V)\.\d+\.\d+(\.\d+)?(-(rc|RC)-.*/)?/
                 # todo: once working remove this one
                 - mac_build
       - store:
@@ -288,7 +288,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                - /^(v|V)\.\d+\.\d+(\.\d+)?(-(rc|RC)-.*/)?/
                 # todo: once working remove this one
                 - mac_build
       - store:
@@ -301,6 +301,6 @@ workflows:
           filters:
             branches:
               only:
-                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                - /^(v|V)\.\d+\.\d+(\.\d+)?(-(rc|RC)-.*/)?/
                 # todo: once working remove this one
                 - mac_build
