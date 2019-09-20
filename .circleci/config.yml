@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-    win: circleci/windows@1.0.0
+  win: circleci/windows@1.0.0
 executors:
   wine-chrome:
     working_directory: ~/mattermost-desktop
@@ -57,11 +57,11 @@ commands:
       - run: bash -x ./scripts/cp_artifacts.sh release << parameters.path >>
       - persist_to_workspace:
           root: ./dist
-          paths: 
+          paths:
             - "./<< parameters.subpath >>/"
 jobs:
   check:
-    executor: wine-chrome    
+    executor: wine-chrome
     steps:
       - checkout
       - update_image:
@@ -167,11 +167,11 @@ jobs:
       - run: mkdir -p ./dist/
       - attach_workspace:
           at: ./dist
-      - win_make: 
+      - win_make:
           operation: optimize
       - win_make:
           operation: "install-deps"
-      - win_make: 
+      - win_make:
           operation: "build"
       - run: mkdir -p ./dist/win
       - run: cp -r release/*.exe ./dist/win
@@ -227,7 +227,6 @@ jobs:
           path: ./dist
           destination: packages
 
-
 workflows:
   version: 2
   test_and_build:
@@ -235,37 +234,38 @@ workflows:
       - check
       - build-linux:
           requires:
-             - check
+            - check
       - build-win-no-installer:
           requires:
-             - check
+            - check
           filters:
             branches:
               ignore:
-                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                - /^(v|V)\d+\.\d+\.\d+(-(rc|RC).*/)?/
                 # todo: once working remove this one
                 - mac_build
       - build-mac-no-dmg:
           requires:
-             - check
+            - check
           filters:
             branches:
               ignore:
-                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                - /^(v|V)\d+\.\d+\.\d+(-(rc|RC).*/)?/
                 # todo: once working remove this one
                 - mac_build
 
       - msi_installer:
           requires:
             - check
+          context: windows-codesign
           filters:
             branches:
-              only: 
-              # only for release and release candidates
-              # v.XX.YY
-              # v.XX.YY.ZZ
-              # v.XX.YY.ZZ-rc-something
-                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+              only:
+                # only for release and release candidates
+                # v.XX.YY
+                # v.XX.YY.ZZ
+                # v.XX.YY.ZZ-rc-something
+                - /^(v|V)\d+\.\d+\.\d+(-(rc|RC).*/)?/
                 # todo: once working remove this one
                 - mac_build
 
@@ -276,7 +276,7 @@ workflows:
           filters:
             branches:
               only:
-                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                - /^(v|V)\d+\.\d+\.\d+(-(rc|RC).*/)?/
                 # todo: once working remove this one
                 - mac_build
       - store:
@@ -288,7 +288,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                - /^(v|V)\d+\.\d+\.\d+(-(rc|RC).*/)?/
                 # todo: once working remove this one
                 - mac_build
       - store:
@@ -301,6 +301,6 @@ workflows:
           filters:
             branches:
               only:
-                - /v\.[0-9]+\.[0-9]+(\.[0-9]+){0,1}(-(rc|RC)-.*/){0,1}
+                - /^(v|V)\d+\.\d+\.\d+(-(rc|RC).*/)?/
                 # todo: once working remove this one
                 - mac_build

@@ -303,8 +303,36 @@ function Run-BuildForceSignature {
             Start-Sleep -s 15
             signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /as "$archPath\Mattermost.exe"
         }
+    } elseif (Test-Path $env:PFX) {
+        Print-Info "Signing"
+        foreach ($archPath in "release\win-unpacked", "release\win-ia32-unpacked") {
+            # Note: The C++ redistribuable files will be resigned again even if they have a
+            # correct signature from Microsoft. Windows doesn't seem to complain, but we
+            # don't know whether this is authorized by the Microsoft EULA.
+            Get-ChildItem -Path $archPath -recurse "*.dll" | ForEach-Object {
+                Print-Info "Signing $($_.Name) (waiting for 2 * 15 seconds)..."
+                # Waiting for at least 15 seconds is needed because these time
+                # servers usually have rate limits and signtool can fail with the
+                # following error message:
+                # "SignTool Error: The specified timestamp server either could not be reached or returned an invalid response.
+                # src.: https://web.archive.org/web/20190306223053/https://github.com/electron-userland/electron-builder/issues/2795#issuecomment-466831315
+                Start-Sleep -s 15
+                signtool.exe sign /f "./matermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "http://timestamp.digicert.com" /fd sha1 /td sha1 "$($_.FullName)"
+                Start-Sleep -s 15
+                signtool.exe sign /f "./matermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /as "$($_.FullName)"
+            }
+
+            Print-Info "Signing Mattermost.exe (waiting for 2 * 15 seconds)..."
+            Start-Sleep -s 15
+            signtool.exe sign /f "./matermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "http://timestamp.digicert.com" /fd sha1 /td sha1 "$archPath\Mattermost.exe"
+            Start-Sleep -s 15
+            signtool.exe sign /f "./matermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /as "$archPath\Mattermost.exe"
+        }
+    } else {
+        Print-Info "DLLs not signed"
     }
 }
+
 
 function Run-BuildLicense {
 
@@ -382,6 +410,35 @@ function Run-BuildMsi {
         Print-Info "Signing mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi (waiting for 15 seconds)..."
         Start-Sleep -s 15
         signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi"
+    } elseif (Test-Path $env:PFX) {
+        Print-Info "Signing mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi (waiting for 15 seconds)..."
+        Start-Sleep -s 15
+        # Dual signing is not supported on msi files. Is it recommended to sign with 256 hash.
+        # src.: https://security.stackexchange.com/a/124685/84134
+        # src.: https://social.msdn.microsoft.com/Forums/windowsdesktop/en-us/d4b70ecd-a883-4289-8047-cc9cde28b492#0b3e3b80-6b3b-463f-ac1e-1bf0dc831952
+        signtool.exe sign /f "./matermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi"
+
+        Print-Info "Signing mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi (waiting for 15 seconds)..."
+        Start-Sleep -s 15
+        signtool.exe sign /f "./matermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi"
+    } else {
+        Print-Info "Not signing msi"
+    }
+}
+
+function Get-Cert {
+    if (Test-Path $env:PFX) {
+        Print-Info "Getting windows certificate"
+        Add-Content "./matermost-desktop-windows.pfx" [Text.Encoding]::Utf8.GetString([Convert]::FromBase64String($env:PFX))
+    } else {
+        Print-Warning "No variable environment found, build will not be signed"
+    }
+}
+
+function Remove-Cert {
+    if (Test-Path $env:PFX) {
+        Print-Info "Removing windows certificate"
+        Remove-Item -path "./matermost-desktop-windows.pfx"
     }
 }
 
@@ -391,10 +448,11 @@ function Run-Build {
     Run-BuildId
     Run-BuildChangelog
     Run-BuildElectron
-    
+    Get-Cert
     Run-BuildForceSignature
     Run-BuildLicense
     Run-BuildMsi
+    Remove-Cert
 }
 
 function Run-Test {
