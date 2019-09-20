@@ -153,15 +153,3 @@ ReactDOM.render(
 // Drag&drop is allowed in webview of index.html.
 document.addEventListener('dragover', (event) => event.preventDefault());
 document.addEventListener('drop', (event) => event.preventDefault());
-
-// setInterval(() => {
-//   // this should dispatch a desktop notification, but it doesn't
-//   console.log('dispatch notification');
-//   const myNotification = new Notification('Test notification', {
-//     body: 'This is just a test notification',
-//   });
-
-//   myNotification.onclick = () => {
-//     console.log('Notification clicked');
-//   };
-// }, 5000);
