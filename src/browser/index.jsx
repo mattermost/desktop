@@ -16,8 +16,11 @@ import {remote, ipcRenderer} from 'electron';
 
 import Config from '../common/config';
 
+import EnhancedNotification from './js/notification';
 import MainPage from './components/MainPage.jsx';
 import {createDataURL as createBadgeDataURL} from './js/badge';
+
+Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
 const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
 

@@ -23,6 +23,8 @@ const preloadJS = `file://${remote.app.getAppPath()}/browser/webview/mattermost_
 const ERR_NOT_IMPLEMENTED = -11;
 const U2F_EXTENSION_URL = 'chrome-extension://kmendfapggjehodndflmmgagdbamhnfd/u2f-comms.html';
 
+const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon.png`;
+
 export default class MattermostView extends React.Component {
   constructor(props) {
     super(props);
@@ -36,6 +38,7 @@ export default class MattermostView extends React.Component {
     };
 
     this.handleUnreadCountChange = this.handleUnreadCountChange.bind(this);
+    this.dispatchNotification = this.dispatchNotification.bind(this);
     this.reload = this.reload.bind(this);
     this.clearCacheAndReload = this.clearCacheAndReload.bind(this);
     this.focusOnWebView = this.focusOnWebView.bind(this);
@@ -56,21 +59,22 @@ export default class MattermostView extends React.Component {
     }
   }
 
+  dispatchNotification(title, body, channel, teamId, silent) {
+    const notification = new Notification(title, {
+      body,
+      tag: body,
+      icon: appIconURL,
+      requireInteraction: false,
+      silent,
+    });
+    notification.onclick = () => {
+      this.webviewRef.current.send('notification-clicked', {channel, teamId});
+    };
+  }
+
   componentDidMount() {
     const self = this;
     const webview = this.webviewRef.current;
-
-    setInterval(() => {
-      // this should dispatch a desktop notification, but it doesn't
-      console.log('dispatch notification');
-      const myNotification = new Notification('Test notification', {
-        body: 'This is just a test notification',
-      });
-
-      myNotification.onclick = () => {
-        console.log('Notification clicked');
-      };
-    }, 5000);
 
     webview.addEventListener('did-fail-load', (e) => {
       console.log(self.props.name, 'webview did-fail-load', e);
@@ -165,13 +169,11 @@ export default class MattermostView extends React.Component {
         });
         break;
       case 'onBadgeChange': {
-        const sessionExpired = event.args[0];
-        const unreadCount = event.args[1];
-        const mentionCount = event.args[2];
-        const isUnread = event.args[3];
-        const isMentioned = event.args[4];
-        self.handleUnreadCountChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
-
+        self.handleUnreadCountChange(...event.args);
+        break;
+      }
+      case 'dispatchNotification': {
+        self.dispatchNotification(...event.args);
         break;
       }
       case 'onNotificationClick':

@@ -3,15 +3,12 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {ipcRenderer, webFrame} from 'electron';
+/* eslint-disable no-magic-numbers */
 
-import EnhancedNotification from '../js/notification';
+import {ipcRenderer, webFrame, remote} from 'electron';
 
 const UNREAD_COUNT_INTERVAL = 1000;
-//eslint-disable-next-line no-magic-numbers
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
-
-Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
 Reflect.deleteProperty(global.Buffer); // http://electron.atom.io/docs/tutorial/security/#buffer-global
 
@@ -48,41 +45,46 @@ window.addEventListener('load', () => {
   watchReactAppUntilInitialized(() => {
     ipcRenderer.sendToHost('onGuestInitialized', window.basename);
   });
-
-  // setInterval(() => {
-  //   // this does dispatch a desktop notification, but only if webview is running form `https://`
-  //   console.log('dispatch notification');
-  //   const myNotification = new Notification('Test notification', {
-  //     body: 'This is just a test notification',
-  //   });
-
-  //   myNotification.onclick = () => {
-  //     console.log('Notification clicked');
-  //   };
-  // }, 5000);
 });
 
-// handle communication from the webapp
-window.addEventListener('message', ({origin, data: {type, message} = {}} = {}) => {
+// listen for messages from the webapp
+window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = {}) => {
   if (origin !== window.location.origin) {
     return;
   }
   switch (type) {
-  case 'desktop-notification':
-    const {title, body, url} = message; // eslint-disable-line no-case-declarations
-    if (!title || !body || !url) {
-      return;
-    }
-    console.log('[webapp] desktop-notification', {
-      origin,
-      type,
-      title,
-      body,
-      url,
-    });
-    window.postMessage({type: 'navigate-to-channel', message: {url}}, window.location.origin);
+  case 'webapp-ready': {
+    // register with the webapp to enable custom integration functionality
+    window.postMessage(
+      {
+        type: 'register-desktop',
+        message: {
+          version: remote.app.getVersion(),
+        },
+      },
+      window.location.origin
+    );
     break;
   }
+  case 'dispatch-notification': {
+    const {title, body, channel, teamId, silent} = message;
+    ipcRenderer.sendToHost('dispatchNotification', title, body, channel, teamId, silent);
+    break;
+  }
+  }
+});
+
+ipcRenderer.on('notification-clicked', (event, {channel, teamId}) => {
+  window.postMessage(
+    {
+      type: 'notification-clicked',
+      message: {
+        channel,
+        teamId,
+      },
+    },
+    window.location.origin
+  );
 });
 
 function hasClass(element, className) {
@@ -244,3 +246,5 @@ ipcRenderer.on('user-activity-update', (event, {userIsActive, isSystemEvent}) =>
 setInterval(() => {
   webFrame.clearCache();
 }, CLEAR_CACHE_INTERVAL);
+
+/* eslint-enable no-magic-numbers */
