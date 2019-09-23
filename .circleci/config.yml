@@ -241,7 +241,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - /^(v|V)\d+\.\d+\.\d+(-(rc|RC).*/)?/
+                - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
                 # todo: once working remove this one
                 - mac_build
       - build-mac-no-dmg:
@@ -250,7 +250,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - /^(v|V)\d+\.\d+\.\d+(-(rc|RC).*/)?/
+                - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
                 # todo: once working remove this one
                 - mac_build
 
@@ -265,7 +265,7 @@ workflows:
                 # v.XX.YY
                 # v.XX.YY.ZZ
                 # v.XX.YY.ZZ-rc-something
-                - /^(v|V)\d+\.\d+\.\d+(-(rc|RC).*/)?/
+                - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
                 # todo: once working remove this one
                 - mac_build
 
@@ -276,7 +276,7 @@ workflows:
           filters:
             branches:
               only:
-                - /^(v|V)\d+\.\d+\.\d+(-(rc|RC).*/)?/
+                - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
                 # todo: once working remove this one
                 - mac_build
       - store:
@@ -288,7 +288,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - /^(v|V)\d+\.\d+\.\d+(-(rc|RC).*/)?/
+                - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
                 # todo: once working remove this one
                 - mac_build
       - store:
@@ -301,6 +301,6 @@ workflows:
           filters:
             branches:
               only:
-                - /^(v|V)\d+\.\d+\.\d+(-(rc|RC).*/)?/
+                - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
                 # todo: once working remove this one
                 - mac_build
