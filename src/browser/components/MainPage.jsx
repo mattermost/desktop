@@ -18,7 +18,6 @@ import LoginModal from './LoginModal.jsx';
 import MattermostView from './MattermostView.jsx';
 import TabBar from './TabBar.jsx';
 import HoveringURL from './HoveringURL.jsx';
-import PermissionRequestDialog from './PermissionRequestDialog.jsx';
 import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
 
@@ -333,8 +332,6 @@ export default class MainPage extends React.Component {
             onSelect={this.handleSelect}
             onAddServer={this.addServer}
             showAddServerButton={this.props.showAddServerButton}
-            requestingPermission={this.props.requestingPermission}
-            onClickPermissionDialog={this.props.onClickPermissionDialog}
           />
         </Row>
       );
@@ -421,16 +418,6 @@ export default class MainPage extends React.Component {
           onLogin={this.handleLogin}
           onCancel={this.handleLoginCancel}
         />
-        {this.props.teams.length === 1 && this.props.requestingPermission[0] ? // eslint-disable-line multiline-ternary
-          <PermissionRequestDialog
-            id='MainPage-permissionDialog'
-            placement='bottom'
-            {...this.props.requestingPermission[0]}
-            onClickAllow={this.props.onClickPermissionDialog.bind(null, 0, 'allow')}
-            onClickBlock={this.props.onClickPermissionDialog.bind(null, 0, 'block')}
-            onClickClose={this.props.onClickPermissionDialog.bind(null, 0, 'close')}
-          /> : null
-        }
         <Grid fluid={true}>
           { tabsRow }
           { viewsRow }
@@ -474,8 +461,6 @@ MainPage.propTypes = {
   onSelectSpellCheckerLocale: PropTypes.func.isRequired,
   deeplinkingUrl: PropTypes.string,
   showAddServerButton: PropTypes.bool.isRequired,
-  requestingPermission: TabBar.propTypes.requestingPermission,
-  onClickPermissionDialog: PropTypes.func,
 };
 
 /* eslint-enable react/no-set-state */

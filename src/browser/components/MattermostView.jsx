@@ -10,6 +10,7 @@ import url from 'url';
 import React from 'react';
 import PropTypes from 'prop-types';
 import {ipcRenderer, remote, shell} from 'electron';
+import log from 'electron-log';
 
 import contextMenu from '../js/contextMenu';
 import Utils from '../../utils/util';
@@ -22,6 +23,8 @@ const preloadJS = `file://${remote.app.getAppPath()}/browser/webview/mattermost_
 
 const ERR_NOT_IMPLEMENTED = -11;
 const U2F_EXTENSION_URL = 'chrome-extension://kmendfapggjehodndflmmgagdbamhnfd/u2f-comms.html';
+
+const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon.png`;
 
 export default class MattermostView extends React.Component {
   constructor(props) {
@@ -36,6 +39,7 @@ export default class MattermostView extends React.Component {
     };
 
     this.handleUnreadCountChange = this.handleUnreadCountChange.bind(this);
+    this.dispatchNotification = this.dispatchNotification.bind(this);
     this.reload = this.reload.bind(this);
     this.clearCacheAndReload = this.clearCacheAndReload.bind(this);
     this.focusOnWebView = this.focusOnWebView.bind(this);
@@ -54,6 +58,27 @@ export default class MattermostView extends React.Component {
     if (this.props.onBadgeChange) {
       this.props.onBadgeChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
     }
+  }
+
+  async dispatchNotification(title, body, channel, teamId, silent) {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      log.error('Notifications not granted');
+      return;
+    }
+    const notification = new Notification(title, {
+      body,
+      tag: body,
+      icon: appIconURL,
+      requireInteraction: false,
+      silent,
+    });
+    notification.onclick = () => {
+      this.webviewRef.current.send('notification-clicked', {channel, teamId});
+    };
+    notification.onerror = () => {
+      log.error('Notification failed to show');
+    };
   }
 
   componentDidMount() {
@@ -90,7 +115,7 @@ export default class MattermostView extends React.Component {
 
     // Open link in browserWindow. for example, attached files.
     webview.addEventListener('new-window', (e) => {
-      if (!Utils.isValidURL(e.url)) {
+      if (!Utils.isValidURI(e.url)) {
         return;
       }
       const currentURL = url.parse(webview.getURL());
@@ -108,7 +133,7 @@ export default class MattermostView extends React.Component {
           shell.openExternal(e.url);
         } else {
           // New window should disable nodeIntegration.
-          window.open(e.url, remote.app.getName(), 'nodeIntegration=no, show=yes');
+          window.open(e.url, remote.app.getName(), 'nodeIntegration=no, contextIsolation=yes, show=yes');
         }
       } else {
         // if the link is external, use default browser.
@@ -153,13 +178,11 @@ export default class MattermostView extends React.Component {
         });
         break;
       case 'onBadgeChange': {
-        const sessionExpired = event.args[0];
-        const unreadCount = event.args[1];
-        const mentionCount = event.args[2];
-        const isUnread = event.args[3];
-        const isMentioned = event.args[4];
-        self.handleUnreadCountChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
-
+        self.handleUnreadCountChange(...event.args);
+        break;
+      }
+      case 'dispatchNotification': {
+        self.dispatchNotification(...event.args);
         break;
       }
       case 'onNotificationClick':
