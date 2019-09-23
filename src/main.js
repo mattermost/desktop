@@ -590,13 +590,11 @@ function initializeAfterAppReady() {
     const requestingURL = webContents.getURL();
 
     // is the target url trusted?
-    config.teams.forEach((team) => {
-      if (requestingURL.startsWith(team.url)) {
-        callback(true);
-      }
+    const matchingTeamIndex = config.teams.findIndex((team) => {
+      return requestingURL.startsWith(team.url);
     });
 
-    callback(false);
+    callback(matchingTeamIndex >= 0);
   });
 }
 
