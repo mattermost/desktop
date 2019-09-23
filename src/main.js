@@ -25,8 +25,6 @@ import appMenu from './main/menus/app';
 import trayMenu from './main/menus/tray';
 import downloadURL from './main/downloadURL';
 import allowProtocolDialog from './main/allowProtocolDialog';
-import PermissionManager from './main/PermissionManager';
-import permissionRequestHandler from './main/permissionRequestHandler';
 import AppStateManager from './main/AppStateManager';
 import initCookieManager from './main/cookieManager';
 import {shouldBeHiddenOnStartup} from './main/utils';
@@ -61,7 +59,6 @@ let spellChecker = null;
 let deeplinkingUrl = null;
 let scheme = null;
 let appState = null;
-let permissionManager = null;
 let registryConfig = null;
 let config = null;
 let trayIcon = null;
@@ -231,12 +228,6 @@ function handleConfigUpdate(configData) {
     }).catch((err) => {
       console.log('error:', err);
     });
-  }
-
-  if (permissionManager) {
-    const trustedURLs = config.teams.map((team) => team.url);
-    permissionManager.setTrustedURLs(trustedURLs);
-    ipcMain.emit('update-dict', true, config.spellCheckerLocale);
   }
 
   ipcMain.emit('update-menu', true, configData);
@@ -571,10 +562,40 @@ function initializeAfterAppReady() {
 
   ipcMain.emit('update-dict');
 
-  const permissionFile = path.join(app.getPath('userData'), 'permission.json');
-  const trustedURLs = config.teams.map((team) => team.url);
-  permissionManager = new PermissionManager(permissionFile, trustedURLs);
-  session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionManager));
+  // supported permission types
+  const supportedPermissionTypes = [
+    'media',
+    'geolocation',
+    'notifications',
+    'fullscreen',
+    'openExternal',
+  ];
+
+  // handle permission requests
+  // - approve if a supported permission type and the request comes from the renderer or one of the defined servers
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    // is the requested permission type supported?
+    if (!supportedPermissionTypes.includes(permission)) {
+      callback(false);
+      return;
+    }
+
+    // is the request coming from the renderer?
+    if (webContents.id === mainWindow.webContents.id) {
+      callback(true);
+      return;
+    }
+
+    // get the requesting webContents url
+    const requestingURL = webContents.getURL();
+
+    // is the target url trusted?
+    const matchingTeamIndex = config.teams.findIndex((team) => {
+      return requestingURL.startsWith(team.url);
+    });
+
+    callback(matchingTeamIndex >= 0);
+  });
 }
 
 //
