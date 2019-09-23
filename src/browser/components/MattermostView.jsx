@@ -10,6 +10,7 @@ import url from 'url';
 import React from 'react';
 import PropTypes from 'prop-types';
 import {ipcRenderer, remote, shell} from 'electron';
+import log from 'electron-log';
 
 import contextMenu from '../js/contextMenu';
 import Utils from '../../utils/util';
@@ -59,7 +60,12 @@ export default class MattermostView extends React.Component {
     }
   }
 
-  dispatchNotification(title, body, channel, teamId, silent) {
+  async dispatchNotification(title, body, channel, teamId, silent) {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      log.error('Notifications not granted');
+      return;
+    }
     const notification = new Notification(title, {
       body,
       tag: body,
@@ -69,6 +75,9 @@ export default class MattermostView extends React.Component {
     });
     notification.onclick = () => {
       this.webviewRef.current.send('notification-clicked', {channel, teamId});
+    };
+    notification.onerror = () => {
+      log.error('Notification failed to show');
     };
   }
 
