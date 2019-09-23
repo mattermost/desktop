@@ -595,6 +595,8 @@ function initializeAfterAppReady() {
         callback(true);
       }
     });
+
+    callback(false);
   });
 }
 
