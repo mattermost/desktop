@@ -242,8 +242,6 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
-                # todo: once working remove this one
-                - mac_build
       - build-mac-no-dmg:
           requires:
             - check
@@ -251,9 +249,6 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
-                # todo: once working remove this one
-                - mac_build
-
       - msi_installer:
           requires:
             - check
@@ -265,9 +260,6 @@ workflows:
                 # v.XX.YY.ZZ
                 # v.XX.YY.ZZ-rc-something
                 - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
-                # todo: once working remove this one
-                - mac_build
-
       - mac_installer:
           requires:
             - check
@@ -276,8 +268,6 @@ workflows:
             branches:
               only:
                 - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
-                # todo: once working remove this one
-                - mac_build
       - store:
           # for master builds
           requires:
@@ -288,8 +278,6 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
-                # todo: once working remove this one
-                - mac_build
       - store:
           # for release and rc builds
           requires:
@@ -301,5 +289,3 @@ workflows:
             branches:
               only:
                 - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
-                # todo: once working remove this one
-                - mac_build
