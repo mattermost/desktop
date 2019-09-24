@@ -430,6 +430,9 @@ function Get-Cert {
     if (Test-Path 'env:PFX') {
         Print-Info "Getting windows certificate"
         [IO.File]::WriteAllBytes("./mattermost-desktop-windows.pfx", [Convert]::FromBase64String($env:PFX))
+        $password = "$env:PFX_KEY" | convertto-securestring -asplaintext -force
+        Print-Info "Importing certificate into the machine"
+        Import-PfxCertificate -filepath "./mattermost-desktop-windows.pfx" cert:\localMachine\my -password $password
     } else {
         Print-Warning "No variable environment found, build will not be signed"
     }
