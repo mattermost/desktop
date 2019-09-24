@@ -16,10 +16,13 @@ Release date: TBD
 
 - Security **XXX**
 
+### Breaking Change
+ - Desktop notifications **XXX**
+
 ### Improvements
 
 #### All Platforms
- - Added support for maintaining a user's online status while the Desktop app is in the background as well as automatically setting the user to away/online if the screensaver goes on/off, the user locks/unlocks their computer or shuts down their computer. **XXX Needs docs**
+ - Added support for maintaining a user's online status while the Desktop app is in the background as well as automatically setting the user to away/online if the screensaver goes on/off, the user locks/unlocks their computer or shuts down their computer.
  [#993](https://github.com/mattermost/desktop/pull/993)
  - Updated spellchecker dictionaries for English.
  [#938](https://github.com/mattermost/desktop/pull/938)
@@ -32,7 +35,7 @@ Release date: TBD
  - Added support for Desktop menu bar accessibility improvements. This was fixed with the major version upgrade of Electron to v5.0.0.
 
 #### Mac
- - Added a flag to enable MacOS dark mode title bar. **XXX Needs docs**
+ - Added a flag to enable MacOS dark mode title bar.
  [#931](https://github.com/mattermost/desktop/pull/931)
 
 ### Architectural Changes
@@ -46,6 +49,8 @@ Release date: TBD
 ### Bug Fixes
 
 #### All Platforms
+ - Fixed various desktop app notification issues.
+ [1040](https://github.com/mattermost/desktop/pull/1040)
  - Fixed an issue where the dot and mention counts in server tab jewels were not centered.
  [#995](https://github.com/mattermost/desktop/pull/995)
  - Fixed an issue where the unread count changed after opening the quick switcher.
