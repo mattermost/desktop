@@ -173,11 +173,11 @@ jobs:
           operation: "install-deps"
       - win_make:
           operation: "build"
-      - run: mkdir -p ./dist/win
-      - run: cp -r release/*.exe ./dist/win
-      - run: cp -r release/*.zip ./dist/win
-      - run: cp -r release/*.msi ./dist/win
-      - run: cp -r release/*.blockmap ./dist/win
+      - run: mkdir -p ./dist/win-release
+      - run: cp -r release/*.exe ./dist/win-release
+      - run: cp -r release/*.zip ./dist/win-release
+      - run: cp -r release/*.msi ./dist/win-release
+      - run: cp -r release/*.blockmap ./dist/win-release
 
       - persist_to_workspace:
           root: ./dist/
@@ -202,8 +202,8 @@ jobs:
           name: Build .dmg
           # todo: add --forceCodeSigning=true once we get it working on circleci
           command: ./node_modules/.bin/electron-builder --mac --publish=never
-      - run: mkdir -p ./dist/macos
-      - run: sh -x ./scripts/cp_artifacts.sh release ./dist/macos
+      - run: mkdir -p ./dist/macos-release
+      - run: sh -x ./scripts/cp_artifacts.sh release ./dist/macos-release
       - persist_to_workspace:
           root: ./dist
           paths:
