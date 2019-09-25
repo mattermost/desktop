@@ -201,7 +201,7 @@ jobs:
       - run:
           name: Build .dmg
           # todo: add --forceCodeSigning=true once we get it working on circleci
-          command: ./node_modules/.bin/build --mac --publish=never
+          command: ./node_modules/.bin/electron-builder --mac --publish=never
       - run: mkdir -p ./dist/macos
       - run: sh -x ./scripts/cp_artifacts.sh release ./dist/macos
       - persist_to_workspace:
@@ -241,7 +241,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
+                - /^release-\d+\.\d+(\.\d+)?(-(rc
       - build-mac-no-dmg:
           requires:
             - check
