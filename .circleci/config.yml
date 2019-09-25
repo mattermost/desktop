@@ -182,7 +182,7 @@ jobs:
       - persist_to_workspace:
           root: ./dist/
           paths:
-            - "./win/"
+            - "./win-release/"
 
   mac_installer:
     executor: mac
@@ -207,7 +207,7 @@ jobs:
       - persist_to_workspace:
           root: ./dist
           paths:
-            - ./macos/
+            - ./macos-release/
       # - run:
       #     name: decode Apple Certificates
       #     command: base64 -D -o Certificates.p12 <<< $applecertificates
