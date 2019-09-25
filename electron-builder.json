@@ -69,8 +69,7 @@
         ]
       }
     ],
-    "hardenedRuntime": true,
-    "entitlements": "./resources/osx/entitlements.mac.inherit.plist"
+    "hardenedRuntime": true
   },
   "dmg": {
     "background": "resources/osx/DMG_BG.png",

@@ -268,6 +268,7 @@ workflows:
             branches:
               only:
                 - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
+                - MM-18851_no_exceptions
       - store:
           # for master builds
           requires:
@@ -282,9 +283,9 @@ workflows:
           # for release and rc builds
           requires:
             # todo: once working uncomment this
-            - msi_installer
+            # - msi_installer
             - mac_installer
-            - build-linux
+            # - build-linux
           filters:
             branches:
               only:
