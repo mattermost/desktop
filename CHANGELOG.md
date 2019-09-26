@@ -22,7 +22,7 @@ Release date: TBD
 ### Improvements
 
 #### All Platforms
- - Added support for maintaining a user's online status while the Desktop app is in the background as well as automatically setting the user to away/online if the screensaver goes on/off, the user locks/unlocks their computer or shuts down their computer.
+ - Added support for maintaining a user's online status while the desktop app is in the background as well as automatically setting the user to away/online if the screensaver goes on/off, the user locks/unlocks their computer or shuts down their computer.
  [#993](https://github.com/mattermost/desktop/pull/993)
  - Updated spellchecker dictionaries for English.
  [#938](https://github.com/mattermost/desktop/pull/938)
@@ -30,7 +30,7 @@ Release date: TBD
  [#926](https://github.com/mattermost/desktop/pull/926)
  - Improved the styling of the session expiry mention badge in the tab bar.
  [#924](https://github.com/mattermost/desktop/pull/924)
- - Improved the wording of the bad certificate dialog to make it scarier and harder to just allow.
+ - Improved the wording of the bad certificate dialog to make it harder to just allow.
  [#900](https://github.com/mattermost/desktop/pull/900)
  - Added support for Desktop menu bar accessibility improvements. This was fixed with the major version upgrade of Electron to v5.0.0.
 
@@ -65,8 +65,6 @@ Release date: TBD
  [#954](https://github.com/mattermost/desktop/pull/954)
   - Fixed an issue to prevent the app from restarting in full-screen mode.
  [#929](https://github.com/mattermost/desktop/pull/929)
- - Prevented a bug where the app would navigate to a random page.
- [#900](https://github.com/mattermost/desktop/pull/900)
  - Fixed an issue where clicking on some links in System Console opened the links on the app itself.
  [#3444](https://github.com/mattermost/mattermost-webapp/pull/3444)
  - Fixed an issue where opening the emoji picker froze the desktop app. This bug was fixed with the major version upgrade of Electron to v5.0.0.
@@ -84,6 +82,9 @@ Release date: TBD
  [#971](https://github.com/mattermost/desktop/pull/971)
  - Fixed an issue where clicking the tooltip button dismissed the tooltip.
  [#2660](https://github.com/mattermost/mattermost-webapp/pull/2660)
+ 
+#### Contributors
+
  
 ----
 
