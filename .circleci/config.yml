@@ -137,6 +137,9 @@ jobs:
     executor: wine-mono
     steps:
       - checkout
+      - run: mkdir -p ./dist
+      - attach_workspace:
+          at: ./dist
       - restore_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - restore_cache:
