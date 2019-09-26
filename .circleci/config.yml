@@ -218,7 +218,7 @@ jobs:
       #     name: decode Provisioning Profiles
       #     command: base64 -D -o ~/Library/MobileDevice/Provisioning\ Profiles/App_Store.mobileprovision <<< $App_Store_Profile
 
-  store:
+  store_artifacts:
     executor: wine-chrome
     steps:
       - attach_workspace:
@@ -279,7 +279,7 @@ workflows:
                 - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
                 # todo: once working remove this one
                 - mac_build
-      - store:
+      - store_artifacts:
           # for master builds
           requires:
             - build-linux
@@ -291,7 +291,7 @@ workflows:
                 - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
                 # todo: once working remove this one
                 - mac_build
-      - store:
+      - store_artifacts:
           # for release and rc builds
           requires:
             # todo: once working uncomment this
