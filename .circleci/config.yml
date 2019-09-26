@@ -198,19 +198,10 @@ jobs:
       - run:
           name: Installing npm dependencies
           command: npm install
-      - run:
-          name: build js
-          command: npm run build
-      - run:
-          name: Build .dmg
-          # todo: add --forceCodeSigning=true once we get it working on circleci
-          command: ./node_modules/.bin/electron-builder --mac --publish=never
-      - run: mkdir -p ./dist/macos-release
-      - run: sh -x ./scripts/cp_artifacts.sh release ./dist/macos-release
-      - persist_to_workspace:
-          root: ./dist
-          paths:
-            - ./macos-release/
+      - build:
+          os: mac
+          path: ./dist/macos-release
+          subpath: ./macos-release/
       # - run:
       #     name: decode Apple Certificates
       #     command: base64 -D -o Certificates.p12 <<< $applecertificates
