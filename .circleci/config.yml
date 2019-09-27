@@ -137,6 +137,9 @@ jobs:
     executor: wine-mono
     steps:
       - checkout
+      - run: mkdir -p ./dist
+      - attach_workspace:
+          at: ./dist
       - restore_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - restore_cache:
@@ -173,16 +176,16 @@ jobs:
           operation: "install-deps"
       - win_make:
           operation: "build"
-      - run: mkdir -p ./dist/win
-      - run: cp -r release/*.exe ./dist/win
-      - run: cp -r release/*.zip ./dist/win
-      - run: cp -r release/*.msi ./dist/win
-      - run: cp -r release/*.blockmap ./dist/win
+      - run: mkdir -p ./dist/win-release
+      - run: cp -r release/*.exe ./dist/win-release
+      - run: cp -r release/*.zip ./dist/win-release
+      - run: cp -r release/*.msi ./dist/win-release
+      - run: cp -r release/*.blockmap ./dist/win-release
 
       - persist_to_workspace:
           root: ./dist/
           paths:
-            - "./win/"
+            - "./win-release/"
 
   mac_installer:
     executor: mac
@@ -195,19 +198,10 @@ jobs:
       - run:
           name: Installing npm dependencies
           command: npm install
-      - run:
-          name: build js
-          command: npm run build
-      - run:
-          name: Build .dmg
-          # todo: add --forceCodeSigning=true once we get it working on circleci
-          command: ./node_modules/.bin/build --mac --publish=never
-      - run: mkdir -p ./dist/macos
-      - run: sh -x ./scripts/cp_artifacts.sh release ./dist/macos
-      - persist_to_workspace:
-          root: ./dist
-          paths:
-            - ./macos/
+      - build:
+          os: mac
+          path: ./dist/macos-release
+          subpath: ./macos-release/
       # - run:
       #     name: decode Apple Certificates
       #     command: base64 -D -o Certificates.p12 <<< $applecertificates
@@ -241,7 +235,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
+                - /^release-\d+\.\d+(\.\d+)?(-(rc
       - build-mac-no-dmg:
           requires:
             - check
