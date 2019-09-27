@@ -53,6 +53,7 @@ function createMainWindow(config, options) {
       nodeIntegration: true,
       contextIsolation: false,
       webviewTag: true,
+      disableBlinkFeatures: 'Auxclick',
     },
   });
 

@@ -62,16 +62,6 @@ const configDataSchemaV1 = Joi.object({
   spellCheckerLocale: Joi.string().regex(/^[a-z]{2}-[A-Z]{2}$/).default('en-US'),
 });
 
-// eg. data['https://community.mattermost.com']['notifications'] = 'granted';
-// eg. data['http://localhost:8065']['notifications'] = 'denied';
-const permissionsSchema = Joi.object().pattern(
-  Joi.string().uri(),
-  Joi.object().pattern(
-    Joi.string(),
-    Joi.any().valid('granted', 'denied'),
-  ),
-);
-
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};
 const certificateStoreSchema = Joi.object().pattern(
   Joi.string().uri(),
@@ -122,11 +112,6 @@ export function validateV1ConfigData(data) {
     data.teams = teams;
   }
   return validateAgainstSchema(data, configDataSchemaV1);
-}
-
-// validate permission.json
-export function validatePermissionsList(data) {
-  return validateAgainstSchema(data, permissionsSchema);
 }
 
 // validate certificate.json

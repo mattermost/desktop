@@ -66,7 +66,6 @@ export default class UserActivityMonitor extends EventEmitter {
     // NOTE: electron.powerMonitor cannot be referenced until the app is ready
     electron.powerMonitor.on('suspend', this.handleSystemGoingAway);
     electron.powerMonitor.on('resume', this.handleSystemComingBack);
-    electron.powerMonitor.on('shutdown', this.handleSystemGoingAway);
     electron.powerMonitor.on('lock-screen', this.handleSystemGoingAway);
     electron.powerMonitor.on('unlock-screen', this.handleSystemComingBack);
 
@@ -87,7 +86,6 @@ export default class UserActivityMonitor extends EventEmitter {
   stopMonitoring() {
     electron.powerMonitor.off('suspend', this.handleSystemGoingAway);
     electron.powerMonitor.off('resume', this.handleSystemComingBack);
-    electron.powerMonitor.off('shutdown', this.handleSystemGoingAway);
     electron.powerMonitor.off('lock-screen', this.handleSystemGoingAway);
     electron.powerMonitor.off('unlock-screen', this.handleSystemComingBack);
 

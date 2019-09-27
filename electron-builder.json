@@ -1,8 +1,10 @@
 {
-  "publish": [{
-    "provider": "generic",
-    "url": "https://releases.mattermost.com/desktop/"
-  }],
+  "publish": [
+    {
+      "provider": "generic",
+      "url": "https://releases.mattermost.com/desktop/"
+    }
+  ],
   "appId": "Mattermost.Desktop",
   "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
   "directories": {
@@ -20,7 +22,9 @@
   "protocols": [
     {
       "name": "Mattermost",
-      "schemes": ["mattermost"]
+      "schemes": [
+        "mattermost"
+      ]
     }
   ],
   "deb": {
@@ -64,7 +68,9 @@
           "NOTICE.txt"
         ]
       }
-    ]
+    ],
+    "hardenedRuntime": true,
+    "entitlements": "./resources/osx/entitlements.mac.inherit.plist"
   },
   "dmg": {
     "background": "resources/osx/DMG_BG.png",

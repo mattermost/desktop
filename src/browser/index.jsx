@@ -14,12 +14,13 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import {remote, ipcRenderer} from 'electron';
 
-import utils from '../utils/util';
-
 import Config from '../common/config';
 
+import EnhancedNotification from './js/notification';
 import MainPage from './components/MainPage.jsx';
 import {createDataURL as createBadgeDataURL} from './js/badge';
+
+Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
 const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
 
@@ -31,9 +32,6 @@ if (teams.length === 0) {
   remote.getCurrentWindow().loadFile('browser/settings.html');
 }
 
-const permissionRequestQueue = [];
-const requestingPermission = new Array(teams.length);
-
 const parsedURL = url.parse(window.location.href, true);
 const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : 0;
 
@@ -44,7 +42,6 @@ if (!parsedURL.query.index || parsedURL.query.index === null) {
 
 config.on('update', (configData) => {
   teams.splice(0, teams.length, ...configData.teams);
-  requestingPermission.length = teams.length;
 });
 
 config.on('synchronize', () => {
@@ -134,52 +131,9 @@ function teamConfigChange(updatedTeams) {
   config.set('teams', updatedTeams);
 }
 
-function feedPermissionRequest() {
-  const webviews = document.getElementsByTagName('webview');
-  const webviewOrigins = Array.from(webviews).map((w) => utils.getDomain(w.getAttribute('src')));
-  for (let index = 0; index < requestingPermission.length; index++) {
-    if (requestingPermission[index]) {
-      break;
-    }
-    for (const request of permissionRequestQueue) {
-      if (request.origin === webviewOrigins[index]) {
-        requestingPermission[index] = request;
-        break;
-      }
-    }
-  }
-}
-
-function handleClickPermissionDialog(index, status) {
-  const requesting = requestingPermission[index];
-  ipcRenderer.send('update-permission', requesting.origin, requesting.permission, status);
-  if (status === 'allow' || status === 'block') {
-    const newRequests = permissionRequestQueue.filter((request) => {
-      if (request.permission === requesting.permission && request.origin === requesting.origin) {
-        return false;
-      }
-      return true;
-    });
-    permissionRequestQueue.splice(0, permissionRequestQueue.length, ...newRequests);
-  } else if (status === 'close') {
-    const i = permissionRequestQueue.findIndex((e) => e.permission === requesting.permission && e.origin === requesting.origin);
-    permissionRequestQueue.splice(i, 1);
-  }
-  requestingPermission[index] = null;
-  feedPermissionRequest();
-}
-
 function handleSelectSpellCheckerLocale(locale) {
   config.set('spellCheckerLocale', locale);
 }
-
-ipcRenderer.on('request-permission', (event, origin, permission) => {
-  if (permissionRequestQueue.length >= 100) {
-    return;
-  }
-  permissionRequestQueue.push({origin, permission});
-  feedPermissionRequest();
-});
 
 ReactDOM.render(
   <MainPage
@@ -191,8 +145,6 @@ ReactDOM.render(
     onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}
     deeplinkingUrl={deeplinkingUrl}
     showAddServerButton={config.enableServerManagement}
-    requestingPermission={requestingPermission}
-    onClickPermissionDialog={handleClickPermissionDialog}
   />,
   document.getElementById('content')
 );
