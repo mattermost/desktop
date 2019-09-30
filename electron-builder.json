@@ -1,10 +1,8 @@
 {
-  "publish": [
-    {
-      "provider": "generic",
-      "url": "https://releases.mattermost.com/desktop/"
-    }
-  ],
+  "publish": [{
+    "provider": "generic",
+    "url": "https://releases.mattermost.com/desktop/"
+  }],
   "appId": "Mattermost.Desktop",
   "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
   "directories": {
