@@ -833,7 +833,7 @@ function getURLPrimaryDomain(url) {
 
   const domainSegments = parsedURL.hostname.split('.').slice(-2); // eslint-disable-line no-magic-numbers
 
-  if (domainSegments.length >= 2) {
+  if (domainSegments.length === 2) {
     return domainSegments.join('.');
   }
   return null;
