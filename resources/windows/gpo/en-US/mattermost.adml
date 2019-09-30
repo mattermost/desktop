@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<policyDefinitionResources revision="0.1" schemaVersion="1.0" >
+<policyDefinitionResources revision="0.1" schemaVersion="1.0">
 	<displayName/>
 	<description/>
 	<resources >
@@ -14,8 +14,6 @@
 If this policy is disabled, the Server Management section is hidden in the app settings and only servers defined by Group Policy can be used.</string>
 			<string id="DefaultServerList">DefaultServerList</string>
 			<string id="DefaultServerListDescription">If this policy is enabled, you can define one or more Mattermost servers that will be pre-configured for users when they launch the app.</string>
-			<string id="EnableGpuAcceleration">EnableGpuAcceleration</string>
-			<string id="EnableGpuAccelerationDescription">If this policy is enabled, the Mattermost Desktop Application will use the GPU for hardware acceleration.</string>
 		</stringTable>
 		<presentationTable>
 			<presentation id="DefaultServerList">
