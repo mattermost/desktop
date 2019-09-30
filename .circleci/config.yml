@@ -202,17 +202,8 @@ jobs:
           os: mac
           path: ./dist/macos-release
           subpath: ./macos-release/
-      # - run:
-      #     name: decode Apple Certificates
-      #     command: base64 -D -o Certificates.p12 <<< $applecertificates
-      # - run:
-      #     name: make Provisioning Profiles directory
-      #     command: mkdir -pv ~/Library/MobileDevice/Provisioning\ Profiles/
-      # - run:
-      #     name: decode Provisioning Profiles
-      #     command: base64 -D -o ~/Library/MobileDevice/Provisioning\ Profiles/App_Store.mobileprovision <<< $App_Store_Profile
 
-  store:
+  store_artifacts:
     executor: wine-chrome
     steps:
       - attach_workspace:
@@ -235,25 +226,26 @@ workflows:
           filters:
             branches:
               ignore:
-                - /^release-\d+\.\d+(\.\d+)?(-(rc
+                - /^release-\d+\.\d+\.\d+?(-rc.*)?/
       - build-mac-no-dmg:
           requires:
             - check
           filters:
             branches:
               ignore:
-                - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
+                - /^release-\d+\.\d+(\.\d+)?(-rc.*)?/
       - msi_installer:
           requires:
             - check
+          context: windows-codesign
           filters:
             branches:
               only:
                 # only for release and release candidates
-                # v.XX.YY
-                # v.XX.YY.ZZ
-                # v.XX.YY.ZZ-rc-something
-                - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
+                # release-XX.YY.ZZ
+                # release-XX.YY.ZZ-rc-something
+                - /^release-\d+\.\d+\.\d+?(-rc.*)?/
+
       - mac_installer:
           requires:
             - check
@@ -261,9 +253,9 @@ workflows:
           filters:
             branches:
               only:
-                - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
-      - store:
-          # for master builds
+                - /^release-\d+\.\d+\.\d+?(-rc.*)?/
+      - store_artifacts:
+          # for master/PR builds
           requires:
             - build-linux
             - build-win-no-installer
@@ -271,15 +263,14 @@ workflows:
           filters:
             branches:
               ignore:
-                - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
-      - store:
+                - /^release-\d+\.\d+\.\d+?(-rc.*)?/
+      - store_artifacts:
           # for release and rc builds
           requires:
-            # todo: once working uncomment this
             - msi_installer
             - mac_installer
             - build-linux
           filters:
             branches:
               only:
-                - /^release-\d+\.\d+(\.\d+)?(-(rc|RC).*/)?/
+                - /^release-\d+\.\d+\.\d+?(-rc.*)?/
