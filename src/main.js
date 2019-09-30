@@ -494,7 +494,7 @@ function initializeAfterAppReady() {
   // start monitoring user activity (needs to be started after the app is ready)
   userActivityMonitor.startMonitoring();
 
-  if (shouldShowTrayIcon) {
+  if (shouldShowTrayIcon()) {
     // set up tray icon
     trayIcon = new Tray(trayImages.normal);
     if (process.platform === 'darwin') {
