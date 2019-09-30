@@ -768,6 +768,10 @@ function isTrustedURL(url) {
   if (typeof url === 'string') {
     parsedUrl = new URL(url);
   }
+  if (!parsedUrl) {
+    return false;
+  }
+
   const trustedURLs = config.teams.map((team) => new URL(team.url));
 
   for (const trustedURL of trustedURLs) {
