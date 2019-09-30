@@ -44,6 +44,7 @@ const {
   dialog,
   systemPreferences,
   session,
+  shell,
 } = electron;
 const criticalErrorHandler = new CriticalErrorHandler();
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
@@ -383,16 +384,21 @@ function handleAppWebContentsCreated(dc, contents) {
 
   contents.on('will-navigate', (event, url) => {
     const contentID = event.sender.id;
-    const parsedUrl = new URL(url);
-    const urlIsTrusted = isTrustedURL(parsedUrl);
-    const urlIsTrustedExternalLoginPath = parsedUrl.hostname === customLogins[contentID].externalHostname;
+    const parsedURL = parseURL(url);
+    const urlIsTrusted = isTrustedURL(parsedURL);
+    const urlIsTrustedExternalLoginPath = parsedURL.hostname === customLogins[contentID].externalHostname;
 
     // don't prevent custom login attempts (oath, saml)
     if (!urlIsTrusted && !urlIsTrustedExternalLoginPath) {
       event.preventDefault();
 
-      // reset custom login if in progress
-      if (customLogins[contentID].inProgress) {
+      const currentPrimaryDomain = getURLPrimaryDomain(contents.getURL());
+      const requestedPrimaryDomain = getURLPrimaryDomain(parsedURL);
+      if (currentPrimaryDomain && requestedPrimaryDomain && currentPrimaryDomain === requestedPrimaryDomain) {
+        // open links from the same trusted primary domain in the default browser
+        shell.openExternal(url);
+      } else if (customLogins[contentID].inProgress) {
+        // reset custom login if in progress
         customLogins[contentID].inProgress = false;
         customLogins[contentID].externalHostname = null;
 
@@ -413,10 +419,11 @@ function handleAppWebContentsCreated(dc, contents) {
   // 3. are we finished with the custom login process? (did-start-navigation listener)
   //    - indicate custom login is NOT in progress and clear any stored 3rd party hostname's
   contents.on('did-start-navigation', (event, url) => {
+    console.log('[did-start-navigation]', url);
     const contentID = event.sender.id;
-    const parsedUrl = new URL(url);
-    const urlIsTrusted = isTrustedURL(parsedUrl);
-    const urlIsCustomLoginPath = isCustomLoginURL(parsedUrl);
+    const parsedURL = parseURL(url);
+    const urlIsTrusted = isTrustedURL(parsedURL);
+    const urlIsCustomLoginPath = isCustomLoginURL(parsedURL);
     const previousPage = event.sender.history[event.sender.history.length - 1];
 
     if (urlIsTrusted && urlIsCustomLoginPath && !customLogins[contentID].inProgress && previousPage.endsWith('/login')) {
@@ -429,14 +436,15 @@ function handleAppWebContentsCreated(dc, contents) {
   });
 
   contents.on('will-redirect', (event, url) => {
+    console.log('[will-redirect]', url);
     const contentID = event.sender.id;
-    const parsedUrl = new URL(url);
-    const urlIsTrusted = isTrustedURL(parsedUrl);
+    const parsedURL = parseURL(url);
+    const urlIsTrusted = isTrustedURL(parsedURL);
     const previousPage = event.sender.history[event.sender.history.length - 1];
     const previousPageIsTrusted = isTrustedURL(previousPage);
 
     if (!urlIsTrusted && previousPageIsTrusted && customLogins[contentID].inProgress && !customLogins[contentID].externalHostname) {
-      customLogins[contentID].externalHostname = parsedUrl.hostname;
+      customLogins[contentID].externalHostname = parsedURL.hostname;
     }
   });
 
@@ -763,15 +771,34 @@ function handleMainWindowWebContentsCrashed() {
 // helper functions
 //
 
-function isTrustedURL(url) {
-  let parsedUrl = url;
-  if (typeof url === 'string') {
-    parsedUrl = new URL(url);
+function parseURL(url) {
+  if (!url) {
+    return null;
   }
+
+  let parsedURL = url;
+
+  if (typeof url === 'string') {
+    try {
+      parsedURL = new URL(url);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  return parsedURL;
+}
+
+function isTrustedURL(url) {
+  const parsedURL = parseURL(url);
+  if (!parsedURL) {
+    return false;
+  }
+
   const trustedURLs = config.teams.map((team) => new URL(team.url));
 
   for (const trustedURL of trustedURLs) {
-    if (parsedUrl.origin === trustedURL.origin) {
+    if (parsedURL.origin === trustedURL.origin) {
       return true;
     }
   }
@@ -780,20 +807,36 @@ function isTrustedURL(url) {
 }
 
 function isCustomLoginURL(url) {
-  if (!isTrustedURL(url)) {
+  const parsedURL = parseURL(url);
+  if (!parsedURL) {
     return false;
   }
-  let parsedUrl = url;
-  if (typeof url === 'string') {
-    parsedUrl = new URL(url);
+  if (!isTrustedURL(parsedURL)) {
+    return false;
   }
-  const urlPath = parsedUrl.pathname;
+
+  const urlPath = parsedURL.pathname;
+
   for (const regexPath of customLoginRegexPaths) {
     if (urlPath.match(regexPath)) {
       return true;
     }
   }
   return false;
+}
+
+function getURLPrimaryDomain(url) {
+  const parsedURL = parseURL(url);
+  if (!parsedURL) {
+    return null;
+  }
+
+  const domainSegments = parsedURL.hostname.split('.').slice(-2); // eslint-disable-line no-magic-numbers
+
+  if (domainSegments.length >= 2) {
+    return domainSegments.join('.');
+  }
+  return null;
 }
 
 function getTrayImages() {
