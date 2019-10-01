@@ -82,9 +82,12 @@ Release date: TBD
  [#971](https://github.com/mattermost/desktop/pull/971)
  - Fixed an issue where clicking the tooltip button dismissed the tooltip.
  [#2660](https://github.com/mattermost/mattermost-webapp/pull/2660)
- 
-#### Contributors
 
+#### Known Issues
+ - Users are unable to zoom in/out on the desktop app. This bug will be fixed after a major version upgrade of Electron to v6.0.0.
+
+#### Contributors
+ - 
  
 ----
 
