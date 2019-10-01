@@ -40,15 +40,5 @@
 				<list id="DefaultServerList" key="Software\Policies\Mattermost\DefaultServerList" additive="true" explicitValue="true" />
 			</elements>
 		</policy>
-		<policy name="EnableGpuAcceleration" class="Machine" displayName="$(string.EnableGpuAcceleration)" explainText="$(string.EnableGpuAccelerationDescription)" key="Software\Policies\Mattermost" valueName="EnableGpuAcceleration">
-			<parentCategory ref="mattermost"/>
-			<supportedOn ref="RequiresMattermost43"/>
-			<enabledValue>
-				<decimal value="1"/>
-			</enabledValue>
-			<disabledValue>
-				<decimal value="0"/>
-			</disabledValue>
-		</policy>
 	</policies>
 </policyDefinitions>
