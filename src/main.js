@@ -764,10 +764,19 @@ function handleMainWindowWebContentsCrashed() {
 //
 
 function isTrustedURL(url) {
+  if (!url) {
+    return false;
+  }
+
   let parsedUrl = url;
   if (typeof url === 'string') {
-    parsedUrl = new URL(url);
+    try {
+      parsedUrl = new URL(url);
+    } catch (e) {
+      return false;
+    }
   }
+
   const trustedURLs = config.teams.map((team) => new URL(team.url));
 
   for (const trustedURL of trustedURLs) {
