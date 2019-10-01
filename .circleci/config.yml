@@ -214,7 +214,7 @@ jobs:
 
 workflows:
   version: 2
-  test_and_build:
+  build_and_test:
     jobs:
       - check
       - build-linux:
