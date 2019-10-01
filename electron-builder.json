@@ -20,7 +20,9 @@
   "protocols": [
     {
       "name": "Mattermost",
-      "schemes": ["mattermost"]
+      "schemes": [
+        "mattermost"
+      ]
     }
   ],
   "deb": {
@@ -64,7 +66,9 @@
           "NOTICE.txt"
         ]
       }
-    ]
+    ],
+    "hardenedRuntime": true,
+    "entitlements": "./resources/osx/entitlements.mac.inherit.plist"
   },
   "dmg": {
     "background": "resources/osx/DMG_BG.png",
@@ -93,3 +97,4 @@
     "artifactName": "${name}-setup-${version}-win.${ext}"
   }
 }
+

@@ -6,16 +6,16 @@
 	<resources minRequiredRevision="0.1"/>
 	<supportedOn>
 		<definitions>
-			<definition name="SUPPORTED_MMD43" displayName="$(string.SUPPORTED_MMD43)"/>
+			<definition name="RequiresMattermost43" displayName="$(string.RequiresMattermost43)"/>
 		</definitions>
 	</supportedOn>
 	<categories>
 		<category displayName="$(string.mattermost)" name="mattermost"></category>
 	</categories>
 	<policies>
-		<policy name="DisableAutoUpdate" class="Machine" displayName="$(string.DisableAutoUpdate)" explainText="$(string.DisableAutoUpdate_Explain)" key="Software\Policies\Mattermost" valueName="DisableAutoUpdate">
+		<policy name="EnableAutoUpdater" class="Machine" displayName="$(string.EnableAutoUpdater)" explainText="$(string.EnableAutoUpdaterDescription)" key="Software\Policies\Mattermost" valueName="EnableAutoUpdater">
 			<parentCategory ref="mattermost"/>
-			<supportedOn ref="SUPPORTED_MMD43"/>
+			<supportedOn ref="RequiresMattermost43"/>
 			<enabledValue>
 				<decimal value="1"/>
 			</enabledValue>
@@ -23,9 +23,9 @@
 				<decimal value="0"/>
 			</disabledValue>
 		</policy>
-		<policy name="PreventAddNewServer" class="Both" displayName="$(string.PreventAddNewServer)" explainText="$(string.PreventAddNewServer_Explain)" key="Software\Policies\Mattermost" valueName="PreventAddNewServer">
+		<policy name="EnableServerManagement" class="Both" displayName="$(string.EnableServerManagement)" explainText="$(string.EnableServerManagementDescription)" key="Software\Policies\Mattermost" valueName="EnableServerManagement">
 			<parentCategory ref="mattermost"/>
-			<supportedOn ref="SUPPORTED_MMD43"/>
+			<supportedOn ref="RequiresMattermost43"/>
 			<enabledValue>
 				<decimal value="1"/>
 			</enabledValue>
@@ -33,22 +33,12 @@
 				<decimal value="0"/>
 			</disabledValue>
 		</policy>
-		<policy name="ServerURL" class="Both" displayName="$(string.ServerURL)" explainText="$(string.ServerURL_Explain)" presentation="$(presentation.ServerURL)" key="Software\Policies\Mattermost">
+		<policy name="DefaultServerList" class="Both" displayName="$(string.DefaultServerList)" explainText="$(string.DefaultServerListDescription)" presentation="$(presentation.DefaultServerList)" key="Software\Policies\Mattermost">
 			<parentCategory ref="mattermost" />
-			<supportedOn ref="SUPPORTED_MMD43" />
+			<supportedOn ref="RequiresMattermost43" />
 			<elements>
-				<list id="ServerURL" key="Software\Policies\Mattermost\DefaultServerList" additive="true" explicitValue="true" />
+				<list id="DefaultServerList" key="Software\Policies\Mattermost\DefaultServerList" additive="true" explicitValue="true" />
 			</elements>
-		</policy>
-		<policy name="PreventGPU" class="Machine" displayName="$(string.PreventGPU)" explainText="$(string.PreventGPU_Explain)" key="Software\Policies\Mattermost" valueName="PreventGPU">
-			<parentCategory ref="mattermost"/>
-			<supportedOn ref="SUPPORTED_MMD43"/>
-			<enabledValue>
-				<decimal value="1"/>
-			</enabledValue>
-			<disabledValue>
-				<decimal value="0"/>
-			</disabledValue>
 		</policy>
 	</policies>
 </policyDefinitions>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+  <String Id="LANG" Overridable="yes">1033</String>
+  
+  <String Id="OsRequirements" Overridable="yes">Windows 7 or higher is required to run [ProductName].</String>
+
+  <String Id="Requires64Bit" Overridable="yes">This install package only supports 64-bit operating systems</String>
+  <String Id="Requires32Bit" Overridable="yes">This install package only supports 32-bit operating systems</String>
+  
+  <String Id="WelcomeDlgInstructions" Overridable="yes">Welcome to the [ProductName] [Installer]!
+
+Click Install to proceed with a standard installation, or click Advanced to change the installation directory and access other customizations.</String>
+
+  <String Id="MaintenanceWelcomeDlgInstructions" Overridable="yes">[ProductName] [Installer]!
+
+This wizard will help you install, modify, repair or uninstall the [ProductName] application on this computer.</String>
+  <String Id="WelcomeDlgAcceptLicenseCheckBox" Overridable="yes">I accept the terms in the License Agreement</String>
+  <String Id="AdvancedDlgInstructions" Overridable="yes">Change the installation directory, create application shortcuts and choose whether to launch the application after installation. Click Cancel to exit the installer.</String>
+  <String Id="AdvancedDlgLocationLabel" Overridable="yes">Location:</String>
+  <String Id="AdvancedDlgBrowse" Overridable="yes">Browse</String>
+  <String Id="AdvancedDlgAddDesktopShortcut" Overridable="yes">Add a shortcut to the desktop</String>
+  <String Id="AdvancedDlgAddStartMenuShortcut" Overridable="yes">Add a shortcut to the Start menu</String>
+  <String Id="AdvancedDlgLaunchAppAfterInstall" Overridable="yes">Launch [ProductName] after installation</String>
+  
+  <String Id="BrowseDlgInstructions" Overridable="yes">Select the directory you want [ProductName] be installed to.</String>
+  <String Id="BrowseDlgNewFolder" Overridable="yes">Create a new folder</String>
+  <String Id="BrowseDlgUp" Overridable="yes">Go thte parent folder</String>
+  
+  <String Id="BrowseDlgPathLabel" Overridable="yes">Currently defined installation directory:</String>
+  
+  <String Id="CancelDlgText" Overridable="yes">Are you sure you want to cancel [ProductName] installation?</String>
+  
+  <String Id="UserExitDlgInstructions" Overridable="yes">[ProductName] installation was interrupted and your system has not been modified.
+  
+  To install [ProductName] in the future, please run the installer again.</String>
+  
+  <String Id="ProgressDlgInstructions" Overridable="yes">[Progress1] [ProductName]. This may take several minutes.</String>
+  <String Id="ProgressDlgStatusLabel" Overridable="yes">Status:</String>
+  
+  <String Id="SuccessDlgInstructions" Overridable="yes">[Progress2] successful. Click Finish to exit the installer.</String>
+
+
+</WixLocalization>

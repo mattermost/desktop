@@ -1,13 +1,21 @@
 version: 2.1
+orbs:
+  win: circleci/windows@1.0.0
 executors:
   wine-chrome:
     working_directory: ~/mattermost-desktop
     docker:
       - image: electronuserland/builder:wine-chrome
+        environment:
+          TAR_OPTIONS: --no-same-owner
   wine-mono:
     working_directory: ~/mattermost-desktop
     docker:
       - image: electronuserland/builder:wine-mono
+  mac:
+    working_directory: ~/mattermost-desktop
+    macos:
+      xcode: "10.3.0"
 commands:
   update_image:
     description: "Update base image"
@@ -19,9 +27,41 @@ commands:
       - run: apt-get update && apt-get -y install << parameters.apt_opts >>
       - run: npm install
 
+  win_make:
+    description: "Run mattermost's makefile.ps1 on ./scripts/"
+    parameters:
+      operation:
+        type: string
+        default: ""
+    steps:
+      - run:
+          command: ./scripts/Makefile.ps1 << parameters.operation >>
+          name: << parameters.operation >>
+          shell: powershell
+  build:
+    description: "Building << parameters.os >> app"
+    parameters:
+      os:
+        type: string
+        default: "linux"
+      path:
+        type: string
+        default: "./dist/linux"
+      subpath:
+        type: string
+        default: "./linux/"
+    steps:
+      - run: npm run build
+      - run: npm run package:<< parameters.os >>
+      - run: mkdir -p << parameters.path >>
+      - run: bash -x ./scripts/cp_artifacts.sh release << parameters.path >>
+      - persist_to_workspace:
+          root: ./dist
+          paths:
+            - "./<< parameters.subpath >>/"
 jobs:
   check:
-    executor: wine-chrome    
+    executor: wine-chrome
     steps:
       - checkout
       - update_image:
@@ -40,23 +80,20 @@ jobs:
             - "node_modules"
             - "src/node_modules"
 
-  build:
+  build-linux:
     executor: wine-mono
     steps:
       - checkout
+      - run: mkdir -p ./dist
+      - attach_workspace:
+          at: ./dist
       - restore_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - restore_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
-      - run: npm run build
-      - run: npm run package:windows
-      - run: jq '.mac.target=["zip"]' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
-      - run: npm run package:mac
-      - run: npm run package:linux
-      - run: mkdir -p /tmp/artifacts
-      - run: sh -x ./scripts/cp_artifacts.sh release /tmp/artifacts
+      - build
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -67,19 +104,173 @@ jobs:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
           paths:
             - "src/node_modules"
+
+  build-win-no-installer:
+    executor: wine-mono
+    steps:
+      - checkout
+      - run: mkdir -p ./dist
+      - attach_workspace:
+          at: ./dist
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
+      - update_image:
+          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - build:
+          os: windows
+          path: ./dist/win
+          subpath: ./win/
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          paths:
+            - "node_modules"
+            - "~/.cache/electron"
+            - "~/.cache/electron-builder"
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
+          paths:
+            - "src/node_modules"
+
+  build-mac-no-dmg:
+    executor: wine-mono
+    steps:
+      - checkout
+      - run: mkdir -p ./dist
+      - attach_workspace:
+          at: ./dist
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
+      - update_image:
+          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run: jq '.mac.target=["zip"]' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
+      - build:
+          os: mac
+          path: ./dist/macos
+          subpath: ./macos/
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          paths:
+            - "node_modules"
+            - "~/.cache/electron"
+            - "~/.cache/electron-builder"
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
+          paths:
+            - "src/node_modules"
+
+  msi_installer:
+    executor: win/vs2019
+
+    steps:
+      - checkout
+      - run: mkdir -p ./dist/
+      - attach_workspace:
+          at: ./dist
+      - win_make:
+          operation: optimize
+      - win_make:
+          operation: "install-deps"
+      - win_make:
+          operation: "build"
+      - run: mkdir -p ./dist/win-release
+      - run: cp -r release/*.exe ./dist/win-release
+      - run: cp -r release/*.zip ./dist/win-release
+      - run: cp -r release/*.msi ./dist/win-release
+      - run: cp -r release/*.blockmap ./dist/win-release
+
+      - persist_to_workspace:
+          root: ./dist/
+          paths:
+            - "./win-release/"
+
+  mac_installer:
+    executor: mac
+
+    steps:
+      - checkout
+      - run: mkdir -p ./dist
+      - attach_workspace:
+          at: ./dist
+      - run:
+          name: Installing npm dependencies
+          command: npm install
+      - build:
+          os: mac
+          path: ./dist/macos-release
+          subpath: ./macos-release/
+
+  store_artifacts:
+    executor: wine-chrome
+    steps:
+      - attach_workspace:
+          at: ./dist
       - store_artifacts:
-          path: /tmp/artifacts/
+          path: ./dist
           destination: packages
-      - run: ./node_modules/.bin/build-storybook -c src/.storybook -o storybook
-      - store_artifacts:
-          path: storybook/
-          destination: storybook
 
 workflows:
   version: 2
   build_and_test:
     jobs:
       - check
-      - build:
+      - build-linux:
           requires:
             - check
+      - build-win-no-installer:
+          requires:
+            - check
+          filters:
+            branches:
+              ignore:
+                - /^release-\d+\.\d+\.\d+?(-rc.*)?/
+      - build-mac-no-dmg:
+          requires:
+            - check
+          filters:
+            branches:
+              ignore:
+                - /^release-\d+\.\d+(\.\d+)?(-rc.*)?/
+      - msi_installer:
+          requires:
+            - check
+          context: windows-codesign
+          filters:
+            branches:
+              only:
+                # only for release and release candidates
+                # release-XX.YY.ZZ
+                # release-XX.YY.ZZ-rc-something
+                - /^release-\d+\.\d+\.\d+?(-rc.*)?/
+
+      - mac_installer:
+          requires:
+            - check
+          context: codesign-certificates
+          filters:
+            branches:
+              only:
+                - /^release-\d+\.\d+\.\d+?(-rc.*)?/
+      - store_artifacts:
+          # for master/PR builds
+          requires:
+            - build-linux
+            - build-win-no-installer
+            - build-mac-no-dmg
+          filters:
+            branches:
+              ignore:
+                - /^release-\d+\.\d+\.\d+?(-rc.*)?/
+      - store_artifacts:
+          # for release and rc builds
+          requires:
+            - msi_installer
+            - mac_installer
+            - build-linux
+          filters:
+            branches:
+              only:
+                - /^release-\d+\.\d+\.\d+?(-rc.*)?/
