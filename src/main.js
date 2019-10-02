@@ -384,10 +384,14 @@ function handleAppWebContentsCreated(dc, contents) {
     const parsedURL = parseURL(url);
     const urlIsTrusted = isTrustedURL(parsedURL);
 
-    // don't prevent custom login attempts (oath, saml)
-    if (!urlIsTrusted && !customLogins[contentID].inProgress) {
-      event.preventDefault();
+    if (urlIsTrusted) {
+      return;
     }
+    if (customLogins[contentID].inProgress) {
+      return;
+    }
+
+    event.preventDefault();
   });
 
   // handle custom login requests (oath, saml):
@@ -399,12 +403,15 @@ function handleAppWebContentsCreated(dc, contents) {
     const contentID = event.sender.id;
     const parsedURL = parseURL(url);
     const urlIsTrusted = isTrustedURL(parsedURL);
-    const urlIsCustomLoginPath = isCustomLoginURL(parsedURL);
-    const previousPage = event.sender.history[event.sender.history.length - 1];
+    if (!urlIsTrusted) {
+      return;
+    }
 
-    if (urlIsTrusted && urlIsCustomLoginPath && !customLogins[contentID].inProgress && previousPage.endsWith('/login')) {
+    const urlIsCustomLoginPath = isCustomLoginURL(parsedURL);
+    const previousPage = parseURL(event.sender.history[event.sender.history.length - 1]);
+    if (urlIsCustomLoginPath && previousPage && previousPage.pathname.endsWith('/login')) {
       customLogins[contentID].inProgress = true;
-    } else if (urlIsTrusted && customLogins[contentID].inProgress) {
+    } else if (customLogins[contentID].inProgress) {
       customLogins[contentID].inProgress = false;
     }
   });
@@ -736,15 +743,14 @@ function parseURL(url) {
   if (!url) {
     return null;
   }
-  let parsedURL = url;
-  if (typeof url === 'string') {
-    try {
-      parsedURL = new URL(url);
-    } catch (e) {
-      return null;
-    }
+  if (url instanceof URL) {
+    return url;
   }
-  return parsedURL;
+  try {
+    return new URL(url);
+  } catch (e) {
+    return null;
+  }
 }
 
 function isTrustedURL(url) {
@@ -752,9 +758,15 @@ function isTrustedURL(url) {
   if (!parsedURL) {
     return false;
   }
-  const trustedURLs = config.teams.map((team) => parseURL(team.url));
-  for (const trustedURL of trustedURLs) {
-    if (parsedURL.origin === trustedURL.origin) {
+  const teamURLs = config.teams.reduce((urls, team) => {
+    const parsedTeamURL = parseURL(team.url);
+    if (parsedTeamURL) {
+      return urls.push(parsedTeamURL);
+    }
+    return urls;
+  });
+  for (const teamURL of teamURLs) {
+    if (parsedURL.origin === teamURL.origin) {
       return true;
     }
   }
