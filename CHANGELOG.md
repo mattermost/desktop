@@ -14,10 +14,10 @@ Release date: TBD
 
 Release date: TBD
 
-- Security **XXX**
+- Security **XX Will be updated when we're closer to Release Day date**
 
 ### Breaking Change
- - Desktop notifications **XXX**
+ - Desktop notifications **XX Waiting for more details on this**
 
 ### Improvements
 
@@ -87,7 +87,7 @@ Release date: TBD
  - Users are unable to zoom in/out on the desktop app. This bug will be fixed after a major version upgrade of Electron to v6.0.0.
 
 #### Contributors
- - 
+ - [asaadmahmood](https://github.com/asaadmahmood), [aswathkk](https://github.com/aswathkk), [crspeller](https://github.com/crspeller), [deanwhillier](https://github.com/deanwhillier), [devinbinnie](https://github.com/devinbinnie), [esethna](https://github.com/esethna), [jespino](https://github.com/jespino), [JtheBAB](https://github.com/JtheBAB), [manland](https://github.com/manland), [mickmister](https://github.com/mickmister), [MikeNicholls](https://github.com/MikeNicholls), [PeterDaveHello](https://github.com/PeterDaveHello), [sethitow](https://github.com/sethitow), [steevsachs](https://github.com/steevsachs), [svelle](https://github.com/svelle), [wget](https://github.com/wget), [Willyfrog](https://github.com/Willyfrog), [yuya-oc](https://github.com/yuya-oc)
  
 ----
 
