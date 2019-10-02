@@ -761,10 +761,10 @@ function isTrustedURL(url) {
   const teamURLs = config.teams.reduce((urls, team) => {
     const parsedTeamURL = parseURL(team.url);
     if (parsedTeamURL) {
-      return urls.push(parsedTeamURL);
+      return urls.concat(parsedTeamURL);
     }
     return urls;
-  });
+  }, []);
   for (const teamURL of teamURLs) {
     if (parsedURL.origin === teamURL.origin) {
       return true;
