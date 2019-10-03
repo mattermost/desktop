@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-function print_link() {
+function print_link {
   local URL="${1}"
   local CHECKSUM="$(curl -s -S -L "${URL}" | sha256sum | awk '{print $1}')"
   echo "- ${URL}"
