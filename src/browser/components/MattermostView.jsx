@@ -145,10 +145,14 @@ export default class MattermostView extends React.Component {
     // So this would be emitted again when reloading a webview
     webview.addEventListener('dom-ready', () => {
       // webview.openDevTools();
+
       // Remove this once https://github.com/electron/electron/issues/14474 is fixed
       // - fixes missing cursor bug in electron
-      webview.blur();
-      webview.focus();
+      // - only apply this focus fix if the current view is active
+      if (this.props.active) {
+        webview.blur();
+        webview.focus();
+      }
       if (!this.state.isContextMenuAdded) {
         contextMenu.setup(webview, {
           useSpellChecker: this.props.useSpellChecker,
