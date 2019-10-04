@@ -3,7 +3,7 @@
 // See LICENSE.txt for license information.
 import React from 'react';
 import PropTypes from 'prop-types';
-import {Glyphicon, Nav, NavItem} from 'react-bootstrap';
+import {Nav, NavItem} from 'react-bootstrap';
 
 export default class TabBar extends React.Component { // need "this"
   render() {
@@ -29,7 +29,7 @@ export default class TabBar extends React.Component { // need "this"
       let badgeDiv;
       if (sessionExpired) {
         badgeDiv = (
-          <div className='TabBar-badge TabBar-badge-nomention'/>
+          <div className='TabBar-expired'/>
         );
       } else if (mentionCount !== 0) {
         badgeDiv = (
@@ -37,7 +37,12 @@ export default class TabBar extends React.Component { // need "this"
             {mentionCount}
           </div>
         );
+      } else if (unreadCount !== 0) {
+        badgeDiv = (
+          <div className='TabBar-dot'/>
+        );
       }
+
       const id = 'teamTabItem' + index;
 
       // draggable=false is a workaround for https://github.com/mattermost/desktop/issues/667
@@ -51,14 +56,12 @@ export default class TabBar extends React.Component { // need "this"
           ref={id}
           draggable={false}
         >
-          <span
-            title={team.name}
-            className={unreadCount === 0 ? '' : 'teamTabItem-unread'}
-          >
-            {team.name}
-          </span>
-          { ' ' }
-          { badgeDiv }
+          <div className='TabBar-tabSeperator'>
+            <span title={team.name}>
+              {team.name}
+            </span>
+            { badgeDiv }
+          </div>
         </NavItem>);
     });
     if (this.props.showAddServerButton === true) {
@@ -71,7 +74,9 @@ export default class TabBar extends React.Component { // need "this"
           title='Add new server'
           draggable={false}
         >
-          <Glyphicon glyph='plus'/>
+          <div className='TabBar-tabSeperator'>
+            {'+'}
+          </div>
         </NavItem>
       );
     }

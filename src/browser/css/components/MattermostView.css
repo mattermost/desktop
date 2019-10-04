@@ -15,7 +15,7 @@
 }
 
 .mattermostView-with-tab webview, .mattermostView-with-tab .mattermostView-loadingScreen {
-  top: 31px;
+  top: 40px;
 }
 
 .mattermostView-hidden webview {
