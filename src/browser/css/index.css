@@ -29,8 +29,13 @@
 
 .topBar {
   -webkit-app-region: drag;
+  min-height: 40px;
 }
 
 .topBar.macOS>.TabBar {
   padding-left: 80px;
+}
+
+.topBar.macOS.darkMode {
+  background-color: #323639;
 }

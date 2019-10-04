@@ -169,6 +169,17 @@ export default class MainPage extends React.Component {
     ipcRenderer.on('toggle-find', () => {
       this.activateFinder(true);
     });
+
+    if (process.platform === 'darwin') {
+      self.setState({
+        isDarkMode: remote.systemPreferences.isDarkMode(),
+      });
+      remote.systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
+        self.setState({
+          isDarkMode: remote.systemPreferences.isDarkMode(),
+        });
+      });
+    }
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -334,6 +345,7 @@ export default class MainPage extends React.Component {
       tabsRow = (
         <TabBar
           id='tabBar'
+          isDarkMode={this.state.isDarkMode}
           teams={this.props.teams}
           sessionsExpired={this.state.sessionsExpired}
           unreadCounts={this.state.unreadCounts}
@@ -348,9 +360,17 @@ export default class MainPage extends React.Component {
       );
     }
 
+    let topBarClassName = 'topBar';
+    if (process.platform === 'darwin') {
+      topBarClassName += ' macOS';
+      if (this.state.isDarkMode) {
+        topBarClassName += ' darkMode';
+      }
+    }
+
     const topRow = (
       <Row
-        className={`topBar${process.platform === 'darwin' ? ' macOS' : ''}`}
+        className={topBarClassName}
         onDoubleClick={this.handleDoubleClick}
       >
         {tabsRow}

@@ -82,7 +82,7 @@ export default class TabBar extends React.Component { // need "this"
     }
     return (
       <Nav
-        className='TabBar'
+        className={`TabBar${this.props.isDarkMode ? ' darkMode' : ''}`}
         id={this.props.id}
         bsStyle='tabs'
         activeKey={this.props.activeKey}
@@ -103,6 +103,7 @@ export default class TabBar extends React.Component { // need "this"
 TabBar.propTypes = {
   activeKey: PropTypes.number,
   id: PropTypes.string,
+  isDarkMode: PropTypes.bool,
   onSelect: PropTypes.func,
   teams: PropTypes.array,
   sessionsExpired: PropTypes.array,
