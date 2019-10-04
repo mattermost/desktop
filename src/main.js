@@ -406,9 +406,7 @@ function handleAppWebContentsCreated(dc, contents) {
       return;
     }
 
-    const urlIsCustomLoginPath = isCustomLoginURL(parsedURL);
-    const previousPage = parseURL(event.sender.history[event.sender.history.length - 1]);
-    if (urlIsCustomLoginPath && previousPage && previousPage.pathname.endsWith('/login')) {
+    if (isCustomLoginURL(parsedURL)) {
       customLogins[contentID].inProgress = true;
     } else if (customLogins[contentID].inProgress) {
       customLogins[contentID].inProgress = false;
