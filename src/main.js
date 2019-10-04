@@ -382,9 +382,8 @@ function handleAppWebContentsCreated(dc, contents) {
   contents.on('will-navigate', (event, url) => {
     const contentID = event.sender.id;
     const parsedURL = parseURL(url);
-    const urlIsTrusted = isTrustedURL(parsedURL);
 
-    if (urlIsTrusted) {
+    if (isTrustedURL(parsedURL)) {
       return;
     }
     if (customLogins[contentID].inProgress) {
@@ -402,8 +401,8 @@ function handleAppWebContentsCreated(dc, contents) {
   contents.on('did-start-navigation', (event, url) => {
     const contentID = event.sender.id;
     const parsedURL = parseURL(url);
-    const urlIsTrusted = isTrustedURL(parsedURL);
-    if (!urlIsTrusted) {
+
+    if (!isTrustedURL(parsedURL)) {
       return;
     }
 
