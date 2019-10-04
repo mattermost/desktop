@@ -26,3 +26,11 @@
 .modal-error {
   color: #a94442;
 }
+
+.topBar {
+  -webkit-app-region: drag;
+}
+
+.topBar.macOS>.TabBar {
+  padding-left: 80px;
+}

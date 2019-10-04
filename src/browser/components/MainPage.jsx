@@ -283,6 +283,19 @@ export default class MainPage extends React.Component {
     }
   }
 
+  handleDoubleClick = () => {
+    // TODO Devin: Implement for Windows
+    const doubleClickAction = remote.systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
+    const win = remote.getCurrentWindow();
+    if (doubleClickAction === 'Minimize') {
+      win.minimize();
+    } else if (doubleClickAction === 'Maximize' && !win.isMaximized()) {
+      win.maximize();
+    } else if (doubleClickAction === 'Maximize' && win.isMaximized()) {
+      win.unmaximize();
+    }
+  }
+
   addServer() {
     this.setState({
       showNewTeamModal: true,
@@ -319,23 +332,30 @@ export default class MainPage extends React.Component {
     let tabsRow;
     if (this.props.teams.length > 1) {
       tabsRow = (
-        <Row>
-          <TabBar
-            id='tabBar'
-            teams={this.props.teams}
-            sessionsExpired={this.state.sessionsExpired}
-            unreadCounts={this.state.unreadCounts}
-            mentionCounts={this.state.mentionCounts}
-            unreadAtActive={this.state.unreadAtActive}
-            mentionAtActiveCounts={this.state.mentionAtActiveCounts}
-            activeKey={this.state.key}
-            onSelect={this.handleSelect}
-            onAddServer={this.addServer}
-            showAddServerButton={this.props.showAddServerButton}
-          />
-        </Row>
+        <TabBar
+          id='tabBar'
+          teams={this.props.teams}
+          sessionsExpired={this.state.sessionsExpired}
+          unreadCounts={this.state.unreadCounts}
+          mentionCounts={this.state.mentionCounts}
+          unreadAtActive={this.state.unreadAtActive}
+          mentionAtActiveCounts={this.state.mentionAtActiveCounts}
+          activeKey={this.state.key}
+          onSelect={this.handleSelect}
+          onAddServer={this.addServer}
+          showAddServerButton={this.props.showAddServerButton}
+        />
       );
     }
+
+    const topRow = (
+      <Row
+        className={`topBar${process.platform === 'darwin' ? ' macOS' : ''}`}
+        onDoubleClick={this.handleDoubleClick}
+      >
+        {tabsRow}
+      </Row>
+    );
 
     const views = this.props.teams.map((team, index) => {
       function handleBadgeChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) {
@@ -419,7 +439,7 @@ export default class MainPage extends React.Component {
           onCancel={this.handleLoginCancel}
         />
         <Grid fluid={true}>
-          { tabsRow }
+          { topRow }
           { viewsRow }
           { this.state.finderVisible ? (
             <Finder
