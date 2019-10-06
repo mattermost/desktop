@@ -372,8 +372,6 @@ function handleAppWebContentsCreated(dc, contents) {
   // initialize custom login tracking
   customLogins[contents.id] = {
     inProgress: false,
-    startingURL: null,
-    externalHostname: null,
   };
 
   contents.on('will-attach-webview', (event, webPreferences) => {
@@ -383,60 +381,35 @@ function handleAppWebContentsCreated(dc, contents) {
 
   contents.on('will-navigate', (event, url) => {
     const contentID = event.sender.id;
-    const parsedUrl = new URL(url);
-    const urlIsTrusted = isTrustedURL(parsedUrl);
-    const urlIsTrustedExternalLoginPath = parsedUrl.hostname === customLogins[contentID].externalHostname;
+    const parsedURL = parseURL(url);
 
-    // don't prevent custom login attempts (oath, saml)
-    if (!urlIsTrusted && !urlIsTrustedExternalLoginPath) {
-      event.preventDefault();
-
-      // reset custom login if in progress
-      if (customLogins[contentID].inProgress) {
-        customLogins[contentID].inProgress = false;
-        customLogins[contentID].externalHostname = null;
-
-        // redirect to starting url if set
-        if (customLogins[contentID].startingURL) {
-          event.sender.loadURL(customLogins[contentID].startingURL);
-          customLogins[contentID].startingURL = null;
-        }
-      }
+    if (isTrustedURL(parsedURL)) {
+      return;
     }
+    if (customLogins[contentID].inProgress) {
+      return;
+    }
+
+    event.preventDefault();
   });
 
   // handle custom login requests (oath, saml):
-  // 1. are we navigating to a supported local custom login path from the `/login` page? (did-start-navigation listener)
-  //    - indicate custom login is in progress and store starting point for possible reset
-  // 2. is a custom login in progress but we don't have the 3rd party hostname yet? (will-redirect listener)
-  //    - store 3rd party hostname to trust subsequent navigation changes within that hostname
-  // 3. are we finished with the custom login process? (did-start-navigation listener)
-  //    - indicate custom login is NOT in progress and clear any stored 3rd party hostname's
+  // 1. are we navigating to a supported local custom login path from the `/login` page?
+  //    - indicate custom login is in progress
+  // 2. are we finished with the custom login process?
+  //    - indicate custom login is NOT in progress
   contents.on('did-start-navigation', (event, url) => {
     const contentID = event.sender.id;
-    const parsedUrl = new URL(url);
-    const urlIsTrusted = isTrustedURL(parsedUrl);
-    const urlIsCustomLoginPath = isCustomLoginURL(parsedUrl);
-    const previousPage = event.sender.history[event.sender.history.length - 1];
+    const parsedURL = parseURL(url);
 
-    if (urlIsTrusted && urlIsCustomLoginPath && !customLogins[contentID].inProgress && previousPage.endsWith('/login')) {
-      customLogins[contentID].inProgress = true;
-      customLogins[contentID].startingURL = event.sender.getURL();
-    } else if (urlIsTrusted && customLogins[contentID].inProgress && customLogins[contentID].externalHostname) {
-      customLogins[contentID].inProgress = false;
-      customLogins[contentID].externalHostname = null;
+    if (!isTrustedURL(parsedURL)) {
+      return;
     }
-  });
 
-  contents.on('will-redirect', (event, url) => {
-    const contentID = event.sender.id;
-    const parsedUrl = new URL(url);
-    const urlIsTrusted = isTrustedURL(parsedUrl);
-    const previousPage = event.sender.history[event.sender.history.length - 1];
-    const previousPageIsTrusted = isTrustedURL(previousPage);
-
-    if (!urlIsTrusted && previousPageIsTrusted && customLogins[contentID].inProgress && !customLogins[contentID].externalHostname) {
-      customLogins[contentID].externalHostname = parsedUrl.hostname;
+    if (isCustomLoginURL(parsedURL)) {
+      customLogins[contentID].inProgress = true;
+    } else if (customLogins[contentID].inProgress) {
+      customLogins[contentID].inProgress = false;
     }
   });
 
@@ -763,40 +736,49 @@ function handleMainWindowWebContentsCrashed() {
 // helper functions
 //
 
-function isTrustedURL(url) {
+function parseURL(url) {
   if (!url) {
+    return null;
+  }
+  if (url instanceof URL) {
+    return url;
+  }
+  try {
+    return new URL(url);
+  } catch (e) {
+    return null;
+  }
+}
+
+function isTrustedURL(url) {
+  const parsedURL = parseURL(url);
+  if (!parsedURL) {
     return false;
   }
-
-  let parsedUrl = url;
-  if (typeof url === 'string') {
-    try {
-      parsedUrl = new URL(url);
-    } catch (e) {
-      return false;
+  const teamURLs = config.teams.reduce((urls, team) => {
+    const parsedTeamURL = parseURL(team.url);
+    if (parsedTeamURL) {
+      return urls.concat(parsedTeamURL);
     }
-  }
-
-  const trustedURLs = config.teams.map((team) => new URL(team.url));
-
-  for (const trustedURL of trustedURLs) {
-    if (parsedUrl.origin === trustedURL.origin) {
+    return urls;
+  }, []);
+  for (const teamURL of teamURLs) {
+    if (parsedURL.origin === teamURL.origin) {
       return true;
     }
   }
-
   return false;
 }
 
 function isCustomLoginURL(url) {
-  if (!isTrustedURL(url)) {
+  const parsedURL = parseURL(url);
+  if (!parsedURL) {
     return false;
   }
-  let parsedUrl = url;
-  if (typeof url === 'string') {
-    parsedUrl = new URL(url);
+  if (!isTrustedURL(parsedURL)) {
+    return false;
   }
-  const urlPath = parsedUrl.pathname;
+  const urlPath = parsedURL.pathname;
   for (const regexPath of customLoginRegexPaths) {
     if (urlPath.match(regexPath)) {
       return true;
