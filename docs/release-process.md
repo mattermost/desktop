@@ -25,9 +25,10 @@ Pre-work for the current release begins at the code complete date of the previou
     - Follow that any feature PR reviews are prioritized and post a list of outstanding feature PRs in the Desktop App channel
     - After release branches are cut, ask dev to cut RC1 for QA testing
     - Submit changelog with updates for improvements, bug fixes, known issues, and contributors
+    - Ask PMs if there are any notable breaking changes or deprecated features in the release
     - Start posting a daily Zero Bug Balance query (posted until zero bugs or day of release)
-    - Confirm date of marketing announcement for the release and update Desktop App channel header if needed
     - Create meta issue for release in GitHub to let contributors and users know about the upcoming release. See [example issue](https://github.com/mattermost/desktop/issues/271)
+    - Confirm date of marketing announcement for the release and update Desktop App channel header if needed
 2. Dev/PM/QA:
     - Prioritize reviewing, testing, and merging of pull requests for current release until there are no more tickets in the [pull request queue](https://github.com/mattermost/desktop/pulls) marked for the current release
     - Verify `version` in [package.json](https://github.com/mattermost/desktop/blob/master/package.json) and [src/package.json](https://github.com/mattermost/desktop/blob/master/src/package.json) are updated to the new release version
@@ -35,6 +36,23 @@ Pre-work for the current release begins at the code complete date of the previou
 3. Marketing:
     - Tweet announcement that RC1 is ready
     - Queue art work for Twitter announcement
+4. Docs:
+    - Submit Changelog PR for team review
+    - Submit any remaining documentation PRs for product updates in the release
+    
+### C. (T-minus 15 working days) Judgment Day
+Day when Leads and PMs decide which major features are included in the release, and which are postponed.
+
+1. Release Manager:
+    - Post this checklist in Release Checklist channel
+    - Verify all items in the last posted release checklist are complete
+    - Update Changelog PR based on what’s in/out of the release
+    - Post a reminder to devs in the Release Discussion channel of the the code complete date with the ZBB count see example
+    - Ask release PM to review the JIRA tickets remaining in the current release fix version and push those that won’t make it to the next fix version
+2. PM:
+    - Finalize roadmap for next release, and identify planned marketing bullet points
+3. Marketing:
+    - Start drafting blog post, tweet, and email for the release announcement
 
 ### C. (T-minus 14 working days) Code Complete
 
@@ -44,29 +62,26 @@ Pre-work for the current release begins at the code complete date of the previou
     - Post this checklist in Desktop App channel
     - Verify all items in the last posted release checklist are complete
     - Update meta issue for release in GitHub with a link to the changelog
-2. PM:
-    - Finalize roadmap for next release
+2. Dev:
+    - Prioritize reviewing, updating, and merging of pull requests for current release until there are no more tickets in the pull request queue marked for the current release
 
 ### D. (T-minus 8 working days) Release Candidate Testing
 
 1. Release Manager:
     - Post this checklist in Desktop App channel
     - Verify all items in the last posted release checklist are complete
+    - Post links to final tickets for next RC to the Desktop App channel
+2. QA:
     - Update Desktop App channel header with links to RC instances and testing spreadsheet
     - Post release testing instructions to Desktop App channel with a list of known issues
     - Coordinate testing:  
         - Update the RC Testing Spreadsheet to cover any changes or new features, confirm that known issues are listed in the relevant tests, and assign each area to a team member
-2. Team:
+3. Team:
     - Test assigned areas of the Release Candidate Testing spreadsheet
-3. Dev/PM:
     - Daily triage of hotfix candidates and decide whether and when to cut next RC or final
-    - Post links to final tickets for next RC to the Desktop App channel
+4. Dev:
     - Submit PRs for hotfixes against the release branch, and review, test and merge prior to next RC
-4. Build:
     - Push next RC to acceptance and announce in Desktop App channel with new RC link
-5. PM:
-    - Test the new RC to verify fixes merged to the release branch work and post in Desktop App channel after testing
-    - Update the meta issue with download links to the new RCs and a list of approved fixes
 
 ### E. (T-minus 7 working days) Release Candidate Testing Finished
 
@@ -77,7 +92,7 @@ Pre-work for the current release begins at the code complete date of the previou
         - Known issues
         - Contributors
         - Breaking changes
-2. Dev/PM:
+2. Team:
     - Finish assigned areas of the Release Candidate Testing spreadsheet
     - Continue triaging hotfix candidates and decide on whether and when to cut next RC or final
     - If no blocking issues are found sign off on the release
@@ -92,9 +107,10 @@ The final release is cut. If an urgent and important issue needs to be addressed
     - Post this checklist in Desktop App channel
     - Verify all items in the last posted release checklist are complete
     - Update the links in [Mattermost download page](https://www.mattermost.org/download/) and [installation guides](https://docs.mattermost.com/install/desktop.html)
+    - Merge changelog PR after review is complete
+       - If there is a security fix, confirm the Changelog recommends upgrade, with a note mentioning the security level and thanking the security researcher
     - Draft [Mattermost Security Updates](http://about.mattermost.com/security-updates/) if applicable, but do not post until seven days after official release
-        - Check Security Issues spreadsheet and confirm disclosure text
-    - Contact owners of [community installers](http://www.mattermost.org/installation/) to update install version number
+       - Check Security Issues spreadsheet and confirm disclosure text
     - Close GitHub meta ticket for the release
 2. Build:
     - Tag a new release (e.g. 1.1.0) and run an official build which should be essentially identical to the last RC
@@ -104,7 +120,7 @@ The final release is cut. If an urgent and important issue needs to be addressed
       `signtool verify /pa /all EXE_TO_VERIFY`
       - Mac: On console,
       `codesign --verify --deep --strict --verbose=2 Mattermost.app`
-3. PM:
+3. Docs:
     - Finalize all documentation
 4. Dev:
     - Publish the release in [GitHub repository](https://github.com/mattermost/desktop/releases)
@@ -139,7 +155,10 @@ If a bug fix release is required, run through the following steps:
 1. Release Manager:
     - Post this checklist in Desktop App channel
     - Verify all items in the last posted release checklist are complete
+    - Add new release fix versions in Jira for the next few releases
+    - Close the release in Jira
     - Post key dates for the next release in the header of the Desktop App channel and remove links to RC candidates
+    - Check for any UserVoice feature suggestions that were completed in the current release
     - Confirm marketing has been posted
     - Close the release milestone in GitHub
 2. Dev:
@@ -150,8 +169,6 @@ If a bug fix release is required, run through the following steps:
 
 1. Release Manager:
     - Post this checklist in Desktop App channel
-    - Verify all items in the last posted release checklist are complete
     - Post and review [Mattermost Security Updates](https://about.mattermost.com/security-updates/) for the Desktop App
     - Update Security Issues spreadsheet with issue number from posted update (e.g. v3.2.0.1)
     - Confirm the Security Researchers list on the [Responsible Disclosure Policy](https://www.mattermost.org/responsible-disclosure-policy/) is up to date
-    - Review community installers for the Desktop App and update version numbers if there are any discrepancies https://www.mattermost.org/installation/
