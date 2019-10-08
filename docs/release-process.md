@@ -20,6 +20,8 @@ Pre-work for the current release begins at the code complete date of the previou
 
 ### B. (T-minus 20 working days) Feature Complete
 
+No pull requests for features should be merged to the current release after this date. In special cases, exceptions can be made by the Release Manager.
+
 1. Release Manager:
     - Post this checklist in Desktop App channel
     - Follow that any feature PR reviews are prioritized and post a list of outstanding feature PRs in the Desktop App channel
@@ -41,7 +43,8 @@ Pre-work for the current release begins at the code complete date of the previou
     - Submit any remaining documentation PRs for product updates in the release
     
 ### C. (T-minus 15 working days) Judgment Day
-Day when Leads and PMs decide which major features are included in the release, and which are postponed.
+
+Day when Release Manager and PMs decide which major features are included in the release, and which are postponed.
 
 1. Release Manager:
     - Post this checklist in Release Checklist channel
@@ -133,20 +136,19 @@ If a bug fix release is required, run through the following steps:
 1. Dev:
     - Submit, review and merge patches for the release branch
     - Cut an RC containing all bug fixes
-2. PM:
+2. QA:
     - Verify each of the issues in the RC are fixed  
 3. Dev:  
     - Tag a new release (e.g. 1.1.1) and run an official build including code-signing
     - Publish the patch release in [GitHub repository](https://github.com/mattermost/desktop/releases) with SHA-256 checksums
     - Delete RCs after final version is shipped
     - Merge changes made to release branch into master
-4. PM:  
+4. Release Manager:  
     - Update [Mattermost download page](https://mattermost.org/download)
     - Update the download links in [installation guides](https://docs.mattermost.com/install/desktop.html)
     - Update the changelog with notes on patch releases (see [example entry](https://docs.mattermost.com/help/apps/desktop-changelog.html#release-v3-4-1))  
     - Draft [Mattermost Security Updates](http://about.mattermost.com/security-updates/) if applicable, but do not post until seven days after official release
         - Check Security Issues spreadsheet and confirm disclosure text
-    - Contact owners of [community installers](http://www.mattermost.org/installation/) to update install version number
 5. Marketing:
     - Schedule Twitter announcement for 08:00 PST on the date of marketing announcement
 
