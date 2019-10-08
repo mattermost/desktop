@@ -20,6 +20,10 @@ import EnhancedNotification from './js/notification';
 import MainPage from './components/MainPage.jsx';
 import {createDataURL as createBadgeDataURL} from './js/badge';
 
+import {Titlebar, Color} from 'custom-electron-titlebar';
+
+import appIcon from '../assets/large-logo.png';
+
 Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
 const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
@@ -148,6 +152,18 @@ ReactDOM.render(
   />,
   document.getElementById('content')
 );
+
+if (process.platform !== 'darwin') {
+  const titlebar = new Titlebar({
+    icon: appIcon,
+    backgroundColor: Color.fromHex('#FFFFFF'),
+    hideWhenClickingClose: true,
+  });
+  document.addEventListener('mousedown', () => {
+    console.log("works", event);
+    titlebar.closeMenu();
+  });
+}
 
 // Deny drag&drop navigation in mainWindow.
 // Drag&drop is allowed in webview of index.html.

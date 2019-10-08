@@ -607,7 +607,7 @@ export default class SettingsPage extends React.Component {
     return (
       <div>
         <Navbar
-          className='navbar-fixed-top'
+          className='navbar-fixed-top titlebar-offset'
           style={settingsPage.navbar}
         >
           <div style={{position: 'relative'}}>

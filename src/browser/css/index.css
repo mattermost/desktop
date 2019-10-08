@@ -39,3 +39,16 @@
 .topBar.macOS.darkMode {
   background-color: #323639;
 }
+
+.titlebar.windows {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.titlebar > .window-appicon {
+  background-size: 93px !important;
+  width: 104px !important;
+}
+
+.titlebar a:hover {
+  text-decoration: none;
+}

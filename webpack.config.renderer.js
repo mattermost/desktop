@@ -42,7 +42,7 @@ module.exports = merge(base, {
         loader: 'url-loader',
       },
     }, {
-      test: /\.svg$/,
+      test: /\.(svg|png)$/,
       use: [
         {
           loader: 'file-loader',

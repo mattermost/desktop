@@ -20,3 +20,7 @@
 .checkbox > label {
   width: 100%;
 }
+
+.navbar-fixed-top.titlebar-offset {
+  top: 30px;
+}

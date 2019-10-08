@@ -51,6 +51,7 @@
     "chai": "^4.2.0",
     "cross-env": "^5.2.0",
     "css-loader": "^1.0.1",
+    "custom-electron-titlebar": "^3.1.0",
     "devtron": "^1.4.0",
     "electron": "^5.0.10",
     "electron-builder": "^21.2.0",
