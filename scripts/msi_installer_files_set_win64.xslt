@@ -17,3 +17,4 @@ xmlns:wi="http://schemas.microsoft.com/wix/2006/wi">
     </xsl:copy>
   </xsl:template>
 </xsl:stylesheet>
+

@@ -127,7 +127,7 @@ function getUnreadCount() {
   }
 
   // mentionCount in sidebar
-  const elem = document.querySelectorAll('#sidebar-left .badge');
+  const elem = document.querySelectorAll('#sidebar-left .badge, #channel_view .badge');
   let mentionCount = 0;
   for (let i = 0; i < elem.length; i++) {
     if (isElementVisible(elem[i]) && !hasClass(elem[i], 'badge-notify')) {
