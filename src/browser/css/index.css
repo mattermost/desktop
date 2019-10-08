@@ -28,16 +28,30 @@
 }
 
 .topBar {
-  -webkit-app-region: drag;
   min-height: 40px;
+}
+
+.topBar.macOS {
+  -webkit-app-region: drag;
 }
 
 .topBar.macOS>.TabBar {
   padding-left: 80px;
 }
 
-.topBar.macOS.darkMode {
+.topBar.darkMode {
   background-color: #323639;
+  color: #fff;
+}
+
+.dark-mode-toggle {
+  float: right;
+  position: relative;
+  font-size: 22px;
+  top: -29px;
+  right: 10px;
+  opacity: 0.5;
+  cursor: pointer;
 }
 
 .titlebar.windows {

@@ -10,7 +10,7 @@ import url from 'url';
 import React from 'react';
 import PropTypes from 'prop-types';
 import {CSSTransition, TransitionGroup} from 'react-transition-group';
-import {Grid, Row} from 'react-bootstrap';
+import {Grid, Row, Glyphicon} from 'react-bootstrap';
 
 import {ipcRenderer, remote} from 'electron';
 
@@ -55,6 +55,7 @@ export default class MainPage extends React.Component {
     this.handleTargetURLChange = this.handleTargetURLChange.bind(this);
     this.inputBlur = this.inputBlur.bind(this);
     this.markReadAtActive = this.markReadAtActive.bind(this);
+    this.setDarkMode = this.setDarkMode.bind(this);
   }
 
   parseDeeplinkURL(deeplink, teams = this.props.teams) {
@@ -295,7 +296,6 @@ export default class MainPage extends React.Component {
   }
 
   handleDoubleClick = () => {
-    // TODO Devin: Implement for Windows
     const doubleClickAction = remote.systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
     const win = remote.getCurrentWindow();
     if (doubleClickAction === 'Minimize') {
@@ -338,6 +338,12 @@ export default class MainPage extends React.Component {
     });
   }
 
+  setDarkMode() {
+    this.setState({
+      isDarkMode: this.props.setDarkMode(),
+    });
+  }
+
   render() {
     const self = this;
     let tabsRow;
@@ -363,9 +369,19 @@ export default class MainPage extends React.Component {
     let topBarClassName = 'topBar';
     if (process.platform === 'darwin') {
       topBarClassName += ' macOS';
-      if (this.state.isDarkMode) {
-        topBarClassName += ' darkMode';
-      }
+    }
+    if (this.state.isDarkMode) {
+      topBarClassName += ' darkMode';
+    }
+
+    let darkModeToggler;
+    if (process.platform !== 'darwin') {
+      <span 
+        className='dark-mode-toggle'
+        onClick={this.setDarkMode}
+      >
+        <Glyphicon glyph='adjust'/>
+      </span>
     }
 
     const topRow = (
@@ -374,6 +390,7 @@ export default class MainPage extends React.Component {
         onDoubleClick={this.handleDoubleClick}
       >
         {tabsRow}
+        {darkModeToggler}
       </Row>
     );
 
@@ -408,6 +425,7 @@ export default class MainPage extends React.Component {
           onTargetURLChange={self.handleTargetURLChange}
           onBadgeChange={handleBadgeChange}
           onNotificationClick={handleNotificationClick}
+          closeMenu={this.props.closeMenu}
           ref={id}
           active={isActive}
         />);
@@ -501,6 +519,7 @@ MainPage.propTypes = {
   onSelectSpellCheckerLocale: PropTypes.func.isRequired,
   deeplinkingUrl: PropTypes.string,
   showAddServerButton: PropTypes.bool.isRequired,
+  setDarkMode: PropTypes.func.isRequired,
 };
 
 /* eslint-enable react/no-set-state */

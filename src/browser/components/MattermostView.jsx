@@ -192,6 +192,9 @@ export default class MattermostView extends React.Component {
       case 'onNotificationClick':
         self.props.onNotificationClick();
         break;
+      case 'closeMenu':
+        self.props.closeMenu();
+        break;
       }
     });
 

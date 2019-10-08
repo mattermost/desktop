@@ -47,6 +47,12 @@ window.addEventListener('load', () => {
   });
 });
 
+if (process.platform !== 'darwin') {
+  window.addEventListener('mousedown', (e) => {
+    ipcRenderer.sendToHost('closeMenu');
+  });
+}
+
 // listen for messages from the webapp
 window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = {}) => {
   if (origin !== window.location.origin) {

@@ -23,6 +23,7 @@ import {createDataURL as createBadgeDataURL} from './js/badge';
 import {Titlebar, Color} from 'custom-electron-titlebar';
 
 import appIcon from '../assets/large-logo.png';
+import appIconWhite from '../assets/large-logo-white.png';
 
 Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
@@ -139,6 +140,33 @@ function handleSelectSpellCheckerLocale(locale) {
   config.set('spellCheckerLocale', locale);
 }
 
+function setDarkMode() {
+  if (process.platform !== 'darwin') {
+    const darkMode = Boolean(config.darkMode);
+    config.set('darkMode', !darkMode);
+    updateTitleBarDarkMode(!darkMode);
+    return !darkMode;
+  }
+  return null;
+}
+
+let titlebar;
+function closeMenu() {
+  if (process.platform !== 'darwin') {
+    titlebar.closeMenu();
+  }
+}
+
+function updateTitleBarDarkMode(darkMode) {
+  if (darkMode) {
+    titlebar.updateBackground(Color.fromHex('#323639'));
+    titlebar.updateIcon(appIconWhite);
+  } else {
+    titlebar.updateBackground(Color.fromHex('#FFFFFF'));
+    titlebar.updateIcon(appIcon);
+  }
+}
+
 ReactDOM.render(
   <MainPage
     teams={teams}
@@ -149,19 +177,17 @@ ReactDOM.render(
     onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}
     deeplinkingUrl={deeplinkingUrl}
     showAddServerButton={config.enableServerManagement}
+    closeMenu={closeMenu}
+    setDarkMode={setDarkMode}
   />,
   document.getElementById('content')
 );
 
 if (process.platform !== 'darwin') {
-  const titlebar = new Titlebar({
-    icon: appIcon,
-    backgroundColor: Color.fromHex('#FFFFFF'),
+  titlebar = new Titlebar({
+    icon: config.darkMode ? appIconWhite : appIcon,
+    backgroundColor: config.darkMode ? Color.fromHex('#323639') : Color.fromHex('#FFFFFF'),
     hideWhenClickingClose: true,
-  });
-  document.addEventListener('mousedown', () => {
-    console.log("works", event);
-    titlebar.closeMenu();
   });
 }
 

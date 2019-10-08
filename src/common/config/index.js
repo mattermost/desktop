@@ -144,6 +144,9 @@ export default class Config extends EventEmitter {
   get teams() {
     return this.combinedData.teams;
   }
+  get darkMode() {
+    return this.combinedData.darkMode;
+  }
   get localTeams() {
     return this.localConfigData.teams;
   }

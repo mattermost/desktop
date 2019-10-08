@@ -13,12 +13,24 @@ import ReactDOM from 'react-dom';
 import SettingsPage from './components/SettingsPage.jsx';
 import contextMenu from './js/contextMenu';
 
+import {Titlebar, Color} from 'custom-electron-titlebar';
+
+import appIcon from '../assets/large-logo.png';
+
 contextMenu.setup(remote.getCurrentWindow());
 
 ReactDOM.render(
   <SettingsPage/>,
   document.getElementById('content')
 );
+
+if (process.platform !== 'darwin') {
+  new Titlebar({
+    icon: appIcon,
+    backgroundColor: Color.fromHex('#FFFFFF'),
+    hideWhenClickingClose: true,
+  });
+}
 
 // Deny drag&drop navigation in mainWindow.
 document.addEventListener('dragover', (event) => event.preventDefault());
