@@ -2,9 +2,9 @@
 
 This document outlines the release process for the Mattermost Desktop App. It is drawn from the development process used by the [Mattermost core team](https://docs.mattermost.com/process/feature-release.html).
 
-Desktop app releases will ship at the same time as the next server Feature release after the latest Electron update, which means approximately every 2-4 months. This is because we need to have at least a month of buffer time to test that the Electron update works with our software. The desktop app releases will ship on the 16th and will follow the server release schedule.
+Desktop App releases will ship at the same time as the next server Feature release after the latest Electron update, which means approximately every 2-4 months. The desktop app releases will ship on the 16th and will follow the server release schedule.
 
-In cases where there are requested features completed prior to the next upcoming Electron update, the next desktop app release will be prepared at the same time as the next server Feature release regardless of if a new Electron update has shipped.
+In cases where there are requested features completed prior to the next upcoming Electron update, the next Desktop App release will be prepared at the same time as the next server Feature release regardless of if a new Electron update has shipped.
 
 A dot release will be prepared sooner if Electron releases a security update.
 
@@ -18,44 +18,43 @@ Notes:
 
 Pre-work for the current release begins at the code complete date of the previous release. See "Code Complete and Release Candidate Cut" section below for details.
 
-### B. (T-minus 12 working days) Release Date Announcement
+### B. (T-minus 20 working days) Feature Complete
 
-1. PM:
+1. Release Manager:
     - Post this checklist in Desktop App channel
     - Confirm date of marketing announcement for the release and update Desktop App channel header if needed
-    - Create meta issue for release in GitHub to let contributors and users know about the upcoming release. See [example issue](https://github.com/mattermost/desktop/issues/271).
-    - Prepare JIRA tickets for the next release, with a corresponding vX.X prefix
-        - Cut the release candidate (RC1)
-        - Cut final release with code-signing for Windows and Mac builds
-    - Queue desktop app for a 15-minute team testing
-2. Dev/PM:
+    - Create meta issue for release in GitHub to let contributors and users know about the upcoming release. See [example issue](https://github.com/mattermost/desktop/issues/271)
+2. Dev/PM/QA:
     - Prioritize reviewing, testing, and merging of pull requests for current release until there are no more tickets in the [pull request queue](https://github.com/mattermost/desktop/pulls) marked for the current release
 
-### C. (T-minus 7 working days) Code Complete and Release Candidate Cut
+### C. (T-minus 14 working days) Code Complete
 
 **Stabilization** period begins when all features for release have been committed. During this period, only **bugs** can be committed to the release branch. Non-bug pull requests are tagged for the next version.
 
-1. PM:
+1. Release Manager:
     - Post this checklist in Desktop App channel
     - Verify all items in the last posted release checklist are complete
-    - Mail out mugs to any new contributors
+    - Submit changelog with updates for improvements, bug fixes, known issues, and contributors
+    - Update meta issue for release in GitHub with a link to the changelog
+2. PM:
+    - Finalize roadmap for next release
+    
+### D. (T-minus 9 working days) Release Candidate Cut
+1. Release Manager:
+    - Post this checklist in Desktop App channel
+    - Verify all items in the last posted release checklist are complete
     - Coordinate testing:  
         - Update the RC Testing Spreadsheet to cover any changes or new features, confirm that known issues are listed in the relevant tests, and assign each area to a team member
-        - Post in Desktop App channel alerting community of upcoming release and to ask help with testing the release candidate
-    - Update meta issue for release in GitHub with a link to the changelog
-2. Dev/PM:
-    - Submit changelog with updates for improvements, bug fixes, known issues, and contributors
-    - Finalize roadmap for next release
-3. Build:
+2. Build:
     - Verify `version` in [package.json](https://github.com/mattermost/desktop/blob/master/package.json) and [src/package.json](https://github.com/mattermost/desktop/blob/master/src/package.json) are updated to the new release version
     - Master is tagged and branched and "Release Candidate 1" is cut (e.g. 1.1.0-RC1)
-4. Marketing:
+3. Marketing:
     - Tweet announcement that RC1 is ready
     - Queue art work for Twitter announcement
 
-### D. (T-minus 6 working days) Release Candidate Testing
+### D. (T-minus 8 working days) Release Candidate Testing
 
-1. PM:
+1. Release Manager:
     - Post this checklist in Desktop App channel
     - Verify all items in the last posted release checklist are complete
     - Update Desktop App channel header with links to RC instances and testing spreadsheet
@@ -72,15 +71,15 @@ Pre-work for the current release begins at the code complete date of the previou
     - Test the new RC to verify fixes merged to the release branch work and post in Desktop App channel after testing
     - Update the meta issue with download links to the new RCs and a list of approved fixes
 
-### E. (T-minus 4 working days) Release Candidate Testing Finished
+### E. (T-minus 7 working days) Release Candidate Testing Finished
 
-1. PM:
+1. Release Manager:
     - Post this checklist in Desktop App channel
     - Verify all items in the last posted release checklist are complete
     - Check that the following are updated in the Changelog:
         - Known issues
         - Contributors
-        - Release candidate bug reports
+        - Breaking changes
 2. Dev/PM:
     - Finish assigned areas of the Release Candidate Testing spreadsheet
     - Continue triaging hotfix candidates and decide on whether and when to cut next RC or final
@@ -92,9 +91,14 @@ Pre-work for the current release begins at the code complete date of the previou
 
 The final release is cut. If an urgent and important issue needs to be addressed between major releases, a bug fix release (e.g. 1.1.1) may be created.
 
-1. PM:
+1. Release Manager:
     - Post this checklist in Desktop App channel
     - Verify all items in the last posted release checklist are complete
+    - Update the links in [Mattermost download page](https://www.mattermost.org/download/) and [installation guides](https://docs.mattermost.com/install/desktop.html)
+    - Draft [Mattermost Security Updates](http://about.mattermost.com/security-updates/) if applicable, but do not post until seven days after official release
+        - Check Security Issues spreadsheet and confirm disclosure text
+    - Contact owners of [community installers](http://www.mattermost.org/installation/) to update install version number
+    - Close GitHub meta ticket for the release
 2. Build:
     - Tag a new release (e.g. 1.1.0) and run an official build which should be essentially identical to the last RC
     - Post in Desktop App channel with links to all supported distributions and SHA-256 checksum
@@ -104,11 +108,6 @@ The final release is cut. If an urgent and important issue needs to be addressed
       - Mac: On console,
       `codesign --verify --deep --strict --verbose=2 Mattermost.app`
 3. PM:
-    - Update the links in [Mattermost download page](https://www.mattermost.org/download/) and [installation guides](https://docs.mattermost.com/install/desktop.html)
-    - Draft [Mattermost Security Updates](http://about.mattermost.com/security-updates/) if applicable, but do not post until seven days after official release
-        - Check Security Issues spreadsheet and confirm disclosure text
-    - Contact owners of [community installers](http://www.mattermost.org/installation/) to update install version number
-    - Close GitHub meta ticket for the release
     - Finalize all documentation
 4. Dev:
     - Publish the release in [GitHub repository](https://github.com/mattermost/desktop/releases)
@@ -140,7 +139,7 @@ If a bug fix release is required, run through the following steps:
 
 ### G. (T-minus 0 working days) Release Day
 
-1. PM:
+1. Release Manager:
     - Post this checklist in Desktop App channel
     - Verify all items in the last posted release checklist are complete
     - Post key dates for the next release in the header of the Desktop App channel and remove links to RC candidates
@@ -152,7 +151,7 @@ If a bug fix release is required, run through the following steps:
 
 ### H. (T-plus 10 working days) Release Updates
 
-1. PM:
+1. Release Manager:
     - Post this checklist in Desktop App channel
     - Verify all items in the last posted release checklist are complete
     - Post and review [Mattermost Security Updates](https://about.mattermost.com/security-updates/) for the Desktop App
