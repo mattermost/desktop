@@ -38,9 +38,9 @@ export default class UserActivityMonitor extends EventEmitter {
    * Begin monitoring system events and idle time at defined frequency
    *
    * @param {Object} config - overide internal configuration defaults
-   * @param {number} config.updateFrequencyMs
-   * @param {number} config.inactiveThresholdSec
-   * @param {number} config.statusUpdateThresholdMs
+   * @param {number} config.updateFrequencyMs - internal update clock frequency for monitoring idleTime
+   * @param {number} config.inactiveThresholdSec - number in seconds the idleTime needs to reach to internally be considered inactive
+   * @param {number} config.statusUpdateThresholdMs - minimum amount of time before sending a new status update
    * @emits {error} emitted when method is called before the app is ready
    * @emits {error} emitted when this method has previously been called but not subsequently stopped
    */
