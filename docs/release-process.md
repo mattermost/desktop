@@ -1,6 +1,12 @@
 # Release Process
 
-This document outlines the release process for the Mattermost Desktop App. It is drawn from the development process used by the [Mattermost core team](https://docs.mattermost.com/process/release-process.html).
+This document outlines the release process for the Mattermost Desktop App. It is drawn from the development process used by the [Mattermost core team](https://docs.mattermost.com/process/feature-release.html).
+
+Desktop app releases will ship at the same time as the next server Feature release after the latest Electron update, which means approximately every 2-4 months. This is because we need to have at least a month of buffer time to test that the Electron update works with our software. The desktop app releases will ship on the 16th and will follow the server release schedule.
+
+In cases where there are requested features completed prior to the next upcoming Electron update, the next desktop app release will be prepared at the same time as the next server Feature release regardless of if a new Electron update has shipped.
+
+A dot release will be prepared sooner if Electron releases a security update.
 
 ## Release Timeline
 
