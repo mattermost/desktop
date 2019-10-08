@@ -22,10 +22,19 @@ Pre-work for the current release begins at the code complete date of the previou
 
 1. Release Manager:
     - Post this checklist in Desktop App channel
+    - Follow that any feature PR reviews are prioritized and post a list of outstanding feature PRs in the Desktop App channel
+    - After release branches are cut, ask dev to cut RC1 for QA testing
+    - Submit changelog with updates for improvements, bug fixes, known issues, and contributors
+    - Start posting a daily Zero Bug Balance query (posted until zero bugs or day of release)
     - Confirm date of marketing announcement for the release and update Desktop App channel header if needed
     - Create meta issue for release in GitHub to let contributors and users know about the upcoming release. See [example issue](https://github.com/mattermost/desktop/issues/271)
 2. Dev/PM/QA:
     - Prioritize reviewing, testing, and merging of pull requests for current release until there are no more tickets in the [pull request queue](https://github.com/mattermost/desktop/pulls) marked for the current release
+    - Verify `version` in [package.json](https://github.com/mattermost/desktop/blob/master/package.json) and [src/package.json](https://github.com/mattermost/desktop/blob/master/src/package.json) are updated to the new release version
+    - Master is tagged and branched and "Release Candidate 1" is cut (e.g. 1.1.0-RC1)
+3. Marketing:
+    - Tweet announcement that RC1 is ready
+    - Queue art work for Twitter announcement
 
 ### C. (T-minus 14 working days) Code Complete
 
@@ -34,23 +43,9 @@ Pre-work for the current release begins at the code complete date of the previou
 1. Release Manager:
     - Post this checklist in Desktop App channel
     - Verify all items in the last posted release checklist are complete
-    - Submit changelog with updates for improvements, bug fixes, known issues, and contributors
     - Update meta issue for release in GitHub with a link to the changelog
 2. PM:
     - Finalize roadmap for next release
-    
-### D. (T-minus 9 working days) Release Candidate Cut
-1. Release Manager:
-    - Post this checklist in Desktop App channel
-    - Verify all items in the last posted release checklist are complete
-    - Coordinate testing:  
-        - Update the RC Testing Spreadsheet to cover any changes or new features, confirm that known issues are listed in the relevant tests, and assign each area to a team member
-2. Build:
-    - Verify `version` in [package.json](https://github.com/mattermost/desktop/blob/master/package.json) and [src/package.json](https://github.com/mattermost/desktop/blob/master/src/package.json) are updated to the new release version
-    - Master is tagged and branched and "Release Candidate 1" is cut (e.g. 1.1.0-RC1)
-3. Marketing:
-    - Tweet announcement that RC1 is ready
-    - Queue art work for Twitter announcement
 
 ### D. (T-minus 8 working days) Release Candidate Testing
 
@@ -59,6 +54,8 @@ Pre-work for the current release begins at the code complete date of the previou
     - Verify all items in the last posted release checklist are complete
     - Update Desktop App channel header with links to RC instances and testing spreadsheet
     - Post release testing instructions to Desktop App channel with a list of known issues
+    - Coordinate testing:  
+        - Update the RC Testing Spreadsheet to cover any changes or new features, confirm that known issues are listed in the relevant tests, and assign each area to a team member
 2. Team:
     - Test assigned areas of the Release Candidate Testing spreadsheet
 3. Dev/PM:
