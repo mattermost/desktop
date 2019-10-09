@@ -9,13 +9,12 @@ window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-e
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-
-import SettingsPage from './components/SettingsPage.jsx';
-import contextMenu from './js/contextMenu';
-
 import {Titlebar, Color} from 'custom-electron-titlebar';
 
 import appIcon from '../assets/large-logo.png';
+
+import SettingsPage from './components/SettingsPage.jsx';
+import contextMenu from './js/contextMenu';
 
 contextMenu.setup(remote.getCurrentWindow());
 
@@ -25,7 +24,8 @@ ReactDOM.render(
 );
 
 if (process.platform !== 'darwin') {
-  new Titlebar({
+  // eslint-disable-next-line new-cap
+  Titlebar({
     icon: appIcon,
     backgroundColor: Color.fromHex('#FFFFFF'),
     hideWhenClickingClose: true,

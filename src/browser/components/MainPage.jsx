@@ -377,12 +377,12 @@ export default class MainPage extends React.Component {
     let darkModeToggler;
     if (process.platform !== 'darwin') {
       darkModeToggler = (
-      <span 
-        className='dark-mode-toggle'
+        <span
+          className='dark-mode-toggle'
           onClick={this.props.setDarkMode}
-      >
-        <Glyphicon glyph='adjust'/>
-      </span>
+        >
+          <Glyphicon glyph='adjust'/>
+        </span>
       );
     }
 
@@ -521,6 +521,7 @@ MainPage.propTypes = {
   onSelectSpellCheckerLocale: PropTypes.func.isRequired,
   deeplinkingUrl: PropTypes.string,
   showAddServerButton: PropTypes.bool.isRequired,
+  closeMenu: PropTypes.func.isRequired,
   setDarkMode: PropTypes.func.isRequired,
 };
 

@@ -13,17 +13,16 @@ import url from 'url';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {remote, ipcRenderer} from 'electron';
+import {Titlebar, Color} from 'custom-electron-titlebar';
 
 import Config from '../common/config';
+
+import appIcon from '../assets/large-logo.png';
+import appIconWhite from '../assets/large-logo-white.png';
 
 import EnhancedNotification from './js/notification';
 import MainPage from './components/MainPage.jsx';
 import {createDataURL as createBadgeDataURL} from './js/badge';
-
-import {Titlebar, Color} from 'custom-electron-titlebar';
-
-import appIcon from '../assets/large-logo.png';
-import appIconWhite from '../assets/large-logo-white.png';
 
 Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 

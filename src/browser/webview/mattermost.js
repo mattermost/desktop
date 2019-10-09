@@ -48,7 +48,7 @@ window.addEventListener('load', () => {
 });
 
 if (process.platform !== 'darwin') {
-  window.addEventListener('mousedown', (e) => {
+  window.addEventListener('mousedown', () => {
     ipcRenderer.sendToHost('closeMenu');
   });
 }
