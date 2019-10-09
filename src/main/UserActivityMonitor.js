@@ -21,7 +21,7 @@ export default class UserActivityMonitor extends EventEmitter {
 
     this.config = {
       updateFrequencyMs: 1 * 1000, // eslint-disable-line no-magic-numbers
-      inactiveThresholdSec: 60, // eslint-disable-line no-magic-numbers
+      inactiveThresholdMs: 60 * 1000, // eslint-disable-line no-magic-numbers
       statusUpdateThresholdMs: 60 * 1000, // eslint-disable-line no-magic-numbers
     };
   }
@@ -39,7 +39,7 @@ export default class UserActivityMonitor extends EventEmitter {
    *
    * @param {Object} config - overide internal configuration defaults
    * @param {number} config.updateFrequencyMs - internal update clock frequency for monitoring idleTime
-   * @param {number} config.inactiveThresholdSec - number in seconds the idleTime needs to reach to internally be considered inactive
+   * @param {number} config.inactiveThresholdMs - the number of milliseconds that idleTime needs to reach to internally be considered inactive
    * @param {number} config.statusUpdateThresholdMs - minimum amount of time before sending a new status update
    * @emits {error} emitted when method is called before the app is ready
    * @emits {error} emitted when this method has previously been called but not subsequently stopped
@@ -83,7 +83,7 @@ export default class UserActivityMonitor extends EventEmitter {
    */
   updateIdleTime(idleTime) {
     this.idleTime = idleTime;
-    if (idleTime > this.config.inactiveThresholdSec) {
+    if (idleTime * 1000 > this.config.inactiveThresholdMs) { // eslint-disable-line no-magic-numbers
       this.setActivityState(false);
     } else {
       this.setActivityState(true);
@@ -102,6 +102,7 @@ export default class UserActivityMonitor extends EventEmitter {
 
     if (isSystemEvent) {
       this.sendStatusUpdate(true);
+      return;
     }
 
     const now = Date.now();
