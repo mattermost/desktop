@@ -33,6 +33,12 @@ Release date: TBD
  - Improved the wording of the bad certificate dialog to make it harder to just allow.
  [#900](https://github.com/mattermost/desktop/pull/900)
  - Added support for Desktop menu bar accessibility improvements. This was fixed with the major version upgrade of Electron to v5.0.0.
+ 
+#### Windows
+ - Added support for MSI installer (Beta) to allow deploying Mattermost desktop app to the computer program files (accessible by any user accounts rather than a specific user account on the machine).
+  [#959](https://github.com/mattermost/desktop/pull/959)
+ - Added support for Group Policies (GPO) to allow admins to set default servers and enable/disable the ability to add/remove servers.
+  [#959](https://github.com/mattermost/desktop/pull/959)
 
 #### Mac
  - Added a flag to enable MacOS dark mode title bar.
@@ -70,18 +76,18 @@ Release date: TBD
  - Fixed an issue where opening the emoji picker froze the desktop app. This bug was fixed with the major version upgrade of Electron to v5.0.0.
  - Fixed an issue where switching server tabs on app load caused a visual size glitch. This bug was fixed with the major version upgrade of Electron to v4.0.0.
  - Fixed an issue where jumbo emoji didn't render for unsupported unicode emojis. This bug was fixed with the major version upgrade of Electron to v4.0.0.
- 
-#### Mac
- - Fixed an issue where using the red Close button to close the window caused a blank screen when the window was maximized.
- [#953](https://github.com/mattermost/desktop/pull/953)
- - Fixed an issue where ``Cmd + Option + Shift + v`` and ``Cmd + Shift + v`` didn't work on MacOS desktop app. This bug was fixed with the major version upgrade of Electron to v5.0.0.
- - Fixed an issue where the timezones were incorrect in OSX High Sierra. This bug was fixed with the major version upgrade of Electron to v4.0.0.
- 
+
 #### Windows
  - Fixed an issue where Ctrl+M shortcut minimized the Windows app and sent a message.
  [#971](https://github.com/mattermost/desktop/pull/971)
  - Fixed an issue where clicking the tooltip button dismissed the tooltip.
  [#2660](https://github.com/mattermost/mattermost-webapp/pull/2660)
+
+#### Mac
+ - Fixed an issue where using the red Close button to close the window caused a blank screen when the window was maximized.
+ [#953](https://github.com/mattermost/desktop/pull/953)
+ - Fixed an issue where ``Cmd + Option + Shift + v`` and ``Cmd + Shift + v`` didn't work on MacOS desktop app. This bug was fixed with the major version upgrade of Electron to v5.0.0.
+ - Fixed an issue where the timezones were incorrect in OSX High Sierra. This bug was fixed with the major version upgrade of Electron to v4.0.0.
 
 #### Known Issues
  - Users are unable to zoom in/out on the desktop app. This bug will be fixed after a major version upgrade of Electron to v6.0.0.
