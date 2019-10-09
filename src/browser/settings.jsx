@@ -24,8 +24,8 @@ ReactDOM.render(
 );
 
 if (process.platform !== 'darwin') {
-  // eslint-disable-next-line new-cap
-  Titlebar({
+  // eslint-disable-next-line no-new
+  new Titlebar({
     icon: appIcon,
     backgroundColor: Color.fromHex('#FFFFFF'),
     hideWhenClickingClose: true,

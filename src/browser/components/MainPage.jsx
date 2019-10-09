@@ -379,7 +379,7 @@ export default class MainPage extends React.Component {
       darkModeToggler = (
         <span
           className='dark-mode-toggle'
-          onClick={this.props.setDarkMode}
+          onClick={this.setDarkMode}
         >
           <Glyphicon glyph='adjust'/>
         </span>
