@@ -376,12 +376,14 @@ export default class MainPage extends React.Component {
 
     let darkModeToggler;
     if (process.platform !== 'darwin') {
+      darkModeToggler = (
       <span 
         className='dark-mode-toggle'
-        onClick={this.setDarkMode}
+          onClick={this.props.setDarkMode}
       >
         <Glyphicon glyph='adjust'/>
       </span>
+      );
     }
 
     const topRow = (
