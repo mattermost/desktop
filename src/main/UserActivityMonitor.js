@@ -15,25 +15,19 @@ export default class UserActivityMonitor extends EventEmitter {
     super();
 
     this.isActive = true;
-    this.forceInactive = false;
     this.idleTime = 0;
-    this.lastStatusUpdate = 0;
+    this.lastSetActive = null;
     this.systemIdleTimeIntervalID = -1;
 
     this.config = {
-      internalUpdateFrequencyMs: 1 * 1000, // eslint-disable-line no-magic-numbers
+      updateFrequencyMs: 1 * 1000, // eslint-disable-line no-magic-numbers
+      inactiveThresholdMs: 60 * 1000, // eslint-disable-line no-magic-numbers
       statusUpdateThresholdMs: 60 * 1000, // eslint-disable-line no-magic-numbers
-      activityTimeoutSec: 5 * 60, // eslint-disable-line no-magic-numbers
     };
-
-    // NOTE: binding needed to prevent error; fat arrow class methods don't work in current setup
-    // Error: "Error: async hook stack has become corrupted (actual: #, expected: #)"
-    this.handleSystemGoingAway = this.handleSystemGoingAway.bind(this);
-    this.handleSystemComingBack = this.handleSystemComingBack.bind(this);
   }
 
   get userIsActive() {
-    return this.forceInactive ? false : this.isActive;
+    return this.isActive;
   }
 
   get userIdleTime() {
@@ -44,9 +38,9 @@ export default class UserActivityMonitor extends EventEmitter {
    * Begin monitoring system events and idle time at defined frequency
    *
    * @param {Object} config - overide internal configuration defaults
-   * @param {nunber} config.internalUpdateFrequencyMs
-   * @param {nunber} config.statusUpdateThresholdMs
-   * @param {nunber} config.activityTimeoutSec
+   * @param {number} config.updateFrequencyMs - internal update clock frequency for monitoring idleTime
+   * @param {number} config.inactiveThresholdMs - the number of milliseconds that idleTime needs to reach to internally be considered inactive
+   * @param {number} config.statusUpdateThresholdMs - minimum amount of time before sending a new status update
    * @emits {error} emitted when method is called before the app is ready
    * @emits {error} emitted when this method has previously been called but not subsequently stopped
    */
@@ -63,12 +57,6 @@ export default class UserActivityMonitor extends EventEmitter {
 
     this.config = Object.assign({}, this.config, config);
 
-    // NOTE: electron.powerMonitor cannot be referenced until the app is ready
-    electron.powerMonitor.on('suspend', this.handleSystemGoingAway);
-    electron.powerMonitor.on('resume', this.handleSystemComingBack);
-    electron.powerMonitor.on('lock-screen', this.handleSystemGoingAway);
-    electron.powerMonitor.on('unlock-screen', this.handleSystemComingBack);
-
     this.systemIdleTimeIntervalID = setInterval(() => {
       try {
         electron.powerMonitor.querySystemIdleTime((idleTime) => {
@@ -77,51 +65,53 @@ export default class UserActivityMonitor extends EventEmitter {
       } catch (err) {
         console.log('Error getting system idle time:', err);
       }
-    }, this.config.internalUpdateFrequencyMs);
+    }, this.config.updateFrequencyMs);
   }
 
   /**
    * Stop monitoring system events and idle time
    */
   stopMonitoring() {
-    electron.powerMonitor.off('suspend', this.handleSystemGoingAway);
-    electron.powerMonitor.off('resume', this.handleSystemComingBack);
-    electron.powerMonitor.off('lock-screen', this.handleSystemGoingAway);
-    electron.powerMonitor.off('unlock-screen', this.handleSystemComingBack);
-
     clearInterval(this.systemIdleTimeIntervalID);
   }
 
   /**
-   * Updates internal idle time properties and conditionally triggers updates to user activity status
+   * Updates internal idle time and sets internal user activity state
    *
    * @param {integer} idleTime
    * @private
    */
   updateIdleTime(idleTime) {
     this.idleTime = idleTime;
-
-    if (this.idleTime > this.config.activityTimeoutSec) {
-      this.updateUserActivityStatus(false);
-    } else if (!this.forceInactive && this.idleTime < this.config.activityTimeoutSec) {
-      this.updateUserActivityStatus(true);
+    if (idleTime * 1000 > this.config.inactiveThresholdMs) { // eslint-disable-line no-magic-numbers
+      this.setActivityState(false);
+    } else {
+      this.setActivityState(true);
     }
   }
 
   /**
-   * Updates user activity status if changed and triggers a status update
+   * Updates user active state and conditionally triggers a status update
    *
    * @param {boolean} isActive
    * @param {boolean} isSystemEvent – indicates whether the update was triggered by a system event (log in/out, screesaver on/off etc)
    * @private
    */
-  updateUserActivityStatus(isActive = false, isSystemEvent = false) {
+  setActivityState(isActive = false, isSystemEvent = false) {
+    this.isActive = isActive;
+
+    if (isSystemEvent) {
+      this.sendStatusUpdate(true);
+      return;
+    }
+
     const now = Date.now();
-    if (isActive !== this.isActive) {
-      this.isActive = isActive;
-      this.sendStatusUpdate(now, isSystemEvent);
-    } else if (now - this.lastStatusUpdate > this.config.statusUpdateThresholdMs) {
-      this.sendStatusUpdate(now, isSystemEvent);
+
+    if (isActive && (this.lastSetActive == null || now - this.lastSetActive >= this.config.statusUpdateThresholdMs)) {
+      this.sendStatusUpdate(false);
+      this.lastSetActive = now;
+    } else if (!isActive) {
+      this.lastSetActive = null;
     }
   }
 
@@ -131,26 +121,11 @@ export default class UserActivityMonitor extends EventEmitter {
    * @emits {status} emitted at regular, definable intervals providing an update on user active status and idle time
    * @private
    */
-  sendStatusUpdate(now = Date.now(), isSystemEvent = false) {
-    this.lastStatusUpdate = now;
+  sendStatusUpdate(isSystemEvent = false) {
     this.emit('status', {
       userIsActive: this.isActive,
       idleTime: this.idleTime,
       isSystemEvent,
     });
-  }
-
-  /**
-   * System event handlers
-   *
-   * @private
-   */
-  handleSystemGoingAway() {
-    this.forceInactive = true;
-    this.updateUserActivityStatus(false, true);
-  }
-  handleSystemComingBack() {
-    this.forceInactive = false;
-    this.updateUserActivityStatus(true, true);
   }
 }
