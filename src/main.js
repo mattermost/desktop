@@ -413,7 +413,10 @@ function handleAppWebContentsCreated(dc, contents) {
     }
   });
 
-  contents.on('new-window', (event) => {
+  contents.on('new-window', (event, url) => {
+    if (isTrustedURL(url)) {
+      return;
+    }
     event.preventDefault();
   });
 }
