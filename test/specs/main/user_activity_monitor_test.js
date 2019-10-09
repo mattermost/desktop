@@ -22,32 +22,12 @@ describe('UserActivityMonitor', () => {
     });
 
     it('should set user status to active', () => {
-      userActivityMonitor.updateUserActivityStatus(true);
+      userActivityMonitor.setActivityState(true);
       assert.equal(userActivityMonitor.userIsActive, true);
     });
     it('should set user status to inactive', () => {
-      userActivityMonitor.updateUserActivityStatus(false);
+      userActivityMonitor.setActivityState(false);
       assert.equal(userActivityMonitor.userIsActive, false);
-    });
-  });
-
-  describe('handleSystemGoingAway', () => {
-    it('should set user status to inactive and forceInactive to true', () => {
-      const userActivityMonitor = new UserActivityMonitor();
-      userActivityMonitor.isActive = true;
-      userActivityMonitor.forceInactive = false;
-      userActivityMonitor.handleSystemGoingAway();
-      assert.equal(!userActivityMonitor.userIsActive && userActivityMonitor.forceInactive, true);
-    });
-  });
-
-  describe('handleSystemComingBack', () => {
-    it('should set user status to active and forceInactive to false', () => {
-      const userActivityMonitor = new UserActivityMonitor();
-      userActivityMonitor.isActive = false;
-      userActivityMonitor.forceInactive = true;
-      userActivityMonitor.handleSystemComingBack();
-      assert.equal(userActivityMonitor.userIsActive && !userActivityMonitor.forceInactive, true);
     });
   });
 
@@ -62,28 +42,28 @@ describe('UserActivityMonitor', () => {
       userActivityMonitor.on('status', ({userIsActive, isSystemEvent}) => {
         assert.equal(userIsActive && !isSystemEvent, true);
       });
-      userActivityMonitor.updateUserActivityStatus(true, false);
+      userActivityMonitor.setActivityState(true, false);
     });
 
     it('should emit a non-system triggered status event indicating a user is inactive', () => {
       userActivityMonitor.on('status', ({userIsActive, isSystemEvent}) => {
         assert.equal(!userIsActive && !isSystemEvent, true);
       });
-      userActivityMonitor.updateUserActivityStatus(false, false);
+      userActivityMonitor.setActivityState(false, false);
     });
 
     it('should emit a system triggered status event indicating a user is active', () => {
       userActivityMonitor.on('status', ({userIsActive, isSystemEvent}) => {
         assert.equal(userIsActive && isSystemEvent, true);
       });
-      userActivityMonitor.updateUserActivityStatus(true, true);
+      userActivityMonitor.setActivityState(true, true);
     });
 
     it('should emit a system triggered status event indicating a user is inactive', () => {
       userActivityMonitor.on('status', ({userIsActive, isSystemEvent}) => {
         assert.equal(!userIsActive && isSystemEvent, true);
       });
-      userActivityMonitor.updateUserActivityStatus(false, true);
+      userActivityMonitor.setActivityState(false, true);
     });
   });
 });
