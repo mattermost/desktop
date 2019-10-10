@@ -20,11 +20,12 @@ if [[ -f "${SRC}/mattermost-desktop-${VERSION}-win-x64.zip" ]]; then
     cp "${SRC}/mattermost-desktop-${VERSION}-win-x64.zip" "${DEST}/mattermost-desktop-${VERSION}-win64.zip"
     SOMETHING_COPIED=$(($SOMETHING_COPIED + 2))
 fi
-if [[ -f "${SRC}/mattermost-desktop-setup-${VERSION}-win.exe" ]]; then
-    echo "Copying win-no-arch\n"
-    cp "${SRC}/mattermost-desktop-setup-${VERSION}-win.exe" "${DEST}/"
-    SOMETHING_COPIED=$(($SOMETHING_COPIED + 4))
-fi
+# we are not supplying this since we supply the msi
+# if [[ -f "${SRC}/mattermost-desktop-setup-${VERSION}-win.exe" ]]; then
+#     echo "Copying win-no-arch\n"
+#     cp "${SRC}/mattermost-desktop-setup-${VERSION}-win.exe" "${DEST}/"
+#     SOMETHING_COPIED=`expr $SOMETHING_COPIED + 4`
+# fi
 if [[ -f "${SRC}"/mattermost-desktop-${VERSION}-mac.zip ]]; then
     echo "Copying mac\n"
     cp "${SRC}"/mattermost-desktop-*-mac.* "${DEST}/"
