@@ -35,14 +35,14 @@ function tag {
 }
 
 function writePackageVersion {
-    tempfile=`mktemp -t "package.json"`
-    jq ".version = \"${1}\"" ./package.json > $tempfile && mv $tempfile ./package.json
-    tempfile=`mktemp -t "package-lock.json"`
-    jq ".version = \"${1}\"" ./package-lock.json > $tempfile && mv $tempfile ./package-lock.json
-    tempfile=`mktemp -t "src-package.json"`
-    jq ".version = \"${1}\"" ./src/package.json > $tempfile && mv $tempfile ./src/package.json
-    tempfile=`mktemp -t "src-package-lock.json"`
-    jq ".version = \"${1}\"" ./src/package-lock.json > $tempfile && mv $tempfile ./src/package-lock.json
+    tempfile=$(mktemp -t "package.json")
+    jq ".version = \"${1}\"" ./package.json > ${tempfile} && mv ${tempfile} ./package.json
+    tempfile=$(mktemp -t "package-lock.json")
+    jq ".version = \"${1}\"" ./package-lock.json > ${tempfile} && mv ${tempfile} ./package-lock.json
+    tempfile=$(mktemp -t "src-package.json")
+    jq ".version = \"${1}\"" ./src/package.json > ${tempfile} && mv ${tempfile} ./src/package.json
+    tempfile=$(mktemp -t "src-package-lock.json")
+    jq ".version = \"${1}\"" ./src/package-lock.json > ${tempfile} && mv ${tempfile} ./src/package-lock.json
     
     git add ./package.json ./package-lock.json
     git commit -qm "Bump to version ${1}"
@@ -50,29 +50,29 @@ function writePackageVersion {
 
 # get original git branch
 branch_name=$(git symbolic-ref -q HEAD)
-branch_name=${branch_name##refs/heads/}
-branch_name=${branch_name:-HEAD}
+branch_name="${branch_name##refs/heads/}"
+branch_name="${branch_name:-HEAD}"
 
 # don't run if branch is dirty, releases shouldn't be done on a dirty branch
-dirty=`git diff --quiet && echo 0 || echo 1`
-if [[ $dirty -eq 1 ]]; then
+dirty=$(git diff --quiet && echo 0 || echo 1)
+if (( $dirty == 1 )); then
     msg="Please use this script on a clean branch"
     writeError $msg
     exit -10
 fi
 
 # require jq
-if [[ ! `command -v jq` ]]; then
+if [[ ! $(command -v jq) ]]; then
     error="this script requires jq to run"
     writeError $error
     exit -11
 fi
 
 # get version
-PKG_VERSION=`jq -r .version package.json`
+PKG_VERSION=$(jq -r .version package.json)
 # remove trailing
-CURRENT_VERSION=${PKG_VERSION%-develop}
-CURRENT_VERSION=${PKG_VERSION%-rc*}
+CURRENT_VERSION="${PKG_VERSION%-develop}"
+CURRENT_VERSION="${PKG_VERSION%-rc*}"
 # parse version
 IFS='.' read MAJOR MINOR MICRO <<<"$CURRENT_VERSION"
 case $1 in
@@ -82,34 +82,34 @@ case $1 in
     "rc")
         if [[ $branch_name =~ "release-" ]]; then
             if [[ $PKG_VERSION =~ "-rc" ]]; then
-                RC=${PKG_VERSION#*-rc}
+                RC="${PKG_VERSION#*-rc}"
             else
                 msg="No release candidate on the version, assuming 0"
-                writeWarning $msg
+                writeWarning ${msg}
                 RC=0
             fi
-            case $RC in
-            ''|*[!0-9]*) 
-                msg="Can't guess release candidate from version, assuming 0"
-                writeWarning $msg
-                RC=1
-            ;;
-            *)
-                RC=$(( RC + 1 ))
-            ;;
+            case "${RC}" in
+                ''|*[!0-9]*) 
+                    msg="Can't guess release candidate from version, assuming 0"
+                    writeWarning ${msg}
+                    RC=1
+                ;;
+                *)
+                    RC=$(( RC + 1 ))
+                ;;
             esac
             msg="Generating ${CURRENT_VERSION} release candidate ${RC}"
-            writeInfo $msg
+            writeInfo ${msg}
             NEW_PKG_VERSION="${CURRENT_VERSION}-rc${RC}"
-            writePackageVersion "$NEW_PKG_VERSION"
-            tagDescription="Release candidate ${RC}"
-            tag $NEW_PKG_VERSION "$tagDescription"
+            writePackageVersion "${NEW_PKG_VERSION}"
+            tag_description="Release candidate ${RC}"
+            tag "${NEW_PKG_VERSION}" "${tag_description}"
             msg="locally created an rc. In order to build you'll have to"
-            writeInfo $msg
+            writeInfo "${msg}"
             echo "$ git push --follow-tags ${gitOrigin} ${branch_name}:${branch_name}\n"
         else
             error="Can't generate a release candidate on a non release-X.Y branch"
-            writeError $error
+            writeError ${error}
             exit -2
 
         fi
@@ -120,8 +120,8 @@ case $1 in
             writeInfo $msg
             NEW_PKG_VERSION=${CURRENT_VERSION}
             writePackageVersion $NEW_PKG_VERSION
-            tagDescription="Released on `date -u`" 
-            tag $NEW_PKG_VERSION $tagDescription
+            tag_description="Released on `date -u`" 
+            tag $NEW_PKG_VERSION $tag_description
             msg="locally created a release. In order to build you'll have to:"
             writeInfo $msg
             echo "$ git push --follow-tags ${gitOrigin} ${branch_name}:${branch_name}"
