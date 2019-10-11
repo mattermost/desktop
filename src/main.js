@@ -385,9 +385,8 @@ function handleAppWebContentsCreated(dc, contents) {
   contents.on('will-navigate', (event, url) => {
     const contentID = event.sender.id;
     const parsedURL = parseURL(url);
-    const isTrustedPopupWindow = popupWindow ? BrowserWindow.fromWebContents(event.sender) === popupWindow : false;
 
-    if (isTrustedURL(parsedURL) || isTrustedPopupWindow) {
+    if (isTrustedURL(parsedURL) || isTrustedPopupWindow(event.sender)) {
       return;
     }
     if (customLogins[contentID].inProgress) {
@@ -432,7 +431,6 @@ function handleAppWebContentsCreated(dc, contents) {
           webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
-            devTools: false,
           },
         });
         popupWindow.once('ready-to-show', () => {
@@ -797,6 +795,16 @@ function isTrustedURL(url) {
     }
   }
   return false;
+}
+
+function isTrustedPopupWindow(webContents) {
+  if (!webContents) {
+    return false;
+  }
+  if (!popupWindow) {
+    return false;
+  }
+  return BrowserWindow.fromWebContents(webContents) === popupWindow;
 }
 
 function isCustomLoginURL(url) {
