@@ -187,6 +187,7 @@ export default class MainPage extends React.Component {
     ipcRenderer.send('update-title', {
       title: webview.getTitle(),
     });
+    window.focus();
     webview.focus();
     this.handleOnTeamFocused(newKey);
   }
