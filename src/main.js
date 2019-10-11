@@ -419,29 +419,31 @@ function handleAppWebContentsCreated(dc, contents) {
 
   contents.on('new-window', (event, url) => {
     event.preventDefault();
-    if (isTrustedURL(url)) {
-      if (popupWindow && popupWindow.getURL() === url) {
-        return;
-      }
-      if (!popupWindow) {
-        popupWindow = new BrowserWindow({
-          parent: mainWindow,
-          alwaysOnTop: true,
-          show: false,
-          webPreferences: {
-            nodeIntegration: false,
-            contextIsolation: true,
-          },
-        });
-        popupWindow.once('ready-to-show', () => {
-          popupWindow.show();
-        });
-        popupWindow.once('closed', () => {
-          popupWindow = null;
-        });
-      }
-      popupWindow.loadURL(url);
+    if (!isTrustedURL(url)) {
+      log.info(`Untrusted popup window blocked: ${url}`);
+      return;
     }
+    if (popupWindow && popupWindow.getURL() === url) {
+      return;
+    }
+    if (!popupWindow) {
+      popupWindow = new BrowserWindow({
+        parent: mainWindow,
+        alwaysOnTop: true,
+        show: false,
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+        },
+      });
+      popupWindow.once('ready-to-show', () => {
+        popupWindow.show();
+      });
+      popupWindow.once('closed', () => {
+        popupWindow = null;
+      });
+    }
+    popupWindow.loadURL(url);
   });
 }
 
