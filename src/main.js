@@ -10,6 +10,7 @@ import {URL} from 'url';
 import electron from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
+import log from 'electron-log';
 
 import {protocols} from '../electron-builder.json';
 
@@ -44,6 +45,7 @@ const {
   dialog,
   systemPreferences,
   session,
+  BrowserWindow,
 } = electron;
 const criticalErrorHandler = new CriticalErrorHandler();
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
@@ -53,6 +55,7 @@ const userActivityMonitor = new UserActivityMonitor();
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow = null;
+let popupWindow = null;
 let hideOnStartup = null;
 let certificateStore = null;
 let spellChecker = null;
@@ -382,14 +385,16 @@ function handleAppWebContentsCreated(dc, contents) {
   contents.on('will-navigate', (event, url) => {
     const contentID = event.sender.id;
     const parsedURL = parseURL(url);
+    const isTrustedPopupWindow = popupWindow ? BrowserWindow.fromWebContents(event.sender) === popupWindow : false;
 
-    if (isTrustedURL(parsedURL)) {
+    if (isTrustedURL(parsedURL) || isTrustedPopupWindow) {
       return;
     }
     if (customLogins[contentID].inProgress) {
       return;
     }
 
+    log.warn(`Untrusted URL blocked: ${url}`);
     event.preventDefault();
   });
 
@@ -414,10 +419,31 @@ function handleAppWebContentsCreated(dc, contents) {
   });
 
   contents.on('new-window', (event, url) => {
-    if (isTrustedURL(url)) {
-      return;
-    }
     event.preventDefault();
+    if (isTrustedURL(url)) {
+      if (popupWindow && popupWindow.getURL() === url) {
+        return;
+      }
+      if (!popupWindow) {
+        popupWindow = new BrowserWindow({
+          parent: mainWindow,
+          alwaysOnTop: true,
+          show: false,
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            devTools: false,
+          },
+        });
+        popupWindow.once('ready-to-show', () => {
+          popupWindow.show();
+        });
+        popupWindow.once('closed', () => {
+          popupWindow = null;
+        });
+      }
+      popupWindow.loadURL(url);
+    }
   });
 }
 
