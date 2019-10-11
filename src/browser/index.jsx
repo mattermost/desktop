@@ -30,6 +30,14 @@ const config = new Config(remote.app.getPath('userData') + '/config.json', remot
 
 const teams = config.teams;
 
+// Make sure teams have an order
+if (teams.every((team) => !team.order)) {
+  teams.forEach((team, index) => {
+    team.order = index;
+  });
+  teamConfigChange(teams);
+}
+
 remote.getCurrentWindow().removeAllListeners('focus');
 
 if (teams.length === 0) {
@@ -139,6 +147,28 @@ function handleSelectSpellCheckerLocale(locale) {
   config.set('spellCheckerLocale', locale);
 }
 
+function moveTabs(originalOrder, newOrder) {
+  const tabOrder = teams.concat().map((team, index) => {
+    return {
+      index,
+      order: team.order,
+    };
+  }).sort((a, b) => (a.order - b.order));
+
+  const team = tabOrder.splice(originalOrder, 1);
+  tabOrder.splice(newOrder, 0, team[0]);
+
+  let teamIndex;
+  tabOrder.forEach((t, order) => {
+    if (order === newOrder) {
+      teamIndex = t.index;
+    }
+    teams[t.index].order = order;
+  });
+  teamConfigChange(teams);
+  return teamIndex;
+}
+
 function setDarkMode() {
   if (process.platform !== 'darwin') {
     const darkMode = Boolean(config.darkMode);
@@ -178,6 +208,7 @@ ReactDOM.render(
     showAddServerButton={config.enableServerManagement}
     closeMenu={closeMenu}
     setDarkMode={setDarkMode}
+    moveTabs={moveTabs}
   />,
   document.getElementById('content')
 );

@@ -48,6 +48,7 @@ export default class MainPage extends React.Component {
     this.addServer = this.addServer.bind(this);
     this.closeFinder = this.closeFinder.bind(this);
     this.focusOnWebView = this.focusOnWebView.bind(this);
+    this.handleDragAndDrop = this.handleDragAndDrop.bind(this);
     this.handleLogin = this.handleLogin.bind(this);
     this.handleLoginCancel = this.handleLoginCancel.bind(this);
     this.handleOnTeamFocused = this.handleOnTeamFocused.bind(this);
@@ -202,6 +203,14 @@ export default class MainPage extends React.Component {
     this.handleOnTeamFocused(newKey);
   }
 
+  handleDragAndDrop(dropResult) {
+    const {removedIndex, addedIndex} = dropResult;
+    if (removedIndex !== addedIndex) {
+      const teamIndex = this.props.moveTabs(removedIndex, addedIndex < this.props.teams.length ? addedIndex : this.props.teams.length - 1);
+      this.handleSelect(teamIndex);
+    }
+  }
+
   handleBadgeChange = (index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) => {
     const sessionsExpired = this.state.sessionsExpired;
     const unreadCounts = this.state.unreadCounts;
@@ -346,25 +355,23 @@ export default class MainPage extends React.Component {
 
   render() {
     const self = this;
-    let tabsRow;
-    if (this.props.teams.length > 1) {
-      tabsRow = (
-        <TabBar
-          id='tabBar'
-          isDarkMode={this.state.isDarkMode}
-          teams={this.props.teams}
-          sessionsExpired={this.state.sessionsExpired}
-          unreadCounts={this.state.unreadCounts}
-          mentionCounts={this.state.mentionCounts}
-          unreadAtActive={this.state.unreadAtActive}
-          mentionAtActiveCounts={this.state.mentionAtActiveCounts}
-          activeKey={this.state.key}
-          onSelect={this.handleSelect}
-          onAddServer={this.addServer}
-          showAddServerButton={this.props.showAddServerButton}
-        />
-      );
-    }
+    const tabsRow = (
+      <TabBar
+        id='tabBar'
+        isDarkMode={this.state.isDarkMode}
+        teams={this.props.teams}
+        sessionsExpired={this.state.sessionsExpired}
+        unreadCounts={this.state.unreadCounts}
+        mentionCounts={this.state.mentionCounts}
+        unreadAtActive={this.state.unreadAtActive}
+        mentionAtActiveCounts={this.state.mentionAtActiveCounts}
+        activeKey={this.state.key}
+        onSelect={this.handleSelect}
+        onAddServer={this.addServer}
+        showAddServerButton={this.props.showAddServerButton}
+        onDrop={this.handleDragAndDrop}
+      />
+    );
 
     let topBarClassName = 'topBar';
     if (process.platform === 'darwin') {
@@ -419,7 +426,7 @@ export default class MainPage extends React.Component {
         <MattermostView
           key={id}
           id={id}
-          withTab={this.props.teams.length > 1}
+          withTab={true}
           useSpellChecker={this.props.useSpellChecker}
           onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
           src={teamUrl}
@@ -523,6 +530,7 @@ MainPage.propTypes = {
   showAddServerButton: PropTypes.bool.isRequired,
   closeMenu: PropTypes.func.isRequired,
   setDarkMode: PropTypes.func.isRequired,
+  moveTabs: PropTypes.func.isRequired,
 };
 
 /* eslint-enable react/no-set-state */

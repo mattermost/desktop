@@ -4,10 +4,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {Nav, NavItem} from 'react-bootstrap';
+import {Container, Draggable} from 'react-smooth-dnd';
 
 export default class TabBar extends React.Component { // need "this"
   render() {
-    const tabs = this.props.teams.map((team, index) => {
+    const orderedTabs = this.props.teams.concat().sort((a, b) => a.order - b.order);
+    const tabs = orderedTabs.map((team) => {
+      const index = this.props.teams.indexOf(team);
       const sessionExpired = this.props.sessionsExpired[index];
 
       let unreadCount = 0;
@@ -44,17 +47,22 @@ export default class TabBar extends React.Component { // need "this"
       }
 
       const id = 'teamTabItem' + index;
-
-      // draggable=false is a workaround for https://github.com/mattermost/desktop/issues/667
-      // It would obstruct https://github.com/mattermost/desktop/issues/478
-      return (
+      const navItem = () => (
         <NavItem
-          className='teamTabItem'
           key={id}
           id={id}
           eventKey={index}
           ref={id}
           draggable={false}
+          active={this.props.activeKey === index}
+          activeKey={this.props.activeKey}
+          onSelect={(eventKey) => {
+            if (eventKey === 'addServerButton') {
+              this.props.onAddServer();
+            } else {
+              this.props.onSelect(eventKey);
+            }
+          }}
         >
           <div className='TabBar-tabSeperator'>
             <span title={team.name}>
@@ -62,7 +70,17 @@ export default class TabBar extends React.Component { // need "this"
             </span>
             { badgeDiv }
           </div>
-        </NavItem>);
+        </NavItem>
+      );
+
+      // draggable=false is a workaround for https://github.com/mattermost/desktop/issues/667
+      // It would obstruct https://github.com/mattermost/desktop/issues/478
+      return (
+        <Draggable
+          key={id}
+          render={navItem}
+          className='teamTabItem'
+        />);
     });
     if (this.props.showAddServerButton === true) {
       tabs.push(
@@ -72,7 +90,14 @@ export default class TabBar extends React.Component { // need "this"
           id='addServerButton'
           eventKey='addServerButton'
           title='Add new server'
-          draggable={false}
+          activeKey={this.props.activeKey}
+          onSelect={(eventKey) => {
+            if (eventKey === 'addServerButton') {
+              this.props.onAddServer();
+            } else {
+              this.props.onSelect(eventKey);
+            }
+          }}
         >
           <div className='TabBar-tabSeperator'>
             {'+'}
@@ -80,22 +105,25 @@ export default class TabBar extends React.Component { // need "this"
         </NavItem>
       );
     }
-    return (
+
+    const navContainer = (ref) => (
       <Nav
-        className={`TabBar${this.props.isDarkMode ? ' darkMode' : ''}`}
+        ref={ref}
+        className={`smooth-dnd-container TabBar${this.props.isDarkMode ? ' darkMode' : ''}`}
         id={this.props.id}
         bsStyle='tabs'
-        activeKey={this.props.activeKey}
-        onSelect={(eventKey) => {
-          if (eventKey === 'addServerButton') {
-            this.props.onAddServer();
-          } else {
-            this.props.onSelect(eventKey);
-          }
-        }}
       >
         { tabs }
       </Nav>
+    );
+    return (
+      <Container
+        render={navContainer}
+        orientation='horizontal'
+        lockAxis={'x'}
+        onDrop={this.props.onDrop}
+        animationDuration={300}
+      />
     );
   }
 }
@@ -113,4 +141,5 @@ TabBar.propTypes = {
   mentionAtActiveCounts: PropTypes.array,
   showAddServerButton: PropTypes.bool,
   onAddServer: PropTypes.func,
+  onDrop: PropTypes.func,
 };

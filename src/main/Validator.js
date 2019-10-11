@@ -46,6 +46,7 @@ const configDataSchemaV1 = Joi.object({
   teams: Joi.array().items(Joi.object({
     name: Joi.string().required(),
     url: Joi.string().required(),
+    order: Joi.number().integer().min(0),
   })).default([]),
   showTrayIcon: Joi.boolean().default(false),
   trayIconTheme: Joi.any().allow('').valid('light', 'dark').default('light'),
@@ -97,12 +98,12 @@ export function validateV0ConfigData(data) {
 export function validateV1ConfigData(data) {
   if (Array.isArray(data.teams) && data.teams.length) {
     // first replace possible backslashes with forward slashes
-    let teams = data.teams.map(({name, url}) => {
+    let teams = data.teams.map(({name, url, order}) => {
       let updatedURL = url;
       if (updatedURL.includes('\\')) {
         updatedURL = updatedURL.toLowerCase().replace(/\\/gi, '/');
       }
-      return {name, url: updatedURL};
+      return {name, url: updatedURL, order};
     });
 
     // next filter out urls that are still invalid so all is not lost
