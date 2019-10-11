@@ -2,7 +2,7 @@
 
 This document outlines the release process for the Mattermost Desktop App. It is drawn from the development process used by the [Mattermost core team](https://docs.mattermost.com/process/feature-release.html).
 
-Desktop App releases will ship at the same time as the next server Feature release after the latest Electron update, which means approximately every 2-4 months. The desktop app releases will ship on the 16th and will follow the server release schedule.
+Desktop App releases ship at the same time as the next server Feature release after the latest [Electron update](https://github.com/electron/electron/releases), which means approximately every 2-4 months. The Desktop App releases ship on the 16th of the month and follow the server release schedule.
 
 In cases where there are requested features completed prior to the next upcoming Electron update, the next Desktop App release will be prepared at the same time as the next server Feature release regardless of if a new Electron update has shipped.
 
@@ -37,10 +37,6 @@ No pull requests for features should be merged to the current release after this
     - Master is tagged and branched and "Release Candidate 1" is cut (e.g. 1.1.0-RC1)
 3. Marketing:
     - Tweet announcement that RC1 is ready
-    - Queue art work for Twitter announcement
-4. Docs:
-    - Submit Changelog PR for team review
-    - Submit any remaining documentation PRs for product updates in the release
     
 ### C. (T-minus 15 working days) Judgment Day
 
@@ -50,7 +46,7 @@ Day when Release Manager and PMs decide which major features are included in the
     - Post this checklist in Release Checklist channel
     - Verify all items in the last posted release checklist are complete
     - Update Changelog PR based on what’s in/out of the release
-    - Post a reminder to devs in the Release Discussion channel of the the code complete date with the ZBB count see example
+    - Post a reminder to devs in the Desktop App channel of the the code complete date with the ZBB count
     - Ask release PM to review the JIRA tickets remaining in the current release fix version and push those that won’t make it to the next fix version
 2. PM:
     - Finalize roadmap for next release, and identify planned marketing bullet points
@@ -85,6 +81,9 @@ Day when Release Manager and PMs decide which major features are included in the
 4. Dev:
     - Submit PRs for hotfixes against the release branch, and review, test and merge prior to next RC
     - Push next RC to acceptance and announce in Desktop App channel with new RC link
+5. Docs:
+    - Submit Changelog PR for team review
+    - Submit any remaining documentation PRs for product updates in the release
 
 ### E. (T-minus 7 working days) Release Candidate Testing Finished
 
