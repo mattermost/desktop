@@ -12,9 +12,9 @@ Release date: TBD
 
 ## Release v4.3.0
 
-Release date: TBD
+Release date: October 16, 2019
 
-- Security **XX Will be updated when we're closer to Release Day date**
+ - Desktop App v4.3.0 contains a medium level security fix. [Upgrading](http://docs.mattermost.com/administration/upgrade.html) is recommended. Details will be posted on our [security updates page](https://about.mattermost.com/security-updates/) 30 days after release as per the [Mattermost Responsible Disclosure Policy](https://www.mattermost.org/responsible-disclosure-policy/).
 
 ### Breaking Change
  - Desktop notifications **XX Waiting for more details on this**
