@@ -44,7 +44,7 @@ function writePackageVersion {
     tempfile=$(mktemp -t "src-package-lock.json")
     jq ".version = \"${1}\"" ./src/package-lock.json > ${tempfile} && mv ${tempfile} ./src/package-lock.json
     
-    git add ./package.json ./package-lock.json
+    git add ./package.json ./package-lock.json ./src/package.json ./src/package-lock.json
     git commit -qm "Bump to version ${1}"
 }
 
@@ -197,4 +197,5 @@ case $1 in
         exit -1
     ;;
 esac
-exit 0
+
+trap - EXIT
