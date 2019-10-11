@@ -393,7 +393,7 @@ function handleAppWebContentsCreated(dc, contents) {
       return;
     }
 
-    log.warn(`Untrusted URL blocked: ${url}`);
+    log.info(`Untrusted URL blocked: ${url}`);
     event.preventDefault();
   });
 
