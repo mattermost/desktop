@@ -288,6 +288,7 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+\.\d+\.\d+?(-rc.*)?/
+                - release-helpers # remove me
       - mac_installer:
           requires:
             - check
@@ -296,6 +297,7 @@ workflows:
             branches:
               only:
                 - /^release-\d+\.\d+\.\d+?(-rc.*)?/
+                - release-helpers # remove-me
       - store_artifacts:
           # for master/PR builds
           requires:
@@ -317,6 +319,8 @@ workflows:
             tags:
               only:
                 - /^v\d+\.\d+\.\d+?$/
+                - release-helpers # remove me
+
       - upload_to_github:
           requires:
             - msi_installer
@@ -327,3 +331,4 @@ workflows:
             branches:
               only:
                 - /^release-\d+\.\d+\.\d+?(-rc.*)?/
+                - release-helpers # remove me
