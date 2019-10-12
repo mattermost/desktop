@@ -16,9 +16,11 @@ describe('browser/settings.html', function desc() {
     teams: [{
       name: 'example',
       url: env.mattermostURL,
+      order: 0,
     }, {
       name: 'github',
       url: 'https://github.com/',
+      order: 1,
     }],
     showTrayIcon: false,
     trayIconTheme: 'light',

@@ -2,6 +2,7 @@
   background-color: rgba(0,0,0,0.1);
   border: none;
   max-height: 36px;
+  width: 100%;
 }
 
 .TabBar.darkMode {
