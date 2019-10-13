@@ -355,23 +355,26 @@ export default class MainPage extends React.Component {
 
   render() {
     const self = this;
-    const tabsRow = (
-      <TabBar
-        id='tabBar'
-        isDarkMode={this.state.isDarkMode}
-        teams={this.props.teams}
-        sessionsExpired={this.state.sessionsExpired}
-        unreadCounts={this.state.unreadCounts}
-        mentionCounts={this.state.mentionCounts}
-        unreadAtActive={this.state.unreadAtActive}
-        mentionAtActiveCounts={this.state.mentionAtActiveCounts}
-        activeKey={this.state.key}
-        onSelect={this.handleSelect}
-        onAddServer={this.addServer}
-        showAddServerButton={this.props.showAddServerButton}
-        onDrop={this.handleDragAndDrop}
-      />
-    );
+    let tabsRow;
+    if (process.platform === 'darwin' || this.props.teams.length > 1) {
+      tabsRow = (
+        <TabBar
+          id='tabBar'
+          isDarkMode={this.state.isDarkMode}
+          teams={this.props.teams}
+          sessionsExpired={this.state.sessionsExpired}
+          unreadCounts={this.state.unreadCounts}
+          mentionCounts={this.state.mentionCounts}
+          unreadAtActive={this.state.unreadAtActive}
+          mentionAtActiveCounts={this.state.mentionAtActiveCounts}
+          activeKey={this.state.key}
+          onSelect={this.handleSelect}
+          onAddServer={this.addServer}
+          showAddServerButton={this.props.showAddServerButton}
+          onDrop={this.handleDragAndDrop}
+        />
+      );
+    }
 
     let topBarClassName = 'topBar';
     if (process.platform === 'darwin') {
@@ -426,7 +429,7 @@ export default class MainPage extends React.Component {
         <MattermostView
           key={id}
           id={id}
-          withTab={true}
+          withTab={process.platform === 'darwin' || this.props.teams.length > 1}
           useSpellChecker={this.props.useSpellChecker}
           onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
           src={teamUrl}

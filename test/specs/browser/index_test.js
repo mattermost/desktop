@@ -66,13 +66,14 @@ describe('browser/index.html', function desc() {
   });
 
   it('should NOT show tabs when there is one team', async () => {
+    const expected = !(process.platform !== 'darwin');
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       url: env.mattermostURL,
     }));
     await this.app.restart();
 
     const existing = await this.app.client.isExisting('#tabBar');
-    existing.should.be.false;
+    existing.should.equal(expected);
   });
 
   it('should set src of webview from config file', async () => {
