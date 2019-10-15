@@ -424,6 +424,7 @@ function handleAppWebContentsCreated(dc, contents) {
       return;
     }
     if (popupWindow && popupWindow.getURL() === url) {
+      log.info(`Popup window already open at provided url: ${url}`);
       return;
     }
     if (!popupWindow) {
