@@ -132,6 +132,7 @@ export default class NewTeamModal extends React.Component {
         show={this.props.show}
         id='newServerModal'
         onHide={this.props.onClose}
+        container={this.props.modalContainer}
         onKeyDown={(e) => {
           switch (e.key) {
           case 'Enter':
@@ -221,4 +222,5 @@ NewTeamModal.propTypes = {
   team: PropTypes.object,
   editMode: PropTypes.bool,
   show: PropTypes.bool,
+  modalContainer: PropTypes.object,
 };
