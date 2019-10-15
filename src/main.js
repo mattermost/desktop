@@ -429,7 +429,6 @@ function handleAppWebContentsCreated(dc, contents) {
     if (!popupWindow) {
       popupWindow = new BrowserWindow({
         parent: mainWindow,
-        alwaysOnTop: true,
         show: false,
         webPreferences: {
           nodeIntegration: false,
