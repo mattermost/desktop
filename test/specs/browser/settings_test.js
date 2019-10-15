@@ -375,6 +375,7 @@ describe('browser/settings.html', function desc() {
     });
 
     it('should disappear on click Close', async () => {
+      await this.app.browserWindow.setSize(1024, 768); // Force a certain window size
       await this.app.client.
         click('.modal-dialog button.close').
         waitForVisible(modalTitleSelector, 10000, true);
