@@ -237,7 +237,7 @@ function createTemplate(mainWindow, config, isDev) {
     enabled: false,
   });
 
-  template.push({label: '&Help', submenu});
+  template.push({label: 'Hel&p', submenu});
   return template;
 }
 
