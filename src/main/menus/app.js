@@ -3,7 +3,7 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {app, dialog, ipcMain, Menu, shell} from 'electron';
+import {app, dialog, Menu, shell} from 'electron';
 
 function createTemplate(mainWindow, config, isDev) {
   const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : `file://${app.getAppPath()}/browser/settings.html`;
@@ -236,15 +236,8 @@ function createTemplate(mainWindow, config, isDev) {
     label: `Version ${app.getVersion()}`,
     enabled: false,
   });
-  if (config.enableAutoUpdater) {
-    submenu.push({
-      label: 'Check for Updates...',
-      click() {
-        ipcMain.emit('check-for-updates', true);
-      },
-    });
-  }
-  template.push({label: '&Help', submenu});
+
+  template.push({label: 'Hel&p', submenu});
   return template;
 }
 

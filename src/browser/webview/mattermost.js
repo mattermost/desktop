@@ -3,18 +3,12 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {ipcRenderer, webFrame} from 'electron';
+/* eslint-disable no-magic-numbers */
 
-import EnhancedNotification from '../js/notification';
-import WebappConnector from '../js/WebappConnector';
+import {ipcRenderer, webFrame, remote} from 'electron';
 
 const UNREAD_COUNT_INTERVAL = 1000;
-//eslint-disable-next-line no-magic-numbers
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
-
-const webappConnector = new WebappConnector();
-
-Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
 Reflect.deleteProperty(global.Buffer); // http://electron.atom.io/docs/tutorial/security/#buffer-global
 
@@ -51,6 +45,46 @@ window.addEventListener('load', () => {
   watchReactAppUntilInitialized(() => {
     ipcRenderer.sendToHost('onGuestInitialized', window.basename);
   });
+});
+
+// listen for messages from the webapp
+window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = {}) => {
+  if (origin !== window.location.origin) {
+    return;
+  }
+  switch (type) {
+  case 'webapp-ready': {
+    // register with the webapp to enable custom integration functionality
+    window.postMessage(
+      {
+        type: 'register-desktop',
+        message: {
+          version: remote.app.getVersion(),
+        },
+      },
+      window.location.origin
+    );
+    break;
+  }
+  case 'dispatch-notification': {
+    const {title, body, channel, teamId, silent} = message;
+    ipcRenderer.sendToHost('dispatchNotification', title, body, channel, teamId, silent);
+    break;
+  }
+  }
+});
+
+ipcRenderer.on('notification-clicked', (event, {channel, teamId}) => {
+  window.postMessage(
+    {
+      type: 'notification-clicked',
+      message: {
+        channel,
+        teamId,
+      },
+    },
+    window.location.origin
+  );
 });
 
 function hasClass(element, className) {
@@ -93,7 +127,7 @@ function getUnreadCount() {
   }
 
   // mentionCount in sidebar
-  const elem = document.querySelectorAll('#sidebar-left .badge');
+  const elem = document.querySelectorAll('#sidebar-left .badge, #channel_view .badge');
   let mentionCount = 0;
   for (let i = 0; i < elem.length; i++) {
     if (isElementVisible(elem[i]) && !hasClass(elem[i], 'badge-notify')) {
@@ -201,9 +235,9 @@ function setSpellChecker() {
 setSpellChecker();
 ipcRenderer.on('set-spellchecker', setSpellChecker);
 
-// push user activity updates to the webapp via the communication bridge
+// push user activity updates to the webapp
 ipcRenderer.on('user-activity-update', (event, {userIsActive, isSystemEvent}) => {
-  webappConnector.emit('user-activity-update', {userIsActive, manual: isSystemEvent});
+  window.postMessage({type: 'user-activity-update', message: {userIsActive, manual: isSystemEvent}}, window.location.origin);
 });
 
 // mattermost-webapp is SPA. So cache is not cleared due to no navigation.
@@ -212,3 +246,5 @@ ipcRenderer.on('user-activity-update', (event, {userIsActive, isSystemEvent}) =>
 setInterval(() => {
   webFrame.clearCache();
 }, CLEAR_CACHE_INTERVAL);
+
+/* eslint-enable no-magic-numbers */
