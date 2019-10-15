@@ -1,7 +1,7 @@
 {
   "name": "mattermost-desktop",
   "productName": "Mattermost",
-  "version": "4.3.0-rc5",
+  "version": "4.3.0-rc6",
   "description": "Mattermost",
   "main": "main.js",
   "author": "Mattermost, Inc. <feedback@mattermost.com>",
@@ -77,4 +77,3 @@
     "webpack-merge": "^4.1.4"
   }
 }
-
