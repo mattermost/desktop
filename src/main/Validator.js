@@ -61,6 +61,7 @@ const configDataSchemaV1 = Joi.object({
   enableHardwareAcceleration: Joi.boolean().default(true),
   autostart: Joi.boolean().default(true),
   spellCheckerLocale: Joi.string().regex(/^[a-z]{2}-[A-Z]{2}$/).default('en-US'),
+  darkMode: Joi.boolean().default(false),
 });
 
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};

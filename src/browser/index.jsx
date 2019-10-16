@@ -169,6 +169,13 @@ function moveTabs(originalOrder, newOrder) {
   return teamIndex;
 }
 
+function getDarkMode() {
+  if (process.platform !== 'darwin') {
+    return config.darkMode;
+  }
+  return null;
+}
+
 function setDarkMode() {
   if (process.platform !== 'darwin') {
     const darkMode = Boolean(config.darkMode);
@@ -207,6 +214,7 @@ ReactDOM.render(
     deeplinkingUrl={deeplinkingUrl}
     showAddServerButton={config.enableServerManagement}
     closeMenu={closeMenu}
+    getDarkMode={getDarkMode}
     setDarkMode={setDarkMode}
     moveTabs={moveTabs}
   />,

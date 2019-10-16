@@ -89,77 +89,90 @@ function createTemplate(mainWindow, config, isDev) {
       role: 'selectall',
     }],
   });
+
+  let viewSubMenu = [{
+    label: 'Find..',
+    accelerator: 'CmdOrCtrl+F',
+    click(item, focusedWindow) {
+      focusedWindow.webContents.send('toggle-find');
+    },
+  }, {
+    label: 'Reload',
+    accelerator: 'CmdOrCtrl+R',
+    click(item, focusedWindow) {
+      if (focusedWindow) {
+        if (focusedWindow === mainWindow) {
+          mainWindow.webContents.send('reload-tab');
+        } else {
+          focusedWindow.reload();
+        }
+      }
+    },
+  }, {
+    label: 'Clear Cache and Reload',
+    accelerator: 'Shift+CmdOrCtrl+R',
+    click(item, focusedWindow) {
+      if (focusedWindow) {
+        if (focusedWindow === mainWindow) {
+          mainWindow.webContents.send('clear-cache-and-reload-tab');
+        } else {
+          focusedWindow.webContents.session.clearCache(() => {
+            focusedWindow.reload();
+          });
+        }
+      }
+    },
+  }, {
+    role: 'togglefullscreen',
+  }, separatorItem, {
+    role: 'resetzoom',
+  }, {
+    role: 'zoomin',
+  }, {
+    label: 'Zoom In (hidden)',
+    accelerator: 'CmdOrCtrl+=',
+    visible: false,
+    role: 'zoomin',
+  }, {
+    role: 'zoomout',
+  }, {
+    label: 'Zoom Out (hidden)',
+    accelerator: 'CmdOrCtrl+Shift+-',
+    visible: false,
+    role: 'zoomout',
+  }, separatorItem, {
+    label: 'Developer Tools for Application Wrapper',
+    accelerator: (() => {
+      if (process.platform === 'darwin') {
+        return 'Alt+Command+I';
+      }
+      return 'Ctrl+Shift+I';
+    })(),
+    click(item, focusedWindow) {
+      if (focusedWindow) {
+        focusedWindow.toggleDevTools();
+      }
+    },
+  }, {
+    label: 'Developer Tools for Current Server',
+    click() {
+      mainWindow.webContents.send('open-devtool');
+    },
+  }];
+
+  if (process.platform !== 'darwin') {
+    viewSubMenu.push(separatorItem);
+    viewSubMenu.push({
+      label: 'Toggle Dark Mode',
+      click() {
+        mainWindow.webContents.send('set-dark-mode');
+      },
+    });
+  }
+
   template.push({
     label: '&View',
-    submenu: [{
-      label: 'Find..',
-      accelerator: 'CmdOrCtrl+F',
-      click(item, focusedWindow) {
-        focusedWindow.webContents.send('toggle-find');
-      },
-    }, {
-      label: 'Reload',
-      accelerator: 'CmdOrCtrl+R',
-      click(item, focusedWindow) {
-        if (focusedWindow) {
-          if (focusedWindow === mainWindow) {
-            mainWindow.webContents.send('reload-tab');
-          } else {
-            focusedWindow.reload();
-          }
-        }
-      },
-    }, {
-      label: 'Clear Cache and Reload',
-      accelerator: 'Shift+CmdOrCtrl+R',
-      click(item, focusedWindow) {
-        if (focusedWindow) {
-          if (focusedWindow === mainWindow) {
-            mainWindow.webContents.send('clear-cache-and-reload-tab');
-          } else {
-            focusedWindow.webContents.session.clearCache(() => {
-              focusedWindow.reload();
-            });
-          }
-        }
-      },
-    }, {
-      role: 'togglefullscreen',
-    }, separatorItem, {
-      role: 'resetzoom',
-    }, {
-      role: 'zoomin',
-    }, {
-      label: 'Zoom In (hidden)',
-      accelerator: 'CmdOrCtrl+=',
-      visible: false,
-      role: 'zoomin',
-    }, {
-      role: 'zoomout',
-    }, {
-      label: 'Zoom Out (hidden)',
-      accelerator: 'CmdOrCtrl+Shift+-',
-      visible: false,
-      role: 'zoomout',
-    }, separatorItem, {
-      label: 'Developer Tools for Application Wrapper',
-      accelerator: (() => {
-        if (process.platform === 'darwin') {
-          return 'Alt+Command+I';
-        }
-        return 'Ctrl+Shift+I';
-      })(),
-      click(item, focusedWindow) {
-        if (focusedWindow) {
-          focusedWindow.toggleDevTools();
-        }
-      },
-    }, {
-      label: 'Developer Tools for Current Server',
-      click() {
-        mainWindow.webContents.send('open-devtool');
-      },
-    }],
+    submenu: viewSubMenu,
   });
   template.push({
     label: '&History',

@@ -181,6 +181,14 @@ export default class MainPage extends React.Component {
           isDarkMode: remote.systemPreferences.isDarkMode(),
         });
       });
+    } else {
+      self.setState({
+        isDarkMode: this.props.getDarkMode(),
+      });
+
+      ipcRenderer.on('set-dark-mode', () => {
+        this.setDarkMode();
+      });
     }
   }
 
@@ -534,6 +542,7 @@ MainPage.propTypes = {
   deeplinkingUrl: PropTypes.string,
   showAddServerButton: PropTypes.bool.isRequired,
   closeMenu: PropTypes.func.isRequired,
+  getDarkMode: PropTypes.func.isRequired,
   setDarkMode: PropTypes.func.isRequired,
   moveTabs: PropTypes.func.isRequired,
 };

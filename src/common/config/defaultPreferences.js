@@ -22,6 +22,7 @@ const defaultPreferences = {
   enableHardwareAcceleration: true,
   autostart: true,
   spellCheckerLocale: 'en-US',
+  darkMode: false,
 };
 
 export default defaultPreferences;

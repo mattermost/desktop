@@ -141,38 +141,42 @@
 
 .TabBar>li.teamTabItem:not(.active)+.TabBar-addServerButton>a>div.TabBar-tabSeperator {
   border-left: 1px solid rgba(61,60,64,0.2);
+  margin-left: -1px;
 }
 
 .TabBar>li.teamTabItem:not(.active)+li.teamTabItem:not(.active)>a>div.TabBar-tabSeperator {
   border-left: 1px solid rgba(61,60,64,0.2);
+  margin-left: -1px;
 }
 
 .TabBar.darkMode>li.teamTabItem:not(.active)+.TabBar-addServerButton>a>div.TabBar-tabSeperator {
   border-left: 1px solid rgba(243,243,243,0.2);
+  margin-left: -1px;
 }
 
 .TabBar.darkMode>li.teamTabItem:not(.active)+li.teamTabItem:not(.active)>a>div.TabBar-tabSeperator {
   border-left: 1px solid rgba(243,243,243,0.2);
+  margin-left: -1px;
 }
 
 .TabBar>li.teamTabItem:not(.active):hover+.TabBar-addServerButton>a>div.TabBar-tabSeperator {
   border-left: none;
-  margin-left: 1px;
+  margin-left: 0px;
 }
 
 .TabBar>li.teamTabItem:not(.active):hover+li.teamTabItem:not(.active)>a>div.TabBar-tabSeperator {
   border-left: none;
-  margin-left: 1px;
+  margin-left: 0px;
 }
 
 .TabBar>li.teamTabItem:not(.active)+.TabBar-addServerButton>a:hover>div.TabBar-tabSeperator {
   border-left: none;
-  margin-left: 1px;
+  margin-left: 0px;
 }
 
 .TabBar>li.teamTabItem:not(.active)+li.teamTabItem:not(.active)>a:hover>div.TabBar-tabSeperator {
   border-left: none;
-  margin-left: 1px;
+  margin-left: 0px;
 }
 
 .TabBar .TabBar-addServerButton>a {
