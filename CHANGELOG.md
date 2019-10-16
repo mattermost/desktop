@@ -22,7 +22,7 @@ Release date: October 16, 2019
 ### Improvements
 
 #### All Platforms
- - Added support for maintaining a user's online status while the desktop app is in the background as well as automatically setting the user to away/online if the screensaver goes on/off, the user locks/unlocks their computer or shuts down their computer.
+ - Added support for maintaining a user's online status while the desktop app is in the background but the user is interacting with their computer.
  [#993](https://github.com/mattermost/desktop/pull/993)
  - Updated spellchecker dictionaries for English.
  [#938](https://github.com/mattermost/desktop/pull/938)
@@ -30,9 +30,9 @@ Release date: October 16, 2019
  [#926](https://github.com/mattermost/desktop/pull/926)
  - Improved the styling of the session expiry mention badge in the tab bar.
  [#924](https://github.com/mattermost/desktop/pull/924)
- - Improved the wording of the bad certificate dialog to make it harder to just allow.
+ - Improved the wording of the invalid certificate dialog.
  [#900](https://github.com/mattermost/desktop/pull/900)
- - Added support for Desktop menu bar accessibility improvements. This was fixed with the major version upgrade of Electron to v5.0.0.
+ - Improved accessibility support for the menu bar items. This was fixed with the major version upgrade of Electron to v5.0.0.
  
 #### Windows
  - Added support for MSI installer (Beta) to allow deploying Mattermost desktop app to the computer program files (accessible by any user accounts rather than a specific user account on the machine).
@@ -47,35 +47,31 @@ Release date: October 16, 2019
 ### Architectural Changes
  - Major version upgrade of Electron to v5.0.0. Electron is the underlying technology used to build the Desktop apps.
  [#996](https://github.com/mattermost/desktop/pull/996)
- - Major version upgrade of Electron to v4.2.4. Electron is the underlying technology used to build the Desktop apps.
- [#989](https://github.com/mattermost/desktop/pull/989)
- - Major version upgrade of Electron to v3.0.9. Electron is the underlying technology used to build the Desktop apps.
- [#892](https://github.com/mattermost/desktop/pull/892)
 
 ### Bug Fixes
 
 #### All Platforms
- - Fixed various desktop app notification issues.
- [1040](https://github.com/mattermost/desktop/pull/1040)
- - Fixed an issue where the dot and mention counts in server tab jewels were not centered.
- [#995](https://github.com/mattermost/desktop/pull/995)
- - Fixed an issue where the unread count changed after opening the quick switcher.
- [990](https://github.com/mattermost/desktop/pull/990)
- - Fixed an issue where the dot in notification badges was off centre.
- [#978](https://github.com/mattermost/desktop/pull/978)
+ - Fixed an issue where opening the emoji picker froze the desktop app. This bug was fixed with the major version upgrade of Electron to v5.0.0.
+ - Fixed an issue where jumbo emoji didn't render for unsupported unicode emojis. This bug was fixed with the major version upgrade of Electron to v4.0.0.
  - Fixed an issue where username and password were not being passed for HTTP basic authentication.
  [#966](https://github.com/mattermost/desktop/pull/966)
+ - Fixed an issue where switching server tabs on app load caused a visual size glitch. This bug was fixed with the major version upgrade of Electron to v4.0.0.
+ - Fixed various desktop app notification issues.
+ [1040](https://github.com/mattermost/desktop/pull/1040)
+ - Fixed an issue where the unread count changed after opening the quick switcher.
+ [990](https://github.com/mattermost/desktop/pull/990)
+ - Fixed an issue where clicking on some links in System Console opened the links on the app itself.
+ [#3444](https://github.com/mattermost/mattermost-webapp/pull/3444)
  - Fixed an issue where the "Help" button opened in a new browser tab instead of below the textbox in the default system browser.
  [#956](https://github.com/mattermost/desktop/pull/956)
  - Fixed an issue where Mattermost opened both on fullscreen and on a smaller window when closing the app in fullscreen.
  [#954](https://github.com/mattermost/desktop/pull/954)
   - Fixed an issue to prevent the app from restarting in full-screen mode.
  [#929](https://github.com/mattermost/desktop/pull/929)
- - Fixed an issue where clicking on some links in System Console opened the links on the app itself.
- [#3444](https://github.com/mattermost/mattermost-webapp/pull/3444)
- - Fixed an issue where opening the emoji picker froze the desktop app. This bug was fixed with the major version upgrade of Electron to v5.0.0.
- - Fixed an issue where switching server tabs on app load caused a visual size glitch. This bug was fixed with the major version upgrade of Electron to v4.0.0.
- - Fixed an issue where jumbo emoji didn't render for unsupported unicode emojis. This bug was fixed with the major version upgrade of Electron to v4.0.0.
+ - Fixed an issue where the dot and mention counts in server tab jewels were not centered.
+ [#995](https://github.com/mattermost/desktop/pull/995)
+ - Fixed an issue where the dot in notification badges was off centre.
+ [#978](https://github.com/mattermost/desktop/pull/978)
 
 #### Windows
  - Fixed an issue where Ctrl+M shortcut minimized the Windows app and sent a message.
