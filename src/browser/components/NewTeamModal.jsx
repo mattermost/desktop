@@ -9,6 +9,10 @@ import {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} from 're
 import Utils from '../../utils/util';
 
 export default class NewTeamModal extends React.Component {
+  static defaultProps = {
+    restoreFocus: true,
+  };
+
   constructor() {
     super();
 
@@ -133,6 +137,7 @@ export default class NewTeamModal extends React.Component {
         id='newServerModal'
         onHide={this.props.onClose}
         container={this.props.modalContainer}
+        restoreFocus={this.props.restoreFocus}
         onKeyDown={(e) => {
           switch (e.key) {
           case 'Enter':
@@ -223,4 +228,5 @@ NewTeamModal.propTypes = {
   editMode: PropTypes.bool,
   show: PropTypes.bool,
   modalContainer: PropTypes.object,
+  restoreFocus: PropTypes.bool,
 };
