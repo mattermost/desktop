@@ -15,7 +15,7 @@
 
 If this policy is disabled, the Server Management section is hidden in the app settings and only servers defined by Group Policy can be used.</string>
 			<string id="DefaultServerList">DefaultServerList</string>
-			<string id="DefaultServerListDescription">If this policy is enabled, you can define one or more Mattermost servers that will be pre-configured for users when they launch the app.</string>
+			<string id="DefaultServerListDescription">If this policy is enabled, you can define one or more Mattermost servers that will be pre-configured for users when they launch the app. "Value name" represents the name of the corresponding server tab and "Value" is the URL of the Mattermost server.</string>
 		</stringTable>
 		<presentationTable>
 			<presentation id="DefaultServerList">
