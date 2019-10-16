@@ -90,7 +90,7 @@ function createTemplate(mainWindow, config, isDev) {
     }],
   });
 
-  let viewSubMenu = [{
+  const viewSubMenu = [{
     label: 'Find..',
     accelerator: 'CmdOrCtrl+F',
     click(item, focusedWindow) {
