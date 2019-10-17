@@ -448,10 +448,10 @@ function Remove-Cert {
 function Run-Build {
     Check-Deps -Verbose -Throwable
     Prepare-Path
+    Get-Cert
     Run-BuildId
     Run-BuildChangelog
     Run-BuildElectron
-    Get-Cert
     Run-BuildForceSignature
     Run-BuildLicense
     Run-BuildMsi
@@ -497,6 +497,12 @@ function Main {
             }
             "debug" {
                 Enable-AppVeyorRDP
+            }
+            "install-cert" {
+                Get-Cert
+            }
+            "remove-cert" {
+                Remove-Cert
             }
             default {
                 Print-Error "Makefile argument ""$_"" is invalid. Build process aborted."
