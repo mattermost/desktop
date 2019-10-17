@@ -91,6 +91,7 @@ Release date: October 16, 2019
  - Unable to exit full screen Youtube videos.
  - "RIght-click + Copy" does not work.
  - Notifications appear in sequence rather than stacking on Windows.
+ - Clicking on notifications when using the MSI installer(s) doesn't focus the app or the channel that triggered the notification.
 
 #### Contributors
  - [asaadmahmood](https://github.com/asaadmahmood), [aswathkk](https://github.com/aswathkk), [crspeller](https://github.com/crspeller), [deanwhillier](https://github.com/deanwhillier), [devinbinnie](https://github.com/devinbinnie), [esethna](https://github.com/esethna), [jespino](https://github.com/jespino), [JtheBAB](https://github.com/JtheBAB), [manland](https://github.com/manland), [mickmister](https://github.com/mickmister), [MikeNicholls](https://github.com/MikeNicholls), [PeterDaveHello](https://github.com/PeterDaveHello), [sethitow](https://github.com/sethitow), [steevsachs](https://github.com/steevsachs), [svelle](https://github.com/svelle), [wget](https://github.com/wget), [Willyfrog](https://github.com/Willyfrog), [yuya-oc](https://github.com/yuya-oc)
