@@ -10,32 +10,91 @@ from the final changelog of the release.
 
 Release date: TBD
 
+## Release v4.3.0
+
+Release date: October 16, 2019
+
+ - Desktop App v4.3.0 contains multiple medium level security fixes. [Upgrading](http://docs.mattermost.com/administration/upgrade.html) is recommended. Details will be posted on our [security updates page](https://about.mattermost.com/security-updates/) 30 days after release as per the [Mattermost Responsible Disclosure Policy](https://www.mattermost.org/responsible-disclosure-policy/).
+
+### Breaking Change
+ - The Mattermost Desktop App v4.3.0 release includes a change to how desktop notifications are sent from non-secure URLs (http://). Organizations using non-secure Mattermost Servers (http://) will need to update to Mattermost Server versions 5.16.0+, 5.15.1, 5.14.4 or 5.9.5 (ESR) to continue receiving desktop notifications when using Mattermost Desktop v4.3.0 or later.
+
 ### Improvements
 
 #### All Platforms
- - Improved the wording of the bad certificate dialog to make it scarier and harder to just allow.
- [#900](https://github.com/mattermost/desktop/pull/900)
- - Improved the styling of the mention badge in tab bar.
- [#924](https://github.com/mattermost/desktop/pull/924)
+ - Added support for maintaining a user's online status while the desktop app is in the background but the user is interacting with their computer.
+ [#993](https://github.com/mattermost/desktop/pull/993)
  - Updated spellchecker dictionaries for English.
  [#938](https://github.com/mattermost/desktop/pull/938)
+ - Added support for exposing Webview Developer Tools via View Menu.
+ [#926](https://github.com/mattermost/desktop/pull/926)
+ - Improved the styling of the session expiry mention badge in the tab bar.
+ [#924](https://github.com/mattermost/desktop/pull/924)
+ - Improved the wording of the invalid certificate dialog.
+ [#900](https://github.com/mattermost/desktop/pull/900)
+ - Improved accessibility support for the menu bar items. This was fixed with the major version upgrade of Electron to v5.0.0.
+ 
+#### Windows
+ - Added support for MSI installer (Beta) to allow deploying Mattermost desktop app to the computer program files (accessible by any user accounts rather than a specific user account on the machine).
+  [#959](https://github.com/mattermost/desktop/pull/959)
+ - Added support for Group Policies (GPO) to allow admins to set default servers and enable/disable the ability to add/remove servers.
+  [#959](https://github.com/mattermost/desktop/pull/959)
 
 #### Mac
- - Added auto-updater.
- [#582](https://github.com/mattermost/desktop/pull/582)
+ - Added a flag to enable MacOS dark mode title bar.
+ [#931](https://github.com/mattermost/desktop/pull/931)
 
 ### Architectural Changes
- - Major version upgrade of Electron to v3.0.10. Electron is the underlying technology used to build the Desktop apps.
- [#892](https://github.com/mattermost/desktop/pull/892)
+ - Major version upgrade of Electron to v5.0.0. Electron is the underlying technology used to build the Desktop apps.
+ [#996](https://github.com/mattermost/desktop/pull/996)
 
 ### Bug Fixes
 
 #### All Platforms
- - Prevented the bug where the app would navigate to a random page.
- [#900](https://github.com/mattermost/desktop/pull/900)
- - Fixed several typos.
- [#905](https://github.com/mattermost/desktop/pull/905)
+ - Fixed an issue where opening the emoji picker froze the desktop app. This bug was fixed with the major version upgrade of Electron to v5.0.0.
+ - Fixed an issue where jumbo emoji didn't render for unsupported unicode emojis. This bug was fixed with the major version upgrade of Electron to v4.0.0.
+ - Fixed an issue where username and password were not being passed for HTTP basic authentication.
+ [#966](https://github.com/mattermost/desktop/pull/966)
+ - Fixed an issue where switching server tabs on app load caused a visual size glitch. This bug was fixed with the major version upgrade of Electron to v4.0.0.
+ - Fixed various desktop app notification issues.
+ [1040](https://github.com/mattermost/desktop/pull/1040)
+ - Fixed an issue where the unread count changed after opening the quick switcher.
+ [990](https://github.com/mattermost/desktop/pull/990)
+ - Fixed an issue where clicking on some links in System Console opened the links on the app itself.
+ [#3444](https://github.com/mattermost/mattermost-webapp/pull/3444)
+ - Fixed an issue where the "Help" button opened in a new browser tab instead of below the textbox in the default system browser.
+ [#956](https://github.com/mattermost/desktop/pull/956)
+ - Fixed an issue where Mattermost opened both on fullscreen and on a smaller window when closing the app in fullscreen.
+ [#954](https://github.com/mattermost/desktop/pull/954)
+  - Fixed an issue to prevent the app from restarting in full-screen mode.
+ [#929](https://github.com/mattermost/desktop/pull/929)
+ - Fixed an issue where the dot and mention counts in server tab jewels were not centered.
+ [#995](https://github.com/mattermost/desktop/pull/995)
+ - Fixed an issue where the dot in notification badges was off centre.
+ [#978](https://github.com/mattermost/desktop/pull/978)
 
+#### Windows
+ - Fixed an issue where Ctrl+M shortcut minimized the Windows app and sent a message.
+ [#971](https://github.com/mattermost/desktop/pull/971)
+ - Fixed an issue where clicking the tooltip button dismissed the tooltip.
+ [#2660](https://github.com/mattermost/mattermost-webapp/pull/2660)
+
+#### Mac
+ - Fixed an issue where using the red Close button to close the window caused a blank screen when the window was maximized.
+ [#953](https://github.com/mattermost/desktop/pull/953)
+ - Fixed an issue where ``Cmd + Option + Shift + v`` and ``Cmd + Shift + v`` didn't work on MacOS desktop app. This bug was fixed with the major version upgrade of Electron to v5.0.0.
+ - Fixed an issue where the timezones were incorrect in OSX High Sierra. This bug was fixed with the major version upgrade of Electron to v4.0.0.
+
+#### Known Issues
+ - Users are unable to zoom in/out on the desktop app. This bug will be fixed after a major version upgrade of Electron to v6.0.0.
+ - ``CMD+Z`` doesn't undo on the Mac desktop app.
+ - Unable to exit full screen Youtube videos.
+ - "RIght-click + Copy" does not work.
+ - Notifications appear in sequence rather than stacking on Windows.
+
+#### Contributors
+ - [asaadmahmood](https://github.com/asaadmahmood), [aswathkk](https://github.com/aswathkk), [crspeller](https://github.com/crspeller), [deanwhillier](https://github.com/deanwhillier), [devinbinnie](https://github.com/devinbinnie), [esethna](https://github.com/esethna), [jespino](https://github.com/jespino), [JtheBAB](https://github.com/JtheBAB), [manland](https://github.com/manland), [mickmister](https://github.com/mickmister), [MikeNicholls](https://github.com/MikeNicholls), [PeterDaveHello](https://github.com/PeterDaveHello), [sethitow](https://github.com/sethitow), [steevsachs](https://github.com/steevsachs), [svelle](https://github.com/svelle), [wget](https://github.com/wget), [Willyfrog](https://github.com/Willyfrog), [yuya-oc](https://github.com/yuya-oc)
+ 
 ----
 
 ## Release v4.2.3
