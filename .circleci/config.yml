@@ -227,7 +227,6 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+\.\d+\.\d+?(-rc.*)?/
-                - eb-win-sign
       - build-mac-no-dmg:
           requires:
             - check
@@ -246,7 +245,6 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+\.\d+\.\d+?(-rc.*)?/
-                - eb-win-sign
 
       - mac_installer:
           requires:
@@ -256,7 +254,6 @@ workflows:
             branches:
               only:
                 - /^release-\d+\.\d+\.\d+?(-rc.*)?/
-                - eb-win-sign
       - store_artifacts:
           # for master/PR builds
           requires:
@@ -267,7 +264,6 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+\.\d+\.\d+?(-rc.*)?/
-                - eb-win-sign
       - store_artifacts:
           # for release and rc builds
           requires:
@@ -278,4 +274,3 @@ workflows:
             branches:
               only:
                 - /^release-\d+\.\d+\.\d+?(-rc.*)?/
-                - eb-win-sign
