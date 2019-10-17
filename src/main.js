@@ -10,14 +10,14 @@ import {URL} from 'url';
 import electron from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
-import {parse as parseArgv} from 'yargs';
+import log from 'electron-log';
 
 import {protocols} from '../electron-builder.json';
 
 import AutoLauncher from './main/AutoLauncher';
 import CriticalErrorHandler from './main/CriticalErrorHandler';
 import upgradeAutoLaunch from './main/autoLaunch';
-import autoUpdater from './main/autoUpdater';
+
 import RegistryConfig from './common/config/RegistryConfig';
 import Config from './common/config';
 import CertificateStore from './main/certificateStore';
@@ -26,13 +26,13 @@ import appMenu from './main/menus/app';
 import trayMenu from './main/menus/tray';
 import downloadURL from './main/downloadURL';
 import allowProtocolDialog from './main/allowProtocolDialog';
-import PermissionManager from './main/PermissionManager';
-import permissionRequestHandler from './main/permissionRequestHandler';
 import AppStateManager from './main/AppStateManager';
 import initCookieManager from './main/cookieManager';
 import {shouldBeHiddenOnStartup} from './main/utils';
 import SpellChecker from './main/SpellChecker';
 import UserActivityMonitor from './main/UserActivityMonitor';
+import Utils from './utils/util';
+import parseArgs from './main/ParseArgs';
 
 // pull out required electron components like this
 // as not all components can be referenced before the app is ready
@@ -45,27 +45,44 @@ const {
   dialog,
   systemPreferences,
   session,
+  BrowserWindow,
 } = electron;
 const criticalErrorHandler = new CriticalErrorHandler();
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
-const argv = parseArgv(process.argv.slice(1));
-const hideOnStartup = shouldBeHiddenOnStartup(argv);
 const loginCallbackMap = new Map();
-const certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
 const userActivityMonitor = new UserActivityMonitor();
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow = null;
+let popupWindow = null;
+let hideOnStartup = null;
+let certificateStore = null;
 let spellChecker = null;
 let deeplinkingUrl = null;
 let scheme = null;
 let appState = null;
-let permissionManager = null;
 let registryConfig = null;
 let config = null;
 let trayIcon = null;
 let trayImages = null;
+
+// supported custom login paths (oath, saml)
+const customLoginRegexPaths = [
+  /^\/oauth\/authorize$/i,
+  /^\/oauth\/deauthorize$/i,
+  /^\/oauth\/access_token$/i,
+  /^\/oauth\/[A-Za-z0-9]+\/complete$/i,
+  /^\/oauth\/[A-Za-z0-9]+\/login$/i,
+  /^\/oauth\/[A-Za-z0-9]+\/signup$/i,
+  /^\/api\/v3\/oauth\/[A-Za-z0-9]+\/complete$/i,
+  /^\/signup\/[A-Za-z0-9]+\/complete$/i,
+  /^\/login\/[A-Za-z0-9]+\/complete$/i,
+  /^\/login\/sso\/saml$/i,
+];
+
+// tracking in progress custom logins
+const customLogins = {};
 
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
@@ -74,15 +91,9 @@ async function initialize() {
   process.on('uncaughtException', criticalErrorHandler.processUncaughtExceptionHandler.bind(criticalErrorHandler));
 
   global.willAppQuit = false;
-  global.isDev = isDev && !argv.disableDevMode;
-
-  app.setAppUserModelId('com.squirrel.mattermost.Mattermost'); // Use explicit AppUserModelID
-
-  if (argv['data-dir']) {
-    app.setPath('userData', path.resolve(argv['data-dir']));
-  }
 
   // initialization that can run before the app is ready
+  initializeArgs();
   initializeConfig();
   initializeAppEventListeners();
   initializeBeforeAppReady();
@@ -115,6 +126,24 @@ try {
 // initialization sub functions
 //
 
+function initializeArgs() {
+  global.args = parseArgs(process.argv.slice(1));
+
+  // output the application version via cli when requested (-v or --version)
+  if (global.args.version) {
+    process.stdout.write(`v.${app.getVersion()}\n`);
+    process.exit(0); // eslint-disable-line no-process-exit
+  }
+
+  hideOnStartup = shouldBeHiddenOnStartup(global.args);
+
+  global.isDev = isDev && !global.args.disableDevMode; // this doesn't seem to be right and isn't used as the single source of truth
+
+  if (global.args['data-dir']) {
+    app.setPath('userData', path.resolve(global.args['data-dir']));
+  }
+}
+
 function initializeConfig() {
   registryConfig = new RegistryConfig();
   config = new Config(app.getPath('userData') + '/config.json');
@@ -136,6 +165,8 @@ function initializeAppEventListeners() {
 }
 
 function initializeBeforeAppReady() {
+  certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
+
   // can only call this before the app is ready
   if (config.enableHardwareAcceleration === false) {
     app.disableHardwareAcceleration();
@@ -179,19 +210,12 @@ function initializeInterCommunicationEventListeners() {
   if (shouldShowTrayIcon()) {
     ipcMain.on('update-unread', handleUpdateUnreadEvent);
   }
-  if (config.enableAutoUpdater) {
-    ipcMain.on('check-for-updates', autoUpdater.checkForUpdates);
-  }
 }
 
 function initializeMainWindowListeners() {
   mainWindow.on('closed', handleMainWindowClosed);
   mainWindow.on('unresponsive', criticalErrorHandler.windowUnresponsiveHandler.bind(criticalErrorHandler));
   mainWindow.webContents.on('crashed', handleMainWindowWebContentsCrashed);
-  mainWindow.on('ready-to-show', handleMainWindowReadyToShow);
-  if (config.enableAutoUpdater) {
-    mainWindow.once('show', handleMainWindowShow);
-  }
 }
 
 //
@@ -207,12 +231,6 @@ function handleConfigUpdate(configData) {
     }).catch((err) => {
       console.log('error:', err);
     });
-  }
-
-  if (permissionManager) {
-    const trustedURLs = config.teams.map((team) => team.url);
-    permissionManager.setTrustedURLs(trustedURLs);
-    ipcMain.emit('update-dict', true, config.spellCheckerLocale);
   }
 
   ipcMain.emit('update-menu', true, configData);
@@ -233,13 +251,12 @@ function handleReloadConfig() {
 //
 
 // activate first app instance, subsequent instances will quit themselves
-function handleAppSecondInstance(event, secondArgv) {
+function handleAppSecondInstance(event, argv) {
   // Protocol handler for win32
   // argv: An array of the second instance’s (command line / deep linked) arguments
   if (process.platform === 'win32') {
-    // Keep only command line / deep linked arguments
-    if (Array.isArray(secondArgv.slice(1)) && secondArgv.slice(1).length > 0) {
-      setDeeplinkingUrl(secondArgv.slice(1)[0]);
+    deeplinkingUrl = getDeeplinkingURL(argv);
+    if (deeplinkingUrl) {
       mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
     }
   }
@@ -337,12 +354,14 @@ function handleAppWillFinishLaunching() {
   // Protocol handler for osx
   app.on('open-url', (event, url) => {
     event.preventDefault();
-    setDeeplinkingUrl(url);
+    deeplinkingUrl = getDeeplinkingURL([url]);
     if (app.isReady()) {
       function openDeepLink() {
         try {
-          mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
-          mainWindow.show();
+          if (deeplinkingUrl) {
+            mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+            mainWindow.show();
+          }
         } catch (err) {
           setTimeout(openDeepLink, 1000);
         }
@@ -353,31 +372,84 @@ function handleAppWillFinishLaunching() {
 }
 
 function handleAppWebContentsCreated(dc, contents) {
+  // initialize custom login tracking
+  customLogins[contents.id] = {
+    inProgress: false,
+  };
+
   contents.on('will-attach-webview', (event, webPreferences) => {
     webPreferences.nodeIntegration = false;
+    webPreferences.contextIsolation = true;
   });
-  contents.on('will-navigate', (event, navigationUrl) => {
-    const parsedUrl = new URL(navigationUrl);
-    const trustedURLs = config.teams.map((team) => new URL(team.url)); //eslint-disable-line max-nested-callbacks
 
-    let trusted = false;
-    for (const url of trustedURLs) {
-      if (parsedUrl.origin === url.origin) {
-        trusted = true;
-        break;
-      }
+  contents.on('will-navigate', (event, url) => {
+    const contentID = event.sender.id;
+    const parsedURL = parseURL(url);
+
+    if (isTrustedURL(parsedURL) || isTrustedPopupWindow(event.sender)) {
+      return;
+    }
+    if (customLogins[contentID].inProgress) {
+      return;
     }
 
-    if (!trusted) {
-      event.preventDefault();
-    }
-  });
-  contents.on('new-window', (event) => {
+    log.info(`Untrusted URL blocked: ${url}`);
     event.preventDefault();
+  });
+
+  // handle custom login requests (oath, saml):
+  // 1. are we navigating to a supported local custom login path from the `/login` page?
+  //    - indicate custom login is in progress
+  // 2. are we finished with the custom login process?
+  //    - indicate custom login is NOT in progress
+  contents.on('did-start-navigation', (event, url) => {
+    const contentID = event.sender.id;
+    const parsedURL = parseURL(url);
+
+    if (!isTrustedURL(parsedURL)) {
+      return;
+    }
+
+    if (isCustomLoginURL(parsedURL)) {
+      customLogins[contentID].inProgress = true;
+    } else if (customLogins[contentID].inProgress) {
+      customLogins[contentID].inProgress = false;
+    }
+  });
+
+  contents.on('new-window', (event, url) => {
+    event.preventDefault();
+    if (!isTrustedURL(url)) {
+      log.info(`Untrusted popup window blocked: ${url}`);
+      return;
+    }
+    if (popupWindow && popupWindow.getURL() === url) {
+      log.info(`Popup window already open at provided url: ${url}`);
+      return;
+    }
+    if (!popupWindow) {
+      popupWindow = new BrowserWindow({
+        parent: mainWindow,
+        show: false,
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+        },
+      });
+      popupWindow.once('ready-to-show', () => {
+        popupWindow.show();
+      });
+      popupWindow.once('closed', () => {
+        popupWindow = null;
+      });
+    }
+    popupWindow.loadURL(url);
   });
 }
 
 function initializeAfterAppReady() {
+  app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
+
   const appStateJson = path.join(app.getPath('userData'), 'app-state.json');
   appState = new AppStateManager(appStateJson);
   if (wasUpdated(appState.lastAppVersion)) {
@@ -397,13 +469,9 @@ function initializeAfterAppReady() {
 
   // Protocol handler for win32
   if (process.platform === 'win32') {
-    // Keep only command line / deep linked argument. Make sure it's not squirrel command
-    const tmpArgs = process.argv.slice(1);
-    if (
-      Array.isArray(tmpArgs) && tmpArgs.length > 0 &&
-      tmpArgs[0].match(/^--squirrel-/) === null
-    ) {
-      setDeeplinkingUrl(tmpArgs[0]);
+    const args = process.argv.slice(1);
+    if (Array.isArray(args) && args.length > 0) {
+      deeplinkingUrl = getDeeplinkingURL(args);
     }
   }
 
@@ -428,7 +496,7 @@ function initializeAfterAppReady() {
   // start monitoring user activity (needs to be started after the app is ready)
   userActivityMonitor.startMonitoring();
 
-  if (shouldShowTrayIcon) {
+  if (shouldShowTrayIcon()) {
     // set up tray icon
     trayIcon = new Tray(trayImages.normal);
     if (process.platform === 'darwin') {
@@ -496,25 +564,40 @@ function initializeAfterAppReady() {
 
   ipcMain.emit('update-dict');
 
-  const permissionFile = path.join(app.getPath('userData'), 'permission.json');
-  const trustedURLs = config.teams.map((team) => team.url);
-  permissionManager = new PermissionManager(permissionFile, trustedURLs);
-  session.defaultSession.setPermissionRequestHandler(permissionRequestHandler(mainWindow, permissionManager));
+  // supported permission types
+  const supportedPermissionTypes = [
+    'media',
+    'geolocation',
+    'notifications',
+    'fullscreen',
+    'openExternal',
+  ];
 
-  if (config.enableAutoUpdater) {
-    const updaterConfig = autoUpdater.loadConfig();
-    autoUpdater.initialize(appState, mainWindow, updaterConfig.isNotifyOnly());
-    ipcMain.on('check-for-updates', autoUpdater.checkForUpdates);
-    mainWindow.once('show', () => {
-      if (autoUpdater.shouldCheckForUpdatesOnStart(appState.updateCheckedDate)) {
-        ipcMain.emit('check-for-updates');
-      } else {
-        setTimeout(() => {
-          ipcMain.emit('check-for-updates');
-        }, autoUpdater.UPDATER_INTERVAL_IN_MS);
-      }
+  // handle permission requests
+  // - approve if a supported permission type and the request comes from the renderer or one of the defined servers
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    // is the requested permission type supported?
+    if (!supportedPermissionTypes.includes(permission)) {
+      callback(false);
+      return;
+    }
+
+    // is the request coming from the renderer?
+    if (webContents.id === mainWindow.webContents.id) {
+      callback(true);
+      return;
+    }
+
+    // get the requesting webContents url
+    const requestingURL = webContents.getURL();
+
+    // is the target url trusted?
+    const matchingTeamIndex = config.teams.findIndex((team) => {
+      return requestingURL.startsWith(team.url);
     });
-  }
+
+    callback(matchingTeamIndex >= 0);
+  });
 }
 
 //
@@ -678,23 +761,70 @@ function handleMainWindowWebContentsCrashed() {
   throw new Error('webContents \'crashed\' event has been emitted');
 }
 
-function handleMainWindowReadyToShow() {
-  autoUpdater.checkForUpdates();
-}
-
-function handleMainWindowShow() {
-  if (autoUpdater.shouldCheckForUpdatesOnStart(appState.updateCheckedDate)) {
-    ipcMain.emit('check-for-updates');
-  } else {
-    setTimeout(() => {
-      ipcMain.emit('check-for-updates');
-    }, autoUpdater.UPDATER_INTERVAL_IN_MS);
-  }
-}
-
 //
 // helper functions
 //
+
+function parseURL(url) {
+  if (!url) {
+    return null;
+  }
+  if (url instanceof URL) {
+    return url;
+  }
+  try {
+    return new URL(url);
+  } catch (e) {
+    return null;
+  }
+}
+
+function isTrustedURL(url) {
+  const parsedURL = parseURL(url);
+  if (!parsedURL) {
+    return false;
+  }
+  const teamURLs = config.teams.reduce((urls, team) => {
+    const parsedTeamURL = parseURL(team.url);
+    if (parsedTeamURL) {
+      return urls.concat(parsedTeamURL);
+    }
+    return urls;
+  }, []);
+  for (const teamURL of teamURLs) {
+    if (parsedURL.origin === teamURL.origin) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isTrustedPopupWindow(webContents) {
+  if (!webContents) {
+    return false;
+  }
+  if (!popupWindow) {
+    return false;
+  }
+  return BrowserWindow.fromWebContents(webContents) === popupWindow;
+}
+
+function isCustomLoginURL(url) {
+  const parsedURL = parseURL(url);
+  if (!parsedURL) {
+    return false;
+  }
+  if (!isTrustedURL(parsedURL)) {
+    return false;
+  }
+  const urlPath = parsedURL.pathname;
+  for (const regexPath of customLoginRegexPaths) {
+    if (urlPath.match(regexPath)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 function getTrayImages() {
   switch (process.platform) {
@@ -756,10 +886,15 @@ function switchMenuIconImages(icons, isDarkMode) {
   }
 }
 
-function setDeeplinkingUrl(url) {
-  if (scheme) {
-    deeplinkingUrl = url.replace(new RegExp('^' + scheme), 'https');
+function getDeeplinkingURL(args) {
+  if (Array.isArray(args) && args.length) {
+    // deeplink urls should always be the last argument, but may not be the first (i.e. Windows with the app already running)
+    const url = args[args.length - 1];
+    if (url && scheme && url.startsWith(scheme) && Utils.isValidURI(url)) {
+      return url;
+    }
   }
+  return null;
 }
 
 function shouldShowTrayIcon() {

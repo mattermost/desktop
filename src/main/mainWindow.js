@@ -6,6 +6,8 @@ import path from 'path';
 
 import {app, BrowserWindow} from 'electron';
 
+import * as Validator from './Validator';
+
 function saveWindowState(file, window) {
   const windowState = window.getBounds();
   windowState.maximized = window.isMaximized();
@@ -28,6 +30,10 @@ function createMainWindow(config, options) {
   let windowOptions;
   try {
     windowOptions = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));
+    windowOptions = Validator.validateBoundsInfo(windowOptions);
+    if (!windowOptions) {
+      throw new Error('Provided bounds info file does not validate, using defaults instead.');
+    }
   } catch (e) {
     // Follow Electron's defaults, except for window dimensions which targets 1024x768 screen resolution.
     windowOptions = {width: defaultWindowWidth, height: defaultWindowHeight};
@@ -45,7 +51,9 @@ function createMainWindow(config, options) {
     fullscreen: false,
     webPreferences: {
       nodeIntegration: true,
+      contextIsolation: false,
       webviewTag: true,
+      disableBlinkFeatures: 'Auxclick',
     },
   });
 
@@ -71,6 +79,7 @@ function createMainWindow(config, options) {
 
   mainWindow.webContents.on('will-attach-webview', (event, webPreferences) => {
     webPreferences.nodeIntegration = false;
+    webPreferences.contextIsolation = true;
   });
 
   mainWindow.once('ready-to-show', () => {

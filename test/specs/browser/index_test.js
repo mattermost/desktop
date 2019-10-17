@@ -22,6 +22,18 @@ describe('browser/index.html', function desc() {
       name: 'github',
       url: 'https://github.com/',
     }],
+    showTrayIcon: false,
+    trayIconTheme: 'light',
+    minimizeToTray: false,
+    notifications: {
+      flashWindow: 0,
+      bounceIcon: false,
+      bounceIconType: 'informational',
+    },
+    showUnreadBadge: true,
+    useSpellChecker: true,
+    enableHardwareAcceleration: true,
+    autostart: true,
   };
 
   const serverPort = 8181;
@@ -91,7 +103,8 @@ describe('browser/index.html', function desc() {
       waitForVisible('#mattermostView0', 2000, true);
   });
 
-  it('should show error when using incorrect URL', async () => {
+  // validation now prevents incorrect url's from being used
+  it.skip('should show error when using incorrect URL', async () => {
     this.timeout(30000);
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       version: 1,
