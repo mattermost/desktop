@@ -3,7 +3,7 @@
 ## Release v4.3.0
 
 - **v4.3.1, release day TBD**
-  - Mac desktop app is not notarized correctly for installing on MacOS Catalina [MM-19555](https://mattermost.atlassian.net/browse/MM-19555)
+  - Mac desktop app is not notarized correctly for installing on MacOS Catalina. [MM-19555](https://mattermost.atlassian.net/browse/MM-19555)
   - `CMD+Z` doesn't undo on the Mac desktop app. [MM-19198](https://mattermost.atlassian.net/browse/MM-19198)
   - Users are unable to zoom in/out except on the first server tab. [MM-19032](https://mattermost.atlassian.net/browse/MM-19032)
   - Right-click + "Copy" does not work in some instances. [MM-19324](https://mattermost.atlassian.net/browse/MM-19324)
