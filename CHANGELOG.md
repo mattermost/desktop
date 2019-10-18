@@ -1,20 +1,18 @@
 # Mattermost Desktop Application Changelog
 
-## UNDER DEVELOPMENT
-
-The "UNDER DEVELOPMENT" section of the Mattermost Desktop changelog appears
-in the product's `master` branch to note key changes committed to `master`
-and are on their way to the next stable release.
-When a stable release is pushed, "UNDER DEVELOPMENT" heading is removed
-from the final changelog of the release.
-
-Release date: TBD
-
 ## Release v4.3.0
 
-Release date: October 16, 2019
+- **v4.3.1, release day TBD**
+  - `CMD+Z` doesn't undo on the Mac desktop app. [MM-19198](https://mattermost.atlassian.net/browse/MM-19198)
+  - Users are unable to zoom in/out except on the first server tab. [MM-19032](https://mattermost.atlassian.net/browse/MM-19032)
+  - Right-click + "Copy" does not work in some instances. [MM-19324](https://mattermost.atlassian.net/browse/MM-19324)
+  - Unable to exit maximized Youtube videos using the close button if the app is running in full screen. [MM-19226](https://mattermost.atlassian.net/browse/MM-19226)
+  - Desktop notifications appear in sequence rather than stacking on Windows. [MM-19363](https://mattermost.atlassian.net/browse/MM-19363)
+  - Clicking on notifications when using the Windows MSI (Beta) doesn't focus the app or the channel that triggered the notification. [MM-19510](https://mattermost.atlassian.net/browse/MM-19510), [MM-19511](https://mattermost.atlassian.net/browse/MM-19511)
+- **v4.3.0, released 2019-10-17**
+  - Original v4.3.0 release
 
- - Desktop App v4.3.0 contains multiple medium level security fixes. [Upgrading](http://docs.mattermost.com/administration/upgrade.html) is recommended. Details will be posted on our [security updates page](https://about.mattermost.com/security-updates/) 30 days after release as per the [Mattermost Responsible Disclosure Policy](https://www.mattermost.org/responsible-disclosure-policy/).
+Desktop App v4.3.0 contains multiple medium level security fixes. [Upgrading](http://docs.mattermost.com/administration/upgrade.html) is recommended. Details will be posted on our [security updates page](https://about.mattermost.com/security-updates/) 30 days after release as per the [Mattermost Responsible Disclosure Policy](https://www.mattermost.org/responsible-disclosure-policy/).
 
 ### Breaking Change
  - The Mattermost Desktop App v4.3.0 release includes a change to how desktop notifications are sent from non-secure URLs (http://). Organizations using non-secure Mattermost Servers (http://) will need to update to Mattermost Server versions 5.16.0+, 5.15.1, 5.14.4 or 5.9.5 (ESR) to continue receiving desktop notifications when using Mattermost Desktop v4.3.0 or later.
@@ -85,12 +83,15 @@ Release date: October 16, 2019
  - Fixed an issue where ``Cmd + Option + Shift + v`` and ``Cmd + Shift + v`` didn't work on MacOS desktop app. This bug was fixed with the major version upgrade of Electron to v5.0.0.
  - Fixed an issue where the timezones were incorrect in OSX High Sierra. This bug was fixed with the major version upgrade of Electron to v4.0.0.
 
-#### Known Issues
- - Users are unable to zoom in/out on the desktop app. This bug will be fixed after a major version upgrade of Electron to v6.0.0.
- - ``CMD+Z`` doesn't undo on the Mac desktop app.
- - Unable to exit full screen Youtube videos.
- - "RIght-click + Copy" does not work.
- - Notifications appear in sequence rather than stacking on Windows.
+### Known Issues
+We are in active development of a new release to address these known issues:
+
+ - `CMD+Z` doesn't undo on the Mac desktop app.
+ - Users are unable to zoom in/out except on the first server tab.
+ - Right-click + "Copy" does not work in some instances.
+ - Unable to exit maximized Youtube videos using the close button if the app is running in full screen.
+ - Desktop notifications appear in sequence rather than stacking on Windows.
+ - Clicking on notifications when using the Windows MSI (Beta) doesn't focus the app or the channel that triggered the notification.
 
 #### Contributors
  - [asaadmahmood](https://github.com/asaadmahmood), [aswathkk](https://github.com/aswathkk), [crspeller](https://github.com/crspeller), [deanwhillier](https://github.com/deanwhillier), [devinbinnie](https://github.com/devinbinnie), [esethna](https://github.com/esethna), [jespino](https://github.com/jespino), [JtheBAB](https://github.com/JtheBAB), [manland](https://github.com/manland), [mickmister](https://github.com/mickmister), [MikeNicholls](https://github.com/MikeNicholls), [PeterDaveHello](https://github.com/PeterDaveHello), [sethitow](https://github.com/sethitow), [steevsachs](https://github.com/steevsachs), [svelle](https://github.com/svelle), [wget](https://github.com/wget), [Willyfrog](https://github.com/Willyfrog), [yuya-oc](https://github.com/yuya-oc)
