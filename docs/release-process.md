@@ -6,7 +6,7 @@ Desktop App releases ship at the same time as the next server Feature release af
 
 In cases where there are requested features completed prior to the next upcoming Electron update, the next Desktop App release will be prepared at the same time as the next server Feature release regardless of if a new Electron update has shipped.
 
-A dot release will be prepared sooner if Electron releases a security update.
+A dot release will be prepared sooner if Electron releases a security update, or if other urgent bugs are found.
 
 ## Release Timeline
 
@@ -145,7 +145,7 @@ If a bug fix release is required, run through the following steps:
 4. Release Manager:  
     - Update [Mattermost download page](https://mattermost.org/download)
     - Update the download links in [installation guides](https://docs.mattermost.com/install/desktop.html)
-    - Update the changelog with notes on patch releases (see [example entry](https://docs.mattermost.com/help/apps/desktop-changelog.html#release-v3-4-1))  
+    - Update the changelog with notes on patch releases
     - Draft [Mattermost Security Updates](http://about.mattermost.com/security-updates/) if applicable, but do not post until seven days after official release
         - Check Security Issues spreadsheet and confirm disclosure text
 5. Marketing:
