@@ -20,7 +20,7 @@ Desktop App v4.3.0 contains multiple medium level security fixes. [Upgrading](ht
 ### Improvements
 
 #### All Platforms
- - Added support for maintaining a user's online status while the desktop app is in the background but the user is interacting with their computer.
+ - Added support for maintaining a user's online status while the desktop app is in the background but the user is interacting with their computer. Requires Mattermost Server v5.16.0 or later.
  [#993](https://github.com/mattermost/desktop/pull/993)
  - Updated spellchecker dictionaries for English.
  [#938](https://github.com/mattermost/desktop/pull/938)
@@ -30,7 +30,7 @@ Desktop App v4.3.0 contains multiple medium level security fixes. [Upgrading](ht
  [#924](https://github.com/mattermost/desktop/pull/924)
  - Improved the wording of the invalid certificate dialog.
  [#900](https://github.com/mattermost/desktop/pull/900)
- - Improved accessibility support for the menu bar items. This was fixed with the major version upgrade of Electron to v5.0.0.
+ - Improved accessibility support for the menu bar items. [#996](https://github.com/mattermost/desktop/pull/996)
  
 #### Windows
  - Added support for MSI installer (Beta) to allow deploying Mattermost desktop app to the computer program files (accessible by any user accounts rather than a specific user account on the machine).
@@ -49,11 +49,11 @@ Desktop App v4.3.0 contains multiple medium level security fixes. [Upgrading](ht
 ### Bug Fixes
 
 #### All Platforms
- - Fixed an issue where opening the emoji picker froze the desktop app. This bug was fixed with the major version upgrade of Electron to v5.0.0.
- - Fixed an issue where jumbo emoji didn't render for unsupported unicode emojis. This bug was fixed with the major version upgrade of Electron to v4.0.0.
+ - Fixed an issue where opening the emoji picker froze the desktop app.
+ - Fixed an issue where jumbo emoji didn't render for unsupported unicode emojis. 
  - Fixed an issue where username and password were not being passed for HTTP basic authentication.
  [#966](https://github.com/mattermost/desktop/pull/966)
- - Fixed an issue where switching server tabs on app load caused a visual size glitch. This bug was fixed with the major version upgrade of Electron to v4.0.0.
+ - Fixed an issue where switching server tabs on app load caused a visual size glitch. 
  - Fixed various desktop app notification issues.
  [1040](https://github.com/mattermost/desktop/pull/1040)
  - Fixed an issue where the unread count changed after opening the quick switcher.
@@ -80,8 +80,8 @@ Desktop App v4.3.0 contains multiple medium level security fixes. [Upgrading](ht
 #### Mac
  - Fixed an issue where using the red Close button to close the window caused a blank screen when the window was maximized.
  [#953](https://github.com/mattermost/desktop/pull/953)
- - Fixed an issue where ``Cmd + Option + Shift + v`` and ``Cmd + Shift + v`` didn't work on MacOS desktop app. This bug was fixed with the major version upgrade of Electron to v5.0.0.
- - Fixed an issue where the timezones were incorrect in OSX High Sierra. This bug was fixed with the major version upgrade of Electron to v4.0.0.
+ - Fixed an issue where ``Cmd + Option + Shift + v`` and ``Cmd + Shift + v`` didn't work on MacOS desktop app. 
+ - Fixed an issue where the timezones were incorrect in OSX High Sierra. 
 
 ### Known Issues
 We are in active development of a new release to address these known issues:
