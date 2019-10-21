@@ -5,7 +5,7 @@
 require('dotenv').config();
 const {notarize} = require('electron-notarize');
 
-const config = require('../electron-builder.json')
+const config = require('../electron-builder.json');
 
 exports.default = async function notarizing(context) {
   const {electronPlatformName, appOutDir} = context;
