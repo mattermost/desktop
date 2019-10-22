@@ -74,7 +74,7 @@ pkg_version="$(jq -r .version package.json)"
 current_version="${pkg_version%-develop}"
 current_version="${pkg_version%-rc*}"
 # parse version
-IFS='.' read -r major min micro <<<"${current_version}"
+IFS='.' read -r major minor micro <<<"${current_version}"
 case "${1}" in
     "help")
         echo "todo"
@@ -114,17 +114,30 @@ case "${1}" in
             new_pkg_version="${current_version}"
             write_package_version "${new_pkg_version}"
             tag "${new_pkg_version}" "Released on $(date -u)"
-            print_info "Locally created an rc. In order to build you'll have to:"
+            print_info "Locally created an final version. In order to build you'll have to:"
             print_info "$ git push --follow-tags ${git_origin} ${branch_name}:${branch_name}"
         else
             print_error "Can't release on a non release-X.Y branch"
             exit 2
         fi
     ;;
+    "patch")
+        if [[ "${branch_name}" =~ "release-" ]]; then
+            new_pkg_version="${major}.${minor}.$(( micro + 1 ))"
+            print_info "Releasing v${new_pkg_version}"
+            write_package_version "${new_pkg_version}"
+            tag "${new_pkg_version}" "Released on $(date -u)"
+            print_info "Locally created an patch version. In order to build you'll have to:"
+            print_info "$ git push --follow-tags ${git_origin} ${branch_name}:${branch_name}"
+        else
+            print_error "Can't patch on a non release-X.Y branch"
+            exit 2
+        fi
+    ;;
     "branch")
         # Quality releases should run from a release branch
         if [[ "${branch_name}" =~ "release-" ]]; then
-            new_branch_version="${major}.$(( min + 1 ))"
+            new_branch_version="${major}.$(( minor + 1 ))"
             new_branch_name="release-${new_branch_version}"
             print_info "Doing a quality branch: ${new_branch_name}"
 
@@ -148,10 +161,10 @@ case "${1}" in
                     exit 1
                 fi
             fi
-            new_branch_version="${major}.${min}"
+            new_branch_version="${major}.${minor}"
             new_branch_name="release-${new_branch_version}"
             new_pkg_version="${new_branch_version}.0-rc0"
-            master_pkg_version="${major}.$(( min + 2 )).0-develop"
+            master_pkg_version="${major}.$(( minor + 2 )).0-develop"
             print_info "Creating a new features branch: ${new_branch_name}"
 
             if git show-ref --verify --quiet "refs/heads/${new_branch_name}"; then
