@@ -146,7 +146,8 @@ jobs:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
-      - run: jq '.mac.target=["zip"]' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
+      - run: jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
+
       - build:
           os: mac
           path: ./dist/macos
