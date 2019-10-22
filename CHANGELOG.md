@@ -2,14 +2,15 @@
 
 ## Release v4.3.0
 
-- **v4.3.1, release day TBD**
-  - Mac desktop app is not notarized correctly for installing on MacOS Catalina. [MM-19555](https://mattermost.atlassian.net/browse/MM-19555)
+- **v4.3.2, release day TBD**
   - `CMD+Z` doesn't undo on the Mac desktop app. [MM-19198](https://mattermost.atlassian.net/browse/MM-19198)
   - Users are unable to zoom in/out except on the first server tab. [MM-19032](https://mattermost.atlassian.net/browse/MM-19032)
   - Right-click + "Copy" does not work in some instances. [MM-19324](https://mattermost.atlassian.net/browse/MM-19324)
   - Unable to exit maximized Youtube videos using the close button if the app is running in full screen. [MM-19226](https://mattermost.atlassian.net/browse/MM-19226)
   - Desktop notifications appear in sequence rather than stacking on Windows. [MM-19363](https://mattermost.atlassian.net/browse/MM-19363)
   - Clicking on notifications when using the Windows MSI (Beta) doesn't focus the app or the channel that triggered the notification. [MM-19510](https://mattermost.atlassian.net/browse/MM-19510), [MM-19511](https://mattermost.atlassian.net/browse/MM-19511)
+- **v4.3.1, released 2019-10-22**
+  - Fixed an issue where Mac desktop app was not notarized correctly for installing on MacOS Catalina. [MM-19555](https://mattermost.atlassian.net/browse/MM-19555)
 - **v4.3.0, released 2019-10-17**
   - Original v4.3.0 release
 
