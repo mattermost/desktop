@@ -75,7 +75,7 @@
   z-index: 9;
 } 
 
-.TabBar>li.teamTabItem.active:before {
+.TabBar>li.teamTabItem.active:before, .TabBar>li.teamTabItem.smooth-dnd-ghost:before {
   left: -4px;
   border-bottom-right-radius: 6px;
   border-right: 2px solid #fff;
@@ -83,12 +83,12 @@
   z-index: 9;
 }
 
-.TabBar.darkMode>li.teamTabItem.active:before {
+.TabBar.darkMode>li.teamTabItem.active:before, .TabBar.darkMode>li.teamTabItem.smooth-dnd-ghost:before {
   border-right: 2px solid #323639;
   border-bottom: 2px solid #323639;
 }
 
-.TabBar>li.teamTabItem.active:after {
+.TabBar>li.teamTabItem.active:after, .TabBar>li.teamTabItem.smooth-dnd-ghost:after {
   border-bottom-left-radius: 6px;
   right: -5px;
   border-left: 2px solid #fff;
@@ -96,18 +96,14 @@
   z-index: 9;
 }
 
-.TabBar.darkMode>li.teamTabItem.active:after {
+.TabBar.darkMode>li.teamTabItem.active:after, .TabBar.darkMode>li.teamTabItem.smooth-dnd-ghost:after {
   border-left: 2px solid #323639;
   border-bottom: 2px solid #323639;
 }
 
 .TabBar>li>a>div.TabBar-tabSeperator {
-  padding: 2px 20px;
-  max-height: 20px;
-}
-
-.TabBar>li.TabBar-addServerButton>a>div.TabBar-tabSeperator {
   padding: 2px 16px;
+  max-height: 20px;
 }
 
 .TabBar>li.TabBar-addServerButton{
@@ -126,7 +122,7 @@
   color: rgba(243,243,243,0.7);
 }
 
-.TabBar>li.teamTabItem.active>a {
+.TabBar>li.teamTabItem.active>a, .TabBar>li.teamTabItem.smooth-dnd-ghost>a {
   border: none;
   border-radius: 6px 6px 0 0;
   color: rgba(61,60,64,1);
@@ -134,7 +130,7 @@
   z-index: 9;
 }
 
-.TabBar.darkMode>li.teamTabItem.active>a {
+.TabBar.darkMode>li.teamTabItem.active>a, .TabBar.darkMode>li.teamTabItem.smooth-dnd-ghost>a {
   color: #f3f3f3;
   background-color: #323639;
 }
@@ -197,7 +193,7 @@
   height: 6px;
   width: 6px;
   margin-top: 5px;
-  margin-left: 9px;
+  margin-left: 8px;
   border-radius: 4px;
   display: flex;
 }
@@ -219,21 +215,20 @@
   background: #CB2431;
   float: right;
   color: white;
-  font-size: 12px;
-  letter-spacing: -0.6px;
+  font-size: 11px;
   text-align: center;
-  text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
-  line-height: 16px;
-  height: 16px;
+  line-height: 18px;
+  height: 18px;
   margin-left: 8px;
-  border-radius: 8px;
-  padding: 4px 4px 4px 3px;
+  border-radius: 100px;
+  padding: 0 5px;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: "Open Sans";
-  font-weight: 600;
-  min-width: 16px;
+  font-family: "Open Sans", sans-serif;
+  font-weight: bold;
+  min-width: 18px;
+  margin-top: -1px;
 }
 
 .TabBar .TabBar-badge.TabBar-badge-nomention:after {
