@@ -372,7 +372,7 @@ export default class SettingsPage extends React.Component {
               id='addNewServer'
               href='#'
               onClick={this.toggleShowTeamForm}
-            >{'⊞ Add new server'}</a>
+            >{'+ Add New Server'}</a>
           </p>
         </Col>
       </Row>
