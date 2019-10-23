@@ -30,6 +30,7 @@ function getSpellCheckerLocaleMenus(onSelectSpellCheckerLocale) {
     {language: 'Spanish (ES)', locale: 'es-ES'},
     {language: 'Spanish (MX)', locale: 'es-MX'},
     {language: 'Dutch', locale: 'nl-NL'},
+    {language: 'Polish', locale: 'pl-PL'},
   ];
   return locales.map((l) => ({
     label: l.language,
