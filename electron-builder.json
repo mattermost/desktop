@@ -25,6 +25,7 @@
       ]
     }
   ],
+  "afterSign": "scripts/notarize.js",
   "deb": {
     "synopsis": "Mattermost"
   },
@@ -68,12 +69,13 @@
       }
     ],
     "hardenedRuntime": true,
-    "entitlements": "./resources/osx/entitlements.mac.inherit.plist"
+    "gatekeeperAssess": true
   },
   "dmg": {
     "background": "resources/osx/DMG_BG.png",
     "iconSize": 140,
-    "iconTextSize": 18
+    "iconTextSize": 18,
+    "sign": false
   },
   "squirrelWindows": {
     "iconUrl": "file://resources/icon.ico",

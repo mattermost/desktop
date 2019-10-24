@@ -56,6 +56,7 @@
     "electron": "^5.0.10",
     "electron-builder": "^21.2.0",
     "electron-connect": "^0.6.3",
+    "electron-notarize": "^0.1.1",
     "eslint": "^5.9.0",
     "eslint-config-mattermost": "github:mattermost/eslint-config-mattermost",
     "eslint-plugin-cypress": "^2.1.2",
