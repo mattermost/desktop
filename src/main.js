@@ -445,6 +445,67 @@ function handleAppWebContentsCreated(dc, contents) {
     }
     popupWindow.loadURL(url);
   });
+
+  // implemented to temporarily help solve for https://community-daily.mattermost.com/core/pl/b95bi44r4bbnueqzjjxsi46qiw
+  contents.on('before-input-event', (event, input) => {
+    if (!input.shift && !input.control && !input.alt && !input.meta) {
+      return;
+    }
+
+    if ((process.platform === 'darwin' && !input.meta) || (process.platform !== 'darwin' && !input.control)) {
+      return;
+    }
+
+    // handle certain keyboard shortcuts manually
+    const activeTab = event.sender;
+    switch (input.key) { // eslint-disable-line padded-blocks
+
+    // Manually handle zoom-in/out/reset keyboard shortcuts
+    // - temporary fix for https://mattermost.atlassian.net/browse/MM-19031 and https://mattermost.atlassian.net/browse/MM-19032
+    case '-':
+      // zoom focused tab's contents out
+      activeTab.setZoomLevel(activeTab.getZoomLevel() - 1);
+      break;
+    case '=':
+      // zoom focused tab's contents in
+      activeTab.setZoomLevel(activeTab.getZoomLevel() + 1);
+      break;
+    case '0':
+      // reset zoom of focused tab
+      activeTab.setZoomLevel(0);
+      break;
+
+    // Manually handle undo/redo keyboard shortcuts
+    // - temporary fix for https://mattermost.atlassian.net/browse/MM-19198
+    case 'z':
+      // call undo/redo in the active tab
+      if (input.shift) {
+        activeTab.redo();
+      } else {
+        activeTab.undo();
+      }
+      break;
+
+    // Manually handle copy/cut/paste keyboard shortcuts
+    case 'c':
+      activeTab.copy();
+      break;
+    case 'x':
+      activeTab.cut();
+      break;
+    case 'v':
+      if (input.shift) {
+        activeTab.pasteAndMatchStyle();
+      } else {
+        activeTab.paste();
+      }
+      break;
+    default:
+      // allows the input event to proceed if not handled by a case above
+      return;
+    }
+    event.preventDefault();
+  });
 }
 
 function initializeAfterAppReady() {
