@@ -457,47 +457,42 @@ function handleAppWebContentsCreated(dc, contents) {
     }
 
     // handle certain keyboard shortcuts manually
-    const activeTab = event.sender;
     switch (input.key) { // eslint-disable-line padded-blocks
 
     // Manually handle zoom-in/out/reset keyboard shortcuts
     // - temporary fix for https://mattermost.atlassian.net/browse/MM-19031 and https://mattermost.atlassian.net/browse/MM-19032
     case '-':
-      // zoom focused tab's contents out
-      activeTab.setZoomLevel(activeTab.getZoomLevel() - 1);
+      mainWindow.webContents.send('zoom-out');
       break;
     case '=':
-      // zoom focused tab's contents in
-      activeTab.setZoomLevel(activeTab.getZoomLevel() + 1);
+      mainWindow.webContents.send('zoom-in');
       break;
     case '0':
-      // reset zoom of focused tab
-      activeTab.setZoomLevel(0);
+      mainWindow.webContents.send('zoom-reset');
       break;
 
     // Manually handle undo/redo keyboard shortcuts
     // - temporary fix for https://mattermost.atlassian.net/browse/MM-19198
     case 'z':
-      // call undo/redo in the active tab
       if (input.shift) {
-        activeTab.redo();
+        mainWindow.webContents.send('redo');
       } else {
-        activeTab.undo();
+        mainWindow.webContents.send('undo');
       }
       break;
 
     // Manually handle copy/cut/paste keyboard shortcuts
     case 'c':
-      activeTab.copy();
+      mainWindow.webContents.send('copy');
       break;
     case 'x':
-      activeTab.cut();
+      mainWindow.webContents.send('cut');
       break;
     case 'v':
       if (input.shift) {
-        activeTab.pasteAndMatchStyle();
+        mainWindow.webContents.send('paste-and-match');
       } else {
-        activeTab.paste();
+        mainWindow.webContents.send('paste');
       }
       break;
     default:

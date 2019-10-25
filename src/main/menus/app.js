@@ -76,15 +76,42 @@ function createTemplate(mainWindow, config, isDev) {
   template.push({
     label: '&Edit',
     submenu: [{
-      role: 'undo',
+      label: 'Undo',
+      accelerator: 'CmdOrCtrl+Z',
+      click() {
+        mainWindow.webContents.send('undo');
+      },
     }, {
-      role: 'redo',
+      label: 'Redo',
+      accelerator: 'CmdOrCtrl+SHIFT+Z',
+      click() {
+        mainWindow.webContents.send('redo');
+      },
     }, separatorItem, {
-      role: 'cut',
+      label: 'Cut',
+      accelerator: 'CmdOrCtrl+X',
+      click() {
+        mainWindow.webContents.send('cut');
+      },
     }, {
-      role: 'copy',
+      label: 'Copy',
+      accelerator: 'CmdOrCtrl+C',
+      click() {
+        mainWindow.webContents.send('copy');
+      },
     }, {
-      role: 'paste',
+      label: 'Paste',
+      accelerator: 'CmdOrCtrl+V',
+      click() {
+        mainWindow.webContents.send('paste');
+      },
+    }, {
+      label: 'Paste and Match Style',
+      accelerator: 'CmdOrCtrl+SHIFT+V',
+      visible: process.platform === 'darwin',
+      click() {
+        mainWindow.webContents.send('paste-and-match');
+      },
     }, {
       role: 'selectall',
     }],
@@ -126,21 +153,23 @@ function createTemplate(mainWindow, config, isDev) {
     }, {
       role: 'togglefullscreen',
     }, separatorItem, {
-      role: 'resetzoom',
+      label: 'Actual Size',
+      accelerator: 'CmdOrCtrl+0',
+      click() {
+        mainWindow.webContents.send('zoom-reset');
+      },
     }, {
-      role: 'zoomin',
+      label: 'Zoom In',
+      accelerator: 'CmdOrCtrl+SHIFT+=',
+      click() {
+        mainWindow.webContents.send('zoom-in');
+      },
     }, {
-      label: 'Zoom In (hidden)',
-      accelerator: 'CmdOrCtrl+=',
-      visible: false,
-      role: 'zoomin',
-    }, {
-      role: 'zoomout',
-    }, {
-      label: 'Zoom Out (hidden)',
-      accelerator: 'CmdOrCtrl+Shift+-',
-      visible: false,
-      role: 'zoomout',
+      label: 'Zoom Out',
+      accelerator: 'CmdOrCtrl+-',
+      click() {
+        mainWindow.webContents.send('zoom-out');
+      },
     }, separatorItem, {
       label: 'Developer Tools for Application Wrapper',
       accelerator: (() => {
