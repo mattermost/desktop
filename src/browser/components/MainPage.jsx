@@ -7,8 +7,6 @@
 
 import url from 'url';
 
-import log from 'electron-log';
-
 import React from 'react';
 import PropTypes from 'prop-types';
 import {CSSTransition, TransitionGroup} from 'react-transition-group';
