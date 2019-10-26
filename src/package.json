@@ -12,7 +12,7 @@
     "@hapi/joi": "^15.1.0",
     "auto-launch": "^5.0.5",
     "bootstrap": "^3.3.7",
-    "electron-context-menu": "^0.10.1",
+    "electron-context-menu": "^0.15.0",
     "electron-devtools-installer": "^2.2.4",
     "electron-is-dev": "^1.0.1",
     "electron-log": "^2.2.17",
