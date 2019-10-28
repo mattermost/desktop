@@ -1,6 +1,8 @@
 version: 2.1
 orbs:
   win: circleci/windows@1.0.0
+  aws-s3: circleci/aws-s3@1.0.11
+
 executors:
   wine-chrome:
     working_directory: ~/mattermost-desktop
@@ -16,6 +18,14 @@ executors:
     working_directory: ~/mattermost-desktop
     macos:
       xcode: "10.3.0"
+  aws:
+    working_directory: ~/mattermost-desktop
+    docker:
+      - image: 'circleci/python:2.7'
+  github:
+    working_directory: ~/mattermost-desktop
+    docker:
+      - image: circleci/golang:1.12
 commands:
   update_image:
     description: "Update base image"
@@ -178,10 +188,10 @@ jobs:
       - win_make:
           operation: "build"
       - run: mkdir -p ./dist/win-release
-      - run: cp -r release/*.exe ./dist/win-release
+      #- run: cp -r release/*.exe ./dist/win-release
       - run: cp -r release/*.zip ./dist/win-release
       - run: cp -r release/*.msi ./dist/win-release
-      - run: cp -r release/*.blockmap ./dist/win-release
+      #- run: cp -r release/*.blockmap ./dist/win-release
 
       - persist_to_workspace:
           root: ./dist/
@@ -212,6 +222,39 @@ jobs:
       - store_artifacts:
           path: ./dist
           destination: packages
+
+  upload_to_s3:
+    executor: aws
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ./dist
+      - aws-s3/copy:
+          from: ./dist/
+          to: s3://releases.mattermost.com/desktop/$(jq -r .version package.json)/
+          arguments: --acl public-read --cache-control "no-cache" --recursive
+  upload_to_github:
+    executor: github
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ./dist
+      - run:
+          name: "Setup files for ghr"
+          command: |
+            mkdir -p ./ghr-dist
+            cp ./dist/{macos-release,win-release,linux}/* ./ghr-dist
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            go get github.com/tcnksm/ghr
+            VERSION=$(jq -r .version package.json)
+            RELEASE_TITLE="${VERSION} ($(date -u "+%Y-%m-%d"))"
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -draft \
+              --body="$(./scripts/generate_release_markdown.sh $VERSION)" \
+              --name="${RELEASE_TITLE}" $( [[ $VERSION =~ "-rc" ]] && printf %s "-prerelease") \
+              -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} \
+              -delete ${VERSION} ./ghr-dist
 
 workflows:
   version: 2
@@ -246,7 +289,7 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+\.\d+\.\d+?(-rc.*)?/
-
+                - release-helpers # remove me
       - mac_installer:
           requires:
             - check
@@ -255,6 +298,7 @@ workflows:
             branches:
               only:
                 - /^release-\d+\.\d+\.\d+?(-rc.*)?/
+                - release-helpers # remove-me
       - store_artifacts:
           # for master/PR builds
           requires:
@@ -265,13 +309,27 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+\.\d+\.\d+?(-rc.*)?/
-      - store_artifacts:
-          # for release and rc builds
+      - upload_to_s3:
+          # for release builds
           requires:
             - msi_installer
             - mac_installer
             - build-linux
+          context: mattermost-ci-s3
+          filters:
+            tags:
+              only:
+                - /^v\d+\.\d+\.\d+?$/
+                - release-helpers # remove me
+
+      - upload_to_github:
+          requires:
+            - msi_installer
+            - mac_installer
+            - build-linux
+          context: matterbuild-github-token
           filters:
             branches:
               only:
                 - /^release-\d+\.\d+\.\d+?(-rc.*)?/
+                - release-helpers # remove me
