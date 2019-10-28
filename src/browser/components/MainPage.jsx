@@ -78,6 +78,17 @@ export default class MainPage extends React.Component {
     return null;
   }
 
+  getTabWebContents(index = this.state.key || 0, teams = this.props.teams) {
+    if (!teams || !teams.length || index > teams.length) {
+      return null;
+    }
+    const tabURL = teams[index].url;
+    if (!tabURL) {
+      return null;
+    }
+    return remote.webContents.getAllWebContents().find((webContents) => webContents.getURL().includes(tabURL));
+  }
+
   componentDidMount() {
     const self = this;
     ipcRenderer.on('login-request', (event, request, authInfo) => {
@@ -131,6 +142,84 @@ export default class MainPage extends React.Component {
 
     ipcRenderer.on('open-devtool', () => {
       document.getElementById(`mattermostView${self.state.key}`).openDevTools();
+    });
+
+    ipcRenderer.on('zoom-in', () => {
+      const activeTabWebContents = this.getTabWebContents(this.state.key);
+      if (!activeTabWebContents) {
+        return;
+      }
+      if (activeTabWebContents.getZoomLevel() >= 9) {
+        return;
+      }
+      activeTabWebContents.setZoomLevel(activeTabWebContents.getZoomLevel() + 1);
+    });
+
+    ipcRenderer.on('zoom-out', () => {
+      const activeTabWebContents = this.getTabWebContents(this.state.key);
+      if (!activeTabWebContents) {
+        return;
+      }
+      if (activeTabWebContents.getZoomLevel() <= -8) {
+        return;
+      }
+      activeTabWebContents.setZoomLevel(activeTabWebContents.getZoomLevel() - 1);
+    });
+
+    ipcRenderer.on('zoom-reset', () => {
+      const activeTabWebContents = this.getTabWebContents(this.state.key);
+      if (!activeTabWebContents) {
+        return;
+      }
+      activeTabWebContents.setZoomLevel(0);
+    });
+
+    ipcRenderer.on('undo', () => {
+      const activeTabWebContents = this.getTabWebContents(this.state.key);
+      if (!activeTabWebContents) {
+        return;
+      }
+      activeTabWebContents.undo();
+    });
+
+    ipcRenderer.on('redo', () => {
+      const activeTabWebContents = this.getTabWebContents(this.state.key);
+      if (!activeTabWebContents) {
+        return;
+      }
+      activeTabWebContents.redo();
+    });
+
+    ipcRenderer.on('cut', () => {
+      const activeTabWebContents = this.getTabWebContents(this.state.key);
+      if (!activeTabWebContents) {
+        return;
+      }
+      activeTabWebContents.cut();
+    });
+
+    ipcRenderer.on('copy', () => {
+      const activeTabWebContents = this.getTabWebContents(this.state.key);
+      if (!activeTabWebContents) {
+        return;
+      }
+      activeTabWebContents.copy();
+    });
+
+    ipcRenderer.on('paste', () => {
+      const activeTabWebContents = this.getTabWebContents(this.state.key);
+      if (!activeTabWebContents) {
+        return;
+      }
+      activeTabWebContents.paste();
+    });
+
+    ipcRenderer.on('paste-and-match', () => {
+      const activeTabWebContents = this.getTabWebContents(this.state.key);
+      if (!activeTabWebContents) {
+        return;
+      }
+      activeTabWebContents.pasteAndMatchStyle();
     });
 
     //goBack and goForward
