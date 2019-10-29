@@ -24,7 +24,7 @@ No pull requests for features should be merged to the current release after this
 
 1. Release Manager:
     - Post this checklist in Desktop App channel
-    - Follow that any feature PR reviews are prioritized and post a list of outstanding feature PRs in the Desktop App channel
+    - Ensure that feature PR reviews are prioritized, and post a list of outstanding feature PRs in the Desktop App channel
     - After release branches are cut, ask dev to cut RC1 for QA testing
     - Submit changelog with updates for improvements, bug fixes, known issues, and contributors
     - Ask PMs if there are any notable breaking changes or deprecated features in the release
@@ -43,7 +43,7 @@ No pull requests for features should be merged to the current release after this
 Day when Release Manager and PMs decide which major features are included in the release, and which are postponed.
 
 1. Release Manager:
-    - Post this checklist in Release Checklist channel
+    - Post this checklist in Desktop App channel
     - Verify all items in the last posted release checklist are complete
     - Update Changelog PR based on what’s in/out of the release
     - Post a reminder to devs in the Desktop App channel of the code complete date with the ZBB count
