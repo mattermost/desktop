@@ -4,7 +4,7 @@ This document outlines the release process for the Mattermost Desktop App. It is
 
 Desktop App releases ship at the same time as the next server Feature release after the latest [Electron update](https://github.com/electron/electron/releases), which means approximately every 2-4 months. The Desktop App releases ship on the 16th of the month and follow the server release schedule.
 
-In cases where there are requested features completed prior to the next upcoming Electron update, the next Desktop App release will be prepared at the same time as the next server Feature release regardless of if a new Electron update has shipped.
+In cases where there are requested features completed prior to the next upcoming Electron update, the next Desktop App release will be prepared at the same time as the next server Feature release regardless of whether a new Electron update has shipped.
 
 A dot release will be prepared sooner if Electron releases a security update, or if other urgent bugs are found.
 
