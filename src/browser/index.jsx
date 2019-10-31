@@ -221,14 +221,6 @@ ReactDOM.render(
   document.getElementById('content')
 );
 
-if (process.platform !== 'darwin') {
-  titlebar = new Titlebar({
-    icon: config.darkMode ? appIconWhite : appIcon,
-    backgroundColor: config.darkMode ? Color.fromHex('#323639') : Color.fromHex('#FFFFFF'),
-    hideWhenClickingClose: true,
-  });
-}
-
 // Deny drag&drop navigation in mainWindow.
 // Drag&drop is allowed in webview of index.html.
 document.addEventListener('dragover', (event) => event.preventDefault());

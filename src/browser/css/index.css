@@ -60,16 +60,3 @@ body {
   opacity: 0.5;
   cursor: pointer;
 }
-
-.titlebar.windows {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-.titlebar > .window-appicon {
-  background-size: 93px !important;
-  width: 104px !important;
-}
-
-.titlebar a:hover {
-  text-decoration: none;
-}
