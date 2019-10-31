@@ -116,9 +116,8 @@ function createTemplate(mainWindow, config, isDev) {
       role: 'selectall',
     }],
   });
-  template.push({
-    label: '&View',
-    submenu: [{
+  
+  const viewSubMenu = [{
       label: 'Find..',
       accelerator: 'CmdOrCtrl+F',
       click(item, focusedWindow) {
@@ -175,46 +174,6 @@ function createTemplate(mainWindow, config, isDev) {
       accelerator: (() => {
         if (process.platform === 'darwin') {
           return 'Alt+Command+I';
-        }
-      }
-    },
-  }, {
-    label: 'Clear Cache and Reload',
-    accelerator: 'Shift+CmdOrCtrl+R',
-    click(item, focusedWindow) {
-      if (focusedWindow) {
-        if (focusedWindow === mainWindow) {
-          mainWindow.webContents.send('clear-cache-and-reload-tab');
-        } else {
-          focusedWindow.webContents.session.clearCache(() => {
-            focusedWindow.reload();
-          });
-        }
-      }
-    },
-  }, {
-    role: 'togglefullscreen',
-  }, separatorItem, {
-    role: 'resetzoom',
-  }, {
-    role: 'zoomin',
-  }, {
-    label: 'Zoom In (hidden)',
-    accelerator: 'CmdOrCtrl+=',
-    visible: false,
-    role: 'zoomin',
-  }, {
-    role: 'zoomout',
-  }, {
-    label: 'Zoom Out (hidden)',
-    accelerator: 'CmdOrCtrl+Shift+-',
-    visible: false,
-    role: 'zoomout',
-  }, separatorItem, {
-    label: 'Developer Tools for Application Wrapper',
-    accelerator: (() => {
-      if (process.platform === 'darwin') {
-        return 'Alt+Command+I';
       }
       return 'Ctrl+Shift+I';
     })(),

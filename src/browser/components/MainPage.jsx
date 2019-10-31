@@ -483,25 +483,12 @@ export default class MainPage extends React.Component {
       topBarClassName += ' darkMode';
     }
 
-    let darkModeToggler;
-    if (process.platform !== 'darwin') {
-      darkModeToggler = (
-        <span
-          className='dark-mode-toggle'
-          onClick={this.setDarkMode}
-        >
-          <Glyphicon glyph='adjust'/>
-        </span>
-      );
-    }
-
     const topRow = (
       <Row
         className={topBarClassName}
         onDoubleClick={this.handleDoubleClick}
       >
         {tabsRow}
-        {darkModeToggler}
       </Row>
     );
 
@@ -536,7 +523,6 @@ export default class MainPage extends React.Component {
           onTargetURLChange={self.handleTargetURLChange}
           onBadgeChange={handleBadgeChange}
           onNotificationClick={handleNotificationClick}
-          closeMenu={this.props.closeMenu}
           ref={id}
           active={isActive}
         />);
@@ -631,7 +617,6 @@ MainPage.propTypes = {
   onSelectSpellCheckerLocale: PropTypes.func.isRequired,
   deeplinkingUrl: PropTypes.string,
   showAddServerButton: PropTypes.bool.isRequired,
-  closeMenu: PropTypes.func.isRequired,
   getDarkMode: PropTypes.func.isRequired,
   setDarkMode: PropTypes.func.isRequired,
   moveTabs: PropTypes.func.isRequired,

@@ -9,9 +9,6 @@ window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-e
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {Titlebar, Color} from 'custom-electron-titlebar';
-
-import appIcon from '../assets/large-logo.png';
 
 import SettingsPage from './components/SettingsPage.jsx';
 import contextMenu from './js/contextMenu';
@@ -22,15 +19,6 @@ ReactDOM.render(
   <SettingsPage/>,
   document.getElementById('content')
 );
-
-if (process.platform !== 'darwin') {
-  // eslint-disable-next-line no-new
-  new Titlebar({
-    icon: appIcon,
-    backgroundColor: Color.fromHex('#FFFFFF'),
-    hideWhenClickingClose: true,
-  });
-}
 
 // Deny drag&drop navigation in mainWindow.
 document.addEventListener('dragover', (event) => event.preventDefault());

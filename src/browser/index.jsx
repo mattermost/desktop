@@ -13,12 +13,8 @@ import url from 'url';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {remote, ipcRenderer} from 'electron';
-import {Titlebar, Color} from 'custom-electron-titlebar';
 
 import Config from '../common/config';
-
-import appIcon from '../assets/large-logo.png';
-import appIconWhite from '../assets/large-logo-white.png';
 
 import EnhancedNotification from './js/notification';
 import MainPage from './components/MainPage.jsx';
@@ -180,27 +176,9 @@ function setDarkMode() {
   if (process.platform !== 'darwin') {
     const darkMode = Boolean(config.darkMode);
     config.set('darkMode', !darkMode);
-    updateTitleBarDarkMode(!darkMode);
     return !darkMode;
   }
   return null;
-}
-
-let titlebar;
-function closeMenu() {
-  if (process.platform !== 'darwin') {
-    titlebar.closeMenu();
-  }
-}
-
-function updateTitleBarDarkMode(darkMode) {
-  if (darkMode) {
-    titlebar.updateBackground(Color.fromHex('#323639'));
-    titlebar.updateIcon(appIconWhite);
-  } else {
-    titlebar.updateBackground(Color.fromHex('#FFFFFF'));
-    titlebar.updateIcon(appIcon);
-  }
 }
 
 ReactDOM.render(
@@ -213,7 +191,6 @@ ReactDOM.render(
     onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}
     deeplinkingUrl={deeplinkingUrl}
     showAddServerButton={config.enableServerManagement}
-    closeMenu={closeMenu}
     getDarkMode={getDarkMode}
     setDarkMode={setDarkMode}
     moveTabs={moveTabs}
