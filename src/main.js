@@ -445,6 +445,62 @@ function handleAppWebContentsCreated(dc, contents) {
     }
     popupWindow.loadURL(url);
   });
+
+  // implemented to temporarily help solve for https://community-daily.mattermost.com/core/pl/b95bi44r4bbnueqzjjxsi46qiw
+  contents.on('before-input-event', (event, input) => {
+    if (!input.shift && !input.control && !input.alt && !input.meta) {
+      return;
+    }
+
+    if ((process.platform === 'darwin' && !input.meta) || (process.platform !== 'darwin' && !input.control)) {
+      return;
+    }
+
+    // handle certain keyboard shortcuts manually
+    switch (input.key) { // eslint-disable-line padded-blocks
+
+    // Manually handle zoom-in/out/reset keyboard shortcuts
+    // - temporary fix for https://mattermost.atlassian.net/browse/MM-19031 and https://mattermost.atlassian.net/browse/MM-19032
+    case '-':
+      mainWindow.webContents.send('zoom-out');
+      break;
+    case '=':
+      mainWindow.webContents.send('zoom-in');
+      break;
+    case '0':
+      mainWindow.webContents.send('zoom-reset');
+      break;
+
+    // Manually handle undo/redo keyboard shortcuts
+    // - temporary fix for https://mattermost.atlassian.net/browse/MM-19198
+    case 'z':
+      if (input.shift) {
+        mainWindow.webContents.send('redo');
+      } else {
+        mainWindow.webContents.send('undo');
+      }
+      break;
+
+    // Manually handle copy/cut/paste keyboard shortcuts
+    case 'c':
+      mainWindow.webContents.send('copy');
+      break;
+    case 'x':
+      mainWindow.webContents.send('cut');
+      break;
+    case 'v':
+      if (input.shift) {
+        mainWindow.webContents.send('paste-and-match');
+      } else {
+        mainWindow.webContents.send('paste');
+      }
+      break;
+    default:
+      // allows the input event to proceed if not handled by a case above
+      return;
+    }
+    event.preventDefault();
+  });
 }
 
 function initializeAfterAppReady() {

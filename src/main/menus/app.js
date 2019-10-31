@@ -76,35 +76,105 @@ function createTemplate(mainWindow, config, isDev) {
   template.push({
     label: '&Edit',
     submenu: [{
-      role: 'undo',
+      label: 'Undo',
+      accelerator: 'CmdOrCtrl+Z',
+      click() {
+        mainWindow.webContents.send('undo');
+      },
     }, {
-      role: 'redo',
+      label: 'Redo',
+      accelerator: 'CmdOrCtrl+SHIFT+Z',
+      click() {
+        mainWindow.webContents.send('redo');
+      },
     }, separatorItem, {
-      role: 'cut',
+      label: 'Cut',
+      accelerator: 'CmdOrCtrl+X',
+      click() {
+        mainWindow.webContents.send('cut');
+      },
     }, {
-      role: 'copy',
+      label: 'Copy',
+      accelerator: 'CmdOrCtrl+C',
+      click() {
+        mainWindow.webContents.send('copy');
+      },
     }, {
-      role: 'paste',
+      label: 'Paste',
+      accelerator: 'CmdOrCtrl+V',
+      click() {
+        mainWindow.webContents.send('paste');
+      },
+    }, {
+      label: 'Paste and Match Style',
+      accelerator: 'CmdOrCtrl+SHIFT+V',
+      visible: process.platform === 'darwin',
+      click() {
+        mainWindow.webContents.send('paste-and-match');
+      },
     }, {
       role: 'selectall',
     }],
   });
-
-  const viewSubMenu = [{
-    label: 'Find..',
-    accelerator: 'CmdOrCtrl+F',
-    click(item, focusedWindow) {
-      focusedWindow.webContents.send('toggle-find');
-    },
-  }, {
-    label: 'Reload',
-    accelerator: 'CmdOrCtrl+R',
-    click(item, focusedWindow) {
-      if (focusedWindow) {
-        if (focusedWindow === mainWindow) {
-          mainWindow.webContents.send('reload-tab');
-        } else {
-          focusedWindow.reload();
+  template.push({
+    label: '&View',
+    submenu: [{
+      label: 'Find..',
+      accelerator: 'CmdOrCtrl+F',
+      click(item, focusedWindow) {
+        focusedWindow.webContents.send('toggle-find');
+      },
+    }, {
+      label: 'Reload',
+      accelerator: 'CmdOrCtrl+R',
+      click(item, focusedWindow) {
+        if (focusedWindow) {
+          if (focusedWindow === mainWindow) {
+            mainWindow.webContents.send('reload-tab');
+          } else {
+            focusedWindow.reload();
+          }
+        }
+      },
+    }, {
+      label: 'Clear Cache and Reload',
+      accelerator: 'Shift+CmdOrCtrl+R',
+      click(item, focusedWindow) {
+        if (focusedWindow) {
+          if (focusedWindow === mainWindow) {
+            mainWindow.webContents.send('clear-cache-and-reload-tab');
+          } else {
+            focusedWindow.webContents.session.clearCache(() => {
+              focusedWindow.reload();
+            });
+          }
+        }
+      },
+    }, {
+      role: 'togglefullscreen',
+    }, separatorItem, {
+      label: 'Actual Size',
+      accelerator: 'CmdOrCtrl+0',
+      click() {
+        mainWindow.webContents.send('zoom-reset');
+      },
+    }, {
+      label: 'Zoom In',
+      accelerator: 'CmdOrCtrl+SHIFT+=',
+      click() {
+        mainWindow.webContents.send('zoom-in');
+      },
+    }, {
+      label: 'Zoom Out',
+      accelerator: 'CmdOrCtrl+-',
+      click() {
+        mainWindow.webContents.send('zoom-out');
+      },
+    }, separatorItem, {
+      label: 'Developer Tools for Application Wrapper',
+      accelerator: (() => {
+        if (process.platform === 'darwin') {
+          return 'Alt+Command+I';
         }
       }
     },
