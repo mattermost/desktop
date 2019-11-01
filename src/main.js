@@ -210,6 +210,9 @@ function initializeInterCommunicationEventListeners() {
   if (shouldShowTrayIcon()) {
     ipcMain.on('update-unread', handleUpdateUnreadEvent);
   }
+  if (process.platform !== 'darwin') {
+    ipcMain.on('open-app-menu', handleOpenAppMenu);
+  }
 }
 
 function initializeMainWindowListeners() {
@@ -731,6 +734,10 @@ function handleUpdateUnreadEvent(event, arg) {
       trayIcon.setToolTip(app.getName());
     }
   }
+}
+
+function handleOpenAppMenu() {
+  Menu.getApplicationMenu().popup();
 }
 
 function handleUpdateMenuEvent(event, configData) {

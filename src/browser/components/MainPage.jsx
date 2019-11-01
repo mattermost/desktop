@@ -490,7 +490,7 @@ export default class MainPage extends React.Component {
       >
         <span
           className='three-dot-menu'
-          onClick={this.openMenu}
+          onClick={this.props.openMenu}
         >
           <Glyphicon glyph='option-vertical'/>
         </span>
@@ -626,6 +626,7 @@ MainPage.propTypes = {
   getDarkMode: PropTypes.func.isRequired,
   setDarkMode: PropTypes.func.isRequired,
   moveTabs: PropTypes.func.isRequired,
+  openMenu: PropTypes.func.isRequired,
 };
 
 /* eslint-enable react/no-set-state */

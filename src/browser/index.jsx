@@ -181,6 +181,12 @@ function setDarkMode() {
   return null;
 }
 
+function openMenu() {
+  if (process.platform !== 'darwin') {
+    ipcRenderer.send('open-app-menu');
+  }
+}
+
 ReactDOM.render(
   <MainPage
     teams={teams}
@@ -194,6 +200,7 @@ ReactDOM.render(
     getDarkMode={getDarkMode}
     setDarkMode={setDarkMode}
     moveTabs={moveTabs}
+    openMenu={openMenu}
   />,
   document.getElementById('content')
 );
