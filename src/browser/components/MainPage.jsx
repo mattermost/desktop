@@ -488,6 +488,12 @@ export default class MainPage extends React.Component {
         className={topBarClassName}
         onDoubleClick={this.handleDoubleClick}
       >
+        <span
+          className='three-dot-menu'
+          onClick={this.openMenu}
+        >
+          <Glyphicon glyph='option-vertical'/>
+        </span>
         {tabsRow}
       </Row>
     );

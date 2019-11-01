@@ -51,12 +51,25 @@ body {
   color: #fff;
 }
 
-.dark-mode-toggle {
-  float: right;
+.topBar>.three-dot-menu {
   position: relative;
-  font-size: 22px;
-  top: -29px;
-  right: 10px;
-  opacity: 0.5;
+  font-size: 18px;
+  line-height: 20px;
+  height: 18px;
+  float: left;
+  left: 10px;
   cursor: pointer;
+  width: 36px;
+  z-index: 9;
+  top: 8px;
+  color: rgba(61,60,64,0.7);
 }
+
+.topBar.macOS>.three-dot-menu {
+  display: none;
+}
+
+.topBar.darkMode>.three-dot-menu {
+  color: rgba(243,243,243,0.7);
+}
+
