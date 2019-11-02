@@ -737,7 +737,10 @@ function handleUpdateUnreadEvent(event, arg) {
 }
 
 function handleOpenAppMenu() {
-  Menu.getApplicationMenu().popup();
+  Menu.getApplicationMenu().popup({
+    x: 18,
+    y: 18,
+  });
 }
 
 function handleUpdateMenuEvent(event, configData) {

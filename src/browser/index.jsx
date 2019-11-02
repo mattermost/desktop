@@ -41,7 +41,7 @@ if (teams.length === 0) {
 }
 
 const parsedURL = url.parse(window.location.href, true);
-const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : 0;
+const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : getInitialIndex();
 
 let deeplinkingUrl = null;
 if (!parsedURL.query.index || parsedURL.query.index === null) {
@@ -59,6 +59,11 @@ config.on('synchronize', () => {
 ipcRenderer.on('reload-config', () => {
   config.reload();
 });
+
+function getInitialIndex() {
+  var element = teams.find((e) => e.order === 0);
+  return element ? teams.indexOf(element) : 0;
+}
 
 function showBadgeWindows(sessionExpired, unreadCount, mentionCount) {
   function sendBadge(dataURL, description) {

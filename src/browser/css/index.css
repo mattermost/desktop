@@ -36,9 +36,6 @@ body {
 
 .topBar {
   height: 40px;
-}
-
-.topBar.macOS {
   -webkit-app-region: drag;
 }
 
@@ -58,11 +55,11 @@ body {
   height: 18px;
   float: left;
   left: 10px;
-  cursor: pointer;
   width: 36px;
   z-index: 9;
   top: 8px;
   color: rgba(61,60,64,0.7);
+  -webkit-app-region: no-drag;
 }
 
 .topBar.macOS>.three-dot-menu {

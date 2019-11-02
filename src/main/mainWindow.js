@@ -48,6 +48,7 @@ function createMainWindow(config, options) {
     show: false,
     minWidth: minimumWindowWidth,
     minHeight: minimumWindowHeight,
+    frame: false,
     fullscreen: false,
     titleBarStyle: 'hiddenInset',
     webPreferences: {

@@ -3,6 +3,7 @@
   border: none;
   max-height: 36px;
   width: 100%;
+  display: block !important;
 }
 
 .TabBar.darkMode {
@@ -20,6 +21,7 @@
 .TabBar>li {
   display: inline-block;
   -webkit-app-region: no-drag;
+  -webkit-user-select: none;
 }
 
 .TabBar>li>a {
