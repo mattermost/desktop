@@ -61,7 +61,7 @@ ipcRenderer.on('reload-config', () => {
 });
 
 function getInitialIndex() {
-  var element = teams.find((e) => e.order === 0);
+  const element = teams.find((e) => e.order === 0);
   return element ? teams.indexOf(element) : 0;
 }
 
