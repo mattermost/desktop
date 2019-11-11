@@ -519,7 +519,7 @@ export default class MainPage extends React.Component {
           className='button restore-button'
           onClick={this.handleRestore}
         >
-          <span>{'&#xE923;'}</span>
+          <span>{'\uE923'}</span>
         </div>
       );
     } else {
@@ -528,7 +528,7 @@ export default class MainPage extends React.Component {
           className='button max-button'
           onClick={this.handleMaximize}
         >
-          <span>{'&#xE922;'}</span>
+          <span>{'\uE922'}</span>
         </div>
       );
     }
@@ -550,14 +550,14 @@ export default class MainPage extends React.Component {
             className='button min-button'
             onClick={this.handleMinimize}
           >
-            <span>{'&#xE921;'}</span>
+            <span>{'\uE921'}</span>
           </div>
           {maxButton}
           <div
             className='button close-button'
             onClick={this.handleClose}
           >
-            <span>{'&#xE8BB;'}</span>
+            <span>{'\uE8BB'}</span>
           </div>
         </span>
       </Row>
