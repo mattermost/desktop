@@ -486,26 +486,23 @@ export default class MainPage extends React.Component {
 
   render() {
     const self = this;
-    let tabsRow;
-    if (process.platform === 'darwin' || this.props.teams.length > 1) {
-      tabsRow = (
-        <TabBar
-          id='tabBar'
-          isDarkMode={this.state.isDarkMode}
-          teams={this.props.teams}
-          sessionsExpired={this.state.sessionsExpired}
-          unreadCounts={this.state.unreadCounts}
-          mentionCounts={this.state.mentionCounts}
-          unreadAtActive={this.state.unreadAtActive}
-          mentionAtActiveCounts={this.state.mentionAtActiveCounts}
-          activeKey={this.state.key}
-          onSelect={this.handleSelect}
-          onAddServer={this.addServer}
-          showAddServerButton={this.props.showAddServerButton}
-          onDrop={this.handleDragAndDrop}
-        />
-      );
-    }
+    const tabsRow = (
+      <TabBar
+        id='tabBar'
+        isDarkMode={this.state.isDarkMode}
+        teams={this.props.teams}
+        sessionsExpired={this.state.sessionsExpired}
+        unreadCounts={this.state.unreadCounts}
+        mentionCounts={this.state.mentionCounts}
+        unreadAtActive={this.state.unreadAtActive}
+        mentionAtActiveCounts={this.state.mentionAtActiveCounts}
+        activeKey={this.state.key}
+        onSelect={this.handleSelect}
+        onAddServer={this.addServer}
+        showAddServerButton={this.props.showAddServerButton}
+        onDrop={this.handleDragAndDrop}
+      />
+    );
 
     let topBarClassName = 'topBar';
     if (process.platform === 'darwin') {
@@ -518,20 +515,20 @@ export default class MainPage extends React.Component {
     let maxButton;
     if (this.state.maximized) {
       maxButton = (
-        <div 
-          class="button restore-button"
+        <div
+          className='button restore-button'
           onClick={this.handleRestore}
         >
-          <span>&#xE923;</span>
+          <span>{'&#xE923;'}</span>
         </div>
       );
     } else {
       maxButton = (
-        <div 
-          class="button max-button"
+        <div
+          className='button max-button'
           onClick={this.handleMaximize}
         >
-          <span>&#xE922;</span>
+          <span>{'&#xE922;'}</span>
         </div>
       );
     }
@@ -548,19 +545,19 @@ export default class MainPage extends React.Component {
           <Glyphicon glyph='option-vertical'/>
         </span>
         {tabsRow}
-        <span class="title-bar-btns">
-          <div 
-            class="button min-button"
+        <span className='title-bar-btns'>
+          <div
+            className='button min-button'
             onClick={this.handleMinimize}
           >
-            <span>&#xE921;</span>
+            <span>{'&#xE921;'}</span>
           </div>
-          {maxButton}          
-          <div 
-            class="button close-button"
+          {maxButton}
+          <div
+            className='button close-button'
             onClick={this.handleClose}
           >
-            <span>&#xE8BB;</span>
+            <span>{'&#xE8BB;'}</span>
           </div>
         </span>
       </Row>
