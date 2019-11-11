@@ -42,6 +42,7 @@ export default class MainPage extends React.Component {
       mentionAtActiveCounts: new Array(this.props.teams.length),
       loginQueue: [],
       targetURL: '',
+      maximized: false,
     };
 
     this.activateFinder = this.activateFinder.bind(this);
@@ -136,6 +137,12 @@ export default class MainPage extends React.Component {
     window.addEventListener('beforeunload', () => {
       currentWindow.removeListener('focus', focusListener);
     });
+
+    if (currentWindow.isMaximized()) {
+      self.setState({maximized: true});
+    }
+    currentWindow.on('maximize', this.handleMaximizeState);
+    currentWindow.on('unmaximize', this.handleMaximizeState);
 
     // https://github.com/mattermost/desktop/pull/371#issuecomment-263072803
     currentWindow.webContents.on('devtools-closed', () => {
@@ -287,6 +294,11 @@ export default class MainPage extends React.Component {
     }
   }
 
+  handleMaximizeState = () => {
+    const win = remote.getCurrentWindow();
+    this.setState({maximized: win.isMaximized()});
+  }
+
   handleSelect(key) {
     const newKey = (this.props.teams.length + key) % this.props.teams.length;
     this.setState({
@@ -403,6 +415,26 @@ export default class MainPage extends React.Component {
     }
   }
 
+  handleClose = () => {
+    const win = remote.getCurrentWindow();
+    win.close();
+  }
+
+  handleMinimize = () => {
+    const win = remote.getCurrentWindow();
+    win.minimize();
+  }
+
+  handleMaximize = () => {
+    const win = remote.getCurrentWindow();
+    win.maximize();
+  }
+
+  handleRestore = () => {
+    const win = remote.getCurrentWindow();
+    win.restore();
+  }
+
   handleDoubleClick = () => {
     const doubleClickAction = remote.systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
     const win = remote.getCurrentWindow();
@@ -483,6 +515,27 @@ export default class MainPage extends React.Component {
       topBarClassName += ' darkMode';
     }
 
+    let maxButton;
+    if (this.state.maximized) {
+      maxButton = (
+        <div 
+          class="button restore-button"
+          onClick={this.handleRestore}
+        >
+          <span>&#xE923;</span>
+        </div>
+      );
+    } else {
+      maxButton = (
+        <div 
+          class="button max-button"
+          onClick={this.handleMaximize}
+        >
+          <span>&#xE922;</span>
+        </div>
+      );
+    }
+
     const topRow = (
       <Row
         className={topBarClassName}
@@ -495,6 +548,21 @@ export default class MainPage extends React.Component {
           <Glyphicon glyph='option-vertical'/>
         </span>
         {tabsRow}
+        <span class="title-bar-btns">
+          <div 
+            class="button min-button"
+            onClick={this.handleMinimize}
+          >
+            <span>&#xE921;</span>
+          </div>
+          {maxButton}          
+          <div 
+            class="button close-button"
+            onClick={this.handleClose}
+          >
+            <span>&#xE8BB;</span>
+          </div>
+        </span>
       </Row>
     );
 
