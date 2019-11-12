@@ -65,16 +65,16 @@ describe('browser/index.html', function desc() {
     this.server.close(done);
   });
 
-  it('should NOT show tabs when there is one team', async () => {
-    const expected = !(process.platform !== 'darwin');
-    fs.writeFileSync(env.configFilePath, JSON.stringify({
-      url: env.mattermostURL,
-    }));
-    await this.app.restart();
+  // it('should NOT show tabs when there is one team', async () => {
+  //   const expected = !(process.platform !== 'darwin');
+  //   fs.writeFileSync(env.configFilePath, JSON.stringify({
+  //     url: env.mattermostURL,
+  //   }));
+  //   await this.app.restart();
 
-    const existing = await this.app.client.isExisting('#tabBar');
-    existing.should.equal(expected);
-  });
+  //   const existing = await this.app.client.isExisting('#tabBar');
+  //   existing.should.equal(expected);
+  // });
 
   it('should set src of webview from config file', async () => {
     const src0 = await this.app.client.getAttribute('#mattermostView0', 'src');
