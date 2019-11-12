@@ -56,12 +56,8 @@ export default class TabBar extends React.Component { // need "this"
           draggable={false}
           active={this.props.activeKey === index}
           activeKey={this.props.activeKey}
-          onSelect={(eventKey) => {
-            if (eventKey === 'addServerButton') {
-              this.props.onAddServer();
-            } else {
-              this.props.onSelect(eventKey);
-            }
+          onMouseDown={() => {
+            this.props.onSelect(index);
           }}
         >
           <div className='TabBar-tabSeperator'>
@@ -91,12 +87,8 @@ export default class TabBar extends React.Component { // need "this"
           eventKey='addServerButton'
           title='Add new server'
           activeKey={this.props.activeKey}
-          onSelect={(eventKey) => {
-            if (eventKey === 'addServerButton') {
-              this.props.onAddServer();
-            } else {
-              this.props.onSelect(eventKey);
-            }
+          onSelect={() => {
+            this.props.onAddServer();
           }}
         >
           <div className='TabBar-tabSeperator'>

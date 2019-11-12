@@ -118,6 +118,7 @@
   font-size: 20px;	
   font-weight: bold;
   color: rgba(61,60,64,0.7);
+  transition: opacity 0.3s ease-in;
 }
 
 .TabBar.darkMode>li.TabBar-addServerButton>a{
@@ -130,6 +131,10 @@
   color: rgba(61,60,64,1);
   background-color: #fff;
   z-index: 9;
+}
+
+.smooth-dnd-no-user-select li.TabBar-addServerButton>a {
+  opacity: 0;
 }
 
 .TabBar.darkMode>li.teamTabItem.active>a, .TabBar.darkMode>li.teamTabItem.smooth-dnd-ghost>a {
@@ -231,6 +236,8 @@
   font-weight: bold;
   min-width: 18px;
   margin-top: -1px;
+  letter-spacing: normal;
+  -webkit-font-smoothing: antialiased;
 }
 
 .TabBar .TabBar-badge.TabBar-badge-nomention:after {
