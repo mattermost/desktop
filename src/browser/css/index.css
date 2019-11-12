@@ -80,14 +80,12 @@ body {
 
 .topBar>.title-bar-btns {
   position: relative;
-  font-size: 10px;
   line-height: 36px;
   height: 36px;
   float: right;
   top: -36px;
   z-index: 9;
   color: rgba(61,60,64,0.7);
-  font-family: "Segoe MDL2 Assets";
   -webkit-app-region: no-drag;
   display: grid;
   grid-template-columns: repeat(3, 46px);

@@ -21,6 +21,11 @@ import HoveringURL from './HoveringURL.jsx';
 import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
 
+import WindowRestoreIcon from 'mdi-react/WindowRestoreIcon';
+import WindowMaximizeIcon from 'mdi-react/WindowMaximizeIcon';
+import WindowMinimizeIcon from 'mdi-react/WindowMinimizeIcon';
+import WindowCloseIcon from 'mdi-react/WindowCloseIcon';
+
 export default class MainPage extends React.Component {
   constructor(props) {
     super(props);
@@ -519,7 +524,7 @@ export default class MainPage extends React.Component {
           className='button restore-button'
           onClick={this.handleRestore}
         >
-          <span>{'\uE923'}</span>
+          <WindowRestoreIcon size={18}/>
         </div>
       );
     } else {
@@ -528,7 +533,7 @@ export default class MainPage extends React.Component {
           className='button max-button'
           onClick={this.handleMaximize}
         >
-          <span>{'\uE922'}</span>
+          <WindowMaximizeIcon size={18}/>
         </div>
       );
     }
@@ -550,14 +555,14 @@ export default class MainPage extends React.Component {
             className='button min-button'
             onClick={this.handleMinimize}
           >
-            <span>{'\uE921'}</span>
+            <WindowMinimizeIcon size={18}/>
           </div>
           {maxButton}
           <div
             className='button close-button'
             onClick={this.handleClose}
           >
-            <span>{'\uE8BB'}</span>
+            <WindowCloseIcon size={18}/>
           </div>
         </span>
       </Row>
