@@ -14,17 +14,17 @@ import {Grid, Row, Glyphicon} from 'react-bootstrap';
 
 import {ipcRenderer, remote} from 'electron';
 
+import WindowRestoreIcon from 'mdi-react/WindowRestoreIcon';
+import WindowMaximizeIcon from 'mdi-react/WindowMaximizeIcon';
+import WindowMinimizeIcon from 'mdi-react/WindowMinimizeIcon';
+import WindowCloseIcon from 'mdi-react/WindowCloseIcon';
+
 import LoginModal from './LoginModal.jsx';
 import MattermostView from './MattermostView.jsx';
 import TabBar from './TabBar.jsx';
 import HoveringURL from './HoveringURL.jsx';
 import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
-
-import WindowRestoreIcon from 'mdi-react/WindowRestoreIcon';
-import WindowMaximizeIcon from 'mdi-react/WindowMaximizeIcon';
-import WindowMinimizeIcon from 'mdi-react/WindowMinimizeIcon';
-import WindowCloseIcon from 'mdi-react/WindowCloseIcon';
 
 export default class MainPage extends React.Component {
   constructor(props) {
