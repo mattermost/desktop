@@ -39,6 +39,10 @@ body {
   -webkit-app-region: drag;
 }
 
+.topBar>.TabBar {
+  margin-left: 36px;
+}
+
 .topBar.macOS>.TabBar {
   margin-left: 80px;
 }
@@ -58,6 +62,7 @@ body {
   width: 36px;
   z-index: 9;
   color: rgba(61,60,64,0.7);
+  background-color: rgba(0,0,0,0.1);
   -webkit-app-region: no-drag;
 }
 
