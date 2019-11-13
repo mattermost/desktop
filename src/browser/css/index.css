@@ -40,7 +40,7 @@ body {
 }
 
 .topBar.macOS>.TabBar {
-  padding-left: 80px;
+  margin-left: 80px;
 }
 
 .topBar.darkMode {
@@ -49,21 +49,28 @@ body {
 }
 
 .topBar>.three-dot-menu {
-  position: relative;
   font-size: 18px;
   line-height: 20px;
-  height: 18px;
+  height: 36px;
   float: left;
-  left: 10px;
+  padding-left: 10px;
+  padding-top: 8px;
   width: 36px;
   z-index: 9;
-  top: 8px;
   color: rgba(61,60,64,0.7);
   -webkit-app-region: no-drag;
 }
 
 .topBar.macOS>.three-dot-menu {
+  width: 80px;
+}
+
+.topBar.macOS>.three-dot-menu>span {
   display: none;
+}
+
+.topBar.darkMode>.three-dot-menu {
+  background-color: #202124;
 }
 
 .topBar.macOS>.title-bar-btns {
