@@ -89,11 +89,14 @@ const customLogins = {};
  */
 async function initialize() {
   process.on('uncaughtException', criticalErrorHandler.processUncaughtExceptionHandler.bind(criticalErrorHandler));
+  global.willAppQuit = false;
 
   // prevent using a different working directory, which happens on windows running after installation.
-  process.chdir(path.dirname(process.execPath));
-
-  global.willAppQuit = false;
+  const expectedPath = path.dirname(process.execPath);
+  if (process.cwd() !== expectedPath && !isDev) {
+    console.warn(`Current working directory is ${process.cwd()}, changing into ${expectedPath}`);
+    process.chdir(expectedPath);
+  }
 
   // initialization that can run before the app is ready
   initializeArgs();
