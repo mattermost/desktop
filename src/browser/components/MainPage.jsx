@@ -524,7 +524,7 @@ export default class MainPage extends React.Component {
           className='button restore-button'
           onClick={this.handleRestore}
         >
-          <img src={restoreButton} />
+          <img src={restoreButton}/>
         </div>
       );
     } else {
@@ -533,7 +533,7 @@ export default class MainPage extends React.Component {
           className='button max-button'
           onClick={this.handleMaximize}
         >
-          <img src={maximizeButton} />
+          <img src={maximizeButton}/>
         </div>
       );
     }
@@ -555,14 +555,14 @@ export default class MainPage extends React.Component {
             className='button min-button'
             onClick={this.handleMinimize}
           >
-            <img src={minimizeButton} />
+            <img src={minimizeButton}/>
           </div>
           {maxButton}
           <div
             className='button close-button'
             onClick={this.handleClose}
           >
-            <img src={closeButton} />
+            <img src={closeButton}/>
           </div>
         </span>
       </Row>
