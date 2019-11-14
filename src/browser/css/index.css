@@ -140,6 +140,15 @@ body {
   background: #f1707a !important;
 }
 
+.topBar>.title-bar-btns img {
+  opacity: 0.7;
+}
+
+.topBar.darkMode>.title-bar-btns img {
+  filter: invert(100%);
+  -webkit-filter: invert(100%);
+}
+
 .topBar>.title-bar-btns>.min-button {
   grid-column: 1;
 }

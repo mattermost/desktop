@@ -14,10 +14,10 @@ import {Grid, Row, Glyphicon} from 'react-bootstrap';
 
 import {ipcRenderer, remote} from 'electron';
 
-import WindowRestoreIcon from 'mdi-react/WindowRestoreIcon';
-import WindowMaximizeIcon from 'mdi-react/WindowMaximizeIcon';
-import WindowMinimizeIcon from 'mdi-react/WindowMinimizeIcon';
-import WindowCloseIcon from 'mdi-react/WindowCloseIcon';
+import restoreButton from '../../assets/titlebar/chrome-restore.svg';
+import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
+import minimizeButton from '../../assets/titlebar/chrome-minimize.svg';
+import closeButton from '../../assets/titlebar/chrome-close.svg';
 
 import LoginModal from './LoginModal.jsx';
 import MattermostView from './MattermostView.jsx';
@@ -524,7 +524,7 @@ export default class MainPage extends React.Component {
           className='button restore-button'
           onClick={this.handleRestore}
         >
-          <WindowRestoreIcon size={18}/>
+          <img src={restoreButton} />
         </div>
       );
     } else {
@@ -533,7 +533,7 @@ export default class MainPage extends React.Component {
           className='button max-button'
           onClick={this.handleMaximize}
         >
-          <WindowMaximizeIcon size={18}/>
+          <img src={maximizeButton} />
         </div>
       );
     }
@@ -555,14 +555,14 @@ export default class MainPage extends React.Component {
             className='button min-button'
             onClick={this.handleMinimize}
           >
-            <WindowMinimizeIcon size={18}/>
+            <img src={minimizeButton} />
           </div>
           {maxButton}
           <div
             className='button close-button'
             onClick={this.handleClose}
           >
-            <WindowCloseIcon size={18}/>
+            <img src={closeButton} />
           </div>
         </span>
       </Row>
