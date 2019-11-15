@@ -455,10 +455,9 @@ function handleAppWebContentsCreated(dc, contents) {
       mainWindow.webContents.send('focus-three-dot-menu');
       return;
     }
-    
     if (!input.shift && !input.control && !input.alt && !input.meta) {
       return;
-    }    
+    }
 
     if ((process.platform === 'darwin' && !input.meta) || (process.platform !== 'darwin' && !input.control)) {
       return;

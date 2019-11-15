@@ -8,7 +8,6 @@
 import url from 'url';
 
 import React from 'react';
-import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import {CSSTransition, TransitionGroup} from 'react-transition-group';
 import {Grid, Row, Glyphicon} from 'react-bootstrap';
@@ -295,7 +294,7 @@ export default class MainPage extends React.Component {
       this.threeDotMenu = React.createRef();
       ipcRenderer.on('focus-three-dot-menu', () => {
         if (this.threeDotMenu.current) {
-          ReactDOM.findDOMNode(this.threeDotMenu.current).focus();
+          this.threeDotMenu.current.focus();
         }
       });
     }
@@ -449,7 +448,8 @@ export default class MainPage extends React.Component {
   }
 
   openMenu = () => {
-    ReactDOM.findDOMNode(this.threeDotMenu.current).blur();
+    // @eslint-ignore
+    this.threeDotMenu.current.blur();
     this.props.openMenu();
   }
 
@@ -562,7 +562,7 @@ export default class MainPage extends React.Component {
           tabIndex={0}
           ref={this.threeDotMenu}
         >
-          <Glyphicon glyph='option-vertical' />
+          <Glyphicon glyph='option-vertical'/>
         </button>
         {tabsRow}
         <span className='title-bar-btns'>
