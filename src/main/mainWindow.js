@@ -39,6 +39,9 @@ function createMainWindow(config, options) {
     windowOptions = {width: defaultWindowWidth, height: defaultWindowHeight};
   }
 
+  const {hideOnStartup, trayIconShown} = options;
+  const {maximized: windowIsMaximized} = windowOptions;
+
   if (process.platform === 'linux') {
     windowOptions.icon = options.linuxAppIcon;
   }
@@ -63,32 +66,31 @@ function createMainWindow(config, options) {
   const indexURL = global.isDev ? 'http://localhost:8080/browser/index.html' : `file://${app.getAppPath()}/browser/index.html`;
   mainWindow.loadURL(indexURL);
 
-  // This section should be called after loadURL() #570
-  if (options.hideOnStartup) {
-    if (windowOptions.maximized) {
-      mainWindow.maximize();
-    }
-
-    // on MacOS, the window is already hidden until 'ready-to-show'
-    if (process.platform !== 'darwin') {
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.webContents.setZoomLevel(0);
+    if (!hideOnStartup) {
+      mainWindow.show();
+      if (windowIsMaximized) {
+        mainWindow.maximize();
+      }
+    } else if (hideOnStartup && !trayIconShown) {
+      mainWindow.show();
       mainWindow.minimize();
     }
-  } else if (windowOptions.maximized) {
-    mainWindow.maximize();
-  }
+  });
+
+  mainWindow.once('restore', () => {
+    if (hideOnStartup) {
+      mainWindow.show();
+      if (windowIsMaximized) {
+        mainWindow.maximize();
+      }
+    }
+  });
 
   mainWindow.webContents.on('will-attach-webview', (event, webPreferences) => {
     webPreferences.nodeIntegration = false;
     webPreferences.contextIsolation = true;
-  });
-
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.webContents.setZoomLevel(0);
-    if (process.platform !== 'darwin') {
-      mainWindow.show();
-    } else if (options.hideOnStartup !== true) {
-      mainWindow.show();
-    }
   });
 
   // App should save bounds when a window is closed.
