@@ -79,6 +79,12 @@ function createMainWindow(config, options) {
     }
   });
 
+  mainWindow.once('show', () => {
+    if (hideOnStartup && windowIsMaximized) {
+      mainWindow.maximize();
+    }
+  });
+
   mainWindow.once('restore', () => {
     if (hideOnStartup) {
       mainWindow.show();
