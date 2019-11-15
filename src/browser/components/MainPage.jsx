@@ -8,6 +8,7 @@
 import url from 'url';
 
 import React from 'react';
+import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import {CSSTransition, TransitionGroup} from 'react-transition-group';
 import {Grid, Row, Glyphicon} from 'react-bootstrap';
@@ -290,6 +291,13 @@ export default class MainPage extends React.Component {
       ipcRenderer.on('set-dark-mode', () => {
         this.setDarkMode();
       });
+
+      this.threeDotMenu = React.createRef();
+      ipcRenderer.on('focus-three-dot-menu', () => {
+        if (this.threeDotMenu.current) {
+          ReactDOM.findDOMNode(this.threeDotMenu.current).focus();
+        }
+      });
     }
   }
 
@@ -440,6 +448,11 @@ export default class MainPage extends React.Component {
     win.restore();
   }
 
+  openMenu = () => {
+    ReactDOM.findDOMNode(this.threeDotMenu.current).blur();
+    this.props.openMenu();
+  }
+
   handleDoubleClick = () => {
     const doubleClickAction = remote.systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
     const win = remote.getCurrentWindow();
@@ -543,12 +556,14 @@ export default class MainPage extends React.Component {
         className={topBarClassName}
         onDoubleClick={this.handleDoubleClick}
       >
-        <span
+        <button
           className='three-dot-menu'
-          onClick={this.props.openMenu}
+          onClick={this.openMenu}
+          tabIndex={0}
+          ref={this.threeDotMenu}
         >
-          <Glyphicon glyph='option-vertical'/>
-        </span>
+          <Glyphicon glyph='option-vertical' />
+        </button>
         {tabsRow}
         <span className='title-bar-btns'>
           <div

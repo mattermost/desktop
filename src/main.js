@@ -451,9 +451,14 @@ function handleAppWebContentsCreated(dc, contents) {
 
   // implemented to temporarily help solve for https://community-daily.mattermost.com/core/pl/b95bi44r4bbnueqzjjxsi46qiw
   contents.on('before-input-event', (event, input) => {
-    if (!input.shift && !input.control && !input.alt && !input.meta) {
+    if (input.key === 'Alt' && input.type === 'keyUp') {
+      mainWindow.webContents.send('focus-three-dot-menu');
       return;
     }
+    
+    if (!input.shift && !input.control && !input.alt && !input.meta) {
+      return;
+    }    
 
     if ((process.platform === 'darwin' && !input.meta) || (process.platform !== 'darwin' && !input.control)) {
       return;
