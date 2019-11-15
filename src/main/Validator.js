@@ -8,6 +8,8 @@ const defaultOptions = {
   stripUnknown: true,
 };
 
+const defaultMinWindowXPos = -100;
+const defaultMinWindowYPos = -100;
 const defaultWindowWidth = 1000;
 const defaultWindowHeight = 700;
 const minWindowWidth = 400;
@@ -23,8 +25,8 @@ const argsSchema = Joi.object({
 });
 
 const boundsInfoSchema = Joi.object({
-  x: Joi.number().integer().min(0),
-  y: Joi.number().integer().min(0),
+  x: Joi.number().integer().min(defaultMinWindowXPos).default(0),
+  y: Joi.number().integer().min(defaultMinWindowYPos).default(0),
   width: Joi.number().integer().min(minWindowWidth).required().default(defaultWindowWidth),
   height: Joi.number().integer().min(minWindowHeight).required().default(defaultWindowHeight),
   maximized: Joi.boolean().default(false),
