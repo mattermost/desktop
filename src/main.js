@@ -392,6 +392,9 @@ function handleAppWebContentsCreated(dc, contents) {
     if (isTrustedURL(parsedURL) || isTrustedPopupWindow(event.sender)) {
       return;
     }
+    if (parsedURL.protocol === 'mailto:') {
+      return;
+    }
     if (customLogins[contentID].inProgress) {
       return;
     }
