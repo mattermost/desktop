@@ -79,7 +79,7 @@ function createMainWindow(config, options) {
     mainWindow.webContents.setZoomLevel(0);
 
     // handle showing the window when not launched by auto-start
-    //- when not configured to hide on startup, immediately show contents and optionally maximize as needed
+    // - when not configured to auto-start, immediately show contents and optionally maximize as needed
     if (!hideOnStartup) {
       mainWindow.show();
       if (windowIsMaximized) {
