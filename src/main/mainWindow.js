@@ -48,7 +48,7 @@ function createMainWindow(config, options) {
   Object.assign(windowOptions, {
     title: app.getName(),
     fullscreenable: true,
-    show: false,
+    show: hideOnStartup,
     minWidth: minimumWindowWidth,
     minHeight: minimumWindowHeight,
     fullscreen: false,
@@ -66,27 +66,30 @@ function createMainWindow(config, options) {
   const indexURL = global.isDev ? 'http://localhost:8080/browser/index.html' : `file://${app.getAppPath()}/browser/index.html`;
   mainWindow.loadURL(indexURL);
 
+  // handle hiding the app when launched by auto-start
+  if (hideOnStartup) {
+    if (trayIconShown && process.platform !== 'darwin') {
+      mainWindow.hide();
+    } else {
+      mainWindow.minimize();
+    }
+  }
+
   mainWindow.once('ready-to-show', () => {
     mainWindow.webContents.setZoomLevel(0);
 
-    // handle the initial state of the app on launch
-    // 1. When not configured to hide on startup, immediately show contents and optionally maximize as needed
-    // 2. When configured to hide on startup and there is no tray icon, show contents and minimize to the app icon
+    // handle showing the window when not launched by auto-start
+    //- when not configured to hide on startup, immediately show contents and optionally maximize as needed
     if (!hideOnStartup) {
       mainWindow.show();
       if (windowIsMaximized) {
         mainWindow.maximize();
       }
-    } else if (hideOnStartup && !trayIconShown) {
-      mainWindow.show();
-
-      // NOTE: minimized here instead of right after creating the window as .show() seems to 'un-minimize' but not show contents
-      mainWindow.minimize();
     }
   });
 
   mainWindow.once('show', () => {
-    // handle showing the window when hidden to the tray icon on launch
+    // handle showing the app when hidden to the tray icon by auto-start
     // - optionally maximize the window as needed
     if (hideOnStartup && windowIsMaximized) {
       mainWindow.maximize();
@@ -94,14 +97,10 @@ function createMainWindow(config, options) {
   });
 
   mainWindow.once('restore', () => {
-    // handle restoring the window when minimized to the app icon on launch
-    // 1. show the window contents
-    // 2. optionally maximize the window as needed
-    if (hideOnStartup) {
-      mainWindow.show();
-      if (windowIsMaximized) {
-        mainWindow.maximize();
-      }
+    // handle restoring the window when minimized to the app icon by auto-start
+    // - optionally maximize the window as needed
+    if (hideOnStartup && windowIsMaximized) {
+      mainWindow.maximize();
     }
   });
 
