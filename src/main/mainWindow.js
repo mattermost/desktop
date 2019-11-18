@@ -68,6 +68,10 @@ function createMainWindow(config, options) {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.webContents.setZoomLevel(0);
+
+    // handle the initial state of the app on launch
+    // 1. When not configured to hide on startup, immediately show contents and optionally maximize as needed
+    // 2. When configured to hide on startup and there is no tray icon, show contents and minimize to the app icon
     if (!hideOnStartup) {
       mainWindow.show();
       if (windowIsMaximized) {
@@ -75,17 +79,24 @@ function createMainWindow(config, options) {
       }
     } else if (hideOnStartup && !trayIconShown) {
       mainWindow.show();
+
+      // NOTE: minimized here instead of right after creating the window as .show() seems to 'un-minimize' but not show contents
       mainWindow.minimize();
     }
   });
 
   mainWindow.once('show', () => {
+    // handle showing the window when hidden to the tray icon on launch
+    // - optionally maximize the window as needed
     if (hideOnStartup && windowIsMaximized) {
       mainWindow.maximize();
     }
   });
 
   mainWindow.once('restore', () => {
+    // handle restoring the window when minimized to the app icon on launch
+    // 1. show the window contents
+    // 2. optionally maximize the window as needed
     if (hideOnStartup) {
       mainWindow.show();
       if (windowIsMaximized) {
