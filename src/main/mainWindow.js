@@ -48,7 +48,7 @@ function createMainWindow(config, options) {
   Object.assign(windowOptions, {
     title: app.getName(),
     fullscreenable: true,
-    show: hideOnStartup,
+    show: hideOnStartup || false,
     minWidth: minimumWindowWidth,
     minHeight: minimumWindowHeight,
     fullscreen: false,
