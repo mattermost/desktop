@@ -14,7 +14,10 @@ exports.default = async function notarizing(context) {
   }
 
   const appName = context.packager.appInfo.productFilename;
-
+  if (typeof process.env.APPLEID === 'undefined') {
+    console.log('skipping notarization, remember to setup environment variables for APPLEID and APPLEIDPASS if you want to notarize');
+    return;
+  }
   await notarize({
 
     // should we change it to appBundleId: 'com.mattermost.desktop',
