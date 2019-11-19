@@ -439,7 +439,7 @@ function Get-Cert {
 }
 
 function Remove-Cert {
-    if (Test-Path $env:PFX) {
+    if (Test-Path 'env:PFX') {
         Print-Info "Removing windows certificate"
         Remove-Item -path "./mattermost-desktop-windows.pfx"
     }
