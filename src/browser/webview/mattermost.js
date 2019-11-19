@@ -6,6 +6,7 @@
 /* eslint-disable no-magic-numbers */
 
 import {ipcRenderer, webFrame, remote} from 'electron';
+import log from 'electron-log';
 
 const UNREAD_COUNT_INTERVAL = 1000;
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
@@ -242,7 +243,7 @@ ipcRenderer.on('user-activity-update', (event, {userIsActive, isSystemEvent}) =>
 
 // exit fullscreen embedded elements like youtube - https://mattermost.atlassian.net/browse/MM-19226
 ipcRenderer.on('exit-fullscreen', () => {
-  if (document.fullscreenElement) {
+  if (document.fullscreenElement && document.fullscreenElement.nodeName.toLowerCase() === 'iframe') {
     document.exitFullscreen();
   }
 });
