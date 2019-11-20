@@ -6,7 +6,6 @@
 /* eslint-disable no-magic-numbers */
 
 import {ipcRenderer, webFrame, remote} from 'electron';
-import log from 'electron-log';
 
 const UNREAD_COUNT_INTERVAL = 1000;
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
