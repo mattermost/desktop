@@ -59,9 +59,10 @@ export default class TabBar extends React.Component { // need "this"
           onMouseDown={() => {
             this.props.onSelect(index);
           }}
+          title={team.name}
         >
           <div className='TabBar-tabSeperator'>
-            <span title={team.name}>
+            <span>
               {team.name}
             </span>
             { badgeDiv }

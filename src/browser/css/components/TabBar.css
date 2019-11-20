@@ -2,7 +2,10 @@
   background-color: rgba(0,0,0,0.1);
   border: none;
   max-height: 36px;
-  display: block !important;
+  flex: 1 1 auto;
+  display: flex !important;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
 }
 
 .TabBar.darkMode {
@@ -10,21 +13,19 @@
 }
 
 .TabBar .teamTabItem span {
-  display: inline-block;
+  flex: 0 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 170px;
 }
 
 .TabBar>li {
-  display: inline-block;
   -webkit-app-region: no-drag;
   -webkit-user-select: none;
+  min-width: 46px;
 }
 
 .TabBar>li>a {
-  display: inline-block;
   border: none;
   border-radius: 0;
   height: 32px;
@@ -74,6 +75,7 @@
   content: "";
   background-color: inherit;
   z-index: 9;
+  flex: 0 0 6px;
 } 
 
 .TabBar>li.teamTabItem.active:before, .TabBar>li.teamTabItem.smooth-dnd-ghost:before {
@@ -105,11 +107,13 @@
 .TabBar>li>a>div.TabBar-tabSeperator {
   padding: 2px 16px;
   max-height: 20px;
+  display: flex;
 }
 
 .TabBar>li.TabBar-addServerButton{
   transition: none !important;
   transform: none !important;
+  flex: 0 0 auto;
 }
 
 .TabBar>li.TabBar-addServerButton>a{
@@ -201,7 +205,7 @@
   margin-top: 5px;
   margin-left: 8px;
   border-radius: 4px;
-  display: flex;
+  flex: 0 0 6px;
 }
 
 .TabBar .TabBar-expired {
@@ -210,6 +214,7 @@
   width: 16px;
   margin-left: 8px;
   background-image: url(../../../assets/icon-session-expired.svg);
+  flex: 0 0 16px;
 }
 
 .TabBar.darkMode .TabBar-expired {
@@ -237,6 +242,7 @@
   margin-top: -1px;
   letter-spacing: normal;
   -webkit-font-smoothing: antialiased;
+  flex: 1 0 18px;
 }
 
 .TabBar .TabBar-badge.TabBar-badge-nomention:after {

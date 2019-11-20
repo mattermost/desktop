@@ -149,6 +149,12 @@ export default class MainPage extends React.Component {
     currentWindow.on('maximize', this.handleMaximizeState);
     currentWindow.on('unmaximize', this.handleMaximizeState);
 
+    if (currentWindow.isFullScreen()) {
+      self.setState({fullScreen: true});
+    }
+    currentWindow.on('enter-full-screen', this.handleFullScreenState);
+    currentWindow.on('leave-full-screen', this.handleFullScreenState);
+
     // https://github.com/mattermost/desktop/pull/371#issuecomment-263072803
     currentWindow.webContents.on('devtools-closed', () => {
       focusListener();
@@ -309,6 +315,11 @@ export default class MainPage extends React.Component {
   handleMaximizeState = () => {
     const win = remote.getCurrentWindow();
     this.setState({maximized: win.isMaximized()});
+  }
+
+  handleFullScreenState = () => {
+    const win = remote.getCurrentWindow();
+    this.setState({fullScreen: win.isFullScreen()});
   }
 
   handleSelect(key) {
@@ -528,6 +539,9 @@ export default class MainPage extends React.Component {
     }
     if (this.state.isDarkMode) {
       topBarClassName += ' darkMode';
+    }
+    if (this.state.fullScreen) {
+      topBarClassName += ' fullScreen';
     }
 
     let maxButton;

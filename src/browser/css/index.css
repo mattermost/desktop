@@ -37,14 +37,8 @@ body {
 .topBar {
   height: 40px;
   -webkit-app-region: drag;
-}
-
-.topBar>.TabBar {
-  margin-left: 36px;
-}
-
-.topBar.macOS>.TabBar {
-  margin-left: 80px;
+  display: flex;
+  overflow: hidden;
 }
 
 .topBar.darkMode {
@@ -59,7 +53,7 @@ body {
   float: left;
   padding: 4px 0 0 5px;
   border: none;
-  width: 36px;
+  flex: 0 0 36px;
   z-index: 9;
   color: rgba(61,60,64,0.7);
   background-color: rgba(0,0,0,0.1);
@@ -82,7 +76,11 @@ body {
 }
 
 .topBar.macOS>.three-dot-menu {
-  width: 80px;
+  flex-basis: 80px;
+}
+
+.topBar.macOS.fullScreen>.three-dot-menu {
+  flex-basis: 0px;
 }
 
 .topBar.macOS>.three-dot-menu>span {
@@ -100,23 +98,20 @@ body {
 
 .topBar.darkMode>.title-bar-btns {
   color: rgba(243,243,243,0.7);
+  background-color: #202124;
 }
 
 .topBar>.title-bar-btns {
   position: relative;
   line-height: 36px;
   height: 36px;
-  float: right;
-  top: -36px;
   z-index: 9;
   color: rgba(61,60,64,0.7);
   -webkit-app-region: no-drag;
   display: grid;
   grid-template-columns: repeat(3, 46px);
-}
-
-.topBar.macOS>.title-bar-btns {
-  display: none;
+  background-color: rgba(0,0,0,0.1);
+  padding-left: 40px;
 }
 
 .topBar>.title-bar-btns>.button {
