@@ -47,6 +47,15 @@ window.addEventListener('load', () => {
   });
 });
 
+// Sent for drag and drop tabs to work properly
+document.addEventListener('mousemove', (event) => {
+  ipcRenderer.sendToHost('mouse-move', {clientX: event.clientX, clientY: event.clientY});
+});
+
+document.addEventListener('mouseup', () => {
+  ipcRenderer.sendToHost('mouse-up');
+});
+
 // listen for messages from the webapp
 window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = {}) => {
   if (origin !== window.location.origin) {

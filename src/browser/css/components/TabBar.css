@@ -14,14 +14,14 @@
 .TabBar .teamTabItem span {
   flex: 0 1 auto;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  text-align: center;
 }
 
 .TabBar>li {
   -webkit-app-region: no-drag;
   -webkit-user-select: none;
-  min-width: 46px;
+  min-width: 48px;
 }
 
 .TabBar>li>a {
@@ -113,7 +113,7 @@
   transition: none !important;
   transform: none !important;
   flex: 0 0 auto;
-  min-width: 42px;
+  min-width: 40px;
 }
 
 .TabBar>li.TabBar-addServerButton>a{
@@ -122,6 +122,10 @@
   font-weight: bold;
   color: rgba(61,60,64,0.7);
   transition: opacity 0.3s ease-in;
+}
+
+.TabBar>li.TabBar-addServerButton svg{
+  margin: -2px;
 }
 
 .TabBar.darkMode>li.TabBar-addServerButton>a{

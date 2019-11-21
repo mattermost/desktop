@@ -192,6 +192,16 @@ export default class MattermostView extends React.Component {
       case 'onNotificationClick':
         self.props.onNotificationClick();
         break;
+      case 'mouse-move':
+        let moveEvent = document.createEvent('MouseEvents');
+        moveEvent.initMouseEvent('mousemove', null, null, null, null, null, null, event.args[0].clientX, event.args[0].clientY);
+        document.dispatchEvent(moveEvent);
+        break;
+      case 'mouse-up':
+        let upEvent = document.createEvent('MouseEvents');
+        upEvent.initMouseEvent('mouseup');
+        document.dispatchEvent(upEvent);
+        break;
       }
     });
 

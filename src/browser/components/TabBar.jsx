@@ -5,6 +5,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {Nav, NavItem} from 'react-bootstrap';
 import {Container, Draggable} from 'react-smooth-dnd';
+import PlusIcon from 'mdi-react/PlusIcon';
 
 export default class TabBar extends React.Component { // need "this"
   render() {
@@ -53,10 +54,12 @@ export default class TabBar extends React.Component { // need "this"
           id={id}
           eventKey={index}
           ref={id}
-          draggable={false}
           active={this.props.activeKey === index}
           activeKey={this.props.activeKey}
           onMouseDown={() => {
+            this.props.onSelect(index);
+          }}
+          onSelect={() => {
             this.props.onSelect(index);
           }}
           title={team.name}
@@ -70,8 +73,6 @@ export default class TabBar extends React.Component { // need "this"
         </NavItem>
       );
 
-      // draggable=false is a workaround for https://github.com/mattermost/desktop/issues/667
-      // It would obstruct https://github.com/mattermost/desktop/issues/478
       return (
         <Draggable
           key={id}
@@ -93,7 +94,7 @@ export default class TabBar extends React.Component { // need "this"
           }}
         >
           <div className='TabBar-tabSeperator'>
-            {'+'}
+            <PlusIcon size={20} />
           </div>
         </NavItem>
       );

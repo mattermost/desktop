@@ -11,6 +11,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {CSSTransition, TransitionGroup} from 'react-transition-group';
 import {Grid, Row, Glyphicon} from 'react-bootstrap';
+import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 
 import {ipcRenderer, remote} from 'electron';
 
@@ -577,7 +578,7 @@ export default class MainPage extends React.Component {
             tabIndex={0}
             ref={this.threeDotMenu}
           >
-            <Glyphicon glyph='option-vertical'/>
+            <DotsVerticalIcon />
           </button>
           {tabsRow}
           <span className='overlay-gradient'/>
