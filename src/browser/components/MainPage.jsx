@@ -570,30 +570,33 @@ export default class MainPage extends React.Component {
         className={topBarClassName}
         onDoubleClick={this.handleDoubleClick}
       >
-        <button
-          className='three-dot-menu'
-          onClick={this.openMenu}
-          tabIndex={0}
-          ref={this.threeDotMenu}
-        >
-          <Glyphicon glyph='option-vertical'/>
-        </button>
-        {tabsRow}
-        <span className='title-bar-btns'>
-          <div
-            className='button min-button'
-            onClick={this.handleMinimize}
+        <div className='topBar-bg'>
+          <button
+            className='three-dot-menu'
+            onClick={this.openMenu}
+            tabIndex={0}
+            ref={this.threeDotMenu}
           >
-            <img src={minimizeButton}/>
-          </div>
-          {maxButton}
-          <div
-            className='button close-button'
-            onClick={this.handleClose}
-          >
-            <img src={closeButton}/>
-          </div>
-        </span>
+            <Glyphicon glyph='option-vertical'/>
+          </button>
+          {tabsRow}
+          <span className='overlay-gradient'/>
+          <span className='title-bar-btns'>
+            <div
+              className='button min-button'
+              onClick={this.handleMinimize}
+            >
+              <img src={minimizeButton}/>
+            </div>
+            {maxButton}
+            <div
+              className='button close-button'
+              onClick={this.handleClose}
+            >
+              <img src={closeButton}/>
+            </div>
+          </span>
+        </div>
       </Row>
     );
 

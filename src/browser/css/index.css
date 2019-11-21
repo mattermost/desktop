@@ -37,8 +37,14 @@ body {
 .topBar {
   height: 40px;
   -webkit-app-region: drag;
+}
+
+.topBar>.topBar-bg {
   display: flex;
   overflow: hidden;
+  -webkit-app-region: drag;
+  height: 36px;
+  background-color: rgba(0,0,0,0.1);
 }
 
 .topBar.darkMode {
@@ -46,7 +52,11 @@ body {
   color: #fff;
 }
 
-.topBar>.three-dot-menu {
+.topBar.darkMode>.topBar-bg {
+  background-color: #202124;
+}
+
+.topBar .three-dot-menu {
   font-size: 18px;
   line-height: 20px;
   height: 36px;
@@ -56,11 +66,10 @@ body {
   flex: 0 0 36px;
   z-index: 9;
   color: rgba(61,60,64,0.7);
-  background-color: rgba(0,0,0,0.1);
   -webkit-app-region: no-drag;
 }
 
-.topBar>.three-dot-menu:hover, .topBar>.three-dot-menu:focus {
+.topBar .three-dot-menu:hover, .topBar .three-dot-menu:focus {
   outline: none;
   background-color: rgba(0,0,0,0.3);
   -webkit-box-shadow: inset 0px 0px 10px 5px #e5e5e5;
@@ -68,40 +77,40 @@ body {
   box-shadow: inset 0px 0px 10px 5px #e5e5e5;
 }
 
-.topBar.darkMode>.three-dot-menu:hover, .topBar.darkMode>.three-dot-menu:focus {
+.topBar.darkMode .three-dot-menu:hover, .topBar.darkMode .three-dot-menu:focus {
   background-color: rgba(61,60,64,0.7);
   -webkit-box-shadow: inset 0px 0px 10px 10px #202124;
   -moz-box-shadow: inset 0px 0px 10px 10px #202124;
   box-shadow: inset 0px 0px 10px 10px #202124;
 }
 
-.topBar.macOS>.three-dot-menu {
+.topBar.macOS .three-dot-menu {
   flex-basis: 80px;
 }
 
-.topBar.macOS.fullScreen>.three-dot-menu {
+.topBar.macOS.fullScreen .three-dot-menu {
   flex-basis: 0px;
 }
 
-.topBar.macOS>.three-dot-menu>span {
+.topBar.macOS .three-dot-menu>span {
   display: none;
 }
 
-.topBar.darkMode>.three-dot-menu {
+.topBar.darkMode .three-dot-menu {
   background-color: #202124;
   color: rgba(243,243,243,0.7);
 }
 
-.topBar.macOS>.title-bar-btns {
+.topBar.macOS .title-bar-btns {
   display: none;
 }
 
-.topBar.darkMode>.title-bar-btns {
+.topBar.darkMode .title-bar-btns {
   color: rgba(243,243,243,0.7);
   background-color: #202124;
 }
 
-.topBar>.title-bar-btns {
+.topBar .title-bar-btns {
   position: relative;
   line-height: 36px;
   height: 36px;
@@ -110,11 +119,10 @@ body {
   -webkit-app-region: no-drag;
   display: grid;
   grid-template-columns: repeat(3, 46px);
-  background-color: rgba(0,0,0,0.1);
-  padding-left: 40px;
+  background-color: #e5e5e5;
 }
 
-.topBar>.title-bar-btns>.button {
+.topBar .title-bar-btns>.button {
   grid-row: 1 / span 1;
   display: flex;
   justify-content: center;
@@ -124,44 +132,58 @@ body {
   user-select: none;
 }
 
-.topBar.darkMode>.title-bar-btns>.button:hover {
+.topBar.darkMode .title-bar-btns>.button:hover {
   background: rgba(255,255,255,0.1);
 }
 
-.topBar.darkMode>.title-bar-btns>.button:active {
+.topBar.darkMode .title-bar-btns>.button:active {
   background: rgba(255,255,255,0.2);
 }
 
-.topBar>.title-bar-btns>.button:hover {
+.topBar .title-bar-btns>.button:hover {
   background: rgba(0,0,0,0.1);
 }
 
-.topBar>.title-bar-btns>.button:active {
+.topBar .title-bar-btns>.button:active {
   background: rgba(0,0,0,0.2);
 }
 
-.topBar>.title-bar-btns>.close-button:hover {
+.topBar .title-bar-btns>.close-button:hover {
   background: #E81123 !important;
 }
-.topBar>.title-bar-btns>.close-button:active {
+.topBar .title-bar-btns>.close-button:active {
   background: #f1707a !important;
 }
 
-.topBar>.title-bar-btns img {
+.topBar .title-bar-btns img {
   opacity: 0.7;
 }
 
-.topBar.darkMode>.title-bar-btns img {
+.topBar.darkMode .title-bar-btns img {
   filter: invert(100%);
   -webkit-filter: invert(100%);
 }
 
-.topBar>.title-bar-btns>.min-button {
+.topBar .title-bar-btns>.min-button {
   grid-column: 1;
 }
-.topBar>.title-bar-btns>.max-button, .topBar>.title-bar-btns>.restore-button {
+.topBar .title-bar-btns>.max-button, .topBar .title-bar-btns>.restore-button {
   grid-column: 2;
 }
-.topBar>.title-bar-btns>.close-button {
+.topBar .title-bar-btns>.close-button {
   grid-column: 3;
+}
+
+.topBar .overlay-gradient {
+  flex: 0 0 40px;
+  z-index: 9;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #e5e5e5 100%);
+}
+
+.topBar.darkMode .overlay-gradient {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #202124 100%);
+}
+
+.topBar.macOS .overlay-gradient {
+  display: none;
 }
