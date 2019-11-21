@@ -178,6 +178,7 @@ body {
   flex: 0 0 40px;
   z-index: 9;
   background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #e5e5e5 100%);
+  -webkit-app-region: drag;
 }
 
 .topBar.darkMode .overlay-gradient {
