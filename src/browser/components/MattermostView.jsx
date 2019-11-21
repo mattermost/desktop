@@ -193,14 +193,10 @@ export default class MattermostView extends React.Component {
         self.props.onNotificationClick();
         break;
       case 'mouse-move':
-        let moveEvent = document.createEvent('MouseEvents');
-        moveEvent.initMouseEvent('mousemove', null, null, null, null, null, null, event.args[0].clientX, event.args[0].clientY);
-        document.dispatchEvent(moveEvent);
+        this.handleMouseMove(event.args[0]);
         break;
       case 'mouse-up':
-        let upEvent = document.createEvent('MouseEvents');
-        upEvent.initMouseEvent('mouseup');
-        document.dispatchEvent(upEvent);
+        this.handleMouseUp();
         break;
       }
     });
@@ -268,6 +264,18 @@ export default class MattermostView extends React.Component {
       webview.focus();
       webContents.focus();
     }
+  }
+
+  handleMouseMove = (event) => {
+    const moveEvent = document.createEvent('MouseEvents');
+    moveEvent.initMouseEvent('mousemove', null, null, null, null, null, null, event.clientX, event.clientY);
+    document.dispatchEvent(moveEvent);
+  }
+
+  handleMouseUp = () => {
+    const upEvent = document.createEvent('MouseEvents');
+    upEvent.initMouseEvent('mouseup');
+    document.dispatchEvent(upEvent);
   }
 
   canGoBack() {

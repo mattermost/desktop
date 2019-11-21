@@ -53,6 +53,7 @@ export default class TabBar extends React.Component { // need "this"
           key={id}
           id={id}
           eventKey={index}
+          draggable={false}
           ref={id}
           active={this.props.activeKey === index}
           activeKey={this.props.activeKey}
@@ -94,7 +95,7 @@ export default class TabBar extends React.Component { // need "this"
           }}
         >
           <div className='TabBar-tabSeperator'>
-            <PlusIcon size={20} />
+            <PlusIcon size={20}/>
           </div>
         </NavItem>
       );

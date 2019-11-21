@@ -92,7 +92,7 @@ body {
   flex-basis: 0px;
 }
 
-.topBar.macOS .three-dot-menu>span {
+.topBar.macOS .three-dot-menu>svg {
   display: none;
 }
 
