@@ -124,11 +124,11 @@ function createMainWindow(config, options) {
         // need to leave fullscreen first, then hide the window
         if (mainWindow.isFullScreen()) {
           mainWindow.once('leave-full-screen', () => {
-            hideWindow(mainWindow);
+            app.hide();
           });
           mainWindow.setFullScreen(false);
         } else {
-          hideWindow(mainWindow);
+          app.hide();
         }
         break;
       default:
