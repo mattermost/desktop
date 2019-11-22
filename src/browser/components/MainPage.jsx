@@ -64,6 +64,8 @@ export default class MainPage extends React.Component {
     this.inputBlur = this.inputBlur.bind(this);
     this.markReadAtActive = this.markReadAtActive.bind(this);
     this.setDarkMode = this.setDarkMode.bind(this);
+
+    this.topBar = React.createRef();
   }
 
   parseDeeplinkURL(deeplink, teams = this.props.teams) {
@@ -100,6 +102,29 @@ export default class MainPage extends React.Component {
 
   componentDidMount() {
     const self = this;
+
+    // Due to a bug in Chrome on macOS, mousemove events from the webview won't register when the webview isn't in focus,
+    // thus you can't drag tabs unless you're right on the container.
+    // this makes it so your tab won't get stuck to your cursor no matter where you mouse up
+    if (process.platform === 'darwin') {
+      self.topBar.current.addEventListener('mouseleave', () => {
+        if (event.target === self.topBar.current) {
+          const upEvent = document.createEvent('MouseEvents');
+          upEvent.initMouseEvent('mouseup');
+          document.dispatchEvent(upEvent);
+        }
+      });
+
+      // Hack for when it leaves the electron window because apparently mouseleave isn't good enough there...
+      self.topBar.current.addEventListener('mousemove', () => {
+        if (event.clientY === 0 || event.clientX === 0 || event.clientX >= window.innerWidth) {
+          const upEvent = document.createEvent('MouseEvents');
+          upEvent.initMouseEvent('mouseup');
+          document.dispatchEvent(upEvent);
+        }
+      });
+    }
+
     ipcRenderer.on('login-request', (event, request, authInfo) => {
       self.setState({
         loginRequired: true,
@@ -571,7 +596,10 @@ export default class MainPage extends React.Component {
         className={topBarClassName}
         onDoubleClick={this.handleDoubleClick}
       >
-        <div className='topBar-bg'>
+        <div
+          ref={this.topBar}
+          className='topBar-bg'
+        >
           <button
             className='three-dot-menu'
             onClick={this.openMenu}

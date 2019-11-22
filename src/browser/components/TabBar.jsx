@@ -113,6 +113,7 @@ export default class TabBar extends React.Component { // need "this"
     );
     return (
       <Container
+        ref={this.container}
         render={navContainer}
         orientation='horizontal'
         lockAxis={'x'}
