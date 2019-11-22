@@ -67,6 +67,7 @@ body {
   z-index: 9;
   color: rgba(61,60,64,0.7);
   -webkit-app-region: no-drag;
+  background-color: rgba(229, 229, 229, 1);
 }
 
 .topBar .three-dot-menu:hover, .topBar .three-dot-menu:focus {
