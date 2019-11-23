@@ -458,6 +458,13 @@ function handleAppWebContentsCreated(dc, contents) {
   // implemented to temporarily help solve for https://community-daily.mattermost.com/core/pl/b95bi44r4bbnueqzjjxsi46qiw
   contents.on('before-input-event', (event, input) => {
     if (!input.shift && !input.control && !input.alt && !input.meta) {
+      // hacky fix for https://mattermost.atlassian.net/browse/MM-19226
+      if ((input.key === 'Escape' || input.key === 'f') && input.type === 'keyDown') {
+        // only do this when in fullscreen on a mac
+        if (mainWindow.isFullScreen() && process.platform === 'darwin') {
+          mainWindow.webContents.send('exit-fullscreen');
+        }
+      }
       return;
     }
 

@@ -240,6 +240,13 @@ ipcRenderer.on('user-activity-update', (event, {userIsActive, isSystemEvent}) =>
   window.postMessage({type: 'user-activity-update', message: {userIsActive, manual: isSystemEvent}}, window.location.origin);
 });
 
+// exit fullscreen embedded elements like youtube - https://mattermost.atlassian.net/browse/MM-19226
+ipcRenderer.on('exit-fullscreen', () => {
+  if (document.fullscreenElement && document.fullscreenElement.nodeName.toLowerCase() === 'iframe') {
+    document.exitFullscreen();
+  }
+});
+
 // mattermost-webapp is SPA. So cache is not cleared due to no navigation.
 // We needed to manually clear cache to free memory in long-term-use.
 // http://seenaburns.com/debugging-electron-memory-usage/
