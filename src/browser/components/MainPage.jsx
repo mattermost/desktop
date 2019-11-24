@@ -453,7 +453,6 @@ export default class MainPage extends React.Component {
           id={id}
           withTab={this.props.teams.length > 1}
           useSpellChecker={this.props.useSpellChecker}
-          onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
           src={teamUrl}
           name={team.name}
           onTargetURLChange={self.handleTargetURLChange}
@@ -549,7 +548,6 @@ MainPage.propTypes = {
   onTeamConfigChange: PropTypes.func.isRequired,
   initialIndex: PropTypes.number.isRequired,
   useSpellChecker: PropTypes.bool.isRequired,
-  onSelectSpellCheckerLocale: PropTypes.func.isRequired,
   deeplinkingUrl: PropTypes.string,
   showAddServerButton: PropTypes.bool.isRequired,
 };

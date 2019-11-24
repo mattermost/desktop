@@ -131,10 +131,6 @@ function teamConfigChange(updatedTeams) {
   config.set('teams', updatedTeams);
 }
 
-function handleSelectSpellCheckerLocale(locale) {
-  config.set('spellCheckerLocale', locale);
-}
-
 ReactDOM.render(
   <MainPage
     teams={teams}
@@ -142,7 +138,6 @@ ReactDOM.render(
     onBadgeChange={showBadge}
     onTeamConfigChange={teamConfigChange}
     useSpellChecker={config.useSpellChecker}
-    onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}
     deeplinkingUrl={deeplinkingUrl}
     showAddServerButton={config.enableServerManagement}
   />,

@@ -11,9 +11,6 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 
 import SettingsPage from './components/SettingsPage.jsx';
-import contextMenu from './js/contextMenu';
-
-contextMenu.setup(remote.getCurrentWindow());
 
 ReactDOM.render(
   <SettingsPage/>,

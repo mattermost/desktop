@@ -14,8 +14,7 @@
     "url": "git://github.com/mattermost/desktop.git"
   },
   "scripts": {
-    "postinstall": "electron-builder install-app-deps && npm run extract-dict",
-    "extract-dict": "node scripts/extract_dict.js src/node_modules/simple-spellchecker/dict",
+    "postinstall": "electron-builder install-app-deps",
     "build": "npm-run-all build:*",
     "build:main": "webpack-cli --bail --config webpack.config.main.js",
     "build:renderer": "webpack-cli --bail --config webpack.config.renderer.js",

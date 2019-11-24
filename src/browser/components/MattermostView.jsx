@@ -12,7 +12,6 @@ import PropTypes from 'prop-types';
 import {ipcRenderer, remote, shell} from 'electron';
 import log from 'electron-log';
 
-import contextMenu from '../js/contextMenu';
 import Utils from '../../utils/util';
 import {protocols} from '../../../electron-builder.json';
 const scheme = protocols[0].schemes[0];
@@ -32,7 +31,6 @@ export default class MattermostView extends React.Component {
 
     this.state = {
       errorInfo: null,
-      isContextMenuAdded: false,
       reloadTimeoutID: null,
       isLoaded: false,
       basename: '/',
@@ -153,18 +151,6 @@ export default class MattermostView extends React.Component {
       if (this.props.active) {
         webview.blur();
         webview.focus();
-      }
-      if (!this.state.isContextMenuAdded) {
-        contextMenu.setup(webview, {
-          useSpellChecker: this.props.useSpellChecker,
-          onSelectSpellCheckerLocale: (locale) => {
-            if (this.props.onSelectSpellCheckerLocale) {
-              this.props.onSelectSpellCheckerLocale(locale);
-            }
-            webview.send('set-spellchecker');
-          },
-        });
-        this.setState({isContextMenuAdded: true});
       }
     });
 
@@ -362,7 +348,6 @@ MattermostView.propTypes = {
   active: PropTypes.bool,
   withTab: PropTypes.bool,
   useSpellChecker: PropTypes.bool,
-  onSelectSpellCheckerLocale: PropTypes.func,
 };
 
 /* eslint-enable react/no-set-state */

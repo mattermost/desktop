@@ -29,7 +29,6 @@ import allowProtocolDialog from './main/allowProtocolDialog';
 import AppStateManager from './main/AppStateManager';
 import initCookieManager from './main/cookieManager';
 import {shouldBeHiddenOnStartup} from './main/utils';
-import SpellChecker from './main/SpellChecker';
 import UserActivityMonitor from './main/UserActivityMonitor';
 import Utils from './utils/util';
 import parseArgs from './main/ParseArgs';
@@ -58,7 +57,6 @@ let mainWindow = null;
 let popupWindow = null;
 let hideOnStartup = null;
 let certificateStore = null;
-let spellChecker = null;
 let deeplinkingUrl = null;
 let scheme = null;
 let appState = null;
@@ -187,10 +185,6 @@ function initializeBeforeAppReady() {
     global.willAppQuit = true;
   }
 
-  if (!config.spellCheckerLocale) {
-    config.set('spellCheckerLocale', SpellChecker.getSpellCheckerLocale(app.getLocale()));
-  }
-
   allowProtocolDialog.init(mainWindow);
 
   if (isDev) {
@@ -208,11 +202,6 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('notified', handleNotifiedEvent);
   ipcMain.on('update-title', handleUpdateTitleEvent);
   ipcMain.on('update-menu', handleUpdateMenuEvent);
-  ipcMain.on('update-dict', handleUpdateDictionaryEvent);
-  ipcMain.on('checkspell', handleCheckSpellingEvent);
-  ipcMain.on('get-spelling-suggestions', handleGetSpellingSuggestionsEvent);
-  ipcMain.on('get-spellchecker-locale', handleGetSpellcheckerLocaleEvent);
-  ipcMain.on('reply-on-spellchecker-is-ready', handleReplyOnSpellcheckerIsReadyEvent);
   if (shouldShowTrayIcon()) {
     ipcMain.on('update-unread', handleUpdateUnreadEvent);
   }
@@ -635,8 +624,6 @@ function initializeAfterAppReady() {
 
   ipcMain.emit('update-menu', true, config.data);
 
-  ipcMain.emit('update-dict');
-
   // supported permission types
   const supportedPermissionTypes = [
     'media',
@@ -770,53 +757,6 @@ function handleUpdateMenuEvent(event, configData) {
       trayIcon.setContextMenu(tMenu);
     }
   }
-}
-
-function handleUpdateDictionaryEvent() {
-  if (config.useSpellChecker) {
-    spellChecker = new SpellChecker(
-      config.spellCheckerLocale,
-      path.resolve(app.getAppPath(), 'node_modules/simple-spellchecker/dict'),
-      (err) => {
-        if (err) {
-          console.error(err);
-        }
-      });
-  }
-}
-
-function handleCheckSpellingEvent(event, word) {
-  let res = null;
-  if (config.useSpellChecker && spellChecker.isReady() && word !== null) {
-    res = spellChecker.spellCheck(word);
-  }
-  event.returnValue = res;
-}
-
-function handleGetSpellingSuggestionsEvent(event, word) {
-  if (config.useSpellChecker && spellChecker.isReady() && word !== null) {
-    event.returnValue = spellChecker.getSuggestions(word, 10);
-  } else {
-    event.returnValue = [];
-  }
-}
-
-function handleGetSpellcheckerLocaleEvent(event) {
-  event.returnValue = config.spellCheckerLocale;
-}
-
-function handleReplyOnSpellcheckerIsReadyEvent(event) {
-  if (!spellChecker) {
-    return;
-  }
-
-  if (spellChecker.isReady()) {
-    event.sender.send('spellchecker-is-ready');
-    return;
-  }
-  spellChecker.once('ready', () => {
-    event.sender.send('spellchecker-is-ready');
-  });
 }
 
 //
