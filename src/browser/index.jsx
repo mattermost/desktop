@@ -69,7 +69,7 @@ function showBadgeWindows(sessionExpired, unreadCount, mentionCount) {
     const dataURL = createBadgeDataURL('•');
     sendBadge(dataURL, 'Session Expired: Please sign in to continue receiving notifications.');
   } else if (mentionCount > 0) {
-    const dataURL = createBadgeDataURL(mentionCount.toString());
+    const dataURL = createBadgeDataURL((mentionCount > 99) ? '99+' : mentionCount.toString(), mentionCount > 99);
     sendBadge(dataURL, 'You have unread mentions (' + mentionCount + ')');
   } else if (unreadCount > 0 && config.showUnreadBadge) {
     const dataURL = createBadgeDataURL('•');
