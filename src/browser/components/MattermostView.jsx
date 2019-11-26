@@ -50,6 +50,7 @@ export default class MattermostView extends React.Component {
     this.getSrc = this.getSrc.bind(this);
     this.handleDeepLink = this.handleDeepLink.bind(this);
     this.handleUserActivityUpdate = this.handleUserActivityUpdate.bind(this);
+    this.handleExitFullscreen = this.handleExitFullscreen.bind(this);
 
     this.webviewRef = React.createRef();
   }
@@ -229,11 +230,13 @@ export default class MattermostView extends React.Component {
 
     // start listening for user status updates from main
     ipcRenderer.on('user-activity-update', this.handleUserActivityUpdate);
+    ipcRenderer.on('exit-fullscreen', this.handleExitFullscreen);
   }
 
   componentWillUnmount() {
     // stop listening for user status updates from main
     ipcRenderer.removeListener('user-activity-update', this.handleUserActivityUpdate);
+    ipcRenderer.removeListener('exit-fullscreen', this.handleExitFullscreen);
   }
 
   reload() {
@@ -316,6 +319,11 @@ export default class MattermostView extends React.Component {
   handleUserActivityUpdate(event, status) {
     // pass user activity update to the webview
     this.webviewRef.current.send('user-activity-update', status);
+  }
+
+  handleExitFullscreen() {
+    // pass exit fullscreen request to the webview
+    this.webviewRef.current.send('exit-fullscreen');
   }
 
   render() {

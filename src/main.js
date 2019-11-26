@@ -465,6 +465,13 @@ function handleAppWebContentsCreated(dc, contents) {
       return;
     }
     if (!input.shift && !input.control && !input.alt && !input.meta) {
+      // hacky fix for https://mattermost.atlassian.net/browse/MM-19226
+      if ((input.key === 'Escape' || input.key === 'f') && input.type === 'keyDown') {
+        // only do this when in fullscreen on a mac
+        if (mainWindow.isFullScreen() && process.platform === 'darwin') {
+          mainWindow.webContents.send('exit-fullscreen');
+        }
+      }
       return;
     }
 
@@ -551,6 +558,7 @@ function initializeAfterAppReady() {
 
   mainWindow = createMainWindow(config.data, {
     hideOnStartup,
+    trayIconShown: process.platform === 'win32' || config.showTrayIcon,
     linuxAppIcon: path.join(assetsDir, 'appicon.png'),
     deeplinkingUrl,
   });
