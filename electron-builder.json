@@ -73,9 +73,20 @@
   },
   "dmg": {
     "background": "resources/osx/DMG_BG.png",
-    "iconSize": 140,
-    "iconTextSize": 18,
-    "sign": false
+    "contents": [
+      {
+        "x": 152,
+        "y": 201
+      },
+      {
+        "x": 445,
+        "y": 201,
+        "type": "link",
+        "path": "/Applications"
+      }
+    ],
+    "iconSize": 110,
+    "iconTextSize": 13
   },
   "squirrelWindows": {
     "iconUrl": "file://resources/icon.ico",
