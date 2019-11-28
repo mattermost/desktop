@@ -69,7 +69,8 @@
       }
     ],
     "hardenedRuntime": true,
-    "gatekeeperAssess": true
+    "gatekeeperAssess": true,
+    "extendInfo": "resources/osx/Info.plist"
   },
   "dmg": {
     "background": "resources/osx/DMG_BG.png",
