@@ -15,7 +15,7 @@ div[id*="-permissionDialog"] {
 .finder {
   position: fixed;
   top: 0;
-  right: 160px;
+  right: 200px;
   padding: 4px;
   background: #eee;
   border: 1px solid #d7d7d7;

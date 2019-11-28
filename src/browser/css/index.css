@@ -70,7 +70,7 @@ body {
   background-color: rgba(229, 229, 229, 1);
 }
 
-.topBar .three-dot-menu:hover, .topBar .three-dot-menu:focus {
+.topBar .three-dot-menu:hover, .topBar .three-dot-menu:focus, .topBar .three-dot-menu:active {
   outline: none;
   background-color: rgba(0,0,0,0.3);
   -webkit-box-shadow: inset 0px 0px 10px 5px #e5e5e5;
@@ -78,11 +78,18 @@ body {
   box-shadow: inset 0px 0px 10px 5px #e5e5e5;
 }
 
-.topBar.darkMode .three-dot-menu:hover, .topBar.darkMode .three-dot-menu:focus {
+.topBar.darkMode .three-dot-menu:hover, .topBar.darkMode .three-dot-menu:focus, .topBar.darkMode .three-dot-menu:active {
   background-color: rgba(61,60,64,0.7);
   -webkit-box-shadow: inset 0px 0px 10px 10px #202124;
   -moz-box-shadow: inset 0px 0px 10px 10px #202124;
   box-shadow: inset 0px 0px 10px 10px #202124;
+}
+
+.topBar.macOS .three-dot-menu:hover, .topBar.macOS .three-dot-menu:focus, .topBar.macOS .three-dot-menu:active {
+  background-color: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+  box-shadow: none !important;
 }
 
 .topBar.macOS .three-dot-menu {
@@ -152,8 +159,19 @@ body {
 .topBar .title-bar-btns>.close-button:hover {
   background: #E81123 !important;
 }
+
+.topBar .title-bar-btns>.close-button:hover>img {
+  filter: invert(100%);
+  -webkit-filter: invert(100%);
+}
+
 .topBar .title-bar-btns>.close-button:active {
   background: #f1707a !important;
+}
+
+.topBar .title-bar-btns>.close-button:active>img {
+  filter: invert(100%);
+  -webkit-filter: invert(100%);
 }
 
 .topBar .title-bar-btns img {
