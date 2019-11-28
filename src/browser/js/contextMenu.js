@@ -52,7 +52,7 @@ export default {
     const actualOptions = Object.assign({}, defaultOptions, options);
     electronContextMenu({
       window: win,
-      prepend(params) {
+      prepend(_defaultActions, params) {
         if (actualOptions.useSpellChecker) {
           const prependMenuItems = [];
           if (params.isEditable && params.misspelledWord !== '') {
