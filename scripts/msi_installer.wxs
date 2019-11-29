@@ -53,18 +53,8 @@
     <?if $(var.Platform) != x64 ?>
     <Condition Message="!(loc.Requires32Bit)"><![CDATA[NOT VersionNT64]]></Condition>
     <?endif ?>
-    <!--<MajorUpgrade
-      DowngradeErrorMessage="A later version of [ProductName] is already installed. Setup will now exit." />-->
+    <MajorUpgrade AllowDowngrades="yes" />
     <!-- Retrieve previous installation path -->
-    <!-- from https://stackoverflow.com/questions/114165/how-to-implement-wix-installer-upgrade -->
-    <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
-    <Upgrade Id="8523DAF0-699D-4CC7-9A65-C5E696A9DE6D">  
-      <UpgradeVersion
-          OnlyDetect="no"
-          Minimum="4.3.0" Maximum="99.0.0"
-          Property="PREVIOUSVERSIONSINSTALLED"
-          IncludeMinimum="yes" IncludeMaximum="no" />
-    </Upgrade>
     <Property Id="INSTALLDIR">
       <RegistrySearch Id="DetermineInstallLocation" Type="raw" Root="HKLM" Key="Software\Mattermost\Desktop" Name="InstallLocation" Win64="$(var.Win64)" />
     </Property>
@@ -136,7 +126,6 @@
     <InstallExecuteSequence>
       <Custom Action="KillApp" Before="InstallValidate" />
       <Custom Action="LaunchApp" After="InstallFinalize">Installed</Custom>
-      <RemoveExistingProducts Before="InstallInitialize" /> 
     </InstallExecuteSequence>
     <CustomAction Id="LaunchApp" FileKey="MattermostDesktopEXE" ExeCommand="" Return="asyncNoWait" />
     <CustomAction Id="KillApp" Directory="INSTALLDIR" Return="ignore" ExeCommand="&quot;[SystemFolder]taskkill.exe&quot; /F /IM &quot;Mattermost.exe&quot;" />
