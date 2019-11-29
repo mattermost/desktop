@@ -232,7 +232,7 @@ jobs:
             mkdir -p ./aws-s3-dist
             cp ./dist/{macos-release,win-release,linux}/* ./aws-s3-dist
       - aws-s3/copy:
-          from: ./dist/aws-s3-dist/
+          from: ./aws-s3-dist/
           to: s3://releases.mattermost.com/desktop/$(jq -r .version package.json)/
           arguments: --acl public-read --cache-control "no-cache" --recursive
 
