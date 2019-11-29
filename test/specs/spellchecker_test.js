@@ -20,6 +20,9 @@ describe('main/Spellchecker.js', function() {
       SpellChecker.getSpellCheckerLocale('es').should.equal('es-ES');
       SpellChecker.getSpellCheckerLocale('es-ES').should.equal('es-ES');
 
+      SpellChecker.getSpellCheckerLocale('lt').should.equal('lt-LT');
+      SpellChecker.getSpellCheckerLocale('lt-LT').should.equal('lt-LT');
+
       SpellChecker.getSpellCheckerLocale('nl').should.equal('nl-NL');
       SpellChecker.getSpellCheckerLocale('nl-NL').should.equal('nl-NL');
 
