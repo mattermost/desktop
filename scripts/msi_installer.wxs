@@ -136,7 +136,6 @@
     <InstallExecuteSequence>
       <Custom Action="KillApp" Before="InstallValidate" />
       <Custom Action="LaunchApp" After="InstallFinalize">Installed</Custom>
-      <!-- <RemoveExistingProducts After="InstallFinalize" /> -->
       <RemoveExistingProducts Before="InstallInitialize" /> 
     </InstallExecuteSequence>
     <CustomAction Id="LaunchApp" FileKey="MattermostDesktopEXE" ExeCommand="" Return="asyncNoWait" />
