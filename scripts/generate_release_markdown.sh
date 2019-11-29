@@ -1,7 +1,10 @@
 #!/bin/bash
 set -eu
 
-function print_link() {
+# Requires sha256sum, on osx you can do
+# brew install coreutils
+
+function print_link {
   local URL="${1}"
   local CHECKSUM="$(curl -s -S -L "${URL}" | sha256sum | awk '{print $1}')"
   echo "- ${URL}"
@@ -15,13 +18,16 @@ cat <<-MD
 ### Mattermost Desktop ${VERSION} has been cut!
 The download links can be found below.
 
-#### Windows
-$(print_link "${BASE_URL}/mattermost-setup-${VERSION}-win32.exe")
-$(print_link "${BASE_URL}/mattermost-setup-${VERSION}-win64.exe")
+#### Windows - msi files (beta)
+$(print_link "${BASE_URL}/mattermost-desktop-v${VERSION}-x64.msi")
+$(print_link "${BASE_URL}/mattermost-desktop-v${VERSION}-x86.msi")
+
+#### Windows - setup exe files
+$(print_link "${BASE_URL}/mattermost-desktop-setup-${VERSION}-win.exe")
 
 #### Windows - zip files
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win32.zip")
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win64.zip")
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win-ia32.zip")
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win-x64.zip")
 
 #### Mac
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-mac.dmg")
