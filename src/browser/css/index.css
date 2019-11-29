@@ -1,5 +1,12 @@
 @import url("components/index.css");
 
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 600;
+  src: url('../../assets/fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_cyrillic_vietnamese-600.woff2') format('woff2');
+}
+
 html {
   height: 100%;
 }
@@ -108,10 +115,6 @@ body {
   color: rgba(243,243,243,0.7);
 }
 
-.topBar.macOS .title-bar-btns {
-  display: none;
-}
-
 .topBar.darkMode .title-bar-btns {
   color: rgba(243,243,243,0.7);
   background-color: #202124;
@@ -201,8 +204,4 @@ body {
 
 .topBar.darkMode .overlay-gradient {
   background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #202124 100%);
-}
-
-.topBar.macOS .overlay-gradient {
-  display: none;
 }

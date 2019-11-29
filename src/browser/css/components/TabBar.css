@@ -117,9 +117,6 @@
 }
 
 .TabBar>li.TabBar-addServerButton>a{
-  font-family: "Open Sans";	
-  font-size: 20px;	
-  font-weight: bold;
   color: rgba(61,60,64,0.7);
   transition: opacity 0.3s ease-in;
 }

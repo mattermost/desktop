@@ -213,6 +213,9 @@ export default class Config extends EventEmitter {
 
       // validate based on config file version
       switch (configData.version) {
+      case 2:
+        configData = Validator.validateV2ConfigData(configData);
+        break;
       case 1:
         configData = Validator.validateV1ConfigData(configData);
         break;

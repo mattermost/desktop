@@ -7,7 +7,7 @@
  * @param {number} version - Scheme version. (Not application version)
  */
 const defaultPreferences = {
-  version: 1,
+  version: 2,
   teams: [],
   showTrayIcon: false,
   trayIconTheme: 'light',

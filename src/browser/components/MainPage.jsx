@@ -591,6 +591,34 @@ export default class MainPage extends React.Component {
       );
     }
 
+    let overlayGradient;
+    if (process.platform !== 'darwin') {
+      overlayGradient = (
+        <span className='overlay-gradient'/>
+      );
+    }
+
+    let titleBarButtons;
+    if (process.platform !== 'darwin') {
+      titleBarButtons = (
+        <span className='title-bar-btns'>
+          <div
+            className='button min-button'
+            onClick={this.handleMinimize}
+          >
+            <img src={minimizeButton}/>
+          </div>
+          {maxButton}
+          <div
+            className='button close-button'
+            onClick={this.handleClose}
+          >
+            <img src={closeButton}/>
+          </div>
+        </span>
+      );
+    }
+
     const topRow = (
       <Row
         className={topBarClassName}
@@ -609,22 +637,8 @@ export default class MainPage extends React.Component {
             <DotsVerticalIcon/>
           </button>
           {tabsRow}
-          <span className='overlay-gradient'/>
-          <span className='title-bar-btns'>
-            <div
-              className='button min-button'
-              onClick={this.handleMinimize}
-            >
-              <img src={minimizeButton}/>
-            </div>
-            {maxButton}
-            <div
-              className='button close-button'
-              onClick={this.handleClose}
-            >
-              <img src={closeButton}/>
-            </div>
-          </span>
+          {overlayGradient}
+          {titleBarButtons}
         </div>
       </Row>
     );
@@ -652,7 +666,7 @@ export default class MainPage extends React.Component {
         <MattermostView
           key={id}
           id={id}
-          withTab={true}
+
           useSpellChecker={this.props.useSpellChecker}
           onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
           src={teamUrl}

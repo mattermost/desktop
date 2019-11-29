@@ -333,14 +333,10 @@ export default class MattermostView extends React.Component {
         className='errorView'
         errorInfo={this.state.errorInfo}
         active={this.props.active}
-        withTab={this.props.withTab}
       />) : null;
 
     // Need to keep webview mounted when failed to load.
     const classNames = ['mattermostView'];
-    if (this.props.withTab) {
-      classNames.push('mattermostView-with-tab');
-    }
     if (!this.props.active || this.state.errorInfo) {
       classNames.push('mattermostView-hidden');
     }
@@ -378,7 +374,6 @@ MattermostView.propTypes = {
   onBadgeChange: PropTypes.func,
   src: PropTypes.string,
   active: PropTypes.bool,
-  withTab: PropTypes.bool,
   useSpellChecker: PropTypes.bool,
   onSelectSpellCheckerLocale: PropTypes.func,
 };
