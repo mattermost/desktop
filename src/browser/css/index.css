@@ -63,33 +63,32 @@ body {
   float: left;
   padding-top: 5px;
   border: none;
-  flex: 0 0 36px;
+  flex: 0 0 26px;
   z-index: 9;
   color: rgba(61,60,64,0.7);
   -webkit-app-region: no-drag;
   background-color: rgba(229, 229, 229, 1);
 }
 
-.topBar .three-dot-menu:hover, .topBar .three-dot-menu:focus, .topBar .three-dot-menu:active {
+.topBar .three-dot-menu svg {
+  border-radius: 100px;
+}
+
+.topBar .three-dot-menu:focus {
   outline: none;
-  background-color: rgba(0,0,0,0.3);
-  -webkit-box-shadow: inset 0px 0px 10px 5px #e5e5e5;
-  -moz-box-shadow: inset 0px 0px 10px 5px #e5e5e5;
-  box-shadow: inset 0px 0px 10px 5px #e5e5e5;
 }
 
-.topBar.darkMode .three-dot-menu:hover, .topBar.darkMode .three-dot-menu:focus, .topBar.darkMode .three-dot-menu:active {
-  background-color: rgba(61,60,64,0.7);
-  -webkit-box-shadow: inset 0px 0px 10px 10px #202124;
-  -moz-box-shadow: inset 0px 0px 10px 10px #202124;
-  box-shadow: inset 0px 0px 10px 10px #202124;
+.topBar .three-dot-menu:hover svg, .topBar .three-dot-menu:focus svg, .topBar .three-dot-menu:active svg {
+  outline: none;
+  background-color: #c8c8c8;
 }
 
-.topBar.macOS .three-dot-menu:hover, .topBar.macOS .three-dot-menu:focus, .topBar.macOS .three-dot-menu:active {
+.topBar.darkMode .three-dot-menu:hover svg, .topBar.darkMode .three-dot-menu:focus svg, .topBar.darkMode .three-dot-menu:active svg {
+  background-color: #383A3F;
+}
+
+.topBar.macOS .three-dot-menu:hover svg, .topBar.macOS .three-dot-menu:focus svg, .topBar.macOS .three-dot-menu:active svg {
   background: none !important;
-  -webkit-box-shadow: none !important;
-  -moz-box-shadow: none !important;
-  box-shadow: none !important;
 }
 
 .topBar.macOS .three-dot-menu {
