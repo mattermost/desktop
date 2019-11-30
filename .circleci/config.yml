@@ -279,14 +279,14 @@ workflows:
           filters:
             branches:
               ignore:
-                - /^release-\d+(\.\d+){1,2}(-(rc|test).*)?/
+                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
       - build-mac-no-dmg:
           requires:
             - check
           filters:
             branches:
               ignore:
-                - /^release-\d+(\.\d+){1,2}(-(rc|test).*)?/
+                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
       - msi_installer:
           requires:
             - check
@@ -297,7 +297,7 @@ workflows:
                 # only for release and release candidates
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
-                - /^release-\d+(\.\d+){1,2}(-(rc|test).*)?/
+                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
       - mac_installer:
           requires:
             - check
@@ -305,7 +305,7 @@ workflows:
           filters:
             branches:
               only:
-                - /^release-\d+(\.\d+){1,2}(-(rc|test).*)?/
+                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
       - store_artifacts:
           # for master/PR builds
           requires:
@@ -315,7 +315,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - /^release-\d+(\.\d+){1,2}(-(rc|test).*)?/
+                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
       - upload_to_s3:
           # for release builds
           requires:
@@ -324,9 +324,6 @@ workflows:
             - build-linux
           context: mattermost-ci-s3
           filters:
-            branches:
-              only:
-                - /^release-\d+(\.\d+){1,2}(-test.*)?/
             tags:
               only:
                 - /^v\d+(\.\d+){1,2}$/
@@ -340,4 +337,4 @@ workflows:
           filters:
             branches:
               only:
-                - /^release-\d+(\.\d+){1,2}(-(rc|test).*)?/
+                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
