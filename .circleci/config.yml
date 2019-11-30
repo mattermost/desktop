@@ -254,11 +254,16 @@ jobs:
             go get github.com/tcnksm/ghr
             VERSION=$(jq -r .version package.json)
             RELEASE_TITLE="v${VERSION} ($(date -u "+%Y-%m-%d"))"
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -draft \
+            ghr \
+              -t ${GITHUB_TOKEN} \
+              -u ${CIRCLE_PROJECT_USERNAME} \
+              -draft \
               --body="$(./scripts/generate_release_markdown.sh $VERSION)" \
               --name="${RELEASE_TITLE}" $( [[ $VERSION =~ "-rc" ]] && printf %s "-prerelease") \
-              -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} \
-              -delete ${VERSION} ./ghr-dist
+              -r ${CIRCLE_PROJECT_REPONAME} \
+              -c ${CIRCLE_SHA1} \
+              -delete \
+              v${VERSION} ./ghr-dist
 
 workflows:
   version: 2
