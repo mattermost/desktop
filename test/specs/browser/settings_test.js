@@ -12,7 +12,7 @@ describe('browser/settings.html', function desc() {
   this.timeout(30000);
 
   const config = {
-    version: 1,
+    version: 2,
     teams: [{
       name: 'example',
       url: env.mattermostURL,
@@ -34,6 +34,7 @@ describe('browser/settings.html', function desc() {
     useSpellChecker: true,
     enableHardwareAcceleration: true,
     autostart: true,
+    darkMode: false,
   };
 
   beforeEach(async () => {

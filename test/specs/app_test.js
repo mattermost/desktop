@@ -72,10 +72,11 @@ describe('application', function desc() {
 
   it('should show index.html when there is config file', async () => {
     const config = {
-      version: 1,
+      version: 2,
       teams: [{
         name: 'example',
         url: env.mattermostURL,
+        order: 0,
       }, {
         name: 'github',
         url: 'https://github.com/',
@@ -92,6 +93,7 @@ describe('application', function desc() {
       useSpellChecker: true,
       enableHardwareAcceleration: true,
       autostart: true,
+      darkMode: false,
     };
     fs.writeFileSync(env.configFilePath, JSON.stringify(config));
     await this.app.restart();

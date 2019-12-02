@@ -14,10 +14,11 @@ describe('browser/index.html', function desc() {
   this.timeout(30000);
 
   const config = {
-    version: 1,
+    version: 2,
     teams: [{
       name: 'example',
       url: env.mattermostURL,
+      order: 0,
     }, {
       name: 'github',
       url: 'https://github.com/',
@@ -34,6 +35,7 @@ describe('browser/index.html', function desc() {
     useSpellChecker: true,
     enableHardwareAcceleration: true,
     autostart: true,
+    darkMode: false,
   };
 
   const serverPort = 8181;

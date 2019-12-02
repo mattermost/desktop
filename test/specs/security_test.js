@@ -16,13 +16,15 @@ describe.skip('security', function desc() {
   const testURL = `http://localhost:${serverPort}`;
 
   const config = {
-    version: 1,
+    version: 2,
     teams: [{
       name: 'example_1',
       url: testURL,
+      order: 0,
     }, {
       name: 'example_2',
       url: testURL,
+      order: 1,
     }],
   };
 
