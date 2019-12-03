@@ -315,7 +315,7 @@ workflows:
             - msi_installer
             - mac_installer
             - build-linux
-          context: mattermost-ci-s3
+          context: mattermost-release-s3
           filters:
             tags:
               only:
