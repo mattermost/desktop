@@ -80,6 +80,7 @@ describe('application', function desc() {
       }, {
         name: 'github',
         url: 'https://github.com/',
+        order: 1,
       }],
       showTrayIcon: false,
       trayIconTheme: 'light',

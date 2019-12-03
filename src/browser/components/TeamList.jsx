@@ -20,6 +20,7 @@ export default class TeamList extends React.Component {
         url: '',
         name: '',
         index: false,
+        order: props.teams.length,
       },
     };
 
@@ -33,7 +34,13 @@ export default class TeamList extends React.Component {
   handleTeamRemove(index) {
     console.log(index);
     const teams = this.props.teams;
+    const removedOrder = this.props.teams[index].order;
     teams.splice(index, 1);
+    teams.forEach((value) => {
+      if (value.order > removedOrder) {
+        value.order--;
+      }
+    });
     this.props.onTeamsChange(teams);
   }
 
@@ -44,6 +51,7 @@ export default class TeamList extends React.Component {
     if ((typeof team.index !== 'undefined') && teams[team.index]) {
       teams[team.index].name = team.name;
       teams[team.index].url = team.url;
+      teams[team.index].order = team.order;
     } else {
       teams.push(team);
     }
@@ -54,19 +62,21 @@ export default class TeamList extends React.Component {
         url: '',
         name: '',
         index: false,
+        order: teams.length,
       },
     });
 
     this.props.onTeamsChange(teams);
   }
 
-  handleTeamEditing(teamName, teamUrl, teamIndex) {
+  handleTeamEditing(teamName, teamUrl, teamIndex, teamOrder) {
     this.setState({
       showEditTeamForm: true,
       team: {
         url: teamUrl,
         name: teamName,
         index: teamIndex,
+        order: teamOrder,
       },
     });
   }
@@ -89,7 +99,7 @@ export default class TeamList extends React.Component {
 
       function handleTeamEditing() {
         document.activeElement.blur();
-        self.handleTeamEditing(team.name, team.url, i);
+        self.handleTeamEditing(team.name, team.url, i, team.order);
       }
 
       function handleTeamClick() {
@@ -111,6 +121,7 @@ export default class TeamList extends React.Component {
 
     const addServerForm = (
       <NewTeamModal
+        currentOrder={this.props.teams.length}
         show={this.props.showAddTeamForm || this.state.showEditTeamForm}
         editMode={this.state.showEditTeamForm}
         onClose={() => {
@@ -120,6 +131,7 @@ export default class TeamList extends React.Component {
               name: '',
               url: '',
               index: false,
+              order: this.props.teams.length,
             },
           });
           this.props.setAddTeamFormVisibility(false);
@@ -128,6 +140,7 @@ export default class TeamList extends React.Component {
           const teamData = {
             name: newTeam.name,
             url: newTeam.url,
+            order: newTeam.order,
           };
           if (this.props.showAddTeamForm) {
             this.props.addServer(teamData);
@@ -141,6 +154,7 @@ export default class TeamList extends React.Component {
               name: '',
               url: '',
               index: false,
+              order: newTeam.order + 1,
             },
           });
           this.render();

@@ -22,6 +22,7 @@ describe('browser/index.html', function desc() {
     }, {
       name: 'github',
       url: 'https://github.com/',
+      order: 1,
     }],
     showTrayIcon: false,
     trayIconTheme: 'light',
@@ -99,10 +100,11 @@ describe('browser/index.html', function desc() {
   it.skip('should show error when using incorrect URL', async () => {
     this.timeout(30000);
     fs.writeFileSync(env.configFilePath, JSON.stringify({
-      version: 1,
+      version: 2,
       teams: [{
         name: 'error_1',
         url: 'http://false',
+        order: 0,
       }],
     }));
     await this.app.restart();
@@ -112,10 +114,11 @@ describe('browser/index.html', function desc() {
 
   it('should set window title by using webview\'s one', async () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
-      version: 1,
+      version: 2,
       teams: [{
         name: 'title_test',
         url: `http://localhost:${serverPort}`,
+        order: 0,
       }],
     }));
     await this.app.restart();
@@ -127,13 +130,15 @@ describe('browser/index.html', function desc() {
   // Skip because it's very unstable in CI
   it.skip('should update window title when the activated tab\'s title is updated', async () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
-      version: 1,
+      version: 2,
       teams: [{
         name: 'title_test_0',
         url: `http://localhost:${serverPort}`,
+        order: 0,
       }, {
         name: 'title_test_1',
         url: `http://localhost:${serverPort}`,
+        order: 1,
       }],
     }));
     await this.app.restart();
@@ -163,13 +168,15 @@ describe('browser/index.html', function desc() {
   // Skip because it's very unstable in CI
   it.skip('should update window title when a tab is selected', async () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
-      version: 1,
+      version: 2,
       teams: [{
         name: 'title_test_0',
         url: `http://localhost:${serverPort}`,
+        order: 0,
       }, {
         name: 'title_test_1',
         url: `http://localhost:${serverPort}`,
+        order: 1,
       }],
     }));
     await this.app.restart();

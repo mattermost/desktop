@@ -694,6 +694,7 @@ export default class MainPage extends React.Component {
     }
     const modal = (
       <NewTeamModal
+        currentOrder={this.props.teams.length}
         show={this.state.showNewTeamModal}
         restoreFocus={false}
         onClose={() => {

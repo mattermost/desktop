@@ -360,8 +360,13 @@ describe('browser/settings.html', function desc() {
 
       await this.app.client.waitForVisible('#serversSaveIndicator', 10000, true);
 
+      const expectedConfig = JSON.parse(JSON.stringify(config.teams.slice(1)));
+      expectedConfig.forEach((value) => {
+        value.order--;
+      });
+
       const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-      savedConfig.teams.should.deep.equal(config.teams.slice(1));
+      savedConfig.teams.should.deep.equal(expectedConfig);
     });
 
     it('should NOT remove existing team on click Cancel', async () => {
@@ -515,6 +520,7 @@ describe('browser/settings.html', function desc() {
         savedConfig.teams.should.deep.contain({
           name: 'TestTeam',
           url: 'http://example.org',
+          order: 2,
         });
       });
     });

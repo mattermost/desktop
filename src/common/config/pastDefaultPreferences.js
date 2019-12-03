@@ -8,6 +8,7 @@ const pastDefaultPreferences = {
     url: '',
   },
   1: {
+    version: 1,
     teams: [],
     showTrayIcon: false,
     trayIconTheme: 'light',

@@ -136,7 +136,7 @@ export function validateV1ConfigData(data) {
     // replace original teams
     data.teams = teams;
   }
-  return validateAgainstSchema(data, configDataSchemaV2);
+  return validateAgainstSchema(data, configDataSchemaV1);
 }
 
 export function validateV2ConfigData(data) {
@@ -156,7 +156,7 @@ export function validateV2ConfigData(data) {
     // replace original teams
     data.teams = teams;
   }
-  return validateAgainstSchema(data, configDataSchemaV1);
+  return validateAgainstSchema(data, configDataSchemaV2);
 }
 
 // validate certificate.json

@@ -13,13 +13,14 @@ export default class NewTeamModal extends React.Component {
     restoreFocus: true,
   };
 
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
 
     this.wasShown = false;
     this.state = {
       teamName: '',
       teamUrl: '',
+      teamOrder: props.currentOrder || 0,
       saveStarted: false,
     };
   }
@@ -29,6 +30,7 @@ export default class NewTeamModal extends React.Component {
       teamName: this.props.team ? this.props.team.name : '',
       teamUrl: this.props.team ? this.props.team.url : '',
       teamIndex: this.props.team ? this.props.team.index : false,
+      teamOrder: this.props.team ? this.props.team.order : (this.props.currentOrder || 0),
       saveStarted: false,
     });
   }
@@ -104,6 +106,7 @@ export default class NewTeamModal extends React.Component {
           url: this.state.teamUrl,
           name: this.state.teamName,
           index: this.state.teamIndex,
+          order: this.state.teamOrder,
         });
       }
     });
@@ -229,4 +232,5 @@ NewTeamModal.propTypes = {
   show: PropTypes.bool,
   modalContainer: PropTypes.object,
   restoreFocus: PropTypes.bool,
+  currentOrder: PropTypes.number,
 };
