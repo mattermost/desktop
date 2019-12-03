@@ -273,6 +273,13 @@ workflows:
       - build-linux:
           requires:
             - check
+          filters:
+            branches:
+              only:
+                - /.*/
+            tags:
+              ignore:
+                - /.*/
       - build-win-no-installer:
           requires:
             - check
