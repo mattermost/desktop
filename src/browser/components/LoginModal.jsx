@@ -38,7 +38,10 @@ export default class LoginModal extends React.Component {
     }
     const message = `${theServer} requires a username and password.`;
     return (
-      <Modal show={this.props.show}>
+      <Modal
+        restoreFocus={false}
+        show={this.props.show}
+      >
         <Modal.Header>
           <Modal.Title>{'Authentication Required'}</Modal.Title>
         </Modal.Header>

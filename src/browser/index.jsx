@@ -36,10 +36,6 @@ if (teams.every((team) => !team.order)) {
 
 remote.getCurrentWindow().removeAllListeners('focus');
 
-if (teams.length === 0) {
-  remote.getCurrentWindow().loadFile('browser/settings.html');
-}
-
 const parsedURL = url.parse(window.location.href, true);
 const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : getInitialIndex();
 
@@ -48,14 +44,12 @@ if (!parsedURL.query.index || parsedURL.query.index === null) {
   deeplinkingUrl = remote.getCurrentWindow().deeplinkingUrl;
 }
 
-config.on('update', (configData) => {
-  teams.splice(0, teams.length, ...configData.teams);
-});
-
+// when the config object changes here in the renderer process, tell the main process to reload its config object to get the changes
 config.on('synchronize', () => {
   ipcRenderer.send('reload-config');
 });
 
+// listen for any config reload requests from the main process to reload configuration changes here in the renderer process
 ipcRenderer.on('reload-config', () => {
   config.reload();
 });
@@ -193,23 +187,33 @@ function openMenu() {
   }
 }
 
-ReactDOM.render(
-  <MainPage
-    teams={teams}
-    initialIndex={initialIndex}
-    onBadgeChange={showBadge}
-    onTeamConfigChange={teamConfigChange}
-    useSpellChecker={config.useSpellChecker}
-    onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}
-    deeplinkingUrl={deeplinkingUrl}
-    showAddServerButton={config.enableServerManagement}
-    getDarkMode={getDarkMode}
-    setDarkMode={setDarkMode}
-    moveTabs={moveTabs}
-    openMenu={openMenu}
-  />,
-  document.getElementById('content')
-);
+function renderMainPage(teamsProp) {
+  ReactDOM.render(
+    <MainPage
+      teams={teamsProp}
+      config={config}
+      initialIndex={initialIndex}
+      onBadgeChange={showBadge}
+      onTeamConfigChange={teamConfigChange}
+      useSpellChecker={config.useSpellChecker}
+      onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}
+      deeplinkingUrl={deeplinkingUrl}
+      showAddServerButton={config.enableServerManagement}
+      getDarkMode={getDarkMode}
+      setDarkMode={setDarkMode}
+      moveTabs={moveTabs}
+      openMenu={openMenu}
+    />,
+    document.getElementById('content')
+  );
+}
+
+config.on('update', (configData) => {
+  const updatedteams = [...configData.teams];
+  renderMainPage(updatedteams);
+});
+
+renderMainPage(teams);
 
 // Deny drag&drop navigation in mainWindow.
 // Drag&drop is allowed in webview of index.html.

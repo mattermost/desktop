@@ -76,6 +76,7 @@
     "react-dom": "^16.6.3",
     "react-smooth-dnd": "github:mattermost/react-smooth-dnd#af6b471295007274560a375799622c1cd52d678a",
     "spectron": "^6.0.0",
+    "spectron-menu-addon": "^0.4.1",
     "style-loader": "^0.23.1",
     "url-loader": "^1.1.2",
     "webpack": "^4.27.0",

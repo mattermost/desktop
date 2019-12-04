@@ -96,8 +96,7 @@ describe('browser/index.html', function desc() {
       waitForVisible('#mattermostView0', 2000, true);
   });
 
-  // validation now prevents incorrect url's from being used
-  it.skip('should show error when using incorrect URL', async () => {
+  it('should show error when using incorrect URL', async () => {
     this.timeout(30000);
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       version: 2,
@@ -127,8 +126,7 @@ describe('browser/index.html', function desc() {
     windowTitle.should.equal('Mattermost Desktop testing html');
   });
 
-  // Skip because it's very unstable in CI
-  it.skip('should update window title when the activated tab\'s title is updated', async () => {
+  it('should update window title when the activated tab\'s title is updated', async () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       version: 2,
       teams: [{
@@ -144,10 +142,8 @@ describe('browser/index.html', function desc() {
     await this.app.restart();
     await this.app.client.pause(500);
 
-    // Note: Indices of webview are correct.
-    // Somehow they are swapped.
     await this.app.client.
-      windowByIndex(2).
+      windowByIndex(1).
       execute(() => {
         document.title = 'Title 0';
       });
@@ -156,7 +152,7 @@ describe('browser/index.html', function desc() {
     windowTitle.should.equal('Title 0');
 
     await this.app.client.
-      windowByIndex(1).
+      windowByIndex(2).
       execute(() => {
         document.title = 'Title 1';
       });
@@ -165,8 +161,7 @@ describe('browser/index.html', function desc() {
     windowTitle.should.equal('Title 0');
   });
 
-  // Skip because it's very unstable in CI
-  it.skip('should update window title when a tab is selected', async () => {
+  it('should update window title when a tab is selected', async () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
       version: 2,
       teams: [{
@@ -181,17 +176,15 @@ describe('browser/index.html', function desc() {
     }));
     await this.app.restart();
 
-    // Note: Indices of webview are correct.
-    // Somehow they are swapped.
     await this.app.client.pause(500);
 
     await this.app.client.
-      windowByIndex(2).
+      windowByIndex(1).
       execute(() => {
         document.title = 'Title 0';
       });
     await this.app.client.
-      windowByIndex(1).
+      windowByIndex(2).
       execute(() => {
         document.title = 'Title 1';
       });

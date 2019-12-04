@@ -7,54 +7,30 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} from 'react-bootstrap';
+import {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row, Modal} from 'react-bootstrap';
 
-import {ipcRenderer, remote} from 'electron';
+import {remote} from 'electron';
 import {debounce} from 'underscore';
-import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
-
-import Config from '../../common/config';
-
-import restoreButton from '../../assets/titlebar/chrome-restore.svg';
-import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
-import minimizeButton from '../../assets/titlebar/chrome-minimize.svg';
-import closeButton from '../../assets/titlebar/chrome-close.svg';
 
 import TeamList from './TeamList.jsx';
 import AutoSaveIndicator from './AutoSaveIndicator.jsx';
-import TabBar from './TabBar.jsx';
 
 const CONFIG_TYPE_SERVERS = 'servers';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
-const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
-
-function backToIndex(index) {
-  const target = typeof index === 'undefined' ? 0 : index;
-  const indexURL = remote.getGlobal('isDev') ? 'http://localhost:8080/browser/index.html' : `file://${remote.app.getAppPath()}/browser/index.html`;
-  remote.getCurrentWindow().loadURL(`${indexURL}?index=${target}`);
-}
-
-export default class SettingsPage extends React.Component {
+export default class SettingsModal extends React.PureComponent {
   constructor(props) {
     super(props);
 
-    this.state = this.convertConfigDataToState(config.data);
-    this.setState({
-      maximized: false,
-    });
+    this.state = this.convertConfigDataToState(this.props.config.data);
 
     this.trayIconThemeRef = React.createRef();
 
     this.saveQueue = [];
   }
 
-  getTabWebContents() {
-    return remote.webContents.getFocusedWebContents();
-  }
-
   componentDidMount() {
-    const self = this;
+    const {config} = this.props;
     config.on('update', (configData) => {
       this.updateSaveState();
       this.setState(this.convertConfigDataToState(configData, this.state));
@@ -71,153 +47,6 @@ export default class SettingsPage extends React.Component {
         }
       });
     });
-
-    function focusListener() {
-      self.setState({unfocused: false});
-    }
-
-    function blurListener() {
-      self.setState({unfocused: true});
-    }
-
-    const currentWindow = remote.getCurrentWindow();
-    currentWindow.on('focus', focusListener);
-    currentWindow.on('blur', blurListener);
-    if (currentWindow.isMaximized()) {
-      self.setState({maximized: true});
-    }
-    currentWindow.on('maximize', this.handleMaximizeState);
-    currentWindow.on('unmaximize', this.handleMaximizeState);
-
-    if (currentWindow.isFullScreen()) {
-      self.setState({fullScreen: true});
-    }
-    currentWindow.on('enter-full-screen', this.handleFullScreenState);
-    currentWindow.on('leave-full-screen', this.handleFullScreenState);
-
-    // when the config object changes here in the renderer process, tell the main process to reload its config object to get the changes
-    config.on('synchronize', () => {
-      ipcRenderer.send('reload-config');
-    });
-
-    // listen for any config reload requests from the main process to reload configuration changes here in the renderer process
-    ipcRenderer.on('reload-config', () => {
-      config.reload();
-    });
-
-    ipcRenderer.on('add-server', () => {
-      this.setState({
-        showAddTeamForm: true,
-      });
-    });
-
-    ipcRenderer.on('switch-tab', (event, key) => {
-      backToIndex(key);
-    });
-
-    ipcRenderer.on('zoom-in', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      if (activeTabWebContents.getZoomLevel() >= 9) {
-        return;
-      }
-      activeTabWebContents.setZoomLevel(activeTabWebContents.getZoomLevel() + 1);
-    });
-
-    ipcRenderer.on('zoom-out', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      if (activeTabWebContents.getZoomLevel() <= -8) {
-        return;
-      }
-      activeTabWebContents.setZoomLevel(activeTabWebContents.getZoomLevel() - 1);
-    });
-
-    ipcRenderer.on('zoom-reset', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.setZoomLevel(0);
-    });
-
-    ipcRenderer.on('undo', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.undo();
-    });
-
-    ipcRenderer.on('redo', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.redo();
-    });
-
-    ipcRenderer.on('cut', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.cut();
-    });
-
-    ipcRenderer.on('copy', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.copy();
-    });
-
-    ipcRenderer.on('paste', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.paste();
-    });
-
-    ipcRenderer.on('paste-and-match', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.pasteAndMatchStyle();
-    });
-
-    if (process.platform === 'darwin') {
-      self.setState({
-        isDarkMode: remote.systemPreferences.isDarkMode(),
-      });
-      remote.systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
-        self.setState({
-          isDarkMode: remote.systemPreferences.isDarkMode(),
-        });
-      });
-    } else {
-      self.setState({
-        isDarkMode: this.props.getDarkMode(),
-      });
-
-      ipcRenderer.on('set-dark-mode', () => {
-        this.setDarkMode();
-      });
-
-      this.threeDotMenu = React.createRef();
-      ipcRenderer.on('focus-three-dot-menu', () => {
-        if (this.threeDotMenu.current) {
-          this.threeDotMenu.current.focus();
-        }
-      });
-    }
   }
 
   convertConfigDataToState = (configData, currentState = {}) => {
@@ -246,7 +75,7 @@ export default class SettingsPage extends React.Component {
   }
 
   processSaveQueue = debounce(() => {
-    config.setMultiple(this.saveQueue.splice(0, this.saveQueue.length));
+    this.props.config.setMultiple(this.saveQueue.splice(0, this.saveQueue.length));
   }, 500);
 
   updateSaveState = () => {
@@ -294,7 +123,7 @@ export default class SettingsPage extends React.Component {
   }
 
   handleCancel = () => {
-    backToIndex();
+    remote.getCurrentWindow().send('toggle-settings-page');
   }
 
   handleChangeShowTrayIcon = () => {
@@ -434,154 +263,11 @@ export default class SettingsPage extends React.Component {
     });
   }
 
-  setDarkMode() {
-    this.setState({
-      isDarkMode: this.props.setDarkMode(),
-    });
-  }
-
-  handleClose = () => {
-    const win = remote.getCurrentWindow();
-    win.close();
-  }
-
-  handleMinimize = () => {
-    const win = remote.getCurrentWindow();
-    win.minimize();
-  }
-
-  handleMaximize = () => {
-    const win = remote.getCurrentWindow();
-    win.maximize();
-  }
-
-  handleRestore = () => {
-    const win = remote.getCurrentWindow();
-    win.restore();
-  }
-
-  openMenu = () => {
-    // @eslint-ignore
-    this.threeDotMenu.current.blur();
-    this.props.openMenu();
-  }
-
-  handleDoubleClick = () => {
-    const doubleClickAction = remote.systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
-    const win = remote.getCurrentWindow();
-    if (doubleClickAction === 'Minimize') {
-      win.minimize();
-    } else if (doubleClickAction === 'Maximize' && !win.isMaximized()) {
-      win.maximize();
-    } else if (doubleClickAction === 'Maximize' && win.isMaximized()) {
-      win.unmaximize();
-    }
-  }
-
-  handleMaximizeState = () => {
-    const win = remote.getCurrentWindow();
-    this.setState({maximized: win.isMaximized()});
-  }
-
-  handleFullScreenState = () => {
-    const win = remote.getCurrentWindow();
-    this.setState({fullScreen: win.isFullScreen()});
+  backToIndex = (index) => {
+    remote.getCurrentWindow().send('toggle-settings-page', index);
   }
 
   render() {
-    const tabsRow = (
-      <TabBar
-        id='tabBar'
-        isDarkMode={this.state.isDarkMode}
-        teams={[]}
-        showAddServerButton={false}
-      />
-    );
-
-    let topBarClassName = 'topBar';
-    if (process.platform === 'darwin') {
-      topBarClassName += ' macOS';
-    }
-    if (this.state.isDarkMode) {
-      topBarClassName += ' darkMode';
-    }
-    if (this.state.fullScreen) {
-      topBarClassName += ' fullScreen';
-    }
-
-    let maxButton;
-    if (this.state.maximized) {
-      maxButton = (
-        <div
-          className='button restore-button'
-          onClick={this.handleRestore}
-        >
-          <img src={restoreButton}/>
-        </div>
-      );
-    } else {
-      maxButton = (
-        <div
-          className='button max-button'
-          onClick={this.handleMaximize}
-        >
-          <img src={maximizeButton}/>
-        </div>
-      );
-    }
-
-    let overlayGradient;
-    if (process.platform !== 'darwin') {
-      overlayGradient = (
-        <span className='overlay-gradient'/>
-      );
-    }
-
-    let titleBarButtons;
-    if (process.platform !== 'darwin') {
-      titleBarButtons = (
-        <span className='title-bar-btns'>
-          <div
-            className='button min-button'
-            onClick={this.handleMinimize}
-          >
-            <img src={minimizeButton}/>
-          </div>
-          {maxButton}
-          <div
-            className='button close-button'
-            onClick={this.handleClose}
-          >
-            <img src={closeButton}/>
-          </div>
-        </span>
-      );
-    }
-
-    const topRow = (
-      <Row
-        className={topBarClassName}
-        onDoubleClick={this.handleDoubleClick}
-      >
-        <div
-          ref={this.topBar}
-          className={`topBar-bg${this.state.unfocused ? ' unfocused' : ''}`}
-        >
-          <button
-            className='three-dot-menu'
-            onClick={this.openMenu}
-            tabIndex={0}
-            ref={this.threeDotMenu}
-          >
-            <DotsVerticalIcon/>
-          </button>
-          {tabsRow}
-          {overlayGradient}
-          {titleBarButtons}
-        </div>
-      </Row>
-    );
-
     const settingsPage = {
       navbar: {
         backgroundColor: '#fff',
@@ -631,7 +317,7 @@ export default class SettingsPage extends React.Component {
             addServer={this.addServer}
             allowTeamEdit={this.state.enableTeamModification}
             onTeamClick={(index) => {
-              backToIndex(index + this.state.buildTeams.length + this.state.registryTeams.length);
+              this.backToIndex(index + this.state.buildTeams.length + this.state.registryTeams.length);
             }}
             modalContainer={this}
           />
@@ -897,20 +583,13 @@ export default class SettingsPage extends React.Component {
     ) : null;
 
     return (
-      <div
-        className='container-fluid'
-        style={{
-          height: '100%',
-        }}
+      <Modal
+        show={this.props.show}
+        dialogClassName='settings-modal-dialog'
+        onExited={this.props.onExit}
+        restoreFocus={false}
       >
-        { topRow }
-        <div
-          style={{
-            overflowY: 'auto',
-            height: '100%',
-            margin: '0 -15px',
-          }}
-        >
+        <Modal.Body>
           <Navbar
             className='navbar-fixed-top'
             style={settingsPage.navbar}
@@ -935,16 +614,16 @@ export default class SettingsPage extends React.Component {
             { srvMgmt }
             { optionsRow }
           </Grid>
-        </div>
-      </div>
+        </Modal.Body>
+      </Modal>
     );
   }
 }
 
-SettingsPage.propTypes = {
-  getDarkMode: PropTypes.func.isRequired,
-  setDarkMode: PropTypes.func.isRequired,
-  openMenu: PropTypes.func.isRequired,
+SettingsModal.propTypes = {
+  show: PropTypes.bool.isRequired,
+  config: PropTypes.object.isRequired,
+  onExit: PropTypes.func.isRequired,
 };
 
 /* eslint-enable react/no-set-state */

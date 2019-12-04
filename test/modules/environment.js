@@ -6,6 +6,8 @@
 const fs = require('fs');
 const path = require('path');
 
+const menuAddon = require('spectron-menu-addon').default;
+
 const Application = require('spectron').Application;
 const chai = require('chai');
 chai.should();
@@ -29,6 +31,7 @@ module.exports = {
   userDataDir,
   boundsInfoPath,
   mattermostURL,
+  menuAddon,
 
   cleanTestConfig() {
     [configFilePath, boundsInfoPath].forEach((file) => {
@@ -46,6 +49,23 @@ module.exports = {
     if (!fs.existsSync(userDataDir)) {
       fs.mkdirSync(userDataDir);
     }
+  },
+
+  getSpectronAppWithMenu() {
+    const options = {
+      path: electronBinaryPath,
+      args: [`${path.join(sourceRootDir, 'src')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode'],
+      chromeDriverArgs: [],
+
+      // enable this if chromedriver hangs to see logs
+      // chromeDriverLogPath: '../chromedriverlog.txt',
+    };
+    if (process.platform === 'darwin') {
+      // on a mac, debbuging port might conflict with other apps
+      // this changes the default debugging port so chromedriver can run without issues.
+      options.chromeDriverArgs.push('remote-debugging-port=9222');
+    }
+    return menuAddon.createApplication(options);
   },
 
   getSpectronApp() {
@@ -66,8 +86,40 @@ module.exports = {
   },
 
   addClientCommands(client) {
-    client.addCommand('loadSettingsPage', function async() {
-      return this.url('file://' + path.join(sourceRootDir, 'src/browser/settings.html')).waitUntilWindowLoaded();
+    client.addCommand('customClick', function async(selector) {
+      let selectorString = selector;
+      let innerTextString = '';
+      const attributeSelectorRegExp = new RegExp(/\[.*=.*\]/);
+      const containsEqualsSignRegExp = new RegExp('=');
+      const isSelectingByAttribute = selector.match(attributeSelectorRegExp);
+      const containsEqualsSign = selector.match(containsEqualsSignRegExp);
+      if (containsEqualsSign && !isSelectingByAttribute) {
+        selectorString = selector.split('=')[0].trim();
+        innerTextString = selector.split('=')[1].trim();
+      }
+      return this.execute((elementSelector, innerTextQuery) => {
+        // TODO: Audit for missing edge cases
+        let element;
+        if (elementSelector && !innerTextQuery) {
+          element = document.querySelector(elementSelector);
+        } else if (!elementSelector && innerTextQuery) {
+          const elements = Array.from(document.all);
+          element = elements.find((el) => el.innerText === innerTextQuery);
+        } else if (elementSelector && innerTextQuery) {
+          const elements = Array.from(document.querySelectorAll(elementSelector));
+          element = elements.find((el) => el.innerText === innerTextQuery);
+        } else {
+          throw new Error('Please pass proper selector query.');
+        }
+        if (element) {
+          element.click();
+        } else {
+          throw Error(`${elementSelector} not found.`);
+        }
+      }, selectorString, innerTextString);
+    });
+    client.addCommand('toggleSettingsPage', function async() {
+      return this.browserWindow.send('toggle-settings-page');
     });
     client.addCommand('isNodeEnabled', function async() {
       return this.execute(() => {

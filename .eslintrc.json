@@ -73,7 +73,6 @@
         "src/browser/components/TeamList.jsx",
         "src/browser/components/LoginModal.jsx",
         "src/browser/components/NewTeamModal.jsx",
-        "src/browser/settings.jsx",
         "src/browser/index.jsx",
         "src/common/deepmerge.js",
         "src/common/config/index.js",

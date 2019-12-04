@@ -13,9 +13,14 @@ export default function DestructiveConfirmationModal(props) {
     cancelLabel,
     onAccept,
     onCancel,
+    modalContainer,
     ...rest} = props;
   return (
-    <Modal {...rest}>
+    <Modal
+      container={modalContainer}
+      restoreFocus={false}
+      {...rest}
+    >
       <Modal.Header closeButton={true}>
         <Modal.Title>{title}</Modal.Title>
       </Modal.Header>
@@ -41,4 +46,5 @@ DestructiveConfirmationModal.propTypes = {
   cancelLabel: PropTypes.string.isRequired,
   onAccept: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
+  modalContainer: PropTypes.object,
 };

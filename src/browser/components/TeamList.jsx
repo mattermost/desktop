@@ -47,6 +47,7 @@ export default class TeamList extends React.Component {
       teams[team.index].url = team.url;
       teams[team.index].order = team.order;
     } else {
+      // TODO: update state or create local variable instead of pushing to props
       teams.push(team);
     }
 
@@ -151,7 +152,6 @@ export default class TeamList extends React.Component {
               order: newTeam.order + 1,
             },
           });
-          this.render();
           this.props.setAddTeamFormVisibility(false);
         }}
         team={this.state.team}

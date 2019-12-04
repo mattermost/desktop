@@ -9,10 +9,6 @@ import {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} from 're
 import Utils from '../../utils/util';
 
 export default class NewTeamModal extends React.Component {
-  static defaultProps = {
-    restoreFocus: true,
-  };
-
   constructor(props) {
     super(props);
 
@@ -134,13 +130,13 @@ export default class NewTeamModal extends React.Component {
 
     return (
       <Modal
+        restoreFocus={false}
         bsClass='modal'
         className='NewTeamModal'
         show={this.props.show}
         id='newServerModal'
         onHide={this.props.onClose}
         container={this.props.modalContainer}
-        restoreFocus={this.props.restoreFocus}
         onKeyDown={(e) => {
           switch (e.key) {
           case 'Enter':
@@ -153,6 +149,15 @@ export default class NewTeamModal extends React.Component {
           case 'Escape':
             this.props.onClose();
             break;
+          }
+        }}
+        onEntered={() => {
+          const activeElement = document.activeElement;
+          if (activeElement.id !== 'teamNameInput') {
+            const input = document.getElementById('teamNameInput');
+            if (input) {
+              input.focus();
+            }
           }
         }}
       >
@@ -232,6 +237,5 @@ NewTeamModal.propTypes = {
   editMode: PropTypes.bool,
   show: PropTypes.bool,
   modalContainer: PropTypes.object,
-  restoreFocus: PropTypes.bool,
   currentOrder: PropTypes.number,
 };

@@ -15,7 +15,6 @@ const base = require('./webpack.config.base');
 module.exports = merge(base, {
   entry: {
     index: './src/browser/index.jsx',
-    settings: './src/browser/settings.jsx',
     updater: './src/browser/updater.jsx',
     'webview/mattermost': './src/browser/webview/mattermost.js',
   },

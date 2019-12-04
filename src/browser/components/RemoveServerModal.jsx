@@ -11,6 +11,7 @@ export default function RemoveServerModal(props) {
   const {serverName, ...rest} = props;
   return (
     <DestructiveConfirmationModal
+      id='removeServerModal'
       {...rest}
       title='Remove Server'
       acceptLabel='Remove'
