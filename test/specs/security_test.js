@@ -9,7 +9,7 @@ const http = require('http');
 
 const env = require('../modules/environment');
 
-describe.skip('security', function desc() {
+describe('security', function desc() {
   this.timeout(30000);
 
   const serverPort = 8181;
@@ -75,10 +75,11 @@ describe.skip('security', function desc() {
   it('should NOT be able to call Node.js API in a new window', () => {
     env.addClientCommands(this.app.client);
     const client = this.app.client;
-    return this.app.client.
+    return this.app.client.webContents.
+      openDevTools().
       windowByIndex(1). // in the first webview
       execute(() => {
-        open_window();
+        window.open('./test.html');
       }).
       waitUntil(() => {
         return client.windowHandles().then((handles) => {
@@ -106,7 +107,7 @@ describe.skip('security', function desc() {
     const tryEvalInSettingsPage = () => {
       return this.app.client.
         windowByIndex(0).
-        loadSettingsPage().
+        toggleSettingsPage().
         execute(() => {
           return eval('1 + 1');
         }).then((result) => {

@@ -8,7 +8,7 @@ const fs = require('fs');
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
-describe('browser/settings.html', function desc() {
+describe('settings modal', function desc() {
   this.timeout(30000);
 
   const config = {
@@ -48,14 +48,16 @@ describe('browser/settings.html', function desc() {
   });
 
   describe('Close button', async () => {
-    it.skip('should show index.html when it\'s clicked', async () => {
+    it('should show rendered server views when it\'s clicked', async () => {
       env.addClientCommands(this.app.client);
       await this.app.client.
-        loadSettingsPage().
-        click('#btnClose').
-        pause(1000);
-      const url = await this.app.client.getUrl();
-      url.should.match(/\/index.html(\?.+)?$/);
+        toggleSettingsPage().
+        customClick('#btnClose').
+        pause(500).
+        isExisting('ul#tabBar').
+        then((exists) => {
+          exists.should.be.true;
+        });
     });
 
     it('should be disabled when the number of servers is zero', async () => {
@@ -63,20 +65,22 @@ describe('browser/settings.html', function desc() {
       env.cleanTestConfig();
       await this.app.start();
 
+      env.addClientCommands(this.app.client);
+
       await this.app.client.waitUntilWindowLoaded().
         waitForVisible('#newServerModal', 10000).
-        click('#cancelNewServerModal');
+        customClick('#cancelNewServerModal');
       let isCloseButtonEnabled = await this.app.client.isEnabled('#btnClose');
       isCloseButtonEnabled.should.equal(false);
 
       await this.app.client.
         waitForVisible('#newServerModal', true).
         pause(250).
-        click('#addNewServer').
+        customClick('#addNewServer').
         waitForVisible('#newServerModal').
         setValue('#teamNameInput', 'TestTeam').
         setValue('#teamUrlInput', 'http://example.org').
-        click('#saveNewServerModal').
+        customClick('#saveNewServerModal').
         waitForVisible('#newServerModal', true).
         waitForVisible('#serversSaveIndicator').
         waitForVisible('#serversSaveIndicator', 10000, true); // at least 2500 ms to disappear
@@ -89,14 +93,17 @@ describe('browser/settings.html', function desc() {
     const modalTitleSelector = '.modal-title=Remove Server';
     env.addClientCommands(this.app.client);
     await this.app.client.
-      loadSettingsPage().
-      click('=Remove').
-      waitForVisible(modalTitleSelector).
-      element('.modal-dialog').click('.btn=Remove').
+      toggleSettingsPage().
+      waitForVisible('#btnClose', 10000).
       pause(500).
-      click('=Remove').
+      customClick('=Remove').
+      pause(500).
       waitForVisible(modalTitleSelector).
-      element('.modal-dialog').click('.btn=Remove').
+      element('.modal-dialog').customClick('.btn=Remove').
+      pause(500).
+      customClick('=Remove').
+      waitForVisible(modalTitleSelector).
+      element('.modal-dialog').customClick('.btn=Remove').
       pause(500);
     const isModalExisting = await this.app.client.isExisting('#newServerModal');
     isModalExisting.should.be.true;
@@ -106,8 +113,8 @@ describe('browser/settings.html', function desc() {
     it.skip('should open the corresponding tab when a server list item is clicked', async () => {
       env.addClientCommands(this.app.client);
       await this.app.client.
-        loadSettingsPage().
-        click('h4=example').
+        toggleSettingsPage().
+        customClick('h4=example').
         pause(1000).
         waitUntilWindowLoaded();
       let indexURL = await this.app.client.getUrl();
@@ -120,8 +127,8 @@ describe('browser/settings.html', function desc() {
       isView1Visible.should.be.false;
 
       await this.app.client.
-        loadSettingsPage().
-        click('h4=github').
+        toggleSettingsPage().
+        customClick('h4=github').
         pause(1000).
         waitUntilWindowLoaded();
       indexURL = await this.app.client.getUrl();
@@ -140,7 +147,7 @@ describe('browser/settings.html', function desc() {
       it('should appear on win32 or linux', async () => {
         const expected = (process.platform === 'win32' || process.platform === 'linux');
         env.addClientCommands(this.app.client);
-        await this.app.client.loadSettingsPage();
+        await this.app.client.toggleSettingsPage();
         const existing = await this.app.client.isExisting('#inputHideMenuBar');
         existing.should.equal(expected);
       });
@@ -149,16 +156,16 @@ describe('browser/settings.html', function desc() {
         env.shouldTest(it, env.isOneOf(['win32', 'linux']))(`should be saved and loaded: ${v}`, async () => {
           env.addClientCommands(this.app.client);
           await this.app.client.
-            loadSettingsPage().
+            toggleSettingsPage().
             scroll('#inputHideMenuBar');
           const isSelected = await this.app.client.isSelected('#inputHideMenuBar');
           if (isSelected !== v) {
-            await this.app.client.click('#inputHideMenuBar');
+            await this.app.client.customClick('#inputHideMenuBar');
           }
 
           await this.app.client.
             pause(600).
-            click('#btnClose').
+            customClick('#btnClose').
             pause(1000);
 
           const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
@@ -174,7 +181,7 @@ describe('browser/settings.html', function desc() {
           autoHide = await this.app.browserWindow.isMenuBarAutoHide();
           autoHide.should.equal(v);
 
-          await this.app.loadSettingsPage();
+          await this.app.toggleSettingsPage();
           autoHide = await this.app.client.isSelected('#inputHideMenuBar');
           autoHide.should.equal(v);
         });
@@ -185,7 +192,7 @@ describe('browser/settings.html', function desc() {
       it('should appear on win32 or linux', async () => {
         const expected = (process.platform === 'win32' || process.platform === 'linux');
         env.addClientCommands(this.app.client);
-        await this.app.client.loadSettingsPage();
+        await this.app.client.toggleSettingsPage();
         const existing = await this.app.client.isExisting('#inputAutoStart');
         existing.should.equal(expected);
       });
@@ -195,7 +202,7 @@ describe('browser/settings.html', function desc() {
       it('should appear on darwin or linux', async () => {
         const expected = (process.platform === 'darwin' || process.platform === 'linux');
         env.addClientCommands(this.app.client);
-        await this.app.client.loadSettingsPage();
+        await this.app.client.toggleSettingsPage();
         const existing = await this.app.client.isExisting('#inputShowTrayIcon');
         existing.should.equal(expected);
       });
@@ -205,15 +212,15 @@ describe('browser/settings.html', function desc() {
           env.addClientCommands(this.app.client);
           await this.app.browserWindow.setSize(1024, 768); // Resize the window to click the element
           await this.app.client.
-            loadSettingsPage().
-            click('#inputShowTrayIcon').
+            toggleSettingsPage().
+            customClick('#inputShowTrayIcon').
             waitForAppOptionsAutoSaved();
 
           let config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
           config0.showTrayIcon.should.true;
 
           await this.app.client.
-            click('#inputShowTrayIcon').
+            customClick('#inputShowTrayIcon').
             waitForAppOptionsAutoSaved();
 
           config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
@@ -226,16 +233,16 @@ describe('browser/settings.html', function desc() {
           env.addClientCommands(this.app.client);
           await this.app.browserWindow.setSize(1024, 768); // Resize the window to click the element
           await this.app.client.
-            loadSettingsPage().
-            click('#inputShowTrayIcon').
-            click('input[value="dark"]').
+            toggleSettingsPage().
+            customClick('#inputShowTrayIcon').
+            customClick('input[value="dark"]').
             pause(700); // wait auto-save
 
           const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
           config0.trayIconTheme.should.equal('dark');
 
           await this.app.client.
-            click('input[value="light"]').
+            customClick('input[value="light"]').
             pause(700); // wait auto-save
 
           const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
@@ -248,7 +255,7 @@ describe('browser/settings.html', function desc() {
       it('should appear on linux', async () => {
         const expected = (process.platform === 'linux');
         env.addClientCommands(this.app.client);
-        await this.app.client.loadSettingsPage();
+        await this.app.client.toggleSettingsPage();
         const existing = await this.app.client.isExisting('#inputMinimizeToTray');
         existing.should.equal(expected);
       });
@@ -258,7 +265,7 @@ describe('browser/settings.html', function desc() {
       it('should appear on win32', async () => {
         const expected = (process.platform === 'win32');
         env.addClientCommands(this.app.client);
-        await this.app.client.loadSettingsPage();
+        await this.app.client.toggleSettingsPage();
         const existing = await this.app.client.isExisting('#inputToggleWindowOnTrayIconClick');
         existing.should.equal(expected);
       });
@@ -268,7 +275,7 @@ describe('browser/settings.html', function desc() {
       it('should appear on win32 and linux', async () => {
         const expected = (process.platform === 'win32' || process.platform === 'linux');
         env.addClientCommands(this.app.client);
-        await this.app.client.loadSettingsPage();
+        await this.app.client.toggleSettingsPage();
         const existing = await this.app.client.isExisting('#inputflashWindow');
         existing.should.equal(expected);
       });
@@ -278,7 +285,7 @@ describe('browser/settings.html', function desc() {
       it('should appear on darwin or win32', async () => {
         const expected = (process.platform === 'darwin' || process.platform === 'win32');
         env.addClientCommands(this.app.client);
-        await this.app.client.loadSettingsPage();
+        await this.app.client.toggleSettingsPage();
         const existing = await this.app.client.isExisting('#inputShowUnreadBadge');
         existing.should.equal(expected);
       });
@@ -287,7 +294,7 @@ describe('browser/settings.html', function desc() {
     describe('Check spelling', () => {
       it('should appear and be selectable', async () => {
         env.addClientCommands(this.app.client);
-        await this.app.client.loadSettingsPage();
+        await this.app.client.toggleSettingsPage();
         const existing = await this.app.client.isExisting('#inputSpellChecker');
         existing.should.equal(true);
 
@@ -300,7 +307,7 @@ describe('browser/settings.html', function desc() {
 
         await this.app.client.
           scroll(0, offset).
-          click('#inputSpellChecker').
+          customClick('#inputSpellChecker').
           pause(5000);
         const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
         config1.useSpellChecker.should.equal(false);
@@ -312,19 +319,19 @@ describe('browser/settings.html', function desc() {
         const ID_INPUT_ENABLE_HARDWARE_ACCELERATION = '#inputEnableHardwareAcceleration';
         env.addClientCommands(this.app.client);
         await this.app.client.
-          loadSettingsPage().
+          toggleSettingsPage().
           waitForExist(ID_INPUT_ENABLE_HARDWARE_ACCELERATION, 5000).
           scroll(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
         const selected = await this.app.client.isSelected(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
         selected.should.equal(true); // default is true
 
-        await this.app.client.click(ID_INPUT_ENABLE_HARDWARE_ACCELERATION).
+        await this.app.client.customClick(ID_INPUT_ENABLE_HARDWARE_ACCELERATION).
           waitForVisible('#appOptionsSaveIndicator', 5000).
           waitForVisible('#appOptionsSaveIndicator', 5000, true); // at least 2500 ms to disappear
         const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
         config0.enableHardwareAcceleration.should.equal(false);
 
-        await this.app.client.click(ID_INPUT_ENABLE_HARDWARE_ACCELERATION).
+        await this.app.client.customClick(ID_INPUT_ENABLE_HARDWARE_ACCELERATION).
           waitForVisible('#appOptionsSaveIndicator', 5000).
           waitForVisible('#appOptionsSaveIndicator', 5000, true); // at least 2500 ms to disappear
         const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
@@ -338,7 +345,7 @@ describe('browser/settings.html', function desc() {
 
     beforeEach(async () => {
       env.addClientCommands(this.app.client);
-      await this.app.client.loadSettingsPage();
+      await this.app.client.toggleSettingsPage();
       const existing = await this.app.client.isExisting(modalTitleSelector);
       existing.should.be.false;
 
@@ -346,13 +353,13 @@ describe('browser/settings.html', function desc() {
       visible.should.be.false;
 
       await this.app.client.
-        click('=Remove').
+        customClick('=Remove').
         waitForVisible(modalTitleSelector);
     });
 
     it('should remove existing team on click Remove', async () => {
       await this.app.client.
-        element('.modal-dialog').click('.btn=Remove').
+        element('.modal-dialog').customClick('.btn=Remove').
         waitForExist(modalTitleSelector, 5000, true);
 
       await this.app.client.waitForVisible('#serversSaveIndicator', 10000, true);
@@ -363,7 +370,7 @@ describe('browser/settings.html', function desc() {
 
     it('should NOT remove existing team on click Cancel', async () => {
       await this.app.client.
-        element('.modal-dialog').click('.btn=Cancel').
+        element('.modal-dialog').customClick('.btn=Cancel').
         waitForExist(modalTitleSelector, 5000, true);
 
       await this.app.client.waitForVisible('#serversSaveIndicator', 10000, true);
@@ -374,7 +381,7 @@ describe('browser/settings.html', function desc() {
 
     it('should disappear on click Close', async () => {
       await this.app.client.
-        click('.modal-dialog button.close').
+        customClick('.modal-dialog button.close').
         waitForVisible(modalTitleSelector, 10000, true);
       const existing = await this.app.client.isExisting(modalTitleSelector);
       existing.should.be.false;
@@ -383,7 +390,7 @@ describe('browser/settings.html', function desc() {
     it('should disappear on click background', async () => {
       await this.app.browserWindow.setSize(1024, 768); // Resize the window to click the center of <body>
       await this.app.client.
-        click('body').
+        customClick('#removeServerModal').
         waitForVisible(modalTitleSelector, 10000, true);
       const existing = await this.app.client.isExisting(modalTitleSelector);
       existing.should.be.false;
@@ -394,8 +401,8 @@ describe('browser/settings.html', function desc() {
     beforeEach(() => {
       env.addClientCommands(this.app.client);
       return this.app.client.
-        loadSettingsPage().
-        click('#addNewServer').
+        toggleSettingsPage().
+        customClick('#addNewServer').
         pause(1000);
     });
 
@@ -407,7 +414,7 @@ describe('browser/settings.html', function desc() {
 
     it('should close the window after clicking cancel', () => {
       return this.app.client.
-        click('#cancelNewServerModal').
+        customClick('#cancelNewServerModal').
         waitForExist('#newServerModal', 10000, true).
         isExisting('#newServerModal').then((existing) => {
           existing.should.be.false;
@@ -416,7 +423,7 @@ describe('browser/settings.html', function desc() {
 
     it('should not be valid if no team name has been set', () => {
       return this.app.client.
-        click('#saveNewServerModal').
+        customClick('#saveNewServerModal').
         waitForExist('.has-error #teamNameInput', 10000).
         isExisting('.has-error #teamNameInput').then((existing) => {
           existing.should.be.true;
@@ -425,7 +432,7 @@ describe('browser/settings.html', function desc() {
 
     it('should not be valid if no server address has been set', () => {
       return this.app.client.
-        click('#saveNewServerModal').
+        customClick('#saveNewServerModal').
         waitForExist('.has-error #teamUrlInput', 10000).
         isExisting('.has-error #teamUrlInput').then((existing) => {
           existing.should.be.true;
@@ -436,7 +443,7 @@ describe('browser/settings.html', function desc() {
       beforeEach(() => {
         return this.app.client.
           setValue('#teamNameInput', 'TestTeam').
-          click('#saveNewServerModal');
+          customClick('#saveNewServerModal');
       });
 
       it('should not be marked invalid', () => {
@@ -458,7 +465,7 @@ describe('browser/settings.html', function desc() {
       beforeEach(() => {
         return this.app.client.
           setValue('#teamUrlInput', 'http://example.org').
-          click('#saveNewServerModal');
+          customClick('#saveNewServerModal');
       });
 
       it('should be valid', () => {
@@ -479,7 +486,7 @@ describe('browser/settings.html', function desc() {
     it('should not be valid if an invalid server address has been set', () => {
       return this.app.client.
         setValue('#teamUrlInput', 'superInvalid url').
-        click('#saveNewServerModal').
+        customClick('#saveNewServerModal').
         pause(500).
         isExisting('.has-error #teamUrlInput').then((existing) => {
           existing.should.be.true;
@@ -502,7 +509,7 @@ describe('browser/settings.html', function desc() {
 
       it('should add the team to the config file', async () => {
         await this.app.client.
-          click('#saveNewServerModal').
+          customClick('#saveNewServerModal').
           waitForVisible('#newServerModal', 10000, true).
           waitForVisible('#serversSaveIndicator', 10000).
           waitForVisible('#serversSaveIndicator', 10000, true). // at least 2500 ms to disappear

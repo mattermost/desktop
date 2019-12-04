@@ -4,15 +4,19 @@
 
 import './css/index.css';
 
-window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
-  throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
-};
+if (!process.env.TEST_CAFE) {
+  window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
+    throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
+  };
+}
 
 import url from 'url';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {remote, ipcRenderer} from 'electron';
+
+import {userDataDir} from '../../test/modules/utils';
 
 import Config from '../common/config';
 
@@ -22,15 +26,11 @@ import {createDataURL as createBadgeDataURL} from './js/badge';
 
 Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
-const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
+const config = new Config((process.env.TEST_CAFE ? userDataDir : remote.app.getPath('userData')) + '/config.json', remote.getCurrentWindow().registryConfigData);
 
 const teams = config.teams;
 
 remote.getCurrentWindow().removeAllListeners('focus');
-
-if (teams.length === 0) {
-  remote.getCurrentWindow().loadFile('browser/settings.html');
-}
 
 const parsedURL = url.parse(window.location.href, true);
 const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : 0;
@@ -139,6 +139,7 @@ function handleSelectSpellCheckerLocale(locale) {
 ReactDOM.render(
   <MainPage
     teams={teams}
+    config={config}
     initialIndex={initialIndex}
     onBadgeChange={showBadge}
     onTeamConfigChange={teamConfigChange}

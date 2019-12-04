@@ -3,14 +3,22 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-const fs = require('fs');
 const path = require('path');
 
 const Application = require('spectron').Application;
 const chai = require('chai');
+
+const {
+  sourceRootDir,
+  configFilePath,
+  userDataDir,
+  boundsInfoPath,
+  mattermostURL,
+  cleanTestConfig,
+  createTestUserDataDir,
+} = require('./utils');
 chai.should();
 
-const sourceRootDir = path.join(__dirname, '../..');
 const electronBinaryPath = (() => {
   if (process.platform === 'darwin') {
     return path.join(sourceRootDir, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron');
@@ -18,10 +26,6 @@ const electronBinaryPath = (() => {
   const exeExtension = (process.platform === 'win32') ? '.exe' : '';
   return path.join(sourceRootDir, 'node_modules/electron/dist/electron' + exeExtension);
 })();
-const userDataDir = path.join(sourceRootDir, 'test/testUserData/');
-const configFilePath = path.join(userDataDir, 'config.json');
-const boundsInfoPath = path.join(userDataDir, 'bounds-info.json');
-const mattermostURL = 'http://example.com/';
 
 module.exports = {
   sourceRootDir,
@@ -29,24 +33,8 @@ module.exports = {
   userDataDir,
   boundsInfoPath,
   mattermostURL,
-
-  cleanTestConfig() {
-    [configFilePath, boundsInfoPath].forEach((file) => {
-      try {
-        fs.unlinkSync(file);
-      } catch (err) {
-        if (err.code !== 'ENOENT') {
-          console.error(err);
-        }
-      }
-    });
-  },
-
-  createTestUserDataDir() {
-    if (!fs.existsSync(userDataDir)) {
-      fs.mkdirSync(userDataDir);
-    }
-  },
+  cleanTestConfig,
+  createTestUserDataDir,
 
   getSpectronApp() {
     const options = {
@@ -66,8 +54,40 @@ module.exports = {
   },
 
   addClientCommands(client) {
-    client.addCommand('loadSettingsPage', function async() {
-      return this.url('file://' + path.join(sourceRootDir, 'src/browser/settings.html')).waitUntilWindowLoaded();
+    client.addCommand('customClick', function async(selector) {
+      let selectorString = selector;
+      let innerTextString = '';
+      const attributeSelectorRegExp = new RegExp(/\[.*=.*\]/);
+      const containsEqualsSignRegExp = new RegExp('=');
+      const isSelectingByAttribute = selector.match(attributeSelectorRegExp);
+      const containsEqualsSign = selector.match(containsEqualsSignRegExp);
+      if (containsEqualsSign && !isSelectingByAttribute) {
+        selectorString = selector.split('=')[0].trim();
+        innerTextString = selector.split('=')[1].trim();
+      }
+      return this.execute((elementSelector, innerTextQuery) => {
+        // TODO: audit for missing edge cases
+        let element;
+        if (elementSelector && !innerTextQuery) {
+          element = document.querySelector(elementSelector);
+        } else if (!elementSelector && innerTextQuery) {
+          const elements = Array.from(document.all);
+          element = elements.find((el) => el.innerText === innerTextQuery);
+        } else if (elementSelector && innerTextQuery) {
+          const elements = Array.from(document.querySelectorAll(elementSelector));
+          element = elements.find((el) => el.innerText === innerTextQuery);
+        } else {
+          throw new Error('Please pass proper selector query.');
+        }
+        if (element) {
+          element.click();
+        } else {
+          throw Error(`${elementSelector} not found.`);
+        }
+      }, selectorString, innerTextString);
+    });
+    client.addCommand('toggleSettingsPage', function async() {
+      return this.browserWindow.send('toggle-settings-page');
     });
     client.addCommand('isNodeEnabled', function async() {
       return this.execute(() => {

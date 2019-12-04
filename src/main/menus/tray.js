@@ -5,8 +5,7 @@
 
 import {app, Menu} from 'electron';
 
-function createTemplate(mainWindow, config, isDev) {
-  const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : `file://${app.getAppPath()}/browser/settings.html`;
+function createTemplate(mainWindow, config) {
   const teams = config.teams;
   const template = [
     ...teams.slice(0, 9).map((team, i) => {
@@ -27,7 +26,7 @@ function createTemplate(mainWindow, config, isDev) {
     }, {
       label: process.platform === 'darwin' ? 'Preferences...' : 'Settings',
       click: () => {
-        mainWindow.loadURL(settingsURL);
+        mainWindow.webContents.send('toggle-settings-page');
         showOrRestore(mainWindow);
 
         if (process.platform === 'darwin') {

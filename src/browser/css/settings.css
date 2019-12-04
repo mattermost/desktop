@@ -20,3 +20,13 @@
 .checkbox > label {
   width: 100%;
 }
+
+.settings-modal-dialog {
+  margin: 0 auto;
+  width: 100%;
+  height: 100%;
+}
+
+.modal-content {
+  height: 100%;
+}

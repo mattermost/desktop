@@ -5,9 +5,7 @@
 
 import {app, dialog, Menu, shell} from 'electron';
 
-function createTemplate(mainWindow, config, isDev) {
-  const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : `file://${app.getAppPath()}/browser/settings.html`;
-
+function createTemplate(mainWindow, config) {
   const separatorItem = {
     type: 'separator',
   };
@@ -29,13 +27,13 @@ function createTemplate(mainWindow, config, isDev) {
     label: 'Preferences...',
     accelerator: 'CmdOrCtrl+,',
     click() {
-      mainWindow.loadURL(settingsURL);
+      mainWindow.webContents.send('toggle-settings-page');
     },
   }] : [{
     label: 'Settings...',
     accelerator: 'CmdOrCtrl+,',
     click() {
-      mainWindow.loadURL(settingsURL);
+      mainWindow.webContents.send('toggle-settings-page');
     },
   }];
 

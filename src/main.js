@@ -13,6 +13,7 @@ import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-install
 import log from 'electron-log';
 
 import {protocols} from '../electron-builder.json';
+import {userDataDir, createTestUserDataDir} from '../test/modules/utils';
 
 import AutoLauncher from './main/AutoLauncher';
 import CriticalErrorHandler from './main/CriticalErrorHandler';
@@ -145,7 +146,12 @@ function initializeArgs() {
 
 function initializeConfig() {
   registryConfig = new RegistryConfig();
-  config = new Config(app.getPath('userData') + '/config.json');
+  if (process.env.TEST_CAFE) {
+    createTestUserDataDir();
+    config = new Config(userDataDir + '/config.json');
+  } else {
+    config = new Config(app.getPath('userData') + '/config.json');
+  }
   config.on('update', handleConfigUpdate);
   config.on('synchronize', handleConfigSynchronize);
 }
