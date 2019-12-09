@@ -2,6 +2,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import React from 'react';
+import {remote} from 'electron';
 import PropTypes from 'prop-types';
 import {Nav, NavItem} from 'react-bootstrap';
 import {Container, Draggable} from 'react-smooth-dnd';
@@ -88,6 +89,7 @@ export default class TabBar extends React.Component { // need "this"
           key='addServerButton'
           id='addServerButton'
           eventKey='addServerButton'
+          draggable={false}
           title='Add new server'
           activeKey={this.props.activeKey}
           onSelect={() => {
@@ -119,6 +121,9 @@ export default class TabBar extends React.Component { // need "this"
         lockAxis={'x'}
         onDrop={this.props.onDrop}
         animationDuration={300}
+        shouldAcceptDrop={() => {
+          return !(remote.getCurrentWindow().registryConfigData.teams && remote.getCurrentWindow().registryConfigData.teams.length > 0);
+        }}
       />
     );
   }
