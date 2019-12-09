@@ -5,10 +5,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 export default class TeamListItem extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-
   handleTeamRemove = () => {
     this.props.onTeamRemove();
   }

@@ -22,7 +22,6 @@ export default class TeamList extends React.Component {
         index: false,
       },
     };
-
   }
 
   handleTeamRemove = (index) => {
