@@ -6,6 +6,7 @@
 /* eslint-disable no-magic-numbers */
 
 import {ipcRenderer, webFrame, remote} from 'electron';
+import {SpellCheckHandler, ContextMenuListener, ContextMenuBuilder} from 'electron-spellchecker';
 
 const UNREAD_COUNT_INTERVAL = 1000;
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
@@ -44,6 +45,16 @@ window.addEventListener('load', () => {
   }
   watchReactAppUntilInitialized(() => {
     ipcRenderer.sendToHost('onGuestInitialized', window.basename);
+  });
+
+  window.spellCheckHandler = new SpellCheckHandler();
+  window.spellCheckHandler.attachToInput();
+
+  window.spellCheckHandler.switchLanguage('en-US');
+
+  const contextMenuBuilder = new ContextMenuBuilder(window.spellCheckHandler);
+  const contextMenuListener = new ContextMenuListener((info) => {
+    contextMenuBuilder.showPopupMenu(info);
   });
 });
 

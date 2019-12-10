@@ -53,6 +53,9 @@ module.exports = merge(base, {
     inline: true,
     publicPath: '/browser/',
   },
+  externals: {
+    'electron-spellchecker': 'require("electron-spellchecker")',
+  },
 });
 
 /* eslint-enable import/no-commonjs */
