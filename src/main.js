@@ -1023,20 +1023,15 @@ function getValidWindowPosition(state) {
 }
 
 function resizeScreen(screen, browserWindow) {
-  console.log('resize screen called!');
   function handle() {
-    console.log('handle resize called!');
     const position = browserWindow.getPosition();
-    console.log(position);
     const size = browserWindow.getSize();
-    console.log(size);
     const validPosition = getValidWindowPosition({
       x: position[0],
       y: position[1],
       width: size[0],
       height: size[1],
     });
-    console.log(`moving window to: ${validPosition.x}:${validPosition.y}`);
     browserWindow.setPosition(validPosition.x || 0, validPosition.y || 0);
   }
 
