@@ -214,13 +214,14 @@ export default class Config extends EventEmitter {
       // validate based on config file version
       if (configData.version > 1) {
         configData = Validator.validateV2ConfigData(configData);
-      }
-      switch (configData.version) {
-      case 1:
-        configData = Validator.validateV1ConfigData(configData);
-        break;
-      default:
-        configData = Validator.validateV0ConfigData(configData);
+      } else {
+        switch (configData.version) {
+        case 1:
+          configData = Validator.validateV1ConfigData(configData);
+          break;
+        default:
+          configData = Validator.validateV0ConfigData(configData);
+        }
       }
       if (!configData) {
         throw new Error('Provided configuration file does not validate, using defaults instead.');
