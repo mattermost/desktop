@@ -3,9 +3,9 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-export function createDataURL(text) {
+export function createDataURL(text, small) {
   const scale = 2; // should rely display dpi
-  const size = 16 * scale;
+  const size = (small ? 20 : 16) * scale;
   const canvas = document.createElement('canvas');
   canvas.setAttribute('width', size);
   canvas.setAttribute('height', size);
