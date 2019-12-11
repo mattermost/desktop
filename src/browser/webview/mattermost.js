@@ -53,6 +53,7 @@ window.addEventListener('load', () => {
   window.spellCheckHandler.switchLanguage('en-US');
 
   const contextMenuBuilder = new ContextMenuBuilder(window.spellCheckHandler);
+  /* eslint-disable-next-line no-unused-vars */
   const contextMenuListener = new ContextMenuListener((info) => {
     contextMenuBuilder.showPopupMenu(info);
   });
