@@ -209,11 +209,9 @@ export default class Config extends EventEmitter {
       configData = this.readFileSync(this.configFilePath);
 
       // validate based on config file version
-      switch (configData.version) {
-      case 1:
+      if (configData.version > 0) {
         configData = Validator.validateV1ConfigData(configData);
-        break;
-      default:
+      } else {
         configData = Validator.validateV0ConfigData(configData);
       }
       if (!configData) {
