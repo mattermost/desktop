@@ -432,6 +432,10 @@ function handleAppWebContentsCreated(dc, contents) {
       log.info(`Untrusted popup window blocked: ${url}`);
       return;
     }
+    if (isTrustedTeam(url)) {
+      log.info('this is a known team, preventing to open a new window');
+      return;
+    }
     if (popupWindow && popupWindow.getURL() === url) {
       log.info(`Popup window already open at provided url: ${url}`);
       return;
@@ -852,7 +856,7 @@ function parseURL(url) {
   }
 }
 
-function isTrustedURL(url) {
+function isTrustedTeam(url) {
   const parsedURL = parseURL(url);
   if (!parsedURL) {
     return false;
@@ -870,6 +874,14 @@ function isTrustedURL(url) {
     }
   }
   return false;
+}
+
+function isTrustedURL(url) {
+  const parsedURL = parseURL(url);
+  if (!parsedURL) {
+    return false;
+  }
+  return isTrustedTeam(parsedURL);
 }
 
 function isTrustedPopupWindow(webContents) {
