@@ -432,8 +432,8 @@ function handleAppWebContentsCreated(dc, contents) {
       log.info(`Untrusted popup window blocked: ${url}`);
       return;
     }
-    if (isKnownTeam(url)) {
-      log.info('this is a known team, preventing to open a new window');
+    if (isTeamUrl(url) === true) {
+      log.info(`${url} is a known team, preventing to open a new window`);
       return;
     }
     if (popupWindow && popupWindow.getURL() === url) {
@@ -856,7 +856,19 @@ function parseURL(url) {
   }
 }
 
-function isKnownTeam(url) {
+function isTeamUrl(url) {
+  const parsedURL = parseURL(url);
+  if (!parsedURL) {
+    return null;
+  }
+  if (isCustomLoginURL(parsedURL)) {
+    return false;
+  }
+  const nonTeamUrlPaths = ['plugins', 'signup', 'login', 'admin', 'channel', 'post', 'api', 'oauth'];
+  return !(nonTeamUrlPaths.some((testPath) => parsedURL.pathname.toLowerCase().startsWith(`/${testPath}/`)));
+}
+
+function isTrustedURL(url) {
   const parsedURL = parseURL(url);
   if (!parsedURL) {
     return false;
@@ -874,14 +886,6 @@ function isKnownTeam(url) {
     }
   }
   return false;
-}
-
-function isTrustedURL(url) {
-  const parsedURL = parseURL(url);
-  if (!parsedURL) {
-    return false;
-  }
-  return isKnownTeam(parsedURL);
 }
 
 function isTrustedPopupWindow(webContents) {
