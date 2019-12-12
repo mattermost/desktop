@@ -161,10 +161,17 @@ export default class MainPage extends React.Component {
     function focusListener() {
       self.handleOnTeamFocused(self.state.key);
       self.refs[`mattermostView${self.state.key}`].focusOnWebView();
+      self.setState({unfocused: false});
     }
+
+    function blurListener() {
+      self.setState({unfocused: true});
+    }
+
 
     const currentWindow = remote.getCurrentWindow();
     currentWindow.on('focus', focusListener);
+    currentWindow.on('blur', blurListener);
     window.addEventListener('beforeunload', () => {
       currentWindow.removeListener('focus', focusListener);
     });
@@ -626,7 +633,7 @@ export default class MainPage extends React.Component {
       >
         <div
           ref={this.topBar}
-          className='topBar-bg'
+          className={`topBar-bg${this.state.unfocused ? ' unfocused' : ''}`}
         >
           <button
             className='three-dot-menu'

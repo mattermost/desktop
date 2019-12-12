@@ -54,6 +54,10 @@ body {
   background-color: rgba(0,0,0,0.1);
 }
 
+.topBar>.topBar-bg.unfocused {
+  opacity: 0.5;
+}
+
 .topBar.darkMode {
   background-color: #323639;
   color: #fff;
@@ -64,13 +68,13 @@ body {
 }
 
 .topBar .three-dot-menu {
-  font-size: 18px;
+  font-size: 20px;
   line-height: 20px;
   height: 36px;
   float: left;
   padding-top: 5px;
   border: none;
-  flex: 0 0 26px;
+  flex: 0 0 40px;
   z-index: 9;
   color: rgba(61,60,64,0.7);
   -webkit-app-region: no-drag;
@@ -79,6 +83,9 @@ body {
 
 .topBar .three-dot-menu svg {
   border-radius: 100px;
+  padding: 4px;
+  height: 28px;
+  width: 28px;
 }
 
 .topBar .three-dot-menu:focus {
@@ -165,6 +172,7 @@ body {
 .topBar .title-bar-btns>.close-button:hover>img {
   filter: invert(100%);
   -webkit-filter: invert(100%);
+  opacity: 1;
 }
 
 .topBar .title-bar-btns>.close-button:active {
@@ -191,6 +199,7 @@ body {
 .topBar .title-bar-btns>.max-button, .topBar .title-bar-btns>.restore-button {
   grid-column: 2;
 }
+
 .topBar .title-bar-btns>.close-button {
   grid-column: 3;
 }
