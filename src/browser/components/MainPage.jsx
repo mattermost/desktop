@@ -168,7 +168,6 @@ export default class MainPage extends React.Component {
       self.setState({unfocused: true});
     }
 
-
     const currentWindow = remote.getCurrentWindow();
     currentWindow.on('focus', focusListener);
     currentWindow.on('blur', blurListener);
