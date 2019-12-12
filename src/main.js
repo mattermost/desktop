@@ -432,7 +432,7 @@ function handleAppWebContentsCreated(dc, contents) {
       log.info(`Untrusted popup window blocked: ${url}`);
       return;
     }
-    if (isTrustedTeam(url)) {
+    if (isKnownTeam(url)) {
       log.info('this is a known team, preventing to open a new window');
       return;
     }
@@ -856,7 +856,7 @@ function parseURL(url) {
   }
 }
 
-function isTrustedTeam(url) {
+function isKnownTeam(url) {
   const parsedURL = parseURL(url);
   if (!parsedURL) {
     return false;
@@ -881,7 +881,7 @@ function isTrustedURL(url) {
   if (!parsedURL) {
     return false;
   }
-  return isTrustedTeam(parsedURL);
+  return isKnownTeam(parsedURL);
 }
 
 function isTrustedPopupWindow(webContents) {
