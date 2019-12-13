@@ -1013,23 +1013,22 @@ function clearAppCache() {
   }
 }
 
-function getValidWindowPosition(state, screen) {
+function isWithinDisplay(state, display) {
+  // given a display, check if window is within it
+  return (state.x > display.maxX || state.y > display.maxY || state.x < display.minX || state.y < display.minY);
+}
+
+function getValidWindowPosition(state) {
   // Check if the previous position is out of the viewable area
   // (e.g. because the screen has been plugged off)
-  const displays = screen.getAllDisplays();
-  let minX = 0;
-  let maxX = 0;
-  let minY = 0;
-  let maxY = 0;
-  for (let i = 0; i < displays.length; i++) {
-    const display = displays[i];
-    maxX = Math.max(maxX, display.bounds.x + display.bounds.width);
-    maxY = Math.max(maxY, display.bounds.y + display.bounds.height);
-    minX = Math.min(minX, display.bounds.x);
-    minY = Math.min(minY, display.bounds.y);
-  }
+  const boundaries = Utils.getDisplayBoundaries();
+  const isDisplayed = boundaries.reduce(
+    (prev, display) => {
+      return prev || isWithinDisplay(state, display);
+    },
+    false);
 
-  if (state.x > maxX || state.y > maxY || state.x < minX || state.y < minY) {
+  if (isDisplayed) {
     Reflect.deleteProperty(state, 'x');
     Reflect.deleteProperty(state, 'y');
     Reflect.deleteProperty(state, 'width');
@@ -1048,7 +1047,7 @@ function resizeScreen(screen, browserWindow) {
       y: position[1],
       width: size[0],
       height: size[1],
-    }, screen);
+    });
     browserWindow.setPosition(validPosition.x || 0, validPosition.y || 0);
   }
 
