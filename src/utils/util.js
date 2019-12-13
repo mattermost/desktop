@@ -3,6 +3,7 @@
 // See LICENSE.txt for license information.
 import url from 'url';
 
+import electron from 'electron';
 import {isUri, isHttpUri, isHttpsUri} from 'valid-url';
 
 function getDomain(inputURL) {
@@ -33,9 +34,27 @@ function isInternalURL(targetURL, currentURL, basename = '/') {
   return true;
 }
 
+function getDisplayBoundaries() {
+  const {screen} = electron;
+
+  const displays = screen.getAllDisplays();
+
+  return displays.map((display) => {
+    return {
+      maxX: display.workArea.x + display.workArea.width,
+      maxY: display.workArea.y + display.workArea.height,
+      minX: display.workArea.x,
+      minY: display.workArea.y,
+      maxWidth: display.workArea.width,
+      maxHeight: display.workArea.height,
+    };
+  });
+}
+
 export default {
   getDomain,
   isValidURL,
   isValidURI,
   isInternalURL,
+  getDisplayBoundaries,
 };
