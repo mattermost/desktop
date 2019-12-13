@@ -772,10 +772,12 @@ function handleUpdateMenuEvent(event, configData) {
   }
 }
 
-function handleUpdateDictionaryEvent() {
+// localeSelected might be null, if that's the case, use config's locale
+function handleUpdateDictionaryEvent(_, localeSelected) {
   if (config.useSpellChecker) {
+    const locale = localeSelected || config.spellCheckerLocale;
     spellChecker = new SpellChecker(
-      config.spellCheckerLocale,
+      locale,
       path.resolve(app.getAppPath(), 'node_modules/simple-spellchecker/dict'),
       (err) => {
         if (err) {
