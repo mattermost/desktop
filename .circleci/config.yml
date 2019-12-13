@@ -102,7 +102,7 @@ jobs:
       - restore_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
       - update_image:
-          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata libxkbfile-dev"
       - build
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
@@ -127,7 +127,7 @@ jobs:
       - restore_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
       - update_image:
-          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata libxkbfile-dev"
       - build:
           os: windows
           path: ./dist/win
@@ -155,7 +155,7 @@ jobs:
       - restore_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "src/package-lock.json" }}
       - update_image:
-          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata libxkbfile-dev"
       - run: jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
 
       - build:
