@@ -75,7 +75,7 @@ jobs:
     steps:
       - checkout
       - update_image:
-          apt_opts: "--no-install-recommends"
+          apt_opts: "--no-install-recommends libxkbfile-dev"
       - restore_cache:
           key: lint-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - run: npm run lint:js-quiet
