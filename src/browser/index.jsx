@@ -133,6 +133,7 @@ function teamConfigChange(updatedTeams) {
 
 function handleSelectSpellCheckerLocale(locale) {
   config.set('spellCheckerLocale', locale);
+  ipcRenderer.send('update-dict', locale);
 }
 
 ReactDOM.render(
