@@ -776,16 +776,22 @@ function handleUpdateMenuEvent(event, configData) {
   }
 }
 
-function handleUpdateDictionaryEvent() {
+// localeSelected might be null, if that's the case, use config's locale
+function handleUpdateDictionaryEvent(_, localeSelected) {
   if (config.useSpellChecker) {
-    spellChecker = new SpellChecker(
-      config.spellCheckerLocale,
-      path.resolve(app.getAppPath(), 'node_modules/simple-spellchecker/dict'),
-      (err) => {
-        if (err) {
-          console.error(err);
-        }
-      });
+    const locale = localeSelected || config.spellCheckerLocale;
+    try {
+      spellChecker = new SpellChecker(
+        locale,
+        path.resolve(app.getAppPath(), 'node_modules/simple-spellchecker/dict'),
+        (err) => {
+          if (err) {
+            console.error(err);
+          }
+        });
+    } catch (e) {
+      console.error('couldn\'t load a spellchecker for locale');
+    }
   }
 }
 
