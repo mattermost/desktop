@@ -24,7 +24,7 @@ const preloadJS = `file://${remote.app.getAppPath()}/browser/webview/mattermost_
 const ERR_NOT_IMPLEMENTED = -11;
 const U2F_EXTENSION_URL = 'chrome-extension://kmendfapggjehodndflmmgagdbamhnfd/u2f-comms.html';
 
-const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon.png`;
+const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon_48.png`;
 
 export default class MattermostView extends React.Component {
   constructor(props) {
