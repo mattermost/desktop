@@ -39,7 +39,7 @@ export default class SettingsPage extends React.Component {
   }
 
   getTabWebContents() {
-    return remote.webContents.getAllWebContents().find((webContents) => webContents.isFocused());
+    return remote.webContents.getFocusedWebContents();
   }
 
   componentDidMount() {
