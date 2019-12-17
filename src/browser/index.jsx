@@ -146,6 +146,7 @@ function teamConfigChange(updatedTeams) {
 
 function handleSelectSpellCheckerLocale(locale) {
   config.set('spellCheckerLocale', locale);
+  ipcRenderer.send('update-dict', locale);
 }
 
 function moveTabs(originalOrder, newOrder) {
