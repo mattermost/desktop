@@ -263,7 +263,7 @@ export default class MattermostView extends React.Component {
   focusOnWebView() {
     const webview = this.webviewRef.current;
     const webContents = webview.getWebContents(); // webContents might not be created yet.
-    if (webContents && !webContents.isFocused()) {
+    if (webContents) {
       webview.focus();
       webContents.focus();
     }

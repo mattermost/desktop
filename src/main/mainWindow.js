@@ -157,10 +157,6 @@ function createMainWindow(config, options) {
     }
   });
 
-  mainWindow.on('sheet-end', () => {
-    mainWindow.webContents.send('focus-on-webview');
-  });
-
   // Register keyboard shortcuts
   mainWindow.webContents.on('before-input-event', (event, input) => {
     // Add Alt+Cmd+(Right|Left) as alternative to switch between servers

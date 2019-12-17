@@ -514,10 +514,8 @@ export default class MainPage extends React.Component {
     });
   }
 
-  focusOnWebView(e) {
-    if (e.target.className !== 'finder-input') {
-      this.refs[`mattermostView${this.state.key}`].focusOnWebView();
-    }
+  focusOnWebView() {
+    this.refs[`mattermostView${this.state.key}`].focusOnWebView();
   }
 
   activateFinder() {
