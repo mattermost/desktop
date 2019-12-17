@@ -7,7 +7,7 @@ import path from 'path';
 
 import {URL} from 'url';
 
-import electron from 'electron';
+import electron, {shell} from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import log from 'electron-log';
@@ -430,10 +430,12 @@ function handleAppWebContentsCreated(dc, contents) {
     event.preventDefault();
     if (!isTrustedURL(url)) {
       log.info(`Untrusted popup window blocked: ${url}`);
+      shell.openExternal(url);
       return;
     }
     if (isTeamUrl(url) === true) {
       log.info(`${url} is a known team, preventing to open a new window`);
+      shell.openExternal(url);
       return;
     }
     if (popupWindow && popupWindow.getURL() === url) {
@@ -870,7 +872,7 @@ function isTeamUrl(url) {
   if (isCustomLoginURL(parsedURL)) {
     return false;
   }
-  const nonTeamUrlPaths = ['plugins', 'signup', 'login', 'admin', 'channel', 'post', 'api', 'oauth'];
+  const nonTeamUrlPaths = ['plugins', 'signup', 'login', 'admin', 'channel', 'post', 'oauth', 'admin_console'];
   return !(nonTeamUrlPaths.some((testPath) => parsedURL.pathname.toLowerCase().startsWith(`/${testPath}/`)));
 }
 
