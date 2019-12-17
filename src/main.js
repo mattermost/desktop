@@ -487,7 +487,7 @@ function handleAppWebContentsCreated(dc, contents) {
         }
       }
       return;
-    } 
+    }
 
     if ((process.platform === 'darwin' && !input.meta) || (process.platform !== 'darwin' && !input.control)) {
       return;
