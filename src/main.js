@@ -428,14 +428,19 @@ function handleAppWebContentsCreated(dc, contents) {
 
   contents.on('new-window', (event, url) => {
     event.preventDefault();
-    if (!isTrustedURL(url)) {
+    const parsedURL = parseURL(url);
+
+    if (!isTrustedURL(parsedURL)) {
       log.info(`Untrusted popup window blocked: ${url}`);
+      return;
+    }
+    if (parsedURL.pathname.toLowerCase().startsWith('/api/')) {
+      log.info(`${url} is a call to servers API, if there is a redirection it'll open on a separate app`);
       shell.openExternal(url);
       return;
     }
-    if (isTeamUrl(url) === true) {
+    if (isTeamUrl(parsedURL) === true) {
       log.info(`${url} is a known team, preventing to open a new window`);
-      shell.openExternal(url);
       return;
     }
     if (popupWindow && popupWindow.getURL() === url) {
