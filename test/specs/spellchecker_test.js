@@ -28,6 +28,9 @@ describe('main/Spellchecker.js', function() {
 
       SpellChecker.getSpellCheckerLocale('ja').should.equal('en-US');
       SpellChecker.getSpellCheckerLocale('ja-JP').should.equal('en-US');
+
+      SpellChecker.getSpellCheckerLocale('it').should.equal('it-IT');
+      SpellChecker.getSpellCheckerLocale('it-IT').should.equal('it-IT');
     });
   });
 
