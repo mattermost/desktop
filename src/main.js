@@ -442,6 +442,7 @@ function handleAppWebContentsCreated(dc, contents) {
     }
     if (!popupWindow) {
       popupWindow = new BrowserWindow({
+        backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
         parent: mainWindow,
         show: false,
         webPreferences: {

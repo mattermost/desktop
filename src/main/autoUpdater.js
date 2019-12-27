@@ -39,6 +39,7 @@ function createUpdaterModal(parentWindow, options) {
     height: windowHeight,
     resizable: false,
     autoHideMenuBar: true,
+    backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
   };
   if (process.platform === 'linux') {
     windowOptions.icon = options.linuxAppIcon;
