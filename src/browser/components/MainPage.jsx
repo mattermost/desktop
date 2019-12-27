@@ -20,6 +20,7 @@ import TabBar from './TabBar.jsx';
 import HoveringURL from './HoveringURL.jsx';
 import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
+import SelectCertificateModal from './SelectCertificateModal.jsx';
 
 export default class MainPage extends React.Component {
   constructor(props) {
@@ -42,6 +43,7 @@ export default class MainPage extends React.Component {
       mentionAtActiveCounts: new Array(this.props.teams.length),
       loginQueue: [],
       targetURL: '',
+      certificateRequest: null,
     };
 
     this.activateFinder = this.activateFinder.bind(this);
@@ -102,6 +104,18 @@ export default class MainPage extends React.Component {
       });
       self.setState({
         loginQueue,
+      });
+    });
+
+    ipcRenderer.on('select-user-certificate', (_, origin, certificateList) => {
+      console.log('received! asking for modal');
+      const certificateRequest = {
+        server: origin,
+        certificateList,
+      };
+      console.log(certificateRequest);
+      self.setState({
+        certificateRequest,
       });
     });
 
@@ -405,6 +419,17 @@ export default class MainPage extends React.Component {
     });
   }
 
+  handleSelectCertificate = (certificate) => {
+    console.log('certificate selected');
+    this.setState({certificateRequest: null});
+    ipcRenderer.send('selected-user-certificate', certificate);
+  }
+  handleCancelCertificate = () => {
+    console.log('cancelling certificate');
+    this.setState({certificateRequest: null});
+    ipcRenderer.send('canceled-user-certificate');
+  }
+
   render() {
     const self = this;
     let tabsRow;
@@ -508,6 +533,11 @@ export default class MainPage extends React.Component {
           authServerURL={authServerURL}
           onLogin={this.handleLogin}
           onCancel={this.handleLoginCancel}
+        />
+        <SelectCertificateModal
+          certificateRequest={this.state.certificateRequest}
+          onSelect={this.handleSelectCertificate}
+          onCancel={this.handleCancelCertificate}
         />
         <Grid fluid={true}>
           { tabsRow }
