@@ -216,6 +216,8 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('get-spellchecker-locale', handleGetSpellcheckerLocaleEvent);
   ipcMain.on('reply-on-spellchecker-is-ready', handleReplyOnSpellcheckerIsReadyEvent);
   ipcMain.on('selected-client-certificate', handleSelectedCertificate);
+  ipcMain.on('show-trusted-cert', showCert);
+
   if (shouldShowTrayIcon()) {
     ipcMain.on('update-unread', handleUpdateUnreadEvent);
   }
@@ -560,6 +562,14 @@ function handleAppWebContentsCreated(dc, contents) {
     }
     event.preventDefault();
   });
+}
+
+function showCert(_, certificate) {
+  console.log('have to show info for certificate');
+  if (certificate !== null) {
+    console.log('showing');
+    dialog.showCertificateTrustDialog({certificate}, Function.prototype);
+  }
 }
 
 function initializeAfterAppReady() {

@@ -1,6 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {ipcRenderer} from 'electron';
 import React, {Fragment} from 'react';
 import PropTypes from 'prop-types';
 import {Modal, Button, Table, Row, Col} from 'react-bootstrap';
@@ -63,11 +64,23 @@ export default class SelectCertificateModal extends React.Component {
     return (<tr><td>{'No certificates to select'}</td></tr>);
   }
 
+  getSelectedCert = () => {
+    return this.state.selectedIndex === null ? null : this.props.certificateRequest.certificateList[this.state.selectedIndex];
+  };
+
   handleOk = () => {
-    if (this.state.selectedIndex !== null) {
-      const cert = this.props.certificateRequest.certificateList[this.state.selectedIndex];
+    const cert = this.getSelectedCert();
+    if (cert !== null) {
       console.log(`selected cert: ${cert.serialNumber}`);
       this.props.onSelect(cert);
+    }
+  }
+
+  handleCertificateInfo = () => {
+    console.log('showing cert info');
+    const certificate = this.getSelectedCert();
+    if (certificate !== null) {
+      ipcRenderer.send('show-trusted-cert', certificate);
     }
   }
 
@@ -114,6 +127,7 @@ export default class SelectCertificateModal extends React.Component {
               <Button
                 variant={'info'}
                 disabled={this.state.selectedIndex === null}
+                onClick={this.handleCertificateInfo}
               >{'Certificate Information'}</Button>
             </Col>
             <Col sm={10}>
