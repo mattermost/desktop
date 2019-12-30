@@ -421,13 +421,15 @@ export default class MainPage extends React.Component {
 
   handleSelectCertificate = (certificate) => {
     console.log('certificate selected');
+    const server = this.state.certificateRequest.server;
     this.setState({certificateRequest: null});
-    ipcRenderer.send('selected-user-certificate', certificate);
+    ipcRenderer.send('selected-client-certificate', server, certificate);
   }
   handleCancelCertificate = () => {
     console.log('cancelling certificate');
+    const server = this.state.certificateRequest.server;
     this.setState({certificateRequest: null});
-    ipcRenderer.send('canceled-user-certificate');
+    ipcRenderer.send('selected-client-certificate', server);
   }
 
   render() {

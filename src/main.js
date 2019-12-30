@@ -312,6 +312,7 @@ function handleSelectCertificate(event, webContents, url, list, callback) {
 
   console.log(`got a certificate request from ${url}`);
   console.log(list);
+
   // store callback so it can be called with selected certificate
   certificateRequests.set(url, callback);
 
@@ -319,9 +320,25 @@ function handleSelectCertificate(event, webContents, url, list, callback) {
   mainWindow.webContents.send('select-user-certificate', url, list);
 }
 
-function handleSelectedCertificate(event, url, cert) {
-  const callback = certificateRequests.get(url);
-  callback(cert);
+function handleSelectedCertificate(event, server, cert) {
+  console.log(`hearing back from the selection of certificate for ${server}`);
+  console.log(cert);
+  const callback = certificateRequests.get(server);
+  if (!callback) {
+    console.error(`there was no callback associated with: ${server}`);
+    return;
+  }
+  try {
+    if (typeof cert === 'undefined') {
+      console.log('user cancel');
+      callback(); //user cancelled, so we use the callback without certificate.
+    } else {
+      console.log('callback with cert');
+      callback(cert);
+    }
+  } catch (e) {
+    console.log(`There was a problem using the selected certificate: ${e}`);
+  }
 }
 
 function handleAppCertificateError(event, webContents, url, error, certificate, callback) {

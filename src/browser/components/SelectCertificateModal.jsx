@@ -22,10 +22,18 @@ export default class SelectCertificateModal extends React.Component {
     };
   }
 
+  maxSize = (item, max) => {
+    if (item.length <= max) {
+      return item;
+    }
+    const sub = item.substring(0, max - 3);
+    return `${sub}...`;
+  }
+
   renderCert = (cert, index) => {
-    const issuer = cert.issuer && cert.issuer.commonName ? cert.issuer.commonName : '';
-    const subject = cert.subject && cert.subject.commonName ? cert.subject.commonName : '';
-    const serial = cert.serialNumber ? cert.serialNumber : '';
+    const issuer = cert.issuer && cert.issuer.commonName ? this.maxSize(cert.issuer.commonName, 10) : '';
+    const subject = cert.subject && cert.subject.commonName ? this.maxSize(cert.subject.commonName, 10) : '';
+    const serial = cert.serialNumber ? this.maxSize(cert.serialNumber, 10) : '';
     const select = () => {
       this.setState({selectedIndex: index});
     };
@@ -56,8 +64,10 @@ export default class SelectCertificateModal extends React.Component {
   }
 
   handleOk = () => {
-    if (this.state.selectedIndex) {
-      this.props.onSelect(this.props.certificateRequest.certificateList[this.state.selectedIndex]);
+    if (this.state.selectedIndex !== null) {
+      const cert = this.props.certificateRequest.certificateList[this.state.selectedIndex];
+      console.log(`selected cert: ${cert.serialNumber}`);
+      this.props.onSelect(cert);
     }
   }
 
@@ -113,7 +123,7 @@ export default class SelectCertificateModal extends React.Component {
               >{'Cancel'}</Button>
               <Button
                 variant={'primary'}
-                onClick={this.props.onSelect}
+                onClick={this.handleOk}
                 disabled={this.state.selectedIndex === null}
               >{'Ok'}</Button>
             </Col>
