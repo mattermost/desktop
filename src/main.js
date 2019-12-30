@@ -928,6 +928,7 @@ function isTrustedURL(url) {
   if (!parsedURL) {
     return false;
   }
+
   // todo remove, testing purposes only
   const testurl = parseURL('https://www.citapreviadnie.es:38188');
   if (parsedURL.origin === testurl.origin) {
