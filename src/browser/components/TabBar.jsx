@@ -48,7 +48,7 @@ export default class TabBar extends React.Component { // need "this"
         );
       }
 
-      const id = 'teamTabItem' + index;
+      const id = `teamTabItem${index}`;
       const navItem = () => (
         <NavItem
           key={id}
