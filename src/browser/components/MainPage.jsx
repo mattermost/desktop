@@ -50,22 +50,6 @@ export default class MainPage extends React.Component {
       targetURL: '',
       maximized: false,
     };
-
-    this.activateFinder = this.activateFinder.bind(this);
-    this.addServer = this.addServer.bind(this);
-    this.closeFinder = this.closeFinder.bind(this);
-    this.focusOnWebView = this.focusOnWebView.bind(this);
-    this.handleDragAndDrop = this.handleDragAndDrop.bind(this);
-    this.handleLogin = this.handleLogin.bind(this);
-    this.handleLoginCancel = this.handleLoginCancel.bind(this);
-    this.handleOnTeamFocused = this.handleOnTeamFocused.bind(this);
-    this.handleSelect = this.handleSelect.bind(this);
-    this.handleTargetURLChange = this.handleTargetURLChange.bind(this);
-    this.inputBlur = this.inputBlur.bind(this);
-    this.markReadAtActive = this.markReadAtActive.bind(this);
-    this.setDarkMode = this.setDarkMode.bind(this);
-
-    this.topBar = React.createRef();
   }
 
   parseDeeplinkURL(deeplink, teams = this.props.teams) {
@@ -354,7 +338,7 @@ export default class MainPage extends React.Component {
     this.setState({fullScreen: win.isFullScreen()});
   }
 
-  handleSelect(key) {
+  handleSelect = (key) => {
     const newKey = (this.props.teams.length + key) % this.props.teams.length;
     this.setState({
       key: newKey,
@@ -369,7 +353,7 @@ export default class MainPage extends React.Component {
     this.handleOnTeamFocused(newKey);
   }
 
-  handleDragAndDrop(dropResult) {
+  handleDragAndDrop = (dropResult) => {
     const {removedIndex, addedIndex} = dropResult;
     if (removedIndex !== addedIndex) {
       const teamIndex = this.props.moveTabs(removedIndex, addedIndex < this.props.teams.length ? addedIndex : this.props.teams.length - 1);
@@ -404,7 +388,7 @@ export default class MainPage extends React.Component {
     this.handleBadgesChange();
   }
 
-  markReadAtActive(index) {
+  markReadAtActive = (index) => {
     const unreadAtActive = this.state.unreadAtActive;
     const mentionAtActiveCounts = this.state.mentionAtActiveCounts;
     unreadAtActive[index] = false;
@@ -440,25 +424,25 @@ export default class MainPage extends React.Component {
     }
   }
 
-  handleOnTeamFocused(index) {
+  handleOnTeamFocused = (index) => {
     // Turn off the flag to indicate whether unread message of active channel contains at current tab.
     this.markReadAtActive(index);
   }
 
-  handleLogin(request, username, password) {
+  handleLogin = (request, username, password) => {
     ipcRenderer.send('login-credentials', request, username, password);
     const loginQueue = this.state.loginQueue;
     loginQueue.shift();
     this.setState({loginQueue});
   }
 
-  handleLoginCancel() {
+  handleLoginCancel = () => {
     const loginQueue = this.state.loginQueue;
     loginQueue.shift();
     this.setState({loginQueue});
   }
 
-  handleTargetURLChange(targetURL) {
+  handleTargetURLChange = (targetURL) => {
     clearTimeout(this.targetURLDisappearTimeout);
     if (targetURL === '') {
       // set delay to avoid momentary disappearance when hovering over multiple links
@@ -508,30 +492,30 @@ export default class MainPage extends React.Component {
     }
   }
 
-  addServer() {
+  addServer = () => {
     this.setState({
       showNewTeamModal: true,
     });
   }
 
-  focusOnWebView() {
+  focusOnWebView = (e) => {
     this.refs[`mattermostView${this.state.key}`].focusOnWebView();
   }
 
-  activateFinder() {
+  activateFinder = () => {
     this.setState({
       finderVisible: true,
       focusFinder: true,
     });
   }
 
-  closeFinder() {
+  closeFinder = () => {
     this.setState({
       finderVisible: false,
     });
   }
 
-  inputBlur() {
+  inputBlur = () => {
     this.setState({
       focusFinder: false,
     });

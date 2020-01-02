@@ -46,7 +46,7 @@ export default class NewTeamModal extends React.Component {
     return this.getTeamNameValidationError() === null ? null : 'error';
   }
 
-  handleTeamNameChange(e) {
+  handleTeamNameChange = (e) => {
     this.setState({
       teamName: e.target.value,
     });
@@ -72,7 +72,7 @@ export default class NewTeamModal extends React.Component {
     return this.getTeamUrlValidationError() === null ? null : 'error';
   }
 
-  handleTeamUrlChange(e) {
+  handleTeamUrlChange = (e) => {
     this.setState({
       teamUrl: e.target.value,
     });
@@ -97,7 +97,7 @@ export default class NewTeamModal extends React.Component {
            this.getTeamUrlValidationState() === null;
   }
 
-  save() {
+  save = () => {
     this.setState({
       saveStarted: true,
     }, () => {
@@ -171,7 +171,7 @@ export default class NewTeamModal extends React.Component {
                 type='text'
                 value={this.state.teamName}
                 placeholder='Server Name'
-                onChange={this.handleTeamNameChange.bind(this)}
+                onChange={this.handleTeamNameChange}
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
@@ -189,7 +189,7 @@ export default class NewTeamModal extends React.Component {
                 type='text'
                 value={this.state.teamUrl}
                 placeholder='https://example.com'
-                onChange={this.handleTeamUrlChange.bind(this)}
+                onChange={this.handleTeamUrlChange}
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
@@ -213,7 +213,7 @@ export default class NewTeamModal extends React.Component {
           >{'Cancel'}</Button>
           <Button
             id='saveNewServerModal'
-            onClick={this.save.bind(this)}
+            onClick={this.save}
             disabled={!this.validateForm()}
             bsStyle='primary'
           >{this.getSaveButtonLabel()}</Button>
