@@ -498,7 +498,7 @@ export default class MainPage extends React.Component {
     });
   }
 
-  focusOnWebView = (e) => {
+  focusOnWebView = () => {
     this.refs[`mattermostView${this.state.key}`].focusOnWebView();
   }
 

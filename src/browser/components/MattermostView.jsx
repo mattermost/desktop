@@ -359,6 +359,7 @@ export default class MattermostView extends React.Component {
 MattermostView.propTypes = {
   name: PropTypes.string,
   id: PropTypes.string,
+  withTab: PropTypes.bool,
   onTargetURLChange: PropTypes.func,
   onBadgeChange: PropTypes.func,
   src: PropTypes.string,
