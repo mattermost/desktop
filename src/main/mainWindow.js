@@ -52,6 +52,7 @@ function createMainWindow(config, options) {
     minWidth: minimumWindowWidth,
     minHeight: minimumWindowHeight,
     fullscreen: false,
+    backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,

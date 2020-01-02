@@ -22,22 +22,16 @@ export default class TeamList extends React.Component {
         index: false,
       },
     };
-
-    this.handleTeamRemove = this.handleTeamRemove.bind(this);
-    this.handleTeamAdd = this.handleTeamAdd.bind(this);
-    this.handleTeamEditing = this.handleTeamEditing.bind(this);
-    this.openServerRemoveModal = this.openServerRemoveModal.bind(this);
-    this.closeServerRemoveModal = this.closeServerRemoveModal.bind(this);
   }
 
-  handleTeamRemove(index) {
+  handleTeamRemove = (index) => {
     console.log(index);
     const teams = this.props.teams;
     teams.splice(index, 1);
     this.props.onTeamsChange(teams);
   }
 
-  handleTeamAdd(team) {
+  handleTeamAdd = (team) => {
     const teams = this.props.teams;
 
     // check if team already exists and then change existing team or add new one
@@ -60,7 +54,7 @@ export default class TeamList extends React.Component {
     this.props.onTeamsChange(teams);
   }
 
-  handleTeamEditing(teamName, teamUrl, teamIndex) {
+  handleTeamEditing = (teamName, teamUrl, teamIndex) => {
     this.setState({
       showEditTeamForm: true,
       team: {
@@ -71,11 +65,11 @@ export default class TeamList extends React.Component {
     });
   }
 
-  openServerRemoveModal(indexForServer) {
+  openServerRemoveModal = (indexForServer) => {
     this.setState({indexToRemoveServer: indexForServer});
   }
 
-  closeServerRemoveModal() {
+  closeServerRemoveModal = () => {
     this.setState({indexToRemoveServer: -1});
   }
 

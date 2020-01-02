@@ -432,12 +432,17 @@ function handleAppWebContentsCreated(dc, contents) {
       log.info(`Untrusted popup window blocked: ${url}`);
       return;
     }
+    if (isTeamUrl(url) === true) {
+      log.info(`${url} is a known team, preventing to open a new window`);
+      return;
+    }
     if (popupWindow && popupWindow.getURL() === url) {
       log.info(`Popup window already open at provided url: ${url}`);
       return;
     }
     if (!popupWindow) {
       popupWindow = new BrowserWindow({
+        backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
         parent: mainWindow,
         show: false,
         webPreferences: {
@@ -772,16 +777,22 @@ function handleUpdateMenuEvent(event, configData) {
   }
 }
 
-function handleUpdateDictionaryEvent() {
+// localeSelected might be null, if that's the case, use config's locale
+function handleUpdateDictionaryEvent(_, localeSelected) {
   if (config.useSpellChecker) {
-    spellChecker = new SpellChecker(
-      config.spellCheckerLocale,
-      path.resolve(app.getAppPath(), 'node_modules/simple-spellchecker/dict'),
-      (err) => {
-        if (err) {
-          console.error(err);
-        }
-      });
+    const locale = localeSelected || config.spellCheckerLocale;
+    try {
+      spellChecker = new SpellChecker(
+        locale,
+        path.resolve(app.getAppPath(), 'node_modules/simple-spellchecker/dict'),
+        (err) => {
+          if (err) {
+            console.error(err);
+          }
+        });
+    } catch (e) {
+      console.error('couldn\'t load a spellchecker for locale');
+    }
   }
 }
 
@@ -850,6 +861,18 @@ function parseURL(url) {
   } catch (e) {
     return null;
   }
+}
+
+function isTeamUrl(url) {
+  const parsedURL = parseURL(url);
+  if (!parsedURL) {
+    return null;
+  }
+  if (isCustomLoginURL(parsedURL)) {
+    return false;
+  }
+  const nonTeamUrlPaths = ['plugins', 'signup', 'login', 'admin', 'channel', 'post', 'api', 'oauth'];
+  return !(nonTeamUrlPaths.some((testPath) => parsedURL.pathname.toLowerCase().startsWith(`/${testPath}/`)));
 }
 
 function isTrustedURL(url) {
@@ -997,23 +1020,22 @@ function clearAppCache() {
   }
 }
 
-function getValidWindowPosition(state, screen) {
+function isWithinDisplay(state, display) {
+  // given a display, check if window is within it
+  return (state.x > display.maxX || state.y > display.maxY || state.x < display.minX || state.y < display.minY);
+}
+
+function getValidWindowPosition(state) {
   // Check if the previous position is out of the viewable area
   // (e.g. because the screen has been plugged off)
-  const displays = screen.getAllDisplays();
-  let minX = 0;
-  let maxX = 0;
-  let minY = 0;
-  let maxY = 0;
-  for (let i = 0; i < displays.length; i++) {
-    const display = displays[i];
-    maxX = Math.max(maxX, display.bounds.x + display.bounds.width);
-    maxY = Math.max(maxY, display.bounds.y + display.bounds.height);
-    minX = Math.min(minX, display.bounds.x);
-    minY = Math.min(minY, display.bounds.y);
-  }
+  const boundaries = Utils.getDisplayBoundaries();
+  const isDisplayed = boundaries.reduce(
+    (prev, display) => {
+      return prev || isWithinDisplay(state, display);
+    },
+    false);
 
-  if (state.x > maxX || state.y > maxY || state.x < minX || state.y < minY) {
+  if (isDisplayed) {
     Reflect.deleteProperty(state, 'x');
     Reflect.deleteProperty(state, 'y');
     Reflect.deleteProperty(state, 'width');
@@ -1032,7 +1054,7 @@ function resizeScreen(screen, browserWindow) {
       y: position[1],
       width: size[0],
       height: size[1],
-    }, screen);
+    });
     browserWindow.setPosition(validPosition.x || 0, validPosition.y || 0);
   }
 
