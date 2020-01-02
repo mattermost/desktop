@@ -62,7 +62,7 @@ const configDataSchemaV1 = Joi.object({
 });
 
 const configDataSchemaV2 = Joi.object({
-  version: Joi.number().min(2).default(1),
+  version: Joi.number().min(2).default(2),
   teams: Joi.array().items(Joi.object({
     name: Joi.string().required(),
     url: Joi.string().required(),
