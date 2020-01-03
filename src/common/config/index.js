@@ -144,6 +144,9 @@ export default class Config extends EventEmitter {
   get teams() {
     return this.combinedData.teams;
   }
+  get darkMode() {
+    return this.combinedData.darkMode;
+  }
   get localTeams() {
     return this.localConfigData.teams;
   }
@@ -209,10 +212,16 @@ export default class Config extends EventEmitter {
       configData = this.readFileSync(this.configFilePath);
 
       // validate based on config file version
-      if (configData.version > 0) {
-        configData = Validator.validateV1ConfigData(configData);
+      if (configData.version > 1) {
+        configData = Validator.validateV2ConfigData(configData);
       } else {
-        configData = Validator.validateV0ConfigData(configData);
+        switch (configData.version) {
+        case 1:
+          configData = Validator.validateV1ConfigData(configData);
+          break;
+        default:
+          configData = Validator.validateV0ConfigData(configData);
+        }
       }
       if (!configData) {
         throw new Error('Provided configuration file does not validate, using defaults instead.');
