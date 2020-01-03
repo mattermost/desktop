@@ -39,6 +39,8 @@ export default class MainPage extends React.Component {
       }
     }
 
+    this.topBar = React.createRef();
+
     this.state = {
       key,
       sessionsExpired: new Array(this.props.teams.length),

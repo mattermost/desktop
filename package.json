@@ -72,7 +72,7 @@
     "npm-run-all": "^4.1.5",
     "react": "^16.6.3",
     "react-dom": "^16.6.3",
-    "react-smooth-dnd": "github:devinbinnie/react-smooth-dnd#a72095d3fa1fd6ffc3a6b797174d019a07d7b011",
+    "react-smooth-dnd": "github:mattermost/react-smooth-dnd#af6b471295007274560a375799622c1cd52d678a",
     "spectron": "^6.0.0",
     "style-loader": "^0.23.1",
     "url-loader": "^1.1.2",
