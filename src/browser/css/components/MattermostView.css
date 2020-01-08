@@ -8,14 +8,10 @@
 
 .mattermostView webview, .mattermostView .mattermostView-loadingScreen {
   position: absolute;
-  top: 0px;
+  top: 40px;
   right: 0px;
   bottom: 0px;
   left: 0px;
-}
-
-.mattermostView-with-tab webview, .mattermostView-with-tab .mattermostView-loadingScreen {
-  top: 31px;
 }
 
 .mattermostView-hidden webview {

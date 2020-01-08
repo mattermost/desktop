@@ -11,8 +11,14 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {CSSTransition, TransitionGroup} from 'react-transition-group';
 import {Grid, Row} from 'react-bootstrap';
+import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 
 import {ipcRenderer, remote} from 'electron';
+
+import restoreButton from '../../assets/titlebar/chrome-restore.svg';
+import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
+import minimizeButton from '../../assets/titlebar/chrome-minimize.svg';
+import closeButton from '../../assets/titlebar/chrome-close.svg';
 
 import LoginModal from './LoginModal.jsx';
 import MattermostView from './MattermostView.jsx';
@@ -34,6 +40,8 @@ export default class MainPage extends React.Component {
       }
     }
 
+    this.topBar = React.createRef();
+
     this.state = {
       key,
       sessionsExpired: new Array(this.props.teams.length),
@@ -44,19 +52,8 @@ export default class MainPage extends React.Component {
       loginQueue: [],
       targetURL: '',
       certificateRequest: null,
+      maximized: false,
     };
-
-    this.activateFinder = this.activateFinder.bind(this);
-    this.addServer = this.addServer.bind(this);
-    this.closeFinder = this.closeFinder.bind(this);
-    this.focusOnWebView = this.focusOnWebView.bind(this);
-    this.handleLogin = this.handleLogin.bind(this);
-    this.handleLoginCancel = this.handleLoginCancel.bind(this);
-    this.handleOnTeamFocused = this.handleOnTeamFocused.bind(this);
-    this.handleSelect = this.handleSelect.bind(this);
-    this.handleTargetURLChange = this.handleTargetURLChange.bind(this);
-    this.inputBlur = this.inputBlur.bind(this);
-    this.markReadAtActive = this.markReadAtActive.bind(this);
   }
 
   parseDeeplinkURL(deeplink, teams = this.props.teams) {
@@ -93,6 +90,29 @@ export default class MainPage extends React.Component {
 
   componentDidMount() {
     const self = this;
+
+    // Due to a bug in Chrome on macOS, mousemove events from the webview won't register when the webview isn't in focus,
+    // thus you can't drag tabs unless you're right on the container.
+    // this makes it so your tab won't get stuck to your cursor no matter where you mouse up
+    if (process.platform === 'darwin') {
+      self.topBar.current.addEventListener('mouseleave', () => {
+        if (event.target === self.topBar.current) {
+          const upEvent = document.createEvent('MouseEvents');
+          upEvent.initMouseEvent('mouseup');
+          document.dispatchEvent(upEvent);
+        }
+      });
+
+      // Hack for when it leaves the electron window because apparently mouseleave isn't good enough there...
+      self.topBar.current.addEventListener('mousemove', () => {
+        if (event.clientY === 0 || event.clientX === 0 || event.clientX >= window.innerWidth) {
+          const upEvent = document.createEvent('MouseEvents');
+          upEvent.initMouseEvent('mouseup');
+          document.dispatchEvent(upEvent);
+        }
+      });
+    }
+
     ipcRenderer.on('login-request', (event, request, authInfo) => {
       self.setState({
         loginRequired: true,
@@ -141,13 +161,31 @@ export default class MainPage extends React.Component {
     function focusListener() {
       self.handleOnTeamFocused(self.state.key);
       self.refs[`mattermostView${self.state.key}`].focusOnWebView();
+      self.setState({unfocused: false});
+    }
+
+    function blurListener() {
+      self.setState({unfocused: true});
     }
 
     const currentWindow = remote.getCurrentWindow();
     currentWindow.on('focus', focusListener);
+    currentWindow.on('blur', blurListener);
     window.addEventListener('beforeunload', () => {
       currentWindow.removeListener('focus', focusListener);
     });
+
+    if (currentWindow.isMaximized()) {
+      self.setState({maximized: true});
+    }
+    currentWindow.on('maximize', this.handleMaximizeState);
+    currentWindow.on('unmaximize', this.handleMaximizeState);
+
+    if (currentWindow.isFullScreen()) {
+      self.setState({fullScreen: true});
+    }
+    currentWindow.on('enter-full-screen', this.handleFullScreenState);
+    currentWindow.on('leave-full-screen', this.handleFullScreenState);
 
     // https://github.com/mattermost/desktop/pull/371#issuecomment-263072803
     currentWindow.webContents.on('devtools-closed', () => {
@@ -272,6 +310,32 @@ export default class MainPage extends React.Component {
     ipcRenderer.on('toggle-find', () => {
       this.activateFinder(true);
     });
+
+    if (process.platform === 'darwin') {
+      self.setState({
+        isDarkMode: remote.systemPreferences.isDarkMode(),
+      });
+      remote.systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
+        self.setState({
+          isDarkMode: remote.systemPreferences.isDarkMode(),
+        });
+      });
+    } else {
+      self.setState({
+        isDarkMode: this.props.getDarkMode(),
+      });
+
+      ipcRenderer.on('set-dark-mode', () => {
+        this.setDarkMode();
+      });
+
+      this.threeDotMenu = React.createRef();
+      ipcRenderer.on('focus-three-dot-menu', () => {
+        if (this.threeDotMenu.current) {
+          this.threeDotMenu.current.focus();
+        }
+      });
+    }
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -280,7 +344,17 @@ export default class MainPage extends React.Component {
     }
   }
 
-  handleSelect(key) {
+  handleMaximizeState = () => {
+    const win = remote.getCurrentWindow();
+    this.setState({maximized: win.isMaximized()});
+  }
+
+  handleFullScreenState = () => {
+    const win = remote.getCurrentWindow();
+    this.setState({fullScreen: win.isFullScreen()});
+  }
+
+  handleSelect = (key) => {
     const newKey = (this.props.teams.length + key) % this.props.teams.length;
     this.setState({
       key: newKey,
@@ -293,6 +367,14 @@ export default class MainPage extends React.Component {
     window.focus();
     webview.focus();
     this.handleOnTeamFocused(newKey);
+  }
+
+  handleDragAndDrop = (dropResult) => {
+    const {removedIndex, addedIndex} = dropResult;
+    if (removedIndex !== addedIndex) {
+      const teamIndex = this.props.moveTabs(removedIndex, addedIndex < this.props.teams.length ? addedIndex : this.props.teams.length - 1);
+      this.handleSelect(teamIndex);
+    }
   }
 
   handleBadgeChange = (index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) => {
@@ -322,7 +404,7 @@ export default class MainPage extends React.Component {
     this.handleBadgesChange();
   }
 
-  markReadAtActive(index) {
+  markReadAtActive = (index) => {
     const unreadAtActive = this.state.unreadAtActive;
     const mentionAtActiveCounts = this.state.mentionAtActiveCounts;
     unreadAtActive[index] = false;
@@ -358,25 +440,25 @@ export default class MainPage extends React.Component {
     }
   }
 
-  handleOnTeamFocused(index) {
+  handleOnTeamFocused = (index) => {
     // Turn off the flag to indicate whether unread message of active channel contains at current tab.
     this.markReadAtActive(index);
   }
 
-  handleLogin(request, username, password) {
+  handleLogin = (request, username, password) => {
     ipcRenderer.send('login-credentials', request, username, password);
     const loginQueue = this.state.loginQueue;
     loginQueue.shift();
     this.setState({loginQueue});
   }
 
-  handleLoginCancel() {
+  handleLoginCancel = () => {
     const loginQueue = this.state.loginQueue;
     loginQueue.shift();
     this.setState({loginQueue});
   }
 
-  handleTargetURLChange(targetURL) {
+  handleTargetURLChange = (targetURL) => {
     clearTimeout(this.targetURLDisappearTimeout);
     if (targetURL === '') {
       // set delay to avoid momentary disappearance when hovering over multiple links
@@ -388,32 +470,68 @@ export default class MainPage extends React.Component {
     }
   }
 
-  addServer() {
+  handleClose = () => {
+    const win = remote.getCurrentWindow();
+    win.close();
+  }
+
+  handleMinimize = () => {
+    const win = remote.getCurrentWindow();
+    win.minimize();
+  }
+
+  handleMaximize = () => {
+    const win = remote.getCurrentWindow();
+    win.maximize();
+  }
+
+  handleRestore = () => {
+    const win = remote.getCurrentWindow();
+    win.restore();
+  }
+
+  openMenu = () => {
+    // @eslint-ignore
+    this.threeDotMenu.current.blur();
+    this.props.openMenu();
+  }
+
+  handleDoubleClick = () => {
+    const doubleClickAction = remote.systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
+    const win = remote.getCurrentWindow();
+    if (doubleClickAction === 'Minimize') {
+      win.minimize();
+    } else if (doubleClickAction === 'Maximize' && !win.isMaximized()) {
+      win.maximize();
+    } else if (doubleClickAction === 'Maximize' && win.isMaximized()) {
+      win.unmaximize();
+    }
+  }
+
+  addServer = () => {
     this.setState({
       showNewTeamModal: true,
     });
   }
 
-  focusOnWebView(e) {
-    if (e.target.className !== 'finder-input') {
-      this.refs[`mattermostView${this.state.key}`].focusOnWebView();
-    }
+  focusOnWebView = () => {
+    this.refs[`mattermostView${this.state.key}`].focusOnWebView();
   }
 
-  activateFinder() {
+  activateFinder = () => {
     this.setState({
       finderVisible: true,
       focusFinder: true,
     });
   }
 
-  closeFinder() {
+  closeFinder = () => {
     this.setState({
       finderVisible: false,
     });
   }
 
-  inputBlur() {
+  inputBlur = () => {
     this.setState({
       focusFinder: false,
     });
@@ -431,29 +549,115 @@ export default class MainPage extends React.Component {
     this.setState({certificateRequest: null});
     ipcRenderer.send('selected-client-certificate', server);
   }
+  setDarkMode() {
+    this.setState({
+      isDarkMode: this.props.setDarkMode(),
+    });
+  }
 
   render() {
     const self = this;
-    let tabsRow;
-    if (this.props.teams.length > 1) {
-      tabsRow = (
-        <Row>
-          <TabBar
-            id='tabBar'
-            teams={this.props.teams}
-            sessionsExpired={this.state.sessionsExpired}
-            unreadCounts={this.state.unreadCounts}
-            mentionCounts={this.state.mentionCounts}
-            unreadAtActive={this.state.unreadAtActive}
-            mentionAtActiveCounts={this.state.mentionAtActiveCounts}
-            activeKey={this.state.key}
-            onSelect={this.handleSelect}
-            onAddServer={this.addServer}
-            showAddServerButton={this.props.showAddServerButton}
-          />
-        </Row>
+    const tabsRow = (
+      <TabBar
+        id='tabBar'
+        isDarkMode={this.state.isDarkMode}
+        teams={this.props.teams}
+        sessionsExpired={this.state.sessionsExpired}
+        unreadCounts={this.state.unreadCounts}
+        mentionCounts={this.state.mentionCounts}
+        unreadAtActive={this.state.unreadAtActive}
+        mentionAtActiveCounts={this.state.mentionAtActiveCounts}
+        activeKey={this.state.key}
+        onSelect={this.handleSelect}
+        onAddServer={this.addServer}
+        showAddServerButton={this.props.showAddServerButton}
+        onDrop={this.handleDragAndDrop}
+      />
+    );
+
+    let topBarClassName = 'topBar';
+    if (process.platform === 'darwin') {
+      topBarClassName += ' macOS';
+    }
+    if (this.state.isDarkMode) {
+      topBarClassName += ' darkMode';
+    }
+    if (this.state.fullScreen) {
+      topBarClassName += ' fullScreen';
+    }
+
+    let maxButton;
+    if (this.state.maximized) {
+      maxButton = (
+        <div
+          className='button restore-button'
+          onClick={this.handleRestore}
+        >
+          <img src={restoreButton}/>
+        </div>
+      );
+    } else {
+      maxButton = (
+        <div
+          className='button max-button'
+          onClick={this.handleMaximize}
+        >
+          <img src={maximizeButton}/>
+        </div>
       );
     }
+
+    let overlayGradient;
+    if (process.platform !== 'darwin') {
+      overlayGradient = (
+        <span className='overlay-gradient'/>
+      );
+    }
+
+    let titleBarButtons;
+    if (process.platform !== 'darwin') {
+      titleBarButtons = (
+        <span className='title-bar-btns'>
+          <div
+            className='button min-button'
+            onClick={this.handleMinimize}
+          >
+            <img src={minimizeButton}/>
+          </div>
+          {maxButton}
+          <div
+            className='button close-button'
+            onClick={this.handleClose}
+          >
+            <img src={closeButton}/>
+          </div>
+        </span>
+      );
+    }
+
+    const topRow = (
+      <Row
+        className={topBarClassName}
+        onDoubleClick={this.handleDoubleClick}
+      >
+        <div
+          ref={this.topBar}
+          className={`topBar-bg${this.state.unfocused ? ' unfocused' : ''}`}
+        >
+          <button
+            className='three-dot-menu'
+            onClick={this.openMenu}
+            tabIndex={0}
+            ref={this.threeDotMenu}
+          >
+            <DotsVerticalIcon/>
+          </button>
+          {tabsRow}
+          {overlayGradient}
+          {titleBarButtons}
+        </div>
+      </Row>
+    );
 
     const views = this.props.teams.map((team, index) => {
       function handleBadgeChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) {
@@ -478,7 +682,7 @@ export default class MainPage extends React.Component {
         <MattermostView
           key={id}
           id={id}
-          withTab={this.props.teams.length > 1}
+
           useSpellChecker={this.props.useSpellChecker}
           onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
           src={teamUrl}
@@ -506,7 +710,9 @@ export default class MainPage extends React.Component {
     }
     const modal = (
       <NewTeamModal
+        currentOrder={this.props.teams.length}
         show={this.state.showNewTeamModal}
+        restoreFocus={false}
         onClose={() => {
           this.setState({
             showNewTeamModal: false,
@@ -542,7 +748,7 @@ export default class MainPage extends React.Component {
           onCancel={this.handleCancelCertificate}
         />
         <Grid fluid={true}>
-          { tabsRow }
+          { topRow }
           { viewsRow }
           { this.state.finderVisible ? (
             <Finder
@@ -584,6 +790,10 @@ MainPage.propTypes = {
   onSelectSpellCheckerLocale: PropTypes.func.isRequired,
   deeplinkingUrl: PropTypes.string,
   showAddServerButton: PropTypes.bool.isRequired,
+  getDarkMode: PropTypes.func.isRequired,
+  setDarkMode: PropTypes.func.isRequired,
+  moveTabs: PropTypes.func.isRequired,
+  openMenu: PropTypes.func.isRequired,
 };
 
 /* eslint-enable react/no-set-state */

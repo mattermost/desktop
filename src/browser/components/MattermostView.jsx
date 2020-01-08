@@ -38,30 +38,16 @@ export default class MattermostView extends React.Component {
       basename: '/',
     };
 
-    this.handleUnreadCountChange = this.handleUnreadCountChange.bind(this);
-    this.dispatchNotification = this.dispatchNotification.bind(this);
-    this.reload = this.reload.bind(this);
-    this.clearCacheAndReload = this.clearCacheAndReload.bind(this);
-    this.focusOnWebView = this.focusOnWebView.bind(this);
-    this.canGoBack = this.canGoBack.bind(this);
-    this.canGoForward = this.canGoForward.bind(this);
-    this.goBack = this.goBack.bind(this);
-    this.goForward = this.goForward.bind(this);
-    this.getSrc = this.getSrc.bind(this);
-    this.handleDeepLink = this.handleDeepLink.bind(this);
-    this.handleUserActivityUpdate = this.handleUserActivityUpdate.bind(this);
-    this.handleExitFullscreen = this.handleExitFullscreen.bind(this);
-
     this.webviewRef = React.createRef();
   }
 
-  handleUnreadCountChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) {
+  handleUnreadCountChange = (sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) => {
     if (this.props.onBadgeChange) {
       this.props.onBadgeChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
     }
   }
 
-  async dispatchNotification(title, body, channel, teamId, silent) {
+  dispatchNotification = async (title, body, channel, teamId, silent) => {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
       log.error('Notifications not granted');
@@ -193,6 +179,12 @@ export default class MattermostView extends React.Component {
       case 'onNotificationClick':
         self.props.onNotificationClick();
         break;
+      case 'mouse-move':
+        this.handleMouseMove(event.args[0]);
+        break;
+      case 'mouse-up':
+        this.handleMouseUp();
+        break;
       }
     });
 
@@ -233,7 +225,7 @@ export default class MattermostView extends React.Component {
     ipcRenderer.removeListener('exit-fullscreen', this.handleExitFullscreen);
   }
 
-  reload() {
+  reload = () => {
     clearTimeout(this.state.reloadTimeoutID);
     this.setState({
       errorInfo: null,
@@ -244,7 +236,7 @@ export default class MattermostView extends React.Component {
     webview.reload();
   }
 
-  clearCacheAndReload() {
+  clearCacheAndReload = () => {
     this.setState({
       errorInfo: null,
     });
@@ -254,41 +246,53 @@ export default class MattermostView extends React.Component {
     });
   }
 
-  focusOnWebView() {
+  focusOnWebView = () => {
     const webview = this.webviewRef.current;
     const webContents = webview.getWebContents(); // webContents might not be created yet.
-    if (webContents && !webContents.isFocused()) {
+    if (webContents) {
       webview.focus();
       webContents.focus();
     }
   }
 
-  canGoBack() {
+  handleMouseMove = (event) => {
+    const moveEvent = document.createEvent('MouseEvents');
+    moveEvent.initMouseEvent('mousemove', null, null, null, null, null, null, event.clientX, event.clientY);
+    document.dispatchEvent(moveEvent);
+  }
+
+  handleMouseUp = () => {
+    const upEvent = document.createEvent('MouseEvents');
+    upEvent.initMouseEvent('mouseup');
+    document.dispatchEvent(upEvent);
+  }
+
+  canGoBack = () => {
     const webview = this.webviewRef.current;
     return webview.getWebContents().canGoBack();
   }
 
-  canGoForward() {
+  canGoForward = () => {
     const webview = this.webviewRef.current;
     return webview.getWebContents().canGoForward();
   }
 
-  goBack() {
+  goBack = () => {
     const webview = this.webviewRef.current;
     webview.getWebContents().goBack();
   }
 
-  goForward() {
+  goForward = () => {
     const webview = this.webviewRef.current;
     webview.getWebContents().goForward();
   }
 
-  getSrc() {
+  getSrc = () => {
     const webview = this.webviewRef.current;
     return webview.src;
   }
 
-  handleDeepLink(relativeUrl) {
+  handleDeepLink = (relativeUrl) => {
     const webview = this.webviewRef.current;
     webview.executeJavaScript(
       'history.pushState(null, null, "' + relativeUrl + '");'
@@ -298,12 +302,12 @@ export default class MattermostView extends React.Component {
     );
   }
 
-  handleUserActivityUpdate(event, status) {
+  handleUserActivityUpdate = (event, status) => {
     // pass user activity update to the webview
     this.webviewRef.current.send('user-activity-update', status);
   }
 
-  handleExitFullscreen() {
+  handleExitFullscreen = () => {
     // pass exit fullscreen request to the webview
     this.webviewRef.current.send('exit-fullscreen');
   }
@@ -315,7 +319,6 @@ export default class MattermostView extends React.Component {
         className='errorView'
         errorInfo={this.state.errorInfo}
         active={this.props.active}
-        withTab={this.props.withTab}
       />) : null;
 
     // Need to keep webview mounted when failed to load.
@@ -323,7 +326,7 @@ export default class MattermostView extends React.Component {
     if (this.props.withTab) {
       classNames.push('mattermostView-with-tab');
     }
-    if (!this.props.active) {
+    if (!this.props.active || this.state.errorInfo) {
       classNames.push('mattermostView-hidden');
     }
 
@@ -356,11 +359,11 @@ export default class MattermostView extends React.Component {
 MattermostView.propTypes = {
   name: PropTypes.string,
   id: PropTypes.string,
+  withTab: PropTypes.bool,
   onTargetURLChange: PropTypes.func,
   onBadgeChange: PropTypes.func,
   src: PropTypes.string,
   active: PropTypes.bool,
-  withTab: PropTypes.bool,
   useSpellChecker: PropTypes.bool,
   onSelectSpellCheckerLocale: PropTypes.func,
 };

@@ -8,12 +8,11 @@ import {Button, Col, ControlLabel, Form, FormGroup, FormControl, Modal} from 're
 export default class LoginModal extends React.Component {
   constructor(props) {
     super(props);
-    this.handleSubmit = this.handleSubmit.bind(this);
     this.username = '';
     this.password = '';
   }
 
-  handleSubmit(event) {
+  handleSubmit = (event) => {
     event.preventDefault();
     this.props.onLogin(this.props.request, this.username, this.password);
     this.username = '';
