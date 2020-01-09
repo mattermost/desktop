@@ -356,6 +356,9 @@ function handleAppGPUProcessCrashed(event, killed) {
 
 function handleAppLogin(event, webContents, request, authInfo, callback) {
   event.preventDefault();
+  if (!isTrustedURL(request.url)) {
+    return;
+  }
   loginCallbackMap.set(JSON.stringify(request), callback);
   mainWindow.webContents.send('login-request', request, authInfo);
 }
