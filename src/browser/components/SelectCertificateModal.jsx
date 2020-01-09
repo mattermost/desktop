@@ -32,8 +32,8 @@ export default class SelectCertificateModal extends React.Component {
   }
 
   renderCert = (cert, index) => {
-    const issuer = cert.issuer && cert.issuer.commonName ? this.maxSize(cert.issuer.commonName, 10) : '';
-    const subject = cert.subject && cert.subject.commonName ? this.maxSize(cert.subject.commonName, 10) : '';
+    const issuer = cert.issuer && cert.issuer.commonName ? this.maxSize(cert.issuer.commonName.split(':')[1], 10) : '';
+    const subject = cert.subject && cert.subject.commonName ? this.maxSize(cert.subject.commonName.split(':')[1], 10) : '';
     const serial = cert.serialNumber ? this.maxSize(cert.serialNumber, 10) : '';
     const select = () => {
       this.setState({selectedIndex: index});
@@ -85,12 +85,6 @@ export default class SelectCertificateModal extends React.Component {
   }
 
   render() {
-    let origin = 'unknown server';
-    if (this.props.certificateRequest) {
-      const parsedUrl = new URL(this.props.certificateRequest.server);
-      origin = parsedUrl.origin;
-    }
-
     const certList = this.props.certificateRequest ? this.props.certificateRequest.certificateList : [];
     return (
       <Modal
@@ -102,7 +96,7 @@ export default class SelectCertificateModal extends React.Component {
           <Modal.Title>{'Select Certificate'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>{`Select a certificate to authenticate yourself to ${origin}`}</p>
+          <p>{`Select a certificate to authenticate yourself to ${this.props.certificateRequest}`}</p>
           <Table
             stripped={'true'}
             bordered={true}
@@ -123,14 +117,14 @@ export default class SelectCertificateModal extends React.Component {
         </Modal.Body>
         <Modal.Footer>
           <Row>
-            <Col sm={2}>
+            <Col sm={4}>
               <Button
                 variant={'info'}
                 disabled={this.state.selectedIndex === null}
                 onClick={this.handleCertificateInfo}
               >{'Certificate Information'}</Button>
             </Col>
-            <Col sm={10}>
+            <Col sm={8}>
               <Button
                 onClick={this.props.onCancel}
                 variant={'secondary'}
