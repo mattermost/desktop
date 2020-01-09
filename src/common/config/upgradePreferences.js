@@ -19,9 +19,21 @@ function upgradeV0toV1(configV0) {
   return config;
 }
 
+function upgradeV1toV2(configV1) {
+  const config = deepCopy(configV1);
+  config.version = 2;
+  config.teams.forEach((value, index) => {
+    value.order = index;
+  });
+  config.darkMode = false;
+  return config;
+}
+
 export default function upgradeToLatest(config) {
   const configVersion = config.version ? config.version : 0;
   switch (configVersion) {
+  case 1:
+    return upgradeToLatest(upgradeV1toV2(config));
   case 0:
     return upgradeToLatest(upgradeV0toV1(config));
   default:

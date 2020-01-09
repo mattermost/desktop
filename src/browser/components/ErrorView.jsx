@@ -14,9 +14,6 @@ export default function ErrorView(props) {
   if (!props.active) {
     classNames.push('ErrorView-hidden');
   }
-  if (props.withTab) {
-    classNames.push('ErrorView-with-tab');
-  }
   function handleClick(event) {
     event.preventDefault();
     shell.openExternal(props.errorInfo.validatedURL);
@@ -84,5 +81,4 @@ ErrorView.propTypes = {
   errorInfo: PropTypes.object,
   id: PropTypes.number,
   active: PropTypes.bool,
-  withTab: PropTypes.bool,
 };

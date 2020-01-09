@@ -424,6 +424,7 @@ export default class SettingsPage extends React.Component {
             onTeamClick={(index) => {
               backToIndex(index + this.state.buildTeams.length + this.state.registryTeams.length);
             }}
+            modalContainer={this}
           />
         </Col>
       </Row>
@@ -687,7 +688,7 @@ export default class SettingsPage extends React.Component {
     ) : null;
 
     return (
-      <div>
+      <div className='modal-container'>
         <Navbar
           className='navbar-fixed-top'
           style={settingsPage.navbar}

@@ -66,6 +66,7 @@ let registryConfig = null;
 let config = null;
 let trayIcon = null;
 let trayImages = null;
+let altLastPressed = false;
 
 // supported custom login paths (oath, saml)
 const customLoginRegexPaths = [
@@ -215,6 +216,9 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('reply-on-spellchecker-is-ready', handleReplyOnSpellcheckerIsReadyEvent);
   if (shouldShowTrayIcon()) {
     ipcMain.on('update-unread', handleUpdateUnreadEvent);
+  }
+  if (process.platform !== 'darwin') {
+    ipcMain.on('open-app-menu', handleOpenAppMenu);
   }
 }
 
@@ -462,6 +466,19 @@ function handleAppWebContentsCreated(dc, contents) {
 
   // implemented to temporarily help solve for https://community-daily.mattermost.com/core/pl/b95bi44r4bbnueqzjjxsi46qiw
   contents.on('before-input-event', (event, input) => {
+    if (input.key === 'Alt' && input.type === 'keyUp' && altLastPressed) {
+      altLastPressed = false;
+      mainWindow.webContents.send('focus-three-dot-menu');
+      return;
+    }
+
+    // Hack to detect keyPress so that alt+<key> combinations don't default back to the 3-dot menu
+    if (input.key === 'Alt' && input.type === 'keyDown') {
+      altLastPressed = true;
+    } else {
+      altLastPressed = false;
+    }
+
     if (!input.shift && !input.control && !input.alt && !input.meta) {
       // hacky fix for https://mattermost.atlassian.net/browse/MM-19226
       if ((input.key === 'Escape' || input.key === 'f') && input.type === 'keyDown') {
@@ -755,9 +772,21 @@ function handleUpdateUnreadEvent(event, arg) {
   }
 }
 
+function handleOpenAppMenu() {
+  Menu.getApplicationMenu().popup({
+    x: 18,
+    y: 18,
+  });
+}
+
+function handleCloseAppMenu(event) {
+  mainWindow.webContents.send('focus-on-webview', event);
+}
+
 function handleUpdateMenuEvent(event, configData) {
   const aMenu = appMenu.createMenu(mainWindow, configData, global.isDev);
   Menu.setApplicationMenu(aMenu);
+  aMenu.addListener('menu-will-close', handleCloseAppMenu);
 
   // set up context menu for tray icon
   if (shouldShowTrayIcon()) {

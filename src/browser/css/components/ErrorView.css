@@ -1,13 +1,9 @@
 .ErrorView {
   position: absolute;
-  top: 0px;
+  top: 32px;
   right: 0px;
   bottom: 0px;
   left: 0px;
-}
-
-.ErrorView-with-tab {
-  top: 32px;
 }
 
 .ErrorView-hidden {

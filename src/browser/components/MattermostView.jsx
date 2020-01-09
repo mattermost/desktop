@@ -179,6 +179,12 @@ export default class MattermostView extends React.Component {
       case 'onNotificationClick':
         self.props.onNotificationClick();
         break;
+      case 'mouse-move':
+        this.handleMouseMove(event.args[0]);
+        break;
+      case 'mouse-up':
+        this.handleMouseUp();
+        break;
       }
     });
 
@@ -243,10 +249,22 @@ export default class MattermostView extends React.Component {
   focusOnWebView = () => {
     const webview = this.webviewRef.current;
     const webContents = webview.getWebContents(); // webContents might not be created yet.
-    if (webContents && !webContents.isFocused()) {
+    if (webContents) {
       webview.focus();
       webContents.focus();
     }
+  }
+
+  handleMouseMove = (event) => {
+    const moveEvent = document.createEvent('MouseEvents');
+    moveEvent.initMouseEvent('mousemove', null, null, null, null, null, null, event.clientX, event.clientY);
+    document.dispatchEvent(moveEvent);
+  }
+
+  handleMouseUp = () => {
+    const upEvent = document.createEvent('MouseEvents');
+    upEvent.initMouseEvent('mouseup');
+    document.dispatchEvent(upEvent);
   }
 
   canGoBack = () => {
@@ -301,7 +319,6 @@ export default class MattermostView extends React.Component {
         className='errorView'
         errorInfo={this.state.errorInfo}
         active={this.props.active}
-        withTab={this.props.withTab}
       />) : null;
 
     // Need to keep webview mounted when failed to load.
@@ -309,7 +326,7 @@ export default class MattermostView extends React.Component {
     if (this.props.withTab) {
       classNames.push('mattermostView-with-tab');
     }
-    if (!this.props.active) {
+    if (!this.props.active || this.state.errorInfo) {
       classNames.push('mattermostView-hidden');
     }
 
@@ -342,11 +359,11 @@ export default class MattermostView extends React.Component {
 MattermostView.propTypes = {
   name: PropTypes.string,
   id: PropTypes.string,
+  withTab: PropTypes.bool,
   onTargetURLChange: PropTypes.func,
   onBadgeChange: PropTypes.func,
   src: PropTypes.string,
   active: PropTypes.bool,
-  withTab: PropTypes.bool,
   useSpellChecker: PropTypes.bool,
   onSelectSpellCheckerLocale: PropTypes.func,
 };
