@@ -175,6 +175,7 @@ export default class NewTeamModal extends React.Component {
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
+                autoFocus={true}
               />
               <FormControl.Feedback/>
               <HelpBlock>{'The name of the server displayed on your desktop app tab bar.'}</HelpBlock>
