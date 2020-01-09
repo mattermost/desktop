@@ -94,7 +94,7 @@ export default class MainPage extends React.Component {
     if (!tabURL) {
       return null;
     }
-    return allWebContents.find((webContents) => webContents.getURL().includes(tabURL));
+    return allWebContents.find((webContents) => webContents.getURL().includes(tabURL) || webContents.getURL().includes(this.refs[`mattermostView${index}`].getSrc()));
   }
 
   componentDidMount() {
