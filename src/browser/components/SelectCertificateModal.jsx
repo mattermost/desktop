@@ -69,7 +69,7 @@ export default class SelectCertificateModal extends React.Component {
   };
 
   renderCerts = (certificateList) => {
-    if (!certificateList) {
+    if (certificateList) {
       const certs = certificateList.map(this.renderCert);
       return (
         <Fragment>
