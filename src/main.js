@@ -316,11 +316,6 @@ function handleSelectCertificate(event, webContents, url, list, callback) {
   event.preventDefault(); // prevent the app from getting the first certificate available
   // todo: check that url has the same origin as one of the configured servers
 
-  console.log(`got a certificate request from ${url}`);
-  console.log(url);
-  console.log(typeof url);
-  console.log(list);
-
   // store callback so it can be called with selected certificate
   certificateRequests.set(url, callback);
 
@@ -329,10 +324,6 @@ function handleSelectCertificate(event, webContents, url, list, callback) {
 }
 
 function handleSelectedCertificate(event, server, cert) {
-  console.log(`hearing back from the selection of certificate for ${server}`);
-  console.log(server);
-  console.log(typeof server);
-  console.log(cert);
   const callback = certificateRequests.get(server);
   if (!callback) {
     console.error(`there was no callback associated with: ${server}`);
@@ -340,10 +331,8 @@ function handleSelectedCertificate(event, server, cert) {
   }
   try {
     if (typeof cert === 'undefined') {
-      console.log('user cancel');
       callback(); //user cancelled, so we use the callback without certificate.
     } else {
-      console.log('callback with cert');
       callback(cert);
     }
   } catch (e) {
@@ -586,9 +575,7 @@ function handleAppWebContentsCreated(dc, contents) {
 }
 
 function showCert(_, certificate) {
-  console.log('have to show info for certificate');
   if (certificate !== null) {
-    console.log('showing');
     dialog.showCertificateTrustDialog({certificate}, Function.prototype);
   }
 }

@@ -6,7 +6,7 @@ import React, {Fragment} from 'react';
 import PropTypes from 'prop-types';
 import {Modal, Button, Table, Row, Col} from 'react-bootstrap';
 
-const CELL_SIZE = 20;
+const CELL_SIZE = 23;
 export default class SelectCertificateModal extends React.Component {
   static propTypes = {
     onSelect: PropTypes.func.isRequired,
@@ -33,9 +33,13 @@ export default class SelectCertificateModal extends React.Component {
   }
 
   renderCert = (cert, index) => {
-    const issuer = cert.issuer && cert.issuer.commonName ? this.maxSize(cert.issuer.commonName.split(':')[1], CELL_SIZE) : '';
-    const subject = cert.subject && cert.subject.commonName ? this.maxSize(cert.subject.commonName.split(':')[1], CELL_SIZE) : '';
-    const serial = cert.serialNumber ? this.maxSize(cert.serialNumber, CELL_SIZE) : '';
+    const issuer = cert.issuer && cert.issuer.commonName ? cert.issuer.commonName : '';
+    const subject = cert.subject && cert.subject.commonName ? cert.subject.commonName: '';
+    const serial = cert.serialNumber || '';
+
+    const issuerShort = this.maxSize(cert.issuer.commonName.split(':')[1], CELL_SIZE);
+    const subjectShort = this.maxSize(cert.subject.commonName.split(':')[1], CELL_SIZE);
+    const serialShort =  this.maxSize(cert.serialNumber, CELL_SIZE);
     const select = () => {
       this.setState({selectedIndex: index});
     };
@@ -47,14 +51,23 @@ export default class SelectCertificateModal extends React.Component {
         onClick={select}
         style={style}
       >
-        <td>{issuer}</td>
-        <td>{subject}</td>
-        <td>{serial}</td>
+        <td
+          style={style}
+          title={issuer}
+        >{issuerShort}</td>
+        <td
+          style={style}
+          title={subject}
+        >{subjectShort}</td>
+        <td
+          style={style}
+          title={serial}
+        >{serialShort}</td>
       </tr>);
   };
 
   renderCerts = (certificateList) => {
-    if (certificateList) {
+    if (!certificateList) {
       const certs = certificateList.map(this.renderCert);
       return (
         <Fragment>
@@ -62,7 +75,7 @@ export default class SelectCertificateModal extends React.Component {
         </Fragment>
       );
     }
-    return (<tr><td>{'No certificates to select'}</td></tr>);
+    return (<Fragment><tr/><tr><td/><td>{'No certificates available'}</td><td/></tr></Fragment>);
   }
 
   getSelectedCert = () => {
@@ -72,13 +85,11 @@ export default class SelectCertificateModal extends React.Component {
   handleOk = () => {
     const cert = this.getSelectedCert();
     if (cert !== null) {
-      console.log(`selected cert: ${cert.serialNumber}`);
       this.props.onSelect(cert);
     }
   }
 
   handleCertificateInfo = () => {
-    console.log('showing cert info');
     const certificate = this.getSelectedCert();
     if (certificate !== null) {
       ipcRenderer.send('show-trusted-cert', certificate);
@@ -94,32 +105,32 @@ export default class SelectCertificateModal extends React.Component {
         className='certificateModal'
         show={this.props.certificateRequest !== null}
       >
-        <Modal.Header>
-          <Modal.Title>{'Select Certificate'}</Modal.Title>
+        <Modal.Header className={'noBorder'}>
+          <Modal.Title className={'bottomBorder'}>{'Select a certificate'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>{`Select a certificate to authenticate yourself to ${server}`}</p>
+          <p className={'subtitle'}>{`Select a certificate to authenticate yourself to ${server}`}</p>
           <Table
             stripped={'true'}
-            bordered={true}
             hover={true}
             size={'sm'}
             className='certificateList'
           >
             <thead>
               <tr>
-                <th>{'Subject'}</th>
-                <th>{'Issuer'}</th>
+                <th><span className={'divider'}>{'Subject'}</span></th>
+                <th><span className={'divider'}>{'Issuer'}</span></th>
                 <th>{'Serial'}</th>
               </tr>
             </thead>
             <tbody>
               {this.renderCerts(certList)}
+              <tr/* this is to correct table height without affecting real rows *//>
             </tbody>
           </Table>
         </Modal.Body>
-        <Modal.Footer>
-          <Row>
+        <Modal.Footer className={'noBorder'}>
+          <Row className={'topBorder'}>
             <Col sm={4}>
               <Button
                 variant={'info'}

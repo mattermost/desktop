@@ -128,14 +128,10 @@ export default class MainPage extends React.Component {
     });
 
     ipcRenderer.on('select-user-certificate', (_, origin, certificateList) => {
-      console.log(`received! asking for modal for ${origin}`);
-      console.log(origin);
-      console.log(typeof origin);
       const certificateRequest = {
         server: origin,
         certificateList,
       };
-      console.log(certificateRequest);
       self.setState({
         certificateRequest,
       });
@@ -540,13 +536,11 @@ export default class MainPage extends React.Component {
   }
 
   handleSelectCertificate = (certificate) => {
-    console.log('certificate selected');
     const server = this.state.certificateRequest.server;
     this.setState({certificateRequest: null});
     ipcRenderer.send('selected-client-certificate', server, certificate);
   }
   handleCancelCertificate = () => {
-    console.log('cancelling certificate');
     const server = this.state.certificateRequest.server;
     this.setState({certificateRequest: null});
     ipcRenderer.send('selected-client-certificate', server);

@@ -13,7 +13,7 @@
     font-size: 12px;
     line-height: 14px;
     padding: 2px;
-    
+    border-bottom: 1px solid #CCCCCC;
     color: #333333;
 }
 
@@ -34,6 +34,8 @@ table.certificateList {
     box-sizing: border-box;
     box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.0008);
     border-radius: 4px;
+    border-collapse: unset;
+    height: 150px;
 }
 
 .certificateModal button {
@@ -50,8 +52,36 @@ table.certificateList {
 
 .certificateModal button.primary {
     background: #457AB2;
+    color: #FFFFFF;
     border: 1px solid #2E6DA4;
 }
 .certificateModal button.info {
     color: #457AB2;
+}
+
+.certificateModal button.primary:hover {
+    background: #659AD2;
+}
+
+.certificateModal .subtitle {
+    color: #737373;
+    margin: 0px 15px 10px;
+}
+
+.certificateModal .bottomBorder {
+    border-bottom: 1px solid #CCCCCC;
+}
+
+.certificateModal .topBorder {
+    border-top: 1px solid #CCCCCC;
+    margin: 0 1px 0 1px;
+    padding-top: 15px;
+}
+.certificateModal .noBorder {
+    border: none;
+}
+
+.divider {
+    border-right: 1px solid #CCCCCC;
+    display: block;
 }
