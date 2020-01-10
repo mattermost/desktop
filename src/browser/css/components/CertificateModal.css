@@ -1,0 +1,57 @@
+.certificateModal dialog {
+    background-color: aliceblue;
+}
+
+.certificateList thead {
+    width: 557.89px;
+    height: 22px;
+}
+.certificateList thead>tr>th {
+    font-family: Helvetica Neue;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 12px;
+    line-height: 14px;
+    padding: 2px;
+    
+    color: #333333;
+}
+
+.certificateList tbody>tr>td {
+    width: 227.17px;
+    height: 47px;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 14px;
+    line-height: 17px;
+
+    color: #555555;
+}
+
+table.certificateList {
+    background: #FFFFFF;
+    border: 1px solid #CCCCCC;
+    box-sizing: border-box;
+    box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.0008);
+    border-radius: 4px;
+}
+
+.certificateModal button {
+    background: #FFFFFF;
+    border: 1px solid #CCCCCC;
+    box-sizing: border-box;
+    border-radius: 4px;
+    padding: 9px 12px;
+}
+
+.certificateModal button:disabled {
+    opacity: 0.5;
+}
+
+.certificateModal button.primary {
+    background: #457AB2;
+    border: 1px solid #2E6DA4;
+}
+.certificateModal button.info {
+    color: #457AB2;
+}

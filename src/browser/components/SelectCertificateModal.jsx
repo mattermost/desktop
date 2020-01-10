@@ -6,6 +6,7 @@ import React, {Fragment} from 'react';
 import PropTypes from 'prop-types';
 import {Modal, Button, Table, Row, Col} from 'react-bootstrap';
 
+const CELL_SIZE = 20;
 export default class SelectCertificateModal extends React.Component {
   static propTypes = {
     onSelect: PropTypes.func.isRequired,
@@ -32,14 +33,14 @@ export default class SelectCertificateModal extends React.Component {
   }
 
   renderCert = (cert, index) => {
-    const issuer = cert.issuer && cert.issuer.commonName ? this.maxSize(cert.issuer.commonName.split(':')[1], 10) : '';
-    const subject = cert.subject && cert.subject.commonName ? this.maxSize(cert.subject.commonName.split(':')[1], 10) : '';
-    const serial = cert.serialNumber ? this.maxSize(cert.serialNumber, 10) : '';
+    const issuer = cert.issuer && cert.issuer.commonName ? this.maxSize(cert.issuer.commonName.split(':')[1], CELL_SIZE) : '';
+    const subject = cert.subject && cert.subject.commonName ? this.maxSize(cert.subject.commonName.split(':')[1], CELL_SIZE) : '';
+    const serial = cert.serialNumber ? this.maxSize(cert.serialNumber, CELL_SIZE) : '';
     const select = () => {
       this.setState({selectedIndex: index});
     };
 
-    const style = this.state.selectedIndex === index ? {background: '#457AB2'} : {};
+    const style = this.state.selectedIndex === index ? {background: '#457AB2', color: '#FFFFFF'} : {};
     return (
       <tr
         key={`cert-${index}`}
@@ -86,22 +87,24 @@ export default class SelectCertificateModal extends React.Component {
 
   render() {
     const certList = this.props.certificateRequest ? this.props.certificateRequest.certificateList : [];
+    const server = this.props.certificateRequest ? this.props.certificateRequest.server : '';
     return (
       <Modal
         bsClass='modal'
-        className='SelectCertificateModal'
+        className='certificateModal'
         show={this.props.certificateRequest !== null}
       >
         <Modal.Header>
           <Modal.Title>{'Select Certificate'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>{`Select a certificate to authenticate yourself to ${this.props.certificateRequest}`}</p>
+          <p>{`Select a certificate to authenticate yourself to ${server}`}</p>
           <Table
             stripped={'true'}
             bordered={true}
             hover={true}
             size={'sm'}
+            className='certificateList'
           >
             <thead>
               <tr>
@@ -122,17 +125,20 @@ export default class SelectCertificateModal extends React.Component {
                 variant={'info'}
                 disabled={this.state.selectedIndex === null}
                 onClick={this.handleCertificateInfo}
+                className={'info'}
               >{'Certificate Information'}</Button>
             </Col>
             <Col sm={8}>
               <Button
                 onClick={this.props.onCancel}
                 variant={'secondary'}
+                className={'secondary'}
               >{'Cancel'}</Button>
               <Button
                 variant={'primary'}
                 onClick={this.handleOk}
                 disabled={this.state.selectedIndex === null}
+                className={'primary'}
               >{'Ok'}</Button>
             </Col>
           </Row>

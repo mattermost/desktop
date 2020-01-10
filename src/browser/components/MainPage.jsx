@@ -128,7 +128,9 @@ export default class MainPage extends React.Component {
     });
 
     ipcRenderer.on('select-user-certificate', (_, origin, certificateList) => {
-      console.log('received! asking for modal');
+      console.log(`received! asking for modal for ${origin}`);
+      console.log(origin);
+      console.log(typeof origin);
       const certificateRequest = {
         server: origin,
         certificateList,

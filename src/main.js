@@ -317,6 +317,8 @@ function handleSelectCertificate(event, webContents, url, list, callback) {
   // todo: check that url has the same origin as one of the configured servers
 
   console.log(`got a certificate request from ${url}`);
+  console.log(url);
+  console.log(typeof url);
   console.log(list);
 
   // store callback so it can be called with selected certificate
@@ -328,6 +330,8 @@ function handleSelectCertificate(event, webContents, url, list, callback) {
 
 function handleSelectedCertificate(event, server, cert) {
   console.log(`hearing back from the selection of certificate for ${server}`);
+  console.log(server);
+  console.log(typeof server);
   console.log(cert);
   const callback = certificateRequests.get(server);
   if (!callback) {
