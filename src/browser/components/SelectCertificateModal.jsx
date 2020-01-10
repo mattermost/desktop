@@ -7,6 +7,8 @@ import PropTypes from 'prop-types';
 import {Modal, Button, Table, Row, Col} from 'react-bootstrap';
 
 const CELL_SIZE = 23;
+const ELIPSIS_SIZE = 3;
+
 export default class SelectCertificateModal extends React.Component {
   static propTypes = {
     onSelect: PropTypes.func.isRequired,
@@ -28,18 +30,18 @@ export default class SelectCertificateModal extends React.Component {
     if (item.length <= max) {
       return item;
     }
-    const sub = item.substring(0, max - 3);
+    const sub = item.substring(0, max - ELIPSIS_SIZE);
     return `${sub}...`;
   }
 
   renderCert = (cert, index) => {
     const issuer = cert.issuer && cert.issuer.commonName ? cert.issuer.commonName : '';
-    const subject = cert.subject && cert.subject.commonName ? cert.subject.commonName: '';
+    const subject = cert.subject && cert.subject.commonName ? cert.subject.commonName : '';
     const serial = cert.serialNumber || '';
 
     const issuerShort = this.maxSize(cert.issuer.commonName.split(':')[1], CELL_SIZE);
     const subjectShort = this.maxSize(cert.subject.commonName.split(':')[1], CELL_SIZE);
-    const serialShort =  this.maxSize(cert.serialNumber, CELL_SIZE);
+    const serialShort = this.maxSize(cert.serialNumber, CELL_SIZE);
     const select = () => {
       this.setState({selectedIndex: index});
     };
