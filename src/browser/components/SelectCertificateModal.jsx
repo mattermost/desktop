@@ -27,30 +27,33 @@ export default class SelectCertificateModal extends React.Component {
   }
 
   maxSize = (item, max) => {
-    if (item.length <= max) {
+    if (!item || item.length <= max) {
       return item;
     }
     const sub = item.substring(0, max - ELIPSIS_SIZE);
     return `${sub}...`;
   }
 
+  selectfn = (index) => {
+    return (() => {
+      this.setState({selectedIndex: index});
+    });
+  };
+
   renderCert = (cert, index) => {
     const issuer = cert.issuer && cert.issuer.commonName ? cert.issuer.commonName : '';
     const subject = cert.subject && cert.subject.commonName ? cert.subject.commonName : '';
     const serial = cert.serialNumber || '';
 
-    const issuerShort = this.maxSize(cert.issuer.commonName.split(':')[1], CELL_SIZE);
-    const subjectShort = this.maxSize(cert.subject.commonName.split(':')[1], CELL_SIZE);
+    const issuerShort = this.maxSize(cert.issuer.commonName, CELL_SIZE);
+    const subjectShort = this.maxSize(cert.subject.commonName, CELL_SIZE);
     const serialShort = this.maxSize(cert.serialNumber, CELL_SIZE);
-    const select = () => {
-      this.setState({selectedIndex: index});
-    };
 
     const style = this.state.selectedIndex === index ? {background: '#457AB2', color: '#FFFFFF'} : {};
     return (
       <tr
         key={`cert-${index}`}
-        onClick={select}
+        onClick={this.selectfn(index)}
         style={style}
       >
         <td
