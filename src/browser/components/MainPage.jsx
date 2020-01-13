@@ -83,7 +83,7 @@ export default class MainPage extends React.Component {
     }
 
     if (this.state.showNewTeamModal) {
-      const indexURL = remote.getGlobal('isDev') ? 'http://localhost:8080/browser/index.html' : `file://${remote.app.getAppPath()}/browser/index.html`;
+      const indexURL = '/browser/index.html';
       return allWebContents.find((webContents) => webContents.getURL().includes(indexURL));
     }
 
