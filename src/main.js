@@ -645,9 +645,18 @@ function initializeAfterAppReady() {
   if (process.platform === 'darwin') {
     session.defaultSession.on('will-download', (event, item) => {
       const filename = item.getFilename();
+      const fileElements = filename.split('.');
+      let filter = null;
+      if (fileElements.length > 1) {
+        filter = {
+          name: fileElements[fileElements.length - 1],
+          extensions: [fileElements[fileElements.length - 1]],
+        };
+      }
       const savePath = dialog.showSaveDialog({
         title: filename,
         defaultPath: os.homedir() + '/Downloads/' + filename,
+        filter,
       });
 
       if (savePath) {
