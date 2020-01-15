@@ -1,10 +1,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ipcRenderer} from 'electron';
 import React, {Fragment} from 'react';
 import PropTypes from 'prop-types';
 import {Modal, Button, Table, Row, Col} from 'react-bootstrap';
+
+import ShowCertificateModal from './showCertificateModal.jsx';
 
 const CELL_SIZE = 23;
 const ELIPSIS_SIZE = 3;
@@ -23,6 +24,7 @@ export default class SelectCertificateModal extends React.Component {
     super(props);
     this.state = {
       selectedIndex: null,
+      showCertificate: null,
     };
   }
 
@@ -96,14 +98,25 @@ export default class SelectCertificateModal extends React.Component {
 
   handleCertificateInfo = () => {
     const certificate = this.getSelectedCert();
-    if (certificate !== null) {
-      ipcRenderer.send('show-trusted-cert', certificate);
-    }
+    console.log(certificate);
+    this.setState({showCertificate: certificate});
+  }
+
+  certificateInfoClose = () => {
+    this.setState({showCertificate: null});
   }
 
   render() {
     const certList = this.props.certificateRequest ? this.props.certificateRequest.certificateList : [];
     const server = this.props.certificateRequest ? this.props.certificateRequest.server : '';
+    if (this.state.showCertificate) {
+      return (
+        <ShowCertificateModal
+          certificate={this.state.showCertificate}
+          onOk={this.certificateInfoClose}
+        />
+      );
+    }
     return (
       <Modal
         bsClass='modal'

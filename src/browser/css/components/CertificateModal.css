@@ -69,6 +69,7 @@ table.certificateList {
 }
 
 .certificateModal .bottomBorder {
+    padding-bottom: 10px;
     border-bottom: 1px solid #CCCCCC;
 }
 
@@ -84,4 +85,38 @@ table.certificateList {
 .divider {
     border-right: 1px solid #CCCCCC;
     display: block;
+}
+
+.certificateModal dt, dd { 
+    float: left;
+    margin: 5px;
+}
+
+.certificateModal dt { clear:both }
+
+.certificateModal dl {
+    overflow-y: auto;
+}
+
+.certificateKey {
+    font-style: normal;
+    font-weight: normal;
+    font-size: 14px;
+    line-height: 17px;
+
+    color: #737373;
+}
+
+.certInfo {
+    font-family: Helvetica Neue;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 12px;
+    line-height: 18px;
+    color: #333333;
+}
+
+.emtpyDescriptor {
+    border-bottom: 1px solid #CCCCCC;
+    /* padding-bottom: -2px; */
 }
