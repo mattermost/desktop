@@ -51,7 +51,7 @@ export default class MainPage extends React.Component {
       mentionAtActiveCounts: new Array(this.props.teams.length),
       loginQueue: [],
       targetURL: '',
-      certificateRequest: null,
+      certificateRequest: [],
       maximized: false,
     };
   }
@@ -128,13 +128,23 @@ export default class MainPage extends React.Component {
     });
 
     ipcRenderer.on('select-user-certificate', (_, origin, certificateList) => {
-      const certificateRequest = {
+      const certificateRequest = self.state.certificateRequest;
+      certificateRequest.push({
         server: origin,
         certificateList,
-      };
+      });
       self.setState({
         certificateRequest,
       });
+      if (certificateRequest.length === 1) {
+        const originUrl = new URL(`http://${origin}`);
+        const secureOriginUrl = new URL(`https://${origin}`);
+
+        const key = this.props.teams.findIndex((team) => {
+          return (team.url.origin === originUrl.origin) || (team.url.origin === secureOriginUrl.origin);
+        });
+        this.handleSelect(key);
+      }
     });
 
     // can't switch tabs sequentially for some reason...
@@ -536,14 +546,34 @@ export default class MainPage extends React.Component {
   }
 
   handleSelectCertificate = (certificate) => {
-    const server = this.state.certificateRequest.server;
-    this.setState({certificateRequest: null});
-    ipcRenderer.send('selected-client-certificate', server, certificate);
+    const certificateRequest = this.state.certificateRequest;
+    const current = certificateRequest.shift();
+    this.setState({certificateRequest});
+    ipcRenderer.send('selected-client-certificate', current.server, certificate);
+    if (certificateRequest.length > 0) {
+      const originUrl = new URL(`http://${certificateRequest[0].origin}`);
+      const secureOriginUrl = new URL(`https://${certificateRequest[0].origin}`);
+
+      const key = this.props.teams.findIndex((team) => {
+        return (team.url.origin === originUrl.origin) || (team.url.origin === secureOriginUrl.origin);
+      });
+      this.handleSelect(key);
+    }
   }
   handleCancelCertificate = () => {
-    const server = this.state.certificateRequest.server;
-    this.setState({certificateRequest: null});
-    ipcRenderer.send('selected-client-certificate', server);
+    const certificateRequest = this.state.certificateRequest;
+    const current = certificateRequest.shift();
+    this.setState({certificateRequest});
+    ipcRenderer.send('selected-client-certificate', current.server);
+    if (certificateRequest.length > 0) {
+      const originUrl = new URL(`http://${origin}`);
+      const secureOriginUrl = new URL(`https://${origin}`);
+
+      const key = this.props.teams.findIndex((team) => {
+        return (team.url.origin === originUrl.origin) || (team.url.origin === secureOriginUrl.origin);
+      });
+      this.handleSelect(key);
+    }
   }
   setDarkMode() {
     this.setState({

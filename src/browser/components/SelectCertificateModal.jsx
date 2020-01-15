@@ -14,10 +14,10 @@ export default class SelectCertificateModal extends React.Component {
   static propTypes = {
     onSelect: PropTypes.func.isRequired,
     onCancel: PropTypes.func,
-    certificateRequest: PropTypes.shape({
+    certificateRequest: PropTypes.shape([{
       server: PropTypes.string,
       certificateList: PropTypes.array,
-    }),
+    }]),
   }
 
   constructor(props) {
@@ -86,7 +86,7 @@ export default class SelectCertificateModal extends React.Component {
   }
 
   getSelectedCert = () => {
-    return this.state.selectedIndex === null ? null : this.props.certificateRequest.certificateList[this.state.selectedIndex];
+    return this.state.selectedIndex === null ? null : this.props.certificateRequest[0].certificateList[this.state.selectedIndex];
   };
 
   handleOk = () => {
@@ -107,8 +107,8 @@ export default class SelectCertificateModal extends React.Component {
   }
 
   render() {
-    const certList = this.props.certificateRequest ? this.props.certificateRequest.certificateList : [];
-    const server = this.props.certificateRequest ? this.props.certificateRequest.server : '';
+    const certList = this.props.certificateRequest.length ? this.props.certificateRequest[0].certificateList : [];
+    const server = this.props.certificateRequest.length ? this.props.certificateRequest[0].server : '';
     if (this.state.showCertificate) {
       return (
         <ShowCertificateModal
@@ -121,7 +121,7 @@ export default class SelectCertificateModal extends React.Component {
       <Modal
         bsClass='modal'
         className='certificateModal'
-        show={this.props.certificateRequest !== null}
+        show={this.props.certificateRequest.length}
       >
         <Modal.Header className={'noBorder'}>
           <Modal.Title className={'bottomBorder'}>{'Select a certificate'}</Modal.Title>
