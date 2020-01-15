@@ -14,10 +14,10 @@ export default class SelectCertificateModal extends React.Component {
   static propTypes = {
     onSelect: PropTypes.func.isRequired,
     onCancel: PropTypes.func,
-    certificateRequest: PropTypes.shape([{
+    certificateRequest: PropTypes.arrayOf(PropTypes.shape({
       server: PropTypes.string,
       certificateList: PropTypes.array,
-    }]),
+    })),
   }
 
   constructor(props) {

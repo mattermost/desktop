@@ -137,13 +137,7 @@ export default class MainPage extends React.Component {
         certificateRequest,
       });
       if (certificateRequest.length === 1) {
-        const originUrl = new URL(`http://${origin}`);
-        const secureOriginUrl = new URL(`https://${origin}`);
-
-        const key = this.props.teams.findIndex((team) => {
-          return (team.url.origin === originUrl.origin) || (team.url.origin === secureOriginUrl.origin);
-        });
-        this.handleSelect(key);
+        self.switchToCertificateRequest(origin);
       }
     });
 
@@ -352,6 +346,18 @@ export default class MainPage extends React.Component {
     }
   }
 
+  switchToCertificateRequest = (origin) => {
+    // origin is server name + port, if the port doesn't match the protocol, it is kept by URL
+    const originUrl = new URL(`http://${origin.split(':')[0]}`);
+    const secureOriginUrl = new URL(`https://${origin.split(':')[0]}`);
+
+    const key = this.props.teams.findIndex((team) => {
+      const parsedURL = new URL(team.url);
+      return (parsedURL.origin === originUrl.origin) || (parsedURL.origin === secureOriginUrl.origin);
+    });
+    this.handleSelect(key);
+  };
+
   handleMaximizeState = () => {
     const win = remote.getCurrentWindow();
     this.setState({maximized: win.isMaximized()});
@@ -551,13 +557,7 @@ export default class MainPage extends React.Component {
     this.setState({certificateRequest});
     ipcRenderer.send('selected-client-certificate', current.server, certificate);
     if (certificateRequest.length > 0) {
-      const originUrl = new URL(`http://${certificateRequest[0].origin}`);
-      const secureOriginUrl = new URL(`https://${certificateRequest[0].origin}`);
-
-      const key = this.props.teams.findIndex((team) => {
-        return (team.url.origin === originUrl.origin) || (team.url.origin === secureOriginUrl.origin);
-      });
-      this.handleSelect(key);
+      this.switchToCertificateRequest(certificateRequest[0].server);
     }
   }
   handleCancelCertificate = () => {
@@ -566,15 +566,9 @@ export default class MainPage extends React.Component {
     this.setState({certificateRequest});
     ipcRenderer.send('selected-client-certificate', current.server);
     if (certificateRequest.length > 0) {
-      const originUrl = new URL(`http://${origin}`);
-      const secureOriginUrl = new URL(`https://${origin}`);
-
-      const key = this.props.teams.findIndex((team) => {
-        return (team.url.origin === originUrl.origin) || (team.url.origin === secureOriginUrl.origin);
-      });
-      this.handleSelect(key);
+      this.switchToCertificateRequest(certificateRequest[0].server);
     }
-  }
+  };
   setDarkMode() {
     this.setState({
       isDarkMode: this.props.setDarkMode(),
