@@ -18,6 +18,12 @@ function init(mainWindow) {
     if (!err) {
       allowedProtocols = JSON.parse(data);
       allowedProtocols = Validator.validateAllowedProtocols(allowedProtocols) || [];
+      if (!allowedProtocols.includes('http:')) {
+        allowedProtocols.push('http:');
+      }
+      if (!allowedProtocols.includes('https:')) {
+        allowedProtocols.push('https:');
+      }
     }
     initDialogEvent(mainWindow);
   });
