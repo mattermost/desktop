@@ -98,7 +98,6 @@ export default class SelectCertificateModal extends React.Component {
 
   handleCertificateInfo = () => {
     const certificate = this.getSelectedCert();
-    console.log(certificate);
     this.setState({showCertificate: certificate});
   }
 
