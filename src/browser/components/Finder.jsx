@@ -77,7 +77,7 @@ export default class Finder extends React.Component {
   render() {
     return (
       <div id='finder'>
-        <div className='finder'>
+        <div className={`finder${process.platform === 'darwin' ? ' macOS' : ''}`}>
           <div className='finder-input-wrapper'>
             <input
               className='finder-input'

@@ -41,6 +41,18 @@ module.exports = merge(base, {
       use: {
         loader: 'url-loader',
       },
+    }, {
+      test: /\.(svg|woff2)$/,
+      use: [
+        {
+          loader: 'file-loader',
+          options: {
+            name: '[hash].[ext]',
+            publicPath: './',
+          },
+        },
+        {loader: 'image-webpack-loader'},
+      ],
     }],
   },
   node: {

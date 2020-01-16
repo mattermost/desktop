@@ -19,6 +19,10 @@ class UpdaterPageContainer extends React.Component {
     this.state = props.initialState;
   }
 
+  getTabWebContents() {
+    return remote.webContents.getFocusedWebContents();
+  }
+
   componentDidMount() {
     ipcRenderer.on('start-download', () => {
       this.setState({
@@ -29,6 +33,83 @@ class UpdaterPageContainer extends React.Component {
       this.setState({
         progress,
       });
+    });
+    ipcRenderer.on('zoom-in', () => {
+      const activeTabWebContents = this.getTabWebContents();
+      if (!activeTabWebContents) {
+        return;
+      }
+      if (activeTabWebContents.getZoomLevel() >= 9) {
+        return;
+      }
+      activeTabWebContents.setZoomLevel(activeTabWebContents.getZoomLevel() + 1);
+    });
+
+    ipcRenderer.on('zoom-out', () => {
+      const activeTabWebContents = this.getTabWebContents();
+      if (!activeTabWebContents) {
+        return;
+      }
+      if (activeTabWebContents.getZoomLevel() <= -8) {
+        return;
+      }
+      activeTabWebContents.setZoomLevel(activeTabWebContents.getZoomLevel() - 1);
+    });
+
+    ipcRenderer.on('zoom-reset', () => {
+      const activeTabWebContents = this.getTabWebContents();
+      if (!activeTabWebContents) {
+        return;
+      }
+      activeTabWebContents.setZoomLevel(0);
+    });
+
+    ipcRenderer.on('undo', () => {
+      const activeTabWebContents = this.getTabWebContents();
+      if (!activeTabWebContents) {
+        return;
+      }
+      activeTabWebContents.undo();
+    });
+
+    ipcRenderer.on('redo', () => {
+      const activeTabWebContents = this.getTabWebContents();
+      if (!activeTabWebContents) {
+        return;
+      }
+      activeTabWebContents.redo();
+    });
+
+    ipcRenderer.on('cut', () => {
+      const activeTabWebContents = this.getTabWebContents();
+      if (!activeTabWebContents) {
+        return;
+      }
+      activeTabWebContents.cut();
+    });
+
+    ipcRenderer.on('copy', () => {
+      const activeTabWebContents = this.getTabWebContents();
+      if (!activeTabWebContents) {
+        return;
+      }
+      activeTabWebContents.copy();
+    });
+
+    ipcRenderer.on('paste', () => {
+      const activeTabWebContents = this.getTabWebContents();
+      if (!activeTabWebContents) {
+        return;
+      }
+      activeTabWebContents.paste();
+    });
+
+    ipcRenderer.on('paste-and-match', () => {
+      const activeTabWebContents = this.getTabWebContents();
+      if (!activeTabWebContents) {
+        return;
+      }
+      activeTabWebContents.pasteAndMatchStyle();
     });
   }
 

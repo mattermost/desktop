@@ -11,7 +11,7 @@ import {ipcRenderer, remote} from 'electron';
 import osVersion from '../../common/osVersion';
 import dingDataURL from '../../assets/ding.mp3'; // https://github.com/mattermost/platform/blob/v3.7.3/webapp/images/ding.mp3
 
-const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon.png`;
+const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon_48.png`;
 
 const playDing = throttle(() => {
   const ding = new Audio(dingDataURL);

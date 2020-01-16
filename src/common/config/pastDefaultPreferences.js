@@ -7,6 +7,23 @@ const pastDefaultPreferences = {
   0: {
     url: '',
   },
+  1: {
+    version: 1,
+    teams: [],
+    showTrayIcon: false,
+    trayIconTheme: 'light',
+    minimizeToTray: false,
+    notifications: {
+      flashWindow: 0,
+      bounceIcon: false,
+      bounceIconType: 'informational',
+    },
+    showUnreadBadge: true,
+    useSpellChecker: true,
+    enableHardwareAcceleration: true,
+    autostart: true,
+    spellCheckerLocale: 'en-US',
+  },
 };
 
 pastDefaultPreferences[`${defaultPreferences.version}`] = defaultPreferences;
