@@ -51,7 +51,7 @@ export default class MainPage extends React.Component {
       mentionAtActiveCounts: new Array(this.props.teams.length),
       loginQueue: [],
       targetURL: '',
-      certificateRequest: [],
+      certificateRequests: [],
       maximized: false,
     };
   }
@@ -128,16 +128,16 @@ export default class MainPage extends React.Component {
     });
 
     ipcRenderer.on('select-user-certificate', (_, origin, certificateList) => {
-      const certificateRequest = self.state.certificateRequest;
-      certificateRequest.push({
+      const certificateRequests = self.state.certificateRequests;
+      certificateRequests.push({
         server: origin,
         certificateList,
       });
       self.setState({
-        certificateRequest,
+        certificateRequests,
       });
-      if (certificateRequest.length === 1) {
-        self.switchToCertificateRequest(origin);
+      if (certificateRequests.length === 1) {
+        self.switchToTabForCertificateRequest(origin);
       }
     });
 
@@ -346,14 +346,14 @@ export default class MainPage extends React.Component {
     }
   }
 
-  switchToCertificateRequest = (origin) => {
+  switchToTabForCertificateRequest = (origin) => {
     // origin is server name + port, if the port doesn't match the protocol, it is kept by URL
-    const originUrl = new URL(`http://${origin.split(':')[0]}`);
-    const secureOriginUrl = new URL(`https://${origin.split(':')[0]}`);
+    const originURL = new URL(`http://${origin.split(':')[0]}`);
+    const secureOriginURL = new URL(`https://${origin.split(':')[0]}`);
 
     const key = this.props.teams.findIndex((team) => {
       const parsedURL = new URL(team.url);
-      return (parsedURL.origin === originUrl.origin) || (parsedURL.origin === secureOriginUrl.origin);
+      return (parsedURL.origin === originURL.origin) || (parsedURL.origin === secureOriginURL.origin);
     });
     this.handleSelect(key);
   };
@@ -552,21 +552,21 @@ export default class MainPage extends React.Component {
   }
 
   handleSelectCertificate = (certificate) => {
-    const certificateRequest = this.state.certificateRequest;
-    const current = certificateRequest.shift();
-    this.setState({certificateRequest});
+    const certificateRequests = this.state.certificateRequests;
+    const current = certificateRequests.shift();
+    this.setState({certificateRequests});
     ipcRenderer.send('selected-client-certificate', current.server, certificate);
-    if (certificateRequest.length > 0) {
-      this.switchToCertificateRequest(certificateRequest[0].server);
+    if (certificateRequests.length > 0) {
+      this.switchToTabForCertificateRequest(certificateRequests[0].server);
     }
   }
   handleCancelCertificate = () => {
-    const certificateRequest = this.state.certificateRequest;
-    const current = certificateRequest.shift();
-    this.setState({certificateRequest});
+    const certificateRequests = this.state.certificateRequests;
+    const current = certificateRequests.shift();
+    this.setState({certificateRequests});
     ipcRenderer.send('selected-client-certificate', current.server);
-    if (certificateRequest.length > 0) {
-      this.switchToCertificateRequest(certificateRequest[0].server);
+    if (certificateRequests.length > 0) {
+      this.switchToTabForCertificateRequest(certificateRequests[0].server);
     }
   };
   setDarkMode() {
@@ -763,7 +763,7 @@ export default class MainPage extends React.Component {
           onCancel={this.handleLoginCancel}
         />
         <SelectCertificateModal
-          certificateRequest={this.state.certificateRequest}
+          certificateRequests={this.state.certificateRequests}
           onSelect={this.handleSelectCertificate}
           onCancel={this.handleCancelCertificate}
         />
