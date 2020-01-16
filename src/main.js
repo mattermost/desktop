@@ -314,8 +314,6 @@ function handleAppBeforeQuit() {
 
 function handleSelectCertificate(event, webContents, url, list, callback) {
   event.preventDefault(); // prevent the app from getting the first certificate available
-  // todo: check that url has the same origin as one of the configured servers
-
   // store callback so it can be called with selected certificate
   certificateRequests.set(url, callback);
 
@@ -949,11 +947,6 @@ function isTrustedURL(url) {
     return false;
   }
 
-  // todo remove, testing purposes only
-  const testurl = parseURL('https://www.citapreviadnie.es:38188');
-  if (parsedURL.origin === testurl.origin) {
-    return true;
-  }
   const teamURLs = config.teams.reduce((urls, team) => {
     const parsedTeamURL = parseURL(team.url);
     if (parsedTeamURL) {
