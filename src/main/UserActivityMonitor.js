@@ -59,9 +59,7 @@ export default class UserActivityMonitor extends EventEmitter {
 
     this.systemIdleTimeIntervalID = setInterval(() => {
       try {
-        electron.powerMonitor.querySystemIdleTime((idleTime) => {
-          this.updateIdleTime(idleTime);
-        });
+        this.updateIdleTime(electron.powerMonitor.getSystemIdleTime());
       } catch (err) {
         console.log('Error getting system idle time:', err);
       }
