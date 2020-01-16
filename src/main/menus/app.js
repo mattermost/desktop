@@ -170,7 +170,7 @@ function createTemplate(mainWindow, config, isDev) {
       mainWindow.webContents.send('zoom-out');
     },
   }, separatorItem, {
-    label: 'Developer Tools for Application Wrapper',
+    label: 'Developer Tools Current Server',
     accelerator: (() => {
       if (process.platform === 'darwin') {
         return 'Alt+Command+I';
@@ -179,13 +179,16 @@ function createTemplate(mainWindow, config, isDev) {
     })(),
     click(item, focusedWindow) {
       if (focusedWindow) {
-        focusedWindow.toggleDevTools();
+        focusedWindow.getBrowserView().webContents.toggleDevTools();
       }
     },
   }, {
-    label: 'Developer Tools for Current Server',
+    label: 'Developer Tools for Application Wrapper',
     click() {
-      mainWindow.webContents.send('open-devtool');
+      setTimeout(() => {
+        mainWindow.webContents.
+          openDevTools({mode: 'detach'});
+      });
     },
   }];
 

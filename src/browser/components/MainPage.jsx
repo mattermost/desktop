@@ -21,7 +21,6 @@ import minimizeButton from '../../assets/titlebar/chrome-minimize.svg';
 import closeButton from '../../assets/titlebar/chrome-close.svg';
 
 import LoginModal from './LoginModal.jsx';
-import MattermostView from './MattermostView.jsx';
 import TabBar from './TabBar.jsx';
 import HoveringURL from './HoveringURL.jsx';
 import Finder from './Finder.jsx';
@@ -77,6 +76,8 @@ export default class MainPage extends React.Component {
 
   getTabWebContents(index = this.state.key || 0, teams = this.props.teams) {
     const allWebContents = remote.webContents.getAllWebContents();
+
+    // log all web contents
     const openDevTools = allWebContents.find((webContents) => webContents.getURL().includes('chrome-devtools') && webContents.isFocused());
     if (openDevTools) {
       return openDevTools;
@@ -94,10 +95,23 @@ export default class MainPage extends React.Component {
     if (!tabURL) {
       return null;
     }
-    return allWebContents.find((webContents) => webContents.getURL().includes(tabURL) || webContents.getURL().includes(this.refs[`mattermostView${index}`].getSrc()));
+
+    // return allWebContents.find((webContents) => webContents.getURL().includes(tabURL) || webContents.getURL().includes(this.refs[`mattermostView${index}`].getSrc()));
+    return null;
   }
 
   componentDidMount() {
+    console.log('docuemtn url: ', document.URL);
+    if (document.URL.includes('?index=')) {
+      const teamIndex = document.URL.split('?')[1].split('=')[1];
+      console.log('team index: ', teamIndex);
+      if (teamIndex && Number.isInteger(Number(teamIndex))) {
+        console.log(this.props.teams);
+        const webContentsId = this.props.teams[teamIndex].webContentsId;
+        console.log('webContentsId :', webContentsId);
+        ipcRenderer.send('view-select', webContentsId);
+      }
+    }
     const self = this;
 
     // Due to a bug in Chrome on macOS, mousemove events from the webview won't register when the webview isn't in focus,
@@ -149,15 +163,15 @@ export default class MainPage extends React.Component {
 
     // reload the activated tab
     ipcRenderer.on('reload-tab', () => {
-      this.refs[`mattermostView${this.state.key}`].reload();
+      // reload browser view
     });
     ipcRenderer.on('clear-cache-and-reload-tab', () => {
-      this.refs[`mattermostView${this.state.key}`].clearCacheAndReload();
+      // clear-cache-and-reload-tab browserview
     });
 
     function focusListener() {
       self.handleOnTeamFocused(self.state.key);
-      self.refs[`mattermostView${self.state.key}`].focusOnWebView();
+      // self.refs[`mattermostView${self.state.key}`].focusOnWebView();
       self.setState({unfocused: false});
     }
 
@@ -190,7 +204,7 @@ export default class MainPage extends React.Component {
     });
 
     ipcRenderer.on('open-devtool', () => {
-      document.getElementById(`mattermostView${self.state.key}`).openDevTools();
+      // document.getElementById(`mattermostView${self.state.key}`).openDevTools();
     });
 
     ipcRenderer.on('zoom-in', () => {
@@ -273,17 +287,17 @@ export default class MainPage extends React.Component {
 
     //goBack and goForward
     ipcRenderer.on('go-back', () => {
-      const mattermost = self.refs[`mattermostView${self.state.key}`];
-      if (mattermost.canGoBack()) {
-        mattermost.goBack();
-      }
+      // const mattermost = self.refs[`mattermostView${self.state.key}`];
+      // if (mattermost.canGoBack()) {
+      //   mattermost.goBack();
+      // }
     });
 
     ipcRenderer.on('go-forward', () => {
-      const mattermost = self.refs[`mattermostView${self.state.key}`];
-      if (mattermost.canGoForward()) {
-        mattermost.goForward();
-      }
+      // const mattermost = self.refs[`mattermostView${self.state.key}`];
+      // if (mattermost.canGoForward()) {
+      //   mattermost.goForward();
+      // }
     });
 
     ipcRenderer.on('add-server', () => {
@@ -300,7 +314,7 @@ export default class MainPage extends React.Component {
         if (this.state.key !== parsedDeeplink.teamIndex) {
           this.handleSelect(parsedDeeplink.teamIndex);
         }
-        self.refs[`mattermostView${parsedDeeplink.teamIndex}`].handleDeepLink(parsedDeeplink.path);
+        // self.refs[`mattermostView${parsedDeeplink.teamIndex}`].handleDeepLink(parsedDeeplink.path);
       }
     });
 
@@ -336,9 +350,11 @@ export default class MainPage extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if (prevState.key !== this.state.key) { // i.e. When tab has been changed
-      this.refs[`mattermostView${this.state.key}`].focusOnWebView();
-    }
+    // if (prevState.key !== this.state.key) { // i.e. When tab has been changed
+    //   this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+    // }
+
+    // focus browser view
   }
 
   handleMaximizeState = () => {
@@ -357,12 +373,13 @@ export default class MainPage extends React.Component {
       key: newKey,
       finderVisible: false,
     });
-    const webview = document.getElementById('mattermostView' + newKey);
-    ipcRenderer.send('update-title', {
-      title: webview.getTitle(),
-    });
-    window.focus();
-    webview.focus();
+    ipcRenderer.send('view-select', this.props.teams[newKey].webContentsId);
+
+    // ipcRenderer.send('update-title', {
+    //   title: browserView.getTitle(),
+    // });
+
+    // focus browser view
     this.handleOnTeamFocused(newKey);
   }
 
@@ -512,7 +529,7 @@ export default class MainPage extends React.Component {
   }
 
   focusOnWebView = () => {
-    this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+    // this.refs[`mattermostView${this.state.key}`].focusOnWebView();
   }
 
   activateFinder = () => {
@@ -541,7 +558,7 @@ export default class MainPage extends React.Component {
   }
 
   render() {
-    const self = this;
+    // const self = this;
     const tabsRow = (
       <TabBar
         id='tabBar'
@@ -644,45 +661,45 @@ export default class MainPage extends React.Component {
       </Row>
     );
 
-    const views = this.props.teams.map((team, index) => {
-      function handleBadgeChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) {
-        self.handleBadgeChange(index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
-      }
-      function handleNotificationClick() {
-        self.handleSelect(index);
-      }
-      const id = 'mattermostView' + index;
-      const isActive = self.state.key === index;
+    // const views = this.props.teams.map((team, index) => {
+    //   function handleBadgeChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) {
+    //     self.handleBadgeChange(index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
+    //   }
+    //   function handleNotificationClick() {
+    //     self.handleSelect(index);
+    //   }
+    //   const id = 'mattermostView' + index;
+    //   const isActive = self.state.key === index;
 
-      let teamUrl = team.url;
+    // //   let teamUrl = team.url;
 
-      if (this.props.deeplinkingUrl) {
-        const parsedDeeplink = this.parseDeeplinkURL(this.props.deeplinkingUrl, [team]);
-        if (parsedDeeplink) {
-          teamUrl = parsedDeeplink.url;
-        }
-      }
+    //   if (this.props.deeplinkingUrl) {
+    //     const parsedDeeplink = this.parseDeeplinkURL(this.props.deeplinkingUrl, [team]);
+    //     if (parsedDeeplink) {
+    //       teamUrl = parsedDeeplink.url;
+    //     }
+    //   }
 
-      return (
-        <MattermostView
-          key={id}
-          id={id}
+    //   return (
+    //     <MattermostView
+    //       key={id}
+    //       id={id}
 
-          useSpellChecker={this.props.useSpellChecker}
-          onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
-          src={teamUrl}
-          name={team.name}
-          onTargetURLChange={self.handleTargetURLChange}
-          onBadgeChange={handleBadgeChange}
-          onNotificationClick={handleNotificationClick}
-          ref={id}
-          active={isActive}
-        />);
-    });
-    const viewsRow = (
-      <Row>
-        {views}
-      </Row>);
+    //       useSpellChecker={this.props.useSpellChecker}
+    //       onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
+    //       src={teamUrl}
+    //       name={team.name}
+    //       onTargetURLChange={self.handleTargetURLChange}
+    //       onBadgeChange={handleBadgeChange}
+    //       onNotificationClick={handleNotificationClick}
+    //       ref={id}
+    //       active={isActive}
+    //     />);
+    // });
+    // const viewsRow = (
+    //   <Row>
+    //     {views}
+    //   </Row>);
 
     let request = null;
     let authServerURL = null;
@@ -704,7 +721,8 @@ export default class MainPage extends React.Component {
           });
         }}
         onSave={(newTeam) => {
-          this.props.teams.push(newTeam);
+          const isActive = true;
+          ipcRenderer.send('add-tab', newTeam, isActive);
           this.setState({
             showNewTeamModal: false,
             key: this.props.teams.length - 1,
@@ -729,7 +747,6 @@ export default class MainPage extends React.Component {
         />
         <Grid fluid={true}>
           { topRow }
-          { viewsRow }
           { this.state.finderVisible ? (
             <Finder
               webviewKey={this.state.key}

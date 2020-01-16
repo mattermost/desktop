@@ -4,6 +4,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {ListGroup} from 'react-bootstrap';
+import {ipcRenderer, remote} from 'electron';
 
 import TeamListItem from './TeamListItem.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
@@ -26,8 +27,8 @@ export default class TeamList extends React.Component {
   }
 
   handleTeamRemove = (index) => {
-    console.log(index);
     const teams = this.props.teams;
+    ipcRenderer.send('view-destroy', teams[index].webContentsId);
     const removedOrder = this.props.teams[index].order;
     teams.splice(index, 1);
     teams.forEach((value) => {
@@ -35,6 +36,7 @@ export default class TeamList extends React.Component {
         value.order--;
       }
     });
+
     this.props.onTeamsChange(teams);
   }
 
@@ -131,13 +133,21 @@ export default class TeamList extends React.Component {
           this.props.setAddTeamFormVisibility(false);
         }}
         onSave={(newTeam) => {
+          const isActive = false;
           const teamData = {
             name: newTeam.name,
             url: newTeam.url,
             order: newTeam.order,
           };
           if (this.props.showAddTeamForm) {
-            this.props.addServer(teamData);
+            ipcRenderer.send('add-tab', teamData, isActive);
+
+            // in electron 7, the following may be replaced with invoke and handle
+            ipcRenderer.once('return-view-id', (_e, id) => {
+              teamData.webContentsId = id;
+              console.log('onSave teamData: ', teamData);
+              this.props.addServer(teamData);
+            });
           } else {
             this.props.updateTeam(newTeam.index, teamData);
           }

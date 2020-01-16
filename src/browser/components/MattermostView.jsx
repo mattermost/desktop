@@ -5,6 +5,8 @@
 // This file uses setState().
 /* eslint-disable react/no-set-state */
 
+// This file would be deleted after replicating functionality, mostly listeners, in main process views
+
 import url from 'url';
 
 import React from 'react';

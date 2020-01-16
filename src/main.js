@@ -17,6 +17,7 @@ import {protocols} from '../electron-builder.json';
 import AutoLauncher from './main/AutoLauncher';
 import CriticalErrorHandler from './main/CriticalErrorHandler';
 import upgradeAutoLaunch from './main/autoLaunch';
+import ViewManager from './main/view-manager';
 
 import RegistryConfig from './common/config/RegistryConfig';
 import Config from './common/config';
@@ -580,6 +581,23 @@ function initializeAfterAppReady() {
     linuxAppIcon: path.join(assetsDir, 'appicon.png'),
     deeplinkingUrl,
   });
+
+  // perhaps instead of passing mainWindow and config it would be much easier
+  // to turn mainWindow.js into class export and make ViewManager a property
+  // of MainWindow extends BrowserWindow
+  const viewManager = new ViewManager(mainWindow, config);
+  console.log(config.teams);
+  const updatedTeams = config.teams.map((team, i) => {
+    console.log('map team: ', team);
+    const view = viewManager.create({url: team.url});
+    if (i === 0) {
+      viewManager.select(view.webContents.id);
+    }
+    team.webContentsId = view.webContents.id;
+    return team;
+  });
+  console.log('updatedTeams in main.js line 595: ', updatedTeams);
+  config.set('teams', updatedTeams);
 
   criticalErrorHandler.setMainWindow(mainWindow);
 

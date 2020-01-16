@@ -42,6 +42,10 @@ export default class SettingsPage extends React.Component {
     return remote.webContents.getFocusedWebContents();
   }
 
+  componentWillMount() {
+    ipcRenderer.send('browserview-clear');
+  }
+
   componentDidMount() {
     config.on('update', (configData) => {
       this.updateSaveState();
@@ -356,6 +360,7 @@ export default class SettingsPage extends React.Component {
   }
 
   updateTeam = (index, newData) => {
+    console.log('update team called in settings page');
     const teams = this.state.localTeams;
     teams[index] = newData;
     setImmediate(this.saveSetting, CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
@@ -367,6 +372,7 @@ export default class SettingsPage extends React.Component {
   addServer = (team) => {
     const teams = this.state.localTeams;
     teams.push(team);
+    console.log('addServer Teams: ', teams);
     setImmediate(this.saveSetting, CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
     this.setState({
       teams,

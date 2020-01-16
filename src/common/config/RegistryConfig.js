@@ -73,6 +73,7 @@ export default class RegistryConfig extends EventEmitter {
           name: team.name,
           url: team.value,
           order: team.order,
+          webContentsId: team.webContentsId,
         });
       }
       return teams;
