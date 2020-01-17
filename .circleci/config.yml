@@ -270,7 +270,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - /^release-\d+\.\d+\.\d+?(-rc.*)?/
+                - /^release-\d+\.\d+(\.\d+)?(-rc.*)?/
       - build-mac-no-dmg:
           requires:
             - check
@@ -288,8 +288,7 @@ workflows:
                 # only for release and release candidates
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
-                - /^release-\d+\.\d+\.\d+?(-rc.*)?/
-                - release-helpers # remove me
+                - /^release-\d+\.\d+(\.\d+)?(-rc.*)?/
       - mac_installer:
           requires:
             - check
@@ -297,8 +296,7 @@ workflows:
           filters:
             branches:
               only:
-                - /^release-\d+\.\d+\.\d+?(-rc.*)?/
-                - release-helpers # remove-me
+                - /^release-\d+\.\d+(\.\d+)?(-rc.*)?/
       - store_artifacts:
           # for master/PR builds
           requires:
@@ -308,7 +306,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - /^release-\d+\.\d+\.\d+?(-rc.*)?/
+                - /^release-\d+\.\d+(\.\d+)?(-rc.*)?/
       - upload_to_s3:
           # for release builds
           requires:
@@ -320,8 +318,6 @@ workflows:
             tags:
               only:
                 - /^v\d+\.\d+\.\d+?$/
-                - release-helpers # remove me
-
       - upload_to_github:
           requires:
             - msi_installer
@@ -331,5 +327,4 @@ workflows:
           filters:
             branches:
               only:
-                - /^release-\d+\.\d+\.\d+?(-rc.*)?/
-                - release-helpers # remove me
+                - /^release-\d+\.\d+(\.\d+)?(-rc.*)?/
