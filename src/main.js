@@ -5,8 +5,6 @@
 import os from 'os';
 import path from 'path';
 
-import {URL} from 'url';
-
 import electron from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
@@ -427,9 +425,12 @@ function handleAppWebContentsCreated(dc, contents) {
 
   contents.on('will-navigate', (event, url) => {
     const contentID = event.sender.id;
-    const parsedURL = parseURL(url);
-
-    if (isTrustedURL(parsedURL) || isTrustedPopupWindow(event.sender)) {
+    const parsedURL = Utils.parseURL(url);
+    const serverURL = Utils.getServer(parsedURL, config.teams);
+    if ((serverURL !== null && Utils.isTeamUrl(serverURL.url, parsedURL)) || isTrustedPopupWindow(event.sender)) {
+      return;
+    }
+    if (isCustomLoginURL(parsedURL)) {
       return;
     }
     if (parsedURL.protocol === 'mailto:') {
@@ -439,7 +440,7 @@ function handleAppWebContentsCreated(dc, contents) {
       return;
     }
 
-    log.info(`Untrusted URL blocked: ${url}`);
+    log.info(`Prevented desktop from navigating to: ${url}`);
     event.preventDefault();
   });
 
@@ -450,7 +451,7 @@ function handleAppWebContentsCreated(dc, contents) {
   //    - indicate custom login is NOT in progress
   contents.on('did-start-navigation', (event, url) => {
     const contentID = event.sender.id;
-    const parsedURL = parseURL(url);
+    const parsedURL = Utils.parseURL(url);
 
     if (!isTrustedURL(parsedURL)) {
       return;
@@ -465,36 +466,42 @@ function handleAppWebContentsCreated(dc, contents) {
 
   contents.on('new-window', (event, url) => {
     event.preventDefault();
-    if (!isTrustedURL(url)) {
+
+    const parsedURL = Utils.parseURL(url);
+    const server = Utils.getServer(parsedURL, config.teams);
+
+    if (!server) {
       log.info(`Untrusted popup window blocked: ${url}`);
       return;
     }
-    if (isTeamUrl(url) === true) {
+    if (Utils.isTeamUrl(server.url, parsedURL, true) === true) {
       log.info(`${url} is a known team, preventing to open a new window`);
       return;
     }
-    if (popupWindow && popupWindow.getURL() === url) {
+    if (popupWindow && !popupWindow.closed && popupWindow.getURL() === url) {
       log.info(`Popup window already open at provided url: ${url}`);
       return;
     }
-    if (!popupWindow) {
-      popupWindow = new BrowserWindow({
-        backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
-        parent: mainWindow,
-        show: false,
-        webPreferences: {
-          nodeIntegration: false,
-          contextIsolation: true,
-        },
-      });
-      popupWindow.once('ready-to-show', () => {
-        popupWindow.show();
-      });
-      popupWindow.once('closed', () => {
-        popupWindow = null;
-      });
+    if (Utils.isPluginUrl(server.url, parsedURL)) {
+      if (!popupWindow || popupWindow.closed) {
+        popupWindow = new BrowserWindow({
+          backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
+          parent: mainWindow,
+          show: false,
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+          },
+        });
+        popupWindow.once('ready-to-show', () => {
+          popupWindow.show();
+        });
+        popupWindow.once('closed', () => {
+          popupWindow = null;
+        });
+      }
+      popupWindow.loadURL(url);
     }
-    popupWindow.loadURL(url);
   });
 
   // implemented to temporarily help solve for https://community-daily.mattermost.com/core/pl/b95bi44r4bbnueqzjjxsi46qiw
@@ -924,51 +931,13 @@ function handleMainWindowWebContentsCrashed() {
 // helper functions
 //
 
-function parseURL(url) {
-  if (!url) {
-    return null;
-  }
-  if (url instanceof URL) {
-    return url;
-  }
-  try {
-    return new URL(url);
-  } catch (e) {
-    return null;
-  }
-}
-
-function isTeamUrl(url) {
-  const parsedURL = parseURL(url);
-  if (!parsedURL) {
-    return null;
-  }
-  if (isCustomLoginURL(parsedURL)) {
-    return false;
-  }
-  const nonTeamUrlPaths = ['plugins', 'signup', 'login', 'admin', 'channel', 'post', 'api', 'oauth'];
-  return !(nonTeamUrlPaths.some((testPath) => parsedURL.pathname.toLowerCase().startsWith(`/${testPath}/`)));
-}
-
 function isTrustedURL(url) {
-  const parsedURL = parseURL(url);
+  const parsedURL = Utils.parseURL(url);
   if (!parsedURL) {
+    console.log('not an url');
     return false;
   }
-
-  const teamURLs = config.teams.reduce((urls, team) => {
-    const parsedTeamURL = parseURL(team.url);
-    if (parsedTeamURL) {
-      return urls.concat(parsedTeamURL);
-    }
-    return urls;
-  }, []);
-  for (const teamURL of teamURLs) {
-    if (parsedURL.origin === teamURL.origin) {
-      return true;
-    }
-  }
-  return false;
+  return Utils.getServer(parsedURL, config.teams) !== null;
 }
 
 function isTrustedPopupWindow(webContents) {
@@ -982,7 +951,7 @@ function isTrustedPopupWindow(webContents) {
 }
 
 function isCustomLoginURL(url) {
-  const parsedURL = parseURL(url);
+  const parsedURL = Utils.parseURL(url);
   if (!parsedURL) {
     return false;
   }

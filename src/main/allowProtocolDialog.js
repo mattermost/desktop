@@ -8,10 +8,19 @@ import fs from 'fs';
 
 import {app, dialog, ipcMain, shell} from 'electron';
 
+import {protocols} from '../../electron-builder.json';
+
 import * as Validator from './Validator';
 
 const allowedProtocolFile = path.resolve(app.getPath('userData'), 'allowedProtocols.json');
 let allowedProtocols = [];
+
+function addScheme(scheme) {
+  const proto = `${scheme}:`;
+  if (!allowedProtocols.includes(proto)) {
+    allowedProtocols.push(proto);
+  }
+}
 
 function init(mainWindow) {
   fs.readFile(allowedProtocolFile, 'utf-8', (err, data) => {
@@ -19,6 +28,13 @@ function init(mainWindow) {
       allowedProtocols = JSON.parse(data);
       allowedProtocols = Validator.validateAllowedProtocols(allowedProtocols) || [];
     }
+    addScheme('http');
+    addScheme('https');
+    protocols.forEach((protocol) => {
+      if (protocol.schemes && protocol.schemes.length > 0) {
+        protocol.schemes.forEach(addScheme);
+      }
+    });
     initDialogEvent(mainWindow);
   });
 }
