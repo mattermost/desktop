@@ -25,7 +25,6 @@ describe('main/Spellchecker.js', function() {
 
       SpellChecker.getSpellCheckerLocale('pl').should.equal('pl-PL');
       SpellChecker.getSpellCheckerLocale('pl-PL').should.equal('pl-PL');
-      
       SpellChecker.getSpellCheckerLocale('pt').should.equal('pt-BR');
       SpellChecker.getSpellCheckerLocale('pt-BR').should.equal('pt-BR');
 
