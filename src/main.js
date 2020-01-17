@@ -672,21 +672,34 @@ function initializeAfterAppReady() {
     });
   }
 
-  if (process.platform === 'darwin') {
-    session.defaultSession.on('will-download', (event, item) => {
-      const filename = item.getFilename();
-      const savePath = dialog.showSaveDialog({
-        title: filename,
-        defaultPath: os.homedir() + '/Downloads/' + filename,
+  session.defaultSession.on('will-download', (event, item) => {
+    const filename = item.getFilename();
+    const fileElements = filename.split('.');
+    const filters = [];
+    if (fileElements.length > 1) {
+      filters.push({
+        name: `${fileElements[fileElements.length - 1]} files`,
+        extensions: [fileElements[fileElements.length - 1]],
       });
+    }
 
-      if (savePath) {
-        item.setSavePath(savePath);
-      } else {
-        item.cancel();
-      }
+    // add default filter
+    filters.push({
+      name: 'All files',
+      extensions: ['*'],
     });
-  }
+    const savePath = dialog.showSaveDialog({
+      title: filename,
+      defaultPath: os.homedir() + '/Downloads/' + filename,
+      filters,
+    });
+
+    if (savePath) {
+      item.setSavePath(savePath);
+    } else {
+      item.cancel();
+    }
+  });
 
   ipcMain.emit('update-menu', true, config.data);
 
