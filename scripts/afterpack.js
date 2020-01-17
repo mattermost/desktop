@@ -7,7 +7,7 @@ const {spawn} = require('electron-notarize');
 
 const SETUID_PERMISSIONS = '4755';
 
-async function afterPack(context) {
+exports.default = async function afterPack(context) {
   if (context.electronPlatformName === 'linux') {
     context.targets.forEach(async (target) => {
       if (!['appimage', 'snap'].includes(target.name.toLowerCase())) {
@@ -20,6 +20,4 @@ async function afterPack(context) {
       }
     });
   }
-}
-
-export default afterPack;
+};
