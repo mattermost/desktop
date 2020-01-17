@@ -26,6 +26,7 @@ import TabBar from './TabBar.jsx';
 import HoveringURL from './HoveringURL.jsx';
 import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
+import SelectCertificateModal from './SelectCertificateModal.jsx';
 
 export default class MainPage extends React.Component {
   constructor(props) {
@@ -50,6 +51,7 @@ export default class MainPage extends React.Component {
       mentionAtActiveCounts: new Array(this.props.teams.length),
       loginQueue: [],
       targetURL: '',
+      certificateRequests: [],
       maximized: false,
     };
   }
@@ -134,6 +136,20 @@ export default class MainPage extends React.Component {
       self.setState({
         loginQueue,
       });
+    });
+
+    ipcRenderer.on('select-user-certificate', (_, origin, certificateList) => {
+      const certificateRequests = self.state.certificateRequests;
+      certificateRequests.push({
+        server: origin,
+        certificateList,
+      });
+      self.setState({
+        certificateRequests,
+      });
+      if (certificateRequests.length === 1) {
+        self.switchToTabForCertificateRequest(origin);
+      }
     });
 
     // can't switch tabs sequentially for some reason...
@@ -341,6 +357,18 @@ export default class MainPage extends React.Component {
     }
   }
 
+  switchToTabForCertificateRequest = (origin) => {
+    // origin is server name + port, if the port doesn't match the protocol, it is kept by URL
+    const originURL = new URL(`http://${origin.split(':')[0]}`);
+    const secureOriginURL = new URL(`https://${origin.split(':')[0]}`);
+
+    const key = this.props.teams.findIndex((team) => {
+      const parsedURL = new URL(team.url);
+      return (parsedURL.origin === originURL.origin) || (parsedURL.origin === secureOriginURL.origin);
+    });
+    this.handleSelect(key);
+  };
+
   handleMaximizeState = () => {
     const win = remote.getCurrentWindow();
     this.setState({maximized: win.isMaximized()});
@@ -534,6 +562,24 @@ export default class MainPage extends React.Component {
     });
   }
 
+  handleSelectCertificate = (certificate) => {
+    const certificateRequests = this.state.certificateRequests;
+    const current = certificateRequests.shift();
+    this.setState({certificateRequests});
+    ipcRenderer.send('selected-client-certificate', current.server, certificate);
+    if (certificateRequests.length > 0) {
+      this.switchToTabForCertificateRequest(certificateRequests[0].server);
+    }
+  }
+  handleCancelCertificate = () => {
+    const certificateRequests = this.state.certificateRequests;
+    const current = certificateRequests.shift();
+    this.setState({certificateRequests});
+    ipcRenderer.send('selected-client-certificate', current.server);
+    if (certificateRequests.length > 0) {
+      this.switchToTabForCertificateRequest(certificateRequests[0].server);
+    }
+  };
   setDarkMode() {
     this.setState({
       isDarkMode: this.props.setDarkMode(),
@@ -726,6 +772,11 @@ export default class MainPage extends React.Component {
           authServerURL={authServerURL}
           onLogin={this.handleLogin}
           onCancel={this.handleLoginCancel}
+        />
+        <SelectCertificateModal
+          certificateRequests={this.state.certificateRequests}
+          onSelect={this.handleSelectCertificate}
+          onCancel={this.handleCancelCertificate}
         />
         <Grid fluid={true}>
           { topRow }
