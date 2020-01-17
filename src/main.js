@@ -50,6 +50,7 @@ const {
 const criticalErrorHandler = new CriticalErrorHandler();
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const loginCallbackMap = new Map();
+const certificateRequests = new Map();
 const userActivityMonitor = new UserActivityMonitor();
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -158,6 +159,7 @@ function initializeAppEventListeners() {
   app.on('activate', handleAppActivate);
   app.on('before-quit', handleAppBeforeQuit);
   app.on('certificate-error', handleAppCertificateError);
+  app.on('select-client-certificate', handleSelectCertificate);
   app.on('gpu-process-crashed', handleAppGPUProcessCrashed);
   app.on('login', handleAppLogin);
   app.on('will-finish-launching', handleAppWillFinishLaunching);
@@ -214,6 +216,8 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('get-spelling-suggestions', handleGetSpellingSuggestionsEvent);
   ipcMain.on('get-spellchecker-locale', handleGetSpellcheckerLocaleEvent);
   ipcMain.on('reply-on-spellchecker-is-ready', handleReplyOnSpellcheckerIsReadyEvent);
+  ipcMain.on('selected-client-certificate', handleSelectedCertificate);
+
   if (shouldShowTrayIcon()) {
     ipcMain.on('update-unread', handleUpdateUnreadEvent);
   }
@@ -305,6 +309,32 @@ function handleAppBeforeQuit() {
     trayIcon.destroy();
   }
   global.willAppQuit = true;
+}
+
+function handleSelectCertificate(event, webContents, url, list, callback) {
+  event.preventDefault(); // prevent the app from getting the first certificate available
+  // store callback so it can be called with selected certificate
+  certificateRequests.set(url, callback);
+
+  // open modal for selecting certificate
+  mainWindow.webContents.send('select-user-certificate', url, list);
+}
+
+function handleSelectedCertificate(event, server, cert) {
+  const callback = certificateRequests.get(server);
+  if (!callback) {
+    console.error(`there was no callback associated with: ${server}`);
+    return;
+  }
+  try {
+    if (typeof cert === 'undefined') {
+      callback(); //user cancelled, so we use the callback without certificate.
+    } else {
+      callback(cert);
+    }
+  } catch (e) {
+    console.log(`There was a problem using the selected certificate: ${e}`);
+  }
 }
 
 function handleAppCertificateError(event, webContents, url, error, certificate, callback) {
@@ -912,6 +942,7 @@ function isTrustedURL(url) {
   if (!parsedURL) {
     return false;
   }
+
   const teamURLs = config.teams.reduce((urls, team) => {
     const parsedTeamURL = parseURL(team.url);
     if (parsedTeamURL) {

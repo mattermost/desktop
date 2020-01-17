@@ -1,0 +1,121 @@
+.certificateModal dialog {
+    background-color: aliceblue;
+}
+
+.certificateList thead {
+    width: 557.89px;
+    height: 22px;
+}
+.certificateList thead>tr>th {
+    font-family: Helvetica Neue;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 12px;
+    line-height: 14px;
+    padding: 2px;
+    border-bottom: 1px solid #CCCCCC;
+    color: #333333;
+}
+
+.certificateList tbody>tr>td {
+    width: 227.17px;
+    height: 47px;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 14px;
+    line-height: 17px;
+
+    color: #555555;
+}
+
+table.certificateList {
+    background: #FFFFFF;
+    border: 1px solid #CCCCCC;
+    box-sizing: border-box;
+    box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.0008);
+    border-radius: 4px;
+    border-collapse: unset;
+    height: 150px;
+}
+
+.certificateModal button {
+    background: #FFFFFF;
+    border: 1px solid #CCCCCC;
+    box-sizing: border-box;
+    border-radius: 4px;
+    padding: 9px 12px;
+}
+
+.certificateModal button:disabled {
+    opacity: 0.5;
+}
+
+.certificateModal button.primary {
+    background: #457AB2;
+    color: #FFFFFF;
+    border: 1px solid #2E6DA4;
+}
+.certificateModal button.info {
+    color: #457AB2;
+}
+
+.certificateModal button.primary:hover {
+    background: #659AD2;
+}
+
+.certificateModal .subtitle {
+    color: #737373;
+    margin: 0px 15px 10px;
+}
+
+.certificateModal .bottomBorder {
+    padding-bottom: 10px;
+    border-bottom: 1px solid #CCCCCC;
+}
+
+.certificateModal .topBorder {
+    border-top: 1px solid #CCCCCC;
+    margin: 0 1px 0 1px;
+    padding-top: 15px;
+}
+.certificateModal .noBorder {
+    border: none;
+}
+
+.divider {
+    border-right: 1px solid #CCCCCC;
+    display: block;
+}
+
+.certificateModal dt, dd { 
+    float: left;
+    margin: 5px;
+}
+
+.certificateModal dt { clear:both }
+
+.certificateModal dl {
+    overflow-y: auto;
+}
+
+.certificateKey {
+    font-style: normal;
+    font-weight: normal;
+    font-size: 14px;
+    line-height: 17px;
+
+    color: #737373;
+}
+
+.certInfo {
+    font-family: Helvetica Neue;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 12px;
+    line-height: 18px;
+    color: #333333;
+}
+
+.emtpyDescriptor {
+    border-bottom: 1px solid #CCCCCC;
+}
