@@ -695,17 +695,11 @@ function initializeAfterAppReady() {
       name: 'All files',
       extensions: ['*'],
     });
-    const savePath = dialog.showSaveDialog({
+    item.setSaveDialogOptions({
       title: filename,
       defaultPath: os.homedir() + '/Downloads/' + filename,
       filters,
     });
-
-    if (savePath) {
-      item.setSavePath(savePath);
-    } else {
-      item.cancel();
-    }
   });
 
   ipcMain.emit('update-menu', true, config.data);
