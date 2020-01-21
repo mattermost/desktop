@@ -15,7 +15,10 @@ VERSION="$1" # such as 3.7.1, 4.0.0-rc1
 BASE_URL="https://releases.mattermost.com/desktop/${VERSION}"
 
 cat <<-MD
-### Mattermost Desktop ${VERSION} has been cut!
+### Mattermost Desktop v${VERSION} has been cut!
+
+Release notes can be found here: https://docs.mattermost.com/help/apps/desktop-changelog.html
+
 The download links can be found below.
 
 #### Windows - msi files (beta)
