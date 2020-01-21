@@ -188,7 +188,7 @@ jobs:
       - win_make:
           operation: "build"
       - run: mkdir -p ./dist/win-release
-      #- run: cp -r release/*.exe ./dist/win-release
+      - run: cp -r release/*.exe ./dist/win-release
       - run: cp -r release/*.zip ./dist/win-release
       - run: cp -r release/*.msi ./dist/win-release
       #- run: cp -r release/*.blockmap ./dist/win-release
