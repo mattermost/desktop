@@ -331,9 +331,9 @@ workflows:
             - build-linux
           context: mattermost-release-s3
           filters:
-            tags:
+            branches:
               only:
-                - /^v\d+(\.\d+){1,2}$/
+                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - upload_to_github:
           requires:
