@@ -266,7 +266,7 @@ function handleReloadConfig() {
 function handleAppSecondInstance(event, argv) {
   // Protocol handler for win32
   // argv: An array of the second instance’s (command line / deep linked) arguments
-  if (process.platform === 'win32') {
+  if (process.platform === 'win32' || process.platform === 'linux') {
     deeplinkingUrl = getDeeplinkingURL(argv);
     if (deeplinkingUrl) {
       mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
@@ -601,8 +601,8 @@ function initializeAfterAppReady() {
       catch((err) => console.log('An error occurred: ', err));
   }
 
-  // Protocol handler for win32
-  if (process.platform === 'win32') {
+  // Protocol handler for win32 and linux
+  if (process.platform === 'win32' || process.platform === 'linux') {
     const args = process.argv.slice(1);
     if (Array.isArray(args) && args.length > 0) {
       deeplinkingUrl = getDeeplinkingURL(args);
