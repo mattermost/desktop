@@ -120,7 +120,7 @@ export default class SelectCertificateModal extends React.Component {
       <Modal
         bsClass='modal'
         className='certificateModal'
-        show={this.props.certificateRequests.length}
+        show={this.props.certificateRequests.length > 0}
       >
         <Modal.Header className={'noBorder'}>
           <Modal.Title className={'bottomBorder'}>{'Select a certificate'}</Modal.Title>

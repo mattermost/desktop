@@ -60,7 +60,7 @@ export default class ShowCertificateModal extends React.Component {
         bsClass='modal'
         className='certificateModal'
         show={this.state.certificate !== null}
-        scrollable={true}
+        scrollable={'true'}
       >
         <Modal.Header className={'noBorder'}>
           <Modal.Title className={'bottomBorder'}>{'Certificate Information'}</Modal.Title>
