@@ -167,7 +167,7 @@ export default class SelectCertificateModal extends React.Component {
                 onClick={this.handleOk}
                 disabled={this.state.selectedIndex === null}
                 className={'primary'}
-              >{'Ok'}</Button>
+              >{'OK'}</Button>
             </Col>
           </Row>
         </Modal.Footer>

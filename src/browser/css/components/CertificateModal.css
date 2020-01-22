@@ -1,20 +1,41 @@
-.certificateModal dialog {
+.certificateModal dialog,
+.showCertificate dialog {
     background-color: aliceblue;
+    margin-top: 40px;
+}
+
+.certificateModal .modal-body,
+.showCertificate .modal-body {
+    padding-top: 0px;
+}
+
+.certificateModal .col-sm-4 {
+    padding: 0px;
+    text-align: left;
+}
+.certificateModal .col-sm-8 {
+    padding: 0px;
 }
 
 .certificateList thead {
     width: 557.89px;
-    height: 22px;
+
 }
+
+.certificateList thead>tr {
+    padding: 0px 5px;
+}
+
 .certificateList thead>tr>th {
     font-family: Helvetica Neue;
     font-style: normal;
     font-weight: normal;
     font-size: 12px;
     line-height: 14px;
-    padding: 2px;
+    padding: 5px;
     border-bottom: 1px solid #CCCCCC;
     color: #333333;
+    height: 22px;
 }
 
 .certificateList tbody>tr>td {
@@ -24,15 +45,16 @@
     font-weight: normal;
     font-size: 14px;
     line-height: 17px;
+    padding: 15px 10px;
 
     color: #555555;
 }
 
 table.certificateList {
     background: #FFFFFF;
-    border: 1px solid #CCCCCC;
+    border: 1px solid #66AFE9;
     box-sizing: border-box;
-    box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.0008);
+    box-shadow: 0px 0px 8px rgba(102, 175, 233, 0.6), inset 1px 1px 0px rgba(0, 0, 0, 0.00075);
     border-radius: 4px;
     border-collapse: unset;
     height: 150px;
@@ -44,6 +66,7 @@ table.certificateList {
     box-sizing: border-box;
     border-radius: 4px;
     padding: 9px 12px;
+    line-height: 16px;
 }
 
 .certificateModal button:disabled {
@@ -65,7 +88,7 @@ table.certificateList {
 
 .certificateModal .subtitle {
     color: #737373;
-    margin: 0px 15px 10px;
+    margin: 0px 0px 10px 0px;
 }
 
 .certificateModal .bottomBorder {
