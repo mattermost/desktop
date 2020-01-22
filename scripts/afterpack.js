@@ -3,7 +3,7 @@
 
 const path = require('path');
 
-const {spawn} = require('electron-notarize');
+const {spawn} = require('electron-notarize/lib/spawn.js');
 
 const SETUID_PERMISSIONS = '4755';
 
