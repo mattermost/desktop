@@ -37,7 +37,10 @@ export default class ShowCertificateModal extends React.Component {
 
     if (this.state.certificate === null) {
       return (
-        <Modal>
+        <Modal
+          bsClass='modal'
+          className='showCertificate'
+        >
           <Modal.Body>
             {'No certificate Selected'}
           </Modal.Body>
@@ -55,10 +58,11 @@ export default class ShowCertificateModal extends React.Component {
     const creation = utcSeconds(this.state.certificate.validStart);
     const dateDisplayOptions = {dateStyle: 'full', timeStyle: 'full'};
     const dateLocale = 'en-US';
+    console.log(this.state.certificate);
     return (
       <Modal
         bsClass='modal'
-        className='certificateModal'
+        className='showCertificate'
         show={this.state.certificate !== null}
         scrollable={'true'}
       >
@@ -66,9 +70,6 @@ export default class ShowCertificateModal extends React.Component {
           <Modal.Title className={'bottomBorder'}>{'Certificate Information'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <h3 className={'certificateKey'}>{`${this.state.certificate.subject.commonName}`}</h3>
-          <p className={'certInfo'}>{`Issued by: ${this.state.certificate.issuer.commonName}`}</p>
-          <p className={'certInfo'}>{`Expires: ${expiration.toLocaleString(dateLocale, dateDisplayOptions)}`}</p>
           <p>{'Details'}</p>
           <dl>
             {certificateItem('Subject Name')}

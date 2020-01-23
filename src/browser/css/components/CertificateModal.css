@@ -4,6 +4,9 @@
     margin-top: 40px;
 }
 
+.showCertificate modal-dialog {
+    width: 800px;
+}
 .certificateModal .modal-body,
 .showCertificate .modal-body {
     padding-top: 0px;
@@ -115,6 +118,13 @@ table.certificateList {
     margin: 5px;
 }
 
+.certificateModal dd {
+    white-space: nowrap;
+    max-width: 400px;
+    text-overflow: ellipsis;
+    overflow-x: hidden;
+}
+
 .certificateModal dt { clear:both }
 
 .certificateModal dl {
@@ -141,4 +151,6 @@ table.certificateList {
 
 .emtpyDescriptor {
     border-bottom: 1px solid #CCCCCC;
+    width: 610px;
+    height: 11px;
 }
