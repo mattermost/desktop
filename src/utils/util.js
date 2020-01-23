@@ -93,7 +93,7 @@ function getServer(inputURL, teams) {
 
     // check server and subpath matches (without subpath pathname is \ so it always matches)
     if (parsedServerUrl.origin === parsedURL.origin && parsedURL.pathname.startsWith(parsedServerUrl.pathname)) {
-      return {name: teams[i].name, url: parsedServerUrl};
+      return {name: teams[i].name, url: parsedServerUrl, index: i};
     }
   }
   return null;
