@@ -1,10 +1,10 @@
-.certificateModal dialog,
-.showCertificate dialog {
+.certificateModal .modal,
+.showCertificate .modal {
     background-color: aliceblue;
     margin-top: 40px;
 }
 
-.showCertificate modal-dialog {
+.showCertificate .modal-dialog {
     width: 800px;
 }
 .certificateModal .modal-body,
@@ -63,6 +63,7 @@ table.certificateList {
     height: 150px;
 }
 
+.showCertificate button,
 .certificateModal button {
     background: #FFFFFF;
     border: 1px solid #CCCCCC;
@@ -72,38 +73,47 @@ table.certificateList {
     line-height: 16px;
 }
 
+.showCertificate button:disabled,
 .certificateModal button:disabled {
     opacity: 0.5;
 }
 
+.showCertificate button.primary,
 .certificateModal button.primary {
     background: #457AB2;
     color: #FFFFFF;
     border: 1px solid #2E6DA4;
 }
-.certificateModal button.info {
-    color: #457AB2;
-}
 
+
+.showCertificate button.primary:hover,
 .certificateModal button.primary:hover {
     background: #659AD2;
 }
 
+.certificateModal button.info {
+    color: #457AB2;
+}
+
+.showCertificate .subtitle,
 .certificateModal .subtitle {
     color: #737373;
     margin: 0px 0px 10px 0px;
 }
 
-.certificateModal .bottomBorder {
+.bottomBorder {
     padding-bottom: 10px;
     border-bottom: 1px solid #CCCCCC;
 }
 
+.showCertificate .topBorder,
 .certificateModal .topBorder {
     border-top: 1px solid #CCCCCC;
     margin: 0 1px 0 1px;
     padding-top: 15px;
 }
+
+.showCertificate .noBorder,
 .certificateModal .noBorder {
     border: none;
 }
@@ -113,31 +123,41 @@ table.certificateList {
     display: block;
 }
 
-.certificateModal dt, dd { 
+.showCertificate dt, dd { 
     float: left;
     margin: 5px;
 }
 
-.certificateModal dd {
+.showCertificate dd {
     white-space: nowrap;
-    max-width: 400px;
     text-overflow: ellipsis;
     overflow-x: hidden;
 }
 
-.certificateModal dt { clear:both }
+.showCertificate dt { 
+    width: 150px;
+    clear:both 
+}
 
-.certificateModal dl {
+.showCertificate dl {
     overflow-y: auto;
 }
 
 .certificateKey {
     font-style: normal;
+    font-weight: bold;
+    font-size: 12px;
+    line-height: 15px;
+    color: #333333;
+    text-align: right;
+}
+.certificateValue {
+    font-style: normal;
     font-weight: normal;
-    font-size: 14px;
-    line-height: 17px;
-
-    color: #737373;
+    font-size: 12px;
+    line-height: 14px;
+    text-align: left;
+    color: #333333;
 }
 
 .certInfo {
@@ -151,6 +171,15 @@ table.certificateList {
 
 .emtpyDescriptor {
     border-bottom: 1px solid #CCCCCC;
-    width: 610px;
+    width: 598px;
     height: 11px;
+}
+
+.showCertificate .details {
+    margin: 5px;
+    font-weight: bold;
+    font-style: normal;
+    font-size: 12px;
+    line-height: 15px;
+    color: #333333;
 }

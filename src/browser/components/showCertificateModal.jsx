@@ -3,7 +3,7 @@
 
 import React, {Fragment} from 'react';
 import PropTypes from 'prop-types';
-import {Modal, Button, Row} from 'react-bootstrap';
+import {Modal, Button, Row, Col} from 'react-bootstrap';
 
 export default class ShowCertificateModal extends React.Component {
   static propTypes = {
@@ -25,11 +25,11 @@ export default class ShowCertificateModal extends React.Component {
 
   render() {
     const certificateItem = (descriptor, value) => {
-      const ddclass = value ? '' : 'emtpyDescriptor';
+      const ddclass = value ? 'certificateValue' : 'emtpyDescriptor';
       const val = value ? `${value}` : <span/>;
       return (
         <Fragment>
-          <dt>{descriptor}</dt>
+          <dt className={'certificateKey'}>{descriptor}</dt>
           <dd className={ddclass}>{val}</dd>
         </Fragment>
       );
@@ -70,7 +70,7 @@ export default class ShowCertificateModal extends React.Component {
           <Modal.Title className={'bottomBorder'}>{'Certificate Information'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>{'Details'}</p>
+          <p className='details'>{'Details'}</p>
           <dl>
             {certificateItem('Subject Name')}
             {certificateItem('Common Name', this.state.certificate.subject.commonName)}
@@ -85,11 +85,13 @@ export default class ShowCertificateModal extends React.Component {
         </Modal.Body>
         <Modal.Footer className={'noBorder'}>
           <Row className={'topBorder'}>
-            <Button
-              variant={'primary'}
-              onClick={this.handleOk}
-              className={'primary'}
-            >{'Close'}</Button>
+            <Col>
+              <Button
+                variant={'primary'}
+                onClick={this.handleOk}
+                className={'primary'}
+              >{'Close'}</Button>
+            </Col>
           </Row>
         </Modal.Footer>
       </Modal>
