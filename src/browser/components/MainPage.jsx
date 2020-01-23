@@ -15,6 +15,8 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 
 import {ipcRenderer, remote} from 'electron';
 
+import Utils from '../../utils/util';
+
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
 import minimizeButton from '../../assets/titlebar/chrome-minimize.svg';
@@ -370,15 +372,7 @@ export default class MainPage extends React.Component {
   };
 
   handleInterTeamLink = (linkUrl) => {
-    let selectedTeam;
-    this.props.teams.forEach((team, index) => {
-      if (linkUrl.href.startsWith(team.url)) {
-        selectedTeam = {
-          team,
-          index,
-        };
-      }
-    });
+    const selectedTeam = Utils.getServer(linkUrl, this.props.teams);
     if (!selectedTeam) {
       return;
     }
