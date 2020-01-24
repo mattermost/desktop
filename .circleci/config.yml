@@ -228,6 +228,12 @@ jobs:
       - attach_workspace:
           at: ./dist
       - run:
+          name: "Don't upload if it's not on a tag"
+          command: |
+            if [ -z `git tag -l --points-at master` ]; then
+              circleci-agent step halt
+            fi  
+      - run:
           name: "Setup files for aws-s3"
           command: |
             mkdir -p ./aws-s3-dist
@@ -287,7 +293,6 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - test-ci
 
       - build-mac-no-dmg:
           requires:
@@ -296,7 +301,6 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - test-ci
 
       - msi_installer:
           requires:
@@ -309,7 +313,6 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - test-ci
 
       - mac_installer:
           requires:
@@ -319,7 +322,6 @@ workflows:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - test-ci
 
       - store_artifacts:
           # for master/PR builds
@@ -331,7 +333,6 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - test-ci
 
       - upload_to_s3:
           # for release builds
@@ -355,4 +356,3 @@ workflows:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - test-ci
