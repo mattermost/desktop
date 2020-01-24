@@ -243,10 +243,12 @@ jobs:
       - checkout
       - attach_workspace:
           at: ./dist
-      - run: |
-        if [ -z `git tag -l --points-at master` ]; then
-          circleci-agent step halt
-        fi  
+      - run:
+          name: "Don't upload if it's not on a tag"
+          command: |
+            if [ -z `git tag -l --points-at master` ]; then
+              circleci-agent step halt
+            fi  
       - run:
           name: "Setup files for ghr"
           command: |
