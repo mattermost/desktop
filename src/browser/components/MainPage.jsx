@@ -81,10 +81,6 @@ export default class MainPage extends React.Component {
 
   getTabWebContents(index = this.state.key || 0, teams = this.props.teams) {
     const allWebContents = remote.webContents.getAllWebContents();
-    const openDevTools = allWebContents.find((webContents) => webContents.getURL().includes('chrome-devtools') && webContents.isFocused());
-    if (openDevTools) {
-      return openDevTools;
-    }
 
     if (this.state.showNewTeamModal) {
       const indexURL = '/browser/index.html';
@@ -98,7 +94,8 @@ export default class MainPage extends React.Component {
     if (!tabURL) {
       return null;
     }
-    return allWebContents.find((webContents) => webContents.getURL().includes(tabURL) || webContents.getURL().includes(this.refs[`mattermostView${index}`].getSrc()));
+    const tab = allWebContents.find((webContents) => webContents.isFocused() && webContents.getURL().includes(this.refs[`mattermostView${index}`].getSrc()));
+    return tab || remote.webContents.getFocusedWebContents();
   }
 
   componentDidMount() {
