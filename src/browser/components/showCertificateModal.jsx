@@ -84,7 +84,7 @@ export default class ShowCertificateModal extends React.Component {
           </dl>
         </Modal.Body>
         <Modal.Footer className={'no-border'}>
-          <div className="container-fluid">
+          <div className='container-fluid'>
             <Row>
               <Col>
                 <Button
