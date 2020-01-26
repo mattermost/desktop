@@ -1,47 +1,70 @@
-.certificateModal .modal,
-.showCertificate .modal {
+.certificate-modal .modal,
+.show-certificate .modal {
     background-color: aliceblue;
     margin-top: 40px;
 }
 
-.showCertificate .modal-dialog {
+.show-certificate .modal-dialog {
     width: 800px;
 }
-.certificateModal .modal-body,
-.showCertificate .modal-body {
-    padding-top: 0px;
+.modal-header {
+    border-bottom: 0px;
+}
+.modal-header::after {
+              border-bottom: solid 1px #E5E5E5;
+              width: 100%;
+              transform: translateY(15px);
+          }
+.modal-footer::before {
+              border-top: solid 1px #E5E5E5;
+              width: 100%;
+              transform: translateY(-15px);
+}
+.modal-body :last-child {
+    margin-bottom: 0;
 }
 
-.certificateModal .col-sm-4 {
+.certificate-modal .col-sm-4 {
     padding: 0px;
     text-align: left;
 }
-.certificateModal .col-sm-8 {
+.certificate-modal .col-sm-8 {
     padding: 0px;
 }
 
-.certificateList thead {
+.certificate-list thead {
     width: 557.89px;
 
 }
 
-.certificateList thead>tr {
+.certificate-list thead>tr {
     padding: 0px 5px;
 }
 
-.certificateList thead>tr>th {
+.certificate-list thead>tr>th {
     font-family: Helvetica Neue;
     font-style: normal;
     font-weight: normal;
     font-size: 12px;
-    line-height: 14px;
-    padding: 5px;
+    line-height: 18px;
+    padding: 3px 5px;
     border-bottom: 1px solid #CCCCCC;
     color: #333333;
     height: 22px;
 }
 
-.certificateList tbody>tr>td {
+.certificate-list thead tr th:first-child span {
+    padding-left: 10px;
+}
+.certificate-list thead tr th span {
+    border-right: solid 1px #E5E5E5;
+    display: block;
+}
+.certificate-list thead tr th:last-child span {
+    border-right: none;
+}
+
+.certificate-list tbody>tr>td {
     width: 227.17px;
     height: 47px;
     font-style: normal;
@@ -53,18 +76,24 @@
     color: #555555;
 }
 
-table.certificateList {
+table.certificate-list {
     background: #FFFFFF;
-    border: 1px solid #66AFE9;
-    box-sizing: border-box;
-    box-shadow: 0px 0px 8px rgba(102, 175, 233, 0.6), inset 1px 1px 0px rgba(0, 0, 0, 0.00075);
+    border: 1px solid #CCCCCC;
     border-radius: 4px;
     border-collapse: unset;
+    box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.0008);
     height: 150px;
 }
 
-.showCertificate button,
-.certificateModal button {
+table.certificate-list:focus {
+    border: 1px solid #66AFE9;
+    box-sizing: border-box;
+    box-shadow: 0px 0px 8px rgba(102, 175, 233, 0.6), inset 1px 1px 0px rgba(0, 0, 0, 0.00075);
+}
+
+
+.show-certificate button,
+.certificate-modal button {
     background: #FFFFFF;
     border: 1px solid #CCCCCC;
     box-sizing: border-box;
@@ -73,77 +102,64 @@ table.certificateList {
     line-height: 16px;
 }
 
-.showCertificate button:disabled,
-.certificateModal button:disabled {
+.show-certificate button:disabled,
+.certificate-modal button:disabled {
     opacity: 0.5;
 }
 
-.showCertificate button.primary,
-.certificateModal button.primary {
+.show-certificate button.primary,
+.certificate-modal button.primary {
     background: #457AB2;
     color: #FFFFFF;
     border: 1px solid #2E6DA4;
 }
 
 
-.showCertificate button.primary:hover,
-.certificateModal button.primary:hover {
+.show-certificate button.primary:hover,
+.certificate-modal button.primary:hover {
     background: #659AD2;
 }
 
-.certificateModal button.info {
+.certificate-modal button.info {
     color: #457AB2;
 }
 
-.showCertificate .subtitle,
-.certificateModal .subtitle {
+.certificate-modal button.info:disabled {
+    color: #000;
+}
+
+.show-certificate .subtitle,
+.certificate-modal .subtitle {
     color: #737373;
-    margin: 0px 0px 10px 0px;
+    margin: 0px 0px 15px 0px;
 }
 
-.bottomBorder {
-    padding-bottom: 10px;
-    border-bottom: 1px solid #CCCCCC;
-}
-
-.showCertificate .topBorder,
-.certificateModal .topBorder {
-    border-top: 1px solid #CCCCCC;
-    margin: 0 1px 0 1px;
-    padding-top: 15px;
-}
-
-.showCertificate .noBorder,
-.certificateModal .noBorder {
+.show-certificate .no-border,
+.certificate-modal .no-border {
     border: none;
 }
 
-.divider {
-    border-right: 1px solid #CCCCCC;
-    display: block;
-}
-
-.showCertificate dt, dd { 
+.show-certificate dt, dd { 
     float: left;
     margin: 5px;
 }
 
-.showCertificate dd {
+.show-certificate dd {
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow-x: hidden;
 }
 
-.showCertificate dt { 
+.show-certificate dt { 
     width: 150px;
     clear:both 
 }
 
-.showCertificate dl {
+.show-certificate dl {
     overflow-y: auto;
 }
 
-.certificateKey {
+.certificate-key {
     font-style: normal;
     font-weight: bold;
     font-size: 12px;
@@ -151,7 +167,7 @@ table.certificateList {
     color: #333333;
     text-align: right;
 }
-.certificateValue {
+.certificate-value {
     font-style: normal;
     font-weight: normal;
     font-size: 12px;
@@ -160,7 +176,7 @@ table.certificateList {
     color: #333333;
 }
 
-.certInfo {
+.cert-info {
     font-family: Helvetica Neue;
     font-style: normal;
     font-weight: normal;
@@ -169,14 +185,14 @@ table.certificateList {
     color: #333333;
 }
 
-.emtpyDescriptor {
-    border-bottom: 1px solid #CCCCCC;
+.emtpy-descriptor {
+    border-bottom: 1px solid #E5E5E5;
     width: 598px;
-    height: 11px;
+    height: 8px;
 }
 
-.showCertificate .details {
-    margin: 5px;
+.show-certificate .details {
+    margin: 15px;
     font-weight: bold;
     font-style: normal;
     font-size: 12px;

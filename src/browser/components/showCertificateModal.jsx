@@ -25,11 +25,11 @@ export default class ShowCertificateModal extends React.Component {
 
   render() {
     const certificateItem = (descriptor, value) => {
-      const ddclass = value ? 'certificateValue' : 'emtpyDescriptor';
+      const ddclass = value ? 'certificate-value' : 'emtpy-descriptor';
       const val = value ? `${value}` : <span/>;
       return (
         <Fragment>
-          <dt className={'certificateKey'}>{descriptor}</dt>
+          <dt className={'certificate-key'}>{descriptor}</dt>
           <dd className={ddclass}>{val}</dd>
         </Fragment>
       );
@@ -39,7 +39,7 @@ export default class ShowCertificateModal extends React.Component {
       return (
         <Modal
           bsClass='modal'
-          className='showCertificate'
+          className='show-certificate'
         >
           <Modal.Body>
             {'No certificate Selected'}
@@ -62,12 +62,12 @@ export default class ShowCertificateModal extends React.Component {
     return (
       <Modal
         bsClass='modal'
-        className='showCertificate'
+        className='show-certificate'
         show={this.state.certificate !== null}
         scrollable={'true'}
       >
-        <Modal.Header className={'noBorder'}>
-          <Modal.Title className={'bottomBorder'}>{'Certificate Information'}</Modal.Title>
+        <Modal.Header className={'no-border'}>
+          <Modal.Title>{'Certificate information'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <p className='details'>{'Details'}</p>
@@ -83,16 +83,18 @@ export default class ShowCertificateModal extends React.Component {
             {certificateItem('Algorithm', this.state.certificate.fingerprint.split('/')[0])}
           </dl>
         </Modal.Body>
-        <Modal.Footer className={'noBorder'}>
-          <Row className={'topBorder'}>
-            <Col>
-              <Button
-                variant={'primary'}
-                onClick={this.handleOk}
-                className={'primary'}
-              >{'Close'}</Button>
-            </Col>
-          </Row>
+        <Modal.Footer className={'no-border'}>
+          <div className="container-fluid">
+            <Row>
+              <Col>
+                <Button
+                  variant={'primary'}
+                  onClick={this.handleOk}
+                  className={'primary'}
+                >{'Close'}</Button>
+              </Col>
+            </Row>
+          </div>
         </Modal.Footer>
       </Modal>
     );

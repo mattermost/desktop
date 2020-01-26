@@ -119,19 +119,21 @@ export default class SelectCertificateModal extends React.Component {
     return (
       <Modal
         bsClass='modal'
-        className='certificateModal'
+        className='certificate-modal'
         show={this.props.certificateRequests.length > 0}
       >
-        <Modal.Header className={'noBorder'}>
-          <Modal.Title className={'bottomBorder'}>{'Select a certificate'}</Modal.Title>
+        <Modal.Header>
+          <Modal.Title >{'Select a certificate'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <p className={'subtitle'}>{`Select a certificate to authenticate yourself to ${server}`}</p>
           <Table
-            stripped={'true'}
+            stripped={true}
             hover={true}
             size={'sm'}
-            className='certificateList'
+            responsive={true}
+            className='certificate-list'
+            tabIndex={1}
           >
             <thead>
               <tr>
@@ -146,30 +148,32 @@ export default class SelectCertificateModal extends React.Component {
             </tbody>
           </Table>
         </Modal.Body>
-        <Modal.Footer className={'noBorder'}>
-          <Row className={'topBorder'}>
-            <Col sm={4}>
-              <Button
-                variant={'info'}
-                disabled={this.state.selectedIndex === null}
-                onClick={this.handleCertificateInfo}
-                className={'info'}
-              >{'Certificate Information'}</Button>
-            </Col>
-            <Col sm={8}>
-              <Button
-                onClick={this.props.onCancel}
-                variant={'secondary'}
-                className={'secondary'}
-              >{'Cancel'}</Button>
-              <Button
-                variant={'primary'}
-                onClick={this.handleOk}
-                disabled={this.state.selectedIndex === null}
-                className={'primary'}
-              >{'OK'}</Button>
-            </Col>
-          </Row>
+        <Modal.Footer className={'no-border'}>
+          <div className={'container-fluid'}>
+            <Row>
+              <Col sm={4}>
+                <Button
+                  variant={'info'}
+                  disabled={this.state.selectedIndex === null}
+                  onClick={this.handleCertificateInfo}
+                  className={'info'}
+                >{'Certificate Information'}</Button>
+              </Col>
+              <Col sm={8}>
+                <Button
+                  onClick={this.props.onCancel}
+                  variant={'secondary'}
+                  className={'secondary'}
+                >{'Cancel'}</Button>
+                <Button
+                  variant={'primary'}
+                  onClick={this.handleOk}
+                  disabled={this.state.selectedIndex === null}
+                  className={'primary'}
+                >{'OK'}</Button>
+              </Col>
+            </Row>
+          </div>
         </Modal.Footer>
       </Modal>
     );
