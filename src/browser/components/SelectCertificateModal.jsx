@@ -43,8 +43,8 @@ export default class SelectCertificateModal extends React.Component {
   };
 
   renderCert = (cert, index) => {
-    const issuer = cert.issuer && cert.issuer.commonName ? cert.issuer.commonName : '';
-    const subject = cert.subject && cert.subject.commonName ? cert.subject.commonName : '';
+    const issuer = (cert.issuerName || (cert.issuer && cert.issuer.commonName) || '');
+    const subject = (cert.subjectName || (cert.subject && cert.subject.commonName) || '');
     const serial = cert.serialNumber || '';
 
     const issuerShort = this.maxSize(cert.issuer.commonName, CELL_SIZE);
