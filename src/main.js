@@ -50,6 +50,7 @@ const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const loginCallbackMap = new Map();
 const certificateRequests = new Map();
 const userActivityMonitor = new UserActivityMonitor();
+const certificateErrors = new Map();
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -344,37 +345,56 @@ function handleAppCertificateError(event, webContents, url, error, certificate, 
     if (certificateStore.isExisting(url)) {
       detail = 'Certificate is different from previous one.\n\n' + detail;
     }
-    dialog.showMessageBox(mainWindow, {
-      title: 'Certificate Error',
-      message: 'There is a configuration issue with this Mattermost server, or someone is trying to intercept your connection. You also may need to sign into the Wi-Fi you are connected to using your web browser.',
-      type: 'error',
-      buttons: [
-        'More Details',
-        'Cancel Connection',
-      ],
-      cancelId: 1,
-    }, (response) => {
-      if (response === 0) {
-        dialog.showMessageBox(mainWindow, {
-          title: 'Certificate Error',
-          message: `Certificate from "${certificate.issuerName}" is not trusted.`,
-          detail,
-          type: 'error',
-          buttons: [
-            'Trust Insecure Certificate',
-            'Cancel Connection',
-          ],
-          cancelId: 1,
-        }, (responseTwo) => { //eslint-disable-line max-nested-callbacks
-          if (responseTwo === 0) {
-            certificateStore.add(url, certificate);
-            certificateStore.save();
-            webContents.loadURL(url);
+    const errorID = `${url}:${error}`;
+
+    // if we are already showing that error, don't add more dialogs, but update the callback as the previous one might have expired
+    if ((typeof certificateErrors.get(errorID)) === 'undefined') {
+      certificateErrors.set(errorID, callback);
+      dialog.showMessageBox(mainWindow, {
+        title: 'Certificate Error',
+        message: 'There is a configuration issue with this Mattermost server, or someone is trying to intercept your connection. You also may need to sign into the Wi-Fi you are connected to using your web browser.',
+        type: 'error',
+        buttons: ['More Details', 'Cancel Connection'],
+        cancelId: 1,
+      }).then(
+        ({response}) => {
+          if (response === 0) {
+            dialog.showMessageBox(mainWindow, {
+              title: 'Certificate Not Trusted',
+              message: `Certificate from "${certificate.issuerName}" is not trusted.`,
+              detail,
+              type: 'error',
+              buttons: ['Trust Insecure Certificate', 'Cancel Connection'],
+              cancelId: 1,
+            }).then(({response: responseTwo}) => {
+              if (responseTwo === 0) {
+                certificateStore.add(url, certificate);
+                certificateStore.save();
+                certificateErrors.get(errorID)(true);
+                certificateErrors.delete(errorID);
+                webContents.loadURL(url);
+              } else {
+                certificateErrors.get(errorID)(false);
+                certificateErrors.delete(errorID);
+              }
+            }).catch((dialogError) => {
+              log.error(`There was an error with the dialog for trusting the certificate: ${dialogError}`);
+              certificateErrors.delete(errorID);
+            });
+          } else {
+            certificateErrors.get(errorID)(false);
+            certificateErrors.delete(errorID);
           }
-        });
-      }
-    });
-    callback(false);
+        }
+      ).catch((dialogError) => {
+        log.error(`There was an error with the dialog: ${dialogError}`);
+        certificateErrors.delete(errorID);
+      });
+    } else {
+      // update the callback
+      console.log(`ignoring dialog for ${errorID}`);
+      certificateErrors.set(errorID, callback);
+    }
   }
 }
 
