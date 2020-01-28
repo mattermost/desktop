@@ -126,8 +126,14 @@ export default class MattermostView extends React.Component {
           shell.openExternal(e.url);
         }
       } else {
-        // if the link is external, use default os' application.
-        ipcRenderer.send('confirm-protocol', destURL.protocol, e.url);
+        const parsedURL = Utils.parseURL(e.url);
+        const serverURL = Utils.getServer(parsedURL, this.props.teams);
+        if (serverURL !== null && Utils.isTeamUrl(serverURL.url, parsedURL)) {
+          this.props.handleInterTeamLink(parsedURL);
+        } else {
+          // if the link is external, use default os' application.
+          ipcRenderer.send('confirm-protocol', destURL.protocol, e.url);
+        }
       }
     });
 
@@ -362,6 +368,7 @@ export default class MattermostView extends React.Component {
 MattermostView.propTypes = {
   name: PropTypes.string,
   id: PropTypes.string,
+  teams: PropTypes.array.isRequired,
   withTab: PropTypes.bool,
   onTargetURLChange: PropTypes.func,
   onBadgeChange: PropTypes.func,
@@ -369,6 +376,7 @@ MattermostView.propTypes = {
   active: PropTypes.bool,
   useSpellChecker: PropTypes.bool,
   onSelectSpellCheckerLocale: PropTypes.func,
+  handleInterTeamLink: PropTypes.func,
 };
 
 /* eslint-enable react/no-set-state */

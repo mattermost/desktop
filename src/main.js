@@ -324,14 +324,14 @@ function handleSelectedCertificate(event, server, cert) {
     console.error(`there was no callback associated with: ${server}`);
     return;
   }
-  try {
-    if (typeof cert === 'undefined') {
-      callback(); //user cancelled, so we use the callback without certificate.
-    } else {
+  if (typeof cert === 'undefined') {
+    console.log('user canceled certificate selection');
+  } else {
+    try {
       callback(cert);
+    } catch (e) {
+      console.log(`There was a problem using the selected certificate: ${e}`);
     }
-  } catch (e) {
-    console.log(`There was a problem using the selected certificate: ${e}`);
   }
 }
 

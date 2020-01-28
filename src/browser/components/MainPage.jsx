@@ -15,6 +15,8 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 
 import {ipcRenderer, remote} from 'electron';
 
+import Utils from '../../utils/util';
+
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
 import minimizeButton from '../../assets/titlebar/chrome-minimize.svg';
@@ -79,10 +81,6 @@ export default class MainPage extends React.Component {
 
   getTabWebContents(index = this.state.key || 0, teams = this.props.teams) {
     const allWebContents = remote.webContents.getAllWebContents();
-    const openDevTools = allWebContents.find((webContents) => webContents.getURL().includes('chrome-devtools') && webContents.isFocused());
-    if (openDevTools) {
-      return openDevTools;
-    }
 
     if (this.state.showNewTeamModal) {
       const indexURL = '/browser/index.html';
@@ -96,7 +94,8 @@ export default class MainPage extends React.Component {
     if (!tabURL) {
       return null;
     }
-    return allWebContents.find((webContents) => webContents.getURL().includes(tabURL) || webContents.getURL().includes(this.refs[`mattermostView${index}`].getSrc()));
+    const tab = allWebContents.find((webContents) => webContents.isFocused() && webContents.getURL().includes(this.refs[`mattermostView${index}`].getSrc()));
+    return tab || remote.webContents.getFocusedWebContents();
   }
 
   componentDidMount() {
@@ -368,6 +367,15 @@ export default class MainPage extends React.Component {
     });
     this.handleSelect(key);
   };
+
+  handleInterTeamLink = (linkUrl) => {
+    const selectedTeam = Utils.getServer(linkUrl, this.props.teams);
+    if (!selectedTeam) {
+      return;
+    }
+    this.refs[`mattermostView${selectedTeam.index}`].handleDeepLink(linkUrl.href);
+    this.setState({key: selectedTeam.index});
+  }
 
   handleMaximizeState = () => {
     const win = remote.getCurrentWindow();
@@ -713,7 +721,7 @@ export default class MainPage extends React.Component {
         <MattermostView
           key={id}
           id={id}
-
+          teams={this.props.teams}
           useSpellChecker={this.props.useSpellChecker}
           onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
           src={teamUrl}
@@ -721,6 +729,7 @@ export default class MainPage extends React.Component {
           onTargetURLChange={self.handleTargetURLChange}
           onBadgeChange={handleBadgeChange}
           onNotificationClick={handleNotificationClick}
+          handleInterTeamLink={self.handleInterTeamLink}
           ref={id}
           active={isActive}
         />);
