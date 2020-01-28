@@ -66,7 +66,6 @@ export default class ShowCertificateModal extends React.Component {
     const creation = utcSeconds(this.state.certificate.validStart);
     const dateDisplayOptions = {dateStyle: 'full', timeStyle: 'full'};
     const dateLocale = 'en-US';
-    console.log(this.state.certificate);
     return (
       <Modal
         bsClass='modal'
