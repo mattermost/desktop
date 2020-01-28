@@ -7,9 +7,6 @@ import {Modal, Button, Table, Row, Col} from 'react-bootstrap';
 
 import ShowCertificateModal from './showCertificateModal.jsx';
 
-const CELL_SIZE = 23;
-const ELIPSIS_SIZE = 3;
-
 export default class SelectCertificateModal extends React.Component {
   static propTypes = {
     onSelect: PropTypes.func.isRequired,
@@ -28,14 +25,6 @@ export default class SelectCertificateModal extends React.Component {
     };
   }
 
-  maxSize = (item, max) => {
-    if (!item || item.length <= max) {
-      return item;
-    }
-    const sub = item.substring(0, max - ELIPSIS_SIZE);
-    return `${sub}...`;
-  }
-
   selectfn = (index) => {
     return (() => {
       this.setState({selectedIndex: index});
@@ -47,10 +36,6 @@ export default class SelectCertificateModal extends React.Component {
     const subject = cert.subject && cert.subject.commonName ? cert.subject.commonName : '';
     const serial = cert.serialNumber || '';
 
-    const issuerShort = this.maxSize(cert.issuer.commonName, CELL_SIZE);
-    const subjectShort = this.maxSize(cert.subject.commonName, CELL_SIZE);
-    const serialShort = this.maxSize(cert.serialNumber, CELL_SIZE);
-
     return (
       <tr
         key={`cert-${index}`}
@@ -58,14 +43,14 @@ export default class SelectCertificateModal extends React.Component {
         className={this.state.selectedIndex === index ? 'selected' : ''}
       >
         <td
-          title={issuer}
-        >{subjectShort}</td>
-        <td
           title={subject}
-        >{issuerShort}</td>
+        >{subject}</td>
+        <td
+          title={issuer}
+        >{issuer}</td>
         <td
           title={serial}
-        >{serialShort}</td>
+        >{serial}</td>
       </tr>);
   };
 

@@ -71,7 +71,7 @@
 }
 
 .certificate-list tbody>tr>td {
-    width: 227.17px;
+    max-width: 165px;
     height: 47px;
     font-style: normal;
     font-weight: normal;
@@ -79,10 +79,13 @@
     line-height: 17px;
     padding: 15px 10px;
     white-space: nowrap;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
 }
 
 .certificate-list tbody tr td:first-child {
     padding-left: 15px;
+    max-width: 227px;
 }
 
 .certificate-list tbody tr.selected {
