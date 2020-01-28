@@ -24,6 +24,14 @@ export default class ShowCertificateModal extends React.Component {
   }
 
   render() {
+    const certificateSection = (descriptor) => {
+      return (
+        <Fragment>
+          <dt className={'certificate-key'}>{descriptor}</dt>
+          <dd className={'certificate-section'}><span/></dd>
+        </Fragment>
+      );
+    };
     const certificateItem = (descriptor, value) => {
       const ddclass = value ? 'certificate-value' : 'emtpy-descriptor';
       const val = value ? `${value}` : <span/>;
@@ -72,14 +80,20 @@ export default class ShowCertificateModal extends React.Component {
         <Modal.Body>
           <p className='details'>{'Details'}</p>
           <dl>
-            {certificateItem('Subject Name')}
+            {certificateSection('Subject Name')}
             {certificateItem('Common Name', this.state.certificate.subject.commonName)}
-            {certificateItem('Issuer Name')}
+          </dl>
+          <dl>
+            {certificateSection('Issuer Name')}
             {certificateItem('Common Name', this.state.certificate.issuer.commonName)}
+          </dl>
+          <dl>
             {certificateItem('Serial Number', this.state.certificate.serialNumber)}
             {certificateItem('Not Valid Before', creation.toLocaleString(dateLocale, dateDisplayOptions))}
             {certificateItem('Not Valid After', expiration.toLocaleString(dateLocale, dateDisplayOptions))}
-            {certificateItem('Public Key Info')}
+          </dl>
+          <dl>
+            {certificateSection('Public Key Info')}
             {certificateItem('Algorithm', this.state.certificate.fingerprint.split('/')[0])}
           </dl>
         </Modal.Body>

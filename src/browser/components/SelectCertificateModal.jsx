@@ -51,23 +51,19 @@ export default class SelectCertificateModal extends React.Component {
     const subjectShort = this.maxSize(cert.subject.commonName, CELL_SIZE);
     const serialShort = this.maxSize(cert.serialNumber, CELL_SIZE);
 
-    const style = this.state.selectedIndex === index ? {background: '#457AB2', color: '#FFFFFF'} : {};
     return (
       <tr
         key={`cert-${index}`}
         onClick={this.selectfn(index)}
-        style={style}
+        className={this.state.selectedIndex === index ? 'selected' : ''}
       >
         <td
-          style={style}
           title={issuer}
-        >{issuerShort}</td>
-        <td
-          style={style}
-          title={subject}
         >{subjectShort}</td>
         <td
-          style={style}
+          title={subject}
+        >{issuerShort}</td>
+        <td
           title={serial}
         >{serialShort}</td>
       </tr>);
@@ -128,7 +124,7 @@ export default class SelectCertificateModal extends React.Component {
         <Modal.Body>
           <p className={'subtitle'}>{`Select a certificate to authenticate yourself to ${server}`}</p>
           <Table
-            stripped={true}
+            striped={true}
             hover={true}
             size={'sm'}
             responsive={true}
