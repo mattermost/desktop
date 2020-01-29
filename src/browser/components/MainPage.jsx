@@ -156,10 +156,24 @@ export default class MainPage extends React.Component {
       this.handleSelect(key);
     });
     ipcRenderer.on('select-next-tab', () => {
-      this.handleSelect(this.state.key + 1);
+      const currentOrder = this.props.teams[this.state.key].order;
+      const nextIndex = this.props.teams.map((team, index) => {
+        return {
+          index,
+          order: (team.order - currentOrder) - 1,
+        };
+      }).find((team) => team.order === 0 || Math.abs(team.order) === this.props.teams.length);
+      this.handleSelect(nextIndex.index);
     });
     ipcRenderer.on('select-previous-tab', () => {
-      this.handleSelect(this.state.key - 1);
+      const currentOrder = this.props.teams[this.state.key].order;
+      const nextIndex = this.props.teams.map((team, index) => {
+        return {
+          index,
+          order: (team.order - currentOrder) + 1,
+        };
+      }).find((team) => team.order === 0 || Math.abs(team.order) === this.props.teams.length);
+      this.handleSelect(nextIndex.index);
     });
 
     // reload the activated tab
