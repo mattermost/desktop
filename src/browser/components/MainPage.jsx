@@ -157,23 +157,18 @@ export default class MainPage extends React.Component {
     });
     ipcRenderer.on('select-next-tab', () => {
       const currentOrder = this.props.teams[this.state.key].order;
-      const nextIndex = this.props.teams.map((team, index) => {
-        return {
-          index,
-          order: team.order - (currentOrder + 1),
-        };
-      }).find((team) => team.order === 0 || Math.abs(team.order) === this.props.teams.length);
-      this.handleSelect(nextIndex.index);
+      const nextOrder = ((currentOrder + 1) % this.props.teams.length);
+      const nextIndex = this.props.teams.findIndex((team) => team.order === nextOrder);
+      this.handleSelect(nextIndex);
     });
+
     ipcRenderer.on('select-previous-tab', () => {
       const currentOrder = this.props.teams[this.state.key].order;
-      const nextIndex = this.props.teams.map((team, index) => {
-        return {
-          index,
-          order: team.order - (currentOrder + 1),
-        };
-      }).find((team) => team.order === 0 || Math.abs(team.order) === this.props.teams.length);
-      this.handleSelect(nextIndex.index);
+
+      // js modulo operator returns a negative number if result is negative, so we have to ensure it's positive
+      const nextOrder = ((this.props.teams.length + (currentOrder - 1)) % this.props.teams.length);
+      const nextIndex = this.props.teams.findIndex((team) => team.order === nextOrder);
+      this.handleSelect(nextIndex);
     });
 
     // reload the activated tab
