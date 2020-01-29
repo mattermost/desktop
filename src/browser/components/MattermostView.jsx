@@ -335,7 +335,7 @@ export default class MattermostView extends React.Component {
     if (this.props.withTab) {
       classNames.push('mattermostView-with-tab');
     }
-    if (!this.props.active || this.state.errorInfo) {
+    if (!this.props.active) {
       classNames.push('mattermostView-hidden');
     }
 
