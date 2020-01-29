@@ -33,12 +33,11 @@ export default class ShowCertificateModal extends React.Component {
       );
     };
     const certificateItem = (descriptor, value) => {
-      const ddclass = value ? 'certificate-value' : 'emtpy-descriptor';
       const val = value ? `${value}` : <span/>;
       return (
         <Fragment>
           <dt className={'certificate-key'}>{descriptor}</dt>
-          <dd className={ddclass}>{val}</dd>
+          <dd className={'certificate-value'}>{val}</dd>
         </Fragment>
       );
     };
