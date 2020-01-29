@@ -348,7 +348,7 @@ function handleAppCertificateError(event, webContents, url, error, certificate, 
 
     // update the callback
     const errorID = `${url}:${error}`;
-  
+
     // if we are already showing that error, don't add more dialogs
     if (certificateErrorCallbacks.has(errorID)) {
       console.log(`Ignoring already shown dialog for ${errorID}`);
