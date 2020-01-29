@@ -20,3 +20,12 @@
 .checkbox > label {
   width: 100%;
 }
+
+body {
+  overflow: hidden;
+  height: 100%;
+}
+
+#content {
+  height: 100%;
+}
