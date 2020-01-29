@@ -160,7 +160,7 @@ export default class MainPage extends React.Component {
       const nextIndex = this.props.teams.map((team, index) => {
         return {
           index,
-          order: team.order - (currentOrder - 1),
+          order: team.order - (currentOrder + 1),
         };
       }).find((team) => team.order === 0 || Math.abs(team.order) === this.props.teams.length);
       this.handleSelect(nextIndex.index);
