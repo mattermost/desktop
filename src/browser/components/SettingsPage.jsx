@@ -6,15 +6,23 @@
 /* eslint-disable react/no-set-state */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} from 'react-bootstrap';
 
 import {ipcRenderer, remote} from 'electron';
 import {debounce} from 'underscore';
+import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 
 import Config from '../../common/config';
 
+import restoreButton from '../../assets/titlebar/chrome-restore.svg';
+import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
+import minimizeButton from '../../assets/titlebar/chrome-minimize.svg';
+import closeButton from '../../assets/titlebar/chrome-close.svg';
+
 import TeamList from './TeamList.jsx';
 import AutoSaveIndicator from './AutoSaveIndicator.jsx';
+import TabBar from './TabBar.jsx';
 
 const CONFIG_TYPE_SERVERS = 'servers';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
@@ -32,6 +40,9 @@ export default class SettingsPage extends React.Component {
     super(props);
 
     this.state = this.convertConfigDataToState(config.data);
+    this.setState({
+      maximized: false,
+    });
 
     this.trayIconThemeRef = React.createRef();
 
@@ -43,6 +54,7 @@ export default class SettingsPage extends React.Component {
   }
 
   componentDidMount() {
+    const self = this;
     config.on('update', (configData) => {
       this.updateSaveState();
       this.setState(this.convertConfigDataToState(configData, this.state));
@@ -59,6 +71,29 @@ export default class SettingsPage extends React.Component {
         }
       });
     });
+
+    function focusListener() {
+      self.setState({unfocused: false});
+    }
+
+    function blurListener() {
+      self.setState({unfocused: true});
+    }
+
+    const currentWindow = remote.getCurrentWindow();
+    currentWindow.on('focus', focusListener);
+    currentWindow.on('blur', blurListener);
+    if (currentWindow.isMaximized()) {
+      self.setState({maximized: true});
+    }
+    currentWindow.on('maximize', this.handleMaximizeState);
+    currentWindow.on('unmaximize', this.handleMaximizeState);
+
+    if (currentWindow.isFullScreen()) {
+      self.setState({fullScreen: true});
+    }
+    currentWindow.on('enter-full-screen', this.handleFullScreenState);
+    currentWindow.on('leave-full-screen', this.handleFullScreenState);
 
     // when the config object changes here in the renderer process, tell the main process to reload its config object to get the changes
     config.on('synchronize', () => {
@@ -157,6 +192,32 @@ export default class SettingsPage extends React.Component {
       }
       activeTabWebContents.pasteAndMatchStyle();
     });
+
+    if (process.platform === 'darwin') {
+      self.setState({
+        isDarkMode: remote.systemPreferences.isDarkMode(),
+      });
+      remote.systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
+        self.setState({
+          isDarkMode: remote.systemPreferences.isDarkMode(),
+        });
+      });
+    } else {
+      self.setState({
+        isDarkMode: this.props.getDarkMode(),
+      });
+
+      ipcRenderer.on('set-dark-mode', () => {
+        this.setDarkMode();
+      });
+
+      this.threeDotMenu = React.createRef();
+      ipcRenderer.on('focus-three-dot-menu', () => {
+        if (this.threeDotMenu.current) {
+          this.threeDotMenu.current.focus();
+        }
+      });
+    }
   }
 
   convertConfigDataToState = (configData, currentState = {}) => {
@@ -373,10 +434,158 @@ export default class SettingsPage extends React.Component {
     });
   }
 
+  setDarkMode() {
+    this.setState({
+      isDarkMode: this.props.setDarkMode(),
+    });
+  }
+
+  handleClose = () => {
+    const win = remote.getCurrentWindow();
+    win.close();
+  }
+
+  handleMinimize = () => {
+    const win = remote.getCurrentWindow();
+    win.minimize();
+  }
+
+  handleMaximize = () => {
+    const win = remote.getCurrentWindow();
+    win.maximize();
+  }
+
+  handleRestore = () => {
+    const win = remote.getCurrentWindow();
+    win.restore();
+  }
+
+  openMenu = () => {
+    // @eslint-ignore
+    this.threeDotMenu.current.blur();
+    this.props.openMenu();
+  }
+
+  handleDoubleClick = () => {
+    const doubleClickAction = remote.systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
+    const win = remote.getCurrentWindow();
+    if (doubleClickAction === 'Minimize') {
+      win.minimize();
+    } else if (doubleClickAction === 'Maximize' && !win.isMaximized()) {
+      win.maximize();
+    } else if (doubleClickAction === 'Maximize' && win.isMaximized()) {
+      win.unmaximize();
+    }
+  }
+
+  handleMaximizeState = () => {
+    const win = remote.getCurrentWindow();
+    this.setState({maximized: win.isMaximized()});
+  }
+
+  handleFullScreenState = () => {
+    const win = remote.getCurrentWindow();
+    this.setState({fullScreen: win.isFullScreen()});
+  }
+
   render() {
+    const tabsRow = (
+      <TabBar
+        id='tabBar'
+        isDarkMode={this.state.isDarkMode}
+        teams={[]}
+        showAddServerButton={false}
+      />
+    );
+
+    let topBarClassName = 'topBar';
+    if (process.platform === 'darwin') {
+      topBarClassName += ' macOS';
+    }
+    if (this.state.isDarkMode) {
+      topBarClassName += ' darkMode';
+    }
+    if (this.state.fullScreen) {
+      topBarClassName += ' fullScreen';
+    }
+
+    let maxButton;
+    if (this.state.maximized) {
+      maxButton = (
+        <div
+          className='button restore-button'
+          onClick={this.handleRestore}
+        >
+          <img src={restoreButton}/>
+        </div>
+      );
+    } else {
+      maxButton = (
+        <div
+          className='button max-button'
+          onClick={this.handleMaximize}
+        >
+          <img src={maximizeButton}/>
+        </div>
+      );
+    }
+
+    let overlayGradient;
+    if (process.platform !== 'darwin') {
+      overlayGradient = (
+        <span className='overlay-gradient'/>
+      );
+    }
+
+    let titleBarButtons;
+    if (process.platform !== 'darwin') {
+      titleBarButtons = (
+        <span className='title-bar-btns'>
+          <div
+            className='button min-button'
+            onClick={this.handleMinimize}
+          >
+            <img src={minimizeButton}/>
+          </div>
+          {maxButton}
+          <div
+            className='button close-button'
+            onClick={this.handleClose}
+          >
+            <img src={closeButton}/>
+          </div>
+        </span>
+      );
+    }
+
+    const topRow = (
+      <Row
+        className={topBarClassName}
+        onDoubleClick={this.handleDoubleClick}
+      >
+        <div
+          ref={this.topBar}
+          className={`topBar-bg${this.state.unfocused ? ' unfocused' : ''}`}
+        >
+          <button
+            className='three-dot-menu'
+            onClick={this.openMenu}
+            tabIndex={0}
+            ref={this.threeDotMenu}
+          >
+            <DotsVerticalIcon/>
+          </button>
+          {tabsRow}
+          {overlayGradient}
+          {titleBarButtons}
+        </div>
+      </Row>
+    );
+
     const settingsPage = {
       navbar: {
         backgroundColor: '#fff',
+        position: 'relative',
       },
       close: {
         textDecoration: 'none',
@@ -688,35 +897,54 @@ export default class SettingsPage extends React.Component {
     ) : null;
 
     return (
-      <div className='modal-container'>
-        <Navbar
-          className='navbar-fixed-top'
-          style={settingsPage.navbar}
+      <div
+        className='container-fluid'
+        style={{
+          height: '100%',
+        }}
+      >
+        { topRow }
+        <div
+          style={{
+            overflowY: 'auto',
+            height: '100%',
+            margin: '0 -15px',
+          }}
         >
-          <div style={{position: 'relative'}}>
-            <h1 style={settingsPage.heading}>{'Settings'}</h1>
-            <Button
-              id='btnClose'
-              className='CloseButton'
-              bsStyle='link'
-              style={settingsPage.close}
-              onClick={this.handleCancel}
-              disabled={this.state.teams.length === 0}
-            >
-              <span>{'×'}</span>
-            </Button>
-          </div>
-        </Navbar>
-        <Grid
-          className='settingsPage'
-          style={{paddingTop: '100px'}}
-        >
-          { srvMgmt }
-          { optionsRow }
-        </Grid>
+          <Navbar
+            className='navbar-fixed-top'
+            style={settingsPage.navbar}
+          >
+            <div style={{position: 'relative'}}>
+              <h1 style={settingsPage.heading}>{'Settings'}</h1>
+              <Button
+                id='btnClose'
+                className='CloseButton'
+                bsStyle='link'
+                style={settingsPage.close}
+                onClick={this.handleCancel}
+                disabled={this.state.teams.length === 0}
+              >
+                <span>{'×'}</span>
+              </Button>
+            </div>
+          </Navbar>
+          <Grid
+            className='settingsPage'
+          >
+            { srvMgmt }
+            { optionsRow }
+          </Grid>
+        </div>
       </div>
     );
   }
 }
+
+SettingsPage.propTypes = {
+  getDarkMode: PropTypes.func.isRequired,
+  setDarkMode: PropTypes.func.isRequired,
+  openMenu: PropTypes.func.isRequired,
+};
 
 /* eslint-enable react/no-set-state */
