@@ -341,11 +341,6 @@ function handleAppCertificateError(event, webContents, url, error, certificate, 
     event.preventDefault();
     callback(true);
   } else {
-    let detail = `URL: ${url}\nError: ${error}`;
-    if (certificateStore.isExisting(url)) {
-      detail = 'Certificate is different from previous one.\n\n' + detail;
-    }
-
     // update the callback
     const errorID = `${url}:${error}`;
 
@@ -355,12 +350,15 @@ function handleAppCertificateError(event, webContents, url, error, certificate, 
       certificateErrorCallbacks.set(errorID, callback);
       return;
     }
+    const extraDetail = certificateStore.isExisting(url) ? 'Certificate is different from previous one.\n\n' : '';
+    const detail = `${extraDetail}URL: ${url}\nError: ${error}`;
 
     certificateErrorCallbacks.set(errorID, callback);
     dialog.showMessageBox(mainWindow, {
       title: 'Certificate Error',
       message: 'There is a configuration issue with this Mattermost server, or someone is trying to intercept your connection. You also may need to sign into the Wi-Fi you are connected to using your web browser.',
       type: 'error',
+      detail,
       buttons: ['More Details', 'Cancel Connection'],
       cancelId: 1,
     }).then(
@@ -369,7 +367,7 @@ function handleAppCertificateError(event, webContents, url, error, certificate, 
           return dialog.showMessageBox(mainWindow, {
             title: 'Certificate Not Trusted',
             message: `Certificate from "${certificate.issuerName}" is not trusted.`,
-            detail,
+            detail: extraDetail,
             type: 'error',
             buttons: ['Trust Insecure Certificate', 'Cancel Connection'],
             cancelId: 1,
