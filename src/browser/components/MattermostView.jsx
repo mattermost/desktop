@@ -118,7 +118,7 @@ export default class MattermostView extends React.Component {
         } else if (destURL.path.match(/^\/help\//)) {
           // continue to open special case internal urls in default browser
           shell.openExternal(e.url);
-        } else if (Utils.isTeamUrl(this.props.src, e.url, true) || Utils.isPluginUrl(this.props.src, e.url)) {
+        } else if (Utils.isTeamUrl(this.props.src, e.url, true) || (Utils.isPluginUrl(this.props.src, e.url) && !Utils.isPluginOAuth(e.url))) {
           // New window should disable nodeIntegration.
           window.open(e.url, remote.app.getName(), 'nodeIntegration=no, contextIsolation=yes, show=yes');
         } else {

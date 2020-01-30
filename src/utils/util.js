@@ -82,6 +82,22 @@ function isPluginUrl(serverUrl, inputURL) {
   return server.origin === parsedURL.origin && parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}plugins/`);
 }
 
+function isPluginOAuth(inputURL) {
+  const parsedURL = parseURL(inputURL);
+  const pluginOauthRegexes = [
+    /^\/plugins\/[A-Za-z0-9\.]+\/oauth\//i,
+    /^\/plugins\/[A-Za-z0-9\.]+\/oauth2\//i,
+  ];
+
+  for (const regexPath of pluginOauthRegexes) {
+    if (parsedURL.pathname.match(regexPath)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function getServer(inputURL, teams) {
   const parsedURL = parseURL(inputURL);
   if (!parsedURL) {
@@ -125,5 +141,6 @@ export default {
   getServer,
   isTeamUrl,
   isPluginUrl,
+  isPluginOAuth,
   getDisplayBoundaries,
 };
