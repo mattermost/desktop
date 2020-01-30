@@ -85,8 +85,8 @@ function isPluginUrl(serverUrl, inputURL) {
 function isPluginOAuth(inputURL) {
   const parsedURL = parseURL(inputURL);
   const pluginOauthRegexes = [
-    /^\/plugins\/[A-Za-z0-9\.]+\/oauth\//i,
-    /^\/plugins\/[A-Za-z0-9\.]+\/oauth2\//i,
+    /^\/plugins\/[A-Za-z0-9.]+\/oauth\//i,
+    /^\/plugins\/[A-Za-z0-9.]+\/oauth2\//i,
   ];
 
   for (const regexPath of pluginOauthRegexes) {
