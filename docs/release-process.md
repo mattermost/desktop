@@ -26,6 +26,7 @@ No pull requests for features should be merged to the current release after this
     - Post this checklist in Desktop App channel
     - Ensure that feature PR reviews are prioritized, and post a list of outstanding feature PRs in the Desktop App channel
     - After release branches are cut, ask dev to cut RC1 for QA testing
+    - After RC1 is cut, make an announcement for R&D to use the RC as their daily client to get more test coverage
     - Submit changelog with updates for improvements, bug fixes, known issues, and contributors
     - Ask PMs if there are any notable breaking changes or deprecated features in the release
     - Start posting a daily Zero Bug Balance query (posted until zero bugs or day of release)
