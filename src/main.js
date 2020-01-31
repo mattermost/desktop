@@ -337,12 +337,17 @@ function handleSelectedCertificate(event, server, cert) {
 }
 
 function handleAppCertificateError(event, webContents, url, error, certificate, callback) {
-  if (certificateStore.isTrusted(url, certificate)) {
+  const parsedURL = new URL(url);
+  if (!parsedURL) {
+    return;
+  }
+  const origin = parsedURL.origin;
+  if (certificateStore.isTrusted(origin, certificate)) {
     event.preventDefault();
     callback(true);
   } else {
     // update the callback
-    const errorID = `${url}:${error}`;
+    const errorID = `${origin}:${error}`;
 
     // if we are already showing that error, don't add more dialogs
     if (certificateErrorCallbacks.has(errorID)) {
@@ -350,8 +355,8 @@ function handleAppCertificateError(event, webContents, url, error, certificate, 
       certificateErrorCallbacks.set(errorID, callback);
       return;
     }
-    const extraDetail = certificateStore.isExisting(url) ? 'Certificate is different from previous one.\n\n' : '';
-    const detail = `${extraDetail}URL: ${url}\nError: ${error}`;
+    const extraDetail = certificateStore.isExisting(origin) ? 'Certificate is different from previous one.\n\n' : '';
+    const detail = `${extraDetail}origin: ${origin}\nError: ${error}`;
 
     certificateErrorCallbacks.set(errorID, callback);
     dialog.showMessageBox(mainWindow, {
@@ -377,7 +382,7 @@ function handleAppCertificateError(event, webContents, url, error, certificate, 
       }).then(
       ({response: responseTwo}) => {
         if (responseTwo === 0) {
-          certificateStore.add(url, certificate);
+          certificateStore.add(origin, certificate);
           certificateStore.save();
           certificateErrorCallbacks.get(errorID)(true);
           certificateErrorCallbacks.delete(errorID);
