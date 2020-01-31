@@ -500,7 +500,7 @@ function handleAppWebContentsCreated(dc, contents) {
           popupWindow = null;
         });
       }
-      popupWindow.loadURL(url);
+      popupWindow.loadURL(url, { userAgent: 'Chrome' });
     }
   });
 
