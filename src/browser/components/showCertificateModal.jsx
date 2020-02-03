@@ -3,7 +3,7 @@
 
 import React, {Fragment} from 'react';
 import PropTypes from 'prop-types';
-import {Modal, Button, Row} from 'react-bootstrap';
+import {Modal, Button, Row, Col} from 'react-bootstrap';
 
 export default class ShowCertificateModal extends React.Component {
   static propTypes = {
@@ -24,20 +24,30 @@ export default class ShowCertificateModal extends React.Component {
   }
 
   render() {
+    const certificateSection = (descriptor) => {
+      return (
+        <Fragment>
+          <dt className={'certificate-key'}>{descriptor}</dt>
+          <dd className={'certificate-section'}><span/></dd>
+        </Fragment>
+      );
+    };
     const certificateItem = (descriptor, value) => {
-      const ddclass = value ? '' : 'emtpyDescriptor';
       const val = value ? `${value}` : <span/>;
       return (
         <Fragment>
-          <dt>{descriptor}</dt>
-          <dd className={ddclass}>{val}</dd>
+          <dt className={'certificate-key'}>{descriptor}</dt>
+          <dd className={'certificate-value'}>{val}</dd>
         </Fragment>
       );
     };
 
     if (this.state.certificate === null) {
       return (
-        <Modal>
+        <Modal
+          bsClass='modal'
+          className='show-certificate'
+        >
           <Modal.Body>
             {'No certificate Selected'}
           </Modal.Body>
@@ -58,38 +68,45 @@ export default class ShowCertificateModal extends React.Component {
     return (
       <Modal
         bsClass='modal'
-        className='certificateModal'
+        className='show-certificate'
         show={this.state.certificate !== null}
-        scrollable={true}
+        scrollable={'true'}
       >
-        <Modal.Header className={'noBorder'}>
-          <Modal.Title className={'bottomBorder'}>{'Certificate Information'}</Modal.Title>
+        <Modal.Header className={'no-border'}>
+          <Modal.Title>{'Certificate information'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <h3 className={'certificateKey'}>{`${this.state.certificate.subject.commonName}`}</h3>
-          <p className={'certInfo'}>{`Issued by: ${this.state.certificate.issuer.commonName}`}</p>
-          <p className={'certInfo'}>{`Expires: ${expiration.toLocaleString(dateLocale, dateDisplayOptions)}`}</p>
-          <p>{'Details'}</p>
+          <p className='details'>{'Details'}</p>
           <dl>
-            {certificateItem('Subject Name')}
+            {certificateSection('Subject Name')}
             {certificateItem('Common Name', this.state.certificate.subject.commonName)}
-            {certificateItem('Issuer Name')}
+          </dl>
+          <dl>
+            {certificateSection('Issuer Name')}
             {certificateItem('Common Name', this.state.certificate.issuer.commonName)}
+          </dl>
+          <dl>
             {certificateItem('Serial Number', this.state.certificate.serialNumber)}
             {certificateItem('Not Valid Before', creation.toLocaleString(dateLocale, dateDisplayOptions))}
             {certificateItem('Not Valid After', expiration.toLocaleString(dateLocale, dateDisplayOptions))}
-            {certificateItem('Public Key Info')}
+          </dl>
+          <dl>
+            {certificateSection('Public Key Info')}
             {certificateItem('Algorithm', this.state.certificate.fingerprint.split('/')[0])}
           </dl>
         </Modal.Body>
-        <Modal.Footer className={'noBorder'}>
-          <Row className={'topBorder'}>
-            <Button
-              variant={'primary'}
-              onClick={this.handleOk}
-              className={'primary'}
-            >{'Close'}</Button>
-          </Row>
+        <Modal.Footer className={'no-border'}>
+          <div className='container-fluid'>
+            <Row>
+              <Col>
+                <Button
+                  variant={'primary'}
+                  onClick={this.handleOk}
+                  className={'primary'}
+                >{'Close'}</Button>
+              </Col>
+            </Row>
+          </div>
         </Modal.Footer>
       </Modal>
     );
