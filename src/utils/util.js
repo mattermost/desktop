@@ -86,7 +86,7 @@ function isPluginOAuth(inputURL) {
   const parsedURL = parseURL(inputURL);
   const regex = /^\/plugins\/[\w.-]+\/oauth[2]?\//i;
 
-  return regex.test(parsedURL.pathname)
+  return regex.test(parsedURL.pathname);
 }
 
 function getServer(inputURL, teams) {
