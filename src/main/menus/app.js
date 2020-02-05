@@ -114,6 +114,7 @@ function createTemplate(mainWindow, config, isDev) {
       },
     }, {
       role: 'selectall',
+      accelerator: 'CmdOrCtrl+A',
     }],
   });
 
@@ -151,6 +152,7 @@ function createTemplate(mainWindow, config, isDev) {
     },
   }, {
     role: 'togglefullscreen',
+    accelerator: process.platform === 'darwin' ? 'Ctrl+Cmd+F' : 'F11',
   }, separatorItem, {
     label: 'Actual Size',
     accelerator: 'CmdOrCtrl+0',
@@ -238,6 +240,7 @@ function createTemplate(mainWindow, config, isDev) {
       accelerator: process.platform === 'win32' ? '' : null,
     }, {
       role: 'close',
+      accelerator: 'CmdOrCtrl+W',
     }, separatorItem, ...teams.slice(0, 9).map((team, i) => {
       return {
         label: team.name,
