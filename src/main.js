@@ -4,6 +4,7 @@
 
 import os from 'os';
 import path from 'path';
+import fs from 'fs';
 
 import electron from 'electron';
 import isDev from 'electron-is-dev';
@@ -599,6 +600,20 @@ function initializeAfterAppReady() {
     installExtension(REACT_DEVELOPER_TOOLS).
       then((name) => console.log(`Added Extension:  ${name}`)).
       catch((err) => console.log('An error occurred: ', err));
+  }
+
+  // Workaround for MM-22193
+  // From this post: https://github.com/electron/electron/issues/19468#issuecomment-549593139
+  // Electron 6 has a bug that affects users on Windows 10 using dark mode, causing the app to hang
+  // This workaround deletes a file that stops that from happening
+  if (process.platform === 'win32') {
+    const appUserDataPath = app.getPath('userData');
+    const devToolsExtensionsPath = path.join(appUserDataPath, 'DevTools Extensions');
+    try {
+      fs.unlinkSync(devToolsExtensionsPath);
+    } catch (_) {
+      // don't complain if the file doesn't exist
+    }
   }
 
   // Protocol handler for win32
