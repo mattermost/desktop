@@ -51,6 +51,7 @@ const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const loginCallbackMap = new Map();
 const certificateRequests = new Map();
 const userActivityMonitor = new UserActivityMonitor();
+const certificateErrorCallbacks = new Map();
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -337,45 +338,65 @@ function handleSelectedCertificate(event, server, cert) {
 }
 
 function handleAppCertificateError(event, webContents, url, error, certificate, callback) {
-  if (certificateStore.isTrusted(url, certificate)) {
+  const parsedURL = new URL(url);
+  if (!parsedURL) {
+    return;
+  }
+  const origin = parsedURL.origin;
+  if (certificateStore.isTrusted(origin, certificate)) {
     event.preventDefault();
     callback(true);
   } else {
-    let detail = `URL: ${url}\nError: ${error}`;
-    if (certificateStore.isExisting(url)) {
-      detail = 'Certificate is different from previous one.\n\n' + detail;
+    // update the callback
+    const errorID = `${origin}:${error}`;
+
+    // if we are already showing that error, don't add more dialogs
+    if (certificateErrorCallbacks.has(errorID)) {
+      console.log(`Ignoring already shown dialog for ${errorID}`);
+      certificateErrorCallbacks.set(errorID, callback);
+      return;
     }
+    const extraDetail = certificateStore.isExisting(origin) ? 'Certificate is different from previous one.\n\n' : '';
+    const detail = `${extraDetail}origin: ${origin}\nError: ${error}`;
+
+    certificateErrorCallbacks.set(errorID, callback);
     dialog.showMessageBox(mainWindow, {
       title: 'Certificate Error',
       message: 'There is a configuration issue with this Mattermost server, or someone is trying to intercept your connection. You also may need to sign into the Wi-Fi you are connected to using your web browser.',
       type: 'error',
-      buttons: [
-        'More Details',
-        'Cancel Connection',
-      ],
+      detail,
+      buttons: ['More Details', 'Cancel Connection'],
       cancelId: 1,
-    }, (response) => {
-      if (response === 0) {
-        dialog.showMessageBox(mainWindow, {
-          title: 'Certificate Error',
-          message: `Certificate from "${certificate.issuerName}" is not trusted.`,
-          detail,
-          type: 'error',
-          buttons: [
-            'Trust Insecure Certificate',
-            'Cancel Connection',
-          ],
-          cancelId: 1,
-        }, (responseTwo) => { //eslint-disable-line max-nested-callbacks
-          if (responseTwo === 0) {
-            certificateStore.add(url, certificate);
-            certificateStore.save();
-            webContents.loadURL(url);
-          }
-        });
-      }
-    });
-    callback(false);
+    }).then(
+      ({response}) => {
+        if (response === 0) {
+          return dialog.showMessageBox(mainWindow, {
+            title: 'Certificate Not Trusted',
+            message: `Certificate from "${certificate.issuerName}" is not trusted.`,
+            detail: extraDetail,
+            type: 'error',
+            buttons: ['Trust Insecure Certificate', 'Cancel Connection'],
+            cancelId: 1,
+          });
+        }
+        return {response};
+      }).then(
+      ({response: responseTwo}) => {
+        if (responseTwo === 0) {
+          certificateStore.add(origin, certificate);
+          certificateStore.save();
+          certificateErrorCallbacks.get(errorID)(true);
+          certificateErrorCallbacks.delete(errorID);
+          webContents.loadURL(url);
+        } else {
+          certificateErrorCallbacks.get(errorID)(false);
+          certificateErrorCallbacks.delete(errorID);
+        }
+      }).catch(
+      (dialogError) => {
+        log.error(`There was an error with the Certificate Error dialog: ${dialogError}`);
+        certificateErrorCallbacks.delete(errorID);
+      });
   }
 }
 
