@@ -64,6 +64,7 @@ function Check-Deps {
         if ($verbose) { Print-Error "signtool dependency missing." }
         $missing += "signtool"
     }
+    if ($verbose) { Print-Info "Checking jq dependency..." }
     if (!(Check-Command "jq")) {
         if ($verbose) { Print-Error "jq dependency missing." }
         $missing += "jq"
