@@ -187,10 +187,11 @@ function Run-BuildId {
     
     Print-Info "Checking build id tag..."    
     if ($env:APPVEYOR_REPO_TAG -eq $true) {
-        $version = "$env:APPVEYOR_REPO_TAG_NAME"
+        $tagversion = "$env:APPVEYOR_REPO_TAG_NAME"
     } else {
-        $version = "$(git describe --tags $(git rev-list --tags --max-count=1))"
+        $tagversion = "$(git describe --tags $(git rev-list --tags --max-count=1))"
     }
+    $version = "$(jq -r '.version' package.json)"
 
     Print-Info "Checking build id tag validity... [$version]"
     [version]$appVersion = New-Object -TypeName System.Version
