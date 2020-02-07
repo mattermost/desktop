@@ -134,7 +134,10 @@
     <Property Id="ARPCONTACT">https://pre-release.mattermost.com</Property>
     <Property Id="ARPHELPLINK">https://docs.mattermost.com/</Property>
     <Property Id="ARPURLINFOABOUT">https://mattermost.com/</Property>
-    <Property Id="ComponentDownload">https://releases.mattermost.com/desktop/0.0.0/mattermost-desktop-0.0.0-$(var.Platform).msi</Property>
+    <!--
+      Next line will be added by `Makefile.ps1`, leaving it here for reference, as it will be added before constructing the MSI
+      <Property Id="ComponentDownload">https://releases.mattermost.com/desktop/0.0.0/mattermost-desktop-0.0.0-$(var.Platform).msi</Property> 
+    -->
     <Property Id="ADDDESKTOPSHORTCUT">true</Property>
     <Property Id="ADDSTARTMENUSHORTCUT">true</Property>
     <UI>
