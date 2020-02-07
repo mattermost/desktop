@@ -204,7 +204,7 @@ function Run-BuildId {
     }
 
     Print-Info -NoNewLine "Getting build id version..."
-    $env:COM_MATTERMOST_MAKEFILE_BUILD_ID = "v$version"
+    $env:COM_MATTERMOST_MAKEFILE_BUILD_ID = "$version"
     Print " [$env:COM_MATTERMOST_MAKEFILE_BUILD_ID]"
 
     Print-Info -NoNewLine "Getting build id version for msi..."
