@@ -25,6 +25,7 @@
       ]
     }
   ],
+  "afterPack": "scripts/afterpack.js",
   "afterSign": "scripts/notarize.js",
   "deb": {
     "synopsis": "Mattermost"
