@@ -184,52 +184,43 @@ function Run-BuildId {
     # candle.exe : error CNDL0001 : Value was either too large or too small for an Int32.
     # Exception Type: System.OverflowException
     # Add the revision only if we are not building a tag
-    
-    Print-Info "Checking build id tag..."    
-    if ($env:APPVEYOR_REPO_TAG -eq $true) {
-        $tagversion = "$env:APPVEYOR_REPO_TAG_NAME"
-    } else {
-        $tagversion = "$(git describe --tags $(git rev-list --tags --max-count=1))"
-    }
+
     $version = "$(jq -r '.version' package.json)"
+    $winVersion = "$($version -Replace '-','.' -Replace '[^0-9.]')"
 
     Print-Info "Checking build id tag validity... [$version]"
     [version]$appVersion = New-Object -TypeName System.Version
-    [void][version]::TryParse($($version -Replace '-','.' -Replace '[^0-9.]'), [ref]$appVersion)
+    [void][version]::TryParse($winVersion, [ref]$appVersion)
     if (!($appVersion)) {
-        Print-Error "Non parsable tag detected. Fallbacking to version 0.0.0."
-        $version = "0.0.0"
+        # if we couldn't parse, it might be a -develop or something similar, so we just add a 
+        # number there that will change overtime. Most likely this is a PR to be tested
+        $revision = "$(git rev-list --all --count)"
+        $winVersion = "$($version -Replace '-.*').${revision}"
+        [void][version]::TryParse($winVersion, [ref]$appVersion)
+        if (!($appVersion)) {
+            Print-Error "Non parsable tag detected. Fallbacking to version 0.0.0."
+            $version = "0.0.0"
+        }
     }
 
     Print-Info -NoNewLine "Getting build id version..."
-    $env:COM_MATTERMOST_MAKEFILE_BUILD_ID = $version
+    $env:COM_MATTERMOST_MAKEFILE_BUILD_ID = "v$version"
     Print " [$env:COM_MATTERMOST_MAKEFILE_BUILD_ID]"
 
     Print-Info -NoNewLine "Getting build id version for msi..."
-    $env:COM_MATTERMOST_MAKEFILE_BUILD_ID_MSI = ($version -Replace '-','.' -Replace '[^0-9.]').Split('.')[0..3] -Join '.'
+    $env:COM_MATTERMOST_MAKEFILE_BUILD_ID_MSI = $winVersion.Split('.')[0..3] -Join '.'
     Print " [$env:COM_MATTERMOST_MAKEFILE_BUILD_ID_MSI]"
 
     Print-Info -NoNewLine "Getting build id version for node/npm..."
-    $env:COM_MATTERMOST_MAKEFILE_BUILD_ID_NODE = ($version -Replace '^v').Split('.')[0..2] -Join '.'
+    $env:COM_MATTERMOST_MAKEFILE_BUILD_ID_NODE = $version
     Print " [$env:COM_MATTERMOST_MAKEFILE_BUILD_ID_NODE]"
 
     Print-Info "Patching version from msi xml descriptor..."
     $msiDescriptorFileName = "scripts\msi_installer.wxs"
     $msiDescriptor = [xml](Get-Content $msiDescriptorFileName)
     $msiDescriptor.Wix.Product.Version = [string]$env:COM_MATTERMOST_MAKEFILE_BUILD_ID_MSI
+    $msiDescriptor.Wix.Product.ComponentDownload = "https://releases.mattermost.com/desktop/$version/mattermost-desktop-$version-`$(var.Platform).msi"
     $msiDescriptor.Save($msiDescriptorFileName)
-
-    Print-Info "Patching version from electron package.json..."
-    $packageFileName = "package.json"
-    $package = Get-Content $packageFileName -Raw | ConvertFrom-Json
-    $package.version = [string]$env:COM_MATTERMOST_MAKEFILE_BUILD_ID_NODE
-    $package | ConvertTo-Json | Set-Content $packageFileName
-
-    Print-Info "Patching version from electron src\package.json..."
-    $packageFileName = "src\package.json"
-    $package = Get-Content $packageFileName -Raw | ConvertFrom-Json
-    $package.version = [string]$env:COM_MATTERMOST_MAKEFILE_BUILD_ID_NODE
-    $package | ConvertTo-Json | Set-Content $packageFileName
 }
 
 function Run-BuildChangelog {
