@@ -219,7 +219,8 @@ function Run-BuildId {
     $msiDescriptorFileName = "scripts\msi_installer.wxs"
     $msiDescriptor = [xml](Get-Content $msiDescriptorFileName)
     $msiDescriptor.Wix.Product.Version = [string]$env:COM_MATTERMOST_MAKEFILE_BUILD_ID_MSI
-    $ComponentDownload = $msiDescriptor.CreateElement("Property", "https://releases.mattermost.com/desktop/$version/mattermost-desktop-$version-`$(var.Platform).msi")
+    $ComponentDownload = $msiDescriptor.CreateElement("Property")
+    $ComponentDownload.InnerText = "https://releases.mattermost.com/desktop/$version/mattermost-desktop-$version-`$(var.Platform).msi"
     $ComponentDownload.SetAttribute("Id", "ComponentDownload")
     $msiDescriptor.Wix.Product.AppendChild($ComponentDownload)
     $msiDescriptor.Save($msiDescriptorFileName)
