@@ -158,6 +158,11 @@ function Get-NpmDir {
     if ([System.IO.File]::Exists("$npmDir\npm.cmd")) {
         return $npmDir
     }
+    $progFile = ${env:ProgramW6432}
+    $npmDir = Join-Path -Path "$progFile" -ChildPath "nodejs"
+    if ([System.IO.File]::Exists("$npmDir\npm.cmd")) {
+        return $npmDir
+    }
     return $null
 }
 
