@@ -64,6 +64,11 @@ function Check-Deps {
         if ($verbose) { Print-Error "signtool dependency missing." }
         $missing += "signtool"
     }
+    if ($verbose) { Print-Info "Checking jq dependency..." }
+    if (!(Check-Command "jq")) {
+        if ($verbose) { Print-Error "jq dependency missing." }
+        $missing += "jq"
+    }
 
     if ($throwable -and $missing.Count -gt 0) {
         throw "com.mattermost.makefile.deps.missing"
@@ -126,6 +131,11 @@ function Install-Deps {
             "npm" {
                 Print-Info "Installing nodejs-lts (with npm)..."
                 choco install nodejs-lts --yes
+                break;
+            }
+            "jq" {
+                Print-Info "Installing jq"
+                choco install jq --yes
                 break;
             }
         }
