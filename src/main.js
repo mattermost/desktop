@@ -769,12 +769,8 @@ function initializeAfterAppReady() {
     // get the requesting webContents url
     const requestingURL = webContents.getURL();
 
-    // is the target url trusted?
-    const matchingTeamIndex = config.teams.findIndex((team) => {
-      return requestingURL.startsWith(team.url);
-    });
-
-    callback(matchingTeamIndex >= 0);
+    // is the requesting url trusted?
+    callback(isTrustedURL(requestingURL));
   });
 }
 
