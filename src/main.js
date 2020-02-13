@@ -448,11 +448,12 @@ function handleAppWebContentsCreated(dc, contents) {
   contents.on('will-navigate', (event, url) => {
     const contentID = event.sender.id;
     const parsedURL = Utils.parseURL(url);
-    const serverURL = Utils.getServer(parsedURL, config.teams);
-    if ((serverURL !== null && Utils.isTeamUrl(serverURL.url, parsedURL)) || isTrustedPopupWindow(event.sender)) {
+    const server = Utils.getServer(parsedURL, config.teams);
+
+    if ((server !== null && Utils.isTeamUrl(server.url, parsedURL)) || isTrustedPopupWindow(event.sender)) {
       return;
     }
-    if (isCustomLoginURL(parsedURL)) {
+    if (isCustomLoginURL(parsedURL, server)) {
       return;
     }
     if (parsedURL.protocol === 'mailto:') {
@@ -976,7 +977,8 @@ function isTrustedPopupWindow(webContents) {
   return BrowserWindow.fromWebContents(webContents) === popupWindow;
 }
 
-function isCustomLoginURL(url) {
+function isCustomLoginURL(url, server) {
+  const subpath = (server === null || typeof server === 'undefined') ? '' : server.url.pathname;
   const parsedURL = Utils.parseURL(url);
   if (!parsedURL) {
     return false;
@@ -984,9 +986,17 @@ function isCustomLoginURL(url) {
   if (!isTrustedURL(parsedURL)) {
     return false;
   }
-  const urlPath = parsedURL.pathname;
+  let urlPath = parsedURL.pathname;
+  if (subpath !== '' && urlPath.startsWith(subpath)) {
+    const replacement = subpath.endsWith('/') ? '/' : '';
+    console.log(`urlpath was ${urlPath}`);
+    urlPath = urlPath.replace(subpath, replacement);
+    console.log(`urlpath now is ${urlPath}`);
+  }
   for (const regexPath of customLoginRegexPaths) {
+    console.log(`testing ${regexPath}`);
     if (urlPath.match(regexPath)) {
+      console.log('match found');
       return true;
     }
   }
