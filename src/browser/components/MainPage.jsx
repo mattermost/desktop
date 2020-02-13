@@ -7,7 +7,7 @@
 
 import url from 'url';
 
-import React from 'react';
+import React, {Fragment} from 'react';
 import PropTypes from 'prop-types';
 import {CSSTransition, TransitionGroup} from 'react-transition-group';
 import {Grid, Row} from 'react-bootstrap';
@@ -29,6 +29,7 @@ import HoveringURL from './HoveringURL.jsx';
 import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
 import SelectCertificateModal from './SelectCertificateModal.jsx';
+import ExtraBar from './ExtraBar.jsx';
 
 export default class MainPage extends React.Component {
   constructor(props) {
@@ -603,6 +604,14 @@ export default class MainPage extends React.Component {
     });
   }
 
+  showExtraBar = () => {
+    const ref = this.refs[`mattermostView${this.state.key}`];
+    if (typeof ref !== 'undefined') {
+      return !Utils.isTeamUrl(this.props.teams[this.state.key].url, ref.getSrc());
+    }
+    return false;
+  }
+
   render() {
     const self = this;
     const tabsRow = (
@@ -741,12 +750,21 @@ export default class MainPage extends React.Component {
           handleInterTeamLink={self.handleInterTeamLink}
           ref={id}
           active={isActive}
+          allowExtraBar={this.showExtraBar()}
         />);
     });
+
     const viewsRow = (
-      <Row>
-        {views}
-      </Row>);
+      <Fragment>
+        <ExtraBar
+          darkMode={this.state.isDarkMode}
+          show={this.showExtraBar()}
+          mattermostView={this.refs[`mattermostView${this.state.key}`]}
+        />
+        <Row>
+          {views}
+        </Row>
+      </Fragment>);
 
     let request = null;
     let authServerURL = null;

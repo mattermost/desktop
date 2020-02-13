@@ -66,6 +66,9 @@ function isTeamUrl(serverUrl, inputUrl, withApi) {
   if (!parsedURL || !server) {
     return null;
   }
+  if (server.origin !== parsedURL.origin) {
+    return null;
+  }
   const nonTeamUrlPaths = ['plugins', 'signup', 'login', 'admin', 'channel', 'post', 'oauth', 'admin_console'];
   if (withApi) {
     nonTeamUrlPaths.push('api');
