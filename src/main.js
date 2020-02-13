@@ -453,6 +453,7 @@ function handleAppWebContentsCreated(dc, contents) {
     if ((server !== null && Utils.isTeamUrl(server.url, parsedURL)) || isTrustedPopupWindow(event.sender)) {
       return;
     }
+
     if (isCustomLoginURL(parsedURL, server)) {
       return;
     }
@@ -986,17 +987,20 @@ function isCustomLoginURL(url, server) {
   if (!isTrustedURL(parsedURL)) {
     return false;
   }
-  let urlPath = parsedURL.pathname;
-  if (subpath !== '' && urlPath.startsWith(subpath)) {
+  const urlPath = parsedURL.pathname;
+  if ((subpath !== '' || subpath !== '/') && urlPath.startsWith(subpath)) {
     const replacement = subpath.endsWith('/') ? '/' : '';
-    console.log(`urlpath was ${urlPath}`);
-    urlPath = urlPath.replace(subpath, replacement);
-    console.log(`urlpath now is ${urlPath}`);
+    const replacedPath = urlPath.replace(subpath, replacement);
+    for (const regexPath of customLoginRegexPaths) {
+      if (replacedPath.match(regexPath)) {
+        return true;
+      }
+    }
   }
+
+  // if there is no subpath, or we are adding the team and got redirected to the real server it'll be caught here
   for (const regexPath of customLoginRegexPaths) {
-    console.log(`testing ${regexPath}`);
     if (urlPath.match(regexPath)) {
-      console.log('match found');
       return true;
     }
   }
