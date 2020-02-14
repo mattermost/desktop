@@ -43,9 +43,9 @@ commands:
       - run: 
           command: |
             echo '{}' | jq '{
-              username: << parameters.username >>,
-              "icon_url": << parameters.icon >>,
-              text: << parameters.message >> 
+              "username": "<< parameters.username >>",
+              "icon_url": "<< parameters.icon >>",
+              "text": "<< parameters.message >>"
             }' > /tmp/webhook-data.json
       - run:
           command: |
