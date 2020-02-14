@@ -42,11 +42,12 @@ commands:
     steps:
       - run: 
           command: |
+            echo "payload=" > /tmp/webhook-data.json;
             echo '{}' | jq '{
               "username": "<< parameters.username >>",
               "icon_url": "<< parameters.icon >>",
               "text": "<< parameters.message >>"
-            }' > /tmp/webhook-data.json
+            }' >> /tmp/webhook-data.json
       - run:
           command: |
             curl -i -X POST -d @/tmp/webhook-data.json $MATTERMOST_RELEASE_WEBHOOK_URL_DESKTOP || true
