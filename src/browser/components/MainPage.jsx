@@ -153,7 +153,8 @@ export default class MainPage extends React.Component {
 
     // can't switch tabs sequentially for some reason...
     ipcRenderer.on('switch-tab', (event, key) => {
-      this.handleSelect(key);
+      const nextIndex = this.props.teams.findIndex((team) => team.order === key);
+      this.handleSelect(nextIndex);
     });
     ipcRenderer.on('select-next-tab', () => {
       const currentOrder = this.props.teams[this.state.key].order;
