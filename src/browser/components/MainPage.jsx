@@ -772,13 +772,13 @@ export default class MainPage extends React.Component {
           });
         }}
         onSave={(newTeam) => {
-          this.props.teams.push(newTeam);
-          this.setState({
-            showNewTeamModal: false,
-            key: this.props.teams.length - 1,
+          this.props.localTeams.push(newTeam);
+          this.props.onTeamConfigChange(this.props.localTeams, () => {
+            self.setState({
+              showNewTeamModal: false,
+              key: this.props.teams.length - 1,
+            });
           });
-          this.render();
-          this.props.onTeamConfigChange(this.props.teams);
         }}
       />
     );
@@ -837,6 +837,7 @@ export default class MainPage extends React.Component {
 MainPage.propTypes = {
   onBadgeChange: PropTypes.func.isRequired,
   teams: PropTypes.array.isRequired,
+  localTeams: PropTypes.array.isRequired,
   onTeamConfigChange: PropTypes.func.isRequired,
   initialIndex: PropTypes.number.isRequired,
   useSpellChecker: PropTypes.bool.isRequired,
