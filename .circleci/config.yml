@@ -49,7 +49,7 @@ commands:
             }' > /tmp/webhook-data.json
       - run:
           command: |
-            curl -i -X POST -d @/tm/webhook-data.json $MATTERMOST_RELEASE_WEBHOOK_URL_DESKTOP || true
+            curl -i -X POST -d @/tmp/webhook-data.json $MATTERMOST_RELEASE_WEBHOOK_URL_DESKTOP || true
 
   update_image:
     description: "Update base image"
