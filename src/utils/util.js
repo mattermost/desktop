@@ -63,7 +63,7 @@ function getServerInfo(serverUrl) {
 function isTeamUrl(serverUrl, inputUrl, withApi) {
   const parsedURL = parseURL(inputUrl);
   const server = getServerInfo(serverUrl);
-  if (!parsedURL || !server || (!testUrlsIgnoringSubpath(server, parsedURL))) {
+  if (!parsedURL || !server || (!equalUrlsIgnoringSubpath(server, parsedURL))) {
     return null;
   }
 
@@ -83,7 +83,7 @@ function isPluginUrl(serverUrl, inputURL) {
     return false;
   }
   return (
-    testUrlsIgnoringSubpath(server, parsedURL) &&
+    equalUrlsIgnoringSubpath(server, parsedURL) &&
     (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}plugins/`) ||
       parsedURL.pathname.toLowerCase().startsWith('/plugins/')));
 }
@@ -94,23 +94,23 @@ function getServer(inputURL, teams) {
     return null;
   }
   let parsedServerUrl;
-  let secondoption = null;
+  let secondOption = null;
   for (let i = 0; i < teams.length; i++) {
     parsedServerUrl = parseURL(teams[i].url);
 
     // check server and subpath matches (without subpath pathname is \ so it always matches)
-    if (testUrlsWithSubpath(parsedServerUrl, parsedURL)) {
+    if (equalUrlsWithSubpath(parsedServerUrl, parsedURL)) {
       return {name: teams[i].name, url: parsedServerUrl, index: i};
     }
-    if (testUrlsIgnoringSubpath(parsedServerUrl, parsedURL)) {
+    if (equalUrlsIgnoringSubpath(parsedServerUrl, parsedURL)) {
       // in case the user added something on the path that doesn't really belong to the server
       // there might be more than one that matches, but we can't differentiate, so last one
-      // is as good as any other.
+      // is as good as any other in case there is no better match (e.g.: two subpath servers with the same origin)
       // e.g.: https://community.mattermost.com/core
-      secondoption = {name: teams[i].name, url: parsedServerUrl, index: i};
+      secondOption = {name: teams[i].name, url: parsedServerUrl, index: i};
     }
   }
-  return secondoption;
+  return secondOption;
 }
 
 function getDisplayBoundaries() {
@@ -131,11 +131,11 @@ function getDisplayBoundaries() {
 }
 
 // next two functions are defined to clarify intent
-function testUrlsWithSubpath(url1, url2) {
+function equalUrlsWithSubpath(url1, url2) {
   return url1.origin === url2.origin && url2.pathname.toLowerCase().startsWith(url1.pathname.toLowerCase());
 }
 
-function testUrlsIgnoringSubpath(url1, url2) {
+function equalUrlsIgnoringSubpath(url1, url2) {
   return url1.origin.toLowerCase() === url2.origin.toLowerCase();
 }
 
