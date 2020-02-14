@@ -26,14 +26,6 @@ const config = new Config(remote.app.getPath('userData') + '/config.json', remot
 
 const teams = config.teams;
 
-// Make sure teams have an order
-if (teams.every((team) => !team.order)) {
-  teams.forEach((team, index) => {
-    team.order = index;
-  });
-  teamConfigChange(teams);
-}
-
 remote.getCurrentWindow().removeAllListeners('focus');
 
 if (teams.length === 0) {
@@ -140,8 +132,11 @@ function showBadge(sessionExpired, unreadCount, mentionCount) {
   }
 }
 
-function teamConfigChange(updatedTeams) {
+function teamConfigChange(updatedTeams, callback) {
   config.set('teams', updatedTeams);
+  if (callback) {
+    config.once('update', callback);
+  }
 }
 
 function handleSelectSpellCheckerLocale(locale) {
@@ -196,6 +191,7 @@ function openMenu() {
 ReactDOM.render(
   <MainPage
     teams={teams}
+    localTeams={config.localTeams}
     initialIndex={initialIndex}
     onBadgeChange={showBadge}
     onTeamConfigChange={teamConfigChange}
