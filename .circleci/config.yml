@@ -95,7 +95,6 @@ commands:
 jobs:
   check:
     executor: wine-chrome
-    context: desktop-notify
     steps:
       - notify:
           message: "this is a notification from circleCI"
@@ -308,7 +307,8 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - check
+      - check:
+          context: desktop-notify
       - build-linux:
           requires:
             - check
