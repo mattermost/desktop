@@ -63,14 +63,17 @@ function getServerInfo(serverUrl) {
 function isTeamUrl(serverUrl, inputUrl, withApi) {
   const parsedURL = parseURL(inputUrl);
   const server = getServerInfo(serverUrl);
-  if (!parsedURL || !server) {
+  if (!parsedURL || !server || (!testUrlsIgnoringSubpath(server, parsedURL))) {
     return null;
   }
+
   const nonTeamUrlPaths = ['plugins', 'signup', 'login', 'admin', 'channel', 'post', 'oauth', 'admin_console'];
   if (withApi) {
     nonTeamUrlPaths.push('api');
   }
-  return !(nonTeamUrlPaths.some((testPath) => parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}${testPath}/`)));
+  return !(nonTeamUrlPaths.some((testPath) => (
+    parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}${testPath}/`) ||
+    parsedURL.pathname.toLowerCase().startsWith(`/${testPath}/`))));
 }
 
 function isPluginUrl(serverUrl, inputURL) {
@@ -79,7 +82,10 @@ function isPluginUrl(serverUrl, inputURL) {
   if (!parsedURL || !server) {
     return false;
   }
-  return server.origin === parsedURL.origin && parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}plugins/`);
+  return (
+    testUrlsIgnoringSubpath(server, parsedURL) &&
+    (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}plugins/`) ||
+      parsedURL.pathname.toLowerCase().startsWith('/plugins/')));
 }
 
 function getServer(inputURL, teams) {
@@ -88,15 +94,23 @@ function getServer(inputURL, teams) {
     return null;
   }
   let parsedServerUrl;
+  let secondoption = null;
   for (let i = 0; i < teams.length; i++) {
     parsedServerUrl = parseURL(teams[i].url);
 
     // check server and subpath matches (without subpath pathname is \ so it always matches)
-    if (parsedServerUrl.origin === parsedURL.origin && parsedURL.pathname.startsWith(parsedServerUrl.pathname)) {
+    if (testUrlsWithSubpath(parsedServerUrl, parsedURL)) {
       return {name: teams[i].name, url: parsedServerUrl, index: i};
     }
+    if (testUrlsIgnoringSubpath(parsedServerUrl, parsedURL)) {
+      // in case the user added something on the path that doesn't really belong to the server
+      // there might be more than one that matches, but we can't differentiate, so last one
+      // is as good as any other.
+      // e.g.: https://community.mattermost.com/core
+      secondoption = {name: teams[i].name, url: parsedServerUrl, index: i};
+    }
   }
-  return null;
+  return secondoption;
 }
 
 function getDisplayBoundaries() {
@@ -114,6 +128,15 @@ function getDisplayBoundaries() {
       maxHeight: display.workArea.height,
     };
   });
+}
+
+// next two functions are defined to clarify intent
+function testUrlsWithSubpath(url1, url2) {
+  return url1.origin === url2.origin && url2.pathname.toLowerCase().startsWith(url1.pathname.toLowerCase());
+}
+
+function testUrlsIgnoringSubpath(url1, url2) {
+  return url1.origin.toLowerCase() === url2.origin.toLowerCase();
 }
 
 export default {
