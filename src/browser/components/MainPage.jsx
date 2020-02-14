@@ -34,7 +34,7 @@ export default class MainPage extends React.Component {
   constructor(props) {
     super(props);
 
-    let key = this.props.initialIndex;
+    let key = this.props.teams.findIndex((team) => team.order === this.props.initialIndex);
     if (this.props.deeplinkingUrl !== null) {
       const parsedDeeplink = this.parseDeeplinkURL(this.props.deeplinkingUrl);
       if (parsedDeeplink) {
