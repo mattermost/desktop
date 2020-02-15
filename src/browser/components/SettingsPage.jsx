@@ -631,7 +631,7 @@ export default class SettingsPage extends React.Component {
             addServer={this.addServer}
             allowTeamEdit={this.state.enableTeamModification}
             onTeamClick={(index) => {
-              backToIndex(index + this.state.buildTeams.length + this.state.registryTeams.length);
+              backToIndex(this.state.localTeams[index].order + this.state.buildTeams.length + this.state.registryTeams.length);
             }}
             modalContainer={this}
           />
