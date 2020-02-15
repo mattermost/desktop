@@ -9,7 +9,7 @@ function createTemplate(mainWindow, config, isDev) {
   const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : `file://${app.getAppPath()}/browser/settings.html`;
   const teams = config.teams;
   const template = [
-    ...teams.slice(0, 9).map((team, i) => {
+    ...teams.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).map((team, i) => {
       return {
         label: team.name,
         click: () => {
