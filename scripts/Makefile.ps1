@@ -401,22 +401,22 @@ function Run-BuildMsi {
         # Dual signing is not supported on msi files. Is it recommended to sign with 256 hash.
         # src.: https://security.stackexchange.com/a/124685/84134
         # src.: https://social.msdn.microsoft.com/Forums/windowsdesktop/en-us/d4b70ecd-a883-4289-8047-cc9cde28b492#0b3e3b80-6b3b-463f-ac1e-1bf0dc831952
-        signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi" /d "mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi"
+        signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /d "mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi" "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi"
 
         Print-Info "Signing mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi (waiting for 15 seconds)..."
         Start-Sleep -s 15
-        signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 "release\mattermost-desktop-\$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi" /d "mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi"
+        signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /d "mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi" "release\mattermost-desktop-\$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi"
     } elseif (Test-Path 'env:PFX') {
         Print-Info "Signing mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi (waiting for 15 seconds)..."
         Start-Sleep -s 15
         # Dual signing is not supported on msi files. Is it recommended to sign with 256 hash.
         # src.: https://security.stackexchange.com/a/124685/84134
         # src.: https://social.msdn.microsoft.com/Forums/windowsdesktop/en-us/d4b70ecd-a883-4289-8047-cc9cde28b492#0b3e3b80-6b3b-463f-ac1e-1bf0dc831952
-        signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi" /d "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi"
+        signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /d "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi" "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi"
 
         Print-Info "Signing mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi (waiting for 15 seconds)..."
         Start-Sleep -s 15
-        signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi" /d "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi"
+        signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /d "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi" "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi"
     } else {
         Print-Info "Not signing msi"
     }
