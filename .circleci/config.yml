@@ -27,6 +27,32 @@ executors:
     docker:
       - image: circleci/golang:1.12
 commands:
+  notify:
+    description: "notify on release channel"
+    parameters:
+      message:
+        type: string
+        default: "This is the default notification message, someone forgot to add info on what to notify!"
+      username:
+        type: string
+        default: "MattermostRelease"
+      icon:
+        type: string
+        default: "https://www.mattermost.org/wp-content/uploads/2016/04/icon.png"
+    steps:
+      - run: 
+          command: |
+            export VERSION=$(jq -r .version package.json)
+            echo "payload=" > /tmp/webhook-data.json;
+            echo '{}' | jq "{
+              \"username\": \"<< parameters.username >>\",
+              \"icon_url\": \"<< parameters.icon >>\",
+              \"text\": \"[${VERSION}] << parameters.message >>\"
+            }" >> /tmp/webhook-data.json
+      - run:
+          command: |
+            curl -i -X POST -d @/tmp/webhook-data.json $MATTERMOST_RELEASE_WEBHOOK_URL_DESKTOP || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
+
   update_image:
     description: "Update base image"
     parameters:
@@ -277,11 +303,39 @@ jobs:
               -delete \
               v${VERSION} ./ghr-dist
 
+  begin-notification:
+    executor: wine-chrome
+    steps:
+      - checkout
+      - update_image:
+          apt_opts: "--no-install-recommends jq"
+      - notify:
+          message: "Release process for the desktop app has started, it should take about 30 minutes to complete."
+  
+  end-notification:
+    executor: wine-chrome
+    steps:
+      - checkout
+      - update_image:
+          apt_opts: "--no-install-recommends jq"
+      - notify:
+          message: "Release process for the desktop app ended, new release can be found on (github's releases)[https://github.com/mattermost/desktop/releases]"
+
+
 workflows:
   version: 2
   build_and_test:
     jobs:
       - check
+      - begin-notification:
+          context: desktop-notify
+          filters:
+            branches:
+              only:
+                # only for release and release candidates
+                # release-XX.YY.ZZ
+                # release-XX.YY.ZZ-rc-something
+                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
       - build-linux:
           requires:
             - check
@@ -353,4 +407,15 @@ workflows:
           filters:
             branches:
               only:
+                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+      - end-notification:
+          requires:
+            - upload_to_github
+          context: desktop-notify
+          filters:
+            branches:
+              only:
+                # only for release and release candidates
+                # release-XX.YY.ZZ
+                # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
