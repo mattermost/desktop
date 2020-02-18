@@ -476,12 +476,13 @@ function handleAppWebContentsCreated(dc, contents) {
   contents.on('did-start-navigation', (event, url) => {
     const contentID = event.sender.id;
     const parsedURL = Utils.parseURL(url);
+    const server = Utils.getServer(parsedURL, config.teams);
 
     if (!isTrustedURL(parsedURL)) {
       return;
     }
 
-    if (isCustomLoginURL(parsedURL)) {
+    if (isCustomLoginURL(parsedURL, server)) {
       customLogins[contentID].inProgress = true;
     } else if (customLogins[contentID].inProgress) {
       customLogins[contentID].inProgress = false;
