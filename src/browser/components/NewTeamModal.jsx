@@ -172,6 +172,11 @@ export default class NewTeamModal extends React.Component {
                 value={this.state.teamName}
                 placeholder='Server Name'
                 onChange={this.handleTeamNameChange}
+                inputRef={(ref) => {
+                  if (ref) {
+                    ref.focus();
+                  }
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
