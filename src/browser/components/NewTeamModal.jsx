@@ -138,6 +138,7 @@ export default class NewTeamModal extends React.Component {
         className='NewTeamModal'
         show={this.props.show}
         id='newServerModal'
+        onEntered={() => this.teamNameInputRef.focus()}
         onHide={this.props.onClose}
         container={this.props.modalContainer}
         restoreFocus={this.props.restoreFocus}
@@ -173,9 +174,7 @@ export default class NewTeamModal extends React.Component {
                 placeholder='Server Name'
                 onChange={this.handleTeamNameChange}
                 inputRef={(ref) => {
-                  if (ref) {
-                    ref.focus();
-                  }
+                  this.teamNameInputRef = ref;
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
