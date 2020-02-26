@@ -739,6 +739,15 @@ function initializeAfterAppReady() {
       defaultPath: os.homedir() + '/Downloads/' + filename,
       filters,
     });
+
+    item.on('done', (doneEvent, state) => {
+      if (state === 'completed') {
+        mainWindow.webContents.send('download-complete', {
+          title: filename,
+          defaultPath: os.homedir() + '/Downloads/' + filename,
+        });
+      }
+    });
   });
 
   ipcMain.emit('update-menu', true, config.data);

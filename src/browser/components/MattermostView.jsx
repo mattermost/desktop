@@ -51,7 +51,7 @@ export default class MattermostView extends React.Component {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
       log.error('Notifications not granted');
-      return;
+      return null;
     }
     const notification = new Notification(title, {
       body,
@@ -66,6 +66,8 @@ export default class MattermostView extends React.Component {
     notification.onerror = () => {
       log.error('Notification failed to show');
     };
+
+    return notification;
   }
 
   componentDidMount() {
@@ -226,6 +228,7 @@ export default class MattermostView extends React.Component {
     // start listening for user status updates from main
     ipcRenderer.on('user-activity-update', this.handleUserActivityUpdate);
     ipcRenderer.on('exit-fullscreen', this.handleExitFullscreen);
+    ipcRenderer.on('download-complete', this.showDownloadCompleteNotification);
   }
 
   componentWillUnmount() {
@@ -319,6 +322,15 @@ export default class MattermostView extends React.Component {
   handleExitFullscreen = () => {
     // pass exit fullscreen request to the webview
     this.webviewRef.current.send('exit-fullscreen');
+  }
+
+  showDownloadCompleteNotification = async (event, item) => {
+    const title = 'Download Complete';
+
+    const notification = await this.dispatchNotification(title, item.title);
+    notification.onclick = () => {
+      shell.showItemInFolder(item.defaultPath);
+    };
   }
 
   render() {
