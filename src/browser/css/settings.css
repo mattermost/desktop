@@ -17,6 +17,10 @@
   transition: opacity 1s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
+.TeamListItem p {
+  overflow-wrap: break-word;
+}
+
 .checkbox > label {
   width: 100%;
 }

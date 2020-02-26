@@ -241,7 +241,7 @@ function createTemplate(mainWindow, config, isDev) {
     }, {
       role: 'close',
       accelerator: 'CmdOrCtrl+W',
-    }, separatorItem, ...teams.slice(0, 9).map((team, i) => {
+    }, separatorItem, ...teams.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).map((team, i) => {
       return {
         label: team.name,
         accelerator: `CmdOrCtrl+${i + 1}`,

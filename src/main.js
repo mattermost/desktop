@@ -448,11 +448,13 @@ function handleAppWebContentsCreated(dc, contents) {
   contents.on('will-navigate', (event, url) => {
     const contentID = event.sender.id;
     const parsedURL = Utils.parseURL(url);
-    const serverURL = Utils.getServer(parsedURL, config.teams);
-    if ((serverURL !== null && Utils.isTeamUrl(serverURL.url, parsedURL)) || isTrustedPopupWindow(event.sender)) {
+    const server = Utils.getServer(parsedURL, config.teams);
+
+    if ((server !== null && Utils.isTeamUrl(server.url, parsedURL)) || isTrustedPopupWindow(event.sender)) {
       return;
     }
-    if (isCustomLoginURL(parsedURL)) {
+
+    if (isCustomLoginURL(parsedURL, server)) {
       return;
     }
     if (parsedURL.protocol === 'mailto:') {
@@ -474,12 +476,13 @@ function handleAppWebContentsCreated(dc, contents) {
   contents.on('did-start-navigation', (event, url) => {
     const contentID = event.sender.id;
     const parsedURL = Utils.parseURL(url);
+    const server = Utils.getServer(parsedURL, config.teams);
 
     if (!isTrustedURL(parsedURL)) {
       return;
     }
 
-    if (isCustomLoginURL(parsedURL)) {
+    if (isCustomLoginURL(parsedURL, server)) {
       customLogins[contentID].inProgress = true;
     } else if (customLogins[contentID].inProgress) {
       customLogins[contentID].inProgress = false;
@@ -976,7 +979,8 @@ function isTrustedPopupWindow(webContents) {
   return BrowserWindow.fromWebContents(webContents) === popupWindow;
 }
 
-function isCustomLoginURL(url) {
+function isCustomLoginURL(url, server) {
+  const subpath = (server === null || typeof server === 'undefined') ? '' : server.url.pathname;
   const parsedURL = Utils.parseURL(url);
   if (!parsedURL) {
     return false;
@@ -985,6 +989,17 @@ function isCustomLoginURL(url) {
     return false;
   }
   const urlPath = parsedURL.pathname;
+  if ((subpath !== '' || subpath !== '/') && urlPath.startsWith(subpath)) {
+    const replacement = subpath.endsWith('/') ? '/' : '';
+    const replacedPath = urlPath.replace(subpath, replacement);
+    for (const regexPath of customLoginRegexPaths) {
+      if (replacedPath.match(regexPath)) {
+        return true;
+      }
+    }
+  }
+
+  // if there is no subpath, or we are adding the team and got redirected to the real server it'll be caught here
   for (const regexPath of customLoginRegexPaths) {
     if (urlPath.match(regexPath)) {
       return true;

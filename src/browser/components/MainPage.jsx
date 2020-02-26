@@ -35,7 +35,7 @@ export default class MainPage extends React.Component {
   constructor(props) {
     super(props);
 
-    let key = this.props.initialIndex;
+    let key = this.props.teams.findIndex((team) => team.order === this.props.initialIndex);
     if (this.props.deeplinkingUrl !== null) {
       const parsedDeeplink = this.parseDeeplinkURL(this.props.deeplinkingUrl);
       if (parsedDeeplink) {
@@ -154,7 +154,8 @@ export default class MainPage extends React.Component {
 
     // can't switch tabs sequentially for some reason...
     ipcRenderer.on('switch-tab', (event, key) => {
-      this.handleSelect(key);
+      const nextIndex = this.props.teams.findIndex((team) => team.order === key);
+      this.handleSelect(nextIndex);
     });
     ipcRenderer.on('select-next-tab', () => {
       const currentOrder = this.props.teams[this.state.key].order;
@@ -786,13 +787,13 @@ export default class MainPage extends React.Component {
           });
         }}
         onSave={(newTeam) => {
-          this.props.teams.push(newTeam);
-          this.setState({
-            showNewTeamModal: false,
-            key: this.props.teams.length - 1,
+          this.props.localTeams.push(newTeam);
+          this.props.onTeamConfigChange(this.props.localTeams, () => {
+            self.setState({
+              showNewTeamModal: false,
+              key: this.props.teams.length - 1,
+            });
           });
-          this.render();
-          this.props.onTeamConfigChange(this.props.teams);
         }}
       />
     );
@@ -851,6 +852,7 @@ export default class MainPage extends React.Component {
 MainPage.propTypes = {
   onBadgeChange: PropTypes.func.isRequired,
   teams: PropTypes.array.isRequired,
+  localTeams: PropTypes.array.isRequired,
   onTeamConfigChange: PropTypes.func.isRequired,
   initialIndex: PropTypes.number.isRequired,
   useSpellChecker: PropTypes.bool.isRequired,
