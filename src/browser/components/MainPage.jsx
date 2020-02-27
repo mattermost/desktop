@@ -544,9 +544,9 @@ export default class MainPage extends React.Component {
     const win = remote.getCurrentWindow();
     if (doubleClickAction === 'Minimize') {
       win.minimize();
-    } else if (doubleClickAction === 'Maximize' && !win.isMaximized()) {
+    } else if (!win.isMaximized()) {
       win.maximize();
-    } else if (doubleClickAction === 'Maximize' && win.isMaximized()) {
+    } else if (win.isMaximized()) {
       win.unmaximize();
     }
   }
