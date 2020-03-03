@@ -27,8 +27,7 @@ export default function downloadURL(browserWindow, URL, callback) {
         }
       }
     ).catch((err) => {
-      console.log(`there was an error trying to save a file: ${err}`);
-      callback();
+      callback(err);
     });
   }).on('error', callback);
   request.end();
