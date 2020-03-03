@@ -17,10 +17,18 @@ export default function downloadURL(browserWindow, URL, callback) {
     const dialogOptions = {
       defaultPath: path.join(app.getPath('downloads'), file),
     };
-    dialog.showSaveDialog(browserWindow, dialogOptions, (filename) => {
-      if (filename) {
-        saveResponseBody(response, filename, callback);
+    dialog.showSaveDialog(
+      browserWindow,
+      dialogOptions
+    ).then(
+      (filename) => {
+        if (filename) {
+          saveResponseBody(response, filename, callback);
+        }
       }
+    ).catch((err) => {
+      console.log(`there was an error trying to save a file: ${err}`);
+      callback();
     });
   }).on('error', callback);
   request.end();
