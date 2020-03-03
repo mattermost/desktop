@@ -144,9 +144,7 @@ function createTemplate(mainWindow, config, isDev) {
         if (focusedWindow === mainWindow) {
           mainWindow.webContents.send('clear-cache-and-reload-tab');
         } else {
-          focusedWindow.webContents.session.clearCache(() => {
-            focusedWindow.reload();
-          });
+          focusedWindow.webContents.session.clearCache().then(focusedWindow.reload);
         }
       }
     },
