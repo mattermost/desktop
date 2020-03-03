@@ -4,10 +4,8 @@
 import {app} from 'electron';
 
 function flushCookiesStore(session) {
-  session.cookies.flushStore((err) => {
-    if (err) {
-      console.log(err);
-    }
+  session.cookies.flushStore().catch((err) => {
+    console.log(`There was a problem flushing cookies:\n${err}`);
   });
 }
 
