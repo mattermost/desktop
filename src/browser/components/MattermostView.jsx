@@ -48,7 +48,12 @@ export default class MattermostView extends React.Component {
   }
 
   dispatchNotification = async (title, body, channel, teamId, silent) => {
-    const permission = await Notification.requestPermission();
+    let permission;
+    if (Notification.permission === 'default') {
+      permission = await Notification.requestPermission();
+    } else {
+      permission = Notification.permission;
+    }
     if (permission !== 'granted') {
       log.error('Notifications not granted');
       return;
@@ -57,14 +62,13 @@ export default class MattermostView extends React.Component {
       body,
       tag: body,
       icon: appIconURL,
-      requireInteraction: false,
       silent,
     });
     notification.onclick = () => {
       this.webviewRef.current.send('notification-clicked', {channel, teamId});
     };
-    notification.onerror = () => {
-      log.error('Notification failed to show');
+    notification.onerror = (err) => {
+      log.error(`Notification failed to show: ${err}`);
     };
   }
 
