@@ -607,7 +607,11 @@ function handleAppWebContentsCreated(dc, contents) {
 }
 
 function initializeAfterAppReady() {
-  app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
+  if (global.isDev && process.platform === 'win32') {
+    app.setAppUserModelId(process.execPath); // in dev mode in windows, just add electron.exe to the start menu (right click + pin to start)
+  } else {
+    app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
+  }
 
   const appStateJson = path.join(app.getPath('userData'), 'app-state.json');
   appState = new AppStateManager(appStateJson);
