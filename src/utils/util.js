@@ -88,6 +88,13 @@ function isPluginUrl(serverUrl, inputURL) {
       parsedURL.pathname.toLowerCase().startsWith('/plugins/')));
 }
 
+function isPluginExternalURL(inputURL) {
+  const parsedURL = parseURL(inputURL);
+  const regex = /^\/plugins\/[\w.-]+\/external\//i;
+
+  return regex.test(parsedURL.pathname);
+}
+
 function getServer(inputURL, teams) {
   const parsedURL = parseURL(inputURL);
   if (!parsedURL) {
@@ -149,4 +156,5 @@ export default {
   isTeamUrl,
   isPluginUrl,
   getDisplayBoundaries,
+  isPluginExternalURL,
 };

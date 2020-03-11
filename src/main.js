@@ -507,7 +507,7 @@ function handleAppWebContentsCreated(dc, contents) {
       log.info(`Popup window already open at provided url: ${url}`);
       return;
     }
-    if (Utils.isPluginUrl(server.url, parsedURL)) {
+    if (Utils.isPluginUrl(server.url, parsedURL) && !Utils.isPluginExternalURL(parsedURL)) {
       if (!popupWindow || popupWindow.closed) {
         popupWindow = new BrowserWindow({
           backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
