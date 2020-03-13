@@ -138,6 +138,7 @@ export default class NewTeamModal extends React.Component {
         className='NewTeamModal'
         show={this.props.show}
         id='newServerModal'
+        onEntered={() => this.teamNameInputRef.focus()}
         onHide={this.props.onClose}
         container={this.props.modalContainer}
         restoreFocus={this.props.restoreFocus}
@@ -172,10 +173,13 @@ export default class NewTeamModal extends React.Component {
                 value={this.state.teamName}
                 placeholder='Server Name'
                 onChange={this.handleTeamNameChange}
+                inputRef={(ref) => {
+                  this.teamNameInputRef = ref;
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
-                autoFocus={true}
+                autofocus='true'
               />
               <FormControl.Feedback/>
               <HelpBlock>{'The name of the server displayed on your desktop app tab bar.'}</HelpBlock>
