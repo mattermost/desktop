@@ -30,6 +30,8 @@ import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
 import SelectCertificateModal from './SelectCertificateModal.jsx';
 
+const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon_48.png`;
+
 export default class MainPage extends React.Component {
   constructor(props) {
     super(props);
@@ -179,6 +181,7 @@ export default class MainPage extends React.Component {
     ipcRenderer.on('clear-cache-and-reload-tab', () => {
       this.refs[`mattermostView${this.state.key}`].clearCacheAndReload();
     });
+    ipcRenderer.on('download-complete', this.showDownloadCompleteNotification);
 
     function focusListener() {
       self.handleOnTeamFocused(self.state.key);
@@ -598,6 +601,39 @@ export default class MainPage extends React.Component {
       this.switchToTabForCertificateRequest(certificateRequests[0].server);
     }
   };
+
+  showDownloadCompleteNotification = async (event, item) => {
+    const title = 'Download Complete';
+
+    const notification = await this.dispatchNotification(title, item.title);
+    notification.onclick = () => {
+      shell.showItemInFolder(item.defaultPath.normalize);
+    };
+  }
+
+  dispatchNotification = async (title, body, channel, teamId, silent) => {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      log.error('Notifications not granted');
+      return null;
+    }
+    const notification = new Notification(title, {
+      body,
+      tag: body,
+      icon: appIconURL,
+      requireInteraction: false,
+      silent,
+    });
+    notification.onclick = () => {
+      this.webviewRef.current.send('notification-clicked', {channel, teamId});
+    };
+    notification.onerror = () => {
+      log.error('Notification failed to show');
+    };
+
+    return notification;
+  }
+
   setDarkMode() {
     this.setState({
       isDarkMode: this.props.setDarkMode(),
