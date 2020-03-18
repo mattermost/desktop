@@ -304,10 +304,10 @@ export default class MattermostView extends React.Component {
   handleDeepLink = (relativeUrl) => {
     const webview = this.webviewRef.current;
     webview.executeJavaScript(
-      'history.pushState(null, null, "' + relativeUrl + '");'
+      'history.pushState(null, null, "' + relativeUrl + '");',
     );
     webview.executeJavaScript(
-      'dispatchEvent(new PopStateEvent("popstate", null));'
+      'dispatchEvent(new PopStateEvent("popstate", null));',
     );
   }
 

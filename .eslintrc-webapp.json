@@ -1,11 +1,11 @@
 {
   "extends": [
-    "./node_modules/eslint-config-mattermost/.eslintrc.json",
-    "./node_modules/eslint-config-mattermost/.eslintrc-react.json",
+    "plugin:mattermost/react",
     "plugin:cypress/recommended"
   ],
   "plugins": [
     "import",
+    "mattermost",
     "cypress"
   ],
   "env": {
@@ -21,6 +21,7 @@
   },
   "rules": {
     "import/no-unresolved": 2,
+    "comma-dangle": 0,
     "import/order": [
       "error",
       {
