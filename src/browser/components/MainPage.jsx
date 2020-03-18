@@ -14,6 +14,7 @@ import {Grid, Row} from 'react-bootstrap';
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 
 import {ipcRenderer, remote, shell} from 'electron';
+import log from 'electron-log';
 
 import Utils from '../../utils/util';
 
