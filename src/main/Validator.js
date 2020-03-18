@@ -158,7 +158,8 @@ export function validateV2ConfigData(data) {
 
 // validate certificate.json
 export function validateCertificateStore(data) {
-  return validateAgainstSchema(data, certificateStoreSchema);
+  const jsonData = (typeof data === 'object' ? data : JSON.parse(data));
+  return validateAgainstSchema(jsonData, certificateStoreSchema);
 }
 
 // validate allowedProtocols.json
@@ -167,11 +168,17 @@ export function validateAllowedProtocols(data) {
 }
 
 function validateAgainstSchema(data, schema) {
-  if (typeof data !== 'object' || !schema) {
+  if (typeof data !== 'object') {
+    console.error(`Input 'data' is not an object we can validate: ${typeof data}`);
     return false;
   }
-  const {error, value} = Joi.validate(data, schema, defaultOptions);
+  if (!schema) {
+    console.error('No schema provided to validate');
+    return false;
+  }
+  const {error, value} = schema.validate(data, defaultOptions);
   if (error) {
+    console.error(`Validation failed due to: ${error}`);
     return false;
   }
   return value;
