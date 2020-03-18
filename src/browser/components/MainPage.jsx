@@ -13,7 +13,7 @@ import {CSSTransition, TransitionGroup} from 'react-transition-group';
 import {Grid, Row} from 'react-bootstrap';
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 
-import {ipcRenderer, remote} from 'electron';
+import {ipcRenderer, remote, shell} from 'electron';
 
 import Utils from '../../utils/util';
 
@@ -607,7 +607,7 @@ export default class MainPage extends React.Component {
 
     const notification = await this.dispatchNotification(title, item.title);
     notification.onclick = () => {
-      shell.showItemInFolder(item.defaultPath.normalize);
+      shell.showItemInFolder(item.defaultPath.normalize());
     };
   }
 
