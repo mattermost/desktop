@@ -18,3 +18,4 @@ testUserData
 src/browser/*.png
 src/browser/*.svg
 src/browser/*.woff2
+src/browser/assets/fonts/

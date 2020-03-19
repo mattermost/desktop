@@ -338,6 +338,9 @@ export default class MattermostView extends React.Component {
     if (!this.props.active) {
       classNames.push('mattermostView-hidden');
     }
+    if (this.props.allowExtraBar) {
+      classNames.push('allow-extra-bar');
+    }
 
     const loadingImage = !this.state.errorInfo && this.props.active && !this.state.isLoaded ? (
       <div className='mattermostView-loadingScreen'>
@@ -377,6 +380,7 @@ MattermostView.propTypes = {
   useSpellChecker: PropTypes.bool,
   onSelectSpellCheckerLocale: PropTypes.func,
   handleInterTeamLink: PropTypes.func,
+  allowExtraBar: PropTypes.bool,
 };
 
 /* eslint-enable react/no-set-state */
