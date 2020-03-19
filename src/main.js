@@ -744,7 +744,7 @@ function initializeAfterAppReady() {
       if (state === 'completed') {
         mainWindow.webContents.send('download-complete', {
           title: filename,
-          defaultPath: os.homedir() + '/Downloads/' + filename,
+          path: item.getSavePath(),
         });
       }
     });

@@ -605,10 +605,10 @@ export default class MainPage extends React.Component {
 
   showDownloadCompleteNotification = async (event, item) => {
     const title = 'Download Complete';
-
+    console.log(item)
     const notification = await this.dispatchNotification(title, item.title);
     notification.onclick = () => {
-      shell.showItemInFolder(item.defaultPath.normalize());
+      shell.showItemInFolder(item.path.normalize());
     };
   }
 
