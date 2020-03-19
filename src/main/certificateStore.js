@@ -32,18 +32,16 @@ function getHost(targetURL) {
 function CertificateStore(storeFile) {
   this.storeFile = storeFile;
   let storeStr;
-  let jsonStore;
   try {
     storeStr = fs.readFileSync(storeFile, 'utf-8');
-    jsonStore = JSON.parse(storeStr);
-    const result = Validator.validateCertificateStore(jsonStore);
+    const result = Validator.validateCertificateStore(storeStr);
     if (!result) {
       throw new Error('Provided certificate store file does not validate, using defaults instead.');
     }
+    this.data = result;
   } catch (e) {
-    jsonStore = {};
+    this.data = {};
   }
-  this.data = jsonStore;
 }
 
 CertificateStore.prototype.save = function save() {
