@@ -718,7 +718,7 @@ function initializeAfterAppReady() {
     });
   }
 
-  session.defaultSession.on('will-download', (event, item) => {
+  session.defaultSession.on('will-download', (event, item, webContents) => {
     const filename = item.getFilename();
     const fileElements = filename.split('.');
     const filters = [];
@@ -743,8 +743,9 @@ function initializeAfterAppReady() {
     item.on('done', (doneEvent, state) => {
       if (state === 'completed') {
         mainWindow.webContents.send('download-complete', {
-          title: filename,
+          fileName: filename,
           path: item.getSavePath(),
+          serverInfo: Utils.getServerInfo(webContents.getURL()),
         });
       }
     });
