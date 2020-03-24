@@ -43,6 +43,9 @@ export default class MainPage extends React.Component {
       }
     }
 
+    // servers come from several places, in case we can't find the right one, pick the first one
+    key = key === -1 ? 0 : key;
+
     this.topBar = React.createRef();
 
     this.state = {
