@@ -707,6 +707,7 @@ export default class MainPage extends React.Component {
             onClick={this.openMenu}
             tabIndex={0}
             ref={this.threeDotMenu}
+            aria-label='Context menu'
           >
             <DotsVerticalIcon/>
           </button>
