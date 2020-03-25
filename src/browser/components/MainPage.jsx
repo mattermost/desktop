@@ -70,8 +70,8 @@ export default class MainPage extends React.Component {
             teamURL,
             teamIndex: index,
             originalURL: deeplinkURL,
-            url: `${teamURL.protocol}//${teamURL.host}${deeplinkURL.pathname || ''}`,
-            path: deeplinkURL.pathname || '',
+            url: `${teamURL.protocol}//${teamURL.host}${deeplinkURL.pathname || '/'}`,
+            path: deeplinkURL.pathname || '/',
           };
         }
       });
