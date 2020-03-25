@@ -601,12 +601,12 @@ export default class MainPage extends React.Component {
   };
 
   showDownloadCompleteNotification = async (event, item) => {
-    const regexResult = /https?:\/\/(.+).mattermost.com\/$/.exec(item.serverInfo.origin)
+    const regexResult = (/https?:\/\/(.+).mattermost.com\/?$/).exec(item.serverInfo.origin);
     let serverName;
-    if(regexResult === null) {
+    if (regexResult === null) {
       serverName = item.serverInfo.serverName;
     } else {
-      serverName = regexResult[1].replace(/-/g, ' ').split(" ").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" ")
+      serverName = regexResult[1].replace(/-/g, ' ').split(' ').map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
     }
 
     const title = process.platform === 'win32' ? serverName : 'Download Complete';
