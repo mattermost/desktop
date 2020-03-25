@@ -9,6 +9,7 @@
  * @prop {Object[]} defaultTeams
  * @prop {string} defaultTeams[].name - The tab name for default team.
  * @prop {string} defaultTeams[].url - The URL for default team.
+ * @prop {string} defaultTeams[].order - Sort order for team tabs (0, 1, 2)
  * @prop {string} helpLink - The URL for "Help->Learn More..." menu item.
  *                           If null is specified, the menu disappears.
  * @prop {boolean} enableServerManagement - Whether users can edit servers configuration.
@@ -19,11 +20,12 @@ const buildConfig = {
   defaultTeams: [/*
     {
       name: 'example',
-      url: 'https://example.com'
-    }*/
-  ],
+      url: 'https://example.com',
+      order: 0
+    }
+  */],
   helpLink: 'https://about.mattermost.com/default-desktop-app-documentation/',
-  enableServerManagement: true,
+  enableServerManagement: false,
   enableAutoUpdater: true,
 };
 

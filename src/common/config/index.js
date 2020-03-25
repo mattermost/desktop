@@ -272,7 +272,7 @@ export default class Config extends EventEmitter {
     delete this.combinedData.defaultTeams;
 
     // IMPORTANT: properly combine teams from all sources
-    const combinedTeams = [];
+    let combinedTeams = [];
 
     // - start by adding default teams from buildConfig, if any
     if (this.buildConfigData.defaultTeams && this.buildConfigData.defaultTeams.length) {
@@ -288,6 +288,9 @@ export default class Config extends EventEmitter {
     if (this.enableServerManagement) {
       combinedTeams.push(...this.localConfigData.teams);
     }
+
+    combinedTeams = this.filterOutDuplicateTeams(combinedTeams)
+    combinedTeams = this.sortUnorderedTeams(combinedTeams)
 
     this.combinedData.teams = combinedTeams;
     this.combinedData.localTeams = this.localConfigData.teams;
@@ -321,6 +324,20 @@ export default class Config extends EventEmitter {
       return this.predefinedTeams.findIndex((existingTeam) => newTeam.url === existingTeam.url) === -1; // eslint-disable-line max-nested-callbacks
     });
 
+    return newTeams;
+  }
+
+  /**
+   * Apply a default sort order to the team list, if no order is specified.
+   * @param {array} teams to sort
+   */
+  sortUnorderedTeams(teams) {
+    let newTeams = teams;
+    let i = 0;
+
+    newTeams = newTeams.filter((newTeam) => {
+      if (!newTeam.order || newTeam.order < 0) { newTeam.order = i++; } return newTeam; // eslint-disable-line max-nested-callbacks
+    });
     return newTeams;
   }
 
