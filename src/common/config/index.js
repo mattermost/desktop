@@ -289,8 +289,8 @@ export default class Config extends EventEmitter {
       combinedTeams.push(...this.localConfigData.teams);
     }
 
-    combinedTeams = this.filterOutDuplicateTeams(combinedTeams)
-    combinedTeams = this.sortUnorderedTeams(combinedTeams)
+    combinedTeams = this.filterOutDuplicateTeams(combinedTeams);
+    combinedTeams = this.sortUnorderedTeams(combinedTeams);
 
     this.combinedData.teams = combinedTeams;
     this.combinedData.localTeams = this.localConfigData.teams;
@@ -336,7 +336,11 @@ export default class Config extends EventEmitter {
     let i = 0;
 
     newTeams = newTeams.filter((newTeam) => {
-      if (!newTeam.order || newTeam.order < 0) { newTeam.order = i++; } return newTeam; // eslint-disable-line max-nested-callbacks
+      if (!newTeam.order || newTeam.order < 0) {
+        newTeam.order = i++;
+      }
+
+      return newTeam; // eslint-disable-line max-nested-callbacks
     });
     return newTeams;
   }
