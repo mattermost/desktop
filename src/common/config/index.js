@@ -347,9 +347,8 @@ export default class Config extends EventEmitter {
     // Now re-number all items from 0 to (max), ensuring user's sort order is preserved. The
     // new tabbed interface requires an item with order:0 in order to raise the first tab.
     //
-    let i = 0;
-    newTeams.forEach((team) => {
-      team.order = i++;
+    newTeams.forEach((team, i) => {
+      team.order = i;
     });
 
     return newTeams;
