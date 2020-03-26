@@ -341,7 +341,8 @@ export default class Config extends EventEmitter {
       if (y.order == null) {
         y.order = 0;
       }
-      return (x.order === y.order) ? 0 : ((x.order > y.order) ? 1 : -1); // eslint-disable-line no-nested-ternary
+      // once we ensured `order` exists, we can sort numerically
+      return x.order - y.order;
     });
 
     // Now re-number all items from 0 to (max), ensuring user's sort order is preserved. The
