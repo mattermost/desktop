@@ -210,22 +210,14 @@ function createTemplate(mainWindow, config, isDev) {
     submenu: [{
       label: 'Back',
       accelerator: process.platform === 'darwin' ? 'Cmd+[' : 'Alt+Left',
-      click: (item, focusedWindow) => {
-        if (focusedWindow === mainWindow) {
-          mainWindow.webContents.send('go-back');
-        } else if (focusedWindow.webContents.canGoBack()) {
-          focusedWindow.goBack();
-        }
+      click: () => {
+        mainWindow.webContents.send('go-back');
       },
     }, {
       label: 'Forward',
       accelerator: process.platform === 'darwin' ? 'Cmd+]' : 'Alt+Right',
-      click: (item, focusedWindow) => {
-        if (focusedWindow === mainWindow) {
-          mainWindow.webContents.send('go-forward');
-        } else if (focusedWindow.webContents.canGoForward()) {
-          focusedWindow.goForward();
-        }
+      click: () => {
+        mainWindow.webContents.send('go-forward');
       },
     }],
   });
