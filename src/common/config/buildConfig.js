@@ -20,8 +20,7 @@ const buildConfig = {
   defaultTeams: [/*
     {
       name: 'example',
-      url: 'https://example.com',
-      order: 0
+      url: 'https://example.com'
     }
   */],
   helpLink: 'https://about.mattermost.com/default-desktop-app-documentation/',
