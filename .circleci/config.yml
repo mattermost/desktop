@@ -348,9 +348,7 @@ workflows:
 
       - upload_to_github:
           requires:
-            - msi_installer
-            - mac_installer
-            - build-linux
+            - upload_to_s3
           context: matterbuild-github-token
           filters:
             branches:
