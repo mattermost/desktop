@@ -332,16 +332,26 @@ export default class Config extends EventEmitter {
    * @param {array} teams to sort
    */
   sortUnorderedTeams(teams) {
-    let newTeams = teams;
-    let i = 0;
-
-    newTeams = newTeams.filter((newTeam) => {
-      if (!newTeam.order || newTeam.order < 0) {
-        newTeam.order = i++;
+    // Make a best pass at interpreting sort order. If an order is not specified, assume it is 0.
+    //
+    const newTeams = teams.sort((x, y) => {
+      if (x.order == null) {
+        x.order = 0;
       }
-
-      return newTeam; // eslint-disable-line max-nested-callbacks
+      if (y.order == null) {
+        y.order = 0;
+      }
+      return (x.order === y.order) ? 0 : ((x.order > y.order) ? 1 : -1); // eslint-disable-line no-nested-ternary
     });
+
+    // Now re-number all items from 0 to (max), ensuring user's sort order is preserved. The
+    // new tabbed interface requires an item with order:0 in order to raise the first tab.
+    //
+    let i = 0;
+    newTeams.forEach((team) => {
+      team.order = i++;
+    });
+
     return newTeams;
   }
 
