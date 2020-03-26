@@ -341,6 +341,7 @@ export default class Config extends EventEmitter {
       if (y.order == null) {
         y.order = 0;
       }
+
       // once we ensured `order` exists, we can sort numerically
       return x.order - y.order;
     });
