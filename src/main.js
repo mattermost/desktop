@@ -1108,7 +1108,7 @@ function clearAppCache() {
 
 function isWithinDisplay(state, display) {
   // given a display, check if window is within it
-  return (state.x > display.maxX || state.y > display.maxY || state.x < display.minX || state.y < display.minY);
+  return !(state.x > display.maxX || state.y > display.maxY || state.x < display.minX || state.y < display.minY);
 }
 
 function getValidWindowPosition(state) {
@@ -1120,12 +1120,12 @@ function getValidWindowPosition(state) {
       return prev || isWithinDisplay(state, display);
     },
     false);
+  Reflect.deleteProperty(state, 'width');
+  Reflect.deleteProperty(state, 'height');
 
-  if (isDisplayed) {
+  if (!isDisplayed) {
     Reflect.deleteProperty(state, 'x');
     Reflect.deleteProperty(state, 'y');
-    Reflect.deleteProperty(state, 'width');
-    Reflect.deleteProperty(state, 'height');
   }
 
   return state;
