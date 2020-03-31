@@ -140,7 +140,7 @@ function equalUrlsIgnoringSubpath(url1, url2) {
   return url1.origin.toLowerCase() === url2.origin.toLowerCase();
 }
 
-const dispatchNotification = async (title, body, handleClick) => {
+const dispatchNotification = async (title, body, silent, handleClick) => {
   const permission = await Notification.requestPermission();
   const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon_48.png`;
 
@@ -153,12 +153,10 @@ const dispatchNotification = async (title, body, handleClick) => {
     tag: body,
     icon: appIconURL,
     requireInteraction: false,
+    silent
   });
 
-  notification.onclick = () => {
-    handleClick();
-    this.webviewRef.current.send('notification-clicked');
-  };
+  notification.onclick = handleClick;
 
   notification.onerror = () => {
     log.error('Notification failed to show');

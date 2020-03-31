@@ -602,18 +602,10 @@ export default class MainPage extends React.Component {
   };
 
   showDownloadCompleteNotification = async (event, item) => {
-    const regexResult = (/https?:\/\/(.+).mattermost.com\/?$/).exec(item.serverInfo.origin);
-    let serverName;
-    if (regexResult === null) {
-      serverName = item.serverInfo.serverName;
-    } else {
-      serverName = regexResult[1].replace(/-/g, ' ').split(' ').map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
-    }
-
-    const title = process.platform === 'win32' ? serverName : 'Download Complete';
+    const title = process.platform === 'win32' ? item.serverInfo.name : 'Download Complete';
     const notificationBody = process.platform === 'win32' ? `Download Complete \n ${item.fileName}` : item.fileName;
 
-    await Utils.dispatchNotification(title, notificationBody, () => {
+    await Utils.dispatchNotification(title, notificationBody, false, () => {
       shell.showItemInFolder(item.path.normalize());
     });
   }
