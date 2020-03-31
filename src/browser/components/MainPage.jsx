@@ -613,10 +613,9 @@ export default class MainPage extends React.Component {
     const title = process.platform === 'win32' ? serverName : 'Download Complete';
     const notificationBody = process.platform === 'win32' ? `Download Complete \n ${item.fileName}` : item.fileName;
 
-    const notification = await Utils.dispatchNotification(title, notificationBody);
-    notification.onclick = () => {
+    await Utils.dispatchNotification(title, notificationBody, () => {
       shell.showItemInFolder(item.path.normalize());
-    };
+    });
   }
 
   setDarkMode() {
