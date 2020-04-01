@@ -315,6 +315,9 @@ export default class MattermostView extends React.Component {
     if (!this.props.active) {
       classNames.push('mattermostView-hidden');
     }
+    if (this.state.errorInfo) {
+      classNames.push('mattermostView-error');
+    }
     if (this.props.allowExtraBar) {
       classNames.push('allow-extra-bar');
     }
