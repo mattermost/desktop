@@ -13,7 +13,7 @@ import {CSSTransition, TransitionGroup} from 'react-transition-group';
 import {Grid, Row} from 'react-bootstrap';
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 
-import {ipcRenderer, remote} from 'electron';
+import {ipcRenderer, remote, shell} from 'electron';
 
 import Utils from '../../utils/util';
 
@@ -180,6 +180,7 @@ export default class MainPage extends React.Component {
     ipcRenderer.on('clear-cache-and-reload-tab', () => {
       this.refs[`mattermostView${this.state.key}`].clearCacheAndReload();
     });
+    ipcRenderer.on('download-complete', this.showDownloadCompleteNotification);
 
     function focusListener() {
       self.handleOnTeamFocused(self.state.key);
@@ -599,6 +600,16 @@ export default class MainPage extends React.Component {
       this.switchToTabForCertificateRequest(certificateRequests[0].server);
     }
   };
+
+  showDownloadCompleteNotification = async (event, item) => {
+    const title = process.platform === 'win32' ? item.serverInfo.name : 'Download Complete';
+    const notificationBody = process.platform === 'win32' ? `Download Complete \n ${item.fileName}` : item.fileName;
+
+    await Utils.dispatchNotification(title, notificationBody, false, () => {
+      shell.showItemInFolder(item.path.normalize());
+    });
+  }
+
   setDarkMode() {
     this.setState({
       isDarkMode: this.props.setDarkMode(),
