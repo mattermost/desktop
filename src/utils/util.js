@@ -141,13 +141,19 @@ function equalUrlsIgnoringSubpath(url1, url2) {
 }
 
 const dispatchNotification = async (title, body, silent, handleClick) => {
-  const permission = await Notification.requestPermission();
+  let permission;
   const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon_48.png`;
+  if (Notification.permission === 'default') {
+    permission = await Notification.requestPermission();
+  } else {
+    permission = Notification.permission;
+  }
 
   if (permission !== 'granted') {
     log.error('Notifications not granted');
     return null;
   }
+
   const notification = new Notification(title, {
     body,
     tag: body,
