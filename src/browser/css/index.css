@@ -143,6 +143,7 @@ body {
 
 .topBar.macOS .three-dot-menu {
   flex-basis: 80px;
+  -webkit-app-region: drag;
 }
 
 .topBar.macOS.fullScreen .three-dot-menu {
