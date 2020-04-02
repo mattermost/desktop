@@ -4,7 +4,6 @@
 'use strict';
 
 import fs from 'fs';
-import url from 'url';
 
 import * as Validator from './Validator';
 
@@ -26,7 +25,8 @@ function areEqual(certificate0, certificate1) {
 }
 
 function getHost(targetURL) {
-  return url.parse(targetURL).host;
+  const parsedURL = new URL(targetURL);
+  return parsedURL.origin;
 }
 
 function CertificateStore(storeFile) {
@@ -34,17 +34,12 @@ function CertificateStore(storeFile) {
   let storeStr;
   try {
     storeStr = fs.readFileSync(storeFile, 'utf-8');
-    storeStr = Validator.validateCertificateStore(storeStr);
-    if (!storeStr) {
+    const result = Validator.validateCertificateStore(storeStr);
+    if (!result) {
       throw new Error('Provided certificate store file does not validate, using defaults instead.');
     }
+    this.data = result;
   } catch (e) {
-    storeStr = '{}';
-  }
-  try {
-    this.data = JSON.parse(storeStr);
-  } catch (e) {
-    console.log('Error when parsing', storeFile, ':', e);
     this.data = {};
   }
 }
