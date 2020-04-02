@@ -19,6 +19,7 @@ const scheme = protocols[0].schemes[0];
 import ErrorView from './ErrorView.jsx';
 
 const preloadJS = `file://${remote.app.getAppPath()}/browser/webview/mattermost_bundle.js`;
+const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon_48.png`;
 
 const ERR_NOT_IMPLEMENTED = -11;
 const U2F_EXTENSION_URL = 'chrome-extension://kmendfapggjehodndflmmgagdbamhnfd/u2f-comms.html';
@@ -52,7 +53,7 @@ export default class MattermostView extends React.Component {
       permission = Notification.permission;
     }
     if (permission !== 'granted') {
-      log.error('Notifications not granted');
+      console.error('Notifications not granted');
       return;
     }
     const notification = new Notification(title, {
@@ -65,7 +66,7 @@ export default class MattermostView extends React.Component {
       this.webviewRef.current.send('notification-clicked', {channel, teamId});
     };
     notification.onerror = (err) => {
-      log.error(`Notification failed to show: ${err}`);
+      console.error(`Notification failed to show: ${err}`);
     };
   }
 
