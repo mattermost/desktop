@@ -718,7 +718,7 @@ function initializeAfterAppReady() {
     });
   }
 
-  session.defaultSession.on('will-download', (event, item) => {
+  session.defaultSession.on('will-download', (event, item, webContents) => {
     const filename = item.getFilename();
     const fileElements = filename.split('.');
     const filters = [];
@@ -738,6 +738,16 @@ function initializeAfterAppReady() {
       title: filename,
       defaultPath: os.homedir() + '/Downloads/' + filename,
       filters,
+    });
+
+    item.on('done', (doneEvent, state) => {
+      if (state === 'completed') {
+        mainWindow.webContents.send('download-complete', {
+          fileName: filename,
+          path: item.getSavePath(),
+          serverInfo: Utils.getServer(webContents.getURL(), config.teams),
+        });
+      }
     });
   });
 

@@ -3,7 +3,8 @@
 // See LICENSE.txt for license information.
 import url from 'url';
 
-import electron from 'electron';
+import electron, {remote} from 'electron';
+import log from 'electron-log';
 import {isUri, isHttpUri, isHttpsUri} from 'valid-url';
 
 function getDomain(inputURL) {
@@ -139,6 +140,31 @@ function equalUrlsIgnoringSubpath(url1, url2) {
   return url1.origin.toLowerCase() === url2.origin.toLowerCase();
 }
 
+const dispatchNotification = async (title, body, silent, handleClick) => {
+  const permission = await Notification.requestPermission();
+  const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon_48.png`;
+
+  if (permission !== 'granted') {
+    log.error('Notifications not granted');
+    return null;
+  }
+  const notification = new Notification(title, {
+    body,
+    tag: body,
+    icon: appIconURL,
+    requireInteraction: false,
+    silent
+  });
+
+  notification.onclick = handleClick;
+
+  notification.onerror = () => {
+    log.error('Notification failed to show');
+  };
+
+  return notification;
+};
+
 export default {
   getDomain,
   isValidURL,
@@ -146,7 +172,9 @@ export default {
   isInternalURL,
   parseURL,
   getServer,
+  getServerInfo,
   isTeamUrl,
   isPluginUrl,
   getDisplayBoundaries,
+  dispatchNotification,
 };
