@@ -56,6 +56,7 @@ export default class MainPage extends React.Component {
       targetURL: '',
       certificateRequests: [],
       maximized: false,
+      showNewTeamModal: false,
     };
   }
 
@@ -183,8 +184,12 @@ export default class MainPage extends React.Component {
     ipcRenderer.on('download-complete', this.showDownloadCompleteNotification);
 
     function focusListener() {
-      self.handleOnTeamFocused(self.state.key);
-      self.refs[`mattermostView${self.state.key}`].focusOnWebView();
+      if (this.state.showNewTeamModal && this.inputRef) {
+        this.inputRef.current().focus();
+      } else {
+        self.handleOnTeamFocused(self.state.key);
+        self.refs[`mattermostView${self.state.key}`].focusOnWebView();
+      }
       self.setState({unfocused: false});
     }
 
@@ -615,6 +620,9 @@ export default class MainPage extends React.Component {
       isDarkMode: this.props.setDarkMode(),
     });
   }
+  setInputRef = (ref) => {
+    this.inputRef = ref;
+  }
 
   showExtraBar = () => {
     const ref = this.refs[`mattermostView${this.state.key}`];
@@ -793,6 +801,7 @@ export default class MainPage extends React.Component {
         currentOrder={this.props.teams.length}
         show={this.state.showNewTeamModal}
         restoreFocus={false}
+        setInputRef={this.setInputRef}
         onClose={() => {
           this.setState({
             showNewTeamModal: false,
