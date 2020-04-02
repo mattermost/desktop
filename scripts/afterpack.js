@@ -14,7 +14,7 @@ exports.default = async function afterPack(context) {
         const result = await spawn('chmod', [SETUID_PERMISSIONS, path.join(context.appOutDir, 'chrome-sandbox')]);
         if (result.code !== 0) {
           throw new Error(
-            `Failed to set proper permissions for linux arch on ${target.name}`
+            `Failed to set proper permissions for linux arch on ${target.name}`,
           );
         }
       }
