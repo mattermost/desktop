@@ -7,13 +7,13 @@
 
 import url from 'url';
 
-import React from 'react';
+import React, {Fragment} from 'react';
 import PropTypes from 'prop-types';
 import {CSSTransition, TransitionGroup} from 'react-transition-group';
 import {Grid, Row} from 'react-bootstrap';
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 
-import {ipcRenderer, remote} from 'electron';
+import {ipcRenderer, remote, shell} from 'electron';
 
 import Utils from '../../utils/util';
 
@@ -29,6 +29,7 @@ import HoveringURL from './HoveringURL.jsx';
 import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
 import SelectCertificateModal from './SelectCertificateModal.jsx';
+import ExtraBar from './ExtraBar.jsx';
 
 export default class MainPage extends React.Component {
   constructor(props) {
@@ -55,6 +56,7 @@ export default class MainPage extends React.Component {
       targetURL: '',
       certificateRequests: [],
       maximized: false,
+      showNewTeamModal: false,
     };
   }
 
@@ -69,8 +71,8 @@ export default class MainPage extends React.Component {
             teamURL,
             teamIndex: index,
             originalURL: deeplinkURL,
-            url: `${teamURL.protocol}//${teamURL.host}${deeplinkURL.pathname}`,
-            path: deeplinkURL.pathname,
+            url: `${teamURL.protocol}//${teamURL.host}${deeplinkURL.pathname || '/'}`,
+            path: deeplinkURL.pathname || '/',
           };
         }
       });
@@ -179,10 +181,15 @@ export default class MainPage extends React.Component {
     ipcRenderer.on('clear-cache-and-reload-tab', () => {
       this.refs[`mattermostView${this.state.key}`].clearCacheAndReload();
     });
+    ipcRenderer.on('download-complete', this.showDownloadCompleteNotification);
 
     function focusListener() {
-      self.handleOnTeamFocused(self.state.key);
-      self.refs[`mattermostView${self.state.key}`].focusOnWebView();
+      if (this.state.showNewTeamModal && this.inputRef) {
+        this.inputRef.current().focus();
+      } else {
+        self.handleOnTeamFocused(self.state.key);
+        self.refs[`mattermostView${self.state.key}`].focusOnWebView();
+      }
       self.setState({unfocused: false});
     }
 
@@ -600,10 +607,31 @@ export default class MainPage extends React.Component {
       this.switchToTabForCertificateRequest(certificateRequests[0].server);
     }
   };
+
+  showDownloadCompleteNotification = async (event, item) => {
+    const title = process.platform === 'win32' ? item.serverInfo.name : 'Download Complete';
+    const notificationBody = process.platform === 'win32' ? `Download Complete \n ${item.fileName}` : item.fileName;
+
+    await Utils.dispatchNotification(title, notificationBody, false, () => {
+      shell.showItemInFolder(item.path.normalize());
+    });
+  }
+
   setDarkMode() {
     this.setState({
       isDarkMode: this.props.setDarkMode(),
     });
+  }
+  setInputRef = (ref) => {
+    this.inputRef = ref;
+  }
+
+  showExtraBar = () => {
+    const ref = this.refs[`mattermostView${this.state.key}`];
+    if (typeof ref !== 'undefined') {
+      return !Utils.isTeamUrl(this.props.teams[this.state.key].url, ref.getSrc());
+    }
+    return false;
   }
 
   render() {
@@ -700,6 +728,7 @@ export default class MainPage extends React.Component {
             onClick={this.openMenu}
             tabIndex={0}
             ref={this.threeDotMenu}
+            aria-label='Context menu'
           >
             <DotsVerticalIcon/>
           </button>
@@ -744,12 +773,21 @@ export default class MainPage extends React.Component {
           handleInterTeamLink={self.handleInterTeamLink}
           ref={id}
           active={isActive}
+          allowExtraBar={this.showExtraBar()}
         />);
     });
+
     const viewsRow = (
-      <Row>
-        {views}
-      </Row>);
+      <Fragment>
+        <ExtraBar
+          darkMode={this.state.isDarkMode}
+          show={this.showExtraBar()}
+          mattermostView={this.refs[`mattermostView${this.state.key}`]}
+        />
+        <Row>
+          {views}
+        </Row>
+      </Fragment>);
 
     let request = null;
     let authServerURL = null;
@@ -765,6 +803,7 @@ export default class MainPage extends React.Component {
         currentOrder={this.props.teams.length}
         show={this.state.showNewTeamModal}
         restoreFocus={false}
+        setInputRef={this.setInputRef}
         onClose={() => {
           this.setState({
             showNewTeamModal: false,

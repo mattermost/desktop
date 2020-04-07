@@ -9,7 +9,7 @@
   "homepage": "https://about.mattermost.com",
   "license": "Apache-2.0",
   "dependencies": {
-    "@hapi/joi": "^15.1.0",
+    "@hapi/joi": "^16.1.8",
     "auto-launch": "^5.0.5",
     "bootstrap": "^3.3.7",
     "electron-context-menu": "^0.15.0",
@@ -17,6 +17,7 @@
     "electron-is-dev": "^1.0.1",
     "electron-log": "^2.2.17",
     "electron-updater": "4.0.6",
+    "font-awesome": "^4.7.0",
     "prop-types": "^15.6.2",
     "react": "^16.6.3",
     "react-bootstrap": "~0.32.4",

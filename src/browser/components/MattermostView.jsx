@@ -10,7 +10,6 @@ import url from 'url';
 import React from 'react';
 import PropTypes from 'prop-types';
 import {ipcRenderer, remote, shell} from 'electron';
-import log from 'electron-log';
 
 import contextMenu from '../js/contextMenu';
 import Utils from '../../utils/util';
@@ -23,8 +22,6 @@ const preloadJS = `file://${remote.app.getAppPath()}/browser/webview/mattermost_
 
 const ERR_NOT_IMPLEMENTED = -11;
 const U2F_EXTENSION_URL = 'chrome-extension://kmendfapggjehodndflmmgagdbamhnfd/u2f-comms.html';
-
-const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon_48.png`;
 
 export default class MattermostView extends React.Component {
   constructor(props) {
@@ -45,27 +42,6 @@ export default class MattermostView extends React.Component {
     if (this.props.onBadgeChange) {
       this.props.onBadgeChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
     }
-  }
-
-  dispatchNotification = async (title, body, channel, teamId, silent) => {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      log.error('Notifications not granted');
-      return;
-    }
-    const notification = new Notification(title, {
-      body,
-      tag: body,
-      icon: appIconURL,
-      requireInteraction: false,
-      silent,
-    });
-    notification.onclick = () => {
-      this.webviewRef.current.send('notification-clicked', {channel, teamId});
-    };
-    notification.onerror = () => {
-      log.error('Notification failed to show');
-    };
   }
 
   componentDidMount() {
@@ -182,7 +158,8 @@ export default class MattermostView extends React.Component {
         break;
       }
       case 'dispatchNotification': {
-        self.dispatchNotification(...event.args);
+        const [title, body, channel, teamId, silent] = event.args;
+        Utils.dispatchNotification(title, body, silent, () => this.webviewRef.current.send('notification-clicked', {channel, teamId}));
         break;
       }
       case 'onNotificationClick':
@@ -257,11 +234,7 @@ export default class MattermostView extends React.Component {
 
   focusOnWebView = () => {
     const webview = this.webviewRef.current;
-    const webContents = webview.getWebContents(); // webContents might not be created yet.
-    if (webContents) {
-      webview.focus();
-      webContents.focus();
-    }
+    webview.focus();
   }
 
   handleMouseMove = (event) => {
@@ -304,10 +277,10 @@ export default class MattermostView extends React.Component {
   handleDeepLink = (relativeUrl) => {
     const webview = this.webviewRef.current;
     webview.executeJavaScript(
-      'history.pushState(null, null, "' + relativeUrl + '");'
+      'history.pushState(null, null, "' + relativeUrl + '");',
     );
     webview.executeJavaScript(
-      'dispatchEvent(new PopStateEvent("popstate", null));'
+      'dispatchEvent(new PopStateEvent("popstate", null));',
     );
   }
 
@@ -337,6 +310,9 @@ export default class MattermostView extends React.Component {
     }
     if (!this.props.active) {
       classNames.push('mattermostView-hidden');
+    }
+    if (this.props.allowExtraBar) {
+      classNames.push('allow-extra-bar');
     }
 
     const loadingImage = !this.state.errorInfo && this.props.active && !this.state.isLoaded ? (
@@ -377,6 +353,7 @@ MattermostView.propTypes = {
   useSpellChecker: PropTypes.bool,
   onSelectSpellCheckerLocale: PropTypes.func,
   handleInterTeamLink: PropTypes.func,
+  allowExtraBar: PropTypes.bool,
 };
 
 /* eslint-enable react/no-set-state */
