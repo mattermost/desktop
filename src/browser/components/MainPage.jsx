@@ -547,14 +547,16 @@ export default class MainPage extends React.Component {
   }
 
   handleDoubleClick = () => {
-    const doubleClickAction = remote.systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
-    const win = remote.getCurrentWindow();
-    if (doubleClickAction === 'Minimize') {
-      win.minimize();
-    } else if (doubleClickAction === 'Maximize' && !win.isMaximized()) {
-      win.maximize();
-    } else if (doubleClickAction === 'Maximize' && win.isMaximized()) {
-      win.unmaximize();
+    if (process.platform === 'darwin') {
+      const doubleClickAction = remote.systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
+      const win = remote.getCurrentWindow();
+      if (doubleClickAction === 'Minimize') {
+        win.minimize();
+      } else if (!win.isMaximized()) {
+        win.maximize();
+      } else if (win.isMaximized()) {
+        win.unmaximize();
+      }
     }
   }
 
