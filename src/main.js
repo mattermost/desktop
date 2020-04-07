@@ -1141,7 +1141,7 @@ function resizeScreen(screen, browserWindow) {
       width: size[0],
       height: size[1],
     });
-    if (validPosition) {
+    if (typeof validPosition.x !== 'undefined' || typeof validPosition.y !== 'undefined') {
       browserWindow.setPosition(validPosition.x || 0, validPosition.y || 0);
     } else {
       browserWindow.center();
