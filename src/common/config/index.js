@@ -272,7 +272,7 @@ export default class Config extends EventEmitter {
     delete this.combinedData.defaultTeams;
 
     // IMPORTANT: properly combine teams from all sources
-    const combinedTeams = [];
+    let combinedTeams = [];
 
     // - start by adding default teams from buildConfig, if any
     if (this.buildConfigData.defaultTeams && this.buildConfigData.defaultTeams.length) {
@@ -288,6 +288,9 @@ export default class Config extends EventEmitter {
     if (this.enableServerManagement) {
       combinedTeams.push(...this.localConfigData.teams);
     }
+
+    combinedTeams = this.filterOutDuplicateTeams(combinedTeams);
+    combinedTeams = this.sortUnorderedTeams(combinedTeams);
 
     this.combinedData.teams = combinedTeams;
     this.combinedData.localTeams = this.localConfigData.teams;
@@ -319,6 +322,35 @@ export default class Config extends EventEmitter {
     // filter out predefined teams
     newTeams = newTeams.filter((newTeam) => {
       return this.predefinedTeams.findIndex((existingTeam) => newTeam.url === existingTeam.url) === -1; // eslint-disable-line max-nested-callbacks
+    });
+
+    return newTeams;
+  }
+
+  /**
+   * Apply a default sort order to the team list, if no order is specified.
+   * @param {array} teams to sort
+   */
+  sortUnorderedTeams(teams) {
+    // Make a best pass at interpreting sort order. If an order is not specified, assume it is 0.
+    //
+    const newTeams = teams.sort((x, y) => {
+      if (x.order == null) {
+        x.order = 0;
+      }
+      if (y.order == null) {
+        y.order = 0;
+      }
+
+      // once we ensured `order` exists, we can sort numerically
+      return x.order - y.order;
+    });
+
+    // Now re-number all items from 0 to (max), ensuring user's sort order is preserved. The
+    // new tabbed interface requires an item with order:0 in order to raise the first tab.
+    //
+    newTeams.forEach((team, i) => {
+      team.order = i;
     });
 
     return newTeams;
