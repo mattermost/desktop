@@ -214,7 +214,7 @@ function createTemplate(mainWindow, config, isDev) {
         if (focusedWindow === mainWindow) {
           mainWindow.webContents.send('go-back');
         } else if (focusedWindow.webContents.canGoBack()) {
-          focusedWindow.goBack();
+          focusedWindow.webContents.goBack();
         }
       },
     }, {
@@ -224,7 +224,7 @@ function createTemplate(mainWindow, config, isDev) {
         if (focusedWindow === mainWindow) {
           mainWindow.webContents.send('go-forward');
         } else if (focusedWindow.webContents.canGoForward()) {
-          focusedWindow.goForward();
+          focusedWindow.webContents.goForward();
         }
       },
     }],
