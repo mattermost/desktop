@@ -227,9 +227,7 @@ export default class MattermostView extends React.Component {
       errorInfo: null,
     });
     const webContents = this.webviewRef.current.getWebContents();
-    webContents.session.clearCache(() => {
-      webContents.reload();
-    });
+    webContents.session.clearCache().then(webContents.reload);
   }
 
   focusOnWebView = () => {

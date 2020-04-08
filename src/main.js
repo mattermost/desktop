@@ -1123,10 +1123,7 @@ function wasUpdated(lastAppVersion) {
 function clearAppCache() {
   if (mainWindow) {
     console.log('Clear cache after update');
-    mainWindow.webContents.session.clearCache(() => {
-      //Restart after cache clear
-      mainWindow.reload();
-    });
+    mainWindow.webContents.session.clearCache().then(mainWindow.reload);
   } else {
     //Wait for mainWindow
     setTimeout(clearAppCache, 100);
