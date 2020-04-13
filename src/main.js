@@ -307,8 +307,7 @@ function handleAppWindowAllClosed() {
 
 function handleAppBrowserWindowCreated(error, newWindow) {
   // Screen cannot be required before app is ready
-  const {screen} = electron;
-  resizeScreen(screen, newWindow);
+  resizeScreen(electron.screen, newWindow);
 }
 
 function handleAppActivate() {
@@ -1131,28 +1130,29 @@ function clearAppCache() {
 }
 
 function isWithinDisplay(state, display) {
-  // given a display, check if window is within it
-  return (state.x > display.maxX || state.y > display.maxY || state.x < display.minX || state.y < display.minY);
+  const startsWithinDisplay = !(state.x > display.maxX || state.y > display.maxY || state.x < display.minX || state.y < display.minY);
+  if (!startsWithinDisplay) {
+    return false;
+  }
+
+  // is half the screen within the display?
+  const midX = state.x + (state.width / 2);
+  const midY = state.y + (state.height / 2);
+  return !(midX > display.maxX || midY > display.maxY);
 }
 
 function getValidWindowPosition(state) {
   // Check if the previous position is out of the viewable area
   // (e.g. because the screen has been plugged off)
   const boundaries = Utils.getDisplayBoundaries();
-  const isDisplayed = boundaries.reduce(
-    (prev, display) => {
-      return prev || isWithinDisplay(state, display);
-    },
-    false);
+  const display = boundaries.find((boundary) => {
+    return isWithinDisplay(state, boundary);
+  });
 
-  if (isDisplayed) {
-    Reflect.deleteProperty(state, 'x');
-    Reflect.deleteProperty(state, 'y');
-    Reflect.deleteProperty(state, 'width');
-    Reflect.deleteProperty(state, 'height');
+  if (typeof display === 'undefined') {
+    return {};
   }
-
-  return state;
+  return {x: state.x, y: state.y};
 }
 
 function resizeScreen(screen, browserWindow) {
@@ -1165,7 +1165,11 @@ function resizeScreen(screen, browserWindow) {
       width: size[0],
       height: size[1],
     });
-    browserWindow.setPosition(validPosition.x || 0, validPosition.y || 0);
+    if (typeof validPosition.x !== 'undefined' || typeof validPosition.y !== 'undefined') {
+      browserWindow.setPosition(validPosition.x || 0, validPosition.y || 0);
+    } else {
+      browserWindow.center();
+    }
   }
 
   browserWindow.on('restore', handle);
