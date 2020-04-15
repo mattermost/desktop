@@ -342,11 +342,11 @@ export default class MainPage extends React.Component {
 
     if (process.platform === 'darwin') {
       self.setState({
-        isDarkMode: remote.nativeTheme.shouldUseDarkColors(),
+        isDarkMode: remote.nativeTheme.shouldUseDarkColors,
       });
       remote.systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
         self.setState({
-          isDarkMode: remote.nativeTheme.shouldUseDarkColors(),
+          isDarkMode: remote.nativeTheme.shouldUseDarkColors,
         });
       });
     } else {

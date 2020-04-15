@@ -1056,7 +1056,7 @@ function getTrayImages() {
         mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconMention.png')),
       },
     };
-    switchMenuIconImages(icons, nativeTheme.shouldUseDarkColors());
+    switchMenuIconImages(icons, nativeTheme.shouldUseDarkColors);
     return icons;
   }
   case 'linux':
