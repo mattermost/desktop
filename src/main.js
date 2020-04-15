@@ -697,7 +697,7 @@ function initializeAfterAppReady() {
       });
     }
 
-    trayIcon.setToolTip(app.getName());
+    trayIcon.setToolTip(app.name);
     trayIcon.on('click', () => {
       if (!mainWindow.isVisible() || mainWindow.isMinimized()) {
         if (mainWindow.isMinimized()) {
@@ -875,7 +875,7 @@ function handleUpdateUnreadEvent(event, arg) {
       if (process.platform === 'darwin') {
         trayIcon.setPressedImage(trayImages.clicked.normal);
       }
-      trayIcon.setToolTip(app.getName());
+      trayIcon.setToolTip(app.name);
     }
   }
 }

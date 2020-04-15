@@ -4,7 +4,7 @@
 import {remote, ipcRenderer} from 'electron';
 
 window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
-  throw new Error(`Sorry, ${remote.app.getName()} does not support window.eval() for security reasons.`);
+  throw new Error(`Sorry, ${remote.app.name} does not support window.eval() for security reasons.`);
 };
 
 import React from 'react';

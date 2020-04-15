@@ -808,7 +808,7 @@ export default class SettingsPage extends React.Component {
           checked={this.state.showTrayIcon}
           onChange={this.handleChangeShowTrayIcon}
         >
-          {process.platform === 'darwin' ? `Show ${remote.app.getName()} icon in the menu bar` : 'Show icon in the notification area'}
+          {process.platform === 'darwin' ? `Show ${remote.app.name} icon in the menu bar` : 'Show icon in the notification area'}
           <HelpBlock>
             {'Setting takes effect after restarting the app.'}
           </HelpBlock>

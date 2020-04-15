@@ -46,7 +46,7 @@ function createMainWindow(config, options) {
     windowOptions.icon = options.linuxAppIcon;
   }
   Object.assign(windowOptions, {
-    title: app.getName(),
+    title: app.name,
     fullscreenable: true,
     show: hideOnStartup || false,
     minWidth: minimumWindowWidth,
