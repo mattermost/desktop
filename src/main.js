@@ -760,7 +760,7 @@ function initializeAfterAppReady() {
       if (state === 'completed') {
         mainWindow.webContents.send('download-complete', {
           fileName: filename,
-          path: item.getSavePath(),
+          path: item.savePath,
           serverInfo: Utils.getServer(webContents.getURL(), config.teams),
         });
       }
