@@ -195,11 +195,11 @@ export default class SettingsPage extends React.Component {
 
     if (process.platform === 'darwin') {
       self.setState({
-        isDarkMode: remote.systemPreferences.isDarkMode(),
+        isDarkMode: remote.nativeTheme.shouldUseDarkColors(),
       });
       remote.systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
         self.setState({
-          isDarkMode: remote.systemPreferences.isDarkMode(),
+          isDarkMode: remote.nativeTheme.shouldUseDarkColors(),
         });
       });
     } else {

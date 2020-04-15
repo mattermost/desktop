@@ -6,7 +6,7 @@ import os from 'os';
 import path from 'path';
 import fs from 'fs';
 
-import electron from 'electron';
+import electron, {nativeTheme} from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import log from 'electron-log';
@@ -692,7 +692,7 @@ function initializeAfterAppReady() {
     if (process.platform === 'darwin') {
       trayIcon.setPressedImage(trayImages.clicked.normal);
       systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
-        switchMenuIconImages(trayImages, systemPreferences.isDarkMode());
+        switchMenuIconImages(trayImages, nativeTheme.shouldUseDarkColors);
         trayIcon.setImage(trayImages.normal);
       });
     }
@@ -1056,7 +1056,7 @@ function getTrayImages() {
         mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconMention.png')),
       },
     };
-    switchMenuIconImages(icons, systemPreferences.isDarkMode());
+    switchMenuIconImages(icons, nativeTheme.shouldUseDarkColors());
     return icons;
   }
   case 'linux':
