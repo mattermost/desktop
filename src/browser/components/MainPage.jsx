@@ -184,8 +184,8 @@ export default class MainPage extends React.Component {
     ipcRenderer.on('download-complete', this.showDownloadCompleteNotification);
 
     function focusListener() {
-      if (this.state.showNewTeamModal && this.inputRef) {
-        this.inputRef.current().focus();
+      if (self.state.showNewTeamModal && self.inputRef) {
+        self.inputRef.current().focus();
       } else {
         self.handleOnTeamFocused(self.state.key);
         self.refs[`mattermostView${self.state.key}`].focusOnWebView();

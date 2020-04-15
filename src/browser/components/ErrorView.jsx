@@ -79,6 +79,6 @@ export default function ErrorView(props) {
 
 ErrorView.propTypes = {
   errorInfo: PropTypes.object,
-  id: PropTypes.number,
+  id: PropTypes.string,
   active: PropTypes.bool,
 };
