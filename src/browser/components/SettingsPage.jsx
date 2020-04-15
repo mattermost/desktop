@@ -120,10 +120,10 @@ export default class SettingsPage extends React.Component {
       if (!activeTabWebContents) {
         return;
       }
-      if (activeTabWebContents.getZoomLevel() >= 9) {
+      if (activeTabWebContents.zoomLevel >= 9) {
         return;
       }
-      activeTabWebContents.setZoomLevel(activeTabWebContents.getZoomLevel() + 1);
+      activeTabWebContents.zoomLevel += 1;
     });
 
     ipcRenderer.on('zoom-out', () => {
@@ -131,10 +131,10 @@ export default class SettingsPage extends React.Component {
       if (!activeTabWebContents) {
         return;
       }
-      if (activeTabWebContents.getZoomLevel() <= -8) {
+      if (activeTabWebContents.zoomLevel <= -8) {
         return;
       }
-      activeTabWebContents.setZoomLevel(activeTabWebContents.getZoomLevel() - 1);
+      activeTabWebContents.zoomLevel -= 1;
     });
 
     ipcRenderer.on('zoom-reset', () => {
@@ -142,7 +142,7 @@ export default class SettingsPage extends React.Component {
       if (!activeTabWebContents) {
         return;
       }
-      activeTabWebContents.setZoomLevel(0);
+      activeTabWebContents.zoomLevel = 0;
     });
 
     ipcRenderer.on('undo', () => {
