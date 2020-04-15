@@ -183,7 +183,7 @@ export default class NewTeamModal extends React.Component {
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
-                autofocus='true'
+                autoFocus='true'
               />
               <FormControl.Feedback/>
               <HelpBlock>{'The name of the server displayed on your desktop app tab bar.'}</HelpBlock>
@@ -242,5 +242,5 @@ NewTeamModal.propTypes = {
   modalContainer: PropTypes.object,
   restoreFocus: PropTypes.bool,
   currentOrder: PropTypes.number,
-  setInputRef: PropTypes.ref,
+  setInputRef: PropTypes.func,
 };
