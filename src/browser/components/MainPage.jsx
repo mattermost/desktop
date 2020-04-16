@@ -520,17 +520,20 @@ export default class MainPage extends React.Component {
     }
   }
 
-  handleClose = () => {
+  handleClose = (e) => {
+    e.stopPropagation(); // since it is our button, the event goes into MainPage's onclick event, getting focus back.
     const win = remote.getCurrentWindow();
     win.close();
   }
 
-  handleMinimize = () => {
+  handleMinimize = (e) => {
+    e.stopPropagation();
     const win = remote.getCurrentWindow();
     win.minimize();
   }
 
-  handleMaximize = () => {
+  handleMaximize = (e) => {
+    e.stopPropagation();
     const win = remote.getCurrentWindow();
     win.maximize();
   }
