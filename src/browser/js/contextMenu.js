@@ -53,7 +53,7 @@ export default {
     };
     const actualOptions = Object.assign({}, defaultOptions, options);
     electronContextMenu({
-      window: win,
+      window: win.webContents ? win : {...win, webContents: win.getWebContents()},
       prepend(_defaultActions, params) {
         if (actualOptions.useSpellChecker) {
           const prependMenuItems = [];
