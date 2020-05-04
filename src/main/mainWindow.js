@@ -131,15 +131,22 @@ function createMainWindow(config, options) {
         window.blur(); // To move focus to the next top-level window in Windows
         window.hide();
       }
+      function closeWindow(window) {
+        window.close();
+      }
       switch (process.platform) {
       case 'win32':
-        hideWindow(mainWindow);
+        if (config.minimizeToTray) {
+          hideWindow(mainWindow);
+        } else {
+          closeWindow(mainWindow);
+        }
         break;
       case 'linux':
         if (config.minimizeToTray) {
           hideWindow(mainWindow);
         } else {
-          mainWindow.minimize();
+          closeWindow(mainWindow);
         }
         break;
       case 'darwin':
@@ -149,8 +156,10 @@ function createMainWindow(config, options) {
             app.hide();
           });
           mainWindow.setFullScreen(false);
-        } else {
+        } else if (config.minimizeToTray) {
           app.hide();
+        } else {
+          closeWindow(mainWindow);
         }
         break;
       default:
