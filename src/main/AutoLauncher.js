@@ -9,7 +9,7 @@ import isDev from 'electron-is-dev';
 export default class AutoLauncher {
   constructor() {
     this.appLauncher = new AutoLaunch({
-      name: app.getName(),
+      name: app.name,
       isHidden: true,
     });
   }

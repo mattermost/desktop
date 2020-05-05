@@ -39,10 +39,10 @@ class UpdaterPageContainer extends React.Component {
       if (!activeTabWebContents) {
         return;
       }
-      if (activeTabWebContents.getZoomLevel() >= 9) {
+      if (activeTabWebContents.zoomLevel >= 9) {
         return;
       }
-      activeTabWebContents.setZoomLevel(activeTabWebContents.getZoomLevel() + 1);
+      activeTabWebContents.zoomLevel += 1;
     });
 
     ipcRenderer.on('zoom-out', () => {
@@ -50,10 +50,10 @@ class UpdaterPageContainer extends React.Component {
       if (!activeTabWebContents) {
         return;
       }
-      if (activeTabWebContents.getZoomLevel() <= -8) {
+      if (activeTabWebContents.zoomLevel <= -8) {
         return;
       }
-      activeTabWebContents.setZoomLevel(activeTabWebContents.getZoomLevel() - 1);
+      activeTabWebContents.zoomLevel -= 1;
     });
 
     ipcRenderer.on('zoom-reset', () => {
@@ -61,7 +61,7 @@ class UpdaterPageContainer extends React.Component {
       if (!activeTabWebContents) {
         return;
       }
-      activeTabWebContents.setZoomLevel(0);
+      activeTabWebContents.zoomLevel = 0;
     });
 
     ipcRenderer.on('undo', () => {
@@ -116,7 +116,7 @@ class UpdaterPageContainer extends React.Component {
   render() {
     return (
       <UpdaterPage
-        appName={`${remote.app.getName()} Desktop App`}
+        appName={`${remote.app.name} Desktop App`}
         notifyOnly={this.props.notifyOnly}
         {...this.state}
         onClickReleaseNotes={() => {

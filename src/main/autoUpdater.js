@@ -30,7 +30,7 @@ function createUpdaterModal(parentWindow, options) {
   const windowWidth = 480;
   const windowHeight = 280;
   const windowOptions = {
-    title: `${app.getName()} Updater`,
+    title: `${app.name} Updater`,
     parent: parentWindow,
     modal: true,
     maximizable: false,

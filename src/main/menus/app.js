@@ -12,7 +12,7 @@ function createTemplate(mainWindow, config, isDev) {
     type: 'separator',
   };
 
-  const appName = app.getName();
+  const appName = app.name;
   const firstMenuName = (process.platform === 'darwin') ? appName : 'File';
   const template = [];
 

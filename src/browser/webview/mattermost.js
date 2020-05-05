@@ -71,7 +71,7 @@ window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = 
           version: remote.app.getVersion(),
         },
       },
-      window.location.origin
+      window.location.origin || '*'
     );
     break;
   }
@@ -250,7 +250,9 @@ ipcRenderer.on('set-spellchecker', setSpellChecker);
 
 // push user activity updates to the webapp
 ipcRenderer.on('user-activity-update', (event, {userIsActive, isSystemEvent}) => {
-  window.postMessage({type: 'user-activity-update', message: {userIsActive, manual: isSystemEvent}}, window.location.origin);
+  if (window.location.origin !== 'null') {
+    window.postMessage({type: 'user-activity-update', message: {userIsActive, manual: isSystemEvent}}, window.location.origin);
+  }
 });
 
 // exit fullscreen embedded elements like youtube - https://mattermost.atlassian.net/browse/MM-19226

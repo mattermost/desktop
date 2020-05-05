@@ -38,13 +38,13 @@ export default function ErrorView(props) {
               md={10}
               lg={8}
             >
-              <h2>{`Cannot connect to ${remote.app.getName()}`}</h2>
+              <h2>{`Cannot connect to ${remote.app.name}`}</h2>
               <hr/>
-              <p>{`We're having trouble connecting to ${remote.app.getName()}. If refreshing this page (Ctrl+R or Command+R) does not work please verify that:`}</p>
+              <p>{`We're having trouble connecting to ${remote.app.name}. If refreshing this page (Ctrl+R or Command+R) does not work please verify that:`}</p>
               <br/>
               <ul className='ErrorView-bullets' >
                 <li>{'Your computer is connected to the internet.'}</li>
-                <li>{`The ${remote.app.getName()} URL `}
+                <li>{`The ${remote.app.name} URL `}
                   <a
                     onClick={handleClick}
                     href={props.errorInfo.validatedURL}
@@ -79,6 +79,6 @@ export default function ErrorView(props) {
 
 ErrorView.propTypes = {
   errorInfo: PropTypes.object,
-  id: PropTypes.number,
+  id: PropTypes.string,
   active: PropTypes.bool,
 };
