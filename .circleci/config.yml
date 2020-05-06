@@ -339,14 +339,13 @@ workflows:
   build_and_test:
     jobs:
       - check
-      - check-deps:
-          context: sast-webhook
-          requires:
-            - check
-
       - build-linux:
           requires:
             - check
+      - check-deps:
+          context: sast-webhook
+          requires:
+            - build-linux
 
       - build-win-no-installer:
           requires:
