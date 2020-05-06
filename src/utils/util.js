@@ -3,8 +3,7 @@
 // See LICENSE.txt for license information.
 import url from 'url';
 
-import electron, {remote} from 'electron';
-import log from 'electron-log';
+import electron, {ipcRenderer} from 'electron';
 import {isUri, isHttpUri, isHttpsUri} from 'valid-url';
 
 function getDomain(inputURL) {
@@ -140,36 +139,20 @@ function equalUrlsIgnoringSubpath(url1, url2) {
   return url1.origin.toLowerCase() === url2.origin.toLowerCase();
 }
 
-const dispatchNotification = async (title, body, silent, handleClick) => {
-  let permission;
-  const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon_48.png`;
-  if (Notification.permission === 'default') {
-    permission = await Notification.requestPermission();
-  } else {
-    permission = Notification.permission;
-  }
-
-  if (permission !== 'granted') {
-    log.error('Notifications not granted');
-    return null;
-  }
-
-  const notification = new Notification(title, {
-    body,
-    tag: body,
-    icon: appIconURL,
-    requireInteraction: false,
-    silent
-  });
-
-  notification.onclick = handleClick;
-
-  notification.onerror = () => {
-    log.error('Notification failed to show');
-  };
-
-  return notification;
-};
+// see src/main/notifier for understanding what is passed to handleResponse as argument
+// use handleRejection in case something went wrong.
+function dispatchNotification(title, body, tag, responseData, handleResponse, handleRejection) {
+  console.log(`send notification for ${title} - ${body}: ${tag}`);
+  ipcRenderer.invoke('dispatch-notification', title, body, tag, responseData).then(
+    (result) => handleResponse(result)
+  ).catch(
+    (result) => {
+      if (handleRejection) {
+        handleRejection(result);
+      }
+    }
+  );
+}
 
 export default {
   getDomain,

@@ -32,6 +32,7 @@ import SpellChecker from './main/SpellChecker';
 import UserActivityMonitor from './main/UserActivityMonitor';
 import Utils from './utils/util';
 import parseArgs from './main/ParseArgs';
+import {handleDispatchNotification} from './main/notifier';
 
 // pull out required electron components like this
 // as not all components can be referenced before the app is ready
@@ -229,6 +230,7 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('get-spellchecker-locale', handleGetSpellcheckerLocaleEvent);
   ipcMain.on('reply-on-spellchecker-is-ready', handleReplyOnSpellcheckerIsReadyEvent);
   ipcMain.on('selected-client-certificate', handleSelectedCertificate);
+  ipcMain.handle('dispatch-notification', handleDispatchNotification);
 
   if (shouldShowTrayIcon()) {
     ipcMain.on('update-unread', handleUpdateUnreadEvent);
@@ -311,7 +313,9 @@ function handleAppBrowserWindowCreated(error, newWindow) {
 }
 
 function handleAppActivate() {
-  mainWindow.show();
+  if (mainWindow) {
+    mainWindow.show();
+  }
 }
 
 function handleAppBeforeQuit() {

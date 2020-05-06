@@ -615,8 +615,10 @@ export default class MainPage extends React.Component {
     const title = process.platform === 'win32' ? item.serverInfo.name : 'Download Complete';
     const notificationBody = process.platform === 'win32' ? `Download Complete \n ${item.fileName}` : item.fileName;
 
-    await Utils.dispatchNotification(title, notificationBody, false, () => {
-      shell.showItemInFolder(item.path.normalize());
+    await Utils.dispatchNotification(title, notificationBody, item.fileName, {path: item.path.normalize()}, (result) => {
+      if (result.notificationResult === 'clicked') {
+        shell.showItemInFolder(result.path);
+      }
     });
   }
 

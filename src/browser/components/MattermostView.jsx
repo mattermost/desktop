@@ -158,8 +158,12 @@ export default class MattermostView extends React.Component {
         break;
       }
       case 'dispatchNotification': {
-        const [title, body, channel, teamId, silent] = event.args;
-        Utils.dispatchNotification(title, body, silent, () => this.webviewRef.current.send('notification-clicked', {channel, teamId}));
+        const [title, body, channel, teamId] = event.args;
+        Utils.dispatchNotification(title, body, `${teamId}/${channel.last_post_at}`, {teamId, channel}, (result) => {
+          if (result.notificationResult === 'clicked') {
+            this.webviewRef.current.send('notification-clicked', result);
+          }
+        });
         break;
       }
       case 'onNotificationClick':
