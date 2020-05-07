@@ -85,7 +85,7 @@ case "${1}" in
                 rc="${pkg_version#*-rc}"
             else
                 print_warning "No release candidate on the version, assuming 0"
-                rc=0
+                rc=1
             fi
             case "${rc}" in
                 ''|*[!0-9]*) 
