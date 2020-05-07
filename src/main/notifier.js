@@ -22,7 +22,7 @@ const NOTIFICATION_TIMEOUT = 10000; // todo: figure out the right amount of time
 
 export const handleDispatchNotification = (event, title, body, tag, responseData) => {
   console.log(`got notification for ${tag}`);
-  const result = new Promise((resolve, reject) => {
+  const result = new Promise((resolve) => {
     const desktopNotification = dispatchNotification(title, body, tag);
     if (desktopNotification === null) {
       resolve({notificationResult: 'failed', ...responseData});
