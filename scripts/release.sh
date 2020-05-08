@@ -164,7 +164,7 @@ case "${1}" in
             new_branch_version="${major}.${minor}"
             new_branch_name="release-${new_branch_version}"
             new_pkg_version="${new_branch_version}.0-rc0"
-            master_pkg_version="${major}.$(( minor + 2 )).0-develop"
+            master_pkg_version="${major}.$(( minor + 1 )).0-develop"
             print_info "Creating a new features branch: ${new_branch_name}"
 
             if git show-ref --verify --quiet "refs/heads/${new_branch_name}"; then
