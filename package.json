@@ -14,8 +14,7 @@
     "url": "git://github.com/mattermost/desktop.git"
   },
   "scripts": {
-    "postinstall": "electron-builder install-app-deps && npm run extract-dict && npm run fix-catalina-dark-mode",
-    "fix-catalina-dark-mode": "node scripts/fix_catalina_dark_mode_debug.js",
+    "postinstall": "electron-builder install-app-deps && npm run extract-dict",
     "extract-dict": "node scripts/extract_dict.js src/node_modules/simple-spellchecker/dict",
     "build": "npm-run-all build:*",
     "build:main": "webpack-cli --bail --config webpack.config.main.js",
@@ -55,7 +54,7 @@
     "cross-env": "^5.2.0",
     "css-loader": "^1.0.1",
     "devtron": "^1.4.0",
-    "electron": "^6.1.7",
+    "electron": "^7.2.1",
     "electron-builder": "^22.2.0",
     "electron-connect": "^0.6.3",
     "electron-notarize": "^0.1.1",
@@ -75,7 +74,7 @@
     "react": "^16.6.3",
     "react-dom": "^16.6.3",
     "react-smooth-dnd": "github:mattermost/react-smooth-dnd#af6b471295007274560a375799622c1cd52d678a",
-    "spectron": "^6.0.0",
+    "spectron": "^9.0.0",
     "style-loader": "^0.23.1",
     "url-loader": "^1.1.2",
     "webpack": "^4.27.0",

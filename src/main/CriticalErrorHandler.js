@@ -13,7 +13,7 @@ const BUTTON_SHOW_DETAILS = 'Show Details';
 const BUTTON_REOPEN = 'Reopen';
 
 function createErrorReport(err) {
-  return `Application: ${app.getName()} ${app.getVersion()}\n` +
+  return `Application: ${app.name} ${app.getVersion()}\n` +
          `Platform: ${os.type()} ${os.release()} ${os.arch()}\n` +
          `${err.stack}`;
 }
@@ -51,7 +51,7 @@ export default class CriticalErrorHandler {
   windowUnresponsiveHandler() {
     const result = dialog.showMessageBox(this.mainWindow, {
       type: 'warning',
-      title: app.getName(),
+      title: app.name,
       message: 'The window is no longer responsive.\nDo you wait until the window becomes responsive again?',
       buttons: ['No', 'Yes'],
       defaultId: 0,
@@ -74,8 +74,8 @@ export default class CriticalErrorHandler {
       const showMessageBox = bindWindowToShowMessageBox(this.mainWindow);
       const result = showMessageBox({
         type: 'error',
-        title: app.getName(),
-        message: `The ${app.getName()} app quit unexpectedly. Click "Show Details" to learn more or "Reopen" to open the application again.\n\nInternal error: ${err.message}`,
+        title: app.name,
+        message: `The ${app.name} app quit unexpectedly. Click "Show Details" to learn more or "Reopen" to open the application again.\n\nInternal error: ${err.message}`,
         buttons,
         defaultId: buttons.indexOf(BUTTON_REOPEN),
         noLink: true,

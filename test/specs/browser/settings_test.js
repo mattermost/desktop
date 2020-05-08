@@ -78,6 +78,7 @@ describe('browser/settings.html', function desc() {
         click('#addNewServer').
         waitForVisible('#newServerModal').
         setValue('#teamNameInput', 'TestTeam').
+        pause(100).
         setValue('#teamUrlInput', 'http://example.org').
         click('#saveNewServerModal').
         waitForVisible('#newServerModal', true).

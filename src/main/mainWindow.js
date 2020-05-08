@@ -46,7 +46,7 @@ function createMainWindow(config, options) {
     windowOptions.icon = options.linuxAppIcon;
   }
   Object.assign(windowOptions, {
-    title: app.getName(),
+    title: app.name,
     fullscreenable: true,
     show: hideOnStartup || false,
     minWidth: minimumWindowWidth,
@@ -79,7 +79,7 @@ function createMainWindow(config, options) {
   }
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow.webContents.setZoomLevel(0);
+    mainWindow.webContents.zoomLevel = 0;
 
     // handle showing the window when not launched by auto-start
     // - when not configured to auto-start, immediately show contents and optionally maximize as needed

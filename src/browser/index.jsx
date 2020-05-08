@@ -105,9 +105,9 @@ function showBadgeOSX(sessionExpired, unreadCount, mentionCount) {
 function showBadgeLinux(sessionExpired, unreadCount, mentionCount) {
   if (remote.app.isUnityRunning()) {
     if (sessionExpired) {
-      remote.app.setBadgeCount(mentionCount + 1);
+      remote.app.badgeCount = mentionCount + 1;
     } else {
-      remote.app.setBadgeCount(mentionCount);
+      remote.app.badgeCount = mentionCount;
     }
   }
 
