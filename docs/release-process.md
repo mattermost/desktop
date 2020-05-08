@@ -109,7 +109,7 @@ The final release is cut. If an urgent and important issue needs to be addressed
 1. Release Manager:
     - Post this checklist in Desktop App channel
     - Verify all items in the last posted release checklist are complete
-    - Update the links in [Mattermost download page](https://www.mattermost.org/download/) and [installation guides](https://docs.mattermost.com/install/desktop.html)
+    - Update the links in [Mattermost download page](https://www.mattermost.org/download/), [installation guides](https://docs.mattermost.com/install/desktop.html) and [MSI installer guides](https://docs.mattermost.com/install/desktop-msi-gpo.html)
     - Merge changelog PR after review is complete
        - If there is a security fix, confirm the Changelog recommends upgrade, with a note mentioning the security level and thanking the security researcher
     - Draft [Mattermost Security Updates](http://about.mattermost.com/security-updates/) if applicable, but do not post until seven days after official release
