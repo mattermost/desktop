@@ -3,7 +3,6 @@
 // See LICENSE.txt for license information.
 import React from 'react';
 import PropTypes from 'prop-types';
-import {Modal} from 'react-bootstrap';
 
 import DestructiveConfirmationModal from './DestructiveConfirmModal.jsx';
 
