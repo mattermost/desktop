@@ -912,15 +912,15 @@ export default class SettingsPage extends React.Component {
 
     const linuxTrayWarning = (
       <DestructiveConfirmationModal
-        title='Please read carefully before turning this on'
+        title='Please read carefully before turning this option on'
         body={
           <React.Fragment>
-            <span>{
+            <p>{
               `There is a known issue on linux distributions with old versions of libappnotify. 
               Please read the following information in order to know if it's safe to turn on or possible workarounds.`
             }
-            </span>
-            <ExternalLink href={'https://mattermost.atlassian.net/browse/MM-23228'}>{'More Information.'}</ExternalLink>
+            </p>
+            <p><ExternalLink href={'https://mattermost.atlassian.net/browse/MM-23228'}>{'More Information.'}</ExternalLink></p>
           </React.Fragment>
         }
         acceptLabel='Continue'

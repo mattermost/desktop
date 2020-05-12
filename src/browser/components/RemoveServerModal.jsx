@@ -16,7 +16,7 @@ export default function RemoveServerModal(props) {
       acceptLabel='Remove'
       cancelLabel='Cancel'
       body={(
-        <Modal.Body>
+        <React.Fragment>
           <p>
             {'This will remove the server from your Desktop App but will not delete any of its data' +
           ' - you can add the server back to the app at any time.'}
@@ -24,7 +24,7 @@ export default function RemoveServerModal(props) {
           <p>
             {'Confirm you wish to remove the '}<strong>{serverName}</strong>{' server?'}
           </p>
-        </Modal.Body>
+        </React.Fragment>
       )}
     />
   );

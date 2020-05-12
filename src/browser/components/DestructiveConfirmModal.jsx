@@ -19,7 +19,9 @@ export default function DestructiveConfirmationModal(props) {
       <Modal.Header closeButton={true}>
         <Modal.Title>{title}</Modal.Title>
       </Modal.Header>
-      {body}
+      <Modal.Body>
+        {body}
+      </Modal.Body>
       <Modal.Footer>
         <Button
           bsStyle='link'
