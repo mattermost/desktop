@@ -23,6 +23,8 @@ import closeButton from '../../assets/titlebar/chrome-close.svg';
 import TeamList from './TeamList.jsx';
 import AutoSaveIndicator from './AutoSaveIndicator.jsx';
 import TabBar from './TabBar.jsx';
+import DestructiveConfirmationModal from './DestructiveConfirmModal.jsx';
+import ExternalLink from './externalLink.jsx';
 
 const CONFIG_TYPE_SERVERS = 'servers';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
@@ -42,6 +44,7 @@ export default class SettingsPage extends React.Component {
     this.state = this.convertConfigDataToState(config.data);
     this.setState({
       maximized: false,
+      showLinuxWarning: false,
     });
 
     this.trayIconThemeRef = React.createRef();
@@ -297,8 +300,7 @@ export default class SettingsPage extends React.Component {
     backToIndex();
   }
 
-  handleChangeShowTrayIcon = () => {
-    const shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
+  changeShowTrayIcon = (shouldShowTrayIcon) => {
     setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'showTrayIcon', data: shouldShowTrayIcon});
     this.setState({
       showTrayIcon: shouldShowTrayIcon,
@@ -308,6 +310,16 @@ export default class SettingsPage extends React.Component {
       this.setState({
         minimizeToTray: false,
       });
+    }
+  };
+
+  handleChangeShowTrayIcon = () => {
+    const shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
+
+    if (process.platform === 'linux' & shouldShowTrayIcon) {
+      this.setState({showLinuxWarning: true});
+    } else {
+      this.changeShowTrayIcon(shouldShowTrayIcon);
     }
   }
 
@@ -898,6 +910,34 @@ export default class SettingsPage extends React.Component {
       </Row>
     ) : null;
 
+    const linuxTrayWarning = (
+      <DestructiveConfirmationModal
+        title='Please read carefully before turning this on'
+        body={
+          <React.Fragment>
+            <span>{
+              `There is a known issue on linux distributions with old versions of libappnotify. 
+              Please read the following information in order to know if it's safe to turn on or possible workarounds.`
+            }
+            </span>
+            <ExternalLink href={'https://mattermost.atlassian.net/browse/MM-23228'}>{'More Information.'}</ExternalLink>
+          </React.Fragment>
+        }
+        acceptLabel='Continue'
+        cancelLabel='Cancel'
+        onAccept={() => {
+          this.changeShowTrayIcon(true);
+          this.setState({showLinuxWarning: false});
+        }}
+        onCancel={
+          () => {
+            this.setState({showLinuxWarning: false});
+          }
+        }
+        show={this.state.showLinuxWarning}
+      />
+    );
+
     return (
       <div
         className='container-fluid'
@@ -905,6 +945,7 @@ export default class SettingsPage extends React.Component {
           height: '100%',
         }}
       >
+        {linuxTrayWarning}
         { topRow }
         <div
           style={{
