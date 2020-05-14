@@ -20,6 +20,7 @@ import upgradeAutoLaunch from './main/autoLaunch';
 import RegistryConfig from './common/config/RegistryConfig';
 import Config from './common/config';
 import CertificateStore from './main/certificateStore';
+import TrustedOriginsStore from './main/trustedOrigins';
 import createMainWindow from './main/mainWindow';
 import appMenu from './main/menus/app';
 import trayMenu from './main/menus/tray';
@@ -59,6 +60,7 @@ let mainWindow = null;
 let popupWindow = null;
 let hideOnStartup = null;
 let certificateStore = null;
+let trustedOriginsStore = null;
 let spellChecker = null;
 let deeplinkingUrl = null;
 let scheme = null;
@@ -180,6 +182,8 @@ function initializeAppEventListeners() {
 
 function initializeBeforeAppReady() {
   certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
+  trustedOriginsStore = new TrustedOriginsStore(path.resolve(app.getPath('userData'), 'trustedOrigins.json'));
+  trustedOriginsStore.load();
 
   // prevent using a different working directory, which happens on windows running after installation.
   const expectedPath = path.dirname(process.execPath);
@@ -417,10 +421,17 @@ function handleAppGPUProcessCrashed(event, killed) {
 
 function handleAppLogin(event, webContents, request, authInfo, callback) {
   event.preventDefault();
-  if (!isTrustedURL(request.url)) {
-    return;
-  }
-  loginCallbackMap.set(JSON.stringify(request), callback);
+  const parsedURL = new URL(request.url);
+  const server = Utils.getServer(parsedURL, config.teams);
+
+  console.log(`got a login request for ${request.url} for server ${server}`);
+
+  // if (!isTrustedURL(request.url) && !isCustomLoginURL(parsedURL, server)) {
+  //   return;
+  // }
+  console.log(`callback is null? ${callback === null}`);
+  console.log(`request is ${JSON.stringify(request)}`);
+  loginCallbackMap.set(request.url, callback);
   mainWindow.webContents.send('login-request', request, authInfo);
 }
 
@@ -457,21 +468,26 @@ function handleAppWebContentsCreated(dc, contents) {
   });
 
   contents.on('will-navigate', (event, url) => {
+    console.log(`will navigate to ${url}`);
     const contentID = event.sender.id;
     const parsedURL = Utils.parseURL(url);
     const server = Utils.getServer(parsedURL, config.teams);
 
     if ((server !== null && Utils.isTeamUrl(server.url, parsedURL)) || isTrustedPopupWindow(event.sender)) {
+      console.log('a');
       return;
     }
 
     if (isCustomLoginURL(parsedURL, server)) {
+      console.log('b');
       return;
     }
     if (parsedURL.protocol === 'mailto:') {
+      console.log('c');
       return;
     }
     if (customLogins[contentID].inProgress) {
+      console.log('d');
       return;
     }
 
@@ -808,8 +824,13 @@ function initializeAfterAppReady() {
 //
 
 function handleLoginCredentialsEvent(event, request, user, password) {
-  const callback = loginCallbackMap.get(JSON.stringify(request));
+  console.log('back from renderer\'s basic auth');
+  const callback = loginCallbackMap.get(request.url);
+  console.log(`is callback null? ${callback !== null}`);
+  console.log(`request is: ${JSON.stringify(request)}`);
+  console.log(`available keys are: ${Array.from(loginCallbackMap.keys())}`);
   if (callback != null) {
+    console.log('calling callback');
     callback(user, password);
   }
 }

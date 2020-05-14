@@ -92,4 +92,16 @@ describe('Utils', () => {
       assert.equal(Utils.isInternalURL(targetURL, currentURL, basename), true);
     });
   });
+
+  describe('getHost', () => {
+    it('should return the origin of a well formed url', () => {
+      const myurl = 'https://mattermost.com/download';
+      assert.equal(Utils.getHost(myurl), 'https://mattermost.com');
+    });
+
+    it('shoud raise an error on malformed urls', () => {
+      const myurl = 'http://example.com:-80/';
+      assert.throws(() => Utils.getHost(myurl), Error);
+    });
+  });
 });

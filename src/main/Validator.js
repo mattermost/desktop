@@ -93,6 +93,16 @@ const certificateStoreSchema = Joi.object().pattern(
   })
 );
 
+const originPermissionsSchema = Joi.object().pattern(
+  Joi.string().valid('canBasicAuth'), // we can add more permissions later if we want
+  Joi.boolean().default(false),
+);
+
+const trustedOriginsSchema = Joi.object().pattern(
+  Joi.string().uri(),
+  originPermissionsSchema,
+);
+
 const allowedProtocolsSchema = Joi.array().items(Joi.string().regex(/^[a-z-]+:$/i));
 
 // validate bounds_info.json
@@ -165,6 +175,14 @@ export function validateCertificateStore(data) {
 // validate allowedProtocols.json
 export function validateAllowedProtocols(data) {
   return validateAgainstSchema(data, allowedProtocolsSchema);
+}
+
+export function validateTrustedOriginsStore(data) {
+  return validateAgainstSchema(data, trustedOriginsSchema);
+}
+
+export function validateOriginPermissions(data) {
+  return validateAgainstSchema(data, originPermissionsSchema);
 }
 
 function validateAgainstSchema(data, schema) {
