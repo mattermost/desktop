@@ -18,6 +18,17 @@ module.exports = merge(base, {
     path: path.join(__dirname, 'src'),
     filename: '[name]_bundle.js',
   },
+  module: {
+    rules: [{
+      test: /\.js?$/,
+      use: {
+        loader: 'babel-loader',
+        options: {
+          include: ['@babel/plugin-proposal-class-properties']
+        }
+      },
+    }],
+  },
   node: {
     __filename: true,
     __dirname: true,
