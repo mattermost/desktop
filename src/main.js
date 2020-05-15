@@ -431,7 +431,7 @@ function handleAppLogin(event, webContents, request, authInfo, callback) {
   // }
   console.log(`callback is null? ${callback === null}`);
   console.log(`request is ${JSON.stringify(request)}`);
-  loginCallbackMap.set(request.url, callback);
+  loginCallbackMap.set(request.url, callback || null); //if callback is undefined set it to null instead so we know we have set it up with no value
   mainWindow.webContents.send('login-request', request, authInfo);
 }
 
@@ -829,6 +829,10 @@ function handleLoginCredentialsEvent(event, request, user, password) {
   console.log(`is callback null? ${callback !== null}`);
   console.log(`request is: ${JSON.stringify(request)}`);
   console.log(`available keys are: ${Array.from(loginCallbackMap.keys())}`);
+  if (typeof callback === 'undefined') {
+    console.error(`Failed to retrieve login callback for ${request.url}`);
+    return;
+  }
   if (callback != null) {
     console.log('calling callback');
     callback(user, password);

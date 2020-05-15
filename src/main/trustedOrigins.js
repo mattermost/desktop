@@ -5,14 +5,18 @@
 
 import fs from 'fs';
 
-import * as Validator from './Validator';
-import getHost from './utils';
+import Utils from '../utils/util.js';
+import {objectFromEntries} from '../utils/objects.js';
 
+import * as Validator from './Validator';
+
+export const BASIC_AUTH_PERMISSION = 'canBasicAuth';
 export default class TrustedOriginsStore {
   constructor(storeFile) {
     this.storeFile = storeFile;
   }
 
+  // don't use this, is for ease of mocking it on testing
   readFromFile = () => {
     let storeData;
     try {
@@ -32,11 +36,16 @@ export default class TrustedOriginsStore {
         throw new Error('Provided TrustedOrigins file does not validate, using defaults instead.');
       }
     }
-    this.data = result;
+    this.data = new Map(Object.entries(result));
+  }
+
+  // don't use this, is for ease of mocking it on testing
+  saveToFile(stringMap) {
+    fs.writeFileSync(this.storeFile, stringMap);
   }
 
   save = () => {
-    fs.writeFileSync(this.storeFile, JSON.stringify(this.data, null, '  '));
+    this.saveToFile(JSON.stringify(objectFromEntries((this.data.entries())), null, '  '));
   };
 
   // if permissions or targetUrl are invalid, this function will throw an error
@@ -45,14 +54,14 @@ export default class TrustedOriginsStore {
     if (!validPermissions) {
       throw new Error(`Invalid permissions set for trusting ${targetURL}`);
     }
-    this.data[getHost(targetURL)] = validPermissions;
+    this.data.set(Utils.getHost(targetURL), validPermissions);
   };
 
-  remove = (targetURL) => {
+  delete = (targetURL) => {
     let host;
     try {
-      host = getHost(targetURL);
-      delete this.data[host];
+      host = Utils.getHost(targetURL);
+      this.data.delete(host);
     } catch {
       return false;
     }
@@ -60,19 +69,21 @@ export default class TrustedOriginsStore {
   }
 
   isExisting = (targetURL) => {
-    return Boolean(this.data[getHost(targetURL)]);
+    return (typeof this.data.get(Utils.getHost(targetURL)) !== 'undefined');
   };
 
   checkPermission = (targetURL, permission) => {
     let origin;
     try {
-      origin = getHost(targetURL);
-    } catch {
+      origin = Utils.getHost(targetURL);
+    } catch (e) {
+      console.error(`invalid host to retrieve permissions: ${targetURL}: ${e}`);
       return false;
     }
 
-    const urlPermissions = this.data[origin];
+    const urlPermissions = this.data.get(origin);
     if (!urlPermissions) {
+      console.error(`can't check permissions on unknown site ${targetURL}, defaulting to false`);
       return false;
     }
 

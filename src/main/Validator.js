@@ -93,14 +93,15 @@ const certificateStoreSchema = Joi.object().pattern(
   })
 );
 
-const originPermissionsSchema = Joi.object().pattern(
-  Joi.string().valid('canBasicAuth'), // we can add more permissions later if we want
-  Joi.boolean().default(false),
-);
+const originPermissionsSchema = Joi.object().keys({
+  canBasicAuth: Joi.boolean().default(false), // we can add more permissions later if we want
+});
 
-const trustedOriginsSchema = Joi.object().pattern(
+const trustedOriginsSchema = Joi.object({}).pattern(
   Joi.string().uri(),
-  originPermissionsSchema,
+  Joi.object().keys({
+    canBasicAuth: Joi.boolean().default(false), // we can add more permissions later if we want
+  }),
 );
 
 const allowedProtocolsSchema = Joi.array().items(Joi.string().regex(/^[a-z-]+:$/i));
@@ -178,11 +179,13 @@ export function validateAllowedProtocols(data) {
 }
 
 export function validateTrustedOriginsStore(data) {
-  return validateAgainstSchema(data, trustedOriginsSchema);
+  const jsonData = (typeof data === 'object' ? data : JSON.parse(data));
+  return validateAgainstSchema(jsonData, trustedOriginsSchema);
 }
 
 export function validateOriginPermissions(data) {
-  return validateAgainstSchema(data, originPermissionsSchema);
+  const jsonData = (typeof data === 'object' ? data : JSON.parse(data));
+  return validateAgainstSchema(jsonData, originPermissionsSchema);
 }
 
 function validateAgainstSchema(data, schema) {
