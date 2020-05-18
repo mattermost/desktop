@@ -126,11 +126,11 @@ export default class PermissionModal extends React.Component {
         <Modal.Footer>
           <div>
             <Button
-              variant='warning'
+              bsStyle='warning'
               onClick={grant}
             >{'Grant'}</Button>
             <Button
-              variant='link'
+              bsStyle='link'
               onClick={deny}
             >{'Deny'}</Button>
           </div>
