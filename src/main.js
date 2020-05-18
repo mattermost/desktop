@@ -427,8 +427,6 @@ function handleAppLogin(event, webContents, request, authInfo, callback) {
   const parsedURL = new URL(request.url);
   const server = Utils.getServer(parsedURL, config.teams);
 
-  log.debug(`got a login request for ${request.url} for server ${server}`);
-  log.info(callback);
   loginCallbackMap.set(request.url, typeof callback === 'undefined' ? null : callback); // if callback is undefined set it to null instead so we know we have set it up with no value
   if (isTrustedURL(request.url) || isCustomLoginURL(parsedURL, server) || trustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
     mainWindow.webContents.send('login-request', request, authInfo);
@@ -836,10 +834,8 @@ function handleLoginCredentialsEvent(event, request, user, password) {
     return;
   }
   if (callback != null) {
-    log.error(`DELETE ME: login with ${user} and ${password}`);
     callback(user, password);
   }
-  log.info('DELETE ME: should be logged in');
 }
 
 function handleDownloadURLEvent(event, url) {
