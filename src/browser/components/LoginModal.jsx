@@ -8,23 +8,27 @@ import {Button, Col, ControlLabel, Form, FormGroup, FormControl, Modal} from 're
 export default class LoginModal extends React.Component {
   constructor(props) {
     super(props);
-    this.username = '';
-    this.password = '';
+    this.state = {
+      username: '',
+      password: '',
+    };
   }
 
   handleSubmit = (event) => {
     event.preventDefault();
-    this.props.onLogin(this.props.request, this.username, this.password);
-    this.username = '';
-    this.password = '';
+    this.props.onLogin(this.props.request, this.state.username, this.state.password);
+    this.setState({
+      username: '',
+      password: '',
+    });
   }
 
   setUsername = (e) => {
-    this.username = e.target.value;
+    this.setState({username: e.target.value});
   }
 
   setPassword = (e) => {
-    this.password = e.target.value;
+    this.setState({password: e.target.value});
   }
 
   render() {
@@ -60,6 +64,7 @@ export default class LoginModal extends React.Component {
                   type='text'
                   placeholder='User Name'
                   onChange={this.setUsername}
+                  value={this.state.username}
                   onClick={(e) => {
                     e.stopPropagation();
                   }}
@@ -76,6 +81,7 @@ export default class LoginModal extends React.Component {
                   type='password'
                   placeholder='Password'
                   onChange={this.setPassword}
+                  value={this.state.password}
                   onClick={(e) => {
                     e.stopPropagation();
                   }}
