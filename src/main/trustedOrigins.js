@@ -10,7 +10,6 @@ import {objectFromEntries} from '../utils/objects.js';
 
 import * as Validator from './Validator';
 
-export const BASIC_AUTH_PERMISSION = 'canBasicAuth';
 export default class TrustedOriginsStore {
   constructor(storeFile) {
     this.storeFile = storeFile;
@@ -49,6 +48,8 @@ export default class TrustedOriginsStore {
   };
 
   // if permissions or targetUrl are invalid, this function will throw an error
+  // this function stablishes all the permissions at once, overwriting whatever was before
+  // to enable just one permission use addPermission instead.
   set = (targetURL, permissions) => {
     const validPermissions = Validator.validateOriginPermissions(permissions);
     if (!validPermissions) {
@@ -56,6 +57,14 @@ export default class TrustedOriginsStore {
     }
     this.data.set(Utils.getHost(targetURL), validPermissions);
   };
+
+  // enables usage of `targetURL` for `permission`
+  addPermission = (targetURL, permission) => {
+    const origin = Utils.getHost(targetURL);
+    const currentPermissions = this.data.get(origin) || {};
+    currentPermissions[permission] = true;
+    this.set(origin, currentPermissions);
+  }
 
   delete = (targetURL) => {
     let host;
@@ -72,6 +81,7 @@ export default class TrustedOriginsStore {
     return (typeof this.data.get(Utils.getHost(targetURL)) !== 'undefined');
   };
 
+  // if user hasn't set his preferences, it will return undefined (falsy)
   checkPermission = (targetURL, permission) => {
     let origin;
     try {
@@ -82,11 +92,6 @@ export default class TrustedOriginsStore {
     }
 
     const urlPermissions = this.data.get(origin);
-    if (!urlPermissions) {
-      console.error(`can't check permissions on unknown site ${targetURL}, defaulting to false`);
-      return false;
-    }
-
     return urlPermissions[permission];
   }
 }

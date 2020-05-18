@@ -20,7 +20,7 @@ import upgradeAutoLaunch from './main/autoLaunch';
 import RegistryConfig from './common/config/RegistryConfig';
 import Config from './common/config';
 import CertificateStore from './main/certificateStore';
-import TrustedOriginsStore from './main/trustedOrigins';
+import TrustedOriginsStore, {BASIC_AUTH_PERMISSION} from './main/trustedOrigins';
 import createMainWindow from './main/mainWindow';
 import appMenu from './main/menus/app';
 import trayMenu from './main/menus/tray';
@@ -33,6 +33,7 @@ import SpellChecker from './main/SpellChecker';
 import UserActivityMonitor from './main/UserActivityMonitor';
 import Utils from './utils/util';
 import parseArgs from './main/ParseArgs';
+import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL} from './common/permissions';
 
 // pull out required electron components like this
 // as not all components can be referenced before the app is ready
@@ -176,6 +177,8 @@ function initializeAppEventListeners() {
   app.on('select-client-certificate', handleSelectCertificate);
   app.on('gpu-process-crashed', handleAppGPUProcessCrashed);
   app.on('login', handleAppLogin);
+  app.on(GRANT_PERMISSION_CHANNEL, handlePermissionGranted);
+  app.on(DENY_PERMISSION_CHANNEL, handlePermissionDenied);
   app.on('will-finish-launching', handleAppWillFinishLaunching);
   app.on('web-contents-created', handleAppWebContentsCreated);
 }
@@ -426,13 +429,21 @@ function handleAppLogin(event, webContents, request, authInfo, callback) {
 
   console.log(`got a login request for ${request.url} for server ${server}`);
 
-  // if (!isTrustedURL(request.url) && !isCustomLoginURL(parsedURL, server)) {
-  //   return;
-  // }
-  console.log(`callback is null? ${callback === null}`);
-  console.log(`request is ${JSON.stringify(request)}`);
-  loginCallbackMap.set(request.url, callback || null); //if callback is undefined set it to null instead so we know we have set it up with no value
-  mainWindow.webContents.send('login-request', request, authInfo);
+  loginCallbackMap.set(request.url, callback || null); // if callback is undefined set it to null instead so we know we have set it up with no value
+  if (isTrustedURL(request.url) || isCustomLoginURL(parsedURL, server) || trustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
+    mainWindow.webContents.send('login-request', request, authInfo);
+  } else {
+    mainWindow.webContents.send(REQUEST_PERMISSION_CHANNEL, request, authInfo, BASIC_AUTH_PERMISSION);
+  }
+}
+
+function handlePermissionGranted(event, url, permission) {
+  trustedOriginsStore.set(url, permission);
+  trustedOriginsStore.save();
+}
+
+function handlePermissionDenied(event, url, permission, reason) {
+  log.warn(`Permission request denied: ${reason}`);
 }
 
 function handleAppWillFinishLaunching() {
