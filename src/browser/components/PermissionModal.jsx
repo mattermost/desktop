@@ -39,10 +39,10 @@ export default class PermissionModal extends React.Component {
   }
 
   requestBasicAuthPermission(event, request, authInfo, permission) {
-    const key = getKey(event, permission);
+    const key = getKey(request, permission);
     this.requestPermission(key, request.url, permission).then(() => {
       ipcRenderer.send(GRANT_PERMISSION_CHANNEL, request.url, permission);
-      ipcRenderer.sendTo(this.props.webContentsId, 'login-request', event, request, authInfo);
+      ipcRenderer.sendTo(this.props.webContentsId, 'login-request', request, authInfo);
       this.loadNext();
     }).catch((err) => {
       ipcRenderer.send(DENY_PERMISSION_CHANNEL, request.url, permission, err.message);
@@ -113,7 +113,7 @@ export default class PermissionModal extends React.Component {
     return (
       <Modal
         bsClass='modal'
-        show={this.state.current}
+        show={Boolean(this.state.current)}
         id='requestPermissionModal'
         enforceFocus={true}
       >

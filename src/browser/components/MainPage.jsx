@@ -359,6 +359,9 @@ export default class MainPage extends React.Component {
   }
 
   loginRequest = (event, request, authInfo) => {
+    console.log('login request initiated');
+    console.log(request);
+    console.log(authInfo);
     const loginQueue = this.state.loginQueue;
     loginQueue.push({
       request,

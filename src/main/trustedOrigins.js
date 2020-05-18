@@ -5,6 +5,8 @@
 
 import fs from 'fs';
 
+import log from 'electron-log';
+
 import Utils from '../utils/util.js';
 import {objectFromEntries} from '../utils/objects.js';
 
@@ -81,17 +83,21 @@ export default class TrustedOriginsStore {
     return (typeof this.data.get(Utils.getHost(targetURL)) !== 'undefined');
   };
 
-  // if user hasn't set his preferences, it will return undefined (falsy)
+  // if user hasn't set his preferences, it will return null (falsy)
   checkPermission = (targetURL, permission) => {
+    if (!permission) {
+      log.error(`Missing permission request on ${targetURL}`);
+      return null;
+    }
     let origin;
     try {
       origin = Utils.getHost(targetURL);
     } catch (e) {
-      console.error(`invalid host to retrieve permissions: ${targetURL}: ${e}`);
-      return false;
+      log.error(`invalid host to retrieve permissions: ${targetURL}: ${e}`);
+      return null;
     }
 
     const urlPermissions = this.data.get(origin);
-    return urlPermissions[permission];
+    return urlPermissions ? urlPermissions[permission] : null;
   }
 }

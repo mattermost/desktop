@@ -4,8 +4,9 @@
 
 import assert from 'assert';
 
-import TrustedOriginsStore, {BASIC_AUTH_PERMISSION} from '../../../src/main/trustedOrigins.js';
+import TrustedOriginsStore from '../../../src/main/trustedOrigins.js';
 import {objectFromEntries} from '../../../src/utils/objects.js';
+import {BASIC_AUTH_PERMISSION} from '../../../src/common/permissions.js';
 
 function mockTOS(fileName, returnvalue) {
   const tos = new TrustedOriginsStore(fileName);
@@ -35,7 +36,7 @@ describe('Trusted Origins', () => {
     });
 
     it('should drop keys that aren\'t urls', () => {
-      const tos = mockTOS('badobject2', '{"this is not an uri": {"canBasicAuth": true}}');
+      const tos = mockTOS('badobject2', `{"this is not an uri": {"${BASIC_AUTH_PERMISSION}": true}}`);
       tos.load();
       assert.equal(typeof tos.data['this is not an uri'], 'undefined');
     });
@@ -43,7 +44,7 @@ describe('Trusted Origins', () => {
     it('should contain valid data if everything goes right', () => {
       const value = {
         'https://mattermost.com': {
-          canBasicAuth: true,
+          [BASIC_AUTH_PERMISSION]: true,
         }};
       const tos = mockTOS('okfile', JSON.stringify(value));
       tos.load();
@@ -53,10 +54,10 @@ describe('Trusted Origins', () => {
   describe('validate testing permissions', () => {
     const value = {
       'https://mattermost.com': {
-        canBasicAuth: true,
+        [BASIC_AUTH_PERMISSION]: true,
       },
       'https://notmattermost.com': {
-        canBasicAuth: false,
+        [BASIC_AUTH_PERMISSION]: false,
       },
     };
     const tos = mockTOS('permission_test', JSON.stringify(value));
@@ -71,17 +72,20 @@ describe('Trusted Origins', () => {
       assert.equal(tos.checkPermission('https://notmattermost.com', BASIC_AUTH_PERMISSION), false);
     });
     it('should say ko if the uri is not set', () => {
-      assert.equal(tos.checkPermission('https://undefined.com', BASIC_AUTH_PERMISSION), false);
+      assert.equal(tos.checkPermission('https://undefined.com', BASIC_AUTH_PERMISSION), null);
+    });
+    it('should say null if the permission is unknown', () => {
+      assert.equal(tos.checkPermission('https://mattermost.com'), null);
     });
   });
 
   describe('validate deleting permissions', () => {
     const value = {
       'https://mattermost.com': {
-        canBasicAuth: true,
+        [BASIC_AUTH_PERMISSION]: true,
       },
       'https://notmattermost.com': {
-        canBasicAuth: false,
+        [BASIC_AUTH_PERMISSION]: false,
       },
     };
     const tos = mockTOS('permission_test', JSON.stringify(value));
@@ -89,7 +93,7 @@ describe('Trusted Origins', () => {
     it('deleting revokes access', () => {
       assert.equal(tos.checkPermission('https://mattermost.com', BASIC_AUTH_PERMISSION), true);
       tos.delete('https://mattermost.com');
-      assert.equal(tos.checkPermission('https://mattermost.com', BASIC_AUTH_PERMISSION), false);
+      assert.equal(tos.checkPermission('https://mattermost.com', BASIC_AUTH_PERMISSION), null);
     });
   });
 });
