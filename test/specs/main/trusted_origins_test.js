@@ -3,9 +3,9 @@
 'use strict';
 
 import assert from 'assert';
+import 'airbnb-js-shims/target/es2015';
 
 import TrustedOriginsStore from '../../../src/main/trustedOrigins.js';
-import {objectFromEntries} from '../../../src/utils/objects.js';
 import {BASIC_AUTH_PERMISSION} from '../../../src/common/permissions.js';
 
 function mockTOS(fileName, returnvalue) {
@@ -48,7 +48,7 @@ describe('Trusted Origins', () => {
         }};
       const tos = mockTOS('okfile', JSON.stringify(value));
       tos.load();
-      assert.deepEqual(objectFromEntries(tos.data.entries()), value);
+      assert.deepEqual(Object.fromEntries(tos.data.entries()), value);
     });
   });
   describe('validate testing permissions', () => {

@@ -10,6 +10,7 @@ import electron, {nativeTheme} from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import log from 'electron-log';
+import 'airbnb-js-shims/target/es2015';
 
 import {protocols} from '../electron-builder.json';
 

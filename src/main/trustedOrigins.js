@@ -8,7 +8,6 @@ import fs from 'fs';
 import log from 'electron-log';
 
 import Utils from '../utils/util.js';
-import {objectFromEntries} from '../utils/objects.js';
 
 import * as Validator from './Validator';
 
@@ -46,7 +45,7 @@ export default class TrustedOriginsStore {
   }
 
   save = () => {
-    this.saveToFile(JSON.stringify(objectFromEntries((this.data.entries())), null, '  '));
+    this.saveToFile(JSON.stringify(Object.fromEntries((this.data.entries())), null, '  '));
   };
 
   // if permissions or targetUrl are invalid, this function will throw an error
