@@ -14,7 +14,6 @@ function getKey(request, permission) {
 }
 
 export default class PermissionModal extends React.Component {
-
   constructor(props) {
     super(props);
     this.state = {
