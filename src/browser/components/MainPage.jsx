@@ -839,9 +839,7 @@ export default class MainPage extends React.Component {
           onLogin={this.handleLogin}
           onCancel={this.handleLoginCancel}
         />
-        <PermissionModal
-          webContentsId={remote.getCurrentWindow().webContents.id}
-        />
+        <PermissionModal/>
         <SelectCertificateModal
           certificateRequests={this.state.certificateRequests}
           onSelect={this.handleSelectCertificate}

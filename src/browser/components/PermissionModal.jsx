@@ -3,9 +3,8 @@
 /* eslint-disable react/no-set-state */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import {Modal, Button} from 'react-bootstrap';
-import {ipcRenderer} from 'electron';
+import {ipcRenderer, remote} from 'electron';
 
 import {BASIC_AUTH_PERMISSION, REQUEST_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, PERMISSION_DESCRIPTION} from '../../common/permissions';
 import Util from '../../utils/util';
@@ -15,9 +14,6 @@ function getKey(request, permission) {
 }
 
 export default class PermissionModal extends React.Component {
-  static propTypes = {
-    webContentsId: PropTypes.number.isRequired,
-  }
 
   constructor(props) {
     super(props);
@@ -42,7 +38,7 @@ export default class PermissionModal extends React.Component {
     const key = getKey(request, permission);
     this.requestPermission(key, request.url, permission).then(() => {
       ipcRenderer.send(GRANT_PERMISSION_CHANNEL, request.url, permission);
-      ipcRenderer.sendTo(this.props.webContentsId, 'login-request', request, authInfo);
+      ipcRenderer.sendTo(remote.getCurrentWindow().webContents.id, 'login-request', request, authInfo);
       this.loadNext();
     }).catch((err) => {
       ipcRenderer.send(DENY_PERMISSION_CHANNEL, request.url, permission, err.message);
