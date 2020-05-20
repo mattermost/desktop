@@ -23,6 +23,15 @@ export default class LoginModal extends React.Component {
     });
   }
 
+  handleCancel = (event) => {
+    event.preventDefault();
+    this.props.onCancel(this.props.request);
+    this.setState({
+      username: '',
+      password: '',
+    });
+  }
+
   setUsername = (e) => {
     this.setState({username: e.target.value});
   }
@@ -96,7 +105,7 @@ export default class LoginModal extends React.Component {
                     bsStyle='primary'
                   >{'Login'}</Button>
                   { ' ' }
-                  <Button onClick={this.props.onCancel}>{'Cancel'}</Button>
+                  <Button onClick={this.handleCancel}>{'Cancel'}</Button>
                 </div>
               </Col>
             </FormGroup>

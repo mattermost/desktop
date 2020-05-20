@@ -41,6 +41,7 @@ export default class PermissionModal extends React.Component {
       this.loadNext();
     }).catch((err) => {
       ipcRenderer.send(DENY_PERMISSION_CHANNEL, request.url, permission, err.message);
+      ipcRenderer.send('login-cancel', request);
       this.loadNext();
     });
   }

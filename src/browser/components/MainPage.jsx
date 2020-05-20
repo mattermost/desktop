@@ -505,7 +505,9 @@ export default class MainPage extends React.Component {
     this.setState({loginQueue});
   }
 
-  handleLoginCancel = () => {
+  handleLoginCancel = (request) => {
+    ipcRenderer.send('login-cancel', request);
+
     const loginQueue = this.state.loginQueue;
     loginQueue.shift();
     this.setState({loginQueue});

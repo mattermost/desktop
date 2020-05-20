@@ -225,6 +225,7 @@ function initializeBeforeAppReady() {
 function initializeInterCommunicationEventListeners() {
   ipcMain.on('reload-config', handleReloadConfig);
   ipcMain.on('login-credentials', handleLoginCredentialsEvent);
+  ipcMain.on('login-cancel', handleCancelLoginEvent);
   ipcMain.on('download-url', handleDownloadURLEvent);
   ipcMain.on('notified', handleNotifiedEvent);
   ipcMain.on('update-title', handleUpdateTitleEvent);
@@ -837,6 +838,12 @@ function handleLoginCredentialsEvent(event, request, user, password) {
   if (callback != null) {
     callback(user, password);
   }
+  loginCallbackMap.delete(request.url);
+}
+
+function handleCancelLoginEvent(event, request) {
+  log.info(`Cancelling request for ${request.url}`);
+  handleLoginCredentialsEvent(event, request); // we use undefined to cancel the request
 }
 
 function handleDownloadURLEvent(event, url) {
