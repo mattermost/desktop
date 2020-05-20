@@ -12,5 +12,5 @@ export const BASIC_AUTH_PERMISSION = 'canBasicAuth';
 
 // Permission descriptions
 export const PERMISSION_DESCRIPTION = {
-  [BASIC_AUTH_PERMISSION]: 'Basic Web Authentication',
+  [BASIC_AUTH_PERMISSION]: 'Web Authentication',
 };

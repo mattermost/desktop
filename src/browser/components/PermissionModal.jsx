@@ -85,7 +85,7 @@ export default class PermissionModal extends React.Component {
 
   getModalTitle() {
     const {permission} = this.getCurrentData();
-    return `Permission request for: ${PERMISSION_DESCRIPTION[permission]}`;
+    return `Permission Request for ${PERMISSION_DESCRIPTION[permission]}`;
   }
 
   getModalBody() {
@@ -121,13 +121,13 @@ export default class PermissionModal extends React.Component {
         <Modal.Footer>
           <div>
             <Button
-              bsStyle='warning'
+              bsStyle='primary'
               onClick={grant}
-            >{'Grant'}</Button>
+            >{'Accept'}</Button>
             <Button
               bsStyle='link'
               onClick={deny}
-            >{'Deny'}</Button>
+            >{'Cancel'}</Button>
           </div>
         </Modal.Footer>
       </Modal>
