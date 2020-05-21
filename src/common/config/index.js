@@ -334,6 +334,7 @@ export default class Config extends EventEmitter {
   sortUnorderedTeams(teams) {
     // We want to preserve the array order of teams in the config, otherwise a lot of bugs will occur
     const mappedTeams = teams.map((team, index) => ({team, originalOrder: index}));
+
     // Make a best pass at interpreting sort order. If an order is not specified, assume it is 0.
     //
     const newTeams = mappedTeams.sort((x, y) => {
