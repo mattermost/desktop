@@ -842,7 +842,7 @@ function handleLoginCredentialsEvent(event, request, user, password) {
 }
 
 function handleCancelLoginEvent(event, request) {
-  log.info(`Cancelling request for ${request.url}`);
+  log.info(`Cancelling request for ${request ? request.url : 'unknown'}`);
   handleLoginCredentialsEvent(event, request); // we use undefined to cancel the request
 }
 

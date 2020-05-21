@@ -5,6 +5,7 @@
 import React from 'react';
 import {Modal, Button} from 'react-bootstrap';
 import {ipcRenderer, remote} from 'electron';
+import {log} from 'electron-log';
 
 import {BASIC_AUTH_PERMISSION, REQUEST_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, PERMISSION_DESCRIPTION} from '../../common/permissions';
 import Util from '../../utils/util';
@@ -68,16 +69,23 @@ export default class PermissionModal extends React.Component {
     if (this.state.current) {
       return this.state.tracker.get(this.state.current);
     }
-    return {};
+    return {
+      grant: () => {
+        const err = new Error();
+        log.error(`There isn't any permission to grant access to.\n Stack trace:\n${err.stack}`);
+      },
+      deny: () => {
+        const err = new Error();
+        log.error(`There isn't any permission to deny access to.\n Stack trace:\n${err.stack}`);
+      }
+    };
   }
 
   loadNext() {
     const tracker = new Map(this.state.tracker);
     tracker.delete(this.state.current);
-    let current = null;
-    if (tracker.size > 0) {
-      current = tracker.keys().next();
-    }
+    const nextKey = tracker.keys().next();
+    const current = nextKey.done ? null : nextKey.value;
     this.setState({
       tracker,
       current,
