@@ -8,7 +8,10 @@ import {ipcRenderer, remote} from 'electron';
 import {log} from 'electron-log';
 
 import {BASIC_AUTH_PERMISSION, REQUEST_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, PERMISSION_DESCRIPTION} from '../../common/permissions';
+
 import Util from '../../utils/util';
+
+import ExternalLink from './externalLink.jsx';
 
 function getKey(request, permission) {
   return `${request.url}:${permission}`;
@@ -94,19 +97,21 @@ export default class PermissionModal extends React.Component {
 
   getModalTitle() {
     const {permission} = this.getCurrentData();
-    return `Permission Request for ${PERMISSION_DESCRIPTION[permission]}`;
+    return `${PERMISSION_DESCRIPTION[permission]} Required`;
   }
 
   getModalBody() {
     const {url, permission} = this.getCurrentData();
-    const origin = url ? Util.getHost(url) : 'unknown origin';
+    const originDisplay = url ? Util.getHost(url) : 'unknown origin';
+    const originLink = url ? originDisplay : '';
     return (
       <div>
         <p>
-          {`A site external to your configured Mattermost server has requested to be able to perform the following action: ${PERMISSION_DESCRIPTION[permission]}`}
+          {`A site that's not included in your Mattermost server configuration requires access for ${PERMISSION_DESCRIPTION[permission]}.`}
         </p>
         <p>
-          {`Request originated from: ${origin}`}
+          <span>{'This request originated from '}</span>
+          <ExternalLink href={originLink}>{`${originDisplay}`}</ExternalLink>
         </p>
       </div>
     );
@@ -117,6 +122,7 @@ export default class PermissionModal extends React.Component {
     return (
       <Modal
         bsClass='modal'
+        className='permission-modal'
         show={Boolean(this.state.current)}
         id='requestPermissionModal'
         enforceFocus={true}
@@ -127,16 +133,15 @@ export default class PermissionModal extends React.Component {
         <Modal.Body>
           {this.getModalBody()}
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className={'remove-border'}>
           <div>
+            <Button
+              onClick={deny}
+            >{'Cancel'}</Button>
             <Button
               bsStyle='primary'
               onClick={grant}
             >{'Accept'}</Button>
-            <Button
-              bsStyle='link'
-              onClick={deny}
-            >{'Cancel'}</Button>
           </div>
         </Modal.Footer>
       </Modal>
