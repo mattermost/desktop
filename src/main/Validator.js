@@ -14,10 +14,8 @@ const minWindowHeight = 240;
 
 const argsSchema = Joi.object({
   hidden: Joi.boolean(),
-  'disable-dev-mode': Joi.boolean(),
   disableDevMode: Joi.boolean(),
-  'data-dir': Joi.string(),
-  dataDir: Joi.array().items(Joi.string()),
+  dataDir: Joi.string(),
   version: Joi.boolean(),
 });
 
