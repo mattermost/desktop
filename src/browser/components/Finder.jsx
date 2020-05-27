@@ -87,7 +87,12 @@ export default class Finder extends React.Component {
               placeholder=''
               value={this.state.searchTxt}
               onChange={this.searchTxt}
-              onBlur={(e) => this.props.inputFocus(e, false)}
+              onBlur={(e) => {
+                const err = new Error();
+                console.log(err.stack);
+                this.props.inputFocus(e, false);
+              }}
+              onClick={(e) => this.props.inputFocus(e, true)}
               onFocus={(e) => this.props.inputFocus(e, true)}
               ref={(input) => {
                 this.searchInput = input;

@@ -57,6 +57,8 @@ export default class MainPage extends React.Component {
       certificateRequests: [],
       maximized: false,
       showNewTeamModal: false,
+      focusFinder: false,
+      finderVisible: false,
     };
   }
 
@@ -106,24 +108,24 @@ export default class MainPage extends React.Component {
     // Due to a bug in Chrome on macOS, mousemove events from the webview won't register when the webview isn't in focus,
     // thus you can't drag tabs unless you're right on the container.
     // this makes it so your tab won't get stuck to your cursor no matter where you mouse up
-    if (process.platform === 'darwin') {
-      self.topBar.current.addEventListener('mouseleave', () => {
-        if (event.target === self.topBar.current) {
-          const upEvent = document.createEvent('MouseEvents');
-          upEvent.initMouseEvent('mouseup');
-          document.dispatchEvent(upEvent);
-        }
-      });
+    // if (process.platform === 'darwin') {
+    //   self.topBar.current.addEventListener('mouseleave', () => {
+    //     if (event.target === self.topBar.current) {
+    //       const upEvent = document.createEvent('MouseEvents');
+    //       upEvent.initMouseEvent('mouseup');
+    //       document.dispatchEvent(upEvent);
+    //     }
+    //   });
 
-      // Hack for when it leaves the electron window because apparently mouseleave isn't good enough there...
-      self.topBar.current.addEventListener('mousemove', () => {
-        if (event.clientY === 0 || event.clientX === 0 || event.clientX >= window.innerWidth) {
-          const upEvent = document.createEvent('MouseEvents');
-          upEvent.initMouseEvent('mouseup');
-          document.dispatchEvent(upEvent);
-        }
-      });
-    }
+    //   // Hack for when it leaves the electron window because apparently mouseleave isn't good enough there...
+    //   self.topBar.current.addEventListener('mousemove', () => {
+    //     if (event.clientY === 0 || event.clientX === 0 || event.clientX >= window.innerWidth) {
+    //       const upEvent = document.createEvent('MouseEvents');
+    //       upEvent.initMouseEvent('mouseup');
+    //       document.dispatchEvent(upEvent);
+    //     }
+    //   });
+    // }
 
     ipcRenderer.on('login-request', (event, request, authInfo) => {
       self.setState({
@@ -183,25 +185,11 @@ export default class MainPage extends React.Component {
     });
     ipcRenderer.on('download-complete', this.showDownloadCompleteNotification);
 
-    function focusListener() {
-      if (self.state.showNewTeamModal && self.inputRef) {
-        self.inputRef.current().focus();
-      } else {
-        self.handleOnTeamFocused(self.state.key);
-        self.refs[`mattermostView${self.state.key}`].focusOnWebView();
-      }
-      self.setState({unfocused: false});
-    }
-
-    function blurListener() {
-      self.setState({unfocused: true});
-    }
-
     const currentWindow = remote.getCurrentWindow();
-    currentWindow.on('focus', focusListener);
-    currentWindow.on('blur', blurListener);
+    currentWindow.on('focus', self.focusListener);
+    currentWindow.on('blur', self.blurListener);
     window.addEventListener('beforeunload', () => {
-      currentWindow.removeListener('focus', focusListener);
+      currentWindow.removeListener('focus', self.focusListener);
     });
 
     if (currentWindow.isMaximized()) {
@@ -218,7 +206,7 @@ export default class MainPage extends React.Component {
 
     // https://github.com/mattermost/desktop/pull/371#issuecomment-263072803
     currentWindow.webContents.on('devtools-closed', () => {
-      focusListener();
+      self.focusListener();
     });
 
     ipcRenderer.on('open-devtool', () => {
@@ -365,6 +353,20 @@ export default class MainPage extends React.Component {
         }
       });
     }
+  }
+
+  focusListener = () => {
+    if (this.state.showNewTeamModal && this.inputRef) {
+      this.inputRef.current().focus();
+    } else if (!(this.state.finderVisible && this.state.focusFinder)) {
+      this.handleOnTeamFocused(this.state.key);
+      this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+    }
+    this.setState({unfocused: false});
+  }
+
+  blurListener = () => {
+    this.setState({unfocused: true});
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -574,6 +576,7 @@ export default class MainPage extends React.Component {
   }
 
   activateFinder = () => {
+    console.log('activating finder');
     this.setState({
       finderVisible: true,
       focusFinder: true,
@@ -581,12 +584,15 @@ export default class MainPage extends React.Component {
   }
 
   closeFinder = () => {
+    console.log('closing finder');
     this.setState({
       finderVisible: false,
+      focusFinder: false,
     });
   }
 
   inputFocus = (e, focus) => {
+    console.log(`input focus: ${focus}`);
     this.setState({
       focusFinder: focus,
     });
