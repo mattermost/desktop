@@ -77,6 +77,15 @@ export default class Finder extends React.Component {
     });
   }
 
+  inputFocus = (e) => {
+    e.stopPropagation();
+    this.props.inputFocus(e, true);
+  }
+
+  inputBlur = (e) => {
+    this.props.inputFocus(e, false);
+  }
+
   render() {
     return (
       <div id='finder'>
@@ -87,13 +96,8 @@ export default class Finder extends React.Component {
               placeholder=''
               value={this.state.searchTxt}
               onChange={this.searchTxt}
-              onBlur={(e) => {
-                const err = new Error();
-                console.log(err.stack);
-                this.props.inputFocus(e, false);
-              }}
-              onClick={(e) => this.props.inputFocus(e, true)}
-              onFocus={(e) => this.props.inputFocus(e, true)}
+              onBlur={this.inputBlur}
+              onClick={this.inputFocus}
               ref={(input) => {
                 this.searchInput = input;
               }}
