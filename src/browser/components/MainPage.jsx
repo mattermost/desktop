@@ -576,7 +576,6 @@ export default class MainPage extends React.Component {
   }
 
   activateFinder = () => {
-    console.log('activating finder');
     this.setState({
       finderVisible: true,
       focusFinder: true,
@@ -584,7 +583,6 @@ export default class MainPage extends React.Component {
   }
 
   closeFinder = () => {
-    console.log('closing finder');
     this.setState({
       finderVisible: false,
       focusFinder: false,
@@ -592,7 +590,6 @@ export default class MainPage extends React.Component {
   }
 
   inputFocus = (e, focus) => {
-    console.log(`input focus: ${focus}`);
     this.setState({
       focusFinder: focus,
     });
