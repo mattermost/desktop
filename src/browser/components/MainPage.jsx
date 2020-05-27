@@ -586,9 +586,9 @@ export default class MainPage extends React.Component {
     });
   }
 
-  inputBlur = () => {
+  inputFocus = (e, focus) => {
     this.setState({
-      focusFinder: false,
+      focusFinder: focus,
     });
   }
 
@@ -849,7 +849,7 @@ export default class MainPage extends React.Component {
               webviewKey={this.state.key}
               close={this.closeFinder}
               focusState={this.state.focusFinder}
-              inputBlur={this.inputBlur}
+              inputFocus={this.inputFocus}
             />
           ) : null}
         </Grid>

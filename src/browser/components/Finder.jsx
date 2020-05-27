@@ -87,7 +87,8 @@ export default class Finder extends React.Component {
               placeholder=''
               value={this.state.searchTxt}
               onChange={this.searchTxt}
-              onBlur={this.props.inputBlur}
+              onBlur={(e) => this.props.inputFocus(e, false)}
+              onFocus={(e) => this.props.inputFocus(e, true)}
               ref={(input) => {
                 this.searchInput = input;
               }}
@@ -172,5 +173,5 @@ Finder.propTypes = {
   close: PropTypes.func,
   webviewKey: PropTypes.number,
   focusState: PropTypes.bool,
-  inputBlur: PropTypes.func,
+  inputFocus: PropTypes.func,
 };
