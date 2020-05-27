@@ -635,7 +635,6 @@ export default class SettingsPage extends React.Component {
             onTeamClick={(index) => {
               backToIndex(this.state.localTeams[index].order + this.state.buildTeams.length + this.state.registryTeams.length);
             }}
-            modalContainer={this}
           />
         </Col>
       </Row>
