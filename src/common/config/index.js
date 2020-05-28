@@ -332,28 +332,31 @@ export default class Config extends EventEmitter {
    * @param {array} teams to sort
    */
   sortUnorderedTeams(teams) {
+    // We want to preserve the array order of teams in the config, otherwise a lot of bugs will occur
+    const mappedTeams = teams.map((team, index) => ({team, originalOrder: index}));
+
     // Make a best pass at interpreting sort order. If an order is not specified, assume it is 0.
     //
-    const newTeams = teams.sort((x, y) => {
-      if (x.order == null) {
-        x.order = 0;
+    const newTeams = mappedTeams.sort((x, y) => {
+      if (x.team.order == null) {
+        x.team.order = 0;
       }
-      if (y.order == null) {
-        y.order = 0;
+      if (y.team.order == null) {
+        y.team.order = 0;
       }
 
       // once we ensured `order` exists, we can sort numerically
-      return x.order - y.order;
+      return x.team.order - y.team.order;
     });
 
     // Now re-number all items from 0 to (max), ensuring user's sort order is preserved. The
     // new tabbed interface requires an item with order:0 in order to raise the first tab.
     //
-    newTeams.forEach((team, i) => {
-      team.order = i;
+    newTeams.forEach((mappedTeam, i) => {
+      mappedTeam.team.order = i;
     });
 
-    return newTeams;
+    return newTeams.sort((x, y) => x.originalOrder - y.originalOrder).map((mappedTeam) => mappedTeam.team);
   }
 
   // helper functions
