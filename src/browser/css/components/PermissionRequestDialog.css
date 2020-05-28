@@ -42,3 +42,10 @@
 .PermissionRequestDialog-content .PermissionRequestDialog-content-close:hover {
   color: black;
 }
+
+.permission-modal .modal-dialog {
+  max-width: 580px;
+}
+.permission-modal .remove-border {
+  border: none;
+}

@@ -34,6 +34,14 @@ function parseURL(inputURL) {
   }
 }
 
+function getHost(inputURL) {
+  const parsedURL = parseURL(inputURL);
+  if (parsedURL) {
+    return parsedURL.origin;
+  }
+  throw new Error(`Couldn't parse url: ${inputURL}`);
+}
+
 // isInternalURL determines if the target url is internal to the application.
 // - currentURL is the current url inside the webview
 // - basename is the global export from the Mattermost application defining the subpath, if any
@@ -183,4 +191,5 @@ export default {
   isPluginUrl,
   getDisplayBoundaries,
   dispatchNotification,
+  getHost,
 };

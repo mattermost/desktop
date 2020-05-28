@@ -10,6 +10,7 @@ import electron, {nativeTheme} from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import log from 'electron-log';
+import 'airbnb-js-shims/target/es2015';
 
 import {protocols} from '../electron-builder.json';
 
@@ -20,6 +21,7 @@ import upgradeAutoLaunch from './main/autoLaunch';
 import RegistryConfig from './common/config/RegistryConfig';
 import Config from './common/config';
 import CertificateStore from './main/certificateStore';
+import TrustedOriginsStore from './main/trustedOrigins';
 import createMainWindow from './main/mainWindow';
 import appMenu from './main/menus/app';
 import trayMenu from './main/menus/tray';
@@ -32,6 +34,7 @@ import SpellChecker from './main/SpellChecker';
 import UserActivityMonitor from './main/UserActivityMonitor';
 import Utils from './utils/util';
 import parseArgs from './main/ParseArgs';
+import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from './common/permissions';
 
 // pull out required electron components like this
 // as not all components can be referenced before the app is ready
@@ -59,6 +62,7 @@ let mainWindow = null;
 let popupWindow = null;
 let hideOnStartup = null;
 let certificateStore = null;
+let trustedOriginsStore = null;
 let spellChecker = null;
 let deeplinkingUrl = null;
 let scheme = null;
@@ -180,11 +184,13 @@ function initializeAppEventListeners() {
 
 function initializeBeforeAppReady() {
   certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
+  trustedOriginsStore = new TrustedOriginsStore(path.resolve(app.getPath('userData'), 'trustedOrigins.json'));
+  trustedOriginsStore.load();
 
   // prevent using a different working directory, which happens on windows running after installation.
   const expectedPath = path.dirname(process.execPath);
   if (process.cwd() !== expectedPath && !isDev) {
-    console.warn(`Current working directory is ${process.cwd()}, changing into ${expectedPath}`);
+    log.warn(`Current working directory is ${process.cwd()}, changing into ${expectedPath}`);
     process.chdir(expectedPath);
   }
 
@@ -219,6 +225,7 @@ function initializeBeforeAppReady() {
 function initializeInterCommunicationEventListeners() {
   ipcMain.on('reload-config', handleReloadConfig);
   ipcMain.on('login-credentials', handleLoginCredentialsEvent);
+  ipcMain.on('login-cancel', handleCancelLoginEvent);
   ipcMain.on('download-url', handleDownloadURLEvent);
   ipcMain.on('notified', handleNotifiedEvent);
   ipcMain.on('update-title', handleUpdateTitleEvent);
@@ -229,6 +236,8 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('get-spellchecker-locale', handleGetSpellcheckerLocaleEvent);
   ipcMain.on('reply-on-spellchecker-is-ready', handleReplyOnSpellcheckerIsReadyEvent);
   ipcMain.on('selected-client-certificate', handleSelectedCertificate);
+  ipcMain.on(GRANT_PERMISSION_CHANNEL, handlePermissionGranted);
+  ipcMain.on(DENY_PERMISSION_CHANNEL, handlePermissionDenied);
 
   if (shouldShowTrayIcon()) {
     ipcMain.on('update-unread', handleUpdateUnreadEvent);
@@ -334,16 +343,16 @@ function handleSelectCertificate(event, webContents, url, list, callback) {
 function handleSelectedCertificate(event, server, cert) {
   const callback = certificateRequests.get(server);
   if (!callback) {
-    console.error(`there was no callback associated with: ${server}`);
+    log.error(`there was no callback associated with: ${server}`);
     return;
   }
   if (typeof cert === 'undefined') {
-    console.log('user canceled certificate selection');
+    log.info('user canceled certificate selection');
   } else {
     try {
       callback(cert);
     } catch (e) {
-      console.log(`There was a problem using the selected certificate: ${e}`);
+      log.error(`There was a problem using the selected certificate: ${e}`);
     }
   }
 }
@@ -363,7 +372,7 @@ function handleAppCertificateError(event, webContents, url, error, certificate, 
 
     // if we are already showing that error, don't add more dialogs
     if (certificateErrorCallbacks.has(errorID)) {
-      console.log(`Ignoring already shown dialog for ${errorID}`);
+      log.warn(`Ignoring already shown dialog for ${errorID}`);
       certificateErrorCallbacks.set(errorID, callback);
       return;
     }
@@ -417,11 +426,24 @@ function handleAppGPUProcessCrashed(event, killed) {
 
 function handleAppLogin(event, webContents, request, authInfo, callback) {
   event.preventDefault();
-  if (!isTrustedURL(request.url)) {
-    return;
+  const parsedURL = new URL(request.url);
+  const server = Utils.getServer(parsedURL, config.teams);
+
+  loginCallbackMap.set(request.url, typeof callback === 'undefined' ? null : callback); // if callback is undefined set it to null instead so we know we have set it up with no value
+  if (isTrustedURL(request.url) || isCustomLoginURL(parsedURL, server) || trustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
+    mainWindow.webContents.send('login-request', request, authInfo);
+  } else {
+    mainWindow.webContents.send(REQUEST_PERMISSION_CHANNEL, request, authInfo, BASIC_AUTH_PERMISSION);
   }
-  loginCallbackMap.set(JSON.stringify(request), callback);
-  mainWindow.webContents.send('login-request', request, authInfo);
+}
+
+function handlePermissionGranted(event, url, permission) {
+  trustedOriginsStore.addPermission(url, permission);
+  trustedOriginsStore.save();
+}
+
+function handlePermissionDenied(event, url, permission, reason) {
+  log.warn(`Permission request denied: ${reason}`);
 }
 
 function handleAppWillFinishLaunching() {
@@ -808,10 +830,20 @@ function initializeAfterAppReady() {
 //
 
 function handleLoginCredentialsEvent(event, request, user, password) {
-  const callback = loginCallbackMap.get(JSON.stringify(request));
+  const callback = loginCallbackMap.get(request.url);
+  if (typeof callback === 'undefined') {
+    log.error(`Failed to retrieve login callback for ${request.url}`);
+    return;
+  }
   if (callback != null) {
     callback(user, password);
   }
+  loginCallbackMap.delete(request.url);
+}
+
+function handleCancelLoginEvent(event, request) {
+  log.info(`Cancelling request for ${request ? request.url : 'unknown'}`);
+  handleLoginCredentialsEvent(event, request); // we use undefined to cancel the request
 }
 
 function handleDownloadURLEvent(event, url) {
@@ -821,7 +853,7 @@ function handleDownloadURLEvent(event, url) {
         type: 'error',
         message: err.toString(),
       });
-      console.log(err);
+      log.error(err);
     }
   });
 }
@@ -924,11 +956,11 @@ function handleUpdateDictionaryEvent(_, localeSelected) {
         path.resolve(app.getAppPath(), 'node_modules/simple-spellchecker/dict'),
         (err) => {
           if (err) {
-            console.error(err);
+            log.error(err);
           }
         });
     } catch (e) {
-      console.error('couldn\'t load a spellchecker for locale');
+      log.error('couldn\'t load a spellchecker for locale');
     }
   }
 }
@@ -989,7 +1021,6 @@ function handleMainWindowWebContentsCrashed() {
 function isTrustedURL(url) {
   const parsedURL = Utils.parseURL(url);
   if (!parsedURL) {
-    console.log('not an url');
     return false;
   }
   return Utils.getServer(parsedURL, config.teams) !== null;
@@ -1121,7 +1152,6 @@ function wasUpdated(lastAppVersion) {
 
 function clearAppCache() {
   if (mainWindow) {
-    console.log('Clear cache after update');
     mainWindow.webContents.session.clearCache().then(mainWindow.reload);
   } else {
     //Wait for mainWindow
