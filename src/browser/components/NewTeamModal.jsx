@@ -141,7 +141,6 @@ export default class NewTeamModal extends React.Component {
         enforceFocus={true}
         onEntered={() => this.teamNameInputRef.focus()}
         onHide={this.props.onClose}
-        container={this.props.modalContainer}
         restoreFocus={this.props.restoreFocus}
         onKeyDown={(e) => {
           switch (e.key) {
@@ -239,7 +238,6 @@ NewTeamModal.propTypes = {
   team: PropTypes.object,
   editMode: PropTypes.bool,
   show: PropTypes.bool,
-  modalContainer: PropTypes.object,
   restoreFocus: PropTypes.bool,
   currentOrder: PropTypes.number,
   setInputRef: PropTypes.func,

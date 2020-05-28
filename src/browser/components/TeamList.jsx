@@ -155,7 +155,6 @@ export default class TeamList extends React.Component {
           this.props.setAddTeamFormVisibility(false);
         }}
         team={this.state.team}
-        modalContainer={this.props.modalContainer}
       />);
 
     const removeServer = this.props.teams[this.state.indexToRemoveServer];
@@ -169,7 +168,6 @@ export default class TeamList extends React.Component {
           this.handleTeamRemove(this.state.indexToRemoveServer);
           this.closeServerRemoveModal();
         }}
-        modalContainer={this.props.modalContainer}
       />
     );
 
@@ -192,5 +190,4 @@ TeamList.propTypes = {
   toggleAddTeamForm: PropTypes.func,
   setAddTeamFormVisibility: PropTypes.func,
   onTeamClick: PropTypes.func,
-  modalContainer: PropTypes.object,
 };
