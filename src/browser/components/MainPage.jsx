@@ -29,6 +29,7 @@ import HoveringURL from './HoveringURL.jsx';
 import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
 import SelectCertificateModal from './SelectCertificateModal.jsx';
+import PermissionModal from './PermissionModal.jsx';
 import ExtraBar from './ExtraBar.jsx';
 
 export default class MainPage extends React.Component {
@@ -128,17 +129,7 @@ export default class MainPage extends React.Component {
     }
 
     ipcRenderer.on('login-request', (event, request, authInfo) => {
-      self.setState({
-        loginRequired: true,
-      });
-      const loginQueue = self.state.loginQueue;
-      loginQueue.push({
-        request,
-        authInfo,
-      });
-      self.setState({
-        loginQueue,
-      });
+      this.loginRequest(event, request, authInfo);
     });
 
     ipcRenderer.on('select-user-certificate', (_, origin, certificateList) => {
@@ -368,6 +359,17 @@ export default class MainPage extends React.Component {
   blurListener = () => {
     this.setState({unfocused: true});
   }
+  loginRequest = (event, request, authInfo) => {
+    const loginQueue = this.state.loginQueue;
+    loginQueue.push({
+      request,
+      authInfo,
+    });
+    this.setState({
+      loginRequired: true,
+      loginQueue,
+    });
+  };
 
   componentDidUpdate(prevProps, prevState) {
     if (prevState.key !== this.state.key) { // i.e. When tab has been changed
@@ -504,7 +506,9 @@ export default class MainPage extends React.Component {
     this.setState({loginQueue});
   }
 
-  handleLoginCancel = () => {
+  handleLoginCancel = (request) => {
+    ipcRenderer.send('login-cancel', request);
+
     const loginQueue = this.state.loginQueue;
     loginQueue.shift();
     this.setState({loginQueue});
@@ -839,6 +843,7 @@ export default class MainPage extends React.Component {
           onLogin={this.handleLogin}
           onCancel={this.handleLoginCancel}
         />
+        <PermissionModal/>
         <SelectCertificateModal
           certificateRequests={this.state.certificateRequests}
           onSelect={this.handleSelectCertificate}
