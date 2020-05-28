@@ -810,7 +810,6 @@ export default class MainPage extends React.Component {
       <NewTeamModal
         currentOrder={this.props.teams.length}
         show={this.state.showNewTeamModal}
-        restoreFocus={false}
         setInputRef={this.setInputRef}
         onClose={() => {
           this.setState({
