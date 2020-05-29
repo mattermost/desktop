@@ -376,7 +376,7 @@ jobs:
       - update_image:
           apt_opts: "--no-install-recommends jq"
       - notify:
-          message: "Release process for the desktop app ended, new release can be found on (github's releases)[https://github.com/mattermost/desktop/releases]"
+          message: "Release process for the desktop app ended, new release can be found on [GitHub](https://github.com/mattermost/desktop/releases)."
 
 
 workflows:
