@@ -68,7 +68,7 @@
     "file-loader": "^2.0.0",
     "image-webpack-loader": "5.0.0",
     "mdi-react": "^6.2.0",
-    "mocha": "^5.2.0",
+    "mocha": "^7.2.0",
     "mocha-circleci-reporter": "0.0.3",
     "npm-run-all": "^4.1.5",
     "react": "^16.6.3",
@@ -78,8 +78,8 @@
     "style-loader": "^0.23.1",
     "url-loader": "^1.1.2",
     "webpack": "^4.27.0",
-    "webpack-cli": "^3.1.2",
-    "webpack-dev-server": "^3.1.14",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.11.0",
     "webpack-merge": "^4.1.4"
   }
 }
