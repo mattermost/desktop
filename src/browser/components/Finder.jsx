@@ -38,7 +38,10 @@ export default class Finder extends React.Component {
   }
 
   findNext = () => {
-    this.webview.findInPage(this.state.searchTxt);
+    this.webview.findInPage(this.state.searchTxt, {
+      forward: true,
+      findNext: true,
+    });
   };
 
   find = (keyword) => {
@@ -53,7 +56,7 @@ export default class Finder extends React.Component {
   };
 
   findPrev = () => {
-    this.webview.findInPage(this.state.searchTxt, {forward: false});
+    this.webview.findInPage(this.state.searchTxt, {forward: false, findNext: true});
   }
 
   searchTxt = (event) => {

@@ -25,13 +25,13 @@
 
 .finder button {
   border: none;
-  background: #d2d2d2;
+  background: #f0f0f0;
   outline: none;
   height: 26px;
 }
 
 .finder button:hover {
-  background: #f0f0f0;
+  background: #d2d2d2;
 }
 
 .finder-input {
@@ -68,12 +68,17 @@
 }
 
 .finder .finder-close {
-    background: transparent;
-    border: none;
+    border-radius: 3px;
 }
 
 .finder-next {
     border-top-right-radius: 3px;
     border-bottom-right-radius: 3px;
     margin-right: 2px;
+}
+
+.finder-prev {
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+  margin-left: 2px;
 }
