@@ -219,7 +219,9 @@ export default class MattermostView extends React.Component {
       isLoaded: false,
     });
     const webview = this.webviewRef.current;
-    webview.reload();
+    if (webview) {
+      webview.reload();
+    }
   }
 
   clearCacheAndReload = () => {
