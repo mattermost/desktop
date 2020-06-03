@@ -565,6 +565,28 @@ function handleAppWebContentsCreated(dc, contents) {
         userAgent: popupUserAgent[process.platform],
       });
     }
+
+    if (Utils.isTrustedRemoteUrl(server.url, parsedURL)) {
+      popupWindow = new BrowserWindow({
+        backgroundColor: '#000',
+        show: true,
+        width: 800,
+        height: 600,
+        center: true,
+        alwaysOnTop: true,
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+        },
+      });
+      popupWindow.once('closed', () => {
+        popupWindow = null;
+      });
+
+      popupWindow.setMenuBarVisibility(false);
+
+      popupWindow.loadURL(url);
+    }
   });
 
   // implemented to temporarily help solve for https://community-daily.mattermost.com/core/pl/b95bi44r4bbnueqzjjxsi46qiw
@@ -804,7 +826,7 @@ function initializeAfterAppReady() {
 
   // handle permission requests
   // - approve if a supported permission type and the request comes from the renderer or one of the defined servers
-  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
     // is the requested permission type supported?
     if (!supportedPermissionTypes.includes(permission)) {
       callback(false);
@@ -817,7 +839,12 @@ function initializeAfterAppReady() {
       return;
     }
 
-    // get the requesting webContents url
+    // is the request coming from trusted popup window
+    if (isTrustedPopupWindow(webContents)) {
+      callback(true);
+      return;
+    }
+
     const requestingURL = webContents.getURL();
 
     // is the requesting url trusted?

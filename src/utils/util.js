@@ -76,7 +76,17 @@ function isTeamUrl(serverUrl, inputUrl, withApi) {
     return null;
   }
 
-  const nonTeamUrlPaths = ['plugins', 'signup', 'login', 'admin', 'channel', 'post', 'oauth', 'admin_console'];
+  const nonTeamUrlPaths = [
+    'plugins',
+    'signup',
+    'login',
+    'admin',
+    'channel',
+    'post',
+    'oauth',
+    'admin_console',
+    'trusted'
+  ];
   if (withApi) {
     nonTeamUrlPaths.push('api');
   }
@@ -95,6 +105,18 @@ function isPluginUrl(serverUrl, inputURL) {
     equalUrlsIgnoringSubpath(server, parsedURL) &&
     (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}plugins/`) ||
       parsedURL.pathname.toLowerCase().startsWith('/plugins/')));
+}
+
+function isTrustedRemoteUrl(serverUrl, inputURL) {
+  const server = getServerInfo(serverUrl);
+  const parsedURL = parseURL(inputURL);
+  if (!parsedURL || !server) {
+    return false;
+  }
+  return (
+    equalUrlsIgnoringSubpath(server, parsedURL) &&
+    (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}trusted/`) ||
+      parsedURL.pathname.toLowerCase().startsWith('/trusted/')));
 }
 
 function getServer(inputURL, teams) {
@@ -189,6 +211,7 @@ export default {
   getServerInfo,
   isTeamUrl,
   isPluginUrl,
+  isTrustedRemoteUrl,
   getDisplayBoundaries,
   dispatchNotification,
   getHost,
