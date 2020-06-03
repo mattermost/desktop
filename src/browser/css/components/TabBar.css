@@ -5,6 +5,8 @@
   display: flex !important;
   flex-wrap: nowrap;
   justify-content: flex-start;
+  -webkit-app-region: drag;
+  margin-top: 4px;
 }
 
 .TabBar.darkMode {
@@ -31,7 +33,6 @@
   max-height: 32px;
   line-height: 16px;
   margin-right: -1px;
-  margin-top: 4px;
   padding: 6px 0;
   color: rgba(61,60,64,0.7);
   font-family: Arial;
