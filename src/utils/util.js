@@ -13,7 +13,7 @@ function getDomain(inputURL) {
 }
 
 function isValidURL(testURL) {
-  return Boolean(isHttpUri(testURL) || isHttpsUri(testURL));
+  return Boolean(isHttpUri(testURL) || isHttpsUri(testURL)) && parseURL(testURL) !== null;
 }
 
 function isValidURI(testURL) {
