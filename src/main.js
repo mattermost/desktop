@@ -839,7 +839,7 @@ function initializeAfterAppReady() {
       return;
     }
 
-    // is the request coming from trusted popup window
+    // is the requested permission coming from trusted popup window
     if (isTrustedPopupWindow(webContents)) {
       callback(true);
       return;
