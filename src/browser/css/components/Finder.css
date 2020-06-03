@@ -1,3 +1,22 @@
+.finder {
+  position: fixed;
+  top: 0px;
+  right: 200px;
+  padding: 4px;
+  background: #eee;
+  border: 1px solid #d7d7d7;
+  border-top: none;
+  border-right: none;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  font-size: 0px;
+  -webkit-app-region: no-drag;
+}
+
+.finder.macOS {
+  right: 20px;
+}
+
 .finder-input-wrapper {
   display: inline-block;
   position: relative;
@@ -6,14 +25,13 @@
 
 .finder button {
   border: none;
-  background: #d2d2d2;
+  background: #f0f0f0;
   outline: none;
-  font-size: 18px;
   height: 26px;
 }
 
 .finder button:hover {
-  background: #f0f0f0;
+  background: #d2d2d2;
 }
 
 .finder-input {
@@ -50,12 +68,17 @@
 }
 
 .finder .finder-close {
-    background: transparent;
-    border: none;
+    border-radius: 3px;
 }
 
 .finder-next {
     border-top-right-radius: 3px;
     border-bottom-right-radius: 3px;
     margin-right: 2px;
+}
+
+.finder-prev {
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+  margin-left: 2px;
 }

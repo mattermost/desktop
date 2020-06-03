@@ -58,6 +58,8 @@ export default class MainPage extends React.Component {
       certificateRequests: [],
       maximized: false,
       showNewTeamModal: false,
+      focusFinder: false,
+      finderVisible: false,
     };
   }
 
@@ -174,25 +176,11 @@ export default class MainPage extends React.Component {
     });
     ipcRenderer.on('download-complete', this.showDownloadCompleteNotification);
 
-    function focusListener() {
-      if (self.state.showNewTeamModal && self.inputRef) {
-        self.inputRef.current().focus();
-      } else {
-        self.handleOnTeamFocused(self.state.key);
-        self.refs[`mattermostView${self.state.key}`].focusOnWebView();
-      }
-      self.setState({unfocused: false});
-    }
-
-    function blurListener() {
-      self.setState({unfocused: true});
-    }
-
     const currentWindow = remote.getCurrentWindow();
-    currentWindow.on('focus', focusListener);
-    currentWindow.on('blur', blurListener);
+    currentWindow.on('focus', self.focusListener);
+    currentWindow.on('blur', self.blurListener);
     window.addEventListener('beforeunload', () => {
-      currentWindow.removeListener('focus', focusListener);
+      currentWindow.removeListener('focus', self.focusListener);
     });
 
     if (currentWindow.isMaximized()) {
@@ -209,7 +197,7 @@ export default class MainPage extends React.Component {
 
     // https://github.com/mattermost/desktop/pull/371#issuecomment-263072803
     currentWindow.webContents.on('devtools-closed', () => {
-      focusListener();
+      self.focusListener();
     });
 
     ipcRenderer.on('open-devtool', () => {
@@ -358,6 +346,19 @@ export default class MainPage extends React.Component {
     }
   }
 
+  focusListener = () => {
+    if (this.state.showNewTeamModal && this.inputRef) {
+      this.inputRef.current().focus();
+    } else if (!(this.state.finderVisible && this.state.focusFinder)) {
+      this.handleOnTeamFocused(this.state.key);
+      this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+    }
+    this.setState({unfocused: false});
+  }
+
+  blurListener = () => {
+    this.setState({unfocused: true});
+  }
   loginRequest = (event, request, authInfo) => {
     const loginQueue = this.state.loginQueue;
     loginQueue.push({
@@ -588,12 +589,13 @@ export default class MainPage extends React.Component {
   closeFinder = () => {
     this.setState({
       finderVisible: false,
+      focusFinder: false,
     });
   }
 
-  inputBlur = () => {
+  inputFocus = (e, focus) => {
     this.setState({
-      focusFinder: false,
+      focusFinder: focus,
     });
   }
 
@@ -854,7 +856,7 @@ export default class MainPage extends React.Component {
               webviewKey={this.state.key}
               close={this.closeFinder}
               focusState={this.state.focusFinder}
-              inputBlur={this.inputBlur}
+              inputFocus={this.inputFocus}
             />
           ) : null}
         </Grid>
