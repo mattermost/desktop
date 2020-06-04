@@ -8,6 +8,8 @@ import path from 'path';
 
 import {app, dialog} from 'electron';
 
+import log from 'electron-log';
+
 const BUTTON_OK = 'OK';
 const BUTTON_SHOW_DETAILS = 'Show Details';
 const BUTTON_REOPEN = 'Reopen';
@@ -48,8 +50,8 @@ export default class CriticalErrorHandler {
       message: 'The window is no longer responsive.\nDo you wait until the window becomes responsive again?',
       buttons: ['No', 'Yes'],
       defaultId: 0,
-    }).then((result) => {
-      if (result === 0) {
+    }).then(({response}) => {
+      if (response === 0) {
         throw new Error('BrowserWindow \'unresponsive\' event has been emitted');
       }
     });
@@ -76,9 +78,9 @@ export default class CriticalErrorHandler {
           defaultId: buttons.indexOf(BUTTON_REOPEN),
           noLink: true,
         }
-      ).then((result) => {
+      ).then(({response}) => {
         let child;
-        switch (result) {
+        switch (response) {
         case buttons.indexOf(BUTTON_SHOW_DETAILS):
           child = openDetachedExternal(file);
           if (child) {
@@ -93,10 +95,15 @@ export default class CriticalErrorHandler {
           break;
         case buttons.indexOf(BUTTON_REOPEN):
           app.relaunch();
+          app.exit(-1);
           break;
         }
+        throw err;
       });
+    } else {
+      log.err(`Window wasn't ready to handle the error: ${err}\ntrace: ${err.stack}`);
+      throw err;
     }
-    throw err;
   }
 }
+

@@ -57,7 +57,7 @@ function initDialogEvent(mainWindow) {
       ],
       cancelId: 2,
       noLink: true,
-    }).then((response) => {
+    }).then(({response}) => {
       switch (response) {
       case 1: {
         allowedProtocols.push(protocol);
