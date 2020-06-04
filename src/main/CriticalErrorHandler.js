@@ -32,13 +32,6 @@ function openDetachedExternal(url) {
   }
 }
 
-function bindWindowToShowMessageBox(win) {
-  if (win && win.isVisible()) {
-    return dialog.showMessageBox.bind(null, win);
-  }
-  return dialog.showMessageBox;
-}
-
 export default class CriticalErrorHandler {
   constructor() {
     this.mainWindow = null;
@@ -49,16 +42,17 @@ export default class CriticalErrorHandler {
   }
 
   windowUnresponsiveHandler() {
-    const result = dialog.showMessageBox(this.mainWindow, {
+    dialog.showMessageBox(this.mainWindow, {
       type: 'warning',
       title: app.name,
       message: 'The window is no longer responsive.\nDo you wait until the window becomes responsive again?',
       buttons: ['No', 'Yes'],
       defaultId: 0,
+    }).then((result) => {
+      if (result === 0) {
+        throw new Error('BrowserWindow \'unresponsive\' event has been emitted');
+      }
     });
-    if (result === 0) {
-      throw new Error('BrowserWindow \'unresponsive\' event has been emitted');
-    }
   }
 
   processUncaughtExceptionHandler(err) {
@@ -71,31 +65,37 @@ export default class CriticalErrorHandler {
       if (process.platform === 'darwin') {
         buttons.reverse();
       }
-      const showMessageBox = bindWindowToShowMessageBox(this.mainWindow);
-      const result = showMessageBox({
-        type: 'error',
-        title: app.name,
-        message: `The ${app.name} app quit unexpectedly. Click "Show Details" to learn more or "Reopen" to open the application again.\n\nInternal error: ${err.message}`,
-        buttons,
-        defaultId: buttons.indexOf(BUTTON_REOPEN),
-        noLink: true,
-      });
-      switch (result) {
-      case buttons.indexOf(BUTTON_SHOW_DETAILS):
+      const bindWindow = this.mainWindow && this.mainWindow.isVisible() ? this.mainWindow : null;
+      dialog.showMessageBox(
+        bindWindow,
         {
-          const child = openDetachedExternal(file);
+          type: 'error',
+          title: app.name,
+          message: `The ${app.name} app quit unexpectedly. Click "Show Details" to learn more or "Reopen" to open the application again.\n\nInternal error: ${err.message}`,
+          buttons,
+          defaultId: buttons.indexOf(BUTTON_REOPEN),
+          noLink: true,
+        }
+      ).then((result) => {
+        let child;
+        switch (result) {
+        case buttons.indexOf(BUTTON_SHOW_DETAILS):
+          child = openDetachedExternal(file);
           if (child) {
-            child.on('error', (spawnError) => {
-              console.log(spawnError);
-            });
+            child.on(
+              'error',
+              (spawnError) => {
+                console.log(spawnError);
+              }
+            );
             child.unref();
           }
+          break;
+        case buttons.indexOf(BUTTON_REOPEN):
+          app.relaunch();
+          break;
         }
-        break;
-      case buttons.indexOf(BUTTON_REOPEN):
-        app.relaunch();
-        break;
-      }
+      });
     }
     throw err;
   }
