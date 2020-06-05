@@ -95,10 +95,9 @@ export default class CriticalErrorHandler {
           break;
         case buttons.indexOf(BUTTON_REOPEN):
           app.relaunch();
-          app.exit(-1);
           break;
         }
-        throw err;
+        app.exit(-1);
       });
     } else {
       log.err(`Window wasn't ready to handle the error: ${err}\ntrace: ${err.stack}`);
