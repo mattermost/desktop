@@ -79,13 +79,11 @@ body {
 
 .topBar {
   height: 40px;
-  -webkit-app-region: drag;
 }
 
 .topBar>.topBar-bg {
   display: flex;
   overflow: hidden;
-  -webkit-app-region: drag;
   height: 36px;
   background-color: rgba(0,0,0,0.1);
 }
@@ -246,6 +244,7 @@ body {
   z-index: 9;
   background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #e5e5e5 100%);
   -webkit-app-region: drag;
+  margin-top: 4px;
 }
 
 .topBar.darkMode .overlay-gradient {
