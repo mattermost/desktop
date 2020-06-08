@@ -142,7 +142,7 @@ function initialize(appState, mainWindow, notifyOnly = false) {
         buttons: ['Close'],
         title: 'Your Desktop App is up to date',
         message: 'You have the latest version of the Mattermost Desktop App.',
-      }, () => {}); // eslint-disable-line no-empty-function
+      });
     }
     setTimeout(() => {
       autoUpdater.checkForUpdates();
