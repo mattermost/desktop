@@ -79,7 +79,7 @@ describe('browser/settings.html', function desc() {
         waitForVisible('#newServerModal').
         setValue('#teamNameInput', 'TestTeam').
         pause(100).
-        setValue('#teamUrlInput', 'http://example.org').
+        setValue('#teamUrlInput', 'https://demo.mattermost.com/').
         click('#saveNewServerModal').
         waitForVisible('#newServerModal', true).
         waitForVisible('#serversSaveIndicator').
@@ -466,7 +466,7 @@ describe('browser/settings.html', function desc() {
     describe('Valid server url', () => {
       beforeEach(() => {
         return this.app.client.
-          setValue('#teamUrlInput', 'http://example.org').
+          setValue('#teamUrlInput', 'https://demo.mattermost.com/').
           click('#saveNewServerModal');
       });
 
@@ -498,7 +498,7 @@ describe('browser/settings.html', function desc() {
     describe('Valid Team Settings', () => {
       beforeEach(() => {
         return this.app.client.
-          setValue('#teamUrlInput', 'http://example.org').
+          setValue('#teamUrlInput', 'https://demo.mattermost.com/').
           setValue('#teamNameInput', 'TestTeam');
       });
 
@@ -520,7 +520,7 @@ describe('browser/settings.html', function desc() {
         const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
         savedConfig.teams.should.deep.contain({
           name: 'TestTeam',
-          url: 'http://example.org',
+          url: 'https://demo.mattermost.com/',
           order: 2,
         });
       });

@@ -26,7 +26,6 @@ export default class TeamList extends React.Component {
   }
 
   handleTeamRemove = (index) => {
-    console.log(index);
     const teams = this.props.teams;
     const removedOrder = this.props.teams[index].order;
     teams.splice(index, 1);
@@ -136,23 +135,43 @@ export default class TeamList extends React.Component {
             url: newTeam.url,
             order: newTeam.order,
           };
-          if (this.props.showAddTeamForm) {
-            this.props.addServer(teamData);
-          } else {
-            this.props.updateTeam(newTeam.index, teamData);
-          }
-          this.setState({
-            showNewTeamModal: false,
-            showEditTeamForm: false,
-            team: {
-              name: '',
-              url: '',
-              index: false,
-              order: newTeam.order + 1,
-            },
+
+          // Check to ensure url is a Mattermost server
+          fetch(newTeam.url).then((response) => {
+            return response.text();
+          }).then((html) => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            let titleTag = doc.getElementsByTagName('title');
+            if (titleTag[0]) {
+              titleTag = titleTag[0];
+            }
+            if (titleTag && titleTag.innerHTML === 'Mattermost') {
+              // It is a Mattermost server, so proceed with adding it
+              if (this.props.showAddTeamForm) {
+                this.props.addServer(teamData);
+              } else {
+                this.props.updateTeam(newTeam.index, teamData);
+              }
+              this.setState({
+                showNewTeamModal: false,
+                showEditTeamForm: false,
+                team: {
+                  name: '',
+                  url: '',
+                  index: false,
+                  order: newTeam.order + 1,
+                },
+              });
+              this.render();
+              this.props.setAddTeamFormVisibility(false);
+            } else {
+              alert('This does not appear to be a Mattermost server.'); // eslint-disable-line no-alert
+            }
+          }).catch((err) => {
+            alert('There was an error adding the server.'); // eslint-disable-line no-alert
+            console.error(err);
           });
-          this.render();
-          this.props.setAddTeamFormVisibility(false);
         }}
         team={this.state.team}
       />);
