@@ -72,7 +72,6 @@ function createMainWindow(config, options) {
   mainWindow.deeplinkingUrl = options.deeplinkingUrl;
   mainWindow.setMenuBarVisibility(false);
 
-
   const indexURL = global.isDev ? 'http://localhost:8080/browser/index.html' : `file://${app.getAppPath()}/browser/index.html`;
   mainWindow.loadURL(indexURL);
 
