@@ -5,6 +5,7 @@
 // This files uses setState().
 /* eslint-disable react/no-set-state */
 
+import os from 'os';
 import url from 'url';
 
 import React, {Fragment} from 'react';
@@ -704,7 +705,7 @@ export default class MainPage extends React.Component {
     }
 
     let titleBarButtons;
-    if (process.platform !== 'darwin') {
+    if (os.platform() === 'win32' && os.release().startsWith('10')) {
       titleBarButtons = (
         <span className='title-bar-btns'>
           <div
