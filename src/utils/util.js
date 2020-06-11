@@ -113,10 +113,10 @@ function isTrustedRemoteUrl(serverUrl, inputURL) {
   if (!parsedURL || !server) {
     return false;
   }
+  const trustedPaths = getTrustedPaths(); // this function would ideally look into some config (like buildConfig.js) to add `trusted` or any other paths we want to add. It also allows for configuring several of them if needed.
   return (
-    equalUrlsIgnoringSubpath(server, parsedURL) &&
-    (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}trusted/`) ||
-      parsedURL.pathname.toLowerCase().startsWith('/trusted/')));
+    equalUrlsIgnoringSubpath(server, parsedURL) && trustedPaths && trustedPaths.lenght &&
+    trustedPaths.some((trustPath) => (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}${trustPath}/`) || parsedURL.pathname.toLowerCase().startsWith('/${trustPath}/'))));
 }
 
 function getServer(inputURL, teams) {
