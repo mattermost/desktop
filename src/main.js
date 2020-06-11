@@ -540,12 +540,13 @@ function handleAppWebContentsCreated(dc, contents) {
       log.info(`Popup window already open at provided url: ${url}`);
       return;
     }
-    if (Utils.isPluginUrl(server.url, parsedURL)) {
+    if (Utils.isPluginUrl(server.url, parsedURL) || Utils.isTrustedRemoteUrl(server.url, parsedURL)) {
       if (!popupWindow || popupWindow.closed) {
         popupWindow = new BrowserWindow({
           backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
           parent: mainWindow,
           show: false,
+          center: true,
           webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -561,31 +562,14 @@ function handleAppWebContentsCreated(dc, contents) {
 
       // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth
       // should be removed once a proper oAuth2 implementation is setup.
-      popupWindow.loadURL(url, {
-        userAgent: popupUserAgent[process.platform],
-      });
-    }
-
-    if (Utils.isTrustedRemoteUrl(server.url, parsedURL)) {
-      popupWindow = new BrowserWindow({
-        backgroundColor: '#000',
-        show: true,
-        width: 800,
-        height: 600,
-        center: true,
-        alwaysOnTop: true,
-        webPreferences: {
-          nodeIntegration: false,
-          contextIsolation: true,
-        },
-      });
-      popupWindow.once('closed', () => {
-        popupWindow = null;
-      });
-
-      popupWindow.setMenuBarVisibility(false);
-
-      popupWindow.loadURL(url);
+      if (Utils.isTrustedRemoteUrl(server.url, parsedURL)) {
+        //popupWindow.setMenuBarVisibility(false);
+        popupWindow.loadURL(url);
+      } else {
+        popupWindow.loadURL(url, {
+          userAgent: popupUserAgent[process.platform],
+        });
+      }
     }
   });
 
@@ -835,12 +819,6 @@ function initializeAfterAppReady() {
 
     // is the request coming from the renderer?
     if (webContents.id === mainWindow.webContents.id) {
-      callback(true);
-      return;
-    }
-
-    // is the requested permission coming from trusted popup window
-    if (isTrustedPopupWindow(webContents)) {
       callback(true);
       return;
     }
