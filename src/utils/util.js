@@ -87,7 +87,7 @@ function isTeamUrl(serverUrl, inputUrl, withApi) {
   }
 
   // pre process nonTeamUrlPaths
-  const nonTeamUrlPaths = [
+  let nonTeamUrlPaths = [
     'plugins',
     'signup',
     'login',
@@ -98,7 +98,7 @@ function isTeamUrl(serverUrl, inputUrl, withApi) {
     'admin_console',
   ];
   const trustedPaths = getTrustedPaths();
-  nonTeamUrlPaths.concat(trustedPaths);
+  nonTeamUrlPaths = nonTeamUrlPaths.concat(trustedPaths);
 
   if (withApi) {
     nonTeamUrlPaths.push('api');
@@ -130,7 +130,7 @@ function isTrustedRemoteUrl(serverUrl, inputURL) {
   const trustedPaths = getTrustedPaths();
 
   return (
-    equalUrlsIgnoringSubpath(server, parsedURL) && trustedPaths && trustedPaths.lenght &&
+    equalUrlsIgnoringSubpath(server, parsedURL) && trustedPaths && trustedPaths.length &&
     trustedPaths.some((trustPath) => (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}${trustPath}/`) || parsedURL.pathname.toLowerCase().startsWith(`/${trustPath}/`))));
 }
 
