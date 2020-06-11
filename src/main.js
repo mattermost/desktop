@@ -563,7 +563,6 @@ function handleAppWebContentsCreated(dc, contents) {
       // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth
       // should be removed once a proper oAuth2 implementation is setup.
       if (Utils.isTrustedRemoteUrl(server.url, parsedURL)) {
-        //popupWindow.setMenuBarVisibility(false);
         popupWindow.loadURL(url);
       } else {
         popupWindow.loadURL(url, {
