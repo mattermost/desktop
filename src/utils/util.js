@@ -7,6 +7,8 @@ import electron, {remote} from 'electron';
 import log from 'electron-log';
 import {isUri, isHttpUri, isHttpsUri} from 'valid-url';
 
+import buildConfig from '../common/config/buildConfig';
+
 function getDomain(inputURL) {
   const parsedURL = url.parse(inputURL);
   return `${parsedURL.protocol}//${parsedURL.host}`;
@@ -69,6 +71,14 @@ function getServerInfo(serverUrl) {
   return {origin: parsedServer.origin, subpath, url: parsedServer};
 }
 
+function getTrustedPaths() {
+  if (!buildConfig) {
+    return [];
+  }
+
+  return buildConfig.trustedPaths || [];
+}
+
 function isTeamUrl(serverUrl, inputUrl, withApi) {
   const parsedURL = parseURL(inputUrl);
   const server = getServerInfo(serverUrl);
@@ -76,6 +86,7 @@ function isTeamUrl(serverUrl, inputUrl, withApi) {
     return null;
   }
 
+  // pre process nonTeamUrlPaths
   const nonTeamUrlPaths = [
     'plugins',
     'signup',
@@ -85,8 +96,10 @@ function isTeamUrl(serverUrl, inputUrl, withApi) {
     'post',
     'oauth',
     'admin_console',
-    'trusted'
   ];
+  const trustedPaths = getTrustedPaths();
+  nonTeamUrlPaths.concat(trustedPaths);
+
   if (withApi) {
     nonTeamUrlPaths.push('api');
   }
@@ -113,10 +126,12 @@ function isTrustedRemoteUrl(serverUrl, inputURL) {
   if (!parsedURL || !server) {
     return false;
   }
-  const trustedPaths = getTrustedPaths(); // this function would ideally look into some config (like buildConfig.js) to add `trusted` or any other paths we want to add. It also allows for configuring several of them if needed.
+
+  const trustedPaths = getTrustedPaths();
+
   return (
     equalUrlsIgnoringSubpath(server, parsedURL) && trustedPaths && trustedPaths.lenght &&
-    trustedPaths.some((trustPath) => (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}${trustPath}/`) || parsedURL.pathname.toLowerCase().startsWith('/${trustPath}/'))));
+    trustedPaths.some((trustPath) => (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}${trustPath}/`) || parsedURL.pathname.toLowerCase().startsWith(`/${trustPath}/`))));
 }
 
 function getServer(inputURL, teams) {
