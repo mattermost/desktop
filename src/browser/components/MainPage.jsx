@@ -347,8 +347,8 @@ export default class MainPage extends React.Component {
   }
 
   focusListener = () => {
-    if (this.state.showNewTeamModal && this.inputRef) {
-      this.inputRef.current().focus();
+    if (this.state.showNewTeamModal && this.inputRef && this.inputRef.current) {
+      this.inputRef.current.focus();
     } else if (!(this.state.finderVisible && this.state.focusFinder)) {
       this.handleOnTeamFocused(this.state.key);
       this.refs[`mattermostView${this.state.key}`].focusOnWebView();
