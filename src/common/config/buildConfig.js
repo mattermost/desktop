@@ -13,9 +13,9 @@
  * @prop {string} helpLink - The URL for "Help->Learn More..." menu item.
  *                           If null is specified, the menu disappears.
  * @prop {boolean} enableServerManagement - Whether users can edit servers configuration.
- * @prop {[]} trustedPaths - Defines which paths are trusted
  *                                          Specify at least one server for "defaultTeams"
  *                                          when "enableServerManagement is set to false
+ * @prop {[]} trustedPaths - Defines which paths are trusted
  */
 const buildConfig = {
   defaultTeams: [/*

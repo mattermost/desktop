@@ -100,6 +100,8 @@ function isTeamUrl(serverUrl, inputUrl, withApi) {
   const trustedPaths = getTrustedPaths();
   nonTeamUrlPaths = nonTeamUrlPaths.concat(trustedPaths);
 
+  console.debug(nonTeamUrlPaths);
+
   if (withApi) {
     nonTeamUrlPaths.push('api');
   }
