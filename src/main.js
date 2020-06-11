@@ -557,6 +557,7 @@ function handleAppWebContentsCreated(dc, contents) {
         popupWindow.once('closed', () => {
           popupWindow = null;
         });
+        popupWindow.setMenuBarVisibility(false);
       }
 
       // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth
