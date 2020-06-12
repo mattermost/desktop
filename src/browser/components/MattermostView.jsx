@@ -97,7 +97,7 @@ export default class MattermostView extends React.Component {
         } else if (Utils.isTeamUrl(this.props.src, e.url, true) || Utils.isPluginUrl(this.props.src, e.url)) {
           // New window should disable nodeIntegration.
           window.open(e.url, remote.app.name, 'nodeIntegration=no, contextIsolation=yes, show=yes');
-        } else if (Utils.isTrustedRemoteUrl(this.props.src, e.url)) {
+        } else if (Utils.isManagedResource(this.props.src, e.url)) {
           e.preventDefault();
         } else {
           e.preventDefault();

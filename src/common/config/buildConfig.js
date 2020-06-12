@@ -15,7 +15,7 @@
  * @prop {boolean} enableServerManagement - Whether users can edit servers configuration.
  *                                          Specify at least one server for "defaultTeams"
  *                                          when "enableServerManagement is set to false
- * @prop {[]} trustedPaths - Defines which paths are trusted
+ * @prop {[]} managedResources - Defines which paths are managed
  */
 const buildConfig = {
   defaultTeams: [/*
@@ -27,7 +27,7 @@ const buildConfig = {
   helpLink: 'https://about.mattermost.com/default-desktop-app-documentation/',
   enableServerManagement: true,
   enableAutoUpdater: true,
-  trustedPaths: ['trusted'],
+  managedResources: ['trusted'],
 };
 
 export default buildConfig;

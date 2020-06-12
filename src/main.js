@@ -540,7 +540,7 @@ function handleAppWebContentsCreated(dc, contents) {
       log.info(`Popup window already open at provided url: ${url}`);
       return;
     }
-    if (Utils.isPluginUrl(server.url, parsedURL) || Utils.isTrustedRemoteUrl(server.url, parsedURL)) {
+    if (Utils.isPluginUrl(server.url, parsedURL) || Utils.isManagedResource(server.url, parsedURL)) {
       if (!popupWindow || popupWindow.closed) {
         popupWindow = new BrowserWindow({
           backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
@@ -560,7 +560,7 @@ function handleAppWebContentsCreated(dc, contents) {
         });
       }
 
-      if (Utils.isTrustedRemoteUrl(server.url, parsedURL)) {
+      if (Utils.isManagedResource(server.url, parsedURL)) {
         popupWindow.loadURL(url);
       } else {
         // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth

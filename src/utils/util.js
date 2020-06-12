@@ -71,12 +71,12 @@ function getServerInfo(serverUrl) {
   return {origin: parsedServer.origin, subpath, url: parsedServer};
 }
 
-function getTrustedPaths() {
+function getManagedResources() {
   if (!buildConfig) {
     return [];
   }
 
-  return buildConfig.trustedPaths || [];
+  return buildConfig.managedResources || [];
 }
 
 function isTeamUrl(serverUrl, inputUrl, withApi) {
@@ -97,10 +97,8 @@ function isTeamUrl(serverUrl, inputUrl, withApi) {
     'oauth',
     'admin_console',
   ];
-  const trustedPaths = getTrustedPaths();
-  nonTeamUrlPaths = nonTeamUrlPaths.concat(trustedPaths);
-
-  console.debug(nonTeamUrlPaths);
+  const managedResources = getManagedResources();
+  nonTeamUrlPaths = nonTeamUrlPaths.concat(managedResources);
 
   if (withApi) {
     nonTeamUrlPaths.push('api');
@@ -122,18 +120,18 @@ function isPluginUrl(serverUrl, inputURL) {
       parsedURL.pathname.toLowerCase().startsWith('/plugins/')));
 }
 
-function isTrustedRemoteUrl(serverUrl, inputURL) {
+function isManagedResource(serverUrl, inputURL) {
   const server = getServerInfo(serverUrl);
   const parsedURL = parseURL(inputURL);
   if (!parsedURL || !server) {
     return false;
   }
 
-  const trustedPaths = getTrustedPaths();
+  const managedResources = getManagedResources();
 
   return (
-    equalUrlsIgnoringSubpath(server, parsedURL) && trustedPaths && trustedPaths.length &&
-    trustedPaths.some((trustPath) => (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}${trustPath}/`) || parsedURL.pathname.toLowerCase().startsWith(`/${trustPath}/`))));
+    equalUrlsIgnoringSubpath(server, parsedURL) && managedResources && managedResources.length &&
+    managedResources.some((managedResource) => (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}${managedResource}/`) || parsedURL.pathname.toLowerCase().startsWith(`/${managedResource}/`))));
 }
 
 function getServer(inputURL, teams) {
@@ -228,7 +226,7 @@ export default {
   getServerInfo,
   isTeamUrl,
   isPluginUrl,
-  isTrustedRemoteUrl,
+  isManagedResource,
   getDisplayBoundaries,
   dispatchNotification,
   getHost,
