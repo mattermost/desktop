@@ -17,7 +17,8 @@
     "browser/assets/fonts/*",
     "node_modules/bootstrap/dist/**",
     "node_modules/font-awesome/{css,fonts}/**",
-    "node_modules/simple-spellchecker/dict/*.dic"
+    "node_modules/simple-spellchecker/dict/*.dic",
+    "addons/*.node"
   ],
   "protocols": [
     {

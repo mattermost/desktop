@@ -4,11 +4,19 @@
 
 import {EventEmitter} from 'events';
 
+import log from 'electron-log';
+
 // import WindowsRegistry from 'winreg';
-import registry from 'registry-js';
+let registry;
+try {
+  // eslint-disable-next-line global-require
+  registry = require('registry-js');
+} catch (e) {
+  log.error(`couldn't import registry-js: ${e}`);
+}
 
 const REGISTRY_HIVE_LIST = [registry.HKEY.HKEY_LOCAL_MACHINE, registry.HKEY.HKEY_CURRENT_USER];
-const BASE_REGISTRY_KEY_PATH = '\\Software\\Policies\\Mattermost';
+const BASE_REGISTRY_KEY_PATH = 'Software\\Policies\\Mattermost';
 
 /**
  * Handles loading config data from the Windows registry set manually or by GPO
@@ -35,6 +43,8 @@ export default class RegistryConfig extends EventEmitter {
         if (servers.length) {
           this.data.teams.push(...servers);
         }
+        log.info('server list:');
+        log.info(servers);
       } catch (error) {
         console.log('[RegistryConfig] Nothing retrieved for \'DefaultServerList\'', error);
       }
@@ -68,14 +78,23 @@ export default class RegistryConfig extends EventEmitter {
    */
   async getServersListFromRegistry() {
     const defaultTeams = await this.getRegistryEntry(`${BASE_REGISTRY_KEY_PATH}\\DefaultServerList`);
-    return defaultTeams.flat(2).reduce((teams, team) => {
+    log.info(`teams retrieved: ${defaultTeams}`);
+    log.info(defaultTeams);
+    return defaultTeams.flat(2).reduce((teams, team, index) => {
       if (team) {
-        teams.push({
+        const newTeam = {
           name: team.name,
-          url: team.value,
-          order: team.order,
-        });
+          url: team.data,
+          order: index,
+        };
+        log.info('new team');
+        log.info(newTeam);
+        teams.push(newTeam);
       }
+      log.info('original team');
+      log.info(team);
+      log.info('teams generated:');
+      log.info(teams);
       return teams;
     }, []);
   }
@@ -123,8 +142,10 @@ export default class RegistryConfig extends EventEmitter {
   getRegistryEntryValues(hive, key, name) {
     return new Promise((resolve, reject) => {
       try {
+        log.info(`querying registry for: ${hive} - ${key}`);
         const results = registry.enumerateValues(hive, key);
         if (!results || results.length === 0) {
+          log.info(`nothing found: ${results}`);
           resolve();
           return;
         }
@@ -136,6 +157,7 @@ export default class RegistryConfig extends EventEmitter {
           resolve(results);
         }
       } catch (e) {
+        console.log(`there was an error: ${e}`);
         reject(e);
       }
     });

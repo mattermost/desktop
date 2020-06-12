@@ -141,11 +141,11 @@ function getDisplayBoundaries() {
 
 // next two functions are defined to clarify intent
 function equalUrlsWithSubpath(url1, url2) {
-  return url1.origin === url2.origin && url2.pathname.toLowerCase().startsWith(url1.pathname.toLowerCase());
+  return url1 && url1.origin && url2 && url2.origin && url1.origin === url2.origin && url2.pathname.toLowerCase().startsWith(url1.pathname.toLowerCase());
 }
 
 function equalUrlsIgnoringSubpath(url1, url2) {
-  return url1.origin.toLowerCase() === url2.origin.toLowerCase();
+  return url1 && url1.origin && url2 && url2.origin && url1.origin.toLowerCase() === url2.origin.toLowerCase();
 }
 
 const dispatchNotification = async (title, body, silent, handleClick) => {

@@ -27,7 +27,22 @@ module.exports = merge(base, {
           include: ['@babel/plugin-proposal-class-properties']
         }
       },
-    }],
+    },
+    {
+      test: /\.node$/,
+      use: [
+        'node-loader',
+        {
+          loader: 'file-loader',
+          options: {
+            name: '[name].[ext]',
+            outputPath: 'addons',
+            publicPath: './addons'
+          }
+        }
+      ]
+    }
+    ],
   },
   node: {
     __filename: true,
