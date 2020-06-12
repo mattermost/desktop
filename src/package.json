@@ -23,11 +23,15 @@
     "react-bootstrap": "~0.32.4",
     "react-dom": "^16.6.3",
     "react-transition-group": "^2.5.0",
+    "registry-js": "^1.9.0",
     "semver": "^5.5.0",
     "simple-spellchecker": "^0.9.8",
     "underscore": "^1.9.1",
     "valid-url": "^1.0.9",
     "winreg": "^1.2.4",
     "yargs": "^15.3.1"
+  },
+  "devDependencies": {
+    "electron-rebuild": "^1.11.0"
   }
 }

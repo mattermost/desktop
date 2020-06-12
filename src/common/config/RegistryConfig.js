@@ -4,9 +4,10 @@
 
 import {EventEmitter} from 'events';
 
-import WindowsRegistry from 'winreg';
+// import WindowsRegistry from 'winreg';
+import registry from 'registry-js';
 
-const REGISTRY_HIVE_LIST = [WindowsRegistry.HKLM, WindowsRegistry.HKCU];
+const REGISTRY_HIVE_LIST = [registry.HKEY.HKEY_LOCAL_MACHINE, registry.HKEY.HKEY_CURRENT_USER];
 const BASE_REGISTRY_KEY_PATH = '\\Software\\Policies\\Mattermost';
 
 /**
@@ -106,7 +107,7 @@ export default class RegistryConfig extends EventEmitter {
   async getRegistryEntry(key, name) {
     const results = [];
     for (const hive of REGISTRY_HIVE_LIST) {
-      results.push(this.getRegistryEntryValues(new WindowsRegistry({hive, key}), name));
+      results.push(this.getRegistryEntryValues(hive, key, name));
     }
     const entryValues = await Promise.all(results);
     return entryValues.filter((value) => value);
@@ -115,23 +116,28 @@ export default class RegistryConfig extends EventEmitter {
   /**
    * Handles actual retrieval of entries from a configured WindowsRegistry instance
    *
-   * @param {WindowsRegistry} regKey A configured instance of the WindowsRegistry class
+   * @param {string} hive subset of registry keys where to look, hast to be one defined in registry.HKEY
+   * @param {WindowsRegistry} key A configured instance of the WindowsRegistry class
    * @param {string} name Name of the specific entry to retrieve (optional)
    */
-  getRegistryEntryValues(regKey, name) {
-    return new Promise((resolve) => {
-      regKey.values((error, items) => {
-        if (error || !items || !items.length) {
+  getRegistryEntryValues(hive, key, name) {
+    return new Promise((resolve, reject) => {
+      try {
+        const results = registry.enumerateValues(hive, key);
+        if (!results || results.length === 0) {
           resolve();
           return;
         }
         if (name) { // looking for a single entry value
-          const registryItem = items.find((item) => item.name === name);
+          const registryItem = results.find((item) => item.name === name);
           resolve(registryItem && registryItem.value ? registryItem.value : null);
         } else { // looking for an entry list
-          resolve(items);
+          // todo: should we remove type?
+          resolve(results);
         }
-      });
+      } catch (e) {
+        reject(e);
+      }
     });
   }
 }
