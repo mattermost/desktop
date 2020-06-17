@@ -126,7 +126,8 @@ export default class MattermostView extends React.Component {
         webview.focus();
       }
       if (!this.state.isContextMenuAdded) {
-        contextMenu.setup(webview, {
+        contextMenu.setup({
+          window: webview,
           useSpellChecker: this.props.useSpellChecker,
           onSelectSpellCheckerLocale: (locale) => {
             if (this.props.onSelectSpellCheckerLocale) {

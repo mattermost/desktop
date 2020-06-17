@@ -16,6 +16,7 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 import {ipcRenderer, remote, shell} from 'electron';
 
 import Utils from '../../utils/util';
+import contextmenu from '../js/contextMenu';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
@@ -61,6 +62,14 @@ export default class MainPage extends React.Component {
       focusFinder: false,
       finderVisible: false,
     };
+    contextmenu.setup({
+      useSpellChecker: this.props.useSpellChecker,
+      onSelectSpellCheckerLocale: (locale) => {
+        if (this.props.onSelectSpellCheckerLocale) {
+          this.props.onSelectSpellCheckerLocale(locale);
+        }
+      },
+    });
   }
 
   parseDeeplinkURL(deeplink, teams = this.props.teams) {

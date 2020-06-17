@@ -46,14 +46,18 @@ function getSpellCheckerLocaleMenus(onSelectSpellCheckerLocale) {
 }
 
 export default {
-  setup(win, options) {
+  setup(options) {
     const defaultOptions = {
       useSpellChecker: false,
       onSelectSpellCheckerLocale: null,
+      shouldShowMenu: (e, p) => {
+        const isInternalLink = p.linkURL.endsWith('#') && p.linkURL.slice(0, -1) === p.pageURL;
+        return p.isEditable || p.hasImageContents || (p.linkURL !== '' && !isInternalLink) || p.mediaType !== 'none' || p.misspelledWord !== '' || p.selectionText !== '';
+      }
     };
     const actualOptions = Object.assign({}, defaultOptions, options);
+
     electronContextMenu({
-      window: win.webContents ? win : {...win, webContents: win.getWebContents()},
       prepend(_defaultActions, params) {
         if (actualOptions.useSpellChecker) {
           const prependMenuItems = [];
@@ -70,6 +74,7 @@ export default {
         }
         return [];
       },
+      ...actualOptions,
     });
   },
 };
