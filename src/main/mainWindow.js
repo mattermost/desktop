@@ -3,6 +3,7 @@
 // See LICENSE.txt for license information.
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 import {app, BrowserWindow} from 'electron';
 
@@ -17,6 +18,10 @@ function saveWindowState(file, window) {
     // [Linux] error happens only when the window state is changed before the config dir is created.
     console.log(e);
   }
+}
+
+function isFramelessWindow() {
+  return os.platform() === 'darwin' || (os.platform() === 'win32' && os.release().startsWith('10'));
 }
 
 function createMainWindow(config, options) {
@@ -51,7 +56,7 @@ function createMainWindow(config, options) {
     show: hideOnStartup || false,
     minWidth: minimumWindowWidth,
     minHeight: minimumWindowHeight,
-    frame: false,
+    frame: !isFramelessWindow(),
     fullscreen: false,
     titleBarStyle: 'hiddenInset',
     backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
@@ -65,6 +70,7 @@ function createMainWindow(config, options) {
 
   const mainWindow = new BrowserWindow(windowOptions);
   mainWindow.deeplinkingUrl = options.deeplinkingUrl;
+  mainWindow.setMenuBarVisibility(false);
 
   const indexURL = global.isDev ? 'http://localhost:8080/browser/index.html' : `file://${app.getAppPath()}/browser/index.html`;
   mainWindow.loadURL(indexURL);

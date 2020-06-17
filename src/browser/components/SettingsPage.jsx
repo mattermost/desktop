@@ -5,6 +5,8 @@
 // This file uses setState().
 /* eslint-disable react/no-set-state */
 
+import os from 'os';
+
 import React from 'react';
 import PropTypes from 'prop-types';
 import {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} from 'react-bootstrap';
@@ -540,7 +542,7 @@ export default class SettingsPage extends React.Component {
     }
 
     let titleBarButtons;
-    if (process.platform !== 'darwin') {
+    if (os.platform() === 'win32' && os.release().startsWith('10')) {
       titleBarButtons = (
         <span className='title-bar-btns'>
           <div
