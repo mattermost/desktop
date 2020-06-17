@@ -1,16 +1,17 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import {ipcRenderer} from 'electron';
+import {ipcRenderer, remote} from 'electron';
 import electronContextMenu from 'electron-context-menu';
 
-function getSuggestionsMenus(win, suggestions) {
+function getSuggestionsMenus(webcontents, suggestions) {
   if (suggestions.length === 0) {
     return [{
       label: 'No Suggestions',
       enabled: false,
     }];
   }
+  const win = webcontents || remote.getCurrentWindow();
   return suggestions.map((s) => ({
     label: s,
     click() {
@@ -63,7 +64,7 @@ export default {
           const prependMenuItems = [];
           if (params.isEditable && params.misspelledWord !== '') {
             const suggestions = ipcRenderer.sendSync('get-spelling-suggestions', params.misspelledWord);
-            prependMenuItems.push(...getSuggestionsMenus(win, suggestions));
+            prependMenuItems.push(...getSuggestionsMenus(options.window, suggestions));
           }
           if (params.isEditable) {
             prependMenuItems.push(
