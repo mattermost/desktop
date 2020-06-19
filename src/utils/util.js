@@ -7,6 +7,8 @@ import electron, {remote} from 'electron';
 import log from 'electron-log';
 import {isUri, isHttpUri, isHttpsUri} from 'valid-url';
 
+import buildConfig from '../common/config/buildConfig';
+
 function getDomain(inputURL) {
   const parsedURL = url.parse(inputURL);
   return `${parsedURL.protocol}//${parsedURL.host}`;
@@ -69,6 +71,14 @@ function getServerInfo(serverUrl) {
   return {origin: parsedServer.origin, subpath, url: parsedServer};
 }
 
+function getManagedResources() {
+  if (!buildConfig) {
+    return [];
+  }
+
+  return buildConfig.managedResources || [];
+}
+
 function isTeamUrl(serverUrl, inputUrl, withApi) {
   const parsedURL = parseURL(inputUrl);
   const server = getServerInfo(serverUrl);
@@ -76,7 +86,20 @@ function isTeamUrl(serverUrl, inputUrl, withApi) {
     return null;
   }
 
-  const nonTeamUrlPaths = ['plugins', 'signup', 'login', 'admin', 'channel', 'post', 'oauth', 'admin_console'];
+  // pre process nonTeamUrlPaths
+  let nonTeamUrlPaths = [
+    'plugins',
+    'signup',
+    'login',
+    'admin',
+    'channel',
+    'post',
+    'oauth',
+    'admin_console',
+  ];
+  const managedResources = getManagedResources();
+  nonTeamUrlPaths = nonTeamUrlPaths.concat(managedResources);
+
   if (withApi) {
     nonTeamUrlPaths.push('api');
   }
@@ -95,6 +118,20 @@ function isPluginUrl(serverUrl, inputURL) {
     equalUrlsIgnoringSubpath(server, parsedURL) &&
     (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}plugins/`) ||
       parsedURL.pathname.toLowerCase().startsWith('/plugins/')));
+}
+
+function isManagedResource(serverUrl, inputURL) {
+  const server = getServerInfo(serverUrl);
+  const parsedURL = parseURL(inputURL);
+  if (!parsedURL || !server) {
+    return false;
+  }
+
+  const managedResources = getManagedResources();
+
+  return (
+    equalUrlsIgnoringSubpath(server, parsedURL) && managedResources && managedResources.length &&
+    managedResources.some((managedResource) => (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}${managedResource}/`) || parsedURL.pathname.toLowerCase().startsWith(`/${managedResource}/`))));
 }
 
 function getServer(inputURL, teams) {
@@ -189,6 +226,7 @@ export default {
   getServerInfo,
   isTeamUrl,
   isPluginUrl,
+  isManagedResource,
   getDisplayBoundaries,
   dispatchNotification,
   getHost,

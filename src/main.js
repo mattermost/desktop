@@ -540,12 +540,13 @@ function handleAppWebContentsCreated(dc, contents) {
       log.info(`Popup window already open at provided url: ${url}`);
       return;
     }
-    if (Utils.isPluginUrl(server.url, parsedURL)) {
+    if (Utils.isPluginUrl(server.url, parsedURL) || Utils.isManagedResource(server.url, parsedURL)) {
       if (!popupWindow || popupWindow.closed) {
         popupWindow = new BrowserWindow({
           backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
           parent: mainWindow,
           show: false,
+          center: true,
           webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -559,11 +560,15 @@ function handleAppWebContentsCreated(dc, contents) {
         });
       }
 
-      // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth
-      // should be removed once a proper oAuth2 implementation is setup.
-      popupWindow.loadURL(url, {
-        userAgent: popupUserAgent[process.platform],
-      });
+      if (Utils.isManagedResource(server.url, parsedURL)) {
+        popupWindow.loadURL(url);
+      } else {
+        // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth
+        // should be removed once a proper oAuth2 implementation is setup.
+        popupWindow.loadURL(url, {
+          userAgent: popupUserAgent[process.platform],
+        });
+      }
     }
   });
 
@@ -817,7 +822,6 @@ function initializeAfterAppReady() {
       return;
     }
 
-    // get the requesting webContents url
     const requestingURL = webContents.getURL();
 
     // is the requesting url trusted?
