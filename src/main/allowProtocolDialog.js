@@ -30,6 +30,7 @@ function init(mainWindow) {
     }
     addScheme('http');
     addScheme('https');
+    addScheme('devtools');
     protocols.forEach((protocol) => {
       if (protocol.schemes && protocol.schemes.length > 0) {
         protocol.schemes.forEach(addScheme);

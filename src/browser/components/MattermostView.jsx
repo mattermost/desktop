@@ -253,22 +253,22 @@ export default class MattermostView extends React.Component {
 
   canGoBack = () => {
     const webview = this.webviewRef.current;
-    return webview.getWebContents().canGoBack();
+    return remote.webContents.fromId(webview.getWebContentsId()).canGoBack();
   }
 
   canGoForward = () => {
     const webview = this.webviewRef.current;
-    return webview.getWebContents().canGoForward();
+    return remote.webContents.fromId(webview.getWebContentsId()).canGoForward();
   }
 
   goBack = () => {
     const webview = this.webviewRef.current;
-    webview.getWebContents().goBack();
+    remote.webContents.fromId(webview.getWebContentsId()).goBack();
   }
 
   goForward = () => {
     const webview = this.webviewRef.current;
-    webview.getWebContents().goForward();
+    remote.webContents.fromId(webview.getWebContentsId()).goForward();
   }
 
   getSrc = () => {

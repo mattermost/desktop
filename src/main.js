@@ -476,6 +476,7 @@ function handleAppWebContentsCreated(dc, contents) {
   contents.on('will-attach-webview', (event, webPreferences) => {
     webPreferences.nodeIntegration = false;
     webPreferences.contextIsolation = true;
+    webPreferences.spellcheck = false;
   });
 
   contents.on('will-navigate', (event, url) => {
@@ -528,7 +529,7 @@ function handleAppWebContentsCreated(dc, contents) {
     const parsedURL = Utils.parseURL(url);
     const server = Utils.getServer(parsedURL, config.teams);
 
-    if (!server) {
+    if (!server && !parsedURL !== 'devtools') {
       log.info(`Untrusted popup window blocked: ${url}`);
       return;
     }
@@ -550,6 +551,7 @@ function handleAppWebContentsCreated(dc, contents) {
           webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
+            spellcheck: false,
           },
         });
         popupWindow.once('ready-to-show', () => {

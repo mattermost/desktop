@@ -65,6 +65,7 @@ function createMainWindow(config, options) {
       contextIsolation: false,
       webviewTag: true,
       disableBlinkFeatures: 'Auxclick',
+      spellchek: false,
     },
   });
 
@@ -113,9 +114,14 @@ function createMainWindow(config, options) {
     }
   });
 
+  mainWindow.webContents.on('web-context', (event, params) => {
+    console.log(params);
+  });
+
   mainWindow.webContents.on('will-attach-webview', (event, webPreferences) => {
     webPreferences.nodeIntegration = false;
     webPreferences.contextIsolation = true;
+    webPreferences.spellcheck = false;
   });
 
   // App should save bounds when a window is closed.
