@@ -5,6 +5,7 @@
 
 import os from 'os';
 const releaseSplit = os.release().split('.');
+const CATALINA_MAJOR = 19;
 
 export default {
   major: parseInt(releaseSplit[0], 10),
@@ -17,4 +18,12 @@ export default {
     // consider Windows 7 and later.
     return (this.major <= 6 && this.minor <= 3);
   },
+  isCatalina() {
+    if (process.platform !== 'darwin') {
+      return false;
+    }
+
+    // mapping release-version: https://en.wikipedia.org/wiki/Darwin_%28operating_system%29#Release_history
+    return this.major >= CATALINA_MAJOR;
+  }
 };

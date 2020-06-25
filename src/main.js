@@ -35,6 +35,7 @@ import UserActivityMonitor from './main/UserActivityMonitor';
 import Utils from './utils/util';
 import parseArgs from './main/ParseArgs';
 import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from './common/permissions';
+import OSVersion from './common/osVersion';
 
 // pull out required electron components like this
 // as not all components can be referenced before the app is ready
@@ -159,8 +160,8 @@ function initializeArgs() {
   if (global.args.dataDir) {
     app.setPath('userData', path.resolve(global.args.dataDir));
   }
-  if (process.platform === 'darwin') {
-    // todo: should we check for catalina or greater only?
+  if (OSVersion.isCatalina()) {
+    // use metal instead of opengl for speeding up rendering
     app.commandLine.appendArgument('--enable-features=Metal');
   }
 }
