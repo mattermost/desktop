@@ -41,10 +41,11 @@ export default class SettingsPage extends React.Component {
   constructor(props) {
     super(props);
 
-    this.state = this.convertConfigDataToState(config.data);
-    this.setState({
+    const configState = this.convertConfigDataToState(config.data);
+    this.state = {
+      ...configState,
       maximized: false,
-    });
+    };
 
     this.trayIconThemeRef = React.createRef();
 
