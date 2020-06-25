@@ -159,6 +159,10 @@ function initializeArgs() {
   if (global.args.dataDir) {
     app.setPath('userData', path.resolve(global.args.dataDir));
   }
+  if (process.platform === 'darwin') {
+    // todo: should we check for catalina or greater only?
+    app.commandLine.appendArgument('--enable-features=Metal');
+  }
 }
 
 function initializeConfig() {
