@@ -15,7 +15,7 @@ import Config from '../common/config';
 import SettingsPage from './components/SettingsPage.jsx';
 import contextMenu from './js/contextMenu';
 
-contextMenu.setup(remote.getCurrentWindow());
+contextMenu.setup();
 
 const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
 

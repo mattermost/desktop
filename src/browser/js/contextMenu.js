@@ -1,16 +1,17 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import {ipcRenderer} from 'electron';
+import {ipcRenderer, remote} from 'electron';
 import electronContextMenu from 'electron-context-menu';
 
-function getSuggestionsMenus(win, suggestions) {
+function getSuggestionsMenus(webcontents, suggestions) {
   if (suggestions.length === 0) {
     return [{
       label: 'No Suggestions',
       enabled: false,
     }];
   }
+  const win = webcontents || remote.getCurrentWindow();
   return suggestions.map((s) => ({
     label: s,
     click() {
@@ -46,20 +47,33 @@ function getSpellCheckerLocaleMenus(onSelectSpellCheckerLocale) {
 }
 
 export default {
-  setup(win, options) {
+  setup(options) {
     const defaultOptions = {
       useSpellChecker: false,
       onSelectSpellCheckerLocale: null,
+      shouldShowMenu: (e, p) => {
+        const isInternalLink = p.linkURL.endsWith('#') && p.linkURL.slice(0, -1) === p.pageURL;
+        let isInternalSrc;
+        try {
+          const srcurl = new URL(p.srcURL);
+          isInternalSrc = srcurl.protocol === 'file:';
+          console.log(`srcrurl protocol: ${srcurl.protocol}`);
+        } catch (err) {
+          console.log(`ups: ${err}`);
+          isInternalSrc = false;
+        }
+        return p.isEditable || (p.mediaType !== 'none' && !isInternalSrc) || (p.linkURL !== '' && !isInternalLink) || p.misspelledWord !== '' || p.selectionText !== '';
+      }
     };
     const actualOptions = Object.assign({}, defaultOptions, options);
+
     electronContextMenu({
-      window: win.webContents ? win : {...win, webContents: win.getWebContents()},
       prepend(_defaultActions, params) {
         if (actualOptions.useSpellChecker) {
           const prependMenuItems = [];
           if (params.isEditable && params.misspelledWord !== '') {
             const suggestions = ipcRenderer.sendSync('get-spelling-suggestions', params.misspelledWord);
-            prependMenuItems.push(...getSuggestionsMenus(win, suggestions));
+            prependMenuItems.push(...getSuggestionsMenus(options.window, suggestions));
           }
           if (params.isEditable) {
             prependMenuItems.push(
@@ -70,6 +84,7 @@ export default {
         }
         return [];
       },
+      ...actualOptions,
     });
   },
 };
