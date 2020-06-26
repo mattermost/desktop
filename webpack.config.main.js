@@ -29,24 +29,18 @@ module.exports = merge(base, {
       },
     },
     {
-      test: /\.node$/,
-      use: [
-        'node-loader',
-        {
-          loader: 'file-loader',
-          options: {
-            name: '[name].[ext]',
-            outputPath: 'addons',
-            publicPath: './addons'
-          }
-        }
-      ]
+      test: /registry.node$/,
+      loader: 'awesome-node-loader',
+      options: {
+        name: '[name].[ext]',
+        rewritePath: 'node_modules\registry-js\build\Release'
+      }
     }
     ],
   },
   node: {
     __filename: true,
-    __dirname: true,
+    __dirname: false,
   },
   target: 'electron-main',
 });

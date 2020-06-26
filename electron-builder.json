@@ -30,6 +30,7 @@
   ],
   "afterPack": "scripts/afterpack.js",
   "afterSign": "scripts/notarize.js",
+  "asarUnpack": ["**/*.node"],
   "deb": {
     "synopsis": "Mattermost"
   },
