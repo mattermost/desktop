@@ -160,9 +160,9 @@ function initializeArgs() {
   if (global.args.dataDir) {
     app.setPath('userData', path.resolve(global.args.dataDir));
   }
-  if (OSVersion.isCatalina()) {
+  if (OSVersion.isCatalina() && !app.commandLine.hasSwitch('enable-features')) {
     // use metal instead of opengl for speeding up rendering
-    app.commandLine.appendArgument('--enable-features=Metal');
+    app.commandLine.appendSwitch('enable-features', 'Metal');
   }
 }
 
