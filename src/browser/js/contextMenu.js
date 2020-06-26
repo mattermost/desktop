@@ -53,7 +53,16 @@ export default {
       onSelectSpellCheckerLocale: null,
       shouldShowMenu: (e, p) => {
         const isInternalLink = p.linkURL.endsWith('#') && p.linkURL.slice(0, -1) === p.pageURL;
-        return p.isEditable || p.hasImageContents || (p.linkURL !== '' && !isInternalLink) || p.mediaType !== 'none' || p.misspelledWord !== '' || p.selectionText !== '';
+        let isInternalSrc;
+        try {
+          const srcurl = new URL(p.srcURL);
+          isInternalSrc = srcurl.protocol === 'file:';
+          console.log(`srcrurl protocol: ${srcurl.protocol}`);
+        } catch (err) {
+          console.log(`ups: ${err}`);
+          isInternalSrc = false;
+        }
+        return p.isEditable || (p.mediaType !== 'none' && !isInternalSrc) || (p.linkURL !== '' && !isInternalLink) || p.misspelledWord !== '' || p.selectionText !== '';
       }
     };
     const actualOptions = Object.assign({}, defaultOptions, options);
