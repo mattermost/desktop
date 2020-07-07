@@ -26,9 +26,9 @@
         "mattermost",
         "http",
         "https",
+        "ftp",
         "mailto",
-        "tel",
-        "ftp"
+        "tel"
       ]
     }
   ],
