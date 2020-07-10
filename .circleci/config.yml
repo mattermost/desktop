@@ -62,7 +62,7 @@ commands:
         default: ""
     steps:
       - run: apt-get update && apt-get -y install << parameters.apt_opts >>
-      - run: npm install
+      - run: npm ci
 
   win_make:
     description: "Run mattermost's makefile.ps1 on ./scripts/"
@@ -289,7 +289,7 @@ jobs:
           at: ./dist
       - run:
           name: Installing npm dependencies
-          command: npm install
+          command: npm ci
       - build:
           os: mac
           path: ./dist/macos-release
