@@ -53,7 +53,7 @@ function createMainWindow(config, options) {
   Object.assign(windowOptions, {
     title: app.name,
     fullscreenable: true,
-    show: hideOnStartup || false,
+    show: false, // don't start the window until it is ready and only if it isn't hidden
     minWidth: minimumWindowWidth,
     minHeight: minimumWindowHeight,
     frame: !isFramelessWindow(),
