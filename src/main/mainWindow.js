@@ -54,7 +54,7 @@ function createMainWindow(config, options) {
     title: app.name,
     fullscreenable: true,
     show: false, // don't start the window until it is ready and only if it isn't hidden
-    paintWhenInitiallyHidden: hideOnStartup, // if initially hidden, we want it to start painting to get info from the webapp
+    paintWhenInitiallyHidden: true, // we want it to start painting to get info from the webapp
     minWidth: minimumWindowWidth,
     minHeight: minimumWindowHeight,
     frame: !isFramelessWindow(),
