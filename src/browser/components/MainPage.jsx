@@ -142,9 +142,10 @@ export default class MainPage extends React.Component {
       this.loginRequest(event, request, authInfo);
     });
 
-    ipcRenderer.on('select-user-certificate', (_, origin, certificateList) => {
+    ipcRenderer.on('select-user-certificate', (_, id, origin, certificateList) => {
       const certificateRequests = self.state.certificateRequests;
       certificateRequests.push({
+        id,
         server: origin,
         certificateList,
       });
@@ -613,7 +614,7 @@ export default class MainPage extends React.Component {
     const certificateRequests = this.state.certificateRequests;
     const current = certificateRequests.shift();
     this.setState({certificateRequests});
-    ipcRenderer.send('selected-client-certificate', current.server, certificate);
+    ipcRenderer.send('selected-client-certificate', current.id, certificate);
     if (certificateRequests.length > 0) {
       this.switchToTabForCertificateRequest(certificateRequests[0].server);
     }
@@ -622,7 +623,7 @@ export default class MainPage extends React.Component {
     const certificateRequests = this.state.certificateRequests;
     const current = certificateRequests.shift();
     this.setState({certificateRequests});
-    ipcRenderer.send('selected-client-certificate', current.server);
+    ipcRenderer.send('selected-client-certificate', current.id);
     if (certificateRequests.length > 0) {
       this.switchToTabForCertificateRequest(certificateRequests[0].server);
     }

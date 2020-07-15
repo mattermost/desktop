@@ -334,23 +334,35 @@ function handleAppBeforeQuit() {
 function handleSelectCertificate(event, webContents, url, list, callback) {
   event.preventDefault(); // prevent the app from getting the first certificate available
   // store callback so it can be called with selected certificate
-  certificateRequests.set(url, callback);
+  log.info('******* Certificate webcontents url *******');
+  log.info(webContents.getURL());
+  log.info('******* Certificate webcontents id *******');
+  log.info(webContents.id);
+  log.info('******* url *******');
+  log.info(url);
+  certificateRequests.set(webContents.id, callback);
 
   // open modal for selecting certificate
-  mainWindow.webContents.send('select-user-certificate', url, list);
+  mainWindow.webContents.send('select-user-certificate', webContents.id, url, list);
 }
 
-function handleSelectedCertificate(event, server, cert) {
-  const callback = certificateRequests.get(server);
+function handleSelectedCertificate(event, id, cert) {
+  log.info('******* Certificate selected *******');
+  log.info(cert);
+  log.info('******* webcontents id *******');
+  log.info(id);
+  const callback = certificateRequests.get(id);
   if (!callback) {
-    log.error(`there was no callback associated with: ${server}`);
+    log.error(`there was no callback associated with: ${id}`);
     return;
   }
   if (typeof cert === 'undefined') {
     log.info('user canceled certificate selection');
   } else {
     try {
-      callback(cert);
+      const result = callback(cert);
+      log.info('******* Result *******');
+      log.info(result);
     } catch (e) {
       log.error(`There was a problem using the selected certificate: ${e}`);
     }
@@ -358,6 +370,7 @@ function handleSelectedCertificate(event, server, cert) {
 }
 
 function handleAppCertificateError(event, webContents, url, error, certificate, callback) {
+  log.error(`Handling error due to certificate: ${error}`);
   const parsedURL = new URL(url);
   if (!parsedURL) {
     return;
