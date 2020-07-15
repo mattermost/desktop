@@ -39,7 +39,7 @@ function createMainWindow(config, options) {
     windowOptions = {width: defaultWindowWidth, height: defaultWindowHeight};
   }
 
-  const {hideOnStartup, trayIconShown} = options;
+  const {hideOnStartup} = options;
   const {maximized: windowIsMaximized} = windowOptions;
 
   if (process.platform === 'linux') {
@@ -48,7 +48,8 @@ function createMainWindow(config, options) {
   Object.assign(windowOptions, {
     title: app.name,
     fullscreenable: true,
-    show: hideOnStartup || false,
+    show: false, // don't start the window until it is ready and only if it isn't hidden
+    paintWhenInitiallyHidden: true, // we want it to start painting to get info from the webapp
     minWidth: minimumWindowWidth,
     minHeight: minimumWindowHeight,
     frame: false,
@@ -68,15 +69,6 @@ function createMainWindow(config, options) {
 
   const indexURL = global.isDev ? 'http://localhost:8080/browser/index.html' : `file://${app.getAppPath()}/browser/index.html`;
   mainWindow.loadURL(indexURL);
-
-  // handle hiding the app when launched by auto-start
-  if (hideOnStartup) {
-    if (trayIconShown && process.platform !== 'darwin') {
-      mainWindow.hide();
-    } else {
-      mainWindow.minimize();
-    }
-  }
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.webContents.zoomLevel = 0;
