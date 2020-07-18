@@ -185,7 +185,7 @@ function equalUrlsIgnoringSubpath(url1, url2) {
   return url1.origin.toLowerCase() === url2.origin.toLowerCase();
 }
 
-const dispatchNotification = async (title, body, silent, handleClick) => {
+const dispatchNotification = async (title, body, silent, soundName, handleClick) => {
   let permission;
   const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon_48.png`;
   if (Notification.permission === 'default') {
@@ -204,7 +204,8 @@ const dispatchNotification = async (title, body, silent, handleClick) => {
     tag: body,
     icon: appIconURL,
     requireInteraction: false,
-    silent
+    silent,
+    soundName
   });
 
   notification.onclick = handleClick;
