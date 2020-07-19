@@ -205,7 +205,7 @@ const dispatchNotification = async (title, body, silent, soundName, handleClick)
     icon: appIconURL,
     requireInteraction: false,
     silent,
-    soundName
+    data: {soundName}
   });
 
   notification.onclick = handleClick;

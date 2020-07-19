@@ -76,8 +76,8 @@ window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = 
     break;
   }
   case 'dispatch-notification': {
-    const {title, body, channel, teamId, silent} = message;
-    ipcRenderer.sendToHost('dispatchNotification', title, body, channel, teamId, silent, () => handleNotificationClick({teamId, channel}));
+    const {title, body, channel, teamId, silent, soundName} = message;
+    ipcRenderer.sendToHost('dispatchNotification', title, body, channel, teamId, silent, soundName, () => handleNotificationClick({teamId, channel}));
     break;
   }
   }

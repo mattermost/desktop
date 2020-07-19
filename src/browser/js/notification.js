@@ -52,7 +52,7 @@ export default class EnhancedNotification extends OriginalNotification {
 
     if (process.platform === 'win32' && osVersion.isLowerThanOrEqualWindows8_1()) {
       if (!options.silent) {
-        playDing(options.soundName);
+        playDing(options.data.soundName);
       }
     }
   }
