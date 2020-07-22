@@ -43,8 +43,8 @@ export default class EnhancedNotification extends OriginalNotification {
       Reflect.deleteProperty(options, 'icon');
     }
 
-    const playCustomSound = !options.silent;
-    if (playCustomSound) {
+    const customSound = !options.silent;
+    if (customSound) {
       // disable native sound
       options.silent = true;
     }
@@ -56,8 +56,8 @@ export default class EnhancedNotification extends OriginalNotification {
       options,
     });
 
-    if (playCustomSound) {
-      playCustomSound(options.data.soundName);
+    if (customSound) {
+      playSound(options.data.soundName);
     }
   }
 
