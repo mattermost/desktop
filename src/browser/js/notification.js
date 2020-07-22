@@ -10,7 +10,6 @@ import {ipcRenderer, remote} from 'electron';
 
 import osVersion from '../../common/osVersion';
 
-import nativeWindowsUntil81 from '../../assets/sounds/ding.mp3';
 import bing from '../../assets/sounds/bing.mp3';
 import crackle from '../../assets/sounds/crackle.mp3';
 import down from '../../assets/sounds/down.mp3';
@@ -19,7 +18,6 @@ import ripple from '../../assets/sounds/ripple.mp3';
 import upstairs from '../../assets/sounds/upstairs.mp3';
 
 export const notificationSounds = new Map([
-  ['native', nativeWindowsUntil81],
   ['Bing', bing],
   ['Crackle', crackle],
   ['Down', down],
@@ -45,8 +43,8 @@ export default class EnhancedNotification extends OriginalNotification {
       Reflect.deleteProperty(options, 'icon');
     }
 
-    const playCustom = !options.silent && options.data.soundName != 'native';
-    if (playCustom) {
+    const playCustomSound = !options.silent;
+    if (playCustomSound) {
       // disable native sound
       options.silent = true;
     }
@@ -58,12 +56,8 @@ export default class EnhancedNotification extends OriginalNotification {
       options,
     });
 
-    if (playCustom) {
-      playSound(options.data.soundName);
-    } else if (process.platform === 'win32' && osVersion.isLowerThanOrEqualWindows8_1()) {
-      if (!options.silent) {
-        playSound('native');
-      }
+    if (playCustomSound) {
+      playCustomSound(options.data.soundName);
     }
   }
 
