@@ -8,8 +8,6 @@ import {throttle} from 'underscore';
 
 import {ipcRenderer, remote} from 'electron';
 
-import osVersion from '../../common/osVersion';
-
 import bing from '../../assets/sounds/bing.mp3';
 import crackle from '../../assets/sounds/crackle.mp3';
 import down from '../../assets/sounds/down.mp3';
