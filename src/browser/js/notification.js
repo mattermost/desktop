@@ -5,9 +5,11 @@
 
 const OriginalNotification = Notification;
 import {throttle} from 'underscore';
-
 import {ipcRenderer, remote} from 'electron';
 
+import osVersion from '../../common/osVersion';
+
+import ding from '../../assets/sounds/ding.mp3';
 import bing from '../../assets/sounds/bing.mp3';
 import crackle from '../../assets/sounds/crackle.mp3';
 import down from '../../assets/sounds/down.mp3';
@@ -15,7 +17,9 @@ import hello from '../../assets/sounds/hello.mp3';
 import ripple from '../../assets/sounds/ripple.mp3';
 import upstairs from '../../assets/sounds/upstairs.mp3';
 
-export const notificationSounds = new Map([
+const DEFAULT_WIN7 = 'Ding';
+const notificationSounds = new Map([
+  [DEFAULT_WIN7, ding],
   ['Bing', bing],
   ['Crackle', crackle],
   ['Down', down],
@@ -23,7 +27,6 @@ export const notificationSounds = new Map([
   ['Ripple', ripple],
   ['Upstairs', upstairs],
 ]);
-const DEFAULT_WIN7 = 'Ding';
 
 const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon_48.png`;
 
@@ -43,7 +46,8 @@ export default class EnhancedNotification extends OriginalNotification {
     }
 
     const isWin7 = (process.platform === 'win32' && osVersion.isLowerThanOrEqualWindows8_1() && DEFAULT_WIN7);
-    const customSound = !options.silent && ((options.data && options.data.soundName) || isWin7)
+    const customSound = !options.silent && ((options.data.soundName !== 'None' && options.data.soundName) || isWin7);
+    console.log("Play sound: " + customSound);
     if (customSound) {
       // disable native sound
       options.silent = true;
