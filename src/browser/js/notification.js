@@ -56,7 +56,7 @@ export default class EnhancedNotification extends OriginalNotification {
     });
 
     if (customSound) {
-      playSound(options.data.soundName);
+      playSound(customSound);
     }
   }
 
