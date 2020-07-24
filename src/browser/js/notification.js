@@ -23,6 +23,7 @@ export const notificationSounds = new Map([
   ['Ripple', ripple],
   ['Upstairs', upstairs],
 ]);
+const DEFAULT_WIN7 = 'Ding';
 
 const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon_48.png`;
 
