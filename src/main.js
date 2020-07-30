@@ -332,12 +332,16 @@ function handleAppBeforeQuit() {
 }
 
 function handleSelectCertificate(event, webContents, url, list, callback) {
-  event.preventDefault(); // prevent the app from getting the first certificate available
-  // store callback so it can be called with selected certificate
-  certificateRequests.set(url, callback);
+  if (list.length > 1) {
+    event.preventDefault(); // prevent the app from getting the first certificate available
+    // store callback so it can be called with selected certificate
+    certificateRequests.set(url, callback);
 
-  // open modal for selecting certificate
-  mainWindow.webContents.send('select-user-certificate', url, list);
+    // open modal for selecting certificate
+    mainWindow.webContents.send('select-user-certificate', url, list);
+  } else {
+    log.info(`There were ${list.length} candidate certificates. Skipping certificate selection`);
+  }
 }
 
 function handleSelectedCertificate(event, server, cert) {
