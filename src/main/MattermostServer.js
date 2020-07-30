@@ -1,11 +1,13 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import {parseURL} from 'util/util';
 
-export class Server {
+// eslint-disable-next-line import/no-unresolved
+import Utils from 'common/utils/util';
+
+export class MattermostServer {
   constructor(name, serverUrl) {
     this.name = name;
-    this.url = parseURL(serverUrl);
+    this.url = Utils.parseURL(serverUrl);
     if (!this.url) {
       throw new Error('Invalid url for creating a server');
     }
@@ -19,7 +21,7 @@ export class Server {
   }
 
   sameOrigin = (otherURL) => {
-    const parsedUrl = parseURL(otherURL);
+    const parsedUrl = Utils.parseURL(otherURL);
     return parsedUrl && this.url.origin === parsedUrl.origin;
   }
 }

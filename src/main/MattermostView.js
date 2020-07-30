@@ -3,7 +3,7 @@
 
 import path from 'path';
 
-import {BrowserView} from 'electron';
+import {BrowserView, app} from 'electron';
 import log from 'electron-log';
 
 import {getWindowBoundaries} from './utils';
@@ -23,16 +23,34 @@ export class MattermostView {
     log.info(`BrowserView created for server ${this.server.name}`);
   }
 
+  load = (someURL) => {
+    const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : parseUrl(someURL);
+    log.info(`[${this.name}] Loading ${loadURL}`);
+
+    // copying what webview sends
+    // TODO: review
+    const userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.146 Electron/6.1.7 Safari/537.36 Mattermost/${app.getVersion()}`;
+
+    const loading = this.view.webContents.loadURL(loadURL, {userAgent});
+    loading.then((result) => {
+      log.info(`[${this.name}] finished loading ${loadURL}: ${result}`);
+    }).catch((err) => {
+      log.info(`[${this.name}] failed loading ${loadURL}: ${err}`);
+    });
+  }
+
   show = (requestedVisibility) => {
     const request = typeof requestedVisibility === 'undefined' ? true : requestedVisibility;
     if (request && !this.isVisible) {
-      this.win.addBrowserView(this.view);
-      this.setBounds(getWindowBoundaries(this.win));
+      this.window.addBrowserView(this.view);
+      this.setBounds(getWindowBoundaries(this.window));
     } else if (!request && this.isVisible) {
-      this.win.removeBrowserView(this.view);
+      this.window.removeBrowserView(this.view);
     }
     this.isVisible = request;
   }
+
+  hide = () => this.show(false);
 
   setBounds = (boundaries) => {
     // todo: review this, as it might not work properly with devtools/minimizing/resizing

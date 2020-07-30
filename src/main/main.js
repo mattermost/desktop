@@ -22,7 +22,6 @@ import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CH
 import AutoLauncher from './AutoLauncher';
 import CriticalErrorHandler from './CriticalErrorHandler';
 import upgradeAutoLaunch from './autoLaunch';
-
 import CertificateStore from './certificateStore';
 import TrustedOriginsStore from './trustedOrigins';
 import createMainWindow from './mainWindow';
@@ -36,6 +35,7 @@ import {shouldBeHiddenOnStartup} from './utils';
 import UserActivityMonitor from './UserActivityMonitor';
 
 import parseArgs from './ParseArgs';
+import {ViewManager} from './viewManager';
 
 // pull out required electron components like this
 // as not all components can be referenced before the app is ready
@@ -72,6 +72,7 @@ let config = null;
 let trayIcon = null;
 let trayImages = null;
 let altLastPressed = false;
+let viewManager = null;
 
 // supported custom login paths (oath, saml)
 const customLoginRegexPaths = [
@@ -698,6 +699,12 @@ function initializeAfterAppReady() {
     log.error('unable to create main window');
     app.quit();
   }
+
+  // const boundaries = getWindowBoundaries(win);
+  // setServersBounds(servers, boundaries);
+  viewManager = new ViewManager(config.teams);
+  viewManager.load(mainWindow);
+  viewManager.showInitial();
 
   criticalErrorHandler.setMainWindow(mainWindow);
 
