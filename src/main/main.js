@@ -1,6 +1,6 @@
-// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+// Copyright (c) 2015-2016 Yuya Ochiai
 
 import os from 'os';
 import path from 'path';
@@ -12,29 +12,31 @@ import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-install
 import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
 
-import {protocols} from '../electron-builder.json';
+import {protocols} from '../../electron-builder.json';
+import RegistryConfig from '../common/config/RegistryConfig';
+import Config from '../common/config';
 
-import AutoLauncher from './main/AutoLauncher';
-import CriticalErrorHandler from './main/CriticalErrorHandler';
-import upgradeAutoLaunch from './main/autoLaunch';
+import Utils from '../common/utils/util';
+import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from '../common/permissions';
 
-import RegistryConfig from './common/config/RegistryConfig';
-import Config from './common/config';
-import CertificateStore from './main/certificateStore';
-import TrustedOriginsStore from './main/trustedOrigins';
-import createMainWindow from './main/mainWindow';
-import appMenu from './main/menus/app';
-import trayMenu from './main/menus/tray';
-import downloadURL from './main/downloadURL';
-import allowProtocolDialog from './main/allowProtocolDialog';
-import AppStateManager from './main/AppStateManager';
-import initCookieManager from './main/cookieManager';
-import {shouldBeHiddenOnStartup} from './main/utils';
-import SpellChecker from './main/SpellChecker';
-import UserActivityMonitor from './main/UserActivityMonitor';
-import Utils from './utils/util';
-import parseArgs from './main/ParseArgs';
-import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from './common/permissions';
+import AutoLauncher from './AutoLauncher';
+import CriticalErrorHandler from './CriticalErrorHandler';
+import upgradeAutoLaunch from './autoLaunch';
+
+import CertificateStore from './certificateStore';
+import TrustedOriginsStore from './trustedOrigins';
+import createMainWindow from './mainWindow';
+import appMenu from './menus/app';
+import trayMenu from './menus/tray';
+import downloadURL from './downloadURL';
+import allowProtocolDialog from './allowProtocolDialog';
+import AppStateManager from './AppStateManager';
+import initCookieManager from './cookieManager';
+import {shouldBeHiddenOnStartup} from './utils';
+import SpellChecker from './SpellChecker';
+import UserActivityMonitor from './UserActivityMonitor';
+
+import parseArgs from './ParseArgs';
 
 // pull out required electron components like this
 // as not all components can be referenced before the app is ready

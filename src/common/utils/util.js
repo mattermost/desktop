@@ -1,13 +1,14 @@
-// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+// Copyright (c) 2015-2016 Yuya Ochiai
+
 import url from 'url';
 
 import electron, {remote} from 'electron';
 import log from 'electron-log';
 import {isUri, isHttpUri, isHttpsUri} from 'valid-url';
 
-import buildConfig from '../common/config/buildConfig';
+import buildConfig from '../config/buildConfig';
 
 function getDomain(inputURL) {
   const parsedURL = url.parse(inputURL);
@@ -81,7 +82,7 @@ function getManagedResources() {
 
 function isTeamUrl(serverUrl, inputUrl, withApi) {
   const parsedURL = parseURL(inputUrl);
-  const server = getServerInfo(serverUrl);
+  const server = getServerInfo(serverUrl); // TODO: change into using server
   if (!parsedURL || !server || (!equalUrlsIgnoringSubpath(server, parsedURL))) {
     return null;
   }

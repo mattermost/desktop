@@ -1,7 +1,8 @@
-// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+// Copyright (c) 2015-2016 Yuya Ochiai
 
+// TODO: remove this file
 // This file uses setState().
 /* eslint-disable react/no-set-state */
 
@@ -12,7 +13,7 @@ import PropTypes from 'prop-types';
 import {ipcRenderer, remote, shell} from 'electron';
 
 import contextMenu from '../js/contextMenu';
-import Utils from '../../utils/util';
+import Utils from '../../common/utils/util';
 import {protocols} from '../../../electron-builder.json';
 const scheme = protocols[0].schemes[0];
 

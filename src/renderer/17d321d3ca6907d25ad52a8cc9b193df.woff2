@@ -1,0 +1,1 @@
+module.exports = __webpack_public_path__ + "assets/fonts/fontawesome-webfont.woff2";
