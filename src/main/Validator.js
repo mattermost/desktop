@@ -2,7 +2,8 @@
 // See LICENSE.txt for license information.
 import Joi from '@hapi/joi';
 
-import Utils from '../utils/util';
+// eslint-disable-next-line import/no-unresolved
+import Utils from 'common/utils/util';
 
 const defaultOptions = {
   stripUnknown: true,

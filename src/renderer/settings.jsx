@@ -1,6 +1,7 @@
-// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+// Copyright (c) 2015-2016 Yuya Ochiai
+
 import {remote, ipcRenderer} from 'electron';
 
 window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
@@ -13,9 +14,6 @@ import ReactDOM from 'react-dom';
 import Config from '../common/config';
 
 import SettingsPage from './components/SettingsPage.jsx';
-import contextMenu from './js/contextMenu';
-
-contextMenu.setup();
 
 const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
 

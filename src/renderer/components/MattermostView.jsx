@@ -12,7 +12,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {ipcRenderer, remote, shell} from 'electron';
 
-import contextMenu from '../js/contextMenu';
 import Utils from '../../common/utils/util';
 import {protocols} from '../../../electron-builder.json';
 const scheme = protocols[0].schemes[0];
@@ -127,19 +126,6 @@ export default class MattermostView extends React.Component {
       if (this.props.active) {
         webview.blur();
         webview.focus();
-      }
-      if (!this.state.isContextMenuAdded) {
-        contextMenu.setup({
-          window: webview,
-          useSpellChecker: this.props.useSpellChecker,
-          onSelectSpellCheckerLocale: (locale) => {
-            if (this.props.onSelectSpellCheckerLocale) {
-              this.props.onSelectSpellCheckerLocale(locale);
-            }
-            webview.send('set-spellchecker');
-          },
-        });
-        this.setState({isContextMenuAdded: true});
       }
     });
 

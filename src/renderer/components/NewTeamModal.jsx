@@ -1,12 +1,13 @@
-// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+// Copyright (c) 2015-2016 Yuya Ochiai
 
 import React from 'react';
 import PropTypes from 'prop-types';
 import {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} from 'react-bootstrap';
 
-import Utils from '../../utils/util';
+// eslint-disable-next-line import/no-unresolved
+import Utils from 'common/utils/util';
 
 export default class NewTeamModal extends React.Component {
   static defaultProps = {

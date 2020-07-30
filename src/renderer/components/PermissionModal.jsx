@@ -7,9 +7,10 @@ import {Modal, Button} from 'react-bootstrap';
 import {ipcRenderer, remote} from 'electron';
 import {log} from 'electron-log';
 
-import {BASIC_AUTH_PERMISSION, REQUEST_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, PERMISSION_DESCRIPTION} from '../../common/permissions';
+// eslint-disable-next-line import/no-unresolved
+import Util from 'common/utils/util';
 
-import Util from '../../utils/util';
+import {BASIC_AUTH_PERMISSION, REQUEST_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, PERMISSION_DESCRIPTION} from '../../common/permissions';
 
 import ExternalLink from './externalLink.jsx';
 

@@ -1,6 +1,6 @@
-// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+// Copyright (c) 2015-2016 Yuya Ochiai
 
 import './css/index.css';
 
@@ -139,11 +139,6 @@ function teamConfigChange(updatedTeams, callback) {
   }
 }
 
-function handleSelectSpellCheckerLocale(locale) {
-  config.set('spellCheckerLocale', locale);
-  ipcRenderer.send('update-dict', locale);
-}
-
 function moveTabs(originalOrder, newOrder) {
   const tabOrder = teams.concat().map((team, index) => {
     return {
@@ -196,7 +191,6 @@ ReactDOM.render(
     onBadgeChange={showBadge}
     onTeamConfigChange={teamConfigChange}
     useSpellChecker={config.useSpellChecker}
-    onSelectSpellCheckerLocale={handleSelectSpellCheckerLocale}
     deeplinkingUrl={deeplinkingUrl}
     showAddServerButton={config.enableServerManagement}
     getDarkMode={getDarkMode}

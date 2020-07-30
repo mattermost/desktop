@@ -4,10 +4,14 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import {format as formatUrl} from 'url';
 
 import {app, BrowserWindow} from 'electron';
 
 import * as Validator from './Validator';
+import contextMenu from './contextMenu';
+
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 function saveWindowState(file, window) {
   const windowState = window.getBounds();
@@ -73,9 +77,15 @@ function createMainWindow(config, options) {
   mainWindow.deeplinkingUrl = options.deeplinkingUrl;
   mainWindow.setMenuBarVisibility(false);
 
-  const indexURL = global.isDev ? 'http://localhost:8080/browser/index.html' : `file://${app.getAppPath()}/browser/index.html`;
-  mainWindow.loadURL(indexURL);
-
+  if (isDevelopment) {
+    mainWindow.loadURL(`http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}`);
+  } else {
+    mainWindow.loadURL(formatUrl({
+      pathname: path.join(__dirname, 'index.html'),
+      protocol: 'file',
+      slashes: true,
+    }));
+  }
   mainWindow.once('ready-to-show', () => {
     mainWindow.webContents.zoomLevel = 0;
 
@@ -171,6 +181,7 @@ function createMainWindow(config, options) {
     }
   });
 
+  contextMenu.setup({useSpellChecker: config.useSpellChecker});
   return mainWindow;
 }
 
