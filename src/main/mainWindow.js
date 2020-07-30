@@ -7,6 +7,7 @@ import os from 'os';
 import {format as formatUrl} from 'url';
 
 import {app, BrowserWindow} from 'electron';
+import log from 'electron-log';
 
 import * as Validator from './Validator';
 import contextMenu from './contextMenu';
@@ -78,8 +79,10 @@ function createMainWindow(config, options) {
   mainWindow.setMenuBarVisibility(false);
 
   if (isDevelopment) {
+    log.info('loading development version');
     mainWindow.loadURL(`http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}`);
   } else {
+    log.info('loading prod version');
     mainWindow.loadURL(formatUrl({
       pathname: path.join(__dirname, 'index.html'),
       protocol: 'file',

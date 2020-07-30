@@ -311,7 +311,11 @@ function handleAppBrowserWindowCreated(error, newWindow) {
 }
 
 function handleAppActivate() {
-  mainWindow.show();
+  if (mainWindow) {
+    mainWindow.show();
+  } else {
+    log.warn('mainWindow is undefined');
+  }
 }
 
 function handleAppBeforeQuit() {
@@ -690,6 +694,10 @@ function initializeAfterAppReady() {
     linuxAppIcon: path.join(assetsDir, 'appicon.png'),
     deeplinkingUrl,
   });
+  if (!mainWindow) {
+    log.error('unable to create main window');
+    app.quit();
+  }
 
   criticalErrorHandler.setMainWindow(mainWindow);
 

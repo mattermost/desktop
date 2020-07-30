@@ -771,22 +771,25 @@ export default class MainPage extends React.Component {
       }
 
       return (
-        <MattermostView
-          key={id}
-          id={id}
-          teams={this.props.teams}
-          useSpellChecker={this.props.useSpellChecker}
-          onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
-          src={teamUrl}
-          name={team.name}
-          onTargetURLChange={self.handleTargetURLChange}
-          onBadgeChange={handleBadgeChange}
-          onNotificationClick={handleNotificationClick}
-          handleInterTeamLink={self.handleInterTeamLink}
-          ref={id}
-          active={isActive}
-          allowExtraBar={this.showExtraBar()}
-        />);
+
+        // <MattermostView
+        //   key={id}
+        //   id={id}
+        //   teams={this.props.teams}
+        //   useSpellChecker={this.props.useSpellChecker}
+        //   onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
+        //   src={teamUrl}
+        //   name={team.name}
+        //   onTargetURLChange={self.handleTargetURLChange}
+        //   onBadgeChange={handleBadgeChange}
+        //   onNotificationClick={handleNotificationClick}
+        //   handleInterTeamLink={self.handleInterTeamLink}
+        //   ref={id}
+        //   active={isActive}
+        //   allowExtraBar={this.showExtraBar()}
+        // />);
+        <span key={id}>{id}</span>
+      );
     });
 
     const viewsRow = (

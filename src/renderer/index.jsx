@@ -3,6 +3,7 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 
 import './css/index.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
   throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
@@ -28,9 +29,10 @@ const teams = config.teams;
 
 remote.getCurrentWindow().removeAllListeners('focus');
 
-if (teams.length === 0) {
-  remote.getCurrentWindow().loadFile('browser/settings.html');
-}
+// if (teams.length === 0) {
+//   log.info('no servers defined');
+//   remote.getCurrentWindow().loadFile('browser/settings.html');
+// }
 
 const parsedURL = url.parse(window.location.href, true);
 const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : getInitialIndex();
@@ -198,7 +200,7 @@ ReactDOM.render(
     moveTabs={moveTabs}
     openMenu={openMenu}
   />,
-  document.getElementById('content')
+  document.getElementById('app')
 );
 
 // Deny drag&drop navigation in mainWindow.
