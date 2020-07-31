@@ -25,7 +25,7 @@ export class MattermostView {
 
   load = (someURL) => {
     const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : parseUrl(someURL);
-    log.info(`[${this.name}] Loading ${loadURL}`);
+    log.info(`[${this.server.name}] Loading ${loadURL}`);
 
     // copying what webview sends
     // TODO: review
@@ -33,9 +33,9 @@ export class MattermostView {
 
     const loading = this.view.webContents.loadURL(loadURL, {userAgent});
     loading.then((result) => {
-      log.info(`[${this.name}] finished loading ${loadURL}: ${result}`);
+      log.info(`[${this.server.name}] finished loading ${loadURL}: ${result}`);
     }).catch((err) => {
-      log.info(`[${this.name}] failed loading ${loadURL}: ${err}`);
+      log.info(`[${this.server.name}] failed loading ${loadURL}: ${err}`);
     });
   }
 

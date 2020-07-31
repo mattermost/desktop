@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "common/*": ["./src/common/*"],
+      "@/*": [
+        "./src/main/*",
+        "./src/renderer/*"
+      ]
+    }
+  }
+}

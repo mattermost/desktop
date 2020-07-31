@@ -25,7 +25,6 @@ import minimizeButton from '../../assets/titlebar/chrome-minimize.svg';
 import closeButton from '../../assets/titlebar/chrome-close.svg';
 
 import LoginModal from './LoginModal.jsx';
-import MattermostView from './MattermostView.jsx';
 import TabBar from './TabBar.jsx';
 import HoveringURL from './HoveringURL.jsx';
 import Finder from './Finder.jsx';
@@ -752,23 +751,24 @@ export default class MainPage extends React.Component {
     );
 
     const views = this.props.teams.map((team, index) => {
-      function handleBadgeChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) {
-        self.handleBadgeChange(index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
-      }
-      function handleNotificationClick() {
-        self.handleSelect(index);
-      }
+      // function handleBadgeChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) {
+      //   self.handleBadgeChange(index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
+      // }
+      // function handleNotificationClick() {
+      //   self.handleSelect(index);
+      // }
       const id = 'mattermostView' + index;
-      const isActive = self.state.key === index;
 
-      let teamUrl = team.url;
+      // const isActive = self.state.key === index;
 
-      if (this.props.deeplinkingUrl) {
-        const parsedDeeplink = this.parseDeeplinkURL(this.props.deeplinkingUrl, [team]);
-        if (parsedDeeplink) {
-          teamUrl = parsedDeeplink.url;
-        }
-      }
+      // let teamUrl = team.url;
+
+      // if (this.props.deeplinkingUrl) {
+      //   const parsedDeeplink = this.parseDeeplinkURL(this.props.deeplinkingUrl, [team]);
+      //   if (parsedDeeplink) {
+      //     teamUrl = parsedDeeplink.url;
+      //   }
+      // }
 
       return (
 

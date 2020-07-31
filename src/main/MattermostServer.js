@@ -1,8 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-// eslint-disable-next-line import/no-unresolved
-import Utils from 'common/utils/util';
+import Utils from '../common/utils/util';
 
 export class MattermostServer {
   constructor(name, serverUrl) {

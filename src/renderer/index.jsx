@@ -5,10 +5,11 @@
 import './css/index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
-  throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
-};
-
+if (process.env.NODE_ENV === 'production') {
+  window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
+    throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
+  };
+}
 import url from 'url';
 
 import React from 'react';
@@ -20,6 +21,7 @@ import Config from '../common/config';
 import EnhancedNotification from './js/notification';
 import MainPage from './components/MainPage.jsx';
 import {createDataURL as createBadgeDataURL} from './js/badge';
+import SettingsPage from './components/SettingsPage.jsx';
 
 Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
@@ -28,11 +30,6 @@ const config = new Config(remote.app.getPath('userData') + '/config.json', remot
 const teams = config.teams;
 
 remote.getCurrentWindow().removeAllListeners('focus');
-
-// if (teams.length === 0) {
-//   log.info('no servers defined');
-//   remote.getCurrentWindow().loadFile('browser/settings.html');
-// }
 
 const parsedURL = url.parse(window.location.href, true);
 const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : getInitialIndex();
@@ -185,7 +182,7 @@ function openMenu() {
   }
 }
 
-ReactDOM.render(
+let component = (
   <MainPage
     teams={teams}
     localTeams={config.localTeams}
@@ -199,7 +196,27 @@ ReactDOM.render(
     setDarkMode={setDarkMode}
     moveTabs={moveTabs}
     openMenu={openMenu}
-  />,
+  />);
+
+// dead simple router, improve if we ever need more than 2 routes
+// TODO: review that this doesn't trigger with external routes e.g.: myexternalsite.com/?settings
+const router = new URLSearchParams(window.location.search);
+
+console.log(router);
+if (router.has('settings')) {
+  console.log('loading settings page');
+  component = (
+    <SettingsPage
+      getDarkMode={getDarkMode}
+      setDarkMode={setDarkMode}
+      openMenu={openMenu}
+    />);
+} else {
+  console.log('loading main page');
+}
+
+ReactDOM.render(
+  component,
   document.getElementById('app')
 );
 

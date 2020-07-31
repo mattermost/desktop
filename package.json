@@ -53,6 +53,7 @@
     "electron-notarize": "^0.1.1",
     "electron-webpack": "^2.8.2",
     "eslint": "^6.6.0",
+    "eslint-import-resolver-webpack": "^0.12.2",
     "eslint-plugin-cypress": "^2.7.0",
     "eslint-plugin-eslint-comments": "^3.1.2",
     "eslint-plugin-header": "^3.0.0",

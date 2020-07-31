@@ -1,10 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
+import fs from 'fs';
 
 import os from 'os';
 import path from 'path';
-import fs from 'fs';
+
+import {format as formatUrl} from 'url';
 
 import electron, {nativeTheme} from 'electron';
 import isDev from 'electron-is-dev';
@@ -36,6 +38,8 @@ import UserActivityMonitor from './UserActivityMonitor';
 
 import parseArgs from './ParseArgs';
 import {ViewManager} from './viewManager';
+import { parsed } from 'yargs';
+import { settings } from 'cluster';
 
 // pull out required electron components like this
 // as not all components can be referenced before the app is ready
@@ -492,6 +496,10 @@ function handleAppWebContentsCreated(dc, contents) {
     if (customLogins[contentID].inProgress) {
       return;
     }
+    if ((parsedURL.protocol === 'file' || parsedURL.origin === `http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}`) && parsedURL.search === '?settings') {
+      log.info('loading settings page');
+      return;
+    }
 
     log.info(`Prevented desktop from navigating to: ${url}`);
     event.preventDefault();
@@ -695,6 +703,21 @@ function initializeAfterAppReady() {
     linuxAppIcon: path.join(assetsDir, 'appicon.png'),
     deeplinkingUrl,
   });
+
+  //temporary
+  const settingsWindow = new BrowserWindow({...config.data, parent: mainWindow, webPreferences: {nodeIntegration: true}});
+  if (process.env.NODE_ENV === 'production') {
+    settingsWindow.loadURL(formatUrl({
+      pathname: path.join(__dirname, 'index.html?settings'),
+      protocol: 'file',
+      slashes: true,
+    }));
+  } else {
+    settingsWindow.loadURL(`http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}?settings`);
+  }
+  settingsWindow.show();
+
+  settingsWindow.webContents.openDevTools();
   if (!mainWindow) {
     log.error('unable to create main window');
     app.quit();
