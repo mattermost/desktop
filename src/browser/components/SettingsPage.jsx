@@ -874,7 +874,7 @@ export default class SettingsPage extends React.Component {
         {'Use GPU hardware acceleration'}
         <HelpBlock>
           {'If enabled, Mattermost UI is rendered more efficiently but can lead to decreased stability for some systems.'}
-          {' Setting takes affect after restarting the app.'}
+          {' Setting takes effect after restarting the app.'}
         </HelpBlock>
       </Checkbox>
     );
