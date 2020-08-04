@@ -2,14 +2,18 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
-import './css/index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
+// eslint-disable-next-line import/no-unresolved
+import '@/css/index.css';
 
 if (process.env.NODE_ENV === 'production') {
   window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
     throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
   };
+} else if (module.hot) {
+  module.hot.accept();
 }
+
 import url from 'url';
 
 import React from 'react';

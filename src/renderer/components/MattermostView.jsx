@@ -344,7 +344,6 @@ MattermostView.propTypes = {
   src: PropTypes.string,
   active: PropTypes.bool,
   useSpellChecker: PropTypes.bool,
-  onSelectSpellCheckerLocale: PropTypes.func,
   handleInterTeamLink: PropTypes.func,
   allowExtraBar: PropTypes.bool,
 };

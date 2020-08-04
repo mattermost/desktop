@@ -894,7 +894,6 @@ MainPage.propTypes = {
   onTeamConfigChange: PropTypes.func.isRequired,
   initialIndex: PropTypes.number.isRequired,
   useSpellChecker: PropTypes.bool.isRequired,
-  onSelectSpellCheckerLocale: PropTypes.func.isRequired,
   deeplinkingUrl: PropTypes.string,
   showAddServerButton: PropTypes.bool.isRequired,
   getDarkMode: PropTypes.func.isRequired,

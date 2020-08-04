@@ -4,13 +4,8 @@
 
 import {remote, ipcRenderer} from 'electron';
 
-if (process.env.NODE_ENV === 'production') {
-  window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
-    throw new Error(`Sorry, ${remote.app.name} does not support window.eval() for security reasons.`);
-  };
-}
-
-import './css/settings.css';
+// eslint-disable-next-line import/no-unresolved
+import '@/css/settings.css';
 
 import React from 'react';
 import ReactDOM from 'react-dom';

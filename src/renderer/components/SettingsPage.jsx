@@ -4,6 +4,8 @@
 
 // This file uses setState().
 /* eslint-disable react/no-set-state */
+// eslint-disable-next-line import/no-unresolved
+import '@/css/settings.css';
 
 import os from 'os';
 

@@ -4,7 +4,7 @@
 import fs from 'fs';
 
 import os from 'os';
-import path from 'path';
+import path, { parse } from 'path';
 
 import {format as formatUrl} from 'url';
 
@@ -38,8 +38,10 @@ import UserActivityMonitor from './UserActivityMonitor';
 
 import parseArgs from './ParseArgs';
 import {ViewManager} from './viewManager';
-import { parsed } from 'yargs';
-import { settings } from 'cluster';
+
+if (process.env.NODE_ENV !== 'production' && module.hot) {
+  module.hot.accept();
+}
 
 // pull out required electron components like this
 // as not all components can be referenced before the app is ready
@@ -527,9 +529,13 @@ function handleAppWebContentsCreated(dc, contents) {
   });
 
   contents.on('new-window', (event, url) => {
+    const parsedURL = Utils.parseURL(url);
+
+    if (parsedURL.protocol === 'devtools:') {
+      return;
+    }
     event.preventDefault();
 
-    const parsedURL = Utils.parseURL(url);
     const server = Utils.getServer(parsedURL, config.teams);
 
     if (!server) {
