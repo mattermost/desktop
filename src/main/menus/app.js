@@ -6,7 +6,7 @@
 import {app, dialog, Menu, shell} from 'electron';
 
 function createTemplate(mainWindow, config, isDev) {
-  const settingsURL = isDev ? 'http://localhost:8080/browser/settings.html' : `file://${app.getAppPath()}/browser/settings.html`;
+  const settingsURL = isDev ? 'http://localhost:8080/renderer/settings.html' : `file://${app.getAppPath()}/renderer/settings.html`;
 
   const separatorItem = {
     type: 'separator',

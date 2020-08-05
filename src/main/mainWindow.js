@@ -13,6 +13,7 @@ import log from 'electron-log';
 
 import * as Validator from './Validator';
 import contextMenu from './contextMenu';
+import { getLocalURL } from './utils';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
@@ -80,17 +81,11 @@ function createMainWindow(config, options) {
   mainWindow.deeplinkingUrl = options.deeplinkingUrl;
   mainWindow.setMenuBarVisibility(false);
 
-  if (isDevelopment) {
-    log.info('loading development version');
-    mainWindow.loadURL(`http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}`);
-  } else {
-    log.info('loading prod version');
-    mainWindow.loadURL(formatUrl({
-      pathname: path.join(__dirname, 'index.html'),
-      protocol: 'file',
-      slashes: true,
-    }));
-  }
+  const localURL = getLocalURL('index.html');
+  mainWindow.loadURL(localURL).catch(
+    (reason) => {
+      log.error(`Main window failed to load: ${reason}`);
+    });
   mainWindow.once('ready-to-show', () => {
     mainWindow.webContents.zoomLevel = 0;
 

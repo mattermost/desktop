@@ -4,7 +4,7 @@
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 // eslint-disable-next-line import/no-unresolved
-import '@/css/index.css';
+import 'renderer/css/index.css';
 
 if (process.env.NODE_ENV === 'production') {
   window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval

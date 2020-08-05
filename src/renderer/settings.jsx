@@ -5,7 +5,7 @@
 import {remote, ipcRenderer} from 'electron';
 
 // eslint-disable-next-line import/no-unresolved
-import '@/css/settings.css';
+import 'renderer/css/settings.css';
 
 import React from 'react';
 import ReactDOM from 'react-dom';

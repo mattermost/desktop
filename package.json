@@ -3,10 +3,10 @@
   "productName": "Mattermost",
   "version": "4.6.0-develop",
   "description": "Mattermost",
-  "main": "main.js",
+  "main": "index.js",
   "author": "Mattermost, Inc. <feedback@mattermost.com>",
   "license": "Apache-2.0",
-  "desktopName": "Mattermost.desktop",
+  "desktopName": "Mattermost.Desktop",
   "homepage": "https://about.mattermost.com",
   "engines": {
     "node": ">=4.2.0"
@@ -17,22 +17,26 @@
   },
   "scripts": {
     "build": "npm-run-all build:*",
-    "build:main": "webpack-cli --bail --config webpack.config.main.js",
+    "build:main": "webpack-cli --bail --config webpack.config.main.dev.js",
     "build:renderer": "webpack-cli --bail --config webpack.config.renderer.js",
-    "start": "electron src --disable-dev-mode",
+    "build-prod": "npm-run-all clean-dist build-prod:*",
+    "build-prod:main": "webpack-cli --bail --config webpack.config.main.prod.js",
+    "build-prod:renderer": "webpack-cli --bail --config webpack.config.renderer.js",
+    "start": "electron dist/ --disable-dev-mode",
     "restart": "npm run build && npm run start",
     "storybook": "start-storybook -p 9001 -c src/.storybook",
-    "clean": "rm -rf release/ node_modules/ && find src -name '*_bundle.js' | xargs rm",
+    "clean": "rm -rf release/ node_modules/ dist/ && find src -name '*_bundle.js' | xargs rm",
     "clean-install": "npm run clean && npm install",
-    "watch": "run-p watch:*",
+    "clean-dist": "rm -rf dist/",
+    "watch": "cross-env-shell WEBPACK_DEV_SERVER=1 run-p watch:*",
     "watch:main": "node scripts/watch_main_and_preload.js",
     "watch:renderer": "webpack-dev-server --config webpack.config.renderer.js",
     "test": "npm-run-all lint:js test:*",
     "test:app": "cross-env NODE_ENV=production npm run build && mocha -r @babel/register --reporter mocha-circleci-reporter --recursive test/specs",
     "package:all": "cross-env NODE_ENV=production npm-run-all check-build-config package:windows package:mac package:linux",
-    "package:windows": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --win --x64 --ia32 --publish=never",
-    "package:mac": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --mac --publish=never",
-    "package:linux": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --linux --x64 --ia32 --publish=never",
+    "package:windows": "cross-env NODE_ENV=production npm-run-all check-build-config build-prod && electron-builder --win --x64 --ia32 --publish=never",
+    "package:mac": "cross-env NODE_ENV=production npm-run-all check-build-config build-prod && electron-builder --mac --publish=never",
+    "package:linux": "cross-env NODE_ENV=production npm-run-all check-build-config build-prod && electron-builder --linux --x64 --ia32 --publish=never",
     "lint:js": "eslint --ignore-path .gitignore --ignore-pattern node_modules --ext .js --ext .jsx .",
     "lint:js-quiet": "eslint --ignore-path .gitignore --ignore-pattern node_modules --ext .js --ext .jsx . --quiet",
     "fix:js": "eslint --ignore-path .gitignore --ignore-pattern node_modules --quiet --ext .js --ext .jsx . --fix",
@@ -81,7 +85,7 @@
     "url-loader": "^1.1.2",
     "webpack": "^4.43.0",
     "webpack-cli": "^3.1.2",
-    "webpack-dev-server": "^3.1.14",
+    "webpack-dev-server": "^3.11.0",
     "webpack-merge": "^4.1.4"
   },
   "dependencies": {
@@ -105,15 +109,122 @@
     "winreg": "^1.2.4",
     "yargs": "^15.3.1"
   },
-  "electronWebpack": {
-    "staticSourceDirectory": "src/assets",
-    "main": {
-      "extraEntries": [
-        "@/preload/mattermost.js"
+  "build": {
+    "publish": [{
+      "provider": "generic",
+      "url": "https://releases.mattermost.com/desktop/"
+    }],
+    "appId": "Mattermost.Desktop",
+    "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "buildResources": "resources",
+      "output": "release"
+    },
+    "extraMetadata": {
+      "main": "dist/main.js"
+    },
+    "files": [
+      "index.js",
+      "main.js",
+      "dist/**/*",
+      "renderer/**/*{.html,.css,_bundle.js,.svg,.png}",
+      "assets/**/*",
+      "renderer/assets/fonts/*",
+      "node_modules/bootstrap/dist/**",
+      "node_modules/font-awesome/{css,fonts}/**"
+    ],
+    "protocols": [
+      {
+        "name": "Mattermost",
+        "schemes": [
+          "mattermost"
+        ]
+      }
+    ],
+    "afterPack": "scripts/afterpack.js",
+    "afterSign": "scripts/notarize.js",
+    "deb": {
+      "synopsis": "Mattermost Desktop App"
+    },
+    "linux": {
+      "category": "Network;InstantMessaging",
+      "target": [
+        "deb",
+        "tar.gz",
+        "appimage"
+      ],
+      "extraFiles": [
+        {
+          "filter": [
+            "LICENSE.txt",
+            "NOTICE.txt"
+          ]
+        },
+        {
+          "from": "resources/linux",
+          "filter": [
+            "create_desktop_file.sh",
+            "icon.svg",
+            "README.md"
+          ]
+        }
       ]
     },
-    "renderer": {
-      "webpackConfig": "webpack.config.renderer.js"
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        "zip",
+        "dmg"
+      ],
+      "darkModeSupport": true,
+      "extraResources": [
+        {
+          "filter": [
+            "LICENSE.txt",
+            "NOTICE.txt"
+          ]
+        }
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": true
+    },
+    "dmg": {
+      "background": "resources/osx/DMG_BG.png",
+      "contents": [
+        {
+          "x": 152,
+          "y": 201
+        },
+        {
+          "x": 445,
+          "y": 201,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "iconSize": 110,
+      "iconTextSize": 13
+    },
+    "squirrelWindows": {
+      "iconUrl": "file://resources/icon.ico",
+      "artifactName": "${name}-setup-${version}-${arch}.${ext}"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "extraFiles": [
+        {
+          "filter": [
+            "LICENSE.txt",
+            "NOTICE.txt"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "artifactName": "${name}-setup-${version}-win.${ext}"
     }
   }
 }

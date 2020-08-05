@@ -13,7 +13,9 @@ import PropTypes from 'prop-types';
 import {ipcRenderer, remote, shell} from 'electron';
 
 import Utils from '../../common/utils/util';
-import {protocols} from '../../../electron-builder.json';
+import {build} from '../../../package.json';
+
+const protocols = build.protocols;
 const scheme = protocols[0].schemes[0];
 
 import ErrorView from './ErrorView.jsx';

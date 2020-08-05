@@ -14,7 +14,7 @@ export class MattermostView {
     this.window = win;
     this.options = {
       webPreferences: {
-        preload: path.resolve(__dirname, 'preload.js'),
+        preload: path.resolve(__dirname, 'preload_bundle.js'),
       },
       ...options
     };

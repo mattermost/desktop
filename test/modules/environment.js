@@ -67,7 +67,7 @@ module.exports = {
 
   addClientCommands(client) {
     client.addCommand('loadSettingsPage', function async() {
-      return this.url('file://' + path.join(sourceRootDir, 'src/browser/settings.html')).waitUntilWindowLoaded();
+      return this.url('file://' + path.join(sourceRootDir, 'src/renderer/settings.html')).waitUntilWindowLoaded();
     });
     client.addCommand('isNodeEnabled', function async() {
       return this.execute(() => {

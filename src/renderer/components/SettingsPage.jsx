@@ -5,7 +5,7 @@
 // This file uses setState().
 /* eslint-disable react/no-set-state */
 // eslint-disable-next-line import/no-unresolved
-import '@/css/settings.css';
+import 'renderer/css/settings.css';
 
 import os from 'os';
 
@@ -35,7 +35,7 @@ const config = new Config(remote.app.getPath('userData') + '/config.json', remot
 
 function backToIndex(index) {
   const target = typeof index === 'undefined' ? 0 : index;
-  const indexURL = remote.getGlobal('isDev') ? 'http://localhost:8080/browser/index.html' : `file://${remote.app.getAppPath()}/browser/index.html`;
+  const indexURL = remote.getGlobal('isDev') ? 'http://localhost:8080/renderer/index.html' : `file://${remote.app.getAppPath()}/renderer/index.html`;
   remote.getCurrentWindow().loadURL(`${indexURL}?index=${target}`);
 }
 

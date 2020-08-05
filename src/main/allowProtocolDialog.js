@@ -3,12 +3,15 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import path from 'path';
 import fs from 'fs';
+
+import path from 'path';
 
 import {app, dialog, ipcMain, shell} from 'electron';
 
-import {protocols} from '../../electron-builder.json';
+import {build} from '../../package.json';
+
+const protocols = build.protocols;
 
 import * as Validator from './Validator';
 

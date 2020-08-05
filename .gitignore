@@ -15,7 +15,7 @@ test_config.json
 .idea
 testUserData
 
-src/browser/*.png
-src/browser/*.svg
-src/browser/*.woff2
-src/browser/assets/fonts/
+src/renderer/*.png
+src/renderer/*.svg
+src/renderer/*.woff2
+src/renderer/assets/fonts/

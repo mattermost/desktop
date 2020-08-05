@@ -33,3 +33,8 @@ body {
 #content {
   height: 100%;
 }
+
+
+.removeme {
+  opacity: 1;
+}

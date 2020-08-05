@@ -38,7 +38,6 @@
         "test/specs/browser/settings_test.js",
         "test/modules/utils.js",
         "test/modules/environment.js",
-        "webpack.config.main.js",
         "CHANGELOG.md",
         "webpack.config.base.js",
         "babel.config.js",

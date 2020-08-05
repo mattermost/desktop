@@ -1,6 +1,6 @@
-// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+// Copyright (c) 2015-2016 Yuya Ochiai
 
 // This files uses CommonJS.
 /* eslint-disable import/no-commonjs */
@@ -13,10 +13,13 @@ const merge = require('webpack-merge');
 const base = require('./webpack.config.base');
 
 module.exports = merge(base, {
-  entry: './src/main.js',
+  entry: {
+    index: './src/main/main.js',
+    preload: './src/main/preload/mattermost.js'
+  },
   output: {
-    path: path.join(__dirname, 'src'),
-    filename: '[name]_bundle.js',
+    path: path.join(__dirname, 'dist/'),
+    filename: '[name].js',
   },
   module: {
     rules: [{

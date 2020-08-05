@@ -6,15 +6,13 @@ import fs from 'fs';
 import os from 'os';
 import path, { parse } from 'path';
 
-import {format as formatUrl} from 'url';
-
 import electron, {nativeTheme} from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
 
-import {protocols} from '../../electron-builder.json';
+import {build} from '../../package.json';
 import RegistryConfig from '../common/config/RegistryConfig';
 import Config from '../common/config';
 
@@ -33,7 +31,7 @@ import downloadURL from './downloadURL';
 import allowProtocolDialog from './allowProtocolDialog';
 import AppStateManager from './AppStateManager';
 import initCookieManager from './cookieManager';
-import {shouldBeHiddenOnStartup} from './utils';
+import {shouldBeHiddenOnStartup, getLocalURL} from './utils';
 import UserActivityMonitor from './UserActivityMonitor';
 
 import parseArgs from './ParseArgs';
@@ -62,6 +60,7 @@ const loginCallbackMap = new Map();
 const certificateRequests = new Map();
 const userActivityMonitor = new UserActivityMonitor();
 const certificateErrorCallbacks = new Map();
+const protocols = build.protocols;
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -710,17 +709,14 @@ function initializeAfterAppReady() {
     deeplinkingUrl,
   });
 
-  //temporary
-  const settingsWindow = new BrowserWindow({...config.data, parent: mainWindow, webPreferences: {nodeIntegration: true}});
-  if (process.env.NODE_ENV === 'production') {
-    settingsWindow.loadURL(formatUrl({
-      pathname: path.join(__dirname, 'index.html?settings'),
-      protocol: 'file',
-      slashes: true,
-    }));
-  } else {
-    settingsWindow.loadURL(`http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}?settings`);
-  }
+  // temporary
+  const settingsWindow = new BrowserWindow({...config.data, parent: mainWindow, title: 'Desktop App Settings', webPreferences: {nodeIntegration: true}});
+  const localURL = getLocalURL('index.html', {settings: true});
+  settingsWindow.loadURL(localURL).catch(
+    (reason) => {
+      log.error(`Settings window failed to load: ${reason}`);
+      log.info(process.env);
+    });
   settingsWindow.show();
 
   settingsWindow.webContents.openDevTools();

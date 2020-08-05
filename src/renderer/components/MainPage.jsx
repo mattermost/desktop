@@ -89,7 +89,7 @@ export default class MainPage extends React.Component {
     const allWebContents = remote.webContents.getAllWebContents();
 
     if (this.state.showNewTeamModal) {
-      const indexURL = '/browser/index.html';
+      const indexURL = '/renderer/index.html';
       return allWebContents.find((webContents) => webContents.getURL().includes(indexURL));
     }
 

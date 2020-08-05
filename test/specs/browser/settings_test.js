@@ -8,7 +8,7 @@ const fs = require('fs');
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
-describe('browser/settings.html', function desc() {
+describe('renderer/settings.html', function desc() {
   this.timeout(30000);
 
   const config = {
