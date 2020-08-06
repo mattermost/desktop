@@ -12,7 +12,7 @@ import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-install
 import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
 
-import {build} from '../../package.json';
+import {protocols} from '../../electron-builder.json';
 import RegistryConfig from '../common/config/RegistryConfig';
 import Config from '../common/config';
 
@@ -60,7 +60,6 @@ const loginCallbackMap = new Map();
 const certificateRequests = new Map();
 const userActivityMonitor = new UserActivityMonitor();
 const certificateErrorCallbacks = new Map();
-const protocols = build.protocols;
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.

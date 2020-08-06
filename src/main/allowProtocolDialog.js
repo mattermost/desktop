@@ -9,9 +9,7 @@ import path from 'path';
 
 import {app, dialog, ipcMain, shell} from 'electron';
 
-import {build} from '../../package.json';
-
-const protocols = build.protocols;
+import {protocols} from '../../electron-builder.json';
 
 import * as Validator from './Validator';
 

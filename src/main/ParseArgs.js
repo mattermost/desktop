@@ -3,11 +3,9 @@
 
 import yargs from 'yargs';
 
-import {build} from '../../package.json';
+import {protocols} from '../../electron-builder.json';
 
 import * as Validator from './Validator';
-
-const protocols = build.protocols;
 
 export default function parse(args) {
   return validateArgs(parseArgs(triageArgs(args)));
