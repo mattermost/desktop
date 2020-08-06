@@ -12,11 +12,16 @@ import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-install
 import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
 
+// eslint-disable-next-line import/no-unresolved
+import Utils from 'common/utils/util';
+
+// eslint-disable-next-line import/no-unresolved
+import {DEV_SERVER, DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
+
 import {protocols} from '../../electron-builder.json';
 import RegistryConfig from '../common/config/RegistryConfig';
 import Config from '../common/config';
 
-import Utils from '../common/utils/util';
 import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from '../common/permissions';
 
 import AutoLauncher from './AutoLauncher';
@@ -496,7 +501,10 @@ function handleAppWebContentsCreated(dc, contents) {
     if (customLogins[contentID].inProgress) {
       return;
     }
-    if ((parsedURL.protocol === 'file' || parsedURL.origin === `http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}`) && parsedURL.search === '?settings') {
+    const mode = Utils.runMode();
+    if ((mode === DEV_SERVER && parsedURL.origin === 'http://localhost:9000') ||
+        ((mode === DEVELOPMENT || mode === PRODUCTION) &&
+          (parsedURL.path === 'renderer/index.html' || parsedURL.path === 'renderer/settings.html'))) {
       log.info('loading settings page');
       return;
     }
@@ -710,7 +718,7 @@ function initializeAfterAppReady() {
 
   // temporary
   const settingsWindow = new BrowserWindow({...config.data, parent: mainWindow, title: 'Desktop App Settings', webPreferences: {nodeIntegration: true}});
-  const localURL = getLocalURL('index.html', {settings: true});
+  const localURL = getLocalURL('settings.html');
   settingsWindow.loadURL(localURL).catch(
     (reason) => {
       log.error(`Settings window failed to load: ${reason}`);

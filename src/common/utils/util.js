@@ -10,6 +10,8 @@ import {isUri, isHttpUri, isHttpsUri} from 'valid-url';
 
 import buildConfig from '../config/buildConfig';
 
+import {DEVELOPMENT, DEV_SERVER, PRODUCTION} from './constants';
+
 function getDomain(inputURL) {
   const parsedURL = url.parse(inputURL);
   return `${parsedURL.protocol}//${parsedURL.host}`;
@@ -217,6 +219,16 @@ const dispatchNotification = async (title, body, silent, handleClick) => {
   return notification;
 };
 
+function runMode() {
+  let mode = DEVELOPMENT;
+  if (process.env.WEBPACK_DEV_SERVER) {
+    mode = DEV_SERVER;
+  } else if (process.env.NODE_ENV === PRODUCTION) {
+    mode = PRODUCTION;
+  }
+  return mode;
+}
+
 export default {
   getDomain,
   isValidURL,
@@ -231,4 +243,5 @@ export default {
   getDisplayBoundaries,
   dispatchNotification,
   getHost,
+  runMode,
 };

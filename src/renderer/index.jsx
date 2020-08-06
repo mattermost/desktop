@@ -25,7 +25,6 @@ import Config from '../common/config';
 import EnhancedNotification from './js/notification';
 import MainPage from './components/MainPage.jsx';
 import {createDataURL as createBadgeDataURL} from './js/badge';
-import SettingsPage from './components/SettingsPage.jsx';
 
 Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
@@ -186,7 +185,7 @@ function openMenu() {
   }
 }
 
-let component = (
+const component = (
   <MainPage
     teams={teams}
     localTeams={config.localTeams}
@@ -201,23 +200,6 @@ let component = (
     moveTabs={moveTabs}
     openMenu={openMenu}
   />);
-
-// dead simple router, improve if we ever need more than 2 routes
-// TODO: review that this doesn't trigger with external routes e.g.: myexternalsite.com/?settings
-const router = new URLSearchParams(window.location.search);
-
-console.log(router);
-if (router.has('settings')) {
-  console.log('loading settings page');
-  component = (
-    <SettingsPage
-      getDarkMode={getDarkMode}
-      setDarkMode={setDarkMode}
-      openMenu={openMenu}
-    />);
-} else {
-  console.log('loading main page');
-}
 
 ReactDOM.render(
   component,

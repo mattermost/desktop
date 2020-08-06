@@ -12,11 +12,13 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const merge = require('webpack-merge');
 
 const base = require('./webpack.config.base');
+
 const WEBSERVER_PORT = 9000;
 
 module.exports = merge(base, {
   entry: {
     index: './src/renderer/index.jsx',
+    settings: './src/renderer/settings.jsx',
   },
   output: {
     path: path.resolve(__dirname, 'dist/renderer'),
@@ -26,6 +28,14 @@ module.exports = merge(base, {
     new HtmlWebpackPlugin({
       title: 'Mattermost Desktop App',
       template: 'src/renderer/index.html',
+      chunks: ['index'],
+      filename: 'index.html',
+    }),
+    new HtmlWebpackPlugin({
+      title: 'Mattermost Desktop Settings',
+      template: 'src/renderer/index.html',
+      chunks: ['settings'],
+      filename: 'settings.html',
     }),
     new MiniCssExtractPlugin({
       filename: 'styles.[contenthash].css',

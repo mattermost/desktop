@@ -6,6 +6,12 @@ import electron, {app} from 'electron';
 import {format} from 'url';
 import path from 'path';
 import log from 'electron-log';
+
+// eslint-disable-next-line import/no-unresolved
+import {DEV_SERVER, PRODUCTION} from 'common/utils/constants';
+// eslint-disable-next-line import/no-unresolved
+import Utils from 'common/utils/util';
+
 const TAB_BAR_HEIGHT = 38;
 
 export function shouldBeHiddenOnStartup(parsedArgv) {
@@ -36,7 +42,8 @@ export function getLocalURL(urlPath, query) {
     query,
     slashes: true,
   };
-  if (process.env.WEBPACK_DEV_SERVER) {
+  const mode = Utils.runMode();
+  if (mode === DEV_SERVER) {
     log.info('detected webserver');
     options.protocol = 'http';
     options.hostname = 'localhost';
@@ -44,7 +51,7 @@ export function getLocalURL(urlPath, query) {
     options.pathname = `/renderer/${urlPath}`;
   } else {
     options.protocol = 'file';
-    if (process.env.NODE_ENV === 'production') {
+    if (mode === PRODUCTION) {
       options.pathname = path.join(electron.app.getAppPath(), `dist/renderer/${urlPath}`);
     } else {
       options.pathname = path.resolve(__dirname, `../../dist/renderer/${urlPath}`); // TODO: find a better way to work with webpack on this

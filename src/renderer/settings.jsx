@@ -4,6 +4,7 @@
 
 import {remote, ipcRenderer} from 'electron';
 
+import 'bootstrap/dist/css/bootstrap.min.css';
 // eslint-disable-next-line import/no-unresolved
 import 'renderer/css/settings.css';
 
@@ -44,7 +45,7 @@ ReactDOM.render(
     setDarkMode={setDarkMode}
     openMenu={openMenu}
   />,
-  document.getElementById('content')
+  document.getElementById('app')
 );
 
 // Deny drag&drop navigation in mainWindow.
