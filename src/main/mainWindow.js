@@ -6,16 +6,13 @@ import fs from 'fs';
 
 import path from 'path';
 import os from 'os';
-import {format as formatUrl} from 'url';
 
 import {app, BrowserWindow} from 'electron';
 import log from 'electron-log';
 
 import * as Validator from './Validator';
 import contextMenu from './contextMenu';
-import { getLocalURL } from './utils';
-
-const isDevelopment = process.env.NODE_ENV !== 'production';
+import {getLocalURL} from './utils';
 
 function saveWindowState(file, window) {
   const windowState = window.getBounds();
