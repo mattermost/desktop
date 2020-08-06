@@ -4,7 +4,7 @@
 import fs from 'fs';
 
 import os from 'os';
-import path, { parse } from 'path';
+import path from 'path';
 
 import electron, {nativeTheme} from 'electron';
 import isDev from 'electron-is-dev';
