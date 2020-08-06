@@ -17,11 +17,9 @@
   },
   "scripts": {
     "build": "npm-run-all build:*",
-    "build:main": "webpack-cli --bail --config webpack.config.main.dev.js",
+    "build:main": "webpack-cli --bail --config webpack.config.main.js",
     "build:renderer": "webpack-cli --bail --config webpack.config.renderer.js",
-    "build-prod": "npm-run-all clean-dist build-prod:*",
-    "build-prod:main": "webpack-cli --bail --config webpack.config.main.prod.js",
-    "build-prod:renderer": "webpack-cli --bail --config webpack.config.renderer.js",
+    "build-prod": "npm-run-all clean-dist build:*",
     "start": "electron dist/ --disable-dev-mode",
     "restart": "npm run build && npm run start",
     "storybook": "start-storybook -p 9001 -c src/.storybook",
