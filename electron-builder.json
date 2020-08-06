@@ -10,7 +10,7 @@
     "output": "release"
   },
   "extraMetadata": {
-    "main": "dist/main.js"
+    "main": "dist/index.js"
   },
   "files": [
     "index.js",

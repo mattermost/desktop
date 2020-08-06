@@ -4,7 +4,7 @@
 const webpack = require('webpack');
 const electron = require('electron-connect').server.create({path: 'dist/'});
 
-const mainConfig = require('../webpack.config.main.dev.js');
+const mainConfig = require('../webpack.config.main.js');
 const rendererConfig = require('../webpack.config.renderer.js');
 
 let started = false;
