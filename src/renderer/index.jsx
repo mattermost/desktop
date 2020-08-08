@@ -14,6 +14,13 @@ if (process.env.NODE_ENV === 'production') {
   module.hot.accept();
 }
 
+// TODO: enable again, but for the moment seems to conflict with electron-webpack
+// window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
+//   import 'bootstrap/dist/css/bootstrap.min.css';
+//     throw new Error(`Sorry, ${remote.app.name} does not support window.eval() for security reasons.`);
+//   // eslint-disable-next-line import/no-unresolved
+//   };
+
 import url from 'url';
 
 import React from 'react';

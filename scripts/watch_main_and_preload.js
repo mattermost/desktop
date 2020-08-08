@@ -23,13 +23,6 @@ mainCompiler.watch({}, (err, stats) => {
   }
 });
 
-// for (const key in rendererConfig.entry) {
-//   if (!key.startsWith('webview/')) {
-//     if ({}.hasOwnProperty.call(rendererConfig.entry, key)) {
-//       delete rendererConfig.entry[key];
-//     }
-//   }
-// }
 const preloadCompiler = webpack(rendererConfig);
 preloadCompiler.watch({}, (err) => {
   if (err) {
