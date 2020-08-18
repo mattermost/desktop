@@ -1,4 +1,3 @@
-// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
@@ -10,9 +9,9 @@ import os from 'os';
 import {app, BrowserWindow} from 'electron';
 import log from 'electron-log';
 
-import * as Validator from './Validator';
-import contextMenu from './contextMenu';
-import {getLocalURL} from './utils';
+import * as Validator from '../Validator';
+import contextMenu from '../contextMenu';
+import {getLocalURL} from '../utils';
 
 function saveWindowState(file, window) {
   const windowState = window.getBounds();

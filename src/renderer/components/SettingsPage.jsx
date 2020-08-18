@@ -11,7 +11,7 @@ import os from 'os';
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import {Button, Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} from 'react-bootstrap';
+import {Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} from 'react-bootstrap';
 
 import {ipcRenderer, remote} from 'electron';
 import {debounce} from 'underscore';
@@ -32,12 +32,6 @@ const CONFIG_TYPE_SERVERS = 'servers';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
 const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
-
-function backToIndex(index) {
-  const target = typeof index === 'undefined' ? 0 : index;
-  const indexURL = remote.getGlobal('isDev') ? 'http://localhost:8080/renderer/index.html' : `file://${remote.app.getAppPath()}/renderer/index.html`;
-  remote.getCurrentWindow().loadURL(`${indexURL}?index=${target}`);
-}
 
 export default class SettingsPage extends React.Component {
   constructor(props) {
@@ -113,10 +107,6 @@ export default class SettingsPage extends React.Component {
       this.setState({
         showAddTeamForm: true,
       });
-    });
-
-    ipcRenderer.on('switch-tab', (event, key) => {
-      backToIndex(key);
     });
 
     ipcRenderer.on('zoom-in', () => {
@@ -295,10 +285,6 @@ export default class SettingsPage extends React.Component {
     if (teams.length === 0) {
       this.setState({showAddTeamForm: true});
     }
-  }
-
-  handleCancel = () => {
-    backToIndex();
   }
 
   handleChangeShowTrayIcon = () => {
@@ -922,16 +908,6 @@ export default class SettingsPage extends React.Component {
           >
             <div style={{position: 'relative'}}>
               <h1 style={settingsPage.heading}>{'Settings'}</h1>
-              <Button
-                id='btnClose'
-                className='CloseButton'
-                bsStyle='link'
-                style={settingsPage.close}
-                onClick={this.handleCancel}
-                disabled={this.state.teams.length === 0}
-              >
-                <span>{'×'}</span>
-              </Button>
             </div>
           </Navbar>
           <Grid
