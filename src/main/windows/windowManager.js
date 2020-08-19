@@ -2,14 +2,14 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
-import {app} from 'electron';
+import {app, nativeImage} from 'electron';
 import log from 'electron-log';
 
 import {createSettingsWindow} from './settingsWindow';
 import createMainWindow from './mainWindow';
 import {CriticalErrorHandler} from './../CriticalErrorHandler';
 
-// singleton element to manage windows
+// singleton module to manage application's windows
 
 const status = {
   mainWindow: null,
@@ -89,17 +89,48 @@ function handleMainWindowWebContentsCrashed() {
   throw new Error('webContents \'crashed\' event has been emitted');
 }
 
-export function restore() {
-  if (status.mainWindow && status.mainWindow.isMinimized()) {
-    status.mainWindow.restore();
-  } else {
-    showMainWindow();
-  }
-}
-
 export function sendToRenderer(channel, ...args) {
   if (!status.mainWindow) {
     showMainWindow();
   }
   status.mainWindow.webContents.send(channel, ...args);
+}
+
+// TODO: if settings is displayed, should we focus it instead?
+export function restoreMain() {
+  if (!status.mainWindow) {
+    showMainWindow();
+  }
+  if (!status.mainWindow.isVisible() || status.mainWindow.isMinimized()) {
+    if (status.mainWindow.isMinimized()) {
+      status.mainWindow.restore();
+    } else {
+      status.mainWindow.show();
+    }
+    status.mainWindow.focus();
+    if (process.platform === 'darwin') {
+      app.dock.show();
+    }
+  } else {
+    status.mainWindow.focus();
+  }
+}
+
+export function flashFrame(flash) {
+  if (process.platform === 'linux' || process.platform === 'win32') {
+    status.mainWindow.flashFrame(flash);
+    if (status.settingsWindow) {
+      // main might be hidden behind the settings
+      status.settingsWindow.flashFrame(flash);
+    }
+  }
+}
+
+export function setOverlayIcon(overlayDataURL, description) {
+  if (process.platform === 'win32') {
+    const overlay = overlayDataURL ? nativeImage.createFromDataURL(overlayDataURL) : null;
+    if (status.mainWindow) {
+      status.mainWindow.setOverlayIcon(overlay, description);
+    }
+  }
 }

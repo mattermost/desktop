@@ -232,7 +232,9 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('login-cancel', handleCancelLoginEvent);
   ipcMain.on('download-url', handleDownloadURLEvent);
   ipcMain.on('notified', handleNotifiedEvent);
-  ipcMain.on('update-title', handleUpdateTitleEvent);
+
+  // see comment on function
+  // ipcMain.on('update-title', handleUpdateTitleEvent);
   ipcMain.on('update-menu', handleUpdateMenuEvent);
   ipcMain.on('selected-client-certificate', handleSelectedCertificate);
   ipcMain.on(GRANT_PERMISSION_CHANNEL, handlePermissionGranted);
@@ -291,7 +293,7 @@ function handleAppSecondInstance(event, argv) {
   }
 
   // Someone tried to run a second instance, we should focus our window.
-  WindowManager.restore();
+  WindowManager.restoreMain();
 }
 
 function handleAppWindowAllClosed() {
@@ -751,38 +753,14 @@ function initializeAfterAppReady() {
 
     trayIcon.setToolTip(app.name);
     trayIcon.on('click', () => {
-      if (!mainWindow.isVisible() || mainWindow.isMinimized()) {
-        if (mainWindow.isMinimized()) {
-          mainWindow.restore();
-        } else {
-          mainWindow.show();
-        }
-        mainWindow.focus();
-        if (process.platform === 'darwin') {
-          app.dock.show();
-        }
-      } else {
-        mainWindow.focus();
-      }
+      WindowManager.restoreMain();
     });
 
     trayIcon.on('right-click', () => {
       trayIcon.popUpContextMenu();
     });
     trayIcon.on('balloon-click', () => {
-      if (process.platform === 'win32' || process.platform === 'darwin') {
-        if (mainWindow.isMinimized()) {
-          mainWindow.restore();
-        } else {
-          mainWindow.show();
-        }
-      }
-
-      if (process.platform === 'darwin') {
-        app.dock.show();
-      }
-
-      mainWindow.focus();
+      WindowManager.restoreMain();
     });
   }
 
@@ -810,7 +788,7 @@ function initializeAfterAppReady() {
 
     item.on('done', (doneEvent, state) => {
       if (state === 'completed') {
-        mainWindow.webContents.send('download-complete', {
+        WindowManager.sendToRenderer('download-complete', {
           fileName: filename,
           path: item.savePath,
           serverInfo: Utils.getServer(webContents.getURL(), config.teams),
@@ -842,7 +820,8 @@ function initializeAfterAppReady() {
     }
 
     // is the request coming from the renderer?
-    if (webContents.id === mainWindow.webContents.id) {
+    const mainWindow = WindowManager.getMainWindow();
+    if (mainWindow && webContents.id === mainWindow.webContents.id) {
       callback(true);
       return;
     }
@@ -876,9 +855,9 @@ function handleCancelLoginEvent(event, request) {
 }
 
 function handleDownloadURLEvent(event, url) {
-  downloadURL(mainWindow, url, (err) => {
+  downloadURL(url, (err) => {
     if (err) {
-      dialog.showMessageBox(mainWindow, {
+      dialog.showMessageBox(WindowManager.getMainWindow(), {
         type: 'error',
         message: err.toString(),
       });
@@ -888,10 +867,8 @@ function handleDownloadURLEvent(event, url) {
 }
 
 function handleNotifiedEvent() {
-  if (process.platform === 'win32' || process.platform === 'linux') {
-    if (config.notifications.flashWindow === 2) {
-      mainWindow.flashFrame(true);
-    }
+  if (config.notifications.flashWindow === 2) {
+    WindowManager.flashFrame(true);
   }
 
   if (process.platform === 'darwin' && config.notifications.bounceIcon) {
@@ -899,17 +876,13 @@ function handleNotifiedEvent() {
   }
 }
 
-function handleUpdateTitleEvent(event, arg) {
-  mainWindow.setTitle(arg.title);
-}
+// TODO: figure out if we want to inherit title from webpage or use one of our own
+// function handleUpdateTitleEvent(event, arg) {
+//   mainWindow.setTitle(arg.title);
+// }
 
 function handleUpdateUnreadEvent(event, arg) {
-  if (process.platform === 'win32') {
-    const overlay = arg.overlayDataURL ? nativeImage.createFromDataURL(arg.overlayDataURL) : null;
-    if (mainWindow) {
-      mainWindow.setOverlayIcon(overlay, arg.description);
-    }
-  }
+  WindowManager.setOverlayIcon(arg.overlayDataURL, arg.description);
 
   if (trayIcon && !trayIcon.isDestroyed()) {
     if (arg.sessionExpired) {
@@ -949,10 +922,12 @@ function handleOpenAppMenu() {
 }
 
 function handleCloseAppMenu(event) {
-  mainWindow.webContents.send('focus-on-webview', event);
+  WindowManager.sendToRenderer('focus-on-webview', event);
 }
 
 function handleUpdateMenuEvent(event, configData) {
+  // TODO: this might make sense to move to window manager? so it updates the window referenced if needed.
+  const mainWindow = WindowManager.getMainWindow();
   const aMenu = appMenu.createMenu(mainWindow, configData, global.isDev);
   Menu.setApplicationMenu(aMenu);
   aMenu.addListener('menu-will-close', handleCloseAppMenu);
@@ -1112,6 +1087,8 @@ function wasUpdated(lastAppVersion) {
 }
 
 function clearAppCache() {
+  // TODO: clear cache on browserviews, not in the renderer.
+  const mainWindow = WindowManager.getMainWindow();
   if (mainWindow) {
     mainWindow.webContents.session.clearCache().then(mainWindow.reload);
   } else {
