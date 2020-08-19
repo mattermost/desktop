@@ -1,1 +1,0 @@
-module.exports = __webpack_public_path__ + "fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_cyrillic_vietnamese-600.woff2";

@@ -8,6 +8,7 @@ const path = require('path');
 
 const Application = require('spectron').Application;
 const chai = require('chai');
+const { getLocalURL } = require('../../src/main/utils');
 chai.should();
 
 const sourceRootDir = path.join(__dirname, '../..');
@@ -67,7 +68,7 @@ module.exports = {
 
   addClientCommands(client) {
     client.addCommand('loadSettingsPage', function async() {
-      return this.url('file://' + path.join(sourceRootDir, 'src/renderer/settings.html')).waitUntilWindowLoaded();
+      return this.url(getLocalURL('settings.html')).waitUntilWindowLoaded();
     });
     client.addCommand('isNodeEnabled', function async() {
       return this.execute(() => {

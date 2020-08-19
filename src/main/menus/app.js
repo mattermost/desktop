@@ -5,8 +5,10 @@
 
 import {app, dialog, Menu, shell} from 'electron';
 
+import {getLocalURL} from '../utils';
+
 function createTemplate(mainWindow, config, isDev) {
-  const settingsURL = isDev ? 'http://localhost:8080/renderer/settings.html' : `file://${app.getAppPath()}/renderer/settings.html`;
+  const settingsURL = getLocalURL('settings.html');
 
   const separatorItem = {
     type: 'separator',

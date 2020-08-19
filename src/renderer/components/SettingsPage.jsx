@@ -33,6 +33,15 @@ const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
 const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
 
+function backToIndex(index) {
+  const target = typeof index === 'undefined' ? 0 : index;
+  return target;
+
+  // TODO: send the message to viewmanager to load the right one
+  // const indexURL = getLocalURL('index.html');
+  // remote.getCurrentWindow().loadURL(`${target}`);
+}
+
 export default class SettingsPage extends React.Component {
   constructor(props) {
     super(props);
