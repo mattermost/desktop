@@ -1,7 +1,0 @@
-{
-  "compilerOptions": {
-    "paths": {
-      "common/*": ["./src/common/*"],
-    }
-  }
-}

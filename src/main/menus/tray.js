@@ -5,8 +5,10 @@
 
 import {app, Menu} from 'electron';
 
+import {getLocalURL} from '../utils';
+
 function createTemplate(mainWindow, config, isDev) {
-  const settingsURL = isDev ? 'http://localhost:8080/renderer/settings.html' : `file://${app.getAppPath()}/renderer/settings.html`;
+  const settingsURL = getLocalURL('settings.html');
   const teams = config.teams;
   const template = [
     ...teams.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).map((team, i) => {

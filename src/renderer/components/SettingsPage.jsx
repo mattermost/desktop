@@ -35,8 +35,11 @@ const config = new Config(remote.app.getPath('userData') + '/config.json', remot
 
 function backToIndex(index) {
   const target = typeof index === 'undefined' ? 0 : index;
-  const indexURL = remote.getGlobal('isDev') ? 'http://localhost:8080/renderer/index.html' : `file://${remote.app.getAppPath()}/renderer/index.html`;
-  remote.getCurrentWindow().loadURL(`${indexURL}?index=${target}`);
+  return target;
+
+  // TODO: send the message to viewmanager to load the right one
+  // const indexURL = getLocalURL('index.html');
+  // remote.getCurrentWindow().loadURL(`${target}`);
 }
 
 export default class SettingsPage extends React.Component {
