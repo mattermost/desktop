@@ -14,8 +14,3 @@ test-results.xml
 test_config.json
 .idea
 testUserData
-
-src/renderer/*.png
-src/renderer/*.svg
-src/renderer/*.woff2
-src/renderer/assets/fonts/
