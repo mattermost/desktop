@@ -35,7 +35,6 @@ import downloadURL from './downloadURL';
 import allowProtocolDialog from './allowProtocolDialog';
 import AppStateManager from './AppStateManager';
 import initCookieManager from './cookieManager';
-import {shouldBeHiddenOnStartup} from './utils';
 import UserActivityMonitor from './UserActivityMonitor';
 import * as WindowManager from './windows/windowManager';
 
@@ -69,7 +68,6 @@ const certificateErrorCallbacks = new Map();
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let popupWindow = null;
-let hideOnStartup = null;
 let certificateStore = null;
 let trustedOriginsStore = null;
 let deeplinkingUrl = null;
@@ -160,7 +158,8 @@ function initializeArgs() {
     process.exit(0); // eslint-disable-line no-process-exit
   }
 
-  hideOnStartup = shouldBeHiddenOnStartup(global.args);
+  // TODO: are we going to use this?
+  // hideOnStartup = shouldBeHiddenOnStartup(global.args);
 
   global.isDev = isDev && !global.args.disableDevMode; // this doesn't seem to be right and isn't used as the single source of truth
 
@@ -174,6 +173,7 @@ function initializeConfig() {
   config = new Config(app.getPath('userData') + '/config.json');
   config.on('update', handleConfigUpdate);
   config.on('synchronize', handleConfigSynchronize);
+  WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
 }
 
 function initializeAppEventListeners() {
@@ -246,6 +246,8 @@ function initializeInterCommunicationEventListeners() {
   if (process.platform !== 'darwin') {
     ipcMain.on('open-app-menu', handleOpenAppMenu);
   }
+
+  ipcMain.on('switch-server', handleSwitchServer);
 }
 
 //
@@ -261,6 +263,7 @@ function handleConfigUpdate(configData) {
     }).catch((err) => {
       console.log('error:', err);
     });
+    WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
   }
 
   ipcMain.emit('update-menu', true, configData);
@@ -268,11 +271,15 @@ function handleConfigUpdate(configData) {
 
 function handleConfigSynchronize() {
   // TODO: send this to server manager
+  WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
+  viewManager.reloadConfiguration(config.teams, WindowManager.getMainWindow());
   WindowManager.sendToRenderer('reload-config');
 }
 
 function handleReloadConfig() {
   config.reload();
+  WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
+  viewManager.reloadConfiguration(config.teams, WindowManager.getMainWindow());
 }
 
 //
@@ -464,6 +471,11 @@ function handleAppWillFinishLaunching() {
       openDeepLink();
     }
   });
+}
+
+function handleSwitchServer(event, serverName) {
+  WindowManager.showMainWindow(true);
+  viewManager.showByName(serverName);
 }
 
 function handleAppWebContentsCreated(dc, contents) {
@@ -722,14 +734,15 @@ function initializeAfterAppReady() {
   // const boundaries = getWindowBoundaries(win);
   // setServersBounds(servers, boundaries);
   viewManager = new ViewManager(config.teams);
-  viewManager.load(WindowManager.getMainWindow()); //TODO: this might cause problems if we close the app
+  viewManager.load(WindowManager.getMainWindow());
   viewManager.showInitial();
 
   criticalErrorHandler.setMainWindow(WindowManager.getMainWindow());
 
   // TODO: find a way to pass along this info other than the window
   config.setRegistryConfigData(registryConfig.data);
-  mainWindow.registryConfigData = registryConfig.data;
+
+  // mainWindow.registryConfigData = registryConfig.data;
 
   // TODO: this has to be sent to the tabs instead
   // listen for status updates and pass on to renderer

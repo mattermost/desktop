@@ -23,4 +23,8 @@ export class MattermostServer {
     const parsedUrl = Utils.parseURL(otherURL);
     return parsedUrl && this.url.origin === parsedUrl.origin;
   }
+
+  equals = (otherServer) => {
+    return (this.name === otherServer.name) && (this.url.toString() === otherServer.url.toString());
+  }
 }

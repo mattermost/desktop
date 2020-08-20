@@ -41,6 +41,7 @@ export function showSettingsWindow() {
     }
     status.settingsWindow = createSettingsWindow(status.mainWindow, status.config);
     status.settingsWindow.on('close', () => {
+      // TODO: should we focus on the main window?
       status.settingsWindow = null;
     });
   }
@@ -133,4 +134,8 @@ export function setOverlayIcon(overlayDataURL, description) {
       status.mainWindow.setOverlayIcon(overlay, description);
     }
   }
+}
+
+export function isMainWindow(window) {
+  return status.mainWindow && status.mainWindow === window;
 }

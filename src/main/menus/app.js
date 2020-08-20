@@ -5,69 +5,74 @@
 
 import {app, dialog, Menu, shell} from 'electron';
 
-import {getLocalURL} from '../utils';
+import * as WindowManager from '../windows/windowManager';
 
-function createTemplate(mainWindow, config, isDev) {
-  const settingsURL = getLocalURL('settings.html');
-
+function createTemplate(config) {
   const separatorItem = {
     type: 'separator',
   };
 
+  const isMac = process.platform === 'darwin';
   const appName = app.name;
-  const firstMenuName = (process.platform === 'darwin') ? appName : 'File';
+  const firstMenuName = isMac ? appName : 'File';
   const template = [];
 
-  let platformAppMenu = process.platform === 'darwin' ? [{
-    label: 'About ' + appName,
-    role: 'about',
-    click() {
-      dialog.showMessageBox(mainWindow, {
-        buttons: ['OK'],
-        message: `${appName} Desktop ${app.getVersion()}`,
-      });
-    },
-  }, separatorItem, {
-    label: 'Preferences...',
+  const settingsLabel = isMac ? 'Preferences...' : 'Settings...';
+
+  let platformAppMenu = [];
+  if (isMac) {
+    platformAppMenu.push(
+      {
+        label: 'About ' + appName,
+        role: 'about',
+        click() {
+          dialog.showMessageBox(WindowManager.getMainWindow(), {
+            buttons: ['OK'],
+            message: `${appName} Desktop ${app.getVersion()}`,
+          });
+        },
+      }
+    );
+    platformAppMenu.push(separatorItem);
+  }
+  platformAppMenu.push({
+    label: settingsLabel,
     accelerator: 'CmdOrCtrl+,',
     click() {
-      mainWindow.loadURL(settingsURL);
+      WindowManager.showSettingsWindow();
     },
-  }] : [{
-    label: 'Settings...',
-    accelerator: 'CmdOrCtrl+,',
-    click() {
-      mainWindow.loadURL(settingsURL);
-    },
-  }];
+  });
 
   if (config.enableServerManagement === true) {
     platformAppMenu.push({
       label: 'Sign in to Another Server',
       click() {
-        mainWindow.webContents.send('add-server');
+        WindowManager.sendToRenderer('add-server');
       },
     });
   }
 
-  platformAppMenu = platformAppMenu.concat(process.platform === 'darwin' ? [
-    separatorItem, {
-      role: 'hide',
-    }, {
-      role: 'hideothers',
-    }, {
-      role: 'unhide',
-    }, separatorItem, {
-      role: 'quit',
-    }] : [
-    separatorItem, {
-      role: 'quit',
-      accelerator: 'CmdOrCtrl+Q',
-      click() {
-        app.quit();
-      },
-    }]
-  );
+  if (isMac) {
+    platformAppMenu = platformAppMenu.concat([
+      separatorItem, {
+        role: 'hide',
+      }, {
+        role: 'hideothers',
+      }, {
+        role: 'unhide',
+      }, separatorItem, {
+        role: 'quit',
+      }]);
+  } else {
+    platformAppMenu = platformAppMenu.concat([
+      separatorItem, {
+        role: 'quit',
+        accelerator: 'CmdOrCtrl+Q',
+        click() {
+          app.quit();
+        },
+      }]);
+  }
 
   template.push({
     label: '&' + firstMenuName,
@@ -81,38 +86,38 @@ function createTemplate(mainWindow, config, isDev) {
       label: 'Undo',
       accelerator: 'CmdOrCtrl+Z',
       click() {
-        mainWindow.webContents.send('undo');
+        WindowManager.sendToRenderer('undo');
       },
     }, {
       label: 'Redo',
       accelerator: 'CmdOrCtrl+SHIFT+Z',
       click() {
-        mainWindow.webContents.send('redo');
+        WindowManager.sendToRenderer('redo');
       },
     }, separatorItem, {
       label: 'Cut',
       accelerator: 'CmdOrCtrl+X',
       click() {
-        mainWindow.webContents.send('cut');
+        WindowManager.sendToRenderer('cut');
       },
     }, {
       label: 'Copy',
       accelerator: 'CmdOrCtrl+C',
       click() {
-        mainWindow.webContents.send('copy');
+        WindowManager.sendToRenderer('copy');
       },
     }, {
       label: 'Paste',
       accelerator: 'CmdOrCtrl+V',
       click() {
-        mainWindow.webContents.send('paste');
+        WindowManager.sendToRenderer('paste');
       },
     }, {
       label: 'Paste and Match Style',
       accelerator: 'CmdOrCtrl+SHIFT+V',
       visible: process.platform === 'darwin',
       click() {
-        mainWindow.webContents.send('paste-and-match');
+        WindowManager.sendToRenderer('paste-and-match');
       },
     }, {
       role: 'selectall',
@@ -131,8 +136,10 @@ function createTemplate(mainWindow, config, isDev) {
     accelerator: 'CmdOrCtrl+R',
     click(item, focusedWindow) {
       if (focusedWindow) {
-        if (focusedWindow === mainWindow) {
-          mainWindow.webContents.send('reload-tab');
+        // TODO: needs checking if there is a difference between BV having the focus and the renderer.
+        if (WindowManager.isMainWindow(focusedWindow)) {
+          // TODO: needs to be sent to ViewManager
+          WindowManager.sendToRenderer('reload-tab');
         } else {
           focusedWindow.reload();
         }
@@ -143,8 +150,8 @@ function createTemplate(mainWindow, config, isDev) {
     accelerator: 'Shift+CmdOrCtrl+R',
     click(item, focusedWindow) {
       if (focusedWindow) {
-        if (focusedWindow === mainWindow) {
-          mainWindow.webContents.send('clear-cache-and-reload-tab');
+        if (WindowManager.isMainWindow(focusedWindow)) {
+          WindowManager.sendToRenderer('clear-cache-and-reload-tab');
         } else {
           focusedWindow.webContents.session.clearCache().then(focusedWindow.reload);
         }
@@ -157,19 +164,19 @@ function createTemplate(mainWindow, config, isDev) {
     label: 'Actual Size',
     accelerator: 'CmdOrCtrl+0',
     click() {
-      mainWindow.webContents.send('zoom-reset');
+      WindowManager.sendToRenderer('zoom-reset');
     },
   }, {
     label: 'Zoom In',
     accelerator: 'CmdOrCtrl+SHIFT+=',
     click() {
-      mainWindow.webContents.send('zoom-in');
+      WindowManager.sendToRenderer('zoom-in');
     },
   }, {
     label: 'Zoom Out',
     accelerator: 'CmdOrCtrl+-',
     click() {
-      mainWindow.webContents.send('zoom-out');
+      WindowManager.sendToRenderer('zoom-out');
     },
   }, separatorItem, {
     label: 'Developer Tools for Application Wrapper',
@@ -187,7 +194,7 @@ function createTemplate(mainWindow, config, isDev) {
   }, {
     label: 'Developer Tools for Current Server',
     click() {
-      mainWindow.webContents.send('open-devtool');
+      WindowManager.sendToRenderer('open-devtool');
     },
   }];
 
@@ -196,7 +203,7 @@ function createTemplate(mainWindow, config, isDev) {
     viewSubMenu.push({
       label: 'Toggle Dark Mode',
       click() {
-        mainWindow.webContents.send('set-dark-mode');
+        WindowManager.sendToRenderer('set-dark-mode');
       },
     });
   }
@@ -211,8 +218,8 @@ function createTemplate(mainWindow, config, isDev) {
       label: 'Back',
       accelerator: process.platform === 'darwin' ? 'Cmd+[' : 'Alt+Left',
       click: (item, focusedWindow) => {
-        if (focusedWindow === mainWindow) {
-          mainWindow.webContents.send('go-back');
+        if (WindowManager.isMainWindow(focusedWindow)) {
+          WindowManager.sendToRenderer('go-back');
         } else if (focusedWindow.webContents.canGoBack()) {
           focusedWindow.webContents.goBack();
         }
@@ -221,8 +228,8 @@ function createTemplate(mainWindow, config, isDev) {
       label: 'Forward',
       accelerator: process.platform === 'darwin' ? 'Cmd+]' : 'Alt+Right',
       click: (item, focusedWindow) => {
-        if (focusedWindow === mainWindow) {
-          mainWindow.webContents.send('go-forward');
+        if (WindowManager.isMainWindow(focusedWindow)) {
+          WindowManager.sendToRenderer('go-forward');
         } else if (focusedWindow.webContents.canGoForward()) {
           focusedWindow.webContents.goForward();
         }
@@ -246,22 +253,22 @@ function createTemplate(mainWindow, config, isDev) {
         label: team.name,
         accelerator: `CmdOrCtrl+${i + 1}`,
         click() {
-          mainWindow.show(); // for OS X
-          mainWindow.webContents.send('switch-tab', i);
+          WindowManager.showMainWindow(); // for OS X
+          WindowManager.sendToRenderer('switch-tab', i);
         },
       };
     }), separatorItem, {
       label: 'Select Next Server',
       accelerator: 'Ctrl+Tab',
       click() {
-        mainWindow.webContents.send('select-next-tab');
+        WindowManager.sendToRenderer('select-next-tab');
       },
       enabled: (teams.length > 1),
     }, {
       label: 'Select Previous Server',
       accelerator: 'Ctrl+Shift+Tab',
       click() {
-        mainWindow.webContents.send('select-previous-tab');
+        WindowManager.sendToRenderer('select-previous-tab');
       },
       enabled: (teams.length > 1),
     }],
@@ -286,8 +293,8 @@ function createTemplate(mainWindow, config, isDev) {
   return template;
 }
 
-function createMenu(mainWindow, config, isDev) {
-  return Menu.buildFromTemplate(createTemplate(mainWindow, config, isDev));
+function createMenu(mainWindow, config) {
+  return Menu.buildFromTemplate(createTemplate(config));
 }
 
 export default {

@@ -62,4 +62,11 @@ export class MattermostView {
       vertical: true,
     });
   }
+
+  destroy = () => {
+    this.view.destroy();
+    this.window = null;
+    this.server = null;
+    this.isVisible = false;
+  }
 }

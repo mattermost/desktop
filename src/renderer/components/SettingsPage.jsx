@@ -33,13 +33,10 @@ const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
 const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
 
-function backToIndex(index) {
-  const target = typeof index === 'undefined' ? 0 : index;
-  return target;
-
-  // TODO: send the message to viewmanager to load the right one
-  // const indexURL = getLocalURL('index.html');
-  // remote.getCurrentWindow().loadURL(`${target}`);
+function backToIndex(serverName) {
+  ipcRenderer.send('switch-server', serverName);
+  remote.getCurrentWindow().close();
+  return serverName;
 }
 
 export default class SettingsPage extends React.Component {
@@ -631,8 +628,8 @@ export default class SettingsPage extends React.Component {
             updateTeam={this.updateTeam}
             addServer={this.addServer}
             allowTeamEdit={this.state.enableTeamModification}
-            onTeamClick={(index) => {
-              backToIndex(this.state.localTeams[index].order + this.state.buildTeams.length + this.state.registryTeams.length);
+            onTeamClick={(name) => {
+              backToIndex(name);
             }}
           />
         </Col>

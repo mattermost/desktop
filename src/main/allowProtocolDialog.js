@@ -41,7 +41,7 @@ function init(mainWindow) {
   });
 }
 
-function initDialogEvent(mainWindow) {
+function initDialogEvent() {
   ipcMain.on('confirm-protocol', (event, protocol, URL) => {
     if (allowedProtocols.indexOf(protocol) !== -1) {
       shell.openExternal(URL);
