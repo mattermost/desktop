@@ -6,6 +6,9 @@ import path from 'path';
 import {BrowserView, app} from 'electron';
 import log from 'electron-log';
 
+// eslint-disable-next-line import/no-unresolved
+import Utils from 'common/utils/util';
+
 import {getWindowBoundaries} from './utils';
 
 export class MattermostView {
@@ -24,7 +27,7 @@ export class MattermostView {
   }
 
   load = (someURL) => {
-    const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : parseUrl(someURL);
+    const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : Utils.parseUrl(someURL);
     log.info(`[${this.server.name}] Loading ${loadURL}`);
 
     // copying what webview sends

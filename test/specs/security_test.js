@@ -3,8 +3,9 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-const path = require('path');
 const fs = require('fs');
+
+const path = require('path');
 const http = require('http');
 
 const env = require('../modules/environment');
