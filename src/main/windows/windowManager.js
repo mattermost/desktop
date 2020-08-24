@@ -64,6 +64,7 @@ export function showMainWindow() {
 
     // window handlers
     status.mainWindow.on('close', () => {
+      log.warn('closing main window');
       status.mainWindow = null;
     });
     status.mainWindow.on('unresponsive', () => {
