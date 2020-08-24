@@ -6,6 +6,8 @@ import {remote, ipcRenderer} from 'electron';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 // eslint-disable-next-line import/no-unresolved
+import 'renderer/css/index.css';
+// eslint-disable-next-line import/no-unresolved
 import 'renderer/css/settings.css';
 
 // TODO: enable again, but for the moment seems to conflict with electron-webpack
