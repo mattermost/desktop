@@ -40,7 +40,7 @@ export function showSettingsWindow() {
       showMainWindow();
     }
     status.settingsWindow = createSettingsWindow(status.mainWindow, status.config);
-    status.settingsWindow.on('close', () => {
+    status.settingsWindow.on('closed', () => {
       // TODO: should we focus on the main window?
       status.settingsWindow = null;
     });
@@ -63,8 +63,8 @@ export function showMainWindow() {
     }
 
     // window handlers
-    status.mainWindow.on('close', () => {
-      log.warn('closing main window');
+    status.mainWindow.on('closed', () => {
+      log.warn('main window closed');
       status.mainWindow = null;
     });
     status.mainWindow.on('unresponsive', () => {

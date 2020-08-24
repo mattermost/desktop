@@ -78,17 +78,7 @@ export default class SettingsPage extends React.Component {
     const currentWindow = remote.getCurrentWindow();
     currentWindow.on('focus', focusListener);
     currentWindow.on('blur', blurListener);
-    if (currentWindow.isMaximized()) {
-      self.setState({maximized: true});
-    }
-    currentWindow.on('maximize', this.handleMaximizeState);
-    currentWindow.on('unmaximize', this.handleMaximizeState);
 
-    if (currentWindow.isFullScreen()) {
-      self.setState({fullScreen: true});
-    }
-    currentWindow.on('enter-full-screen', this.handleFullScreenState);
-    currentWindow.on('leave-full-screen', this.handleFullScreenState);
 
     // when the config object changes here in the renderer process, tell the main process to reload its config object to get the changes
     config.on('synchronize', () => {
@@ -106,35 +96,7 @@ export default class SettingsPage extends React.Component {
       });
     });
 
-    ipcRenderer.on('zoom-in', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      if (activeTabWebContents.zoomLevel >= 9) {
-        return;
-      }
-      activeTabWebContents.zoomLevel += 1;
-    });
 
-    ipcRenderer.on('zoom-out', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      if (activeTabWebContents.zoomLevel <= -8) {
-        return;
-      }
-      activeTabWebContents.zoomLevel -= 1;
-    });
-
-    ipcRenderer.on('zoom-reset', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.zoomLevel = 0;
-    });
 
     ipcRenderer.on('undo', () => {
       const activeTabWebContents = this.getTabWebContents();
@@ -152,37 +114,7 @@ export default class SettingsPage extends React.Component {
       activeTabWebContents.redo();
     });
 
-    ipcRenderer.on('cut', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.cut();
-    });
 
-    ipcRenderer.on('copy', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.copy();
-    });
-
-    ipcRenderer.on('paste', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.paste();
-    });
-
-    ipcRenderer.on('paste-and-match', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.pasteAndMatchStyle();
-    });
 
     if (process.platform === 'darwin') {
       self.setState({
@@ -427,26 +359,6 @@ export default class SettingsPage extends React.Component {
     });
   }
 
-  handleClose = () => {
-    const win = remote.getCurrentWindow();
-    win.close();
-  }
-
-  handleMinimize = () => {
-    const win = remote.getCurrentWindow();
-    win.minimize();
-  }
-
-  handleMaximize = () => {
-    const win = remote.getCurrentWindow();
-    win.maximize();
-  }
-
-  handleRestore = () => {
-    const win = remote.getCurrentWindow();
-    win.restore();
-  }
-
   openMenu = () => {
     // @eslint-ignore
     this.threeDotMenu.current.blur();
@@ -465,16 +377,6 @@ export default class SettingsPage extends React.Component {
         win.unmaximize();
       }
     }
-  }
-
-  handleMaximizeState = () => {
-    const win = remote.getCurrentWindow();
-    this.setState({maximized: win.isMaximized()});
-  }
-
-  handleFullScreenState = () => {
-    const win = remote.getCurrentWindow();
-    this.setState({fullScreen: win.isFullScreen()});
   }
 
   render() {
