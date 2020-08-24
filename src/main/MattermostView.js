@@ -26,6 +26,12 @@ export class MattermostView {
     log.info(`BrowserView created for server ${this.server.name}`);
   }
 
+  // use the same name as the server
+  // TODO: we'll need unique identifiers if we have multiple instances of the same server in different tabs (1:N relationships)
+  get name() {
+    return this.server.name;
+  }
+
   load = (someURL) => {
     const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : Utils.parseUrl(someURL);
     log.info(`[${this.server.name}] Loading ${loadURL}`);
