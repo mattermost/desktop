@@ -35,8 +35,8 @@ export class MattermostView {
     const userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.146 Electron/6.1.7 Safari/537.36 Mattermost/${app.getVersion()}`;
 
     const loading = this.view.webContents.loadURL(loadURL, {userAgent});
-    loading.then((result) => {
-      log.info(`[${this.server.name}] finished loading ${loadURL}: ${result}`);
+    loading.then(() => {
+      log.info(`[${this.server.name}] finished loading ${loadURL}`);
     }).catch((err) => {
       log.info(`[${this.server.name}] failed loading ${loadURL}: ${err}`);
     });
@@ -67,6 +67,9 @@ export class MattermostView {
   }
 
   destroy = () => {
+    if (this.window) {
+      this.window.removeBrowserView(this.view);
+    }
     this.view.destroy();
     this.window = null;
     this.server = null;
