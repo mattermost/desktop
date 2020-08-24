@@ -31,6 +31,15 @@ export class ViewManager {
 
     //TODO: think of a more gradual approach, this would reload all tabs but in most cases they will be the same or have small variation
     for (const view of oldviews.values()) {
+      // try to restore view to the same tab if possible, but if not use initial one
+      if (view.isVisible) {
+        const newView = this.views.get(view.name);
+        if (newView) {
+          newView.show(true);
+        } else {
+          this.showInitial();
+        }
+      }
       view.destroy();
     }
   }
@@ -39,6 +48,8 @@ export class ViewManager {
     // TODO: handle deeplink url
     const element = this.configServers.find((e) => e.order === 0);
     this.showByName(element.name);
+
+    // TODO: send event to highlight selected tab
   }
 
   showByName = (name) => {
