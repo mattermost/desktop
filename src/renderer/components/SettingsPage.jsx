@@ -786,7 +786,7 @@ export default class SettingsPage extends React.Component {
                 errorMessage={'Can\'t save your changes. Please try again.'}
               />
             </div>
-            { options.map((opt, i) => (
+            { options.map((opt) => (
               <FormGroup key={opt.key}>
                 {opt}
               </FormGroup>
