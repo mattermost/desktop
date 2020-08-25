@@ -63,10 +63,6 @@ export function showMainWindow() {
     }
 
     // window handlers
-    status.mainWindow.onbeforeunload = () => {
-      log.warn('we are about to close!');
-    };
-
     status.mainWindow.on('closed', () => {
       log.warn('main window closed');
       status.mainWindow = null;
