@@ -79,7 +79,6 @@ export default class SettingsPage extends React.Component {
     currentWindow.on('focus', focusListener);
     currentWindow.on('blur', blurListener);
 
-
     // when the config object changes here in the renderer process, tell the main process to reload its config object to get the changes
     config.on('synchronize', () => {
       ipcRenderer.send('reload-config');
@@ -96,8 +95,6 @@ export default class SettingsPage extends React.Component {
       });
     });
 
-
-
     ipcRenderer.on('undo', () => {
       const activeTabWebContents = this.getTabWebContents();
       if (!activeTabWebContents) {
@@ -113,8 +110,6 @@ export default class SettingsPage extends React.Component {
       }
       activeTabWebContents.redo();
     });
-
-
 
     if (process.platform === 'darwin') {
       self.setState({
