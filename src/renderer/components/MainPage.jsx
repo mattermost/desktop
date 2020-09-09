@@ -16,7 +16,6 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 
 import {ipcRenderer, remote, shell} from 'electron';
 
-// eslint-disable-next-line import/no-unresolved
 import Utils from 'common/utils/util';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';

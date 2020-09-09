@@ -6,7 +6,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} from 'react-bootstrap';
 
-// eslint-disable-next-line import/no-unresolved
 import Utils from 'common/utils/util';
 
 export default class NewTeamModal extends React.Component {
