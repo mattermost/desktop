@@ -4,7 +4,6 @@
 
 // This file uses setState().
 /* eslint-disable react/no-set-state */
-// eslint-disable-next-line import/no-unresolved
 import 'renderer/css/settings.css';
 
 import React from 'react';

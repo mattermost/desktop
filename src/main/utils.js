@@ -7,9 +7,7 @@ import {format} from 'url';
 import path from 'path';
 import log from 'electron-log';
 
-// eslint-disable-next-line import/no-unresolved
 import {DEV_SERVER, PRODUCTION} from 'common/utils/constants';
-// eslint-disable-next-line import/no-unresolved
 import Utils from 'common/utils/util';
 
 const TAB_BAR_HEIGHT = 38;

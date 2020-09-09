@@ -6,7 +6,6 @@ import path from 'path';
 import {BrowserView, app} from 'electron';
 import log from 'electron-log';
 
-// eslint-disable-next-line import/no-unresolved
 import Utils from 'common/utils/util';
 
 import {getWindowBoundaries} from './utils';

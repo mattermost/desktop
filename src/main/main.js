@@ -12,10 +12,8 @@ import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-install
 import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
 
-// eslint-disable-next-line import/no-unresolved
 import Utils from 'common/utils/util';
 
-// eslint-disable-next-line import/no-unresolved
 import {DEV_SERVER, DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
 
 import {protocols} from '../../electron-builder.json';
