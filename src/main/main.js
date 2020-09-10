@@ -17,7 +17,6 @@ import Utils from 'common/utils/util';
 import {DEV_SERVER, DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
 
 import {protocols} from '../../electron-builder.json';
-import RegistryConfig from '../common/config/RegistryConfig';
 import Config from '../common/config';
 
 import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from '../common/permissions';
@@ -35,6 +34,7 @@ import AppStateManager from './AppStateManager';
 import initCookieManager from './cookieManager';
 import UserActivityMonitor from './UserActivityMonitor';
 import * as WindowManager from './windows/windowManager';
+import {setBadge} from './badje';
 
 import parseArgs from './ParseArgs';
 import {ViewManager} from './viewManager';
@@ -71,7 +71,6 @@ let trustedOriginsStore = null;
 let deeplinkingUrl = null;
 let scheme = null;
 let appState = null;
-let registryConfig = null;
 let config = null;
 let trayIcon = null;
 let trayImages = null;
@@ -122,7 +121,6 @@ async function initialize() {
 
   // wait for registry config data to load and app ready event
   await Promise.all([
-    registryConfig.init(),
     app.whenReady(),
   ]);
 
@@ -167,7 +165,7 @@ function initializeArgs() {
 }
 
 function initializeConfig() {
-  registryConfig = new RegistryConfig();
+  //registryConfig = new RegistryConfig();
   config = new Config(app.getPath('userData') + '/config.json');
   config.on('update', handleConfigUpdate);
   config.on('synchronize', handleConfigSynchronize);
@@ -737,11 +735,6 @@ function initializeAfterAppReady() {
 
   criticalErrorHandler.setMainWindow(WindowManager.getMainWindow());
 
-  // TODO: find a way to pass along this info other than the window
-  config.setRegistryConfigData(registryConfig.data);
-
-  // mainWindow.registryConfigData = registryConfig.data;
-
   // TODO: this has to be sent to the tabs instead
   // listen for status updates and pass on to renderer
   userActivityMonitor.on('status', (status) => {
@@ -893,7 +886,7 @@ function handleNotifiedEvent() {
 // }
 
 function handleUpdateUnreadEvent(event, arg) {
-  WindowManager.setOverlayIcon(arg.overlayDataURL, arg.description);
+  setBadge(arg.sessionExpired, arg.unreadCount, arg.mentionCount, config.showUnreadBadge);
 
   if (trayIcon && !trayIcon.isDestroyed()) {
     if (arg.sessionExpired) {

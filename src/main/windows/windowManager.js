@@ -98,6 +98,15 @@ export function sendToRenderer(channel, ...args) {
   status.mainWindow.webContents.send(channel, ...args);
 }
 
+export function sendToAll(channel, ...args) {
+  sendToRenderer(channel, ...args);
+  if (status.settingsWindow) {
+    status.settingsWindow.webContents.send(channel, ...args);
+  }
+
+  // TODO: should we include popups?
+}
+
 // TODO: if settings is displayed, should we focus it instead?
 export function restoreMain() {
   if (!status.mainWindow) {

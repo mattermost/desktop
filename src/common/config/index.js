@@ -6,22 +6,40 @@ import fs from 'fs';
 import path from 'path';
 
 import {EventEmitter} from 'events';
+import {ipcMain} from 'electron';
 
 import * as Validator from '../../main/Validator';
 
 import defaultPreferences from './defaultPreferences';
 import upgradeConfigData from './upgradePreferences';
 import buildConfig from './buildConfig';
+import RegistryConfig, {REGISTRY_READ_EVENT} from './RegistryConfig';
+
+export const GET_CONFIGURATION = 'get_configuration';
+export const UPDATE_CONFIGURATION = 'update_configuration';
 
 /**
  * Handles loading and merging all sources of configuration as well as saving user provided config
  */
 export default class Config extends EventEmitter {
-  constructor(configFilePath, registryConfigData = {teams: []}) {
+  constructor(configFilePath) {
     super();
     this.configFilePath = configFilePath;
-    this.registryConfigData = registryConfigData;
+    this.registryConfig = new RegistryConfig();
+    this.registryConfig.once(REGISTRY_READ_EVENT, this.loadRegistry);
+    this.registryConfig.init();
+  }
+
+  /**
+   * Gets the teams from registry into the config object and reload
+   *
+   * @param {object} registryData Team configuration from the registry and if teams can be managed by user
+   */
+
+  loadRegistry(registryData) {
+    this.registryConfigData = registryData;
     this.reload();
+    ipcMain.handle(GET_CONFIGURATION, this.handleGetConfiguration);
   }
 
   /**
@@ -393,5 +411,12 @@ export default class Config extends EventEmitter {
 
   copy(data) {
     return Object.assign({}, data);
+  }
+
+  handleGetConfiguration(option) {
+    if (option) {
+      return this.combinedData[option];
+    }
+    return this.combinedData;
   }
 }

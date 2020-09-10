@@ -8,6 +8,7 @@ import WindowsRegistry from 'winreg';
 
 const REGISTRY_HIVE_LIST = [WindowsRegistry.HKLM, WindowsRegistry.HKCU];
 const BASE_REGISTRY_KEY_PATH = '\\Software\\Policies\\Mattermost';
+export const REGISTRY_READ_EVENT = 'registry-read';
 
 /**
  * Handles loading config data from the Windows registry set manually or by GPO
@@ -58,8 +59,10 @@ export default class RegistryConfig extends EventEmitter {
         console.log('[RegistryConfig] Nothing retrieved for \'EnableAutoUpdater\'', error);
       }
     }
+
+    // this will happen wether we are on windows and load the info or not
     this.initialized = true;
-    this.emit('update', this.data);
+    this.emit(REGISTRY_READ_EVENT, this.data);
   }
 
   /**
@@ -67,12 +70,12 @@ export default class RegistryConfig extends EventEmitter {
    */
   async getServersListFromRegistry() {
     const defaultTeams = await this.getRegistryEntry(`${BASE_REGISTRY_KEY_PATH}\\DefaultServerList`);
-    return defaultTeams.flat(2).reduce((teams, team) => {
+    return defaultTeams.flat(2).reduce((teams, team, index) => {
       if (team) {
         teams.push({
           name: team.name,
           url: team.value,
-          order: team.order,
+          order: team.order || index,
         });
       }
       return teams;
