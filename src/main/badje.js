@@ -2,7 +2,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, session} from 'electron';
+import {app} from 'electron';
 
 import * as WindowManager from './windows/windowManager';
 
