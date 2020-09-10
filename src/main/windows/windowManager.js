@@ -149,3 +149,7 @@ export function setOverlayIcon(overlayDataURL, description) {
 export function isMainWindow(window) {
   return status.mainWindow && status.mainWindow === window;
 }
+
+export function getDeepLinkingURL() {
+  return status.deeplinkingUrl;
+}

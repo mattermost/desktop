@@ -25,20 +25,24 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import {ipcRenderer} from 'electron';
 
-import {GET_CONFIGURATION} from '../common/config';
+import {GET_CONFIGURATION, UPDATE_TEAMS} from '../common/config';
 
 import EnhancedNotification from './js/notification';
 import MainPage from './components/MainPage.jsx';
-import {createDataURL as createBadgeDataURL} from './js/badge';
 
 Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
-let config;
-
 // todo: should we block?
 ipcRenderer.invoke(GET_CONFIGURATION).then((result) => {
-  config = result;
-  const teams = config.teams;
+  let config;
+  let teams;
+  const reloadConfig = (newConfig) => {
+    config = newConfig;
+    teams = config.teams;
+  };
+
+  reloadConfig(result);
+
   const parsedURL = url.parse(window.location.href, true);
   const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : getInitialIndex(teams);
 
@@ -50,68 +54,95 @@ ipcRenderer.invoke(GET_CONFIGURATION).then((result) => {
   // if (!parsedURL.query.index || parsedURL.query.index === null) {
   //   deeplinkingUrl = remote.getCurrentWindow().deeplinkingUrl;
   // }
+  const deeplinkingUrl = null;
+
+  config.on('update', (configData) => {
+    teams.splice(0, teams.length, ...configData.teams);
+  });
+
+  config.on('synchronize', () => {
+    ipcRenderer.send('reload-config');
+  });
+
+  ipcRenderer.on('reload-config', () => {
+    ipcRenderer.invoke(GET_CONFIGURATION).then(reloadConfig);
+  });
+
+  function teamConfigChange(updatedTeams, callback) {
+    //config.set('teams', updatedTeams);
+    ipcRenderer.invoke(UPDATE_TEAMS, updatedTeams).then((teamConfig) => {
+      teams = teamConfig;
+      config.teams = teamConfig;
+    });
+    if (callback) {
+      config.once('update', callback);
+    }
+  }
+
+  function moveTabs(originalOrder, newOrder) {
+    const tabOrder = teams.concat().map((team, index) => {
+      return {
+        index,
+        order: team.order,
+      };
+    }).sort((a, b) => (a.order - b.order));
+
+    const team = tabOrder.splice(originalOrder, 1);
+    tabOrder.splice(newOrder, 0, team[0]);
+
+    let teamIndex;
+    tabOrder.forEach((t, order) => {
+      if (order === newOrder) {
+        teamIndex = t.index;
+      }
+      teams[t.index].order = order;
+    });
+    teamConfigChange(teams);
+    return teamIndex;
+  }
+
+  // TODO: can we remove the next two and use other mechanisms? like direct comm to ipcMain
+  function getDarkMode() {
+    if (process.platform !== 'darwin') {
+      return config.darkMode;
+    }
+    return null;
+  }
+
+  function setDarkMode() {
+    if (process.platform !== 'darwin') {
+      const darkMode = Boolean(config.darkMode);
+      config.set('darkMode', !darkMode);
+      return !darkMode;
+    }
+    return null;
+  }
+
+  const component = (
+    <MainPage
+      teams={teams}
+      localTeams={config.localTeams}
+      initialIndex={initialIndex}
+      onBadgeChange={showBadge}
+      onTeamConfigChange={teamConfigChange}
+      useSpellChecker={config.useSpellChecker}
+      deeplinkingUrl={deeplinkingUrl}
+      showAddServerButton={config.enableServerManagement}
+      getDarkMode={getDarkMode}
+      setDarkMode={setDarkMode}
+      moveTabs={moveTabs}
+      openMenu={openMenu}
+    />);
+
+  ReactDOM.render(
+    component,
+    document.getElementById('app')
+  );
 }); // todo: catch?
-
-config.on('update', (configData) => {
-  teams.splice(0, teams.length, ...configData.teams);
-});
-
-config.on('synchronize', () => {
-  ipcRenderer.send('reload-config');
-});
-
-ipcRenderer.on('reload-config', () => {
-  config.reload();
-});
 
 function getInitialIndex(teams) {
   const element = teams.find((e) => e.order === 0);
   return element ? teams.indexOf(element) : 0;
-}
-
-function teamConfigChange(updatedTeams, callback) {
-  config.set('teams', updatedTeams);
-  if (callback) {
-    config.once('update', callback);
-  }
-}
-
-function moveTabs(originalOrder, newOrder) {
-  const tabOrder = teams.concat().map((team, index) => {
-    return {
-      index,
-      order: team.order,
-    };
-  }).sort((a, b) => (a.order - b.order));
-
-  const team = tabOrder.splice(originalOrder, 1);
-  tabOrder.splice(newOrder, 0, team[0]);
-
-  let teamIndex;
-  tabOrder.forEach((t, order) => {
-    if (order === newOrder) {
-      teamIndex = t.index;
-    }
-    teams[t.index].order = order;
-  });
-  teamConfigChange(teams);
-  return teamIndex;
-}
-
-function getDarkMode() {
-  if (process.platform !== 'darwin') {
-    return config.darkMode;
-  }
-  return null;
-}
-
-function setDarkMode() {
-  if (process.platform !== 'darwin') {
-    const darkMode = Boolean(config.darkMode);
-    config.set('darkMode', !darkMode);
-    return !darkMode;
-  }
-  return null;
 }
 
 function openMenu() {
@@ -127,27 +158,6 @@ function showBadge(sessionExpired, unreadCount, mentionCount) {
     mentionCount,
   });
 }
-
-const component = (
-  <MainPage
-    teams={teams}
-    localTeams={config.localTeams}
-    initialIndex={initialIndex}
-    onBadgeChange={showBadge}
-    onTeamConfigChange={teamConfigChange}
-    useSpellChecker={config.useSpellChecker}
-    deeplinkingUrl={deeplinkingUrl}
-    showAddServerButton={config.enableServerManagement}
-    getDarkMode={getDarkMode}
-    setDarkMode={setDarkMode}
-    moveTabs={moveTabs}
-    openMenu={openMenu}
-  />);
-
-ReactDOM.render(
-  component,
-  document.getElementById('app')
-);
 
 // Deny drag&drop navigation in mainWindow.
 // Drag&drop is allowed in webview of index.html.
