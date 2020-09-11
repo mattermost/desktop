@@ -32,16 +32,22 @@ import MainPage from './components/MainPage.jsx';
 
 Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
-// todo: should we block?
-ipcRenderer.invoke(GET_CONFIGURATION).then((result) => {
-  let config;
-  let teams;
-  const reloadConfig = (newConfig) => {
-    config = newConfig;
-    teams = config.teams;
-  };
+let config;
+let teams;
 
-  reloadConfig(result);
+const reloadConfig = (newConfig) => {
+  console.log('new configuration!');
+  console.log(newConfig);
+  config = newConfig;
+  teams = config.teams;
+};
+
+const start = async () => {
+// todo: should we block?
+  const configRequest = await ipcRenderer.invoke(GET_CONFIGURATION);
+  console.log('showing configRequest');
+  console.log(configRequest);
+  reloadConfig(configRequest);
 
   const parsedURL = url.parse(window.location.href, true);
   const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : getInitialIndex(teams);
@@ -138,11 +144,11 @@ ipcRenderer.invoke(GET_CONFIGURATION).then((result) => {
     component,
     document.getElementById('app')
   );
-}); // todo: catch?
+};
 
-function getInitialIndex(teams) {
-  const element = teams.find((e) => e.order === 0);
-  return element ? teams.indexOf(element) : 0;
+function getInitialIndex(teamList) {
+  const element = teamList.find((e) => e.order === 0);
+  return element ? teamList.indexOf(element) : 0;
 }
 
 function openMenu() {
@@ -163,3 +169,4 @@ function showBadge(sessionExpired, unreadCount, mentionCount) {
 // Drag&drop is allowed in webview of index.html.
 document.addEventListener('dragover', (event) => event.preventDefault());
 document.addEventListener('drop', (event) => event.preventDefault());
+start();
