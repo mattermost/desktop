@@ -94,7 +94,7 @@ export default class MattermostView extends React.Component {
         } else if (destURL.path.match(/^\/help\//)) {
           // continue to open special case internal urls in default browser
           shell.openExternal(e.url);
-        } else if (Utils.isTeamUrl(this.props.src, e.url, true)) {
+        } else if (Utils.isTeamUrl(this.props.src, e.url, true) || Utils.isAdminUrl(this.props.src, e.url)) {
           e.preventDefault();
           this.webviewRef.current.loadURL(e.url);
         } else if (Utils.isPluginUrl(this.props.src, e.url)) {
