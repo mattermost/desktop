@@ -699,7 +699,7 @@ function initializeAfterAppReady() {
 
   mainWindow = createMainWindow(config.data, {
     hideOnStartup,
-    trayIconShown: process.platform === 'win32' || config.showTrayIcon,
+    trayIconShown: config.showTrayIcon,
     linuxAppIcon: path.join(assetsDir, 'appicon.png'),
     deeplinkingUrl,
   });
@@ -1145,10 +1145,7 @@ function getDeeplinkingURL(args) {
 }
 
 function shouldShowTrayIcon() {
-  if (process.platform === 'win32') {
-    return true;
-  }
-  if (['darwin', 'linux'].includes(process.platform) && config.showTrayIcon === true) {
+  if (config.showTrayIcon === true) {
     return true;
   }
   return false;
