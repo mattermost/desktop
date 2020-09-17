@@ -29,6 +29,7 @@ function getSpellCheckerLocaleMenus(onSelectSpellCheckerLocale) {
     {language: 'German', locale: 'de-DE'},
     {language: 'Polish', locale: 'pl-PL'},
     {language: 'Portuguese (BR)', locale: 'pt-BR'},
+    {language: 'Russian', locale: 'ru-RU'},
     {language: 'Spanish (ES)', locale: 'es-ES'},
     {language: 'Spanish (MX)', locale: 'es-MX'},
     {language: 'Dutch', locale: 'nl-NL'},

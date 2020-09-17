@@ -33,6 +33,9 @@ describe('main/Spellchecker.js', function() {
 
       SpellChecker.getSpellCheckerLocale('it').should.equal('it-IT');
       SpellChecker.getSpellCheckerLocale('it-IT').should.equal('it-IT');
+
+      SpellChecker.getSpellCheckerLocale('ru').should.equal('ru-RU');
+      SpellChecker.getSpellCheckerLocale('ru-RU').should.equal('ru-RU');
     });
   });
 
@@ -109,6 +112,25 @@ describe('main/Spellchecker.js', function() {
     it('should allow contractions', function() {
       spellchecker.spellCheck("shouldn't").should.equal(true);
       spellchecker.spellCheck('shouldn').should.equal(true);
+    });
+  });
+
+  describe('ru-RU', function() {
+    let spellchecker = null;
+
+    before(function(done) {
+      spellchecker = new SpellChecker(
+        'ru-RU',
+        path.resolve(__dirname, '../../src/node_modules/simple-spellchecker/dict'),
+        done
+      );
+    });
+
+    it('should spellcheck', function() {
+      spellchecker.spellCheck('русский').should.equal(true);
+    });
+    it('should give suggestions', function() {
+      spellchecker.getSuggestions('руский', 1).length.should.be.equal(1);
     });
   });
 
