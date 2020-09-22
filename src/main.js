@@ -1145,7 +1145,7 @@ function getDeeplinkingURL(args) {
 }
 
 function shouldShowTrayIcon() {
-  if (config.showTrayIcon === true) {
+  if (config.showTrayIcon === true || process.platform === 'win32') {
     return true;
   }
   return false;
