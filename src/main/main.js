@@ -15,11 +15,11 @@ import 'airbnb-js-shims/target/es2015';
 import Utils from 'common/utils/util';
 
 import {DEV_SERVER, DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
+import {SWITCH_SERVER, FOCUS_BROWSERVIEW} from 'common/communication';
+import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from 'common/permissions';
+import Config from 'common/config';
 
 import {protocols} from '../../electron-builder.json';
-import Config from '../common/config';
-
-import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from '../common/permissions';
 
 import AutoLauncher from './AutoLauncher';
 import CriticalErrorHandler from './CriticalErrorHandler';
@@ -34,7 +34,7 @@ import AppStateManager from './AppStateManager';
 import initCookieManager from './cookieManager';
 import UserActivityMonitor from './UserActivityMonitor';
 import * as WindowManager from './windows/windowManager';
-import {setBadge} from './badje';
+import {showBadge} from './badge';
 
 import parseArgs from './ParseArgs';
 import {ViewManager} from './viewManager';
@@ -235,6 +235,7 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('selected-client-certificate', handleSelectedCertificate);
   ipcMain.on(GRANT_PERMISSION_CHANNEL, handlePermissionGranted);
   ipcMain.on(DENY_PERMISSION_CHANNEL, handlePermissionDenied);
+  ipcMain.on(FOCUS_BROWSERVIEW, handleFocus);
 
   if (shouldShowTrayIcon()) {
     ipcMain.on('update-unread', handleUpdateUnreadEvent);
@@ -243,7 +244,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on('open-app-menu', handleOpenAppMenu);
   }
 
-  ipcMain.on('switch-server', handleSwitchServer);
+  ipcMain.on(SWITCH_SERVER, handleSwitchServer);
 
   ipcMain.on('quit', handleQuit);
 }
@@ -894,7 +895,7 @@ function handleNotifiedEvent() {
 // }
 
 function handleUpdateUnreadEvent(event, arg) {
-  setBadge(arg.sessionExpired, arg.unreadCount, arg.mentionCount, config.showUnreadBadge);
+  showBadge(arg.sessionExpired, arg.unreadCount, arg.mentionCount, config.showUnreadBadge);
 
   if (trayIcon && !trayIcon.isDestroyed()) {
     if (arg.sessionExpired) {
@@ -935,6 +936,14 @@ function handleOpenAppMenu() {
 
 function handleCloseAppMenu(event) {
   WindowManager.sendToRenderer('focus-on-webview', event);
+}
+
+function handleFocus() {
+  if (viewManager) {
+    viewManager.focus();
+  } else {
+    log.error('Trying to call focus when the viewmanager has not yet been initialized');
+  }
 }
 
 function handleUpdateMenuEvent(event, configData) {

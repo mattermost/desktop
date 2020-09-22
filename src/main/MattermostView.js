@@ -80,4 +80,12 @@ export class MattermostView {
     this.server = null;
     this.isVisible = false;
   }
+
+  focus = () => {
+    if (this.view.webContents) {
+      this.view.webContents.focus();
+    } else {
+      log.warn('trying to focus the browserview, but it doesn\'t yet have webcontents.');
+    }
+  }
 }

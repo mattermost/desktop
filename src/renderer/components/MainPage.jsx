@@ -17,6 +17,7 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 import {ipcRenderer, remote, shell} from 'electron';
 
 import Utils from 'common/utils/util';
+import {FOCUS_BROWSERVIEW} from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
@@ -302,7 +303,7 @@ export default class MainPage extends React.Component {
     });
 
     ipcRenderer.on('focus-on-webview', () => {
-      this.focusOnWebView();
+      ipcRenderer.send(FOCUS_BROWSERVIEW);
     });
 
     ipcRenderer.on('protocol-deeplink', (event, deepLinkUrl) => {
@@ -351,7 +352,6 @@ export default class MainPage extends React.Component {
       this.inputRef.current.focus();
     } else if (!(this.state.finderVisible && this.state.focusFinder)) {
       this.handleOnTeamFocused(this.state.key);
-      this.refs[`mattermostView${this.state.key}`].focusOnWebView();
     }
     this.setState({unfocused: false});
   }
@@ -371,11 +371,12 @@ export default class MainPage extends React.Component {
     });
   };
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.key !== this.state.key) { // i.e. When tab has been changed
-      this.refs[`mattermostView${this.state.key}`].focusOnWebView();
-    }
-  }
+  // TODO: do we need to do something
+  // componentDidUpdate(prevProps, prevState) {
+  //   if (prevState.key !== this.state.key) { // i.e. When tab has been changed
+  //     this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+  //   }
+  // }
 
   switchToTabForCertificateRequest = (origin) => {
     // origin is server name + port, if the port doesn't match the protocol, it is kept by URL
@@ -492,7 +493,7 @@ export default class MainPage extends React.Component {
   handleOnTeamFocused = (index) => {
     // Turn off the flag to indicate whether unread message of active channel contains at current tab.
     // TODO: this should be handled by the viewmanager and the browserview
-    ///this.markReadAtActive(index);
+    this.markReadAtActive(index);
     return index;
   }
 
@@ -573,7 +574,7 @@ export default class MainPage extends React.Component {
   }
 
   focusOnWebView = () => {
-    this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+    ipcRenderer.send(FOCUS_BROWSERVIEW);
   }
 
   activateFinder = () => {
