@@ -244,6 +244,8 @@ function initializeInterCommunicationEventListeners() {
   }
 
   ipcMain.on('switch-server', handleSwitchServer);
+
+  ipcMain.on('quit', handleQuit);
 }
 
 //
@@ -322,6 +324,12 @@ function handleAppBeforeQuit() {
     trayIcon.destroy();
   }
   global.willAppQuit = true;
+}
+
+function handleQuit(e, reason) {
+  log.error(`Exiting App. Reason: ${reason}`);
+  this.handleAppBeforeQuit();
+  app.quit();
 }
 
 function handleSelectCertificate(event, webContents, url, list, callback) {

@@ -415,13 +415,14 @@ export default class Config extends EventEmitter {
     return Object.assign({}, data);
   }
 
-  handleGetConfiguration = (option) => {
+  handleGetConfiguration = (event, option) => {
     console.log('sending configuration to renderer');
-    console.log(this.combinedData);
+    const config = {...this.combinedData};
+    console.log(config);
     if (option) {
-      return this.combinedData[option];
+      return config[option];
     }
-    return JSON.stringify(this.combinedData);
+    return config;
   }
 
   handleUpdateTeams = (newTeams) => {

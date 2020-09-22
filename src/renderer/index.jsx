@@ -42,12 +42,21 @@ const reloadConfig = (newConfig) => {
   teams = config.teams;
 };
 
+const requestConfig = async (exitOnError) => {
+  // todo: should we block?
+  try {
+    const configRequest = await ipcRenderer.invoke(GET_CONFIGURATION);
+    reloadConfig(configRequest);
+  } catch (err) {
+    console.log(`there was an error with the config: ${err}`);
+    if (exitOnError) {
+      ipcRenderer.send('quit', 'unable to load configuration');
+    }
+  }
+};
+
 const start = async () => {
-// todo: should we block?
-  const configRequest = await ipcRenderer.invoke(GET_CONFIGURATION);
-  console.log('showing configRequest');
-  console.log(configRequest);
-  reloadConfig(configRequest);
+  await requestConfig(true);
 
   const parsedURL = url.parse(window.location.href, true);
   const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : getInitialIndex(teams);
@@ -62,12 +71,8 @@ const start = async () => {
   // }
   const deeplinkingUrl = null;
 
-  config.on('update', (configData) => {
-    teams.splice(0, teams.length, ...configData.teams);
-  });
-
-  config.on('synchronize', () => {
-    ipcRenderer.send('reload-config');
+  ipcRenderer.on('synchronize-config', () => {
+    requestConfig();
   });
 
   ipcRenderer.on('reload-config', () => {
@@ -81,7 +86,7 @@ const start = async () => {
       config.teams = teamConfig;
     });
     if (callback) {
-      config.once('update', callback);
+      ipcRenderer.invoke(UPDATE_TEAMS, callback);
     }
   }
 
@@ -124,6 +129,8 @@ const start = async () => {
     return null;
   }
 
+  console.log('config before rendering');
+  console.log(config);
   const component = (
     <MainPage
       teams={teams}
@@ -147,8 +154,11 @@ const start = async () => {
 };
 
 function getInitialIndex(teamList) {
-  const element = teamList.find((e) => e.order === 0);
-  return element ? teamList.indexOf(element) : 0;
+  if (teamList) {
+    const element = teamList.find((e) => e.order === 0);
+    return element ? teamList.indexOf(element) : 0;
+  }
+  return 0;
 }
 
 function openMenu() {
