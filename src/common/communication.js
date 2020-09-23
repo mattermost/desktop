@@ -8,6 +8,8 @@ export const ZOOM = 'zoom';
 export const UNDO = 'undo';
 export const REDO = 'redo';
 
+export const QUIT = 'quit';
+
 export const GET_CONFIGURATION = 'get-configuration';
 export const UPDATE_CONFIGURATION = 'update-configuration';
 export const UPDATE_TEAMS = 'update-teams';

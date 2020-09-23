@@ -25,7 +25,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import {ipcRenderer} from 'electron';
 
-import {GET_CONFIGURATION, UPDATE_TEAMS} from '../common/config';
+import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT} from 'common/communication';
 
 import EnhancedNotification from './js/notification';
 import MainPage from './components/MainPage.jsx';
@@ -45,12 +45,14 @@ const reloadConfig = (newConfig) => {
 const requestConfig = async (exitOnError) => {
   // todo: should we block?
   try {
+    console.log('requested configuration');
     const configRequest = await ipcRenderer.invoke(GET_CONFIGURATION);
+    console.log(`config is: ${configRequest}`);
     reloadConfig(configRequest);
   } catch (err) {
     console.log(`there was an error with the config: ${err}`);
     if (exitOnError) {
-      ipcRenderer.send('quit', `unable to load configuration: ${err}`);
+      ipcRenderer.send(QUIT, `unable to load configuration: ${err}`, err.stack);
     }
   }
 };

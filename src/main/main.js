@@ -15,7 +15,7 @@ import 'airbnb-js-shims/target/es2015';
 import Utils from 'common/utils/util';
 
 import {DEV_SERVER, DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
-import {SWITCH_SERVER, FOCUS_BROWSERVIEW} from 'common/communication';
+import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT} from 'common/communication';
 import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from 'common/permissions';
 import Config from 'common/config';
 
@@ -246,7 +246,7 @@ function initializeInterCommunicationEventListeners() {
 
   ipcMain.on(SWITCH_SERVER, handleSwitchServer);
 
-  ipcMain.on('quit', handleQuit);
+  ipcMain.on(QUIT, handleQuit);
 }
 
 //
@@ -327,8 +327,9 @@ function handleAppBeforeQuit() {
   global.willAppQuit = true;
 }
 
-function handleQuit(e, reason) {
+function handleQuit(e, reason, stack) {
   log.error(`Exiting App. Reason: ${reason}`);
+  log.info(`Stacktrace:\n${stack}`);
   handleAppBeforeQuit();
   app.quit();
 }

@@ -16,7 +16,6 @@ export class ViewManager {
   // TODO: we'll need an event in case the main window changes so this updates accordingly
   load = (mainWindow) => {
     this.configServers.forEach((server) => {
-      log.info(server);
       const srv = new MattermostServer(server.name, server.url);
       const view = new MattermostView(srv, mainWindow);
       this.views.set(server.name, view);
