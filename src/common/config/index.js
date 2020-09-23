@@ -10,12 +10,12 @@ import {ipcMain} from 'electron';
 
 import * as Validator from '../../main/Validator';
 
+import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION} from 'common/communication';
+
 import defaultPreferences from './defaultPreferences';
 import upgradeConfigData from './upgradePreferences';
 import buildConfig from './buildConfig';
 import RegistryConfig, {REGISTRY_READ_EVENT} from './RegistryConfig';
-
-import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION} from 'common/communication';
 
 /**
  * Handles loading and merging all sources of configuration as well as saving user provided config
