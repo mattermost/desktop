@@ -50,7 +50,7 @@ const requestConfig = async (exitOnError) => {
   } catch (err) {
     console.log(`there was an error with the config: ${err}`);
     if (exitOnError) {
-      ipcRenderer.send('quit', 'unable to load configuration');
+      ipcRenderer.send('quit', `unable to load configuration: ${err}`);
     }
   }
 };

@@ -15,7 +15,7 @@ import upgradeConfigData from './upgradePreferences';
 import buildConfig from './buildConfig';
 import RegistryConfig, {REGISTRY_READ_EVENT} from './RegistryConfig';
 
-import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION} from 'common/communications';
+import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION} from 'common/communication';
 
 /**
  * Handles loading and merging all sources of configuration as well as saving user provided config
@@ -95,6 +95,7 @@ export default class Config extends EventEmitter {
       this.regenerateCombinedConfigData();
       this.saveLocalConfigData();
     }
+
     // TODO: send ipc communication with new config
     return this.localConfigData(); //this is the only part that changes
   }

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
-import {remote, ipcRenderer} from 'electron';
+import {ipcRenderer} from 'electron';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'renderer/css/index.css';
