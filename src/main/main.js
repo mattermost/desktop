@@ -329,7 +329,7 @@ function handleAppBeforeQuit() {
 
 function handleQuit(e, reason) {
   log.error(`Exiting App. Reason: ${reason}`);
-  this.handleAppBeforeQuit();
+  handleAppBeforeQuit();
   app.quit();
 }
 
