@@ -17,7 +17,7 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 import {ipcRenderer, remote, shell} from 'electron';
 
 import Utils from 'common/utils/util';
-import {FOCUS_BROWSERVIEW} from 'common/communication';
+import {FOCUS_BROWSERVIEW, ZOOM, UNDO, REDO} from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
@@ -206,85 +206,94 @@ export default class MainPage extends React.Component {
     });
 
     ipcRenderer.on('zoom-in', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      if (activeTabWebContents.zoomLevel >= 9) {
-        return;
-      }
-      activeTabWebContents.zoomLevel += 1;
+      // TODO: do something with this
+      ipcRenderer.send(ZOOM, 1);
+
+      // const activeTabWebContents = this.getTabWebContents(this.state.key);
+      // if (!activeTabWebContents) {
+      //   return;
+      // }
+      // if (activeTabWebContents.zoomLevel >= 9) {
+      //   return;
+      // }
+      // activeTabWebContents.zoomLevel += 1;
     });
 
     ipcRenderer.on('zoom-out', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      if (activeTabWebContents.zoomLevel <= -8) {
-        return;
-      }
-      activeTabWebContents.zoomLevel -= 1;
+      // TODO: do something with this
+      ipcRenderer.send(ZOOM, -1);
     });
 
     ipcRenderer.on('zoom-reset', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.zoomLevel = 0;
+      // TODO: do something with this
+      ipcRenderer.send(ZOOM, null);
+
+      // const activeTabWebContents = this.getTabWebContents(this.state.key);
+      // if (!activeTabWebContents) {
+      //   return;
+      // }
+      // activeTabWebContents.zoomLevel = 0;
     });
 
     ipcRenderer.on('undo', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.undo();
+      // TODO: do something with this
+      ipcRenderer.send(UNDO);
+
+      // const activeTabWebContents = this.getTabWebContents(this.state.key);
+      // if (!activeTabWebContents) {
+      //   return;
+      // }
+      // activeTabWebContents.undo();
     });
 
     ipcRenderer.on('redo', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.redo();
+      // TODO: do something with this
+      ipcRenderer.send(REDO);
+
+      // const activeTabWebContents = this.getTabWebContents(this.state.key);
+      // if (!activeTabWebContents) {
+      //   return;
+      // }
+      // activeTabWebContents.redo();
     });
 
-    ipcRenderer.on('cut', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.cut();
-    });
+    // TODO: should this be an ipcRenderer.invoke?
+    // ipcRenderer.on('cut', () => {
+    //   const activeTabWebContents = this.getTabWebContents(this.state.key);
+    //   if (!activeTabWebContents) {
+    //     return;
+    //   }
+    //   activeTabWebContents.cut();
+    // });
 
-    ipcRenderer.on('copy', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.copy();
-    });
+    // ipcRenderer.on('copy', () => {
+    //   const activeTabWebContents = this.getTabWebContents(this.state.key);
+    //   if (!activeTabWebContents) {
+    //     return;
+    //   }
+    //   activeTabWebContents.copy();
+    // });
 
-    ipcRenderer.on('paste', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.paste();
-    });
+    // ipcRenderer.on('paste', () => {
+    //   const activeTabWebContents = this.getTabWebContents(this.state.key);
+    //   if (!activeTabWebContents) {
+    //     return;
+    //   }
+    //   activeTabWebContents.paste();
+    // });
 
-    ipcRenderer.on('paste-and-match', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.pasteAndMatchStyle();
-    });
+    // ipcRenderer.on('paste-and-match', () => {
+    //   const activeTabWebContents = this.getTabWebContents(this.state.key);
+    //   if (!activeTabWebContents) {
+    //     return;
+    //   }
+    //   activeTabWebContents.pasteAndMatchStyle();
+    // });
 
     //goBack and goForward
     ipcRenderer.on('go-back', () => {
+      // TODO: do something with this
+      ipcRenderer.send(ZOOM, -1);
       const mattermost = self.refs[`mattermostView${self.state.key}`];
       if (mattermost.canGoBack()) {
         mattermost.goBack();

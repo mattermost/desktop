@@ -13,16 +13,13 @@ import {Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} from 'rea
 import {ipcRenderer, remote} from 'electron';
 import {debounce} from 'underscore';
 
-import Config from '../../common/config';
+import {GET_CONFIGURATION, UPDATE_CONFIGURATION} from 'common/communication';
 
 import TeamList from './TeamList.jsx';
 import AutoSaveIndicator from './AutoSaveIndicator.jsx';
 
 const CONFIG_TYPE_SERVERS = 'servers';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
-
-// TODO: how to get the config here without using remote?
-const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
 
 function backToIndex(serverName) {
   ipcRenderer.send('switch-server', serverName);
@@ -32,15 +29,25 @@ function backToIndex(serverName) {
 export default class SettingsPage extends React.Component {
   constructor(props) {
     super(props);
-
-    this.state = this.convertConfigDataToState(config.data);
-    this.setState({
-      maximized: false,
+    ipcRenderer.invoke(GET_CONFIGURATION).then((config) => {
+      this.state = this.convertConfigDataToState(config.data);
+      this.state = {maximized: false, ...this.state};
     });
 
     this.trayIconThemeRef = React.createRef();
 
     this.saveQueue = [];
+
+    if (process.platform === 'darwin') {
+      this.state.isDarkMode = remote.nativeTheme.shouldUseDarkColors;
+      remote.systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
+        this.setState({
+          isDarkMode: remote.nativeTheme.shouldUseDarkColors,
+        });
+      });
+    } else {
+      this.state.isDarkMode = this.props.getDarkMode();
+    }
   }
 
   getTabWebContents() {
@@ -48,93 +55,15 @@ export default class SettingsPage extends React.Component {
   }
 
   componentDidMount() {
-    const self = this;
-    config.on('update', (configData) => {
-      this.updateSaveState();
-      this.setState(this.convertConfigDataToState(configData, this.state));
-    });
-
-    config.on('error', (error) => {
-      console.log('Config saving error: ', error);
-
-      const savingState = Object.assign({}, this.state.savingState);
-      Object.entries(savingState).forEach(([configType, currentState]) => {
-        if (currentState !== AutoSaveIndicator.SAVING_STATE_DONE) {
-          savingState[configType] = AutoSaveIndicator.SAVING_STATE_ERROR;
-          this.setState({savingState});
-        }
-      });
-    });
-
-    function focusListener() {
-      self.setState({unfocused: false});
-    }
-
-    function blurListener() {
-      self.setState({unfocused: true});
-    }
-
-    const currentWindow = remote.getCurrentWindow();
-    currentWindow.on('focus', focusListener);
-    currentWindow.on('blur', blurListener);
-
-    // when the config object changes here in the renderer process, tell the main process to reload its config object to get the changes
-    config.on('synchronize', () => {
-      ipcRenderer.send('reload-config');
-    });
-
-    // listen for any config reload requests from the main process to reload configuration changes here in the renderer process
-    ipcRenderer.on('reload-config', () => {
-      config.reload();
-    });
-
     ipcRenderer.on('add-server', () => {
       this.setState({
         showAddTeamForm: true,
       });
     });
 
-    ipcRenderer.on('undo', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.undo();
+    ipcRenderer.on('set-dark-mode', () => {
+      this.setDarkMode();
     });
-
-    ipcRenderer.on('redo', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.redo();
-    });
-
-    if (process.platform === 'darwin') {
-      self.setState({
-        isDarkMode: remote.nativeTheme.shouldUseDarkColors,
-      });
-      remote.systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
-        self.setState({
-          isDarkMode: remote.nativeTheme.shouldUseDarkColors,
-        });
-      });
-    } else {
-      self.setState({
-        isDarkMode: this.props.getDarkMode(),
-      });
-
-      ipcRenderer.on('set-dark-mode', () => {
-        this.setDarkMode();
-      });
-
-      this.threeDotMenu = React.createRef();
-      ipcRenderer.on('focus-three-dot-menu', () => {
-        if (this.threeDotMenu.current) {
-          this.threeDotMenu.current.focus();
-        }
-      });
-    }
   }
 
   convertConfigDataToState = (configData, currentState = {}) => {
@@ -163,7 +92,7 @@ export default class SettingsPage extends React.Component {
   }
 
   processSaveQueue = debounce(() => {
-    config.setMultiple(this.saveQueue.splice(0, this.saveQueue.length));
+    ipcRenderer.send(UPDATE_CONFIGURATION, this.saveQueue.splice(0, this.saveQueue.length));
   }, 500);
 
   updateSaveState = () => {

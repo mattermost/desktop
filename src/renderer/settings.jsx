@@ -17,11 +17,23 @@ import 'renderer/css/settings.css';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import Config from '../common/config';
+import {GET_CONFIGURATION} from 'common/communication';
 
 import SettingsPage from './components/SettingsPage.jsx';
 
-const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
+let config;
+
+const start = async () => {
+  config = await ipcRenderer.invoke(GET_CONFIGURATION);
+  ReactDOM.render(
+    <SettingsPage
+      getDarkMode={getDarkMode}
+      setDarkMode={setDarkMode}
+      openMenu={openMenu}
+    />,
+    document.getElementById('app')
+  );
+};
 
 function getDarkMode() {
   if (process.platform !== 'darwin') {
@@ -45,15 +57,8 @@ function openMenu() {
   }
 }
 
-ReactDOM.render(
-  <SettingsPage
-    getDarkMode={getDarkMode}
-    setDarkMode={setDarkMode}
-    openMenu={openMenu}
-  />,
-  document.getElementById('app')
-);
-
 // Deny drag&drop navigation in mainWindow.
 document.addEventListener('dragover', (event) => event.preventDefault());
 document.addEventListener('drop', (event) => event.preventDefault());
+
+start();

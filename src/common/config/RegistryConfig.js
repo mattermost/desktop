@@ -69,16 +69,16 @@ export default class RegistryConfig extends EventEmitter {
    * Extracts a list of servers
    */
   async getServersListFromRegistry() {
-    const defaultTeams = await this.getRegistryEntry(`${BASE_REGISTRY_KEY_PATH}\\DefaultServerList`);
-    return defaultTeams.flat(2).reduce((teams, team, index) => {
-      if (team) {
-        teams.push({
-          name: team.name,
-          url: team.value,
-          order: team.order || index,
+    const defaultServers = await this.getRegistryEntry(`${BASE_REGISTRY_KEY_PATH}\\DefaultServerList`);
+    return defaultServers.flat(2).reduce((servers, server, index) => {
+      if (server) {
+        servers.push({
+          name: server.name,
+          url: server.value,
+          order: server.order || index,
         });
       }
-      return teams;
+      return servers;
     }, []);
   }
 

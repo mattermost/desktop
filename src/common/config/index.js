@@ -15,9 +15,7 @@ import upgradeConfigData from './upgradePreferences';
 import buildConfig from './buildConfig';
 import RegistryConfig, {REGISTRY_READ_EVENT} from './RegistryConfig';
 
-export const GET_CONFIGURATION = 'get_configuration';
-export const UPDATE_CONFIGURATION = 'update_configuration';
-export const UPDATE_TEAMS = 'update_Teams';
+import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION} from 'common/communications';
 
 /**
  * Handles loading and merging all sources of configuration as well as saving user provided config
@@ -42,6 +40,7 @@ export default class Config extends EventEmitter {
     this.reload();
     ipcMain.handle(GET_CONFIGURATION, this.handleGetConfiguration);
     ipcMain.handle(UPDATE_TEAMS, this.handleUpdateTeams);
+    ipcMain.on(UPDATE_CONFIGURATION, this.setMultiple);
   }
 
   /**
@@ -86,7 +85,7 @@ export default class Config extends EventEmitter {
    *
    * @param {array} properties an array of config properties to save
    */
-  setMultiple = (properties = []) => {
+  setMultiple = (event, properties = []) => {
     if (properties.length) {
       properties.forEach(({key, data}) => {
         if (key) {
@@ -96,6 +95,8 @@ export default class Config extends EventEmitter {
       this.regenerateCombinedConfigData();
       this.saveLocalConfigData();
     }
+    // TODO: send ipc communication with new config
+    return this.localConfigData(); //this is the only part that changes
   }
 
   setRegistryConfigData = (registryConfigData = {teams: []}) => {
