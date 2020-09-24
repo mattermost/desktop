@@ -15,7 +15,7 @@ import 'airbnb-js-shims/target/es2015';
 import Utils from 'common/utils/util';
 
 import {DEV_SERVER, DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
-import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT} from 'common/communication';
+import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE} from 'common/communication';
 import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from 'common/permissions';
 import Config from 'common/config';
 
@@ -169,6 +169,7 @@ function initializeConfig() {
   config = new Config(app.getPath('userData') + '/config.json');
   config.on('update', handleConfigUpdate);
   config.on('synchronize', handleConfigSynchronize);
+  config.on('darkModeChange', handleDarkModeChange);
   WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
 }
 
@@ -279,6 +280,11 @@ function handleReloadConfig() {
   config.reload();
   WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
   viewManager.reloadConfiguration(config.teams, WindowManager.getMainWindow());
+}
+
+function handleDarkModeChange(darkMode) {
+  console.log(`send dark mode: ${darkMode}`);
+  WindowManager.sendToRenderer(DARK_MODE_CHANGE, darkMode);
 }
 
 //

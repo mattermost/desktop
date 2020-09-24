@@ -5,6 +5,8 @@ import path from 'path';
 import {app, nativeImage} from 'electron';
 import log from 'electron-log';
 
+import {MAXIMIZE_CHANGE} from 'common/communication';
+
 import {createSettingsWindow} from './settingsWindow';
 import createMainWindow from './mainWindow';
 import {CriticalErrorHandler} from './../CriticalErrorHandler';
@@ -73,6 +75,8 @@ export function showMainWindow() {
       criticalErrorHandler.windowUnresponsiveHandler();
     });
     status.mainWindow.on('crashed', handleMainWindowWebContentsCrashed);
+    status.mainWindow.on('maximize', () => this.sendToRenderer(MAXIMIZE_CHANGE, true));
+    status.mainWindow.on('unmaximize', () => this.sendToRenderer(MAXIMIZE_CHANGE, false));
   }
 }
 

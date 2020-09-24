@@ -17,7 +17,7 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 import {ipcRenderer, remote, shell} from 'electron';
 
 import Utils from 'common/utils/util';
-import {FOCUS_BROWSERVIEW, ZOOM, UNDO, REDO} from 'common/communication';
+import {FOCUS_BROWSERVIEW, ZOOM, UNDO, REDO, MAXIMIZE_CHANGE, DARK_MODE_CHANGE} from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
@@ -32,6 +32,12 @@ import NewTeamModal from './NewTeamModal.jsx';
 import SelectCertificateModal from './SelectCertificateModal.jsx';
 import PermissionModal from './PermissionModal.jsx';
 import ExtraBar from './ExtraBar.jsx';
+
+const NOT_LOADED = 0;
+const LOADING = 1;
+const DONE = 2;
+const RETRY = -1;
+const FAILED = -2;
 
 export default class MainPage extends React.Component {
   constructor(props) {
@@ -61,6 +67,8 @@ export default class MainPage extends React.Component {
       showNewTeamModal: false,
       focusFinder: false,
       finderVisible: false,
+      tabStatus: new Map(this.props.teams.map((server) => [server.name, NOT_LOADED])),
+      darkMode: this.props.darkMode,
     };
   }
 
@@ -85,6 +93,10 @@ export default class MainPage extends React.Component {
     return null;
   }
 
+  getTabStatus() {
+    return this.state.tabStatus[this.state.key];
+  }
+
   getTabWebContents(index = this.state.key || 0, teams = this.props.teams) {
     const allWebContents = remote.webContents.getAllWebContents();
 
@@ -105,14 +117,12 @@ export default class MainPage extends React.Component {
   }
 
   componentDidMount() {
-    const self = this;
-
     // Due to a bug in Chrome on macOS, mousemove events from the webview won't register when the webview isn't in focus,
     // thus you can't drag tabs unless you're right on the container.
     // this makes it so your tab won't get stuck to your cursor no matter where you mouse up
     if (process.platform === 'darwin') {
-      self.topBar.current.addEventListener('mouseleave', () => {
-        if (event.target === self.topBar.current) {
+      this.topBar.current.addEventListener('mouseleave', () => {
+        if (event.target === this.topBar.current) {
           const upEvent = document.createEvent('MouseEvents');
           upEvent.initMouseEvent('mouseup');
           document.dispatchEvent(upEvent);
@@ -120,7 +130,7 @@ export default class MainPage extends React.Component {
       });
 
       // Hack for when it leaves the electron window because apparently mouseleave isn't good enough there...
-      self.topBar.current.addEventListener('mousemove', () => {
+      this.topBar.current.addEventListener('mousemove', () => {
         if (event.clientY === 0 || event.clientX === 0 || event.clientX >= window.innerWidth) {
           const upEvent = document.createEvent('MouseEvents');
           upEvent.initMouseEvent('mouseup');
@@ -134,17 +144,22 @@ export default class MainPage extends React.Component {
     });
 
     ipcRenderer.on('select-user-certificate', (_, origin, certificateList) => {
-      const certificateRequests = self.state.certificateRequests;
+      const certificateRequests = this.state.certificateRequests;
       certificateRequests.push({
         server: origin,
         certificateList,
       });
-      self.setState({
+      this.setState({
         certificateRequests,
       });
       if (certificateRequests.length === 1) {
-        self.switchToTabForCertificateRequest(origin);
+        this.switchToTabForCertificateRequest(origin);
       }
+    });
+
+    ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => {
+      console.log(`switch to dark mode ${darkMode}`);
+      this.setState({darkMode});
     });
 
     // can't switch tabs sequentially for some reason...
@@ -177,32 +192,19 @@ export default class MainPage extends React.Component {
     });
     ipcRenderer.on('download-complete', this.showDownloadCompleteNotification);
 
-    const currentWindow = remote.getCurrentWindow();
-    currentWindow.on('focus', self.focusListener);
-    currentWindow.on('blur', self.blurListener);
-    window.addEventListener('beforeunload', () => {
-      currentWindow.removeListener('focus', self.focusListener);
-    });
+    ipcRenderer.on('focus', this.focusListener);
+    ipcRenderer.on('blur', this.blurListener);
 
-    if (currentWindow.isMaximized()) {
-      self.setState({maximized: true});
-    }
-    currentWindow.on('maximize', this.handleMaximizeState);
-    currentWindow.on('unmaximize', this.handleMaximizeState);
+    ipcRenderer.on(MAXIMIZE_CHANGE, this.handleMaximizeState);
 
-    if (currentWindow.isFullScreen()) {
-      self.setState({fullScreen: true});
-    }
-    currentWindow.on('enter-full-screen', this.handleFullScreenState);
-    currentWindow.on('leave-full-screen', this.handleFullScreenState);
+    ipcRenderer.on('enter-full-screen', this.handleFullScreenState);
+    ipcRenderer.on('leave-full-screen', this.handleFullScreenState);
 
+    // TODO: check this doesn't happen
     // https://github.com/mattermost/desktop/pull/371#issuecomment-263072803
-    currentWindow.webContents.on('devtools-closed', () => {
-      self.focusListener();
-    });
 
     ipcRenderer.on('open-devtool', () => {
-      document.getElementById(`mattermostView${self.state.key}`).openDevTools();
+      document.getElementById(`mattermostView${this.state.key}`).openDevTools();
     });
 
     ipcRenderer.on('zoom-in', () => {
@@ -294,14 +296,14 @@ export default class MainPage extends React.Component {
     ipcRenderer.on('go-back', () => {
       // TODO: do something with this
       ipcRenderer.send(ZOOM, -1);
-      const mattermost = self.refs[`mattermostView${self.state.key}`];
+      const mattermost = this.refs[`mattermostView${this.state.key}`];
       if (mattermost.canGoBack()) {
         mattermost.goBack();
       }
     });
 
     ipcRenderer.on('go-forward', () => {
-      const mattermost = self.refs[`mattermostView${self.state.key}`];
+      const mattermost = this.refs[`mattermostView${this.state.key}`];
       if (mattermost.canGoForward()) {
         mattermost.goForward();
       }
@@ -321,7 +323,7 @@ export default class MainPage extends React.Component {
         if (this.state.key !== parsedDeeplink.teamIndex) {
           this.handleSelect(parsedDeeplink.teamIndex);
         }
-        self.refs[`mattermostView${parsedDeeplink.teamIndex}`].handleDeepLink(parsedDeeplink.path);
+        this.refs[`mattermostView${parsedDeeplink.teamIndex}`].handleDeepLink(parsedDeeplink.path);
       }
     });
 
@@ -330,23 +332,6 @@ export default class MainPage extends React.Component {
     });
 
     if (process.platform === 'darwin') {
-      self.setState({
-        isDarkMode: remote.nativeTheme.shouldUseDarkColors,
-      });
-      remote.systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
-        self.setState({
-          isDarkMode: remote.nativeTheme.shouldUseDarkColors,
-        });
-      });
-    } else {
-      self.setState({
-        isDarkMode: this.props.getDarkMode(),
-      });
-
-      ipcRenderer.on('set-dark-mode', () => {
-        this.setDarkMode();
-      });
-
       this.threeDotMenu = React.createRef();
       ipcRenderer.on('focus-three-dot-menu', () => {
         if (this.threeDotMenu.current) {
@@ -408,9 +393,8 @@ export default class MainPage extends React.Component {
     this.setState({key: selectedTeam.index});
   }
 
-  handleMaximizeState = () => {
-    const win = remote.getCurrentWindow();
-    this.setState({maximized: win.isMaximized()});
+  handleMaximizeState = (_, maximized) => {
+    this.setState({maximized});
   }
 
   handleFullScreenState = () => {
@@ -634,11 +618,6 @@ export default class MainPage extends React.Component {
     });
   }
 
-  setDarkMode() {
-    this.setState({
-      isDarkMode: this.props.setDarkMode(),
-    });
-  }
   setInputRef = (ref) => {
     this.inputRef = ref;
   }
@@ -652,11 +631,10 @@ export default class MainPage extends React.Component {
   }
 
   render() {
-    const self = this;
     const tabsRow = (
       <TabBar
         id='tabBar'
-        isDarkMode={this.state.isDarkMode}
+        isDarkMode={this.state.darkMode}
         teams={this.props.teams}
         sessionsExpired={this.state.sessionsExpired}
         unreadCounts={this.state.unreadCounts}
@@ -675,7 +653,7 @@ export default class MainPage extends React.Component {
     if (process.platform === 'darwin') {
       topBarClassName += ' macOS';
     }
-    if (this.state.isDarkMode) {
+    if (this.state.darkMode) {
       topBarClassName += ' darkMode';
     }
     if (this.state.fullScreen) {
@@ -758,14 +736,14 @@ export default class MainPage extends React.Component {
 
     const views = this.props.teams.map((team, index) => {
       // function handleBadgeChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) {
-      //   self.handleBadgeChange(index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
+      //   this.handleBadgeChange(index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
       // }
       // function handleNotificationClick() {
-      //   self.handleSelect(index);
+      //   this.handleSelect(index);
       // }
       const id = 'mattermostView' + index;
 
-      // const isActive = self.state.key === index;
+      // const isActive = this.state.key === index;
 
       // let teamUrl = team.url;
 
@@ -786,10 +764,10 @@ export default class MainPage extends React.Component {
         //   onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
         //   src={teamUrl}
         //   name={team.name}
-        //   onTargetURLChange={self.handleTargetURLChange}
+        //   onTargetURLChange={this.handleTargetURLChange}
         //   onBadgeChange={handleBadgeChange}
         //   onNotificationClick={handleNotificationClick}
-        //   handleInterTeamLink={self.handleInterTeamLink}
+        //   handleInterTeamLink={this.handleInterTeamLink}
         //   ref={id}
         //   active={isActive}
         //   allowExtraBar={this.showExtraBar()}
@@ -801,7 +779,7 @@ export default class MainPage extends React.Component {
     const viewsRow = (
       <Fragment>
         <ExtraBar
-          darkMode={this.state.isDarkMode}
+          darkMode={this.state.darkMode}
           show={this.showExtraBar()}
           mattermostView={this.refs[`mattermostView${this.state.key}`]}
         />
@@ -832,7 +810,7 @@ export default class MainPage extends React.Component {
         onSave={(newTeam) => {
           this.props.localTeams.push(newTeam);
           this.props.onTeamConfigChange(this.props.localTeams, () => {
-            self.setState({
+            this.setState({
               showNewTeamModal: false,
               key: this.props.teams.length - 1,
             });
@@ -902,10 +880,9 @@ MainPage.propTypes = {
   useSpellChecker: PropTypes.bool.isRequired,
   deeplinkingUrl: PropTypes.string,
   showAddServerButton: PropTypes.bool.isRequired,
-  getDarkMode: PropTypes.func.isRequired,
-  setDarkMode: PropTypes.func.isRequired,
   moveTabs: PropTypes.func.isRequired,
   openMenu: PropTypes.func.isRequired,
+  darkMode: PropTypes.bool.isRequired,
 };
 
 /* eslint-enable react/no-set-state */

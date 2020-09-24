@@ -114,23 +114,6 @@ const start = async () => {
     return teamIndex;
   }
 
-  // TODO: can we remove the next two and use other mechanisms? like direct comm to ipcMain
-  function getDarkMode() {
-    if (process.platform !== 'darwin') {
-      return config.darkMode;
-    }
-    return null;
-  }
-
-  function setDarkMode() {
-    if (process.platform !== 'darwin') {
-      const darkMode = Boolean(config.darkMode);
-      config.set('darkMode', !darkMode);
-      return !darkMode;
-    }
-    return null;
-  }
-
   console.log('config before rendering');
   console.log(config);
   const component = (
@@ -143,10 +126,9 @@ const start = async () => {
       useSpellChecker={config.useSpellChecker}
       deeplinkingUrl={deeplinkingUrl}
       showAddServerButton={config.enableServerManagement}
-      getDarkMode={getDarkMode}
-      setDarkMode={setDarkMode}
       moveTabs={moveTabs}
       openMenu={openMenu}
+      darkMode={config.darkMode}
     />);
 
   ReactDOM.render(

@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 
 import {EventEmitter} from 'events';
-import {ipcMain} from 'electron';
+import {ipcMain, nativeTheme} from 'electron';
 
 import * as Validator from '../../main/Validator';
 
@@ -41,6 +41,9 @@ export default class Config extends EventEmitter {
     ipcMain.handle(GET_CONFIGURATION, this.handleGetConfiguration);
     ipcMain.handle(UPDATE_TEAMS, this.handleUpdateTeams);
     ipcMain.on(UPDATE_CONFIGURATION, this.setMultiple);
+    if (process.platform === 'darwin' || process.platform === 'win32') {
+      nativeTheme.on('updated', this.handleUpdateTheme);
+    }
   }
 
   /**
@@ -318,6 +321,9 @@ export default class Config extends EventEmitter {
     this.combinedData.localTeams = this.localConfigData.teams;
     this.combinedData.buildTeams = this.buildConfigData.defaultTeams;
     this.combinedData.registryTeams = this.registryConfigData.teams;
+    if (process.platform === 'darwin' || process.platform === 'win32') {
+      this.combinedData.darkMode = nativeTheme.shouldUseDarkColors;
+    }
   }
 
   /**
@@ -428,5 +434,17 @@ export default class Config extends EventEmitter {
   handleUpdateTeams = (newTeams) => {
     this.set('teams', newTeams);
     return this.combinedData.teams;
+  }
+
+  /**
+   * Detects changes in darkmode if it is windows or osx, updates the config and propagates the changes
+   * @emits 'darkModeChange'
+   */
+  handleUpdateTheme = () => {
+    console.log('dark theme mode change detected');
+    if (this.combinedData.darkMode !== nativeTheme.shouldUseDarkColors) {
+      this.combinedData.darkMode = nativeTheme.shouldUseDarkColors;
+      this.emit('darkModeChange', this.combinedData.darkMode);
+    }
   }
 }
