@@ -699,7 +699,7 @@ function initializeAfterAppReady() {
 
   mainWindow = createMainWindow(config.data, {
     hideOnStartup,
-    trayIconShown: config.showTrayIcon,
+     trayIconShown: process.platform === 'win32' || config.showTrayIcon, 
     linuxAppIcon: path.join(assetsDir, 'appicon.png'),
     deeplinkingUrl,
   });
