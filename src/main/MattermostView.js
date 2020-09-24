@@ -6,9 +6,16 @@ import path from 'path';
 import {BrowserView, app} from 'electron';
 import log from 'electron-log';
 
+import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constants';
 import Utils from 'common/utils/util';
+import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED} from 'common/communication';
 
 import {getWindowBoundaries} from './utils';
+import * as WindowManager from './windows/windowManager';
+
+// copying what webview sends
+// TODO: review
+const userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.146 Electron/6.1.7 Safari/537.36 Mattermost/${app.getVersion()}`;
 
 export class MattermostView {
   constructor(server, win, options) {
@@ -22,6 +29,8 @@ export class MattermostView {
     };
     this.isVisible = false;
     this.view = new BrowserView(this.options);
+    this.retryLoad = null;
+    this.maxRetries = MAX_SERVER_RETRIES;
     log.info(`BrowserView created for server ${this.server.name}`);
   }
 
@@ -32,19 +41,42 @@ export class MattermostView {
   }
 
   load = (someURL) => {
+    this.retryLoad = null;
     const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : Utils.parseUrl(someURL);
     log.info(`[${this.server.name}] Loading ${loadURL}`);
 
-    // copying what webview sends
-    // TODO: review
-    const userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.146 Electron/6.1.7 Safari/537.36 Mattermost/${app.getVersion()}`;
-
     const loading = this.view.webContents.loadURL(loadURL, {userAgent});
-    loading.then(() => {
-      log.info(`[${this.server.name}] finished loading ${loadURL}`);
-    }).catch((err) => {
-      log.info(`[${this.server.name}] failed loading ${loadURL}: ${err}`);
+    loading.then(this.loadSuccess(loadURL)).catch((err) => {
+      this.loadRetry(loadURL, err);
     });
+  }
+
+  retry = (loadURL) => {
+    return () => {
+      const loading = this.view.webContents.loadURL(loadURL, {userAgent});
+      loading.then(this.loadSuccess(loadURL)).catch((err) => {
+        if (this.maxRetries-- > 0) {
+          this.loadRetry(loadURL, err);
+        } else {
+          WindowManager.sendToRenderer(LOAD_FAILED, this.server.name);
+          log.info(`[${this.server.name}] Couldn't stablish a connection with ${loadURL}: ${err}.`);
+        }
+      });
+    };
+  }
+
+  loadRetry = (loadURL, err) => {
+    this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
+    WindowManager.sendToRenderer(LOAD_RETRY, this.server.name, Date.now() + RELOAD_INTERVAL);
+    log.info(`[${this.server.name}] failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
+  }
+
+  loadSuccess = (loadURL) => {
+    return () => {
+      log.info(`[${this.server.name}] finished loading ${loadURL}`);
+      WindowManager.sendToRenderer(LOAD_SUCCESS, this.server.name);
+      this.maxRetries = MAX_SERVER_RETRIES;
+    };
   }
 
   show = (requestedVisibility) => {

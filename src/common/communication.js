@@ -13,3 +13,7 @@ export const QUIT = 'quit';
 export const GET_CONFIGURATION = 'get-configuration';
 export const UPDATE_CONFIGURATION = 'update-configuration';
 export const UPDATE_TEAMS = 'update-teams';
+
+export const LOAD_RETRY = 'load_retry';
+export const LOAD_SUCCESS = 'load_success';
+export const LOAD_FAILED = 'load_fail';

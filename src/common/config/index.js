@@ -418,9 +418,7 @@ export default class Config extends EventEmitter {
   }
 
   handleGetConfiguration = (event, option) => {
-    console.log('sending configuration to renderer');
     const config = {...this.combinedData};
-    console.log(config);
     if (option) {
       return config[option];
     }
