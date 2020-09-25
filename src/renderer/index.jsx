@@ -129,6 +129,7 @@ const start = async () => {
       moveTabs={moveTabs}
       openMenu={openMenu}
       darkMode={config.darkMode}
+      appName={config.appName}
     />);
 
   ReactDOM.render(

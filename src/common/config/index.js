@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 
 import {EventEmitter} from 'events';
-import {ipcMain, nativeTheme} from 'electron';
+import {ipcMain, nativeTheme, app} from 'electron';
 
 import * as Validator from '../../main/Validator';
 
@@ -324,6 +324,7 @@ export default class Config extends EventEmitter {
     if (process.platform === 'darwin' || process.platform === 'win32') {
       this.combinedData.darkMode = nativeTheme.shouldUseDarkColors;
     }
+    this.combinedData.appName = app.appName;
   }
 
   /**

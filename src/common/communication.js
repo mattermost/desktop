@@ -7,6 +7,7 @@ export const FOCUS_BROWSERVIEW = 'focus-browserview';
 export const ZOOM = 'zoom';
 export const UNDO = 'undo';
 export const REDO = 'redo';
+export const HISTORY = 'history';
 
 export const QUIT = 'quit';
 
@@ -20,3 +21,5 @@ export const LOAD_SUCCESS = 'load_success';
 export const LOAD_FAILED = 'load_fail';
 
 export const MAXIMIZE_CHANGE = 'maximized_change';
+
+export const OPEN_EXTERNAL = 'open_external';

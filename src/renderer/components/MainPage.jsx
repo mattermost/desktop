@@ -17,7 +17,18 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 import {ipcRenderer, remote, shell} from 'electron';
 
 import Utils from 'common/utils/util';
-import {FOCUS_BROWSERVIEW, ZOOM, UNDO, REDO, MAXIMIZE_CHANGE, DARK_MODE_CHANGE} from 'common/communication';
+import {
+  FOCUS_BROWSERVIEW,
+  ZOOM,
+  UNDO,
+  REDO,
+  MAXIMIZE_CHANGE,
+  DARK_MODE_CHANGE,
+  HISTORY,
+  LOAD_RETRY,
+  LOAD_SUCCESS,
+  LOAD_FAILED,
+} from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
@@ -32,12 +43,12 @@ import NewTeamModal from './NewTeamModal.jsx';
 import SelectCertificateModal from './SelectCertificateModal.jsx';
 import PermissionModal from './PermissionModal.jsx';
 import ExtraBar from './ExtraBar.jsx';
+import ErrorView from './ErrorView.jsx';
 
-const NOT_LOADED = 0;
 const LOADING = 1;
 const DONE = 2;
 const RETRY = -1;
-const FAILED = -2;
+const FAILED = 0;
 
 export default class MainPage extends React.Component {
   constructor(props) {
@@ -67,7 +78,7 @@ export default class MainPage extends React.Component {
       showNewTeamModal: false,
       focusFinder: false,
       finderVisible: false,
-      tabStatus: new Map(this.props.teams.map((server) => [server.name, NOT_LOADED])),
+      tabStatus: new Map(this.props.teams.map((server) => [server.name, {status: LOADING, extra: null}])),
       darkMode: this.props.darkMode,
     };
   }
@@ -138,6 +149,42 @@ export default class MainPage extends React.Component {
         }
       });
     }
+
+    // set page on retry
+    ipcRenderer.on(LOAD_RETRY, (_, server, retry, err, loadUrl) => {
+      console.log(`${server}: failed to load ${err}, but retrying`);
+      const status = this.state.tabStatus;
+      const statusValue = {
+        status: RETRY,
+        extra: {
+          retry,
+          error: err,
+          url: loadUrl,
+        },
+      };
+      status.set(server, statusValue);
+      this.setState({tabStatus: status});
+    });
+
+    ipcRenderer.on(LOAD_SUCCESS, (_, server) => {
+      const status = this.state.tabStatus;
+      status.set(server, DONE);
+      this.setState({tabStatus: status});
+    });
+
+    ipcRenderer.on(LOAD_FAILED, (_, server, err, loadUrl) => {
+      console.log(`${server}: failed to load ${err}`);
+      const status = this.state.tabStatus;
+      const statusValue = {
+        status: FAILED,
+        extra: {
+          error: err,
+          url: loadUrl,
+        },
+      };
+      status.set(server, statusValue);
+      this.setState({tabStatus: status});
+    });
 
     ipcRenderer.on('login-request', (event, request, authInfo) => {
       this.loginRequest(event, request, authInfo);
@@ -734,17 +781,13 @@ export default class MainPage extends React.Component {
       </Row>
     );
 
-    const views = this.props.teams.map((team, index) => {
+    const views = () => {
       // function handleBadgeChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) {
       //   this.handleBadgeChange(index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
       // }
       // function handleNotificationClick() {
       //   this.handleSelect(index);
       // }
-      const id = 'mattermostView' + index;
-
-      // const isActive = this.state.key === index;
-
       // let teamUrl = team.url;
 
       // if (this.props.deeplinkingUrl) {
@@ -754,34 +797,40 @@ export default class MainPage extends React.Component {
       //   }
       // }
 
-      return (
-
-        // <MattermostView
-        //   key={id}
-        //   id={id}
-        //   teams={this.props.teams}
-        //   useSpellChecker={this.props.useSpellChecker}
-        //   onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
-        //   src={teamUrl}
-        //   name={team.name}
-        //   onTargetURLChange={this.handleTargetURLChange}
-        //   onBadgeChange={handleBadgeChange}
-        //   onNotificationClick={handleNotificationClick}
-        //   handleInterTeamLink={this.handleInterTeamLink}
-        //   ref={id}
-        //   active={isActive}
-        //   allowExtraBar={this.showExtraBar()}
-        // />);
-        <span key={id}>{id}</span>
-      );
-    });
+      let component;
+      const tabStatus = this.getTabStatus();
+      switch (tabStatus.status) {
+      case LOADING:
+        break;
+      case RETRY:
+        break;
+      case FAILED:
+        component = (
+          <ErrorView
+            id={this.status.key + '-fail'}
+            className='errorView'
+            errorInfo={tabStatus.extra ? tabStatus.extra.error : null}
+            url={tabStatus.extra ? tabStatus.extra.url : ''}
+            active={true}
+            retry={tabStatus.extra ? tabStatus.extra.retry : null}
+            appName={this.props.appName}
+          />);
+        break;
+      case DONE:
+        console.log(`Loading tab ${this.status.key}`);
+        component = null;
+      }
+      return component;
+    };
 
     const viewsRow = (
       <Fragment>
         <ExtraBar
           darkMode={this.state.darkMode}
           show={this.showExtraBar()}
-          mattermostView={this.refs[`mattermostView${this.state.key}`]}
+          goBack={() => {
+            ipcRenderer.send(HISTORY, -1);
+          }}
         />
         <Row>
           {views}
@@ -883,6 +932,7 @@ MainPage.propTypes = {
   moveTabs: PropTypes.func.isRequired,
   openMenu: PropTypes.func.isRequired,
   darkMode: PropTypes.bool.isRequired,
+  appName: PropTypes.string.isRequired
 };
 
 /* eslint-enable react/no-set-state */

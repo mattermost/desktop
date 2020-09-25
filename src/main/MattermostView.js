@@ -58,7 +58,7 @@ export class MattermostView {
         if (this.maxRetries-- > 0) {
           this.loadRetry(loadURL, err);
         } else {
-          WindowManager.sendToRenderer(LOAD_FAILED, this.server.name);
+          WindowManager.sendToRenderer(LOAD_FAILED, this.server.name, err.toString(), loadURL.toString());
           log.info(`[${this.server.name}] Couldn't stablish a connection with ${loadURL}: ${err}.`);
         }
       });
@@ -67,7 +67,7 @@ export class MattermostView {
 
   loadRetry = (loadURL, err) => {
     this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
-    WindowManager.sendToRenderer(LOAD_RETRY, this.server.name, Date.now() + RELOAD_INTERVAL);
+    WindowManager.sendToRenderer(LOAD_RETRY, this.server.name, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
     log.info(`[${this.server.name}] failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
   }
 
