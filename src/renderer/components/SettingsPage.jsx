@@ -13,7 +13,7 @@ import {Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} from 'rea
 import {ipcRenderer, remote} from 'electron';
 import {debounce} from 'underscore';
 
-import {GET_CONFIGURATION, UPDATE_CONFIGURATION} from 'common/communication';
+import {GET_LOCAL_CONFIGURATION, UPDATE_CONFIGURATION, DOUBLE_CLICK_ON_WINDOW} from 'common/communication';
 
 import TeamList from './TeamList.jsx';
 import AutoSaveIndicator from './AutoSaveIndicator.jsx';
@@ -29,29 +29,26 @@ function backToIndex(serverName) {
 export default class SettingsPage extends React.Component {
   constructor(props) {
     super(props);
-    ipcRenderer.invoke(GET_CONFIGURATION).then((config) => {
-      this.state = this.convertConfigDataToState(config.data);
-      this.state = {maximized: false, ...this.state};
+    this.state = {
+      ready: false,
+      teams: [],
+      showAddTeamForm: false,
+      savingState: {
+        appOptions: AutoSaveIndicator.SAVING_STATE_DONE,
+        servers: AutoSaveIndicator.SAVING_STATE_DONE,
+      },
+    }
+    ipcRenderer.invoke(GET_LOCAL_CONFIGURATION).then((config) => {
+      console.log('got config');
+      console.log(config);
+      this.state = this.convertConfigDataToState(config);
+      this.setState({ready: true, maximized: false, ...this.state});
+      console.log(this.state);
     });
-
     this.trayIconThemeRef = React.createRef();
 
     this.saveQueue = [];
 
-    if (process.platform === 'darwin') {
-      this.state.isDarkMode = remote.nativeTheme.shouldUseDarkColors;
-      remote.systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
-        this.setState({
-          isDarkMode: remote.nativeTheme.shouldUseDarkColors,
-        });
-      });
-    } else {
-      this.state.isDarkMode = this.props.getDarkMode();
-    }
-  }
-
-  getTabWebContents() {
-    return remote.webContents.getFocusedWebContents();
   }
 
   componentDidMount() {
@@ -61,15 +58,12 @@ export default class SettingsPage extends React.Component {
       });
     });
 
-    ipcRenderer.on('set-dark-mode', () => {
-      this.setDarkMode();
-    });
   }
 
   convertConfigDataToState = (configData, currentState = {}) => {
     const newState = Object.assign({}, configData);
     newState.showAddTeamForm = currentState.showAddTeamForm || false;
-    newState.trayWasVisible = currentState.trayWasVisible || remote.getCurrentWindow().trayWasVisible;
+    newState.trayWasVisible = currentState.trayWasVisible || false;
     if (newState.teams.length === 0 && currentState.firstRun !== false) {
       newState.firstRun = false;
       newState.showAddTeamForm = true;
@@ -259,7 +253,7 @@ export default class SettingsPage extends React.Component {
   }
 
   updateTeam = (index, newData) => {
-    const teams = this.state.localTeams;
+    const teams = this.state.teams;
     teams[index] = newData;
     setImmediate(this.saveSetting, CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
     this.setState({
@@ -268,7 +262,7 @@ export default class SettingsPage extends React.Component {
   }
 
   addServer = (team) => {
-    const teams = this.state.localTeams;
+    const teams = this.state.teams;
     teams.push(team);
     setImmediate(this.saveSetting, CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
     this.setState({
@@ -276,11 +270,6 @@ export default class SettingsPage extends React.Component {
     });
   }
 
-  setDarkMode() {
-    this.setState({
-      isDarkMode: this.props.setDarkMode(),
-    });
-  }
 
   openMenu = () => {
     // @eslint-ignore
@@ -289,17 +278,7 @@ export default class SettingsPage extends React.Component {
   }
 
   handleDoubleClick = () => {
-    if (process.platform === 'darwin') {
-      const doubleClickAction = remote.systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
-      const win = remote.getCurrentWindow();
-      if (doubleClickAction === 'Minimize') {
-        win.minimize();
-      } else if (!win.isMaximized()) {
-        win.maximize();
-      } else if (win.isMaximized()) {
-        win.unmaximize();
-      }
-    }
+    ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW, 'settings');
   }
 
   render() {
@@ -343,14 +322,14 @@ export default class SettingsPage extends React.Component {
       <Row>
         <Col md={12}>
           <TeamList
-            teams={this.state.localTeams}
+            teams={this.state.teams}
             showAddTeamForm={this.state.showAddTeamForm}
             toggleAddTeamForm={this.toggleShowTeamForm}
             setAddTeamFormVisibility={this.setShowTeamFormVisibility}
             onTeamsChange={this.handleTeamsChange}
             updateTeam={this.updateTeam}
             addServer={this.addServer}
-            allowTeamEdit={this.state.enableTeamModification}
+            allowTeamEdit={this.state.enableServerManagement}
             onTeamClick={(name) => {
               backToIndex(name);
             }}
@@ -480,7 +459,7 @@ export default class SettingsPage extends React.Component {
             key='bounceIcon'
             id='inputBounceIcon'
             ref='bounceIcon'
-            checked={this.state.notifications.bounceIcon}
+            checked={this.state.notifications ? this.state.notifications.bounceIcon : false}
             onChange={this.handleBounceIcon}
             style={{marginRight: '10px'}}
           >
@@ -490,8 +469,9 @@ export default class SettingsPage extends React.Component {
             inline={true}
             name='bounceIconType'
             value='informational'
-            disabled={!this.state.notifications.bounceIcon}
+            disabled={!this.state.notifications || !this.state.notifications.bounceIcon}
             defaultChecked={
+              !this.state.notifications ||
               !this.state.notifications.bounceIconType ||
               this.state.notifications.bounceIconType === 'informational'
             }
@@ -504,8 +484,8 @@ export default class SettingsPage extends React.Component {
             inline={true}
             name='bounceIconType'
             value='critical'
-            disabled={!this.state.notifications.bounceIcon}
-            defaultChecked={this.state.notifications.bounceIconType === 'critical'}
+            disabled={!this.state.notifications || !this.state.notifications.bounceIcon}
+            defaultChecked={this.state.notifications && this.state.notifications.bounceIconType === 'critical'}
             onChange={this.handleBounceIconType}
           >
             {'until I open the app'}
@@ -528,7 +508,7 @@ export default class SettingsPage extends React.Component {
           checked={this.state.showTrayIcon}
           onChange={this.handleChangeShowTrayIcon}
         >
-          {process.platform === 'darwin' ? `Show ${remote.app.name} icon in the menu bar` : 'Show icon in the notification area'}
+          {process.platform === 'darwin' ? `Show ${this.state.appName} icon in the menu bar` : 'Show icon in the notification area'}
           <HelpBlock>
             {'Setting takes effect after restarting the app.'}
           </HelpBlock>
@@ -547,7 +527,7 @@ export default class SettingsPage extends React.Component {
             inline={true}
             name='trayIconTheme'
             value='light'
-            defaultChecked={this.state.trayIconTheme === 'light' || this.state.trayIconTheme === ''}
+            defaultChecked={this.state.trayIconTheme === 'light' || !this.state.trayIconTheme}
             onChange={(event) => this.handleChangeTrayIconTheme('light', event)}
           >
             {'Light'}
@@ -621,6 +601,18 @@ export default class SettingsPage extends React.Component {
       );
     }
 
+    let waitForIpc;
+    if (this.state.ready) {
+      waitForIpc = (
+        <>
+          {srvMgmt}
+          {optionsRow}
+        </>
+      )
+    } else {
+      <p>Loading configuration...</p>
+    }
+
     return (
       <div
         className='container-fluid'
@@ -646,8 +638,7 @@ export default class SettingsPage extends React.Component {
           <Grid
             className='settingsPage'
           >
-            { srvMgmt }
-            { optionsRow }
+            {waitForIpc}
           </Grid>
         </div>
       </div>
@@ -656,8 +647,6 @@ export default class SettingsPage extends React.Component {
 }
 
 SettingsPage.propTypes = {
-  getDarkMode: PropTypes.func.isRequired,
-  setDarkMode: PropTypes.func.isRequired,
   openMenu: PropTypes.func.isRequired,
 };
 

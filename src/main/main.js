@@ -15,7 +15,7 @@ import 'airbnb-js-shims/target/es2015';
 import Utils from 'common/utils/util';
 
 import {DEV_SERVER, DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
-import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE} from 'common/communication';
+import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW} from 'common/communication';
 import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from 'common/permissions';
 import Config from 'common/config';
 
@@ -248,6 +248,8 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on(SWITCH_SERVER, handleSwitchServer);
 
   ipcMain.on(QUIT, handleQuit);
+
+  ipcMain.on(DOUBLE_CLICK_ON_WINDOW, handleDoubleClick);
 }
 
 //
@@ -488,6 +490,24 @@ function handleAppWillFinishLaunching() {
 function handleSwitchServer(event, serverName) {
   WindowManager.showMainWindow(true);
   viewManager.showByName(serverName);
+}
+
+function handleDoubleClick(event, windowType) {
+  let action = 'Maximize';
+  if (process.platform === 'darwin') {
+    action = systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
+  }
+  if (windowType === 'settings') {
+    switch (action) {
+      case 'Maximize':
+        WindowManager.max
+        break;
+    
+      default:
+        break;
+    }
+  }
+  
 }
 
 function handleAppWebContentsCreated(dc, contents) {

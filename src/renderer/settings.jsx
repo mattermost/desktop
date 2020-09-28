@@ -17,39 +17,18 @@ import 'renderer/css/settings.css';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import {GET_CONFIGURATION} from 'common/communication';
-
 import SettingsPage from './components/SettingsPage.jsx';
 
 let config;
 
 const start = async () => {
-  config = await ipcRenderer.invoke(GET_CONFIGURATION);
   ReactDOM.render(
     <SettingsPage
-      getDarkMode={getDarkMode}
-      setDarkMode={setDarkMode}
       openMenu={openMenu}
     />,
     document.getElementById('app')
   );
 };
-
-function getDarkMode() {
-  if (process.platform !== 'darwin') {
-    return config.darkMode;
-  }
-  return null;
-}
-
-function setDarkMode() {
-  if (process.platform !== 'darwin') {
-    const darkMode = Boolean(config.darkMode);
-    config.set('darkMode', !darkMode);
-    return !darkMode;
-  }
-  return null;
-}
 
 function openMenu() {
   if (process.platform !== 'darwin') {

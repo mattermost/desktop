@@ -10,7 +10,7 @@ import {ipcMain, nativeTheme, app} from 'electron';
 
 import * as Validator from '../../main/Validator';
 
-import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION} from 'common/communication';
+import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION} from 'common/communication';
 
 import defaultPreferences from './defaultPreferences';
 import upgradeConfigData from './upgradePreferences';
@@ -39,6 +39,7 @@ export default class Config extends EventEmitter {
     this.registryConfigData = registryData;
     this.reload();
     ipcMain.handle(GET_CONFIGURATION, this.handleGetConfiguration);
+    ipcMain.handle(GET_LOCAL_CONFIGURATION, this.handleGetLocalConfiguration);
     ipcMain.handle(UPDATE_TEAMS, this.handleUpdateTeams);
     ipcMain.on(UPDATE_CONFIGURATION, this.setMultiple);
     if (process.platform === 'darwin' || process.platform === 'win32') {
@@ -100,7 +101,7 @@ export default class Config extends EventEmitter {
     }
 
     // TODO: send ipc communication with new config
-    return this.localConfigData(); //this is the only part that changes
+    return this.localConfigData; //this is the only part that changes
   }
 
   setRegistryConfigData = (registryConfigData = {teams: []}) => {
@@ -324,7 +325,7 @@ export default class Config extends EventEmitter {
     if (process.platform === 'darwin' || process.platform === 'win32') {
       this.combinedData.darkMode = nativeTheme.shouldUseDarkColors;
     }
-    this.combinedData.appName = app.appName;
+    this.combinedData.appName = app.name;
   }
 
   /**
@@ -426,6 +427,16 @@ export default class Config extends EventEmitter {
 
   handleGetConfiguration = (event, option) => {
     const config = {...this.combinedData};
+    if (option) {
+      return config[option];
+    }
+    return config;
+  }
+
+  handleGetLocalConfiguration = (event, option) => {
+    const config = {...this.localConfigData};
+    config.appName = app.name;
+    config.enableServerManagement = this.combinedData.enableServerManagement;
     if (option) {
       return config[option];
     }
