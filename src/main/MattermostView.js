@@ -12,10 +12,14 @@ import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED} from 'common/communication';
 
 import {getWindowBoundaries} from './utils';
 import * as WindowManager from './windows/windowManager';
+import { func } from 'prop-types';
 
 // copying what webview sends
 // TODO: review
 const userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.146 Electron/6.1.7 Safari/537.36 Mattermost/${app.getVersion()}`;
+const READY = 1;
+const LOADING = 0;
+const ERROR = -1;
 
 export class MattermostView {
   constructor(server, win, options) {
@@ -31,6 +35,7 @@ export class MattermostView {
     this.view = new BrowserView(this.options);
     this.retryLoad = null;
     this.maxRetries = MAX_SERVER_RETRIES;
+    this.status = LOADING;
     log.info(`BrowserView created for server ${this.server.name}`);
   }
 
@@ -38,6 +43,10 @@ export class MattermostView {
   // TODO: we'll need unique identifiers if we have multiple instances of the same server in different tabs (1:N relationships)
   get name() {
     return this.server.name;
+  }
+
+  setReadyCallback = (func) => {
+    this.readyCallBack = func;
   }
 
   load = (someURL) => {
@@ -60,6 +69,7 @@ export class MattermostView {
         } else {
           WindowManager.sendToRenderer(LOAD_FAILED, this.server.name, err.toString(), loadURL.toString());
           log.info(`[${this.server.name}] Couldn't stablish a connection with ${loadURL}: ${err}.`);
+          this.status = ERROR;
         }
       });
     };
@@ -76,6 +86,10 @@ export class MattermostView {
       log.info(`[${this.server.name}] finished loading ${loadURL}`);
       WindowManager.sendToRenderer(LOAD_SUCCESS, this.server.name);
       this.maxRetries = MAX_SERVER_RETRIES;
+      this.status = READY;
+      if (this.readyCallBack) {
+        this.readyCallBack(this.server.name);
+      }
     };
   }
 
@@ -119,5 +133,9 @@ export class MattermostView {
     } else {
       log.warn('trying to focus the browserview, but it doesn\'t yet have webcontents.');
     }
+  }
+
+  isReady = () => {
+    return this.status === READY;
   }
 }

@@ -19,6 +19,7 @@ export class ViewManager {
       const srv = new MattermostServer(server.name, server.url);
       const view = new MattermostView(srv, mainWindow);
       this.views.set(server.name, view);
+      view.setReadyCallback(this.activateView)
       view.load();
     });
   }
@@ -60,12 +61,18 @@ export class ViewManager {
   showByName = (name) => {
     const newView = this.views.get(name);
     if (newView) {
-      if (this.currentView) {
+      if (this.currentView && this.currentView !== name) {
         const previous = this.views.get(this.currentView);
         previous.hide();
       }
+
       this.currentView = name;
-      newView.show();
+      if (newView.isReady()) {
+        // if view is not ready, the renderer will have something to display instead.
+        newView.show(); 
+      } else {
+        console.log(`couldn't show ${name}, not ready`);
+      }
     } else {
       log.warn(`Couldn't find a view with name: ${name}`);
     }
@@ -75,6 +82,13 @@ export class ViewManager {
     const view = this.views.get(this.currentView);
     if (view) {
       view.focus();
+    }
+  }
+  activateView = (viewName) => {
+    console.log(`activating view for ${viewName}`);
+    if (this.currentView === viewName) {
+      console.log('show!');
+      this.showByName(this.currentView);
     }
   }
 }

@@ -34,6 +34,8 @@ import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
 import minimizeButton from '../../assets/titlebar/chrome-minimize.svg';
 import closeButton from '../../assets/titlebar/chrome-close.svg';
+import spinner from '../../assets/loading.gif';
+import spinnerx2 from '../../assets/loading@2x.gif';
 
 import LoginModal from './LoginModal.jsx';
 import TabBar from './TabBar.jsx';
@@ -105,7 +107,9 @@ export default class MainPage extends React.Component {
   }
 
   getTabStatus() {
-    return this.state.tabStatus[this.state.key];
+    // TODO: should try to make this a bit safer in case we get into a weird situation
+    const tabname = this.props.teams[this.state.key].name
+    return this.state.tabStatus.get(tabname);
   }
 
   getTabWebContents(index = this.state.key || 0, teams = this.props.teams) {
@@ -168,7 +172,7 @@ export default class MainPage extends React.Component {
 
     ipcRenderer.on(LOAD_SUCCESS, (_, server) => {
       const status = this.state.tabStatus;
-      status.set(server, DONE);
+      status.set(server, {status: DONE});
       this.setState({tabStatus: status});
     });
 
@@ -800,24 +804,31 @@ export default class MainPage extends React.Component {
       let component;
       const tabStatus = this.getTabStatus();
       switch (tabStatus.status) {
-      case LOADING:
-        break;
       case RETRY:
-        break;
       case FAILED:
         component = (
           <ErrorView
-            id={this.status.key + '-fail'}
+            id={this.state.key + '-fail'}
             className='errorView'
             errorInfo={tabStatus.extra ? tabStatus.extra.error : null}
             url={tabStatus.extra ? tabStatus.extra.url : ''}
             active={true}
-            retry={tabStatus.extra ? tabStatus.extra.retry : null}
+            retry={tabStatus.extra ? tabStatus.extra.retry : null} // TODO: fix countdown so it counts
             appName={this.props.appName}
           />);
         break;
+      case LOADING:
+        component = (
+        <div className='mattermostView-loadingScreen'>
+          <img
+            className='mattermostView-loadingImage'
+            src={spinner}
+            srcSet={`${spinner} 1x, ${spinnerx2} 2x`}
+          />
+        </div>);
+        break;
       case DONE:
-        console.log(`Loading tab ${this.status.key}`);
+        console.log(`Loading tab ${this.state.key}`);
         component = null;
       }
       return component;
@@ -833,7 +844,7 @@ export default class MainPage extends React.Component {
           }}
         />
         <Row>
-          {views}
+          {views()}
         </Row>
       </Fragment>);
 
