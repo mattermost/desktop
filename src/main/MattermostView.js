@@ -3,6 +3,7 @@
 
 import {BrowserView, app} from 'electron';
 import log from 'electron-log';
+import path from 'path';
 
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constants';
 import Utils from 'common/utils/util';
@@ -22,7 +23,10 @@ export class MattermostView {
   constructor(server, win, options) {
     this.server = server;
     this.window = win;
-    const preload = getLocalURL('preload.js', null, true);
+
+    // const preload = getLocalURL('preload.js', null, true);
+    // const preload = path.resolve(__dirname, 'preload/mattermost.js');
+    const preload = path.resolve(__dirname, '../../dist/preload.js');
     console.log(`Preload path: ${preload}`);
     this.options = {
       webPreferences: {

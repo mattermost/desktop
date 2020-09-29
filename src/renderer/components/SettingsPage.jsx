@@ -10,7 +10,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} from 'react-bootstrap';
 
-import {ipcRenderer, remote} from 'electron';
+import {ipcRenderer} from 'electron';
 import {debounce} from 'underscore';
 
 import {GET_LOCAL_CONFIGURATION, UPDATE_CONFIGURATION, DOUBLE_CLICK_ON_WINDOW} from 'common/communication';
@@ -37,7 +37,8 @@ export default class SettingsPage extends React.Component {
         appOptions: AutoSaveIndicator.SAVING_STATE_DONE,
         servers: AutoSaveIndicator.SAVING_STATE_DONE,
       },
-    }
+    };
+
     ipcRenderer.invoke(GET_LOCAL_CONFIGURATION).then((config) => {
       console.log('got config');
       console.log(config);
@@ -48,7 +49,6 @@ export default class SettingsPage extends React.Component {
     this.trayIconThemeRef = React.createRef();
 
     this.saveQueue = [];
-
   }
 
   componentDidMount() {
@@ -57,7 +57,6 @@ export default class SettingsPage extends React.Component {
         showAddTeamForm: true,
       });
     });
-
   }
 
   convertConfigDataToState = (configData, currentState = {}) => {
@@ -269,7 +268,6 @@ export default class SettingsPage extends React.Component {
       teams,
     });
   }
-
 
   openMenu = () => {
     // @eslint-ignore
@@ -608,9 +606,9 @@ export default class SettingsPage extends React.Component {
           {srvMgmt}
           {optionsRow}
         </>
-      )
+      );
     } else {
-      <p>Loading configuration...</p>
+      waitForIpc = (<p>{'Loading configuration...'}</p>);
     }
 
     return (

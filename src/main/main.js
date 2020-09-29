@@ -288,8 +288,8 @@ function handleReloadConfig() {
 function handleAppVersion() {
   log.info('requested version');
   return {
-    name: app.name,
-    version: app.version,
+    name: app.getName(),
+    version: app.getVersion(),
   };
 }
 

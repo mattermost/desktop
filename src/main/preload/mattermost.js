@@ -7,6 +7,7 @@
 /* eslint-disable no-magic-numbers */
 
 import {ipcRenderer, webFrame} from 'electron';
+import log from 'electron-log';
 
 const UNREAD_COUNT_INTERVAL = 1000;
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
@@ -15,6 +16,8 @@ Reflect.deleteProperty(global.Buffer); // http://electron.atom.io/docs/tutorial/
 
 let appVersion;
 let appName;
+
+log.info('Initializing preload');
 
 ipcRenderer.invoke('get-app-version').then(({name, version}) => {
   console.log(`setup version ${version}`);
