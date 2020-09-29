@@ -1145,10 +1145,7 @@ function getDeeplinkingURL(args) {
 }
 
 function shouldShowTrayIcon() {
-  if (process.platform === 'win32') {
-    return true;
-  }
-  if (['darwin', 'linux'].includes(process.platform) && config.showTrayIcon === true) {
+  if (config.showTrayIcon === true || process.platform === 'win32') {
     return true;
   }
   return false;
