@@ -9,7 +9,7 @@ import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constant
 import Utils from 'common/utils/util';
 import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED} from 'common/communication';
 
-import {getLocalURL, getWindowBoundaries} from './utils';
+import {getWindowBoundaries} from './utils';
 import * as WindowManager from './windows/windowManager';
 
 // copying what webview sends
