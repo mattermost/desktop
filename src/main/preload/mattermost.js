@@ -6,12 +6,21 @@
 
 /* eslint-disable no-magic-numbers */
 
-import {ipcRenderer, webFrame, remote} from 'electron';
+import {ipcRenderer, webFrame} from 'electron';
 
 const UNREAD_COUNT_INTERVAL = 1000;
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 
 Reflect.deleteProperty(global.Buffer); // http://electron.atom.io/docs/tutorial/security/#buffer-global
+
+let appVersion;
+let appName;
+
+ipcRenderer.invoke('get-app-version').then(({name, version}) => {
+  console.log(`setup version ${version}`);
+  appVersion = version;
+  appName = name;
+});
 
 function isReactAppInitialized() {
   const initializedRoot =
@@ -65,11 +74,13 @@ window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = 
   switch (type) {
   case 'webapp-ready': {
     // register with the webapp to enable custom integration functionality
+    console.log(`registering ${appName} v${appVersion} with the server`);
     window.postMessage(
       {
         type: 'register-desktop',
         message: {
-          version: remote.app.getVersion(),
+          version: appVersion,
+          name: appName,
         },
       },
       window.location.origin || '*'

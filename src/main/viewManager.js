@@ -19,7 +19,7 @@ export class ViewManager {
       const srv = new MattermostServer(server.name, server.url);
       const view = new MattermostView(srv, mainWindow);
       this.views.set(server.name, view);
-      view.setReadyCallback(this.activateView)
+      view.setReadyCallback(this.activateView);
       view.load();
     });
   }
@@ -62,14 +62,14 @@ export class ViewManager {
     const newView = this.views.get(name);
     if (newView) {
       if (this.currentView && this.currentView !== name) {
-        const previous = this.views.get(this.currentView);
+        const previous = this.getCurrentView();
         previous.hide();
       }
 
       this.currentView = name;
       if (newView.isReady()) {
         // if view is not ready, the renderer will have something to display instead.
-        newView.show(); 
+        newView.show();
       } else {
         console.log(`couldn't show ${name}, not ready`);
       }
@@ -79,7 +79,7 @@ export class ViewManager {
   }
 
   focus = () => {
-    const view = this.views.get(this.currentView);
+    const view = this.getCurrentView();
     if (view) {
       view.focus();
     }
@@ -89,6 +89,19 @@ export class ViewManager {
     if (this.currentView === viewName) {
       console.log('show!');
       this.showByName(this.currentView);
+    }
+  }
+
+  getCurrentView() {
+    return this.views.get(this.currentView);
+  }
+
+  openViewDevTools = () => {
+    const view = this.getCurrentView();
+    if (view) {
+      view.openDevTools();
+    } else {
+      console.error(`couldn't find ${this.currentView}`);
     }
   }
 }

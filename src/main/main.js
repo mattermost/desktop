@@ -14,7 +14,7 @@ import 'airbnb-js-shims/target/es2015';
 
 import Utils from 'common/utils/util';
 
-import {DEV_SERVER, DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
+import {DEV_SERVER, DEVELOPMENT, PRODUCTION, SECOND} from 'common/utils/constants';
 import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW} from 'common/communication';
 import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from 'common/permissions';
 import Config from 'common/config';
@@ -229,6 +229,7 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('login-cancel', handleCancelLoginEvent);
   ipcMain.on('download-url', handleDownloadURLEvent);
   ipcMain.on('notified', handleNotifiedEvent);
+  ipcMain.handle('get-app-version', handleAppVersion);
 
   // see comment on function
   // ipcMain.on('update-title', handleUpdateTitleEvent);
@@ -249,7 +250,7 @@ function initializeInterCommunicationEventListeners() {
 
   ipcMain.on(QUIT, handleQuit);
 
-  ipcMain.on(DOUBLE_CLICK_ON_WINDOW, handleDoubleClick);
+  ipcMain.on(DOUBLE_CLICK_ON_WINDOW, WindowManager.handleDoubleClick);
 }
 
 //
@@ -282,6 +283,14 @@ function handleReloadConfig() {
   config.reload();
   WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
   viewManager.reloadConfiguration(config.teams, WindowManager.getMainWindow());
+}
+
+function handleAppVersion() {
+  log.info('requested version');
+  return {
+    name: app.name,
+    version: app.version,
+  };
 }
 
 function handleDarkModeChange(darkMode) {
@@ -479,7 +488,7 @@ function handleAppWillFinishLaunching() {
             WindowManager.showMainWindow();
           }
         } catch (err) {
-          setTimeout(openDeepLink, 1000);
+          setTimeout(openDeepLink, SECOND);
         }
       }
       openDeepLink();
@@ -490,24 +499,6 @@ function handleAppWillFinishLaunching() {
 function handleSwitchServer(event, serverName) {
   WindowManager.showMainWindow(true);
   viewManager.showByName(serverName);
-}
-
-function handleDoubleClick(event, windowType) {
-  let action = 'Maximize';
-  if (process.platform === 'darwin') {
-    action = systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
-  }
-  if (windowType === 'settings') {
-    switch (action) {
-      case 'Maximize':
-        WindowManager.max
-        break;
-    
-      default:
-        break;
-    }
-  }
-  
 }
 
 function handleAppWebContentsCreated(dc, contents) {
@@ -976,13 +967,13 @@ function handleFocus() {
 function handleUpdateMenuEvent(event, configData) {
   // TODO: this might make sense to move to window manager? so it updates the window referenced if needed.
   const mainWindow = WindowManager.getMainWindow();
-  const aMenu = appMenu.createMenu(mainWindow, configData, global.isDev);
+  const aMenu = appMenu.createMenu(configData, viewManager);
   Menu.setApplicationMenu(aMenu);
   aMenu.addListener('menu-will-close', handleCloseAppMenu);
 
   // set up context menu for tray icon
   if (shouldShowTrayIcon()) {
-    const tMenu = trayMenu.createMenu(mainWindow, configData, global.isDev);
+    const tMenu = trayMenu.createMenu(configData);
     if (process.platform === 'darwin' || process.platform === 'linux') {
       // store the information, if the tray was initialized, for checking in the settings, if the application
       // was restarted after setting "Show icon on menu bar"

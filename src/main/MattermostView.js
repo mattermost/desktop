@@ -1,8 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import path from 'path';
-
 import {BrowserView, app} from 'electron';
 import log from 'electron-log';
 
@@ -10,9 +8,8 @@ import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constant
 import Utils from 'common/utils/util';
 import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED} from 'common/communication';
 
-import {getWindowBoundaries} from './utils';
+import {getLocalURL, getWindowBoundaries} from './utils';
 import * as WindowManager from './windows/windowManager';
-import { func } from 'prop-types';
 
 // copying what webview sends
 // TODO: review
@@ -25,9 +22,15 @@ export class MattermostView {
   constructor(server, win, options) {
     this.server = server;
     this.window = win;
+    const preload = getLocalURL('preload.js', null, true);
+    console.log(`Preload path: ${preload}`);
     this.options = {
       webPreferences: {
-        preload: path.resolve(__dirname, 'preload_bundle.js'),
+        preload,
+        additionalArguments: [
+          `version=${app.version}`,
+          `appName=${app.name}`,
+        ]
       },
       ...options
     };
@@ -137,5 +140,9 @@ export class MattermostView {
 
   isReady = () => {
     return this.status === READY;
+  }
+
+  openDevTools = () => {
+    this.view.webContents.openDevTools();
   }
 }

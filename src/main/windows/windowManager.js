@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
-import {app, nativeImage} from 'electron';
+import {app, nativeImage, systemPreferences} from 'electron';
 import log from 'electron-log';
 
 import {MAXIMIZE_CHANGE} from 'common/communication';
@@ -156,4 +156,29 @@ export function isMainWindow(window) {
 
 export function getDeepLinkingURL() {
   return status.deeplinkingUrl;
+}
+
+export function handleDoubleClick(e, windowType) {
+  let action = 'Maximize';
+  if (process.platform === 'darwin') {
+    action = systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
+  }
+  const win = (windowType === 'settings') ? status.settingsWindow : status.mainWindow;
+  switch (action) {
+  case 'Minimize':
+    if (win.isMinimized()) {
+      win.restore();
+    } else {
+      win.minimize();
+    }
+    break;
+  case 'Maximize':
+  default:
+    if (win.isMaximized()) {
+      win.maximize();
+    } else {
+      win.unmaximize();
+    }
+    break;
+  }
 }

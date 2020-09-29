@@ -19,8 +19,6 @@ import ReactDOM from 'react-dom';
 
 import SettingsPage from './components/SettingsPage.jsx';
 
-let config;
-
 const start = async () => {
   ReactDOM.render(
     <SettingsPage

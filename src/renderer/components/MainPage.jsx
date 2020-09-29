@@ -108,7 +108,7 @@ export default class MainPage extends React.Component {
 
   getTabStatus() {
     // TODO: should try to make this a bit safer in case we get into a weird situation
-    const tabname = this.props.teams[this.state.key].name
+    const tabname = this.props.teams[this.state.key].name;
     return this.state.tabStatus.get(tabname);
   }
 
@@ -819,13 +819,13 @@ export default class MainPage extends React.Component {
         break;
       case LOADING:
         component = (
-        <div className='mattermostView-loadingScreen'>
-          <img
-            className='mattermostView-loadingImage'
-            src={spinner}
-            srcSet={`${spinner} 1x, ${spinnerx2} 2x`}
-          />
-        </div>);
+          <div className='mattermostView-loadingScreen'>
+            <img
+              className='mattermostView-loadingImage'
+              src={spinner}
+              srcSet={`${spinner} 1x, ${spinnerx2} 2x`}
+            />
+          </div>);
         break;
       case DONE:
         console.log(`Loading tab ${this.state.key}`);

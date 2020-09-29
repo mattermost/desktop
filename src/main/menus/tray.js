@@ -36,7 +36,7 @@ function createTemplate(config) {
   return template;
 }
 
-function createMenu(mainWindow, config) {
+function createMenu(config) {
   return Menu.buildFromTemplate(createTemplate(config));
 }
 
