@@ -487,7 +487,8 @@ function handleAppWebContentsCreated(dc, contents) {
     const parsedURL = Utils.parseURL(url);
     const server = Utils.getServer(parsedURL, config.teams);
 
-    if ((server !== null && Utils.isTeamUrl(server.url, parsedURL)) || isTrustedPopupWindow(event.sender) || Utils.isAdminUrl(server.url, parsedURL)) {
+    if ((server !== null && (Utils.isTeamUrl(server.url, parsedURL) || Utils.isAdminUrl(server.url, parsedURL))) ||
+      isTrustedPopupWindow(event.sender)) {
       return;
     }
 
