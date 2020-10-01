@@ -4,26 +4,53 @@
 
 import electronContextMenu from 'electron-context-menu';
 
-export default {
-  setup(options) {
-    const defaultOptions = {
-      useSpellChecker: options.useSpellChecker,
-      shouldShowMenu: (e, p) => {
-        const isInternalLink = p.linkURL.endsWith('#') && p.linkURL.slice(0, -1) === p.pageURL;
-        let isInternalSrc;
-        try {
-          const srcurl = new URL(p.srcURL);
-          isInternalSrc = srcurl.protocol === 'file:';
-          console.log(`srcrurl protocol: ${srcurl.protocol}`);
-        } catch (err) {
-          console.log(`ups: ${err}`);
-          isInternalSrc = false;
-        }
-        return p.isEditable || (p.mediaType !== 'none' && !isInternalSrc) || (p.linkURL !== '' && !isInternalLink) || p.misspelledWord !== '' || p.selectionText !== '';
-      }
-    };
-    const actualOptions = Object.assign({}, defaultOptions, options);
+let disposeCurrent;
+let menuOptions;
 
-    electronContextMenu(actualOptions);
-  },
+function dispose() {
+  if (disposeCurrent) {
+    disposeCurrent();
+    disposeCurrent = null;
+  }
+}
+
+function saveOptions(options) {
+  const providedOptions = options || {};
+  const defaultOptions = {
+    useSpellChecker: true,
+    shouldShowMenu: (e, p) => {
+      const isInternalLink = p.linkURL.endsWith('#') && p.linkURL.slice(0, -1) === p.pageURL;
+      let isInternalSrc;
+      try {
+        const srcurl = new URL(p.srcURL);
+        isInternalSrc = srcurl.protocol === 'file:';
+        console.log(`srcurl protocol: ${srcurl.protocol}`);
+      } catch (err) {
+        isInternalSrc = false;
+      }
+      console.log(p);
+      return p.isEditable || (p.mediaType !== 'none' && !isInternalSrc) || (p.linkURL !== '' && !isInternalLink) || p.misspelledWord !== '' || p.selectionText !== '';
+    }
+  };
+  menuOptions = Object.assign({}, defaultOptions, providedOptions);
+  console.log('using options: ');
+  console.log(menuOptions);
+}
+
+function reload(target) {
+  dispose();
+  const options = target ? {window: target, ...menuOptions} : menuOptions;
+  disposeCurrent = electronContextMenu(options);
+}
+
+function setup(options) {
+  saveOptions(options);
+  dispose();
+  disposeCurrent = electronContextMenu(menuOptions);
+}
+
+export default {
+  setup,
+  dispose,
+  reload,
 };

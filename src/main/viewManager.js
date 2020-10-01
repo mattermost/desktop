@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 import log from 'electron-log';
 
+import contextMenu from './contextMenu';
 import {MattermostServer} from './MattermostServer';
 import {MattermostView} from './MattermostView';
 
@@ -70,6 +71,7 @@ export class ViewManager {
       if (newView.isReady()) {
         // if view is not ready, the renderer will have something to display instead.
         newView.show();
+        contextMenu.reload(newView.getWebContents());
       } else {
         console.log(`couldn't show ${name}, not ready`);
       }

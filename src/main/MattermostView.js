@@ -149,4 +149,11 @@ export class MattermostView {
   openDevTools = () => {
     this.view.webContents.openDevTools();
   }
+
+  getWebContents = () => {
+    if (this.status === READY) {
+      return this.view.webContents;
+    }
+    return this.window.webContents; // if it's not ready you are looking at the renderer process
+  }
 }
