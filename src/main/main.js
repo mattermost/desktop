@@ -74,7 +74,6 @@ let appState = null;
 let config = null;
 let trayIcon = null;
 let trayImages = null;
-let altLastPressed = false;
 let viewManager = null;
 
 // supported custom login paths (oath, saml)
@@ -617,87 +616,6 @@ function handleAppWebContentsCreated(dc, contents) {
         });
       }
     }
-  });
-
-  // implemented to temporarily help solve for https://community-daily.mattermost.com/core/pl/b95bi44r4bbnueqzjjxsi46qiw
-  contents.on('before-input-event', (event, input) => {
-    if (input.key === 'Alt' && input.type === 'keyUp' && altLastPressed) {
-      altLastPressed = false;
-      WindowManager.sendToRenderer('focus-three-dot-menu');
-      return;
-    }
-
-    // Hack to detect keyPress so that alt+<key> combinations don't default back to the 3-dot menu
-    if (input.key === 'Alt' && input.type === 'keyDown') {
-      altLastPressed = true;
-    } else {
-      altLastPressed = false;
-    }
-
-    // TODO: move to window manager
-    if (!input.shift && !input.control && !input.alt && !input.meta) {
-      // hacky fix for https://mattermost.atlassian.net/browse/MM-19226
-      if ((input.key === 'Escape' || input.key === 'f') && input.type === 'keyDown') {
-        // only do this when in fullscreen on a mac
-        if (process.platform === 'darwin') {
-          const mainWindow = WindowManager.getMainWindow();
-          if (mainWindow && mainWindow.isFullScreen()) {
-            WindowManager.sendToRenderer('exit-fullscreen');
-          }
-        }
-      }
-      return;
-    }
-
-    if ((process.platform === 'darwin' && !input.meta) || (process.platform !== 'darwin' && !input.control)) {
-      return;
-    }
-
-    // TODO: move this to be sent to the browserview as it doesn't make sense to have them sent to the renderer anymore.
-    // handle certain keyboard shortcuts manually
-    switch (input.key) { // eslint-disable-line padded-blocks
-
-    // Manually handle zoom-in/out/reset keyboard shortcuts
-    // - temporary fix for https://mattermost.atlassian.net/browse/MM-19031 and https://mattermost.atlassian.net/browse/MM-19032
-    case '-':
-      WindowManager.sendToRenderer('zoom-out');
-      break;
-    case '=':
-      WindowManager.sendToRenderer('zoom-in');
-      break;
-    case '0':
-      WindowManager.sendToRenderer('zoom-reset');
-      break;
-
-    // Manually handle undo/redo keyboard shortcuts
-    // - temporary fix for https://mattermost.atlassian.net/browse/MM-19198
-    case 'z':
-      if (input.shift) {
-        WindowManager.sendToRenderer('redo');
-      } else {
-        WindowManager.sendToRenderer('undo');
-      }
-      break;
-
-    // Manually handle copy/cut/paste keyboard shortcuts
-    case 'c':
-      WindowManager.sendToRenderer('copy');
-      break;
-    case 'x':
-      WindowManager.sendToRenderer('cut');
-      break;
-    case 'v':
-      if (input.shift) {
-        WindowManager.sendToRenderer('paste-and-match');
-      } else {
-        WindowManager.sendToRenderer('paste');
-      }
-      break;
-    default:
-      // allows the input event to proceed if not handled by a case above
-      return;
-    }
-    event.preventDefault();
   });
 }
 
