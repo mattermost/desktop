@@ -3,7 +3,7 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {app, dialog, Menu, shell} from 'electron';
+import {app, dialog, Menu, shell, webContents} from 'electron';
 
 import * as WindowManager from '../windows/windowManager';
 
