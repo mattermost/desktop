@@ -2,7 +2,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import os from 'os';
 import path from 'path';
 import fs from 'fs';
 
@@ -783,7 +782,7 @@ function initializeAfterAppReady() {
     });
     item.setSaveDialogOptions({
       title: filename,
-      defaultPath: os.homedir() + '/Downloads/' + filename,
+      defaultPath: path.resolve(config.defaultConfigData.downloadLocation, filename),
       filters,
     });
 

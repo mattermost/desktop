@@ -29,6 +29,9 @@ import TabBar from './TabBar.jsx';
 const CONFIG_TYPE_SERVERS = 'servers';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
+// @eslint-ignore
+const {dialog} = require('electron').remote;
+
 const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
 
 function backToIndex(index) {
@@ -418,6 +421,22 @@ export default class SettingsPage extends React.Component {
     });
   }
 
+  saveDownloadLocation = (location) => {
+    this.setState({
+      downloadLocation: location,
+    });
+    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'downloadLocation', data: location});
+  }
+
+  handleChangeDownloadLocation = (e) => {
+    this.saveDownloadLocation(e.target.value);
+  }
+
+  selectDownloadLocation = () => {
+    const location = dialog.showOpenDialogSync({properties: ['openDirectory']});
+    this.saveDownloadLocation(location);
+  }
+
   updateTeam = (index, newData) => {
     const teams = this.state.localTeams;
     teams[index] = newData;
@@ -620,6 +639,11 @@ export default class SettingsPage extends React.Component {
       footer: {
         padding: '0.4em 0',
       },
+
+      downloadLocationInput: {
+        marginRight: '10px',
+        width: '300px',
+      }
     };
 
     const teamsRow = (
@@ -877,6 +901,29 @@ export default class SettingsPage extends React.Component {
           {' Setting takes effect after restarting the app.'}
         </HelpBlock>
       </Checkbox>
+    );
+
+    options.push(
+      <div>
+        <div>{'Download Location'}</div>
+        <input
+          style={settingsPage.downloadLocationInput}
+          key='inputDownloadLocation'
+          id='inputDownloadLocation'
+          ref='downloadLocation'
+          onChange={this.handleChangeDownloadLocation}
+          value={this.state.downloadLocation}
+        />
+        <Button
+          id='saveDownloadLocation'
+          onClick={this.selectDownloadLocation}
+        >
+          <span>{'Select'}</span>
+        </Button>
+        <HelpBlock>
+          {'Specify the folder where files will download'}
+        </HelpBlock>
+      </div>
     );
 
     const optionsRow = (options.length > 0) ? (
