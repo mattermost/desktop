@@ -1,17 +1,18 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import url from 'url';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
 import propTypes from 'prop-types';
 import {ipcRenderer, remote} from 'electron';
 
+import urlUtils from '../utils/url';
+
 import UpdaterPage from './components/UpdaterPage.jsx';
 
-const thisURL = url.parse(location.href, true);
-const notifyOnly = thisURL.query.notifyOnly === 'true';
+const thisURL = urlUtils.parseURL(location.href);
+const notifyOnly = thisURL.searchParams.get('notifyOnly') === 'true';
 
 class UpdaterPageContainer extends React.Component {
   constructor(props) {

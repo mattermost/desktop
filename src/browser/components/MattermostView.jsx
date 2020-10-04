@@ -5,14 +5,13 @@
 // This file uses setState().
 /* eslint-disable react/no-set-state */
 
-import url from 'url';
-
 import React from 'react';
 import PropTypes from 'prop-types';
 import {ipcRenderer, remote, shell} from 'electron';
 
 import contextMenu from '../js/contextMenu';
 import Utils from '../../utils/util';
+import urlUtils from '../../utils/url';
 import {protocols} from '../../../electron-builder.json';
 const scheme = protocols[0].schemes[0];
 
@@ -78,38 +77,38 @@ export default class MattermostView extends React.Component {
 
     // Open link in browserWindow. for example, attached files.
     webview.addEventListener('new-window', (e) => {
-      if (!Utils.isValidURI(e.url)) {
+      if (!urlUtils.isValidURI(e.url)) {
         return;
       }
-      const currentURL = url.parse(webview.getURL());
-      const destURL = url.parse(e.url);
+      const currentURL = urlUtils.parseURL(webview.getURL());
+      const destURL = urlUtils.parseURL(e.url);
       if (destURL.protocol !== 'http:' && destURL.protocol !== 'https:' && destURL.protocol !== `${scheme}:`) {
         ipcRenderer.send('confirm-protocol', destURL.protocol, e.url);
         return;
       }
 
-      if (Utils.isInternalURL(destURL, currentURL, this.state.basename)) {
+      if (urlUtils.isInternalURL(destURL, currentURL, this.state.basename)) {
         if (destURL.path.match(/^\/api\/v[3-4]\/public\/files\//)) {
           ipcRenderer.send('download-url', e.url);
         } else if (destURL.path.match(/^\/help\//)) {
           // continue to open special case internal urls in default browser
           shell.openExternal(e.url);
-        } else if (Utils.isTeamUrl(this.props.src, e.url, true) || Utils.isAdminUrl(this.props.src, e.url)) {
+        } else if (urlUtils.isTeamUrl(this.props.src, e.url, true) || urlUtils.isAdminUrl(this.props.src, e.url)) {
           e.preventDefault();
           this.webviewRef.current.loadURL(e.url);
-        } else if (Utils.isPluginUrl(this.props.src, e.url)) {
+        } else if (urlUtils.isPluginUrl(this.props.src, e.url)) {
           // New window should disable nodeIntegration.
           window.open(e.url, remote.app.name, 'nodeIntegration=no, contextIsolation=yes, show=yes');
-        } else if (Utils.isManagedResource(this.props.src, e.url)) {
+        } else if (urlUtils.isManagedResource(this.props.src, e.url)) {
           e.preventDefault();
         } else {
           e.preventDefault();
           shell.openExternal(e.url);
         }
       } else {
-        const parsedURL = Utils.parseURL(e.url);
-        const serverURL = Utils.getServer(parsedURL, this.props.teams);
-        if (serverURL !== null && Utils.isTeamUrl(serverURL.url, parsedURL)) {
+        const parsedURL = urlUtils.parseURL(e.url);
+        const serverURL = urlUtils.getServer(parsedURL, this.props.teams);
+        if (serverURL !== null && urlUtils.isTeamUrl(serverURL.url, parsedURL)) {
           this.props.handleInterTeamLink(parsedURL);
         } else {
           // if the link is external, use default os' application.

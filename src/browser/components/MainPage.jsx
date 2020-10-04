@@ -6,7 +6,6 @@
 /* eslint-disable react/no-set-state */
 
 import os from 'os';
-import url from 'url';
 
 import React, {Fragment} from 'react';
 import PropTypes from 'prop-types';
@@ -17,6 +16,7 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 import {ipcRenderer, remote, shell} from 'electron';
 
 import Utils from '../../utils/util';
+import urlUtils from '../../utils/url';
 import contextmenu from '../js/contextMenu';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -75,16 +75,16 @@ export default class MainPage extends React.Component {
 
   parseDeeplinkURL(deeplink, teams = this.props.teams) {
     if (deeplink && Array.isArray(teams) && teams.length) {
-      const deeplinkURL = url.parse(deeplink);
+      const deeplinkURL = urlUtils.parseURL(deeplink);
       let parsedDeeplink = null;
       teams.forEach((team, index) => {
-        const teamURL = url.parse(team.url);
+        const teamURL = urlUtils.parseURL(team.url);
         if (deeplinkURL.host === teamURL.host) {
           parsedDeeplink = {
             teamURL,
             teamIndex: index,
             originalURL: deeplinkURL,
-            url: `${teamURL.protocol}//${teamURL.host}${deeplinkURL.pathname || '/'}`,
+            url: `${teamURL.origin}${deeplinkURL.pathname || '/'}`,
             path: deeplinkURL.pathname || '/',
           };
         }
@@ -389,18 +389,18 @@ export default class MainPage extends React.Component {
 
   switchToTabForCertificateRequest = (origin) => {
     // origin is server name + port, if the port doesn't match the protocol, it is kept by URL
-    const originURL = new URL(`http://${origin.split(':')[0]}`);
-    const secureOriginURL = new URL(`https://${origin.split(':')[0]}`);
+    const originURL = urlUtils.parseURL(`http://${origin.split(':')[0]}`);
+    const secureOriginURL = urlUtils.parseURL(`https://${origin.split(':')[0]}`);
 
     const key = this.props.teams.findIndex((team) => {
-      const parsedURL = new URL(team.url);
+      const parsedURL = urlUtils.parseURL(team.url);
       return (parsedURL.origin === originURL.origin) || (parsedURL.origin === secureOriginURL.origin);
     });
     this.handleSelect(key);
   };
 
   handleInterTeamLink = (linkUrl) => {
-    const selectedTeam = Utils.getServer(linkUrl, this.props.teams);
+    const selectedTeam = urlUtils.getServer(linkUrl, this.props.teams);
     if (!selectedTeam) {
       return;
     }
@@ -649,7 +649,7 @@ export default class MainPage extends React.Component {
   showExtraBar = () => {
     const ref = this.refs[`mattermostView${this.state.key}`];
     if (typeof ref !== 'undefined') {
-      return !Utils.isTeamUrl(this.props.teams[this.state.key].url, ref.getSrc());
+      return !urlUtils.isTeamUrl(this.props.teams[this.state.key].url, ref.getSrc());
     }
     return false;
   }
@@ -814,8 +814,8 @@ export default class MainPage extends React.Component {
     let authInfo = null;
     if (this.state.loginQueue.length !== 0) {
       request = this.state.loginQueue[0].request;
-      const tmpURL = url.parse(this.state.loginQueue[0].request.url);
-      authServerURL = `${tmpURL.protocol}//${tmpURL.host}`;
+      const tmpURL = urlUtils.parseURL(this.state.loginQueue[0].request.url);
+      authServerURL = tmpURL.origin;
       authInfo = this.state.loginQueue[0].authInfo;
     }
     const modal = (

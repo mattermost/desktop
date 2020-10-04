@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 import Joi from '@hapi/joi';
 
-import Utils from '../utils/util';
+import urlUtils from '../utils/url';
 
 const defaultOptions = {
   stripUnknown: true,
@@ -137,7 +137,7 @@ export function validateV1ConfigData(data) {
     });
 
     // next filter out urls that are still invalid so all is not lost
-    teams = teams.filter(({url}) => Utils.isValidURL(url));
+    teams = teams.filter(({url}) => urlUtils.isValidURL(url));
 
     // replace original teams
     data.teams = teams;
@@ -157,7 +157,7 @@ export function validateV2ConfigData(data) {
     });
 
     // next filter out urls that are still invalid so all is not lost
-    teams = teams.filter(({url}) => Utils.isValidURL(url));
+    teams = teams.filter(({url}) => urlUtils.isValidURL(url));
 
     // replace original teams
     data.teams = teams;

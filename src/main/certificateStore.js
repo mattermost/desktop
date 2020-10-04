@@ -5,6 +5,8 @@
 
 import fs from 'fs';
 
+import urlUtils from '../utils/url';
+
 import * as Validator from './Validator';
 
 function comparableCertificate(certificate) {
@@ -22,11 +24,6 @@ function areEqual(certificate0, certificate1) {
     return false;
   }
   return true;
-}
-
-function getHost(targetURL) {
-  const parsedURL = new URL(targetURL);
-  return parsedURL.origin;
 }
 
 function CertificateStore(storeFile) {
@@ -49,15 +46,15 @@ CertificateStore.prototype.save = function save() {
 };
 
 CertificateStore.prototype.add = function add(targetURL, certificate) {
-  this.data[getHost(targetURL)] = comparableCertificate(certificate);
+  this.data[urlUtils.getHost(targetURL)] = comparableCertificate(certificate);
 };
 
 CertificateStore.prototype.isExisting = function isExisting(targetURL) {
-  return this.data.hasOwnProperty(getHost(targetURL));
+  return this.data.hasOwnProperty(urlUtils.getHost(targetURL));
 };
 
 CertificateStore.prototype.isTrusted = function isTrusted(targetURL, certificate) {
-  const host = getHost(targetURL);
+  const host = urlUtils.getHost(targetURL);
   if (!this.isExisting(targetURL)) {
     return false;
   }
