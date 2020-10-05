@@ -24,13 +24,14 @@ export class MattermostView {
     this.server = server;
     this.window = win;
 
-    // const preload = getLocalURL('preload.js', null, true);
-    // const preload = path.resolve(__dirname, 'preload/mattermost.js');
     const preload = path.resolve(__dirname, '../../dist/preload.js');
     console.log(`Preload path: ${preload}`);
+    const spellcheck = ((options && typeof options.spellcheck === 'undefined') ? true : options.spellcheck);
+    log.info(`creating view with spellcheck value to ${spellcheck}`);
     this.options = {
       webPreferences: {
         preload,
+        spellcheck,
         additionalArguments: [
           `version=${app.version}`,
           `appName=${app.name}`,

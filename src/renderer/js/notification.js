@@ -7,12 +7,12 @@
 const OriginalNotification = Notification;
 import {throttle} from 'underscore';
 
-import {ipcRenderer, remote} from 'electron';
+import {ipcRenderer} from 'electron';
 
 import osVersion from '../../common/osVersion';
 import dingDataURL from '../../assets/ding.mp3'; // https://github.com/mattermost/platform/blob/v3.7.3/webapp/images/ding.mp3
 
-const appIconURL = `file:///${remote.app.getAppPath()}/assets/appicon_48.png`;
+const appIconURL = 'file://assets/appicon_48.png';
 
 const playDing = throttle(() => {
   const ding = new Audio(dingDataURL);
@@ -43,29 +43,29 @@ export default class EnhancedNotification extends OriginalNotification {
     }
   }
 
-  set onclick(handler) {
-    super.onclick = () => {
-      const currentWindow = remote.getCurrentWindow();
-      if (process.platform === 'win32') {
-        // show() breaks Aero Snap state.
-        if (currentWindow.isVisible()) {
-          currentWindow.focus();
-        } else if (currentWindow.isMinimized()) {
-          currentWindow.restore();
-        } else {
-          currentWindow.show();
-        }
-      } else if (currentWindow.isMinimized()) {
-        currentWindow.restore();
-      } else {
-        currentWindow.show();
-      }
-      ipcRenderer.sendToHost('onNotificationClick');
-      handler();
-    };
-  }
+  // set onclick(handler) {
+  //   super.onclick = () => {
+  //     const currentWindow = remote.getCurrentWindow();
+  //     if (process.platform === 'win32') {
+  //       // show() breaks Aero Snap state.
+  //       if (currentWindow.isVisible()) {
+  //         currentWindow.focus();
+  //       } else if (currentWindow.isMinimized()) {
+  //         currentWindow.restore();
+  //       } else {
+  //         currentWindow.show();
+  //       }
+  //     } else if (currentWindow.isMinimized()) {
+  //       currentWindow.restore();
+  //     } else {
+  //       currentWindow.show();
+  //     }
+  //     ipcRenderer.sendToHost('onNotificationClick');
+  //     handler();
+  //   };
+  // }
 
-  get onclick() {
-    return super.onclick;
-  }
+  // get onclick() {
+  //   return super.onclick;
+  // }
 }

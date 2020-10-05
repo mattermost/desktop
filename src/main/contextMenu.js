@@ -17,7 +17,6 @@ function dispose() {
 function saveOptions(options) {
   const providedOptions = options || {};
   const defaultOptions = {
-    useSpellChecker: true,
     shouldShowMenu: (e, p) => {
       const isInternalLink = p.linkURL.endsWith('#') && p.linkURL.slice(0, -1) === p.pageURL;
       let isInternalSrc;
@@ -29,24 +28,23 @@ function saveOptions(options) {
         isInternalSrc = false;
       }
       console.log(p);
+      console.log(`should show spelling: ${p.isEditable && p.selectionText.length > 0 && p.misspelledWord}`);
       return p.isEditable || (p.mediaType !== 'none' && !isInternalSrc) || (p.linkURL !== '' && !isInternalLink) || p.misspelledWord !== '' || p.selectionText !== '';
     }
   };
   menuOptions = Object.assign({}, defaultOptions, providedOptions);
-  console.log('using options: ');
-  console.log(menuOptions);
 }
 
 function reload(target) {
   dispose();
   const options = target ? {window: target, ...menuOptions} : menuOptions;
-  disposeCurrent = electronContextMenu(options);
+  disposeCurrent = electronContextMenu({window: target});
 }
 
 function setup(options) {
   saveOptions(options);
   dispose();
-  disposeCurrent = electronContextMenu(menuOptions);
+  disposeCurrent = electronContextMenu();
 }
 
 export default {

@@ -506,11 +506,6 @@ function handleAppWebContentsCreated(dc, contents) {
     inProgress: false,
   };
 
-  contents.on('will-attach-webview', (event, webPreferences) => {
-    webPreferences.nodeIntegration = false;
-    webPreferences.contextIsolation = true;
-  });
-
   contents.on('will-navigate', (event, url) => {
     const contentID = event.sender.id;
     const parsedURL = Utils.parseURL(url);
@@ -596,6 +591,7 @@ function handleAppWebContentsCreated(dc, contents) {
           webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
+            spellcheck: (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker),
           },
         });
         popupWindow.once('ready-to-show', () => {
@@ -674,7 +670,7 @@ function initializeAfterAppReady() {
 
   // const boundaries = getWindowBoundaries(win);
   // setServersBounds(servers, boundaries);
-  viewManager = new ViewManager(config.teams);
+  viewManager = new ViewManager(config);
   viewManager.load(WindowManager.getMainWindow());
   viewManager.showInitial();
 

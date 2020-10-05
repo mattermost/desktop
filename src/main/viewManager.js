@@ -7,8 +7,9 @@ import {MattermostServer} from './MattermostServer';
 import {MattermostView} from './MattermostView';
 
 export class ViewManager {
-  constructor(configServers) {
-    this.configServers = configServers;
+  constructor(config) {
+    this.configServers = config.teams;
+    this.viewOptions = {spellcheck: config.useSpellChecker};
     this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
     this.currentView = null;
   }
@@ -18,7 +19,7 @@ export class ViewManager {
   load = (mainWindow) => {
     this.configServers.forEach((server) => {
       const srv = new MattermostServer(server.name, server.url);
-      const view = new MattermostView(srv, mainWindow);
+      const view = new MattermostView(srv, mainWindow, this.viewOptions);
       this.views.set(server.name, view);
       view.setReadyCallback(this.activateView);
       view.load();
