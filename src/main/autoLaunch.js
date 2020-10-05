@@ -9,7 +9,6 @@ async function upgradeAutoLaunch() {
   }
   const appLauncher = new AutoLaunch({
     name: 'Mattermost',
-    isHidden: true,
   });
   const enabled = await appLauncher.isEnabled();
   if (enabled) {
