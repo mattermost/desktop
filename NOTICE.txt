@@ -14,10 +14,10 @@ This product contains '7zip-bin' by Vladimir Krivosheev.
 
 7-Zip precompiled binaries.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/develar/7zip-bin
 
-### : MIT
+* LICENSE: MIT
 
 The MIT License (MIT)
 
@@ -49,10 +49,10 @@ This product contains '@babel/core' by Babel.
 
 Babel is the compiler for writing next generation JavaScript.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/babel/babel
 
-### : MIT
+* LICENSE: MIT
 
 MIT License
 
@@ -85,10 +85,10 @@ This product contains '@babel/plugin-proposal-class-properties' by Babel.
 
 Babel is the compiler for writing next generation JavaScript.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/babel/babel
 
-### : MIT
+* LICENSE: MIT
 
 MIT License
 
@@ -121,10 +121,10 @@ This product contains '@babel/plugin-proposal-object-rest-spread' by Babel.
 
 Babel is the compiler for writing next generation JavaScript.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/babel/babel
 
-### : MIT
+* LICENSE: MIT
 
 MIT License
 
@@ -157,10 +157,10 @@ This product contains '@babel/preset-env' by Babel.
 
 Babel is the compiler for writing next generation JavaScript.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/babel/babel
 
-### : MIT
+* LICENSE: MIT
 
 MIT License
 
@@ -193,10 +193,10 @@ This product contains '@babel/preset-react' by Babel.
 
 Babel is the compiler for writing next generation JavaScript.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/babel/babel
 
-### : MIT
+* LICENSE: MIT
 
 MIT License
 
@@ -229,10 +229,10 @@ This product contains '@babel/register' by Babel.
 
 Babel is the compiler for writing next generation JavaScript.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/babel/babel
 
-### : MIT
+* LICENSE: MIT
 
 MIT License
 
@@ -265,10 +265,10 @@ This product contains '@storybook/addon-actions' by Storybook.
 
 Build bulletproof UI components faster
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/storybookjs/storybook
 
-### : MIT
+* LICENSE: MIT
 
 The MIT License (MIT)
 
@@ -300,10 +300,10 @@ This product contains '@storybook/react' by Storybook.
 
 Build bulletproof UI components faster
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/kadira-samples/react-storybook-demo
 
-### : MIT
+* LICENSE: MIT
 
 The MIT License (MIT)
 
@@ -335,10 +335,10 @@ This product contains 'auto-launch' by Donal Linehan.
 
 Launch node applications or executables at login (Mac, Windows, and Linux)
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/4ver/node-auto-launch
 
-### : MIT
+* LICENSE: MIT
 
 MIT License
 
@@ -370,10 +370,10 @@ This product contains 'babel-eslint' by Babel.
 
 @babel/eslint-parser allows you to lint all valid Babel code with the fantastic ESLint.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/babel/babel/tree/master/eslint/babel-eslint-parser
 
-### : MIT
+* LICENSE: MIT
 
 Copyright (c) 2014-2016 Sebastian McKenzie <sebmck@gmail.com>
 
@@ -406,10 +406,10 @@ This product contains 'babel-loader' by Babel.
 
 This package allows transpiling JavaScript files using Babel and webpack.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/babel/babel-loader
 
-### : MIT
+* LICENSE: MIT
 
 Copyright (c) 2014-2019 Luís Couto <hello@luiscouto.pt>
 
@@ -442,10 +442,10 @@ This product contains 'bootstrap' by The Bootstrap Authors.
 
 The most popular front-end framework for developing responsive, mobile first projects on the web.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://getbootstrap.com/
 
-### : MIT
+* LICENSE: MIT
 
 The MIT License (MIT)
 
@@ -478,10 +478,10 @@ This product contains 'chai' by Chai.js Assertion Library.
 
 Chai is a BDD / TDD assertion library for node and the browser that can be delightfully paired with any javascript testing framework.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/chaijs/chai
 
-### : MIT
+* LICENSE: MIT
 
 MIT License
 
@@ -513,10 +513,10 @@ This product contains 'cross-env' by Kent C. Dodds.
 
 Run scripts that set and use environment variables across platforms
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/kentcdodds/cross-env
 
-### : MIT
+* LICENSE: MIT
 
 The MIT License (MIT)
 Copyright (c) 2017 Kent C. Dodds
@@ -547,10 +547,10 @@ This product contains 'css-loader' by webpack-contrib.
 
 The css-loader interprets @import and url() like import/require() and will resolve them.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/webpack-contrib/css-loader
 
-### : MIT
+* LICENSE: MIT
 
 Copyright JS Foundation and other contributors
 
@@ -581,10 +581,10 @@ This product contains 'devtron' by Electron Userland.
 
 An Electron DevTools extension to help you inspect, monitor, and debug your app.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/electron-userland/devtron
 
-### : MIT
+* LICENSE: MIT
 
 Copyright (c) 2016 GitHub Inc.
 
@@ -615,10 +615,10 @@ This product contains 'electron' by Electron.
 
 The Electron framework lets you write cross-platform desktop applications using JavaScript, HTML and CSS.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/electron/electron
 
-### : MIT
+* LICENSE: MIT
 
 Copyright (c) 2013-2020 GitHub Inc.
 
@@ -649,10 +649,10 @@ This product contains 'electron-builder' by Electron Userland.
 
 A complete solution to package and build a ready for distribution Electron, Proton Native app for macOS, Windows and Linux with “auto update” support out of the box.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/electron-userland/electron-builder
 
-### : MIT
+* LICENSE: MIT
 
 The MIT License (MIT)
 
@@ -684,10 +684,10 @@ This product contains 'electron-connect' by Yosuke Kurami.
 
 Utility tool to develop applications with Electron.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/Quramy/electron-connect
 
-### : MIT
+* LICENSE: MIT
 
 ---
 
@@ -697,10 +697,10 @@ This product contains 'electron-context-menu' by Sindre Sorhus.
 
 Context menu for your Electron app
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/sindresorhus/electron-context-menu#readme
 
-### : MIT
+* LICENSE: MIT
 
 MIT License
 
@@ -720,10 +720,10 @@ This product contains 'electron-devtools-installer' by Samuel Attard.
 
 An easy way to install Dev Tools extensions into Electron applications
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/GPMDP/electron-devtools-installer#readme
 
-### : MIT
+* LICENSE: MIT
 
 The MIT License (MIT)
 Copyright (c) 2016 Samuel Attard
@@ -742,10 +742,10 @@ This product contains 'electron-is-dev' by Sindre Sorhus.
 
 Check if Electron is running in development
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/sindresorhus/electron-is-dev#readme
 
-### : MIT
+* LICENSE: MIT
 
 MIT License
 
@@ -765,10 +765,10 @@ This product contains 'electron-log' by Alexey Prokhorov.
 
 Just a very simple logging module for your Electron application
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/megahertz/electron-log#readme
 
-### : MIT
+* LICENSE: MIT
 
 The MIT License (MIT)
 
@@ -800,10 +800,10 @@ This product contains 'electron-notarize' by Electron.
 
 Notarize your Electron apps seamlessly for macOS
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/electron/electron-notarize
 
-### : MIT
+* LICENSE: MIT
 
 Copyright 2018 Samuel Attard and contributors
 
@@ -821,10 +821,10 @@ This product contains 'electron-updater' by Vladimir Krivosheev.
 
 Cross platform updater for electron applications
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/electron-userland/electron-builder
 
-### : MIT
+* LICENSE: MIT
 
 The MIT License (MIT)
 
@@ -856,10 +856,10 @@ This product contains 'eslint' by ESLint.
 
 ESLint is a tool for identifying and reporting on patterns found in ECMAScript/JavaScript code.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/eslint/eslint
 
-### : MIT
+* LICENSE: MIT
 
 Copyright JS Foundation and other contributors, https://js.foundation
 
@@ -889,10 +889,10 @@ This product contains 'eslint-plugin-cypress' by Cypress-io.
 
 An ESLint plugin for your Cypress tests.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/cypress-io/eslint-plugin-cypress
 
-### : MIT
+* LICENSE: MIT
 
 MIT License
 
@@ -924,10 +924,10 @@ This product contains 'eslint-plugin-eslint-comments' by Toru Nagashima.
 
 Additional ESLint rules for ESLint directive comments (e.g. //eslint-disable-line).
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/mysticatea/eslint-plugin-eslint-comments
 
-### : MIT
+* LICENSE: MIT
 
 MIT License
 
@@ -959,10 +959,10 @@ This product contains 'eslint-plugin-header' by Stuart Knightley.
 
 ESLint plugin to ensure that files begin with given comment.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/Stuk/eslint-plugin-header
 
-### : MIT
+* LICENSE: MIT
 
 ---
 
@@ -972,10 +972,10 @@ This product contains 'eslint-plugin-import' by Ben Mosher.
 
 This plugin intends to support linting of ES2015+ (ES6+) import/export syntax, and prevent issues with misspelling of file paths and import names.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/benmosher/eslint-plugin-import
 
-### : MIT
+* LICENSE: MIT
 
 The MIT License (MIT)
 
@@ -1007,10 +1007,10 @@ This product contains 'eslint-plugin-mattermost' by Mattermost.
 
 An ESLint plugin containing the configuration used by Mattermost as well as support for custom rules specific to the Mattermost code base.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/mattermost/eslint-plugin-mattermost
 
-### : Apache License
+* LICENSE: Apache License
 
 Copyright 2015-present Mattermost, Inc.
 
@@ -1224,10 +1224,10 @@ This product contains 'eslint-plugin-react' by Yannick Croissant.
 
 React specific linting rules for ESLint
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/yannickcr/eslint-plugin-react
 
-### : MIT
+* LICENSE: MIT
 
 The MIT License (MIT)
 
@@ -1259,10 +1259,10 @@ This product contains 'file-loader' by webpack-contrib.
 
 The file-loader resolves import/require() on a file into a url and emits the file into the output directory.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/webpack-contrib/file-loader
 
-### : MIT
+* LICENSE: MIT
 
 Copyright JS Foundation and other contributors
 
@@ -1293,10 +1293,10 @@ This product contains 'font-awesome' by Fort Awesome.
 
 The iconic SVG, font, and CSS framework
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/FortAwesome/Font-Awesome
 
-### : Font Awesome Free License
+* LICENSE: Font Awesome Free License
 -------------------------
 
 Font Awesome Free is free, open source, and GPL friendly. You can use it for
@@ -1339,10 +1339,10 @@ This product contains 'hapi/joi' by Sideway Inc.
 
 The most powerful schema description language and data validator for JavaScript.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/sideway/joi
 
-### : Copyright (c) 2012-2020, Sideway Inc, and project contributors.
+* LICENSE: Copyright (c) 2012-2020, Sideway Inc, and project contributors.
 Copyright (c) 2012-2014, Walmart.
 All rights reserved.
 
@@ -1361,10 +1361,10 @@ This product contains 'image-webpack-loader' by Thomas Coopman.
 
 Image loader module for webpack
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/tcoopman/image-webpack-loader
 
-### : MIT
+* LICENSE: MIT
 
 MIT License
 
@@ -1396,10 +1396,10 @@ This product contains 'jq' by Stephen Dolan.
 
 jq is a lightweight and flexible command-line JSON processor.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/stedolan/jq
 
-### :
+* LICENSE:
 
 ---
 
@@ -1409,10 +1409,10 @@ This product contains 'mdi-react' by Levin Rickert.
 
 Material Design Icons for React/Preact packaged as single components
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/levrik/mdi-react
 
-### : MIT
+* LICENSE: MIT
 
 The MIT License (MIT)
 
@@ -1540,10 +1540,10 @@ This product contains 'mocha' by Mocha.
 
 Simple, flexible, fun JavaScript test framework for Node.js & The Browser
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/mochajs/mocha
 
-### : MIT
+* LICENSE: MIT
 
 (The MIT License)
 
@@ -1576,10 +1576,10 @@ This product contains 'mocha-circleci-reporter' by Glenn Morton.
 
 A Mocha reporter specifically for Circle CI.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/sandcastle/mocha-circleci-reporter
 
-### : MIT
+* LICENSE: MIT
 
 The MIT License (MIT)
 
@@ -1611,10 +1611,10 @@ This product contains 'npm-run-all' by Toru Nagashima.
 
 A CLI tool to run multiple npm-scripts in parallel or sequential.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/mysticatea/npm-run-all
 
-### : MIT
+* LICENSE: MIT
 
 The MIT License (MIT)
 
@@ -1646,10 +1646,10 @@ This product contains 'prop-types' by Facebook.
 
 Runtime type checking for React props and similar objects.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://facebook.github.io/react/
 
-### : MIT
+* LICENSE: MIT
 
 MIT License
 
@@ -1681,10 +1681,10 @@ This product contains 'react' by Facebook.
 
 React is a JavaScript library for building user interfaces.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://reactjs.org/
 
-### : MIT
+* LICENSE: MIT
 
 MIT License
 
@@ -1716,10 +1716,10 @@ This product contains 'react-bootstrap' by Stephen J. Collings.
 
 Bootstrap 4 components built with React
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://react-bootstrap.github.io/
 
-### : MIT
+* LICENSE: MIT
 
 The MIT License (MIT)
 
@@ -1751,10 +1751,10 @@ This product contains 'react-dom' by Facebook.
 
 React package for working with the DOM.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://reactjs.org/
 
-### : MIT
+* LICENSE: MIT
 
 MIT License
 
@@ -1786,10 +1786,10 @@ This product contains 'react-smooth-dnd' by Kutlu Sahin.
 
 A fast and lightweight drag&drop, sortable library for React with many configuration options covering many d&d scenarios.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/kutlugsahin/react-smooth-dnd
 
-### : MIT
+* LICENSE: MIT
 
 MIT License
 
@@ -1821,10 +1821,10 @@ This product contains 'react-transition-group' by React Community.
 
 A react component toolset for managing animations
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/reactjs/react-transition-group#readme
 
-### : BSD-3-Clause
+* LICENSE: BSD-3-Clause
 
 BSD 3-Clause License
 
@@ -1865,10 +1865,10 @@ This product contains 'semver' by GitHub user "npm".
 
 The semantic version parser used by npm.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/npm/node-semver#readme
 
-### : ISC
+* LICENSE: ISC
 
 The ISC License
 
@@ -1894,10 +1894,10 @@ This product contains 'simple-spellchecker' by JFMDev.
 
 A simple spellchecker compatible with Electron
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/jfmdev/simple-spellchecker#readme
 
-### : MPL-2.0
+* LICENSE: MPL-2.0
 
 ﻿Mozilla Public License Version 2.0
 ==================================
@@ -2281,10 +2281,10 @@ This product contains 'spectron' by Electron Userland.
 
 Easily test your Electron apps using ChromeDriver and WebdriverIO.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/electron-userland/spectron
 
-### : MIT
+* LICENSE: MIT
 
 Copyright (c) 2016 GitHub Inc.
 
@@ -2302,10 +2302,10 @@ This product contains 'style-loader' by webpack-contrib.
 
 Inject CSS into the DOM.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/webpack-contrib/style-loader
 
-### : MIT
+* LICENSE: MIT
 
 Copyright JS Foundation and other contributors
 
@@ -2336,10 +2336,10 @@ This product contains 'underscore' by Jeremy Ashkenas.
 
 JavaScript's functional programming helper library.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * http://underscorejs.org
 
-### : MIT
+* LICENSE: MIT
 
 Copyright (c) 2009-2018 Jeremy Ashkenas, DocumentCloud and Investigative
 Reporters & Editors
@@ -2373,10 +2373,10 @@ This product contains 'url-loader' by webpack-contrib.
 
 A loader for webpack which transforms files into base64 URIs.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/webpack-contrib/url-loader
 
-### : MIT
+* LICENSE: MIT
 
 Copyright JS Foundation and other contributors
 
@@ -2407,10 +2407,10 @@ This product contains 'valid-url' by Odysseas Tsatalos.
 
 URL validation
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/ogt/valid-url
 
-### : MIT
+* LICENSE: MIT
 
 Copyright (c) 2013 Odysseas Tsatalos and oDesk Corporation
 
@@ -2441,10 +2441,10 @@ This product contains 'webpack' by webpack.
 
 webpack is a module bundler.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/webpack/webpack
 
-### : MIT
+* LICENSE: MIT
 
 Copyright JS Foundation and other contributors
 
@@ -2475,10 +2475,10 @@ This product contains 'webpack-cli' by webpack.
 
 The official CLI of webpack
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/webpack/webpack-cli
 
-### : MIT
+* LICENSE: MIT
 
 Copyright JS Foundation and other contributors
 
@@ -2509,10 +2509,10 @@ This product contains 'webpack-dev-server' by webpack.
 
 Use webpack with a development server that provides live reloading.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/webpack/webpack-dev-server
 
-### : MIT
+* LICENSE: MIT
 
 Copyright JS Foundation and other contributors
 
@@ -2543,10 +2543,10 @@ This product contains 'webpack-merge' by SurviveJS.
 
 webpack-merge provides a merge function that concatenates arrays and merges objects creating a new object
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/survivejs/webpack-merge
 
-### : MIT
+* LICENSE: MIT
 
 Copyright (c) 2015 Juho Vepsalainen
 
@@ -2577,10 +2577,10 @@ This product contains 'winreg' by Paul Bottin.
 
 provides access to the windows registry through the REG tool
 
-### HOMEPAGE:
+* HOMEPAGE:
   * http://fresc81.github.io/node-winreg
 
-### : BSD-2-Clause
+* LICENSE: BSD-2-Clause
 
 Copyright (c) 2016, Paul Bottin All rights reserved.
 
@@ -2600,10 +2600,10 @@ This product contains 'wix' by WiX Toolset.
 
 The WiX Toolset builds Windows installation packages from XML source code.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://github.com/wixtoolset/wix3
 
-### : Copyright (c) .NET Foundation and contributors.
+* LICENSE: Copyright (c) .NET Foundation and contributors.
 This software is released under the Microsoft Reciprocal License (MS-RL) (the "License"); you may not use the software except in compliance with the License.
 
 The text of the Microsoft Reciprocal License (MS-RL) can be found online at:
@@ -2640,10 +2640,10 @@ This product contains 'yargs' by Yargs Contributors.
 
 yargs the modern, pirate-themed, successor to optimist.
 
-### HOMEPAGE:
+* HOMEPAGE:
   * https://yargs.js.org/
 
-### : MIT
+* LICENSE: MIT
 
 Copyright 2010 James Halliday (mail@substack.net)
 Modified work Copyright 2014 Contributors (ben@npmjs.com)
