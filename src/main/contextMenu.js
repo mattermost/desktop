@@ -30,6 +30,7 @@ function saveOptions(options) {
       }
       console.log(p);
       console.log(`should show spelling: ${p.isEditable && p.selectionText.length > 0 && p.misspelledWord}`);
+      console.log(`also: ${p.selectionText.length > 0} && ${p.misspelledWord} && ${p.dictionarySuggestions.length > 0}`);
       return p.isEditable || (p.mediaType !== 'none' && !isInternalSrc) || (p.linkURL !== '' && !isInternalLink) || p.misspelledWord !== '' || p.selectionText !== '';
     }
   };
@@ -39,13 +40,13 @@ function saveOptions(options) {
 function reload(target) {
   dispose();
   const options = target ? {window: target, ...menuOptions} : menuOptions;
-  disposeCurrent = electronContextMenu({window: target});
+  disposeCurrent = electronContextMenu(options);
 }
 
 function setup(options) {
   saveOptions(options);
   dispose();
-  disposeCurrent = electronContextMenu();
+  disposeCurrent = electronContextMenu(menuOptions);
 }
 
 export default {
