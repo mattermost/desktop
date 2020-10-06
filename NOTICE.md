@@ -1361,7 +1361,7 @@ jq is a lightweight and flexible command-line JSON processor.
 
 **HOMEPAGE**:  https://github.com/stedolan/jq
 
-### LICENSE:
+### LICENSE: MIT
 
 --------
 
