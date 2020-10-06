@@ -1,7 +1,8 @@
 Mattermost Desktop
 © 2016-2017 Mattermost, Inc.  All Rights Reserved.  See LICENSE.txt for license information.
 
-# NOTICES
+NOTICES:
+--------
 
 This document includes a list of open source components used in Mattermost Desktop, including those that have been modified.
 
@@ -13,9 +14,10 @@ This product contains '7zip-bin' by Vladimir Krivosheev.
 
 7-Zip precompiled binaries.
 
-**HOMEPAGE**:  https://github.com/develar/7zip-bin
+### HOMEPAGE:
+  * https://github.com/develar/7zip-bin
 
-### LICENSE: MIT
+### : MIT
 
 The MIT License (MIT)
 
@@ -39,7 +41,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## @babel/core
 
@@ -47,9 +49,10 @@ This product contains '@babel/core' by Babel.
 
 Babel is the compiler for writing next generation JavaScript.
 
-**HOMEPAGE**:  <https://github.com/babel/babel>
+### HOMEPAGE:
+  * https://github.com/babel/babel
 
-### LICENSE: MIT
+### : MIT
 
 MIT License
 
@@ -74,7 +77,7 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## @babel/plugin-proposal-class-properties
 
@@ -82,9 +85,10 @@ This product contains '@babel/plugin-proposal-class-properties' by Babel.
 
 Babel is the compiler for writing next generation JavaScript.
 
-**HOMEPAGE**:  https://github.com/babel/babel
+### HOMEPAGE:
+  * https://github.com/babel/babel
 
-### LICENSE: MIT
+### : MIT
 
 MIT License
 
@@ -109,7 +113,7 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## @babel/plugin-proposal-object-rest-spread
 
@@ -117,9 +121,10 @@ This product contains '@babel/plugin-proposal-object-rest-spread' by Babel.
 
 Babel is the compiler for writing next generation JavaScript.
 
-**HOMEPAGE**:  https://github.com/babel/babel
+### HOMEPAGE:
+  * https://github.com/babel/babel
 
-### LICENSE: MIT
+### : MIT
 
 MIT License
 
@@ -144,7 +149,7 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## @babel/preset-env
 
@@ -152,9 +157,10 @@ This product contains '@babel/preset-env' by Babel.
 
 Babel is the compiler for writing next generation JavaScript.
 
-**HOMEPAGE**:  https://github.com/babel/babel
+### HOMEPAGE:
+  * https://github.com/babel/babel
 
-### LICENSE: MIT
+### : MIT
 
 MIT License
 
@@ -179,7 +185,7 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## @babel/preset-react
 
@@ -187,9 +193,10 @@ This product contains '@babel/preset-react' by Babel.
 
 Babel is the compiler for writing next generation JavaScript.
 
-**HOMEPAGE**:  https://github.com/babel/babel
+### HOMEPAGE:
+  * https://github.com/babel/babel
 
-### LICENSE: MIT
+### : MIT
 
 MIT License
 
@@ -214,7 +221,7 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## @babel/register
 
@@ -222,9 +229,10 @@ This product contains '@babel/register' by Babel.
 
 Babel is the compiler for writing next generation JavaScript.
 
-**HOMEPAGE**:  https://github.com/babel/babel
+### HOMEPAGE:
+  * https://github.com/babel/babel
 
-### LICENSE: MIT
+### : MIT
 
 MIT License
 
@@ -249,7 +257,7 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## @storybook/addon-actions
 
@@ -257,9 +265,10 @@ This product contains '@storybook/addon-actions' by Storybook.
 
 Build bulletproof UI components faster
 
-**HOMEPAGE**:  https://github.com/storybookjs/storybook
+### HOMEPAGE:
+  * https://github.com/storybookjs/storybook
 
-### LICENSE: MIT
+### : MIT
 
 The MIT License (MIT)
 
@@ -283,7 +292,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
---------
+---
 
 ## @storybook/react
 
@@ -291,9 +300,10 @@ This product contains '@storybook/react' by Storybook.
 
 Build bulletproof UI components faster
 
-**HOMEPAGE**:  https://github.com/kadira-samples/react-storybook-demo
+### HOMEPAGE:
+  * https://github.com/kadira-samples/react-storybook-demo
 
-### LICENSE: MIT
+### : MIT
 
 The MIT License (MIT)
 
@@ -317,7 +327,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
---------
+---
 
 ## auto-launch
 
@@ -325,9 +335,10 @@ This product contains 'auto-launch' by Donal Linehan.
 
 Launch node applications or executables at login (Mac, Windows, and Linux)
 
-**HOMEPAGE**:  https://github.com/4ver/node-auto-launch
+### HOMEPAGE:
+  * https://github.com/4ver/node-auto-launch
 
-### LICENSE: MIT
+### : MIT
 
 MIT License
 
@@ -351,7 +362,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## babel-eslint
 
@@ -359,9 +370,10 @@ This product contains 'babel-eslint' by Babel.
 
 @babel/eslint-parser allows you to lint all valid Babel code with the fantastic ESLint.
 
-**HOMEPAGE**:  https://github.com/babel/babel/tree/master/eslint/babel-eslint-parser
+### HOMEPAGE:
+  * https://github.com/babel/babel/tree/master/eslint/babel-eslint-parser
 
-### LICENSE: MIT
+### : MIT
 
 Copyright (c) 2014-2016 Sebastian McKenzie <sebmck@gmail.com>
 
@@ -386,7 +398,7 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## babel-loader
 
@@ -394,9 +406,10 @@ This product contains 'babel-loader' by Babel.
 
 This package allows transpiling JavaScript files using Babel and webpack.
 
-**HOMEPAGE**:  https://github.com/babel/babel-loader
+### HOMEPAGE:
+  * https://github.com/babel/babel-loader
 
-### LICENSE: MIT
+### : MIT
 
 Copyright (c) 2014-2019 Luís Couto <hello@luiscouto.pt>
 
@@ -421,7 +434,7 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## bootstrap
 
@@ -429,9 +442,10 @@ This product contains 'bootstrap' by The Bootstrap Authors.
 
 The most popular front-end framework for developing responsive, mobile first projects on the web.
 
-**HOMEPAGE**:  https://getbootstrap.com/
+### HOMEPAGE:
+  * https://getbootstrap.com/
 
-### LICENSE: MIT
+### : MIT
 
 The MIT License (MIT)
 
@@ -456,7 +470,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
---------
+---
 
 ## chai
 
@@ -464,9 +478,10 @@ This product contains 'chai' by Chai.js Assertion Library.
 
 Chai is a BDD / TDD assertion library for node and the browser that can be delightfully paired with any javascript testing framework.
 
-**HOMEPAGE**:  https://github.com/chaijs/chai
+### HOMEPAGE:
+  * https://github.com/chaijs/chai
 
-### LICENSE: MIT
+### : MIT
 
 MIT License
 
@@ -490,7 +505,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## cross-env
 
@@ -498,9 +513,10 @@ This product contains 'cross-env' by Kent C. Dodds.
 
 Run scripts that set and use environment variables across platforms
 
-**HOMEPAGE**:  https://github.com/kentcdodds/cross-env
+### HOMEPAGE:
+  * https://github.com/kentcdodds/cross-env
 
-### LICENSE: MIT
+### : MIT
 
 The MIT License (MIT)
 Copyright (c) 2017 Kent C. Dodds
@@ -523,7 +539,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## css-loader
 
@@ -531,9 +547,10 @@ This product contains 'css-loader' by webpack-contrib.
 
 The css-loader interprets @import and url() like import/require() and will resolve them.
 
-**HOMEPAGE**:  https://github.com/webpack-contrib/css-loader
+### HOMEPAGE:
+  * https://github.com/webpack-contrib/css-loader
 
-### LICENSE: MIT
+### : MIT
 
 Copyright JS Foundation and other contributors
 
@@ -556,7 +573,7 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## devtron
 
@@ -564,9 +581,10 @@ This product contains 'devtron' by Electron Userland.
 
 An Electron DevTools extension to help you inspect, monitor, and debug your app.
 
-**HOMEPAGE**:  https://github.com/electron-userland/devtron
+### HOMEPAGE:
+  * https://github.com/electron-userland/devtron
 
-### LICENSE: MIT
+### : MIT
 
 Copyright (c) 2016 GitHub Inc.
 
@@ -589,7 +607,7 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## electron
 
@@ -597,9 +615,10 @@ This product contains 'electron' by Electron.
 
 The Electron framework lets you write cross-platform desktop applications using JavaScript, HTML and CSS.
 
-**HOMEPAGE**:  https://github.com/electron/electron
+### HOMEPAGE:
+  * https://github.com/electron/electron
 
-### LICENSE: MIT
+### : MIT
 
 Copyright (c) 2013-2020 GitHub Inc.
 
@@ -622,7 +641,7 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## electron-builder
 
@@ -630,9 +649,10 @@ This product contains 'electron-builder' by Electron Userland.
 
 A complete solution to package and build a ready for distribution Electron, Proton Native app for macOS, Windows and Linux with “auto update” support out of the box.
 
-**HOMEPAGE**:  https://github.com/electron-userland/electron-builder
+### HOMEPAGE:
+  * https://github.com/electron-userland/electron-builder
 
-### LICENSE: MIT
+### : MIT
 
 The MIT License (MIT)
 
@@ -656,7 +676,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## electron-connect
 
@@ -664,11 +684,12 @@ This product contains 'electron-connect' by Yosuke Kurami.
 
 Utility tool to develop applications with Electron.
 
-**HOMEPAGE**:  https://github.com/Quramy/electron-connect
+### HOMEPAGE:
+  * https://github.com/Quramy/electron-connect
 
-### LICENSE: MIT
+### : MIT
 
---------
+---
 
 ## electron-context-menu
 
@@ -676,9 +697,10 @@ This product contains 'electron-context-menu' by Sindre Sorhus.
 
 Context menu for your Electron app
 
-**HOMEPAGE**:  https://github.com/sindresorhus/electron-context-menu#readme
+### HOMEPAGE:
+  * https://github.com/sindresorhus/electron-context-menu#readme
 
-### LICENSE: MIT
+### : MIT
 
 MIT License
 
@@ -690,7 +712,7 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## electron-devtools-installer
 
@@ -698,9 +720,10 @@ This product contains 'electron-devtools-installer' by Samuel Attard.
 
 An easy way to install Dev Tools extensions into Electron applications
 
-**HOMEPAGE**:  https://github.com/GPMDP/electron-devtools-installer#readme
+### HOMEPAGE:
+  * https://github.com/GPMDP/electron-devtools-installer#readme
 
-### LICENSE: MIT
+### : MIT
 
 The MIT License (MIT)
 Copyright (c) 2016 Samuel Attard
@@ -711,7 +734,7 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## electron-is-dev
 
@@ -719,9 +742,10 @@ This product contains 'electron-is-dev' by Sindre Sorhus.
 
 Check if Electron is running in development
 
-**HOMEPAGE**:  https://github.com/sindresorhus/electron-is-dev#readme
+### HOMEPAGE:
+  * https://github.com/sindresorhus/electron-is-dev#readme
 
-### LICENSE: MIT
+### : MIT
 
 MIT License
 
@@ -733,7 +757,7 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## electron-log
 
@@ -741,9 +765,10 @@ This product contains 'electron-log' by Alexey Prokhorov.
 
 Just a very simple logging module for your Electron application
 
-**HOMEPAGE**:  https://github.com/megahertz/electron-log#readme
+### HOMEPAGE:
+  * https://github.com/megahertz/electron-log#readme
 
-### LICENSE: MIT
+### : MIT
 
 The MIT License (MIT)
 
@@ -767,7 +792,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## electron-notarize
 
@@ -775,9 +800,10 @@ This product contains 'electron-notarize' by Electron.
 
 Notarize your Electron apps seamlessly for macOS
 
-**HOMEPAGE**:  https://github.com/electron/electron-notarize
+### HOMEPAGE:
+  * https://github.com/electron/electron-notarize
 
-### LICENSE: MIT
+### : MIT
 
 Copyright 2018 Samuel Attard and contributors
 
@@ -787,7 +813,7 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## electron-updater
 
@@ -795,9 +821,10 @@ This product contains 'electron-updater' by Vladimir Krivosheev.
 
 Cross platform updater for electron applications
 
-**HOMEPAGE**:  https://github.com/electron-userland/electron-builder
+### HOMEPAGE:
+  * https://github.com/electron-userland/electron-builder
 
-### LICENSE: MIT
+### : MIT
 
 The MIT License (MIT)
 
@@ -821,7 +848,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## eslint
 
@@ -829,9 +856,10 @@ This product contains 'eslint' by ESLint.
 
 ESLint is a tool for identifying and reporting on patterns found in ECMAScript/JavaScript code.
 
-**HOMEPAGE**:  https://github.com/eslint/eslint
+### HOMEPAGE:
+  * https://github.com/eslint/eslint
 
-### LICENSE: MIT
+### : MIT
 
 Copyright JS Foundation and other contributors, https://js.foundation
 
@@ -853,7 +881,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
---------
+---
 
 ## eslint-plugin-cypress
 
@@ -861,9 +889,10 @@ This product contains 'eslint-plugin-cypress' by Cypress-io.
 
 An ESLint plugin for your Cypress tests.
 
-**HOMEPAGE**:  https://github.com/cypress-io/eslint-plugin-cypress
+### HOMEPAGE:
+  * https://github.com/cypress-io/eslint-plugin-cypress
 
-### LICENSE: MIT
+### : MIT
 
 MIT License
 
@@ -887,7 +916,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## eslint-plugin-eslint-comments
 
@@ -895,9 +924,10 @@ This product contains 'eslint-plugin-eslint-comments' by Toru Nagashima.
 
 Additional ESLint rules for ESLint directive comments (e.g. //eslint-disable-line).
 
-**HOMEPAGE**:  https://github.com/mysticatea/eslint-plugin-eslint-comments
+### HOMEPAGE:
+  * https://github.com/mysticatea/eslint-plugin-eslint-comments
 
-### LICENSE: MIT
+### : MIT
 
 MIT License
 
@@ -921,7 +951,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## eslint-plugin-header
 
@@ -929,11 +959,12 @@ This product contains 'eslint-plugin-header' by Stuart Knightley.
 
 ESLint plugin to ensure that files begin with given comment.
 
-**HOMEPAGE**:  https://github.com/Stuk/eslint-plugin-header
+### HOMEPAGE:
+  * https://github.com/Stuk/eslint-plugin-header
 
-### LICENSE: MIT
+### : MIT
 
---------
+---
 
 ## eslint-plugin-import
 
@@ -941,9 +972,10 @@ This product contains 'eslint-plugin-import' by Ben Mosher.
 
 This plugin intends to support linting of ES2015+ (ES6+) import/export syntax, and prevent issues with misspelling of file paths and import names.
 
-**HOMEPAGE**:  https://github.com/benmosher/eslint-plugin-import
+### HOMEPAGE:
+  * https://github.com/benmosher/eslint-plugin-import
 
-### LICENSE: MIT
+### : MIT
 
 The MIT License (MIT)
 
@@ -967,7 +999,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## eslint-plugin-mattermost
 
@@ -975,9 +1007,10 @@ This product contains 'eslint-plugin-mattermost' by Mattermost.
 
 An ESLint plugin containing the configuration used by Mattermost as well as support for custom rules specific to the Mattermost code base.
 
-**HOMEPAGE**:  https://github.com/mattermost/eslint-plugin-mattermost
+### HOMEPAGE:
+  * https://github.com/mattermost/eslint-plugin-mattermost
 
-### LICENSE: Apache License
+### : Apache License
 
 Copyright 2015-present Mattermost, Inc.
 
@@ -1183,7 +1216,7 @@ Copyright 2015-present Mattermost, Inc.
    See the License for the specific language governing permissions and
    limitations under the License.
 
---------
+---
 
 ## eslint-plugin-react
 
@@ -1191,9 +1224,10 @@ This product contains 'eslint-plugin-react' by Yannick Croissant.
 
 React specific linting rules for ESLint
 
-**HOMEPAGE**:  https://github.com/yannickcr/eslint-plugin-react
+### HOMEPAGE:
+  * https://github.com/yannickcr/eslint-plugin-react
 
-### LICENSE: MIT
+### : MIT
 
 The MIT License (MIT)
 
@@ -1217,7 +1251,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## file-loader
 
@@ -1225,9 +1259,10 @@ This product contains 'file-loader' by webpack-contrib.
 
 The file-loader resolves import/require() on a file into a url and emits the file into the output directory.
 
-**HOMEPAGE**:  https://github.com/webpack-contrib/file-loader
+### HOMEPAGE:
+  * https://github.com/webpack-contrib/file-loader
 
-### LICENSE: MIT
+### : MIT
 
 Copyright JS Foundation and other contributors
 
@@ -1250,7 +1285,7 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## font-awesome
 
@@ -1258,9 +1293,11 @@ This product contains 'font-awesome' by Fort Awesome.
 
 The iconic SVG, font, and CSS framework
 
-**HOMEPAGE**:  https://github.com/FortAwesome/Font-Awesome
+### HOMEPAGE:
+  * https://github.com/FortAwesome/Font-Awesome
 
-### LICENSE: Font Awesome Free License
+### : Font Awesome Free License
+-------------------------
 
 Font Awesome Free is free, open source, and GPL friendly. You can use it for
 commercial projects, open source projects, or really almost whatever you want.
@@ -1294,7 +1331,7 @@ trademarks does not indicate endorsement of the trademark holder by Font
 Awesome, nor vice versa. **Please do not use brand logos for any purpose except
 to represent the company, product, or service to which they refer.**
 
---------
+---
 
 ## hapi/joi
 
@@ -1302,11 +1339,10 @@ This product contains 'hapi/joi' by Sideway Inc.
 
 The most powerful schema description language and data validator for JavaScript.
 
-**HOMEPAGE**:  https://github.com/sideway/joi
+### HOMEPAGE:
+  * https://github.com/sideway/joi
 
-### LICENSE: BSD-3-Clause
-
-Copyright (c) 2012-2020, Sideway Inc, and project contributors.
+### : Copyright (c) 2012-2020, Sideway Inc, and project contributors.
 Copyright (c) 2012-2014, Walmart.
 All rights reserved.
 
@@ -1317,7 +1353,7 @@ Redistributions in binary form must reproduce the above copyright notice, this l
 The names of any contributors may not be used to endorse or promote products derived from this software without specific prior written permission.
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
---------
+---
 
 ## image-webpack-loader
 
@@ -1325,9 +1361,10 @@ This product contains 'image-webpack-loader' by Thomas Coopman.
 
 Image loader module for webpack
 
-**HOMEPAGE**:  https://github.com/tcoopman/image-webpack-loader
+### HOMEPAGE:
+  * https://github.com/tcoopman/image-webpack-loader
 
-### LICENSE: MIT
+### : MIT
 
 MIT License
 
@@ -1351,7 +1388,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## jq
 
@@ -1359,11 +1396,12 @@ This product contains 'jq' by Stephen Dolan.
 
 jq is a lightweight and flexible command-line JSON processor.
 
-**HOMEPAGE**:  https://github.com/stedolan/jq
+### HOMEPAGE:
+  * https://github.com/stedolan/jq
 
-### LICENSE:
+### :
 
---------
+---
 
 ## mdi-react
 
@@ -1371,9 +1409,10 @@ This product contains 'mdi-react' by Levin Rickert.
 
 Material Design Icons for React/Preact packaged as single components
 
-**HOMEPAGE**:  https://github.com/levrik/mdi-react
+### HOMEPAGE:
+  * https://github.com/levrik/mdi-react
 
-### LICENSE: MIT
+### : MIT
 
 The MIT License (MIT)
 
@@ -1406,7 +1445,9 @@ This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
 http://scripts.sil.org/OFL
 
+-----------------------------------------------------------
 SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
 
 PREAMBLE
 The goals of the Open Font License (OFL) are to stimulate worldwide
@@ -1491,7 +1532,7 @@ DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
 
---------
+---
 
 ## mocha
 
@@ -1499,9 +1540,10 @@ This product contains 'mocha' by Mocha.
 
 Simple, flexible, fun JavaScript test framework for Node.js & The Browser
 
-**HOMEPAGE**:  https://github.com/mochajs/mocha
+### HOMEPAGE:
+  * https://github.com/mochajs/mocha
 
-### LICENSE: MIT
+### : MIT
 
 (The MIT License)
 
@@ -1526,7 +1568,7 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## mocha-circleci-reporter
 
@@ -1534,9 +1576,10 @@ This product contains 'mocha-circleci-reporter' by Glenn Morton.
 
 A Mocha reporter specifically for Circle CI.
 
-**HOMEPAGE**:  https://github.com/sandcastle/mocha-circleci-reporter
+### HOMEPAGE:
+  * https://github.com/sandcastle/mocha-circleci-reporter
 
-### LICENSE: MIT
+### : MIT
 
 The MIT License (MIT)
 
@@ -1560,7 +1603,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## npm-run-all
 
@@ -1568,9 +1611,10 @@ This product contains 'npm-run-all' by Toru Nagashima.
 
 A CLI tool to run multiple npm-scripts in parallel or sequential.
 
-**HOMEPAGE**:  https://github.com/mysticatea/npm-run-all
+### HOMEPAGE:
+  * https://github.com/mysticatea/npm-run-all
 
-### LICENSE: MIT
+### : MIT
 
 The MIT License (MIT)
 
@@ -1594,7 +1638,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## prop-types
 
@@ -1602,9 +1646,10 @@ This product contains 'prop-types' by Facebook.
 
 Runtime type checking for React props and similar objects.
 
-**HOMEPAGE**:  https://facebook.github.io/react/
+### HOMEPAGE:
+  * https://facebook.github.io/react/
 
-### LICENSE: MIT
+### : MIT
 
 MIT License
 
@@ -1628,7 +1673,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## react
 
@@ -1636,9 +1681,10 @@ This product contains 'react' by Facebook.
 
 React is a JavaScript library for building user interfaces.
 
-**HOMEPAGE**:  https://reactjs.org/
+### HOMEPAGE:
+  * https://reactjs.org/
 
-### LICENSE: MIT
+### : MIT
 
 MIT License
 
@@ -1662,7 +1708,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## react-bootstrap
 
@@ -1670,9 +1716,10 @@ This product contains 'react-bootstrap' by Stephen J. Collings.
 
 Bootstrap 4 components built with React
 
-**HOMEPAGE**:  https://react-bootstrap.github.io/
+### HOMEPAGE:
+  * https://react-bootstrap.github.io/
 
-### LICENSE: MIT
+### : MIT
 
 The MIT License (MIT)
 
@@ -1696,7 +1743,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
---------
+---
 
 ## react-dom
 
@@ -1704,9 +1751,10 @@ This product contains 'react-dom' by Facebook.
 
 React package for working with the DOM.
 
-**HOMEPAGE**:  https://reactjs.org/
+### HOMEPAGE:
+  * https://reactjs.org/
 
-### LICENSE: MIT
+### : MIT
 
 MIT License
 
@@ -1730,7 +1778,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## react-smooth-dnd
 
@@ -1738,9 +1786,10 @@ This product contains 'react-smooth-dnd' by Kutlu Sahin.
 
 A fast and lightweight drag&drop, sortable library for React with many configuration options covering many d&d scenarios.
 
-**HOMEPAGE**:  https://github.com/kutlugsahin/react-smooth-dnd
+### HOMEPAGE:
+  * https://github.com/kutlugsahin/react-smooth-dnd
 
-### LICENSE: MIT
+### : MIT
 
 MIT License
 
@@ -1764,7 +1813,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---------
+---
 
 ## react-transition-group
 
@@ -1772,9 +1821,10 @@ This product contains 'react-transition-group' by React Community.
 
 A react component toolset for managing animations
 
-**HOMEPAGE**:  https://github.com/reactjs/react-transition-group#readme
+### HOMEPAGE:
+  * https://github.com/reactjs/react-transition-group#readme
 
-### LICENSE: BSD-3-Clause
+### : BSD-3-Clause
 
 BSD 3-Clause License
 
@@ -1807,7 +1857,7 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
---------
+---
 
 ## semver
 
@@ -1815,9 +1865,10 @@ This product contains 'semver' by GitHub user "npm".
 
 The semantic version parser used by npm.
 
-**HOMEPAGE**:  https://github.com/npm/node-semver#readme
+### HOMEPAGE:
+  * https://github.com/npm/node-semver#readme
 
-### LICENSE: ISC
+### : ISC
 
 The ISC License
 
@@ -1835,7 +1886,7 @@ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
 IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
---------
+---
 
 ## simple-spellchecker
 
@@ -1843,11 +1894,12 @@ This product contains 'simple-spellchecker' by JFMDev.
 
 A simple spellchecker compatible with Electron
 
-**HOMEPAGE**:  https://github.com/jfmdev/simple-spellchecker#readme
+### HOMEPAGE:
+  * https://github.com/jfmdev/simple-spellchecker#readme
 
-### LICENSE: MPL-2.0
+### : MPL-2.0
 
-Mozilla Public License Version 2.0
+﻿Mozilla Public License Version 2.0
 ==================================
 
 1. Definitions
@@ -2221,7 +2273,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   This Source Code Form is "Incompatible With Secondary Licenses", as
   defined by the Mozilla Public License, v. 2.0.
 
---------
+---
 
 ## spectron
 
@@ -2229,9 +2281,10 @@ This product contains 'spectron' by Electron Userland.
 
 Easily test your Electron apps using ChromeDriver and WebdriverIO.
 
-**HOMEPAGE**:  https://github.com/electron-userland/spectron
+### HOMEPAGE:
+  * https://github.com/electron-userland/spectron
 
-### LICENSE: MIT
+### : MIT
 
 Copyright (c) 2016 GitHub Inc.
 
@@ -2241,7 +2294,7 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## style-loader
 
@@ -2249,9 +2302,10 @@ This product contains 'style-loader' by webpack-contrib.
 
 Inject CSS into the DOM.
 
-**HOMEPAGE**:  https://github.com/webpack-contrib/style-loader
+### HOMEPAGE:
+  * https://github.com/webpack-contrib/style-loader
 
-### LICENSE: MIT
+### : MIT
 
 Copyright JS Foundation and other contributors
 
@@ -2274,7 +2328,7 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## underscore
 
@@ -2282,9 +2336,10 @@ This product contains 'underscore' by Jeremy Ashkenas.
 
 JavaScript's functional programming helper library.
 
-**HOMEPAGE**:  http://underscorejs.org
+### HOMEPAGE:
+  * http://underscorejs.org
 
-### LICENSE: MIT
+### : MIT
 
 Copyright (c) 2009-2018 Jeremy Ashkenas, DocumentCloud and Investigative
 Reporters & Editors
@@ -2310,7 +2365,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## url-loader
 
@@ -2318,9 +2373,10 @@ This product contains 'url-loader' by webpack-contrib.
 
 A loader for webpack which transforms files into base64 URIs.
 
-**HOMEPAGE**:  https://github.com/webpack-contrib/url-loader
+### HOMEPAGE:
+  * https://github.com/webpack-contrib/url-loader
 
-### LICENSE: MIT
+### : MIT
 
 Copyright JS Foundation and other contributors
 
@@ -2343,7 +2399,7 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## valid-url
 
@@ -2351,9 +2407,10 @@ This product contains 'valid-url' by Odysseas Tsatalos.
 
 URL validation
 
-**HOMEPAGE**:  https://github.com/ogt/valid-url
+### HOMEPAGE:
+  * https://github.com/ogt/valid-url
 
-### LICENSE: MIT
+### : MIT
 
 Copyright (c) 2013 Odysseas Tsatalos and oDesk Corporation
 
@@ -2376,7 +2433,7 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## webpack
 
@@ -2384,9 +2441,10 @@ This product contains 'webpack' by webpack.
 
 webpack is a module bundler.
 
-**HOMEPAGE**:  https://github.com/webpack/webpack
+### HOMEPAGE:
+  * https://github.com/webpack/webpack
 
-### LICENSE: MIT
+### : MIT
 
 Copyright JS Foundation and other contributors
 
@@ -2409,7 +2467,7 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## webpack-cli
 
@@ -2417,9 +2475,10 @@ This product contains 'webpack-cli' by webpack.
 
 The official CLI of webpack
 
-**HOMEPAGE**:  https://github.com/webpack/webpack-cli
+### HOMEPAGE:
+  * https://github.com/webpack/webpack-cli
 
-### LICENSE: MIT
+### : MIT
 
 Copyright JS Foundation and other contributors
 
@@ -2442,7 +2501,7 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## webpack-dev-server
 
@@ -2450,9 +2509,10 @@ This product contains 'webpack-dev-server' by webpack.
 
 Use webpack with a development server that provides live reloading.
 
-**HOMEPAGE**:  https://github.com/webpack/webpack-dev-server
+### HOMEPAGE:
+  * https://github.com/webpack/webpack-dev-server
 
-### LICENSE: MIT
+### : MIT
 
 Copyright JS Foundation and other contributors
 
@@ -2475,7 +2535,7 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## webpack-merge
 
@@ -2483,9 +2543,10 @@ This product contains 'webpack-merge' by SurviveJS.
 
 webpack-merge provides a merge function that concatenates arrays and merges objects creating a new object
 
-**HOMEPAGE**:  https://github.com/survivejs/webpack-merge
+### HOMEPAGE:
+  * https://github.com/survivejs/webpack-merge
 
-### LICENSE: MIT
+### : MIT
 
 Copyright (c) 2015 Juho Vepsalainen
 
@@ -2508,7 +2569,7 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
---------
+---
 
 ## winreg
 
@@ -2516,9 +2577,10 @@ This product contains 'winreg' by Paul Bottin.
 
 provides access to the windows registry through the REG tool
 
-**HOMEPAGE**:  http://fresc81.github.io/node-winreg
+### HOMEPAGE:
+  * http://fresc81.github.io/node-winreg
 
-### LICENSE: BSD-2-Clause
+### : BSD-2-Clause
 
 Copyright (c) 2016, Paul Bottin All rights reserved.
 
@@ -2530,7 +2592,7 @@ Redistribution and use in source and binary forms, with or without modification,
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
---------
+---
 
 ## wix
 
@@ -2538,9 +2600,10 @@ This product contains 'wix' by WiX Toolset.
 
 The WiX Toolset builds Windows installation packages from XML source code.
 
-**HOMEPAGE**:  https://github.com/wixtoolset/wix3
+### HOMEPAGE:
+  * https://github.com/wixtoolset/wix3
 
-### LICENSE: Copyright (c) .NET Foundation and contributors.
+### : Copyright (c) .NET Foundation and contributors.
 This software is released under the Microsoft Reciprocal License (MS-RL) (the "License"); you may not use the software except in compliance with the License.
 
 The text of the Microsoft Reciprocal License (MS-RL) can be found online at:
@@ -2569,7 +2632,7 @@ This license governs use of the accompanying software. If you use the software, 
  (E) If you distribute any portion of the software in source code form, you may do so only under this license by including a complete copy of this license with your distribution. If you distribute any portion of the software in compiled or object code form, you may only do so under a license that complies with this license.
  (F) The software is licensed "as-is." You bear the risk of using it. The contributors give no express warranties, guarantees or conditions. You may have additional consumer rights under your local laws which this license cannot change. To the extent permitted under your local laws, the contributors exclude the implied warranties of merchantability, fitness for a particular purpose and non-infringement.
 
--------------
+---
 
 ## yargs
 
@@ -2577,9 +2640,10 @@ This product contains 'yargs' by Yargs Contributors.
 
 yargs the modern, pirate-themed, successor to optimist.
 
-**HOMEPAGE**:  https://yargs.js.org/
+### HOMEPAGE:
+  * https://yargs.js.org/
 
-### LICENSE: MIT
+### : MIT
 
 Copyright 2010 James Halliday (mail@substack.net)
 Modified work Copyright 2014 Contributors (ben@npmjs.com)
