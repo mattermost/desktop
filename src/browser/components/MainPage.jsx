@@ -526,7 +526,7 @@ export default class MainPage extends React.Component {
 
   handleTargetURLChange = (targetURL) => {
     clearTimeout(this.targetURLDisappearTimeout);
-    if (targetURL === '' || this.parseDeeplinkURL(targetURL)) { // Do not show URL for internal links
+    if (targetURL === '' || this.parseDeeplinkURL(targetURL, [this.props.teams[this.state.key]])) { // Do not show URL for internal links on current team
       // set delay to avoid momentary disappearance when hovering over multiple links
       this.targetURLDisappearTimeout = setTimeout(() => {
         this.setState({targetURL: ''});
