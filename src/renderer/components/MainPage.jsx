@@ -216,13 +216,15 @@ export default class MainPage extends React.Component {
     // can't switch tabs sequentially for some reason...
     ipcRenderer.on('switch-tab', (event, key) => {
       const nextIndex = this.props.teams.findIndex((team) => team.order === key);
-      this.handleSelect(nextIndex);
+      const team = this.props.teams[nextIndex];
+      this.handleSelect(team.name, nextIndex);
     });
     ipcRenderer.on('select-next-tab', () => {
       const currentOrder = this.props.teams[this.state.key].order;
       const nextOrder = ((currentOrder + 1) % this.props.teams.length);
       const nextIndex = this.props.teams.findIndex((team) => team.order === nextOrder);
-      this.handleSelect(nextIndex);
+      const team = this.props.teams[nextIndex];
+      this.handleSelect(team.name, nextIndex);
     });
 
     ipcRenderer.on('select-previous-tab', () => {
@@ -231,7 +233,8 @@ export default class MainPage extends React.Component {
       // js modulo operator returns a negative number if result is negative, so we have to ensure it's positive
       const nextOrder = ((this.props.teams.length + (currentOrder - 1)) % this.props.teams.length);
       const nextIndex = this.props.teams.findIndex((team) => team.order === nextOrder);
-      this.handleSelect(nextIndex);
+      const team = this.props.teams[nextIndex];
+      this.handleSelect(team.name, nextIndex);
     });
 
     // reload the activated tab
