@@ -6,7 +6,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-import electron, {nativeTheme} from 'electron';
+import electron, {nativeTheme, shell} from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import log from 'electron-log';
@@ -568,7 +568,7 @@ function handleAppWebContentsCreated(dc, contents) {
     const server = Utils.getServer(parsedURL, config.teams);
 
     if (!server) {
-      log.info(`Untrusted popup window blocked: ${url}`);
+      shell.openExternal(url);
       return;
     }
     if (Utils.isTeamUrl(server.url, parsedURL, true) === true) {
