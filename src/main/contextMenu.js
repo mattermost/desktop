@@ -32,7 +32,13 @@ function saveOptions(options) {
       console.log(`should show spelling: ${p.isEditable && p.selectionText.length > 0 && p.misspelledWord}`);
       console.log(`also: ${p.selectionText.length > 0} && ${p.misspelledWord} && ${p.dictionarySuggestions.length > 0}`);
       return p.isEditable || (p.mediaType !== 'none' && !isInternalSrc) || (p.linkURL !== '' && !isInternalLink) || p.misspelledWord !== '' || p.selectionText !== '';
-    }
+    },
+    showLookUpSelection: true,
+    showSearchWithGoogle: true,
+    showCopyImage: true,
+    showSaveImage: true,
+    showSaveImageAs: true,
+    showServices: true,
   };
   menuOptions = Object.assign({}, defaultOptions, providedOptions);
 }
