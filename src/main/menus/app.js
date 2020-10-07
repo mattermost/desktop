@@ -139,7 +139,11 @@ function createTemplate(config, viewManager) {
     accelerator: 'CmdOrCtrl+F',
     click() {
       const focused = webContents.getFocusedWebContents();
-      focused.findInPage();
+      const event = {
+        type: 'keyDown',
+        keyCode: 'CmdOrCtrl+F',
+      };
+      focused.sendInputEvent(event);
     },
   }, {
     label: 'Reload',
@@ -226,21 +230,19 @@ function createTemplate(config, viewManager) {
     submenu: [{
       label: 'Back',
       accelerator: process.platform === 'darwin' ? 'Cmd+[' : 'Alt+Left',
-      click: (item, focusedWindow) => {
-        if (WindowManager.isMainWindow(focusedWindow)) {
-          WindowManager.sendToRenderer('go-back');
-        } else if (focusedWindow.webContents.canGoBack()) {
-          focusedWindow.webContents.goBack();
+      click: () => {
+        const focused = webContents.getFocusedWebContents();
+        if (focused.canGoBack()) {
+          focused.goBack();
         }
       },
     }, {
       label: 'Forward',
       accelerator: process.platform === 'darwin' ? 'Cmd+]' : 'Alt+Right',
-      click: (item, focusedWindow) => {
-        if (WindowManager.isMainWindow(focusedWindow)) {
-          WindowManager.sendToRenderer('go-forward');
-        } else if (focusedWindow.webContents.canGoForward()) {
-          focusedWindow.webContents.goForward();
+      click: () => {
+        const focused = webContents.getFocusedWebContents();
+        if (focused.canGoForward()) {
+          focused.goForward();
         }
       },
     }],
