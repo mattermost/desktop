@@ -13,13 +13,9 @@ let menuOptions = {
     try {
       const srcurl = new URL(p.srcURL);
       isInternalSrc = srcurl.protocol === 'file:';
-      console.log(`srcurl protocol: ${srcurl.protocol}`);
     } catch (err) {
       isInternalSrc = false;
     }
-    console.log(p);
-    console.log(`should show spelling: ${p.isEditable && p.selectionText.length > 0 && p.misspelledWord}`);
-    console.log(`also: ${p.selectionText.length > 0} && ${p.misspelledWord} && ${p.dictionarySuggestions.length > 0}`);
     return p.isEditable || (p.mediaType !== 'none' && !isInternalSrc) || (p.linkURL !== '' && !isInternalLink) || p.misspelledWord !== '' || p.selectionText !== '';
   },
   showLookUpSelection: true,
