@@ -70,13 +70,8 @@ function createMainWindow(config, options) {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      webviewTag: true,
       disableBlinkFeatures: 'Auxclick',
       spellcheck,
-      additionalArguments: [
-        `version=${app.version}`,
-        `appName=${app.name}`,
-      ],
     },
   });
 
