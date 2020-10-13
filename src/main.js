@@ -782,7 +782,7 @@ function initializeAfterAppReady() {
     });
     item.setSaveDialogOptions({
       title: filename,
-      defaultPath: path.resolve(config.defaultConfigData.downloadLocation, filename),
+      defaultPath: path.resolve(config.combinedData.downloadLocation, filename),
       filters,
     });
 

@@ -80,6 +80,7 @@ const configDataSchemaV2 = Joi.object({
   autostart: Joi.boolean().default(true),
   spellCheckerLocale: Joi.string().regex(/^[a-z]{2}-[A-Z]{2}$/).default('en-US'),
   darkMode: Joi.boolean().default(false),
+  downloadLocation: Joi.string(),
 });
 
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};

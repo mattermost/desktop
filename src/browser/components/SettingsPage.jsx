@@ -29,8 +29,6 @@ import TabBar from './TabBar.jsx';
 const CONFIG_TYPE_SERVERS = 'servers';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
-const {dialog} = remote;
-
 const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
 
 function backToIndex(index) {
@@ -433,7 +431,7 @@ export default class SettingsPage extends React.Component {
 
   selectDownloadLocation = () => {
     const message = 'Specify the folder where files will download';
-    dialog.showOpenDialog({defaultPath: '',
+    remote.dialog.showOpenDialog({defaultPath: '',
       message,
       properties:
      ['openDirectory', 'createDirectory', 'dontAddToRecent']}).then((result) => this.saveDownloadLocation(result.filePaths[0]));
