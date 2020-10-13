@@ -29,8 +29,7 @@ import TabBar from './TabBar.jsx';
 const CONFIG_TYPE_SERVERS = 'servers';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
-// @eslint-ignore
-const {dialog} = require('electron').remote;
+const {dialog} = remote;
 
 const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
 
@@ -433,8 +432,11 @@ export default class SettingsPage extends React.Component {
   }
 
   selectDownloadLocation = () => {
-    const location = dialog.showOpenDialogSync({properties: ['openDirectory']});
-    this.saveDownloadLocation(location);
+    const message = 'Specify the folder where files will download';
+    dialog.showOpenDialog({defaultPath: '',
+      message,
+      properties:
+     ['openDirectory', 'createDirectory', 'dontAddToRecent']}).then((result) => this.saveDownloadLocation(result.filePaths[0]));
   }
 
   updateTeam = (index, newData) => {
