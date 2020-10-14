@@ -9,7 +9,7 @@ import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constant
 import Utils from 'common/utils/util';
 import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED} from 'common/communication';
 
-import {getWindowBoundaries} from './utils';
+import {getWindowBoundaries, getLocalURL} from './utils';
 import * as WindowManager from './windows/windowManager';
 
 // copying what webview sends
@@ -61,8 +61,9 @@ export class MattermostView {
     this.retryLoad = null;
     const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : Utils.parseUrl(someURL);
     log.info(`[${this.server.name}] Loading ${loadURL}`);
+    const localURL = getLocalURL('urlView.html', `url=${loadURL.toString()}`);
 
-    const loading = this.view.webContents.loadURL(loadURL, {userAgent});
+    const loading = this.view.webContents.loadURL(localURL, {userAgent});
     loading.then(this.loadSuccess(loadURL)).catch((err) => {
       this.loadRetry(loadURL, err);
     });
@@ -117,15 +118,14 @@ export class MattermostView {
 
   setBounds = (boundaries) => {
     // todo: review this, as it might not work properly with devtools/minimizing/resizing
-    //boundaries.x = 500; // TODO: remove
     console.log(boundaries);
     this.view.setBounds(boundaries);
-    // this.view.setAutoResize({
-    //   height: true,
-    //   width: true,
-    //   horizontal: true,
-    //   vertical: true,
-    // });
+    this.view.setAutoResize({
+      height: true,
+      width: true,
+      horizontal: true,
+      vertical: true,
+    });
   }
 
   destroy = () => {
