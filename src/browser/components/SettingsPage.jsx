@@ -47,6 +47,7 @@ export default class SettingsPage extends React.Component {
     });
 
     this.trayIconThemeRef = React.createRef();
+    this.downloadLocationRef = React.createRef();
 
     this.saveQueue = [];
   }
@@ -910,7 +911,7 @@ export default class SettingsPage extends React.Component {
           style={settingsPage.downloadLocationInput}
           key='inputDownloadLocation'
           id='inputDownloadLocation'
-          ref='downloadLocation'
+          ref={this.downloadLocationRef}
           onChange={this.handleChangeDownloadLocation}
           value={this.state.downloadLocation}
         />
