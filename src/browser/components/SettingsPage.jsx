@@ -921,7 +921,7 @@ export default class SettingsPage extends React.Component {
           <span>{'Select'}</span>
         </Button>
         <HelpBlock>
-          {'Specify the folder where files will download'}
+          {'Specify the folder where files will download.'}
         </HelpBlock>
       </div>
     );
