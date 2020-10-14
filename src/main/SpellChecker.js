@@ -119,5 +119,8 @@ SpellChecker.getSpellCheckerLocale = (electronLocale) => {
   if (electronLocale.match(/^ru-?/)) {
     return 'ru-RU';
   }
+  if (electronLocale.match(/^uk-?/)) {
+    return 'uk-UA';
+  }
   return 'en-US';
 };
