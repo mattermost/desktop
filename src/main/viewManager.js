@@ -1,10 +1,18 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import log from 'electron-log';
+import {BrowserView} from 'electron';
+
+import {SECOND} from 'common/utils/constants';
 
 import contextMenu from './contextMenu';
 import {MattermostServer} from './MattermostServer';
 import {MattermostView} from './MattermostView';
+import {getWindowBoundaries} from './utils';
+
+const URL_VIEW_DURATION = 10 * SECOND;
+const URL_VIEW_HEIGHT = 100;
+const URL_VIEW_WIDTH = 300;
 
 export class ViewManager {
   constructor(config) {
@@ -12,6 +20,7 @@ export class ViewManager {
     this.viewOptions = {spellcheck: config.useSpellChecker};
     this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
     this.currentView = null;
+    this.urlView = null;
   }
 
   // TODO: we shouldn't pass the main window, but get it from windowmanager
@@ -69,6 +78,7 @@ export class ViewManager {
       }
 
       this.currentView = name;
+
       if (newView.isReady()) {
         // if view is not ready, the renderer will have something to display instead.
         newView.show();
@@ -76,6 +86,7 @@ export class ViewManager {
       } else {
         console.log(`couldn't show ${name}, not ready`);
       }
+      this.showURLView('https://google.com');
     } else {
       log.warn(`Couldn't find a view with name: ${name}`);
     }
@@ -106,5 +117,37 @@ export class ViewManager {
     } else {
       console.error(`couldn't find ${this.currentView}`);
     }
+  }
+
+  showURLView = (url) => {
+    console.log(`showing ${url}`);
+    if (this.urlViewCancel) {
+      this.urlViewCancel();
+    }
+    const urlView = new BrowserView();
+    urlView.webContents.loadURL(url);
+    const currentWindow = this.getCurrentView().window;
+    currentWindow.addBrowserView(this.urlView);
+    const boundaries = getWindowBoundaries(currentWindow);
+    urlView.setBounds({
+      x: 0,
+      y: boundaries.height - URL_VIEW_HEIGHT,
+      width: URL_VIEW_WIDTH,
+      height: URL_VIEW_HEIGHT,
+    });
+
+    const hideView = () => {
+      this.urlViewCancel = null;
+      currentWindow.removeBrowserView(urlView);
+      urlView.destroy();
+    };
+
+    const timeout = setTimeout(hideView,
+      URL_VIEW_DURATION);
+
+    this.urlViewCancel = () => {
+      clearTimeout(timeout);
+      hideView();
+    };
   }
 }

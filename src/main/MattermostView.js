@@ -105,6 +105,7 @@ export class MattermostView {
     const request = typeof requestedVisibility === 'undefined' ? true : requestedVisibility;
     if (request && !this.isVisible) {
       this.window.addBrowserView(this.view);
+      console.log(`showing bv ${this.server.name}`);
       this.setBounds(getWindowBoundaries(this.window));
     } else if (!request && this.isVisible) {
       this.window.removeBrowserView(this.view);
@@ -116,13 +117,15 @@ export class MattermostView {
 
   setBounds = (boundaries) => {
     // todo: review this, as it might not work properly with devtools/minimizing/resizing
+    //boundaries.x = 500; // TODO: remove
+    console.log(boundaries);
     this.view.setBounds(boundaries);
-    this.view.setAutoResize({
-      height: true,
-      width: true,
-      horizontal: true,
-      vertical: true,
-    });
+    // this.view.setAutoResize({
+    //   height: true,
+    //   width: true,
+    //   horizontal: true,
+    //   vertical: true,
+    // });
   }
 
   destroy = () => {

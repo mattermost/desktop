@@ -19,6 +19,7 @@ module.exports = merge(base, {
   entry: {
     index: './src/renderer/index.jsx',
     settings: './src/renderer/settings.jsx',
+    urlView: './src/renderer/modals/urlView/urlView.js',
   },
   output: {
     path: path.resolve(__dirname, 'dist/renderer'),
