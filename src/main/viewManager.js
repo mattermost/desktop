@@ -8,7 +8,7 @@ import {SECOND} from 'common/utils/constants';
 import contextMenu from './contextMenu';
 import {MattermostServer} from './MattermostServer';
 import {MattermostView} from './MattermostView';
-import {getWindowBoundaries} from './utils';
+import {getWindowBoundaries, getLocalURLString} from './utils';
 
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 100;
@@ -125,7 +125,10 @@ export class ViewManager {
       this.urlViewCancel();
     }
     const urlView = new BrowserView();
-    urlView.webContents.loadURL(url);
+    const query = new Map([['url', url.toString()]]);
+    const localURL = getLocalURLString('urlView.html', query);
+    console.log(`urlview to ${localURL}`);
+    urlView.webContents.loadURL(localURL);
     const currentWindow = this.getCurrentView().window;
     currentWindow.addBrowserView(this.urlView);
     const boundaries = getWindowBoundaries(currentWindow);
@@ -135,6 +138,8 @@ export class ViewManager {
       width: URL_VIEW_WIDTH,
       height: URL_VIEW_HEIGHT,
     });
+
+    urlView.webContents.openDevTools();
 
     const hideView = () => {
       this.urlViewCancel = null;

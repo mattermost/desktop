@@ -13,5 +13,5 @@ export default function UrlDescription(props) {
 }
 
 UrlDescription.propTypes = {
-  url: propTypes.url.isRequired
+  url: propTypes.string.isRequired
 };

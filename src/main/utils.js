@@ -3,7 +3,6 @@
 // See LICENSE.txt for license information.
 
 import electron, {app} from 'electron';
-import {format} from 'url';
 import path from 'path';
 import log from 'electron-log';
 
@@ -34,27 +33,66 @@ export function getWindowBoundaries(win) {
   };
 }
 
+// export function getLocalURL(urlPath, query, isMain) {
+//   const options = {
+//     path: urlPath,
+//     query: encodeURI(query),
+//     slashes: true,
+//   };
+//   const processPath = isMain ? '' : '/renderer';
+//   const mode = Utils.runMode();
+//   if (mode === DEV_SERVER) {
+//     log.info('detected webserver');
+//     options.protocol = 'http';
+//     options.hostname = 'localhost';
+//     options.port = '9000';
+//     options.pathname = `${processPath}/${urlPath}`;
+//   } else {
+//     options.protocol = 'file';
+//     if (mode === PRODUCTION) {
+//       options.pathname = path.join(electron.app.getAppPath(), `dist/${processPath}/${urlPath}`);
+//     } else {
+//       options.pathname = path.resolve(__dirname, `../../dist/${processPath}/${urlPath}`); // TODO: find a better way to work with webpack on this
+//     }
+//   }
+//   return format(options);
+// }
+
+export function getLocalURLString(urlPath, query, isMain) {
+  const localURL = getLocalURL(urlPath, query, isMain);
+  return localURL.href;
+}
+
 export function getLocalURL(urlPath, query, isMain) {
-  const options = {
-    path: urlPath,
-    query,
-    slashes: true,
-  };
+  let protocol;
+  let hostname;
+  let port;
+  let pathname;
   const processPath = isMain ? '' : '/renderer';
   const mode = Utils.runMode();
   if (mode === DEV_SERVER) {
     log.info('detected webserver');
-    options.protocol = 'http';
-    options.hostname = 'localhost';
-    options.port = '9000';
-    options.pathname = `${processPath}/${urlPath}`;
+    protocol = 'http';
+    hostname = 'localhost';
+    port = ':9000'; // TODO: find out how to get the devserver port
+    pathname = `${processPath}/${urlPath}`;
   } else {
-    options.protocol = 'file';
+    protocol = 'file';
+    hostname = '';
+    port = '';
     if (mode === PRODUCTION) {
-      options.pathname = path.join(electron.app.getAppPath(), `dist/${processPath}/${urlPath}`);
+      pathname = path.join(electron.app.getAppPath(), `dist/${processPath}/${urlPath}`);
     } else {
-      options.pathname = path.resolve(__dirname, `../../dist/${processPath}/${urlPath}`); // TODO: find a better way to work with webpack on this
+      pathname = path.resolve(__dirname, `../../dist/${processPath}/${urlPath}`); // TODO: find a better way to work with webpack on this
     }
   }
-  return format(options);
+  const localUrl = new URL(`${protocol}://${hostname}${port}`);
+  localUrl.pathname = pathname;
+  if (query) {
+    query.forEach((value, key) => {
+      localUrl.searchParams.append(encodeURIComponent(key), encodeURIComponent(value));
+    });
+  }
+
+  return localUrl;
 }

@@ -9,7 +9,7 @@ import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constant
 import Utils from 'common/utils/util';
 import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED} from 'common/communication';
 
-import {getWindowBoundaries, getLocalURL} from './utils';
+import {getWindowBoundaries} from './utils';
 import * as WindowManager from './windows/windowManager';
 
 // copying what webview sends
@@ -61,9 +61,7 @@ export class MattermostView {
     this.retryLoad = null;
     const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : Utils.parseUrl(someURL);
     log.info(`[${this.server.name}] Loading ${loadURL}`);
-    const localURL = getLocalURL('urlView.html', `url=${loadURL.toString()}`);
-
-    const loading = this.view.webContents.loadURL(localURL, {userAgent});
+    const loading = this.view.webContents.loadURL(loadURL, {userAgent});
     loading.then(this.loadSuccess(loadURL)).catch((err) => {
       this.loadRetry(loadURL, err);
     });
