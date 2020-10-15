@@ -643,7 +643,20 @@ export default class SettingsPage extends React.Component {
 
       downloadLocationInput: {
         marginRight: '10px',
+        marginTop: '10px',
         width: '300px',
+        height: '34px',
+        borderRadius: '4px',
+        border: '1px solid #ccc',
+        fontWeight: '500',
+      },
+
+      downloadLocationButton: {
+        marginBottom: '3px',
+      },
+
+      container: {
+        paddingBottom: '40px',
       }
     };
 
@@ -905,7 +918,8 @@ export default class SettingsPage extends React.Component {
     );
 
     options.push(
-      <div>
+      <div style={settingsPage.container}>
+        <hr/>
         <div>{'Download Location'}</div>
         <input
           style={settingsPage.downloadLocationInput}
@@ -916,10 +930,11 @@ export default class SettingsPage extends React.Component {
           value={this.state.downloadLocation}
         />
         <Button
+          style={settingsPage.downloadLocationButton}
           id='saveDownloadLocation'
           onClick={this.selectDownloadLocation}
         >
-          <span>{'Select'}</span>
+          <span>{'Change'}</span>
         </Button>
         <HelpBlock>
           {'Specify the folder where files will download.'}
