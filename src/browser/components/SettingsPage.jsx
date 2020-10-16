@@ -642,17 +642,18 @@ export default class SettingsPage extends React.Component {
       },
 
       downloadLocationInput: {
-        marginRight: '10px',
-        marginTop: '10px',
-        width: '300px',
+        marginRight: '3px',
+        marginTop: '8px',
+        width: '320px',
         height: '34px',
+        padding: '0 12px',
         borderRadius: '4px',
         border: '1px solid #ccc',
         fontWeight: '500',
       },
 
       downloadLocationButton: {
-        marginBottom: '3px',
+        marginBottom: '4px',
       },
 
       container: {
