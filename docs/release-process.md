@@ -157,6 +157,7 @@ If a bug fix release is required, run through the following steps:
 1. Release Manager:
     - Post this checklist in Desktop App channel
     - Verify all items in the last posted release checklist are complete
+    - Update the desktop app upgrade [in-product notice](https://github.com/mattermost/notices)
     - Add new release fix versions in Jira for the next few releases
     - Close the release in Jira
     - Post key dates for the next release in the header of the Desktop App channel and remove links to RC candidates
