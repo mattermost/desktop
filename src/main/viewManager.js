@@ -8,11 +8,10 @@ import {SECOND} from 'common/utils/constants';
 import contextMenu from './contextMenu';
 import {MattermostServer} from './MattermostServer';
 import {MattermostView} from './MattermostView';
-import {getWindowBoundaries, getLocalURLString} from './utils';
+import {getLocalURLString} from './utils';
 
 const URL_VIEW_DURATION = 10 * SECOND;
-const URL_VIEW_HEIGHT = 100;
-const URL_VIEW_WIDTH = 300;
+const URL_VIEW_HEIGHT = 36;
 
 export class ViewManager {
   constructor(config) {
@@ -86,7 +85,6 @@ export class ViewManager {
       } else {
         console.log(`couldn't show ${name}, not ready`);
       }
-      this.showURLView('https://google.com');
     } else {
       log.warn(`Couldn't find a view with name: ${name}`);
     }
@@ -130,18 +128,17 @@ export class ViewManager {
     console.log(`urlview to ${localURL}`);
     urlView.webContents.loadURL(localURL);
     const currentWindow = this.getCurrentView().window;
-    currentWindow.addBrowserView(this.urlView);
-    const boundaries = getWindowBoundaries(currentWindow);
+    currentWindow.addBrowserView(urlView);
+    const boundaries = currentWindow.getBounds();
     urlView.setBounds({
       x: 0,
       y: boundaries.height - URL_VIEW_HEIGHT,
-      width: URL_VIEW_WIDTH,
+      width: Math.floor(boundaries.width / 3),
       height: URL_VIEW_HEIGHT,
     });
 
-    urlView.webContents.openDevTools();
-
     const hideView = () => {
+      console.log('hiding');
       this.urlViewCancel = null;
       currentWindow.removeBrowserView(urlView);
       urlView.destroy();
