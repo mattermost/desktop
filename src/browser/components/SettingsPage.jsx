@@ -432,10 +432,10 @@ export default class SettingsPage extends React.Component {
 
   selectDownloadLocation = () => {
     const message = 'Specify the folder where files will download';
-    remote.dialog.showOpenDialog({defaultPath: '',
+    remote.dialog.showOpenDialog({defaultPath: `/Users/${process.env.USER}/Downloads`,
       message,
       properties:
-     ['openDirectory', 'createDirectory', 'dontAddToRecent']}).then((result) => this.saveDownloadLocation(result.filePaths[0]));
+     ['openDirectory', 'createDirectory', 'dontAddToRecent', 'promptToCreate']}).then((result) => this.saveDownloadLocation(result.filePaths[0]));
   }
 
   updateTeam = (index, newData) => {
@@ -923,6 +923,7 @@ export default class SettingsPage extends React.Component {
         <hr/>
         <div>{'Download Location'}</div>
         <input
+          disabled={true}
           style={settingsPage.downloadLocationInput}
           key='inputDownloadLocation'
           id='inputDownloadLocation'
