@@ -33,6 +33,12 @@ describe('main/Spellchecker.js', function() {
 
       SpellChecker.getSpellCheckerLocale('it').should.equal('it-IT');
       SpellChecker.getSpellCheckerLocale('it-IT').should.equal('it-IT');
+
+      SpellChecker.getSpellCheckerLocale('ru').should.equal('ru-RU');
+      SpellChecker.getSpellCheckerLocale('ru-RU').should.equal('ru-RU');
+
+      SpellChecker.getSpellCheckerLocale('uk').should.equal('uk-UA');
+      SpellChecker.getSpellCheckerLocale('uk-UA').should.equal('uk-UA');
     });
   });
 
@@ -109,6 +115,44 @@ describe('main/Spellchecker.js', function() {
     it('should allow contractions', function() {
       spellchecker.spellCheck("shouldn't").should.equal(true);
       spellchecker.spellCheck('shouldn').should.equal(true);
+    });
+  });
+
+  describe('ru-RU', function() {
+    let spellchecker = null;
+
+    before(function(done) {
+      spellchecker = new SpellChecker(
+        'ru-RU',
+        path.resolve(__dirname, '../../src/node_modules/simple-spellchecker/dict'),
+        done
+      );
+    });
+
+    it('should spellcheck', function() {
+      spellchecker.spellCheck('русский').should.equal(true);
+    });
+    it('should give suggestions', function() {
+      spellchecker.getSuggestions('руский', 1).length.should.be.equal(1);
+    });
+  });
+
+  describe('uk-UA', function() {
+    let spellchecker = null;
+
+    before(function(done) {
+      spellchecker = new SpellChecker(
+        'uk-UA',
+        path.resolve(__dirname, '../../src/node_modules/simple-spellchecker/dict'),
+        done
+      );
+    });
+
+    it('should spellcheck', function() {
+      spellchecker.spellCheck('українська').should.equal(true);
+    });
+    it('should give suggestions', function() {
+      spellchecker.getSuggestions('украінська', 1).length.should.be.equal(1);
     });
   });
 

@@ -28,7 +28,6 @@ import downloadURL from './main/downloadURL';
 import allowProtocolDialog from './main/allowProtocolDialog';
 import AppStateManager from './main/AppStateManager';
 import initCookieManager from './main/cookieManager';
-import {shouldBeHiddenOnStartup} from './main/utils';
 import SpellChecker from './main/SpellChecker';
 import UserActivityMonitor from './main/UserActivityMonitor';
 import Utils from './utils/util';
@@ -59,7 +58,6 @@ const certificateErrorCallbacks = new Map();
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow = null;
 let popupWindow = null;
-let hideOnStartup = null;
 let certificateStore = null;
 let trustedOriginsStore = null;
 let spellChecker = null;
@@ -150,8 +148,6 @@ function initializeArgs() {
     process.stdout.write(`v.${app.getVersion()}\n`);
     process.exit(0); // eslint-disable-line no-process-exit
   }
-
-  hideOnStartup = shouldBeHiddenOnStartup(global.args);
 
   global.isDev = isDev && !global.args.disableDevMode; // this doesn't seem to be right and isn't used as the single source of truth
 
@@ -486,7 +482,8 @@ function handleAppWebContentsCreated(dc, contents) {
     const parsedURL = Utils.parseURL(url);
     const server = Utils.getServer(parsedURL, config.teams);
 
-    if ((server !== null && Utils.isTeamUrl(server.url, parsedURL)) || isTrustedPopupWindow(event.sender)) {
+    if ((server !== null && (Utils.isTeamUrl(server.url, parsedURL) || Utils.isAdminUrl(server.url, parsedURL))) ||
+      isTrustedPopupWindow(event.sender)) {
       return;
     }
 
@@ -535,8 +532,12 @@ function handleAppWebContentsCreated(dc, contents) {
       log.info(`Untrusted popup window blocked: ${url}`);
       return;
     }
-    if (Utils.isTeamUrl(server.url, parsedURL, true) === true) {
+    if (Utils.isTeamUrl(server.url, parsedURL, true)) {
       log.info(`${url} is a known team, preventing to open a new window`);
+      return;
+    }
+    if (Utils.isAdminUrl(server.url, parsedURL)) {
+      log.info(`${url} is an admin console page, preventing to open a new window`);
       return;
     }
     if (popupWindow && !popupWindow.closed && popupWindow.getURL() === url) {
@@ -697,7 +698,6 @@ function initializeAfterAppReady() {
   initCookieManager(session.defaultSession);
 
   mainWindow = createMainWindow(config.data, {
-    hideOnStartup,
     trayIconShown: process.platform === 'win32' || config.showTrayIcon,
     linuxAppIcon: path.join(assetsDir, 'appicon.png'),
     deeplinkingUrl,
@@ -1144,10 +1144,7 @@ function getDeeplinkingURL(args) {
 }
 
 function shouldShowTrayIcon() {
-  if (process.platform === 'win32') {
-    return true;
-  }
-  if (['darwin', 'linux'].includes(process.platform) && config.showTrayIcon === true) {
+  if (config.showTrayIcon === true || process.platform === 'win32') {
     return true;
   }
   return false;

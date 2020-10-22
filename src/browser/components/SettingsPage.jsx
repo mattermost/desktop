@@ -738,8 +738,6 @@ export default class SettingsPage extends React.Component {
           {'Start app on login'}
           <HelpBlock>
             {'If enabled, the app starts automatically when you log in to your machine.'}
-            {' '}
-            {'The app will initially start minimized and appear on the taskbar.'}
           </HelpBlock>
         </Checkbox>);
     }
@@ -755,7 +753,7 @@ export default class SettingsPage extends React.Component {
         {'Check spelling'}
         <HelpBlock>
           {'Highlight misspelled words in your messages.'}
-          {' Available for English, French, German, Portuguese, Spanish, and Dutch.'}
+          {' Available for English, French, German, Portuguese, Russian, Ukrainian, Spanish, and Dutch.'}
         </HelpBlock>
       </Checkbox>);
 
