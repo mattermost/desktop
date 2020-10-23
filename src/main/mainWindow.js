@@ -1,13 +1,18 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+
 import fs from 'fs';
+
 import path from 'path';
 import os from 'os';
 
 import {app, BrowserWindow} from 'electron';
+import log from 'electron-log';
 
 import * as Validator from './Validator';
+import contextMenu from './contextMenu';
+import {getLocalURL} from './utils';
 
 function saveWindowState(file, window) {
   const windowState = window.getBounds();
@@ -73,9 +78,11 @@ function createMainWindow(config, options) {
   mainWindow.deeplinkingUrl = options.deeplinkingUrl;
   mainWindow.setMenuBarVisibility(false);
 
-  const indexURL = global.isDev ? 'http://localhost:8080/browser/index.html' : `file://${app.getAppPath()}/browser/index.html`;
-  mainWindow.loadURL(indexURL);
-
+  const localURL = getLocalURL('index.html');
+  mainWindow.loadURL(localURL).catch(
+    (reason) => {
+      log.error(`Main window failed to load: ${reason}`);
+    });
   mainWindow.once('ready-to-show', () => {
     mainWindow.webContents.zoomLevel = 0;
 
@@ -171,6 +178,7 @@ function createMainWindow(config, options) {
     }
   });
 
+  contextMenu.setup({useSpellChecker: config.useSpellChecker});
   return mainWindow;
 }
 

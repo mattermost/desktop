@@ -10,7 +10,7 @@ const path = require('path');
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
-describe('browser/index.html', function desc() {
+describe('renderer/index.html', function desc() {
   this.timeout(30000);
 
   const config = {

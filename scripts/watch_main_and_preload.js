@@ -2,7 +2,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 const webpack = require('webpack');
-const electron = require('electron-connect').server.create({path: 'src'});
+const electron = require('electron-connect').server.create({path: 'dist/'});
 
 const mainConfig = require('../webpack.config.main.js');
 const rendererConfig = require('../webpack.config.renderer.js');
@@ -23,13 +23,6 @@ mainCompiler.watch({}, (err, stats) => {
   }
 });
 
-for (const key in rendererConfig.entry) {
-  if (!key.startsWith('webview/')) {
-    if ({}.hasOwnProperty.call(rendererConfig.entry, key)) {
-      delete rendererConfig.entry[key];
-    }
-  }
-}
 const preloadCompiler = webpack(rendererConfig);
 preloadCompiler.watch({}, (err) => {
   if (err) {

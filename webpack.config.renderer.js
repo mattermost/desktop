@@ -7,23 +7,42 @@
 'use strict';
 
 const path = require('path');
-
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const merge = require('webpack-merge');
 
 const base = require('./webpack.config.base');
 
+const WEBSERVER_PORT = 9000;
+
 module.exports = merge(base, {
   entry: {
-    index: './src/browser/index.jsx',
-    settings: './src/browser/settings.jsx',
-    updater: './src/browser/updater.jsx',
-    'webview/mattermost': './src/browser/webview/mattermost.js',
+    index: './src/renderer/index.jsx',
+    settings: './src/renderer/settings.jsx',
   },
   output: {
-    path: path.join(__dirname, 'src/browser'),
-    publicPath: 'browser',
+    path: path.resolve(__dirname, 'dist/renderer'),
     filename: '[name]_bundle.js',
   },
+  plugins: [
+    new HtmlWebpackPlugin({
+      title: 'Mattermost Desktop App',
+      template: 'src/renderer/index.html',
+      chunks: ['index'],
+      filename: 'index.html',
+    }),
+    new HtmlWebpackPlugin({
+      title: 'Mattermost Desktop Settings',
+      template: 'src/renderer/index.html',
+      chunks: ['settings'],
+      filename: 'settings.html',
+    }),
+    new MiniCssExtractPlugin({
+      filename: 'styles.[contenthash].css',
+      ignoreOrder: true,
+      chunkFilename: '[id].[contenthash].css',
+    }),
+  ],
   module: {
     rules: [{
       test: /\.(js|jsx)?$/,
@@ -33,8 +52,8 @@ module.exports = merge(base, {
     }, {
       test: /\.css$/,
       use: [
-        {loader: 'style-loader'},
-        {loader: 'css-loader'},
+        MiniCssExtractPlugin.loader,
+        'css-loader',
       ],
     }, {
       test: /\.mp3$/,
@@ -64,14 +83,16 @@ module.exports = merge(base, {
     }],
   },
   node: {
-    __filename: true,
-    __dirname: true,
+    __filename: false,
+    __dirname: false,
   },
   target: 'electron-renderer',
   devServer: {
-    contentBase: path.join(__dirname, 'src'),
+    contentBase: 'src/assets',
+    contentBasePublicPath: '/assets',
     inline: true,
-    publicPath: '/browser/',
+    publicPath: '/renderer/',
+    port: WEBSERVER_PORT,
   },
 });
 

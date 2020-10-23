@@ -3,8 +3,9 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import path from 'path';
 import fs from 'fs';
+
+import path from 'path';
 
 import {app, dialog, ipcMain, shell} from 'electron';
 

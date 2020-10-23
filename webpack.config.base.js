@@ -7,6 +7,7 @@
 'use strict';
 
 const webpack = require('webpack');
+const path = require('path');
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -19,6 +20,14 @@ module.exports = {
     new webpack.DefinePlugin({'process.env.NODE_ENV': JSON.stringify('production')}),
   ] : [],
   devtool: isProduction ? false : '#inline-source-map',
+  resolve: {
+    alias: {
+      renderer: path.resolve(__dirname, 'src/renderer'),
+      main: path.resolve(__dirname, './src/main'),
+      common: path.resolve(__dirname, './src/common'),
+      static: path.resolve(__dirname, './src/assets'),
+    }
+  }
 };
 
 /* eslint-enable import/no-commonjs */

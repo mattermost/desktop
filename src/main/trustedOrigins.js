@@ -7,7 +7,7 @@ import fs from 'fs';
 
 import log from 'electron-log';
 
-import Utils from '../utils/util.js';
+import Utils from '../common/utils/util.js';
 
 import * as Validator from './Validator';
 
