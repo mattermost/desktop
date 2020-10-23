@@ -9,6 +9,7 @@ import contextMenu from './contextMenu';
 import {MattermostServer} from './MattermostServer';
 import {MattermostView} from './MattermostView';
 import {getLocalURLString} from './utils';
+import * as modalManager from './modalManager';
 
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 36;
@@ -88,6 +89,7 @@ export class ViewManager {
     } else {
       log.warn(`Couldn't find a view with name: ${name}`);
     }
+    modalManager.showModal();
   }
 
   focus = () => {
