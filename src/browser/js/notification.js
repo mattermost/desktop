@@ -47,8 +47,7 @@ export default class EnhancedNotification extends OriginalNotification {
 
     const isWin7 = (process.platform === 'win32' && osVersion.isLowerThanOrEqualWindows8_1() && DEFAULT_WIN7);
     const customSound = !options.silent && ((options.data && options.data.soundName !== 'None' && options.data.soundName) || isWin7);
-    console.log(`customSound: ${customSound}`);
-    console.log(`options.data.soundName: ${options.data && options.data.soundName}`);
+
     if (customSound) {
       // disable native sound
       options.silent = true;
