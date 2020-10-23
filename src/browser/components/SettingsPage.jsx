@@ -432,7 +432,7 @@ export default class SettingsPage extends React.Component {
 
   selectDownloadLocation = () => {
     const message = 'Specify the folder where files will download';
-    remote.dialog.showOpenDialog({defaultPath: `/Users/${process.env.USER}/Downloads`,
+    remote.dialog.showOpenDialog({defaultPath: `/Users/${process.env.USER || process.env.USERNAME}/Downloads`,
       message,
       properties:
      ['openDirectory', 'createDirectory', 'dontAddToRecent', 'promptToCreate']}).then((result) => this.saveDownloadLocation(result.filePaths[0]));
