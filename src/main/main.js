@@ -39,7 +39,7 @@ import {showBadge} from './badge';
 import parseArgs from './ParseArgs';
 import {ViewManager} from './viewManager';
 import modalManager from './modalManager';
-import { getLocalURL } from './utils';
+import {getLocalURLString} from './utils';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
   module.hot.accept();
@@ -507,10 +507,16 @@ function handleSwitchServer(event, serverName) {
 }
 
 function handleNewServerModal() {
-  const html = getLocalURL('new_server.html');
-  const modalPreload = getLocalURL('modalPreload.js');
-  modalManager.addModal(html, modalPreload, {}, WindowManager.showMainWindow()).then((data) => {
+  const html = getLocalURLString('newServer.html');
 
+  const modalPreload = getLocalURLString('modalPreload.js');
+
+  // eslint-disable-next-line no-undefined
+  modalManager.addModal(html, modalPreload, {}, WindowManager.getMainWindow()).then((data) => {
+    const teams = config.teams();
+    const order = teams.length;
+    teams.push({...data, order});
+    config.set('teams', teams);
   });
 }
 

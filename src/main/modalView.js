@@ -8,24 +8,48 @@ import {BrowserView} from 'electron';
 const ACTIVE = 'active';
 const SHOWING = 'showing';
 const DONE = 'done';
+const RATIO = 5;
 
 export class ModalView {
   constructor(html, preload, data, onResolve, onReject, currentWindow) {
     this.html = html;
     this.data = data;
-    this.view = new BrowserView(); // TODO: options
+    this.view = new BrowserView({webPreferences: {
+      preload,
+    }});
     this.onReject = onReject;
     this.onResolve = onResolve;
     this.window = currentWindow;
     this.windowAttached = null;
     this.status = ACTIVE;
+    try {
+      this.view.webContents.loadURL(this.html);
+    } catch (e) {
+      console.log('there was an error loading the modal:');
+      console.log(e);
+    }
   }
 
   show = (win) => {
     if (!this.windowAttached) {
       this.windowAttached = win || this.window;
       this.windowAttached.addBrowserView(this.view);
+      const {width, height} = this.window.getBounds();
+      const x = Math.floor(width / RATIO);
+      const y = Math.floor(height / RATIO);
+      const bounds = {
+        x,
+        y,
+        height: height - y,
+        width: width - x,
+      };
+      console.log(`modal boundaries: ${bounds}`);
+      console.log(bounds);
+      this.view.setBounds(bounds);
       this.status = SHOWING;
+      this.view.webContents.openDevTools();
+      const bvs = this.windowAttached.getBrowserViews();
+      console.log(`bvs attached: ${bvs.length}`);
     }
   }
 

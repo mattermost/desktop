@@ -3,6 +3,8 @@
 
 import {ipcMain} from 'electron';
 
+import {RETRIEVE_MODAL_INFO, MODAL_CANCEL, MODAL_RESULT} from 'common/communication.js';
+
 import {ModalView} from './modalView';
 
 // this file is expected to be treated like a singleton, so load it like:
@@ -13,21 +15,24 @@ let modalQueue = [];
 // TODO: use a key to prevent duplication of modals? like calling multiple times the add server
 // should we return the original promise if called multiple times with the same key?
 export function addModal(html, preload, data, win) {
+  console.log(`adding modal: ${html}`);
   const modalPromise = new Promise((resolve, reject) => {
     const mv = new ModalView(html, preload, data, resolve, reject, win);
     modalQueue.push(mv);
   });
 
+  console.log(`queue length: ${modalQueue.length}`);
   if (modalQueue.length === 1) {
+    console.log('showing modal');
     showModal();
   }
 
   return modalPromise;
 }
 
-ipcMain.handle('retrieve-modal-info', handleInfoRequest);
-ipcMain.on('modal-result', handleModalResult);
-ipcMain.on('modal-cancel', handleModalCancel);
+ipcMain.handle(RETRIEVE_MODAL_INFO, handleInfoRequest);
+ipcMain.on(MODAL_RESULT, handleModalResult);
+ipcMain.on(MODAL_CANCEL, handleModalCancel);
 
 function findModalByCaller(event) {
   if (modalQueue.length) {

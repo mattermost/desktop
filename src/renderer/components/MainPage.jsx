@@ -27,6 +27,7 @@ import {
   LOAD_RETRY,
   LOAD_SUCCESS,
   LOAD_FAILED,
+  SHOW_NEW_SERVER_MODAL,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -613,9 +614,12 @@ export default class MainPage extends React.Component {
   }
 
   addServer = () => {
-    this.setState({
-      showNewTeamModal: true,
-    });
+    // this.setState({
+    //   showNewTeamModal: true,
+    // });
+    // TODO: remove
+    console.log('requesting new server modal');
+    ipcRenderer.send(SHOW_NEW_SERVER_MODAL);
   }
 
   focusOnWebView = () => {
