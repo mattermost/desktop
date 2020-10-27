@@ -288,6 +288,7 @@ function handleReloadConfig() {
   config.reload();
   WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
   viewManager.reloadConfiguration(config.teams, WindowManager.getMainWindow());
+  WindowManager.sendToRenderer('reload-config');
 }
 
 function handleAppVersion() {
@@ -509,14 +510,20 @@ function handleSwitchServer(event, serverName) {
 function handleNewServerModal() {
   const html = getLocalURLString('newServer.html');
 
-  const modalPreload = getLocalURLString('modalPreload.js');
+  //  const modalPreload = getLocalURLString('modalPreload.js');
+  const modalPreload = path.resolve(__dirname, '../../dist/modalPreload.js');
 
   // eslint-disable-next-line no-undefined
   modalManager.addModal(html, modalPreload, {}, WindowManager.getMainWindow()).then((data) => {
-    const teams = config.teams();
+    const teams = config.teams;
     const order = teams.length;
     teams.push({...data, order});
     config.set('teams', teams);
+  }).catch((e) => {
+    // e is undefined for user cancellation
+    if (e) {
+      console.log(`dismissing modal: ${e}`);
+    }
   });
 }
 

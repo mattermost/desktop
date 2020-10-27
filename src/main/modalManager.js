@@ -56,13 +56,14 @@ export function showModal() {
   modalQueue.forEach((modal, index) => {
     if (index === 0) {
       modal.show();
+    } else {
+      modal.hide();
     }
-    modal.hide();
   });
 }
 
 function handleModalResult(event, data) {
-  const requestModal = this.findModalByCaller(event);
+  const requestModal = findModalByCaller(event);
   if (requestModal) {
     requestModal.resolve(data);
     filterActive();
@@ -70,7 +71,7 @@ function handleModalResult(event, data) {
 }
 
 function handleModalCancel(event, data) {
-  const requestModal = this.findModalByCaller(event);
+  const requestModal = findModalByCaller(event);
   if (requestModal) {
     requestModal.reject(data);
     filterActive();

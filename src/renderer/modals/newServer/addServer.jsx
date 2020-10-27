@@ -3,7 +3,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} from 'react-bootstrap';
+import {Button, FormGroup, FormControl, ControlLabel, HelpBlock} from 'react-bootstrap';
 
 //import Utils from 'common/utils/util';
 
@@ -134,88 +134,50 @@ export default class NewTeamModal extends React.Component {
     this.wasShown = this.props.show;
 
     return (
-      <Modal
-        bsClass='modal'
-        className='NewTeamModal'
-        show={this.props.show}
-        id='newServerModal'
-        enforceFocus={true}
-        onEntered={() => this.teamNameInputRef.focus()}
-        onHide={this.props.onClose}
-        restoreFocus={this.props.restoreFocus}
-        onKeyDown={(e) => {
-          switch (e.key) {
-          case 'Enter':
-            this.save();
-
-            // The add button from behind this might still be focused
-            e.preventDefault();
-            e.stopPropagation();
-            break;
-          case 'Escape':
-            this.props.onClose();
-            break;
-          }
-        }}
-      >
-        <Modal.Header>
-          <Modal.Title>{this.getModalTitle()}</Modal.Title>
-        </Modal.Header>
-
-        <Modal.Body>
-          <form>
-            <FormGroup
-              validationState={this.getTeamNameValidationState()}
-            >
-              <ControlLabel>{'Server Display Name'}</ControlLabel>
-              <FormControl
-                id='teamNameInput'
-                type='text'
-                value={this.state.teamName}
-                placeholder='Server Name'
-                onChange={this.handleTeamNameChange}
-                inputRef={(ref) => {
-                  this.teamNameInputRef = ref;
-                  if (this.props.setInputRef) {
-                    this.props.setInputRef(ref);
-                  }
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-                autoFocus={true}
-              />
-              <FormControl.Feedback/>
-              <HelpBlock>{'The name of the server displayed on your desktop app tab bar.'}</HelpBlock>
-            </FormGroup>
-            <FormGroup
-              className='NewTeamModal-noBottomSpace'
-              validationState={this.getTeamUrlValidationState()}
-            >
-              <ControlLabel>{'Server URL'}</ControlLabel>
-              <FormControl
-                id='teamUrlInput'
-                type='text'
-                value={this.state.teamUrl}
-                placeholder='https://example.com'
-                onChange={this.handleTeamUrlChange}
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-              />
-              <FormControl.Feedback/>
-              <HelpBlock className='NewTeamModal-noBottomSpace'>{'The URL of your Mattermost server. Must start with http:// or https://.'}</HelpBlock>
-            </FormGroup>
-          </form>
-        </Modal.Body>
-
-        <Modal.Footer>
-          <div
-            className='pull-left modal-error'
+      <div className='modal'>
+        <form>
+          <FormGroup
+            validationState={this.getTeamNameValidationState()}
           >
-            {this.getError()}
-          </div>
-
+            <ControlLabel>{'Server Display Name'}</ControlLabel>
+            <FormControl
+              id='teamNameInput'
+              type='text'
+              value={this.state.teamName}
+              placeholder='Server Name'
+              onChange={this.handleTeamNameChange}
+              inputRef={(ref) => {
+                this.teamNameInputRef = ref;
+                if (this.props.setInputRef) {
+                  this.props.setInputRef(ref);
+                }
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+              autoFocus={true}
+            />
+            <FormControl.Feedback/>
+            <HelpBlock>{'The name of the server displayed on your desktop app tab bar.'}</HelpBlock>
+          </FormGroup>
+          <FormGroup
+            className='NewTeamModal-noBottomSpace'
+            validationState={this.getTeamUrlValidationState()}
+          >
+            <ControlLabel>{'Server URL'}</ControlLabel>
+            <FormControl
+              id='teamUrlInput'
+              type='text'
+              value={this.state.teamUrl}
+              placeholder='https://example.com'
+              onChange={this.handleTeamUrlChange}
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            />
+            <FormControl.Feedback/>
+            <HelpBlock className='NewTeamModal-noBottomSpace'>{'The URL of your Mattermost server. Must start with http:// or https://.'}</HelpBlock>
+          </FormGroup>
           <Button
             id='cancelNewServerModal'
             onClick={this.props.onClose}
@@ -225,10 +187,10 @@ export default class NewTeamModal extends React.Component {
             onClick={this.save}
             disabled={!this.validateForm()}
             bsStyle='primary'
-          >{this.getSaveButtonLabel()}</Button>
-        </Modal.Footer>
-
-      </Modal>
+          >{this.getSaveButtonLabel()}
+          </Button>
+        </form>
+      </div>
     );
   }
 }

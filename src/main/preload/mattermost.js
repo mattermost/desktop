@@ -9,6 +9,8 @@
 import {ipcRenderer, webFrame} from 'electron';
 import log from 'electron-log';
 
+import {MODAL_CANCEL, MODAL_RESULT} from 'common/communication.js';
+
 const UNREAD_COUNT_INTERVAL = 1000;
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 
@@ -81,15 +83,10 @@ document.addEventListener('mouseover', (event) => {
     ipcRenderer.send('update-target-url', event.target.href);
   } else if (event.target && (parentTag(event.target) === 'A')) {
     ipcRenderer.send('update-target-url', event.target.parentNode.href);
-  } else {
-    // TODO: remove
-    console.log(`mouse enter: ${event.target.tagName}: ${event.target.href}`);
-    console.log(event.target.parentNode);
   }
 });
 
 document.addEventListener('mouseout', (event) => {
-  console.log(`mouse leave: ${event.target.tagName}: ${event.target.href}`);
   if (event.target && event.target.tagName === 'A') {
     ipcRenderer.send('delete-target-url', event.target.href);
   }
@@ -119,6 +116,16 @@ window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = 
   case 'dispatch-notification': {
     const {title, body, channel, teamId, silent} = message;
     ipcRenderer.sendToHost('dispatchNotification', title, body, channel, teamId, silent, () => handleNotificationClick({teamId, channel}));
+    break;
+  }
+  case MODAL_CANCEL: {
+    console.log('canceling modal');
+    ipcRenderer.send(MODAL_CANCEL);
+    break;
+  }
+  case MODAL_RESULT: {
+    console.log(`accepting modal with ${event.data.data}`);
+    ipcRenderer.send(MODAL_RESULT, event.data.data);
     break;
   }
   }

@@ -8,18 +8,22 @@ import {ipcRenderer} from 'electron';
 
 import {MODAL_CANCEL, MODAL_RESULT} from 'common/communication';
 
-window.addEventListener('message', ({origin, data}) => {
-  if (origin !== window.location.origin) {
-    return;
-  }
-  switch (data.type) {
+console.log('preloaded for the modal!');
+
+window.addEventListener('message', (event) => {
+  switch (event.data.type) {
   case MODAL_CANCEL: {
+    console.log('canceling modal');
     ipcRenderer.send(MODAL_CANCEL);
     break;
   }
   case MODAL_RESULT: {
-    ipcRenderer.send(MODAL_RESULT, data.data);
+    console.log(`accepting modal with ${event.data.data}`);
+    ipcRenderer.send(MODAL_RESULT, event.data.data);
     break;
   }
+  default:
+    console.log(`got a message: ${event}`);
+    console.log(event);
   }
 });

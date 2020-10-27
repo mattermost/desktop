@@ -14,6 +14,7 @@ export class ModalView {
   constructor(html, preload, data, onResolve, onReject, currentWindow) {
     this.html = html;
     this.data = data;
+    console.log(`preloading with ${preload}`);
     this.view = new BrowserView({webPreferences: {
       preload,
     }});
@@ -34,22 +35,25 @@ export class ModalView {
     if (!this.windowAttached) {
       this.windowAttached = win || this.window;
       this.windowAttached.addBrowserView(this.view);
-      const {width, height} = this.window.getBounds();
-      const x = Math.floor(width / RATIO);
-      const y = Math.floor(height / RATIO);
-      const bounds = {
-        x,
-        y,
-        height: height - y,
-        width: width - x,
-      };
-      console.log(`modal boundaries: ${bounds}`);
-      console.log(bounds);
-      this.view.setBounds(bounds);
-      this.status = SHOWING;
+      //const {width, height} = this.windowAttached.getBounds();
+      // const x = Math.floor(width / RATIO);
+      // const y = Math.floor(height / RATIO);
+      // const bounds = {
+      //   x,
+      //   y,
+      //   height: height - y,
+      //   width: width - x,
+      // };
+      // console.log(`modal boundaries: ${bounds}`);
+      // console.log(bounds);
+      this.view.setBounds(this.windowAttached.getContentBounds());
+      this.view.setAutoResize({
+        height: true,
+        width: true,
+        horizontal: true,
+        vertical: true,
+      });
       this.view.webContents.openDevTools();
-      const bvs = this.windowAttached.getBrowserViews();
-      console.log(`bvs attached: ${bvs.length}`);
     }
   }
 

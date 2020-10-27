@@ -69,6 +69,10 @@ export class MattermostView {
 
   retry = (loadURL) => {
     return () => {
+      // window was closed while retrying
+      if (!this.view) {
+        return;
+      }
       const loading = this.view.webContents.loadURL(loadURL, {userAgent});
       loading.then(this.loadSuccess(loadURL)).catch((err) => {
         if (this.maxRetries-- > 0) {
@@ -127,6 +131,9 @@ export class MattermostView {
   }
 
   destroy = () => {
+    if (this.retryLoad) {
+      clearTimeout(this.retryLoad);
+    }
     if (this.window) {
       this.window.removeBrowserView(this.view);
     }
