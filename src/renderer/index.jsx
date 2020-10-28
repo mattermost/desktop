@@ -73,12 +73,9 @@ const start = async () => {
   // }
   const deeplinkingUrl = null;
 
-  ipcRenderer.on('synchronize-config', () => {
-    requestConfig();
-  });
-
-  ipcRenderer.on('reload-config', () => {
-    ipcRenderer.invoke(GET_CONFIGURATION).then(reloadConfig);
+  ipcRenderer.on('synchronize-config', async () => {
+    await requestConfig();
+    render();
   });
 
   function teamConfigChange(updatedTeams, callback) {
@@ -114,28 +111,30 @@ const start = async () => {
     return teamIndex;
   }
 
-  console.log('config before rendering');
-  console.log(config);
-  const component = (
-    <MainPage
-      teams={teams}
-      localTeams={config.localTeams}
-      initialIndex={initialIndex}
-      onBadgeChange={showBadge}
-      onTeamConfigChange={teamConfigChange}
-      useSpellChecker={config.useSpellChecker}
-      deeplinkingUrl={deeplinkingUrl}
-      showAddServerButton={config.enableServerManagement}
-      moveTabs={moveTabs}
-      openMenu={openMenu}
-      darkMode={config.darkMode}
-      appName={config.appName}
-    />);
+  const render = () => {
+    const component = (
+      <MainPage
+        teams={teams}
+        localTeams={config.localTeams}
+        initialIndex={initialIndex}
+        onBadgeChange={showBadge}
+        onTeamConfigChange={teamConfigChange}
+        useSpellChecker={config.useSpellChecker}
+        deeplinkingUrl={deeplinkingUrl}
+        showAddServerButton={config.enableServerManagement}
+        moveTabs={moveTabs}
+        openMenu={openMenu}
+        darkMode={config.darkMode}
+        appName={config.appName}
+      />);
 
-  ReactDOM.render(
-    component,
-    document.getElementById('app')
-  );
+    ReactDOM.render(
+      component,
+      document.getElementById('app')
+    );
+  };
+
+  render();
 };
 
 function getInitialIndex(teamList) {

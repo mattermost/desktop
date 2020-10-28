@@ -225,7 +225,6 @@ function initializeBeforeAppReady() {
 }
 
 function initializeInterCommunicationEventListeners() {
-  ipcMain.on('reload-config', handleReloadConfig);
   ipcMain.on('login-credentials', handleLoginCredentialsEvent);
   ipcMain.on('login-cancel', handleCancelLoginEvent);
   ipcMain.on('download-url', handleDownloadURLEvent);
@@ -281,14 +280,8 @@ function handleConfigSynchronize() {
   // TODO: send this to server manager
   WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
   viewManager.reloadConfiguration(config.teams, WindowManager.getMainWindow());
-  WindowManager.sendToRenderer('reload-config');
-}
-
-function handleReloadConfig() {
-  config.reload();
-  WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
-  viewManager.reloadConfiguration(config.teams, WindowManager.getMainWindow());
-  WindowManager.sendToRenderer('reload-config');
+  WindowManager.sendToRenderer('synchronize-config');
+  console.log('synch config');
 }
 
 function handleAppVersion() {

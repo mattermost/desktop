@@ -8,7 +8,6 @@ import {BrowserView} from 'electron';
 const ACTIVE = 'active';
 const SHOWING = 'showing';
 const DONE = 'done';
-const RATIO = 5;
 
 export class ModalView {
   constructor(html, preload, data, onResolve, onReject, currentWindow) {
@@ -35,17 +34,6 @@ export class ModalView {
     if (!this.windowAttached) {
       this.windowAttached = win || this.window;
       this.windowAttached.addBrowserView(this.view);
-      //const {width, height} = this.windowAttached.getBounds();
-      // const x = Math.floor(width / RATIO);
-      // const y = Math.floor(height / RATIO);
-      // const bounds = {
-      //   x,
-      //   y,
-      //   height: height - y,
-      //   width: width - x,
-      // };
-      // console.log(`modal boundaries: ${bounds}`);
-      // console.log(bounds);
       this.view.setBounds(this.windowAttached.getContentBounds());
       this.view.setAutoResize({
         height: true,
@@ -53,7 +41,10 @@ export class ModalView {
         horizontal: true,
         vertical: true,
       });
-      this.view.webContents.openDevTools();
+      this.status = SHOWING;
+
+      // uncomment if something goes wrong with modals
+      //this.view.webContents.openDevTools();
     }
   }
 

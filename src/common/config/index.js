@@ -54,7 +54,7 @@ export default class Config extends EventEmitter {
    * @emits {update} emitted once all data has been loaded and merged
    * @emits {synchronize} emitted when requested by a call to method; used to notify other config instances of changes
    */
-  reload = (synchronize = false) => {
+  reload = () => {
     this.defaultConfigData = this.loadDefaultConfigData();
     this.buildConfigData = this.loadBuildConfigData();
 
@@ -64,10 +64,7 @@ export default class Config extends EventEmitter {
     this.regenerateCombinedConfigData();
 
     this.emit('update', this.combinedData);
-
-    if (synchronize) {
-      this.emit('synchronize');
-    }
+    this.emit('synchronize');
   }
 
   /**

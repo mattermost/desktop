@@ -9,8 +9,6 @@
 import {ipcRenderer, webFrame} from 'electron';
 import log from 'electron-log';
 
-import {MODAL_CANCEL, MODAL_RESULT} from 'common/communication.js';
-
 const UNREAD_COUNT_INTERVAL = 1000;
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 
@@ -118,16 +116,8 @@ window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = 
     ipcRenderer.sendToHost('dispatchNotification', title, body, channel, teamId, silent, () => handleNotificationClick({teamId, channel}));
     break;
   }
-  case MODAL_CANCEL: {
-    console.log('canceling modal');
-    ipcRenderer.send(MODAL_CANCEL);
-    break;
-  }
-  case MODAL_RESULT: {
-    console.log(`accepting modal with ${event.data.data}`);
-    ipcRenderer.send(MODAL_RESULT, event.data.data);
-    break;
-  }
+  default:
+    console.log(`ignored message of type: ${type}`);
   }
 });
 
