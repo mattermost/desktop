@@ -27,3 +27,9 @@ window.addEventListener('message', (event) => {
     console.log(event);
   }
 });
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    ipcRenderer.send(MODAL_CANCEL);
+  }
+});
