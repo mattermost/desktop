@@ -135,6 +135,9 @@ export default class NewTeamModal extends React.Component {
 
     return (
       <div className='modal'>
+        <div className='modalHeader'>
+          {'Add Server'}
+        </div>
         <form>
           <FormGroup
             validationState={this.getTeamNameValidationState()}
@@ -178,18 +181,23 @@ export default class NewTeamModal extends React.Component {
             <FormControl.Feedback/>
             <HelpBlock className='NewTeamModal-noBottomSpace'>{'The URL of your Mattermost server. Must start with http:// or https://.'}</HelpBlock>
           </FormGroup>
+        </form>
+        <div className='modalFooter'>
+          <div className='pull-left modal-error'>{this.getError()}</div>
           <Button
+            className='default'
             id='cancelNewServerModal'
             onClick={this.props.onClose}
           >{'Cancel'}</Button>
           <Button
+            className='primary'
             id='saveNewServerModal'
             onClick={this.save}
             disabled={!this.validateForm()}
             bsStyle='primary'
           >{this.getSaveButtonLabel()}
           </Button>
-        </form>
+        </div>
       </div>
     );
   }

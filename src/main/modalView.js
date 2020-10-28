@@ -10,7 +10,8 @@ const SHOWING = 'showing';
 const DONE = 'done';
 
 export class ModalView {
-  constructor(html, preload, data, onResolve, onReject, currentWindow) {
+  constructor(key, html, preload, data, onResolve, onReject, currentWindow) {
+    this.key = key;
     this.html = html;
     this.data = data;
     console.log(`preloading with ${preload}`);
@@ -31,25 +32,40 @@ export class ModalView {
   }
 
   show = (win) => {
-    if (!this.windowAttached) {
-      this.windowAttached = win || this.window;
-      this.windowAttached.addBrowserView(this.view);
-      this.view.setBounds(this.windowAttached.getContentBounds());
-      this.view.setAutoResize({
-        height: true,
-        width: true,
-        horizontal: true,
-        vertical: true,
-      });
-      this.status = SHOWING;
-
-      // uncomment if something goes wrong with modals
-      //this.view.webContents.openDevTools();
+    if (this.windowAttached) {
+      // we'll reatach
+      this.windowAttached.removeBrowserView(this.view);
     }
+    this.windowAttached = win || this.window;
+
+    this.windowAttached.addBrowserView(this.view);
+    const bounds = this.windowAttached.getContentBounds();
+    this.view.setBounds(bounds);
+    this.view.setAutoResize({
+      height: true,
+      width: true,
+      horizontal: true,
+      vertical: true,
+    });
+    this.status = SHOWING;
+    if (this.view.webContents.isLoading()) {
+      this.view.webContents.once('did-finish-load', () => {
+        this.view.webContents.focus();
+      });
+    } else {
+      this.view.webContents.focus();
+    }
+
+    // uncomment if something goes wrong with modals
+    // this.view.webContents.openDevTools();
   }
 
   hide = () => {
     if (this.windowAttached) {
+      if (this.view.webContents.isDevToolsOpened()) {
+        this.view.webContents.closeDevTools();
+      }
+
       this.windowAttached.removeBrowserView(this.view);
       this.windowAttached = null;
       this.status = ACTIVE;

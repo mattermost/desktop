@@ -14,20 +14,21 @@ let modalQueue = [];
 
 // TODO: use a key to prevent duplication of modals? like calling multiple times the add server
 // should we return the original promise if called multiple times with the same key?
-export function addModal(html, preload, data, win) {
-  console.log(`adding modal: ${html}`);
-  const modalPromise = new Promise((resolve, reject) => {
-    const mv = new ModalView(html, preload, data, resolve, reject, win);
-    modalQueue.push(mv);
-  });
+export function addModal(key, html, preload, data, win) {
+  const foundModal = modalQueue.find((modal) => modal.key === key);
+  if (!foundModal) {
+    const modalPromise = new Promise((resolve, reject) => {
+      const mv = new ModalView(key, html, preload, data, resolve, reject, win);
+      modalQueue.push(mv);
+    });
 
-  console.log(`queue length: ${modalQueue.length}`);
-  if (modalQueue.length === 1) {
-    console.log('showing modal');
-    showModal();
+    if (modalQueue.length === 1) {
+      showModal();
+    }
+
+    return modalPromise;
   }
-
-  return modalPromise;
+  return null;
 }
 
 ipcMain.handle(RETRIEVE_MODAL_INFO, handleInfoRequest);

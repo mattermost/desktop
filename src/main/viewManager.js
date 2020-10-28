@@ -120,7 +120,6 @@ export class ViewManager {
   }
 
   showURLView = (url) => {
-    console.log(`showing ${url}`);
     if (this.urlViewCancel) {
       this.urlViewCancel();
     }
@@ -140,7 +139,6 @@ export class ViewManager {
     });
 
     const hideView = () => {
-      console.log('hiding');
       this.urlViewCancel = null;
       currentWindow.removeBrowserView(urlView);
       urlView.destroy();

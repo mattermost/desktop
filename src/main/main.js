@@ -507,17 +507,22 @@ function handleNewServerModal() {
   const modalPreload = path.resolve(__dirname, '../../dist/modalPreload.js');
 
   // eslint-disable-next-line no-undefined
-  modalManager.addModal(html, modalPreload, {}, WindowManager.getMainWindow()).then((data) => {
-    const teams = config.teams;
-    const order = teams.length;
-    teams.push({...data, order});
-    config.set('teams', teams);
-  }).catch((e) => {
-    // e is undefined for user cancellation
-    if (e) {
-      console.log(`dismissing modal: ${e}`);
-    }
-  });
+  const modalPromise = modalManager.addModal('newServer', html, modalPreload, {}, WindowManager.getMainWindow());
+  if (modalPromise) {
+    modalPromise.then((data) => {
+      const teams = config.teams;
+      const order = teams.length;
+      teams.push({...data, order});
+      config.set('teams', teams);
+    }).catch((e) => {
+      // e is undefined for user cancellation
+      if (e) {
+        console.error(`there was an error in the new server modal: ${e}`);
+      }
+    });
+  } else {
+    console.warn('There is already a new server modal');
+  }
 }
 
 function handleAppWebContentsCreated(dc, contents) {
