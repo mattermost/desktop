@@ -98,7 +98,7 @@ export default class TeamList extends React.Component {
       }
 
       function handleTeamClick() {
-        self.props.onTeamClick(i);
+        self.props.onTeamClick(team.name);
       }
 
       return (

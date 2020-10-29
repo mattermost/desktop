@@ -409,18 +409,13 @@ export default class MainPage extends React.Component {
     this.setState({fullScreen: win.isFullScreen()});
   }
 
-  handleSelect = (key) => {
+  handleSelect = (name, key) => {
+    ipcRenderer.send('switch-server', name);
     const newKey = (this.props.teams.length + key) % this.props.teams.length;
     this.setState({
       key: newKey,
       finderVisible: false,
     });
-    const webview = document.getElementById('mattermostView' + newKey);
-    ipcRenderer.send('update-title', {
-      title: webview.getTitle(),
-    });
-    window.focus();
-    webview.focus();
     this.handleOnTeamFocused(newKey);
   }
 
@@ -497,7 +492,9 @@ export default class MainPage extends React.Component {
 
   handleOnTeamFocused = (index) => {
     // Turn off the flag to indicate whether unread message of active channel contains at current tab.
-    this.markReadAtActive(index);
+    // TODO: this should be handled by the viewmanager and the browserview
+    ///this.markReadAtActive(index);
+    return index;
   }
 
   handleLogin = (request, username, password) => {

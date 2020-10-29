@@ -1,6 +1,7 @@
-// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+// Copyright (c) 2015-2016 Yuya Ochiai
+
 import React from 'react';
 import {remote} from 'electron';
 import PropTypes from 'prop-types';
@@ -51,7 +52,7 @@ export default class TabBar extends React.Component { // need "this"
       const id = `teamTabItem${index}`;
       const navItem = () => (
         <NavItem
-          key={id}
+          key={index}
           id={id}
           eventKey={index}
           draggable={false}
@@ -59,10 +60,10 @@ export default class TabBar extends React.Component { // need "this"
           active={this.props.activeKey === index}
           activeKey={this.props.activeKey}
           onMouseDown={() => {
-            this.props.onSelect(index);
+            this.props.onSelect(team.name, index);
           }}
           onSelect={() => {
-            this.props.onSelect(index);
+            this.props.onSelect(team.name, index);
           }}
           title={team.name}
         >

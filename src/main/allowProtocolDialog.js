@@ -12,6 +12,7 @@ import {app, dialog, ipcMain, shell} from 'electron';
 import {protocols} from '../../electron-builder.json';
 
 import * as Validator from './Validator';
+import {getMainWindow} from './windows/windowManager';
 
 const allowedProtocolFile = path.resolve(app.getPath('userData'), 'allowedProtocols.json');
 let allowedProtocols = [];
@@ -40,13 +41,13 @@ function init(mainWindow) {
   });
 }
 
-function initDialogEvent(mainWindow) {
+function initDialogEvent() {
   ipcMain.on('confirm-protocol', (event, protocol, URL) => {
     if (allowedProtocols.indexOf(protocol) !== -1) {
       shell.openExternal(URL);
       return;
     }
-    dialog.showMessageBox(mainWindow, {
+    dialog.showMessageBox(getMainWindow(), {
       title: 'Non http(s) protocol',
       message: `${protocol} link requires an external application.`,
       detail: `The requested link is ${URL} . Do you want to continue?`,

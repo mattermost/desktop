@@ -3,25 +3,21 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {app, Menu} from 'electron';
+import {Menu} from 'electron';
 
-import {getLocalURL} from '../utils';
+import * as WindowManager from '../windows/windowManager';
+import {ViewManager} from '../viewManager';
 
-function createTemplate(mainWindow, config, isDev) {
-  const settingsURL = getLocalURL('settings.html');
+function createTemplate(config) {
   const teams = config.teams;
   const template = [
     ...teams.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).map((team, i) => {
       return {
         label: team.name,
         click: () => {
-          showOrRestore(mainWindow);
-          mainWindow.webContents.send('switch-tab', i);
-
-          if (process.platform === 'darwin') {
-            app.dock.show();
-            mainWindow.focus();
-          }
+          WindowManager.restoreMain();
+          WindowManager.sendToRenderer('switch-tab', i);
+          ViewManager.showByName(team.name);
         },
       };
     }), {
@@ -29,13 +25,7 @@ function createTemplate(mainWindow, config, isDev) {
     }, {
       label: process.platform === 'darwin' ? 'Preferences...' : 'Settings',
       click: () => {
-        mainWindow.loadURL(settingsURL);
-        showOrRestore(mainWindow);
-
-        if (process.platform === 'darwin') {
-          app.dock.show();
-          mainWindow.focus();
-        }
+        WindowManager.showSettingsWindow();
       },
     }, {
       type: 'separator',
@@ -46,16 +36,8 @@ function createTemplate(mainWindow, config, isDev) {
   return template;
 }
 
-function createMenu(mainWindow, config, isDev) {
-  return Menu.buildFromTemplate(createTemplate(mainWindow, config, isDev));
-}
-
-function showOrRestore(window) {
-  if (window.isMinimized()) {
-    window.restore();
-  } else {
-    window.show();
-  }
+function createMenu(mainWindow, config) {
+  return Menu.buildFromTemplate(createTemplate(config));
 }
 
 export default {

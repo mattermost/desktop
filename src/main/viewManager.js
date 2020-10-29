@@ -8,9 +8,11 @@ import {MattermostView} from './MattermostView';
 export class ViewManager {
   constructor(configServers) {
     this.configServers = configServers;
-    this.views = new Map();
+    this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
   }
 
+  // TODO: we shouldn't pass the main window, but get it from windowmanager
+  // TODO: we'll need an event in case the main window changes so this updates accordingly
   load = (mainWindow) => {
     this.configServers.forEach((server) => {
       log.info(server);
@@ -21,10 +23,38 @@ export class ViewManager {
     });
   }
 
+  reloadConfiguration = (configServers, mainWindow) => {
+    this.configServers = configServers;
+    const oldviews = this.views;
+    this.views = new Map();
+    this.load(mainWindow);
+
+    let newView = null;
+
+    //TODO: think of a more gradual approach, this would reload all tabs but in most cases they will be the same or have small variation
+    for (const view of oldviews.values()) {
+      // try to restore view to the same tab if possible, but if not use initial one
+      if (view.isVisible) {
+        log.info(`will try to restore ${view.name}`);
+        newView = this.views.get(view.name);
+      }
+      view.destroy();
+    }
+    if (newView) {
+      log.info('restoring view');
+      newView.show(true);
+    } else {
+      log.info('couldn\'t find original view');
+      this.showInitial();
+    }
+  }
+
   showInitial = () => {
     // TODO: handle deeplink url
     const element = this.configServers.find((e) => e.order === 0);
     this.showByName(element.name);
+
+    // TODO: send event to highlight selected tab
   }
 
   showByName = (name) => {
@@ -34,7 +64,10 @@ export class ViewManager {
       if (view.isVisible) {
         previous = view.name;
       }
+
+      // TODO: this is a map, we can probably improve this search
       if (view.server.name === name) {
+        log.info(`switching view to ${name}`);
         view.show(true);
         found = true;
       } else {
@@ -42,6 +75,7 @@ export class ViewManager {
       }
     });
     if (!found) {
+      log.warn(`Couldn't find a view with name: ${name}`);
       const restore = this.views.get(previous);
       restore.show(true);
     }

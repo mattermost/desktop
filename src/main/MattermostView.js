@@ -6,6 +6,9 @@ import path from 'path';
 import {BrowserView, app} from 'electron';
 import log from 'electron-log';
 
+// eslint-disable-next-line import/no-unresolved
+import Utils from 'common/utils/util';
+
 import {getWindowBoundaries} from './utils';
 
 export class MattermostView {
@@ -23,8 +26,14 @@ export class MattermostView {
     log.info(`BrowserView created for server ${this.server.name}`);
   }
 
+  // use the same name as the server
+  // TODO: we'll need unique identifiers if we have multiple instances of the same server in different tabs (1:N relationships)
+  get name() {
+    return this.server.name;
+  }
+
   load = (someURL) => {
-    const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : parseUrl(someURL);
+    const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : Utils.parseUrl(someURL);
     log.info(`[${this.server.name}] Loading ${loadURL}`);
 
     // copying what webview sends
@@ -32,8 +41,8 @@ export class MattermostView {
     const userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.146 Electron/6.1.7 Safari/537.36 Mattermost/${app.getVersion()}`;
 
     const loading = this.view.webContents.loadURL(loadURL, {userAgent});
-    loading.then((result) => {
-      log.info(`[${this.server.name}] finished loading ${loadURL}: ${result}`);
+    loading.then(() => {
+      log.info(`[${this.server.name}] finished loading ${loadURL}`);
     }).catch((err) => {
       log.info(`[${this.server.name}] failed loading ${loadURL}: ${err}`);
     });
@@ -61,5 +70,15 @@ export class MattermostView {
       horizontal: true,
       vertical: true,
     });
+  }
+
+  destroy = () => {
+    if (this.window) {
+      this.window.removeBrowserView(this.view);
+    }
+    this.view.destroy();
+    this.window = null;
+    this.server = null;
+    this.isVisible = false;
   }
 }

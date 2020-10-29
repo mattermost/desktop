@@ -4,11 +4,13 @@
 'use strict';
 
 const fs = require('fs');
+
 const path = require('path');
 
 const Application = require('spectron').Application;
 const chai = require('chai');
-const { getLocalURL } = require('../../src/main/utils');
+
+const {getLocalURL} = require('../../src/main/utils');
 chai.should();
 
 const sourceRootDir = path.join(__dirname, '../..');

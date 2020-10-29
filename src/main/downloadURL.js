@@ -1,14 +1,18 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+
 import fs from 'fs';
+
 import path from 'path';
 import zlib from 'zlib';
 
 import electron from 'electron';
 const {app, dialog} = electron;
 
-export default function downloadURL(browserWindow, URL, callback) {
+import * as WindowManager from './windows/windowManager';
+
+export default function downloadURL(URL, callback) {
   const {net} = electron;
   const request = net.request(URL);
   request.setHeader('Accept-Encoding', 'gzip,deflate');
@@ -18,7 +22,7 @@ export default function downloadURL(browserWindow, URL, callback) {
       defaultPath: path.join(app.getPath('downloads'), file),
     };
     dialog.showSaveDialog(
-      browserWindow,
+      WindowManager.getMainWindow(true),
       dialogOptions
     ).then(
       (filename) => {

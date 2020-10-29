@@ -5,7 +5,7 @@
 import url from 'url';
 import assert from 'assert';
 
-import Utils from '../../../src/utils/util';
+import Utils from '../../../src/common/utils/util';
 
 describe('Utils', () => {
   describe('isValidURL', () => {

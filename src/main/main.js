@@ -29,15 +29,14 @@ import CriticalErrorHandler from './CriticalErrorHandler';
 import upgradeAutoLaunch from './autoLaunch';
 import CertificateStore from './certificateStore';
 import TrustedOriginsStore from './trustedOrigins';
-import createMainWindow from './mainWindow';
 import appMenu from './menus/app';
 import trayMenu from './menus/tray';
 import downloadURL from './downloadURL';
 import allowProtocolDialog from './allowProtocolDialog';
 import AppStateManager from './AppStateManager';
 import initCookieManager from './cookieManager';
-import {shouldBeHiddenOnStartup, getLocalURL} from './utils';
 import UserActivityMonitor from './UserActivityMonitor';
+import * as WindowManager from './windows/windowManager';
 
 import parseArgs from './ParseArgs';
 import {ViewManager} from './viewManager';
@@ -68,9 +67,7 @@ const certificateErrorCallbacks = new Map();
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-let mainWindow = null;
 let popupWindow = null;
-let hideOnStartup = null;
 let certificateStore = null;
 let trustedOriginsStore = null;
 let deeplinkingUrl = null;
@@ -139,7 +136,6 @@ async function initialize() {
   // initialization that should run once the app is ready
   initializeInterCommunicationEventListeners();
   initializeAfterAppReady();
-  initializeMainWindowListeners();
 }
 
 // attempt to initialize the application
@@ -162,7 +158,8 @@ function initializeArgs() {
     process.exit(0); // eslint-disable-line no-process-exit
   }
 
-  hideOnStartup = shouldBeHiddenOnStartup(global.args);
+  // TODO: are we going to use this?
+  // hideOnStartup = shouldBeHiddenOnStartup(global.args);
 
   global.isDev = isDev && !global.args.disableDevMode; // this doesn't seem to be right and isn't used as the single source of truth
 
@@ -176,6 +173,7 @@ function initializeConfig() {
   config = new Config(app.getPath('userData') + '/config.json');
   config.on('update', handleConfigUpdate);
   config.on('synchronize', handleConfigSynchronize);
+  WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
 }
 
 function initializeAppEventListeners() {
@@ -218,7 +216,7 @@ function initializeBeforeAppReady() {
     global.willAppQuit = true;
   }
 
-  allowProtocolDialog.init(mainWindow);
+  allowProtocolDialog.init();
 
   if (isDev) {
     console.log('In development mode, deeplinking is disabled');
@@ -234,7 +232,9 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('login-cancel', handleCancelLoginEvent);
   ipcMain.on('download-url', handleDownloadURLEvent);
   ipcMain.on('notified', handleNotifiedEvent);
-  ipcMain.on('update-title', handleUpdateTitleEvent);
+
+  // see comment on function
+  // ipcMain.on('update-title', handleUpdateTitleEvent);
   ipcMain.on('update-menu', handleUpdateMenuEvent);
   ipcMain.on('selected-client-certificate', handleSelectedCertificate);
   ipcMain.on(GRANT_PERMISSION_CHANNEL, handlePermissionGranted);
@@ -246,12 +246,8 @@ function initializeInterCommunicationEventListeners() {
   if (process.platform !== 'darwin') {
     ipcMain.on('open-app-menu', handleOpenAppMenu);
   }
-}
 
-function initializeMainWindowListeners() {
-  mainWindow.on('closed', handleMainWindowClosed);
-  mainWindow.on('unresponsive', criticalErrorHandler.windowUnresponsiveHandler.bind(criticalErrorHandler));
-  mainWindow.webContents.on('crashed', handleMainWindowWebContentsCrashed);
+  ipcMain.on('switch-server', handleSwitchServer);
 }
 
 //
@@ -267,19 +263,23 @@ function handleConfigUpdate(configData) {
     }).catch((err) => {
       console.log('error:', err);
     });
+    WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
   }
 
   ipcMain.emit('update-menu', true, configData);
 }
 
 function handleConfigSynchronize() {
-  if (mainWindow) {
-    mainWindow.webContents.send('reload-config');
-  }
+  // TODO: send this to server manager
+  WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
+  viewManager.reloadConfiguration(config.teams, WindowManager.getMainWindow());
+  WindowManager.sendToRenderer('reload-config');
 }
 
 function handleReloadConfig() {
   config.reload();
+  WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
+  viewManager.reloadConfiguration(config.teams, WindowManager.getMainWindow());
 }
 
 //
@@ -292,19 +292,15 @@ function handleAppSecondInstance(event, argv) {
   // argv: An array of the second instance’s (command line / deep linked) arguments
   if (process.platform === 'win32') {
     deeplinkingUrl = getDeeplinkingURL(argv);
+
+    // TODO: handle deeplinking into the tab manager as we have to send them to the appropiate BV
     if (deeplinkingUrl) {
-      mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+      WindowManager.sendToRenderer('protocol-deeplink', deeplinkingUrl);
     }
   }
 
   // Someone tried to run a second instance, we should focus our window.
-  if (mainWindow) {
-    if (mainWindow.isMinimized()) {
-      mainWindow.restore();
-    } else {
-      mainWindow.show();
-    }
-  }
+  WindowManager.restoreMain();
 }
 
 function handleAppWindowAllClosed() {
@@ -321,11 +317,7 @@ function handleAppBrowserWindowCreated(error, newWindow) {
 }
 
 function handleAppActivate() {
-  if (mainWindow) {
-    mainWindow.show();
-  } else {
-    log.warn('mainWindow is undefined');
-  }
+  WindowManager.showMainWindow();
 }
 
 function handleAppBeforeQuit() {
@@ -343,7 +335,7 @@ function handleSelectCertificate(event, webContents, url, list, callback) {
     certificateRequests.set(url, callback);
 
     // open modal for selecting certificate
-    mainWindow.webContents.send('select-user-certificate', url, list);
+    WindowManager.getMainWindow(true).webContents.send('select-user-certificate', url, list);
   } else {
     log.info(`There were ${list.length} candidate certificates. Skipping certificate selection`);
   }
@@ -389,6 +381,9 @@ function handleAppCertificateError(event, webContents, url, error, certificate, 
     const detail = `${extraDetail}origin: ${origin}\nError: ${error}`;
 
     certificateErrorCallbacks.set(errorID, callback);
+
+    // TODO: should we move this to window manager or provide a handler for dialogs?
+    const mainWindow = WindowManager.getMainWindow();
     dialog.showMessageBox(mainWindow, {
       title: 'Certificate Error',
       message: 'There is a configuration issue with this Mattermost server, or someone is trying to intercept your connection. You also may need to sign into the Wi-Fi you are connected to using your web browser.',
@@ -439,6 +434,7 @@ function handleAppLogin(event, webContents, request, authInfo, callback) {
   const server = Utils.getServer(parsedURL, config.teams);
 
   loginCallbackMap.set(request.url, typeof callback === 'undefined' ? null : callback); // if callback is undefined set it to null instead so we know we have set it up with no value
+  const mainWindow = WindowManager.getMainWindow(true);
   if (isTrustedURL(request.url) || isCustomLoginURL(parsedURL, server) || trustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
     mainWindow.webContents.send('login-request', request, authInfo);
   } else {
@@ -464,8 +460,9 @@ function handleAppWillFinishLaunching() {
       function openDeepLink() {
         try {
           if (deeplinkingUrl) {
-            mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
-            mainWindow.show();
+            // TODO: send this to tab manager.
+            //mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
+            WindowManager.showMainWindow();
           }
         } catch (err) {
           setTimeout(openDeepLink, 1000);
@@ -474,6 +471,11 @@ function handleAppWillFinishLaunching() {
       openDeepLink();
     }
   });
+}
+
+function handleSwitchServer(event, serverName) {
+  WindowManager.showMainWindow(true);
+  viewManager.showByName(serverName);
 }
 
 function handleAppWebContentsCreated(dc, contents) {
@@ -560,11 +562,13 @@ function handleAppWebContentsCreated(dc, contents) {
       log.info(`Popup window already open at provided url: ${url}`);
       return;
     }
+
+    // TODO: move popups to its own and have more than one.
     if (Utils.isPluginUrl(server.url, parsedURL) || Utils.isManagedResource(server.url, parsedURL)) {
       if (!popupWindow || popupWindow.closed) {
         popupWindow = new BrowserWindow({
           backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
-          parent: mainWindow,
+          parent: WindowManager.getMainWindow(),
           show: false,
           center: true,
           webPreferences: {
@@ -596,7 +600,7 @@ function handleAppWebContentsCreated(dc, contents) {
   contents.on('before-input-event', (event, input) => {
     if (input.key === 'Alt' && input.type === 'keyUp' && altLastPressed) {
       altLastPressed = false;
-      mainWindow.webContents.send('focus-three-dot-menu');
+      WindowManager.sendToRenderer('focus-three-dot-menu');
       return;
     }
 
@@ -607,12 +611,16 @@ function handleAppWebContentsCreated(dc, contents) {
       altLastPressed = false;
     }
 
+    // TODO: move to window manager
     if (!input.shift && !input.control && !input.alt && !input.meta) {
       // hacky fix for https://mattermost.atlassian.net/browse/MM-19226
       if ((input.key === 'Escape' || input.key === 'f') && input.type === 'keyDown') {
         // only do this when in fullscreen on a mac
-        if (mainWindow.isFullScreen() && process.platform === 'darwin') {
-          mainWindow.webContents.send('exit-fullscreen');
+        if (process.platform === 'darwin') {
+          const mainWindow = WindowManager.getMainWindow();
+          if (mainWindow && mainWindow.isFullScreen()) {
+            WindowManager.sendToRenderer('exit-fullscreen');
+          }
         }
       }
       return;
@@ -622,43 +630,44 @@ function handleAppWebContentsCreated(dc, contents) {
       return;
     }
 
+    // TODO: move this to be sent to the browserview as it doesn't make sense to have them sent to the renderer anymore.
     // handle certain keyboard shortcuts manually
     switch (input.key) { // eslint-disable-line padded-blocks
 
     // Manually handle zoom-in/out/reset keyboard shortcuts
     // - temporary fix for https://mattermost.atlassian.net/browse/MM-19031 and https://mattermost.atlassian.net/browse/MM-19032
     case '-':
-      mainWindow.webContents.send('zoom-out');
+      WindowManager.sendToRenderer('zoom-out');
       break;
     case '=':
-      mainWindow.webContents.send('zoom-in');
+      WindowManager.sendToRenderer('zoom-in');
       break;
     case '0':
-      mainWindow.webContents.send('zoom-reset');
+      WindowManager.sendToRenderer('zoom-reset');
       break;
 
     // Manually handle undo/redo keyboard shortcuts
     // - temporary fix for https://mattermost.atlassian.net/browse/MM-19198
     case 'z':
       if (input.shift) {
-        mainWindow.webContents.send('redo');
+        WindowManager.sendToRenderer('redo');
       } else {
-        mainWindow.webContents.send('undo');
+        WindowManager.sendToRenderer('undo');
       }
       break;
 
     // Manually handle copy/cut/paste keyboard shortcuts
     case 'c':
-      mainWindow.webContents.send('copy');
+      WindowManager.sendToRenderer('copy');
       break;
     case 'x':
-      mainWindow.webContents.send('cut');
+      WindowManager.sendToRenderer('cut');
       break;
     case 'v':
       if (input.shift) {
-        mainWindow.webContents.send('paste-and-match');
+        WindowManager.sendToRenderer('paste-and-match');
       } else {
-        mainWindow.webContents.send('paste');
+        WindowManager.sendToRenderer('paste');
       }
       break;
     default:
@@ -713,43 +722,32 @@ function initializeAfterAppReady() {
 
   initCookieManager(session.defaultSession);
 
-  mainWindow = createMainWindow(config.data, {
-    hideOnStartup,
-    trayIconShown: process.platform === 'win32' || config.showTrayIcon,
-    linuxAppIcon: path.join(assetsDir, 'appicon.png'),
-    deeplinkingUrl,
-  });
+  WindowManager.showMainWindow();
 
-  // temporary
-  const settingsWindow = new BrowserWindow({...config.data, parent: mainWindow, title: 'Desktop App Settings', webPreferences: {nodeIntegration: true}});
-  const localURL = getLocalURL('settings.html');
-  settingsWindow.loadURL(localURL).catch(
-    (reason) => {
-      log.error(`Settings window failed to load: ${reason}`);
-      log.info(process.env);
-    });
-  settingsWindow.show();
-
-  settingsWindow.webContents.openDevTools();
-  if (!mainWindow) {
-    log.error('unable to create main window');
-    app.quit();
+  // TODO: remove dev tools
+  if (config.teams.length === 0) {
+    WindowManager.showSettingsWindow();
   }
+
+  // TODO: how should the relationship between viewmanager and windowmanager be?
 
   // const boundaries = getWindowBoundaries(win);
   // setServersBounds(servers, boundaries);
   viewManager = new ViewManager(config.teams);
-  viewManager.load(mainWindow);
+  viewManager.load(WindowManager.getMainWindow());
   viewManager.showInitial();
 
-  criticalErrorHandler.setMainWindow(mainWindow);
+  criticalErrorHandler.setMainWindow(WindowManager.getMainWindow());
 
+  // TODO: find a way to pass along this info other than the window
   config.setRegistryConfigData(registryConfig.data);
-  mainWindow.registryConfigData = registryConfig.data;
 
+  // mainWindow.registryConfigData = registryConfig.data;
+
+  // TODO: this has to be sent to the tabs instead
   // listen for status updates and pass on to renderer
   userActivityMonitor.on('status', (status) => {
-    mainWindow.webContents.send('user-activity-update', status);
+    WindowManager.sendToRenderer('user-activity-update', status);
   });
 
   // start monitoring user activity (needs to be started after the app is ready)
@@ -768,38 +766,14 @@ function initializeAfterAppReady() {
 
     trayIcon.setToolTip(app.name);
     trayIcon.on('click', () => {
-      if (!mainWindow.isVisible() || mainWindow.isMinimized()) {
-        if (mainWindow.isMinimized()) {
-          mainWindow.restore();
-        } else {
-          mainWindow.show();
-        }
-        mainWindow.focus();
-        if (process.platform === 'darwin') {
-          app.dock.show();
-        }
-      } else {
-        mainWindow.focus();
-      }
+      WindowManager.restoreMain();
     });
 
     trayIcon.on('right-click', () => {
       trayIcon.popUpContextMenu();
     });
     trayIcon.on('balloon-click', () => {
-      if (process.platform === 'win32' || process.platform === 'darwin') {
-        if (mainWindow.isMinimized()) {
-          mainWindow.restore();
-        } else {
-          mainWindow.show();
-        }
-      }
-
-      if (process.platform === 'darwin') {
-        app.dock.show();
-      }
-
-      mainWindow.focus();
+      WindowManager.restoreMain();
     });
   }
 
@@ -827,7 +801,7 @@ function initializeAfterAppReady() {
 
     item.on('done', (doneEvent, state) => {
       if (state === 'completed') {
-        mainWindow.webContents.send('download-complete', {
+        WindowManager.sendToRenderer('download-complete', {
           fileName: filename,
           path: item.savePath,
           serverInfo: Utils.getServer(webContents.getURL(), config.teams),
@@ -859,7 +833,8 @@ function initializeAfterAppReady() {
     }
 
     // is the request coming from the renderer?
-    if (webContents.id === mainWindow.webContents.id) {
+    const mainWindow = WindowManager.getMainWindow();
+    if (mainWindow && webContents.id === mainWindow.webContents.id) {
       callback(true);
       return;
     }
@@ -893,9 +868,9 @@ function handleCancelLoginEvent(event, request) {
 }
 
 function handleDownloadURLEvent(event, url) {
-  downloadURL(mainWindow, url, (err) => {
+  downloadURL(url, (err) => {
     if (err) {
-      dialog.showMessageBox(mainWindow, {
+      dialog.showMessageBox(WindowManager.getMainWindow(), {
         type: 'error',
         message: err.toString(),
       });
@@ -905,10 +880,8 @@ function handleDownloadURLEvent(event, url) {
 }
 
 function handleNotifiedEvent() {
-  if (process.platform === 'win32' || process.platform === 'linux') {
-    if (config.notifications.flashWindow === 2) {
-      mainWindow.flashFrame(true);
-    }
+  if (config.notifications.flashWindow === 2) {
+    WindowManager.flashFrame(true);
   }
 
   if (process.platform === 'darwin' && config.notifications.bounceIcon) {
@@ -916,17 +889,13 @@ function handleNotifiedEvent() {
   }
 }
 
-function handleUpdateTitleEvent(event, arg) {
-  mainWindow.setTitle(arg.title);
-}
+// TODO: figure out if we want to inherit title from webpage or use one of our own
+// function handleUpdateTitleEvent(event, arg) {
+//   mainWindow.setTitle(arg.title);
+// }
 
 function handleUpdateUnreadEvent(event, arg) {
-  if (process.platform === 'win32') {
-    const overlay = arg.overlayDataURL ? nativeImage.createFromDataURL(arg.overlayDataURL) : null;
-    if (mainWindow) {
-      mainWindow.setOverlayIcon(overlay, arg.description);
-    }
-  }
+  WindowManager.setOverlayIcon(arg.overlayDataURL, arg.description);
 
   if (trayIcon && !trayIcon.isDestroyed()) {
     if (arg.sessionExpired) {
@@ -966,10 +935,12 @@ function handleOpenAppMenu() {
 }
 
 function handleCloseAppMenu(event) {
-  mainWindow.webContents.send('focus-on-webview', event);
+  WindowManager.sendToRenderer('focus-on-webview', event);
 }
 
 function handleUpdateMenuEvent(event, configData) {
+  // TODO: this might make sense to move to window manager? so it updates the window referenced if needed.
+  const mainWindow = WindowManager.getMainWindow();
   const aMenu = appMenu.createMenu(mainWindow, configData, global.isDev);
   Menu.setApplicationMenu(aMenu);
   aMenu.addListener('menu-will-close', handleCloseAppMenu);
@@ -990,21 +961,6 @@ function handleUpdateMenuEvent(event, configData) {
       trayIcon.setContextMenu(tMenu);
     }
   }
-}
-
-//
-// mainWindow event handlers
-//
-
-function handleMainWindowClosed() {
-  // Dereference the window object, usually you would store windows
-  // in an array if your app supports multi windows, this is the time
-  // when you should delete the corresponding element.
-  mainWindow = null;
-}
-
-function handleMainWindowWebContentsCrashed() {
-  throw new Error('webContents \'crashed\' event has been emitted');
 }
 
 //
@@ -1144,6 +1100,8 @@ function wasUpdated(lastAppVersion) {
 }
 
 function clearAppCache() {
+  // TODO: clear cache on browserviews, not in the renderer.
+  const mainWindow = WindowManager.getMainWindow();
   if (mainWindow) {
     mainWindow.webContents.session.clearCache().then(mainWindow.reload);
   } else {
