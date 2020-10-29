@@ -3,6 +3,7 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 
 import 'bootstrap/dist/css/bootstrap.min.css';
+// eslint-disable-next-line import/no-unresolved
 import 'renderer/css/index.css';
 
 if (process.env.NODE_ENV === 'production') {
@@ -17,133 +18,172 @@ if (process.env.NODE_ENV === 'production') {
 // window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
 //   import 'bootstrap/dist/css/bootstrap.min.css';
 //     throw new Error(`Sorry, ${remote.app.name} does not support window.eval() for security reasons.`);
+//   // eslint-disable-next-line import/no-unresolved
 //   };
 
 import url from 'url';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {ipcRenderer} from 'electron';
+import {remote, ipcRenderer} from 'electron';
 
-import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT} from 'common/communication';
+import Config from '../common/config';
 
 import EnhancedNotification from './js/notification';
 import MainPage from './components/MainPage.jsx';
+import {createDataURL as createBadgeDataURL} from './js/badge';
 
 Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
-let config;
-let teams;
+const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
 
-const reloadConfig = (newConfig) => {
-  console.log('new configuration!');
-  console.log(newConfig);
-  config = newConfig;
-  teams = config.teams;
-};
+const teams = config.teams;
 
-const requestConfig = async (exitOnError) => {
-  // todo: should we block?
-  try {
-    console.log('requested configuration');
-    const configRequest = await ipcRenderer.invoke(GET_CONFIGURATION);
-    console.log(`config is: ${configRequest}`);
-    reloadConfig(configRequest);
-  } catch (err) {
-    console.log(`there was an error with the config: ${err}`);
-    if (exitOnError) {
-      ipcRenderer.send(QUIT, `unable to load configuration: ${err}`, err.stack);
+remote.getCurrentWindow().removeAllListeners('focus');
+
+const parsedURL = url.parse(window.location.href, true);
+const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : getInitialIndex();
+
+let deeplinkingUrl = null;
+if (!parsedURL.query.index || parsedURL.query.index === null) {
+  deeplinkingUrl = remote.getCurrentWindow().deeplinkingUrl;
+}
+
+config.on('update', (configData) => {
+  teams.splice(0, teams.length, ...configData.teams);
+});
+
+config.on('synchronize', () => {
+  ipcRenderer.send('reload-config');
+});
+
+ipcRenderer.on('reload-config', () => {
+  config.reload();
+});
+
+function getInitialIndex() {
+  const element = teams.find((e) => e.order === 0);
+  return element ? teams.indexOf(element) : 0;
+}
+
+function showBadgeWindows(sessionExpired, unreadCount, mentionCount) {
+  function sendBadge(dataURL, description) {
+    // window.setOverlayIcon() does't work with NativeImage across remote boundaries.
+    // https://github.com/atom/electron/issues/4011
+    ipcRenderer.send('update-unread', {
+      overlayDataURL: dataURL,
+      description,
+      sessionExpired,
+      unreadCount,
+      mentionCount,
+    });
+  }
+
+  if (sessionExpired) {
+    const dataURL = createBadgeDataURL('•');
+    sendBadge(dataURL, 'Session Expired: Please sign in to continue receiving notifications.');
+  } else if (mentionCount > 0) {
+    const dataURL = createBadgeDataURL((mentionCount > 99) ? '99+' : mentionCount.toString(), mentionCount > 99);
+    sendBadge(dataURL, 'You have unread mentions (' + mentionCount + ')');
+  } else if (unreadCount > 0 && config.showUnreadBadge) {
+    const dataURL = createBadgeDataURL('•');
+    sendBadge(dataURL, 'You have unread channels (' + unreadCount + ')');
+  } else {
+    sendBadge(null, 'You have no unread messages');
+  }
+}
+
+function showBadgeOSX(sessionExpired, unreadCount, mentionCount) {
+  if (sessionExpired) {
+    remote.app.dock.setBadge('•');
+  } else if (mentionCount > 0) {
+    remote.app.dock.setBadge(mentionCount.toString());
+  } else if (unreadCount > 0 && config.showUnreadBadge) {
+    remote.app.dock.setBadge('•');
+  } else {
+    remote.app.dock.setBadge('');
+  }
+
+  ipcRenderer.send('update-unread', {
+    sessionExpired,
+    unreadCount,
+    mentionCount,
+  });
+}
+
+function showBadgeLinux(sessionExpired, unreadCount, mentionCount) {
+  if (remote.app.isUnityRunning()) {
+    if (sessionExpired) {
+      remote.app.badgeCount = mentionCount + 1;
+    } else {
+      remote.app.badgeCount = mentionCount;
     }
   }
-};
 
-const start = async () => {
-  await requestConfig(true);
-
-  const parsedURL = url.parse(window.location.href, true);
-  const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : getInitialIndex(teams);
-
-  // TODO: why is this needed? removing for now
-  //remote.getCurrentWindow().removeAllListeners('focus');
-
-  // TODO: deep linking
-  // let deeplinkingUrl = null;
-  // if (!parsedURL.query.index || parsedURL.query.index === null) {
-  //   deeplinkingUrl = remote.getCurrentWindow().deeplinkingUrl;
-  // }
-  const deeplinkingUrl = null;
-
-  ipcRenderer.on('synchronize-config', () => {
-    requestConfig();
+  ipcRenderer.send('update-unread', {
+    sessionExpired,
+    unreadCount,
+    mentionCount,
   });
+}
 
-  ipcRenderer.on('reload-config', () => {
-    ipcRenderer.invoke(GET_CONFIGURATION).then(reloadConfig);
-  });
+function showBadge(sessionExpired, unreadCount, mentionCount) {
+  switch (process.platform) {
+  case 'win32':
+    showBadgeWindows(sessionExpired, unreadCount, mentionCount);
+    break;
+  case 'darwin':
+    showBadgeOSX(sessionExpired, unreadCount, mentionCount);
+    break;
+  case 'linux':
+    showBadgeLinux(sessionExpired, unreadCount, mentionCount);
+    break;
+  }
+}
 
-  function teamConfigChange(updatedTeams, callback) {
-    //config.set('teams', updatedTeams);
-    ipcRenderer.invoke(UPDATE_TEAMS, updatedTeams).then((teamConfig) => {
-      teams = teamConfig;
-      config.teams = teamConfig;
-    });
-    if (callback) {
-      ipcRenderer.invoke(UPDATE_TEAMS, callback);
+function teamConfigChange(updatedTeams, callback) {
+  config.set('teams', updatedTeams);
+  if (callback) {
+    config.once('update', callback);
+  }
+}
+
+function moveTabs(originalOrder, newOrder) {
+  const tabOrder = teams.concat().map((team, index) => {
+    return {
+      index,
+      order: team.order,
+    };
+  }).sort((a, b) => (a.order - b.order));
+
+  const team = tabOrder.splice(originalOrder, 1);
+  tabOrder.splice(newOrder, 0, team[0]);
+
+  let teamIndex;
+  tabOrder.forEach((t, order) => {
+    if (order === newOrder) {
+      teamIndex = t.index;
     }
+    teams[t.index].order = order;
+  });
+  teamConfigChange(teams);
+  return teamIndex;
+}
+
+function getDarkMode() {
+  if (process.platform !== 'darwin') {
+    return config.darkMode;
   }
+  return null;
+}
 
-  function moveTabs(originalOrder, newOrder) {
-    const tabOrder = teams.concat().map((team, index) => {
-      return {
-        index,
-        order: team.order,
-      };
-    }).sort((a, b) => (a.order - b.order));
-
-    const team = tabOrder.splice(originalOrder, 1);
-    tabOrder.splice(newOrder, 0, team[0]);
-
-    let teamIndex;
-    tabOrder.forEach((t, order) => {
-      if (order === newOrder) {
-        teamIndex = t.index;
-      }
-      teams[t.index].order = order;
-    });
-    teamConfigChange(teams);
-    return teamIndex;
+function setDarkMode() {
+  if (process.platform !== 'darwin') {
+    const darkMode = Boolean(config.darkMode);
+    config.set('darkMode', !darkMode);
+    return !darkMode;
   }
-
-  console.log('config before rendering');
-  console.log(config);
-  const component = (
-    <MainPage
-      teams={teams}
-      localTeams={config.localTeams}
-      initialIndex={initialIndex}
-      onBadgeChange={showBadge}
-      onTeamConfigChange={teamConfigChange}
-      useSpellChecker={config.useSpellChecker}
-      deeplinkingUrl={deeplinkingUrl}
-      showAddServerButton={config.enableServerManagement}
-      moveTabs={moveTabs}
-      openMenu={openMenu}
-      darkMode={config.darkMode}
-      appName={config.appName}
-    />);
-
-  ReactDOM.render(
-    component,
-    document.getElementById('app')
-  );
-};
-
-function getInitialIndex(teamList) {
-  if (teamList) {
-    const element = teamList.find((e) => e.order === 0);
-    return element ? teamList.indexOf(element) : 0;
-  }
-  return 0;
+  return null;
 }
 
 function openMenu() {
@@ -152,16 +192,28 @@ function openMenu() {
   }
 }
 
-function showBadge(sessionExpired, unreadCount, mentionCount) {
-  ipcRenderer.send('update-unread', {
-    sessionExpired,
-    unreadCount,
-    mentionCount,
-  });
-}
+const component = (
+  <MainPage
+    teams={teams}
+    localTeams={config.localTeams}
+    initialIndex={initialIndex}
+    onBadgeChange={showBadge}
+    onTeamConfigChange={teamConfigChange}
+    useSpellChecker={config.useSpellChecker}
+    deeplinkingUrl={deeplinkingUrl}
+    showAddServerButton={config.enableServerManagement}
+    getDarkMode={getDarkMode}
+    setDarkMode={setDarkMode}
+    moveTabs={moveTabs}
+    openMenu={openMenu}
+  />);
+
+ReactDOM.render(
+  component,
+  document.getElementById('app')
+);
 
 // Deny drag&drop navigation in mainWindow.
 // Drag&drop is allowed in webview of index.html.
 document.addEventListener('dragover', (event) => event.preventDefault());
 document.addEventListener('drop', (event) => event.preventDefault());
-start();
