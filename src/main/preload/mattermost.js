@@ -92,7 +92,7 @@ window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = 
   }
   case 'dispatch-notification': {
     const {title, body, channel, teamId, silent} = message;
-    ipcRenderer.sendToHost('dispatchNotification', title, body, channel, teamId, silent, () => handleNotificationClick({teamId, channel}));
+    ipcRenderer.send('dispatchMentionNotification', title, body, channel, teamId, silent);
     break;
   }
   }
@@ -111,8 +111,8 @@ const handleNotificationClick = ({channel, teamId}) => {
   );
 };
 
-ipcRenderer.on('notification-clicked', (event, {channel, teamId}) => {
-  handleNotificationClick({channel, teamId});
+ipcRenderer.on('notification-clicked', (event, data) => {
+  handleNotificationClick(data);
 });
 
 function hasClass(element, className) {
