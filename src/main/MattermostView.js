@@ -27,7 +27,6 @@ export class MattermostView {
     // const preload = getLocalURL('preload.js', null, true);
     // const preload = path.resolve(__dirname, 'preload/mattermost.js');
     const preload = path.resolve(__dirname, '../../dist/preload.js');
-    console.log(`Preload path: ${preload}`);
     this.options = {
       webPreferences: {
         preload,

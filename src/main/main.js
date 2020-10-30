@@ -294,7 +294,6 @@ function handleAppVersion() {
 }
 
 function handleDarkModeChange(darkMode) {
-  console.log(`send dark mode: ${darkMode}`);
   WindowManager.sendToRenderer(DARK_MODE_CHANGE, darkMode);
 }
 
