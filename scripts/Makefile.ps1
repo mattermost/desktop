@@ -712,9 +712,11 @@ function Main {
                 Run-Build
             }
             "build" {
+                Install-Deps
                 Run-Build
             }
             "test" {
+                Install-Deps
                 Run-Test
             }
             "install-deps" {
