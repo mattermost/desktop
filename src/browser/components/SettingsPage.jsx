@@ -44,6 +44,7 @@ export default class SettingsPage extends React.Component {
     this.state = this.convertConfigDataToState(config.data);
     this.setState({
       maximized: false,
+      userOpenedDownloadGialog: false,
     });
 
     this.trayIconThemeRef = React.createRef();
@@ -431,11 +432,15 @@ export default class SettingsPage extends React.Component {
   }
 
   selectDownloadLocation = () => {
-    const message = 'Specify the folder where files will download';
-    remote.dialog.showOpenDialog({defaultPath: `/Users/${process.env.USER || process.env.USERNAME}/Downloads`,
-      message,
-      properties:
+    if (!this.state.userOpenedDownloadGialog) {
+      const message = 'Specify the folder where files will download';
+      remote.dialog.showOpenDialog({defaultPath: `/Users/${process.env.USER || process.env.USERNAME}/Downloads`,
+        message,
+        properties:
      ['openDirectory', 'createDirectory', 'dontAddToRecent', 'promptToCreate']}).then((result) => this.saveDownloadLocation(result.filePaths[0]));
+      this.setState({userOpenedDownloadGialog: true});
+    }
+    this.setState({userOpenedDownloadGialog: false});
   }
 
   updateTeam = (index, newData) => {
