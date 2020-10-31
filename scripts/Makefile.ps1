@@ -1,50 +1,335 @@
-# We would have preferred to put this main section to the end of the script,
-# but PowerSchell script arguments must be defined as the first statement in
-# a PowerShell script.
+# We would have preferred to put this main section to the end of the file,
+# but script arguments must be defined as the first statement in a PowerShell
+# script.
 Param (
     [parameter(Position=0)]$makeRule
 )
 
-# imports
-# these should be better with modules, but we would have to install them on circleci servers
-
-# import tools
-. .\scripts\tools.ps1
-
-# import dependencies functions
-. .\scripts\dependencies.ps1
+# While the different sections of this file may be better with import statements
+# or even better with PowerShell modules, choosing this option would require
+# them to be installed on CircleCI servers, which also breaks selfcontainement
+# of this makefile.
 
 ################################################################################
-# Appveyor related functions
+# Logging functions
 ################################################################################
-#region
-
-function Is-AppVeyor {
-    if ($env:APPVEYOR -eq $True) {
-        return $True
-    }
-    return $False
+#Region
+function Print {
+    Param (
+       [String]$message,
+       [Switch]$NoNewLine
+   )
+   if ($NoNewLine) {
+       Write-Host " $message" -NoNewLine
+   } else {
+       Write-Host " $message"
+   }
 }
 
-function Enable-AppVeyorRDP {
-    if (-not (Is-AppVeyor)) {
-        Print-Error "You are not running on AppVeyor. Enabling RDP will be bypassed."
+function Print-Info {
+   Param (
+       [String]$message,
+       [Switch]$NoNewLine
+   )
+   if ([String]::IsNullOrEmpty($message)) {
+       return
+   }
+
+   Write-Host "[" -NoNewLine
+   Write-Host "+" -NoNewLine -ForegroundColor Green
+   Write-Host "]" -NoNewLine
+
+   if ($NoNewLine) {
+       Write-Host " $message" -NoNewLine
+   } else {
+       Write-Host " $message"
+   }
+}
+
+function Print-Warning {
+   Param (
+       [String]$message,
+       [Switch]$NoNewLine
+   )
+   if ([String]::IsNullOrEmpty($message)) {
+       return
+   }
+
+   Write-Host "[" -NoNewLine
+   Write-Host "!" -NoNewLine -ForegroundColor Magenta
+   Write-Host "]" -NoNewLine
+
+   if ($NoNewLine) {
+       Write-Host " $message" -NoNewLine
+   } else {
+       Write-Host " $message"
+   }
+}
+
+# Avoid stacktrace to be displayed along side the error message.
+# We want things simplistic.
+# src.: https://stackoverflow.com/q/38064704/3514658
+# src.: https://stackoverflow.com/a/38064769
+# We won't use [Console]::*Write* not $host.ui.Write* statements
+# as they are UI items
+# src.: https://web.archive.org/web/20190720224207/https://docs.microsoft.com/en-us/powershell/developer/cmdlet/types-of-cmdlet-output
+# Rewriting the error printing function in C# and calling it from Posh is not
+# working either because the redirection to stderr doesn't work under Posh but
+# is working when the Posh script is run from cmd.exe. We are giving up here
+# and simply using Write-Host without stderr redirection.
+function Print-Error {
+   Param (
+       [String]$message,
+       [Switch]$NoNewLine
+   )
+   if ([String]::IsNullOrEmpty($message)) {
+       return
+   }
+
+   Write-Host "[" -NoNewLine
+   Write-Host "-" -NoNewLine -ForegroundColor Red
+   Write-Host "]" -NoNewLine
+
+   if ($NoNewLine) {
+       Write-Host " $message" -NoNewLine
+   } else {
+       Write-Host " $message"
+   }
+}
+#EndRegion
+
+################################################################################
+# OS related functions
+################################################################################
+#Region
+function Check-Command($cmdname) {
+    return [bool](Get-Command -Name $cmdname -ErrorAction SilentlyContinue)
+}
+
+function Refresh-Path {
+    $env:Path =
+        [System.Environment]::GetEnvironmentVariable("Path", "Machine") +
+        ";" +
+        [System.Environment]::GetEnvironmentVariable("Path", "User")
+}
+
+function Get-RootDir {
+    return "$(Split-Path $PSCommandPath)\..\"
+}
+
+# src: https://superuser.com/a/756696/456258
+function Is-Admin {
+    return ([Security.Principal.WindowsPrincipal] `
+            [Security.Principal.WindowsIdentity]::GetCurrent() `
+            ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+#EndRegion
+
+################################################################################
+# Check and install of dependencies related functions
+################################################################################
+#Region
+function Check-Deps {
+    Param (
+        [Switch]
+        $verbose,
+        [Switch]
+        $throwable
+    )
+
+    if ($PSVersionTable.PSVersion.Major -lt 5) {
+        Print-Error "You need at least PowerShell 5.0 to execute this Makefile. Operation aborted."
+        exit
+    }
+
+    [array]$missing = @()
+
+    if ($verbose) { Print-Info "Checking choco dependency..." }
+    if (!(Check-Command "choco")) {
+        if ($verbose) { Print-Error "choco dependency missing." }
+        $missing += "choco"
+    }
+
+    if ($verbose) { Print-Info "Checking git dependency..." }
+    if (!(Check-Command "git")) {
+        if ($verbose) { Print-Error "git dependency missing." }
+        $missing += "git"
+    }
+
+    if ($verbose) { Print-Info "Checking nodejs/npm dependency..." }
+    # Testing if the folder is not empty first is needed otherwise if there is
+    # a file called like that in the path where the makefile is invocated, the
+    # check will succeed while it is plain wrong.
+    if ([string]::IsNullOrEmpty($(Get-NpmDir)) -or
+        # We could have used the builtin Test-Path cmdlet instead but it is
+        # tested for folders as well. We need to test for a file existence
+        # here.  
+        ![System.IO.File]::Exists("$(Get-NpmDir)\npm.cmd") -or
+        ![System.IO.File]::Exists("$(Get-NpmDir)\node.exe")) {
+            if ($verbose) { Print-Error "nodejs/npm dependency missing." }
+        $missing += "npm"
+    }
+
+    if ($verbose) { Print-Info "Checking wix dependency..." }
+    if ([string]::IsNullOrEmpty($(Get-WixDir)) -or
+        ![System.IO.File]::Exists("$(Get-WixDir)\heat.exe") -or
+        ![System.IO.File]::Exists("$(Get-WixDir)\candle.exe") -or
+        ![System.IO.File]::Exists("$(Get-WixDir)\light.exe")) {
+        if ($verbose) { Print-Error "wix dependency missing." }
+        $missing += "wix"
+    }
+
+    if ($verbose) { Print-Info "Checking signtool dependency..." }
+    if ([string]::IsNullOrEmpty($(Get-SignToolDir)) -or
+        ![System.IO.File]::Exists("$(Get-SignToolDir)\signtool.exe")) {
+        if ($verbose) { Print-Error "signtool dependency missing." }
+        $missing += "signtool"
+    }
+    if ($verbose) { Print-Info "Checking jq dependency..." }
+    if (!(Check-Command "jq")) {
+        if ($verbose) { Print-Error "jq dependency missing." }
+        $missing += "jq"
+    }
+
+    if ($throwable -and $missing.Count -gt 0) {
+        throw "com.mattermost.makefile.deps.missing"
+    }
+
+    return $missing
+}
+
+function Install-Deps {
+    [array]$missing = Check-Deps -Verbose
+
+    if ($missing -eq $null) {
+        Print-Info "All dependencies met; exiting dependencies installation..."
         return
     }
-    # src.: https://www.appveyor.com/docs/how-to/rdp-to-build-worker/
-    $blockRdp = $true;
-    iex ((new-object net.webclient).DownloadString(
-        "https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1"
-    ))
+
+    if (-not (Is-Admin)) {
+        throw "com.mattermost.makefile.deps.notadmin"
+    }
+
+    foreach ($missingItem in $missing) {
+        switch ($missingItem) {
+            "choco" {
+                Print-Info "Installing chocolatey..."
+                Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+                break;
+            }
+            "git" {
+                Print-Info "Installing git..."
+                choco install git --yes
+                break;
+            }
+            "wix" {
+                Install-Wix
+                break;
+            }
+            "signtool" {
+                Print-Info "Installing Windows 10 SDK (for signtool)..."
+                choco install windows-sdk-10.1 --yes
+                break;
+            }
+            "npm" {
+                Print-Info "Installing nodejs-lts (with npm)..."
+                choco install nodejs-lts --yes
+                break;
+            }
+            "jq" {
+                Print-Info "Installing jq"
+                choco install jq --yes
+                break;
+            }
+        }
+
+        Print-Info "Refreshing PATH..."
+        Refresh-Path
+    }
 }
 
-#endregion
+function Install-Wix {
+    Print-Info "Downloading wixtoolset..."
+    # choco is using 3.11 which causes problems building on remote ssh due to dotnet3.5
+    # choco install wixtoolset --yes
+    $WebClient = New-Object System.Net.WebClient
+    # if they ever fix the installer we can move to 3.11
+    #$WebClient.DownloadFile("https://github.com/wixtoolset/wix3/releases/download/wix3111rtm/wix311.exe",".\scripts\wix.exe")
+    $WebClient.DownloadFile("https://github.com/wixtoolset/wix3/releases/download/wix3104rtm/wix310.exe",".\scripts\wix.exe")
+    Print-Info "Installing wixtoolset..."
+    # todo: check hash
+    .\scripts\wix.exe -q
+    if ($LastExitCode -ne $null) {
+        throw "com.mattermost.makefile.deps.wix"
+    }
+    Print-Info "wixtoolset installed!"
+}
+#EndRegion
+
+################################################################################
+# Research of dependencies related functions
+################################################################################
+#Region
+function Get-WixDir {
+    $progFile = (${env:ProgramFiles(x86)}, ${env:ProgramFiles} -ne $null)[0]
+    $wixDirs = @(Get-ChildItem -Path $progFile -Recurse -Filter "*wix toolset*" -Attributes Directory -Depth 2 -ErrorAction SilentlyContinue)
+    if ($wixDirs[0] -eq $null) {
+        return $null
+    }
+    $wixDir = Join-Path -Path "$progFile" -ChildPath "$($wixDirs[0])"
+    $wixDir = Join-Path -Path "$wixDir" -ChildPath "bin"
+    return $wixDir
+}
+
+function Get-SignToolDir {
+    $progFile = (${env:ProgramFiles(x86)}, ${env:ProgramFiles} -ne $null)[0]
+    $signToolDir = Join-Path -Path "$progFile" -ChildPath "Windows Kits\10\bin\"
+    # Check if we are on 64 bits or not.
+    if ($env:PROCESSOR_ARCHITECTURE -ilike '*64*') {
+        $arch = "x64"
+    } else {
+        $arch = "x86"
+    }
+    [array]$signToolExes = (
+        Get-ChildItem -Path "$signToolDir" -Filter "signtool.exe" -Recurse -ErrorAction SilentlyContinue -Force | % {
+            if ($_.FullName -ilike '*x64*') {
+                return $_.FullName;
+            }
+        }
+    )
+    if ($signToolExes -eq $null -or
+        [string]::IsNullOrEmpty($signToolExes[0])) {
+        return $null
+    }
+
+    if (Test-Path $signToolExes[0]) {
+        return Split-Path $signToolExes[0]
+    }
+    return $null
+}
+
+function Get-NpmDir {
+    # npm is always installed as a nodejs dependency. 64 bits version available.
+    # C:\Program Files\nodejs\npm with a shortcut leading to
+    # C:\Program Files\nodejs\node_modules\npm\bin
+    $progFile = ${env:ProgramFiles}
+    $npmDir = Join-Path -Path "$progFile" -ChildPath "nodejs"
+    if ([System.IO.File]::Exists("$npmDir\npm.cmd")) {
+        return $npmDir
+    }
+    $progFile = ${env:ProgramW6432}
+    $npmDir = Join-Path -Path "$progFile" -ChildPath "nodejs"
+    if ([System.IO.File]::Exists("$npmDir\npm.cmd")) {
+        return $npmDir
+    }
+    return $null
+}
+#EndRegion
 
 ################################################################################
 # Mattermost related functions
 ################################################################################
 #region
-
 function Prepare-Path {
 
     # As we may need to install new dependencies, make sure the PATH env
@@ -126,7 +411,6 @@ function Restore-ComputerState {
         }
     }
 }
-
 
 function Optimize-Build {
     Print-Info "Checking if Windows Search is running..."
@@ -230,11 +514,7 @@ function Run-BuildId {
 function Run-BuildChangelog {
     Print-Info "Getting list of commits for changelog..."
     $previousTag = $(Invoke-Expression "git describe --abbrev=0 --tags $(git describe --abbrev=0)^")
-    if ($env:APPVEYOR_REPO_TAG -eq $true) {
-        $currentTag = [string]$(git describe --abbrev=0)
-    } else {
-        $currentTag = [string]"HEAD"
-    }
+    $currentTag = [string]"HEAD"
     $changelogRaw = "$(git log --oneline --since=""$(git log -1 ""$previousTag"" --pretty=%ad)"" --until=""$(git log -1 "$currentTag" --pretty=%ad)"")"
     $changelog = "";
     foreach ($i in $changelogRaw) {
@@ -262,44 +542,7 @@ function Run-BuildElectron {
 function Run-BuildForceSignature {
     # Only sign the executable and .dll if this is a release and not a pull request
     # check.
-    if ($env:APPVEYOR_REPO_TAG -eq $true) {
-        Print-Info "Enforcing signature of the executable and dll..."
-
-        # Decrypt the certificate. The decrypted version will be at
-        # .\resources\windows\certificate\mattermost-desktop-windows.pfx
-        iex ((New-Object Net.WebClient).DownloadString(
-            "https://raw.githubusercontent.com/appveyor/secure-file/master/install.ps1"
-        ))
-        # Secure variables are never decoded during Pull Request
-        # except if the repo is private and a secure org has been created
-        # src.: https://www.appveyor.com/docs/build-configuration/#secure-variables
-        & "appveyor-tools\secure-file" -decrypt "resources\windows\certificate\mattermost-desktop-windows.pfx.enc" -secret "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_DECRYPTION_KEY_ENCRYPTED"
-
-        foreach ($archPath in "release\win-unpacked", "release\win-ia32-unpacked") {
-
-            # Note: The C++ redistribuable files will be resigned again even if they have a
-            # correct signature from Microsoft. Windows doesn't seem to complain, but we
-            # don't know whether this is authorized by the Microsoft EULA.
-            Get-ChildItem -Path $archPath -recurse "*.dll" | ForEach-Object {
-                Print-Info "Signing $($_.Name) (waiting for 2 * 15 seconds)..."
-                # Waiting for at least 15 seconds is needed because these time
-                # servers usually have rate limits and signtool can fail with the
-                # following error message:
-                # "SignTool Error: The specified timestamp server either could not be reached or returned an invalid response.
-                # src.: https://web.archive.org/web/20190306223053/https://github.com/electron-userland/electron-builder/issues/2795#issuecomment-466831315
-                Start-Sleep -s 15
-                signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha1 /td sha1 "$($_.FullName)"
-                Start-Sleep -s 15
-                signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /as "$($_.FullName)"
-            }
-
-            Print-Info "Signing Mattermost.exe (waiting for 2 * 15 seconds)..."
-            Start-Sleep -s 15
-            signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha1 /td sha1 "$archPath\Mattermost.exe"
-            Start-Sleep -s 15
-            signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /as "$archPath\Mattermost.exe"
-        }
-    } elseif (Test-Path 'env:PFX') {
+    if (Test-Path 'env:PFX') {
         Print-Info "Signing"
         foreach ($archPath in "release\win-unpacked", "release\win-ia32-unpacked") {
             # Note: The C++ redistribuable files will be resigned again even if they have a
@@ -325,7 +568,7 @@ function Run-BuildForceSignature {
             signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /as "$archPath\Mattermost.exe"
         }
     } else {
-        Print-Info "DLLs not signed"
+        Print-Info "Certificate file not found, DLLs and executable won't be signed."
     }
 }
 
@@ -395,18 +638,7 @@ function Run-BuildMsi {
 
     # Only sign the executable and .dll if this is a release and not a pull request
     # check.
-    if ($env:APPVEYOR_REPO_TAG -eq $true) {
-        Print-Info "Signing mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi (waiting for 15 seconds)..."
-        Start-Sleep -s 15
-        # Dual signing is not supported on msi files. Is it recommended to sign with 256 hash.
-        # src.: https://security.stackexchange.com/a/124685/84134
-        # src.: https://social.msdn.microsoft.com/Forums/windowsdesktop/en-us/d4b70ecd-a883-4289-8047-cc9cde28b492#0b3e3b80-6b3b-463f-ac1e-1bf0dc831952
-        signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /d "mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi" "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi"
-
-        Print-Info "Signing mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi (waiting for 15 seconds)..."
-        Start-Sleep -s 15
-        signtool.exe sign /f "resources\windows\certificate\mattermost-desktop-windows.pfx" /p "$env:COM_MATTERMOST_MAKEFILE_CERTIFICATE_PRIVATE_KEY_ENCRYPTED" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /d "mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi" "release\mattermost-desktop-\$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi"
-    } elseif (Test-Path 'env:PFX') {
+    if (Test-Path 'env:PFX') {
         Print-Info "Signing mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi (waiting for 15 seconds)..."
         Start-Sleep -s 15
         # Dual signing is not supported on msi files. Is it recommended to sign with 256 hash.
@@ -418,7 +650,7 @@ function Run-BuildMsi {
         Start-Sleep -s 15
         signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "http://timestamp.digicert.com" /fd sha256 /td sha256 /d "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi" "release\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi"
     } else {
-        Print-Info "Not signing msi"
+        Print-Info "Certificate file not found, the msi installers won't be signed."
     }
 }
 
@@ -430,7 +662,7 @@ function Get-Cert {
         Print-Info "Importing certificate into the machine"
         Import-PfxCertificate -filepath "./mattermost-desktop-windows.pfx" cert:\localMachine\my -password $password
     } else {
-        Print-Warning "No variable environment found, build will not be signed"
+        Print-Warning "No env:PFX environment variable found, build will not be signed."
     }
 }
 
@@ -459,12 +691,12 @@ function Run-Test {
     Prepare-Path
     npm test
 }
-#endregion
+#EndRegion
 
 ################################################################################
 # Main function
 ################################################################################
-#region
+#Region
 function Main {
     try {
         if ($makeRule -eq $null) {
@@ -491,9 +723,6 @@ function Main {
             "optimize" {
                 Optimize-Build
             }
-            "debug" {
-                Enable-AppVeyorRDP
-            }
             "install-cert" {
                 Get-Cert
             }
@@ -506,25 +735,25 @@ function Main {
         }
 
         $env:COM_MATTERMOST_MAKEFILE_EXECUTION_SUCCESS = $true
-        $exitcode = 0
+        $exitCode = 0
 
     } catch {
         switch ($_.Exception.Message) {
             "com.mattermost.makefile.deps.missing" {
                 Print-Error "The following dependencies are missing: $($missing -Join ', ').`n    Please install dependencies as an administrator:`n    # makefile.ps1 install-deps"
-                $exitcode = -1
+                $exitCode = -1
             }
             "com.mattermost.makefile.deps.notadmin" {
                 Print-Error "Installing dependencies requires admin privileges. Operation aborted.`n    Please reexecute this makefile as an administrator:`n    # makefile.ps1 install-deps"
-                $exitcode = -2
+                $exitCode = -2
             }
             "com.mattermost.makefile.deps.wix" {
                 Print-Error "There was nothing wrong with your source code,but we found a problem installing wix toolset and couldn't continue. please try re-running the job."
-                $exitcode = -3
+                $exitCode = -3
             }   
             default {          
                 Print-Error "Another error occurred: $_"
-                $exitcode = -100
+                $exitCode = -100
             }
         }
     } finally {
@@ -532,10 +761,9 @@ function Main {
             Print-Warning "Makefile interrupted by Ctrl + C or by another interruption handler."
         }
         Restore-ComputerState
-        exit $exitcode
+        exit $exitCode
     }
 }
 
 Main
-#endregion
-
+#EndRegion
