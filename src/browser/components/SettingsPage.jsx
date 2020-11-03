@@ -44,9 +44,11 @@ export default class SettingsPage extends React.Component {
     this.state = this.convertConfigDataToState(config.data);
     this.setState({
       maximized: false,
+      userOpenedDownloadGialog: false,
     });
 
     this.trayIconThemeRef = React.createRef();
+    this.downloadLocationRef = React.createRef();
 
     this.saveQueue = [];
   }
@@ -418,6 +420,29 @@ export default class SettingsPage extends React.Component {
     });
   }
 
+  saveDownloadLocation = (location) => {
+    this.setState({
+      downloadLocation: location,
+    });
+    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'downloadLocation', data: location});
+  }
+
+  handleChangeDownloadLocation = (e) => {
+    this.saveDownloadLocation(e.target.value);
+  }
+
+  selectDownloadLocation = () => {
+    if (!this.state.userOpenedDownloadGialog) {
+      const message = 'Specify the folder where files will download';
+      remote.dialog.showOpenDialog({defaultPath: `/Users/${process.env.USER || process.env.USERNAME}/Downloads`,
+        message,
+        properties:
+     ['openDirectory', 'createDirectory', 'dontAddToRecent', 'promptToCreate']}).then((result) => this.saveDownloadLocation(result.filePaths[0]));
+      this.setState({userOpenedDownloadGialog: true});
+    }
+    this.setState({userOpenedDownloadGialog: false});
+  }
+
   updateTeam = (index, newData) => {
     const teams = this.state.localTeams;
     teams[index] = newData;
@@ -620,6 +645,25 @@ export default class SettingsPage extends React.Component {
       footer: {
         padding: '0.4em 0',
       },
+
+      downloadLocationInput: {
+        marginRight: '3px',
+        marginTop: '8px',
+        width: '320px',
+        height: '34px',
+        padding: '0 12px',
+        borderRadius: '4px',
+        border: '1px solid #ccc',
+        fontWeight: '500',
+      },
+
+      downloadLocationButton: {
+        marginBottom: '4px',
+      },
+
+      container: {
+        paddingBottom: '40px',
+      }
     };
 
     const teamsRow = (
@@ -875,6 +919,32 @@ export default class SettingsPage extends React.Component {
           {' Setting takes effect after restarting the app.'}
         </HelpBlock>
       </Checkbox>
+    );
+
+    options.push(
+      <div style={settingsPage.container}>
+        <hr/>
+        <div>{'Download Location'}</div>
+        <input
+          disabled={true}
+          style={settingsPage.downloadLocationInput}
+          key='inputDownloadLocation'
+          id='inputDownloadLocation'
+          ref={this.downloadLocationRef}
+          onChange={this.handleChangeDownloadLocation}
+          value={this.state.downloadLocation}
+        />
+        <Button
+          style={settingsPage.downloadLocationButton}
+          id='saveDownloadLocation'
+          onClick={this.selectDownloadLocation}
+        >
+          <span>{'Change'}</span>
+        </Button>
+        <HelpBlock>
+          {'Specify the folder where files will download.'}
+        </HelpBlock>
+      </div>
     );
 
     const optionsRow = (options.length > 0) ? (

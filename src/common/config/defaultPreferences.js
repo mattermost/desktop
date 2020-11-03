@@ -23,6 +23,7 @@ const defaultPreferences = {
   autostart: true,
   spellCheckerLocale: 'en-US',
   darkMode: false,
+  downloadLocation: `/Users/${process.env.USER || process.env.USERNAME}/Downloads`
 };
 
 export default defaultPreferences;
