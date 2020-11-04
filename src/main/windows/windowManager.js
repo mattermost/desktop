@@ -7,9 +7,12 @@ import log from 'electron-log';
 
 import {MAXIMIZE_CHANGE} from 'common/communication';
 
+import ViewManager from '../viewManager';
+import {CriticalErrorHandler} from '../CriticalErrorHandler';
+
 import {createSettingsWindow} from './settingsWindow';
 import createMainWindow from './mainWindow';
-import {CriticalErrorHandler} from './../CriticalErrorHandler';
+import { func } from 'prop-types';
 
 // singleton module to manage application's windows
 
@@ -19,6 +22,7 @@ const status = {
   config: null,
   showTrayIcon: process.platform === 'win32',
   deeplinkingUrl: null,
+  viewManager: null,
 };
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
@@ -31,6 +35,9 @@ export function setConfig(data, showTrayIcon, deeplinkingUrl) {
   }
   if (deeplinkingUrl) {
     status.deeplinkingUrl = deeplinkingUrl;
+  }
+  if (status.viewManager) {
+    status.viewManager.reloadConfiguration(status.config.teams, status.mainWindow);
   }
 }
 
@@ -78,6 +85,7 @@ export function showMainWindow() {
     status.mainWindow.on('maximize', () => this.sendToRenderer(MAXIMIZE_CHANGE, true));
     status.mainWindow.on('unmaximize', () => this.sendToRenderer(MAXIMIZE_CHANGE, false));
   }
+  initializeViewManager();
 }
 
 export function getMainWindow(ensureCreated) {
@@ -180,5 +188,32 @@ export function handleDoubleClick(e, windowType) {
       win.unmaximize();
     }
     break;
+  }
+}
+
+function initializeViewManager() {
+  if (!status.viewManager) {
+    status.viewManager = new ViewManager(status.config);
+    status.viewManager.load(status.mainWindow);
+    status.viewManager.showInitial();
+  }
+}
+
+export function switchServer(serverName) {
+  showMainWindow();
+  status.viewManager.showByName(serverName);
+}
+
+export function focusBrowserView() {
+  if (status.viewManager) {
+    status.viewManager.focus();
+  } else {
+    log.error('Trying to call focus when the viewmanager has not yet been initialized');
+  }
+}
+
+export function openBrowserViewDevTools() {
+  if (status.viewManager) {
+    status.viewManager.openViewDevTools();
   }
 }

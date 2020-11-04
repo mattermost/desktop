@@ -9,7 +9,7 @@ import * as WindowManager from '../windows/windowManager';
 
 const ZOOM_DIFFERENTIAL = 0.5;
 
-function createTemplate(config, viewManager) {
+function createTemplate(config) {
   const separatorItem = {
     type: 'separator',
   };
@@ -206,7 +206,7 @@ function createTemplate(config, viewManager) {
   }, {
     label: 'Developer Tools for Current Server',
     click() {
-      viewManager.openViewDevTools();
+      WindowManager.openViewDevTools();
     },
   }];
 

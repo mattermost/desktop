@@ -37,7 +37,6 @@ import * as WindowManager from './windows/windowManager';
 import {showBadge} from './badge';
 
 import parseArgs from './ParseArgs';
-import {ViewManager} from './viewManager';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
   module.hot.accept();
@@ -74,7 +73,6 @@ let appState = null;
 let config = null;
 let trayIcon = null;
 let trayImages = null;
-let viewManager = null;
 
 // supported custom login paths (oath, saml)
 const customLoginRegexPaths = [
@@ -236,7 +234,7 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('selected-client-certificate', handleSelectedCertificate);
   ipcMain.on(GRANT_PERMISSION_CHANNEL, handlePermissionGranted);
   ipcMain.on(DENY_PERMISSION_CHANNEL, handlePermissionDenied);
-  ipcMain.on(FOCUS_BROWSERVIEW, handleFocus);
+  ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
 
   if (shouldShowTrayIcon()) {
     ipcMain.on('update-unread', handleUpdateUnreadEvent);
@@ -274,14 +272,12 @@ function handleConfigUpdate(configData) {
 function handleConfigSynchronize() {
   // TODO: send this to server manager
   WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
-  viewManager.reloadConfiguration(config.teams, WindowManager.getMainWindow());
   WindowManager.sendToRenderer('reload-config');
 }
 
 function handleReloadConfig() {
   config.reload();
   WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
-  viewManager.reloadConfiguration(config.teams, WindowManager.getMainWindow());
 }
 
 function handleAppVersion() {
@@ -496,8 +492,7 @@ function handleAppWillFinishLaunching() {
 }
 
 function handleSwitchServer(event, serverName) {
-  WindowManager.showMainWindow(true);
-  viewManager.showByName(serverName);
+  WindowManager.switchServer(serverName);
 }
 
 function handleAppWebContentsCreated(dc, contents) {
@@ -665,14 +660,6 @@ function initializeAfterAppReady() {
   if (config.teams.length === 0) {
     WindowManager.showSettingsWindow();
   }
-
-  // TODO: how should the relationship between viewmanager and windowmanager be?
-
-  // const boundaries = getWindowBoundaries(win);
-  // setServersBounds(servers, boundaries);
-  viewManager = new ViewManager(config);
-  viewManager.load(WindowManager.getMainWindow());
-  viewManager.showInitial();
 
   criticalErrorHandler.setMainWindow(WindowManager.getMainWindow());
 
@@ -870,18 +857,10 @@ function handleCloseAppMenu(event) {
   WindowManager.sendToRenderer('focus-on-webview', event);
 }
 
-function handleFocus() {
-  if (viewManager) {
-    viewManager.focus();
-  } else {
-    log.error('Trying to call focus when the viewmanager has not yet been initialized');
-  }
-}
-
 function handleUpdateMenuEvent(event, configData) {
   // TODO: this might make sense to move to window manager? so it updates the window referenced if needed.
   const mainWindow = WindowManager.getMainWindow();
-  const aMenu = appMenu.createMenu(configData, viewManager);
+  const aMenu = appMenu.createMenu(configData);
   Menu.setApplicationMenu(aMenu);
   aMenu.addListener('menu-will-close', handleCloseAppMenu);
 
