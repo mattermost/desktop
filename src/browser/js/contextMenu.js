@@ -4,6 +4,8 @@
 import {ipcRenderer, remote} from 'electron';
 import electronContextMenu from 'electron-context-menu';
 
+import urlUtils from '../../utils/url';
+
 function getSuggestionsMenus(webcontents, suggestions) {
   if (suggestions.length === 0) {
     return [{
@@ -57,7 +59,7 @@ export default {
         const isInternalLink = p.linkURL.endsWith('#') && p.linkURL.slice(0, -1) === p.pageURL;
         let isInternalSrc;
         try {
-          const srcurl = new URL(p.srcURL);
+          const srcurl = urlUtils.parseURL(p.srcURL);
           isInternalSrc = srcurl.protocol === 'file:';
           console.log(`srcrurl protocol: ${srcurl.protocol}`);
         } catch (err) {

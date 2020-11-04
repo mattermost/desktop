@@ -5,6 +5,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {ipcRenderer} from 'electron';
 
+import urlUtils from '../../utils/url';
+
 // this component is used to override some checks from the UI, leaving only to trust the protocol in case it wasn't http/s
 // it is used the same as an `a` JSX tag
 export default function ExternalLink(props) {
@@ -12,7 +14,7 @@ export default function ExternalLink(props) {
     e.preventDefault();
     let parseUrl;
     try {
-      parseUrl = new URL(props.href);
+      parseUrl = urlUtils.parseURL(props.href);
       ipcRenderer.send('confirm-protocol', parseUrl.protocol, props.href);
     } catch (err) {
       console.error(`invalid url ${props.href} supplied to externallink: ${err}`);

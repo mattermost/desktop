@@ -31,8 +31,14 @@ import initCookieManager from './main/cookieManager';
 import SpellChecker from './main/SpellChecker';
 import UserActivityMonitor from './main/UserActivityMonitor';
 import Utils from './utils/util';
+import urlUtils from './utils/url';
 import parseArgs from './main/ParseArgs';
-import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from './common/permissions';
+import {
+  REQUEST_PERMISSION_CHANNEL,
+  GRANT_PERMISSION_CHANNEL,
+  DENY_PERMISSION_CHANNEL,
+  BASIC_AUTH_PERMISSION
+} from './common/permissions';
 
 // pull out required electron components like this
 // as not all components can be referenced before the app is ready
@@ -357,7 +363,7 @@ function handleSelectedCertificate(event, server, cert) {
 }
 
 function handleAppCertificateError(event, webContents, url, error, certificate, callback) {
-  const parsedURL = new URL(url);
+  const parsedURL = urlUtils.parseURL(url);
   if (!parsedURL) {
     return;
   }
@@ -425,8 +431,8 @@ function handleAppGPUProcessCrashed(event, killed) {
 
 function handleAppLogin(event, webContents, request, authInfo, callback) {
   event.preventDefault();
-  const parsedURL = new URL(request.url);
-  const server = Utils.getServer(parsedURL, config.teams);
+  const parsedURL = urlUtils.parseURL(request.url);
+  const server = urlUtils.getServer(parsedURL, config.teams);
 
   loginCallbackMap.set(request.url, typeof callback === 'undefined' ? null : callback); // if callback is undefined set it to null instead so we know we have set it up with no value
   if (isTrustedURL(request.url) || isCustomLoginURL(parsedURL, server) || trustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
@@ -461,6 +467,7 @@ function handleAppWillFinishLaunching() {
           setTimeout(openDeepLink, 1000);
         }
       }
+
       openDeepLink();
     }
   });
@@ -479,10 +486,10 @@ function handleAppWebContentsCreated(dc, contents) {
 
   contents.on('will-navigate', (event, url) => {
     const contentID = event.sender.id;
-    const parsedURL = Utils.parseURL(url);
-    const server = Utils.getServer(parsedURL, config.teams);
+    const parsedURL = urlUtils.parseURL(url);
+    const server = urlUtils.getServer(parsedURL, config.teams);
 
-    if ((server !== null && (Utils.isTeamUrl(server.url, parsedURL) || Utils.isAdminUrl(server.url, parsedURL))) ||
+    if ((server !== null && (urlUtils.isTeamUrl(server.url, parsedURL) || urlUtils.isAdminUrl(server.url, parsedURL))) ||
       isTrustedPopupWindow(event.sender)) {
       return;
     }
@@ -508,8 +515,8 @@ function handleAppWebContentsCreated(dc, contents) {
   //    - indicate custom login is NOT in progress
   contents.on('did-start-navigation', (event, url) => {
     const contentID = event.sender.id;
-    const parsedURL = Utils.parseURL(url);
-    const server = Utils.getServer(parsedURL, config.teams);
+    const parsedURL = urlUtils.parseURL(url);
+    const server = urlUtils.getServer(parsedURL, config.teams);
 
     if (!isTrustedURL(parsedURL)) {
       return;
@@ -525,18 +532,18 @@ function handleAppWebContentsCreated(dc, contents) {
   contents.on('new-window', (event, url) => {
     event.preventDefault();
 
-    const parsedURL = Utils.parseURL(url);
-    const server = Utils.getServer(parsedURL, config.teams);
+    const parsedURL = urlUtils.parseURL(url);
+    const server = urlUtils.getServer(parsedURL, config.teams);
 
     if (!server) {
       log.info(`Untrusted popup window blocked: ${url}`);
       return;
     }
-    if (Utils.isTeamUrl(server.url, parsedURL, true)) {
+    if (urlUtils.isTeamUrl(server.url, parsedURL, true)) {
       log.info(`${url} is a known team, preventing to open a new window`);
       return;
     }
-    if (Utils.isAdminUrl(server.url, parsedURL)) {
+    if (urlUtils.isAdminUrl(server.url, parsedURL)) {
       log.info(`${url} is an admin console page, preventing to open a new window`);
       return;
     }
@@ -544,7 +551,7 @@ function handleAppWebContentsCreated(dc, contents) {
       log.info(`Popup window already open at provided url: ${url}`);
       return;
     }
-    if (Utils.isPluginUrl(server.url, parsedURL) || Utils.isManagedResource(server.url, parsedURL)) {
+    if (urlUtils.isPluginUrl(server.url, parsedURL) || urlUtils.isManagedResource(server.url, parsedURL)) {
       if (!popupWindow || popupWindow.closed) {
         popupWindow = new BrowserWindow({
           backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
@@ -564,7 +571,7 @@ function handleAppWebContentsCreated(dc, contents) {
         });
       }
 
-      if (Utils.isManagedResource(server.url, parsedURL)) {
+      if (urlUtils.isManagedResource(server.url, parsedURL)) {
         popupWindow.loadURL(url);
       } else {
         // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth
@@ -621,8 +628,8 @@ function handleAppWebContentsCreated(dc, contents) {
       mainWindow.webContents.send('zoom-reset');
       break;
 
-    // Manually handle undo/redo keyboard shortcuts
-    // - temporary fix for https://mattermost.atlassian.net/browse/MM-19198
+      // Manually handle undo/redo keyboard shortcuts
+      // - temporary fix for https://mattermost.atlassian.net/browse/MM-19198
     case 'z':
       if (input.shift) {
         mainWindow.webContents.send('redo');
@@ -631,7 +638,7 @@ function handleAppWebContentsCreated(dc, contents) {
       }
       break;
 
-    // Manually handle copy/cut/paste keyboard shortcuts
+      // Manually handle copy/cut/paste keyboard shortcuts
     case 'c':
       mainWindow.webContents.send('copy');
       break;
@@ -791,7 +798,7 @@ function initializeAfterAppReady() {
         mainWindow.webContents.send('download-complete', {
           fileName: filename,
           path: item.savePath,
-          serverInfo: Utils.getServer(webContents.getURL(), config.teams),
+          serverInfo: urlUtils.getServer(webContents.getURL(), config.teams),
         });
       }
     });
@@ -1026,11 +1033,11 @@ function handleMainWindowWebContentsCrashed() {
 //
 
 function isTrustedURL(url) {
-  const parsedURL = Utils.parseURL(url);
+  const parsedURL = urlUtils.parseURL(url);
   if (!parsedURL) {
     return false;
   }
-  return Utils.getServer(parsedURL, config.teams) !== null;
+  return urlUtils.getServer(parsedURL, config.teams) !== null;
 }
 
 function isTrustedPopupWindow(webContents) {
@@ -1045,7 +1052,7 @@ function isTrustedPopupWindow(webContents) {
 
 function isCustomLoginURL(url, server) {
   const subpath = (server === null || typeof server === 'undefined') ? '' : server.url.pathname;
-  const parsedURL = Utils.parseURL(url);
+  const parsedURL = urlUtils.parseURL(url);
   if (!parsedURL) {
     return false;
   }
@@ -1080,8 +1087,7 @@ function getTrayImages() {
       unread: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_unread.ico')),
       mention: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_mention.ico')),
     };
-  case 'darwin':
-  {
+  case 'darwin': {
     const icons = {
       light: {
         normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIcon.png')),
@@ -1097,8 +1103,7 @@ function getTrayImages() {
     switchMenuIconImages(icons, nativeTheme.shouldUseDarkColors);
     return icons;
   }
-  case 'linux':
-  {
+  case 'linux': {
     const theme = config.trayIconTheme;
     try {
       return {
@@ -1136,7 +1141,7 @@ function getDeeplinkingURL(args) {
   if (Array.isArray(args) && args.length) {
     // deeplink urls should always be the last argument, but may not be the first (i.e. Windows with the app already running)
     const url = args[args.length - 1];
-    if (url && scheme && url.startsWith(scheme) && Utils.isValidURI(url)) {
+    if (url && scheme && url.startsWith(scheme) && urlUtils.isValidURI(url)) {
       return url;
     }
   }

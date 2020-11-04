@@ -8,11 +8,11 @@ window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-e
   throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
 };
 
-import url from 'url';
-
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {remote, ipcRenderer} from 'electron';
+
+import urlUtils from '../utils/url';
 
 import Config from '../common/config';
 
@@ -32,11 +32,12 @@ if (teams.length === 0) {
   remote.getCurrentWindow().loadFile('browser/settings.html');
 }
 
-const parsedURL = url.parse(window.location.href, true);
-const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : getInitialIndex();
+const parsedURLSearchParams = urlUtils.parseURL(window.location.href).searchParams;
+const parsedURLHasIndex = parsedURLSearchParams.has('index');
+const initialIndex = parsedURLHasIndex ? parseInt(parsedURLSearchParams.get('index'), 10) : getInitialIndex();
 
 let deeplinkingUrl = null;
-if (!parsedURL.query.index || parsedURL.query.index === null) {
+if (!parsedURLHasIndex) {
   deeplinkingUrl = remote.getCurrentWindow().deeplinkingUrl;
 }
 
