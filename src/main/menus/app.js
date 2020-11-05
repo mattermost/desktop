@@ -5,6 +5,8 @@
 
 import {app, dialog, Menu, session, shell, webContents} from 'electron';
 
+import {SWITCH_SERVER} from 'common/communication';
+
 import * as WindowManager from '../windows/windowManager';
 
 const ZOOM_DIFFERENTIAL = 0.5;
@@ -206,7 +208,7 @@ function createTemplate(config) {
   }, {
     label: 'Developer Tools for Current Server',
     click() {
-      WindowManager.openViewDevTools();
+      WindowManager.openBrowserViewDevTools();
     },
   }];
 
@@ -265,7 +267,7 @@ function createTemplate(config) {
         accelerator: `CmdOrCtrl+${i + 1}`,
         click() {
           WindowManager.showMainWindow(); // for OS X
-          WindowManager.sendToRenderer('switch-tab', i);
+          WindowManager.sendToRenderer(SWITCH_SERVER, i);
         },
       };
     }), separatorItem, {

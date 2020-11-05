@@ -15,7 +15,7 @@ import 'airbnb-js-shims/target/es2015';
 import Utils from 'common/utils/util';
 
 import {DEV_SERVER, DEVELOPMENT, PRODUCTION, SECOND} from 'common/utils/constants';
-import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW} from 'common/communication';
+import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, NOTIFY_MENTION} from 'common/communication';
 import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from 'common/permissions';
 import Config from 'common/config';
 
@@ -35,6 +35,7 @@ import initCookieManager from './cookieManager';
 import UserActivityMonitor from './UserActivityMonitor';
 import * as WindowManager from './windows/windowManager';
 import {showBadge} from './badge';
+import {displayMention} from './notifications';
 
 import parseArgs from './ParseArgs';
 
@@ -225,7 +226,7 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('login-credentials', handleLoginCredentialsEvent);
   ipcMain.on('login-cancel', handleCancelLoginEvent);
   ipcMain.on('download-url', handleDownloadURLEvent);
-  ipcMain.on('notified', handleNotifiedEvent);
+  ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
   ipcMain.handle('get-app-version', handleAppVersion);
 
   // see comment on function
@@ -798,14 +799,9 @@ function handleDownloadURLEvent(event, url) {
   });
 }
 
-function handleNotifiedEvent() {
-  if (config.notifications.flashWindow === 2) {
-    WindowManager.flashFrame(true);
-  }
-
-  if (process.platform === 'darwin' && config.notifications.bounceIcon) {
-    app.dock.bounce(config.notifications.bounceIconType);
-  }
+function handleMentionNotification(event, title, body, channel, teamId, silent) {
+  console.log('generating notification!');
+  displayMention(title, body, channel, teamId, silent, event.sender);
 }
 
 // TODO: figure out if we want to inherit title from webpage or use one of our own

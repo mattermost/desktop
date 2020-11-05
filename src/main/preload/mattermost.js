@@ -9,6 +9,8 @@
 import {ipcRenderer, webFrame} from 'electron';
 import log from 'electron-log';
 
+import {NOTIFY_MENTION} from 'common/communication';
+
 const UNREAD_COUNT_INTERVAL = 1000;
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 
@@ -71,6 +73,8 @@ document.addEventListener('mouseup', () => {
 
 // listen for messages from the webapp
 window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = {}) => {
+  console.log(`got a message from ${origin} of type ${type}`);
+  console.log(message);
   if (origin !== window.location.origin) {
     return;
   }
@@ -91,8 +95,9 @@ window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = 
     break;
   }
   case 'dispatch-notification': {
+    console.log(`got a notification: ${message.title}`);
     const {title, body, channel, teamId, silent} = message;
-    ipcRenderer.send('dispatchMentionNotification', title, body, channel, teamId, silent);
+    ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, silent);
     break;
   }
   }

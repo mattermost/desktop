@@ -5,14 +5,13 @@ import path from 'path';
 import {app, nativeImage, systemPreferences} from 'electron';
 import log from 'electron-log';
 
-import {MAXIMIZE_CHANGE} from 'common/communication';
+import {MAXIMIZE_CHANGE, SWITCH_SERVER} from 'common/communication';
 
-import ViewManager from '../viewManager';
+import {ViewManager} from '../viewManager';
 import {CriticalErrorHandler} from '../CriticalErrorHandler';
 
 import {createSettingsWindow} from './settingsWindow';
 import createMainWindow from './mainWindow';
-import { func } from 'prop-types';
 
 // singleton module to manage application's windows
 
@@ -147,6 +146,9 @@ export function flashFrame(flash) {
       status.settingsWindow.flashFrame(flash);
     }
   }
+  if (process.platform === 'darwin' && status.config.notifications.bounceIcon) {
+    app.dock.bounce(status.config.notifications.bounceIconType);
+  }
 }
 
 export function setOverlayIcon(overlayDataURL, description) {
@@ -199,9 +201,13 @@ function initializeViewManager() {
   }
 }
 
-export function switchServer(serverName) {
+export function switchServer(serverName, notifyRenderer) {
   showMainWindow();
   status.viewManager.showByName(serverName);
+  if (notifyRenderer) {
+    const server = status.config.teams.find((candidate) => candidate.name === serverName);
+    sendToRenderer(SWITCH_SERVER, server.order);
+  }
 }
 
 export function focusBrowserView() {
@@ -216,4 +222,11 @@ export function openBrowserViewDevTools() {
   if (status.viewManager) {
     status.viewManager.openViewDevTools();
   }
+}
+
+export function getServerNameByWebContentsId(webContentsId) {
+  if (status.viewManager) {
+    return status.viewManager.findByWebContent(webContentsId);
+  }
+  return null;
 }

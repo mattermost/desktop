@@ -7,6 +7,7 @@ import {Menu} from 'electron';
 
 import * as WindowManager from '../windows/windowManager';
 import {ViewManager} from '../viewManager';
+import {SWITCH_SERVER} from 'common/communication';
 
 function createTemplate(config) {
   const teams = config.teams;
@@ -16,7 +17,7 @@ function createTemplate(config) {
         label: team.name,
         click: () => {
           WindowManager.restoreMain();
-          WindowManager.sendToRenderer('switch-tab', i);
+          WindowManager.sendToRenderer(SWITCH_SERVER, i);
           ViewManager.showByName(team.name);
         },
       };

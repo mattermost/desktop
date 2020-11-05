@@ -27,10 +27,7 @@ import {ipcRenderer} from 'electron';
 
 import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT} from 'common/communication';
 
-import EnhancedNotification from './js/notification';
 import MainPage from './components/MainPage.jsx';
-
-Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
 let config;
 let teams;
