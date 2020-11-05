@@ -323,15 +323,15 @@ export default class MattermostView extends React.Component {
         })}
       >
         { errorView }
+        <LoadingScreen
+          loading={!this.state.errorInfo && this.props.active && !this.state.isWebviewLoaded}
+          darkMode={this.props.isDarkMode}
+        />
         <webview
           id={this.props.id}
           preload={preloadJS}
           src={this.props.src}
           ref={this.webviewRef}
-        />
-        <LoadingScreen
-          loading={!this.state.errorInfo && this.props.active && !this.state.isWebviewLoaded}
-          darkMode={this.props.isDarkMode}
         />
       </div>);
   }
