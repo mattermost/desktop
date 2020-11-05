@@ -8,6 +8,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {ipcRenderer, remote, shell} from 'electron';
+import classNames from 'classnames';
 
 import contextMenu from '../js/contextMenu';
 import Utils from '../../utils/util';
@@ -16,11 +17,14 @@ import {protocols} from '../../../electron-builder.json';
 const scheme = protocols[0].schemes[0];
 
 import ErrorView from './ErrorView.jsx';
+import LoadingScreen from './LoadingScreen';
 
 const preloadJS = `file://${remote.app.getAppPath()}/browser/webview/mattermost_bundle.js`;
 
 const ERR_NOT_IMPLEMENTED = -11;
 const U2F_EXTENSION_URL = 'chrome-extension://kmendfapggjehodndflmmgagdbamhnfd/u2f-comms.html';
+const ERR_USER_ABORTED = -3;
+const AUTO_RELOAD_TIMER = 30000;
 
 export default class MattermostView extends React.Component {
   constructor(props) {
@@ -30,7 +34,7 @@ export default class MattermostView extends React.Component {
       errorInfo: null,
       isContextMenuAdded: false,
       reloadTimeoutID: null,
-      isLoaded: false,
+      isWebviewLoaded: false,
       basename: '/',
     };
 
@@ -49,7 +53,7 @@ export default class MattermostView extends React.Component {
 
     webview.addEventListener('did-fail-load', (e) => {
       console.log(self.props.name, 'webview did-fail-load', e);
-      if (e.errorCode === -3) { // An operation was aborted (due to user action).
+      if (e.errorCode === ERR_USER_ABORTED) { // An operation was aborted (due to user action).
         return;
       }
       if (e.errorCode === ERR_NOT_IMPLEMENTED && e.validatedURL === U2F_EXTENSION_URL) {
@@ -60,7 +64,7 @@ export default class MattermostView extends React.Component {
 
       self.setState({
         errorInfo: e,
-        isLoaded: true,
+        isWebviewLoaded: true,
       });
       function reload() {
         window.removeEventListener('online', reload);
@@ -68,7 +72,7 @@ export default class MattermostView extends React.Component {
       }
       if (navigator.onLine) {
         self.setState({
-          reloadTimeoutID: setTimeout(reload, 30000),
+          reloadTimeoutID: setTimeout(reload, AUTO_RELOAD_TIMER),
         });
       } else {
         window.addEventListener('online', reload);
@@ -154,7 +158,7 @@ export default class MattermostView extends React.Component {
       switch (event.channel) {
       case 'onGuestInitialized':
         self.setState({
-          isLoaded: true,
+          isWebviewLoaded: true,
           basename: event.args[0] || '/',
         });
         break;
@@ -221,7 +225,7 @@ export default class MattermostView extends React.Component {
     this.setState({
       errorInfo: null,
       reloadTimeoutID: null,
-      isLoaded: false,
+      isWebviewLoaded: false,
     });
     const webview = this.webviewRef.current;
     if (webview) {
@@ -289,7 +293,7 @@ export default class MattermostView extends React.Component {
     );
   }
 
-  handleUserActivityUpdate = (event, status) => {
+  handleUserActivityUpdate = (_, status) => {
     // pass user activity update to the webview
     this.webviewRef.current.send('user-activity-update', status);
   }
@@ -306,36 +310,17 @@ export default class MattermostView extends React.Component {
         className='errorView'
         errorInfo={this.state.errorInfo}
         active={this.props.active}
-      />) : null;
-
-    // Need to keep webview mounted when failed to load.
-    const classNames = ['mattermostView'];
-    if (this.props.withTab) {
-      classNames.push('mattermostView-with-tab');
-    }
-    if (!this.props.active) {
-      classNames.push('mattermostView-hidden');
-    }
-    if (this.state.errorInfo) {
-      classNames.push('mattermostView-error');
-    }
-    if (this.props.allowExtraBar) {
-      classNames.push('allow-extra-bar');
-    }
-
-    const loadingImage = !this.state.errorInfo && this.props.active && !this.state.isLoaded ? (
-      <div className='mattermostView-loadingScreen'>
-        <img
-          className='mattermostView-loadingImage'
-          src='../assets/loading.gif'
-          srcSet='../assets/loading.gif 1x, ../assets/loading@2x.gif 2x'
-        />
-      </div>
+      />
     ) : null;
 
     return (
       <div
-        className={classNames.join(' ')}
+        className={classNames('mattermostView', {
+          'mattermostView-with-tab': this.props.withTab,
+          'mattermostView-hidden': !this.props.active,
+          'mattermostView-error': this.state.errorInfo,
+          'allow-extra-bar': this.props.allowExtraBar,
+        })}
       >
         { errorView }
         <webview
@@ -344,7 +329,10 @@ export default class MattermostView extends React.Component {
           src={this.props.src}
           ref={this.webviewRef}
         />
-        { loadingImage }
+        <LoadingScreen
+          loading={!this.state.errorInfo && this.props.active && !this.state.isWebviewLoaded}
+          darkMode={this.props.isDarkMode}
+        />
       </div>);
   }
 }
@@ -354,7 +342,6 @@ MattermostView.propTypes = {
   id: PropTypes.string,
   teams: PropTypes.array.isRequired,
   withTab: PropTypes.bool,
-  onTargetURLChange: PropTypes.func,
   onBadgeChange: PropTypes.func,
   src: PropTypes.string,
   active: PropTypes.bool,
@@ -362,6 +349,7 @@ MattermostView.propTypes = {
   onSelectSpellCheckerLocale: PropTypes.func,
   handleInterTeamLink: PropTypes.func,
   allowExtraBar: PropTypes.bool,
+  isDarkMode: PropTypes.bool,
 };
 
 /* eslint-enable react/no-set-state */

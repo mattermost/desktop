@@ -6,7 +6,7 @@
   text-align: left;
 }
 
-.mattermostView webview, .mattermostView .mattermostView-loadingScreen {
+.mattermostView webview {
   position: absolute;
   top: 40px;
   right: 0px;
@@ -21,20 +21,6 @@
 
 .mattermostView-error webview {
   z-index: -1;
-}
-
-.mattermostView-loadingScreen {
-  vertical-align: middle;
-  background: white;
-}
-
-.mattermostView-loadingImage {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  margin: auto;
 }
 
 .allow-extra-bar webview {
