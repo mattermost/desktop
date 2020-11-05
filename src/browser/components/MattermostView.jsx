@@ -342,6 +342,7 @@ MattermostView.propTypes = {
   id: PropTypes.string,
   teams: PropTypes.array.isRequired,
   withTab: PropTypes.bool,
+  onTargetURLChange: PropTypes.func,
   onBadgeChange: PropTypes.func,
   src: PropTypes.string,
   active: PropTypes.bool,
