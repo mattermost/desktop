@@ -22,7 +22,7 @@ export function displayMention(title, body, channel, teamId, silent, webcontents
     const serverName = windowManager.getServerNameByWebContentsId(webcontents.id);
     console.log(`notification clicked! redirecting to ${serverName}`);
     if (serverName) {
-      windowManager.switchServer(serverName);
+      windowManager.switchServer(serverName, true);
       webcontents.send('notification-clicked', {channel, teamId});
     }
   });

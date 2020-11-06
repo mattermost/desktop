@@ -282,7 +282,6 @@ function handleReloadConfig() {
 }
 
 function handleAppVersion() {
-  log.info('requested version');
   return {
     name: app.getName(),
     version: app.getVersion(),
@@ -800,7 +799,6 @@ function handleDownloadURLEvent(event, url) {
 }
 
 function handleMentionNotification(event, title, body, channel, teamId, silent) {
-  console.log('generating notification!');
   displayMention(title, body, channel, teamId, silent, event.sender);
 }
 
