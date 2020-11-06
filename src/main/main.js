@@ -35,7 +35,7 @@ import initCookieManager from './cookieManager';
 import UserActivityMonitor from './UserActivityMonitor';
 import * as WindowManager from './windows/windowManager';
 import {showBadge} from './badge';
-import {displayMention} from './notifications';
+import {displayMention, displayDownloadCompleted} from './notifications';
 
 import parseArgs from './ParseArgs';
 
@@ -720,11 +720,7 @@ function initializeAfterAppReady() {
 
     item.on('done', (doneEvent, state) => {
       if (state === 'completed') {
-        WindowManager.sendToRenderer('download-complete', {
-          fileName: filename,
-          path: item.savePath,
-          serverInfo: Utils.getServer(webContents.getURL(), config.teams),
-        });
+        displayDownloadCompleted(filename, item.savePath, Utils.getServer(webContents.getURL(), config.teams));
       }
     });
   });

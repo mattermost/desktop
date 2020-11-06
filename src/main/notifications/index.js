@@ -1,11 +1,18 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {shell, Notification} from 'electron';
+
 import * as windowManager from '../windows/windowManager';
 
 import {Mention} from './Mention';
+import {DownloadNotification} from './Download';
 
 export function displayMention(title, body, channel, teamId, silent, webcontents) {
+  if (!Notification.isSupported()) {
+    console.log('notification not supported');
+    return;
+  }
   const options = {
     title,
     body,
@@ -27,4 +34,21 @@ export function displayMention(title, body, channel, teamId, silent, webcontents
     }
   });
   mention.show();
+}
+
+export function displayDownloadCompleted(fileName, path, serverInfo) {
+  if (!Notification.isSupported()) {
+    console.log('notification not supported');
+    return;
+  }
+  const download = new DownloadNotification(fileName, serverInfo);
+
+  download.on('show', () => {
+    windowManager.flashFrame(true);
+  });
+
+  download.on('click', () => {
+    shell.showItemInFolder(path.normalize());
+  });
+  download.show();
 }
