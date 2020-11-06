@@ -4,30 +4,35 @@
 import React from 'react';
 
 function useAnimationEnd(
-  animationRef,
-  callback = () => {}, /* eslint-disable-line no-empty-function */
-  animationName = null,
-  matchChildElements = true,
+  ref,
+  callback,
+  animationName,
+  allowEventBubbling = true,
 ) {
   React.useEffect(() => {
-    if (!animationRef.current) {
-      return null;
+    if (!ref.current) {
+      return;
     }
-    animationRef.current.addEventListener('animationend', handleAnimationend);
-    return () => {
-      animationRef.current.removeEventListener('animationend', handleAnimationend);
-    };
-  }, [animationRef]);
 
-  function handleAnimationend(event) {
-    if (!matchChildElements && event.target !== animationRef.current) {
-      return;
+    function handleAnimationend(event) {
+      if (!allowEventBubbling && event.target !== ref.current) {
+        return;
+      }
+      if (animationName && animationName !== event.animationName) {
+        return;
+      }
+      callback(event);
     }
-    if (animationName && animationName !== event.animationName) {
-      return;
-    }
-    callback(event);
-  }
+
+    ref.current.addEventListener('animationend', handleAnimationend);
+
+    return () => {
+      if (!ref.current) {
+        return;
+      }
+      ref.current.removeEventListener('animationend', handleAnimationend);
+    };
+  }, [ref, callback, animationName, allowEventBubbling]);
 }
 
 export default useAnimationEnd;

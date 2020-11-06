@@ -24,7 +24,9 @@
     "react/jsx-indent-props": [2, 2],
     "react/no-find-dom-node": 2,
     "react/no-set-state": 1,
-    "react/require-optimization": 0
+    "react/require-optimization": 0,
+    "multiline-ternary": ["warn", "always-multiline"],
+    "consistent-return": "off"
   },
   "overrides": [
     {

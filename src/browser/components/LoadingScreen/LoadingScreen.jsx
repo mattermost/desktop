@@ -5,27 +5,51 @@ import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 
+import useTransitionEnd from '../../hooks/useTransitionEnd.js';
+
 import LoadingAnimation from '../LoadingAnimation';
 
 function LoadingScreen({loading = false, darkMode = false}) {
-  const [loadAnimationComplete, setLoadAnimationComplete] = React.useState(false);
+  const loadingScreenRef = React.useRef(null);
+
+  const [loadingIsComplete, setLoadingIsComplete] = React.useState(true);
+  const [loadAnimationIsComplete, setLoadAnimationIsComplete] = React.useState(true);
+  const [fadeOutIsComplete, setFadeOutIsComplete] = React.useState(true);
 
   React.useEffect(() => {
-    // reset internal state if loading screen is shown
-    if (loading && loadAnimationComplete) {
-      setLoadAnimationComplete(false);
+    // reset internal state if loading restarts
+    if (loading) {
+      resetState();
+    }
+    if (!loading) {
+      setLoadingIsComplete(true);
     }
   }, [loading]);
 
   function handleLoadAnimationComplete() {
-    setLoadAnimationComplete(true);
+    setLoadAnimationIsComplete(true);
   }
 
-  return (
+  useTransitionEnd(loadingScreenRef, React.useCallback(() => {
+    setFadeOutIsComplete(true);
+  }), ['opacity']);
+
+  function loadingInProgress() {
+    return !(loadingIsComplete && loadAnimationIsComplete && fadeOutIsComplete);
+  }
+
+  function resetState() {
+    setLoadingIsComplete(false);
+    setLoadAnimationIsComplete(false);
+    setFadeOutIsComplete(false);
+  }
+
+  const loadingScreen = loadingInProgress() ? (
     <div
+      ref={loadingScreenRef}
       className={classNames('LoadingScreen', {
         'LoadingScreen--darkMode': darkMode,
-        'LoadingScreen--loaded': !loading && loadAnimationComplete,
+        'LoadingScreen--loaded': loadingIsComplete && loadAnimationIsComplete,
       })}
     >
       <LoadingAnimation
@@ -34,7 +58,9 @@ function LoadingScreen({loading = false, darkMode = false}) {
         onLoadAnimationComplete={handleLoadAnimationComplete}
       />
     </div>
-  );
+  ) : null;
+
+  return loadingScreen;
 }
 
 LoadingScreen.propTypes = {

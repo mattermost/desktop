@@ -14,7 +14,7 @@
   visibility: visible;
   z-index: 10;
   
-  transition: opacity 150ms 0ms ease-out, visibility 150ms 0ms step-start, z-index 150ms 0ms step-start;
+  transition: opacity 150ms 0ms ease-out, visibility 150ms 0ms step-start;
 }
 
 .LoadingScreen::before, .LoadingScreen::after {
@@ -49,7 +49,6 @@
 .LoadingScreen--loaded {
   opacity: 0;
   visibility: hidden;
-  z-index: -1;
   
-  transition: opacity 150ms 0ms ease-in, visibility 150ms 0ms step-end, z-index 150ms 0ms step-end;
+  transition: opacity 150ms 0ms ease-in, visibility 150ms 0ms step-end;
 }

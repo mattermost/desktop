@@ -3,31 +3,46 @@
 
 import React from 'react';
 
-function useTransitionEnd(
-  transitionRef,
-  callback = () => {}, /* eslint-disable-line no-empty-function */
-  targetProperty = null,
-  matchChildElements = true,
+function useTransitionend(
+  ref,
+  callback,
+  properties,
+  allowEventBubbling = true
 ) {
   React.useEffect(() => {
-    if (!transitionRef.current) {
-      return null;
+    if (!ref.current) {
+      return;
     }
-    transitionRef.current.addEventListener('transitionend', handleTransitionend);
-    return () => {
-      transitionRef.current.removeEventListener('transitionend', handleTransitionend);
-    };
-  }, [transitionRef]);
 
-  function handleTransitionend(event) {
-    if (!matchChildElements && event.target !== transitionRef.current) {
-      return;
+    function handleTransitionEnd(event) {
+      if (!allowEventBubbling && event.target !== ref.current) {
+        return;
+      }
+
+      if (properties && typeof properties === 'object') {
+        const property = properties.find(
+          (propertyName) => propertyName === event.propertyName
+        );
+        if (property) {
+          callback(event);
+        }
+        return;
+      }
+      callback(event);
     }
-    if (targetProperty && targetProperty !== event.propertyName) {
-      return;
-    }
-    callback(event);
-  }
+
+    ref.current.addEventListener('transitionend', handleTransitionEnd);
+
+    return () => {
+      if (!ref.current) {
+        return;
+      }
+      ref.current.removeEventListener(
+        'transitionend',
+        handleTransitionEnd
+      );
+    };
+  }, [ref, callback, properties, allowEventBubbling]);
 }
 
-export default useTransitionEnd;
+export default useTransitionend;

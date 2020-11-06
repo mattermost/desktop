@@ -1,5 +1,14 @@
 .mattermostView {
   text-align: center;
+  z-index: 1;
+  opacity: 1;
+  visibility: visible;
+}
+
+.mattermostView-hidden {
+  z-index: -1;
+  opacity: 0;
+  visibility: hidden;
 }
 
 .mattermostView .ErrorView {
