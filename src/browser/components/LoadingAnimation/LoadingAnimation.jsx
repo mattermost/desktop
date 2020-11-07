@@ -71,7 +71,7 @@ function LoadingAnimation({
         'LoadingAnimation--loaded': animationState === LOADING_STATE.LOADED && animationState !== LOADING_STATE.COMPLETE,
       })}
     >
-      { animationState === LOADING_STATE.COMPLETE ? null : <LoadingIcon/> }
+      <LoadingIcon/>
     </div>
   );
 }
