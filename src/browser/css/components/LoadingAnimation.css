@@ -5,6 +5,7 @@
   --animation-start-duration: 750ms;
   --animation-end-duration: 600ms;
   --animation-spinner-speed: 500ms;
+  --animation-spinner-mask-stroke-length: 169.6;
   --ease-in-cubic: cubic-bezier(0.32, 0, 0.67, 0);
   --ease-in: var(--ease-in-cubic);
   --ease-in-out-cubic: cubic-bezier(0.65, 0, 0.35, 1);
