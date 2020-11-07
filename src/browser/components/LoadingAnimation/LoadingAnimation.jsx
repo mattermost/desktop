@@ -16,6 +16,8 @@ const LOADING_STATE = {
   COMPLETE: 'complete', // animation graphics are removed from the DOM
 };
 
+const ANIMATION_COMPLETION_DELAY = 500;
+
 function LoadingAnimation({
   loading = false,
   darkMode = false,
@@ -48,7 +50,9 @@ function LoadingAnimation({
 
   // listen for end of the css logo animation sequence
   useAnimationEnd(loadingIconContainerRef, () => {
-    setLoadingAnimationComplete(true);
+    setTimeout(() => {
+      setLoadingAnimationComplete(true);
+    }, ANIMATION_COMPLETION_DELAY);
   }, 'LoadingAnimation__compass-shrink');
 
   // listen for end of final css logo fade/shrink animation sequence

@@ -34,14 +34,14 @@
 }
 .LoadingAnimation .LoadingAnimation__spinner-container {
   opacity: 0;
-  transform: scale3D(2.4, 2.4, 1) rotate(-10deg);
+  transform: scale3D(2.08, 2.08, 1) rotate3d(0, 0, 1, -10deg);
 }
 .LoadingAnimation .LoadingAnimation__spinner-mask-container {
-  transform: rotate(-86deg);
+  transform: rotate3d(0, 0, 1, -86deg);
 }
 .LoadingAnimation .LoadingAnimation__spinner-mask {
-  stroke-dasharray: 301.6;
-  stroke-dashoffset: 301.6;
+  stroke-dasharray: var(--animation-spinner-mask-stroke-length);
+  stroke-dashoffset: var(--animation-spinner-mask-stroke-length);
 }
 .LoadingAnimation .LoadingAnimation__compass {
   opacity: 1;
@@ -53,15 +53,15 @@
 .LoadingAnimation .LoadingAnimation__compass-needle,
 .LoadingAnimation .LoadingAnimation__compass-needle-front-mask,
 .LoadingAnimation .LoadingAnimation__compass-needle-behind-mask {
-  transform-origin: 62px 53px;
+  transform-origin: 54px 46px;
   transform: rotate3d(0, 0, 1, 0deg);
 }
 .LoadingAnimation .LoadingAnimation__compass-base-mask-container {
-  transform: rotate(-86deg);
+  transform: rotate3d(0, 0, 1, -86deg);
 }
 .LoadingAnimation .LoadingAnimation__compass-base-mask {
-  stroke-dasharray: 301.6;
-  stroke-dashoffset: 301.6;
+  stroke-dasharray: var(--animation-spinner-mask-stroke-length);
+  stroke-dashoffset: var(--animation-spinner-mask-stroke-length);
 }
 
 .LoadingAnimation--loading {
@@ -84,7 +84,7 @@
     LoadingAnimation__fade-in var(--fade-in-duration) var(--fade-in-delay) var(--ease-in) forwards;
 }
 .LoadingAnimation.LoadingAnimation--loading .LoadingAnimation__spinner-mask {
-  --reveal-duration: calc(var(--animation-end-duration) * 1.12);
+  --reveal-duration: var(--animation-end-duration);
   --reveal-delay: calc(var(--animation-start-duration) + var(--animation-initial-delay));
   
   animation:
@@ -138,7 +138,7 @@
     LoadingAnimation__needle-spin-right var(--spin-right-duration) var(--spin-right-delay) var(--ease-in) forwards;
 }
 .LoadingAnimation.LoadingAnimation--loading .LoadingAnimation__compass-base-mask {
-  --conceal-duration: calc(var(--animation-end-duration) * 1.1);
+  --conceal-duration: var(--animation-end-duration);
   --conceal-delay: calc(var(--animation-start-duration) + var(--animation-initial-delay));
   
   animation:
@@ -162,7 +162,7 @@
 }
 .LoadingAnimation--loaded .LoadingAnimation__spinner-container {
   opacity: 1;
-  transform: scale3D(1, 1, 1) rotate(-10deg);
+  transform: scale3D(1, 1, 1) rotate3d(0, 0, 1, -10deg);
 }
 .LoadingAnimation--loaded .LoadingAnimation__spinner-mask {
   stroke-dashoffset: 0;
@@ -213,25 +213,25 @@
 }
 @keyframes LoadingAnimation__spinner-shrink {
   0% {
-    transform: scale3D(2.4, 2.4, 1) rotate(-10deg);
+    transform: scale3D(2.08, 2.08, 1) rotate3d(0, 0, 1, -10deg);
   }
   100% {
-    transform: scale3D(1, 1, 1) rotate(-10deg);
+    transform: scale3D(1, 1, 1) rotate3d(0, 0, 1, -10deg);
   }
 }
 @keyframes LoadingAnimation__spinner-spin {
   from {
-    transform: rotate(0deg);
+    transform: rotate3d(0, 0, 1, 0deg);
   }
   to {
-    transform: rotate(359deg);
+    transform: rotate3d(0, 0, 1, 359deg);
   }
 }
 @keyframes LoadingAnimation__spinner-reveal {
-  0% {
-    stroke-dashoffset: 301.6;
+  0%, 5% {
+    stroke-dashoffset: var(--animation-spinner-mask-stroke-length);
   }
-  100% {
+  95%, 100% {
     stroke-dashoffset: 0;
   }
 }
@@ -284,10 +284,10 @@
   }
 }
 @keyframes LoadingAnimation__compass-base-conceal {
-  0% {
-    stroke-dashoffset: 301.6;
+  0%, 5% {
+    stroke-dashoffset: var(--animation-spinner-mask-stroke-length);
   }
-  100% {
+  95%, 100% {
     stroke-dashoffset: 0;
   }
 }

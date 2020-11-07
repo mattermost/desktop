@@ -13,6 +13,7 @@
   opacity: 1;
   visibility: visible;
   z-index: 10;
+  overflow:hidden;
   
   transition: opacity 150ms 0ms ease-out, visibility 150ms 0ms step-start;
 }
