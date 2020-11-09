@@ -3,6 +3,9 @@
 
 import React from 'react';
 
+/**
+ * A function component for inlining SVG code for animation logo loader
+ */
 function LoadingAnimation() {
   return (
     <svg

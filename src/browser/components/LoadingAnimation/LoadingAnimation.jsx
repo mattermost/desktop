@@ -18,6 +18,12 @@ const LOADING_STATE = {
 
 const ANIMATION_COMPLETION_DELAY = 500;
 
+/**
+ * A function component for rendering the animated MM logo loading sequence
+ * @param {boolean} loading - Prop that indicates whether currently loading or not
+ * @param {boolean} darkMode - Prop that indicates if dark mode is enabled
+ * @param {function} onLoadingAnimationComplete - Callback function to update when internal loading animation is complete
+ */
 function LoadingAnimation({
   loading = false,
   darkMode = false,

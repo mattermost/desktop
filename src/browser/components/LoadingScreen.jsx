@@ -9,6 +9,11 @@ import useTransitionEnd from '../hooks/useTransitionEnd.js';
 
 import LoadingAnimation from './LoadingAnimation';
 
+/**
+ * A function component for rendering the desktop app loading screen
+ * @param {boolean} loading - Prop that indicates whether currently loading or not
+ * @param {boolean} darkMode - Prop that indicates if dark mode is enabled
+ */
 function LoadingScreen({loading = false, darkMode = false}) {
   const loadingScreenRef = React.useRef(null);
 

@@ -3,6 +3,15 @@
 
 import React from 'react';
 
+/**
+ * A custom hook to implement a transitionend listener on the provided ref
+ * @param {object} ref - A reference to a DOM element to add the listener to
+ * @param {function} callback - A callback function that will be run for matching animation events
+ * @param {array} properties - An array of css property strings to listen for
+ * @param {boolean} listenForEventBubbling - A parameter that when true, listens for events on the target element and
+ *   bubbled from all descendent elements but when false, only listens for events coming from the target element and
+ *   ignores events bubbling up from descendent elements
+ */
 function useTransitionend(
   ref,
   callback,
