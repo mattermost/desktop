@@ -21,7 +21,7 @@ const ANIMATION_COMPLETION_DELAY = 500;
 function LoadingAnimation({
   loading = false,
   darkMode = false,
-  onLoadAnimationComplete = () => {}} // eslint-disable-line no-empty-function
+  onLoadAnimationComplete = null} // eslint-disable-line no-empty-function
 ) {
   const loadingIconContainerRef = React.useRef(null);
   const [animationState, setAnimationState] = React.useState(LOADING_STATE.INITIALIZING);
@@ -57,7 +57,9 @@ function LoadingAnimation({
 
   // listen for end of final css logo fade/shrink animation sequence
   useAnimationEnd(loadingIconContainerRef, () => {
-    onLoadAnimationComplete();
+    if (onLoadAnimationComplete) {
+      onLoadAnimationComplete();
+    }
     setAnimationState(LOADING_STATE.COMPLETE);
   }, 'LoadingAnimation__shrink');
 
