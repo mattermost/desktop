@@ -7,7 +7,7 @@ function useAnimationEnd(
   ref,
   callback,
   animationName,
-  allowEventBubbling = true,
+  listenForEventBubbling = true,
 ) {
   React.useEffect(() => {
     if (!ref.current) {
@@ -15,7 +15,7 @@ function useAnimationEnd(
     }
 
     function handleAnimationend(event) {
-      if (!allowEventBubbling && event.target !== ref.current) {
+      if (!listenForEventBubbling && event.target !== ref.current) {
         return;
       }
       if (animationName && animationName !== event.animationName) {
@@ -32,7 +32,7 @@ function useAnimationEnd(
       }
       ref.current.removeEventListener('animationend', handleAnimationend);
     };
-  }, [ref, callback, animationName, allowEventBubbling]);
+  }, [ref, callback, animationName, listenForEventBubbling]);
 }
 
 export default useAnimationEnd;

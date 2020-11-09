@@ -7,7 +7,7 @@ function useTransitionend(
   ref,
   callback,
   properties,
-  allowEventBubbling = true
+  listenForEventBubbling = true
 ) {
   React.useEffect(() => {
     if (!ref.current) {
@@ -15,7 +15,7 @@ function useTransitionend(
     }
 
     function handleTransitionEnd(event) {
-      if (!allowEventBubbling && event.target !== ref.current) {
+      if (!listenForEventBubbling && event.target !== ref.current) {
         return;
       }
 
@@ -42,7 +42,7 @@ function useTransitionend(
         handleTransitionEnd
       );
     };
-  }, [ref, callback, properties, allowEventBubbling]);
+  }, [ref, callback, properties, listenForEventBubbling]);
 }
 
 export default useTransitionend;
