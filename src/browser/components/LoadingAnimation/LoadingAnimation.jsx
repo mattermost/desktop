@@ -27,7 +27,7 @@ const ANIMATION_COMPLETION_DELAY = 500;
 function LoadingAnimation({
   loading = false,
   darkMode = false,
-  onLoadAnimationComplete = null} // eslint-disable-line no-empty-function
+  onLoadAnimationComplete = null}
 ) {
   const loadingIconContainerRef = React.useRef(null);
   const [animationState, setAnimationState] = React.useState(LOADING_STATE.INITIALIZING);
