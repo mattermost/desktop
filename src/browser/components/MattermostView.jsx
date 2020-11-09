@@ -17,7 +17,7 @@ import {protocols} from '../../../electron-builder.json';
 const scheme = protocols[0].schemes[0];
 
 import ErrorView from './ErrorView.jsx';
-import LoadingScreen from './LoadingScreen';
+import LoadingScreen from './LoadingScreen.jsx';
 
 const preloadJS = `file://${remote.app.getAppPath()}/browser/webview/mattermost_bundle.js`;
 
