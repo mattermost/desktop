@@ -5,9 +5,9 @@ import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 
-import useTransitionEnd from '../../hooks/useTransitionEnd.js';
+import useTransitionEnd from '../hooks/useTransitionEnd.js';
 
-import LoadingAnimation from '../LoadingAnimation';
+import LoadingAnimation from './LoadingAnimation';
 
 function LoadingScreen({loading = false, darkMode = false}) {
   const loadingScreenRef = React.useRef(null);
