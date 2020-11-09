@@ -36,8 +36,6 @@ let config;
 let teams;
 
 const reloadConfig = (newConfig) => {
-  console.log('new configuration!');
-  console.log(newConfig);
   config = newConfig;
   teams = config.teams;
 };
@@ -45,12 +43,9 @@ const reloadConfig = (newConfig) => {
 const requestConfig = async (exitOnError) => {
   // todo: should we block?
   try {
-    console.log('requested configuration');
     const configRequest = await ipcRenderer.invoke(GET_CONFIGURATION);
-    console.log(`config is: ${configRequest}`);
     reloadConfig(configRequest);
   } catch (err) {
-    console.log(`there was an error with the config: ${err}`);
     if (exitOnError) {
       ipcRenderer.send(QUIT, `unable to load configuration: ${err}`, err.stack);
     }
@@ -114,8 +109,6 @@ const start = async () => {
     return teamIndex;
   }
 
-  console.log('config before rendering');
-  console.log(config);
   const component = (
     <MainPage
       teams={teams}
