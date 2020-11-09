@@ -27,7 +27,6 @@ export class MattermostView {
     const preload = path.resolve(__dirname, '../../dist/preload.js');
     console.log(`Preload path: ${preload}`);
     const spellcheck = ((!options || typeof options.spellcheck === 'undefined') ? true : options.spellcheck);
-    log.info(`creating view with spellcheck value to ${spellcheck}`);
     this.options = {
       webPreferences: {
         preload,
