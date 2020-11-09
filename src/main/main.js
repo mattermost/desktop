@@ -12,17 +12,14 @@ import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-install
 import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
 
-// eslint-disable-next-line import/no-unresolved
 import Utils from 'common/utils/util';
 
-// eslint-disable-next-line import/no-unresolved
-import {DEV_SERVER, DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
+import {DEV_SERVER, DEVELOPMENT, PRODUCTION, SECOND} from 'common/utils/constants';
+import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW} from 'common/communication';
+import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from 'common/permissions';
+import Config from 'common/config';
 
 import {protocols} from '../../electron-builder.json';
-import RegistryConfig from '../common/config/RegistryConfig';
-import Config from '../common/config';
-
-import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from '../common/permissions';
 
 import AutoLauncher from './AutoLauncher';
 import CriticalErrorHandler from './CriticalErrorHandler';
@@ -37,6 +34,7 @@ import AppStateManager from './AppStateManager';
 import initCookieManager from './cookieManager';
 import UserActivityMonitor from './UserActivityMonitor';
 import * as WindowManager from './windows/windowManager';
+import {showBadge} from './badge';
 
 import parseArgs from './ParseArgs';
 import {ViewManager} from './viewManager';
@@ -73,7 +71,6 @@ let trustedOriginsStore = null;
 let deeplinkingUrl = null;
 let scheme = null;
 let appState = null;
-let registryConfig = null;
 let config = null;
 let trayIcon = null;
 let trayImages = null;
@@ -124,7 +121,6 @@ async function initialize() {
 
   // wait for registry config data to load and app ready event
   await Promise.all([
-    registryConfig.init(),
     app.whenReady(),
   ]);
 
@@ -169,10 +165,11 @@ function initializeArgs() {
 }
 
 function initializeConfig() {
-  registryConfig = new RegistryConfig();
+  //registryConfig = new RegistryConfig();
   config = new Config(app.getPath('userData') + '/config.json');
   config.on('update', handleConfigUpdate);
   config.on('synchronize', handleConfigSynchronize);
+  config.on('darkModeChange', handleDarkModeChange);
   WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
 }
 
@@ -232,6 +229,7 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('login-cancel', handleCancelLoginEvent);
   ipcMain.on('download-url', handleDownloadURLEvent);
   ipcMain.on('notified', handleNotifiedEvent);
+  ipcMain.handle('get-app-version', handleAppVersion);
 
   // see comment on function
   // ipcMain.on('update-title', handleUpdateTitleEvent);
@@ -239,6 +237,7 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('selected-client-certificate', handleSelectedCertificate);
   ipcMain.on(GRANT_PERMISSION_CHANNEL, handlePermissionGranted);
   ipcMain.on(DENY_PERMISSION_CHANNEL, handlePermissionDenied);
+  ipcMain.on(FOCUS_BROWSERVIEW, handleFocus);
 
   if (shouldShowTrayIcon()) {
     ipcMain.on('update-unread', handleUpdateUnreadEvent);
@@ -247,7 +246,11 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on('open-app-menu', handleOpenAppMenu);
   }
 
-  ipcMain.on('switch-server', handleSwitchServer);
+  ipcMain.on(SWITCH_SERVER, handleSwitchServer);
+
+  ipcMain.on(QUIT, handleQuit);
+
+  ipcMain.on(DOUBLE_CLICK_ON_WINDOW, WindowManager.handleDoubleClick);
 }
 
 //
@@ -280,6 +283,18 @@ function handleReloadConfig() {
   config.reload();
   WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
   viewManager.reloadConfiguration(config.teams, WindowManager.getMainWindow());
+}
+
+function handleAppVersion() {
+  log.info('requested version');
+  return {
+    name: app.getName(),
+    version: app.getVersion(),
+  };
+}
+
+function handleDarkModeChange(darkMode) {
+  WindowManager.sendToRenderer(DARK_MODE_CHANGE, darkMode);
 }
 
 //
@@ -326,6 +341,13 @@ function handleAppBeforeQuit() {
     trayIcon.destroy();
   }
   global.willAppQuit = true;
+}
+
+function handleQuit(e, reason, stack) {
+  log.error(`Exiting App. Reason: ${reason}`);
+  log.info(`Stacktrace:\n${stack}`);
+  handleAppBeforeQuit();
+  app.quit();
 }
 
 function handleSelectCertificate(event, webContents, url, list, callback) {
@@ -465,7 +487,7 @@ function handleAppWillFinishLaunching() {
             WindowManager.showMainWindow();
           }
         } catch (err) {
-          setTimeout(openDeepLink, 1000);
+          setTimeout(openDeepLink, SECOND);
         }
       }
       openDeepLink();
@@ -739,11 +761,6 @@ function initializeAfterAppReady() {
 
   criticalErrorHandler.setMainWindow(WindowManager.getMainWindow());
 
-  // TODO: find a way to pass along this info other than the window
-  config.setRegistryConfigData(registryConfig.data);
-
-  // mainWindow.registryConfigData = registryConfig.data;
-
   // TODO: this has to be sent to the tabs instead
   // listen for status updates and pass on to renderer
   userActivityMonitor.on('status', (status) => {
@@ -895,7 +912,7 @@ function handleNotifiedEvent() {
 // }
 
 function handleUpdateUnreadEvent(event, arg) {
-  WindowManager.setOverlayIcon(arg.overlayDataURL, arg.description);
+  showBadge(arg.sessionExpired, arg.unreadCount, arg.mentionCount, config.showUnreadBadge);
 
   if (trayIcon && !trayIcon.isDestroyed()) {
     if (arg.sessionExpired) {
@@ -938,16 +955,24 @@ function handleCloseAppMenu(event) {
   WindowManager.sendToRenderer('focus-on-webview', event);
 }
 
+function handleFocus() {
+  if (viewManager) {
+    viewManager.focus();
+  } else {
+    log.error('Trying to call focus when the viewmanager has not yet been initialized');
+  }
+}
+
 function handleUpdateMenuEvent(event, configData) {
   // TODO: this might make sense to move to window manager? so it updates the window referenced if needed.
   const mainWindow = WindowManager.getMainWindow();
-  const aMenu = appMenu.createMenu(mainWindow, configData, global.isDev);
+  const aMenu = appMenu.createMenu(configData, viewManager);
   Menu.setApplicationMenu(aMenu);
   aMenu.addListener('menu-will-close', handleCloseAppMenu);
 
   // set up context menu for tray icon
   if (shouldShowTrayIcon()) {
-    const tMenu = trayMenu.createMenu(mainWindow, configData, global.isDev);
+    const tMenu = trayMenu.createMenu(configData);
     if (process.platform === 'darwin' || process.platform === 'linux') {
       // store the information, if the tray was initialized, for checking in the settings, if the application
       // was restarted after setting "Show icon on menu bar"

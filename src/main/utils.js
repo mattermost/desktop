@@ -7,9 +7,7 @@ import {format} from 'url';
 import path from 'path';
 import log from 'electron-log';
 
-// eslint-disable-next-line import/no-unresolved
 import {DEV_SERVER, PRODUCTION} from 'common/utils/constants';
-// eslint-disable-next-line import/no-unresolved
 import Utils from 'common/utils/util';
 
 const TAB_BAR_HEIGHT = 38;
@@ -36,25 +34,26 @@ export function getWindowBoundaries(win) {
   };
 }
 
-export function getLocalURL(urlPath, query) {
+export function getLocalURL(urlPath, query, isMain) {
   const options = {
     path: urlPath,
     query,
     slashes: true,
   };
+  const processPath = isMain ? '' : '/renderer';
   const mode = Utils.runMode();
   if (mode === DEV_SERVER) {
     log.info('detected webserver');
     options.protocol = 'http';
     options.hostname = 'localhost';
     options.port = '9000';
-    options.pathname = `/renderer/${urlPath}`;
+    options.pathname = `${processPath}/${urlPath}`;
   } else {
     options.protocol = 'file';
     if (mode === PRODUCTION) {
-      options.pathname = path.join(electron.app.getAppPath(), `dist/renderer/${urlPath}`);
+      options.pathname = path.join(electron.app.getAppPath(), `dist/${processPath}/${urlPath}`);
     } else {
-      options.pathname = path.resolve(__dirname, `../../dist/renderer/${urlPath}`); // TODO: find a better way to work with webpack on this
+      options.pathname = path.resolve(__dirname, `../../dist/${processPath}/${urlPath}`); // TODO: find a better way to work with webpack on this
     }
   }
   return format(options);

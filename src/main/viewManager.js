@@ -9,16 +9,17 @@ export class ViewManager {
   constructor(configServers) {
     this.configServers = configServers;
     this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
+    this.currentView = null;
   }
 
   // TODO: we shouldn't pass the main window, but get it from windowmanager
   // TODO: we'll need an event in case the main window changes so this updates accordingly
   load = (mainWindow) => {
     this.configServers.forEach((server) => {
-      log.info(server);
       const srv = new MattermostServer(server.name, server.url);
       const view = new MattermostView(srv, mainWindow);
       this.views.set(server.name, view);
+      view.setReadyCallback(this.activateView);
       view.load();
     });
   }
@@ -58,26 +59,49 @@ export class ViewManager {
   }
 
   showByName = (name) => {
-    let previous;
-    let found = false;
-    this.views.forEach((view) => {
-      if (view.isVisible) {
-        previous = view.name;
+    const newView = this.views.get(name);
+    if (newView) {
+      if (this.currentView && this.currentView !== name) {
+        const previous = this.getCurrentView();
+        previous.hide();
       }
 
-      // TODO: this is a map, we can probably improve this search
-      if (view.server.name === name) {
-        log.info(`switching view to ${name}`);
-        view.show(true);
-        found = true;
+      this.currentView = name;
+      if (newView.isReady()) {
+        // if view is not ready, the renderer will have something to display instead.
+        newView.show();
       } else {
-        view.hide();
+        console.log(`couldn't show ${name}, not ready`);
       }
-    });
-    if (!found) {
+    } else {
       log.warn(`Couldn't find a view with name: ${name}`);
-      const restore = this.views.get(previous);
-      restore.show(true);
+    }
+  }
+
+  focus = () => {
+    const view = this.getCurrentView();
+    if (view) {
+      view.focus();
+    }
+  }
+  activateView = (viewName) => {
+    console.log(`activating view for ${viewName}`);
+    if (this.currentView === viewName) {
+      console.log('show!');
+      this.showByName(this.currentView);
+    }
+  }
+
+  getCurrentView() {
+    return this.views.get(this.currentView);
+  }
+
+  openViewDevTools = () => {
+    const view = this.getCurrentView();
+    if (view) {
+      view.openDevTools();
+    } else {
+      console.error(`couldn't find ${this.currentView}`);
     }
   }
 }

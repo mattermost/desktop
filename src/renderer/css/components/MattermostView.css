@@ -6,7 +6,7 @@
   text-align: left;
 }
 
-.mattermostView webview, .mattermostView .mattermostView-loadingScreen {
+.mattermostView-loadingScreen {
   position: absolute;
   top: 40px;
   right: 0px;
@@ -23,10 +23,10 @@
   z-index: -1;
 }
 
-.mattermostView-loadingScreen {
+/* .mattermostView-loadingScreen {
   vertical-align: middle;
   background: white;
-}
+} */
 
 .mattermostView-loadingImage {
   position: absolute;

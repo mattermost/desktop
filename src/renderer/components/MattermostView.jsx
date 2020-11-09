@@ -12,7 +12,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {ipcRenderer, remote, shell} from 'electron';
 
-import Utils from '../../common/utils/util';
+import Utils from 'common/utils/util';
+import {FOCUS_BROWSERVIEW} from 'common/communication';
+
 import {protocols} from '../../../electron-builder.json';
 
 const scheme = protocols[0].schemes[0];
@@ -224,8 +226,7 @@ export default class MattermostView extends React.Component {
   }
 
   focusOnWebView = () => {
-    const webview = this.webviewRef.current;
-    webview.focus();
+    ipcRenderer.send(FOCUS_BROWSERVIEW);
   }
 
   handleMouseMove = (event) => {

@@ -4,26 +4,22 @@
 
 // This file uses setState().
 /* eslint-disable react/no-set-state */
-// eslint-disable-next-line import/no-unresolved
 import 'renderer/css/settings.css';
 
 import React from 'react';
 import PropTypes from 'prop-types';
 import {Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} from 'react-bootstrap';
 
-import {ipcRenderer, remote} from 'electron';
+import {ipcRenderer} from 'electron';
 import {debounce} from 'underscore';
 
-import Config from '../../common/config';
+import {GET_LOCAL_CONFIGURATION, UPDATE_CONFIGURATION, DOUBLE_CLICK_ON_WINDOW} from 'common/communication';
 
 import TeamList from './TeamList.jsx';
 import AutoSaveIndicator from './AutoSaveIndicator.jsx';
 
 const CONFIG_TYPE_SERVERS = 'servers';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
-
-// TODO: how to get the config here without using remote?
-const config = new Config(remote.app.getPath('userData') + '/config.json', remote.getCurrentWindow().registryConfigData);
 
 function backToIndex(serverName) {
   ipcRenderer.send('switch-server', serverName);
@@ -33,115 +29,38 @@ function backToIndex(serverName) {
 export default class SettingsPage extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      ready: false,
+      teams: [],
+      showAddTeamForm: false,
+      savingState: {
+        appOptions: AutoSaveIndicator.SAVING_STATE_DONE,
+        servers: AutoSaveIndicator.SAVING_STATE_DONE,
+      },
+    };
 
-    this.state = this.convertConfigDataToState(config.data);
-    this.setState({
-      maximized: false,
+    ipcRenderer.invoke(GET_LOCAL_CONFIGURATION).then((config) => {
+      this.state = this.convertConfigDataToState(config);
+      this.setState({ready: true, maximized: false, ...this.state});
+      console.log(this.state);
     });
-
     this.trayIconThemeRef = React.createRef();
 
     this.saveQueue = [];
   }
 
-  getTabWebContents() {
-    return remote.webContents.getFocusedWebContents();
-  }
-
   componentDidMount() {
-    const self = this;
-    config.on('update', (configData) => {
-      this.updateSaveState();
-      this.setState(this.convertConfigDataToState(configData, this.state));
-    });
-
-    config.on('error', (error) => {
-      console.log('Config saving error: ', error);
-
-      const savingState = Object.assign({}, this.state.savingState);
-      Object.entries(savingState).forEach(([configType, currentState]) => {
-        if (currentState !== AutoSaveIndicator.SAVING_STATE_DONE) {
-          savingState[configType] = AutoSaveIndicator.SAVING_STATE_ERROR;
-          this.setState({savingState});
-        }
-      });
-    });
-
-    function focusListener() {
-      self.setState({unfocused: false});
-    }
-
-    function blurListener() {
-      self.setState({unfocused: true});
-    }
-
-    const currentWindow = remote.getCurrentWindow();
-    currentWindow.on('focus', focusListener);
-    currentWindow.on('blur', blurListener);
-
-    // when the config object changes here in the renderer process, tell the main process to reload its config object to get the changes
-    config.on('synchronize', () => {
-      ipcRenderer.send('reload-config');
-    });
-
-    // listen for any config reload requests from the main process to reload configuration changes here in the renderer process
-    ipcRenderer.on('reload-config', () => {
-      config.reload();
-    });
-
     ipcRenderer.on('add-server', () => {
       this.setState({
         showAddTeamForm: true,
       });
     });
-
-    ipcRenderer.on('undo', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.undo();
-    });
-
-    ipcRenderer.on('redo', () => {
-      const activeTabWebContents = this.getTabWebContents();
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.redo();
-    });
-
-    if (process.platform === 'darwin') {
-      self.setState({
-        isDarkMode: remote.nativeTheme.shouldUseDarkColors,
-      });
-      remote.systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
-        self.setState({
-          isDarkMode: remote.nativeTheme.shouldUseDarkColors,
-        });
-      });
-    } else {
-      self.setState({
-        isDarkMode: this.props.getDarkMode(),
-      });
-
-      ipcRenderer.on('set-dark-mode', () => {
-        this.setDarkMode();
-      });
-
-      this.threeDotMenu = React.createRef();
-      ipcRenderer.on('focus-three-dot-menu', () => {
-        if (this.threeDotMenu.current) {
-          this.threeDotMenu.current.focus();
-        }
-      });
-    }
   }
 
   convertConfigDataToState = (configData, currentState = {}) => {
     const newState = Object.assign({}, configData);
     newState.showAddTeamForm = currentState.showAddTeamForm || false;
-    newState.trayWasVisible = currentState.trayWasVisible || remote.getCurrentWindow().trayWasVisible;
+    newState.trayWasVisible = currentState.trayWasVisible || false;
     if (newState.teams.length === 0 && currentState.firstRun !== false) {
       newState.firstRun = false;
       newState.showAddTeamForm = true;
@@ -164,7 +83,7 @@ export default class SettingsPage extends React.Component {
   }
 
   processSaveQueue = debounce(() => {
-    config.setMultiple(this.saveQueue.splice(0, this.saveQueue.length));
+    ipcRenderer.send(UPDATE_CONFIGURATION, this.saveQueue.splice(0, this.saveQueue.length));
   }, 500);
 
   updateSaveState = () => {
@@ -331,7 +250,7 @@ export default class SettingsPage extends React.Component {
   }
 
   updateTeam = (index, newData) => {
-    const teams = this.state.localTeams;
+    const teams = this.state.teams;
     teams[index] = newData;
     setImmediate(this.saveSetting, CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
     this.setState({
@@ -340,17 +259,11 @@ export default class SettingsPage extends React.Component {
   }
 
   addServer = (team) => {
-    const teams = this.state.localTeams;
+    const teams = this.state.teams;
     teams.push(team);
     setImmediate(this.saveSetting, CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
     this.setState({
       teams,
-    });
-  }
-
-  setDarkMode() {
-    this.setState({
-      isDarkMode: this.props.setDarkMode(),
     });
   }
 
@@ -361,17 +274,7 @@ export default class SettingsPage extends React.Component {
   }
 
   handleDoubleClick = () => {
-    if (process.platform === 'darwin') {
-      const doubleClickAction = remote.systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
-      const win = remote.getCurrentWindow();
-      if (doubleClickAction === 'Minimize') {
-        win.minimize();
-      } else if (!win.isMaximized()) {
-        win.maximize();
-      } else if (win.isMaximized()) {
-        win.unmaximize();
-      }
-    }
+    ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW, 'settings');
   }
 
   render() {
@@ -415,14 +318,14 @@ export default class SettingsPage extends React.Component {
       <Row>
         <Col md={12}>
           <TeamList
-            teams={this.state.localTeams}
+            teams={this.state.teams}
             showAddTeamForm={this.state.showAddTeamForm}
             toggleAddTeamForm={this.toggleShowTeamForm}
             setAddTeamFormVisibility={this.setShowTeamFormVisibility}
             onTeamsChange={this.handleTeamsChange}
             updateTeam={this.updateTeam}
             addServer={this.addServer}
-            allowTeamEdit={this.state.enableTeamModification}
+            allowTeamEdit={this.state.enableServerManagement}
             onTeamClick={(name) => {
               backToIndex(name);
             }}
@@ -552,7 +455,7 @@ export default class SettingsPage extends React.Component {
             key='bounceIcon'
             id='inputBounceIcon'
             ref='bounceIcon'
-            checked={this.state.notifications.bounceIcon}
+            checked={this.state.notifications ? this.state.notifications.bounceIcon : false}
             onChange={this.handleBounceIcon}
             style={{marginRight: '10px'}}
           >
@@ -562,8 +465,9 @@ export default class SettingsPage extends React.Component {
             inline={true}
             name='bounceIconType'
             value='informational'
-            disabled={!this.state.notifications.bounceIcon}
+            disabled={!this.state.notifications || !this.state.notifications.bounceIcon}
             defaultChecked={
+              !this.state.notifications ||
               !this.state.notifications.bounceIconType ||
               this.state.notifications.bounceIconType === 'informational'
             }
@@ -576,8 +480,8 @@ export default class SettingsPage extends React.Component {
             inline={true}
             name='bounceIconType'
             value='critical'
-            disabled={!this.state.notifications.bounceIcon}
-            defaultChecked={this.state.notifications.bounceIconType === 'critical'}
+            disabled={!this.state.notifications || !this.state.notifications.bounceIcon}
+            defaultChecked={this.state.notifications && this.state.notifications.bounceIconType === 'critical'}
             onChange={this.handleBounceIconType}
           >
             {'until I open the app'}
@@ -600,7 +504,7 @@ export default class SettingsPage extends React.Component {
           checked={this.state.showTrayIcon}
           onChange={this.handleChangeShowTrayIcon}
         >
-          {process.platform === 'darwin' ? `Show ${remote.app.name} icon in the menu bar` : 'Show icon in the notification area'}
+          {process.platform === 'darwin' ? `Show ${this.state.appName} icon in the menu bar` : 'Show icon in the notification area'}
           <HelpBlock>
             {'Setting takes effect after restarting the app.'}
           </HelpBlock>
@@ -619,7 +523,7 @@ export default class SettingsPage extends React.Component {
             inline={true}
             name='trayIconTheme'
             value='light'
-            defaultChecked={this.state.trayIconTheme === 'light' || this.state.trayIconTheme === ''}
+            defaultChecked={this.state.trayIconTheme === 'light' || !this.state.trayIconTheme}
             onChange={(event) => this.handleChangeTrayIconTheme('light', event)}
           >
             {'Light'}
@@ -693,6 +597,18 @@ export default class SettingsPage extends React.Component {
       );
     }
 
+    let waitForIpc;
+    if (this.state.ready) {
+      waitForIpc = (
+        <>
+          {srvMgmt}
+          {optionsRow}
+        </>
+      );
+    } else {
+      waitForIpc = (<p>{'Loading configuration...'}</p>);
+    }
+
     return (
       <div
         className='container-fluid'
@@ -718,8 +634,7 @@ export default class SettingsPage extends React.Component {
           <Grid
             className='settingsPage'
           >
-            { srvMgmt }
-            { optionsRow }
+            {waitForIpc}
           </Grid>
         </div>
       </div>
@@ -728,8 +643,6 @@ export default class SettingsPage extends React.Component {
 }
 
 SettingsPage.propTypes = {
-  getDarkMode: PropTypes.func.isRequired,
-  setDarkMode: PropTypes.func.isRequired,
   openMenu: PropTypes.func.isRequired,
 };
 

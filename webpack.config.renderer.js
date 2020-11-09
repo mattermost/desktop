@@ -61,13 +61,14 @@ module.exports = merge(base, {
         loader: 'url-loader',
       },
     }, {
-      test: /\.(svg)$/,
+      test: /\.(svg|gif)$/,
       use: [
         {
           loader: 'file-loader',
           options: {
-            name: '[hash].[ext]',
-            publicPath: './',
+            name: '[name].[ext]',
+            publicPath: './assets',
+            outputPath: '/../assets',
           },
         },
         {loader: 'image-webpack-loader'},

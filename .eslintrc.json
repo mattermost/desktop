@@ -7,7 +7,11 @@
     "ecmaVersion": 2017
   },
   "settings": {
-    "import/resolver": "webpack"
+    "import/resolver": {
+      "webpack": {
+        "config": "webpack.config.base.js"
+      }
+    }
   },
   "rules": {
     "header/header": [2, "line", [

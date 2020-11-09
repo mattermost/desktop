@@ -2,8 +2,10 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
-import {app, nativeImage} from 'electron';
+import {app, nativeImage, systemPreferences} from 'electron';
 import log from 'electron-log';
+
+import {MAXIMIZE_CHANGE} from 'common/communication';
 
 import {createSettingsWindow} from './settingsWindow';
 import createMainWindow from './mainWindow';
@@ -73,6 +75,8 @@ export function showMainWindow() {
       criticalErrorHandler.windowUnresponsiveHandler();
     });
     status.mainWindow.on('crashed', handleMainWindowWebContentsCrashed);
+    status.mainWindow.on('maximize', () => this.sendToRenderer(MAXIMIZE_CHANGE, true));
+    status.mainWindow.on('unmaximize', () => this.sendToRenderer(MAXIMIZE_CHANGE, false));
   }
 }
 
@@ -96,6 +100,15 @@ export function sendToRenderer(channel, ...args) {
     showMainWindow();
   }
   status.mainWindow.webContents.send(channel, ...args);
+}
+
+export function sendToAll(channel, ...args) {
+  sendToRenderer(channel, ...args);
+  if (status.settingsWindow) {
+    status.settingsWindow.webContents.send(channel, ...args);
+  }
+
+  // TODO: should we include popups?
 }
 
 // TODO: if settings is displayed, should we focus it instead?
@@ -139,4 +152,33 @@ export function setOverlayIcon(overlayDataURL, description) {
 
 export function isMainWindow(window) {
   return status.mainWindow && status.mainWindow === window;
+}
+
+export function getDeepLinkingURL() {
+  return status.deeplinkingUrl;
+}
+
+export function handleDoubleClick(e, windowType) {
+  let action = 'Maximize';
+  if (process.platform === 'darwin') {
+    action = systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
+  }
+  const win = (windowType === 'settings') ? status.settingsWindow : status.mainWindow;
+  switch (action) {
+  case 'Minimize':
+    if (win.isMinimized()) {
+      win.restore();
+    } else {
+      win.minimize();
+    }
+    break;
+  case 'Maximize':
+  default:
+    if (win.isMaximized()) {
+      win.maximize();
+    } else {
+      win.unmaximize();
+    }
+    break;
+  }
 }

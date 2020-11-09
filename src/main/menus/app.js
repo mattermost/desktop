@@ -7,7 +7,7 @@ import {app, dialog, Menu, shell} from 'electron';
 
 import * as WindowManager from '../windows/windowManager';
 
-function createTemplate(config) {
+function createTemplate(config, viewManager) {
   const separatorItem = {
     type: 'separator',
   };
@@ -194,7 +194,7 @@ function createTemplate(config) {
   }, {
     label: 'Developer Tools for Current Server',
     click() {
-      WindowManager.sendToRenderer('open-devtool');
+      viewManager.openViewDevTools();
     },
   }];
 
@@ -237,7 +237,7 @@ function createTemplate(config) {
     }],
   });
 
-  const teams = config.teams;
+  const teams = config.teams || [];
   const windowMenu = {
     label: '&Window',
     submenu: [{
@@ -293,8 +293,8 @@ function createTemplate(config) {
   return template;
 }
 
-function createMenu(mainWindow, config) {
-  return Menu.buildFromTemplate(createTemplate(config));
+function createMenu(config, viewManager) {
+  return Menu.buildFromTemplate(createTemplate(config, viewManager));
 }
 
 export default {

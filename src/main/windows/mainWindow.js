@@ -70,6 +70,10 @@ function createMainWindow(config, options) {
       contextIsolation: false,
       webviewTag: true,
       disableBlinkFeatures: 'Auxclick',
+      additionalArguments: [
+        `version=${app.version}`,
+        `appName=${app.name}`,
+      ],
     },
   });
 

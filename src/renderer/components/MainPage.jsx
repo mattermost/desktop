@@ -16,13 +16,26 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 
 import {ipcRenderer, remote, shell} from 'electron';
 
-// eslint-disable-next-line import/no-unresolved
 import Utils from 'common/utils/util';
+import {
+  FOCUS_BROWSERVIEW,
+  ZOOM,
+  UNDO,
+  REDO,
+  MAXIMIZE_CHANGE,
+  DARK_MODE_CHANGE,
+  HISTORY,
+  LOAD_RETRY,
+  LOAD_SUCCESS,
+  LOAD_FAILED,
+} from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
 import minimizeButton from '../../assets/titlebar/chrome-minimize.svg';
 import closeButton from '../../assets/titlebar/chrome-close.svg';
+import spinner from '../../assets/loading.gif';
+import spinnerx2 from '../../assets/loading@2x.gif';
 
 import LoginModal from './LoginModal.jsx';
 import TabBar from './TabBar.jsx';
@@ -32,6 +45,12 @@ import NewTeamModal from './NewTeamModal.jsx';
 import SelectCertificateModal from './SelectCertificateModal.jsx';
 import PermissionModal from './PermissionModal.jsx';
 import ExtraBar from './ExtraBar.jsx';
+import ErrorView from './ErrorView.jsx';
+
+const LOADING = 1;
+const DONE = 2;
+const RETRY = -1;
+const FAILED = 0;
 
 export default class MainPage extends React.Component {
   constructor(props) {
@@ -61,6 +80,8 @@ export default class MainPage extends React.Component {
       showNewTeamModal: false,
       focusFinder: false,
       finderVisible: false,
+      tabStatus: new Map(this.props.teams.map((server) => [server.name, {status: LOADING, extra: null}])),
+      darkMode: this.props.darkMode,
     };
   }
 
@@ -85,6 +106,12 @@ export default class MainPage extends React.Component {
     return null;
   }
 
+  getTabStatus() {
+    // TODO: should try to make this a bit safer in case we get into a weird situation
+    const tabname = this.props.teams[this.state.key].name;
+    return this.state.tabStatus.get(tabname);
+  }
+
   getTabWebContents(index = this.state.key || 0, teams = this.props.teams) {
     const allWebContents = remote.webContents.getAllWebContents();
 
@@ -105,14 +132,12 @@ export default class MainPage extends React.Component {
   }
 
   componentDidMount() {
-    const self = this;
-
     // Due to a bug in Chrome on macOS, mousemove events from the webview won't register when the webview isn't in focus,
     // thus you can't drag tabs unless you're right on the container.
     // this makes it so your tab won't get stuck to your cursor no matter where you mouse up
     if (process.platform === 'darwin') {
-      self.topBar.current.addEventListener('mouseleave', () => {
-        if (event.target === self.topBar.current) {
+      this.topBar.current.addEventListener('mouseleave', () => {
+        if (event.target === this.topBar.current) {
           const upEvent = document.createEvent('MouseEvents');
           upEvent.initMouseEvent('mouseup');
           document.dispatchEvent(upEvent);
@@ -120,7 +145,7 @@ export default class MainPage extends React.Component {
       });
 
       // Hack for when it leaves the electron window because apparently mouseleave isn't good enough there...
-      self.topBar.current.addEventListener('mousemove', () => {
+      this.topBar.current.addEventListener('mousemove', () => {
         if (event.clientY === 0 || event.clientX === 0 || event.clientX >= window.innerWidth) {
           const upEvent = document.createEvent('MouseEvents');
           upEvent.initMouseEvent('mouseup');
@@ -129,22 +154,63 @@ export default class MainPage extends React.Component {
       });
     }
 
+    // set page on retry
+    ipcRenderer.on(LOAD_RETRY, (_, server, retry, err, loadUrl) => {
+      console.log(`${server}: failed to load ${err}, but retrying`);
+      const status = this.state.tabStatus;
+      const statusValue = {
+        status: RETRY,
+        extra: {
+          retry,
+          error: err,
+          url: loadUrl,
+        },
+      };
+      status.set(server, statusValue);
+      this.setState({tabStatus: status});
+    });
+
+    ipcRenderer.on(LOAD_SUCCESS, (_, server) => {
+      const status = this.state.tabStatus;
+      status.set(server, {status: DONE});
+      this.setState({tabStatus: status});
+    });
+
+    ipcRenderer.on(LOAD_FAILED, (_, server, err, loadUrl) => {
+      console.log(`${server}: failed to load ${err}`);
+      const status = this.state.tabStatus;
+      const statusValue = {
+        status: FAILED,
+        extra: {
+          error: err,
+          url: loadUrl,
+        },
+      };
+      status.set(server, statusValue);
+      this.setState({tabStatus: status});
+    });
+
     ipcRenderer.on('login-request', (event, request, authInfo) => {
       this.loginRequest(event, request, authInfo);
     });
 
     ipcRenderer.on('select-user-certificate', (_, origin, certificateList) => {
-      const certificateRequests = self.state.certificateRequests;
+      const certificateRequests = this.state.certificateRequests;
       certificateRequests.push({
         server: origin,
         certificateList,
       });
-      self.setState({
+      this.setState({
         certificateRequests,
       });
       if (certificateRequests.length === 1) {
-        self.switchToTabForCertificateRequest(origin);
+        this.switchToTabForCertificateRequest(origin);
       }
+    });
+
+    ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => {
+      console.log(`switch to dark mode ${darkMode}`);
+      this.setState({darkMode});
     });
 
     // can't switch tabs sequentially for some reason...
@@ -177,122 +243,118 @@ export default class MainPage extends React.Component {
     });
     ipcRenderer.on('download-complete', this.showDownloadCompleteNotification);
 
-    const currentWindow = remote.getCurrentWindow();
-    currentWindow.on('focus', self.focusListener);
-    currentWindow.on('blur', self.blurListener);
-    window.addEventListener('beforeunload', () => {
-      currentWindow.removeListener('focus', self.focusListener);
-    });
+    ipcRenderer.on('focus', this.focusListener);
+    ipcRenderer.on('blur', this.blurListener);
 
-    if (currentWindow.isMaximized()) {
-      self.setState({maximized: true});
-    }
-    currentWindow.on('maximize', this.handleMaximizeState);
-    currentWindow.on('unmaximize', this.handleMaximizeState);
+    ipcRenderer.on(MAXIMIZE_CHANGE, this.handleMaximizeState);
 
-    if (currentWindow.isFullScreen()) {
-      self.setState({fullScreen: true});
-    }
-    currentWindow.on('enter-full-screen', this.handleFullScreenState);
-    currentWindow.on('leave-full-screen', this.handleFullScreenState);
+    ipcRenderer.on('enter-full-screen', this.handleFullScreenState);
+    ipcRenderer.on('leave-full-screen', this.handleFullScreenState);
 
+    // TODO: check this doesn't happen
     // https://github.com/mattermost/desktop/pull/371#issuecomment-263072803
-    currentWindow.webContents.on('devtools-closed', () => {
-      self.focusListener();
-    });
 
     ipcRenderer.on('open-devtool', () => {
-      document.getElementById(`mattermostView${self.state.key}`).openDevTools();
+      document.getElementById(`mattermostView${this.state.key}`).openDevTools();
     });
 
     ipcRenderer.on('zoom-in', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      if (activeTabWebContents.zoomLevel >= 9) {
-        return;
-      }
-      activeTabWebContents.zoomLevel += 1;
+      // TODO: do something with this
+      ipcRenderer.send(ZOOM, 1);
+
+      // const activeTabWebContents = this.getTabWebContents(this.state.key);
+      // if (!activeTabWebContents) {
+      //   return;
+      // }
+      // if (activeTabWebContents.zoomLevel >= 9) {
+      //   return;
+      // }
+      // activeTabWebContents.zoomLevel += 1;
     });
 
     ipcRenderer.on('zoom-out', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      if (activeTabWebContents.zoomLevel <= -8) {
-        return;
-      }
-      activeTabWebContents.zoomLevel -= 1;
+      // TODO: do something with this
+      ipcRenderer.send(ZOOM, -1);
     });
 
     ipcRenderer.on('zoom-reset', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.zoomLevel = 0;
+      // TODO: do something with this
+      ipcRenderer.send(ZOOM, null);
+
+      // const activeTabWebContents = this.getTabWebContents(this.state.key);
+      // if (!activeTabWebContents) {
+      //   return;
+      // }
+      // activeTabWebContents.zoomLevel = 0;
     });
 
     ipcRenderer.on('undo', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.undo();
+      // TODO: do something with this
+      ipcRenderer.send(UNDO);
+
+      // const activeTabWebContents = this.getTabWebContents(this.state.key);
+      // if (!activeTabWebContents) {
+      //   return;
+      // }
+      // activeTabWebContents.undo();
     });
 
     ipcRenderer.on('redo', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.redo();
+      // TODO: do something with this
+      ipcRenderer.send(REDO);
+
+      // const activeTabWebContents = this.getTabWebContents(this.state.key);
+      // if (!activeTabWebContents) {
+      //   return;
+      // }
+      // activeTabWebContents.redo();
     });
 
-    ipcRenderer.on('cut', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.cut();
-    });
+    // TODO: should this be an ipcRenderer.invoke?
+    // ipcRenderer.on('cut', () => {
+    //   const activeTabWebContents = this.getTabWebContents(this.state.key);
+    //   if (!activeTabWebContents) {
+    //     return;
+    //   }
+    //   activeTabWebContents.cut();
+    // });
 
-    ipcRenderer.on('copy', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.copy();
-    });
+    // ipcRenderer.on('copy', () => {
+    //   const activeTabWebContents = this.getTabWebContents(this.state.key);
+    //   if (!activeTabWebContents) {
+    //     return;
+    //   }
+    //   activeTabWebContents.copy();
+    // });
 
-    ipcRenderer.on('paste', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.paste();
-    });
+    // ipcRenderer.on('paste', () => {
+    //   const activeTabWebContents = this.getTabWebContents(this.state.key);
+    //   if (!activeTabWebContents) {
+    //     return;
+    //   }
+    //   activeTabWebContents.paste();
+    // });
 
-    ipcRenderer.on('paste-and-match', () => {
-      const activeTabWebContents = this.getTabWebContents(this.state.key);
-      if (!activeTabWebContents) {
-        return;
-      }
-      activeTabWebContents.pasteAndMatchStyle();
-    });
+    // ipcRenderer.on('paste-and-match', () => {
+    //   const activeTabWebContents = this.getTabWebContents(this.state.key);
+    //   if (!activeTabWebContents) {
+    //     return;
+    //   }
+    //   activeTabWebContents.pasteAndMatchStyle();
+    // });
 
     //goBack and goForward
     ipcRenderer.on('go-back', () => {
-      const mattermost = self.refs[`mattermostView${self.state.key}`];
+      // TODO: do something with this
+      ipcRenderer.send(ZOOM, -1);
+      const mattermost = this.refs[`mattermostView${this.state.key}`];
       if (mattermost.canGoBack()) {
         mattermost.goBack();
       }
     });
 
     ipcRenderer.on('go-forward', () => {
-      const mattermost = self.refs[`mattermostView${self.state.key}`];
+      const mattermost = this.refs[`mattermostView${this.state.key}`];
       if (mattermost.canGoForward()) {
         mattermost.goForward();
       }
@@ -303,7 +365,7 @@ export default class MainPage extends React.Component {
     });
 
     ipcRenderer.on('focus-on-webview', () => {
-      this.focusOnWebView();
+      ipcRenderer.send(FOCUS_BROWSERVIEW);
     });
 
     ipcRenderer.on('protocol-deeplink', (event, deepLinkUrl) => {
@@ -312,7 +374,7 @@ export default class MainPage extends React.Component {
         if (this.state.key !== parsedDeeplink.teamIndex) {
           this.handleSelect(parsedDeeplink.teamIndex);
         }
-        self.refs[`mattermostView${parsedDeeplink.teamIndex}`].handleDeepLink(parsedDeeplink.path);
+        this.refs[`mattermostView${parsedDeeplink.teamIndex}`].handleDeepLink(parsedDeeplink.path);
       }
     });
 
@@ -321,23 +383,6 @@ export default class MainPage extends React.Component {
     });
 
     if (process.platform === 'darwin') {
-      self.setState({
-        isDarkMode: remote.nativeTheme.shouldUseDarkColors,
-      });
-      remote.systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
-        self.setState({
-          isDarkMode: remote.nativeTheme.shouldUseDarkColors,
-        });
-      });
-    } else {
-      self.setState({
-        isDarkMode: this.props.getDarkMode(),
-      });
-
-      ipcRenderer.on('set-dark-mode', () => {
-        this.setDarkMode();
-      });
-
       this.threeDotMenu = React.createRef();
       ipcRenderer.on('focus-three-dot-menu', () => {
         if (this.threeDotMenu.current) {
@@ -352,7 +397,6 @@ export default class MainPage extends React.Component {
       this.inputRef.current.focus();
     } else if (!(this.state.finderVisible && this.state.focusFinder)) {
       this.handleOnTeamFocused(this.state.key);
-      this.refs[`mattermostView${this.state.key}`].focusOnWebView();
     }
     this.setState({unfocused: false});
   }
@@ -372,11 +416,12 @@ export default class MainPage extends React.Component {
     });
   };
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.key !== this.state.key) { // i.e. When tab has been changed
-      this.refs[`mattermostView${this.state.key}`].focusOnWebView();
-    }
-  }
+  // TODO: do we need to do something
+  // componentDidUpdate(prevProps, prevState) {
+  //   if (prevState.key !== this.state.key) { // i.e. When tab has been changed
+  //     this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+  //   }
+  // }
 
   switchToTabForCertificateRequest = (origin) => {
     // origin is server name + port, if the port doesn't match the protocol, it is kept by URL
@@ -399,9 +444,8 @@ export default class MainPage extends React.Component {
     this.setState({key: selectedTeam.index});
   }
 
-  handleMaximizeState = () => {
-    const win = remote.getCurrentWindow();
-    this.setState({maximized: win.isMaximized()});
+  handleMaximizeState = (_, maximized) => {
+    this.setState({maximized});
   }
 
   handleFullScreenState = () => {
@@ -493,7 +537,7 @@ export default class MainPage extends React.Component {
   handleOnTeamFocused = (index) => {
     // Turn off the flag to indicate whether unread message of active channel contains at current tab.
     // TODO: this should be handled by the viewmanager and the browserview
-    ///this.markReadAtActive(index);
+    this.markReadAtActive(index);
     return index;
   }
 
@@ -574,7 +618,7 @@ export default class MainPage extends React.Component {
   }
 
   focusOnWebView = () => {
-    this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+    ipcRenderer.send(FOCUS_BROWSERVIEW);
   }
 
   activateFinder = () => {
@@ -625,11 +669,6 @@ export default class MainPage extends React.Component {
     });
   }
 
-  setDarkMode() {
-    this.setState({
-      isDarkMode: this.props.setDarkMode(),
-    });
-  }
   setInputRef = (ref) => {
     this.inputRef = ref;
   }
@@ -643,11 +682,10 @@ export default class MainPage extends React.Component {
   }
 
   render() {
-    const self = this;
     const tabsRow = (
       <TabBar
         id='tabBar'
-        isDarkMode={this.state.isDarkMode}
+        isDarkMode={this.state.darkMode}
         teams={this.props.teams}
         sessionsExpired={this.state.sessionsExpired}
         unreadCounts={this.state.unreadCounts}
@@ -666,7 +704,7 @@ export default class MainPage extends React.Component {
     if (process.platform === 'darwin') {
       topBarClassName += ' macOS';
     }
-    if (this.state.isDarkMode) {
+    if (this.state.darkMode) {
       topBarClassName += ' darkMode';
     }
     if (this.state.fullScreen) {
@@ -747,17 +785,13 @@ export default class MainPage extends React.Component {
       </Row>
     );
 
-    const views = this.props.teams.map((team, index) => {
+    const views = () => {
       // function handleBadgeChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) {
-      //   self.handleBadgeChange(index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
+      //   this.handleBadgeChange(index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
       // }
       // function handleNotificationClick() {
-      //   self.handleSelect(index);
+      //   this.handleSelect(index);
       // }
-      const id = 'mattermostView' + index;
-
-      // const isActive = self.state.key === index;
-
       // let teamUrl = team.url;
 
       // if (this.props.deeplinkingUrl) {
@@ -767,37 +801,50 @@ export default class MainPage extends React.Component {
       //   }
       // }
 
-      return (
-
-        // <MattermostView
-        //   key={id}
-        //   id={id}
-        //   teams={this.props.teams}
-        //   useSpellChecker={this.props.useSpellChecker}
-        //   onSelectSpellCheckerLocale={this.props.onSelectSpellCheckerLocale}
-        //   src={teamUrl}
-        //   name={team.name}
-        //   onTargetURLChange={self.handleTargetURLChange}
-        //   onBadgeChange={handleBadgeChange}
-        //   onNotificationClick={handleNotificationClick}
-        //   handleInterTeamLink={self.handleInterTeamLink}
-        //   ref={id}
-        //   active={isActive}
-        //   allowExtraBar={this.showExtraBar()}
-        // />);
-        <span key={id}>{id}</span>
-      );
-    });
+      let component;
+      const tabStatus = this.getTabStatus();
+      switch (tabStatus.status) {
+      case RETRY:
+      case FAILED:
+        component = (
+          <ErrorView
+            id={this.state.key + '-fail'}
+            className='errorView'
+            errorInfo={tabStatus.extra ? tabStatus.extra.error : null}
+            url={tabStatus.extra ? tabStatus.extra.url : ''}
+            active={true}
+            retry={tabStatus.extra ? tabStatus.extra.retry : null} // TODO: fix countdown so it counts
+            appName={this.props.appName}
+          />);
+        break;
+      case LOADING:
+        component = (
+          <div className='mattermostView-loadingScreen'>
+            <img
+              className='mattermostView-loadingImage'
+              src={spinner}
+              srcSet={`${spinner} 1x, ${spinnerx2} 2x`}
+            />
+          </div>);
+        break;
+      case DONE:
+        console.log(`Loading tab ${this.state.key}`);
+        component = null;
+      }
+      return component;
+    };
 
     const viewsRow = (
       <Fragment>
         <ExtraBar
-          darkMode={this.state.isDarkMode}
+          darkMode={this.state.darkMode}
           show={this.showExtraBar()}
-          mattermostView={this.refs[`mattermostView${this.state.key}`]}
+          goBack={() => {
+            ipcRenderer.send(HISTORY, -1);
+          }}
         />
         <Row>
-          {views}
+          {views()}
         </Row>
       </Fragment>);
 
@@ -823,7 +870,7 @@ export default class MainPage extends React.Component {
         onSave={(newTeam) => {
           this.props.localTeams.push(newTeam);
           this.props.onTeamConfigChange(this.props.localTeams, () => {
-            self.setState({
+            this.setState({
               showNewTeamModal: false,
               key: this.props.teams.length - 1,
             });
@@ -893,10 +940,10 @@ MainPage.propTypes = {
   useSpellChecker: PropTypes.bool.isRequired,
   deeplinkingUrl: PropTypes.string,
   showAddServerButton: PropTypes.bool.isRequired,
-  getDarkMode: PropTypes.func.isRequired,
-  setDarkMode: PropTypes.func.isRequired,
   moveTabs: PropTypes.func.isRequired,
   openMenu: PropTypes.func.isRequired,
+  darkMode: PropTypes.bool.isRequired,
+  appName: PropTypes.string.isRequired
 };
 
 /* eslint-enable react/no-set-state */

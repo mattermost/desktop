@@ -7,8 +7,8 @@ import {Row, Button} from 'react-bootstrap';
 
 export default class ExtraBar extends React.Component {
   handleBack = () => {
-    if (this.props.mattermostView) {
-      this.props.mattermostView.goBack();
+    if (this.props.goBack) {
+      this.props.goBack();
     }
   }
   render() {
@@ -45,6 +45,6 @@ export default class ExtraBar extends React.Component {
 
 ExtraBar.propTypes = {
   darkMode: PropTypes.bool,
-  mattermostView: PropTypes.object,
+  goBack: PropTypes.func,
   show: PropTypes.bool,
 };

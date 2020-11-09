@@ -7,16 +7,28 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {Grid, Row, Col} from 'react-bootstrap';
-import {shell, remote} from 'electron';
+
+import {SECOND} from 'common/utils/constants';
+
+//import {ipcRenderer} from 'electron';
+// import {OPEN_EXTERNAL} from 'common/communication';
 
 export default function ErrorView(props) {
   const classNames = ['container', 'ErrorView'];
   if (!props.active) {
     classNames.push('ErrorView-hidden');
   }
-  function handleClick(event) {
-    event.preventDefault();
-    shell.openExternal(props.errorInfo.validatedURL);
+
+  // function handleClick(event) {
+  //   event.preventDefault();
+  //   console.log('TODO: send to main');
+  //   ipcRenderer.send(OPEN_EXTERNAL, props.url);
+  // }
+
+  let retry = null;
+  if (props.retry) {
+    const seconds = (Date.now() - props.retry) / SECOND;
+    retry = <div className='retry-info'><p>{`Trying to load again in ${seconds}`}</p></div>;
   }
   return (
     <Grid
@@ -38,31 +50,38 @@ export default function ErrorView(props) {
               md={10}
               lg={8}
             >
-              <h2>{`Cannot connect to ${remote.app.name}`}</h2>
+              <h2>{`Cannot connect to ${props.appName}`}</h2>
               <hr/>
-              <p>{`We're having trouble connecting to ${remote.app.name}. If refreshing this page (Ctrl+R or Command+R) does not work please verify that:`}</p>
+              <p>{`We're having trouble connecting to ${props.appName}. If refreshing this page (Ctrl+R or Command+R) does not work please verify that:`}</p>
               <br/>
               <ul className='ErrorView-bullets' >
                 <li>{'Your computer is connected to the internet.'}</li>
-                <li>{`The ${remote.app.name} URL `}
+                <li>{`The ${props.appName} URL `}
                   <a
-                    onClick={handleClick}
-                    href={props.errorInfo.validatedURL}
+
+                    //onClick={handleClick}
+                    href={props.url}
+                    target='_blank'
+                    rel='noreferrer'
                   >
-                    {props.errorInfo.validatedURL}
+                    {props.url}
                   </a>{' is correct.'}</li>
                 <li>{'You can reach '}
                   <a
-                    onClick={handleClick}
-                    href={props.errorInfo.validatedURL}
+
+                    // onClick={handleClick}
+                    href={props.url}
+                    target='_blank'
+                    rel='noreferrer'
                   >
                     {props.errorInfo.validatedURL}
                   </a>{' from a browser window.'}</li>
               </ul>
               <br/>
               <div className='ErrorView-techInfo'>
-                {props.errorInfo.errorDescription}{' ('}
-                {props.errorInfo.errorCode }{')'}</div>
+                {props.errorInfo}
+              </div>
+              {retry}
             </Col>
             <Col
               xs={0}
@@ -78,7 +97,10 @@ export default function ErrorView(props) {
 }
 
 ErrorView.propTypes = {
-  errorInfo: PropTypes.object,
+  errorInfo: PropTypes.string,
+  url: PropTypes.string,
   id: PropTypes.string,
   active: PropTypes.bool,
+  retry: PropTypes.number,
+  appName: PropTypes.string,
 };
