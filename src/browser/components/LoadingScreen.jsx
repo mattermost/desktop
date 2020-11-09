@@ -20,8 +20,7 @@ function LoadingScreen({loading = false, darkMode = false}) {
     // reset internal state if loading restarts
     if (loading) {
       resetState();
-    }
-    if (!loading) {
+    } else {
       setLoadingIsComplete(true);
     }
   }, [loading]);
@@ -44,7 +43,7 @@ function LoadingScreen({loading = false, darkMode = false}) {
     setFadeOutIsComplete(false);
   }
 
-  const loadingScreen = loadingInProgress() ? (
+  const loadingScreen = (
     <div
       ref={loadingScreenRef}
       className={classNames('LoadingScreen', {
@@ -58,9 +57,9 @@ function LoadingScreen({loading = false, darkMode = false}) {
         onLoadAnimationComplete={handleLoadAnimationComplete}
       />
     </div>
-  ) : null;
+  );
 
-  return loadingScreen;
+  return loadingInProgress() ? loadingScreen : null;
 }
 
 LoadingScreen.propTypes = {
