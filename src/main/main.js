@@ -113,7 +113,7 @@ async function initialize() {
 
   // initialization that can run before the app is ready
   initializeArgs();
-  initializeConfig();
+  await initializeConfig();
   initializeAppEventListeners();
   initializeBeforeAppReady();
 
@@ -162,13 +162,19 @@ function initializeArgs() {
   }
 }
 
-function initializeConfig() {
-  //registryConfig = new RegistryConfig();
-  config = new Config(app.getPath('userData') + '/config.json');
-  config.on('update', handleConfigUpdate);
-  config.on('synchronize', handleConfigSynchronize);
-  config.on('darkModeChange', handleDarkModeChange);
-  WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
+async function initializeConfig() {
+  const loadConfig = new Promise((resolve, reject) => {
+    config = new Config(app.getPath('userData') + '/config.json');
+    config.once('update', (configData) => {
+      config.on('update', handleConfigUpdate);
+      config.on('synchronize', handleConfigSynchronize);
+      config.on('darkModeChange', handleDarkModeChange);
+      handleConfigUpdate(configData);
+      resolve();
+    });
+  });
+
+  await loadConfig;
 }
 
 function initializeAppEventListeners() {
@@ -881,13 +887,13 @@ function handleFocus() {
 function handleUpdateMenuEvent(event, configData) {
   // TODO: this might make sense to move to window manager? so it updates the window referenced if needed.
   const mainWindow = WindowManager.getMainWindow();
-  const aMenu = appMenu.createMenu(configData, viewManager);
+  const aMenu = appMenu.createMenu(configData);
   Menu.setApplicationMenu(aMenu);
   aMenu.addListener('menu-will-close', handleCloseAppMenu);
 
   // set up context menu for tray icon
   if (shouldShowTrayIcon()) {
-    const tMenu = trayMenu.createMenu(configData);
+    const tMenu = trayMenu.createMenu(configData, viewManager); // this will change once the viewmanager is part of windowmanager
     if (process.platform === 'darwin' || process.platform === 'linux') {
       // store the information, if the tray was initialized, for checking in the settings, if the application
       // was restarted after setting "Show icon on menu bar"

@@ -8,7 +8,8 @@ import {Menu} from 'electron';
 import * as WindowManager from '../windows/windowManager';
 import {ViewManager} from '../viewManager';
 
-function createTemplate(config) {
+// TODO: remove viewmanager once move to windowmanager is completed
+function createTemplate(config, viewManager) {
   const teams = config.teams;
   const template = [
     ...teams.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).map((team, i) => {
@@ -17,7 +18,7 @@ function createTemplate(config) {
         click: () => {
           WindowManager.restoreMain();
           WindowManager.sendToRenderer('switch-tab', i);
-          ViewManager.showByName(team.name);
+          viewManager.showByName(team.name);
         },
       };
     }), {
@@ -36,8 +37,8 @@ function createTemplate(config) {
   return template;
 }
 
-function createMenu(config) {
-  return Menu.buildFromTemplate(createTemplate(config));
+function createMenu(config, viewManager) {
+  return Menu.buildFromTemplate(createTemplate(config, viewManager));
 }
 
 export default {
