@@ -24,12 +24,12 @@ export class MattermostView {
     this.server = server;
     this.window = win;
 
-    // const preload = getLocalURL('preload.js', null, true);
-    // const preload = path.resolve(__dirname, 'preload/mattermost.js');
     const preload = path.resolve(__dirname, '../../dist/preload.js');
+    const spellcheck = ((!options || typeof options.spellcheck === 'undefined') ? true : options.spellcheck);
     this.options = {
       webPreferences: {
         preload,
+        spellcheck,
         additionalArguments: [
           `version=${app.version}`,
           `appName=${app.name}`,
@@ -147,5 +147,12 @@ export class MattermostView {
 
   openDevTools = () => {
     this.view.webContents.openDevTools();
+  }
+
+  getWebContents = () => {
+    if (this.status === READY) {
+      return this.view.webContents;
+    }
+    return this.window.webContents; // if it's not ready you are looking at the renderer process
   }
 }

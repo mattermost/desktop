@@ -2,12 +2,14 @@
 // See LICENSE.txt for license information.
 import log from 'electron-log';
 
+import contextMenu from './contextMenu';
 import {MattermostServer} from './MattermostServer';
 import {MattermostView} from './MattermostView';
 
 export class ViewManager {
-  constructor(configServers) {
-    this.configServers = configServers;
+  constructor(config) {
+    this.configServers = config.teams;
+    this.viewOptions = {spellcheck: config.useSpellChecker};
     this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
     this.currentView = null;
   }
@@ -17,7 +19,7 @@ export class ViewManager {
   load = (mainWindow) => {
     this.configServers.forEach((server) => {
       const srv = new MattermostServer(server.name, server.url);
-      const view = new MattermostView(srv, mainWindow);
+      const view = new MattermostView(srv, mainWindow, this.viewOptions);
       this.views.set(server.name, view);
       view.setReadyCallback(this.activateView);
       view.load();
@@ -70,6 +72,7 @@ export class ViewManager {
       if (newView.isReady()) {
         // if view is not ready, the renderer will have something to display instead.
         newView.show();
+        contextMenu.reload(newView.getWebContents());
       } else {
         console.log(`couldn't show ${name}, not ready`);
       }

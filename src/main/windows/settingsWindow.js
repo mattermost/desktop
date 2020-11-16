@@ -7,7 +7,8 @@ import log from 'electron-log';
 import {getLocalURL} from '../utils';
 
 export function createSettingsWindow(mainWindow, config, withDevTools) {
-  const settingsWindow = new BrowserWindow({...config.data, parent: mainWindow, title: 'Desktop App Settings', webPreferences: {nodeIntegration: true}});
+  const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
+  const settingsWindow = new BrowserWindow({...config.data, parent: mainWindow, title: 'Desktop App Settings', webPreferences: {nodeIntegration: true, spellcheck}});
   const localURL = getLocalURL('settings.html');
   settingsWindow.loadURL(localURL).catch(
     (reason) => {

@@ -3,9 +3,11 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {app, dialog, Menu, shell} from 'electron';
+import {app, dialog, Menu, session, shell, webContents} from 'electron';
 
 import * as WindowManager from '../windows/windowManager';
+
+const ZOOM_DIFFERENTIAL = 0.5;
 
 function createTemplate(config, viewManager) {
   const separatorItem = {
@@ -86,38 +88,44 @@ function createTemplate(config, viewManager) {
       label: 'Undo',
       accelerator: 'CmdOrCtrl+Z',
       click() {
-        WindowManager.sendToRenderer('undo');
+        const focused = webContents.getFocusedWebContents();
+        focused.undo();
       },
     }, {
       label: 'Redo',
       accelerator: 'CmdOrCtrl+SHIFT+Z',
       click() {
-        WindowManager.sendToRenderer('redo');
+        const focused = webContents.getFocusedWebContents();
+        focused.redo();
       },
     }, separatorItem, {
       label: 'Cut',
       accelerator: 'CmdOrCtrl+X',
       click() {
-        WindowManager.sendToRenderer('cut');
+        const focused = webContents.getFocusedWebContents();
+        focused.cut();
       },
     }, {
       label: 'Copy',
       accelerator: 'CmdOrCtrl+C',
       click() {
-        WindowManager.sendToRenderer('copy');
+        const focused = webContents.getFocusedWebContents();
+        focused.copy();
       },
     }, {
       label: 'Paste',
       accelerator: 'CmdOrCtrl+V',
       click() {
-        WindowManager.sendToRenderer('paste');
+        const focused = webContents.getFocusedWebContents();
+        focused.paste();
       },
     }, {
       label: 'Paste and Match Style',
       accelerator: 'CmdOrCtrl+SHIFT+V',
       visible: process.platform === 'darwin',
       click() {
-        WindowManager.sendToRenderer('paste-and-match');
+        const focused = webContents.getFocusedWebContents();
+        focused.pasteAndMatchStyle();
       },
     }, {
       role: 'selectall',
@@ -128,34 +136,28 @@ function createTemplate(config, viewManager) {
   const viewSubMenu = [{
     label: 'Find..',
     accelerator: 'CmdOrCtrl+F',
-    click(item, focusedWindow) {
-      focusedWindow.webContents.send('toggle-find');
+    click() {
+      const focused = webContents.getFocusedWebContents();
+      const event = {
+        type: 'keyDown',
+        keyCode: 'CmdOrCtrl+F',
+      };
+      focused.sendInputEvent(event);
     },
   }, {
     label: 'Reload',
     accelerator: 'CmdOrCtrl+R',
-    click(item, focusedWindow) {
-      if (focusedWindow) {
-        // TODO: needs checking if there is a difference between BV having the focus and the renderer.
-        if (WindowManager.isMainWindow(focusedWindow)) {
-          // TODO: needs to be sent to ViewManager
-          WindowManager.sendToRenderer('reload-tab');
-        } else {
-          focusedWindow.reload();
-        }
-      }
+    click() {
+      const focused = webContents.getFocusedWebContents();
+      focused.reload();
     },
   }, {
     label: 'Clear Cache and Reload',
     accelerator: 'Shift+CmdOrCtrl+R',
-    click(item, focusedWindow) {
-      if (focusedWindow) {
-        if (WindowManager.isMainWindow(focusedWindow)) {
-          WindowManager.sendToRenderer('clear-cache-and-reload-tab');
-        } else {
-          focusedWindow.webContents.session.clearCache().then(focusedWindow.reload);
-        }
-      }
+    click() {
+      session.defaultSession.clearCache();
+      const focused = webContents.getFocusedWebContents();
+      focused.reload();
     },
   }, {
     role: 'togglefullscreen',
@@ -164,19 +166,28 @@ function createTemplate(config, viewManager) {
     label: 'Actual Size',
     accelerator: 'CmdOrCtrl+0',
     click() {
-      WindowManager.sendToRenderer('zoom-reset');
+      const focused = webContents.getFocusedWebContents();
+      focused.setZoomLevel(1);
     },
   }, {
     label: 'Zoom In',
     accelerator: 'CmdOrCtrl+SHIFT+=',
     click() {
-      WindowManager.sendToRenderer('zoom-in');
+      const focused = webContents.getFocusedWebContents();
+      const level = focused.getZoomLevel();
+      if (level <= 3) {
+        focused.setZoomLevel(level + ZOOM_DIFFERENTIAL);
+      }
     },
   }, {
     label: 'Zoom Out',
     accelerator: 'CmdOrCtrl+-',
     click() {
-      WindowManager.sendToRenderer('zoom-out');
+      const focused = webContents.getFocusedWebContents();
+      const level = focused.getZoomLevel();
+      if (level >= 0) {
+        focused.setZoomLevel(level - ZOOM_DIFFERENTIAL);
+      }
     },
   }, separatorItem, {
     label: 'Developer Tools for Application Wrapper',
@@ -203,6 +214,7 @@ function createTemplate(config, viewManager) {
     viewSubMenu.push({
       label: 'Toggle Dark Mode',
       click() {
+        // TODO: review what to do with this one
         WindowManager.sendToRenderer('set-dark-mode');
       },
     });
@@ -217,21 +229,19 @@ function createTemplate(config, viewManager) {
     submenu: [{
       label: 'Back',
       accelerator: process.platform === 'darwin' ? 'Cmd+[' : 'Alt+Left',
-      click: (item, focusedWindow) => {
-        if (WindowManager.isMainWindow(focusedWindow)) {
-          WindowManager.sendToRenderer('go-back');
-        } else if (focusedWindow.webContents.canGoBack()) {
-          focusedWindow.webContents.goBack();
+      click: () => {
+        const focused = webContents.getFocusedWebContents();
+        if (focused.canGoBack()) {
+          focused.goBack();
         }
       },
     }, {
       label: 'Forward',
       accelerator: process.platform === 'darwin' ? 'Cmd+]' : 'Alt+Right',
-      click: (item, focusedWindow) => {
-        if (WindowManager.isMainWindow(focusedWindow)) {
-          WindowManager.sendToRenderer('go-forward');
-        } else if (focusedWindow.webContents.canGoForward()) {
-          focusedWindow.webContents.goForward();
+      click: () => {
+        const focused = webContents.getFocusedWebContents();
+        if (focused.canGoForward()) {
+          focused.goForward();
         }
       },
     }],

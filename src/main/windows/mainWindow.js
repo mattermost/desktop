@@ -51,6 +51,8 @@ function createMainWindow(config, options) {
   const {hideOnStartup} = options;
   const {maximized: windowIsMaximized} = windowOptions;
 
+  const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
+
   if (process.platform === 'linux') {
     windowOptions.icon = options.linuxAppIcon;
   }
@@ -68,12 +70,8 @@ function createMainWindow(config, options) {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      webviewTag: true,
       disableBlinkFeatures: 'Auxclick',
-      additionalArguments: [
-        `version=${app.version}`,
-        `appName=${app.name}`,
-      ],
+      spellcheck,
     },
   });
 
@@ -113,11 +111,6 @@ function createMainWindow(config, options) {
     if (hideOnStartup && windowIsMaximized) {
       mainWindow.maximize();
     }
-  });
-
-  mainWindow.webContents.on('will-attach-webview', (event, webPreferences) => {
-    webPreferences.nodeIntegration = false;
-    webPreferences.contextIsolation = true;
   });
 
   // App should save bounds when a window is closed.
