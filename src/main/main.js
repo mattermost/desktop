@@ -163,7 +163,7 @@ function initializeArgs() {
 }
 
 async function initializeConfig() {
-  const loadConfig = new Promise((resolve, reject) => {
+  const loadConfig = new Promise((resolve) => {
     config = new Config(app.getPath('userData') + '/config.json');
     config.once('update', (configData) => {
       config.on('update', handleConfigUpdate);
