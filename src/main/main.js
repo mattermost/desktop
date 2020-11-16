@@ -887,7 +887,7 @@ function handleFocus() {
 function handleUpdateMenuEvent(event, configData) {
   // TODO: this might make sense to move to window manager? so it updates the window referenced if needed.
   const mainWindow = WindowManager.getMainWindow();
-  const aMenu = appMenu.createMenu(configData);
+  const aMenu = appMenu.createMenu(configData, viewManager);
   Menu.setApplicationMenu(aMenu);
   aMenu.addListener('menu-will-close', handleCloseAppMenu);
 

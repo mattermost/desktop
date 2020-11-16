@@ -110,7 +110,6 @@ function createTemplate(config, viewManager) {
       accelerator: 'CmdOrCtrl+C',
       click() {
         const focused = webContents.getFocusedWebContents();
-        console.log(`I got the focused window ${focused.id}, sending copy command`);
         focused.copy();
       },
     }, {
