@@ -19,6 +19,12 @@ import ReactDOM from 'react-dom';
 
 import SettingsPage from './components/SettingsPage.jsx';
 
+function openMenu() {
+  if (process.platform !== 'darwin') {
+    ipcRenderer.send('open-app-menu');
+  }
+}
+
 const start = async () => {
   ReactDOM.render(
     <SettingsPage
@@ -27,12 +33,6 @@ const start = async () => {
     document.getElementById('app')
   );
 };
-
-function openMenu() {
-  if (process.platform !== 'darwin') {
-    ipcRenderer.send('open-app-menu');
-  }
-}
 
 // Deny drag&drop navigation in mainWindow.
 document.addEventListener('dragover', (event) => event.preventDefault());

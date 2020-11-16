@@ -36,8 +36,6 @@ let config;
 let teams;
 
 const reloadConfig = (newConfig) => {
-  console.log('new configuration!');
-  console.log(newConfig);
   config = newConfig;
   teams = config.teams;
 };
@@ -45,17 +43,36 @@ const reloadConfig = (newConfig) => {
 const requestConfig = async (exitOnError) => {
   // todo: should we block?
   try {
-    console.log('requested configuration');
     const configRequest = await ipcRenderer.invoke(GET_CONFIGURATION);
-    console.log(`config is: ${configRequest}`);
     reloadConfig(configRequest);
   } catch (err) {
-    console.log(`there was an error with the config: ${err}`);
     if (exitOnError) {
       ipcRenderer.send(QUIT, `unable to load configuration: ${err}`, err.stack);
     }
   }
 };
+
+function getInitialIndex(teamList) {
+  if (teamList) {
+    const element = teamList.find((e) => e.order === 0);
+    return element ? teamList.indexOf(element) : 0;
+  }
+  return 0;
+}
+
+function openMenu() {
+  if (process.platform !== 'darwin') {
+    ipcRenderer.send('open-app-menu');
+  }
+}
+
+function showBadge(sessionExpired, unreadCount, mentionCount) {
+  ipcRenderer.send('update-unread', {
+    sessionExpired,
+    unreadCount,
+    mentionCount,
+  });
+}
 
 const start = async () => {
   await requestConfig(true);
@@ -114,8 +131,6 @@ const start = async () => {
     return teamIndex;
   }
 
-  console.log('config before rendering');
-  console.log(config);
   const component = (
     <MainPage
       teams={teams}
@@ -137,28 +152,6 @@ const start = async () => {
     document.getElementById('app')
   );
 };
-
-function getInitialIndex(teamList) {
-  if (teamList) {
-    const element = teamList.find((e) => e.order === 0);
-    return element ? teamList.indexOf(element) : 0;
-  }
-  return 0;
-}
-
-function openMenu() {
-  if (process.platform !== 'darwin') {
-    ipcRenderer.send('open-app-menu');
-  }
-}
-
-function showBadge(sessionExpired, unreadCount, mentionCount) {
-  ipcRenderer.send('update-unread', {
-    sessionExpired,
-    unreadCount,
-    mentionCount,
-  });
-}
 
 // Deny drag&drop navigation in mainWindow.
 // Drag&drop is allowed in webview of index.html.

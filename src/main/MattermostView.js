@@ -25,9 +25,7 @@ export class MattermostView {
     this.window = win;
 
     const preload = path.resolve(__dirname, '../../dist/preload.js');
-    console.log(`Preload path: ${preload}`);
     const spellcheck = ((!options || typeof options.spellcheck === 'undefined') ? true : options.spellcheck);
-    log.info(`creating view with spellcheck value to ${spellcheck}`);
     this.options = {
       webPreferences: {
         preload,
@@ -104,7 +102,6 @@ export class MattermostView {
     const request = typeof requestedVisibility === 'undefined' ? true : requestedVisibility;
     if (request && !this.isVisible) {
       this.window.addBrowserView(this.view);
-      console.log(`showing bv ${this.server.name}`);
       this.setBounds(getWindowBoundaries(this.window));
     } else if (!request && this.isVisible) {
       this.window.removeBrowserView(this.view);
@@ -116,7 +113,6 @@ export class MattermostView {
 
   setBounds = (boundaries) => {
     // todo: review this, as it might not work properly with devtools/minimizing/resizing
-    console.log(boundaries);
     this.view.setBounds(boundaries);
     this.view.setAutoResize({
       height: true,

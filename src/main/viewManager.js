@@ -77,7 +77,6 @@ export class ViewManager {
       }
 
       this.currentView = name;
-
       if (newView.isReady()) {
         // if view is not ready, the renderer will have something to display instead.
         newView.show();
