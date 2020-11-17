@@ -3,11 +3,20 @@
 // See LICENSE.txt for license information.
 
 import {EventEmitter} from 'events';
+import log from 'electron-log';
 
-import WindowsRegistry from 'winreg';
+let registry;
+try {
+  // eslint-disable-next-line global-require
+  registry = require('registry-js');
+} catch (e) {
+  if (process.platform === 'win32') {
+    log.error(`couldn't import registry module: ${e}`);
+  }
+}
 
-const REGISTRY_HIVE_LIST = [WindowsRegistry.HKLM, WindowsRegistry.HKCU];
-const BASE_REGISTRY_KEY_PATH = '\\Software\\Policies\\Mattermost';
+const REGISTRY_HIVE_LIST = [registry.HKEY.HKEY_LOCAL_MACHINE, registry.HKEY.HKEY_CURRENT_USER];
+const BASE_REGISTRY_KEY_PATH = 'Software\\Policies\\Mattermost';
 export const REGISTRY_READ_EVENT = 'registry-read';
 
 /**
@@ -28,7 +37,7 @@ export default class RegistryConfig extends EventEmitter {
    * @emits {update} emitted once all data has been loaded from the registry
    */
   async init() {
-    if (process.platform === 'win32') {
+    if (process.platform === 'win32' && registry) {
       // extract DefaultServerList from the registry
       try {
         const servers = await this.getServersListFromRegistry();
@@ -36,7 +45,7 @@ export default class RegistryConfig extends EventEmitter {
           this.data.teams.push(...servers);
         }
       } catch (error) {
-        console.log('[RegistryConfig] Nothing retrieved for \'DefaultServerList\'', error);
+        log.warn('[RegistryConfig] Nothing retrieved for \'DefaultServerList\'', error);
       }
 
       // extract EnableServerManagement from the registry
@@ -46,7 +55,7 @@ export default class RegistryConfig extends EventEmitter {
           this.data.enableServerManagement = enableServerManagement;
         }
       } catch (error) {
-        console.log('[RegistryConfig] Nothing retrieved for \'EnableServerManagement\'', error);
+        log.warn('[RegistryConfig] Nothing retrieved for \'EnableServerManagement\'', error);
       }
 
       // extract EnableAutoUpdater from the registry
@@ -56,7 +65,7 @@ export default class RegistryConfig extends EventEmitter {
           this.data.enableAutoUpdater = enableAutoUpdater;
         }
       } catch (error) {
-        console.log('[RegistryConfig] Nothing retrieved for \'EnableAutoUpdater\'', error);
+        log.warn('[RegistryConfig] Nothing retrieved for \'EnableAutoUpdater\'', error);
       }
     }
 
@@ -74,7 +83,7 @@ export default class RegistryConfig extends EventEmitter {
       if (server) {
         servers.push({
           name: server.name,
-          url: server.value,
+          url: server.data,
           order: server.order || index,
         });
       }
@@ -109,7 +118,7 @@ export default class RegistryConfig extends EventEmitter {
   async getRegistryEntry(key, name) {
     const results = [];
     for (const hive of REGISTRY_HIVE_LIST) {
-      results.push(this.getRegistryEntryValues(new WindowsRegistry({hive, key}), name));
+      results.push(this.getRegistryEntryValues(hive, key, name));
     }
     const entryValues = await Promise.all(results);
     return entryValues.filter((value) => value);
@@ -121,20 +130,24 @@ export default class RegistryConfig extends EventEmitter {
    * @param {WindowsRegistry} regKey A configured instance of the WindowsRegistry class
    * @param {string} name Name of the specific entry to retrieve (optional)
    */
-  getRegistryEntryValues(regKey, name) {
-    return new Promise((resolve) => {
-      regKey.values((error, items) => {
-        if (error || !items || !items.length) {
+  getRegistryEntryValues(hive, key, name) {
+    return new Promise((resolve, reject) => {
+      try {
+        const results = registry.enumerateValues(hive, key);
+        if (!results || results.length === 0) {
           resolve();
           return;
         }
         if (name) { // looking for a single entry value
-          const registryItem = items.find((item) => item.name === name);
+          const registryItem = results.find((item) => item.name === name);
           resolve(registryItem && registryItem.value ? registryItem.value : null);
         } else { // looking for an entry list
-          resolve(items);
+          resolve(results);
         }
-      });
+      } catch (e) {
+        log.error(`There was an error accesing the registry for ${name}: ${e}`);
+        reject(e);
+      }
     });
   }
 }

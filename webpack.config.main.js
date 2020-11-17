@@ -29,7 +29,15 @@ module.exports = merge(base, {
         options: {
           include: ['@babel/plugin-proposal-class-properties']
         }
-      },
+      }
+    },
+    {
+      test: /\.node$/,
+      loader: 'awesome-node-loader',
+      options: {
+        name: '[name].[ext]',
+        rewritePath: path.resolve(__dirname, 'dist'),
+      }
     }],
   },
   node: {
