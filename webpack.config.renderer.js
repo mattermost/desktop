@@ -48,7 +48,7 @@ module.exports = merge(base, {
         from: 'assets/windows/*.ico',
         context: 'src',
       }, {
-        from: 'assets/linux/*/*.png',
+        from: 'assets/**/*.png',
         context: 'src',
       }, {
         from: 'assets/osx/*.png',
