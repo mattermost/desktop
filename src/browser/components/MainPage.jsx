@@ -794,6 +794,7 @@ export default class MainPage extends React.Component {
           ref={id}
           active={isActive}
           allowExtraBar={this.showExtraBar()}
+          isDarkMode={this.state.isDarkMode}
         />);
     });
 
