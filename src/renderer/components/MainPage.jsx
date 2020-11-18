@@ -385,7 +385,7 @@ export default class MainPage extends React.Component {
       this.activateFinder(true);
     });
 
-    if (process.platform === 'darwin') {
+    if (process.platform !== 'darwin') {
       this.threeDotMenu = React.createRef();
       ipcRenderer.on('focus-three-dot-menu', () => {
         if (this.threeDotMenu.current) {
@@ -595,8 +595,9 @@ export default class MainPage extends React.Component {
   }
 
   openMenu = () => {
-    // @eslint-ignore
-    this.threeDotMenu.current.blur();
+    if (process.platform !== 'darwin') {
+      this.threeDotMenu.current.blur();
+    }
     this.props.openMenu();
   }
 

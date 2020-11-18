@@ -872,7 +872,7 @@ function handleOpenAppMenu() {
 }
 
 function handleCloseAppMenu(event) {
-  WindowManager.sendToRenderer('focus-on-webview', event);
+  viewManager.focus();
 }
 
 function handleFocus() {
