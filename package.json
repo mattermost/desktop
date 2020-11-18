@@ -15,11 +15,20 @@
     "type": "git",
     "url": "git://github.com/mattermost/desktop.git"
   },
+  "config": {
+    "npm_config_target": "10.1.3",
+    "npm_config_arch": "x64",
+    "npm_config_target_arch": "x64",
+    "npm_config_disturl": "https://electronjs.org/headers",
+    "npm_config_runtime": "electron",
+    "npm_config_build_from_source": true
+  },
   "scripts": {
+    "preinstall": "node scripts/setup_env_vars.js",
     "build": "npm-run-all build:*",
     "build:main": "webpack-cli --bail --config webpack.config.main.js",
     "build:renderer": "webpack-cli --bail --config webpack.config.renderer.js",
-    "build-prod": "npm-run-all clean-dist build:*",
+    "build-prod": "npm-run-all build:*",
     "start": "electron dist/ --disable-dev-mode",
     "restart": "npm run build && npm run start",
     "storybook": "start-storybook -p 9001 -c src/.storybook",
