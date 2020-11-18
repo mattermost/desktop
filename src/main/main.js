@@ -229,8 +229,6 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('download-url', handleDownloadURLEvent);
   ipcMain.on('notified', handleNotifiedEvent);
   ipcMain.handle('get-app-version', handleAppVersion);
-  ipcMain.on('update-target-url', handleURLHover);
-  ipcMain.on('delete-target-url', handleURLDelete);
 
   // see comment on function
   // ipcMain.on('update-title', handleUpdateTitleEvent);
@@ -819,19 +817,6 @@ function handleNotifiedEvent() {
 
   if (process.platform === 'darwin' && config.notifications.bounceIcon) {
     app.dock.bounce(config.notifications.bounceIconType);
-  }
-}
-
-function handleURLHover(_, url) {
-  const view = viewManager.getCurrentView();
-  if (url && (!view || !view.server.sameOrigin(url))) {
-    viewManager.showURLView(url);
-  }
-}
-
-function handleURLDelete() {
-  if (viewManager.urlViewCancel) {
-    viewManager.urlViewCancel();
   }
 }
 

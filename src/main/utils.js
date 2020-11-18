@@ -33,31 +33,6 @@ export function getWindowBoundaries(win) {
   };
 }
 
-// export function getLocalURL(urlPath, query, isMain) {
-//   const options = {
-//     path: urlPath,
-//     query: encodeURI(query),
-//     slashes: true,
-//   };
-//   const processPath = isMain ? '' : '/renderer';
-//   const mode = Utils.runMode();
-//   if (mode === DEV_SERVER) {
-//     log.info('detected webserver');
-//     options.protocol = 'http';
-//     options.hostname = 'localhost';
-//     options.port = '9000';
-//     options.pathname = `${processPath}/${urlPath}`;
-//   } else {
-//     options.protocol = 'file';
-//     if (mode === PRODUCTION) {
-//       options.pathname = path.join(electron.app.getAppPath(), `dist/${processPath}/${urlPath}`);
-//     } else {
-//       options.pathname = path.resolve(__dirname, `../../dist/${processPath}/${urlPath}`); // TODO: find a better way to work with webpack on this
-//     }
-//   }
-//   return format(options);
-// }
-
 export function getLocalURLString(urlPath, query, isMain) {
   const localURL = getLocalURL(urlPath, query, isMain);
   return localURL.href;

@@ -4,6 +4,7 @@ import log from 'electron-log';
 import {BrowserView} from 'electron';
 
 import {SECOND} from 'common/utils/constants';
+import {UPDATE_TARGET_URL} from 'common/communication';
 
 import contextMenu from './contextMenu';
 import {MattermostServer} from './MattermostServer';
@@ -31,6 +32,7 @@ export class ViewManager {
       this.views.set(server.name, view);
       view.setReadyCallback(this.activateView);
       view.load();
+      view.on(UPDATE_TARGET_URL, this.showURLView);
     });
   }
 
@@ -117,14 +119,13 @@ export class ViewManager {
   }
 
   showURLView = (url) => {
-    console.log(`showing ${url}`);
     if (this.urlViewCancel) {
       this.urlViewCancel();
     }
+    const urlString = typeof url === 'string' ? url : url.toString();
     const urlView = new BrowserView();
-    const query = new Map([['url', url.toString()]]);
+    const query = new Map([['url', urlString]]);
     const localURL = getLocalURLString('urlView.html', query);
-    console.log(`urlview to ${localURL}`);
     urlView.webContents.loadURL(localURL);
     const currentWindow = this.getCurrentView().window;
     currentWindow.addBrowserView(urlView);
@@ -137,7 +138,6 @@ export class ViewManager {
     });
 
     const hideView = () => {
-      console.log('hiding');
       this.urlViewCancel = null;
       currentWindow.removeBrowserView(urlView);
       urlView.destroy();

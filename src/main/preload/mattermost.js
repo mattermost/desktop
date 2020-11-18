@@ -68,32 +68,6 @@ document.addEventListener('mouseup', () => {
   ipcRenderer.sendToHost('mouse-up');
 });
 
-const parentTag = (target) => {
-  if (target.parentNode) {
-    return target.parentNode.tagName.toUpperCase();
-  }
-  return null;
-};
-
-document.addEventListener('mouseover', (event) => {
-  if (event.target && (event.target.tagName === 'A')) {
-    ipcRenderer.send('update-target-url', event.target.href);
-  } else if (event.target && (parentTag(event.target) === 'A')) {
-    ipcRenderer.send('update-target-url', event.target.parentNode.href);
-  } else {
-    // TODO: remove
-    console.log(`mouse enter: ${event.target.tagName}: ${event.target.href}`);
-    console.log(event.target.parentNode);
-  }
-});
-
-document.addEventListener('mouseout', (event) => {
-  console.log(`mouse leave: ${event.target.tagName}: ${event.target.href}`);
-  if (event.target && event.target.tagName === 'A') {
-    ipcRenderer.send('delete-target-url', event.target.href);
-  }
-});
-
 // listen for messages from the webapp
 window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = {}) => {
   if (origin !== window.location.origin) {
