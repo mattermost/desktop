@@ -38,6 +38,7 @@ import {showBadge} from './badge';
 
 import parseArgs from './ParseArgs';
 import {ViewManager} from './viewManager';
+import {getTrayImages, switchMenuIconImages} from './tray/tray';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
   module.hot.accept();
@@ -50,14 +51,12 @@ const {
   Menu,
   Tray,
   ipcMain,
-  nativeImage,
   dialog,
   systemPreferences,
   session,
   BrowserWindow,
 } = electron;
 const criticalErrorHandler = new CriticalErrorHandler();
-const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const loginCallbackMap = new Map();
 const certificateRequests = new Map();
 const userActivityMonitor = new UserActivityMonitor();
@@ -114,7 +113,7 @@ async function initialize() {
 
   // initialization that can run before the app is ready
   initializeArgs();
-  initializeConfig();
+  await initializeConfig();
   initializeAppEventListeners();
   initializeBeforeAppReady();
 
@@ -163,13 +162,19 @@ function initializeArgs() {
   }
 }
 
-function initializeConfig() {
-  //registryConfig = new RegistryConfig();
-  config = new Config(app.getPath('userData') + '/config.json');
-  config.on('update', handleConfigUpdate);
-  config.on('synchronize', handleConfigSynchronize);
-  config.on('darkModeChange', handleDarkModeChange);
-  WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
+async function initializeConfig() {
+  const loadConfig = new Promise((resolve) => {
+    config = new Config(app.getPath('userData') + '/config.json');
+    config.once('update', (configData) => {
+      config.on('update', handleConfigUpdate);
+      config.on('synchronize', handleConfigSynchronize);
+      config.on('darkModeChange', handleDarkModeChange);
+      handleConfigUpdate(configData);
+      resolve();
+    });
+  });
+
+  await loadConfig;
 }
 
 function initializeAppEventListeners() {
@@ -203,7 +208,7 @@ function initializeBeforeAppReady() {
     app.disableHardwareAcceleration();
   }
 
-  trayImages = getTrayImages();
+  trayImages = getTrayImages(config.trayIconTheme);
 
   // If there is already an instance, quit this one
   const gotTheLock = app.requestSingleInstanceLock();
@@ -293,6 +298,7 @@ function handleAppVersion() {
 }
 
 function handleDarkModeChange(darkMode) {
+  trayImages = getTrayImages(config.trayIconTheme);
   WindowManager.sendToRenderer(DARK_MODE_CHANGE, darkMode);
 }
 
@@ -886,7 +892,7 @@ function handleUpdateMenuEvent(event, configData) {
 
   // set up context menu for tray icon
   if (shouldShowTrayIcon()) {
-    const tMenu = trayMenu.createMenu(configData);
+    const tMenu = trayMenu.createMenu(configData, viewManager); // this will change once the viewmanager is part of windowmanager
     if (process.platform === 'darwin' || process.platform === 'linux') {
       // store the information, if the tray was initialized, for checking in the settings, if the application
       // was restarted after setting "Show icon on menu bar"
@@ -953,66 +959,6 @@ function isCustomLoginURL(url, server) {
   return false;
 }
 
-function getTrayImages() {
-  switch (process.platform) {
-  case 'win32':
-    return {
-      normal: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray.ico')),
-      unread: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_unread.ico')),
-      mention: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_mention.ico')),
-    };
-  case 'darwin':
-  {
-    const icons = {
-      light: {
-        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIcon.png')),
-        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconUnread.png')),
-        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconMention.png')),
-      },
-      clicked: {
-        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIcon.png')),
-        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconUnread.png')),
-        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconMention.png')),
-      },
-    };
-    switchMenuIconImages(icons, nativeTheme.shouldUseDarkColors);
-    return icons;
-  }
-  case 'linux':
-  {
-    const theme = config.trayIconTheme;
-    try {
-      return {
-        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconTemplate.png')),
-        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconUnreadTemplate.png')),
-        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconMentionTemplate.png')),
-      };
-    } catch (e) {
-      //Fallback for invalid theme setting
-      return {
-        normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconTemplate.png')),
-        unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconUnreadTemplate.png')),
-        mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconMentionTemplate.png')),
-      };
-    }
-  }
-  default:
-    return {};
-  }
-}
-
-function switchMenuIconImages(icons, isDarkMode) {
-  if (isDarkMode) {
-    icons.normal = icons.clicked.normal;
-    icons.unread = icons.clicked.unread;
-    icons.mention = icons.clicked.mention;
-  } else {
-    icons.normal = icons.light.normal;
-    icons.unread = icons.light.unread;
-    icons.mention = icons.light.mention;
-  }
-}
-
 function getDeeplinkingURL(args) {
   if (Array.isArray(args) && args.length) {
     // deeplink urls should always be the last argument, but may not be the first (i.e. Windows with the app already running)
@@ -1025,13 +971,7 @@ function getDeeplinkingURL(args) {
 }
 
 function shouldShowTrayIcon() {
-  if (process.platform === 'win32') {
-    return true;
-  }
-  if (['darwin', 'linux'].includes(process.platform) && config.showTrayIcon === true) {
-    return true;
-  }
-  return false;
+  return config.showTrayIcon || process.platform === 'win32';
 }
 
 function wasUpdated(lastAppVersion) {
