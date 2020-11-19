@@ -5,9 +5,11 @@ import {BrowserView, app} from 'electron';
 import log from 'electron-log';
 import path from 'path';
 
+import {EventEmitter} from 'events';
+
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constants';
 import Utils from 'common/utils/util';
-import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED} from 'common/communication';
+import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL} from 'common/communication';
 
 import {getWindowBoundaries} from './utils';
 import * as WindowManager from './windows/windowManager';
@@ -19,15 +21,14 @@ const READY = 1;
 const LOADING = 0;
 const ERROR = -1;
 
-export class MattermostView {
+export class MattermostView extends EventEmitter {
   constructor(server, win, options) {
+    super();
     this.server = server;
     this.window = win;
 
     const preload = path.resolve(__dirname, '../../dist/preload.js');
-    console.log(`Preload path: ${preload}`);
     const spellcheck = ((!options || typeof options.spellcheck === 'undefined') ? true : options.spellcheck);
-    log.info(`creating view with spellcheck value to ${spellcheck}`);
     this.options = {
       webPreferences: {
         preload,
@@ -55,6 +56,7 @@ export class MattermostView {
 
   setReadyCallback = (func) => {
     this.readyCallBack = func;
+    this.view.webContents.on('update-target-url', this.handleUpdateTarget);
   }
 
   load = (someURL) => {
@@ -108,7 +110,6 @@ export class MattermostView {
     const request = typeof requestedVisibility === 'undefined' ? true : requestedVisibility;
     if (request && !this.isVisible) {
       this.window.addBrowserView(this.view);
-      console.log(`showing bv ${this.server.name}`);
       this.setBounds(getWindowBoundaries(this.window));
     } else if (!request && this.isVisible) {
       this.window.removeBrowserView(this.view);
@@ -120,7 +121,6 @@ export class MattermostView {
 
   setBounds = (boundaries) => {
     // todo: review this, as it might not work properly with devtools/minimizing/resizing
-    console.log(boundaries);
     this.view.setBounds(boundaries);
     this.view.setAutoResize({
       height: true,
@@ -164,5 +164,11 @@ export class MattermostView {
       return this.view.webContents;
     }
     return this.window.webContents; // if it's not ready you are looking at the renderer process
+  }
+
+  handleUpdateTarget = (e, url) => {
+    if (!this.server.sameOrigin(url)) {
+      this.emit(UPDATE_TARGET_URL, url);
+    }
   }
 }

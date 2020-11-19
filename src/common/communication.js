@@ -33,3 +33,4 @@ export const SHOW_NEW_SERVER_MODAL = 'show_new_server_modal';
 export const RETRIEVE_MODAL_INFO = 'retrieve-modal-info';
 export const MODAL_CANCEL = 'modal-cancel';
 export const MODAL_RESULT = 'modal-result';
+export const UPDATE_TARGET_URL = 'update_target_url';

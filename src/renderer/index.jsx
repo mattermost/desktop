@@ -36,8 +36,6 @@ let config;
 let teams;
 
 const reloadConfig = (newConfig) => {
-  console.log('new configuration!');
-  console.log(newConfig);
   config = newConfig;
   teams = config.teams;
 };
@@ -45,17 +43,36 @@ const reloadConfig = (newConfig) => {
 const requestConfig = async (exitOnError) => {
   // todo: should we block?
   try {
-    console.log('requested configuration');
     const configRequest = await ipcRenderer.invoke(GET_CONFIGURATION);
-    console.log(`config is: ${configRequest}`);
     reloadConfig(configRequest);
   } catch (err) {
-    console.log(`there was an error with the config: ${err}`);
     if (exitOnError) {
       ipcRenderer.send(QUIT, `unable to load configuration: ${err}`, err.stack);
     }
   }
 };
+
+function getInitialIndex(teamList) {
+  if (teamList) {
+    const element = teamList.find((e) => e.order === 0);
+    return element ? teamList.indexOf(element) : 0;
+  }
+  return 0;
+}
+
+function openMenu() {
+  if (process.platform !== 'darwin') {
+    ipcRenderer.send('open-app-menu');
+  }
+}
+
+function showBadge(sessionExpired, unreadCount, mentionCount) {
+  ipcRenderer.send('update-unread', {
+    sessionExpired,
+    unreadCount,
+    mentionCount,
+  });
+}
 
 const start = async () => {
   await requestConfig(true);
@@ -73,9 +90,12 @@ const start = async () => {
   // }
   const deeplinkingUrl = null;
 
-  ipcRenderer.on('synchronize-config', async () => {
-    await requestConfig();
-    render();
+  ipcRenderer.on('synchronize-config', () => {
+    requestConfig();
+  });
+
+  ipcRenderer.on('reload-config', () => {
+    ipcRenderer.invoke(GET_CONFIGURATION).then(reloadConfig);
   });
 
   function teamConfigChange(updatedTeams, callback) {
@@ -111,53 +131,27 @@ const start = async () => {
     return teamIndex;
   }
 
-  const render = () => {
-    const component = (
-      <MainPage
-        teams={teams}
-        localTeams={config.localTeams}
-        initialIndex={initialIndex}
-        onBadgeChange={showBadge}
-        onTeamConfigChange={teamConfigChange}
-        useSpellChecker={config.useSpellChecker}
-        deeplinkingUrl={deeplinkingUrl}
-        showAddServerButton={config.enableServerManagement}
-        moveTabs={moveTabs}
-        openMenu={openMenu}
-        darkMode={config.darkMode}
-        appName={config.appName}
-      />);
+  const component = (
+    <MainPage
+      teams={teams}
+      localTeams={config.localTeams}
+      initialIndex={initialIndex}
+      onBadgeChange={showBadge}
+      onTeamConfigChange={teamConfigChange}
+      useSpellChecker={config.useSpellChecker}
+      deeplinkingUrl={deeplinkingUrl}
+      showAddServerButton={config.enableServerManagement}
+      moveTabs={moveTabs}
+      openMenu={openMenu}
+      darkMode={config.darkMode}
+      appName={config.appName}
+    />);
 
-    ReactDOM.render(
-      component,
-      document.getElementById('app')
-    );
-  };
-
-  render();
+  ReactDOM.render(
+    component,
+    document.getElementById('app')
+  );
 };
-
-function getInitialIndex(teamList) {
-  if (teamList) {
-    const element = teamList.find((e) => e.order === 0);
-    return element ? teamList.indexOf(element) : 0;
-  }
-  return 0;
-}
-
-function openMenu() {
-  if (process.platform !== 'darwin') {
-    ipcRenderer.send('open-app-menu');
-  }
-}
-
-function showBadge(sessionExpired, unreadCount, mentionCount) {
-  ipcRenderer.send('update-unread', {
-    sessionExpired,
-    unreadCount,
-    mentionCount,
-  });
-}
 
 // Deny drag&drop navigation in mainWindow.
 // Drag&drop is allowed in webview of index.html.
