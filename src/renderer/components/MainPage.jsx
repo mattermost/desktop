@@ -10,7 +10,6 @@ import url from 'url';
 
 import React, {Fragment} from 'react';
 import PropTypes from 'prop-types';
-import {CSSTransition, TransitionGroup} from 'react-transition-group';
 import {Grid, Row} from 'react-bootstrap';
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 
@@ -44,7 +43,6 @@ import spinnerx2 from '../../assets/loading@2x.gif';
 
 import LoginModal from './LoginModal.jsx';
 import TabBar from './TabBar.jsx';
-import HoveringURL from './HoveringURL.jsx';
 import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
 import SelectCertificateModal from './SelectCertificateModal.jsx';
@@ -858,20 +856,6 @@ export default class MainPage extends React.Component {
             />
           ) : null}
         </Grid>
-        <TransitionGroup>
-          { (this.state.targetURL === '') ?
-            null :
-            <CSSTransition
-              classNames='hovering'
-              timeout={{enter: 300, exit: 500}}
-            >
-              <HoveringURL
-                key='hoveringURL'
-                targetURL={this.state.targetURL}
-              />
-            </CSSTransition>
-          }
-        </TransitionGroup>
         <div>
           { modal }
         </div>
