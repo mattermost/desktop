@@ -11,7 +11,7 @@ import log from 'electron-log';
 
 import * as Validator from '../Validator';
 import contextMenu from '../contextMenu';
-import {getLocalURL} from '../utils';
+import {getLocalURLString} from '../utils';
 
 function saveWindowState(file, window) {
   const windowState = window.getBounds();
@@ -79,7 +79,7 @@ function createMainWindow(config, options) {
   mainWindow.deeplinkingUrl = options.deeplinkingUrl;
   mainWindow.setMenuBarVisibility(false);
 
-  const localURL = getLocalURL('index.html');
+  const localURL = getLocalURLString('index.html');
   mainWindow.loadURL(localURL).catch(
     (reason) => {
       log.error(`Main window failed to load: ${reason}`);

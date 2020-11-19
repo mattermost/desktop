@@ -4,12 +4,12 @@
 import {BrowserWindow} from 'electron';
 import log from 'electron-log';
 
-import {getLocalURL} from '../utils';
+import {getLocalURLString} from '../utils';
 
 export function createSettingsWindow(mainWindow, config, withDevTools) {
   const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
   const settingsWindow = new BrowserWindow({...config.data, parent: mainWindow, title: 'Desktop App Settings', webPreferences: {nodeIntegration: true, spellcheck}});
-  const localURL = getLocalURL('settings.html');
+  const localURL = getLocalURLString('settings.html');
   settingsWindow.loadURL(localURL).catch(
     (reason) => {
       log.error(`Settings window failed to load: ${reason}`);

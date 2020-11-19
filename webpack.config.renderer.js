@@ -20,6 +20,7 @@ module.exports = merge(base, {
   entry: {
     index: './src/renderer/index.jsx',
     settings: './src/renderer/settings.jsx',
+    urlView: './src/renderer/modals/urlView/urlView.jsx',
   },
   output: {
     path: path.resolve(__dirname, 'dist/renderer'),
@@ -37,6 +38,12 @@ module.exports = merge(base, {
       template: 'src/renderer/index.html',
       chunks: ['settings'],
       filename: 'settings.html',
+    }),
+    new HtmlWebpackPlugin({
+      title: 'Mattermost Desktop Settings',
+      template: 'src/renderer/index.html',
+      chunks: ['urlView'],
+      filename: 'urlView.html',
     }),
     new MiniCssExtractPlugin({
       filename: 'styles.[contenthash].css',
