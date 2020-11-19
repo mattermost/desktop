@@ -6,18 +6,15 @@
 import {Menu} from 'electron';
 
 import * as WindowManager from '../windows/windowManager';
-import {SWITCH_SERVER} from 'common/communication';
 
 function createTemplate(config) {
   const teams = config.teams;
   const template = [
-    ...teams.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).map((team, i) => {
+    ...teams.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).map((team) => {
       return {
         label: team.name,
         click: () => {
-          WindowManager.restoreMain();
-          WindowManager.sendToRenderer(SWITCH_SERVER, i);
-          ViewManager.showByName(team.name);
+          WindowManager.switchServer(team.name, true);
         },
       };
     }), {
