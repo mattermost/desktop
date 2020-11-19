@@ -40,8 +40,6 @@ export default class SettingsPage extends React.Component {
     };
 
     ipcRenderer.invoke(GET_LOCAL_CONFIGURATION).then((config) => {
-      console.log('got config');
-      console.log(config);
       this.state = this.convertConfigDataToState(config);
       this.setState({ready: true, maximized: false, ...this.state});
       console.log(this.state);

@@ -22,7 +22,6 @@ let appName;
 log.info('Initializing preload');
 
 ipcRenderer.invoke('get-app-version').then(({name, version}) => {
-  console.log(`setup version ${version}`);
   appVersion = version;
   appName = name;
 });

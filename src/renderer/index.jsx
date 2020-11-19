@@ -33,8 +33,6 @@ let config;
 let teams;
 
 const reloadConfig = (newConfig) => {
-  console.log('new configuration!');
-  console.log(newConfig);
   config = newConfig;
   teams = config.teams;
 };
@@ -53,6 +51,28 @@ const requestConfig = async (exitOnError) => {
     }
   }
 };
+
+function getInitialIndex(teamList) {
+  if (teamList) {
+    const element = teamList.find((e) => e.order === 0);
+    return element ? teamList.indexOf(element) : 0;
+  }
+  return 0;
+}
+
+function openMenu() {
+  if (process.platform !== 'darwin') {
+    ipcRenderer.send('open-app-menu');
+  }
+}
+
+function showBadge(sessionExpired, unreadCount, mentionCount) {
+  ipcRenderer.send('update-unread', {
+    sessionExpired,
+    unreadCount,
+    mentionCount,
+  });
+}
 
 const start = async () => {
   await requestConfig(true);
@@ -111,8 +131,6 @@ const start = async () => {
     return teamIndex;
   }
 
-  console.log('config before rendering');
-  console.log(config);
   const component = (
     <MainPage
       teams={teams}
@@ -134,28 +152,6 @@ const start = async () => {
     document.getElementById('app')
   );
 };
-
-function getInitialIndex(teamList) {
-  if (teamList) {
-    const element = teamList.find((e) => e.order === 0);
-    return element ? teamList.indexOf(element) : 0;
-  }
-  return 0;
-}
-
-function openMenu() {
-  if (process.platform !== 'darwin') {
-    ipcRenderer.send('open-app-menu');
-  }
-}
-
-function showBadge(sessionExpired, unreadCount, mentionCount) {
-  ipcRenderer.send('update-unread', {
-    sessionExpired,
-    unreadCount,
-    mentionCount,
-  });
-}
 
 // Deny drag&drop navigation in mainWindow.
 // Drag&drop is allowed in webview of index.html.

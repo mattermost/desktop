@@ -112,7 +112,6 @@ function createTemplate(config) {
       accelerator: 'CmdOrCtrl+C',
       click() {
         const focused = webContents.getFocusedWebContents();
-        console.log(`I got the focused window ${focused.id}, sending copy command`);
         focused.copy();
       },
     }, {
@@ -306,8 +305,8 @@ function createTemplate(config) {
   return template;
 }
 
-function createMenu(config, viewManager) {
-  return Menu.buildFromTemplate(createTemplate(config, viewManager));
+function createMenu(config) {
+  return Menu.buildFromTemplate(createTemplate(config));
 }
 
 export default {

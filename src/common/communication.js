@@ -29,3 +29,4 @@ export const OPEN_EXTERNAL = 'open_external';
 export const DOUBLE_CLICK_ON_WINDOW = 'double_click';
 
 export const NOTIFY_MENTION = 'notify_mention';
+export const UPDATE_TARGET_URL = 'update_target_url';

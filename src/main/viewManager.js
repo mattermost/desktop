@@ -1,10 +1,18 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import log from 'electron-log';
+import {BrowserView} from 'electron';
+
+import {SECOND} from 'common/utils/constants';
+import {UPDATE_TARGET_URL} from 'common/communication';
 
 import contextMenu from './contextMenu';
 import {MattermostServer} from './MattermostServer';
 import {MattermostView} from './MattermostView';
+import {getLocalURLString} from './utils';
+
+const URL_VIEW_DURATION = 10 * SECOND;
+const URL_VIEW_HEIGHT = 36;
 
 export class ViewManager {
   constructor(config) {
@@ -12,6 +20,7 @@ export class ViewManager {
     this.viewOptions = {spellcheck: config.useSpellChecker};
     this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
     this.currentView = null;
+    this.urlView = null;
   }
 
   // TODO: we shouldn't pass the main window, but get it from windowmanager
@@ -23,6 +32,7 @@ export class ViewManager {
       this.views.set(server.name, view);
       view.setReadyCallback(this.activateView);
       view.load();
+      view.on(UPDATE_TARGET_URL, this.showURLView);
     });
   }
 
@@ -123,5 +133,39 @@ export class ViewManager {
       }
     }
     return found;
+  }
+
+  showURLView = (url) => {
+    if (this.urlViewCancel) {
+      this.urlViewCancel();
+    }
+    const urlString = typeof url === 'string' ? url : url.toString();
+    const urlView = new BrowserView();
+    const query = new Map([['url', urlString]]);
+    const localURL = getLocalURLString('urlView.html', query);
+    urlView.webContents.loadURL(localURL);
+    const currentWindow = this.getCurrentView().window;
+    currentWindow.addBrowserView(urlView);
+    const boundaries = currentWindow.getBounds();
+    urlView.setBounds({
+      x: 0,
+      y: boundaries.height - URL_VIEW_HEIGHT,
+      width: Math.floor(boundaries.width / 3),
+      height: URL_VIEW_HEIGHT,
+    });
+
+    const hideView = () => {
+      this.urlViewCancel = null;
+      currentWindow.removeBrowserView(urlView);
+      urlView.destroy();
+    };
+
+    const timeout = setTimeout(hideView,
+      URL_VIEW_DURATION);
+
+    this.urlViewCancel = () => {
+      clearTimeout(timeout);
+      hideView();
+    };
   }
 }

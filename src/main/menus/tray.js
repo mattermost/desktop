@@ -6,7 +6,6 @@
 import {Menu} from 'electron';
 
 import * as WindowManager from '../windows/windowManager';
-import {ViewManager} from '../viewManager';
 import {SWITCH_SERVER} from 'common/communication';
 
 function createTemplate(config) {
