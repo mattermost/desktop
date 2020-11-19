@@ -27,3 +27,8 @@ export const MAXIMIZE_CHANGE = 'maximized_change';
 export const OPEN_EXTERNAL = 'open_external';
 
 export const DOUBLE_CLICK_ON_WINDOW = 'double_click';
+
+export const WINDOW_CLOSE = 'window_close';
+export const WINDOW_MINIMIZE = 'window_minimize';
+export const WINDOW_MAXIMIZE = 'window_maximize';
+export const WINDOW_RESTORE = 'window_restore';

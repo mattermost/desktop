@@ -28,6 +28,11 @@ import {
   LOAD_RETRY,
   LOAD_SUCCESS,
   LOAD_FAILED,
+  WINDOW_CLOSE,
+  WINDOW_MINIMIZE,
+  WINDOW_RESTORE,
+  WINDOW_MAXIMIZE,
+  DOUBLE_CLICK_ON_WINDOW,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -110,25 +115,6 @@ export default class MainPage extends React.Component {
     // TODO: should try to make this a bit safer in case we get into a weird situation
     const tabname = this.props.teams[this.state.key].name;
     return this.state.tabStatus.get(tabname);
-  }
-
-  getTabWebContents(index = this.state.key || 0, teams = this.props.teams) {
-    const allWebContents = remote.webContents.getAllWebContents();
-
-    if (this.state.showNewTeamModal) {
-      const indexURL = '/renderer/index.html';
-      return allWebContents.find((webContents) => webContents.getURL().includes(indexURL));
-    }
-
-    if (!teams || !teams.length || index > teams.length) {
-      return null;
-    }
-    const tabURL = teams[index].url;
-    if (!tabURL) {
-      return null;
-    }
-    const tab = allWebContents.find((webContents) => webContents.isFocused() && webContents.getURL().includes(this.refs[`mattermostView${index}`].getSrc()));
-    return tab || remote.webContents.getFocusedWebContents();
   }
 
   componentDidMount() {
@@ -251,8 +237,8 @@ export default class MainPage extends React.Component {
 
     ipcRenderer.on(MAXIMIZE_CHANGE, this.handleMaximizeState);
 
-    ipcRenderer.on('enter-full-screen', this.handleFullScreenState);
-    ipcRenderer.on('leave-full-screen', this.handleFullScreenState);
+    ipcRenderer.on('enter-full-screen', () => this.handleFullScreenState(true));
+    ipcRenderer.on('leave-full-screen', () => this.handleFullScreenState(false));
 
     // TODO: check this doesn't happen
     // https://github.com/mattermost/desktop/pull/371#issuecomment-263072803
@@ -264,15 +250,6 @@ export default class MainPage extends React.Component {
     ipcRenderer.on('zoom-in', () => {
       // TODO: do something with this
       ipcRenderer.send(ZOOM, 1);
-
-      // const activeTabWebContents = this.getTabWebContents(this.state.key);
-      // if (!activeTabWebContents) {
-      //   return;
-      // }
-      // if (activeTabWebContents.zoomLevel >= 9) {
-      //   return;
-      // }
-      // activeTabWebContents.zoomLevel += 1;
     });
 
     ipcRenderer.on('zoom-out', () => {
@@ -283,34 +260,16 @@ export default class MainPage extends React.Component {
     ipcRenderer.on('zoom-reset', () => {
       // TODO: do something with this
       ipcRenderer.send(ZOOM, null);
-
-      // const activeTabWebContents = this.getTabWebContents(this.state.key);
-      // if (!activeTabWebContents) {
-      //   return;
-      // }
-      // activeTabWebContents.zoomLevel = 0;
     });
 
     ipcRenderer.on('undo', () => {
       // TODO: do something with this
       ipcRenderer.send(UNDO);
-
-      // const activeTabWebContents = this.getTabWebContents(this.state.key);
-      // if (!activeTabWebContents) {
-      //   return;
-      // }
-      // activeTabWebContents.undo();
     });
 
     ipcRenderer.on('redo', () => {
       // TODO: do something with this
       ipcRenderer.send(REDO);
-
-      // const activeTabWebContents = this.getTabWebContents(this.state.key);
-      // if (!activeTabWebContents) {
-      //   return;
-      // }
-      // activeTabWebContents.redo();
     });
 
     // TODO: should this be an ipcRenderer.invoke?
@@ -451,9 +410,8 @@ export default class MainPage extends React.Component {
     this.setState({maximized});
   }
 
-  handleFullScreenState = () => {
-    const win = remote.getCurrentWindow();
-    this.setState({fullScreen: win.isFullScreen()});
+  handleFullScreenState = (isFullScreen) => {
+    this.setState({fullScreen: isFullScreen});
   }
 
   handleSelect = (name, key) => {
@@ -474,6 +432,7 @@ export default class MainPage extends React.Component {
     }
   }
 
+  // TODO: this is the last function using remote in this file, we should rework handling the badge change to completely remove it.
   handleBadgeChange = (index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) => {
     const sessionsExpired = this.state.sessionsExpired;
     const unreadCounts = this.state.unreadCounts;
@@ -573,25 +532,21 @@ export default class MainPage extends React.Component {
 
   handleClose = (e) => {
     e.stopPropagation(); // since it is our button, the event goes into MainPage's onclick event, getting focus back.
-    const win = remote.getCurrentWindow();
-    win.close();
+    ipcRenderer.send(WINDOW_CLOSE);
   }
 
   handleMinimize = (e) => {
     e.stopPropagation();
-    const win = remote.getCurrentWindow();
-    win.minimize();
+    ipcRenderer.send(WINDOW_MINIMIZE);
   }
 
   handleMaximize = (e) => {
     e.stopPropagation();
-    const win = remote.getCurrentWindow();
-    win.maximize();
+    ipcRenderer.send(WINDOW_MAXIMIZE);
   }
 
   handleRestore = () => {
-    const win = remote.getCurrentWindow();
-    win.restore();
+    ipcRenderer.send(WINDOW_RESTORE);
   }
 
   openMenu = () => {
@@ -602,17 +557,7 @@ export default class MainPage extends React.Component {
   }
 
   handleDoubleClick = () => {
-    if (process.platform === 'darwin') {
-      const doubleClickAction = remote.systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
-      const win = remote.getCurrentWindow();
-      if (doubleClickAction === 'Minimize') {
-        win.minimize();
-      } else if (!win.isMaximized()) {
-        win.maximize();
-      } else if (win.isMaximized()) {
-        win.unmaximize();
-      }
-    }
+    ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW);
   }
 
   addServer = () => {

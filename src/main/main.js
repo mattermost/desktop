@@ -39,6 +39,7 @@ import {showBadge} from './badge';
 import parseArgs from './ParseArgs';
 import {ViewManager} from './viewManager';
 import {getTrayImages, switchMenuIconImages} from './tray/tray';
+import { WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE } from '../common/communication';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
   module.hot.accept();
@@ -255,6 +256,10 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on(QUIT, handleQuit);
 
   ipcMain.on(DOUBLE_CLICK_ON_WINDOW, WindowManager.handleDoubleClick);
+  ipcMain.on(WINDOW_CLOSE, WindowManager.close);
+  ipcMain.on(WINDOW_MAXIMIZE, WindowManager.maximize);
+  ipcMain.on(WINDOW_MINIMIZE, WindowManager.minimize);
+  ipcMain.on(WINDOW_RESTORE, WindowManager.restore);
 }
 
 //
