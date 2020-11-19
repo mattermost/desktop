@@ -15,7 +15,7 @@ import 'airbnb-js-shims/target/es2015';
 import Utils from 'common/utils/util';
 
 import {DEV_SERVER, DEVELOPMENT, PRODUCTION, SECOND} from 'common/utils/constants';
-import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW} from 'common/communication';
+import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE} from 'common/communication';
 import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from 'common/permissions';
 import Config from 'common/config';
 
@@ -39,7 +39,6 @@ import {showBadge} from './badge';
 import parseArgs from './ParseArgs';
 import {ViewManager} from './viewManager';
 import {getTrayImages, switchMenuIconImages} from './tray/tray';
-import { WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE } from '../common/communication';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
   module.hot.accept();
@@ -876,7 +875,7 @@ function handleOpenAppMenu() {
   });
 }
 
-function handleCloseAppMenu(event) {
+function handleCloseAppMenu() {
   viewManager.focus();
 }
 
