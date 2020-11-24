@@ -15,7 +15,7 @@ import 'airbnb-js-shims/target/es2015';
 import Utils from 'common/utils/util';
 
 import {DEV_SERVER, DEVELOPMENT, PRODUCTION, SECOND} from 'common/utils/constants';
-import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, NOTIFY_MENTION} from 'common/communication';
+import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION} from 'common/communication';
 import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from 'common/permissions';
 import Config from 'common/config';
 
@@ -254,6 +254,10 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on(QUIT, handleQuit);
 
   ipcMain.on(DOUBLE_CLICK_ON_WINDOW, WindowManager.handleDoubleClick);
+  ipcMain.on(WINDOW_CLOSE, WindowManager.close);
+  ipcMain.on(WINDOW_MAXIMIZE, WindowManager.maximize);
+  ipcMain.on(WINDOW_MINIMIZE, WindowManager.minimize);
+  ipcMain.on(WINDOW_RESTORE, WindowManager.restore);
 }
 
 //
@@ -848,8 +852,8 @@ function handleOpenAppMenu() {
   });
 }
 
-function handleCloseAppMenu(event) {
-  WindowManager.sendToRenderer('focus-on-webview', event);
+function handleCloseAppMenu() {
+  WindowManager.focusBrowserView();
 }
 
 function handleUpdateMenuEvent(event, configData) {

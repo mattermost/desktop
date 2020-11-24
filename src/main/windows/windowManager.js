@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
-import {app, nativeImage, systemPreferences} from 'electron';
+import {app, BrowserWindow, nativeImage, systemPreferences} from 'electron';
 import log from 'electron-log';
 
 import {MAXIMIZE_CHANGE, SWITCH_SERVER} from 'common/communication';
@@ -229,4 +229,24 @@ export function getServerNameByWebContentsId(webContentsId) {
     return status.viewManager.findByWebContent(webContentsId);
   }
   return null;
+export function close() {
+  const focused = BrowserWindow.getFocusedWindow();
+  if (focused.id === status.mainWindow.id) {
+    // TODO: figure out logic for closing
+    focused.close();
+  } else {
+    focused.close();
+  }
+}
+export function maximize() {
+  const focused = BrowserWindow.getFocusedWindow();
+  focused.maximize();
+}
+export function minimize() {
+  const focused = BrowserWindow.getFocusedWindow();
+  focused.minimize();
+}
+export function restore() {
+  const focused = BrowserWindow.getFocusedWindow();
+  focused.restore();
 }
