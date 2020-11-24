@@ -33,4 +33,9 @@ export const SHOW_NEW_SERVER_MODAL = 'show_new_server_modal';
 export const RETRIEVE_MODAL_INFO = 'retrieve-modal-info';
 export const MODAL_CANCEL = 'modal-cancel';
 export const MODAL_RESULT = 'modal-result';
+export const WINDOW_CLOSE = 'window_close';
+export const WINDOW_MINIMIZE = 'window_minimize';
+export const WINDOW_MAXIMIZE = 'window_maximize';
+export const WINDOW_RESTORE = 'window_restore';
+
 export const UPDATE_TARGET_URL = 'update_target_url';
