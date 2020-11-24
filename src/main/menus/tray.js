@@ -6,7 +6,6 @@
 import {Menu} from 'electron';
 
 import * as WindowManager from '../windows/windowManager';
-import {ViewManager} from '../viewManager';
 
 // TODO: remove viewmanager once move to windowmanager is completed
 function createTemplate(config, viewManager) {

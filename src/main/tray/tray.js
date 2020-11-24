@@ -16,7 +16,6 @@ export function getTrayImages(trayIconTheme) {
     };
   case 'darwin':
   {
-    console.log(`normal icon path is: ${path.resolve(assetsDir, 'osx/MenuIcon.png')}`);
     const icons = {
       light: {
         normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIcon.png')),
