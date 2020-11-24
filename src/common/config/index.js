@@ -24,6 +24,10 @@ export default class Config extends EventEmitter {
   constructor(configFilePath) {
     super();
     this.configFilePath = configFilePath;
+  }
+
+  // separating constructor from init so main can setup event listeners
+  init = () => {
     this.registryConfig = new RegistryConfig();
     this.registryConfig.once(REGISTRY_READ_EVENT, this.loadRegistry);
     this.registryConfig.init();
@@ -54,20 +58,15 @@ export default class Config extends EventEmitter {
    * @emits {update} emitted once all data has been loaded and merged
    * @emits {synchronize} emitted when requested by a call to method; used to notify other config instances of changes
    */
-  reload = (synchronize = false) => {
+  reload = () => {
     this.defaultConfigData = this.loadDefaultConfigData();
     this.buildConfigData = this.loadBuildConfigData();
-
     this.localConfigData = this.loadLocalConfigFile();
     this.localConfigData = this.checkForConfigUpdates(this.localConfigData);
-
     this.regenerateCombinedConfigData();
 
     this.emit('update', this.combinedData);
-
-    if (synchronize) {
-      this.emit('synchronize');
-    }
+    this.emit('synchronize');
   }
 
   /**
@@ -453,7 +452,6 @@ export default class Config extends EventEmitter {
    * @emits 'darkModeChange'
    */
   handleUpdateTheme = () => {
-    console.log('dark theme mode change detected');
     if (this.combinedData.darkMode !== nativeTheme.shouldUseDarkColors) {
       this.combinedData.darkMode = nativeTheme.shouldUseDarkColors;
       this.emit('darkModeChange', this.combinedData.darkMode);
