@@ -229,6 +229,8 @@ export function getServerNameByWebContentsId(webContentsId) {
     return status.viewManager.findByWebContent(webContentsId);
   }
   return null;
+}
+
 export function close() {
   const focused = BrowserWindow.getFocusedWindow();
   if (focused.id === status.mainWindow.id) {
