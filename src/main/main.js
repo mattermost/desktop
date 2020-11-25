@@ -171,9 +171,10 @@ async function initializeConfig() {
       handleConfigUpdate(configData);
       resolve();
     });
+    config.init();
   });
 
-  await loadConfig;
+  return loadConfig;
 }
 
 function initializeAppEventListeners() {
@@ -273,7 +274,9 @@ function handleConfigUpdate(configData) {
     }).catch((err) => {
       console.log('error:', err);
     });
-    WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
+    if (app.isReady()) {
+      WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
+    }
   }
 
   ipcMain.emit('update-menu', true, configData);
@@ -282,7 +285,9 @@ function handleConfigUpdate(configData) {
 function handleConfigSynchronize() {
   // TODO: send this to server manager
   WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
-  WindowManager.sendToRenderer('reload-config');
+  if (app.isReady()) {
+    WindowManager.sendToRenderer('reload-config');
+  }
 }
 
 function handleReloadConfig() {
