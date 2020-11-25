@@ -124,6 +124,8 @@
       <ComponentRef Id="GPOUSEnglishFiles" />
     </Feature>
     <InstallExecuteSequence>
+      <RemoveShortcuts>Installed AND NOT UPGRADINGPRODUCTCODE</RemoveShortcuts>
+
       <Custom Action="KillApp" Before="InstallValidate" />
       <Custom Action="LaunchApp" After="InstallFinalize">Installed</Custom>
     </InstallExecuteSequence>
