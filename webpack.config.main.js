@@ -35,6 +35,14 @@ module.exports = merge(base, {
       use: {
         loader: 'url-loader',
       },
+    },
+    {
+      test: /\.node$/,
+      loader: 'awesome-node-loader',
+      options: {
+        name: '[name].[ext]',
+        rewritePath: path.resolve(__dirname, 'dist'),
+      }
     }],
   },
   node: {
