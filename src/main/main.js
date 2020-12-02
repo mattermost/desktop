@@ -15,7 +15,7 @@ import 'airbnb-js-shims/target/es2015';
 import Utils from 'common/utils/util';
 
 import {DEV_SERVER, DEVELOPMENT, PRODUCTION, SECOND} from 'common/utils/constants';
-import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE} from 'common/communication';
+import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION} from 'common/communication';
 import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from 'common/permissions';
 import Config from 'common/config';
 
@@ -35,9 +35,9 @@ import initCookieManager from './cookieManager';
 import UserActivityMonitor from './UserActivityMonitor';
 import * as WindowManager from './windows/windowManager';
 import {showBadge} from './badge';
+import {displayMention, displayDownloadCompleted} from './notifications';
 
 import parseArgs from './ParseArgs';
-import {ViewManager} from './viewManager';
 import {getTrayImages, switchMenuIconImages} from './tray/tray';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
@@ -73,7 +73,6 @@ let appState = null;
 let config = null;
 let trayIcon = null;
 let trayImages = null;
-let viewManager = null;
 
 // supported custom login paths (oath, saml)
 const customLoginRegexPaths = [
@@ -233,7 +232,7 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('login-credentials', handleLoginCredentialsEvent);
   ipcMain.on('login-cancel', handleCancelLoginEvent);
   ipcMain.on('download-url', handleDownloadURLEvent);
-  ipcMain.on('notified', handleNotifiedEvent);
+  ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
   ipcMain.handle('get-app-version', handleAppVersion);
 
   // see comment on function
@@ -242,7 +241,7 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('selected-client-certificate', handleSelectedCertificate);
   ipcMain.on(GRANT_PERMISSION_CHANNEL, handlePermissionGranted);
   ipcMain.on(DENY_PERMISSION_CHANNEL, handlePermissionDenied);
-  ipcMain.on(FOCUS_BROWSERVIEW, handleFocus);
+  ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
 
   if (shouldShowTrayIcon()) {
     ipcMain.on('update-unread', handleUpdateUnreadEvent);
@@ -288,20 +287,15 @@ function handleConfigSynchronize() {
   WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
   if (app.isReady()) {
     WindowManager.sendToRenderer('reload-config');
-    if (viewManager) {
-      viewManager.reloadConfiguration(config.teams, WindowManager.getMainWindow());
-    }
   }
 }
 
 function handleReloadConfig() {
   config.reload();
   WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
-  viewManager.reloadConfiguration(config.teams, WindowManager.getMainWindow());
 }
 
 function handleAppVersion() {
-  log.info('requested version');
   return {
     name: app.getName(),
     version: app.getVersion(),
@@ -512,8 +506,7 @@ function handleAppWillFinishLaunching() {
 }
 
 function handleSwitchServer(event, serverName) {
-  WindowManager.showMainWindow(true);
-  viewManager.showByName(serverName);
+  WindowManager.switchServer(serverName);
 }
 
 function handleAppWebContentsCreated(dc, contents) {
@@ -682,14 +675,6 @@ function initializeAfterAppReady() {
     WindowManager.showSettingsWindow();
   }
 
-  // TODO: how should the relationship between viewmanager and windowmanager be?
-
-  // const boundaries = getWindowBoundaries(win);
-  // setServersBounds(servers, boundaries);
-  viewManager = new ViewManager(config);
-  viewManager.load(WindowManager.getMainWindow());
-  viewManager.showInitial();
-
   criticalErrorHandler.setMainWindow(WindowManager.getMainWindow());
 
   // TODO: this has to be sent to the tabs instead
@@ -750,11 +735,7 @@ function initializeAfterAppReady() {
 
     item.on('done', (doneEvent, state) => {
       if (state === 'completed') {
-        WindowManager.sendToRenderer('download-complete', {
-          fileName: filename,
-          path: item.savePath,
-          serverInfo: Utils.getServer(webContents.getURL(), config.teams),
-        });
+        displayDownloadCompleted(filename, item.savePath, Utils.getServer(webContents.getURL(), config.teams));
       }
     });
   });
@@ -828,14 +809,8 @@ function handleDownloadURLEvent(event, url) {
   });
 }
 
-function handleNotifiedEvent() {
-  if (config.notifications.flashWindow === 2) {
-    WindowManager.flashFrame(true);
-  }
-
-  if (process.platform === 'darwin' && config.notifications.bounceIcon) {
-    app.dock.bounce(config.notifications.bounceIconType);
-  }
+function handleMentionNotification(event, title, body, channel, teamId, silent) {
+  displayMention(title, body, channel, teamId, silent, event.sender);
 }
 
 // TODO: figure out if we want to inherit title from webpage or use one of our own
@@ -884,27 +859,19 @@ function handleOpenAppMenu() {
 }
 
 function handleCloseAppMenu() {
-  viewManager.focus();
-}
-
-function handleFocus() {
-  if (viewManager) {
-    viewManager.focus();
-  } else {
-    log.error('Trying to call focus when the viewmanager has not yet been initialized');
-  }
+  WindowManager.focusBrowserView();
 }
 
 function handleUpdateMenuEvent(event, configData) {
   // TODO: this might make sense to move to window manager? so it updates the window referenced if needed.
   const mainWindow = WindowManager.getMainWindow();
-  const aMenu = appMenu.createMenu(configData, viewManager);
+  const aMenu = appMenu.createMenu(configData);
   Menu.setApplicationMenu(aMenu);
   aMenu.addListener('menu-will-close', handleCloseAppMenu);
 
   // set up context menu for tray icon
   if (shouldShowTrayIcon()) {
-    const tMenu = trayMenu.createMenu(configData, viewManager); // this will change once the viewmanager is part of windowmanager
+    const tMenu = trayMenu.createMenu(configData);
     if (process.platform === 'darwin' || process.platform === 'linux') {
       // store the information, if the tray was initialized, for checking in the settings, if the application
       // was restarted after setting "Show icon on menu bar"

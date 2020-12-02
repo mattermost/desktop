@@ -27,10 +27,7 @@ import {ipcRenderer} from 'electron';
 
 import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT} from 'common/communication';
 
-import EnhancedNotification from './js/notification';
 import MainPage from './components/MainPage.jsx';
-
-Notification = EnhancedNotification; // eslint-disable-line no-global-assign, no-native-reassign
 
 let config;
 let teams;
@@ -43,9 +40,12 @@ const reloadConfig = (newConfig) => {
 const requestConfig = async (exitOnError) => {
   // todo: should we block?
   try {
+    console.log('requested configuration');
     const configRequest = await ipcRenderer.invoke(GET_CONFIGURATION);
+    console.log(`config is: ${configRequest}`);
     reloadConfig(configRequest);
   } catch (err) {
+    console.log(`there was an error with the config: ${err}`);
     if (exitOnError) {
       ipcRenderer.send(QUIT, `unable to load configuration: ${err}`, err.stack);
     }

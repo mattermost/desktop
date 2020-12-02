@@ -118,6 +118,23 @@ export class ViewManager {
     }
   }
 
+  findByWebContent(webContentId) {
+    let found = null;
+    let serverName;
+    let view;
+    const entries = this.views.entries();
+
+    for ([serverName, view] of entries) {
+      if (typeof serverName !== 'undefined') {
+        const wc = view.getWebContents();
+        if (wc && wc.id === webContentId) {
+          found = serverName;
+        }
+      }
+    }
+    return found;
+  }
+
   showURLView = (url) => {
     if (this.urlViewCancel) {
       this.urlViewCancel();

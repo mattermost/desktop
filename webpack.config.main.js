@@ -29,7 +29,12 @@ module.exports = merge(base, {
         options: {
           include: ['@babel/plugin-proposal-class-properties']
         }
-      }
+      },
+    }, {
+      test: /\.mp3$/,
+      use: {
+        loader: 'url-loader',
+      },
     },
     {
       test: /\.node$/,

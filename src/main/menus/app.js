@@ -9,7 +9,7 @@ import * as WindowManager from '../windows/windowManager';
 
 const ZOOM_DIFFERENTIAL = 0.5;
 
-function createTemplate(config, viewManager) {
+function createTemplate(config) {
   const separatorItem = {
     type: 'separator',
   };
@@ -205,7 +205,7 @@ function createTemplate(config, viewManager) {
   }, {
     label: 'Developer Tools for Current Server',
     click() {
-      viewManager.openViewDevTools();
+      WindowManager.openBrowserViewDevTools();
     },
   }];
 
@@ -263,8 +263,7 @@ function createTemplate(config, viewManager) {
         label: team.name,
         accelerator: `CmdOrCtrl+${i + 1}`,
         click() {
-          WindowManager.showMainWindow(); // for OS X
-          WindowManager.sendToRenderer('switch-tab', i);
+          WindowManager.switchServer(team.name, true);
         },
       };
     }), separatorItem, {
@@ -303,8 +302,8 @@ function createTemplate(config, viewManager) {
   return template;
 }
 
-function createMenu(config, viewManager) {
-  return Menu.buildFromTemplate(createTemplate(config, viewManager));
+function createMenu(config) {
+  return Menu.buildFromTemplate(createTemplate(config));
 }
 
 export default {

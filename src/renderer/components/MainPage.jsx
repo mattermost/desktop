@@ -27,6 +27,7 @@ import {
   LOAD_RETRY,
   LOAD_SUCCESS,
   LOAD_FAILED,
+  SWITCH_SERVER,
   WINDOW_CLOSE,
   WINDOW_MINIMIZE,
   WINDOW_RESTORE,
@@ -198,7 +199,7 @@ export default class MainPage extends React.Component {
     });
 
     // can't switch tabs sequentially for some reason...
-    ipcRenderer.on('switch-tab', (event, key) => {
+    ipcRenderer.on(SWITCH_SERVER, (event, key) => {
       const nextIndex = this.props.teams.findIndex((team) => team.order === key);
       const team = this.props.teams[nextIndex];
       this.handleSelect(team.name, nextIndex);
