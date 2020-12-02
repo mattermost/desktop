@@ -391,8 +391,6 @@ export default class SettingsPage extends React.Component {
           {'Start app on login'}
           <HelpBlock>
             {'If enabled, the app starts automatically when you log in to your machine.'}
-            {' '}
-            {'The app will initially start minimized and appear on the taskbar.'}
           </HelpBlock>
         </Checkbox>);
     }

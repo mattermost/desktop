@@ -151,8 +151,6 @@ function initializeArgs() {
     process.exit(0); // eslint-disable-line no-process-exit
   }
 
-  // TODO: are we going to use this?
-  // hideOnStartup = shouldBeHiddenOnStartup(global.args);
 
   global.isDev = isDev && !global.args.disableDevMode; // this doesn't seem to be right and isn't used as the single source of truth
 
