@@ -82,6 +82,16 @@ function getManagedResources() {
   return buildConfig.managedResources || [];
 }
 
+function isAdminUrl(serverUrl, inputUrl) {
+  const parsedURL = parseURL(inputUrl);
+  const server = getServerInfo(serverUrl);
+  if (!parsedURL || !server || (!equalUrlsIgnoringSubpath(server, parsedURL))) {
+    return null;
+  }
+  return (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}/admin_console/`) ||
+    parsedURL.pathname.toLowerCase().startsWith('/admin_console/'));
+}
+
 function isTeamUrl(serverUrl, inputUrl, withApi) {
   const parsedURL = parseURL(inputUrl);
   const server = getServerInfo(serverUrl); // TODO: change into using server
@@ -237,6 +247,7 @@ export default {
   parseURL,
   getServer,
   getServerInfo,
+  isAdminUrl,
   isTeamUrl,
   isPluginUrl,
   isManagedResource,

@@ -520,7 +520,7 @@ function handleAppWebContentsCreated(dc, contents) {
     const parsedURL = Utils.parseURL(url);
     const server = Utils.getServer(parsedURL, config.teams);
 
-    if ((server !== null && Utils.isTeamUrl(server.url, parsedURL)) || isTrustedPopupWindow(event.sender)) {
+    if ((server !== null && Utils.isTeamUrl(server.url, parsedURL)) || Utils.isAdminUrl(server.url, parsedURL) || isTrustedPopupWindow(event.sender)) {
       return;
     }
 
@@ -580,8 +580,12 @@ function handleAppWebContentsCreated(dc, contents) {
       shell.openExternal(url);
       return;
     }
-    if (Utils.isTeamUrl(server.url, parsedURL, true) === true) {
+    if (Utils.isTeamUrl(server.url, parsedURL, true)) {
       log.info(`${url} is a known team, preventing to open a new window`);
+      return;
+    }
+    if (Utils.isAdminUrl(server.url, parsedURL)) {
+      log.info(`${url} is an admin console page, preventing to open a new window`);
       return;
     }
     if (popupWindow && !popupWindow.closed && popupWindow.getURL() === url) {
