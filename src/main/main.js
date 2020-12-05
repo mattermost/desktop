@@ -151,7 +151,6 @@ function initializeArgs() {
     process.exit(0); // eslint-disable-line no-process-exit
   }
 
-
   global.isDev = isDev && !global.args.disableDevMode; // this doesn't seem to be right and isn't used as the single source of truth
 
   if (global.args.dataDir) {
@@ -811,8 +810,8 @@ function handleDownloadURLEvent(event, url) {
   });
 }
 
-function handleMentionNotification(event, title, body, channel, teamId, silent) {
-  displayMention(title, body, channel, teamId, silent, event.sender);
+function handleMentionNotification(event, title, body, channel, teamId, silent, data) {
+  displayMention(title, body, channel, teamId, silent, event.sender, data);
 }
 
 // TODO: figure out if we want to inherit title from webpage or use one of our own

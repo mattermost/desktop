@@ -35,3 +35,5 @@ export const WINDOW_MAXIMIZE = 'window_maximize';
 export const WINDOW_RESTORE = 'window_restore';
 
 export const UPDATE_TARGET_URL = 'update_target_url';
+
+export const PLAY_SOUND = 'play_sound';

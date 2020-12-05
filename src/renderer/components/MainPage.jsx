@@ -33,6 +33,7 @@ import {
   WINDOW_RESTORE,
   WINDOW_MAXIMIZE,
   DOUBLE_CLICK_ON_WINDOW,
+  PLAY_SOUND,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -41,6 +42,8 @@ import minimizeButton from '../../assets/titlebar/chrome-minimize.svg';
 import closeButton from '../../assets/titlebar/chrome-close.svg';
 import spinner from '../../assets/loading.gif';
 import spinnerx2 from '../../assets/loading@2x.gif';
+
+import {playSound} from '../notificationSounds';
 
 import LoginModal from './LoginModal.jsx';
 import TabBar from './TabBar.jsx';
@@ -341,6 +344,10 @@ export default class MainPage extends React.Component {
 
     ipcRenderer.on('toggle-find', () => {
       this.activateFinder(true);
+    });
+
+    ipcRenderer.on(PLAY_SOUND, (_event, soundName) => {
+      playSound(soundName);
     });
 
     if (process.platform !== 'darwin') {

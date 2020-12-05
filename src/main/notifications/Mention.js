@@ -3,9 +3,7 @@
 
 import {Notification} from 'electron';
 
-import osVersion from '../../common/osVersion';
-
-import {playSound, DEFAULT_WIN7} from './notificationSounds';
+import osVersion from 'common/osVersion';
 
 const appIconURL = 'file://assets/appicon_48.png';
 
@@ -15,6 +13,7 @@ const defaultOptions = {
   icon: appIconURL,
   urgency: 'normal',
 };
+export const DEFAULT_WIN7 = 'Ding';
 
 export class Mention extends Notification {
   constructor(customOptions) {
@@ -34,7 +33,7 @@ export class Mention extends Notification {
     this.customSound = customSound;
   }
 
-  onShow = () => {
-    playSound(this.customSound);
+  getNotificationSound = () => {
+    return this.customSound;
   }
 }

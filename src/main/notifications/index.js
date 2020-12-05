@@ -3,31 +3,37 @@
 
 import {shell, Notification} from 'electron';
 
+import {PLAY_SOUND} from 'common/communication';
+
 import * as windowManager from '../windows/windowManager';
 
 import {Mention} from './Mention';
 import {DownloadNotification} from './Download';
 
-export function displayMention(title, body, channel, teamId, silent, webcontents) {
+export function displayMention(title, body, channel, teamId, silent, webcontents, data) {
   if (!Notification.isSupported()) {
     console.log('notification not supported');
     return;
   }
+  const serverName = windowManager.getServerNameByWebContentsId(webcontents.id);
+
   const options = {
-    title,
+    title: `${serverName}: ${title}`,
     body,
-    silent
+    silent,
+    data
   };
   const mention = new Mention(options);
 
-  mention.on('show', (e) => {
-    mention.onShow(e);
+  mention.on('show', () => {
+    const notificationSound = mention.getNotificationSound();
+    if (notificationSound) {
+      windowManager.sendToRenderer(PLAY_SOUND, notificationSound);
+    }
     windowManager.flashFrame(true);
   });
 
   mention.on('click', () => {
-    const serverName = windowManager.getServerNameByWebContentsId(webcontents.id);
-    console.log(`notification clicked! redirecting to ${serverName}`);
     if (serverName) {
       windowManager.switchServer(serverName, true);
       webcontents.send('notification-clicked', {channel, teamId});
