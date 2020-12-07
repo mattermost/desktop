@@ -3,13 +3,28 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 
 import React from 'react';
-import {remote} from 'electron';
+import {ipcRenderer} from 'electron';
 import PropTypes from 'prop-types';
 import {Nav, NavItem} from 'react-bootstrap';
 import {Container, Draggable} from 'react-smooth-dnd';
 import PlusIcon from 'mdi-react/PlusIcon';
 
+import {GET_CONFIGURATION} from 'common/communication';
+
 export default class TabBar extends React.Component { // need "this"
+  constructor(props) {
+    super(props);
+    this.state = {
+      hasGPOTeams: false,
+    };
+  }
+
+  componentDidMount() {
+    ipcRenderer.invoke(GET_CONFIGURATION).then((config) => {
+      this.setState({hasGPOTeams: config.registryTeams && config.registryTeams.length > 0});
+    });
+  }
+
   render() {
     const orderedTabs = this.props.teams.concat().sort((a, b) => a.order - b.order);
     const tabs = orderedTabs.map((team) => {
@@ -123,7 +138,7 @@ export default class TabBar extends React.Component { // need "this"
         onDrop={this.props.onDrop}
         animationDuration={300}
         shouldAcceptDrop={() => {
-          return !(remote.getCurrentWindow().registryConfigData.teams && remote.getCurrentWindow().registryConfigData.teams.length > 0);
+          return !this.state.hasGPOTeams;
         }}
       />
     );

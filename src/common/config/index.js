@@ -442,7 +442,7 @@ export default class Config extends EventEmitter {
     return config;
   }
 
-  handleUpdateTeams = (newTeams) => {
+  handleUpdateTeams = (event, newTeams) => {
     this.set('teams', newTeams);
     return this.combinedData.teams;
   }

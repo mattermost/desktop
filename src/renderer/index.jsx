@@ -28,89 +28,41 @@ import {ipcRenderer} from 'electron';
 import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT} from 'common/communication';
 
 import MainPage from './components/MainPage.jsx';
-
-let config;
-let teams;
-
-const reloadConfig = (newConfig) => {
-  config = newConfig;
-  teams = config.teams;
-};
-
-const requestConfig = async (exitOnError) => {
-  // todo: should we block?
-  try {
-    console.log('requested configuration');
-    const configRequest = await ipcRenderer.invoke(GET_CONFIGURATION);
-    console.log(`config is: ${configRequest}`);
-    reloadConfig(configRequest);
-  } catch (err) {
-    console.log(`there was an error with the config: ${err}`);
-    if (exitOnError) {
-      ipcRenderer.send(QUIT, `unable to load configuration: ${err}`, err.stack);
-    }
+class Root extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {};
   }
-};
 
-function getInitialIndex(teamList) {
-  if (teamList) {
-    const element = teamList.find((e) => e.order === 0);
-    return element ? teamList.indexOf(element) : 0;
-  }
-  return 0;
-}
+  async componentDidMount() {
+    await this.setInitialConfig();
 
-function openMenu() {
-  if (process.platform !== 'darwin') {
-    ipcRenderer.send('open-app-menu');
-  }
-}
-
-function showBadge(sessionExpired, unreadCount, mentionCount) {
-  ipcRenderer.send('update-unread', {
-    sessionExpired,
-    unreadCount,
-    mentionCount,
-  });
-}
-
-const start = async () => {
-  await requestConfig(true);
-
-  const parsedURL = url.parse(window.location.href, true);
-  const initialIndex = parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : getInitialIndex(teams);
-
-  // TODO: why is this needed? removing for now
-  //remote.getCurrentWindow().removeAllListeners('focus');
-
-  // TODO: deep linking
-  // let deeplinkingUrl = null;
-  // if (!parsedURL.query.index || parsedURL.query.index === null) {
-  //   deeplinkingUrl = remote.getCurrentWindow().deeplinkingUrl;
-  // }
-  const deeplinkingUrl = null;
-
-  ipcRenderer.on('synchronize-config', () => {
-    requestConfig();
-  });
-
-  ipcRenderer.on('reload-config', () => {
-    ipcRenderer.invoke(GET_CONFIGURATION).then(reloadConfig);
-  });
-
-  function teamConfigChange(updatedTeams, callback) {
-    //config.set('teams', updatedTeams);
-    ipcRenderer.invoke(UPDATE_TEAMS, updatedTeams).then((teamConfig) => {
-      teams = teamConfig;
-      config.teams = teamConfig;
+    ipcRenderer.on('synchronize-config', () => {
+      this.reloadConfig();
     });
-    if (callback) {
-      ipcRenderer.invoke(UPDATE_TEAMS, callback);
-    }
+
+    ipcRenderer.on('reload-config', () => {
+      this.reloadConfig();
+    });
+
+    // Deny drag&drop navigation in mainWindow.
+    // Drag&drop is allowed in webview of index.html.
+    document.addEventListener('dragover', (event) => event.preventDefault());
+    document.addEventListener('drop', (event) => event.preventDefault());
   }
 
-  function moveTabs(originalOrder, newOrder) {
-    const tabOrder = teams.concat().map((team, index) => {
+  setInitialConfig = async () => {
+    const config = await this.requestConfig(true);
+    const parsedURL = url.parse(window.location.href, true);
+    this.setState({
+      config,
+      initialIndex: parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : this.getInitialIndex(config.teams)
+    });
+  }
+
+  moveTabs = async (originalOrder, newOrder) => {
+    const teams = this.state.config.teams.concat();
+    const tabOrder = teams.map((team, index) => {
       return {
         index,
         order: team.order,
@@ -127,34 +79,87 @@ const start = async () => {
       }
       teams[t.index].order = order;
     });
-    teamConfigChange(teams);
+    await this.teamConfigChange(teams);
     return teamIndex;
+  };
+
+  teamConfigChange = async (updatedTeams, callback) => {
+    const updatedConfig = await ipcRenderer.invoke(UPDATE_TEAMS, updatedTeams);
+    await this.reloadConfig();
+    if (callback) {
+      callback(updatedConfig);
+    }
+  };
+
+  showBadge = (sessionExpired, unreadCount, mentionCount) => {
+    ipcRenderer.send('update-unread', {
+      sessionExpired,
+      unreadCount,
+      mentionCount,
+    });
   }
 
-  const component = (
-    <MainPage
-      teams={teams}
-      localTeams={config.localTeams}
-      initialIndex={initialIndex}
-      onBadgeChange={showBadge}
-      onTeamConfigChange={teamConfigChange}
-      useSpellChecker={config.useSpellChecker}
-      deeplinkingUrl={deeplinkingUrl}
-      showAddServerButton={config.enableServerManagement}
-      moveTabs={moveTabs}
-      openMenu={openMenu}
-      darkMode={config.darkMode}
-      appName={config.appName}
-    />);
+  reloadConfig = async () => {
+    const config = await this.requestConfig();
+    this.setState({config});
+  };
 
-  ReactDOM.render(
-    component,
-    document.getElementById('app')
-  );
-};
+  requestConfig = async (exitOnError) => {
+    // todo: should we block?
+    try {
+      console.log('requested configuration');
+      const configRequest = await ipcRenderer.invoke(GET_CONFIGURATION);
+      console.log(`config is: ${JSON.stringify(configRequest)}`);
+      return configRequest;
+    } catch (err) {
+      console.log(`there was an error with the config: ${err}`);
+      if (exitOnError) {
+        ipcRenderer.send(QUIT, `unable to load configuration: ${err}`, err.stack);
+      }
+    }
+    return null;
+  };
 
-// Deny drag&drop navigation in mainWindow.
-// Drag&drop is allowed in webview of index.html.
-document.addEventListener('dragover', (event) => event.preventDefault());
-document.addEventListener('drop', (event) => event.preventDefault());
-start();
+  getInitialIndex = (teamList) => {
+    if (teamList) {
+      const element = teamList.find((e) => e.order === 0);
+      return element ? teamList.indexOf(element) : 0;
+    }
+    return 0;
+  }
+
+  openMenu = () => {
+    if (process.platform !== 'darwin') {
+      ipcRenderer.send('open-app-menu');
+    }
+  }
+
+  render() {
+    const {config, initialIndex, deeplinkingUrl} = this.state;
+    if (!config) {
+      return null;
+    }
+
+    return (
+      <MainPage
+        teams={config.teams}
+        localTeams={config.localTeams}
+        initialIndex={initialIndex}
+        onBadgeChange={this.showBadge}
+        onTeamConfigChange={this.teamConfigChange}
+        useSpellChecker={config.useSpellChecker}
+        deeplinkingUrl={deeplinkingUrl}
+        showAddServerButton={config.enableServerManagement}
+        moveTabs={this.moveTabs}
+        openMenu={this.openMenu}
+        darkMode={config.darkMode}
+        appName={config.appName}
+      />
+    );
+  }
+}
+
+ReactDOM.render(
+  <Root/>,
+  document.getElementById('app')
+);
