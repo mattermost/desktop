@@ -12,6 +12,7 @@ import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
 
 import Utils from 'common/utils/util';
+import urlUtils from 'common/utils/url';
 
 import {DEV_SERVER, DEVELOPMENT, PRODUCTION, SECOND} from 'common/utils/constants';
 import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION, GET_DOWNLOAD_LOCATION} from 'common/communication';
@@ -460,7 +461,7 @@ function handleAppGPUProcessCrashed(event, killed) {
 function handleAppLogin(event, webContents, request, authInfo, callback) {
   event.preventDefault();
   const parsedURL = new URL(request.url);
-  const server = Utils.getServer(parsedURL, config.teams);
+  const server = urlUtils.getServer(parsedURL, config.teams);
 
   loginCallbackMap.set(request.url, typeof callback === 'undefined' ? null : callback); // if callback is undefined set it to null instead so we know we have set it up with no value
   const mainWindow = WindowManager.getMainWindow(true);
@@ -514,10 +515,10 @@ function handleAppWebContentsCreated(dc, contents) {
 
   contents.on('will-navigate', (event, url) => {
     const contentID = event.sender.id;
-    const parsedURL = Utils.parseURL(url);
-    const server = Utils.getServer(parsedURL, config.teams);
+    const parsedURL = urlUtils.parseURL(url);
+    const server = urlUtils.getServer(parsedURL, config.teams);
 
-    if ((server !== null && Utils.isTeamUrl(server.url, parsedURL)) || Utils.isAdminUrl(server.url, parsedURL) || isTrustedPopupWindow(event.sender)) {
+    if ((server !== null && urlUtils.isTeamUrl(server.url, parsedURL)) || urlUtils.isAdminUrl(server.url, parsedURL) || isTrustedPopupWindow(event.sender)) {
       return;
     }
 
@@ -549,8 +550,8 @@ function handleAppWebContentsCreated(dc, contents) {
   //    - indicate custom login is NOT in progress
   contents.on('did-start-navigation', (event, url) => {
     const contentID = event.sender.id;
-    const parsedURL = Utils.parseURL(url);
-    const server = Utils.getServer(parsedURL, config.teams);
+    const parsedURL = urlUtils.parseURL(url);
+    const server = urlUtils.getServer(parsedURL, config.teams);
 
     if (!isTrustedURL(parsedURL)) {
       return;
@@ -564,20 +565,20 @@ function handleAppWebContentsCreated(dc, contents) {
   });
 
   contents.on('new-window', (event, url) => {
-    const parsedURL = Utils.parseURL(url);
+    const parsedURL = urlUtils.parseURL(url);
 
     if (parsedURL.protocol === 'devtools:') {
       return;
     }
     event.preventDefault();
 
-    const server = Utils.getServer(parsedURL, config.teams);
+    const server = urlUtils.getServer(parsedURL, config.teams);
 
     if (!server) {
       shell.openExternal(url);
       return;
     }
-    if (Utils.isTeamUrl(server.url, parsedURL, true)) {
+    if (urlUtils.isTeamUrl(server.url, parsedURL, true)) {
       log.info(`${url} is a known team, preventing to open a new window`);
       return;
     }
@@ -591,7 +592,7 @@ function handleAppWebContentsCreated(dc, contents) {
     }
 
     // TODO: move popups to its own and have more than one.
-    if (Utils.isPluginUrl(server.url, parsedURL) || Utils.isManagedResource(server.url, parsedURL)) {
+    if (urlUtils.isPluginUrl(server.url, parsedURL) || urlUtils.isManagedResource(server.url, parsedURL)) {
       if (!popupWindow || popupWindow.closed) {
         popupWindow = new BrowserWindow({
           backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
@@ -612,7 +613,7 @@ function handleAppWebContentsCreated(dc, contents) {
         });
       }
 
-      if (Utils.isManagedResource(server.url, parsedURL)) {
+      if (urlUtils.isManagedResource(server.url, parsedURL)) {
         popupWindow.loadURL(url);
       } else {
         // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth
@@ -736,7 +737,7 @@ function initializeAfterAppReady() {
 
     item.on('done', (doneEvent, state) => {
       if (state === 'completed') {
-        displayDownloadCompleted(filename, item.savePath, Utils.getServer(webContents.getURL(), config.teams));
+        displayDownloadCompleted(filename, item.savePath, urlUtils.getServer(webContents.getURL(), config.teams));
       }
     });
   });
@@ -895,7 +896,6 @@ async function handleSelectDownload(event, startFrom) {
     properties:
      ['openDirectory', 'createDirectory', 'dontAddToRecent', 'promptToCreate']});
   return result.filePaths[0];
-
 }
 
 //
@@ -903,11 +903,11 @@ async function handleSelectDownload(event, startFrom) {
 //
 
 function isTrustedURL(url) {
-  const parsedURL = Utils.parseURL(url);
+  const parsedURL = urlUtils.parseURL(url);
   if (!parsedURL) {
     return false;
   }
-  return Utils.getServer(parsedURL, config.teams) !== null;
+  return urlUtils.getServer(parsedURL, config.teams) !== null;
 }
 
 function isTrustedPopupWindow(webContents) {
@@ -922,7 +922,7 @@ function isTrustedPopupWindow(webContents) {
 
 function isCustomLoginURL(url, server) {
   const subpath = (server === null || typeof server === 'undefined') ? '' : server.url.pathname;
-  const parsedURL = Utils.parseURL(url);
+  const parsedURL = urlUtils.parseURL(url);
   if (!parsedURL) {
     return false;
   }
@@ -953,7 +953,7 @@ function getDeeplinkingURL(args) {
   if (Array.isArray(args) && args.length) {
     // deeplink urls should always be the last argument, but may not be the first (i.e. Windows with the app already running)
     const url = args[args.length - 1];
-    if (url && scheme && url.startsWith(scheme) && Utils.isValidURI(url)) {
+    if (url && scheme && url.startsWith(scheme) && urlUtils.isValidURI(url)) {
       return url;
     }
   }

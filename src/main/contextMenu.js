@@ -4,6 +4,8 @@
 
 import electronContextMenu from 'electron-context-menu';
 
+import urlUtils from 'common/utils/url';
+
 let disposeCurrent;
 let menuOptions = {
   shouldShowMenu: (e, p) => {
@@ -11,7 +13,7 @@ let menuOptions = {
     const isInternalLink = p.linkURL.endsWith('#') && p.linkURL.slice(0, -1) === p.pageURL;
     let isInternalSrc;
     try {
-      const srcurl = new URL(p.srcURL);
+      const srcurl = urlUtils.parseURL(p.srcURL);
       isInternalSrc = srcurl.protocol === 'file:';
     } catch (err) {
       isInternalSrc = false;

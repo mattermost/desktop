@@ -7,7 +7,7 @@ import fs from 'fs';
 
 import log from 'electron-log';
 
-import Utils from '../common/utils/util.js';
+import urlUtils from '../common/utils/url';
 
 import * as Validator from './Validator';
 
@@ -56,12 +56,12 @@ export default class TrustedOriginsStore {
     if (!validPermissions) {
       throw new Error(`Invalid permissions set for trusting ${targetURL}`);
     }
-    this.data.set(Utils.getHost(targetURL), validPermissions);
+    this.data.set(urlUtils.getHost(targetURL), validPermissions);
   };
 
   // enables usage of `targetURL` for `permission`
   addPermission = (targetURL, permission) => {
-    const origin = Utils.getHost(targetURL);
+    const origin = urlUtils.getHost(targetURL);
     const currentPermissions = this.data.get(origin) || {};
     currentPermissions[permission] = true;
     this.set(origin, currentPermissions);
@@ -70,7 +70,7 @@ export default class TrustedOriginsStore {
   delete = (targetURL) => {
     let host;
     try {
-      host = Utils.getHost(targetURL);
+      host = urlUtils.getHost(targetURL);
       this.data.delete(host);
     } catch {
       return false;
@@ -79,7 +79,7 @@ export default class TrustedOriginsStore {
   }
 
   isExisting = (targetURL) => {
-    return (typeof this.data.get(Utils.getHost(targetURL)) !== 'undefined');
+    return (typeof this.data.get(urlUtils.getHost(targetURL)) !== 'undefined');
   };
 
   // if user hasn't set his preferences, it will return null (falsy)
@@ -90,7 +90,7 @@ export default class TrustedOriginsStore {
     }
     let origin;
     try {
-      origin = Utils.getHost(targetURL);
+      origin = urlUtils.getHost(targetURL);
     } catch (e) {
       log.error(`invalid host to retrieve permissions: ${targetURL}: ${e}`);
       return null;

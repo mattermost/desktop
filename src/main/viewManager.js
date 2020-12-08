@@ -63,9 +63,13 @@ export class ViewManager {
   }
 
   showInitial = () => {
-    // TODO: handle deeplink url
-    const element = this.configServers.find((e) => e.order === 0);
-    this.showByName(element.name);
+    console.log('configservers');
+    console.log(this.configServers);
+    if (this.configServers.length) {
+      // TODO: handle deeplink url
+      const element = this.configServers.find((e) => e.order === 0);
+      this.showByName(element.name);
+    }
 
     // TODO: send event to highlight selected tab
   }
