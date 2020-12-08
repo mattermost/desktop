@@ -423,11 +423,12 @@ export default class MainPage extends React.Component {
     this.handleOnTeamFocused(newKey);
   }
 
-  handleDragAndDrop = (dropResult) => {
+  handleDragAndDrop = async (dropResult) => {
     const {removedIndex, addedIndex} = dropResult;
     if (removedIndex !== addedIndex) {
-      const teamIndex = this.props.moveTabs(removedIndex, addedIndex < this.props.teams.length ? addedIndex : this.props.teams.length - 1);
-      this.handleSelect(teamIndex);
+      const teamIndex = await this.props.moveTabs(removedIndex, addedIndex < this.props.teams.length ? addedIndex : this.props.teams.length - 1);
+      const name = this.props.teams[teamIndex].name;
+      this.handleSelect(name, teamIndex);
     }
   }
 
