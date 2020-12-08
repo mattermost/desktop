@@ -107,9 +107,7 @@ class Root extends React.Component {
   requestConfig = async (exitOnError) => {
     // todo: should we block?
     try {
-      console.log('requested configuration');
       const configRequest = await ipcRenderer.invoke(GET_CONFIGURATION);
-      console.log(`config is: ${JSON.stringify(configRequest)}`);
       return configRequest;
     } catch (err) {
       console.log(`there was an error with the config: ${err}`);
