@@ -1,5 +1,5 @@
 # Electron's version.
-$env:npm_config_target='10.1.3'
+$env:npm_config_target=(jq ".config.npm_config_target" .\package.json)
 # The architecture of Electron, see https://electronjs.org/docs/tutorial/support#supported-platforms
 # for supported architectures.
 $env:npm_config_arch='x64'
