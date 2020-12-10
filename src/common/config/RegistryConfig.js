@@ -15,7 +15,7 @@ try {
   }
 }
 
-const REGISTRY_HIVE_LIST = [registry.HKEY.HKEY_LOCAL_MACHINE, registry.HKEY.HKEY_CURRENT_USER];
+const REGISTRY_HIVE_LIST = registry ? [registry.HKEY.HKEY_LOCAL_MACHINE, registry.HKEY.HKEY_CURRENT_USER] : [];
 const BASE_REGISTRY_KEY_PATH = 'Software\\Policies\\Mattermost';
 export const REGISTRY_READ_EVENT = 'registry-read';
 
