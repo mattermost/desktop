@@ -234,6 +234,7 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('download-url', handleDownloadURLEvent);
   ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
   ipcMain.handle('get-app-version', handleAppVersion);
+  ipcMain.on('update-custom-theme', handleUpdateCustomTheme);
 
   // see comment on function
   // ipcMain.on('update-title', handleUpdateTitleEvent);
@@ -807,6 +808,10 @@ function handleDownloadURLEvent(event, url) {
       log.error(err);
     }
   });
+}
+
+function handleUpdateCustomTheme(event, theme) {
+  WindowManager.sendToRenderer('use-custom-theme', theme);
 }
 
 function handleMentionNotification(event, title, body, channel, teamId, silent) {

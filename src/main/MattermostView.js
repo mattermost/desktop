@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, app} from 'electron';
+import {BrowserView, app, net} from 'electron';
 import log from 'electron-log';
 import path from 'path';
 
@@ -52,6 +52,73 @@ export class MattermostView extends EventEmitter {
   // TODO: we'll need unique identifiers if we have multiple instances of the same server in different tabs (1:N relationships)
   get name() {
     return this.server.name;
+  }
+
+  getUserTheme = async () => {
+    const cookies = await this.view.webContents.session.cookies.get({});
+    if (!cookies) {
+      // Couldn't get cookies
+      WindowManager.sendToRenderer('use-default-theme');
+      return;
+    }
+
+    // Filter out cookies that aren't part of our domain
+    const filteredCookies = cookies.filter((cookie) => String(this.server.url).indexOf(cookie.domain) >= 0);
+
+    const userId = filteredCookies.find((cookie) => cookie.name === 'MMUSERID');
+    const csrf = filteredCookies.find((cookie) => cookie.name === 'MMCSRF');
+    const authToken = filteredCookies.find((cookie) => cookie.name === 'MMAUTHTOKEN');
+
+    if (!userId || !csrf || !authToken) {
+      // Missing cookies needed for req
+      WindowManager.sendToRenderer('use-default-theme');
+      return;
+    }
+
+    const prefUrl = `${this.server.url}/api/v4/users/${userId.value}/preferences`;
+    const req = net.request({
+      url: prefUrl,
+      session: this.view.webContents.session,
+      useSessionCookies: true,
+    });
+
+    req.on('response', this.handleUserTheme);
+    req.on('aborted', () => WindowManager.sendToRenderer('use-default-theme'));
+    req.on('error', (error) => {
+      log.error(error);
+      WindowManager.sendToRenderer('use-default-theme');
+    });
+    req.end();
+  };
+
+  handleUserTheme = (resp) => {
+    resp.on('data', (data) => {
+      const prefsRaw = `${data}`;
+      const prefs = JSON.parse(prefsRaw);
+      if (!Array.isArray(prefs)) {
+        log.error(prefs);
+        WindowManager.sendToRenderer('use-default-theme');
+        return;
+      }
+
+      const themePrefs = prefs.filter((pref) => pref.category === 'theme');
+      if (themePrefs && themePrefs.length) {
+        // use custom theme
+        const themePref = themePrefs.find((pref) => pref.name === '');
+        const themeData = JSON.parse(themePref.value);
+        WindowManager.sendToRenderer('use-custom-theme', themeData);
+      } else {
+        // use default dark/light mode theme
+        WindowManager.sendToRenderer('use-default-theme');
+      }
+    });
+
+    resp.on('aborted', () => WindowManager.sendToRenderer('use-default-theme'));
+
+    resp.on('error', (error) => {
+      log.error(error);
+      WindowManager.sendToRenderer('use-default-theme');
+    });
   }
 
   setReadyCallback = (func) => {
@@ -107,6 +174,7 @@ export class MattermostView extends EventEmitter {
     if (request && !this.isVisible) {
       this.window.addBrowserView(this.view);
       this.setBounds(getWindowBoundaries(this.window));
+      this.getUserTheme();
     } else if (!request && this.isVisible) {
       this.window.removeBrowserView(this.view);
     }

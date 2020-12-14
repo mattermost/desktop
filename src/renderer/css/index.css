@@ -85,7 +85,7 @@ body {
   display: flex;
   overflow: hidden;
   height: 36px;
-  background-color: rgba(0,0,0,0.1);
+  background-color: var(--topBarBg);
 }
 
 .topBar>.topBar-bg.unfocused {
@@ -93,12 +93,12 @@ body {
 }
 
 .topBar.darkMode {
-  background-color: #323639;
-  color: #fff;
+  background-color: var(--containerBg);
+  color: var(--topBarText);
 }
 
 .topBar.darkMode>.topBar-bg {
-  background-color: #202124;
+  background-color: var(--topBarBg);
 }
 
 .topBar .three-dot-menu {
@@ -110,9 +110,9 @@ body {
   border: none;
   flex: 0 0 40px;
   z-index: 9;
-  color: rgba(61,60,64,0.7);
+  color: var(--topBarButton);
   -webkit-app-region: no-drag;
-  background-color: rgba(229, 229, 229, 1);
+  background-color: var(--topBarButtonBg);
 }
 
 .topBar .three-dot-menu svg {
@@ -128,11 +128,11 @@ body {
 
 .topBar .three-dot-menu:hover svg, .topBar .three-dot-menu:focus svg, .topBar .three-dot-menu:active svg {
   outline: none;
-  background-color: #c8c8c8;
+  background-color: var(--topBarButtonBgHover);
 }
 
 .topBar.darkMode .three-dot-menu:hover svg, .topBar.darkMode .three-dot-menu:focus svg, .topBar.darkMode .three-dot-menu:active svg {
-  background-color: #383A3F;
+  background-color: var(--topBarButtonBgHover);
 }
 
 .topBar.macOS .three-dot-menu:hover svg, .topBar.macOS .three-dot-menu:focus svg, .topBar.macOS .three-dot-menu:active svg {
@@ -153,13 +153,13 @@ body {
 }
 
 .topBar.darkMode .three-dot-menu {
-  background-color: #202124;
-  color: rgba(243,243,243,0.7);
+  background-color: var(--topBarBg);
+  color: var(--topBarButton);
 }
 
 .topBar.darkMode .title-bar-btns {
-  color: rgba(243,243,243,0.7);
-  background-color: #202124;
+  background-color: var(--topBarBg);
+  color: var(--topBarButton);
 }
 
 .topBar .title-bar-btns {
@@ -167,11 +167,11 @@ body {
   line-height: 36px;
   height: 36px;
   z-index: 9;
-  color: rgba(61,60,64,0.7);
+  color: var(--topBarButton);
   -webkit-app-region: no-drag;
   display: grid;
   grid-template-columns: repeat(3, 46px);
-  background-color: #e5e5e5;
+  background-color: var(--topBarButtonBg);
 }
 
 .topBar .title-bar-btns>.button {
@@ -185,23 +185,23 @@ body {
 }
 
 .topBar.darkMode .title-bar-btns>.button:hover {
-  background: rgba(255,255,255,0.1);
+  background: var(--topBarButtonHover);
 }
 
 .topBar.darkMode .title-bar-btns>.button:active {
-  background: rgba(255,255,255,0.2);
+  background: var(--topBarButtonActive);
 }
 
 .topBar .title-bar-btns>.button:hover {
-  background: rgba(0,0,0,0.1);
+  background: var(--topBarButtonHover);
 }
 
 .topBar .title-bar-btns>.button:active {
-  background: rgba(0,0,0,0.2);
+  background: var(--topBarButtonActive);
 }
 
 .topBar .title-bar-btns>.close-button:hover {
-  background: #E81123 !important;
+  background: var(--closeButtonHover) !important;
 }
 
 .topBar .title-bar-btns>.close-button:hover>img {
@@ -211,7 +211,7 @@ body {
 }
 
 .topBar .title-bar-btns>.close-button:active {
-  background: #f1707a !important;
+  background: var(--closeButtonActive) !important;
 }
 
 .topBar .title-bar-btns>.close-button:active>img {
@@ -242,11 +242,11 @@ body {
 .topBar .overlay-gradient {
   flex: 0 0 40px;
   z-index: 9;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #e5e5e5 100%);
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, var(--topBarBg) 100%);
   -webkit-app-region: drag;
   margin-top: 4px;
 }
 
 .topBar.darkMode .overlay-gradient {
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #202124 100%);
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, var(--topBarBg) 100%);
 }

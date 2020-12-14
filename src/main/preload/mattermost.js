@@ -99,6 +99,11 @@ window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = 
     ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, silent);
     break;
   }
+  case 'theme-updated': {
+    console.log('received updated theme');
+    ipcRenderer.send('update-custom-theme', message.theme);
+    break;
+  }
   }
 });
 

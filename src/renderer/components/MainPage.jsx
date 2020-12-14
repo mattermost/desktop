@@ -12,6 +12,7 @@ import React, {Fragment} from 'react';
 import PropTypes from 'prop-types';
 import {Grid, Row} from 'react-bootstrap';
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
+import cssVars from 'css-vars-ponyfill';
 
 import {ipcRenderer, remote, shell} from 'electron';
 
@@ -196,6 +197,7 @@ export default class MainPage extends React.Component {
     ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => {
       console.log(`switch to dark mode ${darkMode}`);
       this.setState({darkMode});
+      this.setDefaultTheme(darkMode);
     });
 
     // can't switch tabs sequentially for some reason...
@@ -351,6 +353,61 @@ export default class MainPage extends React.Component {
         }
       });
     }
+
+    ipcRenderer.on('use-custom-theme', (event, theme) => {
+      cssVars({
+        variables: {
+          containerBg: theme.sidebarHeaderBg,
+          topBarBg: theme.sidebarBg,
+          topBarText: theme.sidebarText,
+          topBarButton: 'rgba(243,243,243,0.7)', // themeData.sidebarText 0.7 opacity
+          topBarButtonHover: 'rgba(255,255,255,0.1)',
+          topBarButtonActive: 'rgba(255,255,255,0.2)',
+          topBarButtonBg: theme.sidebarBg,
+          topBarButtonBgHover: theme.sidebarTextHoverBg,
+          topBarTabHover: theme.sidebarTextHoverBg,
+          topBarFocusedTabBg: theme.sidebarHeaderBg,
+          topBarFocusedTabText: theme.sidebarText,
+          tabText: theme.sidebarText,
+          tabSeperator: 'rgba(243,243,243,0.2)',
+          closeButtonHover: theme.dndIndicator,
+          closeButtonActive: theme.errorTextColor,
+          newMessageIndicator: theme.mentionBg,
+          mentionIndicator: theme.mentionBg,
+          mentionIndicatorText: theme.mentionColor,
+        }
+      });
+    });
+
+    ipcRenderer.on('use-default-theme', () => {
+      this.setDefaultTheme(this.state.darkMode);
+    });
+
+    this.setDefaultTheme(this.state.darkMode);
+  }
+
+  setDefaultTheme = (dark) => {
+    cssVars({
+      variables: {
+        containerBg: dark ? '#323639' : '#fff',
+        topBarBg: dark ? '#202124' : '#e5e5e5',
+        topBarText: dark ? '#fff' : '#000',
+        topBarButton: dark ? 'rgba(243,243,243,0.7)' : 'rgba(61,60,64,0.7)',
+        topBarButtonHover: dark ? 'rgba(255,255,255,0.1)' : '#c8c8c8',
+        topBarButtonActive: dark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+        topBarButtonBg: dark ? '#202124' : 'rgba(229, 229, 229, 1)',
+        topBarButtonBgHover: dark ? '#383A3F' : '#c8c8c8',
+        topBarTabHover: dark ? 'rgba(50, 54, 57, 0.4)' : 'rgba(255,255,255,0.4)',
+        topBarFocusedTabBg: dark ? '#323639' : '#fff',
+        topBarFocusedTabText: dark ? 'rgba(243,243,243,1)' : 'rgba(61,60,64,1)',
+        tabSeperator: dark ? 'rgba(243,243,243,0.2)' : 'rgba(61,60,64,0.2)',
+        closeButtonHover: '#E81123',
+        closeButtonActive: '#f1707a',
+        newMessageIndicator: '#579EFF',
+        mentionIndicator: '#CB2431',
+        mentionIndicatorText: '#fff',
+      }
+    });
   }
 
   focusListener = () => {

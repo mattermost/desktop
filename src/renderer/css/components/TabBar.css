@@ -10,7 +10,7 @@
 }
 
 .TabBar.darkMode {
-  background-color: #202124;
+  background-color: var(--topBarBg);
 }
 
 .TabBar .teamTabItem span {
@@ -34,7 +34,7 @@
   line-height: 16px;
   margin-right: -1px;
   padding: 6px 0;
-  color: rgba(61,60,64,0.7);
+  color: var(--topBarButton);
   font-family: Arial;
   font-size: 14px;
   letter-spacing: -0.2px;
@@ -42,29 +42,29 @@
 }
 
 .TabBar.darkMode>li>a {
-  color: rgba(243,243,243,0.7);
+  color: var(--topBarButton);
 }
 
 .TabBar>li>a:hover {
-  background-color: rgba(255,255,255,0.4);
+  background-color: var(--topBarTabHover);
   text-decoration: none;
   border-radius: 6px 6px 0 0;
 }
 
 .TabBar.darkMode>li>a:hover {
-  background-color: rgba(50, 54, 57, 0.4);
+  background-color: var(--topBarTabHover);
 }
 
 .TabBar>li>a:focus {
-  background-color: #fff;
-  color: rgba(61,60,64,1);
+  background-color: var(--topBarFocusedTabBg);
+  color: var(--topBarFocusedTabText);
   text-decoration: none;
   border-radius: 6px 6px 0 0;
 }
 
 .TabBar.darkMode>li>a:focus {
-  background-color: #323639;
-  color: rgba(243,243,243,1);
+  background-color: var(--topBarFocusedTabBg);
+  color: var(--topBarFocusedTabText);
 }
 
 .TabBar>li:before, .TabBar>li:after {
@@ -81,27 +81,27 @@
 .TabBar>li.teamTabItem.active:before, .TabBar>li.teamTabItem.smooth-dnd-ghost:before {
   left: -4px;
   border-bottom-right-radius: 6px;
-  border-right: 2px solid #fff;
-  border-bottom: 2px solid #fff;
+  border-right: 2px solid var(--containerBg);
+  border-bottom: 2px solid var(--containerBg);
   z-index: 9;
 }
 
 .TabBar.darkMode>li.teamTabItem.active:before, .TabBar.darkMode>li.teamTabItem.smooth-dnd-ghost:before {
-  border-right: 2px solid #323639;
-  border-bottom: 2px solid #323639;
+  border-right: 2px solid var(--containerBg);
+  border-bottom: 2px solid var(--containerBg);
 }
 
 .TabBar>li.teamTabItem.active:after, .TabBar>li.teamTabItem.smooth-dnd-ghost:after {
   border-bottom-left-radius: 6px;
   right: -5px;
-  border-left: 2px solid #fff;
-  border-bottom: 2px solid #fff;
+  border-left: 2px solid var(--containerBg);
+  border-bottom: 2px solid var(--containerBg);
   z-index: 9;
 }
 
 .TabBar.darkMode>li.teamTabItem.active:after, .TabBar.darkMode>li.teamTabItem.smooth-dnd-ghost:after {
-  border-left: 2px solid #323639;
-  border-bottom: 2px solid #323639;
+  border-left: 2px solid var(--containerBg);
+  border-bottom: 2px solid var(--containerBg);
 }
 
 .TabBar>li>a>div.TabBar-tabSeperator {
@@ -118,7 +118,7 @@
 }
 
 .TabBar>li.TabBar-addServerButton>a{
-  color: rgba(61,60,64,0.7);
+  color: var(--topBarButton);
   transition: opacity 0.3s ease-in;
 }
 
@@ -127,7 +127,7 @@
 }
 
 .TabBar.darkMode>li.TabBar-addServerButton>a{
-  color: rgba(243,243,243,0.7);
+  color: var(--topBarButton);
 }
 
 .TabBar>li.teamTabItem.active>a, .TabBar>li.teamTabItem.smooth-dnd-ghost>a {
@@ -143,27 +143,27 @@
 }
 
 .TabBar.darkMode>li.teamTabItem.active>a, .TabBar.darkMode>li.teamTabItem.smooth-dnd-ghost>a {
-  color: #f3f3f3;
-  background-color: #323639;
+  color: var(--topBarFocusedTabText);
+  background-color: var(--topBarFocusedTabBg);
 }
 
 .TabBar>li.teamTabItem:not(.active)+.TabBar-addServerButton>a>div.TabBar-tabSeperator {
-  border-left: 1px solid rgba(61,60,64,0.2);
+  border-left: 1px solid var(--tabSeperator);
   margin-left: -1px;
 }
 
 .TabBar>li.teamTabItem:not(.active)+li.teamTabItem:not(.active)>a>div.TabBar-tabSeperator {
-  border-left: 1px solid rgba(61,60,64,0.2);
+  border-left: 1px solid var(--tabSeperator);
   margin-left: -1px;
 }
 
 .TabBar.darkMode>li.teamTabItem:not(.active)+.TabBar-addServerButton>a>div.TabBar-tabSeperator {
-  border-left: 1px solid rgba(243,243,243,0.2);
+  border-left: 1px solid var(--tabSeperator);
   margin-left: -1px;
 }
 
 .TabBar.darkMode>li.teamTabItem:not(.active)+li.teamTabItem:not(.active)>a>div.TabBar-tabSeperator {
-  border-left: 1px solid rgba(243,243,243,0.2);
+  border-left: 1px solid var(--tabSeperator);
   margin-left: -1px;
 }
 
@@ -190,17 +190,17 @@
 .TabBar .TabBar-addServerButton>a {
   border: none;
   background: transparent;
-  color: #999;
+  color: var(--topBarButton);
   font-size: 10px;
   line-height: 16px;
 }
 
 .TabBar.darkMode .TabBar-addServerButton>a {
-  color: rgba(243,243,243,0.7);
+  color: var(--topBarButton);
 }
 
 .TabBar .TabBar-dot {
-  background: #579EFF;
+  background: var(--newMessageIndicator);
   float: right;
   height: 6px;
   width: 6px;
@@ -225,9 +225,9 @@
 }
 
 .TabBar .TabBar-badge {
-  background: #CB2431;
+  background: var(--mentionIndicator);
   float: right;
-  color: white;
+  color: var(--mentionIndicatorText);
   font-size: 11px;
   text-align: center;
   line-height: 18px;
@@ -251,7 +251,7 @@
   content: "";
   width: 4px;
   height: 4px;
-  background: #fff;
+  background: var(--containerBg);
   display: block;
   border-radius: 50%;
 }
