@@ -3,7 +3,6 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 import fs from 'fs';
 
-import os from 'os';
 import path from 'path';
 
 import electron, {nativeTheme, shell} from 'electron';
@@ -13,9 +12,10 @@ import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
 
 import Utils from 'common/utils/util';
+import urlUtils from 'common/utils/url';
 
 import {DEV_SERVER, DEVELOPMENT, PRODUCTION, SECOND} from 'common/utils/constants';
-import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION} from 'common/communication';
+import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION, GET_DOWNLOAD_LOCATION} from 'common/communication';
 import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from 'common/permissions';
 import Config from 'common/config';
 
@@ -151,9 +151,6 @@ function initializeArgs() {
     process.exit(0); // eslint-disable-line no-process-exit
   }
 
-  // TODO: are we going to use this?
-  // hideOnStartup = shouldBeHiddenOnStartup(global.args);
-
   global.isDev = isDev && !global.args.disableDevMode; // this doesn't seem to be right and isn't used as the single source of truth
 
   if (global.args.dataDir) {
@@ -259,6 +256,7 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on(WINDOW_MAXIMIZE, WindowManager.maximize);
   ipcMain.on(WINDOW_MINIMIZE, WindowManager.minimize);
   ipcMain.on(WINDOW_RESTORE, WindowManager.restore);
+  ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
 }
 
 //
@@ -463,7 +461,7 @@ function handleAppGPUProcessCrashed(event, killed) {
 function handleAppLogin(event, webContents, request, authInfo, callback) {
   event.preventDefault();
   const parsedURL = new URL(request.url);
-  const server = Utils.getServer(parsedURL, config.teams);
+  const server = urlUtils.getServer(parsedURL, config.teams);
 
   loginCallbackMap.set(request.url, typeof callback === 'undefined' ? null : callback); // if callback is undefined set it to null instead so we know we have set it up with no value
   const mainWindow = WindowManager.getMainWindow(true);
@@ -517,10 +515,10 @@ function handleAppWebContentsCreated(dc, contents) {
 
   contents.on('will-navigate', (event, url) => {
     const contentID = event.sender.id;
-    const parsedURL = Utils.parseURL(url);
-    const server = Utils.getServer(parsedURL, config.teams);
+    const parsedURL = urlUtils.parseURL(url);
+    const server = urlUtils.getServer(parsedURL, config.teams);
 
-    if ((server !== null && Utils.isTeamUrl(server.url, parsedURL)) || isTrustedPopupWindow(event.sender)) {
+    if ((server !== null && urlUtils.isTeamUrl(server.url, parsedURL)) || urlUtils.isAdminUrl(server.url, parsedURL) || isTrustedPopupWindow(event.sender)) {
       return;
     }
 
@@ -552,8 +550,8 @@ function handleAppWebContentsCreated(dc, contents) {
   //    - indicate custom login is NOT in progress
   contents.on('did-start-navigation', (event, url) => {
     const contentID = event.sender.id;
-    const parsedURL = Utils.parseURL(url);
-    const server = Utils.getServer(parsedURL, config.teams);
+    const parsedURL = urlUtils.parseURL(url);
+    const server = urlUtils.getServer(parsedURL, config.teams);
 
     if (!isTrustedURL(parsedURL)) {
       return;
@@ -567,21 +565,25 @@ function handleAppWebContentsCreated(dc, contents) {
   });
 
   contents.on('new-window', (event, url) => {
-    const parsedURL = Utils.parseURL(url);
+    const parsedURL = urlUtils.parseURL(url);
 
     if (parsedURL.protocol === 'devtools:') {
       return;
     }
     event.preventDefault();
 
-    const server = Utils.getServer(parsedURL, config.teams);
+    const server = urlUtils.getServer(parsedURL, config.teams);
 
     if (!server) {
       shell.openExternal(url);
       return;
     }
-    if (Utils.isTeamUrl(server.url, parsedURL, true) === true) {
+    if (urlUtils.isTeamUrl(server.url, parsedURL, true)) {
       log.info(`${url} is a known team, preventing to open a new window`);
+      return;
+    }
+    if (Utils.isAdminUrl(server.url, parsedURL)) {
+      log.info(`${url} is an admin console page, preventing to open a new window`);
       return;
     }
     if (popupWindow && !popupWindow.closed && popupWindow.getURL() === url) {
@@ -590,7 +592,7 @@ function handleAppWebContentsCreated(dc, contents) {
     }
 
     // TODO: move popups to its own and have more than one.
-    if (Utils.isPluginUrl(server.url, parsedURL) || Utils.isManagedResource(server.url, parsedURL)) {
+    if (urlUtils.isPluginUrl(server.url, parsedURL) || urlUtils.isManagedResource(server.url, parsedURL)) {
       if (!popupWindow || popupWindow.closed) {
         popupWindow = new BrowserWindow({
           backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
@@ -611,7 +613,7 @@ function handleAppWebContentsCreated(dc, contents) {
         });
       }
 
-      if (Utils.isManagedResource(server.url, parsedURL)) {
+      if (urlUtils.isManagedResource(server.url, parsedURL)) {
         popupWindow.loadURL(url);
       } else {
         // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth
@@ -688,7 +690,6 @@ function initializeAfterAppReady() {
 
   if (shouldShowTrayIcon()) {
     // set up tray icon
-    console.log(`displaying ${trayImages.normal}`);
     trayIcon = new Tray(trayImages.normal);
     if (process.platform === 'darwin') {
       trayIcon.setPressedImage(trayImages.clicked.normal);
@@ -729,13 +730,13 @@ function initializeAfterAppReady() {
     });
     item.setSaveDialogOptions({
       title: filename,
-      defaultPath: os.homedir() + '/Downloads/' + filename,
+      defaultPath: path.resolve(config.combinedData.downloadLocation, filename),
       filters,
     });
 
     item.on('done', (doneEvent, state) => {
       if (state === 'completed') {
-        displayDownloadCompleted(filename, item.savePath, Utils.getServer(webContents.getURL(), config.teams));
+        displayDownloadCompleted(filename, item.savePath, urlUtils.getServer(webContents.getURL(), config.teams));
       }
     });
   });
@@ -809,8 +810,8 @@ function handleDownloadURLEvent(event, url) {
   });
 }
 
-function handleMentionNotification(event, title, body, channel, teamId, silent) {
-  displayMention(title, body, channel, teamId, silent, event.sender);
+function handleMentionNotification(event, title, body, channel, teamId, silent, data) {
+  displayMention(title, body, channel, teamId, silent, event.sender, data);
 }
 
 // TODO: figure out if we want to inherit title from webpage or use one of our own
@@ -887,16 +888,25 @@ function handleUpdateMenuEvent(event, configData) {
   }
 }
 
+async function handleSelectDownload(event, startFrom) {
+  const message = 'Specify the folder where files will download';
+  const result = await dialog.showOpenDialog({defaultPath: startFrom,
+    message,
+    properties:
+     ['openDirectory', 'createDirectory', 'dontAddToRecent', 'promptToCreate']});
+  return result.filePaths[0];
+}
+
 //
 // helper functions
 //
 
 function isTrustedURL(url) {
-  const parsedURL = Utils.parseURL(url);
+  const parsedURL = urlUtils.parseURL(url);
   if (!parsedURL) {
     return false;
   }
-  return Utils.getServer(parsedURL, config.teams) !== null;
+  return urlUtils.getServer(parsedURL, config.teams) !== null;
 }
 
 function isTrustedPopupWindow(webContents) {
@@ -911,7 +921,7 @@ function isTrustedPopupWindow(webContents) {
 
 function isCustomLoginURL(url, server) {
   const subpath = (server === null || typeof server === 'undefined') ? '' : server.url.pathname;
-  const parsedURL = Utils.parseURL(url);
+  const parsedURL = urlUtils.parseURL(url);
   if (!parsedURL) {
     return false;
   }
@@ -942,7 +952,7 @@ function getDeeplinkingURL(args) {
   if (Array.isArray(args) && args.length) {
     // deeplink urls should always be the last argument, but may not be the first (i.e. Windows with the app already running)
     const url = args[args.length - 1];
-    if (url && scheme && url.startsWith(scheme) && Utils.isValidURI(url)) {
+    if (url && scheme && url.startsWith(scheme) && urlUtils.isValidURI(url)) {
       return url;
     }
   }

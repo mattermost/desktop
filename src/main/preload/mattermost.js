@@ -72,8 +72,6 @@ document.addEventListener('mouseup', () => {
 
 // listen for messages from the webapp
 window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = {}) => {
-  console.log(`got a message from ${origin} of type ${type}`);
-  console.log(message);
   if (origin !== window.location.origin) {
     return;
   }
@@ -94,9 +92,8 @@ window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = 
     break;
   }
   case 'dispatch-notification': {
-    console.log(`got a notification: ${message.title}`);
-    const {title, body, channel, teamId, silent} = message;
-    ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, silent);
+    const {title, body, channel, teamId, silent, data} = message;
+    ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, silent, data);
     break;
   }
   }

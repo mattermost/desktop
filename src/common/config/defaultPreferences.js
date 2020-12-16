@@ -9,9 +9,9 @@
 const defaultPreferences = {
   version: 2,
   teams: [],
-  showTrayIcon: false,
+  showTrayIcon: true,
   trayIconTheme: 'light',
-  minimizeToTray: false,
+  minimizeToTray: true,
   notifications: {
     flashWindow: 2,
     bounceIcon: true,
@@ -23,6 +23,7 @@ const defaultPreferences = {
   autostart: true,
   spellCheckerLocale: 'en-US',
   darkMode: false,
+  downloadLocation: `/Users/${process.env.USER || process.env.USERNAME}/Downloads`,
 };
 
 export default defaultPreferences;

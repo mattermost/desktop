@@ -25,7 +25,6 @@ function triageArgs(args) {
 
 function parseArgs(args) {
   return yargs.
-    alias('hidden', 'h').boolean('hidden').describe('hidden', 'Launch the app in hidden mode.').
     alias('dataDir', 'd').string('dataDir').describe('dataDir', 'Set the path to where user data is stored.').
     alias('disableDevMode', 'p').boolean('disableDevMode').describe('disableDevMode', 'Disable development mode. Allows for testing as if it was Production.').
     alias('version', 'v').boolean('version').describe('version', 'Prints the application version.').
