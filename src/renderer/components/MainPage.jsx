@@ -196,7 +196,6 @@ export default class MainPage extends React.Component {
     });
 
     ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => {
-      console.log(`switch to dark mode ${darkMode}`);
       this.setState({darkMode});
     });
 
@@ -773,7 +772,6 @@ export default class MainPage extends React.Component {
           </div>);
         break;
       case DONE:
-        console.log(`Loading tab ${this.state.key}`);
         component = null;
       }
       return component;

@@ -43,7 +43,6 @@ export default class SettingsPage extends React.Component {
     ipcRenderer.invoke(GET_LOCAL_CONFIGURATION).then((config) => {
       this.state = this.convertConfigDataToState(config);
       this.setState({ready: true, maximized: false, ...this.state});
-      console.log(this.state);
     });
     this.trayIconThemeRef = React.createRef();
     this.downloadLocationRef = React.createRef();

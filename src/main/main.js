@@ -690,7 +690,6 @@ function initializeAfterAppReady() {
 
   if (shouldShowTrayIcon()) {
     // set up tray icon
-    console.log(`displaying ${trayImages.normal}`);
     trayIcon = new Tray(trayImages.normal);
     if (process.platform === 'darwin') {
       trayIcon.setPressedImage(trayImages.clicked.normal);
