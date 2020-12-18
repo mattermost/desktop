@@ -471,7 +471,7 @@ export default class SettingsPage extends React.Component {
           key='flashWindow'
           id='inputflashWindow'
           ref='flashWindow'
-          checked={this.state.notifications.flashWindow === 2}
+          checked={!this.state.notifications || this.state.notifications.flashWindow === 2}
           onChange={this.handleFlashWindow}
         >
           {'Flash app window and taskbar icon when a new message is received'}

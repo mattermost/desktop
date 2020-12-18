@@ -57,6 +57,7 @@ const LOADING = 1;
 const DONE = 2;
 const RETRY = -1;
 const FAILED = 0;
+const NOSERVERS = -2;
 
 export default class MainPage extends React.Component {
   constructor(props) {
@@ -114,8 +115,11 @@ export default class MainPage extends React.Component {
 
   getTabStatus() {
     // TODO: should try to make this a bit safer in case we get into a weird situation
-    const tabname = this.props.teams[this.state.key].name;
-    return this.state.tabStatus.get(tabname);
+    if (this.props.teams.length) {
+      const tabname = this.props.teams[this.state.key].name;
+      return this.state.tabStatus.get(tabname);
+    }
+    return {status: NOSERVERS};
   }
 
   componentDidMount() {
@@ -123,7 +127,7 @@ export default class MainPage extends React.Component {
     // thus you can't drag tabs unless you're right on the container.
     // this makes it so your tab won't get stuck to your cursor no matter where you mouse up
     if (process.platform === 'darwin') {
-      this.topBar.current.addEventListener('mouseleave', () => {
+      this.topBar.current.addEventListener('mouseleave', (event) => {
         if (event.target === this.topBar.current) {
           const upEvent = document.createEvent('MouseEvents');
           upEvent.initMouseEvent('mouseup');
@@ -132,7 +136,7 @@ export default class MainPage extends React.Component {
       });
 
       // Hack for when it leaves the electron window because apparently mouseleave isn't good enough there...
-      this.topBar.current.addEventListener('mousemove', () => {
+      this.topBar.current.addEventListener('mousemove', (event) => {
         if (event.clientY === 0 || event.clientX === 0 || event.clientX >= window.innerWidth) {
           const upEvent = document.createEvent('MouseEvents');
           upEvent.initMouseEvent('mouseup');
@@ -381,7 +385,6 @@ export default class MainPage extends React.Component {
     });
   };
 
-  // TODO: do we need to do something
   // componentDidUpdate(prevProps, prevState) {
   //   if (prevState.key !== this.state.key) { // i.e. When tab has been changed
   //     this.refs[`mattermostView${this.state.key}`].focusOnWebView();
@@ -748,6 +751,18 @@ export default class MainPage extends React.Component {
       let component;
       const tabStatus = this.getTabStatus();
       switch (tabStatus.status) {
+      case NOSERVERS: // TODO: substitute with https://mattermost.atlassian.net/browse/MM-25003
+        component = (
+          <ErrorView
+            id={'NoServers'}
+            className='errorView'
+            errorInfo={'No Servers configured'}
+            url={tabStatus.extra ? tabStatus.extra.url : ''}
+            active={true}
+            retry={null}
+            appName={this.props.appName}
+          />);
+        break;
       case RETRY:
       case FAILED:
         component = (
