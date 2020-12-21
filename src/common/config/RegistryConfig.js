@@ -7,7 +7,7 @@ import log from 'electron-log';
 import WindowsRegistry from 'winreg';
 
 const REGISTRY_HIVE_LIST = [WindowsRegistry.HKLM, WindowsRegistry.HKCU];
-const BASE_REGISTRY_KEY_PATH = 'Software\\Policies\\Mattermost';
+const BASE_REGISTRY_KEY_PATH = '\\Software\\Policies\\Mattermost';
 export const REGISTRY_READ_EVENT = 'registry-read';
 
 /**
