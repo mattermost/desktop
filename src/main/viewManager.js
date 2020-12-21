@@ -23,7 +23,6 @@ export class ViewManager {
     this.urlView = null;
   }
 
-  // TODO: we shouldn't pass the main window, but get it from windowmanager
   // TODO: we'll need an event in case the main window changes so this updates accordingly
   load = (mainWindow) => {
     this.configServers.forEach((server) => {
@@ -66,9 +65,10 @@ export class ViewManager {
     if (this.configServers.length) {
       // TODO: handle deeplink url
       const element = this.configServers.find((e) => e.order === 0);
-      this.showByName(element.name);
+      if (element) {
+        this.showByName(element.name);
+      }
     }
-
     // TODO: send event to highlight selected tab
   }
 

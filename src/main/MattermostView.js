@@ -149,7 +149,7 @@ export class MattermostView extends EventEmitter {
   }
 
   openDevTools = () => {
-    this.view.webContents.openDevTools();
+    this.view.webContents.openDevTools({mode: 'detach'});
   }
 
   getWebContents = () => {

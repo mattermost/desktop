@@ -263,7 +263,7 @@ function initializeInterCommunicationEventListeners() {
 // config event handlers
 //
 
-function handleConfigUpdate(configData) {
+function handleConfigUpdate(config) {
   if (process.platform === 'win32' || process.platform === 'linux') {
     const appLauncher = new AutoLauncher();
     const autoStartTask = config.autostart ? appLauncher.enable() : appLauncher.disable();
@@ -272,12 +272,10 @@ function handleConfigUpdate(configData) {
     }).catch((err) => {
       console.log('error:', err);
     });
-    if (app.isReady()) {
-      WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
-    }
+    WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
   }
 
-  ipcMain.emit('update-menu', true, configData);
+  ipcMain.emit('update-menu', true, config);
 }
 
 function handleConfigSynchronize() {

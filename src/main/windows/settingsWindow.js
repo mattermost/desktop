@@ -18,7 +18,7 @@ export function createSettingsWindow(mainWindow, config, withDevTools) {
   settingsWindow.show();
 
   if (withDevTools) {
-    settingsWindow.webContents.openDevTools();
+    settingsWindow.webContents.openDevTools({mode: 'detach'});
   }
   return settingsWindow;
 }
