@@ -199,7 +199,7 @@ function createTemplate(config) {
     })(),
     click(item, focusedWindow) {
       if (focusedWindow) {
-        focusedWindow.toggleDevTools();
+        focusedWindow.toggleDevTools({mode: 'detach'});
       }
     },
   }, {
