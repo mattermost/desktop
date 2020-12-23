@@ -134,6 +134,7 @@ export class MattermostView extends EventEmitter {
     this.window = null;
     this.server = null;
     this.isVisible = false;
+    clearTimeout(this.retryLoad);
   }
 
   focus = () => {

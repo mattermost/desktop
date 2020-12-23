@@ -23,41 +23,45 @@ export class ViewManager {
     this.urlView = null;
   }
 
+  loadServer = (server, mainWindow) => {
+    const srv = new MattermostServer(server.name, server.url);
+    const view = new MattermostView(srv, mainWindow, this.viewOptions);
+    this.views.set(server.name, view);
+    view.setReadyCallback(this.activateView);
+    view.load();
+    view.on(UPDATE_TARGET_URL, this.showURLView);
+  }
+
   // TODO: we shouldn't pass the main window, but get it from windowmanager
   // TODO: we'll need an event in case the main window changes so this updates accordingly
   load = (mainWindow) => {
-    this.configServers.forEach((server) => {
-      const srv = new MattermostServer(server.name, server.url);
-      const view = new MattermostView(srv, mainWindow, this.viewOptions);
-      this.views.set(server.name, view);
-      view.setReadyCallback(this.activateView);
-      view.load();
-      view.on(UPDATE_TARGET_URL, this.showURLView);
-    });
+    this.configServers.forEach((server) => this.loadServer(server, mainWindow));
   }
 
   reloadConfiguration = (configServers, mainWindow) => {
     this.configServers = configServers;
     const oldviews = this.views;
     this.views = new Map();
-    this.load(mainWindow);
-
-    let newView = null;
-
-    //TODO: think of a more gradual approach, this would reload all tabs but in most cases they will be the same or have small variation
-    for (const view of oldviews.values()) {
-      // try to restore view to the same tab if possible, but if not use initial one
-      if (view.isVisible) {
-        log.info(`will try to restore ${view.name}`);
-        newView = this.views.get(view.name);
+    const sorted = this.configServers.sort((a, b) => a.order - b.order);
+    let setFocus;
+    sorted.forEach((server) => {
+      const recycle = oldviews.get(server.name);
+      if (recycle) {
+        oldviews.delete(recycle.name);
+        this.views.set(recycle.name, recycle);
+        if (recycle.isVisible) {
+          setFocus = recycle.name;
+        }
+      } else {
+        this.loadServer(server, mainWindow);
       }
-      view.destroy();
-    }
-    if (newView) {
-      log.info('restoring view');
-      newView.show(true);
+    });
+    oldviews.forEach((unused) => {
+      unused.destroy();
+    });
+    if (setFocus) {
+      this.showByName(setFocus);
     } else {
-      log.info('couldn\'t find original view');
       this.showInitial();
     }
   }
@@ -74,10 +78,15 @@ export class ViewManager {
 
   showByName = (name) => {
     const newView = this.views.get(name);
+    if (newView.isVisible) {
+      return;
+    }
     if (newView) {
       if (this.currentView && this.currentView !== name) {
         const previous = this.getCurrentView();
-        previous.hide();
+        if (previous) {
+          previous.hide();
+        }
       }
 
       this.currentView = name;

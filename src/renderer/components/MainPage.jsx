@@ -114,8 +114,12 @@ export default class MainPage extends React.Component {
 
   getTabStatus() {
     // TODO: should try to make this a bit safer in case we get into a weird situation
-    const tabname = this.props.teams[this.state.key].name;
-    return this.state.tabStatus.get(tabname);
+    const tab = this.props.teams[this.state.key];
+    if (tab) {
+      const tabname = tab.name;
+      return this.state.tabStatus.get(tabname);
+    }
+    return null;
   }
 
   componentDidMount() {
@@ -747,6 +751,15 @@ export default class MainPage extends React.Component {
 
       let component;
       const tabStatus = this.getTabStatus();
+      if (!tabStatus) {
+        const tab = this.props.teams[this.state.key];
+        if (tab) {
+          console.error(`Not tabStatus for ${this.props.teams[this.state.key].name}`);
+        } else {
+          console.error('No tab status, tab doesn\'t exist anymore');
+        }
+        return null;
+      }
       switch (tabStatus.status) {
       case RETRY:
       case FAILED:
