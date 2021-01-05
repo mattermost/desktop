@@ -109,7 +109,13 @@ export default class RegistryConfig extends EventEmitter {
   async getRegistryEntry(key, name) {
     const results = [];
     for (const hive of REGISTRY_HIVE_LIST) {
-      results.push(this.getRegistryEntryValues(hive, key, name));
+      this.getRegistryEntryValues(hive, key, name).then((values) => {
+        if (values) {
+          results.push(values);
+        }
+      }).catch((e) => {
+        log.error(`There was an error accesing the registry for ${name}: ${e}`);
+      });
     }
     const entryValues = await Promise.all(results);
     return entryValues.filter((value) => value);
@@ -123,7 +129,7 @@ export default class RegistryConfig extends EventEmitter {
    */
   getRegistryEntryValues(hive, key, name) {
     const registry = new WindowsRegistry({hive, key});
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       try {
         registry.values((error, results) => {
           if (error || !results || results.length === 0) {
@@ -138,8 +144,7 @@ export default class RegistryConfig extends EventEmitter {
           }
         });
       } catch (e) {
-        log.error(`There was an error accesing the registry for ${name}: ${e}`);
-        resolve();
+        reject(e);
       }
     });
   }
