@@ -114,7 +114,6 @@ export default class MainPage extends React.Component {
   }
 
   getTabStatus() {
-    // TODO: should try to make this a bit safer in case we get into a weird situation
     if (this.props.teams.length) {
       const tabname = this.props.teams[this.state.key].name;
       return this.state.tabStatus.get(tabname);
