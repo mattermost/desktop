@@ -46,12 +46,12 @@ export class ViewManager {
     let setFocus;
     sorted.forEach((server) => {
       const recycle = oldviews.get(server.name);
-      if (recycle) {
+      if (recycle && recycle.isVisible) {
+        setFocus = recycle.name;
+      }
+      if (recycle && recycle.server.url === server.url) {
         oldviews.delete(recycle.name);
         this.views.set(recycle.name, recycle);
-        if (recycle.isVisible) {
-          setFocus = recycle.name;
-        }
       } else {
         this.loadServer(server, mainWindow);
       }
