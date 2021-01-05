@@ -12,9 +12,6 @@ import ReactDOM from 'react-dom';
 import UrlDescription from '../../components/urlDescription.jsx';
 
 const start = async () => {
-  console.log(queryString);
-  console.log(urlParams);
-  console.log(urlParams.get('url'));
   ReactDOM.render(
     <UrlDescription
       url={decodeURIComponent(urlParams.get('url'))}

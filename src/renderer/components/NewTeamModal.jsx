@@ -6,7 +6,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} from 'react-bootstrap';
 
-import Utils from 'common/utils/util';
+import urlUtils from 'common/utils/url';
 
 export default class NewTeamModal extends React.Component {
   static defaultProps = {
@@ -62,7 +62,7 @@ export default class NewTeamModal extends React.Component {
     if (!(/^https?:\/\/.*/).test(this.state.teamUrl.trim())) {
       return 'URL should start with http:// or https://.';
     }
-    if (!Utils.isValidURL(this.state.teamUrl.trim())) {
+    if (!urlUtils.isValidURL(this.state.teamUrl.trim())) {
       return 'URL is not formatted correctly.';
     }
     return null;

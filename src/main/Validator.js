@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 import Joi from '@hapi/joi';
 
-import Utils from 'common/utils/util';
+import urlUtils from 'common/utils/url';
 
 const defaultOptions = {
   stripUnknown: true,
@@ -80,6 +80,7 @@ const configDataSchemaV2 = Joi.object({
   autostart: Joi.boolean().default(true),
   spellCheckerLocale: Joi.string().regex(/^[a-z]{2}-[A-Z]{2}$/).default('en-US'),
   darkMode: Joi.boolean().default(false),
+  downloadLocation: Joi.string(),
 });
 
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};
@@ -137,7 +138,7 @@ export function validateV1ConfigData(data) {
     });
 
     // next filter out urls that are still invalid so all is not lost
-    teams = teams.filter(({url}) => Utils.isValidURL(url));
+    teams = teams.filter(({url}) => urlUtils.isValidURL(url));
 
     // replace original teams
     data.teams = teams;
@@ -157,7 +158,7 @@ export function validateV2ConfigData(data) {
     });
 
     // next filter out urls that are still invalid so all is not lost
-    teams = teams.filter(({url}) => Utils.isValidURL(url));
+    teams = teams.filter(({url}) => urlUtils.isValidURL(url));
 
     // replace original teams
     data.teams = teams;

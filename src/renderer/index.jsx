@@ -19,11 +19,11 @@ if (process.env.NODE_ENV === 'production') {
 //     throw new Error(`Sorry, ${remote.app.name} does not support window.eval() for security reasons.`);
 //   };
 
-import url from 'url';
-
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {ipcRenderer} from 'electron';
+
+import urlUtils from 'common/utils/url';
 
 import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT} from 'common/communication';
 
@@ -53,10 +53,13 @@ class Root extends React.Component {
 
   setInitialConfig = async () => {
     const config = await this.requestConfig(true);
-    const parsedURL = url.parse(window.location.href, true);
+
+    const parsedURLSearchParams = urlUtils.parseURL(window.location.href).searchParams;
+    const parsedURLHasIndex = parsedURLSearchParams.has('index');
+    const initialIndex = parsedURLHasIndex ? parseInt(parsedURLSearchParams.get('index'), 10) : this.getInitialIndex(config.teams);
     this.setState({
       config,
-      initialIndex: parsedURL.query.index ? parseInt(parsedURL.query.index, 10) : this.getInitialIndex(config.teams)
+      initialIndex,
     });
   }
 
