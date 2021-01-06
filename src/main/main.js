@@ -532,7 +532,7 @@ function handleAppWebContentsCreated(dc, contents) {
       return;
     }
     const mode = Utils.runMode();
-    if ((mode === DEV_SERVER && parsedURL.origin === 'http://localhost:9000') ||
+    if ((mode === DEV_SERVER && parsedURL.origin === 'http://localhost:9001') ||
         ((mode === DEVELOPMENT || mode === PRODUCTION) &&
           (parsedURL.path === 'renderer/index.html' || parsedURL.path === 'renderer/settings.html'))) {
       log.info('loading settings page');
