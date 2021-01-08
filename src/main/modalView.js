@@ -31,7 +31,7 @@ export class ModalView {
     }
   }
 
-  show = (win) => {
+  show = (win, withDevTools) => {
     if (this.windowAttached) {
       // we'll reatach
       this.windowAttached.removeBrowserView(this.view);
@@ -57,7 +57,9 @@ export class ModalView {
     }
 
     // uncomment if something goes wrong with modals
-    // this.view.webContents.openDevTools();
+    if (withDevTools) {
+      this.view.webContents.openDevTools();
+    }
   }
 
   hide = () => {

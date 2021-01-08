@@ -54,9 +54,11 @@ function handleInfoRequest(event) {
 }
 
 export function showModal() {
+  let noWindow;
+  const withDevTools = process.env.MM_DEBUG_MODALS || false;
   modalQueue.forEach((modal, index) => {
     if (index === 0) {
-      modal.show();
+      modal.show(noWindow, withDevTools);
     } else {
       modal.hide();
     }
