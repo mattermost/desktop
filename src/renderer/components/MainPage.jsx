@@ -6,16 +6,15 @@
 /* eslint-disable react/no-set-state */
 
 import os from 'os';
-import url from 'url';
 
 import React, {Fragment} from 'react';
 import PropTypes from 'prop-types';
 import {Grid, Row} from 'react-bootstrap';
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 
-import {ipcRenderer, remote, shell} from 'electron';
+import {ipcRenderer, remote} from 'electron';
 
-import Utils from 'common/utils/util';
+import urlUtils from 'common/utils/url';
 import {
   FOCUS_BROWSERVIEW,
   ZOOM,
@@ -28,11 +27,13 @@ import {
   LOAD_SUCCESS,
   LOAD_FAILED,
   SHOW_NEW_SERVER_MODAL,
+  SWITCH_SERVER,
   WINDOW_CLOSE,
   WINDOW_MINIMIZE,
   WINDOW_RESTORE,
   WINDOW_MAXIMIZE,
   DOUBLE_CLICK_ON_WINDOW,
+  PLAY_SOUND,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -41,6 +42,8 @@ import minimizeButton from '../../assets/titlebar/chrome-minimize.svg';
 import closeButton from '../../assets/titlebar/chrome-close.svg';
 import spinner from '../../assets/loading.gif';
 import spinnerx2 from '../../assets/loading@2x.gif';
+
+import {playSound} from '../notificationSounds';
 
 import LoginModal from './LoginModal.jsx';
 import TabBar from './TabBar.jsx';
@@ -91,16 +94,16 @@ export default class MainPage extends React.Component {
 
   parseDeeplinkURL(deeplink, teams = this.props.teams) {
     if (deeplink && Array.isArray(teams) && teams.length) {
-      const deeplinkURL = url.parse(deeplink);
+      const deeplinkURL = urlUtils.parseURL(deeplink);
       let parsedDeeplink = null;
       teams.forEach((team, index) => {
-        const teamURL = url.parse(team.url);
+        const teamURL = urlUtils.parseURL(team.url);
         if (deeplinkURL.host === teamURL.host) {
           parsedDeeplink = {
             teamURL,
             teamIndex: index,
             originalURL: deeplinkURL,
-            url: `${teamURL.protocol}//${teamURL.host}${deeplinkURL.pathname || '/'}`,
+            url: `${teamURL.origin}${deeplinkURL.pathname || '/'}`,
             path: deeplinkURL.pathname || '/',
           };
         }
@@ -112,8 +115,12 @@ export default class MainPage extends React.Component {
 
   getTabStatus() {
     // TODO: should try to make this a bit safer in case we get into a weird situation
-    const tabname = this.props.teams[this.state.key].name;
-    return this.state.tabStatus.get(tabname);
+    const tab = this.props.teams[this.state.key];
+    if (tab) {
+      const tabname = tab.name;
+      return this.state.tabStatus.get(tabname);
+    }
+    return null;
   }
 
   componentDidMount() {
@@ -194,12 +201,11 @@ export default class MainPage extends React.Component {
     });
 
     ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => {
-      console.log(`switch to dark mode ${darkMode}`);
       this.setState({darkMode});
     });
 
     // can't switch tabs sequentially for some reason...
-    ipcRenderer.on('switch-tab', (event, key) => {
+    ipcRenderer.on(SWITCH_SERVER, (event, key) => {
       const nextIndex = this.props.teams.findIndex((team) => team.order === key);
       const team = this.props.teams[nextIndex];
       this.handleSelect(team.name, nextIndex);
@@ -229,7 +235,6 @@ export default class MainPage extends React.Component {
     ipcRenderer.on('clear-cache-and-reload-tab', () => {
       this.refs[`mattermostView${this.state.key}`].clearCacheAndReload();
     });
-    ipcRenderer.on('download-complete', this.showDownloadCompleteNotification);
 
     ipcRenderer.on('focus', this.focusListener);
     ipcRenderer.on('blur', this.blurListener);
@@ -343,6 +348,10 @@ export default class MainPage extends React.Component {
       this.activateFinder(true);
     });
 
+    ipcRenderer.on(PLAY_SOUND, (_event, soundName) => {
+      playSound(soundName);
+    });
+
     if (process.platform !== 'darwin') {
       this.threeDotMenu = React.createRef();
       ipcRenderer.on('focus-three-dot-menu', () => {
@@ -386,18 +395,18 @@ export default class MainPage extends React.Component {
 
   switchToTabForCertificateRequest = (origin) => {
     // origin is server name + port, if the port doesn't match the protocol, it is kept by URL
-    const originURL = new URL(`http://${origin.split(':')[0]}`);
-    const secureOriginURL = new URL(`https://${origin.split(':')[0]}`);
+    const originURL = urlUtils.parseURL(`http://${origin.split(':')[0]}`);
+    const secureOriginURL = urlUtils.parseURL(`https://${origin.split(':')[0]}`);
 
     const key = this.props.teams.findIndex((team) => {
-      const parsedURL = new URL(team.url);
+      const parsedURL = urlUtils.parseURL(team.url);
       return (parsedURL.origin === originURL.origin) || (parsedURL.origin === secureOriginURL.origin);
     });
     this.handleSelect(key);
   };
 
   handleInterTeamLink = (linkUrl) => {
-    const selectedTeam = Utils.getServer(linkUrl, this.props.teams);
+    const selectedTeam = urlUtils.getServer(linkUrl, this.props.teams);
     if (!selectedTeam) {
       return;
     }
@@ -423,11 +432,12 @@ export default class MainPage extends React.Component {
     this.handleOnTeamFocused(newKey);
   }
 
-  handleDragAndDrop = (dropResult) => {
+  handleDragAndDrop = async (dropResult) => {
     const {removedIndex, addedIndex} = dropResult;
     if (removedIndex !== addedIndex) {
-      const teamIndex = this.props.moveTabs(removedIndex, addedIndex < this.props.teams.length ? addedIndex : this.props.teams.length - 1);
-      this.handleSelect(teamIndex);
+      const teamIndex = await this.props.moveTabs(removedIndex, addedIndex < this.props.teams.length ? addedIndex : this.props.teams.length - 1);
+      const name = this.props.teams[teamIndex].name;
+      this.handleSelect(name, teamIndex);
     }
   }
 
@@ -611,15 +621,6 @@ export default class MainPage extends React.Component {
     }
   };
 
-  showDownloadCompleteNotification = async (event, item) => {
-    const title = process.platform === 'win32' ? item.serverInfo.name : 'Download Complete';
-    const notificationBody = process.platform === 'win32' ? `Download Complete \n ${item.fileName}` : item.fileName;
-
-    await Utils.dispatchNotification(title, notificationBody, false, () => {
-      shell.showItemInFolder(item.path.normalize());
-    });
-  }
-
   setInputRef = (ref) => {
     this.inputRef = ref;
   }
@@ -627,7 +628,7 @@ export default class MainPage extends React.Component {
   showExtraBar = () => {
     const ref = this.refs[`mattermostView${this.state.key}`];
     if (typeof ref !== 'undefined') {
-      return !Utils.isTeamUrl(this.props.teams[this.state.key].url, ref.getSrc());
+      return !urlUtils.isTeamUrl(this.props.teams[this.state.key].url, ref.getSrc());
     }
     return false;
   }
@@ -754,6 +755,15 @@ export default class MainPage extends React.Component {
 
       let component;
       const tabStatus = this.getTabStatus();
+      if (!tabStatus) {
+        const tab = this.props.teams[this.state.key];
+        if (tab) {
+          console.error(`Not tabStatus for ${this.props.teams[this.state.key].name}`);
+        } else {
+          console.error('No tab status, tab doesn\'t exist anymore');
+        }
+        return null;
+      }
       switch (tabStatus.status) {
       case RETRY:
       case FAILED:
@@ -779,7 +789,6 @@ export default class MainPage extends React.Component {
           </div>);
         break;
       case DONE:
-        console.log(`Loading tab ${this.state.key}`);
         component = null;
       }
       return component;
@@ -804,7 +813,7 @@ export default class MainPage extends React.Component {
     let authInfo = null;
     if (this.state.loginQueue.length !== 0) {
       request = this.state.loginQueue[0].request;
-      const tmpURL = url.parse(this.state.loginQueue[0].request.url);
+      const tmpURL = urlUtils.parseURL(this.state.loginQueue[0].request.url);
       authServerURL = `${tmpURL.protocol}//${tmpURL.host}`;
       authInfo = this.state.loginQueue[0].authInfo;
     }

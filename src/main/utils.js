@@ -49,7 +49,7 @@ export function getLocalURL(urlPath, query, isMain) {
     log.info('detected webserver');
     protocol = 'http';
     hostname = 'localhost';
-    port = ':9000'; // TODO: find out how to get the devserver port
+    port = ':9001'; // TODO: find out how to get the devserver port
     pathname = `${processPath}/${urlPath}`;
   } else {
     protocol = 'file';

@@ -3,7 +3,6 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 import fs from 'fs';
 
-import os from 'os';
 import path from 'path';
 
 import electron, {nativeTheme, shell} from 'electron';
@@ -13,9 +12,10 @@ import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
 
 import Utils from 'common/utils/util';
+import urlUtils from 'common/utils/url';
 
 import {DEV_SERVER, DEVELOPMENT, PRODUCTION, SECOND} from 'common/utils/constants';
-import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, SHOW_NEW_SERVER_MODAL, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE} from 'common/communication';
+import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, SHOW_NEW_SERVER_MODAL, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION, GET_DOWNLOAD_LOCATION} from 'common/communication';
 import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from 'common/permissions';
 import Config from 'common/config';
 
@@ -35,9 +35,9 @@ import initCookieManager from './cookieManager';
 import UserActivityMonitor from './UserActivityMonitor';
 import * as WindowManager from './windows/windowManager';
 import {showBadge} from './badge';
+import {displayMention, displayDownloadCompleted} from './notifications';
 
 import parseArgs from './ParseArgs';
-import {ViewManager} from './viewManager';
 import modalManager from './modalManager';
 import {getLocalURLString} from './utils';
 import {getTrayImages, switchMenuIconImages} from './tray/tray';
@@ -75,7 +75,6 @@ let appState = null;
 let config = null;
 let trayIcon = null;
 let trayImages = null;
-let viewManager = null;
 
 // supported custom login paths (oath, saml)
 const customLoginRegexPaths = [
@@ -154,9 +153,6 @@ function initializeArgs() {
     process.exit(0); // eslint-disable-line no-process-exit
   }
 
-  // TODO: are we going to use this?
-  // hideOnStartup = shouldBeHiddenOnStartup(global.args);
-
   global.isDev = isDev && !global.args.disableDevMode; // this doesn't seem to be right and isn't used as the single source of truth
 
   if (global.args.dataDir) {
@@ -231,10 +227,11 @@ function initializeBeforeAppReady() {
 }
 
 function initializeInterCommunicationEventListeners() {
+  ipcMain.on('reload-config', handleReloadConfig);
   ipcMain.on('login-credentials', handleLoginCredentialsEvent);
   ipcMain.on('login-cancel', handleCancelLoginEvent);
   ipcMain.on('download-url', handleDownloadURLEvent);
-  ipcMain.on('notified', handleNotifiedEvent);
+  ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
   ipcMain.handle('get-app-version', handleAppVersion);
 
   // see comment on function
@@ -243,7 +240,7 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('selected-client-certificate', handleSelectedCertificate);
   ipcMain.on(GRANT_PERMISSION_CHANNEL, handlePermissionGranted);
   ipcMain.on(DENY_PERMISSION_CHANNEL, handlePermissionDenied);
-  ipcMain.on(FOCUS_BROWSERVIEW, handleFocus);
+  ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
 
   if (shouldShowTrayIcon()) {
     ipcMain.on('update-unread', handleUpdateUnreadEvent);
@@ -263,6 +260,7 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on(WINDOW_MAXIMIZE, WindowManager.maximize);
   ipcMain.on(WINDOW_MINIMIZE, WindowManager.minimize);
   ipcMain.on(WINDOW_RESTORE, WindowManager.restore);
+  ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
 }
 
 //
@@ -291,14 +289,15 @@ function handleConfigSynchronize() {
   WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
   if (app.isReady()) {
     WindowManager.sendToRenderer('reload-config');
-    if (viewManager) {
-      viewManager.reloadConfiguration(config.teams, WindowManager.getMainWindow());
-    }
   }
 }
 
+function handleReloadConfig() {
+  config.reload();
+  WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
+}
+
 function handleAppVersion() {
-  log.info('requested version');
   return {
     name: app.getName(),
     version: app.getVersion(),
@@ -466,7 +465,7 @@ function handleAppGPUProcessCrashed(event, killed) {
 function handleAppLogin(event, webContents, request, authInfo, callback) {
   event.preventDefault();
   const parsedURL = new URL(request.url);
-  const server = Utils.getServer(parsedURL, config.teams);
+  const server = urlUtils.getServer(parsedURL, config.teams);
 
   loginCallbackMap.set(request.url, typeof callback === 'undefined' ? null : callback); // if callback is undefined set it to null instead so we know we have set it up with no value
   const mainWindow = WindowManager.getMainWindow(true);
@@ -509,8 +508,7 @@ function handleAppWillFinishLaunching() {
 }
 
 function handleSwitchServer(event, serverName) {
-  WindowManager.showMainWindow(true);
-  viewManager.showByName(serverName);
+  WindowManager.switchServer(serverName);
 }
 
 function handleNewServerModal() {
@@ -546,10 +544,10 @@ function handleAppWebContentsCreated(dc, contents) {
 
   contents.on('will-navigate', (event, url) => {
     const contentID = event.sender.id;
-    const parsedURL = Utils.parseURL(url);
-    const server = Utils.getServer(parsedURL, config.teams);
+    const parsedURL = urlUtils.parseURL(url);
+    const server = urlUtils.getServer(parsedURL, config.teams);
 
-    if ((server !== null && Utils.isTeamUrl(server.url, parsedURL)) || isTrustedPopupWindow(event.sender)) {
+    if (server && (urlUtils.isTeamUrl(server.url, parsedURL) || urlUtils.isAdminUrl(server.url, parsedURL) || isTrustedPopupWindow(event.sender))) {
       return;
     }
 
@@ -563,7 +561,7 @@ function handleAppWebContentsCreated(dc, contents) {
       return;
     }
     const mode = Utils.runMode();
-    if ((mode === DEV_SERVER && parsedURL.origin === 'http://localhost:9000') ||
+    if ((mode === DEV_SERVER && parsedURL.origin === 'http://localhost:9001') ||
         ((mode === DEVELOPMENT || mode === PRODUCTION) &&
           (parsedURL.path === 'renderer/index.html' || parsedURL.path === 'renderer/settings.html'))) {
       log.info('loading settings page');
@@ -581,8 +579,8 @@ function handleAppWebContentsCreated(dc, contents) {
   //    - indicate custom login is NOT in progress
   contents.on('did-start-navigation', (event, url) => {
     const contentID = event.sender.id;
-    const parsedURL = Utils.parseURL(url);
-    const server = Utils.getServer(parsedURL, config.teams);
+    const parsedURL = urlUtils.parseURL(url);
+    const server = urlUtils.getServer(parsedURL, config.teams);
 
     if (!isTrustedURL(parsedURL)) {
       return;
@@ -596,21 +594,25 @@ function handleAppWebContentsCreated(dc, contents) {
   });
 
   contents.on('new-window', (event, url) => {
-    const parsedURL = Utils.parseURL(url);
+    const parsedURL = urlUtils.parseURL(url);
 
     if (parsedURL.protocol === 'devtools:') {
       return;
     }
     event.preventDefault();
 
-    const server = Utils.getServer(parsedURL, config.teams);
+    const server = urlUtils.getServer(parsedURL, config.teams);
 
     if (!server) {
       shell.openExternal(url);
       return;
     }
-    if (Utils.isTeamUrl(server.url, parsedURL, true) === true) {
+    if (urlUtils.isTeamUrl(server.url, parsedURL, true)) {
       log.info(`${url} is a known team, preventing to open a new window`);
+      return;
+    }
+    if (Utils.isAdminUrl(server.url, parsedURL)) {
+      log.info(`${url} is an admin console page, preventing to open a new window`);
       return;
     }
     if (popupWindow && !popupWindow.closed && popupWindow.getURL() === url) {
@@ -619,7 +621,7 @@ function handleAppWebContentsCreated(dc, contents) {
     }
 
     // TODO: move popups to its own and have more than one.
-    if (Utils.isPluginUrl(server.url, parsedURL) || Utils.isManagedResource(server.url, parsedURL)) {
+    if (urlUtils.isPluginUrl(server.url, parsedURL) || urlUtils.isManagedResource(server.url, parsedURL)) {
       if (!popupWindow || popupWindow.closed) {
         popupWindow = new BrowserWindow({
           backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
@@ -640,7 +642,7 @@ function handleAppWebContentsCreated(dc, contents) {
         });
       }
 
-      if (Utils.isManagedResource(server.url, parsedURL)) {
+      if (urlUtils.isManagedResource(server.url, parsedURL)) {
         popupWindow.loadURL(url);
       } else {
         // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth
@@ -704,14 +706,6 @@ function initializeAfterAppReady() {
     WindowManager.showSettingsWindow();
   }
 
-  // TODO: how should the relationship between viewmanager and windowmanager be?
-
-  // const boundaries = getWindowBoundaries(win);
-  // setServersBounds(servers, boundaries);
-  viewManager = new ViewManager(config);
-  viewManager.load(WindowManager.getMainWindow());
-  viewManager.showInitial();
-
   criticalErrorHandler.setMainWindow(WindowManager.getMainWindow());
 
   // TODO: this has to be sent to the tabs instead
@@ -725,7 +719,6 @@ function initializeAfterAppReady() {
 
   if (shouldShowTrayIcon()) {
     // set up tray icon
-    console.log(`displaying ${trayImages.normal}`);
     trayIcon = new Tray(trayImages.normal);
     if (process.platform === 'darwin') {
       trayIcon.setPressedImage(trayImages.clicked.normal);
@@ -766,17 +759,13 @@ function initializeAfterAppReady() {
     });
     item.setSaveDialogOptions({
       title: filename,
-      defaultPath: os.homedir() + '/Downloads/' + filename,
+      defaultPath: path.resolve(config.combinedData.downloadLocation, filename),
       filters,
     });
 
     item.on('done', (doneEvent, state) => {
       if (state === 'completed') {
-        WindowManager.sendToRenderer('download-complete', {
-          fileName: filename,
-          path: item.savePath,
-          serverInfo: Utils.getServer(webContents.getURL(), config.teams),
-        });
+        displayDownloadCompleted(filename, item.savePath, urlUtils.getServer(webContents.getURL(), config.teams));
       }
     });
   });
@@ -850,14 +839,8 @@ function handleDownloadURLEvent(event, url) {
   });
 }
 
-function handleNotifiedEvent() {
-  if (config.notifications.flashWindow === 2) {
-    WindowManager.flashFrame(true);
-  }
-
-  if (process.platform === 'darwin' && config.notifications.bounceIcon) {
-    app.dock.bounce(config.notifications.bounceIconType);
-  }
+function handleMentionNotification(event, title, body, channel, teamId, silent, data) {
+  displayMention(title, body, channel, teamId, silent, event.sender, data);
 }
 
 // TODO: figure out if we want to inherit title from webpage or use one of our own
@@ -906,27 +889,19 @@ function handleOpenAppMenu() {
 }
 
 function handleCloseAppMenu() {
-  viewManager.focus();
-}
-
-function handleFocus() {
-  if (viewManager) {
-    viewManager.focus();
-  } else {
-    log.error('Trying to call focus when the viewmanager has not yet been initialized');
-  }
+  WindowManager.focusBrowserView();
 }
 
 function handleUpdateMenuEvent(event, configData) {
   // TODO: this might make sense to move to window manager? so it updates the window referenced if needed.
   const mainWindow = WindowManager.getMainWindow();
-  const aMenu = appMenu.createMenu(configData, viewManager);
+  const aMenu = appMenu.createMenu(configData);
   Menu.setApplicationMenu(aMenu);
   aMenu.addListener('menu-will-close', handleCloseAppMenu);
 
   // set up context menu for tray icon
   if (shouldShowTrayIcon()) {
-    const tMenu = trayMenu.createMenu(configData, viewManager); // this will change once the viewmanager is part of windowmanager
+    const tMenu = trayMenu.createMenu(configData);
     if (process.platform === 'darwin' || process.platform === 'linux') {
       // store the information, if the tray was initialized, for checking in the settings, if the application
       // was restarted after setting "Show icon on menu bar"
@@ -942,16 +917,25 @@ function handleUpdateMenuEvent(event, configData) {
   }
 }
 
+async function handleSelectDownload(event, startFrom) {
+  const message = 'Specify the folder where files will download';
+  const result = await dialog.showOpenDialog({defaultPath: startFrom,
+    message,
+    properties:
+     ['openDirectory', 'createDirectory', 'dontAddToRecent', 'promptToCreate']});
+  return result.filePaths[0];
+}
+
 //
 // helper functions
 //
 
 function isTrustedURL(url) {
-  const parsedURL = Utils.parseURL(url);
+  const parsedURL = urlUtils.parseURL(url);
   if (!parsedURL) {
     return false;
   }
-  return Utils.getServer(parsedURL, config.teams) !== null;
+  return urlUtils.getServer(parsedURL, config.teams) !== null;
 }
 
 function isTrustedPopupWindow(webContents) {
@@ -966,7 +950,7 @@ function isTrustedPopupWindow(webContents) {
 
 function isCustomLoginURL(url, server) {
   const subpath = (server === null || typeof server === 'undefined') ? '' : server.url.pathname;
-  const parsedURL = Utils.parseURL(url);
+  const parsedURL = urlUtils.parseURL(url);
   if (!parsedURL) {
     return false;
   }
@@ -997,7 +981,7 @@ function getDeeplinkingURL(args) {
   if (Array.isArray(args) && args.length) {
     // deeplink urls should always be the last argument, but may not be the first (i.e. Windows with the app already running)
     const url = args[args.length - 1];
-    if (url && scheme && url.startsWith(scheme) && Utils.isValidURI(url)) {
+    if (url && scheme && url.startsWith(scheme) && urlUtils.isValidURI(url)) {
       return url;
     }
   }

@@ -48,7 +48,6 @@ function createMainWindow(config, options) {
     windowOptions = {width: defaultWindowWidth, height: defaultWindowHeight};
   }
 
-  const {hideOnStartup} = options;
   const {maximized: windowIsMaximized} = windowOptions;
 
   const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
@@ -87,30 +86,18 @@ function createMainWindow(config, options) {
   mainWindow.once('ready-to-show', () => {
     mainWindow.webContents.zoomLevel = 0;
 
-    // handle showing the window when not launched by auto-start
-    // - when not configured to auto-start, immediately show contents and optionally maximize as needed
-    if (!hideOnStartup) {
-      mainWindow.show();
-      if (windowIsMaximized) {
-        mainWindow.maximize();
-      }
+    mainWindow.show();
+    if (windowIsMaximized) {
+      mainWindow.maximize();
     }
   });
 
   mainWindow.once('show', () => {
-    // handle showing the app when hidden to the tray icon by auto-start
-    // - optionally maximize the window as needed
-    if (hideOnStartup && windowIsMaximized) {
-      mainWindow.maximize();
-    }
+    mainWindow.show();
   });
 
   mainWindow.once('restore', () => {
-    // handle restoring the window when minimized to the app icon by auto-start
-    // - optionally maximize the window as needed
-    if (hideOnStartup && windowIsMaximized) {
-      mainWindow.maximize();
-    }
+    mainWindow.restore();
   });
 
   // App should save bounds when a window is closed.

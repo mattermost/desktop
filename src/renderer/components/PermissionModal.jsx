@@ -7,7 +7,7 @@ import {Modal, Button} from 'react-bootstrap';
 import {ipcRenderer, remote} from 'electron';
 import {log} from 'electron-log';
 
-import Util from 'common/utils/util';
+import urlUtil from 'common/utils/url';
 
 import {BASIC_AUTH_PERMISSION, REQUEST_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, PERMISSION_DESCRIPTION} from '../../common/permissions';
 
@@ -102,7 +102,7 @@ export default class PermissionModal extends React.Component {
 
   getModalBody() {
     const {url, permission} = this.getCurrentData();
-    const originDisplay = url ? Util.getHost(url) : 'unknown origin';
+    const originDisplay = url ? urlUtil.getHost(url) : 'unknown origin';
     const originLink = url ? originDisplay : '';
     return (
       <div>

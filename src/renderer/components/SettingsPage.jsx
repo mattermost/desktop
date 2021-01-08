@@ -8,12 +8,12 @@ import 'renderer/css/settings.css';
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import {Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row} from 'react-bootstrap';
+import {Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row, Button} from 'react-bootstrap';
 
 import {ipcRenderer} from 'electron';
 import {debounce} from 'underscore';
 
-import {GET_LOCAL_CONFIGURATION, UPDATE_CONFIGURATION, DOUBLE_CLICK_ON_WINDOW} from 'common/communication';
+import {GET_LOCAL_CONFIGURATION, UPDATE_CONFIGURATION, DOUBLE_CLICK_ON_WINDOW, GET_DOWNLOAD_LOCATION} from 'common/communication';
 
 import TeamList from './TeamList.jsx';
 import AutoSaveIndicator from './AutoSaveIndicator.jsx';
@@ -37,14 +37,15 @@ export default class SettingsPage extends React.Component {
         appOptions: AutoSaveIndicator.SAVING_STATE_DONE,
         servers: AutoSaveIndicator.SAVING_STATE_DONE,
       },
+      userOpenedDownloadDialog: false,
     };
 
     ipcRenderer.invoke(GET_LOCAL_CONFIGURATION).then((config) => {
       this.state = this.convertConfigDataToState(config);
       this.setState({ready: true, maximized: false, ...this.state});
-      console.log(this.state);
     });
     this.trayIconThemeRef = React.createRef();
+    this.downloadLocationRef = React.createRef();
 
     this.saveQueue = [];
   }
@@ -249,6 +250,25 @@ export default class SettingsPage extends React.Component {
     });
   }
 
+  saveDownloadLocation = (location) => {
+    this.setState({
+      downloadLocation: location,
+    });
+    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'downloadLocation', data: location});
+  }
+
+  handleChangeDownloadLocation = (e) => {
+    this.saveDownloadLocation(e.target.value);
+  }
+
+  selectDownloadLocation = () => {
+    if (!this.state.userOpenedDownloadDialog) {
+      ipcRenderer.invoke(GET_DOWNLOAD_LOCATION, `/Users/${process.env.USER || process.env.USERNAME}/Downloads`).then((result) => this.saveDownloadLocation(result));
+      this.setState({userOpenedDownloadDialog: true});
+    }
+    this.setState({userOpenedDownloadDialog: false});
+  }
+
   updateTeam = (index, newData) => {
     const teams = this.state.teams;
     teams[index] = newData;
@@ -312,6 +332,24 @@ export default class SettingsPage extends React.Component {
       footer: {
         padding: '0.4em 0',
       },
+      downloadLocationInput: {
+        marginRight: '3px',
+        marginTop: '8px',
+        width: '320px',
+        height: '34px',
+        padding: '0 12px',
+        borderRadius: '4px',
+        border: '1px solid #ccc',
+        fontWeight: '500',
+      },
+
+      downloadLocationButton: {
+        marginBottom: '4px',
+      },
+
+      container: {
+        paddingBottom: '40px',
+      }
     };
 
     const teamsRow = (
@@ -391,8 +429,6 @@ export default class SettingsPage extends React.Component {
           {'Start app on login'}
           <HelpBlock>
             {'If enabled, the app starts automatically when you log in to your machine.'}
-            {' '}
-            {'The app will initially start minimized and appear on the taskbar.'}
           </HelpBlock>
         </Checkbox>);
     }
@@ -572,6 +608,32 @@ export default class SettingsPage extends React.Component {
           {' Setting takes effect after restarting the app.'}
         </HelpBlock>
       </Checkbox>
+    );
+
+    options.push(
+      <div style={settingsPage.container}>
+        <hr/>
+        <div>{'Download Location'}</div>
+        <input
+          disabled={true}
+          style={settingsPage.downloadLocationInput}
+          key='inputDownloadLocation'
+          id='inputDownloadLocation'
+          ref={this.downloadLocationRef}
+          onChange={this.handleChangeDownloadLocation}
+          value={this.state.downloadLocation}
+        />
+        <Button
+          style={settingsPage.downloadLocationButton}
+          id='saveDownloadLocation'
+          onClick={this.selectDownloadLocation}
+        >
+          <span>{'Change'}</span>
+        </Button>
+        <HelpBlock>
+          {'Specify the folder where files will download.'}
+        </HelpBlock>
+      </div>
     );
 
     let optionsRow = null;

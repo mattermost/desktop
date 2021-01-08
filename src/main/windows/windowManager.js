@@ -5,11 +5,13 @@ import path from 'path';
 import {app, BrowserWindow, nativeImage, systemPreferences} from 'electron';
 import log from 'electron-log';
 
-import {MAXIMIZE_CHANGE} from 'common/communication';
+import {MAXIMIZE_CHANGE, SWITCH_SERVER} from 'common/communication';
+
+import {ViewManager} from '../viewManager';
+import {CriticalErrorHandler} from '../CriticalErrorHandler';
 
 import {createSettingsWindow} from './settingsWindow';
 import createMainWindow from './mainWindow';
-import {CriticalErrorHandler} from './../CriticalErrorHandler';
 
 // singleton module to manage application's windows
 
@@ -19,6 +21,7 @@ const status = {
   config: null,
   showTrayIcon: process.platform === 'win32',
   deeplinkingUrl: null,
+  viewManager: null,
 };
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
@@ -31,6 +34,9 @@ export function setConfig(data, showTrayIcon, deeplinkingUrl) {
   }
   if (deeplinkingUrl) {
     status.deeplinkingUrl = deeplinkingUrl;
+  }
+  if (status.viewManager) {
+    status.viewManager.reloadConfiguration(status.config.teams, status.mainWindow);
   }
 }
 
@@ -78,6 +84,7 @@ export function showMainWindow() {
     status.mainWindow.on('maximize', () => this.sendToRenderer(MAXIMIZE_CHANGE, true));
     status.mainWindow.on('unmaximize', () => this.sendToRenderer(MAXIMIZE_CHANGE, false));
   }
+  initializeViewManager();
 }
 
 export function getMainWindow(ensureCreated) {
@@ -139,6 +146,9 @@ export function flashFrame(flash) {
       status.settingsWindow.flashFrame(flash);
     }
   }
+  if (process.platform === 'darwin' && status.config.notifications.bounceIcon) {
+    app.dock.bounce(status.config.notifications.bounceIconType);
+  }
 }
 
 export function setOverlayIcon(overlayDataURL, description) {
@@ -181,6 +191,44 @@ export function handleDoubleClick(e, windowType) {
     }
     break;
   }
+}
+
+function initializeViewManager() {
+  if (!status.viewManager) {
+    status.viewManager = new ViewManager(status.config);
+    status.viewManager.load(status.mainWindow);
+    status.viewManager.showInitial();
+  }
+}
+
+export function switchServer(serverName, notifyRenderer) {
+  showMainWindow();
+  status.viewManager.showByName(serverName);
+  if (notifyRenderer) {
+    const server = status.config.teams.find((candidate) => candidate.name === serverName);
+    sendToRenderer(SWITCH_SERVER, server.order);
+  }
+}
+
+export function focusBrowserView() {
+  if (status.viewManager) {
+    status.viewManager.focus();
+  } else {
+    log.error('Trying to call focus when the viewmanager has not yet been initialized');
+  }
+}
+
+export function openBrowserViewDevTools() {
+  if (status.viewManager) {
+    status.viewManager.openViewDevTools();
+  }
+}
+
+export function getServerNameByWebContentsId(webContentsId) {
+  if (status.viewManager) {
+    return status.viewManager.findByWebContent(webContentsId);
+  }
+  return null;
 }
 
 export function close() {

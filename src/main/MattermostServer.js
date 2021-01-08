@@ -1,12 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import Utils from '../common/utils/util';
+import urlUtils from 'common/utils/url';
 
 export class MattermostServer {
   constructor(name, serverUrl) {
     this.name = name;
-    this.url = Utils.parseURL(serverUrl);
+    this.url = urlUtils.parseURL(serverUrl);
     if (!this.url) {
       throw new Error('Invalid url for creating a server');
     }
@@ -20,7 +20,7 @@ export class MattermostServer {
   }
 
   sameOrigin = (otherURL) => {
-    const parsedUrl = Utils.parseURL(otherURL);
+    const parsedUrl = urlUtils.parseURL(otherURL);
     return parsedUrl && this.url.origin === parsedUrl.origin;
   }
 

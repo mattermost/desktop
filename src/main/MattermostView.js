@@ -8,7 +8,7 @@ import path from 'path';
 import {EventEmitter} from 'events';
 
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constants';
-import Utils from 'common/utils/util';
+import urlUtils from 'common/utils/url';
 import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL} from 'common/communication';
 
 import {getWindowBoundaries} from './utils';
@@ -61,7 +61,7 @@ export class MattermostView extends EventEmitter {
 
   load = (someURL) => {
     this.retryLoad = null;
-    const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : Utils.parseUrl(someURL);
+    const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : urlUtils.parseUrl(someURL);
     log.info(`[${this.server.name}] Loading ${loadURL}`);
     const loading = this.view.webContents.loadURL(loadURL, {userAgent});
     loading.then(this.loadSuccess(loadURL)).catch((err) => {
@@ -141,6 +141,7 @@ export class MattermostView extends EventEmitter {
     this.window = null;
     this.server = null;
     this.isVisible = false;
+    clearTimeout(this.retryLoad);
   }
 
   focus = () => {

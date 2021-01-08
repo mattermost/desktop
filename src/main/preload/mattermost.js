@@ -9,6 +9,8 @@
 import {ipcRenderer, webFrame} from 'electron';
 import log from 'electron-log';
 
+import {NOTIFY_MENTION} from 'common/communication';
+
 const UNREAD_COUNT_INTERVAL = 1000;
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 
@@ -111,8 +113,8 @@ window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = 
     break;
   }
   case 'dispatch-notification': {
-    const {title, body, channel, teamId, silent} = message;
-    ipcRenderer.sendToHost('dispatchNotification', title, body, channel, teamId, silent, () => handleNotificationClick({teamId, channel}));
+    const {title, body, channel, teamId, silent, data} = message;
+    ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, silent, data);
     break;
   }
   default:
@@ -133,8 +135,8 @@ const handleNotificationClick = ({channel, teamId}) => {
   );
 };
 
-ipcRenderer.on('notification-clicked', (event, {channel, teamId}) => {
-  handleNotificationClick({channel, teamId});
+ipcRenderer.on('notification-clicked', (event, data) => {
+  handleNotificationClick(data);
 });
 
 function hasClass(element, className) {

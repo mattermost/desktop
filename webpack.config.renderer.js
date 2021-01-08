@@ -14,7 +14,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 const base = require('./webpack.config.base');
 
-const WEBSERVER_PORT = 9000;
+const WEBSERVER_PORT = 9001;
 
 module.exports = merge(base, {
   entry: {
