@@ -138,7 +138,9 @@ export default class NewTeamModal extends React.Component {
         <div className='modalHeader'>
           {'Add Server'}
         </div>
-        <form>
+        <form
+          className={'modalForm'}
+        >
           <FormGroup
             validationState={this.getTeamNameValidationState()}
           >
@@ -185,12 +187,12 @@ export default class NewTeamModal extends React.Component {
         <div className='modalFooter'>
           <div className='pull-left modal-error'>{this.getError()}</div>
           <Button
-            className='default'
+            className='default modalButton'
             id='cancelNewServerModal'
             onClick={this.props.onClose}
           >{'Cancel'}</Button>
           <Button
-            className='primary'
+            className='primary modalButton'
             id='saveNewServerModal'
             onClick={this.save}
             disabled={!this.validateForm()}

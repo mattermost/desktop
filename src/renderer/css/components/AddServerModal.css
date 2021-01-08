@@ -28,7 +28,7 @@ body {
   font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 
-form {
+form.modalForm {
   padding-left: 10px;
   display: block;
   color: #333;
@@ -79,7 +79,7 @@ label {
   color: #737373;
 }
 
-button {
+button.modalButton {
   color: #007bff;
   border-color: #007bff;
 	display: inline-block;
@@ -101,15 +101,15 @@ button {
   margin-right: 0.2em;
 }
 
-button:last-child {
+button.modalButton:last-child {
   margin-right: 0px;
 }
 
-button:focus {
+button.modalButton:focus {
   text-decoration: none;
 }
 
-button:active:focus {
+button.modalButton:active:focus {
   outline: 5px auto -webkit-focus-ring-color;
   outline-offset: -2px;
 }
@@ -176,6 +176,4 @@ button.default:focus {
 .has-error .form-control {
   border-color: #a94442;
 }
-.has-error .has-feedback {
-  
-}
+
