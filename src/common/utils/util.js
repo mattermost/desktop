@@ -4,7 +4,7 @@
 
 import electron from 'electron';
 
-import {DEVELOPMENT, DEV_SERVER, PRODUCTION} from './constants';
+import {DEVELOPMENT, PRODUCTION} from './constants';
 
 function getDisplayBoundaries() {
   const {screen} = electron;
@@ -24,13 +24,7 @@ function getDisplayBoundaries() {
 }
 
 function runMode() {
-  let mode = DEVELOPMENT;
-  if (process.env.WEBPACK_DEV_SERVER) {
-    mode = DEV_SERVER;
-  } else if (process.env.NODE_ENV === PRODUCTION) {
-    mode = PRODUCTION;
-  }
-  return mode;
+  return process.env.NODE_ENV === PRODUCTION ? PRODUCTION : DEVELOPMENT;
 }
 
 export default {

@@ -4,9 +4,8 @@
 
 import electron, {app} from 'electron';
 import path from 'path';
-import log from 'electron-log';
 
-import {DEV_SERVER, PRODUCTION} from 'common/utils/constants';
+import {PRODUCTION} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 
 const TAB_BAR_HEIGHT = 38;
@@ -39,27 +38,16 @@ export function getLocalURLString(urlPath, query, isMain) {
 }
 
 export function getLocalURL(urlPath, query, isMain) {
-  let protocol;
-  let hostname;
-  let port;
   let pathname;
   const processPath = isMain ? '' : '/renderer';
   const mode = Utils.runMode();
-  if (mode === DEV_SERVER) {
-    log.info('detected webserver');
-    protocol = 'http';
-    hostname = 'localhost';
-    port = ':9001'; // TODO: find out how to get the devserver port
-    pathname = `${processPath}/${urlPath}`;
+  const protocol = 'file';
+  const hostname = '';
+  const port = '';
+  if (mode === PRODUCTION) {
+    pathname = path.join(electron.app.getAppPath(), `dist/${processPath}/${urlPath}`);
   } else {
-    protocol = 'file';
-    hostname = '';
-    port = '';
-    if (mode === PRODUCTION) {
-      pathname = path.join(electron.app.getAppPath(), `dist/${processPath}/${urlPath}`);
-    } else {
-      pathname = path.resolve(__dirname, `../../dist/${processPath}/${urlPath}`); // TODO: find a better way to work with webpack on this
-    }
+    pathname = path.resolve(__dirname, `../../dist/${processPath}/${urlPath}`); // TODO: find a better way to work with webpack on this
   }
   const localUrl = new URL(`${protocol}://${hostname}${port}`);
   localUrl.pathname = pathname;
