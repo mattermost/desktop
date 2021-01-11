@@ -850,7 +850,13 @@ function handleUpdateUnreadEvent(event, arg) {
 }
 
 function handleOpenAppMenu() {
-  Menu.getApplicationMenu().popup({
+  const windowMenu = Menu.getApplicationMenu();
+  if (!windowMenu) {
+    console.error('No application menu found');
+    return;
+  }
+  windowMenu.popup({
+    window: WindowManager.getMainWindow(),
     x: 18,
     y: 18,
   });

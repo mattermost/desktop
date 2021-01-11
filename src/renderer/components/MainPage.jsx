@@ -72,6 +72,7 @@ export default class MainPage extends React.Component {
     }
 
     this.topBar = React.createRef();
+    this.threeDotMenu = React.createRef();
 
     this.state = {
       key,
@@ -354,7 +355,6 @@ export default class MainPage extends React.Component {
     });
 
     if (process.platform !== 'darwin') {
-      this.threeDotMenu = React.createRef();
       ipcRenderer.on('focus-three-dot-menu', () => {
         if (this.threeDotMenu.current) {
           this.threeDotMenu.current.focus();
