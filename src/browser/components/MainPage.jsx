@@ -795,6 +795,7 @@ export default class MainPage extends React.Component {
           active={isActive}
           allowExtraBar={this.showExtraBar()}
           isDarkMode={this.state.isDarkMode}
+          overrideUserAgent={this.props.overrideUserAgent}
         />);
     });
 
@@ -907,6 +908,7 @@ MainPage.propTypes = {
   setDarkMode: PropTypes.func.isRequired,
   moveTabs: PropTypes.func.isRequired,
   openMenu: PropTypes.func.isRequired,
+  overrideUserAgent: PropTypes.string,
 };
 
 /* eslint-enable react/no-set-state */

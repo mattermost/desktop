@@ -313,6 +313,26 @@ export default class MattermostView extends React.Component {
       />
     ) : null;
 
+    const webviewProps = {
+      id: this.props.id,
+      preload: preloadJS,
+      src: this.props.src,
+      ref: this.webviewRef,
+    };
+
+    if (this.props.overrideUserAgent) {
+      let customUA = this.props.overrideUserAgent;
+      if (customUA.indexOf('Electron') === -1) {
+        customUA = `${customUA} Electron/${process.versions.electron}`;
+      }
+
+      const name = remote.app.name;
+      if (customUA.indexOf(name) === -1) {
+        customUA = `${customUA} ${name}/${remote.app.getVersion()}`;
+      }
+      webviewProps.useragent = customUA;
+    }
+
     return (
       <div
         className={classNames('mattermostView', {
@@ -327,12 +347,7 @@ export default class MattermostView extends React.Component {
           loading={!this.state.errorInfo && this.props.active && !this.state.isWebviewLoaded}
           darkMode={this.props.isDarkMode}
         />
-        <webview
-          id={this.props.id}
-          preload={preloadJS}
-          src={this.props.src}
-          ref={this.webviewRef}
-        />
+        <webview {...webviewProps}/>
       </div>);
   }
 }
@@ -351,6 +366,7 @@ MattermostView.propTypes = {
   handleInterTeamLink: PropTypes.func,
   allowExtraBar: PropTypes.bool,
   isDarkMode: PropTypes.bool,
+  overrideUserAgent: PropTypes.string,
 };
 
 /* eslint-enable react/no-set-state */

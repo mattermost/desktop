@@ -204,6 +204,7 @@ ReactDOM.render(
     setDarkMode={setDarkMode}
     moveTabs={moveTabs}
     openMenu={openMenu}
+    overrideUserAgent={config.combinedData.userAgent}
   />,
   document.getElementById('content')
 );
