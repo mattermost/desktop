@@ -4,19 +4,10 @@
 
 import {EventEmitter} from 'events';
 import log from 'electron-log';
+import WindowsRegistry from 'winreg';
 
-let registry;
-try {
-  // eslint-disable-next-line global-require
-  registry = require('registry-js');
-} catch (e) {
-  if (process.platform === 'win32') {
-    log.error(`couldn't import registry module: ${e}`);
-  }
-}
-
-const REGISTRY_HIVE_LIST = [registry.HKEY.HKEY_LOCAL_MACHINE, registry.HKEY.HKEY_CURRENT_USER];
-const BASE_REGISTRY_KEY_PATH = 'Software\\Policies\\Mattermost';
+const REGISTRY_HIVE_LIST = [WindowsRegistry.HKLM, WindowsRegistry.HKCU];
+const BASE_REGISTRY_KEY_PATH = '\\Software\\Policies\\Mattermost';
 export const REGISTRY_READ_EVENT = 'registry-read';
 
 /**
@@ -37,7 +28,7 @@ export default class RegistryConfig extends EventEmitter {
    * @emits {update} emitted once all data has been loaded from the registry
    */
   async init() {
-    if (process.platform === 'win32' && registry) {
+    if (process.platform === 'win32') {
       // extract DefaultServerList from the registry
       try {
         const servers = await this.getServersListFromRegistry();
@@ -83,7 +74,7 @@ export default class RegistryConfig extends EventEmitter {
       if (server) {
         servers.push({
           name: server.name,
-          url: server.data,
+          url: server.value,
           order: server.order || index,
         });
       }
@@ -131,21 +122,23 @@ export default class RegistryConfig extends EventEmitter {
    * @param {string} name Name of the specific entry to retrieve (optional)
    */
   getRegistryEntryValues(hive, key, name) {
+    const registry = new WindowsRegistry({hive, key});
     return new Promise((resolve, reject) => {
       try {
-        const results = registry.enumerateValues(hive, key);
-        if (!results || results.length === 0) {
-          resolve();
-          return;
-        }
-        if (name) { // looking for a single entry value
-          const registryItem = results.find((item) => item.name === name);
-          resolve(registryItem && registryItem.value ? registryItem.value : null);
-        } else { // looking for an entry list
-          resolve(results);
-        }
+        registry.values((error, results) => {
+          if (error || !results || results.length === 0) {
+            resolve();
+            return;
+          }
+          if (name) { // looking for a single entry value
+            const registryItem = results.find((item) => item.name === name);
+            resolve(registryItem && registryItem.value ? registryItem.value : null);
+          } else { // looking for an entry list
+            resolve(results);
+          }
+        });
       } catch (e) {
-        log.error(`There was an error accesing the registry for ${name}: ${e}`);
+        log.error(`There was an error accessing the registry for ${key}`);
         reject(e);
       }
     });

@@ -70,7 +70,9 @@ export class ViewManager {
     if (this.configServers.length) {
       // TODO: handle deeplink url
       const element = this.configServers.find((e) => e.order === 0);
-      this.showByName(element.name);
+      if (element) {
+        this.showByName(element.name);
+      }
     }
 
     // TODO: send event to highlight selected tab
