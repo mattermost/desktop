@@ -115,8 +115,11 @@ export default class MainPage extends React.Component {
 
   getTabStatus() {
     if (this.props.teams.length) {
-      const tabname = this.props.teams[this.state.key].name;
-      return this.state.tabStatus.get(tabname);
+      const tab = this.props.teams[this.state.key];
+      if (tab) {
+        const tabname = tab.name;
+        return this.state.tabStatus.get(tabname);
+      }
     }
     return {status: NOSERVERS};
   }
@@ -749,6 +752,15 @@ export default class MainPage extends React.Component {
 
       let component;
       const tabStatus = this.getTabStatus();
+      if (!tabStatus) {
+        const tab = this.props.teams[this.state.key];
+        if (tab) {
+          console.error(`Not tabStatus for ${this.props.teams[this.state.key].name}`);
+        } else {
+          console.error('No tab status, tab doesn\'t exist anymore');
+        }
+        return null;
+      }
       switch (tabStatus.status) {
       case NOSERVERS: // TODO: substitute with https://mattermost.atlassian.net/browse/MM-25003
         component = (

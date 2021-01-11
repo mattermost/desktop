@@ -14,7 +14,7 @@ import 'airbnb-js-shims/target/es2015';
 import Utils from 'common/utils/util';
 import urlUtils from 'common/utils/url';
 
-import {DEV_SERVER, DEVELOPMENT, PRODUCTION, SECOND} from 'common/utils/constants';
+import {DEVELOPMENT, PRODUCTION, SECOND} from 'common/utils/constants';
 import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION, GET_DOWNLOAD_LOCATION} from 'common/communication';
 import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from 'common/permissions';
 import Config from 'common/config';
@@ -530,8 +530,7 @@ function handleAppWebContentsCreated(dc, contents) {
       return;
     }
     const mode = Utils.runMode();
-    if ((mode === DEV_SERVER && parsedURL.origin === 'http://localhost:9000') ||
-        ((mode === DEVELOPMENT || mode === PRODUCTION) &&
+    if (((mode === DEVELOPMENT || mode === PRODUCTION) &&
           (parsedURL.path === 'renderer/index.html' || parsedURL.path === 'renderer/settings.html'))) {
       log.info('loading settings page');
       return;
