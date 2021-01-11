@@ -263,16 +263,16 @@ function initializeInterCommunicationEventListeners() {
 // config event handlers
 //
 
-function handleConfigUpdate(config) {
+function handleConfigUpdate(newConfig) {
   if (process.platform === 'win32' || process.platform === 'linux') {
     const appLauncher = new AutoLauncher();
     const autoStartTask = config.autostart ? appLauncher.enable() : appLauncher.disable();
     autoStartTask.then(() => {
-      console.log('config.autostart has been configured:', config.autostart);
+      console.log('config.autostart has been configured:', newConfig.autostart);
     }).catch((err) => {
       console.log('error:', err);
     });
-    WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
+    WindowManager.setConfig(newConfig.data, newConfig.showTrayIcon, deeplinkingUrl);
   }
 
   ipcMain.emit('update-menu', true, config);
