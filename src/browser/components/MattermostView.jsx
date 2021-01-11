@@ -320,6 +320,13 @@ export default class MattermostView extends React.Component {
       ref: this.webviewRef,
     };
 
+    /*
+    * to override the user agent used by the app in the main window
+    * set 'userAgent' in the config.json file
+    * be aware that this might break some other interactions with servers
+    * we are still adding the Electron and Mattermost/whitelabel tags to
+    * ensure the server recognizes the desktop app.
+    */
     if (this.props.overrideUserAgent) {
       let customUA = this.props.overrideUserAgent;
       if (customUA.indexOf('Electron') === -1) {
