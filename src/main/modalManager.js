@@ -7,12 +7,9 @@ import {RETRIEVE_MODAL_INFO, MODAL_CANCEL, MODAL_RESULT} from 'common/communicat
 
 import {ModalView} from './modalView';
 
-// this file is expected to be treated like a singleton, so load it like:
-// import * as modalManager from '<path>/modalManager';
-
 let modalQueue = [];
 
-// TODO: use a key to prevent duplication of modals? like calling multiple times the add server
+// TODO: add a queue/add differentiation, in case we need to put a modal first in line
 // should we return the original promise if called multiple times with the same key?
 export function addModal(key, html, preload, data, win) {
   const foundModal = modalQueue.find((modal) => modal.key === key);
@@ -69,7 +66,10 @@ function handleModalResult(event, data) {
   const requestModal = findModalByCaller(event);
   if (requestModal) {
     requestModal.resolve(data);
-    filterActive();
+  }
+  filterActive();
+  if (modalQueue.length) {
+    showModal();
   }
 }
 
@@ -77,15 +77,13 @@ function handleModalCancel(event, data) {
   const requestModal = findModalByCaller(event);
   if (requestModal) {
     requestModal.reject(data);
-    filterActive();
+  }
+  filterActive();
+  if (modalQueue.length) {
+    showModal();
   }
 }
 
 function filterActive() {
   modalQueue = modalQueue.filter((modal) => modal.isActive());
 }
-
-export default {
-  addModal,
-  showModal,
-};

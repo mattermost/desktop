@@ -38,7 +38,7 @@ import {showBadge} from './badge';
 import {displayMention, displayDownloadCompleted} from './notifications';
 
 import parseArgs from './ParseArgs';
-import modalManager from './modalManager';
+import {addModal} from './modalManager';
 import {getLocalURLString} from './utils';
 import {getTrayImages, switchMenuIconImages} from './tray/tray';
 
@@ -518,7 +518,7 @@ function handleNewServerModal() {
   const modalPreload = path.resolve(__dirname, '../../dist/modalPreload.js');
 
   // eslint-disable-next-line no-undefined
-  const modalPromise = modalManager.addModal('newServer', html, modalPreload, {}, WindowManager.getMainWindow());
+  const modalPromise = addModal('newServer', html, modalPreload, {}, WindowManager.getMainWindow());
   if (modalPromise) {
     modalPromise.then((data) => {
       const teams = config.teams;
