@@ -202,6 +202,7 @@ export class MattermostView extends EventEmitter {
     this.window = null;
     this.server = null;
     this.isVisible = false;
+    clearTimeout(this.retryLoad);
   }
 
   focus = () => {
@@ -217,14 +218,16 @@ export class MattermostView extends EventEmitter {
   }
 
   openDevTools = () => {
-    this.view.webContents.openDevTools();
+    this.view.webContents.openDevTools({mode: 'detach'});
   }
 
   getWebContents = () => {
     if (this.status === READY) {
       return this.view.webContents;
+    } else if (this.window) {
+      return this.window.webContents; // if it's not ready you are looking at the renderer process
     }
-    return this.window.webContents; // if it's not ready you are looking at the renderer process
+    return WindowManager.getMainWindow.webContents;
   }
 
   handleUpdateTarget = (e, url) => {
