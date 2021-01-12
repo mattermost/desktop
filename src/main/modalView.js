@@ -58,6 +58,7 @@ export class ModalView {
 
     // uncomment if something goes wrong with modals
     if (withDevTools) {
+      console.log(`showing dev tools for ${this.key}`);
       this.view.webContents.openDevTools();
     }
   }

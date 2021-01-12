@@ -55,7 +55,7 @@ module.exports = merge(base, {
     new HtmlWebpackPlugin({
       title: 'Mattermost Desktop Settings',
       template: 'src/renderer/index.html',
-      chunks: ['login'],
+      chunks: ['loginModal'],
       filename: 'login.html',
     }),
     new MiniCssExtractPlugin({
