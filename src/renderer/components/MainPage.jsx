@@ -513,21 +513,6 @@ export default class MainPage extends React.Component {
     return index;
   }
 
-  handleLogin = (request, username, password) => {
-    ipcRenderer.send('login-credentials', request, username, password);
-    const loginQueue = this.state.loginQueue;
-    loginQueue.shift();
-    this.setState({loginQueue});
-  }
-
-  handleLoginCancel = (request) => {
-    ipcRenderer.send('login-cancel', request);
-
-    const loginQueue = this.state.loginQueue;
-    loginQueue.shift();
-    this.setState({loginQueue});
-  }
-
   handleTargetURLChange = (targetURL) => {
     clearTimeout(this.targetURLDisappearTimeout);
     if (targetURL === '') {

@@ -5,6 +5,20 @@ import {isHttpsUri, isHttpUri, isUri} from 'valid-url';
 
 import buildConfig from '../config/buildConfig';
 
+// supported custom login paths (oath, saml)
+const customLoginRegexPaths = [
+  /^\/oauth\/authorize$/i,
+  /^\/oauth\/deauthorize$/i,
+  /^\/oauth\/access_token$/i,
+  /^\/oauth\/[A-Za-z0-9]+\/complete$/i,
+  /^\/oauth\/[A-Za-z0-9]+\/login$/i,
+  /^\/oauth\/[A-Za-z0-9]+\/signup$/i,
+  /^\/api\/v3\/oauth\/[A-Za-z0-9]+\/complete$/i,
+  /^\/signup\/[A-Za-z0-9]+\/complete$/i,
+  /^\/login\/[A-Za-z0-9]+\/complete$/i,
+  /^\/login\/sso\/saml$/i,
+];
+
 function getDomain(inputURL) {
   const parsedURL = parseURL(inputURL);
   return parsedURL.origin;
@@ -174,6 +188,43 @@ function equalUrlsIgnoringSubpath(url1, url2) {
   return url1.origin.toLowerCase() === url2.origin.toLowerCase();
 }
 
+function isTrustedURL(url, teams) {
+  const parsedURL = parseURL(url);
+  if (!parsedURL) {
+    return false;
+  }
+  return getServer(parsedURL, teams) !== null;
+}
+
+function isCustomLoginURL(url, server, teams) {
+  const subpath = (server === null || typeof server === 'undefined') ? '' : server.url.pathname;
+  const parsedURL = parseURL(url);
+  if (!parsedURL) {
+    return false;
+  }
+  if (!isTrustedURL(parsedURL, teams)) {
+    return false;
+  }
+  const urlPath = parsedURL.pathname;
+  if ((subpath !== '' || subpath !== '/') && urlPath.startsWith(subpath)) {
+    const replacement = subpath.endsWith('/') ? '/' : '';
+    const replacedPath = urlPath.replace(subpath, replacement);
+    for (const regexPath of customLoginRegexPaths) {
+      if (replacedPath.match(regexPath)) {
+        return true;
+      }
+    }
+  }
+
+  // if there is no subpath, or we are adding the team and got redirected to the real server it'll be caught here
+  for (const regexPath of customLoginRegexPaths) {
+    if (urlPath.match(regexPath)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export default {
   getDomain,
   isValidURL,
@@ -187,4 +238,6 @@ export default {
   isPluginUrl,
   isManagedResource,
   getHost,
+  isTrustedURL,
+  isCustomLoginURL,
 };
