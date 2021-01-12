@@ -8,7 +8,7 @@ import urlUtils from 'common/utils/url';
 
 import * as WindowManager from './windows/windowManager';
 
-import modalManager from './modalManager';
+import {addModal} from './modalManager';
 import {getLocalURLString} from './utils';
 
 export class AuthManager {
@@ -63,7 +63,7 @@ export class AuthManager {
 
   showModalIfNecessary = () => {
     if (this.loginQueue.length) {
-      const html = getLocalURLString('login.html');
+      const html = getLocalURLString('loginModal.html');
 
       //  const modalPreload = getLocalURLString('modalPreload.js');
       const modalPreload = path.resolve(__dirname, '../../dist/modalPreload.js');
@@ -71,7 +71,7 @@ export class AuthManager {
       log.info('do the login modal thing!');
 
       // eslint-disable-next-line no-undefined
-      const modalPromise = modalManager.addModal('login', html, modalPreload, {}, WindowManager.getMainWindow());
+      const modalPromise = addModal('login', html, modalPreload, {request: this.loginQueue[0].request, authInfo: this.loginQueue[0].authInfo}, WindowManager.getMainWindow());
       if (modalPromise) {
         modalPromise.then((data) => {
           const {request, username, password} = data;
