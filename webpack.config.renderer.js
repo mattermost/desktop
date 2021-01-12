@@ -10,7 +10,6 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const merge = require('webpack-merge');
-const CopyPlugin = require('copy-webpack-plugin');
 
 const base = require('./webpack.config.base');
 
@@ -56,19 +55,6 @@ module.exports = merge(base, {
       filename: 'styles.[contenthash].css',
       ignoreOrder: true,
       chunkFilename: '[id].[contenthash].css',
-    }),
-    new CopyPlugin({
-      patterns: [{
-        from: 'assets/windows/*.ico',
-        context: 'src',
-      }, {
-        from: 'assets/**/*.png',
-        context: 'src',
-      }, {
-        from: 'assets/osx/*.png',
-        context: 'src',
-      }
-      ],
     })
   ],
   module: {

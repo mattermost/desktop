@@ -10,17 +10,16 @@
     "output": "release"
   },
   "extraMetadata": {
-    "main": "dist/index.js"
+    "main": "index.js"
   },
   "files": [
-    "index.js",
-    "main.js",
-    "dist/**/*",
-    "renderer/**/*{.html,.css,_bundle.js,.svg,.png}",
-    "assets/**/*",
-    "renderer/assets/fonts/*",
     "node_modules/bootstrap/dist/**",
-    "node_modules/font-awesome/{css,fonts}/**"
+    "node_modules/font-awesome/{css,fonts}/**",
+    {
+      "from": "dist",
+      "to": ".",
+      "filter": "**/*"
+    }
   ],
   "protocols": [
     {

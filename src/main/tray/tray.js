@@ -4,7 +4,7 @@
 import path from 'path';
 import {app, nativeImage, nativeTheme} from 'electron';
 
-const assetsDir = path.resolve(app.getAppPath(), 'renderer/assets');
+const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
 export function getTrayImages(trayIconTheme) {
   switch (process.platform) {

@@ -10,6 +10,8 @@ const path = require('path');
 
 const merge = require('webpack-merge');
 
+const CopyPlugin = require('copy-webpack-plugin');
+
 const base = require('./webpack.config.base');
 
 module.exports = merge(base, {
@@ -46,6 +48,14 @@ module.exports = merge(base, {
       }
     }],
   },
+  plugins: [
+    new CopyPlugin({
+      patterns: [{
+        from: 'assets/**/*',
+        context: 'src',
+      }],
+    })
+  ],
   node: {
     __filename: true,
     __dirname: true,
