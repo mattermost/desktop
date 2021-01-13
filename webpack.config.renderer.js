@@ -56,7 +56,7 @@ module.exports = merge(base, {
       title: 'Mattermost Desktop Settings',
       template: 'src/renderer/index.html',
       chunks: ['loginModal'],
-      filename: 'login.html',
+      filename: 'loginModal.html',
     }),
     new MiniCssExtractPlugin({
       filename: 'styles.[contenthash].css',
