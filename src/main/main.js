@@ -16,7 +16,6 @@ import urlUtils from 'common/utils/url';
 
 import {DEVELOPMENT, PRODUCTION, SECOND} from 'common/utils/constants';
 import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, SHOW_NEW_SERVER_MODAL, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION, GET_DOWNLOAD_LOCATION} from 'common/communication';
-import {GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL} from 'common/permissions';
 import Config from 'common/config';
 
 import {protocols} from '../../electron-builder.json';
@@ -225,8 +224,6 @@ function initializeInterCommunicationEventListeners() {
   // ipcMain.on('update-title', handleUpdateTitleEvent);
   ipcMain.on('update-menu', handleUpdateMenuEvent);
   ipcMain.on('selected-client-certificate', handleSelectedCertificate);
-  ipcMain.on(GRANT_PERMISSION_CHANNEL, handlePermissionGranted);
-  ipcMain.on(DENY_PERMISSION_CHANNEL, handlePermissionDenied);
   ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
 
   if (shouldShowTrayIcon()) {
@@ -449,15 +446,6 @@ function handleAppLogin(event, webContents, request, authInfo, callback) {
 
 function handleAppGPUProcessCrashed(event, killed) {
   console.log(`The GPU process has crashed (killed = ${killed})`);
-}
-
-function handlePermissionGranted(event, url, permission) {
-  trustedOriginsStore.addPermission(url, permission);
-  trustedOriginsStore.save();
-}
-
-function handlePermissionDenied(event, url, permission, reason) {
-  log.warn(`Permission request denied: ${reason}`);
 }
 
 function handleAppWillFinishLaunching() {

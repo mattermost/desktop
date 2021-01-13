@@ -3,7 +3,7 @@
 import path from 'path';
 import log from 'electron-log';
 
-import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from 'common/permissions';
+import {BASIC_AUTH_PERMISSION} from 'common/permissions';
 import urlUtils from 'common/utils/url';
 
 import * as WindowManager from './windows/windowManager';
@@ -11,11 +11,13 @@ import * as WindowManager from './windows/windowManager';
 import {addModal} from './modalManager';
 import {getLocalURLString} from './utils';
 
+const modalPreload = path.resolve(__dirname, '../../dist/modalPreload.js');
 export class AuthManager {
   constructor(config, trustedOriginsStore) {
     this.config = config;
     this.trustedOriginsStore = trustedOriginsStore;
     this.loginQueue = [];
+    this.permissionQueue = [];
     this.loginCallbackMap = new Map();
   }
 
@@ -25,14 +27,21 @@ export class AuthManager {
     const server = urlUtils.getServer(parsedURL, this.config.teams);
 
     this.loginCallbackMap.set(request.url, typeof callback === 'undefined' ? null : callback); // if callback is undefined set it to null instead so we know we have set it up with no value
-    const mainWindow = WindowManager.getMainWindow(true);
-    if (urlUtils.isTrustedURL(request.url, this.config.teams) || urlUtils.isCustomLoginURL(parsedURL, server, this.config.teams) || this.trustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
-      this.addToLoginQueue(request, authInfo);
-    } else {
-      mainWindow.webContents.send(REQUEST_PERMISSION_CHANNEL, request, authInfo, BASIC_AUTH_PERMISSION);
+    //if (urlUtils.isTrustedURL(request.url, this.config.teams) || urlUtils.isCustomLoginURL(parsedURL, server, this.config.teams) || this.trustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
+    //  this.addToLoginQueue(request, authInfo);
+    //} else {
+      this.addToPermissionQueue(request, authInfo, BASIC_AUTH_PERMISSION);
+    //}
+  }
 
-      // pop permissionModal
-    }
+  addToPermissionQueue = (request, authInfo, permission) => {
+    this.permissionQueue.push({
+      request,
+      authInfo,
+      permission,
+    });
+
+    this.showPermissionModalIfNecessary();
   }
 
   addToLoginQueue = (request, authInfo) => {
@@ -41,7 +50,54 @@ export class AuthManager {
       authInfo,
     });
 
-    this.showModalIfNecessary();
+    this.showLoginModalIfNecessary();
+  }
+
+  showLoginModalIfNecessary = () => {
+    if (this.loginQueue.length) {
+      const html = getLocalURLString('loginModal.html');
+
+      const modalPromise = addModal('login', html, modalPreload, {request: this.loginQueue[0].request, authInfo: this.loginQueue[0].authInfo}, WindowManager.getMainWindow());
+      if (modalPromise) {
+        modalPromise.then((data) => {
+          const {request, username, password} = data;
+          this.handleLoginCredentialsEvent(request, username, password);
+          this.loginQueue.shift();
+          this.showLoginModalIfNecessary();
+        }).catch((data) => {
+          const {request} = data;
+          this.handleCancelLoginEvent(request);
+          this.loginQueue.shift();
+          this.showLoginModalIfNecessary();
+        });
+      } else {
+        console.warn('There is already a login modal');
+      }
+    }
+  }
+
+  showPermissionModalIfNecessary = () => {
+    if (this.permissionQueue.length) {
+      const html = getLocalURLString('permissionModal.html');
+
+      const {request, authInfo, permission} = this.permissionQueue[0];
+      const modalPromise = addModal('permission', html, modalPreload, {url: request.url, permission}, WindowManager.getMainWindow());
+      if (modalPromise) {
+        modalPromise.then(() => {
+          this.handlePermissionGranted(request.url, permission);
+          this.addToLoginQueue(request, authInfo);
+          this.permissionQueue.shift();
+          this.showPermissionModalIfNecessary();
+        }).catch((err) => {
+          log.warn(`Permission request denied: ${err.message}`);
+          this.handleCancelLoginEvent(request);
+          this.permissionQueue.shift();
+          this.showPermissionModalIfNecessary();
+        });
+      } else {
+        console.warn('There is already a permission modal');
+      }
+    }
   }
 
   handleLoginCredentialsEvent = (request, username, password) => {
@@ -61,28 +117,8 @@ export class AuthManager {
     this.handleLoginCredentialsEvent(request); // we use undefined to cancel the request
   }
 
-  showModalIfNecessary = () => {
-    if (this.loginQueue.length) {
-      const html = getLocalURLString('loginModal.html');
-
-      //  const modalPreload = getLocalURLString('modalPreload.js');
-      const modalPreload = path.resolve(__dirname, '../../dist/modalPreload.js');
-
-      log.info('do the login modal thing!');
-
-      // eslint-disable-next-line no-undefined
-      const modalPromise = addModal('login', html, modalPreload, {request: this.loginQueue[0].request, authInfo: this.loginQueue[0].authInfo}, WindowManager.getMainWindow());
-      if (modalPromise) {
-        modalPromise.then((data) => {
-          const {request, username, password} = data;
-          this.handleLoginCredentialsEvent(request, username, password);
-        }).catch((data) => {
-          const {request} = data;
-          this.handleCancelLoginEvent(request);
-        });
-      } else {
-        console.warn('There is already a new server modal');
-      }
-    }
+  handlePermissionGranted(url, permission) {
+    this.trustedOriginsStore.addPermission(url, permission);
+    this.trustedOriginsStore.save();
   }
 }

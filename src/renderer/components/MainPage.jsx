@@ -45,7 +45,6 @@ import spinnerx2 from '../../assets/loading@2x.gif';
 
 import {playSound} from '../notificationSounds';
 
-import LoginModal from './LoginModal.jsx';
 import TabBar from './TabBar.jsx';
 import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
@@ -806,15 +805,6 @@ export default class MainPage extends React.Component {
         </Row>
       </Fragment>);
 
-    let request = null;
-    let authServerURL = null;
-    let authInfo = null;
-    if (this.state.loginQueue.length !== 0) {
-      request = this.state.loginQueue[0].request;
-      const tmpURL = urlUtils.parseURL(this.state.loginQueue[0].request.url);
-      authServerURL = `${tmpURL.protocol}//${tmpURL.host}`;
-      authInfo = this.state.loginQueue[0].authInfo;
-    }
     const modal = (
       <NewTeamModal
         currentOrder={this.props.teams.length}
@@ -841,14 +831,6 @@ export default class MainPage extends React.Component {
         className='MainPage'
         onClick={this.focusOnWebView}
       >
-        <LoginModal
-          show={this.state.loginQueue.length !== 0}
-          request={request}
-          authInfo={authInfo}
-          authServerURL={authServerURL}
-          onLogin={this.handleLogin}
-          onCancel={this.handleLoginCancel}
-        />
         <PermissionModal/>
         <SelectCertificateModal
           certificateRequests={this.state.certificateRequests}

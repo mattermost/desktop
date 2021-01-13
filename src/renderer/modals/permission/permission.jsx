@@ -6,28 +6,28 @@ import ReactDOM from 'react-dom';
 
 import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO} from 'common/communication.js';
 
-import LoginModal from './loginModal.jsx';
+import PermissionModal from './permissionModal.jsx';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-const handleLoginCancel = (request) => {
-  window.postMessage({type: MODAL_CANCEL, data: {request}}, window.location.href);
+const handleDeny = () => {
+  window.postMessage({type: MODAL_CANCEL}, window.location.href);
 };
 
-const handleLogin = (request, username, password) => {
-  window.postMessage({type: MODAL_RESULT, data: {request, username, password}}, window.location.href);
+const handleGrant = () => {
+  window.postMessage({type: MODAL_RESULT}, window.location.href);
 };
 
-const getAuthInfo = () => {
+const getPermissionInfo = () => {
   window.postMessage({type: RETRIEVE_MODAL_INFO}, window.location.href);
 };
 
 const start = async () => {
   ReactDOM.render(
-    <LoginModal
-      onLogin={handleLogin}
-      onCancel={handleLoginCancel}
-      getAuthInfo={getAuthInfo}
+    <PermissionModal
+      getPermissionInfo={getPermissionInfo}
+      handleDeny={handleDeny}
+      handleGrant={handleGrant}
     />,
     document.getElementById('app')
   );
