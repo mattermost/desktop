@@ -5,7 +5,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {Button, Col, ControlLabel, Form, FormGroup, FormControl, Modal} from 'react-bootstrap';
-import {ipcRenderer} from 'electron';
+// import {ipcRenderer} from 'electron';
 
 import {RETRIEVE_MODAL_INFO} from 'common/communication';
 import urlUtils from 'common/utils/url';
@@ -22,9 +22,9 @@ export default class LoginModal extends React.Component {
   }
 
   async componentDidMount() {
-    const {request, authInfo} = await ipcRenderer.invoke(RETRIEVE_MODAL_INFO);
+    //const {request, authInfo} = await ipcRenderer.invoke(RETRIEVE_MODAL_INFO);
     // eslint-disable-next-line react/no-did-mount-set-state
-    this.setState({request, authInfo});
+    //this.setState({request, authInfo});
   }
 
   handleSubmit = (event) => {
