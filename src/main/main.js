@@ -39,7 +39,7 @@ import {displayMention, displayDownloadCompleted} from './notifications';
 
 import parseArgs from './ParseArgs';
 import {addModal} from './modalManager';
-import {getLocalURLString} from './utils';
+import {getLocalURLString, getLocalPreload} from './utils';
 import {getTrayImages, switchMenuIconImages} from './tray/tray';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
@@ -513,7 +513,7 @@ function handleNewServerModal() {
   const html = getLocalURLString('newServer.html');
 
   //  const modalPreload = getLocalURLString('modalPreload.js');
-  const modalPreload = path.resolve(__dirname, '../../dist/modalPreload.js');
+  const modalPreload = getLocalPreload('modalPreload.js');
 
   // eslint-disable-next-line no-undefined
   const modalPromise = addModal('newServer', html, modalPreload, {}, WindowManager.getMainWindow());

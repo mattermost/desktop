@@ -45,7 +45,7 @@ export function getLocalURL(urlPath, query, isMain) {
   const hostname = '';
   const port = '';
   if (mode === PRODUCTION) {
-    pathname = path.join(electron.app.getAppPath(), `dist/${processPath}/${urlPath}`);
+    pathname = path.join(electron.app.getAppPath(), `${processPath}/${urlPath}`);
   } else {
     pathname = path.resolve(__dirname, `../../dist/${processPath}/${urlPath}`); // TODO: find a better way to work with webpack on this
   }
@@ -58,4 +58,11 @@ export function getLocalURL(urlPath, query, isMain) {
   }
 
   return localUrl;
+}
+
+export function getLocalPreload(file) {
+  if (Utils.runMode() === PRODUCTION) {
+    return path.resolve(__dirname, `./${file}`);
+  }
+  return path.resolve(__dirname, `../../dist/${file}`);
 }
