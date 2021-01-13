@@ -31,6 +31,7 @@ export const DOUBLE_CLICK_ON_WINDOW = 'double_click';
 export const SHOW_NEW_SERVER_MODAL = 'show_new_server_modal';
 
 export const RETRIEVE_MODAL_INFO = 'retrieve-modal-info';
+export const MODAL_INFO = 'modal-info';
 export const MODAL_CANCEL = 'modal-cancel';
 export const MODAL_RESULT = 'modal-result';
 export const NOTIFY_MENTION = 'notify_mention';

@@ -5,9 +5,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {Button, Col, ControlLabel, Form, FormGroup, FormControl, Modal} from 'react-bootstrap';
-// import {ipcRenderer} from 'electron';
 
-import {RETRIEVE_MODAL_INFO} from 'common/communication';
+import {MODAL_INFO} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
 export default class LoginModal extends React.Component {
@@ -21,10 +20,26 @@ export default class LoginModal extends React.Component {
     };
   }
 
-  async componentDidMount() {
-    //const {request, authInfo} = await ipcRenderer.invoke(RETRIEVE_MODAL_INFO);
-    // eslint-disable-next-line react/no-did-mount-set-state
-    //this.setState({request, authInfo});
+  componentDidMount() {
+    window.addEventListener('message', this.handleAuthInfoMessage);
+
+    this.props.getAuthInfo();
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('message', this.handleAuthInfoMessage);
+  }
+
+  handleAuthInfoMessage = (event) => {
+    switch (event.data.type) {
+    case MODAL_INFO: {
+      const {request, authInfo} = event.data.data;
+      this.setState({request, authInfo});
+      break;
+    }
+    default:
+      break;
+    }
   }
 
   handleSubmit = (event) => {
@@ -69,7 +84,7 @@ export default class LoginModal extends React.Component {
     }
     const message = `${theServer} requires a username and password.`;
     return (
-      <Modal show={this.state.request && this.state.authInfo}>
+      <Modal show={Boolean(this.state.request && this.state.authInfo)}>
         <Modal.Header>
           <Modal.Title>{'Authentication Required'}</Modal.Title>
         </Modal.Header>
@@ -137,4 +152,5 @@ export default class LoginModal extends React.Component {
 LoginModal.propTypes = {
   onCancel: PropTypes.func,
   onLogin: PropTypes.func,
+  getAuthInfo: PropTypes.func,
 };
