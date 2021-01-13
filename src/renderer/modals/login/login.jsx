@@ -4,7 +4,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import {MODAL_CANCEL, MODAL_RESULT} from 'common/communication.js';
+import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO} from 'common/communication.js';
 
 import LoginModal from './loginModal.jsx';
 
@@ -16,11 +16,16 @@ const handleLogin = (request, username, password) => {
   window.postMessage({type: MODAL_RESULT, data: {request, username, password}}, window.location.href);
 };
 
+const getAuthInfo = () => {
+  window.postMessage({type: RETRIEVE_MODAL_INFO}, window.location.href);
+};
+
 const start = async () => {
   ReactDOM.render(
     <LoginModal
       onLogin={handleLogin}
       onCancel={handleLoginCancel}
+      getAuthInfo={getAuthInfo}
     />,
     document.getElementById('app')
   );
