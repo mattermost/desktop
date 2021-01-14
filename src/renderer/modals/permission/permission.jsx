@@ -4,7 +4,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO} from 'common/communication.js';
+import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO, MODAL_SEND_IPC_MESSAGE} from 'common/communication.js';
 
 import PermissionModal from './permissionModal.jsx';
 
@@ -22,12 +22,17 @@ const getPermissionInfo = () => {
   window.postMessage({type: RETRIEVE_MODAL_INFO}, window.location.href);
 };
 
+const openExternalLink = (protocol, url) => {
+  window.postMessage({type: MODAL_SEND_IPC_MESSAGE, data: {type: 'confirm-protocol', args: [protocol, url]}}, window.location.href);
+};
+
 const start = async () => {
   ReactDOM.render(
     <PermissionModal
       getPermissionInfo={getPermissionInfo}
       handleDeny={handleDeny}
       handleGrant={handleGrant}
+      openExternalLink={openExternalLink}
     />,
     document.getElementById('app')
   );

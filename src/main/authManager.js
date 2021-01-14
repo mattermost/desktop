@@ -27,11 +27,11 @@ export class AuthManager {
     const server = urlUtils.getServer(parsedURL, this.config.teams);
 
     this.loginCallbackMap.set(request.url, typeof callback === 'undefined' ? null : callback); // if callback is undefined set it to null instead so we know we have set it up with no value
-    //if (urlUtils.isTrustedURL(request.url, this.config.teams) || urlUtils.isCustomLoginURL(parsedURL, server, this.config.teams) || this.trustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
-    //  this.addToLoginQueue(request, authInfo);
-    //} else {
+    if (urlUtils.isTrustedURL(request.url, this.config.teams) || urlUtils.isCustomLoginURL(parsedURL, server, this.config.teams) || this.trustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
+      this.addToLoginQueue(request, authInfo);
+    } else {
       this.addToPermissionQueue(request, authInfo, BASIC_AUTH_PERMISSION);
-    //}
+    }
   }
 
   addToPermissionQueue = (request, authInfo, permission) => {

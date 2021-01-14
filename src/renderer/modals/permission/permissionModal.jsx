@@ -10,8 +10,6 @@ import urlUtil from 'common/utils/url';
 import {MODAL_INFO} from 'common/communication';
 import {PERMISSION_DESCRIPTION} from 'common/permissions';
 
-import ExternalLink from '../../components/externalLink.jsx';
-
 export default class PermissionModal extends React.Component {
   constructor(props) {
     super(props);
@@ -45,9 +43,21 @@ export default class PermissionModal extends React.Component {
   }
 
   getModalBody() {
-    const {url, permission} = this.state();
+    const {url, permission} = this.state;
     const originDisplay = url ? urlUtil.getHost(url) : 'unknown origin';
     const originLink = url ? originDisplay : '';
+
+    const click = (e) => {
+      e.preventDefault();
+      let parseUrl;
+      try {
+        parseUrl = urlUtil.parseURL(originLink);
+        this.props.openExternalLink(parseUrl.protocol, originLink);
+      } catch (err) {
+        console.error(`invalid url ${originLink} supplied to externallink: ${err}`);
+      }
+    };
+
     return (
       <div>
         <p>
@@ -55,22 +65,18 @@ export default class PermissionModal extends React.Component {
         </p>
         <p>
           <span>{'This request originated from '}</span>
-          <ExternalLink href={originLink}>{`${originDisplay}`}</ExternalLink>
+          <a onClick={click}>{originDisplay}</a>
         </p>
       </div>
     );
   }
 
   render() {
-    if (!(this.state.url && this.state.permission)) {
-      return null;
-    }
-
     return (
       <Modal
         bsClass='modal'
         className='permission-modal'
-        show={Boolean(this.state.current)}
+        show={Boolean(this.state.url && this.state.permission)}
         id='requestPermissionModal'
         enforceFocus={true}
       >
@@ -101,4 +107,5 @@ PermissionModal.propTypes = {
   handleDeny: PropTypes.func,
   handleGrant: PropTypes.func,
   getPermissionInfo: PropTypes.func,
+  openExternalLink: PropTypes.func,
 };
