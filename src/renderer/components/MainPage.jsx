@@ -48,8 +48,6 @@ import {playSound} from '../notificationSounds';
 import TabBar from './TabBar.jsx';
 import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
-import SelectCertificateModal from './SelectCertificateModal.jsx';
-import PermissionModal from './PermissionModal.jsx';
 import ExtraBar from './ExtraBar.jsx';
 import ErrorView from './ErrorView.jsx';
 
@@ -587,25 +585,6 @@ export default class MainPage extends React.Component {
     });
   }
 
-  handleSelectCertificate = (certificate) => {
-    const certificateRequests = this.state.certificateRequests;
-    const current = certificateRequests.shift();
-    this.setState({certificateRequests});
-    ipcRenderer.send('selected-client-certificate', current.server, certificate);
-    if (certificateRequests.length > 0) {
-      this.switchToTabForCertificateRequest(certificateRequests[0].server);
-    }
-  }
-  handleCancelCertificate = () => {
-    const certificateRequests = this.state.certificateRequests;
-    const current = certificateRequests.shift();
-    this.setState({certificateRequests});
-    ipcRenderer.send('selected-client-certificate', current.server);
-    if (certificateRequests.length > 0) {
-      this.switchToTabForCertificateRequest(certificateRequests[0].server);
-    }
-  };
-
   setInputRef = (ref) => {
     this.inputRef = ref;
   }
@@ -831,12 +810,6 @@ export default class MainPage extends React.Component {
         className='MainPage'
         onClick={this.focusOnWebView}
       >
-        <PermissionModal/>
-        <SelectCertificateModal
-          certificateRequests={this.state.certificateRequests}
-          onSelect={this.handleSelectCertificate}
-          onCancel={this.handleCancelCertificate}
-        />
         <Grid fluid={true}>
           { topRow }
           { viewsRow }

@@ -12,6 +12,7 @@ import {addModal} from './modalManager';
 import {getLocalURLString} from './utils';
 
 const modalPreload = path.resolve(__dirname, '../../dist/modalPreload.js');
+
 export class AuthManager {
   constructor(config, trustedOriginsStore) {
     this.config = config;

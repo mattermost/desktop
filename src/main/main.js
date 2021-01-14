@@ -41,6 +41,7 @@ import {addModal} from './modalManager';
 import {getLocalURLString, getLocalPreload} from './utils';
 import {getTrayImages, switchMenuIconImages} from './tray/tray';
 import {AuthManager} from './authManager';
+import {CertificateManager} from './certificateManager';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
   module.hot.accept();
@@ -59,7 +60,6 @@ const {
   BrowserWindow,
 } = electron;
 const criticalErrorHandler = new CriticalErrorHandler();
-const certificateRequests = new Map();
 const userActivityMonitor = new UserActivityMonitor();
 const certificateErrorCallbacks = new Map();
 
@@ -75,6 +75,7 @@ let config = null;
 let trayIcon = null;
 let trayImages = null;
 let authManager = null;
+let certificateManager = null;
 
 // tracking in progress custom logins
 const customLogins = {};
@@ -205,6 +206,7 @@ function initializeBeforeAppReady() {
   allowProtocolDialog.init();
 
   authManager = new AuthManager(config, trustedOriginsStore);
+  certificateManager = new CertificateManager();
 
   if (isDev) {
     console.log('In development mode, deeplinking is disabled');
@@ -223,7 +225,6 @@ function initializeInterCommunicationEventListeners() {
   // see comment on function
   // ipcMain.on('update-title', handleUpdateTitleEvent);
   ipcMain.on('update-menu', handleUpdateMenuEvent);
-  ipcMain.on('selected-client-certificate', handleSelectedCertificate);
   ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
 
   if (shouldShowTrayIcon()) {
@@ -345,33 +346,7 @@ function handleQuit(e, reason, stack) {
 }
 
 function handleSelectCertificate(event, webContents, url, list, callback) {
-  if (list.length > 1) {
-    event.preventDefault(); // prevent the app from getting the first certificate available
-    // store callback so it can be called with selected certificate
-    certificateRequests.set(url, callback);
-
-    // open modal for selecting certificate
-    WindowManager.getMainWindow(true).webContents.send('select-user-certificate', url, list);
-  } else {
-    log.info(`There were ${list.length} candidate certificates. Skipping certificate selection`);
-  }
-}
-
-function handleSelectedCertificate(event, server, cert) {
-  const callback = certificateRequests.get(server);
-  if (!callback) {
-    log.error(`there was no callback associated with: ${server}`);
-    return;
-  }
-  if (typeof cert === 'undefined') {
-    log.info('user canceled certificate selection');
-  } else {
-    try {
-      callback(cert);
-    } catch (e) {
-      log.error(`There was a problem using the selected certificate: ${e}`);
-    }
-  }
+  certificateManager.handleSelectCertificate(event, webContents, url, list, callback);
 }
 
 function handleAppCertificateError(event, webContents, url, error, certificate, callback) {
