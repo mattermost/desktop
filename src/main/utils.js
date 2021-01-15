@@ -62,7 +62,7 @@ export function getLocalURL(urlPath, query, isMain) {
 
 export function getLocalPreload(file) {
   if (Utils.runMode() === PRODUCTION) {
-    return path.resolve(__dirname, `./${file}`);
+    return path.join(electron.app.getAppPath(), `${file}`);
   }
   return path.resolve(__dirname, `../../dist/${file}`);
 }

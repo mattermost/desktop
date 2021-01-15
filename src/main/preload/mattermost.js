@@ -112,6 +112,9 @@ window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = 
     );
     break;
   }
+  case 'register-desktop':
+    // it will be captured by itself too
+    break;
   case 'dispatch-notification': {
     const {title, body, channel, teamId, silent, data} = message;
     ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, silent, data);
