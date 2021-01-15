@@ -81,8 +81,8 @@
     "entitlements": "./build/entitlements.mac.plist",
     "entitlementsInherit": "./build/entitlements.mac.plist",
     "extendInfo": {
-      "NSMicrophoneUsageDescription": "Third party plugins (like jitsi) will use the microphone to provide in-app videoconference",
-      "NSCameraUsageDescription": "Third party plugins (like jitsi) will use the microphone to provide in-app videoconference"
+      "NSMicrophoneUsageDescription": "Microphone access may be used by Mattermost plugins, such as Jitsi video conferencing.",
+      "NSCameraUsageDescription": "Camera access may be used by Mattermost plugins, such as Jitsi video conferencing."
   }
   },
   "dmg": {
