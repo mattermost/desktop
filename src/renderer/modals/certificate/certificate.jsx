@@ -9,6 +9,8 @@ import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO} from 'common/communicat
 import SelectCertificateModal from './certificateModal.jsx';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
+import 'renderer/css/modals.css';
+import 'renderer/css/components/CertificateModal.css';
 
 const handleCancel = () => {
   window.postMessage({type: MODAL_CANCEL}, window.location.href);

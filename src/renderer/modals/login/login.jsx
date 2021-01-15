@@ -9,6 +9,7 @@ import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO} from 'common/communicat
 import LoginModal from './loginModal.jsx';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
+import 'renderer/css/modals.css';
 
 const handleLoginCancel = (request) => {
   window.postMessage({type: MODAL_CANCEL, data: {request}}, window.location.href);

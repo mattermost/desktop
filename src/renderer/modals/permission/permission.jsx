@@ -9,6 +9,7 @@ import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO, MODAL_SEND_IPC_MESSAGE}
 import PermissionModal from './permissionModal.jsx';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
+import 'renderer/css/modals.css';
 
 const handleDeny = () => {
   window.postMessage({type: MODAL_CANCEL}, window.location.href);
