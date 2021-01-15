@@ -70,6 +70,27 @@ document.addEventListener('mouseup', () => {
   ipcRenderer.sendToHost('mouse-up');
 });
 
+const parentTag = (target) => {
+  if (target.parentNode) {
+    return target.parentNode.tagName.toUpperCase();
+  }
+  return null;
+};
+
+document.addEventListener('mouseover', (event) => {
+  if (event.target && (event.target.tagName === 'A')) {
+    ipcRenderer.send('update-target-url', event.target.href);
+  } else if (event.target && (parentTag(event.target) === 'A')) {
+    ipcRenderer.send('update-target-url', event.target.parentNode.href);
+  }
+});
+
+document.addEventListener('mouseout', (event) => {
+  if (event.target && event.target.tagName === 'A') {
+    ipcRenderer.send('delete-target-url', event.target.href);
+  }
+});
+
 // listen for messages from the webapp
 window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = {}) => {
   if (origin !== window.location.origin) {
@@ -91,11 +112,16 @@ window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = 
     );
     break;
   }
+  case 'register-desktop':
+    // it will be captured by itself too
+    break;
   case 'dispatch-notification': {
     const {title, body, channel, teamId, silent, data} = message;
     ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, silent, data);
     break;
   }
+  default:
+    console.log(`ignored message of type: ${type}`);
   }
 });
 

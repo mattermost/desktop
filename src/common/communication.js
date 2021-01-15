@@ -28,6 +28,11 @@ export const OPEN_EXTERNAL = 'open_external';
 
 export const DOUBLE_CLICK_ON_WINDOW = 'double_click';
 
+export const SHOW_NEW_SERVER_MODAL = 'show_new_server_modal';
+
+export const RETRIEVE_MODAL_INFO = 'retrieve-modal-info';
+export const MODAL_CANCEL = 'modal-cancel';
+export const MODAL_RESULT = 'modal-result';
 export const NOTIFY_MENTION = 'notify_mention';
 export const WINDOW_CLOSE = 'window_close';
 export const WINDOW_MINIMIZE = 'window_minimize';

@@ -15,7 +15,7 @@ import Utils from 'common/utils/util';
 import urlUtils from 'common/utils/url';
 
 import {DEVELOPMENT, PRODUCTION, SECOND} from 'common/utils/constants';
-import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION, GET_DOWNLOAD_LOCATION} from 'common/communication';
+import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, SHOW_NEW_SERVER_MODAL, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION, GET_DOWNLOAD_LOCATION} from 'common/communication';
 import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from 'common/permissions';
 import Config from 'common/config';
 
@@ -38,6 +38,8 @@ import {showBadge} from './badge';
 import {displayMention, displayDownloadCompleted} from './notifications';
 
 import parseArgs from './ParseArgs';
+import {addModal} from './modalManager';
+import {getLocalURLString, getLocalPreload} from './utils';
 import {getTrayImages, switchMenuIconImages} from './tray/tray';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
@@ -252,6 +254,8 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on(QUIT, handleQuit);
 
   ipcMain.on(DOUBLE_CLICK_ON_WINDOW, WindowManager.handleDoubleClick);
+
+  ipcMain.on(SHOW_NEW_SERVER_MODAL, handleNewServerModal);
   ipcMain.on(WINDOW_CLOSE, WindowManager.close);
   ipcMain.on(WINDOW_MAXIMIZE, WindowManager.maximize);
   ipcMain.on(WINDOW_MINIMIZE, WindowManager.minimize);
@@ -503,6 +507,31 @@ function handleAppWillFinishLaunching() {
 
 function handleSwitchServer(event, serverName) {
   WindowManager.switchServer(serverName);
+}
+
+function handleNewServerModal() {
+  const html = getLocalURLString('newServer.html');
+
+  //  const modalPreload = getLocalURLString('modalPreload.js');
+  const modalPreload = getLocalPreload('modalPreload.js');
+
+  // eslint-disable-next-line no-undefined
+  const modalPromise = addModal('newServer', html, modalPreload, {}, WindowManager.getMainWindow());
+  if (modalPromise) {
+    modalPromise.then((data) => {
+      const teams = config.teams;
+      const order = teams.length;
+      teams.push({...data, order});
+      config.set('teams', teams);
+    }).catch((e) => {
+      // e is undefined for user cancellation
+      if (e) {
+        console.error(`there was an error in the new server modal: ${e}`);
+      }
+    });
+  } else {
+    console.warn('There is already a new server modal');
+  }
 }
 
 function handleAppWebContentsCreated(dc, contents) {

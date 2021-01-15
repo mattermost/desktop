@@ -26,6 +26,7 @@ import {
   LOAD_RETRY,
   LOAD_SUCCESS,
   LOAD_FAILED,
+  SHOW_NEW_SERVER_MODAL,
   SWITCH_SERVER,
   WINDOW_CLOSE,
   WINDOW_MINIMIZE,
@@ -570,9 +571,12 @@ export default class MainPage extends React.Component {
   }
 
   addServer = () => {
-    this.setState({
-      showNewTeamModal: true,
-    });
+    // this.setState({
+    //   showNewTeamModal: true,
+    // });
+    // TODO: remove
+    console.log('requesting new server modal');
+    ipcRenderer.send(SHOW_NEW_SERVER_MODAL);
   }
 
   focusOnWebView = () => {

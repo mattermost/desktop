@@ -11,7 +11,7 @@ import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constant
 import urlUtils from 'common/utils/url';
 import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL} from 'common/communication';
 
-import {getWindowBoundaries} from './utils';
+import {getWindowBoundaries, getLocalPreload} from './utils';
 import * as WindowManager from './windows/windowManager';
 
 // copying what webview sends
@@ -27,7 +27,7 @@ export class MattermostView extends EventEmitter {
     this.server = server;
     this.window = win;
 
-    const preload = path.resolve(__dirname, '../../dist/preload.js');
+    const preload = getLocalPreload('preload.js');
     const spellcheck = ((!options || typeof options.spellcheck === 'undefined') ? true : options.spellcheck);
     this.options = {
       webPreferences: {
@@ -71,6 +71,10 @@ export class MattermostView extends EventEmitter {
 
   retry = (loadURL) => {
     return () => {
+      // window was closed while retrying
+      if (!this.view) {
+        return;
+      }
       const loading = this.view.webContents.loadURL(loadURL, {userAgent});
       loading.then(this.loadSuccess(loadURL)).catch((err) => {
         if (this.maxRetries-- > 0) {
@@ -127,6 +131,9 @@ export class MattermostView extends EventEmitter {
   }
 
   destroy = () => {
+    if (this.retryLoad) {
+      clearTimeout(this.retryLoad);
+    }
     if (this.window) {
       this.window.removeBrowserView(this.view);
     }

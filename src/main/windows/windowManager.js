@@ -47,7 +47,9 @@ export function showSettingsWindow() {
     if (!status.mainWindow) {
       showMainWindow();
     }
-    status.settingsWindow = createSettingsWindow(status.mainWindow, status.config);
+    const withDevTools = process.env.MM_DEBUG_SETTINGS || false;
+
+    status.settingsWindow = createSettingsWindow(status.mainWindow, status.config, withDevTools);
     status.settingsWindow.on('closed', () => {
       // TODO: should we focus on the main window?
       status.settingsWindow = null;
