@@ -804,7 +804,7 @@ function initializeAfterAppReady() {
     });
   });
 
-  // Code for preventing user-agent checking. See: https://mattermost.atlassian.net/browse/MM-31626 
+  // Code for preventing user-agent checking. See: https://mattermost.atlassian.net/browse/MM-31626
   const REMOVE_CHROME_FROM = ['https://gitlab.com/*'];
   const nonChromeUA = session.defaultSession.getUserAgent().replace(/ Chrome\/[\d.]+/g, '');
   session.defaultSession.webRequest.onBeforeSendHeaders({urls: REMOVE_CHROME_FROM}, (details, callback) => {

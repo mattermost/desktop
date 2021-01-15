@@ -269,8 +269,13 @@ export default class MattermostView extends React.Component {
   }
 
   goBack = () => {
-    const webview = this.webviewRef.current;
-    webview.getWebContents().goBack();
+    try {
+      const webview = this.webviewRef.current;
+      webview.getWebContents().goBack();
+    } catch (e) {
+      console.log(`Error while trying to go back in history: ${e}`);
+      this.webview.loadURL(this.props.src);
+    }
   }
 
   goForward = () => {
@@ -313,33 +318,6 @@ export default class MattermostView extends React.Component {
       />
     ) : null;
 
-    const webviewProps = {
-      id: this.props.id,
-      preload: preloadJS,
-      src: this.props.src,
-      ref: this.webviewRef,
-    };
-
-    /*
-    * to override the user agent used by the app in the main window
-    * set 'userAgent' in the config.json file
-    * be aware that this might break some other interactions with servers
-    * we are still adding the Electron and Mattermost/whitelabel tags to
-    * ensure the server recognizes the desktop app.
-    */
-    if (this.props.overrideUserAgent) {
-      let customUA = this.props.overrideUserAgent;
-      if (customUA.indexOf('Electron') === -1) {
-        customUA = `${customUA} Electron/${process.versions.electron}`;
-      }
-
-      const name = remote.app.name;
-      if (customUA.indexOf(name) === -1) {
-        customUA = `${customUA} ${name}/${remote.app.getVersion()}`;
-      }
-      webviewProps.useragent = customUA;
-    }
-
     return (
       <div
         className={classNames('mattermostView', {
@@ -354,7 +332,12 @@ export default class MattermostView extends React.Component {
           loading={!this.state.errorInfo && this.props.active && !this.state.isWebviewLoaded}
           darkMode={this.props.isDarkMode}
         />
-        <webview {...webviewProps}/>
+        <webview
+          id={this.props.id}
+          preload={preloadJS}
+          src={this.props.src}
+          ref={this.webviewRef}
+        />
       </div>);
   }
 }
@@ -373,7 +356,6 @@ MattermostView.propTypes = {
   handleInterTeamLink: PropTypes.func,
   allowExtraBar: PropTypes.bool,
   isDarkMode: PropTypes.bool,
-  overrideUserAgent: PropTypes.string,
 };
 
 /* eslint-enable react/no-set-state */
