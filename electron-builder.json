@@ -79,7 +79,13 @@
       }
     ],
     "hardenedRuntime": true,
-    "gatekeeperAssess": true
+    "gatekeeperAssess": true,
+    "entitlements": "./build/entitlements.mac.plist",
+    "entitlementsInherit": "./build/entitlements.mac.plist",
+    "extendInfo": {
+      "NSMicrophoneUsageDescription": "Microphone access may be used by Mattermost plugins, such as Jitsi video conferencing.",
+      "NSCameraUsageDescription": "Camera access may be used by Mattermost plugins, such as Jitsi video conferencing."
+  }
   },
   "dmg": {
     "background": "resources/osx/DMG_BG.png",
