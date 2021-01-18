@@ -7,7 +7,6 @@ node_modules/
 release/
 npm-debug.log*
 
-build/
 dist/
 
 test-results.xml
