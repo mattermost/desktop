@@ -305,6 +305,17 @@ jobs:
           path: ./dist
           destination: packages
 
+  share_to_channel:
+    executor: wine-chrome
+    steps:
+      - attach_workspace:
+          at: ./dist
+      - run: mkdir -p ./links
+      - run:
+          name: "Get urls for sharing"
+          command: |
+            curl -H "Circle-Token: $CIRCLE_TOKEN" https://circleci.com/api/v1.1/project/:vcs-type/:username/:project/:build_num/artifacts \
+            | grep -o 'https://[^"]*' > ./links/linklist.txt
   upload_to_s3:
     executor: aws
     steps:
@@ -481,3 +492,29 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+  nightly_browser_view:
+    triggers:
+      - schedule:
+          cron: "0 4 * * 0-5"
+          filters:
+            branches:
+              only:
+                - browser-view
+                - BV_pipeline #remove this one before merging
+    jobs:
+      - build-linux
+      - build-win-no-installer:
+          context: windows-codesign
+      - mac_installer:
+          context: codesign-certificates
+      - store_artifacts:
+          # for master/PR builds
+          requires:
+            - build-linux
+            - build-win-no-installer
+            - mac_installer
+      - share_to_channel:
+          context: desktop_browserview
+          requires:
+            - store_artifacts
+
