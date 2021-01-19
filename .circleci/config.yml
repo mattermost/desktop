@@ -503,8 +503,7 @@ workflows:
                 - BV_pipeline #remove this one before merging
     jobs:
       - build-linux
-      - build-win-no-installer:
-          context: windows-codesign
+      - build-win-no-installer
       - mac_installer:
           context: codesign-certificates
       - store_artifacts:
