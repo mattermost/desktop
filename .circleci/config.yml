@@ -311,11 +311,25 @@ jobs:
       - attach_workspace:
           at: ./dist
       - run: mkdir -p ./links
+      - run: echo "### Nightly builds:\n" > ./links/linklist.txt
       - run:
           name: "Get urls for sharing"
           command: |
             curl -H "Circle-Token: $CIRCLE_TOKEN" https://circleci.com/api/v1.1/project/:vcs-type/:username/:project/:build_num/artifacts \
-            | grep -o 'https://[^"]*' > ./links/linklist.txt
+            | grep -o 'https://[^"]*' >> ./links/linklist.txt
+      - run: 
+          command: |
+            linklist=$(<./links/linklist.txt);
+            echo "payload=" > /tmp/webhook-data.json;
+            echo '{}' | jq "{
+              \"username\": \"NightBuilder\",
+              \"icon_url\": \"https://upload.wikimedia.org/wikipedia/commons/1/17/Luna_symbol.png\",
+              \"text\": "${linklist@Q}"
+            }" >> /tmp/webhook-data.json
+      - run:
+          command: |
+            curl -i -X POST -d @/tmp/webhook-data.json $MM_TOKEN || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
+
   upload_to_s3:
     executor: aws
     steps:
