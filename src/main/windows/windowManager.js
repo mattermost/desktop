@@ -85,8 +85,8 @@ export function showMainWindow() {
       criticalErrorHandler.windowUnresponsiveHandler();
     });
     status.mainWindow.on('crashed', handleMainWindowWebContentsCrashed);
-    status.mainWindow.on('enter-full-screen', () => setBoundsForCurrentView());
-    status.mainWindow.on('leave-full-screen', () => setBoundsForCurrentView());
+    status.mainWindow.on('enter-full-screen', setBoundsForCurrentView);
+    status.mainWindow.on('leave-full-screen', setBoundsForCurrentView);
     status.mainWindow.on('maximize', handleMaximizeMainWindow);
     status.mainWindow.on('unmaximize', handleUnmaximizeMainWindow);
     status.mainWindow.on('will-resize', handleResizeMainWindow);
