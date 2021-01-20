@@ -122,12 +122,6 @@ export class MattermostView extends EventEmitter {
   setBounds = (boundaries) => {
     // todo: review this, as it might not work properly with devtools/minimizing/resizing
     this.view.setBounds(boundaries);
-    this.view.setAutoResize({
-      height: true,
-      width: true,
-      horizontal: true,
-      vertical: true,
-    });
   }
 
   destroy = () => {

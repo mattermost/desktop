@@ -7,6 +7,8 @@ import log from 'electron-log';
 
 import {MAXIMIZE_CHANGE, SWITCH_SERVER} from 'common/communication';
 
+import {getAdjustedWindowBoundaries} from '../utils';
+
 import {ViewManager} from '../viewManager';
 import {CriticalErrorHandler} from '../CriticalErrorHandler';
 
@@ -83,8 +85,11 @@ export function showMainWindow() {
       criticalErrorHandler.windowUnresponsiveHandler();
     });
     status.mainWindow.on('crashed', handleMainWindowWebContentsCrashed);
-    status.mainWindow.on('maximize', () => this.sendToRenderer(MAXIMIZE_CHANGE, true));
-    status.mainWindow.on('unmaximize', () => this.sendToRenderer(MAXIMIZE_CHANGE, false));
+    status.mainWindow.on('enter-full-screen', setBoundsForCurrentView);
+    status.mainWindow.on('leave-full-screen', setBoundsForCurrentView);
+    status.mainWindow.on('maximize', handleMaximizeMainWindow);
+    status.mainWindow.on('unmaximize', handleUnmaximizeMainWindow);
+    status.mainWindow.on('will-resize', handleResizeMainWindow);
   }
   initializeViewManager();
 }
@@ -102,6 +107,28 @@ export function on(event, listener) {
 
 function handleMainWindowWebContentsCrashed() {
   throw new Error('webContents \'crashed\' event has been emitted');
+}
+
+function handleMaximizeMainWindow() {
+  sendToRenderer(MAXIMIZE_CHANGE, true);
+  setBoundsForCurrentView();
+}
+
+function handleUnmaximizeMainWindow() {
+  sendToRenderer(MAXIMIZE_CHANGE, false);
+  setBoundsForCurrentView();
+}
+
+function handleResizeMainWindow(event, newBounds) {
+  setBoundsForCurrentView(newBounds);
+}
+
+function setBoundsForCurrentView(newBounds) {
+  const currentView = status.viewManager.getCurrentView();
+  const bounds = newBounds || status.mainWindow.getContentBounds();
+  if (currentView) {
+    currentView.setBounds(getAdjustedWindowBoundaries(bounds.width, bounds.height));
+  }
 }
 
 export function sendToRenderer(channel, ...args) {

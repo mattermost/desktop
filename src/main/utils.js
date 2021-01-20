@@ -8,7 +8,7 @@ import path from 'path';
 import {PRODUCTION} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 
-const TAB_BAR_HEIGHT = 38;
+const TAB_BAR_HEIGHT = 40;
 
 export function shouldBeHiddenOnStartup(parsedArgv) {
   if (parsedArgv.hidden) {
@@ -24,6 +24,10 @@ export function shouldBeHiddenOnStartup(parsedArgv) {
 
 export function getWindowBoundaries(win) {
   const {width, height} = win.getContentBounds();
+  return getAdjustedWindowBoundaries(width, height);
+}
+
+export function getAdjustedWindowBoundaries(width, height) {
   return {
     x: 0,
     y: TAB_BAR_HEIGHT,
