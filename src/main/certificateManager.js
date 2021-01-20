@@ -9,10 +9,10 @@ import {addModal} from './modalManager';
 import {getLocalURLString} from './utils';
 
 const modalPreload = path.resolve(__dirname, '../../dist/modalPreload.js');
+const html = getLocalURLString('certificateModal.html');
 
 export class CertificateManager {
   constructor() {
-    this.certificateQueue = [];
     this.certificateRequestCallbackMap = new Map();
   }
 
@@ -22,42 +22,20 @@ export class CertificateManager {
 
       // store callback so it can be called with selected certificate
       this.certificateRequestCallbackMap.set(url, callback);
-      this.addToCertificateQueue(url, list);
+      this.popCertificateModal(url, list);
     } else {
       log.info(`There were ${list.length} candidate certificates. Skipping certificate selection`);
     }
   }
 
-  addToCertificateQueue = (url, list) => {
-    this.certificateQueue.push({
-      url,
-      list
+  popCertificateModal = (url, list) => {
+    const modalPromise = addModal(`certificate-${url}`, html, modalPreload, {url, list}, WindowManager.getMainWindow());
+    modalPromise.then((data) => {
+      const {cert} = data;
+      this.handleSelectedCertificate(url, cert);
+    }).catch(() => {
+      this.handleSelectedCertificate(url);
     });
-
-    this.showCertificateModalIfNecessary();
-  }
-
-  showCertificateModalIfNecessary = () => {
-    if (this.certificateQueue.length) {
-      const {url, list} = this.certificateQueue[0];
-      const html = getLocalURLString('certificateModal.html');
-
-      const modalPromise = addModal('certificate', html, modalPreload, {url, list}, WindowManager.getMainWindow());
-      if (modalPromise) {
-        modalPromise.then((data) => {
-          const {cert} = data;
-          this.handleSelectedCertificate(url, cert);
-          this.certificateQueue.shift();
-          this.showCertificateModalIfNecessary();
-        }).catch(() => {
-          this.handleSelectedCertificate(url);
-          this.certificateQueue.shift();
-          this.showCertificateModalIfNecessary();
-        });
-      } else {
-        console.warn('There is already a certificate modal');
-      }
-    }
   }
 
   handleSelectedCertificate = (server, cert) => {
