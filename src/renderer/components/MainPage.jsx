@@ -36,7 +36,9 @@ import {
   PLAY_SOUND,
   MODAL_OPEN,
   MODAL_CLOSE,
-  SET_SERVER_KEY
+  SET_SERVER_KEY,
+  UPDATE_MENTIONS,
+  UPDATE_UNREADS,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -360,6 +362,25 @@ export default class MainPage extends React.Component {
 
     ipcRenderer.on(MODAL_CLOSE, () => {
       this.setState({modalOpen: false});
+    });
+
+    ipcRenderer.on(UPDATE_MENTIONS, (_event, team, mentions, unreads) => {
+      const key = this.props.teams.findIndex((server) => server.name === team);
+      const {unreadCounts, mentionCounts} = this.state;
+      mentionCounts[key] = mentions || 0;
+      if (typeof unreads !== 'undefined') {
+        unreadCounts[key] = unreads;
+      }
+      this.setState({unreadCounts, mentionCounts});
+    });
+
+    ipcRenderer.on(UPDATE_UNREADS, (_event, team, unreads) => {
+      const key = this.props.teams.findIndex((server) => server.name === team);
+      const {unreadCounts} = this.state;
+      if (typeof unreads !== 'undefined') {
+        unreadCounts[key] = unreads;
+      }
+      this.setState({unreadCounts});
     });
 
     if (process.platform !== 'darwin') {
