@@ -330,7 +330,7 @@ jobs:
             echo '{}' | jq "{
               \"username\": \"NightBuilder\",
               \"icon_url\": \"https://upload.wikimedia.org/wikipedia/commons/1/17/Luna_symbol.png\",
-              \"text\": "${linklist@Q}"
+              \"text\": \"${linklist@Q}\"
             }" >> /tmp/webhook-data.json
       - run:
           command: |
