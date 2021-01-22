@@ -28,7 +28,6 @@ import CertificateStore from './certificateStore';
 import TrustedOriginsStore from './trustedOrigins';
 import appMenu from './menus/app';
 import trayMenu from './menus/tray';
-import downloadURL from './downloadURL';
 import allowProtocolDialog from './allowProtocolDialog';
 import AppStateManager from './AppStateManager';
 import initCookieManager from './cookieManager';
@@ -230,7 +229,6 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('reload-config', handleReloadConfig);
   ipcMain.on('login-credentials', handleLoginCredentialsEvent);
   ipcMain.on('login-cancel', handleCancelLoginEvent);
-  ipcMain.on('download-url', handleDownloadURLEvent);
   ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
   ipcMain.handle('get-app-version', handleAppVersion);
 
@@ -593,10 +591,17 @@ function handleAppWebContentsCreated(dc, contents) {
   contents.on('new-window', (event, url) => {
     const parsedURL = urlUtils.parseURL(url);
 
+    // Dev tools case
     if (parsedURL.protocol === 'devtools:') {
       return;
     }
     event.preventDefault();
+
+    // Check for custom protocol
+    if (parsedURL.protocol !== 'http:' && parsedURL.protocol !== 'https:' && parsedURL.protocol !== `${scheme}:`) {
+      allowProtocolDialog.handleDialogEvent(parsedURL.protocol, url);
+      return;
+    }
 
     const server = urlUtils.getServer(parsedURL, config.teams);
 
@@ -822,18 +827,6 @@ function handleLoginCredentialsEvent(event, request, user, password) {
 function handleCancelLoginEvent(event, request) {
   log.info(`Cancelling request for ${request ? request.url : 'unknown'}`);
   handleLoginCredentialsEvent(event, request); // we use undefined to cancel the request
-}
-
-function handleDownloadURLEvent(event, url) {
-  downloadURL(url, (err) => {
-    if (err) {
-      dialog.showMessageBox(WindowManager.getMainWindow(), {
-        type: 'error',
-        message: err.toString(),
-      });
-      log.error(err);
-    }
-  });
 }
 
 function handleMentionNotification(event, title, body, channel, teamId, silent, data) {
