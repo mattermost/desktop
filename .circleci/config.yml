@@ -314,6 +314,8 @@ jobs:
     steps:
       - attach_workspace:
           at: ./dist
+      - update_image:
+          apt_opts: "--no-install-recommends jq"
       - run: mkdir -p ./links
       - run: echo "### Nightly builds:\n" > ./links/linklist.txt
       - run:
