@@ -1,4 +1,8 @@
 version: 2.1
+parameters:
+  run_nightly:
+    default: false
+    type: boolean
 orbs:
   win: circleci/windows@1.0.0
   aws-s3: circleci/aws-s3@1.0.11
@@ -507,14 +511,7 @@ workflows:
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
   nightly_browser_view:
-    triggers:
-      - schedule:
-          cron: "0 4 * * 0-5"
-          filters:
-            branches:
-              only:
-                - browser-view
-                - BV_pipeline #remove this one before merging
+    when: << pipeline.parameters.run_nightly >>
     jobs:
       - build-linux
       - build-win-no-installer
