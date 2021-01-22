@@ -17,17 +17,18 @@ const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 36;
 
 export class ViewManager {
-  constructor(config) {
+  constructor(config, updateBadge) {
     this.configServers = config.teams;
     this.viewOptions = {spellcheck: config.useSpellChecker};
     this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
     this.currentView = null;
     this.urlView = null;
+    this.updateBadge = updateBadge;
   }
 
   loadServer = (server, mainWindow) => {
     const srv = new MattermostServer(server.name, server.url);
-    const view = new MattermostView(srv, mainWindow, this.viewOptions);
+    const view = new MattermostView(srv, mainWindow, this.viewOptions, this.updateBadge);
     this.views.set(server.name, view);
     view.setReadyCallback(this.activateView);
     view.load();

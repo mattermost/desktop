@@ -5,7 +5,7 @@ import path from 'path';
 import {app, BrowserWindow, nativeImage, systemPreferences} from 'electron';
 import log from 'electron-log';
 
-import {MAXIMIZE_CHANGE} from 'common/communication';
+import {MAXIMIZE_CHANGE, SWITCH_SERVER, UPDATE_MENTIONS, UPDATE_UNREADS} from 'common/communication';
 
 import {getAdjustedWindowBoundaries} from '../utils';
 
@@ -24,6 +24,8 @@ const status = {
   showTrayIcon: process.platform === 'win32',
   deeplinkingUrl: null,
   viewManager: null,
+  mentions: new Map(),
+  unreads: new Map(),
 };
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
@@ -225,7 +227,7 @@ export function handleDoubleClick(e, windowType) {
 
 function initializeViewManager() {
   if (!status.viewManager) {
-    status.viewManager = new ViewManager(status.config);
+    status.viewManager = new ViewManager(status.config, updateBadge);
     status.viewManager.load(status.mainWindow);
     status.viewManager.showInitial();
   }
@@ -277,4 +279,14 @@ export function minimize() {
 export function restore() {
   const focused = BrowserWindow.getFocusedWindow();
   focused.restore();
+}
+
+function updateBadge(serverName, mentions, unreads) {
+  if (mentions !== null) {
+    status.mentions.set(serverName, mentions);
+  }
+  if (typeof unreads !== 'undefined') {
+    status.unreads.set(serverName, unreads);
+  }
+  sendToRenderer(UPDATE_MENTIONS, serverName, status.mentions.get(serverName) || 0, status.unreads.get(unreads) || false);
 }
