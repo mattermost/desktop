@@ -314,6 +314,7 @@ jobs:
     steps:
       - attach_workspace:
           at: ./dist
+      - run: wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | apt-key add -
       - run: apt-get update && apt-get -y install
       - run: mkdir -p ./links
       - run: echo "### Nightly builds:\n" > ./links/linklist.txt
