@@ -48,7 +48,6 @@ commands:
       - run: 
           command: |
             export VERSION=$(jq -r .version package.json)
-            echo "payload=" > /tmp/webhook-data.json;
             echo '{}' | jq "{
               \"username\": \"<< parameters.username >>\",
               \"icon_url\": \"<< parameters.icon >>\",
@@ -56,7 +55,7 @@ commands:
             }" >> /tmp/webhook-data.json
       - run:
           command: |
-            curl -i -X POST -d @/tmp/webhook-data.json $MATTERMOST_RELEASE_WEBHOOK_URL_DESKTOP || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
+            curl -i -H "Content-Type: application/json" -X POST -d @/tmp/webhook-data.json $MATTERMOST_RELEASE_WEBHOOK_URL_DESKTOP || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
 
   update_image:
     description: "Update base image"
@@ -321,16 +320,14 @@ jobs:
       - run:
           name: "Get urls for sharing"
           command: |
-            curl -H "Circle-Token: $CIRCLE_TOKEN" https://circleci.com/api/v1.1/project/:vcs-type/:username/:project/:build_num/artifacts \
-            | grep -o 'https://[^"]*' >> ./links/linklist.txt
+            artifacts=$(curl -H "Circle-Token: $CIRCLE_TOKEN" -H "Accept: application/json" -X GET "https://circleci.com/api/v2/project/github/mattermost/desktop/$CIRCLE_BUILD_NUM/artifacts")
+            echo "export ARTIFACT_RESPONSE=$artifacts" >> $BASH_ENV
       - run: 
           command: |
-            linklist=$(<./links/linklist.txt);
-            echo "payload=" > /tmp/webhook-data.json;
             echo '{}' | jq "{
               \"username\": \"NightBuilder\",
               \"icon_url\": \"https://upload.wikimedia.org/wikipedia/commons/1/17/Luna_symbol.png\",
-              \"text\": \"${linklist@Q}\"
+              \"text\": \"${ARTIFACT_RESPONSE}\"
             }" >> /tmp/webhook-data.json
       - run:
           command: |
