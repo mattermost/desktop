@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, app, shell, dialog} from 'electron';
+import {BrowserView, app} from 'electron';
 import log from 'electron-log';
 
 import {EventEmitter} from 'events';
@@ -9,11 +9,7 @@ import {EventEmitter} from 'events';
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
 import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL} from 'common/communication';
-import {protocols} from '../../electron-builder.json';
-const scheme = protocols[0].schemes[0];
 
-import allowProtocolDialog from './allowProtocolDialog';
-import downloadURL from './downloadURL';
 import {getWindowBoundaries, getLocalPreload} from './utils';
 import * as WindowManager from './windows/windowManager';
 
@@ -60,7 +56,6 @@ export class MattermostView extends EventEmitter {
   setReadyCallback = (func) => {
     this.readyCallBack = func;
     this.view.webContents.on('update-target-url', this.handleUpdateTarget);
-    //this.view.webContents.on('new-window', this.handleNewWindow);
   }
 
   load = (someURL) => {
@@ -170,60 +165,6 @@ export class MattermostView extends EventEmitter {
   handleUpdateTarget = (e, url) => {
     if (!this.server.sameOrigin(url)) {
       this.emit(UPDATE_TARGET_URL, url);
-    }
-  }
-
-  handleNewWindow = (e, url) => {
-    // Check for valid URL
-    if (!urlUtils.isValidURI(url)) {
-      e.preventDefault();
-      return;
-    }
-
-    // Parse current and destination URLs
-    const currentURL = urlUtils.parseURL(this.view.webContents.getURL());
-    const destURL = urlUtils.parseURL(url);
-
-    if (urlUtils.isInternalURL(destURL, currentURL, this.state.basename)) {
-      // Download file case
-      if (destURL.path.match(/^\/api\/v[3-4]\/public\/files\//)) {
-        downloadURL(url, (err) => {
-          if (err) {
-            dialog.showMessageBox(WindowManager.getMainWindow(), {
-              type: 'error',
-              message: err.toString(),
-            });
-            log.error(err);
-          }
-        });
-      } else if (destURL.path.match(/^\/help\//)) {
-        // Help links case
-        // continue to open special case internal urls in default browser
-        shell.openExternal(url);
-      } else if (urlUtils.isTeamUrl(this.props.src, url, true) || urlUtils.isAdminUrl(this.props.src, url)) {
-        // Normal in-app behaviour case
-        e.preventDefault();
-        this.webviewRef.current.loadURL(url);
-      } else if (urlUtils.isPluginUrl(this.props.src, url)) {
-        // Plugin case
-        // New window should disable nodeIntegration.
-        window.open(url, app.name, 'nodeIntegration=no, contextIsolation=yes, show=yes');
-      } else if (urlUtils.isManagedResource(this.props.src, url)) {
-        // 'Trusted' URL case
-        e.preventDefault();
-      } else {
-        e.preventDefault();
-        shell.openExternal(url);
-      }
-    } else {
-      const parsedURL = urlUtils.parseURL(url);
-      const serverURL = urlUtils.getServer(parsedURL, this.props.teams);
-      if (serverURL !== null && urlUtils.isTeamUrl(serverURL.url, parsedURL)) {
-        this.props.handleInterTeamLink(parsedURL);
-      } else {
-        // if the link is external, use default os' application.
-        allowProtocolDialog.handleDialogEvent(destURL.protocol, url);
-      }
     }
   }
 }

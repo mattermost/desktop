@@ -35,6 +35,7 @@ import UserActivityMonitor from './UserActivityMonitor';
 import * as WindowManager from './windows/windowManager';
 import {showBadge} from './badge';
 import {displayMention, displayDownloadCompleted} from './notifications';
+import downloadURL from './downloadURL';
 
 import parseArgs from './ParseArgs';
 import {addModal} from './modalManager';
@@ -597,6 +598,11 @@ function handleAppWebContentsCreated(dc, contents) {
     }
     event.preventDefault();
 
+    // Check for valid URL
+    if (!urlUtils.isValidURI(url)) {
+      return;
+    }
+
     // Check for custom protocol
     if (parsedURL.protocol !== 'http:' && parsedURL.protocol !== 'https:' && parsedURL.protocol !== `${scheme}:`) {
       allowProtocolDialog.handleDialogEvent(parsedURL.protocol, url);
@@ -609,6 +615,29 @@ function handleAppWebContentsCreated(dc, contents) {
       shell.openExternal(url);
       return;
     }
+
+    // Public download links case
+    // TODO: This doesn't work correctly right now, needs to be refactored
+    // if (parsedURL.pathname.match(/^(\/api\/v[3-4]\/public)*\/files\//)) {
+    //   downloadURL(url, (err) => {
+    //     if (err) {
+    //       dialog.showMessageBox(WindowManager.getMainWindow(), {
+    //         type: 'error',
+    //         message: err.toString(),
+    //       });
+    //       log.error(err);
+    //     }
+    //   });
+    //   return;
+    // }
+
+    if (parsedURL.pathname.match(/^\/help\//)) {
+      // Help links case
+      // continue to open special case internal urls in default browser
+      shell.openExternal(url);
+      return;
+    }
+
     if (urlUtils.isTeamUrl(server.url, parsedURL, true)) {
       log.info(`${url} is a known team, preventing to open a new window`);
       return;

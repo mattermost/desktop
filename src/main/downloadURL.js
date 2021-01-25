@@ -49,6 +49,7 @@ function getAttachmentName(headers) {
 }
 
 function saveResponseBody(response, filename, callback) {
+  console.log(filename);
   const output = fs.createWriteStream(filename);
   output.on('close', callback);
   switch (response.headers['content-encoding']) {
