@@ -184,13 +184,6 @@ export class MattermostView extends EventEmitter {
     const currentURL = urlUtils.parseURL(this.view.webContents.getURL());
     const destURL = urlUtils.parseURL(url);
 
-    // Check for custom protocol
-    if (destURL.protocol !== 'http:' && destURL.protocol !== 'https:' && destURL.protocol !== `${scheme}:`) {
-      e.preventDefault();
-      allowProtocolDialog.handleDialogEvent(destURL.protocol, url);
-      return;
-    }
-
     if (urlUtils.isInternalURL(destURL, currentURL, this.state.basename)) {
       // Download file case
       if (destURL.path.match(/^\/api\/v[3-4]\/public\/files\//)) {
