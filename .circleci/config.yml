@@ -333,7 +333,7 @@ jobs:
             }" >> /tmp/webhook-data.json
       - run:
           command: |
-            curl -i -X POST -d @/tmp/webhook-data.json $MM_TOKEN || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
+            curl -i -X POST -H "Content-Type: application/json" -d @/tmp/webhook-data.json $MM_TOKEN || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
 
   upload_to_s3:
     executor: aws
