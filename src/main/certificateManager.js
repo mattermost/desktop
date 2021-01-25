@@ -33,7 +33,10 @@ export class CertificateManager {
     modalPromise.then((data) => {
       const {cert} = data;
       this.handleSelectedCertificate(url, cert);
-    }).catch(() => {
+    }).catch((err) => {
+      if (err) {
+        log.error('Error processing certificate selection', err);
+      }
       this.handleSelectedCertificate(url);
     });
   }

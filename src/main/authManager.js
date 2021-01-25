@@ -45,7 +45,10 @@ export class AuthManager {
     modalPromise.then((data) => {
       const {username, password} = data;
       this.handleLoginCredentialsEvent(request, username, password);
-    }).catch(() => {
+    }).catch((err) => {
+      if (err) {
+        log.error('Error processing login request', err);
+      }
       this.handleCancelLoginEvent(request);
     });
   }
@@ -56,7 +59,9 @@ export class AuthManager {
       this.handlePermissionGranted(request.url, permission);
       this.addToLoginQueue(request, authInfo);
     }).catch((err) => {
-      log.warn(`Permission request denied: ${err.message}`);
+      if (err) {
+        log.error('Error processing permission request', err);
+      }
       this.handleCancelLoginEvent(request);
     });
   }
