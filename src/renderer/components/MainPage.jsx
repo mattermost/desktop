@@ -45,12 +45,9 @@ import spinnerx2 from '../../assets/loading@2x.gif';
 
 import {playSound} from '../notificationSounds';
 
-import LoginModal from './LoginModal.jsx';
 import TabBar from './TabBar.jsx';
 import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
-import SelectCertificateModal from './SelectCertificateModal.jsx';
-import PermissionModal from './PermissionModal.jsx';
 import ExtraBar from './ExtraBar.jsx';
 import ErrorView from './ErrorView.jsx';
 
@@ -513,21 +510,6 @@ export default class MainPage extends React.Component {
     return index;
   }
 
-  handleLogin = (request, username, password) => {
-    ipcRenderer.send('login-credentials', request, username, password);
-    const loginQueue = this.state.loginQueue;
-    loginQueue.shift();
-    this.setState({loginQueue});
-  }
-
-  handleLoginCancel = (request) => {
-    ipcRenderer.send('login-cancel', request);
-
-    const loginQueue = this.state.loginQueue;
-    loginQueue.shift();
-    this.setState({loginQueue});
-  }
-
   handleTargetURLChange = (targetURL) => {
     clearTimeout(this.targetURLDisappearTimeout);
     if (targetURL === '') {
@@ -602,25 +584,6 @@ export default class MainPage extends React.Component {
       focusFinder: focus,
     });
   }
-
-  handleSelectCertificate = (certificate) => {
-    const certificateRequests = this.state.certificateRequests;
-    const current = certificateRequests.shift();
-    this.setState({certificateRequests});
-    ipcRenderer.send('selected-client-certificate', current.server, certificate);
-    if (certificateRequests.length > 0) {
-      this.switchToTabForCertificateRequest(certificateRequests[0].server);
-    }
-  }
-  handleCancelCertificate = () => {
-    const certificateRequests = this.state.certificateRequests;
-    const current = certificateRequests.shift();
-    this.setState({certificateRequests});
-    ipcRenderer.send('selected-client-certificate', current.server);
-    if (certificateRequests.length > 0) {
-      this.switchToTabForCertificateRequest(certificateRequests[0].server);
-    }
-  };
 
   setInputRef = (ref) => {
     this.inputRef = ref;
@@ -821,15 +784,6 @@ export default class MainPage extends React.Component {
         </Row>
       </Fragment>);
 
-    let request = null;
-    let authServerURL = null;
-    let authInfo = null;
-    if (this.state.loginQueue.length !== 0) {
-      request = this.state.loginQueue[0].request;
-      const tmpURL = urlUtils.parseURL(this.state.loginQueue[0].request.url);
-      authServerURL = `${tmpURL.protocol}//${tmpURL.host}`;
-      authInfo = this.state.loginQueue[0].authInfo;
-    }
     const modal = (
       <NewTeamModal
         currentOrder={this.props.teams.length}
@@ -856,20 +810,6 @@ export default class MainPage extends React.Component {
         className='MainPage'
         onClick={this.focusOnWebView}
       >
-        <LoginModal
-          show={this.state.loginQueue.length !== 0}
-          request={request}
-          authInfo={authInfo}
-          authServerURL={authServerURL}
-          onLogin={this.handleLogin}
-          onCancel={this.handleLoginCancel}
-        />
-        <PermissionModal/>
-        <SelectCertificateModal
-          certificateRequests={this.state.certificateRequests}
-          onSelect={this.handleSelectCertificate}
-          onCancel={this.handleCancelCertificate}
-        />
         <Grid fluid={true}>
           { topRow }
           { viewsRow }
