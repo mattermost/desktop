@@ -6,6 +6,7 @@ import {ipcMain} from 'electron';
 import {RETRIEVE_MODAL_INFO, MODAL_CANCEL, MODAL_RESULT} from 'common/communication.js';
 
 import {ModalView} from './modalView';
+import * as WindowManager from './windows/windowManager';
 
 let modalQueue = [];
 
@@ -70,6 +71,8 @@ function handleModalResult(event, data) {
   filterActive();
   if (modalQueue.length) {
     showModal();
+  } else {
+    WindowManager.focusBrowserView();
   }
 }
 
@@ -81,6 +84,8 @@ function handleModalCancel(event, data) {
   filterActive();
   if (modalQueue.length) {
     showModal();
+  } else {
+    WindowManager.focusBrowserView();
   }
 }
 
