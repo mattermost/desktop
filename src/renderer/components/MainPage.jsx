@@ -34,6 +34,8 @@ import {
   WINDOW_MAXIMIZE,
   DOUBLE_CLICK_ON_WINDOW,
   PLAY_SOUND,
+  MODAL_OPEN,
+  MODAL_CLOSE,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -352,6 +354,14 @@ export default class MainPage extends React.Component {
       playSound(soundName);
     });
 
+    ipcRenderer.on(MODAL_OPEN, () => {
+      this.setState({modalOpen: true});
+    });
+
+    ipcRenderer.on(MODAL_CLOSE, () => {
+      this.setState({modalOpen: false});
+    });
+
     if (process.platform !== 'darwin') {
       ipcRenderer.on('focus-three-dot-menu', () => {
         if (this.threeDotMenu.current) {
@@ -613,6 +623,7 @@ export default class MainPage extends React.Component {
         onAddServer={this.addServer}
         showAddServerButton={this.props.showAddServerButton}
         onDrop={this.handleDragAndDrop}
+        tabsDisabled={this.state.modalOpen}
       />
     );
 

@@ -81,6 +81,7 @@ export default class TabBar extends React.Component { // need "this"
             this.props.onSelect(team.name, index);
           }}
           title={team.name}
+          disabled={this.props.tabsDisabled}
         >
           <div className='TabBar-tabSeperator'>
             <span>
@@ -111,6 +112,7 @@ export default class TabBar extends React.Component { // need "this"
           onSelect={() => {
             this.props.onAddServer();
           }}
+          disabled={this.props.tabsDisabled}
         >
           <div className='TabBar-tabSeperator'>
             <PlusIcon size={20}/>
@@ -138,7 +140,7 @@ export default class TabBar extends React.Component { // need "this"
         onDrop={this.props.onDrop}
         animationDuration={300}
         shouldAcceptDrop={() => {
-          return !this.state.hasGPOTeams;
+          return !this.state.hasGPOTeams && !this.props.tabsDisabled;
         }}
       />
     );
@@ -159,4 +161,5 @@ TabBar.propTypes = {
   showAddServerButton: PropTypes.bool,
   onAddServer: PropTypes.func,
   onDrop: PropTypes.func,
+  tabsDisabled: PropTypes.bool,
 };

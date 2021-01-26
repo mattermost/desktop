@@ -3,7 +3,7 @@
 
 import {ipcMain} from 'electron';
 
-import {RETRIEVE_MODAL_INFO, MODAL_CANCEL, MODAL_RESULT} from 'common/communication.js';
+import {RETRIEVE_MODAL_INFO, MODAL_CANCEL, MODAL_RESULT, MODAL_OPEN, MODAL_CLOSE} from 'common/communication.js';
 
 import {ModalView} from './modalView';
 import * as WindowManager from './windows/windowManager';
@@ -56,8 +56,10 @@ export function showModal() {
   const withDevTools = process.env.MM_DEBUG_MODALS || false;
   modalQueue.forEach((modal, index) => {
     if (index === 0) {
+      WindowManager.sendToRenderer(MODAL_OPEN);
       modal.show(noWindow, withDevTools);
     } else {
+      WindowManager.sendToRenderer(MODAL_CLOSE);
       modal.hide();
     }
   });
@@ -72,6 +74,7 @@ function handleModalResult(event, data) {
   if (modalQueue.length) {
     showModal();
   } else {
+    WindowManager.sendToRenderer(MODAL_CLOSE);
     WindowManager.focusBrowserView();
   }
 }
@@ -85,6 +88,7 @@ function handleModalCancel(event, data) {
   if (modalQueue.length) {
     showModal();
   } else {
+    WindowManager.sendToRenderer(MODAL_CLOSE);
     WindowManager.focusBrowserView();
   }
 }
