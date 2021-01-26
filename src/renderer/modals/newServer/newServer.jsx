@@ -1,8 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-//import 'bootstrap/dist/css/bootstrap.min.css';
-import 'renderer/css/components/AddServerModal.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'renderer/css/modals.css';
+//import 'renderer/css/components/AddServerModal.css';
 
 // todo: add css into modal;
 
@@ -14,15 +15,13 @@ import ReactDOM from 'react-dom';
 
 import {MODAL_CANCEL, MODAL_RESULT} from 'common/communication.js';
 
-import NewTeamModal from './addServer.jsx';
+import NewTeamModal from '../../components/NewTeamModal.jsx'; //'./addServer.jsx';
 
 const onClose = () => {
-  console.log('cancel!');
   window.postMessage({type: MODAL_CANCEL}, window.location.href);
 };
 
 const onSave = (data) => {
-  console.log('adding!');
   window.postMessage({type: MODAL_RESULT, data}, window.location.href);
 };
 
