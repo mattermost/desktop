@@ -1,4 +1,8 @@
 version: 2.1
+parameters:
+  run_nightly:
+    default: false
+    type: boolean
 orbs:
   win: circleci/windows@1.0.0
   aws-s3: circleci/aws-s3@1.0.11
@@ -44,7 +48,6 @@ commands:
       - run: 
           command: |
             export VERSION=$(jq -r .version package.json)
-            echo "payload=" > /tmp/webhook-data.json;
             echo '{}' | jq "{
               \"username\": \"<< parameters.username >>\",
               \"icon_url\": \"<< parameters.icon >>\",
@@ -52,7 +55,7 @@ commands:
             }" >> /tmp/webhook-data.json
       - run:
           command: |
-            curl -i -X POST -d @/tmp/webhook-data.json $MATTERMOST_RELEASE_WEBHOOK_URL_DESKTOP || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
+            curl -i -H "Content-Type: application/json" -X POST -d @/tmp/webhook-data.json $MATTERMOST_RELEASE_WEBHOOK_URL_DESKTOP || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
 
   update_image:
     description: "Update base image"
@@ -305,6 +308,33 @@ jobs:
           path: ./dist
           destination: packages
 
+  share_to_channel:
+    executor: wine-chrome
+    steps:
+      - attach_workspace:
+          at: ./dist
+      - run: wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | apt-key add -
+      - run: apt-get update && apt-get -y install jq
+      - run: mkdir -p ./links
+      - run: echo "### Nightly builds:\n" > ./links/linklist.txt
+      - run:
+          name: "Get urls for sharing"
+          command: |
+            echo "Links for $(date +"%b-%d-%Y")" > ./links/linklist.txt
+            curl -H "Circle-Token: $CIRCLE_TOKEN" -H "Accept: application/json" -X GET "https://circleci.com/api/v2/project/github/mattermost/desktop/$CIRCLE_PREVIOUS_BUILD_NUM/artifacts" | jq -r '.items[].url' >> ./links/linklist.txt
+            echo "Retrieved links for job #${CIRCLE_PREVIOUS_BUILD_NUM}"
+      - run: 
+          command: |
+            linklist=$(<./links/linklist.txt);
+            echo '{}' | jq "{
+              \"username\": \"NightBuilder\",
+              \"icon_url\": \"https://upload.wikimedia.org/wikipedia/commons/1/17/Luna_symbol.png\",
+              \"text\": \"${linklist}\"
+            }" >> /tmp/webhook-data.json
+      - run:
+          command: |
+            curl -i -X POST -H "Content-Type: application/json" -d @/tmp/webhook-data.json $MM_TOKEN || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
+
   upload_to_s3:
     executor: aws
     steps:
@@ -481,3 +511,21 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+  nightly_browser_view:
+    when: << pipeline.parameters.run_nightly >>
+    jobs:
+      - build-linux
+      - build-win-no-installer
+      - mac_installer:
+          context: codesign-certificates
+      - store_artifacts:
+          # for master/PR builds
+          requires:
+            - build-linux
+            - build-win-no-installer
+            - mac_installer
+      - share_to_channel:
+          context: desktop_browserview
+          requires:
+            - store_artifacts
+

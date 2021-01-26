@@ -16,7 +16,6 @@ import urlUtils from 'common/utils/url';
 
 import {DEVELOPMENT, PRODUCTION, SECOND} from 'common/utils/constants';
 import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, SHOW_NEW_SERVER_MODAL, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION, GET_DOWNLOAD_LOCATION} from 'common/communication';
-import {REQUEST_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, BASIC_AUTH_PERMISSION} from 'common/permissions';
 import Config from 'common/config';
 
 import {protocols} from '../../electron-builder.json';
@@ -41,6 +40,8 @@ import parseArgs from './ParseArgs';
 import {addModal} from './modalManager';
 import {getLocalURLString, getLocalPreload} from './utils';
 import {getTrayImages, switchMenuIconImages} from './tray/tray';
+import {AuthManager} from './authManager';
+import {CertificateManager} from './certificateManager';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
   module.hot.accept();
@@ -59,8 +60,6 @@ const {
   BrowserWindow,
 } = electron;
 const criticalErrorHandler = new CriticalErrorHandler();
-const loginCallbackMap = new Map();
-const certificateRequests = new Map();
 const userActivityMonitor = new UserActivityMonitor();
 const certificateErrorCallbacks = new Map();
 
@@ -75,20 +74,8 @@ let appState = null;
 let config = null;
 let trayIcon = null;
 let trayImages = null;
-
-// supported custom login paths (oath, saml)
-const customLoginRegexPaths = [
-  /^\/oauth\/authorize$/i,
-  /^\/oauth\/deauthorize$/i,
-  /^\/oauth\/access_token$/i,
-  /^\/oauth\/[A-Za-z0-9]+\/complete$/i,
-  /^\/oauth\/[A-Za-z0-9]+\/login$/i,
-  /^\/oauth\/[A-Za-z0-9]+\/signup$/i,
-  /^\/api\/v3\/oauth\/[A-Za-z0-9]+\/complete$/i,
-  /^\/signup\/[A-Za-z0-9]+\/complete$/i,
-  /^\/login\/[A-Za-z0-9]+\/complete$/i,
-  /^\/login\/sso\/saml$/i,
-];
+let authManager = null;
+let certificateManager = null;
 
 // tracking in progress custom logins
 const customLogins = {};
@@ -218,6 +205,9 @@ function initializeBeforeAppReady() {
 
   allowProtocolDialog.init();
 
+  authManager = new AuthManager(config, trustedOriginsStore);
+  certificateManager = new CertificateManager();
+
   if (isDev) {
     console.log('In development mode, deeplinking is disabled');
   } else if (protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0]) {
@@ -228,17 +218,12 @@ function initializeBeforeAppReady() {
 
 function initializeInterCommunicationEventListeners() {
   ipcMain.on('reload-config', handleReloadConfig);
-  ipcMain.on('login-credentials', handleLoginCredentialsEvent);
-  ipcMain.on('login-cancel', handleCancelLoginEvent);
   ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
   ipcMain.handle('get-app-version', handleAppVersion);
 
   // see comment on function
   // ipcMain.on('update-title', handleUpdateTitleEvent);
   ipcMain.on('update-menu', handleUpdateMenuEvent);
-  ipcMain.on('selected-client-certificate', handleSelectedCertificate);
-  ipcMain.on(GRANT_PERMISSION_CHANNEL, handlePermissionGranted);
-  ipcMain.on(DENY_PERMISSION_CHANNEL, handlePermissionDenied);
   ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
 
   if (shouldShowTrayIcon()) {
@@ -360,33 +345,7 @@ function handleQuit(e, reason, stack) {
 }
 
 function handleSelectCertificate(event, webContents, url, list, callback) {
-  if (list.length > 1) {
-    event.preventDefault(); // prevent the app from getting the first certificate available
-    // store callback so it can be called with selected certificate
-    certificateRequests.set(url, callback);
-
-    // open modal for selecting certificate
-    WindowManager.getMainWindow(true).webContents.send('select-user-certificate', url, list);
-  } else {
-    log.info(`There were ${list.length} candidate certificates. Skipping certificate selection`);
-  }
-}
-
-function handleSelectedCertificate(event, server, cert) {
-  const callback = certificateRequests.get(server);
-  if (!callback) {
-    log.error(`there was no callback associated with: ${server}`);
-    return;
-  }
-  if (typeof cert === 'undefined') {
-    log.info('user canceled certificate selection');
-  } else {
-    try {
-      callback(cert);
-    } catch (e) {
-      log.error(`There was a problem using the selected certificate: ${e}`);
-    }
-  }
+  certificateManager.handleSelectCertificate(event, webContents, url, list, callback);
 }
 
 function handleAppCertificateError(event, webContents, url, error, certificate, callback) {
@@ -455,31 +414,12 @@ function handleAppCertificateError(event, webContents, url, error, certificate, 
   }
 }
 
+function handleAppLogin(event, webContents, request, authInfo, callback) {
+  authManager.handleAppLogin(event, webContents, request, authInfo, callback);
+}
+
 function handleAppGPUProcessCrashed(event, killed) {
   console.log(`The GPU process has crashed (killed = ${killed})`);
-}
-
-function handleAppLogin(event, webContents, request, authInfo, callback) {
-  event.preventDefault();
-  const parsedURL = new URL(request.url);
-  const server = urlUtils.getServer(parsedURL, config.teams);
-
-  loginCallbackMap.set(request.url, typeof callback === 'undefined' ? null : callback); // if callback is undefined set it to null instead so we know we have set it up with no value
-  const mainWindow = WindowManager.getMainWindow(true);
-  if (isTrustedURL(request.url) || isCustomLoginURL(parsedURL, server) || trustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
-    mainWindow.webContents.send('login-request', request, authInfo);
-  } else {
-    mainWindow.webContents.send(REQUEST_PERMISSION_CHANNEL, request, authInfo, BASIC_AUTH_PERMISSION);
-  }
-}
-
-function handlePermissionGranted(event, url, permission) {
-  trustedOriginsStore.addPermission(url, permission);
-  trustedOriginsStore.save();
-}
-
-function handlePermissionDenied(event, url, permission, reason) {
-  log.warn(`Permission request denied: ${reason}`);
 }
 
 function handleAppWillFinishLaunching() {
@@ -548,7 +488,7 @@ function handleAppWebContentsCreated(dc, contents) {
       return;
     }
 
-    if (isCustomLoginURL(parsedURL, server)) {
+    if (urlUtils.isCustomLoginURL(parsedURL, server, config.teams)) {
       return;
     }
     if (parsedURL.protocol === 'mailto:') {
@@ -578,11 +518,11 @@ function handleAppWebContentsCreated(dc, contents) {
     const parsedURL = urlUtils.parseURL(url);
     const server = urlUtils.getServer(parsedURL, config.teams);
 
-    if (!isTrustedURL(parsedURL)) {
+    if (!urlUtils.isTrustedURL(parsedURL, config.teams)) {
       return;
     }
 
-    if (isCustomLoginURL(parsedURL, server)) {
+    if (urlUtils.isCustomLoginURL(parsedURL, server, config.teams)) {
       customLogins[contentID].inProgress = true;
     } else if (customLogins[contentID].inProgress) {
       customLogins[contentID].inProgress = false;
@@ -833,30 +773,13 @@ function initializeAfterAppReady() {
     const requestingURL = webContents.getURL();
 
     // is the requesting url trusted?
-    callback(isTrustedURL(requestingURL));
+    callback(urlUtils.isTrustedURL(requestingURL, config.teams));
   });
 }
 
 //
 // ipc communication event handlers
 //
-
-function handleLoginCredentialsEvent(event, request, user, password) {
-  const callback = loginCallbackMap.get(request.url);
-  if (typeof callback === 'undefined') {
-    log.error(`Failed to retrieve login callback for ${request.url}`);
-    return;
-  }
-  if (callback != null) {
-    callback(user, password);
-  }
-  loginCallbackMap.delete(request.url);
-}
-
-function handleCancelLoginEvent(event, request) {
-  log.info(`Cancelling request for ${request ? request.url : 'unknown'}`);
-  handleLoginCredentialsEvent(event, request); // we use undefined to cancel the request
-}
 
 function handleMentionNotification(event, title, body, channel, teamId, silent, data) {
   displayMention(title, body, channel, teamId, silent, event.sender, data);
@@ -955,14 +878,6 @@ async function handleSelectDownload(event, startFrom) {
 // helper functions
 //
 
-function isTrustedURL(url) {
-  const parsedURL = urlUtils.parseURL(url);
-  if (!parsedURL) {
-    return false;
-  }
-  return urlUtils.getServer(parsedURL, config.teams) !== null;
-}
-
 function isTrustedPopupWindow(webContents) {
   if (!webContents) {
     return false;
@@ -971,35 +886,6 @@ function isTrustedPopupWindow(webContents) {
     return false;
   }
   return BrowserWindow.fromWebContents(webContents) === popupWindow;
-}
-
-function isCustomLoginURL(url, server) {
-  const subpath = (server === null || typeof server === 'undefined') ? '' : server.url.pathname;
-  const parsedURL = urlUtils.parseURL(url);
-  if (!parsedURL) {
-    return false;
-  }
-  if (!isTrustedURL(parsedURL)) {
-    return false;
-  }
-  const urlPath = parsedURL.pathname;
-  if ((subpath !== '' || subpath !== '/') && urlPath.startsWith(subpath)) {
-    const replacement = subpath.endsWith('/') ? '/' : '';
-    const replacedPath = urlPath.replace(subpath, replacement);
-    for (const regexPath of customLoginRegexPaths) {
-      if (replacedPath.match(regexPath)) {
-        return true;
-      }
-    }
-  }
-
-  // if there is no subpath, or we are adding the team and got redirected to the real server it'll be caught here
-  for (const regexPath of customLoginRegexPaths) {
-    if (urlPath.match(regexPath)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 function getDeeplinkingURL(args) {

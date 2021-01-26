@@ -3,6 +3,8 @@
 
 import {BrowserView} from 'electron';
 
+import {getWindowBoundaries} from './utils';
+
 // TODO: should we use windowmanager to get the currentwindow?
 
 const ACTIVE = 'active';
@@ -39,8 +41,7 @@ export class ModalView {
     this.windowAttached = win || this.window;
 
     this.windowAttached.addBrowserView(this.view);
-    const bounds = this.windowAttached.getContentBounds();
-    this.view.setBounds(bounds);
+    this.view.setBounds(getWindowBoundaries(this.windowAttached));
     this.view.setAutoResize({
       height: true,
       width: true,
@@ -58,6 +59,7 @@ export class ModalView {
 
     // uncomment if something goes wrong with modals
     if (withDevTools) {
+      console.log(`showing dev tools for ${this.key}`);
       this.view.webContents.openDevTools();
     }
   }

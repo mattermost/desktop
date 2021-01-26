@@ -20,7 +20,10 @@ module.exports = merge(base, {
     index: './src/renderer/index.jsx',
     settings: './src/renderer/settings.jsx',
     urlView: './src/renderer/modals/urlView/urlView.jsx',
-    newServer: './src/renderer/modals/newServer/newServer.jsx'
+    newServer: './src/renderer/modals/newServer/newServer.jsx',
+    loginModal: './src/renderer/modals/login/login.jsx',
+    permissionModal: './src/renderer/modals/permission/permission.jsx',
+    certificateModal: './src/renderer/modals/certificate/certificate.jsx',
   },
   output: {
     path: path.resolve(__dirname, 'dist/renderer'),
@@ -50,6 +53,24 @@ module.exports = merge(base, {
       template: 'src/renderer/index.html',
       chunks: ['newServer'],
       filename: 'newServer.html',
+    }),
+    new HtmlWebpackPlugin({
+      title: 'Mattermost Desktop Settings',
+      template: 'src/renderer/index.html',
+      chunks: ['loginModal'],
+      filename: 'loginModal.html',
+    }),
+    new HtmlWebpackPlugin({
+      title: 'Mattermost Desktop Settings',
+      template: 'src/renderer/index.html',
+      chunks: ['permissionModal'],
+      filename: 'permissionModal.html',
+    }),
+    new HtmlWebpackPlugin({
+      title: 'Mattermost Desktop Settings',
+      template: 'src/renderer/index.html',
+      chunks: ['certificateModal'],
+      filename: 'certificateModal.html',
     }),
     new MiniCssExtractPlugin({
       filename: 'styles.[contenthash].css',
