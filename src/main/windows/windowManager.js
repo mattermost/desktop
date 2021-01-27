@@ -214,9 +214,9 @@ export function handleDoubleClick(e, windowType) {
   case 'Maximize':
   default:
     if (win.isMaximized()) {
-      win.maximize();
-    } else {
       win.unmaximize();
+    } else {
+      win.maximize();
     }
     break;
   }
