@@ -21,12 +21,9 @@ if [[ -f "${SRC}/mattermost-desktop-${VERSION}-win-x64.zip" ]]; then
     SOMETHING_COPIED=$((SOMETHING_COPIED + 2))
 fi
 
-# make sure the var exists
-if [ -z "$MM_WIN_INSTALLERS" ]; then
-    MM_WIN_INSTALLERS=0
-fi
-if [[ $MM_WIN_INSTALLERS -eq 1 && -f "${SRC}/mattermost-desktop-setup-${VERSION}-win.exe" ]]; then
+if [[ ${MM_WIN_INSTALLERS-0} -eq 1 && -f "${SRC}/mattermost-desktop-setup-${VERSION}-win.exe" ]]; then
     echo -e "Copying win-no-arch\n"
+    cp "${SRC}/mattermost-desktop-setup-${VERSION}-win.exe" "${DEST}/"
     cp "${SRC}/mattermost-desktop-setup-${VERSION}-win.exe" "${DEST}/"
     SOMETHING_COPIED=$((SOMETHING_COPIED + 4))
 fi
