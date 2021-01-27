@@ -9,7 +9,7 @@ const path = require('path');
 
 const path7za = require('7zip-bin').path7za;
 
-const pkg = require('../src/package.json');
+const pkg = require('../package.json');
 const appVersion = pkg.version;
 const name = pkg.name;
 
