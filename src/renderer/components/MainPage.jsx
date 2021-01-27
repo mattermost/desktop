@@ -421,7 +421,7 @@ export default class MainPage extends React.Component {
   }
 
   handleSelect = (name, key) => {
-    ipcRenderer.send('switch-server', name);
+    ipcRenderer.send(SWITCH_SERVER, name);
     const newKey = (this.props.teams.length + key) % this.props.teams.length;
     this.setState({
       key: newKey,
