@@ -548,7 +548,7 @@ function handleAppWebContentsCreated(dc, contents) {
       log.info(`${url} is a known team, preventing to open a new window`);
       return;
     }
-    if (Utils.isAdminUrl(server.url, parsedURL)) {
+    if (urlUtils.isAdminUrl(server.url, parsedURL)) {
       log.info(`${url} is an admin console page, preventing to open a new window`);
       return;
     }
