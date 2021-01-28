@@ -6,19 +6,30 @@
 /* eslint-disable import/no-commonjs */
 'use strict';
 
+const childProcess = require('child_process');
+
 const webpack = require('webpack');
+
 const path = require('path');
 
+const VERSION = childProcess.execSync('git rev-parse --short HEAD').toString();
 const isProduction = process.env.NODE_ENV === 'production';
+
+const codeDefinitions = {
+  __HASH_VERSION__: JSON.stringify(VERSION)
+};
+if (isProduction) {
+  codeDefinitions['process.env.NODE_ENV'] = JSON.stringify('production');
+}
 
 module.exports = {
 
   // Some plugins cause errors on the app, so use few plugins.
   // https://webpack.js.org/concepts/mode/#mode-production
   mode: isProduction ? 'none' : 'development',
-  plugins: isProduction ? [
-    new webpack.DefinePlugin({'process.env.NODE_ENV': JSON.stringify('production')}),
-  ] : [],
+  plugins: [
+    new webpack.DefinePlugin(codeDefinitions),
+  ],
   devtool: isProduction ? false : '#inline-source-map',
   resolve: {
     alias: {
