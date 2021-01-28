@@ -5,7 +5,7 @@ import fs from 'fs';
 
 import path from 'path';
 
-import electron, {nativeTheme, shell} from 'electron';
+import electron, {shell} from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import log from 'electron-log';
@@ -28,18 +28,19 @@ import TrustedOriginsStore from './trustedOrigins';
 import appMenu from './menus/app';
 import trayMenu from './menus/tray';
 import allowProtocolDialog from './allowProtocolDialog';
-import AppStateManager from './AppStateManager';
+import AppVersionManager from './AppVersionManager';
 import initCookieManager from './cookieManager';
 import UserActivityMonitor from './UserActivityMonitor';
 import * as WindowManager from './windows/windowManager';
-import {showBadge} from './badge';
 import {displayMention, displayDownloadCompleted} from './notifications';
-import downloadURL from './downloadURL';
+
+// see below
+// import downloadURL from './downloadURL';
 
 import parseArgs from './ParseArgs';
 import {addModal} from './modalManager';
 import {getLocalURLString, getLocalPreload} from './utils';
-import {getTrayImages, switchMenuIconImages} from './tray/tray';
+import {destroyTray, getTrayImages, setTrayMenu, setupTray} from './tray/tray';
 import {AuthManager} from './authManager';
 import {CertificateManager} from './certificateManager';
 
@@ -52,10 +53,8 @@ if (process.env.NODE_ENV !== 'production' && module.hot) {
 const {
   app,
   Menu,
-  Tray,
   ipcMain,
   dialog,
-  systemPreferences,
   session,
   BrowserWindow,
 } = electron;
@@ -70,10 +69,8 @@ let certificateStore = null;
 let trustedOriginsStore = null;
 let deeplinkingUrl = null;
 let scheme = null;
-let appState = null;
+let appVersion = null;
 let config = null;
-let trayIcon = null;
-let trayImages = null;
 let authManager = null;
 let certificateManager = null;
 
@@ -194,7 +191,7 @@ function initializeBeforeAppReady() {
     app.disableHardwareAcceleration();
   }
 
-  trayImages = getTrayImages(config.trayIconTheme);
+  getTrayImages(config.trayIconTheme);
 
   // If there is already an instance, quit this one
   const gotTheLock = app.requestSingleInstanceLock();
@@ -226,9 +223,6 @@ function initializeInterCommunicationEventListeners() {
   ipcMain.on('update-menu', handleUpdateMenuEvent);
   ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
 
-  if (shouldShowTrayIcon()) {
-    ipcMain.on('update-unread', handleUpdateUnreadEvent);
-  }
   if (process.platform !== 'darwin') {
     ipcMain.on('open-app-menu', handleOpenAppMenu);
   }
@@ -260,7 +254,7 @@ function handleConfigUpdate(newConfig) {
     }).catch((err) => {
       console.log('error:', err);
     });
-    WindowManager.setConfig(newConfig.data, newConfig.showTrayIcon, deeplinkingUrl);
+    WindowManager.setConfig(newConfig.data, deeplinkingUrl);
   }
 
   ipcMain.emit('update-menu', true, config);
@@ -268,7 +262,7 @@ function handleConfigUpdate(newConfig) {
 
 function handleConfigSynchronize() {
   // TODO: send this to server manager
-  WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
+  WindowManager.setConfig(config.data, deeplinkingUrl);
   if (app.isReady()) {
     WindowManager.sendToRenderer('reload-config');
   }
@@ -276,7 +270,7 @@ function handleConfigSynchronize() {
 
 function handleReloadConfig() {
   config.reload();
-  WindowManager.setConfig(config.data, config.showTrayIcon, deeplinkingUrl);
+  WindowManager.setConfig(config.data, deeplinkingUrl);
 }
 
 function handleAppVersion() {
@@ -287,7 +281,7 @@ function handleAppVersion() {
 }
 
 function handleDarkModeChange(darkMode) {
-  trayImages = getTrayImages(config.trayIconTheme);
+  getTrayImages(config.trayIconTheme);
   WindowManager.sendToRenderer(DARK_MODE_CHANGE, darkMode);
 }
 
@@ -331,9 +325,7 @@ function handleAppActivate() {
 
 function handleAppBeforeQuit() {
   // Make sure tray icon gets removed if the user exits via CTRL-Q
-  if (trayIcon && process.platform === 'win32') {
-    trayIcon.destroy();
-  }
+  destroyTray();
   global.willAppQuit = true;
 }
 
@@ -629,12 +621,12 @@ function handleAppWebContentsCreated(dc, contents) {
 function initializeAfterAppReady() {
   app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
 
-  const appStateJson = path.join(app.getPath('userData'), 'app-state.json');
-  appState = new AppStateManager(appStateJson);
-  if (wasUpdated(appState.lastAppVersion)) {
+  const appVersionJson = path.join(app.getPath('userData'), 'app-state.json');
+  appVersion = new AppVersionManager(appVersionJson);
+  if (wasUpdated(appVersion.lastAppVersion)) {
     clearAppCache();
   }
-  appState.lastAppVersion = app.getVersion();
+  appVersion.lastAppVersion = app.getVersion();
 
   if (!global.isDev) {
     upgradeAutoLaunch();
@@ -689,27 +681,7 @@ function initializeAfterAppReady() {
   userActivityMonitor.startMonitoring();
 
   if (shouldShowTrayIcon()) {
-    // set up tray icon
-    trayIcon = new Tray(trayImages.normal);
-    if (process.platform === 'darwin') {
-      trayIcon.setPressedImage(trayImages.clicked.normal);
-      systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
-        switchMenuIconImages(trayImages, nativeTheme.shouldUseDarkColors);
-        trayIcon.setImage(trayImages.normal);
-      });
-    }
-
-    trayIcon.setToolTip(app.name);
-    trayIcon.on('click', () => {
-      WindowManager.restoreMain();
-    });
-
-    trayIcon.on('right-click', () => {
-      trayIcon.popUpContextMenu();
-    });
-    trayIcon.on('balloon-click', () => {
-      WindowManager.restoreMain();
-    });
+    setupTray();
   }
 
   session.defaultSession.on('will-download', (event, item, webContents) => {
@@ -785,43 +757,39 @@ function handleMentionNotification(event, title, body, channel, teamId, silent, 
   displayMention(title, body, channel, teamId, silent, event.sender, data);
 }
 
-// TODO: figure out if we want to inherit title from webpage or use one of our own
-// function handleUpdateTitleEvent(event, arg) {
-//   mainWindow.setTitle(arg.title);
+// TODO: session expired
+// function handleUpdateUnreadEvent(event, arg) {
+//   showBadge(arg.sessionExpired, arg.unreadCount, arg.mentionCount, config.showUnreadBadge);
+
+//   if (trayIcon && !trayIcon.isDestroyed()) {
+//     if (arg.sessionExpired) {
+//       // reuse the mention icon when the session is expired
+//       trayIcon.setImage(trayImages.mention);
+//       if (process.platform === 'darwin') {
+//         trayIcon.setPressedImage(trayImages.clicked.mention);
+//       }
+//       trayIcon.setToolTip('Session Expired: Please sign in to continue receiving notifications.');
+//     } else if (arg.mentionCount > 0) {
+//       trayIcon.setImage(trayImages.mention);
+//       if (process.platform === 'darwin') {
+//         trayIcon.setPressedImage(trayImages.clicked.mention);
+//       }
+//       trayIcon.setToolTip(arg.mentionCount + ' unread mentions');
+//     } else if (arg.unreadCount > 0) {
+//       trayIcon.setImage(trayImages.unread);
+//       if (process.platform === 'darwin') {
+//         trayIcon.setPressedImage(trayImages.clicked.unread);
+//       }
+//       trayIcon.setToolTip(arg.unreadCount + ' unread channels');
+//     } else {
+//       trayIcon.setImage(trayImages.normal);
+//       if (process.platform === 'darwin') {
+//         trayIcon.setPressedImage(trayImages.clicked.normal);
+//       }
+//       trayIcon.setToolTip(app.name);
+//     }
+//   }
 // }
-
-function handleUpdateUnreadEvent(event, arg) {
-  showBadge(arg.sessionExpired, arg.unreadCount, arg.mentionCount, config.showUnreadBadge);
-
-  if (trayIcon && !trayIcon.isDestroyed()) {
-    if (arg.sessionExpired) {
-      // reuse the mention icon when the session is expired
-      trayIcon.setImage(trayImages.mention);
-      if (process.platform === 'darwin') {
-        trayIcon.setPressedImage(trayImages.clicked.mention);
-      }
-      trayIcon.setToolTip('Session Expired: Please sign in to continue receiving notifications.');
-    } else if (arg.mentionCount > 0) {
-      trayIcon.setImage(trayImages.mention);
-      if (process.platform === 'darwin') {
-        trayIcon.setPressedImage(trayImages.clicked.mention);
-      }
-      trayIcon.setToolTip(arg.mentionCount + ' unread mentions');
-    } else if (arg.unreadCount > 0) {
-      trayIcon.setImage(trayImages.unread);
-      if (process.platform === 'darwin') {
-        trayIcon.setPressedImage(trayImages.clicked.unread);
-      }
-      trayIcon.setToolTip(arg.unreadCount + ' unread channels');
-    } else {
-      trayIcon.setImage(trayImages.normal);
-      if (process.platform === 'darwin') {
-        trayIcon.setPressedImage(trayImages.clicked.normal);
-      }
-      trayIcon.setToolTip(app.name);
-    }
-  }
-}
 
 function handleOpenAppMenu() {
   const windowMenu = Menu.getApplicationMenu();
@@ -850,18 +818,7 @@ function handleUpdateMenuEvent(event, configData) {
   // set up context menu for tray icon
   if (shouldShowTrayIcon()) {
     const tMenu = trayMenu.createMenu(configData);
-    if (process.platform === 'darwin' || process.platform === 'linux') {
-      // store the information, if the tray was initialized, for checking in the settings, if the application
-      // was restarted after setting "Show icon on menu bar"
-      if (trayIcon) {
-        trayIcon.setContextMenu(tMenu);
-        mainWindow.trayWasVisible = true;
-      } else {
-        mainWindow.trayWasVisible = false;
-      }
-    } else if (trayIcon) {
-      trayIcon.setContextMenu(tMenu);
-    }
+    setTrayMenu(tMenu, mainWindow);
   }
 }
 

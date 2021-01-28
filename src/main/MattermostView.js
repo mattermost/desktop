@@ -12,6 +12,7 @@ import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL, IS_UNREAD, UNR
 
 import {getWindowBoundaries, getLocalPreload} from './utils';
 import * as WindowManager from './windows/windowManager';
+import * as appState from './appState';
 
 // copying what webview sends
 // TODO: review
@@ -24,11 +25,10 @@ const ASTERISK_GROUP = 3;
 const MENTIONS_GROUP = 2;
 
 export class MattermostView extends EventEmitter {
-  constructor(server, win, options, updateBadge) {
+  constructor(server, win, options) {
     super();
     this.server = server;
     this.window = win;
-    this.updateBadge = updateBadge;
 
     const preload = getLocalPreload('preload.js');
     const spellcheck = ((!options || typeof options.spellcheck === 'undefined') ? true : options.spellcheck);
@@ -203,8 +203,7 @@ export class MattermostView extends EventEmitter {
       unreads = Boolean(hasAsterisk);
     }
     const mentions = (results && results.value && results.value[MENTIONS_GROUP]) || 0;
-    this.updateBadge(this.server.name, mentions, unreads);
-    //WindowManager.sendToRenderer(UPDATE_MENTIONS, this.server.name, mentions, unreads);
+    appState.updateMentions(this.server.name, mentions, unreads);
   }
 
   handleFaviconUpdate = (e, favicons) => {
@@ -213,8 +212,7 @@ export class MattermostView extends EventEmitter {
       // if not, get related info from preload and store it for future changes
       this.currentFavicon = favicons[0];
       if (this.faviconMemoize.has(favicons[0])) {
-        this.updateBadge(this.server.name, null, this.faviconMemoize.get(favicons[0]));
-        //WindowManager.sendToRenderer(UPDATE_UNREADS, this.server.name, this.faviconMemoize.get(favicons[0]));
+        appState.updateUnreads(this.server.name, this.faviconMemoize.get(favicons[0]));
       } else {
         this.findUnreadState(favicons[0]);
       }
@@ -228,8 +226,7 @@ export class MattermostView extends EventEmitter {
   handleFaviconIsUnread = (e, favicon, result) => {
     this.faviconMemoize.set(favicon, result);
     if (favicon === this.currentFavicon) {
-      this.updateBadge(this.server.name, null, result);
-      //WindowManager.sendToRenderer(UPDATE_UNREADS, this.server.name, result);
+      appState.updateUnreads(this.server.name, result);
     }
   }
 }

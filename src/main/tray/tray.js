@@ -2,21 +2,30 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
-import {app, nativeImage, nativeTheme} from 'electron';
+import {app, nativeImage, nativeTheme, Tray, systemPreferences} from 'electron';
+
+import {UPDATE_MENTIONS} from 'common/communication';
+
+import * as WindowManager from '../windows/windowManager';
+import * as AppState from '../appState';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
+
+let trayImages;
+let trayIcon;
 
 export function getTrayImages(trayIconTheme) {
   switch (process.platform) {
   case 'win32':
-    return {
+    trayImages = {
       normal: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray.ico')),
       unread: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_unread.ico')),
       mention: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_mention.ico')),
     };
+    break;
   case 'darwin':
   {
-    const icons = {
+    trayImages = {
       light: {
         normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIcon.png')),
         unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconUnread.png')),
@@ -28,30 +37,32 @@ export function getTrayImages(trayIconTheme) {
         mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconMention.png')),
       },
     };
-    switchMenuIconImages(icons, nativeTheme.shouldUseDarkColors);
-    return icons;
+    switchMenuIconImages(trayImages, nativeTheme.shouldUseDarkColors);
+    break;
   }
   case 'linux':
   {
     const theme = trayIconTheme;
     try {
-      return {
+      trayImages = {
         normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconTemplate.png')),
         unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconUnreadTemplate.png')),
         mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconMentionTemplate.png')),
       };
     } catch (e) {
       //Fallback for invalid theme setting
-      return {
+      trayImages = {
         normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconTemplate.png')),
         unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconUnreadTemplate.png')),
         mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconMentionTemplate.png')),
       };
     }
+    break;
   }
   default:
-    return {};
+    trayImages = {};
   }
+  return trayImages;
 }
 
 export function switchMenuIconImages(icons, isDarkMode) {
@@ -63,5 +74,72 @@ export function switchMenuIconImages(icons, isDarkMode) {
     icons.normal = icons.light.normal;
     icons.unread = icons.light.unread;
     icons.mention = icons.light.mention;
+  }
+}
+
+export function setupTray() {
+  // set up tray icon
+  trayIcon = new Tray(trayImages.normal);
+  if (process.platform === 'darwin') {
+    trayIcon.setPressedImage(trayImages.clicked.normal);
+    systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
+      switchMenuIconImages(trayImages, nativeTheme.shouldUseDarkColors);
+      trayIcon.setImage(trayImages.normal);
+    });
+  }
+
+  trayIcon.setToolTip(app.name);
+  trayIcon.on('click', () => {
+    WindowManager.restoreMain();
+  });
+
+  trayIcon.on('right-click', () => {
+    trayIcon.popUpContextMenu();
+  });
+  trayIcon.on('balloon-click', () => {
+    WindowManager.restoreMain();
+  });
+
+  AppState.on(UPDATE_MENTIONS, (_server, _mentions, _unreads, anyMentions, anyUnreads) => {
+    if (anyMentions) {
+      trayIcon.setImage(trayImages.mention);
+      if (process.platform === 'darwin') {
+        trayIcon.setPressedImage(trayImages.clicked.mention);
+      }
+      trayIcon.setToolTip('You have mentions');
+    } else if (anyUnreads) {
+      trayIcon.setImage(trayImages.unread);
+      if (process.platform === 'darwin') {
+        trayIcon.setPressedImage(trayImages.clicked.unread);
+      }
+      trayIcon.setToolTip('You have unread channels');
+    } else {
+      trayIcon.setImage(trayImages.normal);
+      if (process.platform === 'darwin') {
+        trayIcon.setPressedImage(trayImages.clicked.normal);
+      }
+      trayIcon.setToolTip(app.name);
+    }
+  });
+}
+
+export function destroyTray() {
+  if (trayIcon && process.platform === 'win32') {
+    trayIcon.destroy();
+  }
+}
+
+export function setTrayMenu(tMenu, mainWindow) {
+  if (process.platform === 'darwin' || process.platform === 'linux') {
+    // store the information, if the tray was initialized, for checking in the settings, if the application
+    // was restarted after setting "Show icon on menu bar"
+    if (trayIcon) {
+      trayIcon.setContextMenu(tMenu);
+      mainWindow.trayWasVisible = true;
+    } else {
+      mainWindow.trayWasVisible = false;
+    }
+  } else if (trayIcon) {
+    trayIcon.setContextMenu(tMenu);
   }
 }

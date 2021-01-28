@@ -5,7 +5,7 @@ import path from 'path';
 import {app, BrowserWindow, nativeImage, systemPreferences} from 'electron';
 import log from 'electron-log';
 
-import {MAXIMIZE_CHANGE, SWITCH_SERVER, UPDATE_MENTIONS, UPDATE_UNREADS} from 'common/communication';
+import {MAXIMIZE_CHANGE, SWITCH_SERVER} from 'common/communication';
 
 import {getAdjustedWindowBoundaries} from '../utils';
 
@@ -21,20 +21,14 @@ const status = {
   mainWindow: null,
   settingsWindow: null,
   config: null,
-  showTrayIcon: process.platform === 'win32',
   deeplinkingUrl: null,
   viewManager: null,
-  mentions: new Map(),
-  unreads: new Map(),
 };
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
-export function setConfig(data, showTrayIcon, deeplinkingUrl) {
+export function setConfig(data, deeplinkingUrl) {
   if (data) {
     status.config = data;
-  }
-  if (showTrayIcon) {
-    status.showTrayIcon = process.platform === 'win32' || showTrayIcon;
   }
   if (deeplinkingUrl) {
     status.deeplinkingUrl = deeplinkingUrl;
@@ -67,7 +61,6 @@ export function showMainWindow() {
     status.mainWindow.show();
   } else {
     status.mainWindow = createMainWindow(status.config, {
-      trayIconShown: status.showTrayIcon,
       linuxAppIcon: path.join(assetsDir, 'appicon.png'),
       deeplinkingUrl: status.deeplinkingUrl,
     });
@@ -227,7 +220,7 @@ export function handleDoubleClick(e, windowType) {
 
 function initializeViewManager() {
   if (!status.viewManager) {
-    status.viewManager = new ViewManager(status.config, updateBadge);
+    status.viewManager = new ViewManager(status.config);
     status.viewManager.load(status.mainWindow);
     status.viewManager.showInitial();
   }
@@ -279,14 +272,4 @@ export function minimize() {
 export function restore() {
   const focused = BrowserWindow.getFocusedWindow();
   focused.restore();
-}
-
-function updateBadge(serverName, mentions, unreads) {
-  if (mentions !== null) {
-    status.mentions.set(serverName, mentions);
-  }
-  if (typeof unreads !== 'undefined') {
-    status.unreads.set(serverName, unreads);
-  }
-  sendToRenderer(UPDATE_MENTIONS, serverName, status.mentions.get(serverName) || 0, status.unreads.get(unreads) || false);
 }
