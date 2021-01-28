@@ -445,8 +445,8 @@ function handleAppWillFinishLaunching() {
   });
 }
 
-function handleSwitchServer(event, serverName, notifyRenderer) {
-  WindowManager.switchServer(serverName, notifyRenderer);
+function handleSwitchServer(event, serverName) {
+  WindowManager.switchServer(serverName);
 }
 
 function handleNewServerModal() {

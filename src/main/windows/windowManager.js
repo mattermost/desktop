@@ -5,7 +5,7 @@ import path from 'path';
 import {app, BrowserWindow, nativeImage, systemPreferences} from 'electron';
 import log from 'electron-log';
 
-import {MAXIMIZE_CHANGE, SWITCH_SERVER} from 'common/communication';
+import {MAXIMIZE_CHANGE, SET_SERVER_KEY} from 'common/communication';
 
 import {getAdjustedWindowBoundaries} from '../utils';
 
@@ -230,13 +230,11 @@ function initializeViewManager() {
   }
 }
 
-export function switchServer(serverName, notifyRenderer) {
+export function switchServer(serverName) {
   showMainWindow();
   status.viewManager.showByName(serverName);
-  if (notifyRenderer) {
-    const server = status.config.teams.find((candidate) => candidate.name === serverName);
-    sendToRenderer(SWITCH_SERVER, server.order);
-  }
+  const server = status.config.teams.find((candidate) => candidate.name === serverName);
+  sendToRenderer(SET_SERVER_KEY, server.order);
 }
 
 export function focusBrowserView() {

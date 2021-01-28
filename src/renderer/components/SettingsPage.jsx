@@ -22,7 +22,7 @@ const CONFIG_TYPE_SERVERS = 'servers';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
 function backToIndex(serverName) {
-  ipcRenderer.send(SWITCH_SERVER, serverName, true);
+  ipcRenderer.send(SWITCH_SERVER, serverName);
   window.close();
 }
 
