@@ -27,7 +27,6 @@ import CertificateStore from './certificateStore';
 import TrustedOriginsStore from './trustedOrigins';
 import appMenu from './menus/app';
 import trayMenu from './menus/tray';
-import downloadURL from './downloadURL';
 import allowProtocolDialog from './allowProtocolDialog';
 import AppStateManager from './AppStateManager';
 import initCookieManager from './cookieManager';
@@ -35,6 +34,7 @@ import UserActivityMonitor from './UserActivityMonitor';
 import * as WindowManager from './windows/windowManager';
 import {showBadge} from './badge';
 import {displayMention, displayDownloadCompleted} from './notifications';
+import downloadURL from './downloadURL';
 
 import parseArgs from './ParseArgs';
 import {addModal} from './modalManager';
@@ -218,7 +218,6 @@ function initializeBeforeAppReady() {
 
 function initializeInterCommunicationEventListeners() {
   ipcMain.on('reload-config', handleReloadConfig);
-  ipcMain.on('download-url', handleDownloadURLEvent);
   ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
   ipcMain.handle('get-app-version', handleAppVersion);
 
@@ -533,10 +532,22 @@ function handleAppWebContentsCreated(dc, contents) {
   contents.on('new-window', (event, url) => {
     const parsedURL = urlUtils.parseURL(url);
 
+    // Dev tools case
     if (parsedURL.protocol === 'devtools:') {
       return;
     }
     event.preventDefault();
+
+    // Check for valid URL
+    if (!urlUtils.isValidURI(url)) {
+      return;
+    }
+
+    // Check for custom protocol
+    if (parsedURL.protocol !== 'http:' && parsedURL.protocol !== 'https:' && parsedURL.protocol !== `${scheme}:`) {
+      allowProtocolDialog.handleDialogEvent(parsedURL.protocol, url);
+      return;
+    }
 
     const server = urlUtils.getServer(parsedURL, config.teams);
 
@@ -544,6 +555,29 @@ function handleAppWebContentsCreated(dc, contents) {
       shell.openExternal(url);
       return;
     }
+
+    // Public download links case
+    // TODO: This doesn't work correctly right now, needs to be refactored
+    // if (parsedURL.pathname.match(/^(\/api\/v[3-4]\/public)*\/files\//)) {
+    //   downloadURL(url, (err) => {
+    //     if (err) {
+    //       dialog.showMessageBox(WindowManager.getMainWindow(), {
+    //         type: 'error',
+    //         message: err.toString(),
+    //       });
+    //       log.error(err);
+    //     }
+    //   });
+    //   return;
+    // }
+
+    if (parsedURL.pathname.match(/^\/help\//)) {
+      // Help links case
+      // continue to open special case internal urls in default browser
+      shell.openExternal(url);
+      return;
+    }
+
     if (urlUtils.isTeamUrl(server.url, parsedURL, true)) {
       log.info(`${url} is a known team, preventing to open a new window`);
       return;
@@ -746,18 +780,6 @@ function initializeAfterAppReady() {
 //
 // ipc communication event handlers
 //
-
-function handleDownloadURLEvent(event, url) {
-  downloadURL(url, (err) => {
-    if (err) {
-      dialog.showMessageBox(WindowManager.getMainWindow(), {
-        type: 'error',
-        message: err.toString(),
-      });
-      log.error(err);
-    }
-  });
-}
 
 function handleMentionNotification(event, title, body, channel, teamId, silent, data) {
   displayMention(title, body, channel, teamId, silent, event.sender, data);

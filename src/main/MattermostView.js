@@ -3,7 +3,6 @@
 
 import {BrowserView, app} from 'electron';
 import log from 'electron-log';
-import path from 'path';
 
 import {EventEmitter} from 'events';
 
