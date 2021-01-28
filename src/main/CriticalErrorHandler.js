@@ -16,7 +16,8 @@ const BUTTON_SHOW_DETAILS = 'Show Details';
 const BUTTON_REOPEN = 'Reopen';
 
 function createErrorReport(err) {
-  return `Application: ${app.name} ${app.getVersion()}\n` +
+  // eslint-disable-next-line no-undef
+  return `Application: ${app.name} ${app.getVersion()} [commit: ${__HASH_VERSION__}]\n` +
          `Platform: ${os.type()} ${os.release()} ${os.arch()}\n` +
          `${err.stack}`;
 }

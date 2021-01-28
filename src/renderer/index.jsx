@@ -159,6 +159,10 @@ class Root extends React.Component {
     );
   }
 }
+ipcRenderer.invoke('get-app-version').then(({name, version}) => {
+  // eslint-disable-next-line no-undef
+  console.log(`Starting ${name} v${version} commit: ${__HASH_VERSION__}`);
+});
 
 ReactDOM.render(
   <Root/>,
