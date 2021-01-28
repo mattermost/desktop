@@ -4,7 +4,7 @@ import log from 'electron-log';
 import {BrowserView} from 'electron';
 
 import {SECOND} from 'common/utils/constants';
-import {UPDATE_TARGET_URL} from 'common/communication';
+import {UPDATE_TARGET_URL, SET_SERVER_KEY} from 'common/communication';
 
 import contextMenu from './contextMenu';
 import {MattermostServer} from './MattermostServer';
@@ -96,6 +96,8 @@ export class ViewManager {
       if (newView.isReady()) {
         // if view is not ready, the renderer will have something to display instead.
         newView.show();
+        const serverInfo = this.configServers.find((candidate) => candidate.name === newView.server.name);
+        newView.window.webContents.send(SET_SERVER_KEY, serverInfo.order);
         contextMenu.reload(newView.getWebContents());
       } else {
         console.log(`couldn't show ${name}, not ready`);

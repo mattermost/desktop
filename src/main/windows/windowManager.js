@@ -233,8 +233,6 @@ function initializeViewManager() {
 export function switchServer(serverName) {
   showMainWindow();
   status.viewManager.showByName(serverName);
-  const server = status.config.teams.find((candidate) => candidate.name === serverName);
-  sendToRenderer(SET_SERVER_KEY, server.order);
 }
 
 export function focusBrowserView() {
