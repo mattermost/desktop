@@ -5,7 +5,7 @@ import path from 'path';
 import {app, BrowserWindow, nativeImage, systemPreferences} from 'electron';
 import log from 'electron-log';
 
-import {MAXIMIZE_CHANGE, SET_SERVER_KEY} from 'common/communication';
+import {MAXIMIZE_CHANGE} from 'common/communication';
 
 import {getAdjustedWindowBoundaries} from '../utils';
 
