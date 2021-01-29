@@ -195,9 +195,9 @@ function createTemplate(config) {
       if (focusedWindow) {
         // toggledevtools opens it in the last known position, so sometimes it goes below the browserview
         if (focusedWindow.isDevToolsOpened()) {
-          focusedWindow.openDevTools({mode: 'detach'});
-        } else {
           focusedWindow.closeDevTools();
+        } else {
+          focusedWindow.openDevTools({mode: 'detach'});
         }
       }
     },
