@@ -128,7 +128,7 @@ export class ViewManager {
   openViewDevTools = () => {
     const view = this.getCurrentView();
     if (view) {
-      view.openDevTools();
+      view.openDevTools({mode: 'detach'});
     } else {
       console.error(`couldn't find ${this.currentView}`);
     }
