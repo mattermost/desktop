@@ -43,6 +43,7 @@ import {getLocalURLString, getLocalPreload} from './utils';
 import {destroyTray, getTrayImages, setTrayMenu, setupTray} from './tray/tray';
 import {AuthManager} from './authManager';
 import {CertificateManager} from './certificateManager';
+import {setupBadge} from './badge';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
   module.hot.accept();
@@ -681,8 +682,9 @@ function initializeAfterAppReady() {
   userActivityMonitor.startMonitoring();
 
   if (shouldShowTrayIcon()) {
-    setupTray();
+    setupTray(config.trayIconTheme);
   }
+  setupBadge();
 
   session.defaultSession.on('will-download', (event, item, webContents) => {
     const filename = item.getFilename();
@@ -756,40 +758,6 @@ function initializeAfterAppReady() {
 function handleMentionNotification(event, title, body, channel, teamId, silent, data) {
   displayMention(title, body, channel, teamId, silent, event.sender, data);
 }
-
-// TODO: session expired
-// function handleUpdateUnreadEvent(event, arg) {
-//   showBadge(arg.sessionExpired, arg.unreadCount, arg.mentionCount, config.showUnreadBadge);
-
-//   if (trayIcon && !trayIcon.isDestroyed()) {
-//     if (arg.sessionExpired) {
-//       // reuse the mention icon when the session is expired
-//       trayIcon.setImage(trayImages.mention);
-//       if (process.platform === 'darwin') {
-//         trayIcon.setPressedImage(trayImages.clicked.mention);
-//       }
-//       trayIcon.setToolTip('Session Expired: Please sign in to continue receiving notifications.');
-//     } else if (arg.mentionCount > 0) {
-//       trayIcon.setImage(trayImages.mention);
-//       if (process.platform === 'darwin') {
-//         trayIcon.setPressedImage(trayImages.clicked.mention);
-//       }
-//       trayIcon.setToolTip(arg.mentionCount + ' unread mentions');
-//     } else if (arg.unreadCount > 0) {
-//       trayIcon.setImage(trayImages.unread);
-//       if (process.platform === 'darwin') {
-//         trayIcon.setPressedImage(trayImages.clicked.unread);
-//       }
-//       trayIcon.setToolTip(arg.unreadCount + ' unread channels');
-//     } else {
-//       trayIcon.setImage(trayImages.normal);
-//       if (process.platform === 'darwin') {
-//         trayIcon.setPressedImage(trayImages.clicked.normal);
-//       }
-//       trayIcon.setToolTip(app.name);
-//     }
-//   }
-// }
 
 function handleOpenAppMenu() {
   const windowMenu = Menu.getApplicationMenu();

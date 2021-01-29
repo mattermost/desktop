@@ -115,6 +115,8 @@ export class MattermostView extends EventEmitter {
         this.view.webContents.on('page-title-updated', this.handleTitleUpdate);
         this.view.webContents.on('page-favicon-updated', this.handleFaviconUpdate);
         ipcMain.on(UNREAD_RESULT, this.handleFaviconIsUnread);
+        this.handleTitleUpdate(null, this.view.webContents.getTitle());
+        this.findUnreadState(null);
       }
       this.status = READY;
       if (this.readyCallBack) {
@@ -202,7 +204,8 @@ export class MattermostView extends EventEmitter {
     if (this.usesAsteriskForUnreads) {
       unreads = Boolean(hasAsterisk);
     }
-    const mentions = (results && results.value && results.value[MENTIONS_GROUP]) || 0;
+    const mentions = (results && results.value && parseInt(results.value[MENTIONS_GROUP], 10)) || 0;
+
     appState.updateMentions(this.server.name, mentions, unreads);
   }
 
@@ -219,14 +222,21 @@ export class MattermostView extends EventEmitter {
     }
   }
 
+  // if favicon is null, it will affect appState, but won't be memoized
   findUnreadState = (favicon) => {
-    this.view.webContents.send(IS_UNREAD, favicon);
+    this.view.webContents.send(IS_UNREAD, favicon, this.server.name);
   }
 
-  handleFaviconIsUnread = (e, favicon, result) => {
-    this.faviconMemoize.set(favicon, result);
-    if (favicon === this.currentFavicon) {
-      appState.updateUnreads(this.server.name, result);
+  // if favicon is null, it means it is the initial load,
+  // so don't memoize as we don't have the favicons and there is no rush to find out.
+  handleFaviconIsUnread = (e, favicon, serverName, result) => {
+    if (this.server && serverName === this.server.name) {
+      if (favicon) {
+        this.faviconMemoize.set(favicon, result);
+      }
+      if (favicon === null || favicon === this.currentFavicon) {
+        appState.updateUnreads(serverName, result);
+      }
     }
   }
 }

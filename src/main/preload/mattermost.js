@@ -9,7 +9,7 @@
 import {ipcRenderer, webFrame} from 'electron';
 import log from 'electron-log';
 
-import {NOTIFY_MENTION, IS_UNREAD, UNREAD_RESULT} from 'common/communication';
+import {NOTIFY_MENTION, IS_UNREAD, UNREAD_RESULT, SESSION_EXPIRED} from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
@@ -18,6 +18,8 @@ Reflect.deleteProperty(global.Buffer); // http://electron.atom.io/docs/tutorial/
 
 let appVersion;
 let appName;
+let sessionExpired;
+let serverName;
 
 log.info('Initializing preload');
 
@@ -92,7 +94,8 @@ document.addEventListener('mouseout', (event) => {
 });
 
 // listen for messages from the webapp
-window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = {}) => {
+window.addEventListener('message', ({origin, data = {}} = {}) => {
+  const {type, message = {}} = data;
   if (origin !== window.location.origin) {
     return;
   }
@@ -116,12 +119,17 @@ window.addEventListener('message', ({origin, data: {type, message = {}} = {}} = 
     // it will be captured by itself too
     break;
   case 'dispatch-notification': {
-    const {title, body, channel, teamId, silent, data} = message;
-    ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, silent, data);
+    const {title, body, channel, teamId, silent, data: messageData} = message;
+    ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, silent, messageData);
     break;
   }
   default:
-    console.log(`ignored message of type: ${type}`);
+    if (typeof type === 'undefined') {
+      console.log('ignoring message of undefined type:');
+      console.log(data);
+    } else {
+      console.log(`ignored message of type: ${type}`);
+    }
   }
 });
 
@@ -142,134 +150,45 @@ ipcRenderer.on('notification-clicked', (event, data) => {
   handleNotificationClick(data);
 });
 
-function hasClass(element, className) {
-  const rclass = /[\t\r\n\f]/g;
-  if ((' ' + element.className + ' ').replace(rclass, ' ').indexOf(className) > -1) {
-    return true;
-  }
-  return false;
-}
-
-ipcRenderer.on(IS_UNREAD, (event, favicon) => {
+const findUnread = (favicon) => {
   const classes = ['team-container unreads', 'SidebarChannel unread', 'sidebar-item unread-title'];
   const isUnread = classes.some((classPair) => {
     const result = document.getElementsByClassName(classPair);
     return result && result.length > 0;
   });
-  ipcRenderer.send(UNREAD_RESULT, favicon, isUnread);
+  ipcRenderer.send(UNREAD_RESULT, favicon, serverName, isUnread);
+};
+
+ipcRenderer.on(IS_UNREAD, (event, favicon, server) => {
+  if (typeof serverName === 'undefined') {
+    serverName = server;
+  }
+  if (isReactAppInitialized()) {
+    findUnread(favicon);
+  } else {
+    watchReactAppUntilInitialized(() => {
+      findUnread(favicon);
+    });
+  }
 });
 
 function getUnreadCount() {
-  if (!this.unreadCount) {
-    this.unreadCount = 0;
-  }
-  if (!this.mentionCount) {
-    this.mentionCount = 0;
-  }
-
   // LHS not found => Log out => Count should be 0, but session may be expired.
-  if (document.getElementById('sidebar-left') === null) {
-    const extraParam = (new URLSearchParams(window.location.search)).get('extra');
-    const sessionExpired = extraParam === 'expired';
-
-    ipcRenderer.sendToHost('onBadgeChange', sessionExpired, 0, 0, false, false);
-    this.sessionExpired = sessionExpired;
-    this.unreadCount = 0;
-    this.mentionCount = 0;
-    setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
-    return;
-  }
-
-  // unreadCount in sidebar
-  // Note: the active channel doesn't have '.unread-title'.
-  let unreadCount = document.getElementsByClassName('unread-title').length;
-
-  // unreadCount in team sidebar
-  const teamSideBar = document.getElementsByClassName('team-sidebar'); // team-sidebar doesn't have id
-  if (teamSideBar.length === 1) {
-    unreadCount += teamSideBar[0].getElementsByClassName('unread').length;
-  }
-
-  // mentionCount in sidebar
-  const elem = document.querySelectorAll('#sidebar-left .badge, #channel_view .badge');
-  let mentionCount = 0;
-  for (let i = 0; i < elem.length; i++) {
-    if (isElementVisible(elem[i]) && !hasClass(elem[i], 'badge-notify')) {
-      mentionCount += Number(elem[i].innerHTML);
+  if (typeof serverName !== 'undefined') {
+    let isExpired;
+    if (document.getElementById('sidebar-left') === null) {
+      const extraParam = (new URLSearchParams(window.location.search)).get('extra');
+      isExpired = extraParam === 'expired';
+    } else {
+      isExpired = false;
+    }
+    if (isExpired !== sessionExpired) {
+      sessionExpired = isExpired;
+      ipcRenderer.send(SESSION_EXPIRED, sessionExpired, serverName);
     }
   }
-
-  const postAttrName = 'data-reactid';
-  const lastPostElem = document.querySelector('div[' + postAttrName + '="' + this.lastCheckedPostId + '"]');
-  let isUnread = false;
-  let isMentioned = false;
-  if (lastPostElem === null || !isElementVisible(lastPostElem)) {
-    // When load channel or change channel, this.lastCheckedPostId is invalid.
-    // So we get latest post and save lastCheckedPostId.
-
-    // find active post-list.
-    const postLists = document.querySelectorAll('div.post-list__content');
-    if (postLists.length === 0) {
-      setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
-      return;
-    }
-    let post = null;
-    for (let j = 0; j < postLists.length; j++) {
-      if (isElementVisible(postLists[j])) {
-        post = postLists[j].children[0];
-      }
-    }
-    if (post === null) {
-      setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
-      return;
-    }
-
-    // find latest post and save.
-    post = post.nextSibling;
-    while (post) {
-      if (post.nextSibling === null) {
-        if (post.getAttribute(postAttrName) !== null) {
-          this.lastCheckedPostId = post.getAttribute(postAttrName);
-        }
-      }
-      post = post.nextSibling;
-    }
-  } else if (lastPostElem !== null) {
-    let newPostElem = lastPostElem.nextSibling;
-    while (newPostElem) {
-      this.lastCheckedPostId = newPostElem.getAttribute(postAttrName);
-      isUnread = true;
-      const activeChannel = document.querySelector('.active .sidebar-channel');
-      const closeButton = activeChannel.getElementsByClassName('btn-close');
-      if (closeButton.length === 1 && closeButton[0].getAttribute('aria-describedby') === 'remove-dm-tooltip') {
-        // If active channel is DM, all posts is treated as mention.
-        isMentioned = true;
-        break;
-      } else {
-        // If active channel is public/private channel, only mentioned post is treated as mention.
-        const highlight = newPostElem.getElementsByClassName('mention-highlight');
-        if (highlight.length !== 0 && isElementVisible(highlight[0])) {
-          isMentioned = true;
-          break;
-        }
-      }
-      newPostElem = newPostElem.nextSibling;
-    }
-  }
-
-  if (this.sessionExpired || this.unreadCount !== unreadCount || this.mentionCount !== mentionCount || isUnread || isMentioned) {
-    ipcRenderer.sendToHost('onBadgeChange', false, unreadCount, mentionCount, isUnread, isMentioned);
-  }
-  this.unreadCount = unreadCount;
-  this.mentionCount = mentionCount;
-  this.sessionExpired = false;
-  setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
 }
-setTimeout(getUnreadCount, UNREAD_COUNT_INTERVAL);
-
-function isElementVisible(elem) {
-  return elem.offsetHeight !== 0;
-}
+setInterval(getUnreadCount, UNREAD_COUNT_INTERVAL);
 
 // push user activity updates to the webapp
 ipcRenderer.on('user-activity-update', (event, {userIsActive, isSystemEvent}) => {

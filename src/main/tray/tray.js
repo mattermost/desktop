@@ -4,7 +4,7 @@
 import path from 'path';
 import {app, nativeImage, nativeTheme, Tray, systemPreferences} from 'electron';
 
-import {UPDATE_MENTIONS} from 'common/communication';
+import {UPDATE_TRAY} from 'common/communication';
 
 import * as WindowManager from '../windows/windowManager';
 import * as AppState from '../appState';
@@ -77,8 +77,8 @@ export function switchMenuIconImages(icons, isDarkMode) {
   }
 }
 
-export function setupTray() {
-  // set up tray icon
+export function setupTray(icontheme) {
+  getTrayImages(icontheme);
   trayIcon = new Tray(trayImages.normal);
   if (process.platform === 'darwin') {
     trayIcon.setPressedImage(trayImages.clicked.normal);
@@ -100,27 +100,25 @@ export function setupTray() {
     WindowManager.restoreMain();
   });
 
-  AppState.on(UPDATE_MENTIONS, (_server, _mentions, _unreads, anyMentions, anyUnreads) => {
-    if (anyMentions) {
-      trayIcon.setImage(trayImages.mention);
-      if (process.platform === 'darwin') {
-        trayIcon.setPressedImage(trayImages.clicked.mention);
-      }
-      trayIcon.setToolTip('You have mentions');
+  AppState.on(UPDATE_TRAY, (anyExpired, anyMentions, anyUnreads) => {
+    if (anyExpired) {
+      setTray('mention', 'Session Expired: Please sign in to continue receiving notifications.');
+    } else if (anyMentions) {
+      setTray('mention', 'You have been mentioned');
     } else if (anyUnreads) {
-      trayIcon.setImage(trayImages.unread);
-      if (process.platform === 'darwin') {
-        trayIcon.setPressedImage(trayImages.clicked.unread);
-      }
-      trayIcon.setToolTip('You have unread channels');
+      setTray('unread', 'You have unread channels');
     } else {
-      trayIcon.setImage(trayImages.normal);
-      if (process.platform === 'darwin') {
-        trayIcon.setPressedImage(trayImages.clicked.normal);
-      }
-      trayIcon.setToolTip(app.name);
+      setTray('normal', app.name);
     }
   });
+}
+
+function setTray(status, message) {
+  trayIcon.setImage(trayImages[status]);
+  if (process.platform === 'darwin') {
+    trayIcon.setPressedImage(trayImages.clicked[status]);
+  }
+  trayIcon.setToolTip(message);
 }
 
 export function destroyTray() {

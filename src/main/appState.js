@@ -3,23 +3,39 @@
 
 import events from 'events';
 
-import {UPDATE_MENTIONS} from 'common/communication';
+import {UPDATE_MENTIONS, UPDATE_TRAY, UPDATE_BADGE} from 'common/communication';
 
 import * as WindowManager from './windows/windowManager';
 
 const status = {
   unreads: new Map(),
   mentions: new Map(),
-  emitter: new events.EventEmitter()
+  expired: new Map(),
+  emitter: new events.EventEmitter(),
 };
 
 const emitMentions = (serverName) => {
   const newMentions = getMentions(serverName);
   const newUnreads = getUnreads(serverName);
-  const globalMentions = newMentions || anyMentions();
-  const globalUnread = newUnreads || anyUnreads();
+
   WindowManager.sendToRenderer(UPDATE_MENTIONS, serverName, newMentions, newUnreads);
-  status.emitter.emit(UPDATE_MENTIONS, serverName, newMentions, newUnreads, globalMentions, globalUnread);
+  emitStatus();
+};
+
+const emitTray = (expired, mentions, unreads) => {
+  status.emitter.emit(UPDATE_TRAY, expired, Boolean(mentions), unreads);
+};
+
+const emitBadge = (expired, mentions, unreads) => {
+  status.emitter.emit(UPDATE_BADGE, expired, mentions, unreads);
+};
+
+const emitStatus = () => {
+  const expired = anyExpired();
+  const mentions = totalMentions();
+  const unreads = anyUnreads();
+  emitTray(expired, mentions, unreads);
+  emitBadge(expired, mentions, unreads);
 };
 
 export const updateMentions = (serverName, mentions, unreads) => {
@@ -30,7 +46,6 @@ export const updateMentions = (serverName, mentions, unreads) => {
     status.unreads.set(serverName, unreads);
   }
   status.mentions.set(serverName, mentions || 0);
-
   emitMentions(serverName);
 };
 
@@ -56,8 +71,25 @@ export const anyMentions = () => {
   return false;
 };
 
+export const totalMentions = () => {
+  let total = 0;
+  for (const v of status.mentions.values()) {
+    total += v;
+  }
+  return total;
+};
+
 export const anyUnreads = () => {
   for (const v of status.unreads.values()) {
+    if (v) {
+      return v;
+    }
+  }
+  return false;
+};
+
+export const anyExpired = () => {
+  for (const v of status.expired.values()) {
     if (v) {
       return v;
     }
@@ -68,4 +100,13 @@ export const anyUnreads = () => {
 // add any other event emitter methods if needed
 export const on = (event, listener) => {
   status.emitter.on(event, listener);
+};
+
+export const setSessionExpired = (serverName, expired) => {
+  const isExpired = Boolean(expired);
+  const old = status.expired.get(serverName);
+  status.expired.set(serverName, isExpired);
+  if (typeof old !== 'undefined' && old !== isExpired) {
+    emitTray();
+  }
 };
