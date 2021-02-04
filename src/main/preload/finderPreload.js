@@ -6,7 +6,7 @@
 
 import {ipcRenderer} from 'electron';
 
-import {FOUND_IN_PAGE, FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER} from 'common/communication';
+import {FOUND_IN_PAGE, FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER, FOCUS_FINDER} from 'common/communication';
 
 console.log('preloaded for the finder!');
 
@@ -20,6 +20,9 @@ window.addEventListener('message', async (event) => {
     break;
   case CLOSE_FINDER:
     ipcRenderer.send(CLOSE_FINDER);
+    break;
+  case FOCUS_FINDER:
+    ipcRenderer.send(FOCUS_FINDER);
     break;
   default:
     console.log(`got a message: ${event}`);

@@ -4,7 +4,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import {FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER, FOUND_IN_PAGE} from 'common/communication.js';
+import {FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER, FOUND_IN_PAGE, FOCUS_FINDER} from 'common/communication.js';
 
 import Finder from './finder.jsx';
 
@@ -24,6 +24,9 @@ const stopFindInPage = (action) => {
   window.postMessage({type: STOP_FIND_IN_PAGE, data: action}, window.location.href);
 };
 
+const focusFinder = () => {
+  window.postMessage({type: FOCUS_FINDER}, window.location.href);
+};
 class FinderRoot extends React.Component {
   constructor() {
     super();
@@ -51,6 +54,7 @@ class FinderRoot extends React.Component {
         activeMatchOrdinal={this.state.activeMatchOrdinal}
         matches={this.state.matches}
         close={closeFinder}
+        focus={focusFinder}
         findInPage={findInPage}
         stopFindInPage={stopFindInPage}
       />

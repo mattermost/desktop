@@ -5,7 +5,7 @@ import path from 'path';
 import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain} from 'electron';
 import log from 'electron-log';
 
-import {MAXIMIZE_CHANGE, SWITCH_SERVER, FIND_IN_PAGE, STOP_FIND_IN_PAGE} from 'common/communication';
+import {MAXIMIZE_CHANGE, SWITCH_SERVER, FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER, FOCUS_FINDER} from 'common/communication';
 
 import {getAdjustedWindowBoundaries} from '../utils';
 
@@ -29,6 +29,8 @@ const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
 ipcMain.on(FIND_IN_PAGE, findInPage);
 ipcMain.on(STOP_FIND_IN_PAGE, stopFindInPage);
+ipcMain.on(CLOSE_FINDER, closeFinder);
+ipcMain.on(FOCUS_FINDER, focusFinder);
 
 export function setConfig(data, showTrayIcon, deeplinkingUrl) {
   if (data) {
@@ -259,6 +261,18 @@ export function openBrowserViewDevTools() {
 export function openFinder() {
   if (status.viewManager) {
     status.viewManager.showFinder();
+  }
+}
+
+export function closeFinder() {
+  if (status.viewManager) {
+    status.viewManager.hideFinder();
+  }
+}
+
+export function focusFinder() {
+  if (status.viewManager) {
+    status.viewManager.focusFinder();
   }
 }
 

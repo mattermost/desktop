@@ -100,7 +100,10 @@ export default class Finder extends React.Component {
 
   render() {
     return (
-      <div id='finder'>
+      <div
+        id='finder'
+        onClick={this.props.focus}
+      >
         <div className='finder'>
           <div className='finder-input-wrapper'>
             <input
@@ -198,6 +201,7 @@ Finder.propTypes = {
   stopFindInPage: PropTypes.func,
   activeMatchOrdinal: PropTypes.number,
   matches: PropTypes.number,
+  focus: PropTypes.func,
   // focusState: PropTypes.bool,
   // inputFocus: PropTypes.func,
 };

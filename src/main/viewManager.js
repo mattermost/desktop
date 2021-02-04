@@ -184,44 +184,54 @@ export class ViewManager {
     };
   }
 
-  showFinder = () => {
-    // don't open another finder if one is already open
-    if (this.hideFinder) {
-      return;
-    }
-
-    const preload = getLocalPreload('finderPreload.js');
-    const finder = new BrowserView({webPreferences: {
-      preload,
-    }});
-    const localURL = getLocalURLString('finder.html');
-    finder.webContents.loadURL(localURL);
+  setFinderBounds = () => {
     const currentWindow = this.getCurrentView().window;
-    currentWindow.addBrowserView(finder);
     const boundaries = currentWindow.getBounds();
-
-    finder.setBounds({
+    this.finder.setBounds({
       x: boundaries.width - FINDER_WIDTH - (process.platform === 'darwin' ? 20 : 200),
       y: 0,
       width: FINDER_WIDTH,
       height: FINDER_HEIGHT,
     });
+  }
 
-    const hideView = () => {
-      this.hideFinder = null;
-      this.foundInPage = null;
-      currentWindow.removeBrowserView(finder);
-      finder.destroy();
-    };
+  focusFinder = () => {
+    if (this.finder) {
+      this.finder.webContents.focus();
+    }
+  }
 
-    this.hideFinder = () => {
-      hideView();
-    };
+  hideFinder = () => {
+    if (this.finder) {
+      const currentWindow = this.getCurrentView().window;
+      currentWindow.removeBrowserView(this.finder);
+      this.finder.destroy();
+      this.finder = null;
+    }
+  }
 
-    this.foundInPage = (result) => {
-      finder.webContents.send(FOUND_IN_PAGE, result);
-    };
+  foundInPage = (result) => {
+    if (this.finder) {
+      this.finder.webContents.send(FOUND_IN_PAGE, result);
+    }
+  }
 
-    finder.webContents.focus();
+  showFinder = () => {
+    // don't open another finder if one is already open
+    if (this.finder) {
+      return;
+    }
+
+    const preload = getLocalPreload('finderPreload.js');
+    this.finder = new BrowserView({webPreferences: {
+      preload,
+    }});
+    const localURL = getLocalURLString('finder.html');
+    this.finder.webContents.loadURL(localURL);
+    const currentWindow = this.getCurrentView().window;
+    currentWindow.addBrowserView(this.finder);
+    this.setFinderBounds();
+
+    this.finder.webContents.focus();
   }
 }

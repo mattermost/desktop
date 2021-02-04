@@ -51,3 +51,4 @@ export const FOUND_IN_PAGE = 'found-in-page';
 export const FIND_IN_PAGE = 'find-in-page';
 export const STOP_FIND_IN_PAGE = 'stop-find-in-page';
 export const CLOSE_FINDER = 'close-finder';
+export const FOCUS_FINDER = 'focus-finder';
