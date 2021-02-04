@@ -48,6 +48,7 @@ export function setConfig(data, showTrayIcon, deeplinkingUrl) {
 }
 
 export function showSettingsWindow() {
+  const self = this;
   if (status.settingsWindow) {
     status.settingsWindow.show();
   } else {
@@ -58,8 +59,8 @@ export function showSettingsWindow() {
 
     status.settingsWindow = createSettingsWindow(status.mainWindow, status.config, withDevTools);
     status.settingsWindow.on('closed', () => {
-      // TODO: should we focus on the main window?
       status.settingsWindow = null;
+      self.focusBrowserView();
     });
   }
 }

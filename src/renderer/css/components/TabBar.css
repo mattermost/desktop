@@ -167,22 +167,22 @@
   margin-left: -1px;
 }
 
-.TabBar>li.teamTabItem:not(.active):hover+.TabBar-addServerButton>a>div.TabBar-tabSeperator {
+.TabBar>li.teamTabItem:not(.active):not(.disabled):hover+.TabBar-addServerButton>a>div.TabBar-tabSeperator {
   border-left: none;
   margin-left: 0px;
 }
 
-.TabBar>li.teamTabItem:not(.active):hover+li.teamTabItem:not(.active)>a>div.TabBar-tabSeperator {
+.TabBar>li.teamTabItem:not(.active):not(.disabled):hover+li.teamTabItem:not(.active)>a>div.TabBar-tabSeperator {
   border-left: none;
   margin-left: 0px;
 }
 
-.TabBar>li.teamTabItem:not(.active)+.TabBar-addServerButton>a:hover>div.TabBar-tabSeperator {
+.TabBar>li.teamTabItem:not(.active):not(.disabled)+.TabBar-addServerButton>a:hover>div.TabBar-tabSeperator {
   border-left: none;
   margin-left: 0px;
 }
 
-.TabBar>li.teamTabItem:not(.active)+li.teamTabItem:not(.active)>a:hover>div.TabBar-tabSeperator {
+.TabBar>li.teamTabItem:not(.active):not(.disabled)+li.teamTabItem:not(.active)>a:hover>div.TabBar-tabSeperator {
   border-left: none;
   margin-left: 0px;
 }
