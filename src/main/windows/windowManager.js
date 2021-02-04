@@ -121,10 +121,10 @@ function handleUnmaximizeMainWindow() {
 }
 
 function handleResizeMainWindow(event, newBounds) {
-  setBoundsForCurrentView(newBounds);
+  setBoundsForCurrentView(event, newBounds);
 }
 
-function setBoundsForCurrentView(newBounds) {
+function setBoundsForCurrentView(event, newBounds) {
   const currentView = status.viewManager.getCurrentView();
   const bounds = newBounds || status.mainWindow.getContentBounds();
   if (currentView) {
