@@ -40,7 +40,7 @@ import {displayMention, displayDownloadCompleted} from './notifications';
 import parseArgs from './ParseArgs';
 import {addModal} from './modalManager';
 import {getLocalURLString, getLocalPreload} from './utils';
-import {destroyTray, getTrayImages, setTrayMenu, setupTray} from './tray/tray';
+import {destroyTray, refreshTrayImages, setTrayMenu, setupTray} from './tray/tray';
 import {AuthManager} from './authManager';
 import {CertificateManager} from './certificateManager';
 import {setupBadge} from './badge';
@@ -192,7 +192,7 @@ function initializeBeforeAppReady() {
     app.disableHardwareAcceleration();
   }
 
-  getTrayImages(config.trayIconTheme);
+  refreshTrayImages(config.trayIconTheme);
 
   // If there is already an instance, quit this one
   const gotTheLock = app.requestSingleInstanceLock();
@@ -282,7 +282,7 @@ function handleAppVersion() {
 }
 
 function handleDarkModeChange(darkMode) {
-  getTrayImages(config.trayIconTheme);
+  refreshTrayImages(config.trayIconTheme);
   WindowManager.sendToRenderer(DARK_MODE_CHANGE, darkMode);
 }
 

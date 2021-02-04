@@ -14,7 +14,7 @@ const assetsDir = path.resolve(app.getAppPath(), 'assets');
 let trayImages;
 let trayIcon;
 
-export function getTrayImages(trayIconTheme) {
+export function refreshTrayImages(trayIconTheme) {
   switch (process.platform) {
   case 'win32':
     trayImages = {
@@ -78,7 +78,7 @@ export function switchMenuIconImages(icons, isDarkMode) {
 }
 
 export function setupTray(icontheme) {
-  getTrayImages(icontheme);
+  refreshTrayImages(icontheme);
   trayIcon = new Tray(trayImages.normal);
   if (process.platform === 'darwin') {
     trayIcon.setPressedImage(trayImages.clicked.normal);
