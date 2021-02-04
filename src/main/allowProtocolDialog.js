@@ -7,7 +7,7 @@ import fs from 'fs';
 
 import path from 'path';
 
-import {app, dialog, ipcMain, shell} from 'electron';
+import {app, dialog, shell} from 'electron';
 
 import {protocols} from '../../electron-builder.json';
 
@@ -24,7 +24,7 @@ function addScheme(scheme) {
   }
 }
 
-function init(mainWindow) {
+function init() {
   fs.readFile(allowedProtocolFile, 'utf-8', (err, data) => {
     if (!err) {
       allowedProtocols = JSON.parse(data);
@@ -37,51 +37,49 @@ function init(mainWindow) {
         protocol.schemes.forEach(addScheme);
       }
     });
-    initDialogEvent(mainWindow);
   });
 }
 
-function initDialogEvent() {
-  ipcMain.on('confirm-protocol', (event, protocol, URL) => {
-    if (allowedProtocols.indexOf(protocol) !== -1) {
-      shell.openExternal(URL);
-      return;
-    }
-    dialog.showMessageBox(getMainWindow(), {
-      title: 'Non http(s) protocol',
-      message: `${protocol} link requires an external application.`,
-      detail: `The requested link is ${URL} . Do you want to continue?`,
-      type: 'warning',
-      buttons: [
-        'Yes',
-        `Yes (Save ${protocol} as allowed)`,
-        'No',
-      ],
-      cancelId: 2,
-      noLink: true,
-    }).then(({response}) => {
-      switch (response) {
-      case 1: {
-        allowedProtocols.push(protocol);
-        function handleError(err) {
-          if (err) {
-            console.error(err);
-          }
+function handleDialogEvent(protocol, URL) {
+  if (allowedProtocols.indexOf(protocol) !== -1) {
+    shell.openExternal(URL);
+    return;
+  }
+  dialog.showMessageBox(getMainWindow(), {
+    title: 'Non http(s) protocol',
+    message: `${protocol} link requires an external application.`,
+    detail: `The requested link is ${URL} . Do you want to continue?`,
+    type: 'warning',
+    buttons: [
+      'Yes',
+      `Yes (Save ${protocol} as allowed)`,
+      'No',
+    ],
+    cancelId: 2,
+    noLink: true,
+  }).then(({response}) => {
+    switch (response) {
+    case 1: {
+      allowedProtocols.push(protocol);
+      function handleError(err) {
+        if (err) {
+          console.error(err);
         }
-        fs.writeFile(allowedProtocolFile, JSON.stringify(allowedProtocols), handleError);
-        shell.openExternal(URL);
-        break;
       }
-      case 0:
-        shell.openExternal(URL);
-        break;
-      default:
-        break;
-      }
-    });
+      fs.writeFile(allowedProtocolFile, JSON.stringify(allowedProtocols), handleError);
+      shell.openExternal(URL);
+      break;
+    }
+    case 0:
+      shell.openExternal(URL);
+      break;
+    default:
+      break;
+    }
   });
 }
 
 export default {
   init,
+  handleDialogEvent,
 };

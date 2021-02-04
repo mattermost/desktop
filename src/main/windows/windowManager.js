@@ -5,7 +5,7 @@ import path from 'path';
 import {app, BrowserWindow, nativeImage, systemPreferences} from 'electron';
 import log from 'electron-log';
 
-import {MAXIMIZE_CHANGE, SWITCH_SERVER} from 'common/communication';
+import {MAXIMIZE_CHANGE} from 'common/communication';
 
 import {getAdjustedWindowBoundaries} from '../utils';
 
@@ -215,9 +215,9 @@ export function handleDoubleClick(e, windowType) {
   case 'Maximize':
   default:
     if (win.isMaximized()) {
-      win.maximize();
-    } else {
       win.unmaximize();
+    } else {
+      win.maximize();
     }
     break;
   }
@@ -231,13 +231,9 @@ function initializeViewManager() {
   }
 }
 
-export function switchServer(serverName, notifyRenderer) {
+export function switchServer(serverName) {
   showMainWindow();
   status.viewManager.showByName(serverName);
-  if (notifyRenderer) {
-    const server = status.config.teams.find((candidate) => candidate.name === serverName);
-    sendToRenderer(SWITCH_SERVER, server.order);
-  }
 }
 
 export function focusBrowserView() {

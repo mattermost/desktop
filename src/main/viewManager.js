@@ -4,7 +4,8 @@ import log from 'electron-log';
 import {BrowserView} from 'electron';
 
 import {SECOND} from 'common/utils/constants';
-import {UPDATE_TARGET_URL} from 'common/communication';
+import urlUtils from 'common/utils/url';
+import {UPDATE_TARGET_URL, SET_SERVER_KEY} from 'common/communication';
 
 import contextMenu from './contextMenu';
 import {MattermostServer} from './MattermostServer';
@@ -40,7 +41,7 @@ export class ViewManager {
   }
 
   reloadConfiguration = (configServers, mainWindow) => {
-    this.configServers = configServers;
+    this.configServers = configServers.concat();
     const oldviews = this.views;
     this.views = new Map();
     const sorted = this.configServers.sort((a, b) => a.order - b.order);
@@ -50,7 +51,7 @@ export class ViewManager {
       if (recycle && recycle.isVisible) {
         setFocus = recycle.name;
       }
-      if (recycle && recycle.server.url === server.url) {
+      if (recycle && recycle.server.url === urlUtils.parseURL(server.url)) {
         oldviews.delete(recycle.name);
         this.views.set(recycle.name, recycle);
       } else {
@@ -93,6 +94,8 @@ export class ViewManager {
       }
 
       this.currentView = name;
+      const serverInfo = this.configServers.find((candidate) => candidate.name === newView.server.name);
+      newView.window.webContents.send(SET_SERVER_KEY, serverInfo.order);
       if (newView.isReady()) {
         // if view is not ready, the renderer will have something to display instead.
         newView.show();

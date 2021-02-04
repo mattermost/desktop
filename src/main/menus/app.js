@@ -3,7 +3,7 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {app, dialog, Menu, session, shell, webContents} from 'electron';
+import {app, Menu, session, shell, webContents} from 'electron';
 
 import * as WindowManager from '../windows/windowManager';
 
@@ -27,12 +27,6 @@ function createTemplate(config) {
       {
         label: 'About ' + appName,
         role: 'about',
-        click() {
-          dialog.showMessageBox(WindowManager.getMainWindow(), {
-            buttons: ['OK'],
-            message: `${appName} Desktop ${app.getVersion()}`,
-          });
-        },
       }
     );
     platformAppMenu.push(separatorItem);
@@ -294,7 +288,8 @@ function createTemplate(config) {
     submenu.push(separatorItem);
   }
   submenu.push({
-    label: `Version ${app.getVersion()}`,
+    // eslint-disable-next-line no-undef
+    label: `Version ${app.getVersion()} commit: ${__HASH_VERSION__}`,
     enabled: false,
   });
 

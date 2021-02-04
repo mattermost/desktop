@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 export const SWITCH_SERVER = 'switch-server';
+export const SET_SERVER_KEY = 'set-server-key';
 export const MARK_READ = 'mark-read';
 export const FOCUS_BROWSERVIEW = 'focus-browserview';
 export const ZOOM = 'zoom';
