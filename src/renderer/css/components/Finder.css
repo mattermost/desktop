@@ -1,7 +1,7 @@
 .finder {
   position: fixed;
   top: 0px;
-  right: 200px;
+  /* right: 200px; */
   padding: 4px;
   background: #eee;
   border: 1px solid #d7d7d7;
@@ -13,9 +13,9 @@
   -webkit-app-region: no-drag;
 }
 
-.finder.macOS {
+/* .finder.macOS {
   right: 20px;
-}
+} */
 
 .finder-input-wrapper {
   display: inline-block;

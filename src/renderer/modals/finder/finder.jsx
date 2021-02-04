@@ -11,7 +11,6 @@ import PropTypes from 'prop-types';
 export default class Finder extends React.Component {
   constructor(props) {
     super(props);
-    this.webview = document.getElementById('mattermostView' + this.props.webviewKey);
     this.state = {
       foundInPage: false,
       searchTxt: '',
@@ -19,7 +18,6 @@ export default class Finder extends React.Component {
   }
 
   componentDidMount() {
-    this.webview.addEventListener('found-in-page', this.foundInPage);
     this.searchInput.focus();
 
     // synthetic events are not working all that reliably for touch bar with esc keys
@@ -27,28 +25,38 @@ export default class Finder extends React.Component {
   }
 
   componentWillUnmount() {
-    this.webview.stopFindInPage('clearSelection');
-    this.webview.removeEventListener('found-in-page', this.foundInPage);
+    this.props.stopFindInPage('clearSelection');
     this.searchInput.removeEventListener('keyup', this.handleKeyEvent);
   }
 
-  componentDidUpdate(prevProps) {
-    if (this.props.focusState && (this.props.focusState !== prevProps.focusState)) {
-      this.searchInput.focus();
+  static getDerivedStateFromProps(props, state) {
+    if (state.searchTxt) {
+      return {
+        foundInPage: Boolean(props.matches),
+        matches: `${props.activeMatchOrdinal}/${props.matches}`
+      };
     }
+
+    return {matches: '0/0'};
   }
 
+  // componentDidUpdate(prevProps) {
+  //   if (this.props.focusState && (this.props.focusState !== prevProps.focusState)) {
+  //     this.searchInput.focus();
+  //   }
+  // }
+
   findNext = () => {
-    this.webview.findInPage(this.state.searchTxt, {
+    this.props.findInPage(this.state.searchTxt, {
       forward: true,
       findNext: true,
     });
   };
 
   find = (keyword) => {
-    this.webview.stopFindInPage('clearSelection');
+    this.props.stopFindInPage('clearSelection');
     if (keyword) {
-      this.webview.findInPage(keyword);
+      this.props.findInPage(keyword);
     } else {
       this.setState({
         matches: '0/0',
@@ -57,7 +65,7 @@ export default class Finder extends React.Component {
   };
 
   findPrev = () => {
-    this.webview.findInPage(this.state.searchTxt, {forward: false, findNext: true});
+    this.props.findInPage(this.state.searchTxt, {forward: false, findNext: true});
   }
 
   searchTxt = (event) => {
@@ -73,35 +81,35 @@ export default class Finder extends React.Component {
     }
   }
 
-  foundInPage = (event) => {
-    const {matches, activeMatchOrdinal} = event.result;
-    this.setState({
-      foundInPage: true,
-      matches: `${activeMatchOrdinal}/${matches}`,
-    });
-  }
+  // foundInPage = (event) => {
+  //   const {matches, activeMatchOrdinal} = event.result;
+  //   this.setState({
+  //     foundInPage: true,
+  //     matches: `${activeMatchOrdinal}/${matches}`,
+  //   });
+  // }
 
-  inputFocus = (e) => {
-    e.stopPropagation();
-    this.props.inputFocus(e, true);
-  }
+  // inputFocus = (e) => {
+  //   e.stopPropagation();
+  //   this.props.inputFocus(e, true);
+  // }
 
-  inputBlur = (e) => {
-    this.props.inputFocus(e, false);
-  }
+  // inputBlur = (e) => {
+  //   this.props.inputFocus(e, false);
+  // }
 
   render() {
     return (
       <div id='finder'>
-        <div className={`finder${process.platform === 'darwin' ? ' macOS' : ''}`}>
+        <div className='finder'>
           <div className='finder-input-wrapper'>
             <input
               className='finder-input'
               placeholder=''
               value={this.state.searchTxt}
               onChange={this.searchTxt}
-              onBlur={this.inputBlur}
-              onClick={this.inputFocus}
+              // onBlur={this.inputBlur}
+              // onClick={this.inputFocus}
               ref={(input) => {
                 this.searchInput = input;
               }}
@@ -111,6 +119,7 @@ export default class Finder extends React.Component {
           <button
             className='finder-prev'
             onClick={this.findPrev}
+            disabled={!this.state.searchTxt}
           >
             <svg
               xmlns='http://www.w3.org/2000/svg'
@@ -130,6 +139,7 @@ export default class Finder extends React.Component {
           <button
             className='finder-next'
             onClick={this.findNext}
+            disabled={!this.state.searchTxt}
           >
             <svg
               xmlns='http://www.w3.org/2000/svg'
@@ -184,7 +194,10 @@ export default class Finder extends React.Component {
 
 Finder.propTypes = {
   close: PropTypes.func,
-  webviewKey: PropTypes.number,
-  focusState: PropTypes.bool,
-  inputFocus: PropTypes.func,
+  findInPage: PropTypes.func,
+  stopFindInPage: PropTypes.func,
+  activeMatchOrdinal: PropTypes.number,
+  matches: PropTypes.number,
+  // focusState: PropTypes.bool,
+  // inputFocus: PropTypes.func,
 };

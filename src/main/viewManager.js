@@ -4,16 +4,18 @@ import log from 'electron-log';
 import {BrowserView} from 'electron';
 
 import {SECOND} from 'common/utils/constants';
-import {UPDATE_TARGET_URL} from 'common/communication';
+import {UPDATE_TARGET_URL, FOUND_IN_PAGE} from 'common/communication';
 
 import contextMenu from './contextMenu';
 import {MattermostServer} from './MattermostServer';
 import {MattermostView} from './MattermostView';
-import {getLocalURLString} from './utils';
+import {getLocalURLString, getLocalPreload} from './utils';
 import {showModal} from './modalManager';
 
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 36;
+const FINDER_WIDTH = 310;
+const FINDER_HEIGHT = 40;
 
 export class ViewManager {
   constructor(config) {
@@ -180,5 +182,46 @@ export class ViewManager {
       clearTimeout(timeout);
       hideView();
     };
+  }
+
+  showFinder = () => {
+    // don't open another finder if one is already open
+    if (this.hideFinder) {
+      return;
+    }
+
+    const preload = getLocalPreload('finderPreload.js');
+    const finder = new BrowserView({webPreferences: {
+      preload,
+    }});
+    const localURL = getLocalURLString('finder.html');
+    finder.webContents.loadURL(localURL);
+    const currentWindow = this.getCurrentView().window;
+    currentWindow.addBrowserView(finder);
+    const boundaries = currentWindow.getBounds();
+
+    finder.setBounds({
+      x: boundaries.width - FINDER_WIDTH - (process.platform === 'darwin' ? 20 : 200),
+      y: 0,
+      width: FINDER_WIDTH,
+      height: FINDER_HEIGHT,
+    });
+
+    const hideView = () => {
+      this.hideFinder = null;
+      this.foundInPage = null;
+      currentWindow.removeBrowserView(finder);
+      finder.destroy();
+    };
+
+    this.hideFinder = () => {
+      hideView();
+    };
+
+    this.foundInPage = (result) => {
+      finder.webContents.send(FOUND_IN_PAGE, result);
+    };
+
+    finder.webContents.focus();
   }
 }

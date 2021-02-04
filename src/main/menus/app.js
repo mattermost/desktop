@@ -131,12 +131,7 @@ function createTemplate(config) {
     label: 'Find..',
     accelerator: 'CmdOrCtrl+F',
     click() {
-      const focused = webContents.getFocusedWebContents();
-      const event = {
-        type: 'keyDown',
-        keyCode: 'CmdOrCtrl+F',
-      };
-      focused.sendInputEvent(event);
+      WindowManager.openFinder();
     },
   }, {
     label: 'Reload',
