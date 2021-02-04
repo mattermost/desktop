@@ -34,6 +34,7 @@ import {
   WINDOW_MAXIMIZE,
   DOUBLE_CLICK_ON_WINDOW,
   PLAY_SOUND,
+  SET_SERVER_KEY
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -205,10 +206,9 @@ export default class MainPage extends React.Component {
     });
 
     // can't switch tabs sequentially for some reason...
-    ipcRenderer.on(SWITCH_SERVER, (event, key) => {
+    ipcRenderer.on(SET_SERVER_KEY, (event, key) => {
       const nextIndex = this.props.teams.findIndex((team) => team.order === key);
-      const team = this.props.teams[nextIndex];
-      this.handleSelect(team.name, nextIndex);
+      this.handleSetServerKey(nextIndex);
     });
     ipcRenderer.on('select-next-tab', () => {
       const currentOrder = this.props.teams[this.state.key].order;
@@ -420,14 +420,18 @@ export default class MainPage extends React.Component {
     this.setState({fullScreen: isFullScreen});
   }
 
-  handleSelect = (name, key) => {
-    ipcRenderer.send('switch-server', name);
+  handleSetServerKey = (key) => {
     const newKey = (this.props.teams.length + key) % this.props.teams.length;
     this.setState({
       key: newKey,
       finderVisible: false,
     });
     this.handleOnTeamFocused(newKey);
+  }
+
+  handleSelect = (name, key) => {
+    ipcRenderer.send(SWITCH_SERVER, name);
+    this.handleSetServerKey(key);
   }
 
   handleDragAndDrop = async (dropResult) => {

@@ -235,13 +235,9 @@ function initializeViewManager() {
   }
 }
 
-export function switchServer(serverName, notifyRenderer) {
+export function switchServer(serverName) {
   showMainWindow();
   status.viewManager.showByName(serverName);
-  if (notifyRenderer) {
-    const server = status.config.teams.find((candidate) => candidate.name === serverName);
-    sendToRenderer(SWITCH_SERVER, server.order);
-  }
 }
 
 export function focusBrowserView() {
