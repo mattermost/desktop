@@ -34,18 +34,20 @@ class FinderRoot extends React.Component {
   }
 
   componentDidMount() {
-    window.addEventListener('message', async (event) => {
-      switch (event.data.type) {
-      case FOUND_IN_PAGE:
-        this.setState({
-          activeMatchOrdinal: event.data.data.activeMatchOrdinal,
-          matches: event.data.data.matches,
-        });
-        break;
-      default:
-        break;
-      }
-    });
+    window.addEventListener('message', this.handleMessageEvent);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('message', this.handleMessageEvent);
+  }
+
+  handleMessageEvent = (event) => {
+    if (event.data.type === FOUND_IN_PAGE) {
+      this.setState({
+        activeMatchOrdinal: event.data.data.activeMatchOrdinal,
+        matches: event.data.data.matches,
+      });
+    }
   }
 
   render() {

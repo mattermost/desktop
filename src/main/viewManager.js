@@ -222,8 +222,9 @@ export class ViewManager {
   }
 
   showFinder = () => {
-    // don't open another finder if one is already open
+    // just focus the current finder if it's already open
     if (this.finder) {
+      this.finder.webContents.focus();
       return;
     }
 

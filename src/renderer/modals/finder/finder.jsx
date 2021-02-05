@@ -2,9 +2,6 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
-// eslint-disable-next-line eslint-comments/disable-enable-pair
-/* eslint-disable react/no-set-state */
-
 import React from 'react';
 import PropTypes from 'prop-types';
 
@@ -39,12 +36,6 @@ export default class Finder extends React.Component {
 
     return {matches: '0/0'};
   }
-
-  // componentDidUpdate(prevProps) {
-  //   if (this.props.focusState && (this.props.focusState !== prevProps.focusState)) {
-  //     this.searchInput.focus();
-  //   }
-  // }
 
   findNext = () => {
     this.props.findInPage(this.state.searchTxt, {
