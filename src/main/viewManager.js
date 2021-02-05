@@ -53,7 +53,7 @@ export class ViewManager {
       if (recycle && recycle.isVisible) {
         setFocus = recycle.name;
       }
-      if (recycle && recycle.server.url === urlUtils.parseURL(server.url)) {
+      if (recycle && recycle.server.url.toString() === urlUtils.parseURL(server.url).toString()) {
         oldviews.delete(recycle.name);
         this.views.set(recycle.name, recycle);
       } else {
@@ -188,14 +188,16 @@ export class ViewManager {
   }
 
   setFinderBounds = () => {
-    const currentWindow = this.getCurrentView().window;
-    const boundaries = currentWindow.getBounds();
-    this.finder.setBounds({
-      x: boundaries.width - FINDER_WIDTH - (process.platform === 'darwin' ? 20 : 200),
-      y: 0,
-      width: FINDER_WIDTH,
-      height: FINDER_HEIGHT,
-    });
+    if (this.finder) {
+      const currentWindow = this.getCurrentView().window;
+      const boundaries = currentWindow.getBounds();
+      this.finder.setBounds({
+        x: boundaries.width - FINDER_WIDTH - (process.platform === 'darwin' ? 20 : 200),
+        y: 0,
+        width: FINDER_WIDTH,
+        height: FINDER_HEIGHT,
+      });
+    }
   }
 
   focusFinder = () => {

@@ -81,23 +81,6 @@ export default class Finder extends React.Component {
     }
   }
 
-  // foundInPage = (event) => {
-  //   const {matches, activeMatchOrdinal} = event.result;
-  //   this.setState({
-  //     foundInPage: true,
-  //     matches: `${activeMatchOrdinal}/${matches}`,
-  //   });
-  // }
-
-  // inputFocus = (e) => {
-  //   e.stopPropagation();
-  //   this.props.inputFocus(e, true);
-  // }
-
-  // inputBlur = (e) => {
-  //   this.props.inputFocus(e, false);
-  // }
-
   render() {
     return (
       <div
@@ -111,8 +94,6 @@ export default class Finder extends React.Component {
               placeholder=''
               value={this.state.searchTxt}
               onChange={this.searchTxt}
-              // onBlur={this.inputBlur}
-              // onClick={this.inputFocus}
               ref={(input) => {
                 this.searchInput = input;
               }}
@@ -202,6 +183,4 @@ Finder.propTypes = {
   activeMatchOrdinal: PropTypes.number,
   matches: PropTypes.number,
   focus: PropTypes.func,
-  // focusState: PropTypes.bool,
-  // inputFocus: PropTypes.func,
 };
