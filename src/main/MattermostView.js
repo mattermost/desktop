@@ -110,6 +110,9 @@ export class MattermostView extends EventEmitter {
     if (request && !this.isVisible) {
       this.window.addBrowserView(this.view);
       this.setBounds(getWindowBoundaries(this.window));
+      if (this.status === READY) {
+        this.focus();
+      }
     } else if (!request && this.isVisible) {
       this.window.removeBrowserView(this.view);
     }

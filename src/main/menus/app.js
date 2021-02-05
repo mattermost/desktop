@@ -7,8 +7,6 @@ import {app, Menu, session, shell, webContents} from 'electron';
 
 import * as WindowManager from '../windows/windowManager';
 
-const ZOOM_DIFFERENTIAL = 0.5;
-
 function createTemplate(config) {
   const separatorItem = {
     type: 'separator',
@@ -63,10 +61,6 @@ function createTemplate(config) {
     platformAppMenu = platformAppMenu.concat([
       separatorItem, {
         role: 'quit',
-        accelerator: 'CmdOrCtrl+Q',
-        click() {
-          app.quit();
-        },
       }]);
   }
 
@@ -79,48 +73,17 @@ function createTemplate(config) {
   template.push({
     label: '&Edit',
     submenu: [{
-      label: 'Undo',
-      accelerator: 'CmdOrCtrl+Z',
-      click() {
-        const focused = webContents.getFocusedWebContents();
-        focused.undo();
-      },
+      role: 'undo',
     }, {
-      label: 'Redo',
-      accelerator: 'CmdOrCtrl+SHIFT+Z',
-      click() {
-        const focused = webContents.getFocusedWebContents();
-        focused.redo();
-      },
+      role: 'Redo',
     }, separatorItem, {
-      label: 'Cut',
-      accelerator: 'CmdOrCtrl+X',
-      click() {
-        const focused = webContents.getFocusedWebContents();
-        focused.cut();
-      },
+      role: 'cut',
     }, {
-      label: 'Copy',
-      accelerator: 'CmdOrCtrl+C',
-      click() {
-        const focused = webContents.getFocusedWebContents();
-        focused.copy();
-      },
+      role: 'copy'
     }, {
-      label: 'Paste',
-      accelerator: 'CmdOrCtrl+V',
-      click() {
-        const focused = webContents.getFocusedWebContents();
-        focused.paste();
-      },
+      role: 'paste',
     }, {
-      label: 'Paste and Match Style',
-      accelerator: 'CmdOrCtrl+SHIFT+V',
-      visible: process.platform === 'darwin',
-      click() {
-        const focused = webContents.getFocusedWebContents();
-        focused.pasteAndMatchStyle();
-      },
+      role: 'pasteAndMatchStyle',
     }, {
       role: 'selectall',
       accelerator: 'CmdOrCtrl+A',
@@ -158,31 +121,11 @@ function createTemplate(config) {
     accelerator: process.platform === 'darwin' ? 'Ctrl+Cmd+F' : 'F11',
   }, separatorItem, {
     label: 'Actual Size',
-    accelerator: 'CmdOrCtrl+0',
-    click() {
-      const focused = webContents.getFocusedWebContents();
-      focused.setZoomLevel(1);
-    },
+    role: 'resetZoom',
   }, {
-    label: 'Zoom In',
-    accelerator: 'CmdOrCtrl+SHIFT+=',
-    click() {
-      const focused = webContents.getFocusedWebContents();
-      const level = focused.getZoomLevel();
-      if (level <= 3) {
-        focused.setZoomLevel(level + ZOOM_DIFFERENTIAL);
-      }
-    },
+    role: 'zoomIn',
   }, {
-    label: 'Zoom Out',
-    accelerator: 'CmdOrCtrl+-',
-    click() {
-      const focused = webContents.getFocusedWebContents();
-      const level = focused.getZoomLevel();
-      if (level >= 0) {
-        focused.setZoomLevel(level - ZOOM_DIFFERENTIAL);
-      }
-    },
+    role: 'zoomOut',
   }, separatorItem, {
     label: 'Developer Tools for Application Wrapper',
     accelerator: (() => {
