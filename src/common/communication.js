@@ -49,3 +49,11 @@ export const UPDATE_TARGET_URL = 'update_target_url';
 export const PLAY_SOUND = 'play_sound';
 
 export const GET_DOWNLOAD_LOCATION = 'get_download_location';
+
+export const UPDATE_MENTIONS = 'update_mentions';
+export const UPDATE_UNREADS = 'update_unreads';
+export const IS_UNREAD = 'is_unread';
+export const UNREAD_RESULT = 'unread_result';
+export const SESSION_EXPIRED = 'session_expired';
+export const UPDATE_TRAY = 'update_tray';
+export const UPDATE_BADGE = 'update_badge';

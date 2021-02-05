@@ -4,7 +4,10 @@
 
 import {app} from 'electron';
 
+import {UPDATE_BADGE} from 'common/communication';
+
 import * as WindowManager from './windows/windowManager';
+import * as AppState from './appState';
 
 const MAX_WIN_COUNT = 99;
 
@@ -32,7 +35,7 @@ function createDataURL(text, small) {
   return canvas.toDataURL();
 }
 
-function showBadgeWindows(sessionExpired, unreadCount, mentionCount, showUnreadBadge) {
+function showBadgeWindows(sessionExpired, showUnreadBadge, mentionCount) {
   let description = 'You have no unread messages';
   let dataURL = null;
   if (sessionExpired) {
@@ -41,42 +44,46 @@ function showBadgeWindows(sessionExpired, unreadCount, mentionCount, showUnreadB
   } else if (mentionCount > 0) {
     dataURL = createDataURL((mentionCount > MAX_WIN_COUNT) ? `${MAX_WIN_COUNT}+` : mentionCount.toString(), mentionCount > MAX_WIN_COUNT);
     description = `You have unread mentions (${mentionCount})`;
-  } else if (unreadCount > 0 && showUnreadBadge) {
+  } else if (showUnreadBadge) {
     dataURL = createDataURL('•');
-    description = `You have unread channels (${unreadCount})`;
+    description = 'You have unread channels';
   }
   WindowManager.setOverlayIcon(dataURL, description);
 }
 
-function showBadgeOSX(sessionExpired, unreadCount, mentionCount, showUnreadBadge) {
+function showBadgeOSX(sessionExpired, showUnreadBadge, mentionCount) {
   let badge = '';
   if (sessionExpired) {
     badge = '•';
   } else if (mentionCount > 0) {
     badge = mentionCount.toString();
-  } else if (unreadCount > 0 && showUnreadBadge) {
+  } else if (showUnreadBadge) {
     badge = '•';
   }
   app.dock.setBadge(badge);
 }
 
-function showBadgeLinux(sessionExpired, unreadCount, mentionCount) {
+function showBadgeLinux(sessionExpired, showUnreadBadge, mentionCount) {
   if (app.isUnityRunning()) {
     const countExpired = sessionExpired ? 1 : 0;
     app.setBadgeCount(mentionCount + countExpired);
   }
 }
 
-export function showBadge(sessionExpired, unreadCount, mentionCount, showUnreadBadge) {
+function showBadge(sessionExpired, mentionCount, showUnreadBadge) {
   switch (process.platform) {
   case 'win32':
-    showBadgeWindows(sessionExpired, unreadCount, mentionCount, showUnreadBadge);
+    showBadgeWindows(sessionExpired, showUnreadBadge, mentionCount);
     break;
   case 'darwin':
-    showBadgeOSX(sessionExpired, unreadCount, mentionCount, showUnreadBadge);
+    showBadgeOSX(sessionExpired, showUnreadBadge, mentionCount);
     break;
   case 'linux':
-    showBadgeLinux(sessionExpired, unreadCount, mentionCount, showUnreadBadge);
+    showBadgeLinux(sessionExpired, showUnreadBadge, mentionCount);
     break;
   }
+}
+
+export function setupBadge() {
+  AppState.on(UPDATE_BADGE, showBadge);
 }

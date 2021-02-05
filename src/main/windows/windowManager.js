@@ -5,7 +5,7 @@ import path from 'path';
 import {app, BrowserWindow, nativeImage, systemPreferences} from 'electron';
 import log from 'electron-log';
 
-import {MAXIMIZE_CHANGE} from 'common/communication';
+import {MAXIMIZE_CHANGE, SWITCH_SERVER} from 'common/communication';
 
 import {getAdjustedWindowBoundaries} from '../utils';
 
@@ -21,18 +21,14 @@ const status = {
   mainWindow: null,
   settingsWindow: null,
   config: null,
-  showTrayIcon: process.platform === 'win32',
   deeplinkingUrl: null,
   viewManager: null,
 };
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
-export function setConfig(data, showTrayIcon, deeplinkingUrl) {
+export function setConfig(data, deeplinkingUrl) {
   if (data) {
     status.config = data;
-  }
-  if (showTrayIcon) {
-    status.showTrayIcon = process.platform === 'win32' || showTrayIcon;
   }
   if (deeplinkingUrl) {
     status.deeplinkingUrl = deeplinkingUrl;
@@ -65,7 +61,6 @@ export function showMainWindow() {
     status.mainWindow.show();
   } else {
     status.mainWindow = createMainWindow(status.config, {
-      trayIconShown: status.showTrayIcon,
       linuxAppIcon: path.join(assetsDir, 'appicon.png'),
       deeplinkingUrl: status.deeplinkingUrl,
     });
