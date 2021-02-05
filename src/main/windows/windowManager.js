@@ -90,6 +90,7 @@ export function showMainWindow() {
     status.mainWindow.on('maximize', handleMaximizeMainWindow);
     status.mainWindow.on('unmaximize', handleUnmaximizeMainWindow);
     status.mainWindow.on('will-resize', handleResizeMainWindow);
+    status.mainWindow.on('focus', this.focusBrowserView);
   }
   initializeViewManager();
 }
