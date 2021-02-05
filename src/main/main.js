@@ -550,19 +550,21 @@ function handleAppWebContentsCreated(dc, contents) {
     }
 
     // Public download links case
-    // TODO: This doesn't work correctly right now, needs to be refactored
-    // if (parsedURL.pathname.match(/^(\/api\/v[3-4]\/public)*\/files\//)) {
-    //   downloadURL(url, (err) => {
-    //     if (err) {
-    //       dialog.showMessageBox(WindowManager.getMainWindow(), {
-    //         type: 'error',
-    //         message: err.toString(),
-    //       });
-    //       log.error(err);
-    //     }
-    //   });
-    //   return;
-    // }
+    // TODO: We might be handling different types differently in the future, for now
+    // we are going to mimic the browser and just pop a new browser window for public links
+    if (parsedURL.pathname.match(/^(\/api\/v[3-4]\/public)*\/files\//)) {
+      // downloadURL(url, (err) => {
+      //   if (err) {
+      //     dialog.showMessageBox(WindowManager.getMainWindow(), {
+      //       type: 'error',
+      //       message: err.toString(),
+      //     });
+      //     log.error(err);
+      //   }
+      // });
+      shell.openExternal(url);
+      return;
+    }
 
     if (parsedURL.pathname.match(/^\/help\//)) {
       // Help links case
