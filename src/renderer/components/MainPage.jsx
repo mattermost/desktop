@@ -12,7 +12,7 @@ import PropTypes from 'prop-types';
 import {Grid, Row} from 'react-bootstrap';
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 
-import {ipcRenderer, remote} from 'electron';
+import {ipcRenderer} from 'electron';
 
 import urlUtils from 'common/utils/url';
 import {
@@ -474,34 +474,6 @@ export default class MainPage extends React.Component {
     }
   }
 
-  // TODO: this is the last function using remote in this file, we should rework handling the badge change to completely remove it.
-  handleBadgeChange = (index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) => {
-    const sessionsExpired = this.state.sessionsExpired;
-    const unreadCounts = this.state.unreadCounts;
-    const mentionCounts = this.state.mentionCounts;
-    const unreadAtActive = this.state.unreadAtActive;
-    const mentionAtActiveCounts = this.state.mentionAtActiveCounts;
-    sessionsExpired[index] = sessionExpired;
-    unreadCounts[index] = unreadCount;
-    mentionCounts[index] = mentionCount;
-
-    // Never turn on the unreadAtActive flag at current focused tab.
-    if (this.state.key !== index || !remote.getCurrentWindow().isFocused()) {
-      unreadAtActive[index] = unreadAtActive[index] || isUnread;
-      if (isMentioned) {
-        mentionAtActiveCounts[index]++;
-      }
-    }
-    this.setState({
-      sessionsExpired,
-      unreadCounts,
-      mentionCounts,
-      unreadAtActive,
-      mentionAtActiveCounts,
-    });
-    this.handleBadgesChange();
-  }
-
   markReadAtActive = (index) => {
     const unreadAtActive = this.state.unreadAtActive;
     const mentionAtActiveCounts = this.state.mentionAtActiveCounts;
@@ -738,21 +710,6 @@ export default class MainPage extends React.Component {
     );
 
     const views = () => {
-      // function handleBadgeChange(sessionExpired, unreadCount, mentionCount, isUnread, isMentioned) {
-      //   this.handleBadgeChange(index, sessionExpired, unreadCount, mentionCount, isUnread, isMentioned);
-      // }
-      // function handleNotificationClick() {
-      //   this.handleSelect(index);
-      // }
-      // let teamUrl = team.url;
-
-      // if (this.props.deeplinkingUrl) {
-      //   const parsedDeeplink = this.parseDeeplinkURL(this.props.deeplinkingUrl, [team]);
-      //   if (parsedDeeplink) {
-      //     teamUrl = parsedDeeplink.url;
-      //   }
-      // }
-
       let component;
       const tabStatus = this.getTabStatus();
       if (!tabStatus) {
