@@ -55,3 +55,11 @@ export const FIND_IN_PAGE = 'find-in-page';
 export const STOP_FIND_IN_PAGE = 'stop-find-in-page';
 export const CLOSE_FINDER = 'close-finder';
 export const FOCUS_FINDER = 'focus-finder';
+
+export const UPDATE_MENTIONS = 'update_mentions';
+export const UPDATE_UNREADS = 'update_unreads';
+export const IS_UNREAD = 'is_unread';
+export const UNREAD_RESULT = 'unread_result';
+export const SESSION_EXPIRED = 'session_expired';
+export const UPDATE_TRAY = 'update_tray';
+export const UPDATE_BADGE = 'update_badge';

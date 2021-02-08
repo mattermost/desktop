@@ -21,7 +21,6 @@ const status = {
   mainWindow: null,
   settingsWindow: null,
   config: null,
-  showTrayIcon: process.platform === 'win32',
   deeplinkingUrl: null,
   viewManager: null,
 };
@@ -32,12 +31,9 @@ ipcMain.on(STOP_FIND_IN_PAGE, stopFindInPage);
 ipcMain.on(CLOSE_FINDER, closeFinder);
 ipcMain.on(FOCUS_FINDER, focusFinder);
 
-export function setConfig(data, showTrayIcon, deeplinkingUrl) {
+export function setConfig(data, deeplinkingUrl) {
   if (data) {
     status.config = data;
-  }
-  if (showTrayIcon) {
-    status.showTrayIcon = process.platform === 'win32' || showTrayIcon;
   }
   if (deeplinkingUrl) {
     status.deeplinkingUrl = deeplinkingUrl;
@@ -70,7 +66,6 @@ export function showMainWindow() {
     status.mainWindow.show();
   } else {
     status.mainWindow = createMainWindow(status.config, {
-      trayIconShown: status.showTrayIcon,
       linuxAppIcon: path.join(assetsDir, 'appicon.png'),
       deeplinkingUrl: status.deeplinkingUrl,
     });
@@ -96,6 +91,7 @@ export function showMainWindow() {
     status.mainWindow.on('maximize', handleMaximizeMainWindow);
     status.mainWindow.on('unmaximize', handleUnmaximizeMainWindow);
     status.mainWindow.on('will-resize', handleResizeMainWindow);
+    status.mainWindow.on('focus', this.focusBrowserView);
   }
   initializeViewManager();
 }
@@ -126,10 +122,10 @@ function handleUnmaximizeMainWindow() {
 }
 
 function handleResizeMainWindow(event, newBounds) {
-  setBoundsForCurrentView(newBounds);
+  setBoundsForCurrentView(event, newBounds);
 }
 
-function setBoundsForCurrentView(newBounds) {
+function setBoundsForCurrentView(event, newBounds) {
   const currentView = status.viewManager.getCurrentView();
   const bounds = newBounds || status.mainWindow.getContentBounds();
   if (currentView) {
