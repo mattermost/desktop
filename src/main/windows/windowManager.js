@@ -44,7 +44,6 @@ export function setConfig(data, deeplinkingUrl) {
 }
 
 export function showSettingsWindow() {
-  const self = this;
   if (status.settingsWindow) {
     status.settingsWindow.show();
   } else {
@@ -56,7 +55,7 @@ export function showSettingsWindow() {
     status.settingsWindow = createSettingsWindow(status.mainWindow, status.config, withDevTools);
     status.settingsWindow.on('closed', () => {
       status.settingsWindow = null;
-      self.focusBrowserView();
+      focusBrowserView();
     });
   }
 }
@@ -91,7 +90,7 @@ export function showMainWindow() {
     status.mainWindow.on('maximize', handleMaximizeMainWindow);
     status.mainWindow.on('unmaximize', handleUnmaximizeMainWindow);
     status.mainWindow.on('will-resize', handleResizeMainWindow);
-    status.mainWindow.on('focus', this.focusBrowserView);
+    status.mainWindow.on('focus', focusBrowserView);
   }
   initializeViewManager();
 }
