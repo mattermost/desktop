@@ -8,7 +8,7 @@ import {EventEmitter} from 'events';
 
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
-import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL, IS_UNREAD, UNREAD_RESULT} from 'common/communication';
+import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL, IS_UNREAD, UNREAD_RESULT, FOUND_IN_PAGE} from 'common/communication';
 
 import {getWindowBoundaries, getLocalPreload} from './utils';
 import * as WindowManager from './windows/windowManager';
@@ -69,6 +69,7 @@ export class MattermostView extends EventEmitter {
   setReadyCallback = (func) => {
     this.readyCallBack = func;
     this.view.webContents.on('update-target-url', this.handleUpdateTarget);
+    this.view.webContents.on(FOUND_IN_PAGE, (event, result) => WindowManager.foundInPage(result));
   }
 
   load = (someURL) => {

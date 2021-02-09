@@ -4,17 +4,19 @@ import log from 'electron-log';
 import {BrowserView} from 'electron';
 
 import {SECOND} from 'common/utils/constants';
+import {UPDATE_TARGET_URL, FOUND_IN_PAGE, SET_SERVER_KEY} from 'common/communication';
 import urlUtils from 'common/utils/url';
-import {UPDATE_TARGET_URL, SET_SERVER_KEY} from 'common/communication';
 
 import contextMenu from './contextMenu';
 import {MattermostServer} from './MattermostServer';
 import {MattermostView} from './MattermostView';
-import {getLocalURLString} from './utils';
+import {getLocalURLString, getLocalPreload} from './utils';
 import {showModal} from './modalManager';
 
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 36;
+const FINDER_WIDTH = 310;
+const FINDER_HEIGHT = 40;
 
 export class ViewManager {
   constructor(config) {
@@ -51,7 +53,7 @@ export class ViewManager {
       if (recycle && recycle.isVisible) {
         setFocus = recycle.name;
       }
-      if (recycle && recycle.server.url === urlUtils.parseURL(server.url)) {
+      if (recycle && recycle.server.url.toString() === urlUtils.parseURL(server.url).toString()) {
         oldviews.delete(recycle.name);
         this.views.set(recycle.name, recycle);
       } else {
@@ -185,5 +187,59 @@ export class ViewManager {
         hideView();
       };
     }
+  }
+
+  setFinderBounds = () => {
+    if (this.finder) {
+      const currentWindow = this.getCurrentView().window;
+      const boundaries = currentWindow.getBounds();
+      this.finder.setBounds({
+        x: boundaries.width - FINDER_WIDTH - (process.platform === 'darwin' ? 20 : 200),
+        y: 0,
+        width: FINDER_WIDTH,
+        height: FINDER_HEIGHT,
+      });
+    }
+  }
+
+  focusFinder = () => {
+    if (this.finder) {
+      this.finder.webContents.focus();
+    }
+  }
+
+  hideFinder = () => {
+    if (this.finder) {
+      const currentWindow = this.getCurrentView().window;
+      currentWindow.removeBrowserView(this.finder);
+      this.finder.destroy();
+      this.finder = null;
+    }
+  }
+
+  foundInPage = (result) => {
+    if (this.finder) {
+      this.finder.webContents.send(FOUND_IN_PAGE, result);
+    }
+  }
+
+  showFinder = () => {
+    // just focus the current finder if it's already open
+    if (this.finder) {
+      this.finder.webContents.focus();
+      return;
+    }
+
+    const preload = getLocalPreload('finderPreload.js');
+    this.finder = new BrowserView({webPreferences: {
+      preload,
+    }});
+    const localURL = getLocalURLString('finder.html');
+    this.finder.webContents.loadURL(localURL);
+    const currentWindow = this.getCurrentView().window;
+    currentWindow.addBrowserView(this.finder);
+    this.setFinderBounds();
+
+    this.finder.webContents.focus();
   }
 }

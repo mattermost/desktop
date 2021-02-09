@@ -2,10 +2,10 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
-import {app, BrowserWindow, nativeImage, systemPreferences} from 'electron';
+import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain} from 'electron';
 import log from 'electron-log';
 
-import {MAXIMIZE_CHANGE, SWITCH_SERVER} from 'common/communication';
+import {MAXIMIZE_CHANGE, FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER, FOCUS_FINDER} from 'common/communication';
 
 import {getAdjustedWindowBoundaries} from '../utils';
 
@@ -25,6 +25,11 @@ const status = {
   viewManager: null,
 };
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
+
+ipcMain.on(FIND_IN_PAGE, findInPage);
+ipcMain.on(STOP_FIND_IN_PAGE, stopFindInPage);
+ipcMain.on(CLOSE_FINDER, closeFinder);
+ipcMain.on(FOCUS_FINDER, focusFinder);
 
 export function setConfig(data, deeplinkingUrl) {
   if (data) {
@@ -126,6 +131,7 @@ function setBoundsForCurrentView(event, newBounds) {
   if (currentView) {
     currentView.setBounds(getAdjustedWindowBoundaries(bounds.width, bounds.height));
   }
+  status.viewManager.setFinderBounds();
 }
 
 export function sendToRenderer(channel, ...args) {
@@ -243,6 +249,48 @@ export function focusBrowserView() {
 export function openBrowserViewDevTools() {
   if (status.viewManager) {
     status.viewManager.openViewDevTools();
+  }
+}
+
+export function openFinder() {
+  if (status.viewManager) {
+    status.viewManager.showFinder();
+  }
+}
+
+export function closeFinder() {
+  if (status.viewManager) {
+    status.viewManager.hideFinder();
+  }
+}
+
+export function focusFinder() {
+  if (status.viewManager) {
+    status.viewManager.focusFinder();
+  }
+}
+
+export function foundInPage(result) {
+  if (status.viewManager && status.viewManager.foundInPage) {
+    status.viewManager.foundInPage(result);
+  }
+}
+
+export function findInPage(event, searchText, options) {
+  if (status.viewManager) {
+    const activeView = status.viewManager.getCurrentView();
+    if (activeView) {
+      activeView.view.webContents.findInPage(searchText, options);
+    }
+  }
+}
+
+export function stopFindInPage(event, action) {
+  if (status.viewManager) {
+    const activeView = status.viewManager.getCurrentView();
+    if (activeView) {
+      activeView.view.webContents.stopFindInPage(action);
+    }
   }
 }
 

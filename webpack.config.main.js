@@ -18,7 +18,8 @@ module.exports = merge(base, {
   entry: {
     index: './src/main/main.js',
     preload: './src/main/preload/mattermost.js',
-    modalPreload: './src/main/preload/modalPreload.js'
+    modalPreload: './src/main/preload/modalPreload.js',
+    finderPreload: './src/main/preload/finderPreload.js'
   },
   output: {
     path: path.join(__dirname, 'dist/'),
