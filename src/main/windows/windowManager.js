@@ -5,7 +5,8 @@ import path from 'path';
 import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain} from 'electron';
 import log from 'electron-log';
 
-import {MAXIMIZE_CHANGE, FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER, FOCUS_FINDER} from 'common/communication';
+import {MAXIMIZE_CHANGE, FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER, FOCUS_FINDER, HISTORY} from 'common/communication';
+import urlUtils from 'common/utils/url';
 
 import {getAdjustedWindowBoundaries} from '../utils';
 
@@ -30,6 +31,7 @@ ipcMain.on(FIND_IN_PAGE, findInPage);
 ipcMain.on(STOP_FIND_IN_PAGE, stopFindInPage);
 ipcMain.on(CLOSE_FINDER, closeFinder);
 ipcMain.on(FOCUS_FINDER, focusFinder);
+ipcMain.on(HISTORY, handleHistory);
 
 export function setConfig(data, deeplinkingUrl) {
   if (data) {
@@ -128,7 +130,7 @@ function setBoundsForCurrentView(event, newBounds) {
   const currentView = status.viewManager.getCurrentView();
   const bounds = newBounds || status.mainWindow.getContentBounds();
   if (currentView) {
-    currentView.setBounds(getAdjustedWindowBoundaries(bounds.width, bounds.height));
+    currentView.setBounds(getAdjustedWindowBoundaries(bounds.width, bounds.height, !urlUtils.isTeamUrl(currentView.server.url, currentView.view.webContents.getURL())));
   }
   status.viewManager.setFinderBounds();
 }
@@ -320,4 +322,13 @@ export function minimize() {
 export function restore() {
   const focused = BrowserWindow.getFocusedWindow();
   focused.restore();
+}
+
+export function handleHistory(event, offset) {
+  if (status.viewManager) {
+    const activeView = status.viewManager.getCurrentView();
+    if (activeView && activeView.view.webContents.canGoToOffset(offset)) {
+      activeView.view.webContents.goToOffset(offset);
+    }
+  }
 }
