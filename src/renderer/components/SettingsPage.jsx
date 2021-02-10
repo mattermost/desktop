@@ -40,10 +40,7 @@ export default class SettingsPage extends React.Component {
       userOpenedDownloadDialog: false,
     };
 
-    ipcRenderer.invoke(GET_LOCAL_CONFIGURATION).then((config) => {
-      this.state = this.convertConfigDataToState(config);
-      this.setState({ready: true, maximized: false, ...this.state});
-    });
+    this.getConfig();
     this.trayIconThemeRef = React.createRef();
     this.downloadLocationRef = React.createRef();
 
@@ -59,6 +56,13 @@ export default class SettingsPage extends React.Component {
 
     ipcRenderer.on('reload-config', () => {
       this.updateSaveState();
+      this.getConfig();
+    });
+  }
+
+  getConfig = () => {
+    ipcRenderer.invoke(GET_LOCAL_CONFIGURATION).then((config) => {
+      this.setState({ready: true, maximized: false, ...this.convertConfigDataToState(config)});
     });
   }
 
