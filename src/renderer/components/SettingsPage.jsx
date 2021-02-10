@@ -56,6 +56,10 @@ export default class SettingsPage extends React.Component {
         showAddTeamForm: true,
       });
     });
+
+    ipcRenderer.on('reload-config', () => {
+      this.updateSaveState();
+    });
   }
 
   convertConfigDataToState = (configData, currentState = {}) => {
