@@ -9,6 +9,7 @@ import {PRODUCTION} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 
 const TAB_BAR_HEIGHT = 40;
+const BACK_BAR_HEIGHT = 36;
 
 export function shouldBeHiddenOnStartup(parsedArgv) {
   if (parsedArgv.hidden) {
@@ -22,17 +23,17 @@ export function shouldBeHiddenOnStartup(parsedArgv) {
   return false;
 }
 
-export function getWindowBoundaries(win) {
+export function getWindowBoundaries(win, hasBackBar = false) {
   const {width, height} = win.getContentBounds();
-  return getAdjustedWindowBoundaries(width, height);
+  return getAdjustedWindowBoundaries(width, height, hasBackBar);
 }
 
-export function getAdjustedWindowBoundaries(width, height) {
+export function getAdjustedWindowBoundaries(width, height, hasBackBar = false) {
   return {
     x: 0,
-    y: TAB_BAR_HEIGHT,
+    y: TAB_BAR_HEIGHT + (hasBackBar ? BACK_BAR_HEIGHT : 0),
     width,
-    height: height - TAB_BAR_HEIGHT,
+    height: height - TAB_BAR_HEIGHT - (hasBackBar ? BACK_BAR_HEIGHT : 0),
   };
 }
 

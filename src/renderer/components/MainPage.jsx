@@ -55,6 +55,7 @@ import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
 import ExtraBar from './ExtraBar.jsx';
 import ErrorView from './ErrorView.jsx';
+import { TOGGLE_BACK_BUTTON } from '../../common/communication';
 
 const LOADING = 1;
 const DONE = 2;
@@ -364,6 +365,10 @@ export default class MainPage extends React.Component {
       this.setState({modalOpen: false});
     });
 
+    ipcRenderer.on(TOGGLE_BACK_BUTTON, (event, showExtraBar) => {
+      this.setState({showExtraBar});
+    });
+
     ipcRenderer.on(UPDATE_MENTIONS, (_event, team, mentions, unreads) => {
       const key = this.props.teams.findIndex((server) => server.name === team);
       const {unreadCounts, mentionCounts} = this.state;
@@ -596,14 +601,6 @@ export default class MainPage extends React.Component {
     this.inputRef = ref;
   }
 
-  showExtraBar = () => {
-    const ref = this.refs[`mattermostView${this.state.key}`];
-    if (typeof ref !== 'undefined') {
-      return !urlUtils.isTeamUrl(this.props.teams[this.state.key].url, ref.getSrc());
-    }
-    return false;
-  }
-
   render() {
     const tabsRow = (
       <TabBar
@@ -767,7 +764,7 @@ export default class MainPage extends React.Component {
       <Fragment>
         <ExtraBar
           darkMode={this.state.darkMode}
-          show={this.showExtraBar()}
+          show={this.state.showExtraBar}
           goBack={() => {
             ipcRenderer.send(HISTORY, -1);
           }}
