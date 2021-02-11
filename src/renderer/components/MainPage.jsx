@@ -232,14 +232,6 @@ export default class MainPage extends React.Component {
       this.handleSelect(team.name, nextIndex);
     });
 
-    // reload the activated tab
-    ipcRenderer.on('reload-tab', () => {
-      this.refs[`mattermostView${this.state.key}`].reload();
-    });
-    ipcRenderer.on('clear-cache-and-reload-tab', () => {
-      this.refs[`mattermostView${this.state.key}`].clearCacheAndReload();
-    });
-
     ipcRenderer.on('focus', this.focusListener);
     ipcRenderer.on('blur', this.blurListener);
 
@@ -280,56 +272,6 @@ export default class MainPage extends React.Component {
       ipcRenderer.send(REDO);
     });
 
-    // TODO: should this be an ipcRenderer.invoke?
-    // ipcRenderer.on('cut', () => {
-    //   const activeTabWebContents = this.getTabWebContents(this.state.key);
-    //   if (!activeTabWebContents) {
-    //     return;
-    //   }
-    //   activeTabWebContents.cut();
-    // });
-
-    // ipcRenderer.on('copy', () => {
-    //   const activeTabWebContents = this.getTabWebContents(this.state.key);
-    //   if (!activeTabWebContents) {
-    //     return;
-    //   }
-    //   activeTabWebContents.copy();
-    // });
-
-    // ipcRenderer.on('paste', () => {
-    //   const activeTabWebContents = this.getTabWebContents(this.state.key);
-    //   if (!activeTabWebContents) {
-    //     return;
-    //   }
-    //   activeTabWebContents.paste();
-    // });
-
-    // ipcRenderer.on('paste-and-match', () => {
-    //   const activeTabWebContents = this.getTabWebContents(this.state.key);
-    //   if (!activeTabWebContents) {
-    //     return;
-    //   }
-    //   activeTabWebContents.pasteAndMatchStyle();
-    // });
-
-    //goBack and goForward
-    ipcRenderer.on('go-back', () => {
-      // TODO: do something with this
-      ipcRenderer.send(ZOOM, -1);
-      const mattermost = this.refs[`mattermostView${this.state.key}`];
-      if (mattermost.canGoBack()) {
-        mattermost.goBack();
-      }
-    });
-
-    ipcRenderer.on('go-forward', () => {
-      const mattermost = this.refs[`mattermostView${this.state.key}`];
-      if (mattermost.canGoForward()) {
-        mattermost.goForward();
-      }
-    });
-
     ipcRenderer.on('add-server', () => {
       this.addServer();
     });
@@ -338,6 +280,7 @@ export default class MainPage extends React.Component {
       ipcRenderer.send(FOCUS_BROWSERVIEW);
     });
 
+    // TODO: GV is working on this, leaving alone until he's done
     ipcRenderer.on('protocol-deeplink', (event, deepLinkUrl) => {
       const parsedDeeplink = this.parseDeeplinkURL(deepLinkUrl);
       if (parsedDeeplink) {
@@ -433,15 +376,6 @@ export default class MainPage extends React.Component {
     });
     this.handleSelect(key);
   };
-
-  handleInterTeamLink = (linkUrl) => {
-    const selectedTeam = urlUtils.getServer(linkUrl, this.props.teams);
-    if (!selectedTeam) {
-      return;
-    }
-    this.refs[`mattermostView${selectedTeam.index}`].handleDeepLink(linkUrl.href);
-    this.setState({key: selectedTeam.index});
-  }
 
   handleMaximizeState = (_, maximized) => {
     this.setState({maximized});
@@ -596,6 +530,7 @@ export default class MainPage extends React.Component {
     this.inputRef = ref;
   }
 
+  // TODO: remove when back bar PR is merged
   showExtraBar = () => {
     const ref = this.refs[`mattermostView${this.state.key}`];
     if (typeof ref !== 'undefined') {
@@ -835,7 +770,7 @@ MainPage.propTypes = {
   moveTabs: PropTypes.func.isRequired,
   openMenu: PropTypes.func.isRequired,
   darkMode: PropTypes.bool.isRequired,
-  appName: PropTypes.string.isRequired
+  appName: PropTypes.string.isRequired,
 };
 
 /* eslint-enable react/no-set-state */

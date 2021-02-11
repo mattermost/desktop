@@ -35,7 +35,7 @@ const start = async () => {
       handleGrant={handleGrant}
       openExternalLink={openExternalLink}
     />,
-    document.getElementById('app')
+    document.getElementById('app'),
   );
 };
 

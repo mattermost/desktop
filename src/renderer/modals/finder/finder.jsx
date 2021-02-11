@@ -30,7 +30,7 @@ export default class Finder extends React.Component {
     if (state.searchTxt) {
       return {
         foundInPage: Boolean(props.matches),
-        matches: `${props.activeMatchOrdinal}/${props.matches}`
+        matches: `${props.activeMatchOrdinal}/${props.matches}`,
       };
     }
 

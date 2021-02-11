@@ -23,13 +23,13 @@ export default function downloadURL(URL, callback) {
     };
     dialog.showSaveDialog(
       WindowManager.getMainWindow(true),
-      dialogOptions
+      dialogOptions,
     ).then(
       (filename) => {
         if (filename) {
           saveResponseBody(response, filename, callback);
         }
-      }
+      },
     ).catch((err) => {
       callback(err);
     });

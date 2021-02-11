@@ -83,7 +83,7 @@ module.exports = merge(base, {
       filename: 'styles.[contenthash].css',
       ignoreOrder: true,
       chunkFilename: '[id].[contenthash].css',
-    })
+    }),
   ],
   module: {
     rules: [{

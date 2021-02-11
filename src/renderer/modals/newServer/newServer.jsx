@@ -3,7 +3,6 @@
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'renderer/css/modals.css';
-//import 'renderer/css/components/AddServerModal.css';
 
 // todo: add css into modal;
 
@@ -34,7 +33,7 @@ const start = async () => {
       show={true}
       url={decodeURIComponent(urlParams.get('url'))}
     />,
-    document.getElementById('app')
+    document.getElementById('app'),
   );
 };
 

@@ -153,5 +153,5 @@ ReactDOM.render(
     notifyOnly={notifyOnly}
     initialState={{isDownloading: false, progress: 0}}
   />,
-  document.getElementById('content')
+  document.getElementById('content'),
 );

@@ -30,7 +30,7 @@ const start = async () => {
     <SettingsPage
       openMenu={openMenu}
     />,
-    document.getElementById('app')
+    document.getElementById('app'),
   );
 };
 

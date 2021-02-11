@@ -166,5 +166,5 @@ ipcRenderer.invoke('get-app-version').then(({name, version}) => {
 
 ReactDOM.render(
   <Root/>,
-  document.getElementById('app')
+  document.getElementById('app'),
 );

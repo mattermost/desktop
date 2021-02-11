@@ -79,7 +79,7 @@ export default class CriticalErrorHandler {
           buttons,
           defaultId: buttons.indexOf(BUTTON_REOPEN),
           noLink: true,
-        }
+        },
       ).then(({response}) => {
         let child;
         switch (response) {
@@ -90,7 +90,7 @@ export default class CriticalErrorHandler {
               'error',
               (spawnError) => {
                 console.log(spawnError);
-              }
+              },
             );
             child.unref();
           }

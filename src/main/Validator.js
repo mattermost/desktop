@@ -89,7 +89,7 @@ const certificateStoreSchema = Joi.object().pattern(
   Joi.object({
     data: Joi.string(),
     issuerName: Joi.string(),
-  })
+  }),
 );
 
 const originPermissionsSchema = Joi.object().keys({

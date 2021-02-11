@@ -111,7 +111,7 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
           name: appName,
         },
       },
-      window.location.origin || '*'
+      window.location.origin || '*',
     );
     break;
   }
@@ -142,7 +142,7 @@ const handleNotificationClick = ({channel, teamId}) => {
         teamId,
       },
     },
-    window.location.origin
+    window.location.origin,
   );
 };
 

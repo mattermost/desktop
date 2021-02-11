@@ -19,7 +19,7 @@ module.exports = merge(base, {
     index: './src/main/main.js',
     preload: './src/main/preload/mattermost.js',
     modalPreload: './src/main/preload/modalPreload.js',
-    finderPreload: './src/main/preload/finderPreload.js'
+    finderPreload: './src/main/preload/finderPreload.js',
   },
   output: {
     path: path.join(__dirname, 'dist/'),
@@ -31,8 +31,8 @@ module.exports = merge(base, {
       use: {
         loader: 'babel-loader',
         options: {
-          include: ['@babel/plugin-proposal-class-properties']
-        }
+          include: ['@babel/plugin-proposal-class-properties'],
+        },
       },
     }, {
       test: /\.mp3$/,
@@ -46,7 +46,7 @@ module.exports = merge(base, {
       options: {
         name: '[name].[ext]',
         rewritePath: path.resolve(__dirname, 'dist'),
-      }
+      },
     }],
   },
   plugins: [
@@ -55,7 +55,7 @@ module.exports = merge(base, {
         from: 'assets/**/*',
         context: 'src',
       }],
-    })
+    }),
   ],
   node: {
     __filename: true,

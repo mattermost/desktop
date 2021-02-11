@@ -21,7 +21,7 @@ export function displayMention(title, body, channel, teamId, silent, webcontents
     title: `${serverName}: ${title}`,
     body,
     silent,
-    data
+    data,
   };
   const mention = new Mention(options);
 

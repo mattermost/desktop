@@ -31,6 +31,21 @@
   },
   "overrides": [
     {
+      "files": ["test/specs/**/*"],
+      "env": {
+        "jest": true
+      },
+      "rules": {
+        "babel/no-unused-expressions": "off", //TODO: rework tests to use correct notation
+        "func-names": 0,
+        "global-require": 0,
+        "new-cap": 0,
+        "prefer-arrow-callback": 0,
+        "no-import-assign": 0,
+        "no-only-tests/no-only-tests": "warn"
+      }
+    },
+    {
       "files": [
         "webpack.config.renderer.js",
         "test/specs/spellchecker_test.js",

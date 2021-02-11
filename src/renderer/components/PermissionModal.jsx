@@ -80,7 +80,7 @@ export default class PermissionModal extends React.Component {
       deny: () => {
         const err = new Error();
         log.error(`There isn't any permission to deny access to.\n Stack trace:\n${err.stack}`);
-      }
+      },
     };
   }
 

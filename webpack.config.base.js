@@ -16,7 +16,7 @@ const VERSION = childProcess.execSync('git rev-parse --short HEAD').toString();
 const isProduction = process.env.NODE_ENV === 'production';
 
 const codeDefinitions = {
-  __HASH_VERSION__: JSON.stringify(VERSION)
+  __HASH_VERSION__: JSON.stringify(VERSION),
 };
 if (isProduction) {
   codeDefinitions['process.env.NODE_ENV'] = JSON.stringify('production');
@@ -37,8 +37,8 @@ module.exports = {
       main: path.resolve(__dirname, './src/main'),
       common: path.resolve(__dirname, './src/common'),
       static: path.resolve(__dirname, './src/assets'),
-    }
-  }
+    },
+  },
 };
 
 /* eslint-enable import/no-commonjs */

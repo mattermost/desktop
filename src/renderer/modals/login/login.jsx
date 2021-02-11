@@ -30,7 +30,7 @@ const start = async () => {
       onCancel={handleLoginCancel}
       getAuthInfo={getAuthInfo}
     />,
-    document.getElementById('app')
+    document.getElementById('app'),
   );
 };
 

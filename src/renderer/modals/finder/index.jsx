@@ -66,7 +66,7 @@ class FinderRoot extends React.Component {
 const start = async () => {
   ReactDOM.render(
     <FinderRoot/>,
-    document.getElementById('app')
+    document.getElementById('app'),
   );
 };
 

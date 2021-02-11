@@ -39,9 +39,9 @@ export class MattermostView extends EventEmitter {
         additionalArguments: [
           `version=${app.version}`,
           `appName=${app.name}`,
-        ]
+        ],
       },
-      ...options
+      ...options,
     };
     this.isVisible = false;
     this.view = new BrowserView(this.options);

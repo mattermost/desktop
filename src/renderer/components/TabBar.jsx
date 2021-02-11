@@ -117,7 +117,7 @@ export default class TabBar extends React.Component { // need "this"
           <div className='TabBar-tabSeperator'>
             <PlusIcon size={20}/>
           </div>
-        </NavItem>
+        </NavItem>,
       );
     }
 

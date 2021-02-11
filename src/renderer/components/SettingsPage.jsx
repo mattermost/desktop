@@ -46,6 +46,14 @@ export default class SettingsPage extends React.Component {
     });
     this.trayIconThemeRef = React.createRef();
     this.downloadLocationRef = React.createRef();
+    this.showTrayIconRef = React.createRef();
+    this.autostartRef = React.createRef();
+    this.minimizeToTrayRef = React.createRef();
+    this.flashWindowRef = React.createRef();
+    this.bounceIconRef = React.createRef();
+    this.showUnreadBadgeRef = React.createRef();
+    this.useSpellCheckerRef = React.createRef();
+    this.enableHardwareAccelerationRef = React.createRef();
 
     this.saveQueue = [];
   }
@@ -132,7 +140,7 @@ export default class SettingsPage extends React.Component {
   }
 
   handleChangeShowTrayIcon = () => {
-    const shouldShowTrayIcon = !this.refs.showTrayIcon.props.checked;
+    const shouldShowTrayIcon = !this.showTrayIconRef.current.props.checked;
     setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'showTrayIcon', data: shouldShowTrayIcon});
     this.setState({
       showTrayIcon: shouldShowTrayIcon,
@@ -153,14 +161,14 @@ export default class SettingsPage extends React.Component {
   }
 
   handleChangeAutoStart = () => {
-    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'autostart', data: !this.refs.autostart.props.checked});
+    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'autostart', data: !this.autostartRef.current.props.checked});
     this.setState({
-      autostart: !this.refs.autostart.props.checked,
+      autostart: !this.autostartRef.current.props.checked,
     });
   }
 
   handleChangeMinimizeToTray = () => {
-    const shouldMinimizeToTray = this.state.showTrayIcon && !this.refs.minimizeToTray.props.checked;
+    const shouldMinimizeToTray = this.state.showTrayIcon && !this.minimizeToTrayRef.current.props.checked;
 
     setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'minimizeToTray', data: shouldMinimizeToTray});
     this.setState({
@@ -186,13 +194,13 @@ export default class SettingsPage extends React.Component {
       key: 'notifications',
       data: {
         ...this.state.notifications,
-        flashWindow: this.refs.flashWindow.props.checked ? 0 : 2,
+        flashWindow: this.flashWindowRef.current.props.checked ? 0 : 2,
       },
     });
     this.setState({
       notifications: {
         ...this.state.notifications,
-        flashWindow: this.refs.flashWindow.props.checked ? 0 : 2,
+        flashWindow: this.flashWindowRef.current.props.checked ? 0 : 2,
       },
     });
   }
@@ -202,13 +210,13 @@ export default class SettingsPage extends React.Component {
       key: 'notifications',
       data: {
         ...this.state.notifications,
-        bounceIcon: !this.refs.bounceIcon.props.checked,
+        bounceIcon: !this.bounceIconRef.current.props.checked,
       },
     });
     this.setState({
       notifications: {
         ...this.state.notifications,
-        bounceIcon: !this.refs.bounceIcon.props.checked,
+        bounceIcon: !this.bounceIconRef.current.props.checked,
       },
     });
   }
@@ -230,23 +238,23 @@ export default class SettingsPage extends React.Component {
   }
 
   handleShowUnreadBadge = () => {
-    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'showUnreadBadge', data: !this.refs.showUnreadBadge.props.checked});
+    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'showUnreadBadge', data: !this.showUnreadBadgeRef.current.props.checked});
     this.setState({
-      showUnreadBadge: !this.refs.showUnreadBadge.props.checked,
+      showUnreadBadge: !this.showUnreadBadgeRef.current.props.checked,
     });
   }
 
   handleChangeUseSpellChecker = () => {
-    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'useSpellChecker', data: !this.refs.useSpellChecker.props.checked});
+    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'useSpellChecker', data: !this.useSpellCheckerRef.current.props.checked});
     this.setState({
-      useSpellChecker: !this.refs.useSpellChecker.props.checked,
+      useSpellChecker: !this.useSpellCheckerRef.current.props.checked,
     });
   }
 
   handleChangeEnableHardwareAcceleration = () => {
-    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'enableHardwareAcceleration', data: !this.refs.enableHardwareAcceleration.props.checked});
+    setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'enableHardwareAcceleration', data: !this.enableHardwareAccelerationRef.current.props.checked});
     this.setState({
-      enableHardwareAcceleration: !this.refs.enableHardwareAcceleration.props.checked,
+      enableHardwareAcceleration: !this.enableHardwareAccelerationRef.current.props.checked,
     });
   }
 
@@ -349,7 +357,7 @@ export default class SettingsPage extends React.Component {
 
       container: {
         paddingBottom: '40px',
-      }
+      },
     };
 
     const teamsRow = (
@@ -422,7 +430,7 @@ export default class SettingsPage extends React.Component {
         <Checkbox
           key='inputAutoStart'
           id='inputAutoStart'
-          ref='autostart'
+          ref={this.autostartRef}
           checked={this.state.autostart}
           onChange={this.handleChangeAutoStart}
         >
@@ -437,7 +445,7 @@ export default class SettingsPage extends React.Component {
       <Checkbox
         key='inputSpellChecker'
         id='inputSpellChecker'
-        ref='useSpellChecker'
+        ref={this.useSpellCheckerRef}
         checked={this.state.useSpellChecker}
         onChange={this.handleChangeUseSpellChecker}
       >
@@ -454,7 +462,7 @@ export default class SettingsPage extends React.Component {
         <Checkbox
           key='inputShowUnreadBadge'
           id='inputShowUnreadBadge'
-          ref='showUnreadBadge'
+          ref={this.showUnreadBadgeRef}
           checked={this.state.showUnreadBadge}
           onChange={this.handleShowUnreadBadge}
         >
@@ -470,7 +478,7 @@ export default class SettingsPage extends React.Component {
         <Checkbox
           key='flashWindow'
           id='inputflashWindow'
-          ref='flashWindow'
+          ref={this.flashWindowRef}
           checked={!this.state.notifications || this.state.notifications.flashWindow === 2}
           onChange={this.handleFlashWindow}
         >
@@ -490,7 +498,7 @@ export default class SettingsPage extends React.Component {
             inline={true}
             key='bounceIcon'
             id='inputBounceIcon'
-            ref='bounceIcon'
+            ref={this.bounceIconRef}
             checked={this.state.notifications ? this.state.notifications.bounceIcon : false}
             onChange={this.handleBounceIcon}
             style={{marginRight: '10px'}}
@@ -527,7 +535,7 @@ export default class SettingsPage extends React.Component {
           >
             {'If enabled, the Dock icon bounces once or until the user opens the app when a new notification is received.'}
           </HelpBlock>
-        </FormGroup>
+        </FormGroup>,
       );
     }
 
@@ -536,7 +544,7 @@ export default class SettingsPage extends React.Component {
         <Checkbox
           key='inputShowTrayIcon'
           id='inputShowTrayIcon'
-          ref='showTrayIcon'
+          ref={this.showTrayIconRef}
           checked={this.state.showTrayIcon}
           onChange={this.handleChangeShowTrayIcon}
         >
@@ -572,7 +580,7 @@ export default class SettingsPage extends React.Component {
             defaultChecked={this.state.trayIconTheme === 'dark'}
             onChange={(event) => this.handleChangeTrayIconTheme('dark', event)}
           >{'Dark'}</Radio>
-        </FormGroup>
+        </FormGroup>,
       );
     }
 
@@ -581,7 +589,7 @@ export default class SettingsPage extends React.Component {
         <Checkbox
           key='inputMinimizeToTray'
           id='inputMinimizeToTray'
-          ref='minimizeToTray'
+          ref={this.minimizeToTrayRef}
           disabled={!this.state.showTrayIcon || !this.state.trayWasVisible}
           checked={this.state.minimizeToTray}
           onChange={this.handleChangeMinimizeToTray}
@@ -598,7 +606,7 @@ export default class SettingsPage extends React.Component {
       <Checkbox
         key='inputEnableHardwareAcceleration'
         id='inputEnableHardwareAcceleration'
-        ref='enableHardwareAcceleration'
+        ref={this.enableHardwareAccelerationRef}
         checked={this.state.enableHardwareAcceleration}
         onChange={this.handleChangeEnableHardwareAcceleration}
       >
@@ -607,7 +615,7 @@ export default class SettingsPage extends React.Component {
           {'If enabled, Mattermost UI is rendered more efficiently but can lead to decreased stability for some systems.'}
           {' Setting takes effect after restarting the app.'}
         </HelpBlock>
-      </Checkbox>
+      </Checkbox>,
     );
 
     options.push(
@@ -633,7 +641,7 @@ export default class SettingsPage extends React.Component {
         <HelpBlock>
           {'Specify the folder where files will download.'}
         </HelpBlock>
-      </div>
+      </div>,
     );
 
     let optionsRow = null;

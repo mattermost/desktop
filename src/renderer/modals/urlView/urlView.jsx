@@ -16,7 +16,7 @@ const start = async () => {
     <UrlDescription
       url={decodeURIComponent(urlParams.get('url'))}
     />,
-    document.getElementById('app')
+    document.getElementById('app'),
   );
 };
 

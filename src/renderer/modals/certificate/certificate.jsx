@@ -31,7 +31,7 @@ const start = async () => {
       onCancel={handleCancel}
       getCertInfo={getCertInfo}
     />,
-    document.getElementById('app')
+    document.getElementById('app'),
   );
 };
 

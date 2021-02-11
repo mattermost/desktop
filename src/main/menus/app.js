@@ -25,7 +25,7 @@ function createTemplate(config) {
       {
         label: 'About ' + appName,
         role: 'about',
-      }
+      },
     );
     platformAppMenu.push(separatorItem);
   }
@@ -79,7 +79,7 @@ function createTemplate(config) {
     }, separatorItem, {
       role: 'cut',
     }, {
-      role: 'copy'
+      role: 'copy',
     }, {
       role: 'paste',
     }, {
