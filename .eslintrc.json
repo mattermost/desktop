@@ -30,7 +30,7 @@
   },
   "overrides": [
     {
-      "files": ["test/specs/**/*"],
+      "files": ["test/**/*"],
       "env": {
         "jest": true
       },
