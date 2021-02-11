@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import log from 'electron-log';
-import {BrowserView} from 'electron';
+import {BrowserView, dialog} from 'electron';
 
 import {SECOND} from 'common/utils/constants';
 import {UPDATE_TARGET_URL, FOUND_IN_PAGE, SET_SERVER_KEY} from 'common/communication';
@@ -221,7 +221,7 @@ export class ViewManager {
     if (this.finder) {
       this.finder.webContents.send(FOUND_IN_PAGE, result);
     }
-  }
+  };
 
   showFinder = () => {
     // just focus the current finder if it's already open
@@ -241,5 +241,18 @@ export class ViewManager {
     this.setFinderBounds();
 
     this.finder.webContents.focus();
-  }
+  };
+
+  handleDeepLink = (url) => {
+    if (url) {
+      const server = urlUtils.getServer(url, this.configServers, true);
+      if (server) {
+        const view = this.views.get(server.name);
+        view.loadURL(url);
+        this.showByName(server.name);
+      } else {
+        dialog.showErrorBox('No matching server', `there is no configured server in the app that matches the requested url: ${url}`);
+      }
+    }
+  };
 }

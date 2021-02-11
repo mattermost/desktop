@@ -65,7 +65,6 @@ const certificateErrorCallbacks = new Map();
 let popupWindow = null;
 let certificateStore = null;
 let trustedOriginsStore = null;
-let deeplinkingUrl = null;
 let scheme = null;
 let appVersion = null;
 let config = null;
@@ -252,7 +251,7 @@ function handleConfigUpdate(newConfig) {
     }).catch((err) => {
       console.log('error:', err);
     });
-    WindowManager.setConfig(newConfig.data, deeplinkingUrl);
+    WindowManager.setConfig(newConfig.data);
   }
 
   ipcMain.emit('update-menu', true, config);
@@ -260,7 +259,7 @@ function handleConfigUpdate(newConfig) {
 
 function handleConfigSynchronize() {
   // TODO: send this to server manager
-  WindowManager.setConfig(config.data, deeplinkingUrl);
+  WindowManager.setConfig(config.data);
   if (app.isReady()) {
     WindowManager.sendToRenderer('reload-config');
   }
@@ -268,7 +267,7 @@ function handleConfigSynchronize() {
 
 function handleReloadConfig() {
   config.reload();
-  WindowManager.setConfig(config.data, deeplinkingUrl);
+  WindowManager.setConfig(config.data);
 }
 
 function handleAppVersion() {
@@ -291,17 +290,8 @@ function handleDarkModeChange(darkMode) {
 function handleAppSecondInstance(event, argv) {
   // Protocol handler for win32
   // argv: An array of the second instance’s (command line / deep linked) arguments
-  if (process.platform === 'win32') {
-    deeplinkingUrl = getDeeplinkingURL(argv);
-
-    // TODO: handle deeplinking into the tab manager as we have to send them to the appropiate BV
-    if (deeplinkingUrl) {
-      WindowManager.sendToRenderer('protocol-deeplink', deeplinkingUrl);
-    }
-  }
-
-  // Someone tried to run a second instance, we should focus our window.
-  WindowManager.restoreMain();
+  const deeplinkingUrl = getDeeplinkingURL(argv);
+  WindowManager.showMainWindow(deeplinkingUrl);
 }
 
 function handleAppWindowAllClosed() {
@@ -416,15 +406,11 @@ function handleAppWillFinishLaunching() {
   // Protocol handler for osx
   app.on('open-url', (event, url) => {
     event.preventDefault();
-    deeplinkingUrl = getDeeplinkingURL([url]);
+    const deeplinkingUrl = getDeeplinkingURL([url]);
     if (app.isReady()) {
       function openDeepLink() {
         try {
-          if (deeplinkingUrl) {
-            // TODO: send this to tab manager.
-            //mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
-            WindowManager.showMainWindow();
-          }
+          WindowManager.showMainWindow(deeplinkingUrl);
         } catch (err) {
           setTimeout(openDeepLink, SECOND);
         }
@@ -643,17 +629,19 @@ function initializeAfterAppReady() {
     }
   }
 
+  let deeplinkingURL;
+
   // Protocol handler for win32
   if (process.platform === 'win32') {
     const args = process.argv.slice(1);
     if (Array.isArray(args) && args.length > 0) {
-      deeplinkingUrl = getDeeplinkingURL(args);
+      deeplinkingURL = getDeeplinkingURL(args);
     }
   }
 
   initCookieManager(session.defaultSession);
 
-  WindowManager.showMainWindow();
+  WindowManager.showMainWindow(deeplinkingURL);
 
   // TODO: remove dev tools
   if (config.teams.length === 0) {
