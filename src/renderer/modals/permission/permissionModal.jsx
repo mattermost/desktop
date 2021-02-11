@@ -1,6 +1,5 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-/* eslint-disable react/no-set-state */
 
 import React from 'react';
 import {Modal, Button} from 'react-bootstrap';
@@ -102,7 +101,6 @@ export default class PermissionModal extends React.Component {
   }
 }
 
-/* eslint-enable react/no-set-state */
 PermissionModal.propTypes = {
   handleDeny: PropTypes.func,
   handleGrant: PropTypes.func,

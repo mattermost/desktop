@@ -2,9 +2,6 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
-// This files uses setState().
-/* eslint-disable react/no-set-state */
-
 import os from 'os';
 
 import React, {Fragment} from 'react';
@@ -772,5 +769,3 @@ MainPage.propTypes = {
   darkMode: PropTypes.bool.isRequired,
   appName: PropTypes.string.isRequired,
 };
-
-/* eslint-enable react/no-set-state */

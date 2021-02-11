@@ -2,8 +2,6 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
-// This file uses setState().
-/* eslint-disable react/no-set-state */
 import 'renderer/css/settings.css';
 
 import React from 'react';
@@ -715,5 +713,3 @@ export default class SettingsPage extends React.Component {
 SettingsPage.propTypes = {
   openMenu: PropTypes.func.isRequired,
 };
-
-/* eslint-enable react/no-set-state */

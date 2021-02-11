@@ -2,8 +2,6 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
-/* eslint-disable react/no-set-state */
-
 import React from 'react';
 import PropTypes from 'prop-types';
 
