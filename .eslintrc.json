@@ -1,7 +1,6 @@
 {
   "extends": [
-    "./.eslintrc-webapp.json",
-    "plugin:eslint-comments/recommended"
+    "./.eslintrc-webapp.json"
   ],
   "parserOptions": {
     "ecmaVersion": 2017
