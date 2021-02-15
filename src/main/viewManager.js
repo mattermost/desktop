@@ -4,7 +4,7 @@ import log from 'electron-log';
 import {BrowserView, dialog} from 'electron';
 
 import {SECOND} from 'common/utils/constants';
-import {UPDATE_TARGET_URL, FOUND_IN_PAGE, SET_SERVER_KEY} from 'common/communication';
+import {UPDATE_TARGET_URL, FOUND_IN_PAGE, SET_SERVER_KEY, LOAD_SUCCESS, LOAD_FAILED} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
 import contextMenu from './contextMenu';
@@ -31,7 +31,7 @@ export class ViewManager {
     const srv = new MattermostServer(server.name, server.url);
     const view = new MattermostView(srv, mainWindow, this.viewOptions);
     this.views.set(server.name, view);
-    view.setReadyCallback(this.activateView);
+    view.once(LOAD_SUCCESS, this.activateView);
     view.load();
     view.on(UPDATE_TARGET_URL, this.showURLView);
   }
@@ -243,15 +243,33 @@ export class ViewManager {
     this.finder.webContents.focus();
   };
 
+  deeplinkSuccess = (serverName) => {
+    const view = this.views.get(serverName);
+    this.showByName(serverName);
+    view.removeListener(LOAD_FAILED, this.deeplinkFailed);
+  };
+
+  deeplinkFailed = (serverName, err, url) => {
+    const view = this.views.get(serverName);
+    log.error(`[${serverName}] failed to load deeplink ${url}: ${err}`);
+    view.removeListener(LOAD_SUCCESS, this.deeplinkSuccess);
+  }
+
   handleDeepLink = (url) => {
     if (url) {
-      const server = urlUtils.getServer(url, this.configServers, true);
+      const parsedURL = urlUtils.parseURL(url);
+      const server = urlUtils.getServer(parsedURL, this.configServers, true);
       if (server) {
         const view = this.views.get(server.name);
-        view.loadURL(url);
-        this.showByName(server.name);
+
+        // attempting to change parsedURL protocol results in it not being modified.
+        const urlWithSchema = `${view.server.url.origin}${parsedURL.pathname}${parsedURL.search}`;
+        view.resetLoadingStatus();
+        view.load(urlWithSchema);
+        view.once(LOAD_SUCCESS, this.deeplinkSuccess);
+        view.once(LOAD_FAILED, this.deeplinkFailed);
       } else {
-        dialog.showErrorBox('No matching server', `there is no configured server in the app that matches the requested url: ${url}`);
+        dialog.showErrorBox('No matching server', `there is no configured server in the app that matches the requested url: ${parsedURL.toString()}`);
       }
     }
   };

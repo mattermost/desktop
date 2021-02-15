@@ -45,9 +45,7 @@ export class MattermostView extends EventEmitter {
     };
     this.isVisible = false;
     this.view = new BrowserView(this.options);
-    this.retryLoad = null;
-    this.maxRetries = MAX_SERVER_RETRIES;
-    this.status = LOADING;
+    this.resetLoadingStatus();
 
     /**
      * for backward compatibility when reading the title.
@@ -66,15 +64,16 @@ export class MattermostView extends EventEmitter {
     return this.server.name;
   }
 
-  setReadyCallback = (func) => {
-    this.readyCallBack = func;
-    this.view.webContents.on('update-target-url', this.handleUpdateTarget);
-    this.view.webContents.on(FOUND_IN_PAGE, (event, result) => WindowManager.foundInPage(result));
+  resetLoadingStatus = () => {
+    if (this.status !== LOADING) { // if it's already loading, don't touch anything
+      this.retryLoad = null;
+      this.status = LOADING;
+      this.maxRetries = MAX_SERVER_RETRIES;
+    }
   }
 
   load = (someURL) => {
-    this.retryLoad = null;
-    const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : urlUtils.parseUrl(someURL);
+    const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : urlUtils.parseURL(someURL).toString();
     log.info(`[${this.server.name}] Loading ${loadURL}`);
     const loading = this.view.webContents.loadURL(loadURL, {userAgent});
     loading.then(this.loadSuccess(loadURL)).catch((err) => {
@@ -94,6 +93,7 @@ export class MattermostView extends EventEmitter {
           this.loadRetry(loadURL, err);
         } else {
           WindowManager.sendToRenderer(LOAD_FAILED, this.server.name, err.toString(), loadURL.toString());
+          this.emit(LOAD_FAILED, this.server.name, err.toString(), loadURL.toString());
           log.info(`[${this.server.name}] Couldn't stablish a connection with ${loadURL}: ${err}.`);
           this.status = ERROR;
         }
@@ -120,9 +120,10 @@ export class MattermostView extends EventEmitter {
         this.findUnreadState(null);
       }
       this.status = READY;
-      if (this.readyCallBack) {
-        this.readyCallBack(this.server.name);
-      }
+      this.emit(LOAD_SUCCESS, this.server.name, loadURL.toString());
+
+      this.view.webContents.on('update-target-url', this.handleUpdateTarget);
+      this.view.webContents.on(FOUND_IN_PAGE, (event, result) => WindowManager.foundInPage(result));
     };
   }
 

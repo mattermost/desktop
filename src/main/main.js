@@ -14,7 +14,7 @@ import 'airbnb-js-shims/target/es2015';
 import Utils from 'common/utils/util';
 import urlUtils from 'common/utils/url';
 
-import {DEVELOPMENT, PRODUCTION, SECOND} from 'common/utils/constants';
+import {DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
 import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, SHOW_NEW_SERVER_MODAL, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION, GET_DOWNLOAD_LOCATION} from 'common/communication';
 import Config from 'common/config';
 
@@ -402,20 +402,26 @@ function handleAppGPUProcessCrashed(event, killed) {
   console.log(`The GPU process has crashed (killed = ${killed})`);
 }
 
+function openDeepLink(deeplinkingUrl) {
+  try {
+    WindowManager.showMainWindow(deeplinkingUrl);
+  } catch (err) {
+    log.error(`There was an error opening the deeplinking url: ${err}`);
+  }
+}
+
 function handleAppWillFinishLaunching() {
   // Protocol handler for osx
   app.on('open-url', (event, url) => {
+    log.info(`Handling deeplinking url: ${url}`);
     event.preventDefault();
     const deeplinkingUrl = getDeeplinkingURL([url]);
-    if (app.isReady()) {
-      function openDeepLink() {
-        try {
-          WindowManager.showMainWindow(deeplinkingUrl);
-        } catch (err) {
-          setTimeout(openDeepLink, SECOND);
-        }
+    if (deeplinkingUrl) {
+      if (app.isReady() && deeplinkingUrl) {
+        openDeepLink(deeplinkingUrl);
+      } else {
+        app.once('ready', () => openDeepLink(deeplinkingUrl));
       }
-      openDeepLink();
     }
   });
 }
