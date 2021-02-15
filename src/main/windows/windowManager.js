@@ -89,7 +89,6 @@ export function showMainWindow(deeplinkingURL) {
   }
   initializeViewManager();
 
-  // TODO: handle deeplinkingURL
   if (deeplinkingURL) {
     status.viewManager.handleDeepLink(deeplinkingURL);
   }
