@@ -178,7 +178,44 @@ export function flashFrame(flash) {
   }
 }
 
-export function setOverlayIcon(overlayDataURL, description) {
+function drawBadge(text, small) {
+  const scale = 2; // should rely display dpi
+  const size = (small ? 20 : 16) * scale;
+  const canvas = document.createElement('canvas');
+  canvas.setAttribute('width', size);
+  canvas.setAttribute('height', size);
+  const ctx = canvas.getContext('2d');
+
+  // circle
+  ctx.fillStyle = '#FF1744'; // Material Red A400
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // text
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = (11 * scale) + 'px sans-serif';
+  ctx.fillText(text, size / 2, size / 2, size);
+
+  return canvas.toDataURL();
+}
+
+function createDataURL(text, small) {
+  const win = status.mainWindow;
+  if (!win) {
+    return null;
+  }
+  // since we don't have a document/canvas object in the main process, we use the webcontents from the window to draw.
+  return win.webContents.executeJavascript(`
+  window.drawBadge = fucntion ${drawBadge};
+  window.drawBadge(${text}, ${small});
+  `);
+
+}
+
+export function setOverlayIcon(badgeText, description) {
   if (process.platform === 'win32') {
     const overlay = overlayDataURL ? nativeImage.createFromDataURL(overlayDataURL) : null;
     if (status.mainWindow) {

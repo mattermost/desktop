@@ -1,4 +1,3 @@
-
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
@@ -37,18 +36,18 @@ function createDataURL(text, small) {
 
 function showBadgeWindows(sessionExpired, showUnreadBadge, mentionCount) {
   let description = 'You have no unread messages';
-  let dataURL = null;
+  let text;
   if (sessionExpired) {
-    dataURL = createDataURL('•');
+    text = '•';
     description = 'Session Expired: Please sign in to continue receiving notifications.';
   } else if (mentionCount > 0) {
-    dataURL = createDataURL((mentionCount > MAX_WIN_COUNT) ? `${MAX_WIN_COUNT}+` : mentionCount.toString(), mentionCount > MAX_WIN_COUNT);
+    text = (mentionCount > MAX_WIN_COUNT) ? `${MAX_WIN_COUNT}+` : mentionCount.toString();
     description = `You have unread mentions (${mentionCount})`;
   } else if (showUnreadBadge) {
-    dataURL = createDataURL('•');
+    text = '•';
     description = 'You have unread channels';
   }
-  WindowManager.setOverlayIcon(dataURL, description);
+  WindowManager.setOverlayIcon(text, description);
 }
 
 function showBadgeOSX(sessionExpired, showUnreadBadge, mentionCount) {
