@@ -207,17 +207,17 @@ function createDataURL(text, small) {
   if (!win) {
     return null;
   }
+
   // since we don't have a document/canvas object in the main process, we use the webcontents from the window to draw.
   return win.webContents.executeJavascript(`
   window.drawBadge = fucntion ${drawBadge};
   window.drawBadge(${text}, ${small});
   `);
-
 }
 
 export function setOverlayIcon(badgeText, description) {
   if (process.platform === 'win32') {
-    const overlay = overlayDataURL ? nativeImage.createFromDataURL(overlayDataURL) : null;
+    const overlay = badgeText ? nativeImage.createFromDataURL(createDataURL(badgeText)) : null;
     if (status.mainWindow) {
       status.mainWindow.setOverlayIcon(overlay, description);
     }
