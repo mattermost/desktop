@@ -4,8 +4,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'renderer/css/modals.css';
 
-// todo: add css into modal;
-
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 
@@ -38,17 +36,3 @@ const start = async () => {
 };
 
 start();
-
-/** remove
- * NewTeamModal.propTypes = {
-  onClose: PropTypes.func,
-  onSave: PropTypes.func,
-  team: PropTypes.object,
-  editMode: PropTypes.bool,
-  show: PropTypes.bool,
-  restoreFocus: PropTypes.bool,
-  currentOrder: PropTypes.number,
-  setInputRef: PropTypes.func,
-};
-
- */

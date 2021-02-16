@@ -14,9 +14,6 @@ import {ipcRenderer} from 'electron';
 import urlUtils from 'common/utils/url';
 import {
   FOCUS_BROWSERVIEW,
-  ZOOM,
-  UNDO,
-  REDO,
   MAXIMIZE_CHANGE,
   DARK_MODE_CHANGE,
   HISTORY,
@@ -242,31 +239,6 @@ export default class MainPage extends React.Component {
 
     ipcRenderer.on('open-devtool', () => {
       document.getElementById(`mattermostView${this.state.key}`).openDevTools();
-    });
-
-    ipcRenderer.on('zoom-in', () => {
-      // TODO: do something with this
-      ipcRenderer.send(ZOOM, 1);
-    });
-
-    ipcRenderer.on('zoom-out', () => {
-      // TODO: do something with this
-      ipcRenderer.send(ZOOM, -1);
-    });
-
-    ipcRenderer.on('zoom-reset', () => {
-      // TODO: do something with this
-      ipcRenderer.send(ZOOM, null);
-    });
-
-    ipcRenderer.on('undo', () => {
-      // TODO: do something with this
-      ipcRenderer.send(UNDO);
-    });
-
-    ipcRenderer.on('redo', () => {
-      // TODO: do something with this
-      ipcRenderer.send(REDO);
     });
 
     ipcRenderer.on('add-server', () => {
@@ -730,6 +702,7 @@ export default class MainPage extends React.Component {
         }}
       />
     );
+
     return (
       <div
         className='MainPage'
@@ -738,14 +711,6 @@ export default class MainPage extends React.Component {
         <Grid fluid={true}>
           { topRow }
           { viewsRow }
-          { this.state.finderVisible ? (
-            <Finder
-              webviewKey={this.state.key}
-              close={this.closeFinder}
-              focusState={this.state.focusFinder}
-              inputFocus={this.inputFocus}
-            />
-          ) : null}
         </Grid>
         <div>
           { modal }
@@ -761,7 +726,6 @@ MainPage.propTypes = {
   localTeams: PropTypes.array.isRequired,
   onTeamConfigChange: PropTypes.func.isRequired,
   initialIndex: PropTypes.number.isRequired,
-  useSpellChecker: PropTypes.bool.isRequired,
   deeplinkingUrl: PropTypes.string,
   showAddServerButton: PropTypes.bool.isRequired,
   moveTabs: PropTypes.func.isRequired,

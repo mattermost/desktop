@@ -104,7 +104,7 @@ export default class TeamList extends React.Component {
       return (
         <TeamListItem
           index={i}
-          key={'teamListItem' + i}
+          key={`teamListItem_${team.name}`}
           name={team.name}
           url={team.url}
           onTeamRemove={handleTeamRemove}
@@ -188,7 +188,5 @@ TeamList.propTypes = {
   teams: PropTypes.array,
   addServer: PropTypes.func,
   updateTeam: PropTypes.func,
-  toggleAddTeamForm: PropTypes.func,
   setAddTeamFormVisibility: PropTypes.func,
-  onTeamClick: PropTypes.func,
 };

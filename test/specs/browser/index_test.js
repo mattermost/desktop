@@ -98,20 +98,20 @@ describe('renderer/index.html', function desc() {
   });
 
   // validation now prevents incorrect url's from being used
-  it.skip('should show error when using incorrect URL', async () => {
-    this.timeout(30000);
-    fs.writeFileSync(env.configFilePath, JSON.stringify({
-      version: 2,
-      teams: [{
-        name: 'error_1',
-        url: 'http://false',
-        order: 0,
-      }],
-    }));
-    await this.app.restart();
-    return this.app.client.
-      waitForVisible('#mattermostView0-fail', 20000);
-  });
+  // it.skip('should show error when using incorrect URL', async () => {
+  //   this.timeout(30000);
+  //   fs.writeFileSync(env.configFilePath, JSON.stringify({
+  //     version: 2,
+  //     teams: [{
+  //       name: 'error_1',
+  //       url: 'http://false',
+  //       order: 0,
+  //     }],
+  //   }));
+  //   await this.app.restart();
+  //   return this.app.client.
+  //     waitForVisible('#mattermostView0-fail', 20000);
+  // });
 
   it('should set window title by using webview\'s one', async () => {
     fs.writeFileSync(env.configFilePath, JSON.stringify({
@@ -129,82 +129,82 @@ describe('renderer/index.html', function desc() {
   });
 
   // Skip because it's very unstable in CI
-  it.skip('should update window title when the activated tab\'s title is updated', async () => {
-    fs.writeFileSync(env.configFilePath, JSON.stringify({
-      version: 2,
-      teams: [{
-        name: 'title_test_0',
-        url: `http://localhost:${serverPort}`,
-        order: 0,
-      }, {
-        name: 'title_test_1',
-        url: `http://localhost:${serverPort}`,
-        order: 1,
-      }],
-    }));
-    await this.app.restart();
-    await this.app.client.pause(500);
+  // it.skip('should update window title when the activated tab\'s title is updated', async () => {
+  //   fs.writeFileSync(env.configFilePath, JSON.stringify({
+  //     version: 2,
+  //     teams: [{
+  //       name: 'title_test_0',
+  //       url: `http://localhost:${serverPort}`,
+  //       order: 0,
+  //     }, {
+  //       name: 'title_test_1',
+  //       url: `http://localhost:${serverPort}`,
+  //       order: 1,
+  //     }],
+  //   }));
+  //   await this.app.restart();
+  //   await this.app.client.pause(500);
 
-    // Note: Indices of webview are correct.
-    // Somehow they are swapped.
-    await this.app.client.
-      windowByIndex(2).
-      execute(() => {
-        document.title = 'Title 0';
-      });
-    await this.app.client.windowByIndex(0).pause(500);
-    let windowTitle = await this.app.browserWindow.getTitle();
-    windowTitle.should.equal('Title 0');
+  //   // Note: Indices of webview are correct.
+  //   // Somehow they are swapped.
+  //   await this.app.client.
+  //     windowByIndex(2).
+  //     execute(() => {
+  //       document.title = 'Title 0';
+  //     });
+  //   await this.app.client.windowByIndex(0).pause(500);
+  //   let windowTitle = await this.app.browserWindow.getTitle();
+  //   windowTitle.should.equal('Title 0');
 
-    await this.app.client.
-      windowByIndex(1).
-      execute(() => {
-        document.title = 'Title 1';
-      });
-    await this.app.client.windowByIndex(0).pause(500);
-    windowTitle = await this.app.browserWindow.getTitle();
-    windowTitle.should.equal('Title 0');
-  });
+  //   await this.app.client.
+  //     windowByIndex(1).
+  //     execute(() => {
+  //       document.title = 'Title 1';
+  //     });
+  //   await this.app.client.windowByIndex(0).pause(500);
+  //   windowTitle = await this.app.browserWindow.getTitle();
+  //   windowTitle.should.equal('Title 0');
+  // });
 
   // Skip because it's very unstable in CI
-  it.skip('should update window title when a tab is selected', async () => {
-    fs.writeFileSync(env.configFilePath, JSON.stringify({
-      version: 2,
-      teams: [{
-        name: 'title_test_0',
-        url: `http://localhost:${serverPort}`,
-        order: 0,
-      }, {
-        name: 'title_test_1',
-        url: `http://localhost:${serverPort}`,
-        order: 1,
-      }],
-    }));
-    await this.app.restart();
+  // it.skip('should update window title when a tab is selected', async () => {
+  //   fs.writeFileSync(env.configFilePath, JSON.stringify({
+  //     version: 2,
+  //     teams: [{
+  //       name: 'title_test_0',
+  //       url: `http://localhost:${serverPort}`,
+  //       order: 0,
+  //     }, {
+  //       name: 'title_test_1',
+  //       url: `http://localhost:${serverPort}`,
+  //       order: 1,
+  //     }],
+  //   }));
+  //   await this.app.restart();
 
-    // Note: Indices of webview are correct.
-    // Somehow they are swapped.
-    await this.app.client.pause(500);
+  //   // Note: Indices of webview are correct.
+  //   // Somehow they are swapped.
+  //   await this.app.client.pause(500);
 
-    await this.app.client.
-      windowByIndex(2).
-      execute(() => {
-        document.title = 'Title 0';
-      });
-    await this.app.client.
-      windowByIndex(1).
-      execute(() => {
-        document.title = 'Title 1';
-      });
-    await this.app.client.windowByIndex(0).pause(500);
+  //   await this.app.client.
+  //     windowByIndex(2).
+  //     execute(() => {
+  //       document.title = 'Title 0';
+  //     });
+  //   await this.app.client.
+  //     windowByIndex(1).
+  //     execute(() => {
+  //       document.title = 'Title 1';
+  //     });
+  //   await this.app.client.windowByIndex(0).pause(500);
 
-    let windowTitle = await this.app.browserWindow.getTitle();
-    windowTitle.should.equal('Title 0');
+  //   let windowTitle = await this.app.browserWindow.getTitle();
+  //   windowTitle.should.equal('Title 0');
 
-    await this.app.client.click('#teamTabItem1').pause(500);
-    windowTitle = await this.app.browserWindow.getTitle();
-    windowTitle.should.equal('Title 1');
-  });
+  //   await this.app.client.click('#teamTabItem1').pause(500);
+  //   windowTitle = await this.app.browserWindow.getTitle();
+  //   windowTitle.should.equal('Title 1');
+  // });
 
   it('should open the new server prompt after clicking the add button', async () => {
     // See settings_test for specs that cover the actual prompt

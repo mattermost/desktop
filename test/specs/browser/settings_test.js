@@ -51,15 +51,15 @@ describe('renderer/settings.html', function desc() {
   });
 
   describe('Close button', async () => {
-    it.skip('should show index.html when it\'s clicked', async () => {
-      env.addClientCommands(this.app.client);
-      await this.app.client.
-        loadSettingsPage().
-        click('#btnClose').
-        pause(1000);
-      const url = await this.app.client.getUrl();
-      url.should.match(/\/index.html(\?.+)?$/);
-    });
+    // it.skip('should show index.html when it\'s clicked', async () => {
+    //   env.addClientCommands(this.app.client);
+    //   await this.app.client.
+    //     loadSettingsPage().
+    //     click('#btnClose').
+    //     pause(1000);
+    //   const url = await this.app.client.getUrl();
+    //   url.should.match(/\/index.html(\?.+)?$/);
+    // });
 
     it('should be disabled when the number of servers is zero', async () => {
       await this.app.stop();
@@ -106,84 +106,84 @@ describe('renderer/settings.html', function desc() {
     isModalExisting.should.be.true;
   });
 
-  describe('Server list', () => {
-    it.skip('should open the corresponding tab when a server list item is clicked', async () => {
-      env.addClientCommands(this.app.client);
-      await this.app.client.
-        loadSettingsPage().
-        click('h4=example').
-        pause(1000).
-        waitUntilWindowLoaded();
-      let indexURL = await this.app.client.getUrl();
-      indexURL.should.match(/\/index.html(\?.+)?$/);
+  // describe('Server list', () => {
+  //   it.skip('should open the corresponding tab when a server list item is clicked', async () => {
+  //     env.addClientCommands(this.app.client);
+  //     await this.app.client.
+  //       loadSettingsPage().
+  //       click('h4=example').
+  //       pause(1000).
+  //       waitUntilWindowLoaded();
+  //     let indexURL = await this.app.client.getUrl();
+  //     indexURL.should.match(/\/index.html(\?.+)?$/);
 
-      let isView0Visible = await this.app.client.isVisible('#mattermostView0');
-      isView0Visible.should.be.true;
+  //     let isView0Visible = await this.app.client.isVisible('#mattermostView0');
+  //     isView0Visible.should.be.true;
 
-      let isView1Visible = await this.app.client.isVisible('#mattermostView1');
-      isView1Visible.should.be.false;
+  //     let isView1Visible = await this.app.client.isVisible('#mattermostView1');
+  //     isView1Visible.should.be.false;
 
-      await this.app.client.
-        loadSettingsPage().
-        click('h4=github').
-        pause(1000).
-        waitUntilWindowLoaded();
-      indexURL = await this.app.client.getUrl();
-      indexURL.should.match(/\/index.html(\?.+)?$/);
+  //     await this.app.client.
+  //       loadSettingsPage().
+  //       click('h4=github').
+  //       pause(1000).
+  //       waitUntilWindowLoaded();
+  //     indexURL = await this.app.client.getUrl();
+  //     indexURL.should.match(/\/index.html(\?.+)?$/);
 
-      isView0Visible = await this.app.client.isVisible('#mattermostView0');
-      isView0Visible.should.be.false;
+  //     isView0Visible = await this.app.client.isVisible('#mattermostView0');
+  //     isView0Visible.should.be.false;
 
-      isView1Visible = await this.app.client.isVisible('#mattermostView1');
-      isView1Visible.should.be.true;
-    });
-  });
+  //     isView1Visible = await this.app.client.isVisible('#mattermostView1');
+  //     isView1Visible.should.be.true;
+  //   });
+  // });
 
   describe('Options', () => {
-    describe.skip('Hide Menu Bar', () => {
-      it('should appear on win32 or linux', async () => {
-        const expected = (process.platform === 'win32' || process.platform === 'linux');
-        env.addClientCommands(this.app.client);
-        await this.app.client.loadSettingsPage();
-        const existing = await this.app.client.isExisting('#inputHideMenuBar');
-        existing.should.equal(expected);
-      });
+    // describe.skip('Hide Menu Bar', () => {
+    //   it('should appear on win32 or linux', async () => {
+    //     const expected = (process.platform === 'win32' || process.platform === 'linux');
+    //     env.addClientCommands(this.app.client);
+    //     await this.app.client.loadSettingsPage();
+    //     const existing = await this.app.client.isExisting('#inputHideMenuBar');
+    //     existing.should.equal(expected);
+    //   });
 
-      [true, false].forEach((v) => {
-        env.shouldTest(it, env.isOneOf(['win32', 'linux']))(`should be saved and loaded: ${v}`, async () => {
-          env.addClientCommands(this.app.client);
-          await this.app.client.
-            loadSettingsPage().
-            scroll('#inputHideMenuBar');
-          const isSelected = await this.app.client.isSelected('#inputHideMenuBar');
-          if (isSelected !== v) {
-            await this.app.client.click('#inputHideMenuBar');
-          }
+    //   [true, false].forEach((v) => {
+    //     env.shouldTest(it, env.isOneOf(['win32', 'linux']))(`should be saved and loaded: ${v}`, async () => {
+    //       env.addClientCommands(this.app.client);
+    //       await this.app.client.
+    //         loadSettingsPage().
+    //         scroll('#inputHideMenuBar');
+    //       const isSelected = await this.app.client.isSelected('#inputHideMenuBar');
+    //       if (isSelected !== v) {
+    //         await this.app.client.click('#inputHideMenuBar');
+    //       }
 
-          await this.app.client.
-            pause(600).
-            click('#btnClose').
-            pause(1000);
+    //       await this.app.client.
+    //         pause(600).
+    //         click('#btnClose').
+    //         pause(1000);
 
-          const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-          savedConfig.hideMenuBar.should.equal(v);
+    //       const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+    //       savedConfig.hideMenuBar.should.equal(v);
 
-          let autoHide = await this.app.browserWindow.isMenuBarAutoHide();
-          autoHide.should.equal(v);
+    //       let autoHide = await this.app.browserWindow.isMenuBarAutoHide();
+    //       autoHide.should.equal(v);
 
-          // confirm actual behavior
-          await this.app.restart();
-          env.addClientCommands(this.app.client);
+    //       // confirm actual behavior
+    //       await this.app.restart();
+    //       env.addClientCommands(this.app.client);
 
-          autoHide = await this.app.browserWindow.isMenuBarAutoHide();
-          autoHide.should.equal(v);
+    //       autoHide = await this.app.browserWindow.isMenuBarAutoHide();
+    //       autoHide.should.equal(v);
 
-          await this.app.loadSettingsPage();
-          autoHide = await this.app.client.isSelected('#inputHideMenuBar');
-          autoHide.should.equal(v);
-        });
-      });
-    });
+    //       await this.app.loadSettingsPage();
+    //       autoHide = await this.app.client.isSelected('#inputHideMenuBar');
+    //       autoHide.should.equal(v);
+    //     });
+    //   });
+    // });
 
     describe('Start app on login', () => {
       it('should appear on win32 or linux', async () => {
@@ -258,15 +258,15 @@ describe('renderer/settings.html', function desc() {
       });
     });
 
-    describe.skip('Toggle window visibility when clicking on the tray icon', () => {
-      it('should appear on win32', async () => {
-        const expected = (process.platform === 'win32');
-        env.addClientCommands(this.app.client);
-        await this.app.client.loadSettingsPage();
-        const existing = await this.app.client.isExisting('#inputToggleWindowOnTrayIconClick');
-        existing.should.equal(expected);
-      });
-    });
+    // describe.skip('Toggle window visibility when clicking on the tray icon', () => {
+    //   it('should appear on win32', async () => {
+    //     const expected = (process.platform === 'win32');
+    //     env.addClientCommands(this.app.client);
+    //     await this.app.client.loadSettingsPage();
+    //     const existing = await this.app.client.isExisting('#inputToggleWindowOnTrayIconClick');
+    //     existing.should.equal(expected);
+    //   });
+    // });
 
     describe('Flash app window and taskbar icon when a new message is received', () => {
       it('should appear on win32 and linux', async () => {

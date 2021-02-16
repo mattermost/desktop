@@ -30,6 +30,53 @@ InstallButton.propTypes = {
 };
 
 function UpdaterPage(props) {
+  let footer;
+  if (props.isDownloading) {
+    footer = (
+      <Navbar
+        className='UpdaterPage-footer'
+        fixedBottom={true}
+        fluid={true}
+      >
+        <ProgressBar
+          active={true}
+          now={props.progress}
+          label={`${props.progress}%`}
+        />
+        <div className='pull-right'>
+          <Button
+            onClick={props.onClickCancel}
+          >{'Cancel'}</Button>
+        </div>
+      </Navbar>
+    );
+  } else {
+    footer = (
+      <Navbar
+        className='UpdaterPage-footer'
+        fixedBottom={true}
+        fluid={true}
+      >
+        <Button
+          className='UpdaterPage-skipButton'
+          bsStyle='link'
+          onClick={props.onClickSkip}
+        >{'Skip this version'}</Button>
+        <div className='pull-right'>
+          <Button
+            bsStyle='link'
+            onClick={props.onClickRemind}
+          >{'Remind me in 2 days'}</Button>
+          <InstallButton
+            notifyOnly={props.notifyOnly}
+            onClickInstall={props.onClickInstall}
+            onClickDownload={props.onClickDownload}
+          />
+        </div>
+      </Navbar>
+    );
+  }
+
   return (
     <div className='UpdaterPage'>
       <Navbar fluid={true} >
@@ -45,46 +92,7 @@ function UpdaterPage(props) {
           {' to learn more.'}
         </p>
       </div>
-      {props.isDownloading ?
-        <Navbar
-          className='UpdaterPage-footer'
-          fixedBottom={true}
-          fluid={true}
-        >
-          <ProgressBar
-            active={true}
-            now={props.progress}
-            label={`${props.progress}%`}
-          />
-          <div className='pull-right'>
-            <Button
-              onClick={props.onClickCancel}
-            >{'Cancel'}</Button>
-          </div>
-        </Navbar> :
-        <Navbar
-          className='UpdaterPage-footer'
-          fixedBottom={true}
-          fluid={true}
-        >
-          <Button
-            className='UpdaterPage-skipButton'
-            bsStyle='link'
-            onClick={props.onClickSkip}
-          >{'Skip this version'}</Button>
-          <div className='pull-right'>
-            <Button
-              bsStyle='link'
-              onClick={props.onClickRemind}
-            >{'Remind me in 2 days'}</Button>
-            <InstallButton
-              notifyOnly={props.notifyOnly}
-              onClickInstall={props.onClickInstall}
-              onClickDownload={props.onClickDownload}
-            />
-          </div>
-        </Navbar>
-      }
+      {footer}
     </div>
   );
 }

@@ -50,7 +50,7 @@ CertificateStore.prototype.add = function add(targetURL, certificate) {
 };
 
 CertificateStore.prototype.isExisting = function isExisting(targetURL) {
-  return this.data.hasOwnProperty(urlUtils.getHost(targetURL));
+  return Object.prototype.hasOwnProperty.call(this.data, urlUtils.getHost(targetURL));
 };
 
 CertificateStore.prototype.isTrusted = function isTrusted(targetURL, certificate) {

@@ -34,30 +34,30 @@ describe('application', function desc() {
     visible.should.be.true;
   });
 
-  if (process.platform === 'darwin') {
-    it.skip('should show closed window with cmd+tab', async () => {
-      // Unable to utilize Command key press due to: https://bugs.chromium.org/p/chromedriver/issues/detail?id=3023#c2
-      await this.app.client.waitUntilWindowLoaded();
-      await this.app.client.keys(['Meta', 'w']);
-      let visible = await this.app.browserWindow.isVisible();
-      visible.should.be.false;
+  // if (process.platform === 'darwin') {
+  //   it.skip('should show closed window with cmd+tab', async () => {
+  //     // Unable to utilize Command key press due to: https://bugs.chromium.org/p/chromedriver/issues/detail?id=3023#c2
+  //     await this.app.client.waitUntilWindowLoaded();
+  //     await this.app.client.keys(['Meta', 'w']);
+  //     let visible = await this.app.browserWindow.isVisible();
+  //     visible.should.be.false;
 
-      this.app.client.keys(['Meta', 'Tab']);
-      visible = await this.app.browserWindow.isVisible();
-      visible.should.be.true;
-    });
-  }
+  //     this.app.client.keys(['Meta', 'Tab']);
+  //     visible = await this.app.browserWindow.isVisible();
+  //     visible.should.be.true;
+  //   });
+  // }
 
-  it.skip('should restore window bounds', async () => {
-    // bounds seems to be incorrectly calculated in some environments
-    // - Windows 10: OK
-    // - CircleCI: NG
-    const expectedBounds = {x: 100, y: 200, width: 300, height: 400};
-    fs.writeFileSync(env.boundsInfoPath, JSON.stringify(expectedBounds));
-    await this.app.restart();
-    const bounds = await this.app.browserWindow.getBounds();
-    bounds.should.deep.equal(expectedBounds);
-  });
+  // it.skip('should restore window bounds', async () => {
+  //   // bounds seems to be incorrectly calculated in some environments
+  //   // - Windows 10: OK
+  //   // - CircleCI: NG
+  //   const expectedBounds = {x: 100, y: 200, width: 300, height: 400};
+  //   fs.writeFileSync(env.boundsInfoPath, JSON.stringify(expectedBounds));
+  //   await this.app.restart();
+  //   const bounds = await this.app.browserWindow.getBounds();
+  //   bounds.should.deep.equal(expectedBounds);
+  // });
 
   it('should NOT restore window bounds if the origin is located on outside of viewarea', async () => {
     // bounds seems to be incorrectly calculated in some environments (e.g. CircleCI)
@@ -134,19 +134,18 @@ describe('application', function desc() {
     upgradedConfig.version.should.equal(newConfig.defaultData.version);
   });
 
-  it.skip('should be stopped when the app instance already exists', (done) => {
-    const secondApp = env.getSpectronApp();
+  // it.skip('should be stopped when the app instance already exists', (done) => {
+  //   const secondApp = env.getSpectronApp();
 
-    // In the correct case, 'start().then' is not called.
-    // So need to use setTimeout in order to finish this test.
-    const timer = setTimeout(() => {
-      done();
-    }, 3000);
-    secondApp.start().then(() => {
-      clearTimeout(timer);
-      return secondApp.stop();
-    }).then(() => {
-      done(new Error('Second app instance exists'));
-    });
-  });
+  //   // In the correct case, 'start().then' is not called.
+  //   // So need to use setTimeout in order to finish this test.
+  //   const timer = setTimeout(() => {
+  //     done();
+  //   }, 3000);
+  //   secondApp.start().then(() => {
+  //     clearTimeout(timer);
+  //     return secondApp.stop();
+  //   }).then(() => {
+  //     done(new Error('Second app instance exists'));
+  //   });
 });
