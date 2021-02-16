@@ -134,6 +134,9 @@ export function sendToRenderer(channel, ...args) {
     showMainWindow();
   }
   status.mainWindow.webContents.send(channel, ...args);
+  if (status.settingsWindow && status.settingsWindow.isVisible()) {
+    status.settingsWindow.webContents.send(channel, ...args);
+  }
 }
 
 export function sendToAll(channel, ...args) {
