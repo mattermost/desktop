@@ -15,57 +15,57 @@ import dingDataURL from '../../assets/ding.mp3'; // https://github.com/mattermos
 const appIconURL = 'file://assets/appicon_48.png';
 
 const playDing = throttle(() => {
-  const ding = new Audio(dingDataURL);
-  ding.play();
+    const ding = new Audio(dingDataURL);
+    ding.play();
 }, 3000, {trailing: false});
 
 export default class EnhancedNotification extends OriginalNotification {
-  constructor(title, options) {
-    if (process.platform === 'win32') {
-      // Replace with application icon.
-      options.icon = appIconURL;
-    } else if (process.platform === 'darwin') {
-      // Notification Center shows app's icon, so there were two icons on the notification.
-      Reflect.deleteProperty(options, 'icon');
+    constructor(title, options) {
+        if (process.platform === 'win32') {
+            // Replace with application icon.
+            options.icon = appIconURL;
+        } else if (process.platform === 'darwin') {
+            // Notification Center shows app's icon, so there were two icons on the notification.
+            Reflect.deleteProperty(options, 'icon');
+        }
+
+        super(title, options);
+
+        ipcRenderer.send('notified', {
+            title,
+            options,
+        });
+
+        if (process.platform === 'win32' && osVersion.isLowerThanOrEqualWindows8_1()) {
+            if (!options.silent) {
+                playDing();
+            }
+        }
     }
 
-    super(title, options);
+    // set onclick(handler) {
+    //   super.onclick = () => {
+    //     const currentWindow = remote.getCurrentWindow();
+    //     if (process.platform === 'win32') {
+    //       // show() breaks Aero Snap state.
+    //       if (currentWindow.isVisible()) {
+    //         currentWindow.focus();
+    //       } else if (currentWindow.isMinimized()) {
+    //         currentWindow.restore();
+    //       } else {
+    //         currentWindow.show();
+    //       }
+    //     } else if (currentWindow.isMinimized()) {
+    //       currentWindow.restore();
+    //     } else {
+    //       currentWindow.show();
+    //     }
+    //     ipcRenderer.sendToHost('onNotificationClick');
+    //     handler();
+    //   };
+    // }
 
-    ipcRenderer.send('notified', {
-      title,
-      options,
-    });
-
-    if (process.platform === 'win32' && osVersion.isLowerThanOrEqualWindows8_1()) {
-      if (!options.silent) {
-        playDing();
-      }
-    }
-  }
-
-  // set onclick(handler) {
-  //   super.onclick = () => {
-  //     const currentWindow = remote.getCurrentWindow();
-  //     if (process.platform === 'win32') {
-  //       // show() breaks Aero Snap state.
-  //       if (currentWindow.isVisible()) {
-  //         currentWindow.focus();
-  //       } else if (currentWindow.isMinimized()) {
-  //         currentWindow.restore();
-  //       } else {
-  //         currentWindow.show();
-  //       }
-  //     } else if (currentWindow.isMinimized()) {
-  //       currentWindow.restore();
-  //     } else {
-  //       currentWindow.show();
-  //     }
-  //     ipcRenderer.sendToHost('onNotificationClick');
-  //     handler();
-  //   };
-  // }
-
-  // get onclick() {
-  //   return super.onclick;
-  // }
+    // get onclick() {
+    //   return super.onclick;
+    // }
 }

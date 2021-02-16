@@ -8,53 +8,53 @@ import urlUtils from 'common/utils/url';
 
 let disposeCurrent;
 let menuOptions = {
-  shouldShowMenu: (e, p) => {
+    shouldShowMenu: (e, p) => {
     // TODO: remove copy link from internal links (like the team)
-    const isInternalLink = p.linkURL.endsWith('#') && p.linkURL.slice(0, -1) === p.pageURL;
-    let isInternalSrc;
-    try {
-      const srcurl = urlUtils.parseURL(p.srcURL);
-      isInternalSrc = srcurl.protocol === 'file:';
-    } catch (err) {
-      isInternalSrc = false;
-    }
-    return p.isEditable || (p.mediaType !== 'none' && !isInternalSrc) || (p.linkURL !== '' && !isInternalLink) || p.misspelledWord !== '' || p.selectionText !== '';
-  },
-  showLookUpSelection: true,
-  showSearchWithGoogle: true,
-  showCopyImage: true,
-  showSaveImage: true,
-  showSaveImageAs: true,
-  showServices: true,
+        const isInternalLink = p.linkURL.endsWith('#') && p.linkURL.slice(0, -1) === p.pageURL;
+        let isInternalSrc;
+        try {
+            const srcurl = urlUtils.parseURL(p.srcURL);
+            isInternalSrc = srcurl.protocol === 'file:';
+        } catch (err) {
+            isInternalSrc = false;
+        }
+        return p.isEditable || (p.mediaType !== 'none' && !isInternalSrc) || (p.linkURL !== '' && !isInternalLink) || p.misspelledWord !== '' || p.selectionText !== '';
+    },
+    showLookUpSelection: true,
+    showSearchWithGoogle: true,
+    showCopyImage: true,
+    showSaveImage: true,
+    showSaveImageAs: true,
+    showServices: true,
 };
 
 function dispose() {
-  if (disposeCurrent) {
-    disposeCurrent();
-    disposeCurrent = null;
-  }
+    if (disposeCurrent) {
+        disposeCurrent();
+        disposeCurrent = null;
+    }
 }
 
 function saveOptions(options) {
-  const providedOptions = options || {};
+    const providedOptions = options || {};
 
-  menuOptions = Object.assign({}, menuOptions, providedOptions);
+    menuOptions = Object.assign({}, menuOptions, providedOptions);
 }
 
 function reload(target) {
-  dispose();
-  const options = target ? {window: target, ...menuOptions} : menuOptions;
-  disposeCurrent = electronContextMenu(options);
+    dispose();
+    const options = target ? {window: target, ...menuOptions} : menuOptions;
+    disposeCurrent = electronContextMenu(options);
 }
 
 function setup(options) {
-  saveOptions(options);
-  dispose();
-  disposeCurrent = electronContextMenu(menuOptions);
+    saveOptions(options);
+    dispose();
+    disposeCurrent = electronContextMenu(menuOptions);
 }
 
 export default {
-  setup,
-  dispose,
-  reload,
+    setup,
+    dispose,
+    reload,
 };

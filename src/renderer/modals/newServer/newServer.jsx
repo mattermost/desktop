@@ -15,24 +15,24 @@ import {MODAL_CANCEL, MODAL_RESULT} from 'common/communication.js';
 import NewTeamModal from '../../components/NewTeamModal.jsx'; //'./addServer.jsx';
 
 const onClose = () => {
-  window.postMessage({type: MODAL_CANCEL}, window.location.href);
+    window.postMessage({type: MODAL_CANCEL}, window.location.href);
 };
 
 const onSave = (data) => {
-  window.postMessage({type: MODAL_RESULT, data}, window.location.href);
+    window.postMessage({type: MODAL_RESULT, data}, window.location.href);
 };
 
 const start = async () => {
-  ReactDOM.render(
-    <NewTeamModal
-      onClose={onClose}
-      onSave={onSave}
-      editMode={false}
-      show={true}
-      url={decodeURIComponent(urlParams.get('url'))}
-    />,
-    document.getElementById('app'),
-  );
+    ReactDOM.render(
+        <NewTeamModal
+            onClose={onClose}
+            onSave={onSave}
+            editMode={false}
+            show={true}
+            url={decodeURIComponent(urlParams.get('url'))}
+        />,
+        document.getElementById('app'),
+    );
 };
 
 start();

@@ -13,26 +13,26 @@ import 'renderer/css/modals.css';
 import 'renderer/css/components/CertificateModal.css';
 
 const handleCancel = () => {
-  window.postMessage({type: MODAL_CANCEL}, window.location.href);
+    window.postMessage({type: MODAL_CANCEL}, window.location.href);
 };
 
 const handleSelect = (cert) => {
-  window.postMessage({type: MODAL_RESULT, data: {cert}}, window.location.href);
+    window.postMessage({type: MODAL_RESULT, data: {cert}}, window.location.href);
 };
 
 const getCertInfo = () => {
-  window.postMessage({type: RETRIEVE_MODAL_INFO}, window.location.href);
+    window.postMessage({type: RETRIEVE_MODAL_INFO}, window.location.href);
 };
 
 const start = async () => {
-  ReactDOM.render(
-    <SelectCertificateModal
-      onSelect={handleSelect}
-      onCancel={handleCancel}
-      getCertInfo={getCertInfo}
-    />,
-    document.getElementById('app'),
-  );
+    ReactDOM.render(
+        <SelectCertificateModal
+            onSelect={handleSelect}
+            onCancel={handleCancel}
+            getCertInfo={getCertInfo}
+        />,
+        document.getElementById('app'),
+    );
 };
 
 start();

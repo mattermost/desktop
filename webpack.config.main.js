@@ -15,53 +15,53 @@ const CopyPlugin = require('copy-webpack-plugin');
 const base = require('./webpack.config.base');
 
 module.exports = merge(base, {
-  entry: {
-    index: './src/main/main.js',
-    preload: './src/main/preload/mattermost.js',
-    modalPreload: './src/main/preload/modalPreload.js',
-    finderPreload: './src/main/preload/finderPreload.js',
-  },
-  output: {
-    path: path.join(__dirname, 'dist/'),
-    filename: '[name].js',
-  },
-  module: {
-    rules: [{
-      test: /\.js?$/,
-      use: {
-        loader: 'babel-loader',
-        options: {
-          include: ['@babel/plugin-proposal-class-properties'],
-        },
-      },
-    }, {
-      test: /\.mp3$/,
-      use: {
-        loader: 'url-loader',
-      },
+    entry: {
+        index: './src/main/main.js',
+        preload: './src/main/preload/mattermost.js',
+        modalPreload: './src/main/preload/modalPreload.js',
+        finderPreload: './src/main/preload/finderPreload.js',
     },
-    {
-      test: /\.node$/,
-      loader: 'awesome-node-loader',
-      options: {
-        name: '[name].[ext]',
-        rewritePath: path.resolve(__dirname, 'dist'),
-      },
-    }],
-  },
-  plugins: [
-    new CopyPlugin({
-      patterns: [{
-        from: 'assets/**/*',
-        context: 'src',
-      }],
-    }),
-  ],
-  node: {
-    __filename: true,
-    __dirname: true,
-  },
-  target: 'electron-main',
+    output: {
+        path: path.join(__dirname, 'dist/'),
+        filename: '[name].js',
+    },
+    module: {
+        rules: [{
+            test: /\.js?$/,
+            use: {
+                loader: 'babel-loader',
+                options: {
+                    include: ['@babel/plugin-proposal-class-properties'],
+                },
+            },
+        }, {
+            test: /\.mp3$/,
+            use: {
+                loader: 'url-loader',
+            },
+        },
+        {
+            test: /\.node$/,
+            loader: 'awesome-node-loader',
+            options: {
+                name: '[name].[ext]',
+                rewritePath: path.resolve(__dirname, 'dist'),
+            },
+        }],
+    },
+    plugins: [
+        new CopyPlugin({
+            patterns: [{
+                from: 'assets/**/*',
+                context: 'src',
+            }],
+        }),
+    ],
+    node: {
+        __filename: true,
+        __dirname: true,
+    },
+    target: 'electron-main',
 });
 
 /* eslint-enable import/no-commonjs */

@@ -12,13 +12,13 @@ const {path7za} = require('7zip-bin');
 const cwd = process.argv[2];
 
 spawn(path7za, ['e', '-y', '*.zip'], {
-  cwd,
-  stdio: 'inherit',
+    cwd,
+    stdio: 'inherit',
 }).on('error', (err) => {
-  console.error(err);
-  process.exit(1);
+    console.error(err);
+    process.exit(1);
 }).on('close', (code) => {
-  process.exit(code);
+    process.exit(code);
 });
 
 /* eslint-enable no-process-exit */

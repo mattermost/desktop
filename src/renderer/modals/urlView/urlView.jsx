@@ -12,12 +12,12 @@ import ReactDOM from 'react-dom';
 import UrlDescription from '../../components/urlDescription.jsx';
 
 const start = async () => {
-  ReactDOM.render(
-    <UrlDescription
-      url={decodeURIComponent(urlParams.get('url'))}
-    />,
-    document.getElementById('app'),
-  );
+    ReactDOM.render(
+        <UrlDescription
+            url={decodeURIComponent(urlParams.get('url'))}
+        />,
+        document.getElementById('app'),
+    );
 };
 
 start();

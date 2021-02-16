@@ -13,18 +13,18 @@ import upstairs from 'static/sounds/upstairs.mp3';
 
 export const DEFAULT_WIN7 = 'Ding';
 const notificationSounds = new Map([
-  [DEFAULT_WIN7, ding],
-  ['Bing', bing],
-  ['Crackle', crackle],
-  ['Down', down],
-  ['Hello', hello],
-  ['Ripple', ripple],
-  ['Upstairs', upstairs],
+    [DEFAULT_WIN7, ding],
+    ['Bing', bing],
+    ['Crackle', crackle],
+    ['Down', down],
+    ['Hello', hello],
+    ['Ripple', ripple],
+    ['Upstairs', upstairs],
 ]);
 
 export const playSound = throttle((soundName) => {
-  if (soundName) {
-    const audio = new Audio(notificationSounds.get(soundName));
-    audio.play();
-  }
+    if (soundName) {
+        const audio = new Audio(notificationSounds.get(soundName));
+        audio.play();
+    }
 }, 3000, {trailing: false});

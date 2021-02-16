@@ -3,13 +3,13 @@
 // See LICENSE.txt for license information.
 
 function asyncSleep(timeout) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve();
-    }, timeout);
-  });
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve();
+        }, timeout);
+    });
 }
 
 module.exports = {
-  asyncSleep,
+    asyncSleep,
 };

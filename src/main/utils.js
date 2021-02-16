@@ -11,62 +11,62 @@ import Utils from 'common/utils/util';
 const TAB_BAR_HEIGHT = 40;
 
 export function shouldBeHiddenOnStartup(parsedArgv) {
-  if (parsedArgv.hidden) {
-    return true;
-  }
-  if (process.platform === 'darwin') {
-    if (app.getLoginItemSettings().wasOpenedAsHidden) {
-      return true;
+    if (parsedArgv.hidden) {
+        return true;
     }
-  }
-  return false;
+    if (process.platform === 'darwin') {
+        if (app.getLoginItemSettings().wasOpenedAsHidden) {
+            return true;
+        }
+    }
+    return false;
 }
 
 export function getWindowBoundaries(win) {
-  const {width, height} = win.getContentBounds();
-  return getAdjustedWindowBoundaries(width, height);
+    const {width, height} = win.getContentBounds();
+    return getAdjustedWindowBoundaries(width, height);
 }
 
 export function getAdjustedWindowBoundaries(width, height) {
-  return {
-    x: 0,
-    y: TAB_BAR_HEIGHT,
-    width,
-    height: height - TAB_BAR_HEIGHT,
-  };
+    return {
+        x: 0,
+        y: TAB_BAR_HEIGHT,
+        width,
+        height: height - TAB_BAR_HEIGHT,
+    };
 }
 
 export function getLocalURLString(urlPath, query, isMain) {
-  const localURL = getLocalURL(urlPath, query, isMain);
-  return localURL.href;
+    const localURL = getLocalURL(urlPath, query, isMain);
+    return localURL.href;
 }
 
 export function getLocalURL(urlPath, query, isMain) {
-  let pathname;
-  const processPath = isMain ? '' : '/renderer';
-  const mode = Utils.runMode();
-  const protocol = 'file';
-  const hostname = '';
-  const port = '';
-  if (mode === PRODUCTION) {
-    pathname = path.join(electron.app.getAppPath(), `${processPath}/${urlPath}`);
-  } else {
-    pathname = path.resolve(__dirname, `../../dist/${processPath}/${urlPath}`); // TODO: find a better way to work with webpack on this
-  }
-  const localUrl = new URL(`${protocol}://${hostname}${port}`);
-  localUrl.pathname = pathname;
-  if (query) {
-    query.forEach((value, key) => {
-      localUrl.searchParams.append(encodeURIComponent(key), encodeURIComponent(value));
-    });
-  }
+    let pathname;
+    const processPath = isMain ? '' : '/renderer';
+    const mode = Utils.runMode();
+    const protocol = 'file';
+    const hostname = '';
+    const port = '';
+    if (mode === PRODUCTION) {
+        pathname = path.join(electron.app.getAppPath(), `${processPath}/${urlPath}`);
+    } else {
+        pathname = path.resolve(__dirname, `../../dist/${processPath}/${urlPath}`); // TODO: find a better way to work with webpack on this
+    }
+    const localUrl = new URL(`${protocol}://${hostname}${port}`);
+    localUrl.pathname = pathname;
+    if (query) {
+        query.forEach((value, key) => {
+            localUrl.searchParams.append(encodeURIComponent(key), encodeURIComponent(value));
+        });
+    }
 
-  return localUrl;
+    return localUrl;
 }
 
 export function getLocalPreload(file) {
-  if (Utils.runMode() === PRODUCTION) {
-    return path.join(electron.app.getAppPath(), `${file}`);
-  }
-  return path.resolve(__dirname, `../../dist/${file}`);
+    if (Utils.runMode() === PRODUCTION) {
+        return path.join(electron.app.getAppPath(), `${file}`);
+    }
+    return path.resolve(__dirname, `../../dist/${file}`);
 }

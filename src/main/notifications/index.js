@@ -11,50 +11,50 @@ import {Mention} from './Mention';
 import {DownloadNotification} from './Download';
 
 export function displayMention(title, body, channel, teamId, silent, webcontents, data) {
-  if (!Notification.isSupported()) {
-    console.log('notification not supported');
-    return;
-  }
-  const serverName = windowManager.getServerNameByWebContentsId(webcontents.id);
-
-  const options = {
-    title: `${serverName}: ${title}`,
-    body,
-    silent,
-    data,
-  };
-  const mention = new Mention(options);
-
-  mention.on('show', () => {
-    const notificationSound = mention.getNotificationSound();
-    if (notificationSound) {
-      windowManager.sendToRenderer(PLAY_SOUND, notificationSound);
+    if (!Notification.isSupported()) {
+        console.log('notification not supported');
+        return;
     }
-    windowManager.flashFrame(true);
-  });
+    const serverName = windowManager.getServerNameByWebContentsId(webcontents.id);
 
-  mention.on('click', () => {
-    if (serverName) {
-      windowManager.switchServer(serverName, true);
-      webcontents.send('notification-clicked', {channel, teamId});
-    }
-  });
-  mention.show();
+    const options = {
+        title: `${serverName}: ${title}`,
+        body,
+        silent,
+        data,
+    };
+    const mention = new Mention(options);
+
+    mention.on('show', () => {
+        const notificationSound = mention.getNotificationSound();
+        if (notificationSound) {
+            windowManager.sendToRenderer(PLAY_SOUND, notificationSound);
+        }
+        windowManager.flashFrame(true);
+    });
+
+    mention.on('click', () => {
+        if (serverName) {
+            windowManager.switchServer(serverName, true);
+            webcontents.send('notification-clicked', {channel, teamId});
+        }
+    });
+    mention.show();
 }
 
 export function displayDownloadCompleted(fileName, path, serverInfo) {
-  if (!Notification.isSupported()) {
-    console.log('notification not supported');
-    return;
-  }
-  const download = new DownloadNotification(fileName, serverInfo);
+    if (!Notification.isSupported()) {
+        console.log('notification not supported');
+        return;
+    }
+    const download = new DownloadNotification(fileName, serverInfo);
 
-  download.on('show', () => {
-    windowManager.flashFrame(true);
-  });
+    download.on('show', () => {
+        windowManager.flashFrame(true);
+    });
 
-  download.on('click', () => {
-    shell.showItemInFolder(path.normalize());
-  });
-  download.show();
+    download.on('click', () => {
+        shell.showItemInFolder(path.normalize());
+    });
+    download.show();
 }

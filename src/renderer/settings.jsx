@@ -20,18 +20,18 @@ import ReactDOM from 'react-dom';
 import SettingsPage from './components/SettingsPage.jsx';
 
 function openMenu() {
-  if (process.platform !== 'darwin') {
-    ipcRenderer.send('open-app-menu');
-  }
+    if (process.platform !== 'darwin') {
+        ipcRenderer.send('open-app-menu');
+    }
 }
 
 const start = async () => {
-  ReactDOM.render(
-    <SettingsPage
-      openMenu={openMenu}
-    />,
-    document.getElementById('app'),
-  );
+    ReactDOM.render(
+        <SettingsPage
+            openMenu={openMenu}
+        />,
+        document.getElementById('app'),
+    );
 };
 
 // Deny drag&drop navigation in mainWindow.

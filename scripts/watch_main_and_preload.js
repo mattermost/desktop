@@ -11,21 +11,21 @@ let started = false;
 
 const mainCompiler = webpack(mainConfig);
 mainCompiler.watch({}, (err, stats) => {
-  process.stdout.write(stats.toString({colors: true}));
-  process.stdout.write('\n');
-  if (!stats.hasErrors()) {
-    if (started) {
-      electron.restart();
-    } else {
-      electron.start();
-      started = true;
+    process.stdout.write(stats.toString({colors: true}));
+    process.stdout.write('\n');
+    if (!stats.hasErrors()) {
+        if (started) {
+            electron.restart();
+        } else {
+            electron.start();
+            started = true;
+        }
     }
-  }
 });
 
 const preloadCompiler = webpack(rendererConfig);
 preloadCompiler.watch({}, (err) => {
-  if (err) {
-    console.log(err);
-  }
+    if (err) {
+        console.log(err);
+    }
 });

@@ -7,44 +7,44 @@ import {Row, Button} from 'react-bootstrap';
 
 export default class ExtraBar extends React.Component {
   handleBack = () => {
-    if (this.props.goBack) {
-      this.props.goBack();
-    }
+      if (this.props.goBack) {
+          this.props.goBack();
+      }
   }
   render() {
-    let barClass = 'clear-mode';
-    if (!this.props.show) {
-      barClass = 'hidden';
-    } else if (this.props.darkMode) {
-      barClass = 'dark-mode';
-    }
+      let barClass = 'clear-mode';
+      if (!this.props.show) {
+          barClass = 'hidden';
+      } else if (this.props.darkMode) {
+          barClass = 'dark-mode';
+      }
 
-    return (
-      <Row
-        id={'extra-bar'}
-        className={barClass}
-      >
-        <div
-          className={'container-fluid'}
-          onClick={this.handleBack}
-        >
-          <Button
-            bsStyle={'link'}
-            bsSize={'xsmall'}
+      return (
+          <Row
+              id={'extra-bar'}
+              className={barClass}
           >
-            <span className={'backIcon fa fa-1x fa-angle-left'}/>
-            <span className={'backLabel'}>
-              {'Back'}
-            </span>
-          </Button>
-        </div>
-      </Row>
-    );
+              <div
+                  className={'container-fluid'}
+                  onClick={this.handleBack}
+              >
+                  <Button
+                      bsStyle={'link'}
+                      bsSize={'xsmall'}
+                  >
+                      <span className={'backIcon fa fa-1x fa-angle-left'}/>
+                      <span className={'backLabel'}>
+                          {'Back'}
+                      </span>
+                  </Button>
+              </div>
+          </Row>
+      );
   }
 }
 
 ExtraBar.propTypes = {
-  darkMode: PropTypes.bool,
-  goBack: PropTypes.func,
-  show: PropTypes.bool,
+    darkMode: PropTypes.bool,
+    goBack: PropTypes.func,
+    show: PropTypes.bool,
 };

@@ -14,154 +14,154 @@ import contextMenu from '../contextMenu';
 import {getLocalURLString} from '../utils';
 
 function saveWindowState(file, window) {
-  const windowState = window.getBounds();
-  windowState.maximized = window.isMaximized();
-  try {
-    fs.writeFileSync(file, JSON.stringify(windowState));
-  } catch (e) {
+    const windowState = window.getBounds();
+    windowState.maximized = window.isMaximized();
+    try {
+        fs.writeFileSync(file, JSON.stringify(windowState));
+    } catch (e) {
     // [Linux] error happens only when the window state is changed before the config dir is created.
-    console.log(e);
-  }
+        console.log(e);
+    }
 }
 
 function isFramelessWindow() {
-  return os.platform() === 'darwin' || (os.platform() === 'win32' && os.release().startsWith('10'));
+    return os.platform() === 'darwin' || (os.platform() === 'win32' && os.release().startsWith('10'));
 }
 
 function createMainWindow(config, options) {
-  const defaultWindowWidth = 1000;
-  const defaultWindowHeight = 700;
-  const minimumWindowWidth = 400;
-  const minimumWindowHeight = 240;
+    const defaultWindowWidth = 1000;
+    const defaultWindowHeight = 700;
+    const minimumWindowWidth = 400;
+    const minimumWindowHeight = 240;
 
-  // Create the browser window.
-  const boundsInfoPath = path.join(app.getPath('userData'), 'bounds-info.json');
-  let windowOptions;
-  try {
-    windowOptions = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));
-    windowOptions = Validator.validateBoundsInfo(windowOptions);
-    if (!windowOptions) {
-      throw new Error('Provided bounds info file does not validate, using defaults instead.');
-    }
-  } catch (e) {
+    // Create the browser window.
+    const boundsInfoPath = path.join(app.getPath('userData'), 'bounds-info.json');
+    let windowOptions;
+    try {
+        windowOptions = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));
+        windowOptions = Validator.validateBoundsInfo(windowOptions);
+        if (!windowOptions) {
+            throw new Error('Provided bounds info file does not validate, using defaults instead.');
+        }
+    } catch (e) {
     // Follow Electron's defaults, except for window dimensions which targets 1024x768 screen resolution.
-    windowOptions = {width: defaultWindowWidth, height: defaultWindowHeight};
-  }
+        windowOptions = {width: defaultWindowWidth, height: defaultWindowHeight};
+    }
 
-  const {maximized: windowIsMaximized} = windowOptions;
+    const {maximized: windowIsMaximized} = windowOptions;
 
-  const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
+    const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
 
-  if (process.platform === 'linux') {
-    windowOptions.icon = options.linuxAppIcon;
-  }
-  Object.assign(windowOptions, {
-    title: app.name,
-    fullscreenable: true,
-    show: false, // don't start the window until it is ready and only if it isn't hidden
-    paintWhenInitiallyHidden: true, // we want it to start painting to get info from the webapp
-    minWidth: minimumWindowWidth,
-    minHeight: minimumWindowHeight,
-    frame: !isFramelessWindow(),
-    fullscreen: false,
-    titleBarStyle: 'hiddenInset',
-    backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      disableBlinkFeatures: 'Auxclick',
-      spellcheck,
-    },
-  });
-
-  const mainWindow = new BrowserWindow(windowOptions);
-  mainWindow.deeplinkingUrl = options.deeplinkingUrl;
-  mainWindow.setMenuBarVisibility(false);
-
-  const localURL = getLocalURLString('index.html');
-  mainWindow.loadURL(localURL).catch(
-    (reason) => {
-      log.error(`Main window failed to load: ${reason}`);
+    if (process.platform === 'linux') {
+        windowOptions.icon = options.linuxAppIcon;
+    }
+    Object.assign(windowOptions, {
+        title: app.name,
+        fullscreenable: true,
+        show: false, // don't start the window until it is ready and only if it isn't hidden
+        paintWhenInitiallyHidden: true, // we want it to start painting to get info from the webapp
+        minWidth: minimumWindowWidth,
+        minHeight: minimumWindowHeight,
+        frame: !isFramelessWindow(),
+        fullscreen: false,
+        titleBarStyle: 'hiddenInset',
+        backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+            disableBlinkFeatures: 'Auxclick',
+            spellcheck,
+        },
     });
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.webContents.zoomLevel = 0;
 
-    mainWindow.show();
-    if (windowIsMaximized) {
-      mainWindow.maximize();
-    }
-  });
+    const mainWindow = new BrowserWindow(windowOptions);
+    mainWindow.deeplinkingUrl = options.deeplinkingUrl;
+    mainWindow.setMenuBarVisibility(false);
 
-  mainWindow.once('show', () => {
-    mainWindow.show();
-  });
+    const localURL = getLocalURLString('index.html');
+    mainWindow.loadURL(localURL).catch(
+        (reason) => {
+            log.error(`Main window failed to load: ${reason}`);
+        });
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.webContents.zoomLevel = 0;
 
-  mainWindow.once('restore', () => {
-    mainWindow.restore();
-  });
-
-  // App should save bounds when a window is closed.
-  // However, 'close' is not fired in some situations(shutdown, ctrl+c)
-  // because main process is killed in such situations.
-  // 'blur' event was effective in order to avoid this.
-  // Ideally, app should detect that OS is shutting down.
-  mainWindow.on('blur', () => {
-    saveWindowState(boundsInfoPath, mainWindow);
-  });
-
-  mainWindow.on('close', (event) => {
-    if (global.willAppQuit) { // when [Ctrl|Cmd]+Q
-      saveWindowState(boundsInfoPath, mainWindow);
-    } else { // Minimize or hide the window for close button.
-      event.preventDefault();
-      function hideWindow(window) {
-        window.blur(); // To move focus to the next top-level window in Windows
-        window.hide();
-      }
-      switch (process.platform) {
-      case 'win32':
-        hideWindow(mainWindow);
-        break;
-      case 'linux':
-        if (config.minimizeToTray) {
-          hideWindow(mainWindow);
-        } else {
-          mainWindow.minimize();
+        mainWindow.show();
+        if (windowIsMaximized) {
+            mainWindow.maximize();
         }
-        break;
-      case 'darwin':
-        // need to leave fullscreen first, then hide the window
-        if (mainWindow.isFullScreen()) {
-          mainWindow.once('leave-full-screen', () => {
-            app.hide();
-          });
-          mainWindow.setFullScreen(false);
-        } else {
-          app.hide();
-        }
-        break;
-      default:
-      }
-    }
-  });
+    });
 
-  // Register keyboard shortcuts
-  mainWindow.webContents.on('before-input-event', (event, input) => {
+    mainWindow.once('show', () => {
+        mainWindow.show();
+    });
+
+    mainWindow.once('restore', () => {
+        mainWindow.restore();
+    });
+
+    // App should save bounds when a window is closed.
+    // However, 'close' is not fired in some situations(shutdown, ctrl+c)
+    // because main process is killed in such situations.
+    // 'blur' event was effective in order to avoid this.
+    // Ideally, app should detect that OS is shutting down.
+    mainWindow.on('blur', () => {
+        saveWindowState(boundsInfoPath, mainWindow);
+    });
+
+    mainWindow.on('close', (event) => {
+        if (global.willAppQuit) { // when [Ctrl|Cmd]+Q
+            saveWindowState(boundsInfoPath, mainWindow);
+        } else { // Minimize or hide the window for close button.
+            event.preventDefault();
+            function hideWindow(window) {
+                window.blur(); // To move focus to the next top-level window in Windows
+                window.hide();
+            }
+            switch (process.platform) {
+            case 'win32':
+                hideWindow(mainWindow);
+                break;
+            case 'linux':
+                if (config.minimizeToTray) {
+                    hideWindow(mainWindow);
+                } else {
+                    mainWindow.minimize();
+                }
+                break;
+            case 'darwin':
+                // need to leave fullscreen first, then hide the window
+                if (mainWindow.isFullScreen()) {
+                    mainWindow.once('leave-full-screen', () => {
+                        app.hide();
+                    });
+                    mainWindow.setFullScreen(false);
+                } else {
+                    app.hide();
+                }
+                break;
+            default:
+            }
+        }
+    });
+
+    // Register keyboard shortcuts
+    mainWindow.webContents.on('before-input-event', (event, input) => {
     // Add Alt+Cmd+(Right|Left) as alternative to switch between servers
-    if (process.platform === 'darwin') {
-      if (input.alt && input.meta) {
-        if (input.key === 'ArrowRight') {
-          mainWindow.webContents.send('select-next-tab');
+        if (process.platform === 'darwin') {
+            if (input.alt && input.meta) {
+                if (input.key === 'ArrowRight') {
+                    mainWindow.webContents.send('select-next-tab');
+                }
+                if (input.key === 'ArrowLeft') {
+                    mainWindow.webContents.send('select-previous-tab');
+                }
+            }
         }
-        if (input.key === 'ArrowLeft') {
-          mainWindow.webContents.send('select-previous-tab');
-        }
-      }
-    }
-  });
+    });
 
-  contextMenu.setup({useSpellChecker: config.useSpellChecker});
-  return mainWindow;
+    contextMenu.setup({useSpellChecker: config.useSpellChecker});
+    return mainWindow;
 }
 
 export default createMainWindow;

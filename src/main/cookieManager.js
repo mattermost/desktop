@@ -4,20 +4,20 @@
 import {app} from 'electron';
 
 function flushCookiesStore(session) {
-  session.cookies.flushStore().catch((err) => {
-    console.log(`There was a problem flushing cookies:\n${err}`);
-  });
+    session.cookies.flushStore().catch((err) => {
+        console.log(`There was a problem flushing cookies:\n${err}`);
+    });
 }
 
 export default function initCookieManager(session) {
-  // Somehow cookies are not immediately saved to disk.
-  // So manually flush cookie store to disk on closing the app.
-  // https://github.com/electron/electron/issues/8416
-  app.on('before-quit', () => {
-    flushCookiesStore(session);
-  });
+    // Somehow cookies are not immediately saved to disk.
+    // So manually flush cookie store to disk on closing the app.
+    // https://github.com/electron/electron/issues/8416
+    app.on('before-quit', () => {
+        flushCookiesStore(session);
+    });
 
-  app.on('browser-window-blur', () => {
-    flushCookiesStore(session);
-  });
+    app.on('browser-window-blur', () => {
+        flushCookiesStore(session);
+    });
 }

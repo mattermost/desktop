@@ -14,18 +14,18 @@ const appVersion = pkg.version;
 const name = pkg.name;
 
 function disableInstallUpdate(zipPath) {
-  const zipFullPath = path.resolve(__dirname, '..', zipPath);
-  const appUpdaterConfigFile = 'app-updater-config.json';
+    const zipFullPath = path.resolve(__dirname, '..', zipPath);
+    const appUpdaterConfigFile = 'app-updater-config.json';
 
-  const addResult = spawnSync(path7za, ['a', zipFullPath, appUpdaterConfigFile], {cwd: 'resources/windows'});
-  if (addResult.status !== 0) {
-    throw new Error(`7za a returned non-zero exit code for ${zipPath}`);
-  }
+    const addResult = spawnSync(path7za, ['a', zipFullPath, appUpdaterConfigFile], {cwd: 'resources/windows'});
+    if (addResult.status !== 0) {
+        throw new Error(`7za a returned non-zero exit code for ${zipPath}`);
+    }
 
-  const renameResult = spawnSync(path7za, ['rn', zipFullPath, appUpdaterConfigFile, `resources/${appUpdaterConfigFile}`]);
-  if (renameResult.status !== 0) {
-    throw new Error(`7za rn returned non-zero exit code for ${zipPath}`);
-  }
+    const renameResult = spawnSync(path7za, ['rn', zipFullPath, appUpdaterConfigFile, `resources/${appUpdaterConfigFile}`]);
+    if (renameResult.status !== 0) {
+        throw new Error(`7za rn returned non-zero exit code for ${zipPath}`);
+    }
 }
 
 console.log('Manipulating 64-bit zip...');
