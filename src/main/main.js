@@ -291,7 +291,7 @@ function handleAppSecondInstance(event, argv) {
   // Protocol handler for win32
   // argv: An array of the second instance’s (command line / deep linked) arguments
   const deeplinkingUrl = getDeeplinkingURL(argv);
-  WindowManager.showMainWindow(deeplinkingUrl);
+  openDeepLink(deeplinkingUrl);
 }
 
 function handleAppWindowAllClosed() {
