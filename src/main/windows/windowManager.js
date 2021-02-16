@@ -209,9 +209,10 @@ function createDataURL(text, small) {
   }
 
   // since we don't have a document/canvas object in the main process, we use the webcontents from the window to draw.
+  const safeSmall = Boolean(small);
   const code = `
     window.drawBadge = ${drawBadge};
-    window.drawBadge(${text}, ${small});
+    window.drawBadge('${text || ''}', ${safeSmall});
   `;
   return win.webContents.executeJavaScript(code);
 }
