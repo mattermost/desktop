@@ -228,7 +228,12 @@ export class MattermostView extends EventEmitter {
 
   // if favicon is null, it will affect appState, but won't be memoized
   findUnreadState = (favicon) => {
-    this.view.webContents.send(IS_UNREAD, favicon, this.server.name);
+    try {
+      this.view.webContents.send(IS_UNREAD, favicon, this.server.name);
+    } catch (err) {
+      log.error(`There was an error trying to request the unread state: ${err}`);
+      log.error(err.stack);
+    }
   }
 
   // if favicon is null, it means it is the initial load,
