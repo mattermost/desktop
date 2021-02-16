@@ -45,7 +45,6 @@ import spinnerx2 from '../../assets/loading@2x.gif';
 import {playSound} from '../notificationSounds';
 
 import TabBar from './TabBar.jsx';
-import Finder from './Finder.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
 import ExtraBar from './ExtraBar.jsx';
 import ErrorView from './ErrorView.jsx';
@@ -256,7 +255,8 @@ export default class MainPage extends React.Component {
         if (this.state.key !== parsedDeeplink.teamIndex) {
           this.handleSelect(parsedDeeplink.teamIndex);
         }
-        this.refs[`mattermostView${parsedDeeplink.teamIndex}`].handleDeepLink(parsedDeeplink.path);
+
+        //this.refs[`mattermostView${parsedDeeplink.teamIndex}`].handleDeepLink(parsedDeeplink.path);
       }
     });
 
@@ -500,13 +500,13 @@ export default class MainPage extends React.Component {
   }
 
   // TODO: remove when back bar PR is merged
-  showExtraBar = () => {
-    const ref = this.refs[`mattermostView${this.state.key}`];
-    if (typeof ref !== 'undefined') {
-      return !urlUtils.isTeamUrl(this.props.teams[this.state.key].url, ref.getSrc());
-    }
-    return false;
-  }
+  // showExtraBar = () => {
+  //   const ref = this.refs[`mattermostView${this.state.key}`];
+  //   if (typeof ref !== 'undefined') {
+  //     return !urlUtils.isTeamUrl(this.props.teams[this.state.key].url, ref.getSrc());
+  //   }
+  //   return false;
+  // }
 
   render() {
     const tabsRow = (
