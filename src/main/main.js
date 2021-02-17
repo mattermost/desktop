@@ -14,7 +14,7 @@ import 'airbnb-js-shims/target/es2015';
 import Utils from 'common/utils/util';
 import urlUtils from 'common/utils/url';
 
-import {DEVELOPMENT, PRODUCTION, SECOND} from 'common/utils/constants';
+import {DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
 import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, SHOW_NEW_SERVER_MODAL, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION, GET_DOWNLOAD_LOCATION} from 'common/communication';
 import Config from 'common/config';
 
@@ -65,7 +65,6 @@ const certificateErrorCallbacks = new Map();
 let popupWindow = null;
 let certificateStore = null;
 let trustedOriginsStore = null;
-let deeplinkingUrl = null;
 let scheme = null;
 let appVersion = null;
 let config = null;
@@ -252,7 +251,7 @@ function handleConfigUpdate(newConfig) {
     }).catch((err) => {
       console.log('error:', err);
     });
-    WindowManager.setConfig(newConfig.data, deeplinkingUrl);
+    WindowManager.setConfig(newConfig.data);
   }
 
   ipcMain.emit('update-menu', true, config);
@@ -260,7 +259,7 @@ function handleConfigUpdate(newConfig) {
 
 function handleConfigSynchronize() {
   // TODO: send this to server manager
-  WindowManager.setConfig(config.data, deeplinkingUrl);
+  WindowManager.setConfig(config.data);
   if (app.isReady()) {
     WindowManager.sendToRenderer('reload-config');
   }
@@ -268,7 +267,7 @@ function handleConfigSynchronize() {
 
 function handleReloadConfig() {
   config.reload();
-  WindowManager.setConfig(config.data, deeplinkingUrl);
+  WindowManager.setConfig(config.data);
 }
 
 function handleAppVersion() {
@@ -291,17 +290,8 @@ function handleDarkModeChange(darkMode) {
 function handleAppSecondInstance(event, argv) {
   // Protocol handler for win32
   // argv: An array of the second instance’s (command line / deep linked) arguments
-  if (process.platform === 'win32') {
-    deeplinkingUrl = getDeeplinkingURL(argv);
-
-    // TODO: handle deeplinking into the tab manager as we have to send them to the appropiate BV
-    if (deeplinkingUrl) {
-      WindowManager.sendToRenderer('protocol-deeplink', deeplinkingUrl);
-    }
-  }
-
-  // Someone tried to run a second instance, we should focus our window.
-  WindowManager.restoreMain();
+  const deeplinkingUrl = getDeeplinkingURL(argv);
+  openDeepLink(deeplinkingUrl);
 }
 
 function handleAppWindowAllClosed() {
@@ -412,24 +402,26 @@ function handleAppGPUProcessCrashed(event, killed) {
   console.log(`The GPU process has crashed (killed = ${killed})`);
 }
 
+function openDeepLink(deeplinkingUrl) {
+  try {
+    WindowManager.showMainWindow(deeplinkingUrl);
+  } catch (err) {
+    log.error(`There was an error opening the deeplinking url: ${err}`);
+  }
+}
+
 function handleAppWillFinishLaunching() {
   // Protocol handler for osx
   app.on('open-url', (event, url) => {
+    log.info(`Handling deeplinking url: ${url}`);
     event.preventDefault();
-    deeplinkingUrl = getDeeplinkingURL([url]);
-    if (app.isReady()) {
-      function openDeepLink() {
-        try {
-          if (deeplinkingUrl) {
-            // TODO: send this to tab manager.
-            //mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
-            WindowManager.showMainWindow();
-          }
-        } catch (err) {
-          setTimeout(openDeepLink, SECOND);
-        }
+    const deeplinkingUrl = getDeeplinkingURL([url]);
+    if (deeplinkingUrl) {
+      if (app.isReady() && deeplinkingUrl) {
+        openDeepLink(deeplinkingUrl);
+      } else {
+        app.once('ready', () => openDeepLink(deeplinkingUrl));
       }
-      openDeepLink();
     }
   });
 }
@@ -643,17 +635,19 @@ function initializeAfterAppReady() {
     }
   }
 
+  let deeplinkingURL;
+
   // Protocol handler for win32
   if (process.platform === 'win32') {
     const args = process.argv.slice(1);
     if (Array.isArray(args) && args.length > 0) {
-      deeplinkingUrl = getDeeplinkingURL(args);
+      deeplinkingURL = getDeeplinkingURL(args);
     }
   }
 
   initCookieManager(session.defaultSession);
 
-  WindowManager.showMainWindow();
+  WindowManager.showMainWindow(deeplinkingURL);
 
   // TODO: remove dev tools
   if (config.teams.length === 0) {

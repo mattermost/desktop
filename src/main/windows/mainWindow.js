@@ -75,7 +75,6 @@ function createMainWindow(config, options) {
   });
 
   const mainWindow = new BrowserWindow(windowOptions);
-  mainWindow.deeplinkingUrl = options.deeplinkingUrl;
   mainWindow.setMenuBarVisibility(false);
 
   const localURL = getLocalURLString('index.html');

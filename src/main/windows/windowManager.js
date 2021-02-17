@@ -21,7 +21,6 @@ const status = {
   mainWindow: null,
   settingsWindow: null,
   config: null,
-  deeplinkingUrl: null,
   viewManager: null,
 };
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
@@ -31,12 +30,9 @@ ipcMain.on(STOP_FIND_IN_PAGE, stopFindInPage);
 ipcMain.on(CLOSE_FINDER, closeFinder);
 ipcMain.on(FOCUS_FINDER, focusFinder);
 
-export function setConfig(data, deeplinkingUrl) {
+export function setConfig(data) {
   if (data) {
     status.config = data;
-  }
-  if (deeplinkingUrl) {
-    status.deeplinkingUrl = deeplinkingUrl;
   }
   if (status.viewManager) {
     status.viewManager.reloadConfiguration(status.config.teams, status.mainWindow);
@@ -60,13 +56,12 @@ export function showSettingsWindow() {
   }
 }
 
-export function showMainWindow() {
+export function showMainWindow(deeplinkingURL) {
   if (status.mainWindow) {
     status.mainWindow.show();
   } else {
     status.mainWindow = createMainWindow(status.config, {
       linuxAppIcon: path.join(assetsDir, 'appicon.png'),
-      deeplinkingUrl: status.deeplinkingUrl,
     });
 
     if (!status.mainWindow) {
@@ -91,6 +86,10 @@ export function showMainWindow() {
     status.mainWindow.on('focus', focusBrowserView);
   }
   initializeViewManager();
+
+  if (deeplinkingURL) {
+    status.viewManager.handleDeepLink(deeplinkingURL);
+  }
 }
 
 export function getMainWindow(ensureCreated) {
@@ -237,10 +236,6 @@ export async function setOverlayIcon(badgeText, description) {
 
 export function isMainWindow(window) {
   return status.mainWindow && status.mainWindow === window;
-}
-
-export function getDeepLinkingURL() {
-  return status.deeplinkingUrl;
 }
 
 export function handleDoubleClick(e, windowType) {
