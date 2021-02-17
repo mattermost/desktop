@@ -27,219 +27,219 @@ export class ViewManager {
         this.urlView = null;
     }
 
-  loadServer = (server, mainWindow) => {
-      const srv = new MattermostServer(server.name, server.url);
-      const view = new MattermostView(srv, mainWindow, this.viewOptions);
-      this.views.set(server.name, view);
-      view.setReadyCallback(this.activateView);
-      view.load();
-      view.on(UPDATE_TARGET_URL, this.showURLView);
-  }
+    loadServer = (server, mainWindow) => {
+        const srv = new MattermostServer(server.name, server.url);
+        const view = new MattermostView(srv, mainWindow, this.viewOptions);
+        this.views.set(server.name, view);
+        view.setReadyCallback(this.activateView);
+        view.load();
+        view.on(UPDATE_TARGET_URL, this.showURLView);
+    }
 
-  // TODO: we shouldn't pass the main window, but get it from windowmanager
-  // TODO: we'll need an event in case the main window changes so this updates accordingly
-  load = (mainWindow) => {
-      this.configServers.forEach((server) => this.loadServer(server, mainWindow));
-  }
+    // TODO: we shouldn't pass the main window, but get it from windowmanager
+    // TODO: we'll need an event in case the main window changes so this updates accordingly
+    load = (mainWindow) => {
+        this.configServers.forEach((server) => this.loadServer(server, mainWindow));
+    }
 
-  reloadConfiguration = (configServers, mainWindow) => {
-      this.configServers = configServers.concat();
-      const oldviews = this.views;
-      this.views = new Map();
-      const sorted = this.configServers.sort((a, b) => a.order - b.order);
-      let setFocus;
-      sorted.forEach((server) => {
-          const recycle = oldviews.get(server.name);
-          if (recycle && recycle.isVisible) {
-              setFocus = recycle.name;
-          }
-          if (recycle && recycle.server.url.toString() === urlUtils.parseURL(server.url).toString()) {
-              oldviews.delete(recycle.name);
-              this.views.set(recycle.name, recycle);
-          } else {
-              this.loadServer(server, mainWindow);
-          }
-      });
-      oldviews.forEach((unused) => {
-          unused.destroy();
-      });
-      if (setFocus) {
-          this.showByName(setFocus);
-      } else {
-          this.showInitial();
-      }
-  }
+    reloadConfiguration = (configServers, mainWindow) => {
+        this.configServers = configServers.concat();
+        const oldviews = this.views;
+        this.views = new Map();
+        const sorted = this.configServers.sort((a, b) => a.order - b.order);
+        let setFocus;
+        sorted.forEach((server) => {
+            const recycle = oldviews.get(server.name);
+            if (recycle && recycle.isVisible) {
+                setFocus = recycle.name;
+            }
+            if (recycle && recycle.server.url.toString() === urlUtils.parseURL(server.url).toString()) {
+                oldviews.delete(recycle.name);
+                this.views.set(recycle.name, recycle);
+            } else {
+                this.loadServer(server, mainWindow);
+            }
+        });
+        oldviews.forEach((unused) => {
+            unused.destroy();
+        });
+        if (setFocus) {
+            this.showByName(setFocus);
+        } else {
+            this.showInitial();
+        }
+    }
 
-  showInitial = () => {
-      if (this.configServers.length) {
-      // TODO: handle deeplink url
-          const element = this.configServers.find((e) => e.order === 0);
-          if (element) {
-              this.showByName(element.name);
-          }
-      }
+    showInitial = () => {
+        if (this.configServers.length) {
+        // TODO: handle deeplink url
+            const element = this.configServers.find((e) => e.order === 0);
+            if (element) {
+                this.showByName(element.name);
+            }
+        }
 
-      // TODO: send event to highlight selected tab
-  }
+        // TODO: send event to highlight selected tab
+    }
 
-  showByName = (name) => {
-      const newView = this.views.get(name);
-      if (newView.isVisible) {
-          return;
-      }
-      if (newView) {
-          if (this.currentView && this.currentView !== name) {
-              const previous = this.getCurrentView();
-              if (previous) {
-                  previous.hide();
-              }
-          }
+    showByName = (name) => {
+        const newView = this.views.get(name);
+        if (newView.isVisible) {
+            return;
+        }
+        if (newView) {
+            if (this.currentView && this.currentView !== name) {
+                const previous = this.getCurrentView();
+                if (previous) {
+                    previous.hide();
+                }
+            }
 
-          this.currentView = name;
-          const serverInfo = this.configServers.find((candidate) => candidate.name === newView.server.name);
-          newView.window.webContents.send(SET_SERVER_KEY, serverInfo.order);
-          if (newView.isReady()) {
-              // if view is not ready, the renderer will have something to display instead.
-              newView.show();
-              contextMenu.reload(newView.getWebContents());
-          } else {
-              console.log(`couldn't show ${name}, not ready`);
-          }
-      } else {
-          log.warn(`Couldn't find a view with name: ${name}`);
-      }
-      showModal();
-  }
+            this.currentView = name;
+            const serverInfo = this.configServers.find((candidate) => candidate.name === newView.server.name);
+            newView.window.webContents.send(SET_SERVER_KEY, serverInfo.order);
+            if (newView.isReady()) {
+                // if view is not ready, the renderer will have something to display instead.
+                newView.show();
+                contextMenu.reload(newView.getWebContents());
+            } else {
+                console.log(`couldn't show ${name}, not ready`);
+            }
+        } else {
+            log.warn(`Couldn't find a view with name: ${name}`);
+        }
+        showModal();
+    }
 
-  focus = () => {
-      const view = this.getCurrentView();
-      if (view) {
-          view.focus();
-      }
-  }
-  activateView = (viewName) => {
-      if (this.currentView === viewName) {
-          this.showByName(this.currentView);
-      }
-  }
+    focus = () => {
+        const view = this.getCurrentView();
+        if (view) {
+            view.focus();
+        }
+    }
+    activateView = (viewName) => {
+        if (this.currentView === viewName) {
+            this.showByName(this.currentView);
+        }
+    }
 
-  getCurrentView() {
-      return this.views.get(this.currentView);
-  }
+    getCurrentView() {
+        return this.views.get(this.currentView);
+    }
 
-  openViewDevTools = () => {
-      const view = this.getCurrentView();
-      if (view) {
-          view.openDevTools({mode: 'detach'});
-      } else {
-          console.error(`couldn't find ${this.currentView}`);
-      }
-  }
+    openViewDevTools = () => {
+        const view = this.getCurrentView();
+        if (view) {
+            view.openDevTools({mode: 'detach'});
+        } else {
+            console.error(`couldn't find ${this.currentView}`);
+        }
+    }
 
-  findByWebContent(webContentId) {
-      let found = null;
-      let serverName;
-      let view;
-      const entries = this.views.entries();
+    findByWebContent(webContentId) {
+        let found = null;
+        let serverName;
+        let view;
+        const entries = this.views.entries();
 
-      for ([serverName, view] of entries) {
-          if (typeof serverName !== 'undefined') {
-              const wc = view.getWebContents();
-              if (wc && wc.id === webContentId) {
-                  found = serverName;
-              }
-          }
-      }
-      return found;
-  }
+        for ([serverName, view] of entries) {
+            if (typeof serverName !== 'undefined') {
+                const wc = view.getWebContents();
+                if (wc && wc.id === webContentId) {
+                    found = serverName;
+                }
+            }
+        }
+        return found;
+    }
 
-  showURLView = (url) => {
-      if (this.urlViewCancel) {
-          this.urlViewCancel();
-      }
-      if (url && url !== '') {
-          const urlString = typeof url === 'string' ? url : url.toString();
-          const urlView = new BrowserView();
-          const query = new Map([['url', urlString]]);
-          const localURL = getLocalURLString('urlView.html', query);
-          urlView.webContents.loadURL(localURL);
-          const currentWindow = this.getCurrentView().window;
-          currentWindow.addBrowserView(urlView);
-          const boundaries = currentWindow.getBounds();
-          urlView.setBounds({
-              x: 0,
-              y: boundaries.height - URL_VIEW_HEIGHT,
-              width: Math.floor(boundaries.width / 3),
-              height: URL_VIEW_HEIGHT,
-          });
+    showURLView = (url) => {
+        if (this.urlViewCancel) {
+            this.urlViewCancel();
+        }
+        if (url && url !== '') {
+            const urlString = typeof url === 'string' ? url : url.toString();
+            const urlView = new BrowserView();
+            const query = new Map([['url', urlString]]);
+            const localURL = getLocalURLString('urlView.html', query);
+            urlView.webContents.loadURL(localURL);
+            const currentWindow = this.getCurrentView().window;
+            currentWindow.addBrowserView(urlView);
+            const boundaries = currentWindow.getBounds();
+            urlView.setBounds({
+                x: 0,
+                y: boundaries.height - URL_VIEW_HEIGHT,
+                width: Math.floor(boundaries.width / 3),
+                height: URL_VIEW_HEIGHT,
+            });
 
-          const hideView = () => {
-              this.urlViewCancel = null;
-              currentWindow.removeBrowserView(urlView);
-              urlView.destroy();
-          };
+            const hideView = () => {
+                this.urlViewCancel = null;
+                currentWindow.removeBrowserView(urlView);
+                urlView.destroy();
+            };
 
-          const timeout = setTimeout(hideView,
-              URL_VIEW_DURATION);
+            const timeout = setTimeout(hideView,
+                URL_VIEW_DURATION);
 
-          this.urlViewCancel = () => {
-              clearTimeout(timeout);
-              hideView();
-          };
-      }
-  }
+            this.urlViewCancel = () => {
+                clearTimeout(timeout);
+                hideView();
+            };
+        }
+    }
 
-  setFinderBounds = () => {
-      if (this.finder) {
-          const currentWindow = this.getCurrentView().window;
-          const boundaries = currentWindow.getBounds();
-          this.finder.setBounds({
-              x: boundaries.width - FINDER_WIDTH - (process.platform === 'darwin' ? 20 : 200),
-              y: 0,
-              width: FINDER_WIDTH,
-              height: FINDER_HEIGHT,
-          });
-      }
-  }
+    setFinderBounds = () => {
+        if (this.finder) {
+            const currentWindow = this.getCurrentView().window;
+            const boundaries = currentWindow.getBounds();
+            this.finder.setBounds({
+                x: boundaries.width - FINDER_WIDTH - (process.platform === 'darwin' ? 20 : 200),
+                y: 0,
+                width: FINDER_WIDTH,
+                height: FINDER_HEIGHT,
+            });
+        }
+    }
 
-  focusFinder = () => {
-      if (this.finder) {
-          this.finder.webContents.focus();
-      }
-  }
+    focusFinder = () => {
+        if (this.finder) {
+            this.finder.webContents.focus();
+        }
+    }
 
-  hideFinder = () => {
-      if (this.finder) {
-          const currentWindow = this.getCurrentView().window;
-          currentWindow.removeBrowserView(this.finder);
-          this.finder.destroy();
-          this.finder = null;
-      }
-  }
+    hideFinder = () => {
+        if (this.finder) {
+            const currentWindow = this.getCurrentView().window;
+            currentWindow.removeBrowserView(this.finder);
+            this.finder.destroy();
+            this.finder = null;
+        }
+    }
 
-  foundInPage = (result) => {
-      if (this.finder) {
-          this.finder.webContents.send(FOUND_IN_PAGE, result);
-      }
-  }
+    foundInPage = (result) => {
+        if (this.finder) {
+            this.finder.webContents.send(FOUND_IN_PAGE, result);
+        }
+    }
 
-  showFinder = () => {
-      // just focus the current finder if it's already open
-      if (this.finder) {
-          this.finder.webContents.focus();
-          return;
-      }
+    showFinder = () => {
+        // just focus the current finder if it's already open
+        if (this.finder) {
+            this.finder.webContents.focus();
+            return;
+        }
 
-      const preload = getLocalPreload('finderPreload.js');
-      this.finder = new BrowserView({webPreferences: {
-          preload,
-      }});
-      const localURL = getLocalURLString('finder.html');
-      this.finder.webContents.loadURL(localURL);
-      const currentWindow = this.getCurrentView().window;
-      currentWindow.addBrowserView(this.finder);
-      this.setFinderBounds();
+        const preload = getLocalPreload('finderPreload.js');
+        this.finder = new BrowserView({webPreferences: {
+            preload,
+        }});
+        const localURL = getLocalURLString('finder.html');
+        this.finder.webContents.loadURL(localURL);
+        const currentWindow = this.getCurrentView().window;
+        currentWindow.addBrowserView(this.finder);
+        this.setFinderBounds();
 
-      this.finder.webContents.focus();
-  }
+        this.finder.webContents.focus();
+    }
 }

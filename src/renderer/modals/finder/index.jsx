@@ -41,27 +41,27 @@ class FinderRoot extends React.Component {
         window.removeEventListener('message', this.handleMessageEvent);
     }
 
-  handleMessageEvent = (event) => {
-      if (event.data.type === FOUND_IN_PAGE) {
-          this.setState({
-              activeMatchOrdinal: event.data.data.activeMatchOrdinal,
-              matches: event.data.data.matches,
-          });
-      }
-  }
+    handleMessageEvent = (event) => {
+        if (event.data.type === FOUND_IN_PAGE) {
+            this.setState({
+                activeMatchOrdinal: event.data.data.activeMatchOrdinal,
+                matches: event.data.data.matches,
+            });
+        }
+    }
 
-  render() {
-      return (
-          <Finder
-              activeMatchOrdinal={this.state.activeMatchOrdinal}
-              matches={this.state.matches}
-              close={closeFinder}
-              focus={focusFinder}
-              findInPage={findInPage}
-              stopFindInPage={stopFindInPage}
-          />
-      );
-  }
+    render() {
+        return (
+            <Finder
+                activeMatchOrdinal={this.state.activeMatchOrdinal}
+                matches={this.state.matches}
+                close={closeFinder}
+                focus={focusFinder}
+                findInPage={findInPage}
+                stopFindInPage={stopFindInPage}
+            />
+        );
+    }
 }
 const start = async () => {
     ReactDOM.render(

@@ -122,9 +122,9 @@ export default class MainPage extends React.Component {
     }
 
     componentDidMount() {
-    // Due to a bug in Chrome on macOS, mousemove events from the webview won't register when the webview isn't in focus,
-    // thus you can't drag tabs unless you're right on the container.
-    // this makes it so your tab won't get stuck to your cursor no matter where you mouse up
+        // Due to a bug in Chrome on macOS, mousemove events from the webview won't register when the webview isn't in focus,
+        // thus you can't drag tabs unless you're right on the container.
+        // this makes it so your tab won't get stuck to your cursor no matter where you mouse up
         if (process.platform === 'darwin') {
             this.topBar.current.addEventListener('mouseleave', (event) => {
                 if (event.target === this.topBar.current) {
@@ -304,420 +304,420 @@ export default class MainPage extends React.Component {
         }
     }
 
-  focusListener = () => {
-      if (this.state.showNewTeamModal && this.inputRef && this.inputRef.current) {
-          this.inputRef.current.focus();
-      } else if (!(this.state.finderVisible && this.state.focusFinder)) {
-          this.handleOnTeamFocused(this.state.key);
-      }
-      this.setState({unfocused: false});
-  }
+    focusListener = () => {
+        if (this.state.showNewTeamModal && this.inputRef && this.inputRef.current) {
+            this.inputRef.current.focus();
+        } else if (!(this.state.finderVisible && this.state.focusFinder)) {
+            this.handleOnTeamFocused(this.state.key);
+        }
+        this.setState({unfocused: false});
+    }
 
-  blurListener = () => {
-      this.setState({unfocused: true});
-  }
-  loginRequest = (event, request, authInfo) => {
-      const loginQueue = this.state.loginQueue;
-      loginQueue.push({
-          request,
-          authInfo,
-      });
-      this.setState({
-          loginRequired: true,
-          loginQueue,
-      });
-  };
+    blurListener = () => {
+        this.setState({unfocused: true});
+    }
+    loginRequest = (event, request, authInfo) => {
+        const loginQueue = this.state.loginQueue;
+        loginQueue.push({
+            request,
+            authInfo,
+        });
+        this.setState({
+            loginRequired: true,
+            loginQueue,
+        });
+    };
 
-  // componentDidUpdate(prevProps, prevState) {
-  //   if (prevState.key !== this.state.key) { // i.e. When tab has been changed
-  //     this.refs[`mattermostView${this.state.key}`].focusOnWebView();
-  //   }
-  // }
+    // componentDidUpdate(prevProps, prevState) {
+    //   if (prevState.key !== this.state.key) { // i.e. When tab has been changed
+    //     this.refs[`mattermostView${this.state.key}`].focusOnWebView();
+    //   }
+    // }
 
-  switchToTabForCertificateRequest = (origin) => {
-      // origin is server name + port, if the port doesn't match the protocol, it is kept by URL
-      const originURL = urlUtils.parseURL(`http://${origin.split(':')[0]}`);
-      const secureOriginURL = urlUtils.parseURL(`https://${origin.split(':')[0]}`);
+    switchToTabForCertificateRequest = (origin) => {
+        // origin is server name + port, if the port doesn't match the protocol, it is kept by URL
+        const originURL = urlUtils.parseURL(`http://${origin.split(':')[0]}`);
+        const secureOriginURL = urlUtils.parseURL(`https://${origin.split(':')[0]}`);
 
-      const key = this.props.teams.findIndex((team) => {
-          const parsedURL = urlUtils.parseURL(team.url);
-          return (parsedURL.origin === originURL.origin) || (parsedURL.origin === secureOriginURL.origin);
-      });
-      this.handleSelect(key);
-  };
+        const key = this.props.teams.findIndex((team) => {
+            const parsedURL = urlUtils.parseURL(team.url);
+            return (parsedURL.origin === originURL.origin) || (parsedURL.origin === secureOriginURL.origin);
+        });
+        this.handleSelect(key);
+    };
 
-  handleMaximizeState = (_, maximized) => {
-      this.setState({maximized});
-  }
+    handleMaximizeState = (_, maximized) => {
+        this.setState({maximized});
+    }
 
-  handleFullScreenState = (isFullScreen) => {
-      this.setState({fullScreen: isFullScreen});
-  }
+    handleFullScreenState = (isFullScreen) => {
+        this.setState({fullScreen: isFullScreen});
+    }
 
-  handleSetServerKey = (key) => {
-      const newKey = (this.props.teams.length + key) % this.props.teams.length;
-      this.setState({
-          key: newKey,
-          finderVisible: false,
-      });
-      this.handleOnTeamFocused(newKey);
-  }
+    handleSetServerKey = (key) => {
+        const newKey = (this.props.teams.length + key) % this.props.teams.length;
+        this.setState({
+            key: newKey,
+            finderVisible: false,
+        });
+        this.handleOnTeamFocused(newKey);
+    }
 
-  handleSelect = (name, key) => {
-      ipcRenderer.send(SWITCH_SERVER, name);
-      this.handleSetServerKey(key);
-  }
+    handleSelect = (name, key) => {
+        ipcRenderer.send(SWITCH_SERVER, name);
+        this.handleSetServerKey(key);
+    }
 
-  handleDragAndDrop = async (dropResult) => {
-      const {removedIndex, addedIndex} = dropResult;
-      if (removedIndex !== addedIndex) {
-          const teamIndex = await this.props.moveTabs(removedIndex, addedIndex < this.props.teams.length ? addedIndex : this.props.teams.length - 1);
-          const name = this.props.teams[teamIndex].name;
-          this.handleSelect(name, teamIndex);
-      }
-  }
+    handleDragAndDrop = async (dropResult) => {
+        const {removedIndex, addedIndex} = dropResult;
+        if (removedIndex !== addedIndex) {
+            const teamIndex = await this.props.moveTabs(removedIndex, addedIndex < this.props.teams.length ? addedIndex : this.props.teams.length - 1);
+            const name = this.props.teams[teamIndex].name;
+            this.handleSelect(name, teamIndex);
+        }
+    }
 
-  markReadAtActive = (index) => {
-      const unreadAtActive = this.state.unreadAtActive;
-      const mentionAtActiveCounts = this.state.mentionAtActiveCounts;
-      unreadAtActive[index] = false;
-      mentionAtActiveCounts[index] = 0;
-      this.setState({
-          unreadAtActive,
-          mentionAtActiveCounts,
-      });
-      this.handleBadgesChange();
-  }
+    markReadAtActive = (index) => {
+        const unreadAtActive = this.state.unreadAtActive;
+        const mentionAtActiveCounts = this.state.mentionAtActiveCounts;
+        unreadAtActive[index] = false;
+        mentionAtActiveCounts[index] = 0;
+        this.setState({
+            unreadAtActive,
+            mentionAtActiveCounts,
+        });
+        this.handleBadgesChange();
+    }
 
-  handleBadgesChange = () => {
-      if (this.props.onBadgeChange) {
-          const someSessionsExpired = this.state.sessionsExpired.some((sessionExpired) => sessionExpired);
+    handleBadgesChange = () => {
+        if (this.props.onBadgeChange) {
+            const someSessionsExpired = this.state.sessionsExpired.some((sessionExpired) => sessionExpired);
 
-          let allUnreadCount = this.state.unreadCounts.reduce((prev, curr) => {
-              return prev + curr;
-          }, 0);
-          this.state.unreadAtActive.forEach((state) => {
-              if (state) {
-                  allUnreadCount += 1;
-              }
-          });
+            let allUnreadCount = this.state.unreadCounts.reduce((prev, curr) => {
+                return prev + curr;
+            }, 0);
+            this.state.unreadAtActive.forEach((state) => {
+                if (state) {
+                    allUnreadCount += 1;
+                }
+            });
 
-          let allMentionCount = this.state.mentionCounts.reduce((prev, curr) => {
-              return prev + curr;
-          }, 0);
-          this.state.mentionAtActiveCounts.forEach((count) => {
-              allMentionCount += count;
-          });
+            let allMentionCount = this.state.mentionCounts.reduce((prev, curr) => {
+                return prev + curr;
+            }, 0);
+            this.state.mentionAtActiveCounts.forEach((count) => {
+                allMentionCount += count;
+            });
 
-          this.props.onBadgeChange(someSessionsExpired, allUnreadCount, allMentionCount);
-      }
-  }
+            this.props.onBadgeChange(someSessionsExpired, allUnreadCount, allMentionCount);
+        }
+    }
 
-  handleOnTeamFocused = (index) => {
-      // Turn off the flag to indicate whether unread message of active channel contains at current tab.
-      // TODO: this should be handled by the viewmanager and the browserview
-      this.markReadAtActive(index);
-      return index;
-  }
+    handleOnTeamFocused = (index) => {
+        // Turn off the flag to indicate whether unread message of active channel contains at current tab.
+        // TODO: this should be handled by the viewmanager and the browserview
+        this.markReadAtActive(index);
+        return index;
+    }
 
-  handleTargetURLChange = (targetURL) => {
-      clearTimeout(this.targetURLDisappearTimeout);
-      if (targetURL === '') {
-      // set delay to avoid momentary disappearance when hovering over multiple links
-          this.targetURLDisappearTimeout = setTimeout(() => {
-              this.setState({targetURL: ''});
-          }, 500);
-      } else {
-          this.setState({targetURL});
-      }
-  }
+    handleTargetURLChange = (targetURL) => {
+        clearTimeout(this.targetURLDisappearTimeout);
+        if (targetURL === '') {
+        // set delay to avoid momentary disappearance when hovering over multiple links
+            this.targetURLDisappearTimeout = setTimeout(() => {
+                this.setState({targetURL: ''});
+            }, 500);
+        } else {
+            this.setState({targetURL});
+        }
+    }
 
-  handleClose = (e) => {
-      e.stopPropagation(); // since it is our button, the event goes into MainPage's onclick event, getting focus back.
-      ipcRenderer.send(WINDOW_CLOSE);
-  }
+    handleClose = (e) => {
+        e.stopPropagation(); // since it is our button, the event goes into MainPage's onclick event, getting focus back.
+        ipcRenderer.send(WINDOW_CLOSE);
+    }
 
-  handleMinimize = (e) => {
-      e.stopPropagation();
-      ipcRenderer.send(WINDOW_MINIMIZE);
-  }
+    handleMinimize = (e) => {
+        e.stopPropagation();
+        ipcRenderer.send(WINDOW_MINIMIZE);
+    }
 
-  handleMaximize = (e) => {
-      e.stopPropagation();
-      ipcRenderer.send(WINDOW_MAXIMIZE);
-  }
+    handleMaximize = (e) => {
+        e.stopPropagation();
+        ipcRenderer.send(WINDOW_MAXIMIZE);
+    }
 
-  handleRestore = () => {
-      ipcRenderer.send(WINDOW_RESTORE);
-  }
+    handleRestore = () => {
+        ipcRenderer.send(WINDOW_RESTORE);
+    }
 
-  openMenu = () => {
-      if (process.platform !== 'darwin') {
-          this.threeDotMenu.current.blur();
-      }
-      this.props.openMenu();
-  }
+    openMenu = () => {
+        if (process.platform !== 'darwin') {
+            this.threeDotMenu.current.blur();
+        }
+        this.props.openMenu();
+    }
 
-  handleDoubleClick = () => {
-      ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW);
-  }
+    handleDoubleClick = () => {
+        ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW);
+    }
 
-  addServer = () => {
-      // this.setState({
-      //   showNewTeamModal: true,
-      // });
-      // TODO: remove
-      console.log('requesting new server modal');
-      ipcRenderer.send(SHOW_NEW_SERVER_MODAL);
-  }
+    addServer = () => {
+        // this.setState({
+        //   showNewTeamModal: true,
+        // });
+        // TODO: remove
+        console.log('requesting new server modal');
+        ipcRenderer.send(SHOW_NEW_SERVER_MODAL);
+    }
 
-  focusOnWebView = () => {
-      ipcRenderer.send(FOCUS_BROWSERVIEW);
-  }
+    focusOnWebView = () => {
+        ipcRenderer.send(FOCUS_BROWSERVIEW);
+    }
 
-  activateFinder = () => {
-      this.setState({
-          finderVisible: true,
-          focusFinder: true,
-      });
-  }
+    activateFinder = () => {
+        this.setState({
+            finderVisible: true,
+            focusFinder: true,
+        });
+    }
 
-  closeFinder = () => {
-      this.setState({
-          finderVisible: false,
-          focusFinder: false,
-      });
-  }
+    closeFinder = () => {
+        this.setState({
+            finderVisible: false,
+            focusFinder: false,
+        });
+    }
 
-  inputFocus = (e, focus) => {
-      this.setState({
-          focusFinder: focus,
-      });
-  }
+    inputFocus = (e, focus) => {
+        this.setState({
+            focusFinder: focus,
+        });
+    }
 
-  setInputRef = (ref) => {
-      this.inputRef = ref;
-  }
+    setInputRef = (ref) => {
+        this.inputRef = ref;
+    }
 
-  // TODO: remove when back bar PR is merged
-  // showExtraBar = () => {
-  //   const ref = this.refs[`mattermostView${this.state.key}`];
-  //   if (typeof ref !== 'undefined') {
-  //     return !urlUtils.isTeamUrl(this.props.teams[this.state.key].url, ref.getSrc());
-  //   }
-  //   return false;
-  // }
+    // TODO: remove when back bar PR is merged
+    // showExtraBar = () => {
+    //   const ref = this.refs[`mattermostView${this.state.key}`];
+    //   if (typeof ref !== 'undefined') {
+    //     return !urlUtils.isTeamUrl(this.props.teams[this.state.key].url, ref.getSrc());
+    //   }
+    //   return false;
+    // }
 
-  render() {
-      const tabsRow = (
-          <TabBar
-              id='tabBar'
-              isDarkMode={this.state.darkMode}
-              teams={this.props.teams}
-              sessionsExpired={this.state.sessionsExpired}
-              unreadCounts={this.state.unreadCounts}
-              mentionCounts={this.state.mentionCounts}
-              unreadAtActive={this.state.unreadAtActive}
-              mentionAtActiveCounts={this.state.mentionAtActiveCounts}
-              activeKey={this.state.key}
-              onSelect={this.handleSelect}
-              onAddServer={this.addServer}
-              showAddServerButton={this.props.showAddServerButton}
-              onDrop={this.handleDragAndDrop}
-              tabsDisabled={this.state.modalOpen}
-          />
-      );
+    render() {
+        const tabsRow = (
+            <TabBar
+                id='tabBar'
+                isDarkMode={this.state.darkMode}
+                teams={this.props.teams}
+                sessionsExpired={this.state.sessionsExpired}
+                unreadCounts={this.state.unreadCounts}
+                mentionCounts={this.state.mentionCounts}
+                unreadAtActive={this.state.unreadAtActive}
+                mentionAtActiveCounts={this.state.mentionAtActiveCounts}
+                activeKey={this.state.key}
+                onSelect={this.handleSelect}
+                onAddServer={this.addServer}
+                showAddServerButton={this.props.showAddServerButton}
+                onDrop={this.handleDragAndDrop}
+                tabsDisabled={this.state.modalOpen}
+            />
+        );
 
-      let topBarClassName = 'topBar';
-      if (process.platform === 'darwin') {
-          topBarClassName += ' macOS';
-      }
-      if (this.state.darkMode) {
-          topBarClassName += ' darkMode';
-      }
-      if (this.state.fullScreen) {
-          topBarClassName += ' fullScreen';
-      }
+        let topBarClassName = 'topBar';
+        if (process.platform === 'darwin') {
+            topBarClassName += ' macOS';
+        }
+        if (this.state.darkMode) {
+            topBarClassName += ' darkMode';
+        }
+        if (this.state.fullScreen) {
+            topBarClassName += ' fullScreen';
+        }
 
-      let maxButton;
-      if (this.state.maximized) {
-          maxButton = (
-              <div
-                  className='button restore-button'
-                  onClick={this.handleRestore}
-              >
-                  <img src={restoreButton}/>
-              </div>
-          );
-      } else {
-          maxButton = (
-              <div
-                  className='button max-button'
-                  onClick={this.handleMaximize}
-              >
-                  <img src={maximizeButton}/>
-              </div>
-          );
-      }
+        let maxButton;
+        if (this.state.maximized) {
+            maxButton = (
+                <div
+                    className='button restore-button'
+                    onClick={this.handleRestore}
+                >
+                    <img src={restoreButton}/>
+                </div>
+            );
+        } else {
+            maxButton = (
+                <div
+                    className='button max-button'
+                    onClick={this.handleMaximize}
+                >
+                    <img src={maximizeButton}/>
+                </div>
+            );
+        }
 
-      let overlayGradient;
-      if (process.platform !== 'darwin') {
-          overlayGradient = (
-              <span className='overlay-gradient'/>
-          );
-      }
+        let overlayGradient;
+        if (process.platform !== 'darwin') {
+            overlayGradient = (
+                <span className='overlay-gradient'/>
+            );
+        }
 
-      let titleBarButtons;
-      if (os.platform() === 'win32' && os.release().startsWith('10')) {
-          titleBarButtons = (
-              <span className='title-bar-btns'>
-                  <div
-                      className='button min-button'
-                      onClick={this.handleMinimize}
-                  >
-                      <img src={minimizeButton}/>
-                  </div>
-                  {maxButton}
-                  <div
-                      className='button close-button'
-                      onClick={this.handleClose}
-                  >
-                      <img src={closeButton}/>
-                  </div>
-              </span>
-          );
-      }
+        let titleBarButtons;
+        if (os.platform() === 'win32' && os.release().startsWith('10')) {
+            titleBarButtons = (
+                <span className='title-bar-btns'>
+                    <div
+                        className='button min-button'
+                        onClick={this.handleMinimize}
+                    >
+                        <img src={minimizeButton}/>
+                    </div>
+                    {maxButton}
+                    <div
+                        className='button close-button'
+                        onClick={this.handleClose}
+                    >
+                        <img src={closeButton}/>
+                    </div>
+                </span>
+            );
+        }
 
-      const topRow = (
-          <Row
-              className={topBarClassName}
-              onDoubleClick={this.handleDoubleClick}
-          >
-              <div
-                  ref={this.topBar}
-                  className={`topBar-bg${this.state.unfocused ? ' unfocused' : ''}`}
-              >
-                  <button
-                      className='three-dot-menu'
-                      onClick={this.openMenu}
-                      tabIndex={0}
-                      ref={this.threeDotMenu}
-                      aria-label='Context menu'
-                  >
-                      <DotsVerticalIcon/>
-                  </button>
-                  {tabsRow}
-                  {overlayGradient}
-                  {titleBarButtons}
-              </div>
-          </Row>
-      );
+        const topRow = (
+            <Row
+                className={topBarClassName}
+                onDoubleClick={this.handleDoubleClick}
+            >
+                <div
+                    ref={this.topBar}
+                    className={`topBar-bg${this.state.unfocused ? ' unfocused' : ''}`}
+                >
+                    <button
+                        className='three-dot-menu'
+                        onClick={this.openMenu}
+                        tabIndex={0}
+                        ref={this.threeDotMenu}
+                        aria-label='Context menu'
+                    >
+                        <DotsVerticalIcon/>
+                    </button>
+                    {tabsRow}
+                    {overlayGradient}
+                    {titleBarButtons}
+                </div>
+            </Row>
+        );
 
-      const views = () => {
-          let component;
-          const tabStatus = this.getTabStatus();
-          if (!tabStatus) {
-              const tab = this.props.teams[this.state.key];
-              if (tab) {
-                  console.error(`Not tabStatus for ${this.props.teams[this.state.key].name}`);
-              } else {
-                  console.error('No tab status, tab doesn\'t exist anymore');
-              }
-              return null;
-          }
-          switch (tabStatus.status) {
-          case NOSERVERS: // TODO: substitute with https://mattermost.atlassian.net/browse/MM-25003
-              component = (
-                  <ErrorView
-                      id={'NoServers'}
-                      className='errorView'
-                      errorInfo={'No Servers configured'}
-                      url={tabStatus.extra ? tabStatus.extra.url : ''}
-                      active={true}
-                      retry={null}
-                      appName={this.props.appName}
-                  />);
-              break;
-          case RETRY:
-          case FAILED:
-              component = (
-                  <ErrorView
-                      id={this.state.key + '-fail'}
-                      className='errorView'
-                      errorInfo={tabStatus.extra ? tabStatus.extra.error : null}
-                      url={tabStatus.extra ? tabStatus.extra.url : ''}
-                      active={true}
-                      retry={tabStatus.extra ? tabStatus.extra.retry : null} // TODO: fix countdown so it counts
-                      appName={this.props.appName}
-                  />);
-              break;
-          case LOADING:
-              component = (
-                  <div className='mattermostView-loadingScreen'>
-                      <img
-                          className='mattermostView-loadingImage'
-                          src={spinner}
-                          srcSet={`${spinner} 1x, ${spinnerx2} 2x`}
-                      />
-                  </div>);
-              break;
-          case DONE:
-              component = null;
-          }
-          return component;
-      };
+        const views = () => {
+            let component;
+            const tabStatus = this.getTabStatus();
+            if (!tabStatus) {
+                const tab = this.props.teams[this.state.key];
+                if (tab) {
+                    console.error(`Not tabStatus for ${this.props.teams[this.state.key].name}`);
+                } else {
+                    console.error('No tab status, tab doesn\'t exist anymore');
+                }
+                return null;
+            }
+            switch (tabStatus.status) {
+            case NOSERVERS: // TODO: substitute with https://mattermost.atlassian.net/browse/MM-25003
+                component = (
+                    <ErrorView
+                        id={'NoServers'}
+                        className='errorView'
+                        errorInfo={'No Servers configured'}
+                        url={tabStatus.extra ? tabStatus.extra.url : ''}
+                        active={true}
+                        retry={null}
+                        appName={this.props.appName}
+                    />);
+                break;
+            case RETRY:
+            case FAILED:
+                component = (
+                    <ErrorView
+                        id={this.state.key + '-fail'}
+                        className='errorView'
+                        errorInfo={tabStatus.extra ? tabStatus.extra.error : null}
+                        url={tabStatus.extra ? tabStatus.extra.url : ''}
+                        active={true}
+                        retry={tabStatus.extra ? tabStatus.extra.retry : null} // TODO: fix countdown so it counts
+                        appName={this.props.appName}
+                    />);
+                break;
+            case LOADING:
+                component = (
+                    <div className='mattermostView-loadingScreen'>
+                        <img
+                            className='mattermostView-loadingImage'
+                            src={spinner}
+                            srcSet={`${spinner} 1x, ${spinnerx2} 2x`}
+                        />
+                    </div>);
+                break;
+            case DONE:
+                component = null;
+            }
+            return component;
+        };
 
-      const viewsRow = (
-          <Fragment>
-              <ExtraBar
-                  darkMode={this.state.darkMode}
-                  show={this.showExtraBar()}
-                  goBack={() => {
-                      ipcRenderer.send(HISTORY, -1);
-                  }}
-              />
-              <Row>
-                  {views()}
-              </Row>
-          </Fragment>);
+        const viewsRow = (
+            <Fragment>
+                <ExtraBar
+                    darkMode={this.state.darkMode}
+                    show={this.showExtraBar()}
+                    goBack={() => {
+                        ipcRenderer.send(HISTORY, -1);
+                    }}
+                />
+                <Row>
+                    {views()}
+                </Row>
+            </Fragment>);
 
-      const modal = (
-          <NewTeamModal
-              currentOrder={this.props.teams.length}
-              show={this.state.showNewTeamModal}
-              setInputRef={this.setInputRef}
-              onClose={() => {
-                  this.setState({
-                      showNewTeamModal: false,
-                  });
-              }}
-              onSave={(newTeam) => {
-                  this.props.localTeams.push(newTeam);
-                  this.props.onTeamConfigChange(this.props.localTeams, () => {
-                      this.setState({
-                          showNewTeamModal: false,
-                          key: this.props.teams.length - 1,
-                      });
-                  });
-              }}
-          />
-      );
+        const modal = (
+            <NewTeamModal
+                currentOrder={this.props.teams.length}
+                show={this.state.showNewTeamModal}
+                setInputRef={this.setInputRef}
+                onClose={() => {
+                    this.setState({
+                        showNewTeamModal: false,
+                    });
+                }}
+                onSave={(newTeam) => {
+                    this.props.localTeams.push(newTeam);
+                    this.props.onTeamConfigChange(this.props.localTeams, () => {
+                        this.setState({
+                            showNewTeamModal: false,
+                            key: this.props.teams.length - 1,
+                        });
+                    });
+                }}
+            />
+        );
 
-      return (
-          <div
-              className='MainPage'
-              onClick={this.focusOnWebView}
-          >
-              <Grid fluid={true}>
-                  { topRow }
-                  { viewsRow }
-              </Grid>
-              <div>
-                  { modal }
-              </div>
-          </div>
-      );
-  }
+        return (
+            <div
+                className='MainPage'
+                onClick={this.focusOnWebView}
+            >
+                <Grid fluid={true}>
+                    { topRow }
+                    { viewsRow }
+                </Grid>
+                <div>
+                    { modal }
+                </div>
+            </div>
+        );
+    }
 }
 
 MainPage.propTypes = {

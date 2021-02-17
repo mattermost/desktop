@@ -33,7 +33,7 @@ export class Mention extends Notification {
         this.customSound = customSound;
     }
 
-  getNotificationSound = () => {
-      return this.customSound;
-  }
+    getNotificationSound = () => {
+        return this.customSound;
+    }
 }

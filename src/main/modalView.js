@@ -33,67 +33,67 @@ export class ModalView {
         }
     }
 
-  show = (win, withDevTools) => {
-      if (this.windowAttached) {
-      // we'll reatach
-          this.windowAttached.removeBrowserView(this.view);
-      }
-      this.windowAttached = win || this.window;
+    show = (win, withDevTools) => {
+        if (this.windowAttached) {
+        // we'll reatach
+            this.windowAttached.removeBrowserView(this.view);
+        }
+        this.windowAttached = win || this.window;
 
-      this.windowAttached.addBrowserView(this.view);
-      this.view.setBounds(getWindowBoundaries(this.windowAttached));
-      this.view.setAutoResize({
-          height: true,
-          width: true,
-          horizontal: true,
-          vertical: true,
-      });
-      this.status = SHOWING;
-      if (this.view.webContents.isLoading()) {
-          this.view.webContents.once('did-finish-load', () => {
-              this.view.webContents.focus();
-          });
-      } else {
-          this.view.webContents.focus();
-      }
+        this.windowAttached.addBrowserView(this.view);
+        this.view.setBounds(getWindowBoundaries(this.windowAttached));
+        this.view.setAutoResize({
+            height: true,
+            width: true,
+            horizontal: true,
+            vertical: true,
+        });
+        this.status = SHOWING;
+        if (this.view.webContents.isLoading()) {
+            this.view.webContents.once('did-finish-load', () => {
+                this.view.webContents.focus();
+            });
+        } else {
+            this.view.webContents.focus();
+        }
 
-      if (withDevTools) {
-          console.log(`showing dev tools for ${this.key}`);
-          this.view.webContents.openDevTools({mode: 'detach'});
-      }
-  }
+        if (withDevTools) {
+            console.log(`showing dev tools for ${this.key}`);
+            this.view.webContents.openDevTools({mode: 'detach'});
+        }
+    }
 
-  hide = () => {
-      if (this.windowAttached) {
-          if (this.view.webContents.isDevToolsOpened()) {
-              this.view.webContents.closeDevTools();
-          }
+    hide = () => {
+        if (this.windowAttached) {
+            if (this.view.webContents.isDevToolsOpened()) {
+                this.view.webContents.closeDevTools();
+            }
 
-          this.windowAttached.removeBrowserView(this.view);
-          this.windowAttached = null;
-          this.status = ACTIVE;
-      }
-  }
+            this.windowAttached.removeBrowserView(this.view);
+            this.windowAttached = null;
+            this.status = ACTIVE;
+        }
+    }
 
-  handleInfoRequest = () => {
-      return this.data;
-  }
+    handleInfoRequest = () => {
+        return this.data;
+    }
 
-  reject = (data) => {
-      if (this.onReject) {
-          this.onReject(data);
-      }
-      this.hide();
-      this.status = DONE;
-  }
+    reject = (data) => {
+        if (this.onReject) {
+            this.onReject(data);
+        }
+        this.hide();
+        this.status = DONE;
+    }
 
-  resolve = (data) => {
-      if (this.onResolve) {
-          this.onResolve(data);
-      }
-      this.hide();
-      this.status = DONE;
-  }
+    resolve = (data) => {
+        if (this.onResolve) {
+            this.onResolve(data);
+        }
+        this.hide();
+        this.status = DONE;
+    }
 
-  isActive = () => this.status !== DONE;
+    isActive = () => this.status !== DONE;
 }
