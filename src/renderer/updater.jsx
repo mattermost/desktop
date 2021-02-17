@@ -14,7 +14,7 @@ import UpdaterPage from './components/UpdaterPage.jsx';
 const thisURL = url.parse(location.href, true);
 const notifyOnly = thisURL.query.notifyOnly === 'true';
 
-class UpdaterPageContainer extends React.Component {
+class UpdaterPageContainer extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = props.initialState;

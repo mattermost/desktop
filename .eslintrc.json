@@ -23,10 +23,8 @@
         ],
         "import/no-commonjs": 2,
         "no-process-env": 0,
-        "no-underscore-dangle": 1,
         "no-var": 2,
-        "react/no-find-dom-node": 2,
-        "react/require-optimization": 0
+        "react/no-find-dom-node": 2
     },
     "overrides": [
         {

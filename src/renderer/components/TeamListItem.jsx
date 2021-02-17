@@ -5,7 +5,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-export default class TeamListItem extends React.Component {
+export default class TeamListItem extends React.PureComponent {
     handleTeamRemove = () => {
         this.props.onTeamRemove();
     }

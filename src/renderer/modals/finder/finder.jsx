@@ -5,7 +5,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-export default class Finder extends React.Component {
+export default class Finder extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {

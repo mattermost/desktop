@@ -6,7 +6,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {Button, Col, ControlLabel, Form, FormGroup, FormControl, Modal} from 'react-bootstrap';
 
-export default class LoginModal extends React.Component {
+export default class LoginModal extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {

@@ -8,7 +8,7 @@ import {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} from 're
 
 import urlUtils from 'common/utils/url';
 
-export default class NewTeamModal extends React.Component {
+export default class NewTeamModal extends React.PureComponent {
     static defaultProps = {
         restoreFocus: true,
     };

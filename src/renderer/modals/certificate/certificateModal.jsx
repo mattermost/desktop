@@ -9,7 +9,7 @@ import {MODAL_INFO} from 'common/communication';
 
 import ShowCertificateModal from '../../components/showCertificateModal.jsx';
 
-export default class SelectCertificateModal extends React.Component {
+export default class SelectCertificateModal extends React.PureComponent {
     static propTypes = {
         onSelect: PropTypes.func.isRequired,
         onCancel: PropTypes.func,

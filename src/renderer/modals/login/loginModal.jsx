@@ -9,7 +9,7 @@ import {Button, Col, ControlLabel, Form, FormGroup, FormControl, Modal} from 're
 import {MODAL_INFO} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
-export default class LoginModal extends React.Component {
+export default class LoginModal extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {

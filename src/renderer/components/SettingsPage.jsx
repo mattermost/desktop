@@ -24,7 +24,7 @@ function backToIndex(serverName) {
     window.close();
 }
 
-export default class SettingsPage extends React.Component {
+export default class SettingsPage extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {

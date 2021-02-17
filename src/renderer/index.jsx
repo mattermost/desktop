@@ -28,7 +28,7 @@ import urlUtils from 'common/utils/url';
 import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT} from 'common/communication';
 
 import MainPage from './components/MainPage.jsx';
-class Root extends React.Component {
+class Root extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {};

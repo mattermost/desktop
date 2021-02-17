@@ -5,7 +5,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {Row, Button} from 'react-bootstrap';
 
-export default class ExtraBar extends React.Component {
+export default class ExtraBar extends React.PureComponent {
     handleBack = () => {
         if (this.props.goBack) {
             this.props.goBack();

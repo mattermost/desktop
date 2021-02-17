@@ -7,7 +7,7 @@ import {Modal, Button, Table, Row, Col} from 'react-bootstrap';
 
 import ShowCertificateModal from './showCertificateModal.jsx';
 
-export default class SelectCertificateModal extends React.Component {
+export default class SelectCertificateModal extends React.PureComponent {
     static propTypes = {
         onSelect: PropTypes.func.isRequired,
         onCancel: PropTypes.func,

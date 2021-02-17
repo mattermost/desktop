@@ -10,7 +10,7 @@ import TeamListItem from './TeamListItem.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
 import RemoveServerModal from './RemoveServerModal.jsx';
 
-export default class TeamList extends React.Component {
+export default class TeamList extends React.PureComponent {
     constructor(props) {
         super(props);
 

@@ -16,7 +16,7 @@ function getKey(request, permission) {
     return `${request.url}:${permission}`;
 }
 
-export default class PermissionModal extends React.Component {
+export default class PermissionModal extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {

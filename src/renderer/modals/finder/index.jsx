@@ -27,7 +27,7 @@ const stopFindInPage = (action) => {
 const focusFinder = () => {
     window.postMessage({type: FOCUS_FINDER}, window.location.href);
 };
-class FinderRoot extends React.Component {
+class FinderRoot extends React.PureComponent {
     constructor() {
         super();
         this.state = {};

@@ -55,7 +55,7 @@ const RETRY = -1;
 const FAILED = 0;
 const NOSERVERS = -2;
 
-export default class MainPage extends React.Component {
+export default class MainPage extends React.PureComponent {
     constructor(props) {
         super(props);
 
@@ -505,7 +505,7 @@ export default class MainPage extends React.Component {
     //   if (typeof ref !== 'undefined') {
     //     return !urlUtils.isTeamUrl(this.props.teams[this.state.key].url, ref.getSrc());
     //   }
-       return false;
+        return false;
     }
 
     render() {

@@ -5,7 +5,7 @@ import React, {Fragment} from 'react';
 import PropTypes from 'prop-types';
 import {Modal, Button, Row, Col} from 'react-bootstrap';
 
-export default class ShowCertificateModal extends React.Component {
+export default class ShowCertificateModal extends React.PureComponent {
     static propTypes = {
         certificate: PropTypes.object,
         onOk: PropTypes.func.isRequired,

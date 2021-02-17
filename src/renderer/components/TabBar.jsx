@@ -11,7 +11,7 @@ import PlusIcon from 'mdi-react/PlusIcon';
 
 import {GET_CONFIGURATION} from 'common/communication';
 
-export default class TabBar extends React.Component { // need "this"
+export default class TabBar extends React.PureComponent { // need "this"
     constructor(props) {
         super(props);
         this.state = {
