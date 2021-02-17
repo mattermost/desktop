@@ -49,6 +49,7 @@ function handleDialogEvent(protocol, URL) {
     title: 'Non http(s) protocol',
     message: `${protocol} link requires an external application.`,
     detail: `The requested link is ${URL} . Do you want to continue?`,
+    defaultId: 2,
     type: 'warning',
     buttons: [
       'Yes',

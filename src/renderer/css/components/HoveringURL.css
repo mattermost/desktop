@@ -24,6 +24,7 @@
 .HoveringURL p {
   margin: 0;
   font-size: small;
+  font-family: "Open Sans", sans-serif;
   padding-left: 4px;
   padding-right: 4px;
 }

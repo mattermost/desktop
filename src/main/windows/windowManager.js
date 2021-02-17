@@ -22,7 +22,6 @@ const status = {
   mainWindow: null,
   settingsWindow: null,
   config: null,
-  deeplinkingUrl: null,
   viewManager: null,
 };
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
@@ -33,12 +32,9 @@ ipcMain.on(CLOSE_FINDER, closeFinder);
 ipcMain.on(FOCUS_FINDER, focusFinder);
 ipcMain.on(HISTORY, handleHistory);
 
-export function setConfig(data, deeplinkingUrl) {
+export function setConfig(data) {
   if (data) {
     status.config = data;
-  }
-  if (deeplinkingUrl) {
-    status.deeplinkingUrl = deeplinkingUrl;
   }
   if (status.viewManager) {
     status.viewManager.reloadConfiguration(status.config.teams, status.mainWindow);
@@ -62,13 +58,12 @@ export function showSettingsWindow() {
   }
 }
 
-export function showMainWindow() {
+export function showMainWindow(deeplinkingURL) {
   if (status.mainWindow) {
     status.mainWindow.show();
   } else {
     status.mainWindow = createMainWindow(status.config, {
       linuxAppIcon: path.join(assetsDir, 'appicon.png'),
-      deeplinkingUrl: status.deeplinkingUrl,
     });
 
     if (!status.mainWindow) {
@@ -87,14 +82,16 @@ export function showMainWindow() {
       criticalErrorHandler.windowUnresponsiveHandler();
     });
     status.mainWindow.on('crashed', handleMainWindowWebContentsCrashed);
-    status.mainWindow.on('enter-full-screen', setBoundsForCurrentView);
-    status.mainWindow.on('leave-full-screen', setBoundsForCurrentView);
     status.mainWindow.on('maximize', handleMaximizeMainWindow);
     status.mainWindow.on('unmaximize', handleUnmaximizeMainWindow);
-    status.mainWindow.on('will-resize', handleResizeMainWindow);
+    status.mainWindow.on('resize', handleResizeMainWindow);
     status.mainWindow.on('focus', focusBrowserView);
   }
   initializeViewManager();
+
+  if (deeplinkingURL) {
+    status.viewManager.handleDeepLink(deeplinkingURL);
+  }
 }
 
 export function getMainWindow(ensureCreated) {
@@ -114,12 +111,10 @@ function handleMainWindowWebContentsCrashed() {
 
 function handleMaximizeMainWindow() {
   sendToRenderer(MAXIMIZE_CHANGE, true);
-  setBoundsForCurrentView();
 }
 
 function handleUnmaximizeMainWindow() {
   sendToRenderer(MAXIMIZE_CHANGE, false);
-  setBoundsForCurrentView();
 }
 
 function handleResizeMainWindow(event, newBounds) {
@@ -140,6 +135,9 @@ export function sendToRenderer(channel, ...args) {
     showMainWindow();
   }
   status.mainWindow.webContents.send(channel, ...args);
+  if (status.settingsWindow && status.settingsWindow.isVisible()) {
+    status.settingsWindow.webContents.send(channel, ...args);
+  }
 }
 
 export function sendToAll(channel, ...args) {
@@ -184,21 +182,62 @@ export function flashFrame(flash) {
   }
 }
 
-export function setOverlayIcon(overlayDataURL, description) {
+function drawBadge(text, small) {
+  const scale = 2; // should rely display dpi
+  const size = (small ? 20 : 16) * scale;
+  const canvas = document.createElement('canvas');
+  canvas.setAttribute('width', size);
+  canvas.setAttribute('height', size);
+  const ctx = canvas.getContext('2d');
+
+  // circle
+  ctx.fillStyle = '#FF1744'; // Material Red A400
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // text
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = (11 * scale) + 'px sans-serif';
+  ctx.fillText(text, size / 2, size / 2, size);
+
+  return canvas.toDataURL();
+}
+
+function createDataURL(text, small) {
+  const win = status.mainWindow;
+  if (!win) {
+    return null;
+  }
+
+  // since we don't have a document/canvas object in the main process, we use the webcontents from the window to draw.
+  const safeSmall = Boolean(small);
+  const code = `
+    window.drawBadge = ${drawBadge};
+    window.drawBadge('${text || ''}', ${safeSmall});
+  `;
+  return win.webContents.executeJavaScript(code);
+}
+
+export async function setOverlayIcon(badgeText, description) {
   if (process.platform === 'win32') {
-    const overlay = overlayDataURL ? nativeImage.createFromDataURL(overlayDataURL) : null;
-    if (status.mainWindow) {
-      status.mainWindow.setOverlayIcon(overlay, description);
+    let overlay = null;
+    if (status.mainWindow && badgeText) {
+      try {
+        const dataUrl = await createDataURL(badgeText);
+        overlay = nativeImage.createFromDataURL(dataUrl);
+      } catch (err) {
+        log.error(`Couldn't generate a badge: ${err}`);
+      }
     }
+    status.mainWindow.setOverlayIcon(overlay, description);
   }
 }
 
 export function isMainWindow(window) {
   return status.mainWindow && status.mainWindow === window;
-}
-
-export function getDeepLinkingURL() {
-  return status.deeplinkingUrl;
 }
 
 export function handleDoubleClick(e, windowType) {
