@@ -8,7 +8,7 @@ import {EventEmitter} from 'events';
 
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
-import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL, IS_UNREAD, UNREAD_RESULT, FOUND_IN_PAGE} from 'common/communication';
+import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL, IS_UNREAD, UNREAD_RESULT, FOUND_IN_PAGE, TOGGLE_BACK_BUTTON} from 'common/communication';
 
 import {getWindowBoundaries, getLocalPreload} from './utils';
 import * as WindowManager from './windows/windowManager';
@@ -83,7 +83,7 @@ export class MattermostView extends EventEmitter {
 
     retry = (loadURL) => {
         return () => {
-        // window was closed while retrying
+            // window was closed while retrying
             if (!this.view) {
                 return;
             }
@@ -124,6 +124,7 @@ export class MattermostView extends EventEmitter {
 
             this.view.webContents.on('update-target-url', this.handleUpdateTarget);
             this.view.webContents.on(FOUND_IN_PAGE, (event, result) => WindowManager.foundInPage(result));
+            this.view.webContents.on('did-navigate', this.handleDidNavigate);
         };
     }
 
@@ -131,7 +132,7 @@ export class MattermostView extends EventEmitter {
         const request = typeof requestedVisibility === 'undefined' ? true : requestedVisibility;
         if (request && !this.isVisible) {
             this.window.addBrowserView(this.view);
-            this.setBounds(getWindowBoundaries(this.window));
+            this.setBounds(getWindowBoundaries(this.window, !urlUtils.isTeamUrl(this.server.url, this.view.webContents.getURL())));
             if (this.status === READY) {
                 this.focus();
             }
@@ -187,6 +188,19 @@ export class MattermostView extends EventEmitter {
         return WindowManager.getMainWindow.webContents;
     }
 
+    handleDidNavigate = (event, url) => {
+        const isUrlTeamUrl = urlUtils.isTeamUrl(this.server.url, url);
+        if (isUrlTeamUrl) {
+            this.setBounds(getWindowBoundaries(this.window));
+            WindowManager.sendToRenderer(TOGGLE_BACK_BUTTON, false);
+            log.info('hide back button');
+        } else {
+            this.setBounds(getWindowBoundaries(this.window, true));
+            WindowManager.sendToRenderer(TOGGLE_BACK_BUTTON, true);
+            log.info('show back button');
+        }
+    }
+
     handleUpdateTarget = (e, url) => {
         if (!this.server.sameOrigin(url)) {
             this.emit(UPDATE_TARGET_URL, url);
@@ -216,8 +230,8 @@ export class MattermostView extends EventEmitter {
 
     handleFaviconUpdate = (e, favicons) => {
         if (!this.usesAsteriskForUnreads) {
-        // if unread state is stored for that favicon, retrieve value.
-        // if not, get related info from preload and store it for future changes
+            // if unread state is stored for that favicon, retrieve value.
+            // if not, get related info from preload and store it for future changes
             this.currentFavicon = favicons[0];
             if (this.faviconMemoize.has(favicons[0])) {
                 appState.updateUnreads(this.server.name, this.faviconMemoize.get(favicons[0]));

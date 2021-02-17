@@ -63,3 +63,5 @@ export const UNREAD_RESULT = 'unread_result';
 export const SESSION_EXPIRED = 'session_expired';
 export const UPDATE_TRAY = 'update_tray';
 export const UPDATE_BADGE = 'update_badge';
+
+export const TOGGLE_BACK_BUTTON = 'toggle-back-button';

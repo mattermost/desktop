@@ -33,6 +33,7 @@ import {
     SET_SERVER_KEY,
     UPDATE_MENTIONS,
     UPDATE_UNREADS,
+    TOGGLE_BACK_BUTTON,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -276,6 +277,10 @@ export default class MainPage extends React.PureComponent {
             this.setState({modalOpen: false});
         });
 
+        ipcRenderer.on(TOGGLE_BACK_BUTTON, (event, showExtraBar) => {
+            this.setState({showExtraBar});
+        });
+
         ipcRenderer.on(UPDATE_MENTIONS, (_event, team, mentions, unreads) => {
             const key = this.props.teams.findIndex((server) => server.name === team);
             const {unreadCounts, mentionCounts} = this.state;
@@ -499,15 +504,6 @@ export default class MainPage extends React.PureComponent {
         this.inputRef = ref;
     }
 
-    // TODO: remove when back bar PR is merged
-    showExtraBar = () => {
-    //   const ref = this.refs[`mattermostView${this.state.key}`];
-    //   if (typeof ref !== 'undefined') {
-    //     return !urlUtils.isTeamUrl(this.props.teams[this.state.key].url, ref.getSrc());
-    //   }
-        return false;
-    }
-
     render() {
         const tabsRow = (
             <TabBar
@@ -671,7 +667,7 @@ export default class MainPage extends React.PureComponent {
             <Fragment>
                 <ExtraBar
                     darkMode={this.state.darkMode}
-                    show={this.showExtraBar()}
+                    show={this.state.showExtraBar}
                     goBack={() => {
                         ipcRenderer.send(HISTORY, -1);
                     }}
