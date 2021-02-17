@@ -4,6 +4,7 @@
 import EventEmitter from 'events';
 
 import electron from 'electron';
+import log from 'electron-log';
 
 const {app} = electron;
 
@@ -61,7 +62,7 @@ export default class UserActivityMonitor extends EventEmitter {
             try {
                 this.updateIdleTime(electron.powerMonitor.getSystemIdleTime());
             } catch (err) {
-                console.log('Error getting system idle time:', err);
+                log.error('Error getting system idle time:', err);
             }
         }, this.config.updateFrequencyMs);
     }

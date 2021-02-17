@@ -103,7 +103,7 @@ export class ViewManager {
                 newView.show();
                 contextMenu.reload(newView.getWebContents());
             } else {
-                console.log(`couldn't show ${name}, not ready`);
+                log.info(`couldn't show ${name}, not ready`);
             }
         } else {
             log.warn(`Couldn't find a view with name: ${name}`);
@@ -132,7 +132,7 @@ export class ViewManager {
         if (view) {
             view.openDevTools({mode: 'detach'});
         } else {
-            console.error(`couldn't find ${this.currentView}`);
+            log.error(`couldn't find ${this.currentView}`);
         }
     }
 

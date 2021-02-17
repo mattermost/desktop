@@ -2,10 +2,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import {app} from 'electron';
+import log from 'electron-log';
 
 function flushCookiesStore(session) {
     session.cookies.flushStore().catch((err) => {
-        console.log(`There was a problem flushing cookies:\n${err}`);
+        log.error(`There was a problem flushing cookies:\n${err}`);
     });
 }
 

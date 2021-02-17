@@ -6,15 +6,15 @@ import path from 'path';
 
 import {app, BrowserWindow, dialog, ipcMain, shell} from 'electron';
 
-import logger from 'electron-log';
+import log from 'electron-log';
 import {autoUpdater, CancellationToken} from 'electron-updater';
 import semver from 'semver';
 
 // eslint-disable-next-line no-magic-numbers
 const UPDATER_INTERVAL_IN_MS = 48 * 60 * 60 * 1000; // 48 hours
 
-autoUpdater.logger = logger;
-autoUpdater.logger.transports.file.level = 'info';
+autoUpdater.log = log;
+autoUpdater.log.transports.file.level = 'info';
 
 let updaterModal = null;
 
@@ -95,7 +95,7 @@ function initialize(appState, mainWindow, notifyOnly = false) {
     autoUpdater.autoDownload = false; // To prevent upgrading on quit
     const assetsDir = path.resolve(app.getAppPath(), 'assets');
     autoUpdater.on('error', (err) => {
-        console.error('Error in autoUpdater:', err.message);
+        log.error('Error in autoUpdater:', err.message);
     }).on('update-available', (info) => {
         let cancellationToken = null;
         if (isUpdateApplicable(new Date(), appState.skippedVersion, info)) {
@@ -119,7 +119,7 @@ function initialize(appState, mainWindow, notifyOnly = false) {
                 updaterModal.webContents.send('start-download');
                 autoUpdater.signals.progress((data) => { // eslint-disable-line max-nested-callbacks
                     updaterModal.send('progress', Math.floor(data.percent));
-                    console.log('progress:', data);
+                    log.info('progress:', data);
                 });
                 cancellationToken = new CancellationToken();
                 downloadAndInstall(cancellationToken);

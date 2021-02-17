@@ -5,6 +5,7 @@
 import AutoLaunch from 'auto-launch';
 import {app} from 'electron';
 import isDev from 'electron-is-dev';
+import log from 'electron-log';
 
 export default class AutoLauncher {
     constructor() {
@@ -24,7 +25,7 @@ export default class AutoLauncher {
 
     async enable() {
         if (isDev) {
-            console.log('In development mode, autostart config never effects');
+            log.warn('In development mode, autostart config never effects');
             return this.blankPromise();
         }
         const enabled = await this.isEnabled();
@@ -36,7 +37,7 @@ export default class AutoLauncher {
 
     async disable() {
         if (isDev) {
-            console.log('In development mode, autostart config never effects');
+            log.warn('In development mode, autostart config never effects');
             return this.blankPromise();
         }
         const enabled = await this.isEnabled();

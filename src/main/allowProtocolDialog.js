@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from 'path';
 
 import {app, dialog, shell} from 'electron';
+import log from 'electron-log';
 
 import {protocols} from '../../electron-builder.json';
 
@@ -63,7 +64,7 @@ function handleDialogEvent(protocol, URL) {
             allowedProtocols.push(protocol);
             function handleError(err) {
                 if (err) {
-                    console.error(err);
+                    log.error(err);
                 }
             }
             fs.writeFile(allowedProtocolFile, JSON.stringify(allowedProtocols), handleError);

@@ -1,5 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+import log from 'electron-log';
+
 import Joi from '@hapi/joi';
 
 import urlUtils from 'common/utils/url';
@@ -189,16 +191,16 @@ export function validateOriginPermissions(data) {
 
 function validateAgainstSchema(data, schema) {
     if (typeof data !== 'object') {
-        console.error(`Input 'data' is not an object we can validate: ${typeof data}`);
+        log.error(`Input 'data' is not an object we can validate: ${typeof data}`);
         return false;
     }
     if (!schema) {
-        console.error('No schema provided to validate');
+        log.error('No schema provided to validate');
         return false;
     }
     const {error, value} = schema.validate(data, defaultOptions);
     if (error) {
-        console.error(`Validation failed due to: ${error}`);
+        log.error(`Validation failed due to: ${error}`);
         return false;
     }
     return value;

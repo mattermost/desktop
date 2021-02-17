@@ -204,7 +204,7 @@ function initializeBeforeAppReady() {
     certificateManager = new CertificateManager();
 
     if (isDev) {
-        console.log('In development mode, deeplinking is disabled');
+        log.info('In development mode, deeplinking is disabled');
     } else if (protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0]) {
         scheme = protocols[0].schemes[0];
         app.setAsDefaultProtocolClient(scheme);
@@ -248,9 +248,9 @@ function handleConfigUpdate(newConfig) {
         const appLauncher = new AutoLauncher();
         const autoStartTask = config.autostart ? appLauncher.enable() : appLauncher.disable();
         autoStartTask.then(() => {
-            console.log('config.autostart has been configured:', newConfig.autostart);
+            log.info('config.autostart has been configured:', newConfig.autostart);
         }).catch((err) => {
-            console.log('error:', err);
+            log.error('error:', err);
         });
         WindowManager.setConfig(newConfig.data, deeplinkingUrl);
     }
@@ -409,7 +409,7 @@ function handleAppLogin(event, webContents, request, authInfo, callback) {
 }
 
 function handleAppGPUProcessCrashed(event, killed) {
-    console.log(`The GPU process has crashed (killed = ${killed})`);
+    log.error(`The GPU process has crashed (killed = ${killed})`);
 }
 
 function handleAppWillFinishLaunching() {
@@ -455,11 +455,11 @@ function handleNewServerModal() {
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
-                console.error(`there was an error in the new server modal: ${e}`);
+                log.error(`there was an error in the new server modal: ${e}`);
             }
         });
     } else {
-        console.warn('There is already a new server modal');
+        log.warn('There is already a new server modal');
     }
 }
 
@@ -625,8 +625,8 @@ function initializeAfterAppReady() {
 
     if (global.isDev) {
         installExtension(REACT_DEVELOPER_TOOLS).
-            then((name) => console.log(`Added Extension:  ${name}`)).
-            catch((err) => console.log('An error occurred: ', err));
+            then((name) => log.info(`Added Extension:  ${name}`)).
+            catch((err) => log.error('An error occurred: ', err));
     }
 
     // Workaround for MM-22193
@@ -752,7 +752,7 @@ function handleMentionNotification(event, title, body, channel, teamId, silent, 
 function handleOpenAppMenu() {
     const windowMenu = Menu.getApplicationMenu();
     if (!windowMenu) {
-        console.error('No application menu found');
+        log.error('No application menu found');
         return;
     }
     windowMenu.popup({

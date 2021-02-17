@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {shell, Notification} from 'electron';
+import log from 'electron-log';
 
 import {PLAY_SOUND} from 'common/communication';
 
@@ -12,7 +13,7 @@ import {DownloadNotification} from './Download';
 
 export function displayMention(title, body, channel, teamId, silent, webcontents, data) {
     if (!Notification.isSupported()) {
-        console.log('notification not supported');
+        log.error('notification not supported');
         return;
     }
     const serverName = windowManager.getServerNameByWebContentsId(webcontents.id);
@@ -44,7 +45,7 @@ export function displayMention(title, body, channel, teamId, silent, webcontents
 
 export function displayDownloadCompleted(fileName, path, serverInfo) {
     if (!Notification.isSupported()) {
-        console.log('notification not supported');
+        log.error('notification not supported');
         return;
     }
     const download = new DownloadNotification(fileName, serverInfo);

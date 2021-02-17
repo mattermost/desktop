@@ -500,13 +500,13 @@ export default class MainPage extends React.Component {
     }
 
     // TODO: remove when back bar PR is merged
-    // showExtraBar = () => {
+    showExtraBar = () => {
     //   const ref = this.refs[`mattermostView${this.state.key}`];
     //   if (typeof ref !== 'undefined') {
     //     return !urlUtils.isTeamUrl(this.props.teams[this.state.key].url, ref.getSrc());
     //   }
-    //   return false;
-    // }
+       return false;
+    }
 
     render() {
         const tabsRow = (

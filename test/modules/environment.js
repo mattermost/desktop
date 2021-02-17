@@ -39,6 +39,7 @@ module.exports = {
                 fs.unlinkSync(file);
             } catch (err) {
                 if (err.code !== 'ENOENT') {
+                    // eslint-disable-next-line no-console
                     console.error(err);
                 }
             }

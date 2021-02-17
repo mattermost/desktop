@@ -20,7 +20,7 @@ function saveWindowState(file, window) {
         fs.writeFileSync(file, JSON.stringify(windowState));
     } catch (e) {
     // [Linux] error happens only when the window state is changed before the config dir is created.
-        console.log(e);
+        log.error(e);
     }
 }
 

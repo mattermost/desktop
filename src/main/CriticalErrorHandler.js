@@ -89,7 +89,7 @@ export default class CriticalErrorHandler {
                         child.on(
                             'error',
                             (spawnError) => {
-                                console.log(spawnError);
+                                log.error(spawnError);
                             },
                         );
                         child.unref();

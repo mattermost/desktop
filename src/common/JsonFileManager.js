@@ -16,6 +16,8 @@ export default class JsonFileManager {
     writeToFile() {
         fs.writeFile(this.jsonFile, JSON.stringify(this.json, null, 2), (err) => {
             if (err) {
+                // No real point in bringing electron-log into this otherwise electron-free file
+                // eslint-disable-next-line no-console
                 console.error(err);
             }
         });

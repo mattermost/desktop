@@ -7,6 +7,7 @@ import path from 'path';
 
 import {EventEmitter} from 'events';
 import {ipcMain, nativeTheme, app} from 'electron';
+import log from 'electron-log';
 
 import * as Validator from '../../main/Validator';
 
@@ -252,7 +253,7 @@ export default class Config extends EventEmitter {
                 throw new Error('Provided configuration file does not validate, using defaults instead.');
             }
         } catch (e) {
-            console.log('Failed to load configuration file from the filesystem. Using defaults.');
+            log.warn('Failed to load configuration file from the filesystem. Using defaults.');
             configData = this.copy(this.defaultConfigData);
 
             // add default team to teams if one exists and there arent currently any teams
@@ -277,10 +278,10 @@ export default class Config extends EventEmitter {
             if (configData.version !== this.defaultConfigData.version) {
                 configData = upgradeConfigData(configData);
                 this.writeFileSync(this.configFilePath, configData);
-                console.log(`Configuration updated to version ${this.defaultConfigData.version} successfully.`);
+                log.info(`Configuration updated to version ${this.defaultConfigData.version} successfully.`);
             }
         } catch (error) {
-            console.log(`Failed to update configuration to version ${this.defaultConfigData.version}.`);
+            log.error(`Failed to update configuration to version ${this.defaultConfigData.version}.`);
         }
         return configData;
     }
