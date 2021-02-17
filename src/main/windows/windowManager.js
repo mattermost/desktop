@@ -367,7 +367,12 @@ export function handleHistory(event, offset) {
   if (status.viewManager) {
     const activeView = status.viewManager.getCurrentView();
     if (activeView && activeView.view.webContents.canGoToOffset(offset)) {
-      activeView.view.webContents.goToOffset(offset);
+      try {
+        activeView.view.webContents.goToOffset(offset);
+      } catch (error) {
+        log.error(error);
+        activeView.load(activeView.server.url);
+      }
     }
   }
 }
