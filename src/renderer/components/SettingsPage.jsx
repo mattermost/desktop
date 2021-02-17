@@ -24,59 +24,61 @@ function backToIndex(serverName) {
     window.close();
 }
 
-export default class SettingsPage extends React.PureComponent {
-    constructor(props) {
-        super(props);
-        this.state = {
-            ready: false,
-            teams: [],
-            showAddTeamForm: false,
-            savingState: {
-                appOptions: AutoSaveIndicator.SAVING_STATE_DONE,
-                servers: AutoSaveIndicator.SAVING_STATE_DONE,
-            },
-            userOpenedDownloadDialog: false,
-        };
+export default class SettingsPage extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      ready: false,
+      teams: [],
+      showAddTeamForm: false,
+      savingState: {
+        appOptions: AutoSaveIndicator.SAVING_STATE_DONE,
+        servers: AutoSaveIndicator.SAVING_STATE_DONE,
+      },
+      userOpenedDownloadDialog: false,
+    };
 
-        ipcRenderer.invoke(GET_LOCAL_CONFIGURATION).then((config) => {
-            this.state = this.convertConfigDataToState(config);
-            this.setState({ready: true, maximized: false, ...this.state});
-        });
-        this.trayIconThemeRef = React.createRef();
-        this.downloadLocationRef = React.createRef();
-        this.showTrayIconRef = React.createRef();
-        this.autostartRef = React.createRef();
-        this.minimizeToTrayRef = React.createRef();
-        this.flashWindowRef = React.createRef();
-        this.bounceIconRef = React.createRef();
-        this.showUnreadBadgeRef = React.createRef();
-        this.useSpellCheckerRef = React.createRef();
-        this.enableHardwareAccelerationRef = React.createRef();
+    this.getConfig();
+    this.trayIconThemeRef = React.createRef();
+    this.downloadLocationRef = React.createRef();
+    this.showTrayIconRef = React.createRef();
+    this.autostartRef = React.createRef();
+    this.minimizeToTrayRef = React.createRef();
+    this.flashWindowRef = React.createRef();
+    this.bounceIconRef = React.createRef();
+    this.showUnreadBadgeRef = React.createRef();
+    this.useSpellCheckerRef = React.createRef();
+    this.enableHardwareAccelerationRef = React.createRef();
 
-        this.saveQueue = [];
-    }
+    this.saveQueue = [];
+  }
 
-    componentDidMount() {
-        ipcRenderer.on('add-server', () => {
-            this.setState({
-                showAddTeamForm: true,
-            });
-        });
-    }
+  componentDidMount() {
+    ipcRenderer.on('add-server', () => {
+      this.setState({
+        showAddTeamForm: true,
+      });
+    });
 
-    convertConfigDataToState = (configData, currentState = {}) => {
-        const newState = Object.assign({}, configData);
-        newState.showAddTeamForm = currentState.showAddTeamForm || false;
-        newState.trayWasVisible = currentState.trayWasVisible || false;
-        if (newState.teams.length === 0 && currentState.firstRun !== false) {
-            newState.firstRun = false;
-            newState.showAddTeamForm = true;
-        }
-        newState.savingState = currentState.savingState || {
-            appOptions: AutoSaveIndicator.SAVING_STATE_DONE,
-            servers: AutoSaveIndicator.SAVING_STATE_DONE,
-        };
-        return newState;
+    ipcRenderer.on('reload-config', () => {
+      this.updateSaveState();
+      this.getConfig();
+    });
+  }
+
+  getConfig = () => {
+    ipcRenderer.invoke(GET_LOCAL_CONFIGURATION).then((config) => {
+      this.setState({ready: true, maximized: false, ...this.convertConfigDataToState(config)});
+    });
+  }
+
+  convertConfigDataToState = (configData, currentState = {}) => {
+    const newState = Object.assign({}, configData);
+    newState.showAddTeamForm = currentState.showAddTeamForm || false;
+    newState.trayWasVisible = currentState.trayWasVisible || false;
+    if (newState.teams.length === 0 && currentState.firstRun !== false) {
+      newState.firstRun = false;
+      newState.showAddTeamForm = true;
     }
 
     saveSetting = (configType, {key, data}) => {

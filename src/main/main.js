@@ -14,7 +14,7 @@ import 'airbnb-js-shims/target/es2015';
 import Utils from 'common/utils/util';
 import urlUtils from 'common/utils/url';
 
-import {DEVELOPMENT, PRODUCTION, SECOND} from 'common/utils/constants';
+import {DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
 import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, SHOW_NEW_SERVER_MODAL, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION, GET_DOWNLOAD_LOCATION} from 'common/communication';
 import Config from 'common/config';
 
@@ -65,7 +65,6 @@ const certificateErrorCallbacks = new Map();
 let popupWindow = null;
 let certificateStore = null;
 let trustedOriginsStore = null;
-let deeplinkingUrl = null;
 let scheme = null;
 let appVersion = null;
 let config = null;
@@ -244,31 +243,31 @@ function initializeInterCommunicationEventListeners() {
 //
 
 function handleConfigUpdate(newConfig) {
-    if (process.platform === 'win32' || process.platform === 'linux') {
-        const appLauncher = new AutoLauncher();
-        const autoStartTask = config.autostart ? appLauncher.enable() : appLauncher.disable();
-        autoStartTask.then(() => {
-            log.info('config.autostart has been configured:', newConfig.autostart);
-        }).catch((err) => {
-            log.error('error:', err);
-        });
-        WindowManager.setConfig(newConfig.data, deeplinkingUrl);
-    }
+  if (process.platform === 'win32' || process.platform === 'linux') {
+    const appLauncher = new AutoLauncher();
+    const autoStartTask = config.autostart ? appLauncher.enable() : appLauncher.disable();
+    autoStartTask.then(() => {
+      console.log('config.autostart has been configured:', newConfig.autostart);
+    }).catch((err) => {
+      console.log('error:', err);
+    });
+    WindowManager.setConfig(newConfig.data);
+  }
 
     ipcMain.emit('update-menu', true, config);
 }
 
 function handleConfigSynchronize() {
-    // TODO: send this to server manager
-    WindowManager.setConfig(config.data, deeplinkingUrl);
-    if (app.isReady()) {
-        WindowManager.sendToRenderer('reload-config');
-    }
+  // TODO: send this to server manager
+  WindowManager.setConfig(config.data);
+  if (app.isReady()) {
+    WindowManager.sendToRenderer('reload-config');
+  }
 }
 
 function handleReloadConfig() {
-    config.reload();
-    WindowManager.setConfig(config.data, deeplinkingUrl);
+  config.reload();
+  WindowManager.setConfig(config.data);
 }
 
 function handleAppVersion() {
@@ -289,19 +288,10 @@ function handleDarkModeChange(darkMode) {
 
 // activate first app instance, subsequent instances will quit themselves
 function handleAppSecondInstance(event, argv) {
-    // Protocol handler for win32
-    // argv: An array of the second instance’s (command line / deep linked) arguments
-    if (process.platform === 'win32') {
-        deeplinkingUrl = getDeeplinkingURL(argv);
-
-        // TODO: handle deeplinking into the tab manager as we have to send them to the appropiate BV
-        if (deeplinkingUrl) {
-            WindowManager.sendToRenderer('protocol-deeplink', deeplinkingUrl);
-        }
-    }
-
-    // Someone tried to run a second instance, we should focus our window.
-    WindowManager.restoreMain();
+  // Protocol handler for win32
+  // argv: An array of the second instance’s (command line / deep linked) arguments
+  const deeplinkingUrl = getDeeplinkingURL(argv);
+  openDeepLink(deeplinkingUrl);
 }
 
 function handleAppWindowAllClosed() {
@@ -412,26 +402,28 @@ function handleAppGPUProcessCrashed(event, killed) {
     log.error(`The GPU process has crashed (killed = ${killed})`);
 }
 
+function openDeepLink(deeplinkingUrl) {
+  try {
+    WindowManager.showMainWindow(deeplinkingUrl);
+  } catch (err) {
+    log.error(`There was an error opening the deeplinking url: ${err}`);
+  }
+}
+
 function handleAppWillFinishLaunching() {
-    // Protocol handler for osx
-    app.on('open-url', (event, url) => {
-        event.preventDefault();
-        deeplinkingUrl = getDeeplinkingURL([url]);
-        if (app.isReady()) {
-            function openDeepLink() {
-                try {
-                    if (deeplinkingUrl) {
-                        // TODO: send this to tab manager.
-                        //mainWindow.webContents.send('protocol-deeplink', deeplinkingUrl);
-                        WindowManager.showMainWindow();
-                    }
-                } catch (err) {
-                    setTimeout(openDeepLink, SECOND);
-                }
-            }
-            openDeepLink();
-        }
-    });
+  // Protocol handler for osx
+  app.on('open-url', (event, url) => {
+    log.info(`Handling deeplinking url: ${url}`);
+    event.preventDefault();
+    const deeplinkingUrl = getDeeplinkingURL([url]);
+    if (deeplinkingUrl) {
+      if (app.isReady() && deeplinkingUrl) {
+        openDeepLink(deeplinkingUrl);
+      } else {
+        app.once('ready', () => openDeepLink(deeplinkingUrl));
+      }
+    }
+  });
 }
 
 function handleSwitchServer(event, serverName) {
@@ -643,48 +635,51 @@ function initializeAfterAppReady() {
         }
     }
 
-    // Protocol handler for win32
-    if (process.platform === 'win32') {
-        const args = process.argv.slice(1);
-        if (Array.isArray(args) && args.length > 0) {
-            deeplinkingUrl = getDeeplinkingURL(args);
-        }
+  let deeplinkingURL;
+
+  // Protocol handler for win32
+  if (process.platform === 'win32') {
+    const args = process.argv.slice(1);
+    if (Array.isArray(args) && args.length > 0) {
+      deeplinkingURL = getDeeplinkingURL(args);
     }
+  }
 
-    initCookieManager(session.defaultSession);
+  initCookieManager(session.defaultSession);
 
-    WindowManager.showMainWindow();
+  WindowManager.showMainWindow(deeplinkingURL);
 
-    // TODO: remove dev tools
-    if (config.teams.length === 0) {
-        WindowManager.showSettingsWindow();
+  // TODO: remove dev tools
+  if (config.teams.length === 0) {
+    WindowManager.showSettingsWindow();
+  }
+
+  criticalErrorHandler.setMainWindow(WindowManager.getMainWindow());
+
+  // TODO: this has to be sent to the tabs instead
+  // listen for status updates and pass on to renderer
+  userActivityMonitor.on('status', (status) => {
+    WindowManager.sendToRenderer('user-activity-update', status);
+  });
+
+  // start monitoring user activity (needs to be started after the app is ready)
+  userActivityMonitor.startMonitoring();
+
+  if (shouldShowTrayIcon()) {
+    setupTray(config.trayIconTheme);
+  }
+  setupBadge();
+
+  session.defaultSession.on('will-download', (event, item, webContents) => {
+    const filename = item.getFilename();
+    const fileElements = filename.split('.');
+    const filters = [];
+    if (fileElements.length > 1) {
+      filters.push({
+        name: `${fileElements[fileElements.length - 1]} files`,
+        extensions: [fileElements[fileElements.length - 1]],
+      });
     }
-
-    criticalErrorHandler.setMainWindow(WindowManager.getMainWindow());
-
-    // TODO: this has to be sent to the tabs instead
-    // listen for status updates and pass on to renderer
-    userActivityMonitor.on('status', (status) => {
-        WindowManager.sendToRenderer('user-activity-update', status);
-    });
-
-    // start monitoring user activity (needs to be started after the app is ready)
-    userActivityMonitor.startMonitoring();
-
-    if (shouldShowTrayIcon()) {
-        setupTray(config.trayIconTheme);
-    }
-    setupBadge();
-
-    session.defaultSession.on('will-download', (event, item, webContents) => {
-        const filename = item.getFilename();
-        const fileElements = filename.split('.');
-        const filters = [];
-        if (fileElements.length > 1) {
-            filters.push({
-                name: `${fileElements[fileElements.length - 1]} files`,
-                extensions: [fileElements[fileElements.length - 1]],
-            });
         }
 
         // add default filter

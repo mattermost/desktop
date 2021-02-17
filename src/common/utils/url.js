@@ -154,38 +154,44 @@ function isManagedResource(serverUrl, inputURL) {
     managedResources.some((managedResource) => (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}${managedResource}/`) || parsedURL.pathname.toLowerCase().startsWith(`/${managedResource}/`))));
 }
 
-function getServer(inputURL, teams) {
-    const parsedURL = parseURL(inputURL);
-    if (!parsedURL) {
-        return null;
-    }
-    let parsedServerUrl;
-    let secondOption = null;
-    for (let i = 0; i < teams.length; i++) {
-        parsedServerUrl = parseURL(teams[i].url);
+function getServer(inputURL, teams, ignoreScheme = false) {
+  const parsedURL = parseURL(inputURL);
+  if (!parsedURL) {
+    return null;
+  }
+  let parsedServerUrl;
+  let secondOption = null;
+  for (let i = 0; i < teams.length; i++) {
+    parsedServerUrl = parseURL(teams[i].url);
 
-        // check server and subpath matches (without subpath pathname is \ so it always matches)
-        if (equalUrlsWithSubpath(parsedServerUrl, parsedURL)) {
-            return {name: teams[i].name, url: parsedServerUrl, index: i};
-        }
-        if (equalUrlsIgnoringSubpath(parsedServerUrl, parsedURL)) {
-            // in case the user added something on the path that doesn't really belong to the server
-            // there might be more than one that matches, but we can't differentiate, so last one
-            // is as good as any other in case there is no better match (e.g.: two subpath servers with the same origin)
-            // e.g.: https://community.mattermost.com/core
-            secondOption = {name: teams[i].name, url: parsedServerUrl, index: i};
-        }
+    // check server and subpath matches (without subpath pathname is \ so it always matches)
+    if (equalUrlsWithSubpath(parsedServerUrl, parsedURL, ignoreScheme)) {
+      return {name: teams[i].name, url: parsedServerUrl, index: i};
     }
-    return secondOption;
+    if (equalUrlsIgnoringSubpath(parsedServerUrl, parsedURL, ignoreScheme)) {
+      // in case the user added something on the path that doesn't really belong to the server
+      // there might be more than one that matches, but we can't differentiate, so last one
+      // is as good as any other in case there is no better match (e.g.: two subpath servers with the same origin)
+      // e.g.: https://community.mattermost.com/core
+      secondOption = {name: teams[i].name, url: parsedServerUrl, index: i};
+    }
+  }
+  return secondOption;
 }
 
 // next two functions are defined to clarify intent
-function equalUrlsWithSubpath(url1, url2) {
-    return url1.origin === url2.origin && url2.pathname.toLowerCase().startsWith(url1.pathname.toLowerCase());
+function equalUrlsWithSubpath(url1, url2, ignoreScheme) {
+  if (ignoreScheme) {
+    return url1.host === url2.host && url2.pathname.toLowerCase().startsWith(url1.pathname.toLowerCase());
+  }
+  return url1.origin === url2.origin && url2.pathname.toLowerCase().startsWith(url1.pathname.toLowerCase());
 }
 
-function equalUrlsIgnoringSubpath(url1, url2) {
-    return url1.origin.toLowerCase() === url2.origin.toLowerCase();
+function equalUrlsIgnoringSubpath(url1, url2, ignoreScheme) {
+  if (ignoreScheme) {
+    return url1.host.toLowerCase() === url2.host.toLowerCase();
+  }
+  return url1.origin.toLowerCase() === url2.origin.toLowerCase();
 }
 
 function isTrustedURL(url, teams) {

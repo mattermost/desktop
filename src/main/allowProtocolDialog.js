@@ -42,34 +42,35 @@ function init() {
 }
 
 function handleDialogEvent(protocol, URL) {
-    if (allowedProtocols.indexOf(protocol) !== -1) {
-        shell.openExternal(URL);
-        return;
-    }
-    dialog.showMessageBox(getMainWindow(), {
-        title: 'Non http(s) protocol',
-        message: `${protocol} link requires an external application.`,
-        detail: `The requested link is ${URL} . Do you want to continue?`,
-        type: 'warning',
-        buttons: [
-            'Yes',
-            `Yes (Save ${protocol} as allowed)`,
-            'No',
-        ],
-        cancelId: 2,
-        noLink: true,
-    }).then(({response}) => {
-        switch (response) {
-        case 1: {
-            allowedProtocols.push(protocol);
-            function handleError(err) {
-                if (err) {
-                    log.error(err);
-                }
-            }
-            fs.writeFile(allowedProtocolFile, JSON.stringify(allowedProtocols), handleError);
-            shell.openExternal(URL);
-            break;
+  if (allowedProtocols.indexOf(protocol) !== -1) {
+    shell.openExternal(URL);
+    return;
+  }
+  dialog.showMessageBox(getMainWindow(), {
+    title: 'Non http(s) protocol',
+    message: `${protocol} link requires an external application.`,
+    detail: `The requested link is ${URL} . Do you want to continue?`,
+    defaultId: 2,
+    type: 'warning',
+    buttons: [
+      'Yes',
+      `Yes (Save ${protocol} as allowed)`,
+      'No',
+    ],
+    cancelId: 2,
+    noLink: true,
+  }).then(({response}) => {
+    switch (response) {
+    case 1: {
+      allowedProtocols.push(protocol);
+      function handleError(err) {
+        if (err) {
+          console.error(err);
+        }
+      }
+      fs.writeFile(allowedProtocolFile, JSON.stringify(allowedProtocols), handleError);
+      shell.openExternal(URL);
+      break;
         }
         case 0:
             shell.openExternal(URL);

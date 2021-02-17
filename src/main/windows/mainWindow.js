@@ -45,46 +45,45 @@ function createMainWindow(config, options) {
         }
     } catch (e) {
     // Follow Electron's defaults, except for window dimensions which targets 1024x768 screen resolution.
-        windowOptions = {width: defaultWindowWidth, height: defaultWindowHeight};
-    }
+    windowOptions = {width: defaultWindowWidth, height: defaultWindowHeight};
+  }
 
-    const {maximized: windowIsMaximized} = windowOptions;
+  const {maximized: windowIsMaximized} = windowOptions;
 
-    const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
+  const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
 
-    if (process.platform === 'linux') {
-        windowOptions.icon = options.linuxAppIcon;
-    }
-    Object.assign(windowOptions, {
-        title: app.name,
-        fullscreenable: true,
-        show: false, // don't start the window until it is ready and only if it isn't hidden
-        paintWhenInitiallyHidden: true, // we want it to start painting to get info from the webapp
-        minWidth: minimumWindowWidth,
-        minHeight: minimumWindowHeight,
-        frame: !isFramelessWindow(),
-        fullscreen: false,
-        titleBarStyle: 'hiddenInset',
-        backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
-            disableBlinkFeatures: 'Auxclick',
-            spellcheck,
-        },
+  if (process.platform === 'linux') {
+    windowOptions.icon = options.linuxAppIcon;
+  }
+  Object.assign(windowOptions, {
+    title: app.name,
+    fullscreenable: true,
+    show: false, // don't start the window until it is ready and only if it isn't hidden
+    paintWhenInitiallyHidden: true, // we want it to start painting to get info from the webapp
+    minWidth: minimumWindowWidth,
+    minHeight: minimumWindowHeight,
+    frame: !isFramelessWindow(),
+    fullscreen: false,
+    titleBarStyle: 'hiddenInset',
+    backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      disableBlinkFeatures: 'Auxclick',
+      spellcheck,
+    },
+  });
+
+  const mainWindow = new BrowserWindow(windowOptions);
+  mainWindow.setMenuBarVisibility(false);
+
+  const localURL = getLocalURLString('index.html');
+  mainWindow.loadURL(localURL).catch(
+    (reason) => {
+      log.error(`Main window failed to load: ${reason}`);
     });
-
-    const mainWindow = new BrowserWindow(windowOptions);
-    mainWindow.deeplinkingUrl = options.deeplinkingUrl;
-    mainWindow.setMenuBarVisibility(false);
-
-    const localURL = getLocalURLString('index.html');
-    mainWindow.loadURL(localURL).catch(
-        (reason) => {
-            log.error(`Main window failed to load: ${reason}`);
-        });
-    mainWindow.once('ready-to-show', () => {
-        mainWindow.webContents.zoomLevel = 0;
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.webContents.zoomLevel = 0;
 
         mainWindow.show();
         if (windowIsMaximized) {
