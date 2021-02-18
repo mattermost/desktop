@@ -80,6 +80,11 @@ export default class SettingsPage extends React.PureComponent {
             newState.firstRun = false;
             newState.showAddTeamForm = true;
         }
+        newState.savingState = currentState.savingState || {
+            appOptions: AutoSaveIndicator.SAVING_STATE_DONE,
+            servers: AutoSaveIndicator.SAVING_STATE_DONE,
+        };
+        return newState;
     }
 
     saveSetting = (configType, {key, data}) => {

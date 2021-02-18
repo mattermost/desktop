@@ -78,7 +78,6 @@
                 "src/main.js",
                 "src/browser/js/contextMenu.js",
                 "src/browser/updater.jsx",
-                "src/browser/js/notification.js",
                 "src/browser/js/badge.js",
                 "src/browser/webview/mattermost.js",
                 "src/browser/components/RemoveServerModal.jsx",

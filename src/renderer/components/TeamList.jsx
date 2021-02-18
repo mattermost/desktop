@@ -89,16 +89,16 @@ export default class TeamList extends React.PureComponent {
         const teamNodes = this.props.teams.map((team, i) => {
             function handleTeamRemove() {
                 document.activeElement.blur();
-                self.openServerRemoveModal(i);
+                this.openServerRemoveModal(i);
             }
 
             function handleTeamEditing() {
                 document.activeElement.blur();
-                self.handleTeamEditing(team.name, team.url, i, team.order);
+                this.handleTeamEditing(team.name, team.url, i, team.order);
             }
 
             function handleTeamClick() {
-                self.props.onTeamClick(team.name);
+                this.props.onTeamClick(team.name);
             }
 
             return (
