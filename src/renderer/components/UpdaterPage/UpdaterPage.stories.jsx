@@ -24,30 +24,30 @@ onClickSkip: propTypes.func.isRequired,
 const appName = 'Storybook App';
 
 storiesOf('UpdaterPage', module).
-  add('Normal', () => (
-    <UpdaterPage
-      appName={appName}
-      notifyOnly={false}
-      isDownloading={false}
-      progress={0}
-      onClickInstall={action('clicked install')}
-      onClickReleaseNotes={action('clicked release notes')}
-      onClickRemind={action('clicked remind')}
-      onClickSkip={action('clicked skip')}
-    />
-  )).
-  add('NotifyOnly', () => (
-    <UpdaterPage
-      appName={appName}
-      notifyOnly={true}
-      onClickDownload={action('clicked download')}
-    />
-  )).
-  add('Downloading', () => (
-    <UpdaterPage
-      appName={appName}
-      isDownloading={true}
-      progress={0}
-      onClickCancel={action('clicked cancel')}
-    />
-  ));
+    add('Normal', () => (
+        <UpdaterPage
+            appName={appName}
+            notifyOnly={false}
+            isDownloading={false}
+            progress={0}
+            onClickInstall={action('clicked install')}
+            onClickReleaseNotes={action('clicked release notes')}
+            onClickRemind={action('clicked remind')}
+            onClickSkip={action('clicked skip')}
+        />
+    )).
+    add('NotifyOnly', () => (
+        <UpdaterPage
+            appName={appName}
+            notifyOnly={true}
+            onClickDownload={action('clicked download')}
+        />
+    )).
+    add('Downloading', () => (
+        <UpdaterPage
+            appName={appName}
+            isDownloading={true}
+            progress={0}
+            onClickCancel={action('clicked cancel')}
+        />
+    ));

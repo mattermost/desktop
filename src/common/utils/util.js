@@ -7,27 +7,27 @@ import electron from 'electron';
 import {DEVELOPMENT, PRODUCTION} from './constants';
 
 function getDisplayBoundaries() {
-  const {screen} = electron;
+    const {screen} = electron;
 
-  const displays = screen.getAllDisplays();
+    const displays = screen.getAllDisplays();
 
-  return displays.map((display) => {
-    return {
-      maxX: display.workArea.x + display.workArea.width,
-      maxY: display.workArea.y + display.workArea.height,
-      minX: display.workArea.x,
-      minY: display.workArea.y,
-      maxWidth: display.workArea.width,
-      maxHeight: display.workArea.height,
-    };
-  });
+    return displays.map((display) => {
+        return {
+            maxX: display.workArea.x + display.workArea.width,
+            maxY: display.workArea.y + display.workArea.height,
+            minX: display.workArea.x,
+            minY: display.workArea.y,
+            maxWidth: display.workArea.width,
+            maxHeight: display.workArea.height,
+        };
+    });
 }
 
 function runMode() {
-  return process.env.NODE_ENV === PRODUCTION ? PRODUCTION : DEVELOPMENT;
+    return process.env.NODE_ENV === PRODUCTION ? PRODUCTION : DEVELOPMENT;
 }
 
 export default {
-  getDisplayBoundaries,
-  runMode,
+    getDisplayBoundaries,
+    runMode,
 };

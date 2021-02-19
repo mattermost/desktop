@@ -12,31 +12,31 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'renderer/css/modals.css';
 
 const handleDeny = () => {
-  window.postMessage({type: MODAL_CANCEL}, window.location.href);
+    window.postMessage({type: MODAL_CANCEL}, window.location.href);
 };
 
 const handleGrant = () => {
-  window.postMessage({type: MODAL_RESULT}, window.location.href);
+    window.postMessage({type: MODAL_RESULT}, window.location.href);
 };
 
 const getPermissionInfo = () => {
-  window.postMessage({type: RETRIEVE_MODAL_INFO}, window.location.href);
+    window.postMessage({type: RETRIEVE_MODAL_INFO}, window.location.href);
 };
 
 const openExternalLink = (protocol, url) => {
-  window.postMessage({type: MODAL_SEND_IPC_MESSAGE, data: {type: 'confirm-protocol', args: [protocol, url]}}, window.location.href);
+    window.postMessage({type: MODAL_SEND_IPC_MESSAGE, data: {type: 'confirm-protocol', args: [protocol, url]}}, window.location.href);
 };
 
 const start = async () => {
-  ReactDOM.render(
-    <PermissionModal
-      getPermissionInfo={getPermissionInfo}
-      handleDeny={handleDeny}
-      handleGrant={handleGrant}
-      openExternalLink={openExternalLink}
-    />,
-    document.getElementById('app')
-  );
+    ReactDOM.render(
+        <PermissionModal
+            getPermissionInfo={getPermissionInfo}
+            handleDeny={handleDeny}
+            handleGrant={handleGrant}
+            openExternalLink={openExternalLink}
+        />,
+        document.getElementById('app'),
+    );
 };
 
 start();

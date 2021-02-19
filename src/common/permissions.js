@@ -1,4 +1,3 @@
-
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
@@ -12,5 +11,5 @@ export const BASIC_AUTH_PERMISSION = 'canBasicAuth';
 
 // Permission descriptions
 export const PERMISSION_DESCRIPTION = {
-  [BASIC_AUTH_PERMISSION]: 'Web Authentication',
+    [BASIC_AUTH_PERMISSION]: 'Web Authentication',
 };

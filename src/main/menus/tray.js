@@ -8,35 +8,35 @@ import {Menu} from 'electron';
 import * as WindowManager from '../windows/windowManager';
 
 function createTemplate(config) {
-  const teams = config.teams;
-  const template = [
-    ...teams.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).map((team) => {
-      return {
-        label: team.name,
-        click: () => {
-          WindowManager.switchServer(team.name, true);
+    const teams = config.teams;
+    const template = [
+        ...teams.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).map((team) => {
+            return {
+                label: team.name,
+                click: () => {
+                    WindowManager.switchServer(team.name, true);
+                },
+            };
+        }), {
+            type: 'separator',
+        }, {
+            label: process.platform === 'darwin' ? 'Preferences...' : 'Settings',
+            click: () => {
+                WindowManager.showSettingsWindow();
+            },
+        }, {
+            type: 'separator',
+        }, {
+            role: 'quit',
         },
-      };
-    }), {
-      type: 'separator',
-    }, {
-      label: process.platform === 'darwin' ? 'Preferences...' : 'Settings',
-      click: () => {
-        WindowManager.showSettingsWindow();
-      },
-    }, {
-      type: 'separator',
-    }, {
-      role: 'quit',
-    },
-  ];
-  return template;
+    ];
+    return template;
 }
 
 function createMenu(config) {
-  return Menu.buildFromTemplate(createTemplate(config));
+    return Menu.buildFromTemplate(createTemplate(config));
 }
 
 export default {
-  createMenu,
+    createMenu,
 };
