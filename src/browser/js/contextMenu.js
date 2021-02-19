@@ -35,6 +35,7 @@ function getSpellCheckerLocaleMenus(onSelectSpellCheckerLocale) {
     {language: 'Ukrainian', locale: 'uk-UA'},
     {language: 'Spanish (ES)', locale: 'es-ES'},
     {language: 'Spanish (MX)', locale: 'es-MX'},
+    {language: 'Swedish', locale: 'sv-SE'},
     {language: 'Dutch', locale: 'nl-NL'},
     {language: 'Italian', locale: 'it-IT'},
   ];
