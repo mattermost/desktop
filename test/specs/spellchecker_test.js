@@ -36,10 +36,10 @@ describe('main/Spellchecker.js', function() {
 
       SpellChecker.getSpellCheckerLocale('ru').should.equal('ru-RU');
       SpellChecker.getSpellCheckerLocale('ru-RU').should.equal('ru-RU');
-      
+
       SpellChecker.getSpellCheckerLocale('sv').should.equal('sv-SE');
       SpellChecker.getSpellCheckerLocale('sv-SE').should.equal('sv-SE');
-      
+
       SpellChecker.getSpellCheckerLocale('uk').should.equal('uk-UA');
       SpellChecker.getSpellCheckerLocale('uk-UA').should.equal('uk-UA');
     });
