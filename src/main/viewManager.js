@@ -12,6 +12,7 @@ import {MattermostServer} from './MattermostServer';
 import {MattermostView} from './MattermostView';
 import {getLocalURLString, getLocalPreload} from './utils';
 import {showModal} from './modalManager';
+import {handleAppWebContentsCreated, removeWebContentsListeners} from './webContentEvents';
 
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 36;
@@ -118,6 +119,8 @@ export class ViewManager {
         if (this.currentView === viewName) {
             this.showByName(this.currentView);
         }
+        const view = this.views.get(viewName);
+        handleAppWebContentsCreated(view.webContents);
     }
 
     getCurrentView() {
