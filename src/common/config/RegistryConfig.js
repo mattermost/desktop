@@ -4,7 +4,7 @@
 
 import {EventEmitter} from 'events';
 import log from 'electron-log';
-import WindowsRegistry from 'winreg';
+import WindowsRegistry from 'winreg-utf8';
 
 const REGISTRY_HIVE_LIST = [WindowsRegistry.HKLM, WindowsRegistry.HKCU];
 const BASE_REGISTRY_KEY_PATH = '\\Software\\Policies\\Mattermost';
@@ -122,7 +122,7 @@ export default class RegistryConfig extends EventEmitter {
    * @param {string} name Name of the specific entry to retrieve (optional)
    */
     getRegistryEntryValues(hive, key, name) {
-        const registry = new WindowsRegistry({hive, key});
+        const registry = new WindowsRegistry({hive, key, utf8: true});
         return new Promise((resolve, reject) => {
             try {
                 registry.values((error, results) => {

@@ -118,7 +118,7 @@
     "semver": "^5.5.0",
     "underscore": "^1.9.1",
     "valid-url": "^1.0.9",
-    "winreg": "^1.2.4",
+    "winreg-utf8": "^0.1.1",
     "yargs": "^15.3.1"
   }
 }
