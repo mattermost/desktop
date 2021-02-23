@@ -12,7 +12,7 @@ const appIconURL = path.resolve(assetsDir, 'appicon_48.png');
 const defaultOptions = {
     title: 'Someone mentioned you',
     silent: false,
-    icon: nativeImage.createFromDataURL(appIconURL),
+    icon: appIconURL,
     urgency: 'normal',
 };
 export const DEFAULT_WIN7 = 'Ding';
