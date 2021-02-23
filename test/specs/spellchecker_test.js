@@ -140,6 +140,26 @@ describe('main/Spellchecker.js', function() {
     });
   });
 
+  describe('sv-SE', function() {
+    let spellchecker = null;
+
+    before(function(done) {
+      spellchecker = new SpellChecker(
+        'sv-SE',
+        path.resolve(__dirname, '../../src/node_modules/simple-spellchecker/dict'),
+        done
+      );
+    });
+
+    it('should spellcheck', function() {
+      spellchecker.spellCheck('ändamålslös').should.equal(true);
+      spellchecker.spellCheck('ändamålslos').should.equal(false);
+    });
+    it('should give suggestions', function() {
+      spellchecker.getSuggestions('ändamålslos', 1).length.should.be.equal(1);
+    });
+  });
+
   describe('uk-UA', function() {
     let spellchecker = null;
 
