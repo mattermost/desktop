@@ -98,7 +98,6 @@ export default class TeamList extends React.PureComponent {
         const teamNodes = this.props.teams.map((team, i) => {
             return (
                 <TeamListItem
-                    index={i}
                     key={`teamListItem_${team.name}`}
                     name={team.name}
                     url={team.url}
