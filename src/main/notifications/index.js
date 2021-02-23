@@ -27,13 +27,13 @@ export function displayMention(title, body, channel, teamId, silent, webcontents
         data,
     };
 
-    const mention = new Mention(options, channel);
+    const mention = new Mention(options, channel, teamId);
 
     mention.on('show', () => {
         // On Windows, manually dismiss notifications from the same channel and only show the latest one
         if (process.platform === 'win32') {
             for (const notification of currentNotifications.values()) {
-                if (notification.channel.id === mention.channel.id) {
+                if (notification.channel.id === mention.channel.id && notification.teamId === mention.teamId) {
                     notification.close();
                     currentNotifications.delete(notification);
                 }

@@ -16,7 +16,7 @@ const defaultOptions = {
 export const DEFAULT_WIN7 = 'Ding';
 
 export class Mention extends Notification {
-    constructor(customOptions, channel) {
+    constructor(customOptions, channel, teamId) {
         const options = {...defaultOptions, ...customOptions};
         if (process.platform === 'darwin') { // TODO: review
             // Notification Center shows app's icon, so there were two icons on the notification.
@@ -30,6 +30,7 @@ export class Mention extends Notification {
         super(options);
         this.customSound = customSound;
         this.channel = channel;
+        this.teamId = teamId;
     }
 
     getNotificationSound = () => {
