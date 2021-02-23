@@ -64,18 +64,6 @@ export default class TeamList extends React.PureComponent {
         this.props.onTeamsChange(teams);
     }
 
-    handleTeamEditing = (teamName, teamUrl, teamIndex, teamOrder) => {
-        this.setState({
-            showEditTeamForm: true,
-            team: {
-                url: teamUrl,
-                name: teamName,
-                index: teamIndex,
-                order: teamOrder,
-            },
-        });
-    }
-
     openServerRemoveModal = (indexForServer) => {
         this.setState({indexToRemoveServer: indexForServer});
     }
@@ -84,32 +72,39 @@ export default class TeamList extends React.PureComponent {
         this.setState({indexToRemoveServer: -1});
     }
 
+    handleTeamRemovePrompt = (index) => {
+        return () => {
+            document.activeElement.blur();
+            this.openServerRemoveModal(index);
+        };
+    }
+
+    handleTeamEditing = (team, index) => {
+        return () => {
+            document.activeElement.blur();
+            this.setState({
+                showEditTeamForm: true,
+                team: {
+                    url: team.url,
+                    name: team.name,
+                    index,
+                    order: team.order,
+                },
+            });
+        };
+    }
+
     render() {
-        const self = this;
         const teamNodes = this.props.teams.map((team, i) => {
-            function handleTeamRemove() {
-                document.activeElement.blur();
-                self.openServerRemoveModal(i);
-            }
-
-            function handleTeamEditing() {
-                document.activeElement.blur();
-                self.handleTeamEditing(team.name, team.url, i, team.order);
-            }
-
-            function handleTeamClick() {
-                self.props.onTeamClick(team.name);
-            }
-
             return (
                 <TeamListItem
                     index={i}
                     key={`teamListItem_${team.name}`}
                     name={team.name}
                     url={team.url}
-                    onTeamRemove={handleTeamRemove}
-                    onTeamEditing={handleTeamEditing}
-                    onTeamClick={handleTeamClick}
+                    onTeamRemove={this.handleTeamRemovePrompt(i)}
+                    onTeamEditing={this.handleTeamEditing(team, i)}
+                    onTeamClick={() => this.props.onTeamClick(team.name)}
                 />
             );
         });
@@ -183,6 +178,7 @@ export default class TeamList extends React.PureComponent {
 }
 
 TeamList.propTypes = {
+    onTeamClick: PropTypes.func,
     onTeamsChange: PropTypes.func,
     showAddTeamForm: PropTypes.bool,
     teams: PropTypes.array,
