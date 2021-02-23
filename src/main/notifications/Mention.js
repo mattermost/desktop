@@ -1,11 +1,13 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, Notification, nativeImage} from 'electron';
+import path from 'path';
+import {app, Notification} from 'electron';
 
 import osVersion from 'common/osVersion';
 
-const appIconURL = `file:///${app.getAppPath()}/assets/appicon_48.png`;
+const assetsDir = path.resolve(app.getAppPath(), 'assets');
+const appIconURL = path.resolve(assetsDir, 'appicon_48.png');
 
 const defaultOptions = {
     title: 'Someone mentioned you',
