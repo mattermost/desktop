@@ -5,7 +5,7 @@ import fs from 'fs';
 
 import path from 'path';
 
-import electron, {shell} from 'electron';
+import electron from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import log from 'electron-log';
@@ -14,7 +14,6 @@ import 'airbnb-js-shims/target/es2015';
 import Utils from 'common/utils/util';
 import urlUtils from 'common/utils/url';
 
-import {DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
 import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, SHOW_NEW_SERVER_MODAL, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION, GET_DOWNLOAD_LOCATION} from 'common/communication';
 import Config from 'common/config';
 
@@ -54,7 +53,6 @@ const {
     ipcMain,
     dialog,
     session,
-    BrowserWindow,
 } = electron;
 const criticalErrorHandler = new CriticalErrorHandler();
 const userActivityMonitor = new UserActivityMonitor();
@@ -62,7 +60,6 @@ const certificateErrorCallbacks = new Map();
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-let popupWindow = null;
 let certificateStore = null;
 let trustedOriginsStore = null;
 let scheme = null;
@@ -70,21 +67,6 @@ let appVersion = null;
 let config = null;
 let authManager = null;
 let certificateManager = null;
-
-// tracking in progress custom logins
-const customLogins = {};
-
-const nixUA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari/537.36';
-
-const popupUserAgent = {
-    darwin: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari/537.36',
-    win32: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari/537.36',
-    aix: nixUA,
-    freebsd: nixUA,
-    linux: nixUA,
-    openbsd: nixUA,
-    sunos: nixUA,
-};
 
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
