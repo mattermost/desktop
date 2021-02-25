@@ -34,7 +34,7 @@ import * as WindowManager from './windows/windowManager';
 import {displayMention, displayDownloadCompleted} from './notifications';
 
 import parseArgs from './ParseArgs';
-import {addModal} from './modalManager';
+import {addModal} from './views/modalManager';
 import {getLocalURLString, getLocalPreload} from './utils';
 import {destroyTray, refreshTrayImages, setTrayMenu, setupTray} from './tray/tray';
 import {AuthManager} from './authManager';

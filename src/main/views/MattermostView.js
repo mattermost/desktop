@@ -8,11 +8,11 @@ import {EventEmitter} from 'events';
 
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
-import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL, IS_UNREAD, UNREAD_RESULT, FOUND_IN_PAGE, TOGGLE_BACK_BUTTON} from 'common/communication';
+import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL, IS_UNREAD, UNREAD_RESULT, TOGGLE_BACK_BUTTON} from 'common/communication';
 
-import {getWindowBoundaries, getLocalPreload} from './utils';
-import * as WindowManager from './windows/windowManager';
-import * as appState from './appState';
+import {getWindowBoundaries, getLocalPreload} from '../utils';
+import * as WindowManager from '../windows/windowManager';
+import * as appState from '../appState';
 
 // copying what webview sends
 // TODO: review
@@ -113,18 +113,12 @@ export class MattermostView extends EventEmitter {
             WindowManager.sendToRenderer(LOAD_SUCCESS, this.server.name);
             this.maxRetries = MAX_SERVER_RETRIES;
             if (this.status === LOADING) {
-                this.view.webContents.on('page-title-updated', this.handleTitleUpdate);
-                this.view.webContents.on('page-favicon-updated', this.handleFaviconUpdate);
                 ipcMain.on(UNREAD_RESULT, this.handleFaviconIsUnread);
                 this.handleTitleUpdate(null, this.view.webContents.getTitle());
                 this.findUnreadState(null);
             }
             this.status = READY;
             this.emit(LOAD_SUCCESS, this.server.name, loadURL.toString());
-
-            this.view.webContents.on('update-target-url', this.handleUpdateTarget);
-            this.view.webContents.on(FOUND_IN_PAGE, (event, result) => WindowManager.foundInPage(result));
-            this.view.webContents.on('did-navigate', this.handleDidNavigate);
         };
     }
 
@@ -206,6 +200,8 @@ export class MattermostView extends EventEmitter {
             this.emit(UPDATE_TARGET_URL, url);
         }
     }
+
+    handleFoundInPage = (event, result) => WindowManager.foundInPage(result)
 
     titleParser = /(\((\d+)\) )?(\*)?/g
 
