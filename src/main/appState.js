@@ -39,11 +39,8 @@ const emitStatus = () => {
 };
 
 export const updateMentions = (serverName, mentions, unreads) => {
-    if (mentions !== null) {
-        status.mentions.set(serverName, Boolean(mentions));
-    }
     if (typeof unreads !== 'undefined') {
-        status.unreads.set(serverName, unreads);
+        status.unreads.set(serverName, Boolean(unreads));
     }
     status.mentions.set(serverName, mentions || 0);
     emitMentions(serverName);
