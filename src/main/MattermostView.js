@@ -132,7 +132,7 @@ export class MattermostView extends EventEmitter {
         const request = typeof requestedVisibility === 'undefined' ? true : requestedVisibility;
         if (request && !this.isVisible) {
             this.window.addBrowserView(this.view);
-            this.setBounds(getWindowBoundaries(this.window, !urlUtils.isTeamUrl(this.server.url, this.view.webContents.getURL())));
+            this.setBounds(getWindowBoundaries(this.window, !(urlUtils.isTeamUrl(this.server.url, this.view.webContents.getURL()) || urlUtils.isAdminUrl(this.server.url, this.view.webContents.getURL()))));
             if (this.status === READY) {
                 this.focus();
             }
@@ -189,7 +189,7 @@ export class MattermostView extends EventEmitter {
     }
 
     handleDidNavigate = (event, url) => {
-        const isUrlTeamUrl = urlUtils.isTeamUrl(this.server.url, url);
+        const isUrlTeamUrl = urlUtils.isTeamUrl(this.server.url, url) || urlUtils.isAdminUrl(this.server.url, url);
         if (isUrlTeamUrl) {
             this.setBounds(getWindowBoundaries(this.window));
             WindowManager.sendToRenderer(TOGGLE_BACK_BUTTON, false);
