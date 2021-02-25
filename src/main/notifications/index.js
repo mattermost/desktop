@@ -11,7 +11,7 @@ import * as windowManager from '../windows/windowManager';
 import {Mention} from './Mention';
 import {DownloadNotification} from './Download';
 
-const currentNotifications = new Set();
+const currentNotifications = new Map();
 
 export function displayMention(title, body, channel, teamId, silent, webcontents, data) {
     if (!Notification.isSupported()) {
@@ -28,17 +28,17 @@ export function displayMention(title, body, channel, teamId, silent, webcontents
     };
 
     const mention = new Mention(options, channel, teamId);
+    const mentionKey = `${mention.teamId}:${mention.channel.id}`;
 
     mention.on('show', () => {
         // On Windows, manually dismiss notifications from the same channel and only show the latest one
         if (process.platform === 'win32') {
-            for (const notification of currentNotifications.values()) {
-                if (notification.channel.id === mention.channel.id && notification.teamId === mention.teamId) {
-                    notification.close();
-                    currentNotifications.delete(notification);
-                }
+            if (currentNotifications.has(mentionKey)) {
+                log.info(`close ${mentionKey}`);
+                currentNotifications.get(mentionKey).close();
+                currentNotifications.delete(mentionKey);
             }
-            currentNotifications.add(mention);
+            currentNotifications.set(mentionKey, mention);
         }
         const notificationSound = mention.getNotificationSound();
         if (notificationSound) {
