@@ -458,4 +458,13 @@ export default class Config extends EventEmitter {
             this.emit('darkModeChange', this.combinedData.darkMode);
         }
     }
+
+    /**
+     * Manually toggles dark mode for OSes that don't have a native dark mode setting
+     * @emits 'darkModeChange'
+     */
+    toggleDarkModeManually = () => {
+        this.set('darkMode', !this.combinedData.darkMode);
+        this.emit('darkModeChange', this.combinedData.darkMode);
+    }
 }

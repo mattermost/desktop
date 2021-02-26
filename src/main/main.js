@@ -693,7 +693,7 @@ function initializeAfterAppReady() {
         });
     });
 
-    ipcMain.emit('update-menu', true, config.data);
+    ipcMain.emit('update-menu', true, config);
 
     ipcMain.emit('update-dict');
 
@@ -754,16 +754,16 @@ function handleCloseAppMenu() {
     WindowManager.focusBrowserView();
 }
 
-function handleUpdateMenuEvent(event, configData) {
+function handleUpdateMenuEvent(event, config) {
     // TODO: this might make sense to move to window manager? so it updates the window referenced if needed.
     const mainWindow = WindowManager.getMainWindow();
-    const aMenu = appMenu.createMenu(configData);
+    const aMenu = appMenu.createMenu(config);
     Menu.setApplicationMenu(aMenu);
     aMenu.addListener('menu-will-close', handleCloseAppMenu);
 
     // set up context menu for tray icon
     if (shouldShowTrayIcon()) {
-        const tMenu = trayMenu.createMenu(configData);
+        const tMenu = trayMenu.createMenu(config.data);
         setTrayMenu(tMenu, mainWindow);
     }
 }

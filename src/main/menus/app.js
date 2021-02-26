@@ -3,7 +3,7 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {app, Menu, session, shell, webContents} from 'electron';
+import {app, ipcMain, Menu, session, shell, webContents} from 'electron';
 
 import * as WindowManager from '../windows/windowManager';
 
@@ -37,7 +37,7 @@ function createTemplate(config) {
         },
     });
 
-    if (config.enableServerManagement === true) {
+    if (config.data.enableServerManagement === true) {
         platformAppMenu.push({
             label: 'Sign in to Another Server',
             click() {
@@ -151,8 +151,7 @@ function createTemplate(config) {
         viewSubMenu.push({
             label: 'Toggle Dark Mode',
             click() {
-                // TODO: review what to do with this one
-                WindowManager.sendToRenderer('set-dark-mode');
+                config.toggleDarkModeManually();
             },
         });
     }
@@ -184,7 +183,7 @@ function createTemplate(config) {
         }],
     });
 
-    const teams = config.teams || [];
+    const teams = config.data.teams || [];
     const windowMenu = {
         label: '&Window',
         submenu: [{
@@ -221,11 +220,11 @@ function createTemplate(config) {
     };
     template.push(windowMenu);
     const submenu = [];
-    if (config.helpLink) {
+    if (config.data.MenuhelpLink) {
         submenu.push({
             label: 'Learn More...',
             click() {
-                shell.openExternal(config.helpLink);
+                shell.openExternal(config.data.helpLink);
             },
         });
         submenu.push(separatorItem);
