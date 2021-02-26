@@ -5,7 +5,7 @@ import log from 'electron-log';
 
 import * as WindowManager from './windows/windowManager';
 
-import {addModal} from './modalManager';
+import {addModal} from './views/modalManager';
 import {getLocalURLString} from './utils';
 
 const modalPreload = path.resolve(__dirname, '../../dist/modalPreload.js');

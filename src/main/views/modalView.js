@@ -4,7 +4,7 @@
 import {BrowserView} from 'electron';
 import log from 'electron-log';
 
-import {getWindowBoundaries} from './utils';
+import {getWindowBoundaries} from '../utils';
 
 // TODO: should we use windowmanager to get the currentwindow?
 

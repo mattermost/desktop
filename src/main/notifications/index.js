@@ -11,6 +11,8 @@ import * as windowManager from '../windows/windowManager';
 import {Mention} from './Mention';
 import {DownloadNotification} from './Download';
 
+const currentNotifications = new Map();
+
 export function displayMention(title, body, channel, teamId, silent, webcontents, data) {
     if (!Notification.isSupported()) {
         log.error('notification not supported');
@@ -24,9 +26,20 @@ export function displayMention(title, body, channel, teamId, silent, webcontents
         silent,
         data,
     };
-    const mention = new Mention(options);
+
+    const mention = new Mention(options, channel, teamId);
+    const mentionKey = `${mention.teamId}:${mention.channel.id}`;
 
     mention.on('show', () => {
+        // On Windows, manually dismiss notifications from the same channel and only show the latest one
+        if (process.platform === 'win32') {
+            if (currentNotifications.has(mentionKey)) {
+                log.info(`close ${mentionKey}`);
+                currentNotifications.get(mentionKey).close();
+                currentNotifications.delete(mentionKey);
+            }
+            currentNotifications.set(mentionKey, mention);
+        }
         const notificationSound = mention.getNotificationSound();
         if (notificationSound) {
             windowManager.sendToRenderer(PLAY_SOUND, notificationSound);

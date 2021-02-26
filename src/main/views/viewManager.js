@@ -7,11 +7,13 @@ import {SECOND} from 'common/utils/constants';
 import {UPDATE_TARGET_URL, FOUND_IN_PAGE, SET_SERVER_KEY, LOAD_SUCCESS, LOAD_FAILED} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
-import contextMenu from './contextMenu';
-import {MattermostServer} from './MattermostServer';
+import contextMenu from '../contextMenu';
+import {MattermostServer} from '../MattermostServer';
+import {getLocalURLString, getLocalPreload} from '../utils';
+
 import {MattermostView} from './MattermostView';
-import {getLocalURLString, getLocalPreload} from './utils';
 import {showModal} from './modalManager';
+import {addWebContentsEventListeners} from './webContentEvents';
 
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 36;
@@ -25,6 +27,10 @@ export class ViewManager {
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
         this.currentView = null;
         this.urlView = null;
+    }
+
+    getServers = () => {
+        return this.configServers;
     }
 
     loadServer = (server, mainWindow) => {
@@ -118,6 +124,8 @@ export class ViewManager {
         if (this.currentView === viewName) {
             this.showByName(this.currentView);
         }
+        const view = this.views.get(viewName);
+        addWebContentsEventListeners(view, this.getServers);
     }
 
     getCurrentView() {
