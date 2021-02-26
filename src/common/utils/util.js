@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
-import electron from 'electron';
+import electron, {BrowserWindow} from 'electron';
 
 import {DEVELOPMENT, PRODUCTION} from './constants';
 
@@ -27,7 +27,25 @@ function runMode() {
     return process.env.NODE_ENV === PRODUCTION ? PRODUCTION : DEVELOPMENT;
 }
 
+// workaround until electron 12 hits, since fromWebContents return a null value if using a webcontent from browserview
+function browserWindowFromWebContents(content) {
+    let window;
+    if (content.type === 'browserview') {
+        for (const win of BrowserWindow.getAllWindows()) {
+            for (const view of win.getBrowserViews()) {
+                if (view.webContents.id === content.id) {
+                    window = win;
+                }
+            }
+        }
+    } else {
+        window = BrowserWindow.fromWebContents(content);
+    }
+    return window;
+}
+
 export default {
     getDisplayBoundaries,
     runMode,
+    browserWindowFromWebContents,
 };

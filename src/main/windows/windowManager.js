@@ -10,7 +10,7 @@ import urlUtils from 'common/utils/url';
 
 import {getAdjustedWindowBoundaries} from '../utils';
 
-import {ViewManager} from '../viewManager';
+import {ViewManager} from '../views/viewManager';
 import {CriticalErrorHandler} from '../CriticalErrorHandler';
 
 import {createSettingsWindow} from './settingsWindow';

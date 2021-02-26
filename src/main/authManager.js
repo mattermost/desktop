@@ -7,7 +7,7 @@ import urlUtils from 'common/utils/url';
 
 import * as WindowManager from './windows/windowManager';
 
-import {addModal} from './modalManager';
+import {addModal} from './views/modalManager';
 import {getLocalURLString, getLocalPreload} from './utils';
 
 const modalPreload = getLocalPreload('modalPreload.js');

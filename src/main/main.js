@@ -5,7 +5,7 @@ import fs from 'fs';
 
 import path from 'path';
 
-import electron, {shell} from 'electron';
+import electron from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import log from 'electron-log';
@@ -14,7 +14,6 @@ import 'airbnb-js-shims/target/es2015';
 import Utils from 'common/utils/util';
 import urlUtils from 'common/utils/url';
 
-import {DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
 import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, SHOW_NEW_SERVER_MODAL, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION, GET_DOWNLOAD_LOCATION} from 'common/communication';
 import Config from 'common/config';
 
@@ -35,7 +34,7 @@ import * as WindowManager from './windows/windowManager';
 import {displayMention, displayDownloadCompleted} from './notifications';
 
 import parseArgs from './ParseArgs';
-import {addModal} from './modalManager';
+import {addModal} from './views/modalManager';
 import {getLocalURLString, getLocalPreload} from './utils';
 import {destroyTray, refreshTrayImages, setTrayMenu, setupTray} from './tray/tray';
 import {AuthManager} from './authManager';
@@ -54,7 +53,6 @@ const {
     ipcMain,
     dialog,
     session,
-    BrowserWindow,
 } = electron;
 const criticalErrorHandler = new CriticalErrorHandler();
 const userActivityMonitor = new UserActivityMonitor();
@@ -62,7 +60,6 @@ const certificateErrorCallbacks = new Map();
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-let popupWindow = null;
 let certificateStore = null;
 let trustedOriginsStore = null;
 let scheme = null;
@@ -70,21 +67,6 @@ let appVersion = null;
 let config = null;
 let authManager = null;
 let certificateManager = null;
-
-// tracking in progress custom logins
-const customLogins = {};
-
-const nixUA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari/537.36';
-
-const popupUserAgent = {
-    darwin: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari/537.36',
-    win32: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari/537.36',
-    aix: nixUA,
-    freebsd: nixUA,
-    linux: nixUA,
-    openbsd: nixUA,
-    sunos: nixUA,
-};
 
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
@@ -168,7 +150,6 @@ function initializeAppEventListeners() {
     app.on('gpu-process-crashed', handleAppGPUProcessCrashed);
     app.on('login', handleAppLogin);
     app.on('will-finish-launching', handleAppWillFinishLaunching);
-    app.on('web-contents-created', handleAppWebContentsCreated);
 }
 
 function initializeBeforeAppReady() {
@@ -433,10 +414,8 @@ function handleSwitchServer(event, serverName) {
 function handleNewServerModal() {
     const html = getLocalURLString('newServer.html');
 
-    //  const modalPreload = getLocalURLString('modalPreload.js');
     const modalPreload = getLocalPreload('modalPreload.js');
 
-    // eslint-disable-next-line no-undefined
     const modalPromise = addModal('newServer', html, modalPreload, {}, WindowManager.getMainWindow());
     if (modalPromise) {
         modalPromise.then((data) => {
@@ -453,152 +432,6 @@ function handleNewServerModal() {
     } else {
         log.warn('There is already a new server modal');
     }
-}
-
-function handleAppWebContentsCreated(dc, contents) {
-    // initialize custom login tracking
-    customLogins[contents.id] = {
-        inProgress: false,
-    };
-
-    contents.on('will-navigate', (event, url) => {
-        const contentID = event.sender.id;
-        const parsedURL = urlUtils.parseURL(url);
-        const server = urlUtils.getServer(parsedURL, config.teams);
-
-        if (server && (urlUtils.isTeamUrl(server.url, parsedURL) || urlUtils.isAdminUrl(server.url, parsedURL) || isTrustedPopupWindow(event.sender))) {
-            return;
-        }
-
-        if (urlUtils.isCustomLoginURL(parsedURL, server, config.teams)) {
-            return;
-        }
-        if (parsedURL.protocol === 'mailto:') {
-            return;
-        }
-        if (customLogins[contentID].inProgress) {
-            return;
-        }
-        const mode = Utils.runMode();
-        if (((mode === DEVELOPMENT || mode === PRODUCTION) &&
-          (parsedURL.path === 'renderer/index.html' || parsedURL.path === 'renderer/settings.html'))) {
-            log.info('loading settings page');
-            return;
-        }
-
-        log.info(`Prevented desktop from navigating to: ${url}`);
-        event.preventDefault();
-    });
-
-    // handle custom login requests (oath, saml):
-    // 1. are we navigating to a supported local custom login path from the `/login` page?
-    //    - indicate custom login is in progress
-    // 2. are we finished with the custom login process?
-    //    - indicate custom login is NOT in progress
-    contents.on('did-start-navigation', (event, url) => {
-        const contentID = event.sender.id;
-        const parsedURL = urlUtils.parseURL(url);
-        const server = urlUtils.getServer(parsedURL, config.teams);
-
-        if (!urlUtils.isTrustedURL(parsedURL, config.teams)) {
-            return;
-        }
-
-        if (urlUtils.isCustomLoginURL(parsedURL, server, config.teams)) {
-            customLogins[contentID].inProgress = true;
-        } else if (customLogins[contentID].inProgress) {
-            customLogins[contentID].inProgress = false;
-        }
-    });
-
-    contents.on('new-window', (event, url) => {
-        const parsedURL = urlUtils.parseURL(url);
-
-        // Dev tools case
-        if (parsedURL.protocol === 'devtools:') {
-            return;
-        }
-        event.preventDefault();
-
-        // Check for valid URL
-        if (!urlUtils.isValidURI(url)) {
-            return;
-        }
-
-        // Check for custom protocol
-        if (parsedURL.protocol !== 'http:' && parsedURL.protocol !== 'https:' && parsedURL.protocol !== `${scheme}:`) {
-            allowProtocolDialog.handleDialogEvent(parsedURL.protocol, url);
-            return;
-        }
-
-        const server = urlUtils.getServer(parsedURL, config.teams);
-
-        if (!server) {
-            shell.openExternal(url);
-            return;
-        }
-
-        // Public download links case
-        // TODO: We might be handling different types differently in the future, for now
-        // we are going to mimic the browser and just pop a new browser window for public links
-        if (parsedURL.pathname.match(/^(\/api\/v[3-4]\/public)*\/files\//)) {
-            shell.openExternal(url);
-            return;
-        }
-
-        if (parsedURL.pathname.match(/^\/help\//)) {
-            // Help links case
-            // continue to open special case internal urls in default browser
-            shell.openExternal(url);
-            return;
-        }
-
-        if (urlUtils.isTeamUrl(server.url, parsedURL, true)) {
-            log.info(`${url} is a known team, preventing to open a new window`);
-            return;
-        }
-        if (urlUtils.isAdminUrl(server.url, parsedURL)) {
-            log.info(`${url} is an admin console page, preventing to open a new window`);
-            return;
-        }
-        if (popupWindow && !popupWindow.closed && popupWindow.getURL() === url) {
-            log.info(`Popup window already open at provided url: ${url}`);
-            return;
-        }
-
-        // TODO: move popups to its own and have more than one.
-        if (urlUtils.isPluginUrl(server.url, parsedURL) || urlUtils.isManagedResource(server.url, parsedURL)) {
-            if (!popupWindow || popupWindow.closed) {
-                popupWindow = new BrowserWindow({
-                    backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
-                    parent: WindowManager.getMainWindow(),
-                    show: false,
-                    center: true,
-                    webPreferences: {
-                        nodeIntegration: false,
-                        contextIsolation: true,
-                        spellcheck: (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker),
-                    },
-                });
-                popupWindow.once('ready-to-show', () => {
-                    popupWindow.show();
-                });
-                popupWindow.once('closed', () => {
-                    popupWindow = null;
-                });
-            }
-
-            if (urlUtils.isManagedResource(server.url, parsedURL)) {
-                popupWindow.loadURL(url);
-            } else {
-                // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth
-                // should be removed once a proper oAuth2 implementation is setup.
-                popupWindow.loadURL(url, {
-                    userAgent: popupUserAgent[process.platform],
-                });
-            }
-        }
-    });
 }
 
 function initializeAfterAppReady() {
@@ -780,16 +613,6 @@ async function handleSelectDownload(event, startFrom) {
 //
 // helper functions
 //
-
-function isTrustedPopupWindow(webContents) {
-    if (!webContents) {
-        return false;
-    }
-    if (!popupWindow) {
-        return false;
-    }
-    return BrowserWindow.fromWebContents(webContents) === popupWindow;
-}
 
 function getDeeplinkingURL(args) {
     if (Array.isArray(args) && args.length) {
