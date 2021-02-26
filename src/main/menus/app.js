@@ -146,6 +146,17 @@ function createTemplate(config) {
         },
     }];
 
+    if (process.platform !== 'darwin' && process.platform !== 'win32') {
+        viewSubMenu.push(separatorItem);
+        viewSubMenu.push({
+            label: 'Toggle Dark Mode',
+            click() {
+                // TODO: review what to do with this one
+                WindowManager.sendToRenderer('set-dark-mode');
+            },
+        });
+    }
+
     template.push({
         label: '&View',
         submenu: viewSubMenu,
