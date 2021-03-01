@@ -9,6 +9,8 @@ import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {FOUND_IN_PAGE} from 'common/communication';
 
+import * as WindowManager from '../windows/windowManager';
+
 import {protocols} from '../../../electron-builder.json';
 
 import allowProtocolDialog from '../allowProtocolDialog';
@@ -137,7 +139,7 @@ const generateNewWindowListener = (getServersFunction, spellcheck) => {
         }
 
         if (urlUtils.isTeamUrl(server.url, parsedURL, true)) {
-            log.info(`${url} is a known team, preventing to open a new window`);
+            WindowManager.showMainWindow(parsedURL);
             return;
         }
         if (urlUtils.isAdminUrl(server.url, parsedURL)) {
