@@ -284,11 +284,17 @@ export default class MainPage extends React.PureComponent {
         ipcRenderer.on(UPDATE_MENTIONS, (_event, team, mentions, unreads) => {
             const key = this.props.teams.findIndex((server) => server.name === team);
             const {unreadCounts, mentionCounts} = this.state;
-            mentionCounts[key] = mentions || 0;
+
+            const newMentionCounts = {...mentionCounts};
+            newMentionCounts[key] = mentions || 0;
+
+            let newUnreads = unreadCounts;
+
             if (typeof unreads !== 'undefined') {
+                newUnreads = {...unreadCounts};
                 unreadCounts[key] = unreads;
             }
-            this.setState({unreadCounts, mentionCounts});
+            this.setState({unreadCounts: newUnreads, mentionCounts: newMentionCounts});
         });
 
         ipcRenderer.on(UPDATE_UNREADS, (_event, team, unreads) => {

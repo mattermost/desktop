@@ -195,9 +195,6 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on('reload-config', handleReloadConfig);
     ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
     ipcMain.handle('get-app-version', handleAppVersion);
-
-    // see comment on function
-    // ipcMain.on('update-title', handleUpdateTitleEvent);
     ipcMain.on('update-menu', handleUpdateMenuEvent);
     ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
 
