@@ -64,7 +64,8 @@ function createMainWindow(config, options) {
         minHeight: minimumWindowHeight,
         frame: !isFramelessWindow(),
         fullscreen: false,
-        titleBarStyle: 'hiddenInset',
+        titleBarStyle: 'hidden',
+        trafficLightPosition: {x: 12, y: 24},
         backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
         webPreferences: {
             nodeIntegration: true,
