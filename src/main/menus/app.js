@@ -61,6 +61,7 @@ function createTemplate(config) {
         platformAppMenu = platformAppMenu.concat([
             separatorItem, {
                 role: 'quit',
+                accelerator: 'CmdOrCtrl+Q',
             }]);
     }
 
@@ -74,16 +75,22 @@ function createTemplate(config) {
         label: '&Edit',
         submenu: [{
             role: 'undo',
+            accelerator: 'CmdOrCtrl+Z',
         }, {
             role: 'Redo',
+            accelerator: 'CmdOrCtrl+SHIFT+Z',
         }, separatorItem, {
             role: 'cut',
+            accelerator: 'CmdOrCtrl+X',
         }, {
             role: 'copy',
+            accelerator: 'CmdOrCtrl+C',
         }, {
             role: 'paste',
+            accelerator: 'CmdOrCtrl+V',
         }, {
             role: 'pasteAndMatchStyle',
+            accelerator: 'CmdOrCtrl+SHIFT+V',
         }, {
             role: 'selectall',
             accelerator: 'CmdOrCtrl+A',
@@ -117,10 +124,13 @@ function createTemplate(config) {
     }, separatorItem, {
         label: 'Actual Size',
         role: 'resetZoom',
+        accelerator: 'CmdOrCtrl+0',
     }, {
         role: 'zoomIn',
+        accelerator: 'CmdOrCtrl+SHIFT+=',
     }, {
         role: 'zoomOut',
+        accelerator: 'CmdOrCtrl+-',
     }, separatorItem, {
         label: 'Developer Tools for Application Wrapper',
         accelerator: (() => {
