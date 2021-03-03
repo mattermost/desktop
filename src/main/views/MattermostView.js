@@ -34,6 +34,7 @@ export class MattermostView extends EventEmitter {
         const spellcheck = ((!options || typeof options.spellcheck === 'undefined') ? true : options.spellcheck);
         this.options = {
             webPreferences: {
+                contextIsolation: true,
                 preload,
                 spellcheck,
                 additionalArguments: [
@@ -150,7 +151,6 @@ export class MattermostView extends EventEmitter {
         if (this.window) {
             this.window.removeBrowserView(this.view);
         }
-        this.view.destroy();
         this.window = null;
         this.server = null;
         this.isVisible = false;
