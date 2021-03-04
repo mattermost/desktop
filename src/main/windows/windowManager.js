@@ -85,7 +85,6 @@ export function showMainWindow(deeplinkingURL) {
         status.mainWindow.on('maximize', handleMaximizeMainWindow);
         status.mainWindow.on('unmaximize', handleUnmaximizeMainWindow);
         status.mainWindow.on('resize', handleResizeMainWindow);
-        status.mainWindow.on('resized', handleResizeMainWindow);
         status.mainWindow.on('focus', focusBrowserView);
     }
     initializeViewManager();
