@@ -239,7 +239,6 @@ export const addWebContentsEventListeners = (mmview, getServersFunction) => {
 
     listeners[contents.id] = removeListeners;
     contents.once('render-process-gone', (event, details) => {
-        log.info(details);
         if (details !== 'clean-exit') {
             log.error(`Renderer process for a webcontent is no longer available: ${details}`);
         }
