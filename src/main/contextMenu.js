@@ -48,7 +48,7 @@ function reload(target) {
      * Work-around issue with passing `WebContents` to `electron-context-menu` in Electron 11
      * @see https://github.com/sindresorhus/electron-context-menu/issues/123
      */
-    const options = target ? {window: {webContents: target, inspectElement: target.inspectElement.bind(target)}, ...menuOptions} : menuOptions;
+    const options = target ? {window: {webContents: target, inspectElement: target.inspectElement.bind(target), isDestroyed: target.isDestroyed.bind(target), off: target.off.bind(target)}, ...menuOptions} : menuOptions;
     disposeCurrent = electronContextMenu(options);
 }
 
