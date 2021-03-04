@@ -584,16 +584,16 @@ function handleCloseAppMenu() {
     WindowManager.focusBrowserView();
 }
 
-function handleUpdateMenuEvent(event, config) {
+function handleUpdateMenuEvent(event, configuration) {
     // TODO: this might make sense to move to window manager? so it updates the window referenced if needed.
     const mainWindow = WindowManager.getMainWindow();
-    const aMenu = appMenu.createMenu(config);
+    const aMenu = appMenu.createMenu(configuration);
     Menu.setApplicationMenu(aMenu);
     aMenu.addListener('menu-will-close', handleCloseAppMenu);
 
     // set up context menu for tray icon
     if (shouldShowTrayIcon()) {
-        const tMenu = trayMenu.createMenu(config.data);
+        const tMenu = trayMenu.createMenu(configuration.data);
         setTrayMenu(tMenu, mainWindow);
     }
 }
