@@ -19,6 +19,7 @@ export class ModalView {
         this.data = data;
         log.info(`preloading with ${preload}`);
         this.view = new BrowserView({webPreferences: {
+            contextIsolation: true,
             preload,
         }});
         this.onReject = onReject;

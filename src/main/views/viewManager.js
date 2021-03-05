@@ -164,7 +164,7 @@ export class ViewManager {
         }
         if (url && url !== '') {
             const urlString = typeof url === 'string' ? url : url.toString();
-            const urlView = new BrowserView();
+            const urlView = new BrowserView({webPreferences: {contextIsolation: true}});
             const query = new Map([['url', urlString]]);
             const localURL = getLocalURLString('urlView.html', query);
             urlView.webContents.loadURL(localURL);
@@ -181,7 +181,6 @@ export class ViewManager {
             const hideView = () => {
                 this.urlViewCancel = null;
                 currentWindow.removeBrowserView(urlView);
-                urlView.destroy();
             };
 
             const timeout = setTimeout(hideView,
@@ -217,7 +216,6 @@ export class ViewManager {
         if (this.finder) {
             const currentWindow = this.getCurrentView().window;
             currentWindow.removeBrowserView(this.finder);
-            this.finder.destroy();
             this.finder = null;
         }
     }
@@ -237,6 +235,7 @@ export class ViewManager {
 
         const preload = getLocalPreload('finderPreload.js');
         this.finder = new BrowserView({webPreferences: {
+            contextIsolation: true,
             preload,
         }});
         const localURL = getLocalURLString('finder.html');
