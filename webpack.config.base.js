@@ -31,6 +31,17 @@ module.exports = {
         new webpack.DefinePlugin(codeDefinitions),
     ],
     devtool: isProduction ? false : '#inline-source-map',
+    externals: {
+        puppeteer: 'require("puppeteer")',
+        fs: 'require("fs")',
+        ws: 'require("ws")',
+        child_process: 'require("child_process")',
+        dns: 'require("dns")',
+        http2: 'require("http2")',
+        net: 'require("net")',
+        repl: 'require("repl")',
+        tls: 'require("tls")',
+    },
     resolve: {
         alias: {
             renderer: path.resolve(__dirname, 'src/renderer'),
