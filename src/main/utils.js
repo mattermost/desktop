@@ -5,8 +5,8 @@
 import electron, {app} from 'electron';
 import path from 'path';
 
-import {PRODUCTION} from 'common/utils/constants';
-import Utils from 'common/utils/util';
+import {PRODUCTION} from '../common/utils/constants';
+import Utils from '../common/utils/util';
 
 const TAB_BAR_HEIGHT = 40;
 const BACK_BAR_HEIGHT = 36;

@@ -4,7 +4,7 @@
 import path from 'path';
 import {app, Notification} from 'electron';
 
-import osVersion from 'common/osVersion';
+import osVersion from '../../common/osVersion';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const appIconURL = path.resolve(assetsDir, 'appicon_48.png');

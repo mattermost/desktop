@@ -2,8 +2,8 @@
 // See LICENSE.txt for license information.
 import log from 'electron-log';
 
-import {BASIC_AUTH_PERMISSION} from 'common/permissions';
-import urlUtils from 'common/utils/url';
+import {BASIC_AUTH_PERMISSION} from '../common/permissions';
+import urlUtils from '../common/utils/url';
 
 import * as WindowManager from './windows/windowManager';
 

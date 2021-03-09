@@ -4,7 +4,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import {FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER, FOUND_IN_PAGE, FOCUS_FINDER} from 'common/communication.js';
+import {FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER, FOUND_IN_PAGE, FOCUS_FINDER} from '../../../common/communication.js';
 
 import Finder from './finder.jsx';
 

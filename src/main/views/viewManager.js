@@ -3,9 +3,9 @@
 import log from 'electron-log';
 import {BrowserView, dialog} from 'electron';
 
-import {SECOND} from 'common/utils/constants';
-import {UPDATE_TARGET_URL, FOUND_IN_PAGE, SET_SERVER_KEY, LOAD_SUCCESS, LOAD_FAILED} from 'common/communication';
-import urlUtils from 'common/utils/url';
+import {SECOND} from '../../common/utils/constants';
+import {UPDATE_TARGET_URL, FOUND_IN_PAGE, SET_SERVER_KEY, LOAD_SUCCESS, LOAD_FAILED} from '../../common/communication';
+import urlUtils from '../../common/utils/url';
 
 import contextMenu from '../contextMenu';
 import {MattermostServer} from '../MattermostServer';

@@ -6,7 +6,7 @@
 
 import {ipcRenderer} from 'electron';
 
-import {MODAL_CANCEL, MODAL_RESULT, MODAL_INFO, RETRIEVE_MODAL_INFO, MODAL_SEND_IPC_MESSAGE} from 'common/communication';
+import {MODAL_CANCEL, MODAL_RESULT, MODAL_INFO, RETRIEVE_MODAL_INFO, MODAL_SEND_IPC_MESSAGE} from '../../common/communication';
 
 console.log('preloaded for the modal!');
 

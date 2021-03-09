@@ -5,7 +5,7 @@
 
 import fs from 'fs';
 
-import urlUtils from 'common/utils/url';
+import urlUtils from '../common/utils/url';
 
 import * as Validator from './Validator';
 

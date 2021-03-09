@@ -11,7 +11,7 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 
 import {ipcRenderer} from 'electron';
 
-import urlUtils from 'common/utils/url';
+import urlUtils from '../../common/utils/url';
 import {
     FOCUS_BROWSERVIEW,
     MAXIMIZE_CHANGE,
@@ -34,7 +34,7 @@ import {
     UPDATE_MENTIONS,
     UPDATE_UNREADS,
     TOGGLE_BACK_BUTTON,
-} from 'common/communication';
+} from '../../common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';

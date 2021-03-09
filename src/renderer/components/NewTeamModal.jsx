@@ -6,7 +6,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} from 'react-bootstrap';
 
-import urlUtils from 'common/utils/url';
+import urlUtils from '../../common/utils/url';
 
 export default class NewTeamModal extends React.PureComponent {
     static defaultProps = {

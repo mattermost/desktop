@@ -4,12 +4,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO, MODAL_SEND_IPC_MESSAGE} from 'common/communication.js';
+import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO, MODAL_SEND_IPC_MESSAGE} from '../../../common/communication.js';
 
 import PermissionModal from './permissionModal.jsx';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import 'renderer/css/modals.css';
+import '../../css/modals.css';
 
 const handleDeny = () => {
     window.postMessage({type: MODAL_CANCEL}, window.location.href);

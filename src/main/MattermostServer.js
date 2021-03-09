@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import urlUtils from 'common/utils/url';
+import urlUtils from '../common/utils/url';
 
 export class MattermostServer {
     constructor(name, serverUrl) {

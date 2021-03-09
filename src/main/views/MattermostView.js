@@ -6,9 +6,9 @@ import log from 'electron-log';
 
 import {EventEmitter} from 'events';
 
-import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constants';
-import urlUtils from 'common/utils/url';
-import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL, IS_UNREAD, UNREAD_RESULT, TOGGLE_BACK_BUTTON} from 'common/communication';
+import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from '../../common/utils/constants';
+import urlUtils from '../../common/utils/url';
+import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL, IS_UNREAD, UNREAD_RESULT, TOGGLE_BACK_BUTTON} from '../../common/communication';
 
 import {getWindowBoundaries, getLocalPreload} from '../utils';
 import * as WindowManager from '../windows/windowManager';

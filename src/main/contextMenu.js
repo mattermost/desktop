@@ -4,7 +4,7 @@
 
 import electronContextMenu from 'electron-context-menu';
 
-import urlUtils from 'common/utils/url';
+import urlUtils from '../common/utils/url';
 
 let disposeCurrent;
 let menuOptions = {

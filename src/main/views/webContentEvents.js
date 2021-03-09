@@ -4,10 +4,10 @@
 import {BrowserWindow, shell} from 'electron';
 import log from 'electron-log';
 
-import {DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
-import urlUtils from 'common/utils/url';
-import Utils from 'common/utils/util';
-import {FOUND_IN_PAGE} from 'common/communication';
+import {DEVELOPMENT, PRODUCTION} from '../../common/utils/constants';
+import urlUtils from '../../common/utils/url';
+import Utils from '../../common/utils/util';
+import {FOUND_IN_PAGE} from '../../common/communication';
 
 import {protocols} from '../../../electron-builder.json';
 

@@ -5,8 +5,8 @@ import path from 'path';
 import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain} from 'electron';
 import log from 'electron-log';
 
-import {MAXIMIZE_CHANGE, FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER, FOCUS_FINDER, HISTORY} from 'common/communication';
-import urlUtils from 'common/utils/url';
+import {MAXIMIZE_CHANGE, FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER, FOCUS_FINDER, HISTORY} from '../../common/communication';
+import urlUtils from '../../common/utils/url';
 
 import {getAdjustedWindowBoundaries} from '../utils';
 
