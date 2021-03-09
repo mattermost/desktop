@@ -72,6 +72,11 @@ export default class Finder extends React.PureComponent {
         }
     }
 
+    close = () => {
+        this.props.stopFindInPage('clearSelection');
+        this.props.close();
+    }
+
     render() {
         return (
             <div
@@ -133,7 +138,7 @@ export default class Finder extends React.PureComponent {
                     </button>
                     <button
                         className='finder-close'
-                        onClick={this.props.close}
+                        onClick={this.close}
                     >
                         <svg
                             xmlns='http://www.w3.org/2000/svg'
