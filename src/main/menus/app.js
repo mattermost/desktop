@@ -3,7 +3,7 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {app, ipcMain, Menu, session, shell, webContents} from 'electron';
+import {app, Menu, session, shell, webContents} from 'electron';
 
 import * as WindowManager from '../windows/windowManager';
 
