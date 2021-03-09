@@ -21,11 +21,6 @@ export default class Finder extends React.PureComponent {
         this.searchInput.addEventListener('keyup', this.handleKeyEvent);
     }
 
-    componentWillUnmount() {
-        this.props.stopFindInPage('clearSelection');
-        this.searchInput.removeEventListener('keyup', this.handleKeyEvent);
-    }
-
     static getDerivedStateFromProps(props, state) {
         if (state.searchTxt) {
             return {
@@ -73,6 +68,7 @@ export default class Finder extends React.PureComponent {
     }
 
     close = () => {
+        this.searchInput.removeEventListener('keyup', this.handleKeyEvent);
         this.props.stopFindInPage('clearSelection');
         this.props.close();
     }
