@@ -61,7 +61,7 @@ export default class Finder extends React.PureComponent {
 
     handleKeyEvent = (event) => {
         if (event.code === 'Escape') {
-            this.props.close();
+            this.close();
         } else if (event.code === 'Enter') {
             this.findNext();
         }
