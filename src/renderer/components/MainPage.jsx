@@ -74,8 +74,8 @@ export default class MainPage extends React.PureComponent {
         this.state = {
             key,
             sessionsExpired: new Array(this.props.teams.length),
-            unreadCounts: new Array(this.props.teams.length),
-            mentionCounts: new Array(this.props.teams.length),
+            unreadCounts: {},
+            mentionCounts: {},
             unreadAtActive: new Array(this.props.teams.length),
             mentionAtActiveCounts: new Array(this.props.teams.length),
             loginQueue: [],
@@ -288,12 +288,9 @@ export default class MainPage extends React.PureComponent {
             const newMentionCounts = {...mentionCounts};
             newMentionCounts[key] = mentions || 0;
 
-            let newUnreads = unreadCounts;
+            const newUnreads = {...unreadCounts};
+            newUnreads[key] = unreads || false;
 
-            if (typeof unreads !== 'undefined') {
-                newUnreads = {...unreadCounts};
-                unreadCounts[key] = unreads;
-            }
             this.setState({unreadCounts: newUnreads, mentionCounts: newMentionCounts});
         });
 
@@ -397,31 +394,6 @@ export default class MainPage extends React.PureComponent {
             unreadAtActive,
             mentionAtActiveCounts,
         });
-        this.handleBadgesChange();
-    }
-
-    handleBadgesChange = () => {
-        if (this.props.onBadgeChange) {
-            const someSessionsExpired = this.state.sessionsExpired.some((sessionExpired) => sessionExpired);
-
-            let allUnreadCount = this.state.unreadCounts.reduce((prev, curr) => {
-                return prev + curr;
-            }, 0);
-            this.state.unreadAtActive.forEach((state) => {
-                if (state) {
-                    allUnreadCount += 1;
-                }
-            });
-
-            let allMentionCount = this.state.mentionCounts.reduce((prev, curr) => {
-                return prev + curr;
-            }, 0);
-            this.state.mentionAtActiveCounts.forEach((count) => {
-                allMentionCount += count;
-            });
-
-            this.props.onBadgeChange(someSessionsExpired, allUnreadCount, allMentionCount);
-        }
     }
 
     handleOnTeamFocused = (index) => {
@@ -723,7 +695,6 @@ export default class MainPage extends React.PureComponent {
 }
 
 MainPage.propTypes = {
-    onBadgeChange: PropTypes.func.isRequired,
     teams: PropTypes.array.isRequired,
     localTeams: PropTypes.array.isRequired,
     onTeamConfigChange: PropTypes.func.isRequired,
