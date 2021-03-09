@@ -40,8 +40,6 @@ import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
 import minimizeButton from '../../assets/titlebar/chrome-minimize.svg';
 import closeButton from '../../assets/titlebar/chrome-close.svg';
-import spinner from '../../assets/loading.gif';
-import spinnerx2 from '../../assets/loading@2x.gif';
 
 import {playSound} from '../notificationSounds';
 
@@ -49,6 +47,7 @@ import TabBar from './TabBar.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
 import ExtraBar from './ExtraBar.jsx';
 import ErrorView from './ErrorView.jsx';
+import LoadingScreen from './LoadingScreen.jsx';
 
 const LOADING = 1;
 const DONE = 2;
@@ -655,13 +654,11 @@ export default class MainPage extends React.PureComponent {
                 break;
             case LOADING:
                 component = (
-                    <div className='mattermostView-loadingScreen'>
-                        <img
-                            className='mattermostView-loadingImage'
-                            src={spinner}
-                            srcSet={`${spinner} 1x, ${spinnerx2} 2x`}
-                        />
-                    </div>);
+                    <LoadingScreen
+                        loading={true}
+                        darkMode={this.state.darkMode}
+                    />
+                );
                 break;
             case DONE:
                 component = null;

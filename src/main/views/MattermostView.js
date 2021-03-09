@@ -137,6 +137,15 @@ export class MattermostView extends EventEmitter {
         this.isVisible = request;
     }
 
+    reload = () => {
+        if (this.status === READY) {
+            this.view.webContents.reload();
+        } else {
+            this.resetLoadingStatus();
+            this.load();
+        }
+    }
+
     hide = () => this.show(false);
 
     setBounds = (boundaries) => {

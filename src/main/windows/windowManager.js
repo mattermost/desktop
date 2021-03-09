@@ -363,6 +363,13 @@ export function restore() {
     focused.restore();
 }
 
+export function reload() {
+    const currentView = status.viewManager.getCurrentView();
+    if (currentView) {
+        currentView.reload();
+    }
+}
+
 export function handleHistory(event, offset) {
     if (status.viewManager) {
         const activeView = status.viewManager.getCurrentView();
