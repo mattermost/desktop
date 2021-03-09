@@ -523,6 +523,16 @@ function initializeAfterAppReady() {
         });
     });
 
+    // Code for preventing user-agent checking. See: https://mattermost.atlassian.net/browse/MM-31626
+    const REMOVE_CHROME_FROM = ['https://gitlab.com/*'];
+    const nonChromeUA = session.defaultSession.getUserAgent().replace(/ Chrome\/[\d.]+/g, '');
+    session.defaultSession.webRequest.onBeforeSendHeaders({urls: REMOVE_CHROME_FROM}, (details, callback) => {
+        log.warn(`Cloud-flare url detected for ${details.url}, request will use a different User Agent`);
+        const temporaryHeaders = details.requestHeaders;
+        temporaryHeaders['User-Agent'] = nonChromeUA;
+        callback({cancel: false, requestHeaders: temporaryHeaders});
+    });
+
     ipcMain.emit('update-menu', true, config);
 
     ipcMain.emit('update-dict');

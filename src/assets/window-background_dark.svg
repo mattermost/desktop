@@ -1,0 +1,38 @@
+<svg width="1366" height="728" viewBox="0 0 1366 728" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g opacity="0.4">
+    <path opacity="0.08" fill-rule="evenodd" clip-rule="evenodd" d="M-110.707 1953.19L1907.89 1311.71L1711.11 751.364C1711.11 751.364 1672.69 793.21 1563.69 793.21C1474 793.21 1336.54 764.894 1133.3 661.622C1065.76 627.3 1003.53 612.696 945.902 612.696C619.396 612.696 440.377 1081.47 277.09 1089.21C84.9803 1098.33 -171.308 1754.9 -171.308 1754.9L-110.707 1953.19Z" fill="url(#paint0_linear)"/>
+    <path opacity="0.08" fill-rule="evenodd" clip-rule="evenodd" d="M-125.359 1872.43L1893.24 1233.07L1696.45 674.56C1696.45 674.56 1658.03 716.269 1549.04 716.269C1459.35 716.269 1321.88 688.045 1118.65 585.113C1051.11 550.904 988.878 536.348 931.25 536.348C604.743 536.348 425.725 1003.58 262.438 1011.3C70.328 1020.38 -185.96 1674.8 -185.96 1674.8L-125.359 1872.43Z" fill="url(#paint1_linear)"/>
+    <path opacity="0.08" fill-rule="evenodd" clip-rule="evenodd" d="M-142.943 1800.49L1875.66 1159.02L1678.87 598.668C1678.87 598.668 1640.45 640.515 1531.46 640.515C1441.77 640.515 1304.3 612.198 1101.07 508.927C1033.52 474.605 971.295 460 913.666 460C587.16 460 408.142 928.77 244.854 936.516C52.7448 945.63 -203.543 1602.2 -203.543 1602.2L-142.943 1800.49Z" fill="url(#paint2_linear)"/>
+  </g>
+  <g opacity="0.4">
+    <path opacity="0.08" fill-rule="evenodd" clip-rule="evenodd" d="M1174.71 -925.187L-843.895 -283.711L-647.106 276.636C-647.106 276.636 -608.685 234.79 -499.692 234.79C-410.003 234.79 -272.537 263.107 -69.302 366.378C-1.7585 400.7 60.4692 415.304 118.098 415.304C444.604 415.304 623.623 -53.4652 786.91 -61.2118C979.02 -70.3257 1235.31 -726.899 1235.31 -726.899L1174.71 -925.187Z" fill="url(#paint3_linear)"/>
+    <path opacity="0.08" fill-rule="evenodd" clip-rule="evenodd" d="M1189.36 -844.434L-829.242 -205.066L-632.454 353.44C-632.454 353.44 -594.033 311.731 -485.039 311.731C-395.351 311.731 -257.884 339.955 -54.6495 442.887C12.894 477.096 75.1216 491.653 132.751 491.653C459.257 491.652 638.275 24.4232 801.562 16.7021C993.672 7.61807 1249.96 -646.798 1249.96 -646.798L1189.36 -844.434Z" fill="url(#paint4_linear)"/>
+    <path opacity="0.08" fill-rule="evenodd" clip-rule="evenodd" d="M1206.94 -772.491L-811.659 -131.015L-614.87 429.332C-614.87 429.332 -576.45 387.485 -467.456 387.485C-377.768 387.485 -240.301 415.802 -37.0664 519.074C30.4771 553.395 92.7048 568 150.334 568C476.84 568 655.858 99.2303 819.146 91.4837C1011.26 82.3698 1267.54 -574.204 1267.54 -574.204L1206.94 -772.491Z" fill="url(#paint5_linear)"/>
+  </g>
+  <defs>
+      <linearGradient id="paint0_linear" x1="868.293" y1="1205.82" x2="868.293" y2="612.695" gradientUnits="userSpaceOnUse">
+          <stop stop-color="white" stop-opacity="0"/>
+          <stop offset="1" stop-color="white"/>
+      </linearGradient>
+      <linearGradient id="paint1_linear" x1="853.641" y1="1127.52" x2="853.641" y2="536.347" gradientUnits="userSpaceOnUse">
+          <stop stop-color="white" stop-opacity="0"/>
+          <stop offset="1" stop-color="white"/>
+      </linearGradient>
+      <linearGradient id="paint2_linear" x1="836.058" y1="1053.13" x2="836.058" y2="460" gradientUnits="userSpaceOnUse">
+          <stop stop-color="white" stop-opacity="0"/>
+          <stop offset="1" stop-color="white"/>
+      </linearGradient>
+      <linearGradient id="paint3_linear" x1="195.706" y1="-177.821" x2="195.707" y2="415.305" gradientUnits="userSpaceOnUse">
+          <stop stop-color="white" stop-opacity="0"/>
+          <stop offset="1" stop-color="white"/>
+      </linearGradient>
+      <linearGradient id="paint4_linear" x1="210.359" y1="-99.5238" x2="210.359" y2="491.653" gradientUnits="userSpaceOnUse">
+          <stop stop-color="white" stop-opacity="0"/>
+          <stop offset="1" stop-color="white"/>
+      </linearGradient>
+      <linearGradient id="paint5_linear" x1="227.942" y1="-25.1253" x2="227.942" y2="568" gradientUnits="userSpaceOnUse">
+          <stop stop-color="white" stop-opacity="0"/>
+          <stop offset="1" stop-color="white"/>
+      </linearGradient>
+  </defs>
+</svg>
