@@ -158,9 +158,10 @@ const generateNewWindowListener = (getServersFunction, spellcheck) => {
                     show: false,
                     center: true,
                     webPreferences: {
-                        nodeIntegration: false,
-                        contextIsolation: true,
+                        nodeIntegration: process.env.NODE_ENV === 'test',
+                        contextIsolation: process.env.NODE_ENV !== 'test',
                         spellcheck: (typeof spellcheck === 'undefined' ? true : spellcheck),
+                        enableRemoteModule: process.env.NODE_ENV === 'test',
                     },
                 });
                 popupWindow.once('ready-to-show', () => {

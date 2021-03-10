@@ -55,12 +55,12 @@ module.exports = {
     getSpectronApp() {
         const options = {
             path: electronBinaryPath,
-            args: [`${path.join(sourceRootDir, 'src')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode'],
+            args: [`${path.join(sourceRootDir, 'dist')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode'],
             chromeDriverArgs: [],
-
-            // enable this if chromedriver hangs to see logs
-            // chromeDriverLogPath: '../chromedriverlog.txt',
         };
+        if (process.env.MM_DEBUG_SETTINGS) {
+            options.chromeDriverLogPath = './chromedriverlog.txt';
+        }
         if (process.platform === 'darwin' || process.platform === 'linux') {
             // on a mac, debbuging port might conflict with other apps
             // this changes the default debugging port so chromedriver can run without issues.

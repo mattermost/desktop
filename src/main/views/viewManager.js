@@ -164,7 +164,12 @@ export class ViewManager {
         }
         if (url && url !== '') {
             const urlString = typeof url === 'string' ? url : url.toString();
-            const urlView = new BrowserView({webPreferences: {contextIsolation: true}});
+            const urlView = new BrowserView({
+                webPreferences: {
+                    contextIsolation: process.env.NODE_ENV !== 'test',
+                    nodeIntegration: process.env.NODE_ENV === 'test',
+                    enableRemoteModule: process.env.NODE_ENV === 'test',
+                }});
             const query = new Map([['url', urlString]]);
             const localURL = getLocalURLString('urlView.html', query);
             urlView.webContents.loadURL(localURL);
@@ -235,8 +240,10 @@ export class ViewManager {
 
         const preload = getLocalPreload('finderPreload.js');
         this.finder = new BrowserView({webPreferences: {
-            contextIsolation: true,
+            contextIsolation: process.env.NODE_ENV !== 'test',
             preload,
+            nodeIntegration: process.env.NODE_ENV === 'test',
+            enableRemoteModule: process.env.NODE_ENV === 'test', // TODO: try to use this only on testing
         }});
         const localURL = getLocalURLString('finder.html');
         this.finder.webContents.loadURL(localURL);

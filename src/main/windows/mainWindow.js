@@ -72,6 +72,7 @@ function createMainWindow(config, options) {
             contextIsolation: false,
             disableBlinkFeatures: 'Auxclick',
             spellcheck,
+            enableRemoteModule: process.env.NODE_ENV === 'test',
         },
     });
 

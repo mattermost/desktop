@@ -18,9 +18,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 const codeDefinitions = {
     __HASH_VERSION__: JSON.stringify(VERSION),
 };
-if (isProduction) {
-    codeDefinitions['process.env.NODE_ENV'] = JSON.stringify('production');
-}
+codeDefinitions['process.env.NODE_ENV'] = JSON.stringify(process.env.NODE_ENV);
 
 module.exports = {
 

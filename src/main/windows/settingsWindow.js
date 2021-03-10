@@ -8,7 +8,16 @@ import {getLocalURLString} from '../utils';
 
 export function createSettingsWindow(mainWindow, config, withDevTools) {
     const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
-    const settingsWindow = new BrowserWindow({...config.data, parent: mainWindow, title: 'Desktop App Settings', webPreferences: {nodeIntegration: true, contextIsolation: false, spellcheck}});
+    const settingsWindow = new BrowserWindow({
+        ...config.data,
+        parent: mainWindow,
+        title: 'Desktop App Settings',
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+            spellcheck,
+            enableRemoteModule: process.env.NODE_ENV === 'test',
+        }});
     const localURL = getLocalURLString('settings.html');
     settingsWindow.loadURL(localURL).catch(
         (reason) => {

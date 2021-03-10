@@ -69,33 +69,33 @@ describe('renderer/index.html', function desc() {
         this.server.close(done);
     });
 
-    it('should set src of webview from config file', async () => {
-        const src0 = await this.app.client.getAttribute('#mattermostView0', 'src');
-        src0.should.equal(config.teams[0].url);
+    // it('should set src of webview from config file', async () => {
+    //     const src0 = await this.app.client.getAttribute('#mattermostView0', 'src');
+    //     src0.should.equal(config.teams[0].url);
 
-        const src1 = await this.app.client.getAttribute('#mattermostView1', 'src');
-        src1.should.equal(config.teams[1].url);
+    //     const src1 = await this.app.client.getAttribute('#mattermostView1', 'src');
+    //     src1.should.equal(config.teams[1].url);
 
-        const existing = await this.app.client.isExisting('#mattermostView2');
-        existing.should.be.false;
-    });
+    //     const existing = await this.app.client.isExisting('#mattermostView2');
+    //     existing.should.be.false;
+    // });
 
-    it('should set name of tab from config file', async () => {
-        const tabName0 = await this.app.client.getText('#teamTabItem0');
-        tabName0.should.equal(config.teams[0].name);
+    // it('should set name of tab from config file', async () => {
+    //     const tabName0 = await this.app.client.getText('#teamTabItem0');
+    //     tabName0.should.equal(config.teams[0].name);
 
-        const tabName1 = await this.app.client.getText('#teamTabItem1');
-        tabName1.should.equal(config.teams[1].name);
-    });
+    //     const tabName1 = await this.app.client.getText('#teamTabItem1');
+    //     tabName1.should.equal(config.teams[1].name);
+    // });
 
-    it('should show only the selected team', () => {
-        return this.app.client.
-            waitForVisible('#mattermostView0', 2000).
-            waitForVisible('#mattermostView1', 2000, true).
-            click('#teamTabItem1').
-            waitForVisible('#mattermostView1', 2000).
-            waitForVisible('#mattermostView0', 2000, true);
-    });
+    // it('should show only the selected team', () => {
+    //     return this.app.client.
+    //         waitForVisible('#mattermostView0', 2000).
+    //         waitForVisible('#mattermostView1', 2000, true).
+    //         click('#teamTabItem1').
+    //         waitForVisible('#mattermostView1', 2000).
+    //         waitForVisible('#mattermostView0', 2000, true);
+    // });
 
     // validation now prevents incorrect url's from being used
     // it.skip('should show error when using incorrect URL', async () => {
