@@ -13,32 +13,32 @@ import React from 'react';
  *   ignores events bubbling up from descendent elements
  */
 function useAnimationEnd(
-  ref,
-  callback,
-  animationName,
-  listenForEventBubbling = true,
+    ref,
+    callback,
+    animationName,
+    listenForEventBubbling = true,
 ) {
-  React.useEffect(() => {
-    if (!ref.current) {
-      return;
-    }
+    React.useEffect(() => {
+        if (!ref.current) {
+            return null;
+        }
 
-    function handleAnimationend(event) {
-      if (!listenForEventBubbling && event.target !== ref.current) {
-        return;
-      }
-      if (animationName && animationName !== event.animationName) {
-        return;
-      }
-      callback(event);
-    }
+        function handleAnimationend(event) {
+            if (!listenForEventBubbling && event.target !== ref.current) {
+                return;
+            }
+            if (animationName && animationName !== event.animationName) {
+                return;
+            }
+            callback(event);
+        }
 
-    ref.current.addEventListener('animationend', handleAnimationend);
+        ref.current.addEventListener('animationend', handleAnimationend);
 
-    return () => {
-      ref.current.removeEventListener('animationend', handleAnimationend);
-    };
-  }, [ref, callback, animationName, listenForEventBubbling]);
+        return () => {
+            ref.current.removeEventListener('animationend', handleAnimationend);
+        };
+    }, [ref, callback, animationName, listenForEventBubbling]);
 }
 
 export default useAnimationEnd;

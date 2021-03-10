@@ -13,45 +13,45 @@ import React from 'react';
  *   ignores events bubbling up from descendent elements
  */
 function useTransitionend(
-  ref,
-  callback,
-  properties,
-  listenForEventBubbling = true
+    ref,
+    callback,
+    properties,
+    listenForEventBubbling = true,
 ) {
-  React.useEffect(() => {
-    if (!ref.current) {
-      return;
-    }
-
-    function handleTransitionEnd(event) {
-      if (!listenForEventBubbling && event.target !== ref.current) {
-        return;
-      }
-
-      if (properties && typeof properties === 'object') {
-        const property = properties.find(
-          (propertyName) => propertyName === event.propertyName
-        );
-        if (property) {
-          callback(event);
+    React.useEffect(() => {
+        if (!ref.current) {
+            return null;
         }
-        return;
-      }
-      callback(event);
-    }
 
-    ref.current.addEventListener('transitionend', handleTransitionEnd);
+        function handleTransitionEnd(event) {
+            if (!listenForEventBubbling && event.target !== ref.current) {
+                return;
+            }
 
-    return () => {
-      if (!ref.current) {
-        return;
-      }
-      ref.current.removeEventListener(
-        'transitionend',
-        handleTransitionEnd
-      );
-    };
-  }, [ref, callback, properties, listenForEventBubbling]);
+            if (properties && typeof properties === 'object') {
+                const property = properties.find(
+                    (propertyName) => propertyName === event.propertyName,
+                );
+                if (property) {
+                    callback(event);
+                }
+                return;
+            }
+            callback(event);
+        }
+
+        ref.current.addEventListener('transitionend', handleTransitionEnd);
+
+        return () => {
+            if (!ref.current) {
+                return;
+            }
+            ref.current.removeEventListener(
+                'transitionend',
+                handleTransitionEnd,
+            );
+        };
+    }, [ref, callback, properties, listenForEventBubbling]);
 }
 
 export default useTransitionend;
