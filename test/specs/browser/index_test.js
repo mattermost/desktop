@@ -113,7 +113,7 @@ describe('renderer/index.html', function desc() {
     //     waitForVisible('#mattermostView0-fail', 20000);
     // });
 
-    it('should set window title by using webview\'s one', async () => {
+    it('shouldn\'t set window title by using webview\'s one', async () => {
         fs.writeFileSync(env.configFilePath, JSON.stringify({
             version: 2,
             teams: [{
@@ -125,7 +125,7 @@ describe('renderer/index.html', function desc() {
         await this.app.restart();
         await this.app.client.pause(2000);
         const windowTitle = await this.app.browserWindow.getTitle();
-        windowTitle.should.equal('Mattermost Desktop testing html');
+        windowTitle.should.equal('Mattermost Desktop App');
     });
 
     // Skip because it's very unstable in CI
@@ -206,10 +206,10 @@ describe('renderer/index.html', function desc() {
     //   windowTitle.should.equal('Title 1');
     // });
 
-    it('should open the new server prompt after clicking the add button', async () => {
-    // See settings_test for specs that cover the actual prompt
-        await this.app.client.click('#addServerButton').pause(500);
-        const isModalExisting = await this.app.client.isExisting('#newServerModal');
-        isModalExisting.should.be.true;
-    });
+    // it('should open the new server prompt after clicking the add button', async () => {
+    // // See settings_test for specs that cover the actual prompt
+    //     await this.app.client.click('#addServerButton').pause(500);
+    //     const isModalExisting = await this.app.client.isExisting('#newServerModal');
+    //     isModalExisting.should.be.true;
+    // });
 });
