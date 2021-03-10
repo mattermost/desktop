@@ -3,7 +3,7 @@
 
 import {ipcMain} from 'electron';
 
-import {RETRIEVE_MODAL_INFO, MODAL_CANCEL, MODAL_RESULT, MODAL_OPEN, MODAL_CLOSE} from '../../common/communication.js';
+import {RETRIEVE_MODAL_INFO, MODAL_CANCEL, MODAL_RESULT, MODAL_OPEN, MODAL_CLOSE} from 'common/communication.js';
 
 import * as WindowManager from '../windows/windowManager';
 

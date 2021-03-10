@@ -9,7 +9,7 @@ import {Nav, NavItem} from 'react-bootstrap';
 import {Container, Draggable} from 'react-smooth-dnd';
 import PlusIcon from 'mdi-react/PlusIcon';
 
-import {GET_CONFIGURATION} from '../../common/communication';
+import {GET_CONFIGURATION} from 'common/communication';
 
 export default class TabBar extends React.PureComponent { // need "this"
     constructor(props) {

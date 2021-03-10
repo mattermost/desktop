@@ -8,12 +8,22 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {Grid, Row, Col} from 'react-bootstrap';
 
-import {SECOND} from '../../common/utils/constants';
+import {SECOND} from 'common/utils/constants';
+
+//import {ipcRenderer} from 'electron';
+// import {OPEN_EXTERNAL} from 'common/communication';
+
 export default function ErrorView(props) {
     const classNames = ['container', 'ErrorView'];
     if (!props.active) {
         classNames.push('ErrorView-hidden');
     }
+
+    // function handleClick(event) {
+    //   event.preventDefault();
+    //   console.log('TODO: send to main');
+    //   ipcRenderer.send(OPEN_EXTERNAL, props.url);
+    // }
 
     let retry = null;
     if (props.retry) {

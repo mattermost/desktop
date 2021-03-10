@@ -23,9 +23,9 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import {ipcRenderer} from 'electron';
 
-import urlUtils from '../common/utils/url';
+import urlUtils from 'common/utils/url';
 
-import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT} from '../common/communication';
+import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT} from 'common/communication';
 
 import MainPage from './components/MainPage.jsx';
 class Root extends React.PureComponent {

@@ -3,7 +3,7 @@
 
 import events from 'events';
 
-import {UPDATE_MENTIONS, UPDATE_TRAY, UPDATE_BADGE} from '../common/communication';
+import {UPDATE_MENTIONS, UPDATE_TRAY, UPDATE_BADGE} from 'common/communication';
 
 import * as WindowManager from './windows/windowManager';
 

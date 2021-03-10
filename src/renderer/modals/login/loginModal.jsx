@@ -6,8 +6,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {Button, Col, ControlLabel, Form, FormGroup, FormControl, Modal} from 'react-bootstrap';
 
-import {MODAL_INFO} from '../../../common/communication';
-import urlUtils from '../../../common/utils/url';
+import {MODAL_INFO} from 'common/communication';
+import urlUtils from 'common/utils/url';
 
 export default class LoginModal extends React.PureComponent {
     constructor(props) {

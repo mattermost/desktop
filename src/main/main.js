@@ -11,10 +11,11 @@ import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-install
 import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
 
-import Utils from '../common/utils/util';
-import urlUtils from '../common/utils/url';
-import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, SHOW_NEW_SERVER_MODAL, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION, GET_DOWNLOAD_LOCATION} from '../common/communication';
-import Config from '../common/config';
+import Utils from 'common/utils/util';
+import urlUtils from 'common/utils/url';
+
+import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, SHOW_NEW_SERVER_MODAL, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION, GET_DOWNLOAD_LOCATION} from 'common/communication';
+import Config from 'common/config';
 
 import {protocols} from '../../electron-builder.json';
 

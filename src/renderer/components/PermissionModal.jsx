@@ -6,7 +6,7 @@ import {Modal, Button} from 'react-bootstrap';
 import {ipcRenderer, remote} from 'electron';
 import {log} from 'electron-log';
 
-import urlUtil from '../../common/utils/url';
+import urlUtil from 'common/utils/url';
 
 import {BASIC_AUTH_PERMISSION, REQUEST_PERMISSION_CHANNEL, DENY_PERMISSION_CHANNEL, GRANT_PERMISSION_CHANNEL, PERMISSION_DESCRIPTION} from '../../common/permissions';
 

@@ -3,7 +3,7 @@
 
 import {app} from 'electron';
 
-import {UPDATE_BADGE} from '../common/communication';
+import {UPDATE_BADGE} from 'common/communication';
 
 import * as WindowManager from './windows/windowManager';
 import * as AppState from './appState';

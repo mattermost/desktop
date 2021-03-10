@@ -11,7 +11,7 @@ import log from 'electron-log';
 
 import * as Validator from '../../main/Validator';
 
-import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION} from '../communication';
+import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION} from 'common/communication';
 
 import defaultPreferences from './defaultPreferences';
 import upgradeConfigData from './upgradePreferences';

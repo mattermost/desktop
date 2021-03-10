@@ -4,7 +4,7 @@ import log from 'electron-log';
 
 import Joi from '@hapi/joi';
 
-import urlUtils from '../common/utils/url';
+import urlUtils from 'common/utils/url';
 
 const defaultOptions = {
     stripUnknown: true,

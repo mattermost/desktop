@@ -5,9 +5,9 @@ import React from 'react';
 import {Modal, Button} from 'react-bootstrap';
 import PropTypes from 'prop-types';
 
-import urlUtil from '../../../common/utils/url';
-import {MODAL_INFO} from '../../../common/communication';
-import {PERMISSION_DESCRIPTION} from '../../../common/permissions';
+import urlUtil from 'common/utils/url';
+import {MODAL_INFO} from 'common/communication';
+import {PERMISSION_DESCRIPTION} from 'common/permissions';
 
 export default class PermissionModal extends React.PureComponent {
     constructor(props) {

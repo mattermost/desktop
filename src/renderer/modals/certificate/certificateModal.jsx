@@ -5,7 +5,7 @@ import React, {Fragment} from 'react';
 import PropTypes from 'prop-types';
 import {Modal, Button, Table, Row, Col} from 'react-bootstrap';
 
-import {MODAL_INFO} from '../../../common/communication';
+import {MODAL_INFO} from 'common/communication';
 
 import ShowCertificateModal from '../../components/showCertificateModal.jsx';
 

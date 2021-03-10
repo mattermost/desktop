@@ -5,7 +5,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {ipcRenderer} from 'electron';
 
-import urlUtils from '../../common/utils/url';
+import urlUtils from 'common/utils/url';
 
 // this component is used to override some checks from the UI, leaving only to trust the protocol in case it wasn't http/s
 // it is used the same as an `a` JSX tag

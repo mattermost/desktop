@@ -4,7 +4,7 @@
 import path from 'path';
 import {app, nativeImage, nativeTheme, Tray, systemPreferences} from 'electron';
 
-import {UPDATE_TRAY} from '../../common/communication';
+import {UPDATE_TRAY} from 'common/communication';
 
 import * as WindowManager from '../windows/windowManager';
 import * as AppState from '../appState';

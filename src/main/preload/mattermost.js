@@ -9,7 +9,7 @@
 import {ipcRenderer, webFrame} from 'electron';
 import log from 'electron-log';
 
-import {NOTIFY_MENTION, IS_UNREAD, UNREAD_RESULT, SESSION_EXPIRED} from '../../common/communication';
+import {NOTIFY_MENTION, IS_UNREAD, UNREAD_RESULT, SESSION_EXPIRED} from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours

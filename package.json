@@ -3,7 +3,7 @@
   "productName": "Mattermost",
   "version": "5.0.0-develop",
   "description": "Mattermost",
-  "main": "dist/index.js",
+  "main": "index.js",
   "author": "Mattermost, Inc. <feedback@mattermost.com>",
   "license": "Apache-2.0",
   "desktopName": "Mattermost.Desktop",
