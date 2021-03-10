@@ -21,11 +21,6 @@ export default class Finder extends React.PureComponent {
         this.searchInput.addEventListener('keyup', this.handleKeyEvent);
     }
 
-    componentWillUnmount() {
-        this.props.stopFindInPage('clearSelection');
-        this.searchInput.removeEventListener('keyup', this.handleKeyEvent);
-    }
-
     static getDerivedStateFromProps(props, state) {
         if (state.searchTxt) {
             return {
@@ -66,10 +61,16 @@ export default class Finder extends React.PureComponent {
 
     handleKeyEvent = (event) => {
         if (event.code === 'Escape') {
-            this.props.close();
+            this.close();
         } else if (event.code === 'Enter') {
             this.findNext();
         }
+    }
+
+    close = () => {
+        this.searchInput.removeEventListener('keyup', this.handleKeyEvent);
+        this.props.stopFindInPage('clearSelection');
+        this.props.close();
     }
 
     render() {
@@ -133,7 +134,7 @@ export default class Finder extends React.PureComponent {
                     </button>
                     <button
                         className='finder-close'
-                        onClick={this.props.close}
+                        onClick={this.close}
                     >
                         <svg
                             xmlns='http://www.w3.org/2000/svg'
