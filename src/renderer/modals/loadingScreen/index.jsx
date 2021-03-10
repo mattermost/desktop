@@ -4,7 +4,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import {RECEIVED_LOADING_SCREEN_DATA, GET_LOADING_SCREEN_DATA, LOADING_SCREEN_ANIMATION_FINISHED} from 'common/communication.js';
+import {RECEIVED_LOADING_SCREEN_DATA, GET_LOADING_SCREEN_DATA, LOADING_SCREEN_ANIMATION_FINISHED, TOGGLE_LOADING_SCREEN_VISIBILITY } from 'common/communication.js';
 
 import LoadingScreen from '../../components/LoadingScreen.jsx';
 
@@ -34,10 +34,14 @@ class LoadingScreenRoot extends React.PureComponent {
 
     handleMessageEvent = (event) => {
         if (event.data.type === RECEIVED_LOADING_SCREEN_DATA) {
-            console.log(event);
             this.setState({
-                showLoadingScreen: event.data.data.showLoadingScreen,
                 darkMode: event.data.data.darkMode,
+            });
+        }
+
+        if (event.data.type === TOGGLE_LOADING_SCREEN_VISIBILITY) {
+            this.setState({
+                showLoadingScreen: event.data.data,
             });
         }
     }

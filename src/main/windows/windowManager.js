@@ -5,7 +5,7 @@ import path from 'path';
 import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain} from 'electron';
 import log from 'electron-log';
 
-import {MAXIMIZE_CHANGE, FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER, FOCUS_FINDER, HISTORY, GET_LOADING_SCREEN_DATA} from 'common/communication';
+import {MAXIMIZE_CHANGE, FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER, FOCUS_FINDER, HISTORY, GET_LOADING_SCREEN_DATA, REACT_APP_INITIALIZED, LOADING_SCREEN_ANIMATION_FINISHED} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
 import {getAdjustedWindowBoundaries} from '../utils';
@@ -32,6 +32,8 @@ ipcMain.on(CLOSE_FINDER, closeFinder);
 ipcMain.on(FOCUS_FINDER, focusFinder);
 ipcMain.on(HISTORY, handleHistory);
 ipcMain.handle(GET_LOADING_SCREEN_DATA, handleLoadingScreenDataRequest);
+ipcMain.on(REACT_APP_INITIALIZED, handleReactAppInitialized);
+ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, handleLoadingScreenAnimationFinished);
 
 export function setConfig(data) {
     if (data) {
@@ -338,9 +340,26 @@ export function stopFindInPage(event, action) {
 
 function handleLoadingScreenDataRequest() {
     return {
-        showLoadingScreen: Boolean(status.viewManager.loadingScreen),
         darkMode: status.config.darkMode,
     };
+}
+
+function handleReactAppInitialized(_, server) {
+    if (status.viewManager) {
+        status.viewManager.setServerInitialized(server);
+    }
+}
+
+function handleLoadingScreenAnimationFinished() {
+    if (status.viewManager) {
+        status.viewManager.hideLoadingScreen();
+    }
+}
+
+export function updateLoadingScreenDarkMode(darkMode) {
+    if (status.viewManager) {
+        status.viewManager.updateLoadingScreenDarkMode(darkMode);
+    }
 }
 
 export function getServerNameByWebContentsId(webContentsId) {

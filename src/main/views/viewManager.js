@@ -4,7 +4,7 @@ import log from 'electron-log';
 import {BrowserView, dialog} from 'electron';
 
 import {SECOND} from 'common/utils/constants';
-import {UPDATE_TARGET_URL, FOUND_IN_PAGE, SET_SERVER_KEY, LOAD_SUCCESS, LOAD_FAILED} from 'common/communication';
+import {UPDATE_TARGET_URL, FOUND_IN_PAGE, SET_SERVER_KEY, LOAD_SUCCESS, LOAD_FAILED, TOGGLE_LOADING_SCREEN_VISIBILITY, GET_LOADING_SCREEN_DATA} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
 import contextMenu from '../contextMenu';
@@ -89,7 +89,6 @@ export class ViewManager {
     }
 
     showByName = (name) => {
-        log.info('showByName', name);
         const newView = this.views.get(name);
         if (newView.isVisible) {
             return;
@@ -103,13 +102,19 @@ export class ViewManager {
             }
 
             this.currentView = name;
-            this.showLoadingScreen();
+            if (newView.needsLoadingScreen()) {
+                this.showLoadingScreen();
+            }
             const serverInfo = this.configServers.find((candidate) => candidate.name === newView.server.name);
             newView.window.webContents.send(SET_SERVER_KEY, serverInfo.order);
             if (newView.isReady()) {
                 // if view is not ready, the renderer will have something to display instead.
                 newView.show();
-                this.hideLoadingScreen();
+                if (newView.needsLoadingScreen()) {
+                    this.showLoadingScreen();
+                } else {
+                    this.fadeLoadingScreen();
+                }
                 contextMenu.reload(newView.getWebContents());
             } else {
                 log.warn(`couldn't show ${name}, not ready`);
@@ -275,9 +280,9 @@ export class ViewManager {
             this.createLoadingScreen();
         }
 
-        log.info('show loading screen');
-        const currentWindow = this.getCurrentView().window;
+        this.loadingScreen.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
 
+        const currentWindow = this.getCurrentView().window;
         if (currentWindow.getBrowserViews().includes(this.loadingScreen)) {
             currentWindow.setTopBrowserView(this.loadingScreen);
         } else {
@@ -287,11 +292,30 @@ export class ViewManager {
         this.setLoadingScreenBounds();
     }
 
+    fadeLoadingScreen = () => {
+        if (this.loadingScreen) {
+            this.loadingScreen.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, false);
+        }
+    }
+
     hideLoadingScreen = () => {
         if (this.loadingScreen) {
-            log.info('hide loading screen');
             const currentWindow = this.getCurrentView().window;
             currentWindow.removeBrowserView(this.loadingScreen);
+        }
+    }
+
+    setServerInitialized = (server) => {
+        const view = this.views.get(server);
+        view.setInitialized();
+        if (this.getCurrentView() === view) {
+            this.fadeLoadingScreen();
+        }
+    }
+
+    updateLoadingScreenDarkMode = (darkMode) => {
+        if (this.loadingScreen) {
+            this.loadingScreen.webContents.send(GET_LOADING_SCREEN_DATA, {darkMode});
         }
     }
 

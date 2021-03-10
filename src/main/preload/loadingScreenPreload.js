@@ -6,7 +6,7 @@
 
 import {ipcRenderer} from 'electron';
 
-import {RECEIVED_LOADING_SCREEN_DATA, GET_LOADING_SCREEN_DATA, LOADING_SCREEN_ANIMATION_FINISHED} from 'common/communication';
+import {RECEIVED_LOADING_SCREEN_DATA, GET_LOADING_SCREEN_DATA, LOADING_SCREEN_ANIMATION_FINISHED, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
 
 console.log('preloaded for the loading screen!');
 
@@ -26,4 +26,8 @@ window.addEventListener('message', async (event) => {
 
 ipcRenderer.on(GET_LOADING_SCREEN_DATA, (_, result) => {
     window.postMessage({type: RECEIVED_LOADING_SCREEN_DATA, data: result}, window.location.href);
+});
+
+ipcRenderer.on(TOGGLE_LOADING_SCREEN_VISIBILITY, (_, toggle) => {
+    window.postMessage({type: TOGGLE_LOADING_SCREEN_VISIBILITY, data: toggle}, window.location.href);
 });
