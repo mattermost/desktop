@@ -13,63 +13,66 @@ import LoadingAnimation from './LoadingAnimation';
  * A function component for rendering the desktop app loading screen
  * @param {boolean} loading - Prop that indicates whether currently loading or not
  * @param {boolean} darkMode - Prop that indicates if dark mode is enabled
+ * @param {() => void} onFadeOutComplete - Function to call when the loading animation is completely finished
  */
-function LoadingScreen({loading = false, darkMode = false}) {
-  const loadingScreenRef = React.useRef(null);
+function LoadingScreen({loading = false, darkMode = false, onFadeOutComplete = () => null}) {
+    const loadingScreenRef = React.useRef(null);
 
-  const [loadingIsComplete, setLoadingIsComplete] = React.useState(true);
-  const [loadAnimationIsComplete, setLoadAnimationIsComplete] = React.useState(true);
-  const [fadeOutIsComplete, setFadeOutIsComplete] = React.useState(true);
+    const [loadingIsComplete, setLoadingIsComplete] = React.useState(true);
+    const [loadAnimationIsComplete, setLoadAnimationIsComplete] = React.useState(true);
+    const [fadeOutIsComplete, setFadeOutIsComplete] = React.useState(true);
 
-  React.useEffect(() => {
+    React.useEffect(() => {
     // reset internal state if loading restarts
-    if (loading) {
-      resetState();
-    } else {
-      setLoadingIsComplete(true);
+        if (loading) {
+            resetState();
+        } else {
+            setLoadingIsComplete(true);
+        }
+    }, [loading]);
+
+    function handleLoadAnimationComplete() {
+        setLoadAnimationIsComplete(true);
     }
-  }, [loading]);
 
-  function handleLoadAnimationComplete() {
-    setLoadAnimationIsComplete(true);
-  }
+    useTransitionEnd(loadingScreenRef, React.useCallback(() => {
+        setFadeOutIsComplete(true);
+        onFadeOutComplete();
+    }), ['opacity']);
 
-  useTransitionEnd(loadingScreenRef, React.useCallback(() => {
-    setFadeOutIsComplete(true);
-  }), ['opacity']);
+    function loadingInProgress() {
+        return !(loadingIsComplete && loadAnimationIsComplete && fadeOutIsComplete);
+    }
 
-  function loadingInProgress() {
-    return !(loadingIsComplete && loadAnimationIsComplete && fadeOutIsComplete);
-  }
+    function resetState() {
+        setLoadingIsComplete(false);
+        setLoadAnimationIsComplete(false);
+        setFadeOutIsComplete(false);
+    }
 
-  function resetState() {
-    setLoadingIsComplete(false);
-    setLoadAnimationIsComplete(false);
-    setFadeOutIsComplete(false);
-  }
+    const loadingScreen = (
+        <div
+            ref={loadingScreenRef}
+            className={classNames('LoadingScreen', {
+                'LoadingScreen--darkMode': darkMode,
+                'LoadingScreen--loaded': loadingIsComplete && loadAnimationIsComplete,
+            })}
+        >
+            <LoadingAnimation
+                loading={loading}
+                darkMode={darkMode}
+                onLoadAnimationComplete={handleLoadAnimationComplete}
+            />
+        </div>
+    );
 
-  const loadingScreen = (
-    <div
-      ref={loadingScreenRef}
-      className={classNames('LoadingScreen', {
-        'LoadingScreen--darkMode': darkMode,
-        'LoadingScreen--loaded': loadingIsComplete && loadAnimationIsComplete,
-      })}
-    >
-      <LoadingAnimation
-        loading={loading}
-        darkMode={darkMode}
-        onLoadAnimationComplete={handleLoadAnimationComplete}
-      />
-    </div>
-  );
-
-  return loadingInProgress() ? loadingScreen : null;
+    return loadingInProgress() ? loadingScreen : null;
 }
 
 LoadingScreen.propTypes = {
-  loading: PropTypes.bool,
-  darkMode: PropTypes.bool,
+    loading: PropTypes.bool,
+    darkMode: PropTypes.bool,
+    onFadeOutComplete: PropTypes.func,
 };
 
 export default LoadingScreen;

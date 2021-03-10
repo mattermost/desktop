@@ -9,7 +9,7 @@ import urlUtils from 'common/utils/url';
 
 import contextMenu from '../contextMenu';
 import {MattermostServer} from '../MattermostServer';
-import {getLocalURLString, getLocalPreload} from '../utils';
+import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
 
 import {MattermostView} from './MattermostView';
 import {showModal} from './modalManager';
@@ -37,6 +37,9 @@ export class ViewManager {
         const srv = new MattermostServer(server.name, server.url);
         const view = new MattermostView(srv, mainWindow, this.viewOptions);
         this.views.set(server.name, view);
+        if (!this.loadingScreen) {
+            this.createLoadingScreen();
+        }
         view.once(LOAD_SUCCESS, this.activateView);
         view.load();
         view.on(UPDATE_TARGET_URL, this.showURLView);
@@ -86,6 +89,7 @@ export class ViewManager {
     }
 
     showByName = (name) => {
+        log.info('showByName', name);
         const newView = this.views.get(name);
         if (newView.isVisible) {
             return;
@@ -99,11 +103,13 @@ export class ViewManager {
             }
 
             this.currentView = name;
+            this.showLoadingScreen();
             const serverInfo = this.configServers.find((candidate) => candidate.name === newView.server.name);
             newView.window.webContents.send(SET_SERVER_KEY, serverInfo.order);
             if (newView.isReady()) {
                 // if view is not ready, the renderer will have something to display instead.
                 newView.show();
+                this.hideLoadingScreen();
                 contextMenu.reload(newView.getWebContents());
             } else {
                 log.warn(`couldn't show ${name}, not ready`);
@@ -246,6 +252,48 @@ export class ViewManager {
 
         this.finder.webContents.focus();
     };
+
+    setLoadingScreenBounds = () => {
+        if (this.loadingScreen) {
+            const currentWindow = this.getCurrentView().window;
+            this.loadingScreen.setBounds(getWindowBoundaries(currentWindow));
+        }
+    }
+
+    createLoadingScreen = () => {
+        const preload = getLocalPreload('loadingScreenPreload.js');
+        this.loadingScreen = new BrowserView({webPreferences: {
+            contextIsolation: true,
+            preload,
+        }});
+        const localURL = getLocalURLString('loadingScreen.html');
+        this.loadingScreen.webContents.loadURL(localURL);
+    }
+
+    showLoadingScreen = () => {
+        if (!this.loadingScreen) {
+            this.createLoadingScreen();
+        }
+
+        log.info('show loading screen');
+        const currentWindow = this.getCurrentView().window;
+
+        if (currentWindow.getBrowserViews().includes(this.loadingScreen)) {
+            currentWindow.setTopBrowserView(this.loadingScreen);
+        } else {
+            currentWindow.addBrowserView(this.loadingScreen);
+        }
+
+        this.setLoadingScreenBounds();
+    }
+
+    hideLoadingScreen = () => {
+        if (this.loadingScreen) {
+            log.info('hide loading screen');
+            const currentWindow = this.getCurrentView().window;
+            currentWindow.removeBrowserView(this.loadingScreen);
+        }
+    }
 
     deeplinkSuccess = (serverName) => {
         const view = this.views.get(serverName);

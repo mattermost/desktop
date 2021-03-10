@@ -47,7 +47,6 @@ import TabBar from './TabBar.jsx';
 import NewTeamModal from './NewTeamModal.jsx';
 import ExtraBar from './ExtraBar.jsx';
 import ErrorView from './ErrorView.jsx';
-import LoadingScreen from './LoadingScreen.jsx';
 
 const LOADING = 1;
 const DONE = 2;
@@ -639,7 +638,6 @@ export default class MainPage extends React.PureComponent {
                         appName={this.props.appName}
                     />);
                 break;
-            case RETRY:
             case FAILED:
                 component = (
                     <ErrorView
@@ -653,13 +651,7 @@ export default class MainPage extends React.PureComponent {
                     />);
                 break;
             case LOADING:
-                component = (
-                    <LoadingScreen
-                        loading={true}
-                        darkMode={this.state.darkMode}
-                    />
-                );
-                break;
+            case RETRY:
             case DONE:
                 component = null;
             }
