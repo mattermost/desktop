@@ -20,7 +20,7 @@ function useTransitionend(
 ) {
     React.useEffect(() => {
         if (!ref.current) {
-            return null;
+            return undefined;
         }
 
         function handleTransitionEnd(event) {

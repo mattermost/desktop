@@ -20,7 +20,7 @@ function useAnimationEnd(
 ) {
     React.useEffect(() => {
         if (!ref.current) {
-            return null;
+            return undefined;
         }
 
         function handleAnimationend(event) {
