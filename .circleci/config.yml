@@ -117,7 +117,6 @@ jobs:
           key: lint-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
             - "node_modules"
-            - "src/node_modules"
 
   check-deps:
     parameters:
@@ -140,7 +139,6 @@ jobs:
           name: Adjust permissions
           command: |
             sudo chown -R `id -nu`:`id -ng` node_modules
-            sudo chown -R `id -nu`:`id -ng` src/node_modules
       - run:
           name: Checkout config
           command: cd .. && git clone https://github.com/mattermost/security-automation-config
