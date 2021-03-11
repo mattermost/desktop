@@ -94,14 +94,6 @@ class Root extends React.PureComponent {
         }
     };
 
-    showBadge = (sessionExpired, unreadCount, mentionCount) => {
-        ipcRenderer.send('update-unread', {
-            sessionExpired,
-            unreadCount,
-            mentionCount,
-        });
-    }
-
     reloadConfig = async () => {
         const config = await this.requestConfig();
         this.setState({config});
@@ -146,7 +138,6 @@ class Root extends React.PureComponent {
                 teams={config.teams}
                 localTeams={config.localTeams}
                 initialIndex={initialIndex}
-                onBadgeChange={this.showBadge}
                 onTeamConfigChange={this.teamConfigChange}
                 useSpellChecker={config.useSpellChecker}
                 deeplinkingUrl={deeplinkingUrl}

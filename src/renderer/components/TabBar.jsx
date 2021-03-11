@@ -31,13 +31,7 @@ export default class TabBar extends React.PureComponent { // need "this"
             const index = this.props.teams.indexOf(team);
             const sessionExpired = this.props.sessionsExpired[index];
 
-            let unreadCount = 0;
-            if (this.props.unreadCounts[index] > 0) {
-                unreadCount = this.props.unreadCounts[index];
-            }
-            if (this.props.unreadAtActive[index]) {
-                unreadCount += 1;
-            }
+            const hasUnreads = this.props.unreadCounts[index];
 
             let mentionCount = 0;
             if (this.props.mentionCounts[index] > 0) {
@@ -58,7 +52,7 @@ export default class TabBar extends React.PureComponent { // need "this"
                         {mentionCount}
                     </div>
                 );
-            } else if (unreadCount !== 0) {
+            } else if (hasUnreads) {
                 badgeDiv = (
                     <div className='TabBar-dot'/>
                 );
@@ -154,9 +148,9 @@ TabBar.propTypes = {
     onSelect: PropTypes.func,
     teams: PropTypes.array,
     sessionsExpired: PropTypes.array,
-    unreadCounts: PropTypes.array,
+    unreadCounts: PropTypes.object,
     unreadAtActive: PropTypes.array,
-    mentionCounts: PropTypes.array,
+    mentionCounts: PropTypes.object,
     mentionAtActiveCounts: PropTypes.array,
     showAddServerButton: PropTypes.bool,
     onAddServer: PropTypes.func,
