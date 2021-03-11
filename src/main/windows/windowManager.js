@@ -221,12 +221,12 @@ function createDataURL(text, small) {
     return win.webContents.executeJavaScript(code);
 }
 
-export async function setOverlayIcon(badgeText, description) {
+export async function setOverlayIcon(badgeText, description, small) {
     if (process.platform === 'win32') {
         let overlay = null;
         if (status.mainWindow && badgeText) {
             try {
-                const dataUrl = await createDataURL(badgeText);
+                const dataUrl = await createDataURL(badgeText, small);
                 overlay = nativeImage.createFromDataURL(dataUrl);
             } catch (err) {
                 log.error(`Couldn't generate a badge: ${err}`);
