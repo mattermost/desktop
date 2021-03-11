@@ -108,8 +108,7 @@ jobs:
           apt_opts: "--no-install-recommends"
       - restore_cache:
           key: lint-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
-      - run: npm run lint:js-quiet
-      - run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run npm run test:app
+      - run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run npm run test
       - run: mkdir -p /tmp/test-results
       - run: cp test-results.xml /tmp/test-results/
       - store_test_results:
