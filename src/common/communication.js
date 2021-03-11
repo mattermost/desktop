@@ -65,3 +65,5 @@ export const UPDATE_TRAY = 'update_tray';
 export const UPDATE_BADGE = 'update_badge';
 
 export const TOGGLE_BACK_BUTTON = 'toggle-back-button';
+
+export const SHOW_SETTINGS_WINDOW = 'show-settings-window';

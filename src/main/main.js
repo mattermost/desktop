@@ -14,7 +14,21 @@ import 'airbnb-js-shims/target/es2015';
 import Utils from 'common/utils/util';
 import urlUtils from 'common/utils/url';
 
-import {SWITCH_SERVER, FOCUS_BROWSERVIEW, QUIT, DARK_MODE_CHANGE, DOUBLE_CLICK_ON_WINDOW, SHOW_NEW_SERVER_MODAL, WINDOW_CLOSE, WINDOW_MAXIMIZE, WINDOW_MINIMIZE, WINDOW_RESTORE, NOTIFY_MENTION, GET_DOWNLOAD_LOCATION} from 'common/communication';
+import {
+    SWITCH_SERVER,
+    FOCUS_BROWSERVIEW,
+    QUIT,
+    DARK_MODE_CHANGE,
+    DOUBLE_CLICK_ON_WINDOW,
+    SHOW_NEW_SERVER_MODAL,
+    WINDOW_CLOSE,
+    WINDOW_MAXIMIZE,
+    WINDOW_MINIMIZE,
+    WINDOW_RESTORE,
+    NOTIFY_MENTION,
+    GET_DOWNLOAD_LOCATION,
+    SHOW_SETTINGS_WINDOW,
+} from 'common/communication';
 import Config from 'common/config';
 
 import {protocols} from '../../electron-builder.json';
@@ -213,6 +227,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(WINDOW_MAXIMIZE, WindowManager.maximize);
     ipcMain.on(WINDOW_MINIMIZE, WindowManager.minimize);
     ipcMain.on(WINDOW_RESTORE, WindowManager.restore);
+    ipcMain.on(SHOW_SETTINGS_WINDOW, WindowManager.showSettingsWindow);
     ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
 }
 

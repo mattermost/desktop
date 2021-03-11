@@ -5,8 +5,8 @@
 import assert from 'assert';
 import 'airbnb-js-shims/target/es2015';
 
-import TrustedOriginsStore from '../../../src/main/trustedOrigins.js';
-import {BASIC_AUTH_PERMISSION} from '../../../src/common/permissions.js';
+import TrustedOriginsStore from 'main/trustedOrigins.js';
+import {BASIC_AUTH_PERMISSION} from 'common/permissions.js';
 
 function mockTOS(fileName, returnvalue) {
     const tos = new TrustedOriginsStore(fileName);

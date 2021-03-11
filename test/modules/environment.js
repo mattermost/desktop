@@ -9,8 +9,9 @@ const path = require('path');
 
 const Application = require('spectron').Application;
 const chai = require('chai');
+const {ipcRenderer} = require('electron');
 
-const {getLocalURLString} = require('../../src/main/utils');
+const {SHOW_SETTINGS_WINDOW} = require('../../src/common/communication');
 chai.should();
 
 const sourceRootDir = path.join(__dirname, '../..');
@@ -71,7 +72,7 @@ module.exports = {
 
     addClientCommands(client) {
         client.addCommand('loadSettingsPage', function async() {
-            return this.url(getLocalURLString('settings.html')).waitUntilWindowLoaded();
+            ipcRenderer.send(SHOW_SETTINGS_WINDOW);
         });
         client.addCommand('isNodeEnabled', function async() {
             return this.execute(() => {
