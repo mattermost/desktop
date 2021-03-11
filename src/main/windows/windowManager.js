@@ -394,6 +394,7 @@ export function restore() {
 export function reload() {
     const currentView = status.viewManager.getCurrentView();
     if (currentView) {
+        status.viewManager.showLoadingScreen();
         currentView.reload();
     }
 }

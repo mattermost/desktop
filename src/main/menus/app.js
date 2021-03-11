@@ -114,6 +114,7 @@ function createTemplate(config) {
         accelerator: 'Shift+CmdOrCtrl+R',
         click() {
             session.defaultSession.clearCache();
+            WindowManager.reload();
         },
     }, {
         role: 'togglefullscreen',
