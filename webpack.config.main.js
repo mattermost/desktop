@@ -20,6 +20,7 @@ module.exports = merge(base, {
         preload: './src/main/preload/mattermost.js',
         modalPreload: './src/main/preload/modalPreload.js',
         finderPreload: './src/main/preload/finderPreload.js',
+        loadingScreenPreload: './src/main/preload/loadingScreenPreload.js',
     },
     output: {
         path: path.join(__dirname, 'dist/'),

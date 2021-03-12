@@ -8,7 +8,7 @@ import {EventEmitter} from 'events';
 
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
-import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL, IS_UNREAD, UNREAD_RESULT, TOGGLE_BACK_BUTTON} from 'common/communication';
+import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL, IS_UNREAD, UNREAD_RESULT, TOGGLE_BACK_BUTTON, SET_SERVER_NAME} from 'common/communication';
 
 import {getWindowBoundaries, getLocalPreload} from '../utils';
 import * as WindowManager from '../windows/windowManager';
@@ -59,6 +59,9 @@ export class MattermostView extends EventEmitter {
         this.faviconMemoize = new Map();
         this.currentFavicon = null;
         log.info(`BrowserView created for server ${this.server.name}`);
+
+        this.isInitialized = false;
+        this.hasBeenShown = false;
     }
 
     // use the same name as the server
@@ -122,10 +125,12 @@ export class MattermostView extends EventEmitter {
             }
             this.status = READY;
             this.emit(LOAD_SUCCESS, this.server.name, loadURL.toString());
+            this.view.webContents.send(SET_SERVER_NAME, this.server.name);
         };
     }
 
     show = (requestedVisibility) => {
+        this.hasBeenShown = true;
         const request = typeof requestedVisibility === 'undefined' ? true : requestedVisibility;
         if (request && !this.isVisible) {
             this.window.addBrowserView(this.view);
@@ -137,6 +142,11 @@ export class MattermostView extends EventEmitter {
             this.window.removeBrowserView(this.view);
         }
         this.isVisible = request;
+    }
+
+    reload = () => {
+        this.resetLoadingStatus();
+        this.load();
     }
 
     hide = () => this.show(false);
@@ -169,6 +179,14 @@ export class MattermostView extends EventEmitter {
 
     isReady = () => {
         return this.status === READY;
+    }
+
+    needsLoadingScreen = () => {
+        return !(this.isInitialized && this.hasBeenShown);
+    }
+
+    setInitialized = () => {
+        this.isInitialized = true;
     }
 
     openDevTools = () => {

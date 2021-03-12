@@ -1,0 +1,59 @@
+body {
+    background-color: transparent;
+}
+
+.LoadingScreen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  vertical-align: middle;
+  background: white url(../../../assets/window-background.svg) no-repeat center;
+  background-size: cover;
+  opacity: 1;
+  visibility: visible;
+  z-index: 10;
+  overflow:hidden;
+  
+  transition: opacity 150ms 0ms ease-out, visibility 150ms 0ms step-start;
+}
+
+.LoadingScreen::before, .LoadingScreen::after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 460px;
+  height: 460px;
+  opacity: 0.1;
+  background-image: url(../../../assets/window-background-dots.svg);
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.LoadingScreen::before {
+  left: -210px;
+  bottom: 10px;
+}
+.LoadingScreen::after {
+  right: -80px;
+  top: 50%;
+  margin-top: -230px;
+}
+
+.LoadingScreen--darkMode {
+  background-color: #323639;
+  background-image: url(../../../assets/window-background_dark.svg);
+}
+.LoadingScreen--darkMode::before, .LoadingScreen--darkMode::after {
+  background-image: url(../../../assets/window-background-dots_dark.svg);
+}
+
+.LoadingScreen--loaded {
+  opacity: 0;
+  visibility: hidden;
+  
+  transition: opacity 150ms 0ms ease-in, visibility 150ms 0ms step-end;
+}

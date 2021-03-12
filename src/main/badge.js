@@ -23,7 +23,7 @@ function showBadgeWindows(sessionExpired, showUnreadBadge, mentionCount) {
         text = '•';
         description = 'You have unread channels';
     }
-    WindowManager.setOverlayIcon(text, description);
+    WindowManager.setOverlayIcon(text, description, mentionCount > 99);
 }
 
 function showBadgeOSX(sessionExpired, showUnreadBadge, mentionCount) {

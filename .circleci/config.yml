@@ -118,7 +118,6 @@ jobs:
           paths:
             - "node_modules"
 
-
   build-linux:
     executor: wine-mono
     steps:

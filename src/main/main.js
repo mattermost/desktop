@@ -273,6 +273,7 @@ function handleAppVersion() {
 function handleDarkModeChange(darkMode) {
     refreshTrayImages(config.trayIconTheme);
     WindowManager.sendToRenderer(DARK_MODE_CHANGE, darkMode);
+    WindowManager.updateLoadingScreenDarkMode(darkMode);
 }
 
 //
