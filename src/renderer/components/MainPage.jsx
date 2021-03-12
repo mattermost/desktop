@@ -34,6 +34,10 @@ import {
     UPDATE_MENTIONS,
     UPDATE_UNREADS,
     TOGGLE_BACK_BUTTON,
+    SELECT_NEXT_TAB,
+    SELECT_PREVIOUS_TAB,
+    ADD_SERVER,
+    FOCUS_THREE_DOT_MENU,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -76,9 +80,7 @@ export default class MainPage extends React.PureComponent {
             mentionCounts: {},
             unreadAtActive: new Array(this.props.teams.length),
             mentionAtActiveCounts: new Array(this.props.teams.length),
-            loginQueue: [],
             targetURL: '',
-            certificateRequests: [],
             maximized: false,
             showNewTeamModal: false,
             focusFinder: false,
@@ -179,24 +181,6 @@ export default class MainPage extends React.PureComponent {
             this.setState({tabStatus: status});
         });
 
-        ipcRenderer.on('login-request', (event, request, authInfo) => {
-            this.loginRequest(event, request, authInfo);
-        });
-
-        ipcRenderer.on('select-user-certificate', (_, origin, certificateList) => {
-            const certificateRequests = this.state.certificateRequests;
-            certificateRequests.push({
-                server: origin,
-                certificateList,
-            });
-            this.setState({
-                certificateRequests,
-            });
-            if (certificateRequests.length === 1) {
-                this.switchToTabForCertificateRequest(origin);
-            }
-        });
-
         ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => {
             this.setState({darkMode});
         });
@@ -206,7 +190,7 @@ export default class MainPage extends React.PureComponent {
             const nextIndex = this.props.teams.findIndex((team) => team.order === key);
             this.handleSetServerKey(nextIndex);
         });
-        ipcRenderer.on('select-next-tab', () => {
+        ipcRenderer.on(SELECT_NEXT_TAB, () => {
             const currentOrder = this.props.teams[this.state.key].order;
             const nextOrder = ((currentOrder + 1) % this.props.teams.length);
             const nextIndex = this.props.teams.findIndex((team) => team.order === nextOrder);
@@ -214,7 +198,7 @@ export default class MainPage extends React.PureComponent {
             this.handleSelect(team.name, nextIndex);
         });
 
-        ipcRenderer.on('select-previous-tab', () => {
+        ipcRenderer.on(SELECT_PREVIOUS_TAB, () => {
             const currentOrder = this.props.teams[this.state.key].order;
 
             // js modulo operator returns a negative number if result is negative, so we have to ensure it's positive
@@ -232,35 +216,8 @@ export default class MainPage extends React.PureComponent {
         ipcRenderer.on('enter-full-screen', () => this.handleFullScreenState(true));
         ipcRenderer.on('leave-full-screen', () => this.handleFullScreenState(false));
 
-        // TODO: check this doesn't happen
-        // https://github.com/mattermost/desktop/pull/371#issuecomment-263072803
-
-        ipcRenderer.on('open-devtool', () => {
-            document.getElementById(`mattermostView${this.state.key}`).openDevTools();
-        });
-
-        ipcRenderer.on('add-server', () => {
+        ipcRenderer.on(ADD_SERVER, () => {
             this.addServer();
-        });
-
-        ipcRenderer.on('focus-on-webview', () => {
-            ipcRenderer.send(FOCUS_BROWSERVIEW);
-        });
-
-        // TODO: GV is working on this, leaving alone until he's done
-        ipcRenderer.on('protocol-deeplink', (event, deepLinkUrl) => {
-            const parsedDeeplink = this.parseDeeplinkURL(deepLinkUrl);
-            if (parsedDeeplink) {
-                if (this.state.key !== parsedDeeplink.teamIndex) {
-                    this.handleSelect(parsedDeeplink.teamIndex);
-                }
-
-                //this.refs[`mattermostView${parsedDeeplink.teamIndex}`].handleDeepLink(parsedDeeplink.path);
-            }
-        });
-
-        ipcRenderer.on('toggle-find', () => {
-            this.activateFinder(true);
         });
 
         ipcRenderer.on(PLAY_SOUND, (_event, soundName) => {
@@ -302,7 +259,7 @@ export default class MainPage extends React.PureComponent {
         });
 
         if (process.platform !== 'darwin') {
-            ipcRenderer.on('focus-three-dot-menu', () => {
+            ipcRenderer.on(FOCUS_THREE_DOT_MENU, () => {
                 if (this.threeDotMenu.current) {
                     this.threeDotMenu.current.focus();
                 }
@@ -322,35 +279,6 @@ export default class MainPage extends React.PureComponent {
     blurListener = () => {
         this.setState({unfocused: true});
     }
-    loginRequest = (event, request, authInfo) => {
-        const loginQueue = this.state.loginQueue;
-        loginQueue.push({
-            request,
-            authInfo,
-        });
-        this.setState({
-            loginRequired: true,
-            loginQueue,
-        });
-    };
-
-    // componentDidUpdate(prevProps, prevState) {
-    //   if (prevState.key !== this.state.key) { // i.e. When tab has been changed
-    //     this.refs[`mattermostView${this.state.key}`].focusOnWebView();
-    //   }
-    // }
-
-    switchToTabForCertificateRequest = (origin) => {
-        // origin is server name + port, if the port doesn't match the protocol, it is kept by URL
-        const originURL = urlUtils.parseURL(`http://${origin.split(':')[0]}`);
-        const secureOriginURL = urlUtils.parseURL(`https://${origin.split(':')[0]}`);
-
-        const key = this.props.teams.findIndex((team) => {
-            const parsedURL = urlUtils.parseURL(team.url);
-            return (parsedURL.origin === originURL.origin) || (parsedURL.origin === secureOriginURL.origin);
-        });
-        this.handleSelect(key);
-    };
 
     handleMaximizeState = (_, maximized) => {
         this.setState({maximized});
@@ -401,18 +329,6 @@ export default class MainPage extends React.PureComponent {
         return index;
     }
 
-    handleTargetURLChange = (targetURL) => {
-        clearTimeout(this.targetURLDisappearTimeout);
-        if (targetURL === '') {
-        // set delay to avoid momentary disappearance when hovering over multiple links
-            this.targetURLDisappearTimeout = setTimeout(() => {
-                this.setState({targetURL: ''});
-            }, 500);
-        } else {
-            this.setState({targetURL});
-        }
-    }
-
     handleClose = (e) => {
         e.stopPropagation(); // since it is our button, the event goes into MainPage's onclick event, getting focus back.
         ipcRenderer.send(WINDOW_CLOSE);
@@ -444,36 +360,11 @@ export default class MainPage extends React.PureComponent {
     }
 
     addServer = () => {
-        // this.setState({
-        //   showNewTeamModal: true,
-        // });
-        // TODO: remove
-        console.log('requesting new server modal');
         ipcRenderer.send(SHOW_NEW_SERVER_MODAL);
     }
 
     focusOnWebView = () => {
         ipcRenderer.send(FOCUS_BROWSERVIEW);
-    }
-
-    activateFinder = () => {
-        this.setState({
-            finderVisible: true,
-            focusFinder: true,
-        });
-    }
-
-    closeFinder = () => {
-        this.setState({
-            finderVisible: false,
-            focusFinder: false,
-        });
-    }
-
-    inputFocus = (e, focus) => {
-        this.setState({
-            focusFinder: focus,
-        });
     }
 
     setInputRef = (ref) => {

@@ -9,6 +9,8 @@ import os from 'os';
 import {app, BrowserWindow} from 'electron';
 import log from 'electron-log';
 
+import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB} from 'common/communication';
+
 import * as Validator from '../Validator';
 import contextMenu from '../contextMenu';
 import {getLocalURLString} from '../utils';
@@ -152,10 +154,10 @@ function createMainWindow(config, options) {
         if (process.platform === 'darwin') {
             if (input.alt && input.meta) {
                 if (input.key === 'ArrowRight') {
-                    mainWindow.webContents.send('select-next-tab');
+                    mainWindow.webContents.send(SELECT_NEXT_TAB);
                 }
                 if (input.key === 'ArrowLeft') {
-                    mainWindow.webContents.send('select-previous-tab');
+                    mainWindow.webContents.send(SELECT_PREVIOUS_TAB);
                 }
             }
         }

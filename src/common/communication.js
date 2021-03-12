@@ -76,3 +76,7 @@ export const GET_LOADING_SCREEN_DATA = 'get-loading-screen-data';
 export const LOADING_SCREEN_ANIMATION_FINISHED = 'loading-screen-animation-finished';
 export const TOGGLE_LOADING_SCREEN_VISIBILITY = 'toggle-loading-screen-visibility';
 
+export const SELECT_NEXT_TAB = 'select-next-tab';
+export const SELECT_PREVIOUS_TAB = 'select-previous-tab';
+export const ADD_SERVER = 'add-server';
+export const FOCUS_THREE_DOT_MENU = 'focus-three-dot-menu';

@@ -5,7 +5,7 @@ import path from 'path';
 import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain} from 'electron';
 import log from 'electron-log';
 
-import {MAXIMIZE_CHANGE, FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER, FOCUS_FINDER, HISTORY, GET_LOADING_SCREEN_DATA, REACT_APP_INITIALIZED, LOADING_SCREEN_ANIMATION_FINISHED} from 'common/communication';
+import {MAXIMIZE_CHANGE, FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER, FOCUS_FINDER, HISTORY, GET_LOADING_SCREEN_DATA, REACT_APP_INITIALIZED, LOADING_SCREEN_ANIMATION_FINISHED, FOCUS_THREE_DOT_MENU} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
 import {getAdjustedWindowBoundaries} from '../utils';
@@ -339,6 +339,13 @@ export function stopFindInPage(event, action) {
         if (activeView) {
             activeView.view.webContents.stopFindInPage(action);
         }
+    }
+}
+
+export function focusThreeDotMenu() {
+    if (status.mainWindow) {
+        status.mainWindow.webContents.focus();
+        status.mainWindow.webContents.send(FOCUS_THREE_DOT_MENU);
     }
 }
 

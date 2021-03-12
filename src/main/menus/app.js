@@ -5,6 +5,8 @@
 
 import {app, Menu, session, shell, webContents} from 'electron';
 
+import {ADD_SERVER, SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB} from 'common/communication';
+
 import * as WindowManager from '../windows/windowManager';
 
 function createTemplate(config) {
@@ -41,7 +43,7 @@ function createTemplate(config) {
         platformAppMenu.push({
             label: 'Sign in to Another Server',
             click() {
-                WindowManager.sendToRenderer('add-server');
+                WindowManager.sendToRenderer(ADD_SERVER);
             },
         });
     }
@@ -214,14 +216,14 @@ function createTemplate(config) {
             label: 'Select Next Server',
             accelerator: 'Ctrl+Tab',
             click() {
-                WindowManager.sendToRenderer('select-next-tab');
+                WindowManager.sendToRenderer(SELECT_NEXT_TAB);
             },
             enabled: (teams.length > 1),
         }, {
             label: 'Select Previous Server',
             accelerator: 'Ctrl+Shift+Tab',
             click() {
-                WindowManager.sendToRenderer('select-previous-tab');
+                WindowManager.sendToRenderer(SELECT_PREVIOUS_TAB);
             },
             enabled: (teams.length > 1),
         }],
