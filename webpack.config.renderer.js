@@ -25,6 +25,7 @@ module.exports = merge(base, {
         permissionModal: './src/renderer/modals/permission/permission.jsx',
         certificateModal: './src/renderer/modals/certificate/certificate.jsx',
         finder: './src/renderer/modals/finder/index.jsx',
+        loadingScreen: './src/renderer/modals/loadingScreen/index.jsx',
     },
     output: {
         path: path.resolve(__dirname, 'dist/renderer'),
@@ -78,6 +79,12 @@ module.exports = merge(base, {
             template: 'src/renderer/index.html',
             chunks: ['finder'],
             filename: 'finder.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['loadingScreen'],
+            filename: 'loadingScreen.html',
         }),
         new MiniCssExtractPlugin({
             filename: 'styles.[contenthash].css',

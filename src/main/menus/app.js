@@ -107,16 +107,14 @@ function createTemplate(config) {
         label: 'Reload',
         accelerator: 'CmdOrCtrl+R',
         click() {
-            const focused = webContents.getFocusedWebContents();
-            focused.reload();
+            WindowManager.reload();
         },
     }, {
         label: 'Clear Cache and Reload',
         accelerator: 'Shift+CmdOrCtrl+R',
         click() {
             session.defaultSession.clearCache();
-            const focused = webContents.getFocusedWebContents();
-            focused.reload();
+            WindowManager.reload();
         },
     }, {
         role: 'togglefullscreen',

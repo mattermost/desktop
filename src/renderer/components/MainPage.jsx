@@ -40,8 +40,6 @@ import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
 import minimizeButton from '../../assets/titlebar/chrome-minimize.svg';
 import closeButton from '../../assets/titlebar/chrome-close.svg';
-import spinner from '../../assets/loading.gif';
-import spinnerx2 from '../../assets/loading@2x.gif';
 
 import {playSound} from '../notificationSounds';
 
@@ -612,7 +610,6 @@ export default class MainPage extends React.PureComponent {
                         appName={this.props.appName}
                     />);
                 break;
-            case RETRY:
             case FAILED:
                 component = (
                     <ErrorView
@@ -626,15 +623,7 @@ export default class MainPage extends React.PureComponent {
                     />);
                 break;
             case LOADING:
-                component = (
-                    <div className='mattermostView-loadingScreen'>
-                        <img
-                            className='mattermostView-loadingImage'
-                            src={spinner}
-                            srcSet={`${spinner} 1x, ${spinnerx2} 2x`}
-                        />
-                    </div>);
-                break;
+            case RETRY:
             case DONE:
                 component = null;
             }
