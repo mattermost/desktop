@@ -89,6 +89,8 @@ export function showMainWindow(deeplinkingURL) {
         status.mainWindow.on('unmaximize', handleUnmaximizeMainWindow);
         status.mainWindow.on('resize', handleResizeMainWindow);
         status.mainWindow.on('focus', focusBrowserView);
+        status.mainWindow.on('enter-full-screen', () => sendToRenderer('enter-full-screen'));
+        status.mainWindow.on('leave-full-screen', () => sendToRenderer('leave-full-screen'));
 
         if (process.env.MM_DEBUG_SETTINGS) {
             status.mainWindow.webContents.openDevTools({mode: 'detach'});

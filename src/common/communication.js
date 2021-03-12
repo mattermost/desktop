@@ -57,7 +57,6 @@ export const CLOSE_FINDER = 'close-finder';
 export const FOCUS_FINDER = 'focus-finder';
 
 export const UPDATE_MENTIONS = 'update_mentions';
-export const UPDATE_UNREADS = 'update_unreads';
 export const IS_UNREAD = 'is_unread';
 export const UNREAD_RESULT = 'unread_result';
 export const SESSION_EXPIRED = 'session_expired';

@@ -12,7 +12,7 @@ import {MattermostServer} from '../MattermostServer';
 import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
 
 import {MattermostView} from './MattermostView';
-import {showModal} from './modalManager';
+import {showModal, isModalDisplayed, focusCurrentModal} from './modalManager';
 import {addWebContentsEventListeners} from './webContentEvents';
 
 const URL_VIEW_DURATION = 10 * SECOND;
@@ -126,6 +126,11 @@ export class ViewManager {
     }
 
     focus = () => {
+        if (isModalDisplayed()) {
+            focusCurrentModal();
+            return;
+        }
+
         const view = this.getCurrentView();
         if (view) {
             view.focus();
@@ -314,9 +319,11 @@ export class ViewManager {
 
     setServerInitialized = (server) => {
         const view = this.views.get(server);
-        view.setInitialized();
-        if (this.getCurrentView() === view) {
-            this.fadeLoadingScreen();
+        if (view) {
+            view.setInitialized();
+            if (this.getCurrentView() === view) {
+                this.fadeLoadingScreen();
+            }
         }
     }
 

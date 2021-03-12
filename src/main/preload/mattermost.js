@@ -62,15 +62,6 @@ window.addEventListener('load', () => {
     });
 });
 
-// Sent for drag and drop tabs to work properly
-document.addEventListener('mousemove', (event) => {
-    ipcRenderer.sendToHost('mouse-move', {clientX: event.clientX, clientY: event.clientY});
-});
-
-document.addEventListener('mouseup', () => {
-    ipcRenderer.sendToHost('mouse-up');
-});
-
 const parentTag = (target) => {
     if (target.parentNode) {
         return target.parentNode.tagName.toUpperCase();

@@ -2,8 +2,9 @@
 // See LICENSE.txt for license information.
 
 import events from 'events';
+import {ipcMain} from 'electron';
 
-import {UPDATE_MENTIONS, UPDATE_TRAY, UPDATE_BADGE} from 'common/communication';
+import {UPDATE_MENTIONS, UPDATE_TRAY, UPDATE_BADGE, SESSION_EXPIRED} from 'common/communication';
 
 import * as WindowManager from './windows/windowManager';
 
@@ -17,8 +18,9 @@ const status = {
 const emitMentions = (serverName) => {
     const newMentions = getMentions(serverName);
     const newUnreads = getUnreads(serverName);
+    const isExpired = getIsExpired(serverName);
 
-    WindowManager.sendToRenderer(UPDATE_MENTIONS, serverName, newMentions, newUnreads);
+    WindowManager.sendToRenderer(UPDATE_MENTIONS, serverName, newMentions, newUnreads, isExpired);
     emitStatus();
 };
 
@@ -57,6 +59,10 @@ export const getUnreads = (serverName) => {
 
 export const getMentions = (serverName) => {
     return status.mentions.get(serverName) || 0; // this might be undefined as a way to tell that we don't know as it might need to login still.
+};
+
+export const getIsExpired = (serverName) => {
+    return status.expired.get(serverName) || false;
 };
 
 export const anyMentions = () => {
@@ -106,4 +112,9 @@ export const setSessionExpired = (serverName, expired) => {
     if (typeof old !== 'undefined' && old !== isExpired) {
         emitTray();
     }
+    emitMentions(serverName);
 };
+
+ipcMain.on(SESSION_EXPIRED, (event, isExpired, serverName) => {
+    setSessionExpired(serverName, isExpired);
+});
