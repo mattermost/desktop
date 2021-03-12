@@ -89,6 +89,10 @@ export function showMainWindow(deeplinkingURL) {
         status.mainWindow.on('unmaximize', handleUnmaximizeMainWindow);
         status.mainWindow.on('resize', handleResizeMainWindow);
         status.mainWindow.on('focus', focusBrowserView);
+
+        if (process.env.MM_DEBUG_SETTINGS) {
+            status.mainWindow.webContents.openDevTools({mode: 'detach'});
+        }
     }
     initializeViewManager();
 

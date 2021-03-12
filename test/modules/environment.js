@@ -9,8 +9,9 @@ const path = require('path');
 
 const Application = require('spectron').Application;
 const chai = require('chai');
+const {ipcRenderer} = require('electron');
 
-const {getLocalURLString} = require('../../src/main/utils');
+const {SHOW_SETTINGS_WINDOW} = require('../../src/common/communication');
 chai.should();
 
 const sourceRootDir = path.join(__dirname, '../..');
@@ -55,12 +56,12 @@ module.exports = {
     getSpectronApp() {
         const options = {
             path: electronBinaryPath,
-            args: [`${path.join(sourceRootDir, 'src')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode'],
+            args: [`${path.join(sourceRootDir, 'dist')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode'],
             chromeDriverArgs: [],
-
-            // enable this if chromedriver hangs to see logs
-            // chromeDriverLogPath: '../chromedriverlog.txt',
         };
+        if (process.env.MM_DEBUG_SETTINGS) {
+            options.chromeDriverLogPath = './chromedriverlog.txt';
+        }
         if (process.platform === 'darwin' || process.platform === 'linux') {
             // on a mac, debbuging port might conflict with other apps
             // this changes the default debugging port so chromedriver can run without issues.
@@ -71,7 +72,7 @@ module.exports = {
 
     addClientCommands(client) {
         client.addCommand('loadSettingsPage', function async() {
-            return this.url(getLocalURLString('settings.html')).waitUntilWindowLoaded();
+            ipcRenderer.send(SHOW_SETTINGS_WINDOW);
         });
         client.addCommand('isNodeEnabled', function async() {
             return this.execute(() => {

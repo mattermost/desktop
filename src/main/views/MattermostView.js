@@ -34,13 +34,15 @@ export class MattermostView extends EventEmitter {
         const spellcheck = ((!options || typeof options.spellcheck === 'undefined') ? true : options.spellcheck);
         this.options = {
             webPreferences: {
-                contextIsolation: true,
+                contextIsolation: process.env.NODE_ENV !== 'test',
                 preload,
                 spellcheck,
                 additionalArguments: [
                     `version=${app.version}`,
                     `appName=${app.name}`,
                 ],
+                enableRemoteModule: true,
+                nodeIntegration: process.env.NODE_ENV === 'test',
             },
             ...options,
         };
