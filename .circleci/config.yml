@@ -461,7 +461,7 @@ workflows:
             - build-linux
             - build-win-no-installer
             - mac_installer
-      - upload_to_s3_daily
+      - upload_to_s3_daily:
           context: mattermost-desktop-daily-s3
           requires:
             - build-linux
