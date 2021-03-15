@@ -15,6 +15,7 @@ export const QUIT = 'quit';
 export const GET_CONFIGURATION = 'get-configuration';
 export const UPDATE_CONFIGURATION = 'update-configuration';
 export const GET_LOCAL_CONFIGURATION = 'get-local-configuration';
+export const RELOAD_CONFIGURATION = 'reload-config';
 
 export const UPDATE_TEAMS = 'update-teams';
 export const DARK_MODE_CHANGE = 'dark_mode_change';

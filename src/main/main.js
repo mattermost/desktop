@@ -28,6 +28,7 @@ import {
     NOTIFY_MENTION,
     GET_DOWNLOAD_LOCATION,
     SHOW_SETTINGS_WINDOW,
+    RELOAD_CONFIGURATION,
 } from 'common/communication';
 import Config from 'common/config';
 
@@ -206,7 +207,7 @@ function initializeBeforeAppReady() {
 }
 
 function initializeInterCommunicationEventListeners() {
-    ipcMain.on('reload-config', handleReloadConfig);
+    ipcMain.on(RELOAD_CONFIGURATION, handleReloadConfig);
     ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
     ipcMain.handle('get-app-version', handleAppVersion);
     ipcMain.on('update-menu', handleUpdateMenuEvent);
@@ -254,7 +255,7 @@ function handleConfigSynchronize() {
     // TODO: send this to server manager
     WindowManager.setConfig(config.data);
     if (app.isReady()) {
-        WindowManager.sendToRenderer('reload-config');
+        WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
     }
 }
 

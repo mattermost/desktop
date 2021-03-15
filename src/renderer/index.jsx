@@ -17,7 +17,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import {ipcRenderer} from 'electron';
 
-import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT} from 'common/communication';
+import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT, RELOAD_CONFIGURATION} from 'common/communication';
 
 import MainPage from './components/MainPage.jsx';
 class Root extends React.PureComponent {
@@ -33,7 +33,7 @@ class Root extends React.PureComponent {
             this.reloadConfig();
         });
 
-        ipcRenderer.on('reload-config', () => {
+        ipcRenderer.on(RELOAD_CONFIGURATION, () => {
             this.reloadConfig();
         });
 
