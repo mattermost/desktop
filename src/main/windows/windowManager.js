@@ -40,7 +40,7 @@ export function setConfig(data) {
         status.config = data;
     }
     if (status.viewManager) {
-        status.viewManager.reloadConfiguration(status.config.teams, status.mainWindow);
+        status.viewManager.reloadConfiguration(status.config.teams);
     }
 }
 
@@ -94,6 +94,10 @@ export function showMainWindow(deeplinkingURL) {
 
         if (process.env.MM_DEBUG_SETTINGS) {
             status.mainWindow.webContents.openDevTools({mode: 'detach'});
+        }
+
+        if (status.viewManager) {
+            status.viewManager.updateMainWindow(status.mainWindow);
         }
     }
     initializeViewManager();
@@ -159,8 +163,14 @@ export function sendToAll(channel, ...args) {
     // TODO: should we include popups?
 }
 
-// TODO: if settings is displayed, should we focus it instead?
+export function sendToMattermostViews(channel, ...args) {
+    if (status.viewManager) {
+        status.viewManager.sendToAllViews(channel, ...args);
+    }
+}
+
 export function restoreMain() {
+    log.info('restoreMain');
     if (!status.mainWindow) {
         showMainWindow();
     }
@@ -170,10 +180,16 @@ export function restoreMain() {
         } else {
             status.mainWindow.show();
         }
-        status.mainWindow.focus();
+        if (status.settingsWindow) {
+            status.settingsWindow.focus();
+        } else {
+            status.mainWindow.focus();
+        }
         if (process.platform === 'darwin') {
             app.dock.show();
         }
+    } else if (status.settingsWindow) {
+        status.settingsWindow.focus();
     } else {
         status.mainWindow.focus();
     }
@@ -277,8 +293,8 @@ export function handleDoubleClick(e, windowType) {
 
 function initializeViewManager() {
     if (!status.viewManager) {
-        status.viewManager = new ViewManager(status.config);
-        status.viewManager.load(status.mainWindow);
+        status.viewManager = new ViewManager(status.config, status.mainWindow);
+        status.viewManager.load();
         status.viewManager.showInitial();
     }
 }

@@ -21,21 +21,26 @@ const FINDER_WIDTH = 310;
 const FINDER_HEIGHT = 40;
 
 export class ViewManager {
-    constructor(config) {
+    constructor(config, mainWindow) {
         this.configServers = config.teams;
         this.viewOptions = {spellcheck: config.useSpellChecker};
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
         this.currentView = null;
         this.urlView = null;
+        this.mainWindow = mainWindow;
+    }
+
+    updateMainWindow = (mainWindow) => {
+        this.mainWindow = mainWindow;
     }
 
     getServers = () => {
         return this.configServers;
     }
 
-    loadServer = (server, mainWindow) => {
+    loadServer = (server) => {
         const srv = new MattermostServer(server.name, server.url);
-        const view = new MattermostView(srv, mainWindow, this.viewOptions);
+        const view = new MattermostView(srv, this.mainWindow, this.viewOptions);
         this.views.set(server.name, view);
         if (!this.loadingScreen) {
             this.createLoadingScreen();
@@ -45,13 +50,11 @@ export class ViewManager {
         view.on(UPDATE_TARGET_URL, this.showURLView);
     }
 
-    // TODO: we shouldn't pass the main window, but get it from windowmanager
-    // TODO: we'll need an event in case the main window changes so this updates accordingly
-    load = (mainWindow) => {
-        this.configServers.forEach((server) => this.loadServer(server, mainWindow));
+    load = () => {
+        this.configServers.forEach((server) => this.loadServer(server));
     }
 
-    reloadConfiguration = (configServers, mainWindow) => {
+    reloadConfiguration = (configServers) => {
         this.configServers = configServers.concat();
         const oldviews = this.views;
         this.views = new Map();
@@ -66,7 +69,7 @@ export class ViewManager {
                 oldviews.delete(recycle.name);
                 this.views.set(recycle.name, recycle);
             } else {
-                this.loadServer(server, mainWindow);
+                this.loadServer(server, this.mainWindow);
             }
         });
         oldviews.forEach((unused) => {
@@ -216,8 +219,7 @@ export class ViewManager {
 
     setFinderBounds = () => {
         if (this.finder) {
-            const currentWindow = this.getCurrentView().window;
-            const boundaries = currentWindow.getBounds();
+            const boundaries = this.mainWindow.getBounds();
             this.finder.setBounds({
                 x: boundaries.width - FINDER_WIDTH - (process.platform === 'darwin' ? 20 : 200),
                 y: 0,
@@ -235,8 +237,7 @@ export class ViewManager {
 
     hideFinder = () => {
         if (this.finder) {
-            const currentWindow = this.getCurrentView().window;
-            currentWindow.removeBrowserView(this.finder);
+            this.mainWindow.removeBrowserView(this.finder);
             this.finder = null;
         }
     }
@@ -263,8 +264,7 @@ export class ViewManager {
         }});
         const localURL = getLocalURLString('finder.html');
         this.finder.webContents.loadURL(localURL);
-        const currentWindow = this.getCurrentView().window;
-        currentWindow.addBrowserView(this.finder);
+        this.mainWindow.addBrowserView(this.finder);
         this.setFinderBounds();
 
         this.finder.webContents.focus();
@@ -272,8 +272,7 @@ export class ViewManager {
 
     setLoadingScreenBounds = () => {
         if (this.loadingScreen) {
-            const currentWindow = this.getCurrentView().window;
-            this.loadingScreen.setBounds(getWindowBoundaries(currentWindow));
+            this.loadingScreen.setBounds(getWindowBoundaries(this.mainWindow));
         }
     }
 
@@ -294,11 +293,10 @@ export class ViewManager {
 
         this.loadingScreen.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
 
-        const currentWindow = this.getCurrentView().window;
-        if (currentWindow.getBrowserViews().includes(this.loadingScreen)) {
-            currentWindow.setTopBrowserView(this.loadingScreen);
+        if (this.mainWindow.getBrowserViews().includes(this.loadingScreen)) {
+            this.mainWindow.setTopBrowserView(this.loadingScreen);
         } else {
-            currentWindow.addBrowserView(this.loadingScreen);
+            this.mainWindow.addBrowserView(this.loadingScreen);
         }
 
         this.setLoadingScreenBounds();
@@ -312,8 +310,7 @@ export class ViewManager {
 
     hideLoadingScreen = () => {
         if (this.loadingScreen) {
-            const currentWindow = this.getCurrentView().window;
-            currentWindow.removeBrowserView(this.loadingScreen);
+            this.mainWindow.removeBrowserView(this.loadingScreen);
         }
     }
 
@@ -363,4 +360,8 @@ export class ViewManager {
             }
         }
     };
+
+    sendToAllViews = (channel, ...args) => {
+        this.views.forEach((view) => view.view.webContents.send(channel, ...args));
+    }
 }

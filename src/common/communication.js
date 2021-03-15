@@ -19,6 +19,7 @@ export const RELOAD_CONFIGURATION = 'reload-config';
 
 export const UPDATE_TEAMS = 'update-teams';
 export const DARK_MODE_CHANGE = 'dark_mode_change';
+export const USER_ACTIVITY_UPDATE = 'user-activity-update';
 
 export const LOAD_RETRY = 'load_retry';
 export const LOAD_SUCCESS = 'load_success';

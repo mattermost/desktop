@@ -29,6 +29,7 @@ import {
     GET_DOWNLOAD_LOCATION,
     SHOW_SETTINGS_WINDOW,
     RELOAD_CONFIGURATION,
+    USER_ACTIVITY_UPDATE,
 } from 'common/communication';
 import Config from 'common/config';
 
@@ -496,17 +497,15 @@ function initializeAfterAppReady() {
 
     WindowManager.showMainWindow(deeplinkingURL);
 
-    // TODO: remove dev tools
     if (config.teams.length === 0) {
         WindowManager.showSettingsWindow();
     }
 
     criticalErrorHandler.setMainWindow(WindowManager.getMainWindow());
 
-    // TODO: this has to be sent to the tabs instead
     // listen for status updates and pass on to renderer
     userActivityMonitor.on('status', (status) => {
-        WindowManager.sendToRenderer('user-activity-update', status);
+        WindowManager.sendToMattermostViews(USER_ACTIVITY_UPDATE, status);
     });
 
     // start monitoring user activity (needs to be started after the app is ready)
