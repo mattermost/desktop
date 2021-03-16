@@ -292,7 +292,7 @@ jobs:
           command: |
             mv ./dist/macos-release ./dist/macos
             mkdir -p ./aws-s3-dist
-            cp ./dist/{macos,win,linux}/* ./aws-s3-dist
+            cp ./dist/{macos,win,linux} ./aws-s3-dist
       - aws-s3/copy:
           from: ./aws-s3-dist/
           to: s3://arn:aws:s3:::mattermost-desktop-daily-builds/
