@@ -19,7 +19,7 @@ export class DownloadNotification extends Notification {
         const options = {...defaultOptions};
         if (process.platform === 'win32') {
             options.icon = appIconURL;
-        } else if (process.platform === 'darwin') { // TODO: review
+        } else if (process.platform === 'darwin') {
             // Notification Center shows app's icon, so there were two icons on the notification.
             Reflect.deleteProperty(options, 'icon');
         }

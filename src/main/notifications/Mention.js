@@ -20,7 +20,7 @@ export const DEFAULT_WIN7 = 'Ding';
 export class Mention extends Notification {
     constructor(customOptions, channel, teamId) {
         const options = {...defaultOptions, ...customOptions};
-        if (process.platform === 'darwin') { // TODO: review
+        if (process.platform === 'darwin') {
             // Notification Center shows app's icon, so there were two icons on the notification.
             Reflect.deleteProperty(options, 'icon');
         }

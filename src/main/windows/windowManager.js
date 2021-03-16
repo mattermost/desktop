@@ -5,7 +5,7 @@ import path from 'path';
 import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain} from 'electron';
 import log from 'electron-log';
 
-import {MAXIMIZE_CHANGE, FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER, FOCUS_FINDER, HISTORY, GET_LOADING_SCREEN_DATA, REACT_APP_INITIALIZED, LOADING_SCREEN_ANIMATION_FINISHED} from 'common/communication';
+import {MAXIMIZE_CHANGE, FIND_IN_PAGE, STOP_FIND_IN_PAGE, CLOSE_FINDER, FOCUS_FINDER, HISTORY, GET_LOADING_SCREEN_DATA, REACT_APP_INITIALIZED, LOADING_SCREEN_ANIMATION_FINISHED, FOCUS_THREE_DOT_MENU} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
 import {getAdjustedWindowBoundaries} from '../utils';
@@ -40,7 +40,7 @@ export function setConfig(data) {
         status.config = data;
     }
     if (status.viewManager) {
-        status.viewManager.reloadConfiguration(status.config.teams, status.mainWindow);
+        status.viewManager.reloadConfiguration(status.config.teams);
     }
 }
 
@@ -89,9 +89,15 @@ export function showMainWindow(deeplinkingURL) {
         status.mainWindow.on('unmaximize', handleUnmaximizeMainWindow);
         status.mainWindow.on('resize', handleResizeMainWindow);
         status.mainWindow.on('focus', focusBrowserView);
+        status.mainWindow.on('enter-full-screen', () => sendToRenderer('enter-full-screen'));
+        status.mainWindow.on('leave-full-screen', () => sendToRenderer('leave-full-screen'));
 
         if (process.env.MM_DEBUG_SETTINGS) {
             status.mainWindow.webContents.openDevTools({mode: 'detach'});
+        }
+
+        if (status.viewManager) {
+            status.viewManager.updateMainWindow(status.mainWindow);
         }
     }
     initializeViewManager();
@@ -157,8 +163,14 @@ export function sendToAll(channel, ...args) {
     // TODO: should we include popups?
 }
 
-// TODO: if settings is displayed, should we focus it instead?
+export function sendToMattermostViews(channel, ...args) {
+    if (status.viewManager) {
+        status.viewManager.sendToAllViews(channel, ...args);
+    }
+}
+
 export function restoreMain() {
+    log.info('restoreMain');
     if (!status.mainWindow) {
         showMainWindow();
     }
@@ -168,10 +180,16 @@ export function restoreMain() {
         } else {
             status.mainWindow.show();
         }
-        status.mainWindow.focus();
+        if (status.settingsWindow) {
+            status.settingsWindow.focus();
+        } else {
+            status.mainWindow.focus();
+        }
         if (process.platform === 'darwin') {
             app.dock.show();
         }
+    } else if (status.settingsWindow) {
+        status.settingsWindow.focus();
     } else {
         status.mainWindow.focus();
     }
@@ -275,8 +293,8 @@ export function handleDoubleClick(e, windowType) {
 
 function initializeViewManager() {
     if (!status.viewManager) {
-        status.viewManager = new ViewManager(status.config);
-        status.viewManager.load(status.mainWindow);
+        status.viewManager = new ViewManager(status.config, status.mainWindow);
+        status.viewManager.load();
         status.viewManager.showInitial();
     }
 }
@@ -339,6 +357,13 @@ export function stopFindInPage(event, action) {
         if (activeView) {
             activeView.view.webContents.stopFindInPage(action);
         }
+    }
+}
+
+export function focusThreeDotMenu() {
+    if (status.mainWindow) {
+        status.mainWindow.webContents.focus();
+        status.mainWindow.webContents.send(FOCUS_THREE_DOT_MENU);
     }
 }
 

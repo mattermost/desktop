@@ -11,7 +11,7 @@ import {Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row, Button} f
 import {ipcRenderer} from 'electron';
 import {debounce} from 'underscore';
 
-import {GET_LOCAL_CONFIGURATION, UPDATE_CONFIGURATION, DOUBLE_CLICK_ON_WINDOW, GET_DOWNLOAD_LOCATION, SWITCH_SERVER} from 'common/communication';
+import {GET_LOCAL_CONFIGURATION, UPDATE_CONFIGURATION, DOUBLE_CLICK_ON_WINDOW, GET_DOWNLOAD_LOCATION, SWITCH_SERVER, ADD_SERVER, RELOAD_CONFIGURATION} from 'common/communication';
 
 import TeamList from './TeamList.jsx';
 import AutoSaveIndicator from './AutoSaveIndicator.jsx';
@@ -54,13 +54,13 @@ export default class SettingsPage extends React.PureComponent {
     }
 
     componentDidMount() {
-        ipcRenderer.on('add-server', () => {
+        ipcRenderer.on(ADD_SERVER, () => {
             this.setState({
                 showAddTeamForm: true,
             });
         });
 
-        ipcRenderer.on('reload-config', () => {
+        ipcRenderer.on(RELOAD_CONFIGURATION, () => {
             this.updateSaveState();
             this.getConfig();
         });

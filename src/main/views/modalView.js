@@ -6,8 +6,6 @@ import log from 'electron-log';
 
 import {getWindowBoundaries} from '../utils';
 
-// TODO: should we use windowmanager to get the currentwindow?
-
 const ACTIVE = 'active';
 const SHOWING = 'showing';
 const DONE = 'done';

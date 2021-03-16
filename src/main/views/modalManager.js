@@ -97,3 +97,13 @@ function handleModalCancel(event, data) {
 function filterActive() {
     modalQueue = modalQueue.filter((modal) => modal.isActive());
 }
+
+export function isModalDisplayed() {
+    return modalQueue.some((modal) => modal.isActive());
+}
+
+export function focusCurrentModal() {
+    if (isModalDisplayed()) {
+        modalQueue[0].view.webContents.focus();
+    }
+}

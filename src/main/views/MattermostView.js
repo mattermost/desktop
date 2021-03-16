@@ -62,6 +62,11 @@ export class MattermostView extends EventEmitter {
 
         this.isInitialized = false;
         this.hasBeenShown = false;
+
+        if (process.platform !== 'darwin') {
+            this.altLastPressed = false;
+            this.view.webContents.on('before-input-event', this.handleInputEvents);
+        }
     }
 
     // use the same name as the server
@@ -200,6 +205,22 @@ export class MattermostView extends EventEmitter {
             return this.window.webContents; // if it's not ready you are looking at the renderer process
         }
         return WindowManager.getMainWindow.webContents;
+    }
+
+    handleInputEvents = (_, input) => {
+        // Handler for pressing the Alt key to focus the 3-dot menu
+        if (input.key === 'Alt' && input.type === 'keyUp' && this.altLastPressed) {
+            this.altLastPressed = false;
+            WindowManager.focusThreeDotMenu();
+            return;
+        }
+
+        // Hack to detect keyPress so that alt+<key> combinations don't default back to the 3-dot menu
+        if (input.key === 'Alt' && input.type === 'keyDown') {
+            this.altLastPressed = true;
+        } else {
+            this.altLastPressed = false;
+        }
     }
 
     handleDidNavigate = (event, url) => {

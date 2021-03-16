@@ -13,19 +13,11 @@ if (process.env.NODE_ENV === 'production') {
     module.hot.accept();
 }
 
-// TODO: enable again, but for the moment seems to conflict with electron-webpack
-// window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
-//   import 'bootstrap/dist/css/bootstrap.min.css';
-//     throw new Error(`Sorry, ${remote.app.name} does not support window.eval() for security reasons.`);
-//   };
-
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {ipcRenderer} from 'electron';
 
-import urlUtils from 'common/utils/url';
-
-import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT} from 'common/communication';
+import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT, RELOAD_CONFIGURATION} from 'common/communication';
 
 import MainPage from './components/MainPage.jsx';
 class Root extends React.PureComponent {
@@ -41,7 +33,7 @@ class Root extends React.PureComponent {
             this.reloadConfig();
         });
 
-        ipcRenderer.on('reload-config', () => {
+        ipcRenderer.on(RELOAD_CONFIGURATION, () => {
             this.reloadConfig();
         });
 
@@ -53,14 +45,7 @@ class Root extends React.PureComponent {
 
     setInitialConfig = async () => {
         const config = await this.requestConfig(true);
-
-        const parsedURLSearchParams = urlUtils.parseURL(window.location.href).searchParams;
-        const parsedURLHasIndex = parsedURLSearchParams.has('index');
-        const initialIndex = parsedURLHasIndex ? parseInt(parsedURLSearchParams.get('index'), 10) : this.getInitialIndex(config.teams);
-        this.setState({
-            config,
-            initialIndex,
-        });
+        this.setState({config});
     }
 
     moveTabs = async (originalOrder, newOrder) => {
@@ -113,14 +98,6 @@ class Root extends React.PureComponent {
         return null;
     };
 
-    getInitialIndex = (teamList) => {
-        if (teamList) {
-            const element = teamList.find((e) => e.order === 0);
-            return element ? teamList.indexOf(element) : 0;
-        }
-        return 0;
-    }
-
     openMenu = () => {
         if (process.platform !== 'darwin') {
             ipcRenderer.send('open-app-menu');
@@ -128,7 +105,7 @@ class Root extends React.PureComponent {
     }
 
     render() {
-        const {config, initialIndex, deeplinkingUrl} = this.state;
+        const {config} = this.state;
         if (!config) {
             return null;
         }
@@ -136,11 +113,6 @@ class Root extends React.PureComponent {
         return (
             <MainPage
                 teams={config.teams}
-                localTeams={config.localTeams}
-                initialIndex={initialIndex}
-                onTeamConfigChange={this.teamConfigChange}
-                useSpellChecker={config.useSpellChecker}
-                deeplinkingUrl={deeplinkingUrl}
                 showAddServerButton={config.enableServerManagement}
                 moveTabs={this.moveTabs}
                 openMenu={this.openMenu}
