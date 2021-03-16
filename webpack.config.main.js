@@ -19,7 +19,6 @@ module.exports = merge(base, {
         index: './src/main/main.js',
         preload: './src/main/preload/mattermost.js',
         modalPreload: './src/main/preload/modalPreload.js',
-        finderPreload: './src/main/preload/finderPreload.js',
         loadingScreenPreload: './src/main/preload/loadingScreenPreload.js',
     },
     output: {
