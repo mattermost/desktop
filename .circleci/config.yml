@@ -289,7 +289,7 @@ jobs:
           at: ./dist
       - aws-s3/copy:
           from: ./dist/
-          to: s3://arn:aws:s3:::mattermost-desktop-daily-builds/
+          to: s3://mattermost-desktop-daily-builds/
           arguments: --acl public-read --cache-control "no-cache" --recursive
 
   upload_to_github:
