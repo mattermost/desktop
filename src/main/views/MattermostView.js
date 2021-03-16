@@ -242,8 +242,6 @@ export class MattermostView extends EventEmitter {
         }
     }
 
-    handleFoundInPage = (event, result) => WindowManager.foundInPage(result)
-
     titleParser = /(\((\d+)\) )?(\*)?/g
 
     handleTitleUpdate = (e, title) => {

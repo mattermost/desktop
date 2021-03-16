@@ -4,7 +4,7 @@ import log from 'electron-log';
 import {BrowserView, dialog} from 'electron';
 
 import {SECOND} from 'common/utils/constants';
-import {UPDATE_TARGET_URL, FOUND_IN_PAGE, SET_SERVER_KEY, LOAD_SUCCESS, LOAD_FAILED, TOGGLE_LOADING_SCREEN_VISIBILITY, GET_LOADING_SCREEN_DATA} from 'common/communication';
+import {UPDATE_TARGET_URL, SET_SERVER_KEY, LOAD_SUCCESS, LOAD_FAILED, TOGGLE_LOADING_SCREEN_VISIBILITY, GET_LOADING_SCREEN_DATA} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
 import contextMenu from '../contextMenu';
@@ -17,8 +17,6 @@ import {addWebContentsEventListeners} from './webContentEvents';
 
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 36;
-const FINDER_WIDTH = 310;
-const FINDER_HEIGHT = 40;
 
 export class ViewManager {
     constructor(config, mainWindow) {
@@ -216,59 +214,6 @@ export class ViewManager {
             };
         }
     }
-
-    setFinderBounds = () => {
-        if (this.finder) {
-            const boundaries = this.mainWindow.getBounds();
-            this.finder.setBounds({
-                x: boundaries.width - FINDER_WIDTH - (process.platform === 'darwin' ? 20 : 200),
-                y: 0,
-                width: FINDER_WIDTH,
-                height: FINDER_HEIGHT,
-            });
-        }
-    }
-
-    focusFinder = () => {
-        if (this.finder) {
-            this.finder.webContents.focus();
-        }
-    }
-
-    hideFinder = () => {
-        if (this.finder) {
-            this.mainWindow.removeBrowserView(this.finder);
-            this.finder = null;
-        }
-    }
-
-    foundInPage = (result) => {
-        if (this.finder) {
-            this.finder.webContents.send(FOUND_IN_PAGE, result);
-        }
-    };
-
-    showFinder = () => {
-        // just focus the current finder if it's already open
-        if (this.finder) {
-            this.finder.webContents.focus();
-            return;
-        }
-
-        const preload = getLocalPreload('finderPreload.js');
-        this.finder = new BrowserView({webPreferences: {
-            contextIsolation: process.env.NODE_ENV !== 'test',
-            preload,
-            nodeIntegration: process.env.NODE_ENV === 'test',
-            enableRemoteModule: process.env.NODE_ENV === 'test', // TODO: try to use this only on testing
-        }});
-        const localURL = getLocalURLString('finder.html');
-        this.finder.webContents.loadURL(localURL);
-        this.mainWindow.addBrowserView(this.finder);
-        this.setFinderBounds();
-
-        this.finder.webContents.focus();
-    };
 
     setLoadingScreenBounds = () => {
         if (this.loadingScreen) {
