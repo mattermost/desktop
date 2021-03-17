@@ -287,6 +287,9 @@ jobs:
       - checkout
       - attach_workspace:
           at: ./dist
+      - run:
+        command: |
+        mv ./dist/macos-release ./dist/macos
       - aws-s3/copy:
           from: ./dist/
           to: s3://mattermost-desktop-daily-builds/
