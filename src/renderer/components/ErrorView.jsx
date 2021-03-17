@@ -8,28 +8,12 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {Grid, Row, Col} from 'react-bootstrap';
 
-import {SECOND} from 'common/utils/constants';
-
-//import {ipcRenderer} from 'electron';
-// import {OPEN_EXTERNAL} from 'common/communication';
-
 export default function ErrorView(props) {
     const classNames = ['container', 'ErrorView'];
     if (!props.active) {
         classNames.push('ErrorView-hidden');
     }
 
-    // function handleClick(event) {
-    //   event.preventDefault();
-    //   console.log('TODO: send to main');
-    //   ipcRenderer.send(OPEN_EXTERNAL, props.url);
-    // }
-
-    let retry = null;
-    if (props.retry) {
-        const seconds = (Date.now() - props.retry) / SECOND;
-        retry = <div className='retry-info'><p>{`Trying to load again in ${seconds}`}</p></div>;
-    }
     return (
         <Grid
             id={props.id}
@@ -81,7 +65,6 @@ export default function ErrorView(props) {
                             <div className='ErrorView-techInfo'>
                                 {props.errorInfo}
                             </div>
-                            {retry}
                         </Col>
                         <Col
                             xs={0}
@@ -101,6 +84,5 @@ ErrorView.propTypes = {
     url: PropTypes.string,
     id: PropTypes.string,
     active: PropTypes.bool,
-    retry: PropTypes.number,
     appName: PropTypes.string,
 };

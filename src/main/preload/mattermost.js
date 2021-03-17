@@ -9,7 +9,7 @@
 import {ipcRenderer, webFrame} from 'electron';
 import log from 'electron-log';
 
-import {NOTIFY_MENTION, IS_UNREAD, UNREAD_RESULT, SESSION_EXPIRED, SET_SERVER_NAME, REACT_APP_INITIALIZED} from 'common/communication';
+import {NOTIFY_MENTION, IS_UNREAD, UNREAD_RESULT, SESSION_EXPIRED, SET_SERVER_NAME, REACT_APP_INITIALIZED, USER_ACTIVITY_UPDATE} from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
@@ -60,15 +60,6 @@ window.addEventListener('load', () => {
     watchReactAppUntilInitialized(() => {
         ipcRenderer.send(REACT_APP_INITIALIZED, serverName);
     });
-});
-
-// Sent for drag and drop tabs to work properly
-document.addEventListener('mousemove', (event) => {
-    ipcRenderer.sendToHost('mouse-move', {clientX: event.clientX, clientY: event.clientY});
-});
-
-document.addEventListener('mouseup', () => {
-    ipcRenderer.sendToHost('mouse-up');
 });
 
 const parentTag = (target) => {
@@ -194,9 +185,9 @@ function getUnreadCount() {
 setInterval(getUnreadCount, UNREAD_COUNT_INTERVAL);
 
 // push user activity updates to the webapp
-ipcRenderer.on('user-activity-update', (event, {userIsActive, isSystemEvent}) => {
+ipcRenderer.on(USER_ACTIVITY_UPDATE, (event, {userIsActive, isSystemEvent}) => {
     if (window.location.origin !== 'null') {
-        window.postMessage({type: 'user-activity-update', message: {userIsActive, manual: isSystemEvent}}, window.location.origin);
+        window.postMessage({type: USER_ACTIVITY_UPDATE, message: {userIsActive, manual: isSystemEvent}}, window.location.origin);
     }
 });
 

@@ -100,7 +100,6 @@ export default class Config extends EventEmitter {
             this.saveLocalConfigData();
         }
 
-        // TODO: send ipc communication with new config
         return this.localConfigData; //this is the only part that changes
     }
 

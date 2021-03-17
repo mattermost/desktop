@@ -29,16 +29,13 @@ export default class TabBar extends React.PureComponent { // need "this"
         const orderedTabs = this.props.teams.concat().sort((a, b) => a.order - b.order);
         const tabs = orderedTabs.map((team) => {
             const index = this.props.teams.indexOf(team);
-            const sessionExpired = this.props.sessionsExpired[index];
 
+            const sessionExpired = this.props.sessionsExpired[index];
             const hasUnreads = this.props.unreadCounts[index];
 
             let mentionCount = 0;
             if (this.props.mentionCounts[index] > 0) {
                 mentionCount = this.props.mentionCounts[index];
-            }
-            if (this.props.mentionAtActiveCounts[index] > 0) {
-                mentionCount += this.props.mentionAtActiveCounts[index];
             }
 
             let badgeDiv;
@@ -147,11 +144,9 @@ TabBar.propTypes = {
     isDarkMode: PropTypes.bool,
     onSelect: PropTypes.func,
     teams: PropTypes.array,
-    sessionsExpired: PropTypes.array,
+    sessionsExpired: PropTypes.object,
     unreadCounts: PropTypes.object,
-    unreadAtActive: PropTypes.array,
     mentionCounts: PropTypes.object,
-    mentionAtActiveCounts: PropTypes.array,
     showAddServerButton: PropTypes.bool,
     onAddServer: PropTypes.func,
     onDrop: PropTypes.func,

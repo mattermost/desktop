@@ -9,7 +9,6 @@ import urlUtils from 'common/utils/url';
 let disposeCurrent;
 let menuOptions = {
     shouldShowMenu: (e, p) => {
-    // TODO: remove copy link from internal links (like the team)
         const isInternalLink = p.linkURL.endsWith('#') && p.linkURL.slice(0, -1) === p.pageURL;
         let isInternalSrc;
         try {

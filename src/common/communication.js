@@ -15,9 +15,11 @@ export const QUIT = 'quit';
 export const GET_CONFIGURATION = 'get-configuration';
 export const UPDATE_CONFIGURATION = 'update-configuration';
 export const GET_LOCAL_CONFIGURATION = 'get-local-configuration';
+export const RELOAD_CONFIGURATION = 'reload-config';
 
 export const UPDATE_TEAMS = 'update-teams';
 export const DARK_MODE_CHANGE = 'dark_mode_change';
+export const USER_ACTIVITY_UPDATE = 'user-activity-update';
 
 export const LOAD_RETRY = 'load_retry';
 export const LOAD_SUCCESS = 'load_success';
@@ -57,7 +59,6 @@ export const CLOSE_FINDER = 'close-finder';
 export const FOCUS_FINDER = 'focus-finder';
 
 export const UPDATE_MENTIONS = 'update_mentions';
-export const UPDATE_UNREADS = 'update_unreads';
 export const IS_UNREAD = 'is_unread';
 export const UNREAD_RESULT = 'unread_result';
 export const SESSION_EXPIRED = 'session_expired';
@@ -76,3 +77,7 @@ export const GET_LOADING_SCREEN_DATA = 'get-loading-screen-data';
 export const LOADING_SCREEN_ANIMATION_FINISHED = 'loading-screen-animation-finished';
 export const TOGGLE_LOADING_SCREEN_VISIBILITY = 'toggle-loading-screen-visibility';
 
+export const SELECT_NEXT_TAB = 'select-next-tab';
+export const SELECT_PREVIOUS_TAB = 'select-previous-tab';
+export const ADD_SERVER = 'add-server';
+export const FOCUS_THREE_DOT_MENU = 'focus-three-dot-menu';
