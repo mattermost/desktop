@@ -288,8 +288,9 @@ jobs:
       - attach_workspace:
           at: ./dist
       - run:
+          name: "Normalize folder names"
           command: |
-          mv ./dist/macos-release ./dist/macos
+            mv ./dist/macos-release ./dist/macos
       - aws-s3/copy:
           from: ./dist/
           to: s3://mattermost-desktop-daily-builds/
