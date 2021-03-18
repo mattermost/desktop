@@ -13,6 +13,8 @@ const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
 let trayImages;
 let trayIcon;
+let lastStatus = 'normal';
+let lastMessage = app.name;
 
 export function refreshTrayImages(trayIconTheme) {
     switch (process.platform) {
@@ -61,6 +63,9 @@ export function refreshTrayImages(trayIconTheme) {
     }
     default:
         trayImages = {};
+    }
+    if (trayIcon) {
+        setTray(lastStatus, lastMessage);
     }
     return trayImages;
 }
@@ -114,6 +119,8 @@ export function setupTray(icontheme) {
 }
 
 function setTray(status, message) {
+    lastStatus = status;
+    lastMessage = message;
     trayIcon.setImage(trayImages[status]);
     if (process.platform === 'darwin') {
         trayIcon.setPressedImage(trayImages.clicked[status]);
