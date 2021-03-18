@@ -5,7 +5,7 @@ parameters:
     type: boolean
 orbs:
   win: circleci/windows@1.0.0
-  aws-s3: circleci/aws-s3@1.0.11
+  aws-s3: circleci/aws-s3@2.0.0
   owasp: entur/owasp@0.0.10
 
 executors:
@@ -281,6 +281,21 @@ jobs:
           to: s3://releases.mattermost.com/desktop/$(jq -r .version package.json)/
           arguments: --acl public-read --cache-control "no-cache" --recursive
 
+  upload_to_s3_daily:
+    executor: aws
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ./dist
+      - run:
+          name: "Normalize folder names"
+          command: |
+            mv ./dist/macos-release ./dist/macos
+      - aws-s3/copy:
+          from: ./dist/
+          to: s3://mattermost-desktop-daily-builds/
+          arguments: --acl public-read --cache-control "no-cache" --recursive
+
   upload_to_github:
     executor: github
     steps:
@@ -441,6 +456,12 @@ workflows:
           context: codesign-certificates
       - store_artifacts:
           # for master/PR builds
+          requires:
+            - build-linux
+            - build-win-no-installer
+            - mac_installer
+      - upload_to_s3_daily:
+          context: mattermost-desktop-daily-s3
           requires:
             - build-linux
             - build-win-no-installer
