@@ -26,12 +26,8 @@ function write_package_version {
     jq ".version = \"${1}\"" ./package.json > "${temp_file}" && mv "${temp_file}" ./package.json
     temp_file="$(mktemp -t package-lock.json)"
     jq ".version = \"${1}\"" ./package-lock.json > "${temp_file}" && mv "${temp_file}" ./package-lock.json
-    temp_file="$(mktemp -t src-package.json)"
-    jq ".version = \"${1}\"" ./src/package.json > "${temp_file}" && mv "${temp_file}" ./src/package.json
-    temp_file="$(mktemp -t src-package-lock.json)"
-    jq ".version = \"${1}\"" ./src/package-lock.json > "${temp_file}" && mv "${temp_file}" ./src/package-lock.json
     
-    git add ./package.json ./package-lock.json ./src/package.json ./src/package-lock.json
+    git add ./package.json ./package-lock.json
     git commit -qm "Bump to version ${1}"
 }
 

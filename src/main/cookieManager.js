@@ -2,22 +2,23 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import {app} from 'electron';
+import log from 'electron-log';
 
 function flushCookiesStore(session) {
-  session.cookies.flushStore().catch((err) => {
-    console.log(`There was a problem flushing cookies:\n${err}`);
-  });
+    session.cookies.flushStore().catch((err) => {
+        log.error(`There was a problem flushing cookies:\n${err}`);
+    });
 }
 
 export default function initCookieManager(session) {
-  // Somehow cookies are not immediately saved to disk.
-  // So manually flush cookie store to disk on closing the app.
-  // https://github.com/electron/electron/issues/8416
-  app.on('before-quit', () => {
-    flushCookiesStore(session);
-  });
+    // Somehow cookies are not immediately saved to disk.
+    // So manually flush cookie store to disk on closing the app.
+    // https://github.com/electron/electron/issues/8416
+    app.on('before-quit', () => {
+        flushCookiesStore(session);
+    });
 
-  app.on('browser-window-blur', () => {
-    flushCookiesStore(session);
-  });
+    app.on('browser-window-blur', () => {
+        flushCookiesStore(session);
+    });
 }

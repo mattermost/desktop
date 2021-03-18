@@ -1,0 +1,261 @@
+.TabBar {
+  border: none;
+  max-height: 36px;
+  flex: 1 1 auto;
+  display: flex !important;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  -webkit-app-region: drag;
+  margin-top: 4px;
+}
+
+.TabBar.darkMode {
+  background-color: #202124;
+}
+
+.TabBar .teamTabItem span {
+  flex: 0 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.TabBar>li {
+  -webkit-app-region: no-drag;
+  -webkit-user-select: none;
+  min-width: 48px;
+}
+
+.TabBar>li>a {
+  border: none;
+  border-radius: 0;
+  height: 32px;
+  max-height: 32px;
+  line-height: 16px;
+  margin-right: -1px;
+  padding: 6px 0;
+  color: rgba(61,60,64,0.7);
+  font-family: Arial;
+  font-size: 14px;
+  letter-spacing: -0.2px;
+  transition: 0.3s;
+}
+
+.TabBar.darkMode>li>a {
+  color: rgba(243,243,243,0.7);
+}
+
+.TabBar>li>a:hover {
+  background-color: rgba(255,255,255,0.4);
+  text-decoration: none;
+  border-radius: 6px 6px 0 0;
+}
+
+.TabBar.darkMode>li>a:hover {
+  background-color: rgba(50, 54, 57, 0.4);
+}
+
+.TabBar>li>a:focus {
+  background-color: #fff;
+  color: rgba(61,60,64,1);
+  text-decoration: none;
+  border-radius: 6px 6px 0 0;
+}
+
+.TabBar.darkMode>li>a:focus {
+  background-color: #323639;
+  color: rgba(243,243,243,1);
+}
+
+.TabBar>li:before, .TabBar>li:after {
+  position: absolute;
+  bottom: -1px;
+  width: 6px;
+  height: 6px;
+  content: "";
+  background-color: inherit;
+  z-index: 9;
+  flex: 0 0 6px;
+} 
+
+.TabBar>li.teamTabItem.active:before, .TabBar>li.teamTabItem.smooth-dnd-ghost:before {
+  left: -4px;
+  border-bottom-right-radius: 6px;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  z-index: 9;
+}
+
+.TabBar.darkMode>li.teamTabItem.active:before, .TabBar.darkMode>li.teamTabItem.smooth-dnd-ghost:before {
+  border-right: 2px solid #323639;
+  border-bottom: 2px solid #323639;
+}
+
+.TabBar>li.teamTabItem.active:after, .TabBar>li.teamTabItem.smooth-dnd-ghost:after {
+  border-bottom-left-radius: 6px;
+  right: -5px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  z-index: 9;
+}
+
+.TabBar.darkMode>li.teamTabItem.active:after, .TabBar.darkMode>li.teamTabItem.smooth-dnd-ghost:after {
+  border-left: 2px solid #323639;
+  border-bottom: 2px solid #323639;
+}
+
+.TabBar>li>a>div.TabBar-tabSeperator {
+  padding: 2px 16px;
+  max-height: 20px;
+  display: flex;
+}
+
+.TabBar>li.TabBar-addServerButton{
+  transition: none !important;
+  transform: none !important;
+  flex: 0 0 auto;
+  min-width: 40px;
+}
+
+.TabBar>li.TabBar-addServerButton>a{
+  color: rgba(61,60,64,0.7);
+  transition: opacity 0.3s ease-in;
+}
+
+.TabBar>li.TabBar-addServerButton svg{
+  margin: -2px;
+}
+
+.TabBar.darkMode>li.TabBar-addServerButton>a{
+  color: rgba(243,243,243,0.7);
+}
+
+.TabBar>li.teamTabItem.active>a, .TabBar>li.teamTabItem.smooth-dnd-ghost>a {
+  border: none;
+  border-radius: 6px 6px 0 0;
+  color: rgba(61,60,64,1);
+  background-color: #fff;
+  z-index: 9;
+}
+
+.smooth-dnd-no-user-select li.TabBar-addServerButton>a {
+  opacity: 0;
+}
+
+.TabBar.darkMode>li.teamTabItem.active>a, .TabBar.darkMode>li.teamTabItem.smooth-dnd-ghost>a {
+  color: #f3f3f3;
+  background-color: #323639;
+}
+
+.TabBar>li.teamTabItem:not(.active)+.TabBar-addServerButton>a>div.TabBar-tabSeperator {
+  border-left: 1px solid rgba(61,60,64,0.2);
+  margin-left: -1px;
+}
+
+.TabBar>li.teamTabItem:not(.active)+li.teamTabItem:not(.active)>a>div.TabBar-tabSeperator {
+  border-left: 1px solid rgba(61,60,64,0.2);
+  margin-left: -1px;
+}
+
+.TabBar.darkMode>li.teamTabItem:not(.active)+.TabBar-addServerButton>a>div.TabBar-tabSeperator {
+  border-left: 1px solid rgba(243,243,243,0.2);
+  margin-left: -1px;
+}
+
+.TabBar.darkMode>li.teamTabItem:not(.active)+li.teamTabItem:not(.active)>a>div.TabBar-tabSeperator {
+  border-left: 1px solid rgba(243,243,243,0.2);
+  margin-left: -1px;
+}
+
+.TabBar>li.teamTabItem:not(.active):not(.disabled):hover+.TabBar-addServerButton>a>div.TabBar-tabSeperator {
+  border-left: none;
+  margin-left: 0px;
+}
+
+.TabBar>li.teamTabItem:not(.active):not(.disabled):hover+li.teamTabItem:not(.active)>a>div.TabBar-tabSeperator {
+  border-left: none;
+  margin-left: 0px;
+}
+
+.TabBar>li.teamTabItem:not(.active):not(.disabled)+.TabBar-addServerButton>a:hover>div.TabBar-tabSeperator {
+  border-left: none;
+  margin-left: 0px;
+}
+
+.TabBar>li.teamTabItem:not(.active):not(.disabled)+li.teamTabItem:not(.active)>a:hover>div.TabBar-tabSeperator {
+  border-left: none;
+  margin-left: 0px;
+}
+
+.TabBar .TabBar-addServerButton>a {
+  border: none;
+  background: transparent;
+  color: #999;
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.TabBar.darkMode .TabBar-addServerButton>a {
+  color: rgba(243,243,243,0.7);
+}
+
+.TabBar .TabBar-dot {
+  background: #579EFF;
+  float: right;
+  height: 6px;
+  width: 6px;
+  margin-top: 5px;
+  margin-left: 8px;
+  border-radius: 4px;
+  flex: 0 0 6px;
+}
+
+.TabBar .TabBar-expired {
+  float: right;
+  height: 16px;
+  width: 16px;
+  margin-left: 8px;
+  background-image: url(../../../assets/icon-session-expired.svg);
+  flex: 0 0 16px;
+}
+
+.TabBar.darkMode .TabBar-expired {
+  filter: invert(100%);
+  -webkit-filter: invert(100%);
+}
+
+.TabBar .TabBar-badge {
+  background: #CB2431;
+  float: right;
+  color: white;
+  font-size: 11px;
+  text-align: center;
+  line-height: 18px;
+  height: 18px;
+  margin-left: 8px;
+  border-radius: 100px;
+  padding: 0 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: "Open Sans", sans-serif;
+  font-weight: bold;
+  min-width: 18px;
+  margin-top: -1px;
+  letter-spacing: normal;
+  -webkit-font-smoothing: antialiased;
+  flex: 1 0 18px;
+}
+
+.TabBar .TabBar-badge.TabBar-badge-nomention:after {
+  content: "";
+  width: 4px;
+  height: 4px;
+  background: #fff;
+  display: block;
+  border-radius: 50%;
+}
+
+.TabBar .teamTabItem-unread {
+  font-weight: bold;
+}

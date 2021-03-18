@@ -1,0 +1,79 @@
+.finder {
+  position: fixed;
+  top: 0px;
+  padding: 4px;
+  background: #eee;
+  border: 1px solid #d7d7d7;
+  border-top: none;
+  border-right: none;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  font-size: 0px;
+  -webkit-app-region: no-drag;
+}
+
+.finder-input-wrapper {
+  display: inline-block;
+  position: relative;
+  vertical-align: bottom;
+}
+
+.finder button {
+  border: none;
+  background: #f0f0f0;
+  outline: none;
+  height: 26px;
+}
+
+.finder button:hover {
+  background: #d2d2d2;
+}
+
+.finder-input {
+  border: 1px solid #d2d2d2;
+  border-radius: 3px;
+  width: 200px;
+  outline: none;
+  line-height: 24px;
+  font-size: 14px;
+  padding: 0px 35px 0px 5px;
+  vertical-align: baseline;
+}
+
+.finder-input:focus {
+  border-color: #35b5f4;
+  box-shadow: 0 0 1px #35b5f4;
+}
+
+.finder-progress__disabled {
+  display: none;
+}
+
+.finder-progress {
+  position: absolute;
+  font-size: 12px;
+  right: 8px;
+  top: 6px;
+  color: #7b7b7b;
+}
+
+.icon {
+  height: 18px;
+  width: 18px;
+}
+
+.finder .finder-close {
+    border-radius: 3px;
+}
+
+.finder-next {
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    margin-right: 2px;
+}
+
+.finder-prev {
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+  margin-left: 2px;
+}

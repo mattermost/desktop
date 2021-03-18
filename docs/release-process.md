@@ -34,7 +34,7 @@ No pull requests for features should be merged to the current release after this
     - Confirm date of marketing announcement for the release and update Desktop App channel header if needed
 2. Dev/PM/QA:
     - Prioritize reviewing, testing, and merging of pull requests for current release until there are no more tickets in the [pull request queue](https://github.com/mattermost/desktop/pulls) marked for the current release
-    - Verify `version` in [package.json](https://github.com/mattermost/desktop/blob/master/package.json) and [src/package.json](https://github.com/mattermost/desktop/blob/master/src/package.json) are updated to the new release version
+    - Verify `version` in [package.json](https://github.com/mattermost/desktop/blob/master/package.json) is updated to the new release version
     - Master is tagged and branched and "Release Candidate 1" is cut (e.g. 1.1.0-RC1)
 3. Marketing:
     - Tweet announcement that RC1 is ready

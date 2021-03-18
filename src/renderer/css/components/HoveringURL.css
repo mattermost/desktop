@@ -1,0 +1,30 @@
+.HoveringURL {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  color: gray;
+  background-color: whitesmoke;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 0px;
+  padding-right: 16px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  border-top: solid thin lightgray;
+  pointer-events: none;
+  margin: 0;
+}
+
+.HoveringURL-left {
+  border-top-right-radius: 4px;
+  border-right: solid thin lightgray;
+}
+
+.HoveringURL p {
+  margin: 0;
+  font-size: small;
+  font-family: "Open Sans", sans-serif;
+  padding-left: 4px;
+  padding-right: 4px;
+}

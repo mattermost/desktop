@@ -107,3 +107,10 @@ Mattermost Desktop
 - **node_modules/** - Third party Node.js modules to develop and build the application.
 - **release/** - Packaged distributable applications.
 - **src/node_modules/** - Third party Node.js modules to use in the application.
+
+
+### Developer tools for debugging
+While you can access the developer tools for the renderer and current browserview, there are some other that usually don't need access. With the new browserview you can automatically call for the devtools when showing the settings window or any of the modals. To do so you'll need to setup environment variables:
+
+- MM_DEBUG_SETTINGS for the new settings window
+- MM_DEBUG_MODALS for any modal that needs to be debugged. Currently we can't target only one specifically.

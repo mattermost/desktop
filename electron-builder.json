@@ -7,17 +7,19 @@
   "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
   "directories": {
     "buildResources": "resources",
-    "app": "src",
     "output": "release"
   },
+  "extraMetadata": {
+    "main": "index.js"
+  },
   "files": [
-    "main_bundle.js",
-    "browser/**/*{.html,.css,_bundle.js,.svg,.png}",
-    "assets/**/*",
-    "browser/assets/fonts/*",
     "node_modules/bootstrap/dist/**",
     "node_modules/font-awesome/{css,fonts}/**",
-    "node_modules/simple-spellchecker/dict/*.dic"
+    {
+      "from": "dist",
+      "to": ".",
+      "filter": "**/*"
+    }
   ],
   "protocols": [
     {
@@ -35,7 +37,7 @@
   "afterPack": "scripts/afterpack.js",
   "afterSign": "scripts/notarize.js",
   "deb": {
-    "synopsis": "Mattermost"
+    "synopsis": "Mattermost Desktop App"
   },
   "linux": {
     "category": "Network;InstantMessaging",
@@ -124,4 +126,3 @@
     "artifactName": "${name}-setup-${version}-win.${ext}"
   }
 }
-
