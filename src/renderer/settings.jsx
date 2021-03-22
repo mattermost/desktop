@@ -8,14 +8,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'renderer/css/index.css';
 import 'renderer/css/settings.css';
 
-if (process.env.NODE_ENV === 'production') {
-    window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
-        throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
-    };
-} else if (module.hot) {
-    module.hot.accept();
-}
-
 import React from 'react';
 import ReactDOM from 'react-dom';
 
