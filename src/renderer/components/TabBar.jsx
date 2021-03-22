@@ -3,7 +3,6 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 
 import React from 'react';
-import {ipcRenderer} from 'electron';
 import PropTypes from 'prop-types';
 import {Nav, NavItem} from 'react-bootstrap';
 import {Container, Draggable} from 'react-smooth-dnd';
@@ -20,7 +19,7 @@ export default class TabBar extends React.PureComponent { // need "this"
     }
 
     componentDidMount() {
-        ipcRenderer.invoke(GET_CONFIGURATION).then((config) => {
+        window.ipcRenderer.invoke(GET_CONFIGURATION).then((config) => {
             this.setState({hasGPOTeams: config.registryTeams && config.registryTeams.length > 0});
         });
     }

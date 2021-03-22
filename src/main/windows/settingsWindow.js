@@ -4,17 +4,19 @@
 import {BrowserWindow} from 'electron';
 import log from 'electron-log';
 
-import {getLocalURLString} from '../utils';
+import {getLocalPreload, getLocalURLString} from '../utils';
 
 export function createSettingsWindow(mainWindow, config, withDevTools) {
+    const preload = getLocalPreload('mainWindow.js');
     const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
     const settingsWindow = new BrowserWindow({
         ...config.data,
         parent: mainWindow,
         title: 'Desktop App Settings',
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload,
             spellcheck,
             enableRemoteModule: process.env.NODE_ENV === 'test',
         }});
