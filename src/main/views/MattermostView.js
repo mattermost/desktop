@@ -14,6 +14,8 @@ import {getWindowBoundaries, getLocalPreload} from '../utils';
 import * as WindowManager from '../windows/windowManager';
 import * as appState from '../appState';
 
+import {removeWebContentsListeners} from './webContentEvents';
+
 // copying what webview sends
 // TODO: review
 const userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.146 Electron/6.1.7 Safari/537.36 Mattermost/${app.getVersion()}`;
@@ -165,6 +167,7 @@ export class MattermostView extends EventEmitter {
         if (this.retryLoad) {
             clearTimeout(this.retryLoad);
         }
+        removeWebContentsListeners(this.view.webContents.id);
         if (this.window) {
             this.window.removeBrowserView(this.view);
         }
