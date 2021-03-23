@@ -7,7 +7,7 @@ import url from 'url';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import propTypes from 'prop-types';
-import {ipcRenderer, remote} from 'electron';
+import {remote} from 'electron';
 
 import UpdaterPage from './components/UpdaterPage.jsx';
 
