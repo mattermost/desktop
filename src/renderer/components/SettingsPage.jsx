@@ -8,7 +8,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row, Button} from 'react-bootstrap';
 
-import {ipcRenderer} from 'electron';
 import {debounce} from 'underscore';
 
 import {GET_LOCAL_CONFIGURATION, UPDATE_CONFIGURATION, DOUBLE_CLICK_ON_WINDOW, GET_DOWNLOAD_LOCATION, SWITCH_SERVER, ADD_SERVER, RELOAD_CONFIGURATION} from 'common/communication';
@@ -20,7 +19,7 @@ const CONFIG_TYPE_SERVERS = 'servers';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
 function backToIndex(serverName) {
-    ipcRenderer.send(SWITCH_SERVER, serverName);
+    window.ipcRenderer.send(SWITCH_SERVER, serverName);
     window.close();
 }
 
@@ -54,20 +53,20 @@ export default class SettingsPage extends React.PureComponent {
     }
 
     componentDidMount() {
-        ipcRenderer.on(ADD_SERVER, () => {
+        window.ipcRenderer.on(ADD_SERVER, () => {
             this.setState({
                 showAddTeamForm: true,
             });
         });
 
-        ipcRenderer.on(RELOAD_CONFIGURATION, () => {
+        window.ipcRenderer.on(RELOAD_CONFIGURATION, () => {
             this.updateSaveState();
             this.getConfig();
         });
     }
 
     getConfig = () => {
-        ipcRenderer.invoke(GET_LOCAL_CONFIGURATION).then((config) => {
+        window.ipcRenderer.invoke(GET_LOCAL_CONFIGURATION).then((config) => {
             this.setState({ready: true, maximized: false, ...this.convertConfigDataToState(config)});
         });
     }
@@ -98,7 +97,7 @@ export default class SettingsPage extends React.PureComponent {
     }
 
     processSaveQueue = debounce(() => {
-        ipcRenderer.send(UPDATE_CONFIGURATION, this.saveQueue.splice(0, this.saveQueue.length));
+        window.ipcRenderer.send(UPDATE_CONFIGURATION, this.saveQueue.splice(0, this.saveQueue.length));
     }, 500);
 
     updateSaveState = () => {
@@ -135,7 +134,7 @@ export default class SettingsPage extends React.PureComponent {
     }, 2000);
 
     handleTeamsChange = (teams) => {
-        setImmediate(this.saveSetting, CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
         this.setState({
             showAddTeamForm: false,
             teams,
@@ -147,12 +146,12 @@ export default class SettingsPage extends React.PureComponent {
 
     handleChangeShowTrayIcon = () => {
         const shouldShowTrayIcon = !this.showTrayIconRef.current.props.checked;
-        setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'showTrayIcon', data: shouldShowTrayIcon});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'showTrayIcon', data: shouldShowTrayIcon});
         this.setState({
             showTrayIcon: shouldShowTrayIcon,
         });
 
-        if (process.platform === 'darwin' && !shouldShowTrayIcon) {
+        if (window.process.platform === 'darwin' && !shouldShowTrayIcon) {
             this.setState({
                 minimizeToTray: false,
             });
@@ -160,14 +159,14 @@ export default class SettingsPage extends React.PureComponent {
     }
 
     handleChangeTrayIconTheme = (theme) => {
-        setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'trayIconTheme', data: theme});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'trayIconTheme', data: theme});
         this.setState({
             trayIconTheme: theme,
         });
     }
 
     handleChangeAutoStart = () => {
-        setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'autostart', data: !this.autostartRef.current.props.checked});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'autostart', data: !this.autostartRef.current.props.checked});
         this.setState({
             autostart: !this.autostartRef.current.props.checked,
         });
@@ -176,7 +175,7 @@ export default class SettingsPage extends React.PureComponent {
     handleChangeMinimizeToTray = () => {
         const shouldMinimizeToTray = this.state.showTrayIcon && !this.minimizeToTrayRef.current.props.checked;
 
-        setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'minimizeToTray', data: shouldMinimizeToTray});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'minimizeToTray', data: shouldMinimizeToTray});
         this.setState({
             minimizeToTray: shouldMinimizeToTray,
         });
@@ -196,7 +195,7 @@ export default class SettingsPage extends React.PureComponent {
     }
 
     handleFlashWindow = () => {
-        setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {
             key: 'notifications',
             data: {
                 ...this.state.notifications,
@@ -212,7 +211,7 @@ export default class SettingsPage extends React.PureComponent {
     }
 
     handleBounceIcon = () => {
-        setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {
             key: 'notifications',
             data: {
                 ...this.state.notifications,
@@ -228,7 +227,7 @@ export default class SettingsPage extends React.PureComponent {
     }
 
     handleBounceIconType = (event) => {
-        setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {
             key: 'notifications',
             data: {
                 ...this.state.notifications,
@@ -244,21 +243,21 @@ export default class SettingsPage extends React.PureComponent {
     }
 
     handleShowUnreadBadge = () => {
-        setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'showUnreadBadge', data: !this.showUnreadBadgeRef.current.props.checked});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'showUnreadBadge', data: !this.showUnreadBadgeRef.current.props.checked});
         this.setState({
             showUnreadBadge: !this.showUnreadBadgeRef.current.props.checked,
         });
     }
 
     handleChangeUseSpellChecker = () => {
-        setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'useSpellChecker', data: !this.useSpellCheckerRef.current.props.checked});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'useSpellChecker', data: !this.useSpellCheckerRef.current.props.checked});
         this.setState({
             useSpellChecker: !this.useSpellCheckerRef.current.props.checked,
         });
     }
 
     handleChangeEnableHardwareAcceleration = () => {
-        setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'enableHardwareAcceleration', data: !this.enableHardwareAccelerationRef.current.props.checked});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'enableHardwareAcceleration', data: !this.enableHardwareAccelerationRef.current.props.checked});
         this.setState({
             enableHardwareAcceleration: !this.enableHardwareAccelerationRef.current.props.checked,
         });
@@ -268,7 +267,7 @@ export default class SettingsPage extends React.PureComponent {
         this.setState({
             downloadLocation: location,
         });
-        setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'downloadLocation', data: location});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'downloadLocation', data: location});
     }
 
     handleChangeDownloadLocation = (e) => {
@@ -277,7 +276,7 @@ export default class SettingsPage extends React.PureComponent {
 
     selectDownloadLocation = () => {
         if (!this.state.userOpenedDownloadDialog) {
-            ipcRenderer.invoke(GET_DOWNLOAD_LOCATION, `/Users/${process.env.USER || process.env.USERNAME}/Downloads`).then((result) => this.saveDownloadLocation(result));
+            window.ipcRenderer.invoke(GET_DOWNLOAD_LOCATION, `/Users/${window.process.env.USER || window.process.env.USERNAME}/Downloads`).then((result) => this.saveDownloadLocation(result));
             this.setState({userOpenedDownloadDialog: true});
         }
         this.setState({userOpenedDownloadDialog: false});
@@ -286,7 +285,7 @@ export default class SettingsPage extends React.PureComponent {
     updateTeam = (index, newData) => {
         const teams = this.state.teams;
         teams[index] = newData;
-        setImmediate(this.saveSetting, CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
         this.setState({
             teams,
         });
@@ -295,7 +294,7 @@ export default class SettingsPage extends React.PureComponent {
     addServer = (team) => {
         const teams = this.state.teams;
         teams.push(team);
-        setImmediate(this.saveSetting, CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
         this.setState({
             teams,
         });
@@ -308,7 +307,7 @@ export default class SettingsPage extends React.PureComponent {
     }
 
     handleDoubleClick = () => {
-        ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW, 'settings');
+        window.ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW, 'settings');
     }
 
     render() {
@@ -431,7 +430,7 @@ export default class SettingsPage extends React.PureComponent {
         const options = [];
 
         // MacOS has an option in the Dock, to set the app to autostart, so we choose to not support this option for OSX
-        if (process.platform === 'win32' || process.platform === 'linux') {
+        if (window.process.platform === 'win32' || window.process.platform === 'linux') {
             options.push(
                 <Checkbox
                     key='inputAutoStart'
@@ -462,8 +461,8 @@ export default class SettingsPage extends React.PureComponent {
                 </HelpBlock>
             </Checkbox>);
 
-        if (process.platform === 'darwin' || process.platform === 'win32') {
-            const TASKBAR = process.platform === 'win32' ? 'taskbar' : 'Dock';
+        if (window.process.platform === 'darwin' || window.process.platform === 'win32') {
+            const TASKBAR = window.process.platform === 'win32' ? 'taskbar' : 'Dock';
             options.push(
                 <Checkbox
                     key='inputShowUnreadBadge'
@@ -479,7 +478,7 @@ export default class SettingsPage extends React.PureComponent {
                 </Checkbox>);
         }
 
-        if (process.platform === 'win32' || process.platform === 'linux') {
+        if (window.process.platform === 'win32' || window.process.platform === 'linux') {
             options.push(
                 <Checkbox
                     key='flashWindow'
@@ -495,7 +494,7 @@ export default class SettingsPage extends React.PureComponent {
                 </Checkbox>);
         }
 
-        if (process.platform === 'darwin') {
+        if (window.process.platform === 'darwin') {
             options.push(
                 <FormGroup
                     key='OptionsForm'
@@ -545,7 +544,7 @@ export default class SettingsPage extends React.PureComponent {
             );
         }
 
-        if (process.platform === 'darwin' || process.platform === 'linux') {
+        if (window.process.platform === 'darwin' || window.process.platform === 'linux') {
             options.push(
                 <Checkbox
                     key='inputShowTrayIcon'
@@ -554,14 +553,14 @@ export default class SettingsPage extends React.PureComponent {
                     checked={this.state.showTrayIcon}
                     onChange={this.handleChangeShowTrayIcon}
                 >
-                    {process.platform === 'darwin' ? `Show ${this.state.appName} icon in the menu bar` : 'Show icon in the notification area'}
+                    {window.process.platform === 'darwin' ? `Show ${this.state.appName} icon in the menu bar` : 'Show icon in the notification area'}
                     <HelpBlock>
                         {'Setting takes effect after restarting the app.'}
                     </HelpBlock>
                 </Checkbox>);
         }
 
-        if (process.platform === 'linux') {
+        if (window.process.platform === 'linux') {
             options.push(
                 <FormGroup
                     key='trayIconTheme'
@@ -590,7 +589,7 @@ export default class SettingsPage extends React.PureComponent {
             );
         }
 
-        if (process.platform === 'linux') {
+        if (window.process.platform === 'linux') {
             options.push(
                 <Checkbox
                     key='inputMinimizeToTray'

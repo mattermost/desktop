@@ -2,19 +2,9 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
-import {ipcRenderer} from 'electron';
-
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'renderer/css/index.css';
 import 'renderer/css/settings.css';
-
-if (process.env.NODE_ENV === 'production') {
-    window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
-        throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
-    };
-} else if (module.hot) {
-    module.hot.accept();
-}
 
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -22,8 +12,8 @@ import ReactDOM from 'react-dom';
 import SettingsPage from './components/SettingsPage.jsx';
 
 function openMenu() {
-    if (process.platform !== 'darwin') {
-        ipcRenderer.send('open-app-menu');
+    if (window.process.platform !== 'darwin') {
+        window.ipcRenderer.send('open-app-menu');
     }
 }
 
