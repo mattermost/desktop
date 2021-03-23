@@ -25,17 +25,17 @@ class UpdaterPageContainer extends React.PureComponent {
     }
 
     componentDidMount() {
-        ipcRenderer.on('start-download', () => {
+        window.ipcRenderer.on('start-download', () => {
             this.setState({
                 isDownloading: true,
             });
         });
-        ipcRenderer.on('progress', (event, progress) => {
+        window.ipcRenderer.on('progress', (event, progress) => {
             this.setState({
                 progress,
             });
         });
-        ipcRenderer.on('zoom-in', () => {
+        window.ipcRenderer.on('zoom-in', () => {
             const activeTabWebContents = this.getTabWebContents();
             if (!activeTabWebContents) {
                 return;
@@ -46,7 +46,7 @@ class UpdaterPageContainer extends React.PureComponent {
             activeTabWebContents.zoomLevel += 1;
         });
 
-        ipcRenderer.on('zoom-out', () => {
+        window.ipcRenderer.on('zoom-out', () => {
             const activeTabWebContents = this.getTabWebContents();
             if (!activeTabWebContents) {
                 return;
@@ -57,7 +57,7 @@ class UpdaterPageContainer extends React.PureComponent {
             activeTabWebContents.zoomLevel -= 1;
         });
 
-        ipcRenderer.on('zoom-reset', () => {
+        window.ipcRenderer.on('zoom-reset', () => {
             const activeTabWebContents = this.getTabWebContents();
             if (!activeTabWebContents) {
                 return;
@@ -65,7 +65,7 @@ class UpdaterPageContainer extends React.PureComponent {
             activeTabWebContents.zoomLevel = 0;
         });
 
-        ipcRenderer.on('undo', () => {
+        window.ipcRenderer.on('undo', () => {
             const activeTabWebContents = this.getTabWebContents();
             if (!activeTabWebContents) {
                 return;
@@ -73,7 +73,7 @@ class UpdaterPageContainer extends React.PureComponent {
             activeTabWebContents.undo();
         });
 
-        ipcRenderer.on('redo', () => {
+        window.ipcRenderer.on('redo', () => {
             const activeTabWebContents = this.getTabWebContents();
             if (!activeTabWebContents) {
                 return;
@@ -81,7 +81,7 @@ class UpdaterPageContainer extends React.PureComponent {
             activeTabWebContents.redo();
         });
 
-        ipcRenderer.on('cut', () => {
+        window.ipcRenderer.on('cut', () => {
             const activeTabWebContents = this.getTabWebContents();
             if (!activeTabWebContents) {
                 return;
@@ -89,7 +89,7 @@ class UpdaterPageContainer extends React.PureComponent {
             activeTabWebContents.cut();
         });
 
-        ipcRenderer.on('copy', () => {
+        window.ipcRenderer.on('copy', () => {
             const activeTabWebContents = this.getTabWebContents();
             if (!activeTabWebContents) {
                 return;
@@ -97,7 +97,7 @@ class UpdaterPageContainer extends React.PureComponent {
             activeTabWebContents.copy();
         });
 
-        ipcRenderer.on('paste', () => {
+        window.ipcRenderer.on('paste', () => {
             const activeTabWebContents = this.getTabWebContents();
             if (!activeTabWebContents) {
                 return;
@@ -105,7 +105,7 @@ class UpdaterPageContainer extends React.PureComponent {
             activeTabWebContents.paste();
         });
 
-        ipcRenderer.on('paste-and-match', () => {
+        window.ipcRenderer.on('paste-and-match', () => {
             const activeTabWebContents = this.getTabWebContents();
             if (!activeTabWebContents) {
                 return;
@@ -121,22 +121,22 @@ class UpdaterPageContainer extends React.PureComponent {
                 notifyOnly={this.props.notifyOnly}
                 {...this.state}
                 onClickReleaseNotes={() => {
-                    ipcRenderer.send('click-release-notes');
+                    window.ipcRenderer.send('click-release-notes');
                 }}
                 onClickSkip={() => {
-                    ipcRenderer.send('click-skip');
+                    window.ipcRenderer.send('click-skip');
                 }}
                 onClickRemind={() => {
-                    ipcRenderer.send('click-remind');
+                    window.ipcRenderer.send('click-remind');
                 }}
                 onClickInstall={() => {
-                    ipcRenderer.send('click-install');
+                    window.ipcRenderer.send('click-install');
                 }}
                 onClickDownload={() => {
-                    ipcRenderer.send('click-download');
+                    window.ipcRenderer.send('click-download');
                 }}
                 onClickCancel={() => {
-                    ipcRenderer.send('click-cancel');
+                    window.ipcRenderer.send('click-cancel');
                 }}
             />
         );

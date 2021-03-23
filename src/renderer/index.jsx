@@ -5,17 +5,8 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'renderer/css/index.css';
 
-if (process.env.NODE_ENV === 'production') {
-    window.eval = global.eval = () => { // eslint-disable-line no-multi-assign, no-eval
-        throw new Error('Sorry, Mattermost does not support window.eval() for security reasons.');
-    };
-} else if (module.hot) {
-    module.hot.accept();
-}
-
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {ipcRenderer} from 'electron';
 
 import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT, RELOAD_CONFIGURATION} from 'common/communication';
 
@@ -29,11 +20,11 @@ class Root extends React.PureComponent {
     async componentDidMount() {
         await this.setInitialConfig();
 
-        ipcRenderer.on('synchronize-config', () => {
+        window.ipcRenderer.on('synchronize-config', () => {
             this.reloadConfig();
         });
 
-        ipcRenderer.on(RELOAD_CONFIGURATION, () => {
+        window.ipcRenderer.on(RELOAD_CONFIGURATION, () => {
             this.reloadConfig();
         });
 
@@ -72,7 +63,7 @@ class Root extends React.PureComponent {
     };
 
     teamConfigChange = async (updatedTeams, callback) => {
-        const updatedConfig = await ipcRenderer.invoke(UPDATE_TEAMS, updatedTeams);
+        const updatedConfig = await window.ipcRenderer.invoke(UPDATE_TEAMS, updatedTeams);
         await this.reloadConfig();
         if (callback) {
             callback(updatedConfig);
@@ -87,20 +78,20 @@ class Root extends React.PureComponent {
     requestConfig = async (exitOnError) => {
         // todo: should we block?
         try {
-            const configRequest = await ipcRenderer.invoke(GET_CONFIGURATION);
+            const configRequest = await window.ipcRenderer.invoke(GET_CONFIGURATION);
             return configRequest;
         } catch (err) {
             console.log(`there was an error with the config: ${err}`);
             if (exitOnError) {
-                ipcRenderer.send(QUIT, `unable to load configuration: ${err}`, err.stack);
+                window.ipcRenderer.send(QUIT, `unable to load configuration: ${err}`, err.stack);
             }
         }
         return null;
     };
 
     openMenu = () => {
-        if (process.platform !== 'darwin') {
-            ipcRenderer.send('open-app-menu');
+        if (window.process.platform !== 'darwin') {
+            window.ipcRenderer.send('open-app-menu');
         }
     }
 
@@ -122,7 +113,7 @@ class Root extends React.PureComponent {
         );
     }
 }
-ipcRenderer.invoke('get-app-version').then(({name, version}) => {
+window.ipcRenderer.invoke('get-app-version').then(({name, version}) => {
     // eslint-disable-next-line no-undef
     console.log(`Starting ${name} v${version} commit: ${__HASH_VERSION__}`);
 });

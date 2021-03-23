@@ -2,14 +2,10 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
-import os from 'os';
-
 import React, {Fragment} from 'react';
 import PropTypes from 'prop-types';
 import {Grid, Row} from 'react-bootstrap';
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
-
-import {ipcRenderer} from 'electron';
 
 import {
     FOCUS_BROWSERVIEW,
@@ -87,7 +83,7 @@ export default class MainPage extends React.PureComponent {
 
     componentDidMount() {
         // set page on retry
-        ipcRenderer.on(LOAD_RETRY, (_, server, retry, err, loadUrl) => {
+        window.ipcRenderer.on(LOAD_RETRY, (_, server, retry, err, loadUrl) => {
             console.log(`${server}: failed to load ${err}, but retrying`);
             const status = this.state.tabStatus;
             const statusValue = {
@@ -102,13 +98,13 @@ export default class MainPage extends React.PureComponent {
             this.setState({tabStatus: status});
         });
 
-        ipcRenderer.on(LOAD_SUCCESS, (_, server) => {
+        window.ipcRenderer.on(LOAD_SUCCESS, (_, server) => {
             const status = this.state.tabStatus;
             status.set(server, {status: DONE});
             this.setState({tabStatus: status});
         });
 
-        ipcRenderer.on(LOAD_FAILED, (_, server, err, loadUrl) => {
+        window.ipcRenderer.on(LOAD_FAILED, (_, server, err, loadUrl) => {
             console.log(`${server}: failed to load ${err}`);
             const status = this.state.tabStatus;
             const statusValue = {
@@ -122,16 +118,16 @@ export default class MainPage extends React.PureComponent {
             this.setState({tabStatus: status});
         });
 
-        ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => {
+        window.ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => {
             this.setState({darkMode});
         });
 
         // can't switch tabs sequentially for some reason...
-        ipcRenderer.on(SET_SERVER_KEY, (event, key) => {
+        window.ipcRenderer.on(SET_SERVER_KEY, (event, key) => {
             const nextIndex = this.props.teams.findIndex((team) => team.order === key);
             this.handleSetServerKey(nextIndex);
         });
-        ipcRenderer.on(SELECT_NEXT_TAB, () => {
+        window.ipcRenderer.on(SELECT_NEXT_TAB, () => {
             const currentOrder = this.props.teams[this.state.key].order;
             const nextOrder = ((currentOrder + 1) % this.props.teams.length);
             const nextIndex = this.props.teams.findIndex((team) => team.order === nextOrder);
@@ -139,7 +135,7 @@ export default class MainPage extends React.PureComponent {
             this.handleSelect(team.name, nextIndex);
         });
 
-        ipcRenderer.on(SELECT_PREVIOUS_TAB, () => {
+        window.ipcRenderer.on(SELECT_PREVIOUS_TAB, () => {
             const currentOrder = this.props.teams[this.state.key].order;
 
             // js modulo operator returns a negative number if result is negative, so we have to ensure it's positive
@@ -149,32 +145,32 @@ export default class MainPage extends React.PureComponent {
             this.handleSelect(team.name, nextIndex);
         });
 
-        ipcRenderer.on(MAXIMIZE_CHANGE, this.handleMaximizeState);
+        window.ipcRenderer.on(MAXIMIZE_CHANGE, this.handleMaximizeState);
 
-        ipcRenderer.on('enter-full-screen', () => this.handleFullScreenState(true));
-        ipcRenderer.on('leave-full-screen', () => this.handleFullScreenState(false));
+        window.ipcRenderer.on('enter-full-screen', () => this.handleFullScreenState(true));
+        window.ipcRenderer.on('leave-full-screen', () => this.handleFullScreenState(false));
 
-        ipcRenderer.on(ADD_SERVER, () => {
+        window.ipcRenderer.on(ADD_SERVER, () => {
             this.addServer();
         });
 
-        ipcRenderer.on(PLAY_SOUND, (_event, soundName) => {
+        window.ipcRenderer.on(PLAY_SOUND, (_event, soundName) => {
             playSound(soundName);
         });
 
-        ipcRenderer.on(MODAL_OPEN, () => {
+        window.ipcRenderer.on(MODAL_OPEN, () => {
             this.setState({modalOpen: true});
         });
 
-        ipcRenderer.on(MODAL_CLOSE, () => {
+        window.ipcRenderer.on(MODAL_CLOSE, () => {
             this.setState({modalOpen: false});
         });
 
-        ipcRenderer.on(TOGGLE_BACK_BUTTON, (event, showExtraBar) => {
+        window.ipcRenderer.on(TOGGLE_BACK_BUTTON, (event, showExtraBar) => {
             this.setState({showExtraBar});
         });
 
-        ipcRenderer.on(UPDATE_MENTIONS, (_event, team, mentions, unreads, isExpired) => {
+        window.ipcRenderer.on(UPDATE_MENTIONS, (_event, team, mentions, unreads, isExpired) => {
             const key = this.props.teams.findIndex((server) => server.name === team);
             const {unreadCounts, mentionCounts, sessionsExpired} = this.state;
 
@@ -190,8 +186,8 @@ export default class MainPage extends React.PureComponent {
             this.setState({unreadCounts: newUnreads, mentionCounts: newMentionCounts, sessionsExpired: expired});
         });
 
-        if (process.platform !== 'darwin') {
-            ipcRenderer.on(FOCUS_THREE_DOT_MENU, () => {
+        if (window.process.platform !== 'darwin') {
+            window.ipcRenderer.on(FOCUS_THREE_DOT_MENU, () => {
                 if (this.threeDotMenu.current) {
                     this.threeDotMenu.current.focus();
                 }
@@ -213,7 +209,7 @@ export default class MainPage extends React.PureComponent {
     }
 
     handleSelect = (name, key) => {
-        ipcRenderer.send(SWITCH_SERVER, name);
+        window.ipcRenderer.send(SWITCH_SERVER, name);
         this.handleSetServerKey(key);
     }
 
@@ -228,40 +224,40 @@ export default class MainPage extends React.PureComponent {
 
     handleClose = (e) => {
         e.stopPropagation(); // since it is our button, the event goes into MainPage's onclick event, getting focus back.
-        ipcRenderer.send(WINDOW_CLOSE);
+        window.ipcRenderer.send(WINDOW_CLOSE);
     }
 
     handleMinimize = (e) => {
         e.stopPropagation();
-        ipcRenderer.send(WINDOW_MINIMIZE);
+        window.ipcRenderer.send(WINDOW_MINIMIZE);
     }
 
     handleMaximize = (e) => {
         e.stopPropagation();
-        ipcRenderer.send(WINDOW_MAXIMIZE);
+        window.ipcRenderer.send(WINDOW_MAXIMIZE);
     }
 
     handleRestore = () => {
-        ipcRenderer.send(WINDOW_RESTORE);
+        window.ipcRenderer.send(WINDOW_RESTORE);
     }
 
     openMenu = () => {
-        if (process.platform !== 'darwin') {
+        if (window.process.platform !== 'darwin') {
             this.threeDotMenu.current.blur();
         }
         this.props.openMenu();
     }
 
     handleDoubleClick = () => {
-        ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW);
+        window.ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW);
     }
 
     addServer = () => {
-        ipcRenderer.send(SHOW_NEW_SERVER_MODAL);
+        window.ipcRenderer.send(SHOW_NEW_SERVER_MODAL);
     }
 
     focusOnWebView = () => {
-        ipcRenderer.send(FOCUS_BROWSERVIEW);
+        window.ipcRenderer.send(FOCUS_BROWSERVIEW);
     }
 
     setInputRef = (ref) => {
@@ -287,7 +283,7 @@ export default class MainPage extends React.PureComponent {
         );
 
         let topBarClassName = 'topBar';
-        if (process.platform === 'darwin') {
+        if (window.process.platform === 'darwin') {
             topBarClassName += ' macOS';
         }
         if (this.state.darkMode) {
@@ -319,14 +315,14 @@ export default class MainPage extends React.PureComponent {
         }
 
         let overlayGradient;
-        if (process.platform !== 'darwin') {
+        if (window.process.platform !== 'darwin') {
             overlayGradient = (
                 <span className='overlay-gradient'/>
             );
         }
 
         let titleBarButtons;
-        if (os.platform() === 'win32' && os.release().startsWith('10')) {
+        if (window.os.isWindows10) {
             titleBarButtons = (
                 <span className='title-bar-btns'>
                     <div
@@ -421,7 +417,7 @@ export default class MainPage extends React.PureComponent {
                     darkMode={this.state.darkMode}
                     show={this.state.showExtraBar}
                     goBack={() => {
-                        ipcRenderer.send(HISTORY, -1);
+                        window.ipcRenderer.send(HISTORY, -1);
                     }}
                 />
                 <Row>

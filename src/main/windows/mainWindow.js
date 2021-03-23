@@ -13,7 +13,7 @@ import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB} from 'common/communication';
 
 import * as Validator from '../Validator';
 import contextMenu from '../contextMenu';
-import {getLocalURLString} from '../utils';
+import {getLocalPreload, getLocalURLString} from '../utils';
 
 function saveWindowState(file, window) {
     const windowState = window.getBounds();
@@ -37,6 +37,7 @@ function createMainWindow(config, options) {
     const minimumWindowHeight = 240;
 
     // Create the browser window.
+    const preload = getLocalPreload('mainWindow.js');
     const boundsInfoPath = path.join(app.getPath('userData'), 'bounds-info.json');
     let windowOptions;
     try {
@@ -70,9 +71,10 @@ function createMainWindow(config, options) {
         trafficLightPosition: {x: 12, y: 24},
         backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
+            nodeIntegration: process.env.NODE_ENV === 'test',
+            contextIsolation: process.env.NODE_ENV !== 'test',
             disableBlinkFeatures: 'Auxclick',
+            preload,
             spellcheck,
             enableRemoteModule: process.env.NODE_ENV === 'test',
         },

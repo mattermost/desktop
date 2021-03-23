@@ -43,7 +43,7 @@ export class MattermostView extends EventEmitter {
                     `version=${app.version}`,
                     `appName=${app.name}`,
                 ],
-                enableRemoteModule: true,
+                enableRemoteModule: process.env.NODE_ENV === 'test',
                 nodeIntegration: process.env.NODE_ENV === 'test',
             },
             ...options,
