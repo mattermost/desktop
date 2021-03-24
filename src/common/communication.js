@@ -52,12 +52,6 @@ export const PLAY_SOUND = 'play_sound';
 
 export const GET_DOWNLOAD_LOCATION = 'get_download_location';
 
-export const FOUND_IN_PAGE = 'found-in-page';
-export const FIND_IN_PAGE = 'find-in-page';
-export const STOP_FIND_IN_PAGE = 'stop-find-in-page';
-export const CLOSE_FINDER = 'close-finder';
-export const FOCUS_FINDER = 'focus-finder';
-
 export const UPDATE_MENTIONS = 'update_mentions';
 export const IS_UNREAD = 'is_unread';
 export const UNREAD_RESULT = 'unread_result';

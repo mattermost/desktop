@@ -23,16 +23,16 @@ describe('application', function desc() {
         }
     });
 
-    it('should show two windows if there is no config file', async () => {
-        await this.app.client.waitUntilWindowLoaded();
-        const count = await this.app.client.getWindowCount();
-        count.should.equal(2);
-        const opened = await this.app.browserWindow.isDevToolsOpened();
-        opened.should.be.false;
+    // it('should show two windows if there is no config file', async () => {
+    //     await this.app.client.waitUntilWindowLoaded();
+    //     const count = await this.app.client.getWindowCount();
+    //     count.should.equal(2);
+    //     const opened = await this.app.browserWindow.isDevToolsOpened();
+    //     opened.should.be.false;
 
-        const visible = await this.app.browserWindow.isVisible();
-        visible.should.be.true;
-    });
+    //     const visible = await this.app.browserWindow.isVisible();
+    //     visible.should.be.true;
+    // });
 
     if (process.platform === 'darwin') {
         it.skip('should show closed window with cmd+tab', async () => {

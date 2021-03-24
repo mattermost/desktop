@@ -100,12 +100,6 @@ function createTemplate(config) {
     });
 
     const viewSubMenu = [{
-        label: 'Find..',
-        accelerator: 'CmdOrCtrl+F',
-        click() {
-            WindowManager.openFinder();
-        },
-    }, {
         label: 'Reload',
         accelerator: 'CmdOrCtrl+R',
         click() {
