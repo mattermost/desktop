@@ -203,6 +203,7 @@ export class ViewManager {
             const hideView = () => {
                 this.urlViewCancel = null;
                 currentWindow.removeBrowserView(urlView);
+                urlView.webContents.destroy();
             };
 
             const timeout = setTimeout(hideView,

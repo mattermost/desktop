@@ -72,6 +72,7 @@ export class ModalView {
             }
 
             this.windowAttached.removeBrowserView(this.view);
+            this.view.webContents.destroy();
             this.windowAttached = null;
             this.status = ACTIVE;
         }

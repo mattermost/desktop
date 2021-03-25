@@ -171,6 +171,7 @@ export class MattermostView extends EventEmitter {
         if (this.window) {
             this.window.removeBrowserView(this.view);
         }
+        this.view.webContents.destroy();
         this.window = null;
         this.server = null;
         this.isVisible = false;
