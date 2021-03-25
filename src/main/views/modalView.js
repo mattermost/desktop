@@ -70,9 +70,12 @@ export class ModalView {
             if (this.view.webContents.isDevToolsOpened()) {
                 this.view.webContents.closeDevTools();
             }
-
             this.windowAttached.removeBrowserView(this.view);
+
+            // workaround to eliminate zombie processes
+            // https://github.com/mattermost/desktop/pull/1519
             this.view.webContents.destroy();
+
             this.windowAttached = null;
             this.status = ACTIVE;
         }
