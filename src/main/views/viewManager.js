@@ -203,6 +203,10 @@ export class ViewManager {
             const hideView = () => {
                 this.urlViewCancel = null;
                 currentWindow.removeBrowserView(urlView);
+
+                // workaround to eliminate zombie processes
+                // https://github.com/mattermost/desktop/pull/1519
+                urlView.webContents.destroy();
             };
 
             const timeout = setTimeout(hideView,

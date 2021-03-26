@@ -171,6 +171,11 @@ export class MattermostView extends EventEmitter {
         if (this.window) {
             this.window.removeBrowserView(this.view);
         }
+
+        // workaround to eliminate zombie processes
+        // https://github.com/mattermost/desktop/pull/1519
+        this.view.webContents.destroy();
+
         this.window = null;
         this.server = null;
         this.isVisible = false;
