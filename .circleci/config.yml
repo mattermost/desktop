@@ -475,5 +475,5 @@ workflows:
       - share_to_channel:
           context: desktop_browserview
           requires:
-            - upload_to_s3_daily
+            - store_artifacts
 
