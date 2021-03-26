@@ -231,6 +231,12 @@ jobs:
       - store_artifacts:
           path: ./dist
           destination: packages
+      - run:
+          name: "store url links"
+          command: |
+            curl -H "Circle-Token: $CIRCLE_TOKEN" -H "Accept: application/json" -X GET "https://circleci.com/api/v2/project/github/mattermost/desktop/$CIRCLE_BUILD_NUM/artifacts" | jq -r '.items[].url' >> ./dist/artifactlist.txt
+            grep -v ".yml" ./dist/artifactlist.txt > ./dist/linklist.txt
+            grep -v "._" ./dist/linklist.txt > ./dist/linklist.txt
 
   share_to_channel:
     executor: wine-chrome
@@ -244,9 +250,8 @@ jobs:
       - run:
           name: "Get urls for sharing"
           command: |
-            echo "Links for $(date +"%b-%d-%Y")" > ./links/linklist.txt
-            curl -H "Circle-Token: $CIRCLE_TOKEN" -H "Accept: application/json" -X GET "https://circleci.com/api/v2/project/github/mattermost/desktop/$CIRCLE_PREVIOUS_BUILD_NUM/artifacts" | jq -r '.items[].url' >> ./links/linklist.txt
-            echo "Retrieved links for job #${CIRCLE_PREVIOUS_BUILD_NUM}"
+            echo "Links for $(date +"%b-%d-%Y")" >> ./links/linklist.txt
+            cat ./dist/linklist.txt >> ./links/linklist.txt
       - run: 
           command: |
             linklist=$(<./links/linklist.txt);
@@ -455,6 +460,7 @@ workflows:
       - mac_installer:
           context: codesign-certificates
       - store_artifacts:
+          context: desktop_browserview
           # for master/PR builds
           requires:
             - build-linux
@@ -469,5 +475,5 @@ workflows:
       - share_to_channel:
           context: desktop_browserview
           requires:
-            - store_artifacts
+            - upload_to_s3_daily
 
