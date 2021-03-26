@@ -246,6 +246,11 @@ jobs:
             grep "macos" ./templist.txt | awk -F/ '{print "- ["$NF"]("$0")"}' >> ./dist/linklist.txt
             echo "##### :windows: Windows" >> ./dist/linklist.txt
             grep "win" ./templist.txt | awk -F/ '{print "- ["$NF"]("$0")"}' >> ./dist/linklist.txt
+      - persist_to_workspace:
+          root: ./dist
+          paths: 
+            - ./linklist.txt
+            - ./artifactlist.txt
 
   share_to_channel:
     executor: wine-chrome
