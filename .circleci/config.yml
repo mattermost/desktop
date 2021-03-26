@@ -237,8 +237,13 @@ jobs:
           name: "store url links"
           command: |
             curl -H "Circle-Token: $CIRCLE_TOKEN" -H "Accept: application/json" -X GET "https://circleci.com/api/v2/project/github/mattermost/desktop/$CIRCLE_BUILD_NUM/artifacts" | jq -r '.items[].url' >> ./mattermost-desktop/dist/artifactlist.txt
-            grep -v ".yml" ./mattermost-desktop/ddist/artifactlist.txt > ./mattermost-desktop/ddist/linklist.txt
-            grep -v "._" ./mattermost-desktop/ddist/linklist.txt > ./mattermost-desktop/ddist/linklist.txt
+            grep -v ".yml" ./mattermost-desktop/dist/artifactlist.txt | grep -v "._" > ./templist.txt
+            echo "##### :tux: Linux" > ./mattermost-desktop/dist/linklist.txt
+            grep "linux" ./templist.txt | awk -F/ '{print "- ["$NF"]("$0")"}' >> ./mattermost-desktop/dist/linklist.txt
+            echo "##### :apple_logo: macOS" >> ./mattermost-desktop/dist/linklist.txt
+            grep "macos" ./templist.txt | awk -F/ '{print "- ["$NF"]("$0")"}' >> ./mattermost-desktop/dist/linklist.txt
+            echo "##### :windows: Windows" >> ./mattermost-desktop/dist/linklist.txt
+            grep "win" ./templist.txt | awk -F/ '{print "- ["$NF"]("$0")"}' >> ./mattermost-desktop/dist/linklist.txt
 
   share_to_channel:
     executor: wine-chrome
