@@ -97,6 +97,12 @@ const generateDidStartNavigation = (getServersFunction) => {
 const generateNewWindowListener = (getServersFunction, spellcheck) => {
     return (event, url) => {
         const parsedURL = urlUtils.parseURL(url);
+        if (!parsedURL) {
+            event.preventDefault();
+            log.warn(`Ignoring non-url ${url}`);
+            return;
+        }
+
         const configServers = getServersFunction();
 
         // Dev tools case
