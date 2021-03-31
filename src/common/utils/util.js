@@ -44,8 +44,19 @@ function browserWindowFromWebContents(content) {
     return window;
 }
 
+const DEFAULT_MAX = 20;
+
+function shorten(string, max) {
+    const maxLength = (max && max >= 4) ? max : DEFAULT_MAX;
+    if (string.length >= maxLength) {
+        return `${string.slice(0, maxLength - 3)}...`;
+    }
+    return string;
+}
+
 export default {
     getDisplayBoundaries,
     runMode,
     browserWindowFromWebContents,
+    shorten,
 };

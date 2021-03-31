@@ -18,8 +18,13 @@
 }
 
 .TeamListItem p {
-  overflow-wrap: break-word;
+    overflow-wrap: break-word;
 }
+
+.TeamListItem h4 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+};
 
 .checkbox > label {
   width: 100%;

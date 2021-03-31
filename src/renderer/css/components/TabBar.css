@@ -16,6 +16,8 @@
 .TabBar .teamTabItem span {
   flex: 0 1 auto;
   overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
   white-space: nowrap;
   text-align: center;
 }
