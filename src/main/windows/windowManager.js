@@ -120,10 +120,26 @@ function handleMainWindowWebContentsCrashed() {
 
 function handleMaximizeMainWindow() {
     sendToRenderer(MAXIMIZE_CHANGE, true);
+
+    // Workaround as part of https://mattermost.atlassian.net/browse/MM-33577
+    // Linux (or GNOME at least) seems to have issues with Electron and getting the size correctly when minimizing/maximizing
+    // So we need to manually force the browser view to resize after a small interval to get the size correct
+    // Please remove this once this issue has been resolved by Electron
+    if (process.platform === 'linux') {
+        setTimeout(setBoundsForCurrentView, 10);
+    }
 }
 
 function handleUnmaximizeMainWindow() {
     sendToRenderer(MAXIMIZE_CHANGE, false);
+
+    // Workaround as part of https://mattermost.atlassian.net/browse/MM-33577
+    // Linux (or GNOME at least) seems to have issues with Electron and getting the size correctly when minimizing/maximizing
+    // So we need to manually force the browser view to resize after a small interval to get the size correct
+    // Please remove this once this issue has been resolved by Electron
+    if (process.platform === 'linux') {
+        setTimeout(setBoundsForCurrentView, 10);
+    }
 }
 
 function handleResizeMainWindow(event, newBounds) {
