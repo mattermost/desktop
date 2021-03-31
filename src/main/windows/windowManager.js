@@ -381,6 +381,13 @@ export function reload() {
     }
 }
 
+export function sendToFind() {
+    const currentView = status.viewManager.getCurrentView();
+    if (currentView) {
+        currentView.view.webContents.sendInputEvent({type: 'keyDown', keyCode: 'F', modifiers: ['CmdOrCtrl', 'Shift']});
+    }
+}
+
 export function handleHistory(event, offset) {
     if (status.viewManager) {
         const activeView = status.viewManager.getCurrentView();
