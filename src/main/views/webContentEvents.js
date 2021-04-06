@@ -7,7 +7,6 @@ import log from 'electron-log';
 import {DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
-import {FOUND_IN_PAGE} from 'common/communication';
 
 import * as WindowManager from '../windows/windowManager';
 
@@ -210,6 +209,7 @@ export const addWebContentsEventListeners = (mmview, getServersFunction) => {
     if (listeners[contents.id]) {
         removeWebContentsListeners(contents.id);
     }
+
     const willNavigate = generateWillNavigate(getServersFunction);
     contents.on('will-navigate', willNavigate);
 
@@ -228,7 +228,6 @@ export const addWebContentsEventListeners = (mmview, getServersFunction) => {
     contents.on('page-title-updated', mmview.handleTitleUpdate);
     contents.on('page-favicon-updated', mmview.handleFaviconUpdate);
     contents.on('update-target-url', mmview.handleUpdateTarget);
-    contents.on(FOUND_IN_PAGE, mmview.handleFoundInPage);
     contents.on('did-navigate', mmview.handleDidNavigate);
 
     const removeListeners = () => {
@@ -239,7 +238,6 @@ export const addWebContentsEventListeners = (mmview, getServersFunction) => {
             contents.removeListener('page-title-updated', mmview.handleTitleUpdate);
             contents.removeListener('page-favicon-updated', mmview.handleFaviconUpdate);
             contents.removeListener('update-target-url', mmview.handleUpdateTarget);
-            contents.removeListener(FOUND_IN_PAGE, mmview.handleFoundInPage);
             contents.removeListener('did-navigate', mmview.handleDidNavigate);
         } catch (e) {
             log.error(`Error while trying to detach listeners, this might be ok if the process crashed: ${e}`);

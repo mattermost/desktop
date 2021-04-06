@@ -6,6 +6,7 @@ import log from 'electron-log';
 
 import {EventEmitter} from 'events';
 
+import Util from 'common/utils/util';
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
 import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL, IS_UNREAD, UNREAD_RESULT, TOGGLE_BACK_BUTTON, SET_SERVER_NAME} from 'common/communication';
@@ -87,7 +88,7 @@ export class MattermostView extends EventEmitter {
 
     load = (someURL) => {
         const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : urlUtils.parseURL(someURL).toString();
-        log.info(`[${this.server.name}] Loading ${loadURL}`);
+        log.info(`[${Util.shorten(this.server.name)}] Loading ${loadURL}`);
         const loading = this.view.webContents.loadURL(loadURL, {userAgent});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             this.loadRetry(loadURL, err);
@@ -107,7 +108,7 @@ export class MattermostView extends EventEmitter {
                 } else {
                     WindowManager.sendToRenderer(LOAD_FAILED, this.server.name, err.toString(), loadURL.toString());
                     this.emit(LOAD_FAILED, this.server.name, err.toString(), loadURL.toString());
-                    log.info(`[${this.server.name}] Couldn't stablish a connection with ${loadURL}: ${err}.`);
+                    log.info(`[${Util.shorten(this.server.name)}] Couldn't stablish a connection with ${loadURL}: ${err}.`);
                     this.status = ERROR;
                 }
             });
@@ -117,12 +118,12 @@ export class MattermostView extends EventEmitter {
     loadRetry = (loadURL, err) => {
         this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
         WindowManager.sendToRenderer(LOAD_RETRY, this.server.name, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
-        log.info(`[${this.server.name}] failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
+        log.info(`[${Util.shorten(this.server.name)}] failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
     }
 
     loadSuccess = (loadURL) => {
         return () => {
-            log.info(`[${this.server.name}] finished loading ${loadURL}`);
+            log.info(`[${Util.shorten(this.server.name)}] finished loading ${loadURL}`);
             WindowManager.sendToRenderer(LOAD_SUCCESS, this.server.name);
             this.maxRetries = MAX_SERVER_RETRIES;
             if (this.status === LOADING) {
