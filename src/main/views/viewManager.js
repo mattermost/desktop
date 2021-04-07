@@ -37,7 +37,7 @@ export class ViewManager {
     }
 
     loadServer = (server) => {
-        const srv = new MattermostServer(server.name, server.url);
+        const srv = new MattermostServer(server);
         const view = new MattermostView(srv, this.mainWindow, this.viewOptions);
         this.views.set(server.name, view);
         if (!this.loadingScreen) {

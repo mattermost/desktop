@@ -123,7 +123,6 @@ export class MattermostView extends EventEmitter {
     loadSuccess = (loadURL) => {
         return () => {
             log.info(`[${this.server.name}] finished loading ${loadURL}`);
-            WindowManager.sendToRenderer(LOAD_SUCCESS, this.server.name);
             this.maxRetries = MAX_SERVER_RETRIES;
             if (this.status === LOADING) {
                 ipcMain.on(UNREAD_RESULT, this.handleFaviconIsUnread);
@@ -131,6 +130,7 @@ export class MattermostView extends EventEmitter {
                 this.findUnreadState(null);
             }
             this.status = READY;
+            WindowManager.sendToRenderer(LOAD_SUCCESS, this.server.name);
             this.emit(LOAD_SUCCESS, this.server.name, loadURL.toString());
             this.view.webContents.send(SET_SERVER_NAME, this.server.name);
         };
@@ -195,7 +195,10 @@ export class MattermostView extends EventEmitter {
     }
 
     needsLoadingScreen = () => {
-        return !(this.isInitialized && this.hasBeenShown);
+        // mattermost servers will wait until webapp notifies it's ready, any other url will be loaded as soon as it gets
+        const stillLoading = this.server.isNonMattermost ? this.status === LOADING : !this.isInitialized;
+
+        return stillLoading || !this.hasBeenShown;
     }
 
     setInitialized = () => {

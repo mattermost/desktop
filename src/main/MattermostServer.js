@@ -4,9 +4,10 @@
 import urlUtils from 'common/utils/url';
 
 export class MattermostServer {
-    constructor(name, serverUrl) {
-        this.name = name;
-        this.url = urlUtils.parseURL(serverUrl);
+    constructor(configServer) {
+        this.name = configServer.name;
+        this.url = urlUtils.parseURL(configServer.url);
+        this.isNonMattermost = configServer.isNonMattermost;
         if (!this.url) {
             throw new Error('Invalid url for creating a server');
         }

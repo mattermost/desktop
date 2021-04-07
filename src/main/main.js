@@ -49,7 +49,7 @@ import UserActivityMonitor from './UserActivityMonitor';
 import * as WindowManager from './windows/windowManager';
 import {displayMention, displayDownloadCompleted} from './notifications';
 
-import parseArgs from './ParseArgs';
+import parseArgs, {getDeeplinkingURL, getServerURL} from './ParseArgs';
 import {addModal} from './views/modalManager';
 import {getLocalURLString, getLocalPreload} from './utils';
 import {destroyTray, refreshTrayImages, setTrayMenu, setupTray} from './tray/tray';
@@ -140,8 +140,23 @@ function initializeArgs() {
 }
 
 async function initializeConfig() {
+    let newServer;
+    const serverUrl = getServerURL(global.args, scheme);
+    if (global.args.serverName || global.args.otherServerName) {
+        if (serverUrl) {
+            newServer = {
+                name: global.args.serverName || global.args.otherServerName,
+                url: serverUrl,
+                isNonMattermost: Boolean(global.args.otherServerName),
+            };
+        } else {
+            const flag = global.args.serverName ? 'serverName' : 'otherServerName';
+            log.error(`use of ${flag} requires to provide a valid server url`);
+            process.exit(-2); //eslint-disable-line no-process-exit
+        }
+    }
     const loadConfig = new Promise((resolve) => {
-        config = new Config(app.getPath('userData') + '/config.json');
+        config = new Config(app.getPath('userData') + '/config.json', newServer);
         config.once('update', (configData) => {
             config.on('update', handleConfigUpdate);
             config.on('synchronize', handleConfigSynchronize);
@@ -149,7 +164,7 @@ async function initializeConfig() {
             handleConfigUpdate(configData);
             resolve();
         });
-        config.init();
+        config.init(newServer);
     });
 
     return loadConfig;
@@ -286,7 +301,7 @@ function handleDarkModeChange(darkMode) {
 function handleAppSecondInstance(event, argv) {
     // Protocol handler for win32
     // argv: An array of the second instance’s (command line / deep linked) arguments
-    const deeplinkingUrl = getDeeplinkingURL(argv);
+    const deeplinkingUrl = getDeeplinkingURL(argv, scheme);
     openDeepLink(deeplinkingUrl);
 }
 
@@ -411,7 +426,7 @@ function handleAppWillFinishLaunching() {
     app.on('open-url', (event, url) => {
         log.info(`Handling deeplinking url: ${url}`);
         event.preventDefault();
-        const deeplinkingUrl = getDeeplinkingURL([url]);
+        const deeplinkingUrl = getDeeplinkingURL([url], scheme);
         if (deeplinkingUrl) {
             if (app.isReady() && deeplinkingUrl) {
                 openDeepLink(deeplinkingUrl);
@@ -489,7 +504,7 @@ function initializeAfterAppReady() {
     if (process.platform === 'win32') {
         const args = process.argv.slice(1);
         if (Array.isArray(args) && args.length > 0) {
-            deeplinkingURL = getDeeplinkingURL(args);
+            deeplinkingURL = getDeeplinkingURL(args, scheme);
         }
     }
 
@@ -626,17 +641,6 @@ async function handleSelectDownload(event, startFrom) {
 //
 // helper functions
 //
-
-function getDeeplinkingURL(args) {
-    if (Array.isArray(args) && args.length) {
-    // deeplink urls should always be the last argument, but may not be the first (i.e. Windows with the app already running)
-        const url = args[args.length - 1];
-        if (url && scheme && url.startsWith(scheme) && urlUtils.isValidURI(url)) {
-            return url;
-        }
-    }
-    return null;
-}
 
 function shouldShowTrayIcon() {
     return config.showTrayIcon || process.platform === 'win32';

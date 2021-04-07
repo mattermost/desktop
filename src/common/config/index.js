@@ -9,6 +9,8 @@ import {EventEmitter} from 'events';
 import {ipcMain, nativeTheme, app} from 'electron';
 import log from 'electron-log';
 
+import urlUtils from 'common/utils/url';
+
 import * as Validator from '../../main/Validator';
 
 import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION} from 'common/communication';
@@ -28,9 +30,9 @@ export default class Config extends EventEmitter {
     }
 
     // separating constructor from init so main can setup event listeners
-    init = () => {
+    init = (cliServer) => {
         this.registryConfig = new RegistryConfig();
-        this.registryConfig.once(REGISTRY_READ_EVENT, this.loadRegistry);
+        this.registryConfig.once(REGISTRY_READ_EVENT, (registryData) => this.loadRegistry(registryData, cliServer));
         this.registryConfig.init();
     }
 
@@ -38,11 +40,12 @@ export default class Config extends EventEmitter {
      * Gets the teams from registry into the config object and reload
      *
      * @param {object} registryData Team configuration from the registry and if teams can be managed by user
+     * @param {object} cliServer Server added from the command line to be passed to localconfig
      */
 
-    loadRegistry = (registryData) => {
+    loadRegistry = (registryData, cliServer) => {
         this.registryConfigData = registryData;
-        this.reload();
+        this.reload(cliServer);
         ipcMain.handle(GET_CONFIGURATION, this.handleGetConfiguration);
         ipcMain.handle(GET_LOCAL_CONFIGURATION, this.handleGetLocalConfiguration);
         ipcMain.handle(UPDATE_TEAMS, this.handleUpdateTeams);
@@ -55,16 +58,33 @@ export default class Config extends EventEmitter {
     /**
      * Reload all sources of config data
      *
-     * @param {boolean} synchronize determines whether or not to emit a synchronize event once config has been reloaded
+     * @param {cliServer} Add a server to localconfig
      * @emits {update} emitted once all data has been loaded and merged
      * @emits {synchronize} emitted when requested by a call to method; used to notify other config instances of changes
      */
-    reload = () => {
+    reload = (cliServer) => {
         this.defaultConfigData = this.loadDefaultConfigData();
         this.buildConfigData = this.loadBuildConfigData();
         this.localConfigData = this.loadLocalConfigFile();
         this.localConfigData = this.checkForConfigUpdates(this.localConfigData);
-        this.regenerateCombinedConfigData();
+
+        let skipRegenerate = false;
+        if (cliServer) {
+            const configData = {...this.localConfigData};
+            if (urlUtils.getServer(cliServer.url, configData.teams)) {
+                log.warn('there is already a server with that url, so it won\'t be added');
+            } else if (configData.teams.some((server) => server.name === cliServer.name)) {
+                log.warn('there is already a server with that name, so it won\'t be added');
+            } else {
+                configData.teams.push(cliServer);
+                this.replace(configData);
+                skipRegenerate = true;
+            }
+        }
+
+        if (!skipRegenerate) {
+            this.regenerateCombinedConfigData();
+        }
 
         this.emit('update', this.combinedData);
         this.emit('synchronize');
