@@ -21,6 +21,7 @@ export function createSettingsWindow(mainWindow, config, withDevTools) {
             enableRemoteModule: process.env.NODE_ENV === 'test',
         }});
     const localURL = getLocalURLString('settings.html');
+    settingsWindow.setMenuBarVisibility(false);
     settingsWindow.loadURL(localURL).catch(
         (reason) => {
             log.error(`Settings window failed to load: ${reason}`);
