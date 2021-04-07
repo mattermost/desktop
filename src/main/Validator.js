@@ -21,6 +21,7 @@ const argsSchema = Joi.object({
     version: Joi.boolean(),
     serverName: Joi.string(),
     otherServerName: Joi.string(),
+    _: Joi.any(),
 });
 
 const boundsInfoSchema = Joi.object({

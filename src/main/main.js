@@ -124,7 +124,7 @@ try {
 //
 
 function initializeArgs() {
-    global.args = parseArgs(process.argv.slice(1));
+    global.args = parseArgs();
 
     // output the application version via cli when requested (-v or --version)
     if (global.args.version) {
