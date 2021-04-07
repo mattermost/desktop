@@ -106,9 +106,9 @@ export class MattermostView extends EventEmitter {
                     this.loadRetry(loadURL, err);
                 } else {
                     WindowManager.sendToRenderer(LOAD_FAILED, this.server.name, err.toString(), loadURL.toString());
-                    this.emit(LOAD_FAILED, this.server.name, err.toString(), loadURL.toString());
                     log.info(`[${this.server.name}] Couldn't stablish a connection with ${loadURL}: ${err}.`);
                     this.status = ERROR;
+                    this.emit(LOAD_FAILED, this.server.name, err.toString(), loadURL.toString());
                 }
             });
         };
@@ -191,7 +191,7 @@ export class MattermostView extends EventEmitter {
     }
 
     isReady = () => {
-        return this.status === READY;
+        return this.status !== LOADING;
     }
 
     needsLoadingScreen = () => {

@@ -44,6 +44,7 @@ export class ViewManager {
             this.createLoadingScreen();
         }
         view.once(LOAD_SUCCESS, this.activateView);
+        view.once(LOAD_FAILED, this.failView);
         view.load();
         view.on(UPDATE_TARGET_URL, this.showURLView);
     }
@@ -137,12 +138,22 @@ export class ViewManager {
             view.focus();
         }
     }
+
     activateView = (viewName) => {
         if (this.currentView === viewName) {
             this.showByName(this.currentView);
         }
         const view = this.views.get(viewName);
+        view.removeListener(LOAD_FAILED, this.failView);
         addWebContentsEventListeners(view, this.getServers);
+    }
+
+    failView = (viewName) => {
+        if (this.currentView === viewName) {
+            this.showByName(this.currentView);
+        }
+        const view = this.views.get(viewName);
+        view.removeListener(LOAD_SUCCESS, this.activateView);
     }
 
     getCurrentView() {
