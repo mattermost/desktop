@@ -230,7 +230,7 @@ function createTemplate(config) {
     };
     template.push(windowMenu);
     const submenu = [];
-    if (config.data.MenuhelpLink) {
+    if (config.data.helpLink) {
         submenu.push({
             label: 'Learn More...',
             click() {
