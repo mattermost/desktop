@@ -335,7 +335,7 @@ export default class SettingsPage extends React.PureComponent {
                 fontSize: '20px',
                 margin: '0',
                 padding: '1em 0',
-                float: 'left',
+                display: 'inline-block',
             },
             sectionHeadingLink: {
                 marginTop: '24px',
