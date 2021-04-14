@@ -10,6 +10,8 @@ import * as AppState from './appState';
 
 const MAX_WIN_COUNT = 99;
 
+let showUnreadBadgeSetting;
+
 function showBadgeWindows(sessionExpired, showUnreadBadge, mentionCount) {
     let description = 'You have no unread messages';
     let text;
@@ -19,7 +21,7 @@ function showBadgeWindows(sessionExpired, showUnreadBadge, mentionCount) {
     } else if (mentionCount > 0) {
         text = (mentionCount > MAX_WIN_COUNT) ? `${MAX_WIN_COUNT}+` : mentionCount.toString();
         description = `You have unread mentions (${mentionCount})`;
-    } else if (showUnreadBadge) {
+    } else if (showUnreadBadge && showUnreadBadgeSetting) {
         text = '•';
         description = 'You have unread channels';
     }
@@ -32,7 +34,7 @@ function showBadgeOSX(sessionExpired, showUnreadBadge, mentionCount) {
         badge = '•';
     } else if (mentionCount > 0) {
         badge = mentionCount.toString();
-    } else if (showUnreadBadge) {
+    } else if (showUnreadBadge && showUnreadBadgeSetting) {
         badge = '•';
     }
     app.dock.setBadge(badge);
@@ -57,6 +59,11 @@ function showBadge(sessionExpired, mentionCount, showUnreadBadge) {
         showBadgeLinux(sessionExpired, showUnreadBadge, mentionCount);
         break;
     }
+}
+
+export function setUnreadBadgeSetting(showUnreadBadge) {
+    showUnreadBadgeSetting = showUnreadBadge;
+    AppState.emitStatus();
 }
 
 export function setupBadge() {
