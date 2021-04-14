@@ -38,6 +38,7 @@ export const MODAL_INFO = 'modal-info';
 export const MODAL_CANCEL = 'modal-cancel';
 export const MODAL_RESULT = 'modal-result';
 export const MODAL_SEND_IPC_MESSAGE = 'modal-send-ipc-message';
+export const MODAL_INVOKE_IPC_MESSAGE = 'modal-invoke-ipc-message';
 export const MODAL_OPEN = 'modal-open';
 export const MODAL_CLOSE = 'modal-close';
 export const NOTIFY_MENTION = 'notify_mention';
@@ -75,3 +76,5 @@ export const SELECT_NEXT_TAB = 'select-next-tab';
 export const SELECT_PREVIOUS_TAB = 'select-previous-tab';
 export const ADD_SERVER = 'add-server';
 export const FOCUS_THREE_DOT_MENU = 'focus-three-dot-menu';
+
+export const TEST_SERVER = 'test-server';

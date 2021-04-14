@@ -30,6 +30,7 @@ import {
     SHOW_SETTINGS_WINDOW,
     RELOAD_CONFIGURATION,
     USER_ACTIVITY_UPDATE,
+    TEST_SERVER,
 } from 'common/communication';
 import Config from 'common/config';
 
@@ -228,6 +229,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle('get-app-version', handleAppVersion);
     ipcMain.on('update-menu', handleUpdateMenuEvent);
     ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
+    ipcMain.handle(TEST_SERVER, urlUtils.testServerUrl);
 
     if (process.platform !== 'darwin') {
         ipcMain.on('open-app-menu', handleOpenAppMenu);

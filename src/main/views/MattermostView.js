@@ -6,7 +6,7 @@ import log from 'electron-log';
 
 import {EventEmitter} from 'events';
 
-import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constants';
+import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
 import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL, IS_UNREAD, UNREAD_RESULT, TOGGLE_BACK_BUTTON, SET_SERVER_NAME} from 'common/communication';
 
@@ -50,6 +50,7 @@ export class MattermostView extends EventEmitter {
         };
         this.isVisible = false;
         this.view = new BrowserView(this.options);
+        this.removeLoading = null;
         this.resetLoadingStatus();
 
         /**
@@ -77,11 +78,19 @@ export class MattermostView extends EventEmitter {
         return this.server.name;
     }
 
+    cancelLoadingTimeout = () => {
+        if (this.removeLoading) {
+            clearTimeout(this.removeLoading);
+            this.removeLoading = null;
+        }
+    }
+
     resetLoadingStatus = () => {
         if (this.status !== LOADING) { // if it's already loading, don't touch anything
             this.retryLoad = null;
             this.status = LOADING;
             this.maxRetries = MAX_SERVER_RETRIES;
+            this.cancelLoadingTimeout();
         }
     }
 
@@ -89,6 +98,13 @@ export class MattermostView extends EventEmitter {
         const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : urlUtils.parseURL(someURL).toString();
         log.info(`[${this.server.name}] Loading ${loadURL}`);
         const loading = this.view.webContents.loadURL(loadURL, {userAgent});
+        this.removeLoading = setTimeout(() => {
+            if (this.status === READY) {
+                this.emit(LOAD_SUCCESS, this.server.name);
+            } else {
+                this.emit(LOAD_FAILED, this.server.name);
+            }
+        }, MAX_LOADING_SCREEN_SECONDS);
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             this.loadRetry(loadURL, err);
         });
@@ -109,6 +125,7 @@ export class MattermostView extends EventEmitter {
                     log.info(`[${this.server.name}] Couldn't stablish a connection with ${loadURL}: ${err}.`);
                     this.status = ERROR;
                     this.emit(LOAD_FAILED, this.server.name, err.toString(), loadURL.toString());
+                    this.cancelLoadingTimeout();
                 }
             });
         };
@@ -124,6 +141,7 @@ export class MattermostView extends EventEmitter {
         return () => {
             log.info(`[${this.server.name}] finished loading ${loadURL}`);
             this.maxRetries = MAX_SERVER_RETRIES;
+            this.cancelLoadingTimeout();
             if (this.status === LOADING) {
                 ipcMain.on(UNREAD_RESULT, this.handleFaviconIsUnread);
                 this.handleTitleUpdate(null, this.view.webContents.getTitle());
@@ -197,8 +215,8 @@ export class MattermostView extends EventEmitter {
     needsLoadingScreen = () => {
         // mattermost servers will wait until webapp notifies it's ready, any other url will be loaded as soon as it gets
         const stillLoading = this.server.isNonMattermost ? this.status === LOADING : !this.isInitialized;
-
-        return stillLoading || !this.hasBeenShown;
+        const timedOut = this.startLoading ? (Date.now() - this.startLoading) / SECOND > MAX_LOADING_SCREEN_SECONDS : false;
+        return stillLoading || !this.hasBeenShown || timedOut;
     }
 
     setInitialized = () => {

@@ -1,9 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {net} from 'electron';
 import {isHttpsUri, isHttpUri, isUri} from 'valid-url';
 
 import buildConfig from '../config/buildConfig';
+
+import {SECOND} from './constants';
 
 // supported custom login paths (oath, saml)
 const customLoginRegexPaths = [
@@ -231,6 +234,48 @@ function isCustomLoginURL(url, server, teams) {
     return false;
 }
 
+const API_PING = '/api/v4/system/ping';
+
+function testSingleUrl(serverUrl) {
+    return new Promise((resolve, reject) => {
+        const testUrl = typeof serverUrl === 'string' ? `${serverUrl}/${API_PING}` : `${serverUrl.toString()}/${API_PING}`;
+        const test = net.request(testUrl);
+        const timeout = setTimeout(() => test.abort(), 20 * SECOND);
+        test.on('response', (data) => {
+            clearTimeout(timeout);
+            if (data.statusCode >= 400) {
+                reject(new Error(`Not a mattermost server. Request error: ${data.statusCode}`));
+            }
+
+            resolve(true);
+        });
+        test.on('abort', () => {
+            reject(new Error('Server timed out'));
+        });
+    });
+}
+
+function testServerUrl(serverUrl) {
+    const splitUrl = serverUrl.split('/');
+    if (splitUrl.length < 3) {
+        return false;
+    }
+
+    let urlBase = splitUrl.slice(0, 2).join('/');
+    let result = false;
+    splitUrl.slice(3).forEach(async (path) => {
+        urlBase = `${urlBase}/${path}`;
+        try {
+            result = result || await testSingleUrl(urlBase);
+        } catch {
+            // eslint-disable-next-line no-console
+            console.debug(`urlBase ${urlBase} is not a server`);
+        }
+    });
+
+    return result;
+}
+
 export default {
     getDomain,
     isValidURL,
@@ -246,4 +291,5 @@ export default {
     getHost,
     isTrustedURL,
     isCustomLoginURL,
+    testServerUrl,
 };

@@ -6,7 +6,7 @@
 
 import {ipcRenderer} from 'electron';
 
-import {MODAL_CANCEL, MODAL_RESULT, MODAL_INFO, RETRIEVE_MODAL_INFO, MODAL_SEND_IPC_MESSAGE} from 'common/communication';
+import {MODAL_CANCEL, MODAL_RESULT, MODAL_INFO, RETRIEVE_MODAL_INFO, MODAL_SEND_IPC_MESSAGE, MODAL_INVOKE_IPC_MESSAGE} from 'common/communication';
 
 console.log('preloaded for the modal!');
 
@@ -29,6 +29,9 @@ window.addEventListener('message', async (event) => {
     case MODAL_SEND_IPC_MESSAGE:
         console.log('sending custom ipc message');
         ipcRenderer.send(event.data.data.type, ...event.data.data.args);
+        break;
+    case MODAL_INVOKE_IPC_MESSAGE:
+        window.postMessage({type: event.data.data.type, data: ipcRenderer.invoke(event.data.data.type, ...event.data.data.args)}, window.location.href);
         break;
     default:
         console.log(`got a message: ${event}`);

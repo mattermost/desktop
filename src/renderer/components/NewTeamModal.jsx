@@ -6,6 +6,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} from 'react-bootstrap';
 
+import {ipcRenderer} from 'electron';
+
 import urlUtils from 'common/utils/url';
 
 export default class NewTeamModal extends React.PureComponent {
@@ -32,6 +34,8 @@ export default class NewTeamModal extends React.PureComponent {
             teamIndex: this.props.team ? this.props.team.index : false,
             teamOrder: this.props.team ? this.props.team.order : (this.props.currentOrder || 0),
             saveStarted: false,
+            testStartted: false,
+            testResult: null,
         });
     }
 
@@ -75,6 +79,7 @@ export default class NewTeamModal extends React.PureComponent {
     handleTeamUrlChange = (e) => {
         this.setState({
             teamUrl: e.target.value,
+            testResult: null,
         });
     }
 
@@ -88,6 +93,8 @@ export default class NewTeamModal extends React.PureComponent {
             return nameError;
         } else if (urlError) {
             return urlError;
+        } else if (this.state.testResult === false) {
+            return 'Please enter the URL to a Mattermost workspace or server';
         }
         return null;
     }
@@ -98,22 +105,33 @@ export default class NewTeamModal extends React.PureComponent {
     }
 
     save = () => {
-        this.setState({
-            saveStarted: true,
-        }, () => {
+        if (this.state.testResult) {
+            this.setState({
+                saveStarted: true,
+            }, () => {
+                if (this.validateForm()) {
+                    this.props.onSave({
+                        url: this.state.teamUrl,
+                        name: this.state.teamName,
+                        index: this.state.teamIndex,
+                        order: this.state.teamOrder,
+                    });
+                }
+            });
+        } else if (!test.state.testStarted) {
             if (this.validateForm()) {
-                this.props.onSave({
-                    url: this.state.teamUrl,
-                    name: this.state.teamName,
-                    index: this.state.teamIndex,
-                    order: this.state.teamOrder,
+                this.setState({testStarted: true});
+                ipcRenderer.invoke(this.state.teamUrl).then((result) => {
+                    this.setState({testResult: result});
                 });
             }
-        });
+        }
     }
 
     getSaveButtonLabel() {
-        if (this.props.editMode) {
+        if (this.state.testresult === null) {
+            return 'Test';
+        } else if (this.props.editMode) {
             return 'Save';
         }
         return 'Add';

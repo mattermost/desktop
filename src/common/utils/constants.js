@@ -7,4 +7,6 @@ export const DEVELOPMENT = 'development';
 export const SECOND = 1000;
 export const RELOAD_INTERVAL = 5 * SECOND;
 
-export const MAX_SERVER_RETRIES = 5;
+export const MAX_SERVER_RETRIES = 3;
+
+export const MAX_LOADING_SCREEN_SECONDS = 20;
