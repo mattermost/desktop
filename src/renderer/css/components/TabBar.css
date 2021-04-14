@@ -17,7 +17,6 @@
   flex: 0 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 200px;
   white-space: nowrap;
   text-align: center;
 }
@@ -26,6 +25,7 @@
   -webkit-app-region: no-drag;
   -webkit-user-select: none;
   min-width: 48px;
+  max-width: 224px;
 }
 
 .TabBar>li>a {
