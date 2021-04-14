@@ -247,7 +247,7 @@ function handleConfigUpdate(newConfig) {
             log.error('error:', err);
         });
         WindowManager.setConfig(newConfig.data);
-        setUnreadBadgeSetting(newConfig.data.showUnreadBadge);
+        setUnreadBadgeSetting(newConfig.data && newConfig.data.showUnreadBadge);
     }
 
     ipcMain.emit('update-menu', true, config);
