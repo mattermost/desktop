@@ -7,9 +7,19 @@ import log from 'electron-log';
 import {EventEmitter} from 'events';
 
 import Util from 'common/utils/util';
-import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND} from 'common/utils/constants';
+import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
-import {LOAD_RETRY, LOAD_SUCCESS, LOAD_FAILED, UPDATE_TARGET_URL, IS_UNREAD, UNREAD_RESULT, TOGGLE_BACK_BUTTON, SET_SERVER_NAME} from 'common/communication';
+import {
+    LOAD_RETRY,
+    LOAD_SUCCESS,
+    LOAD_FAILED,
+    UPDATE_TARGET_URL,
+    IS_UNREAD,
+    UNREAD_RESULT,
+    TOGGLE_BACK_BUTTON,
+    SET_SERVER_NAME,
+    LOADSCREEN_END,
+} from 'common/communication';
 
 import {getWindowBoundaries, getLocalPreload} from '../utils';
 import * as WindowManager from '../windows/windowManager';
@@ -21,6 +31,7 @@ import {removeWebContentsListeners} from './webContentEvents';
 // TODO: review
 const userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.146 Electron/6.1.7 Safari/537.36 Mattermost/${app.getVersion()}`;
 const READY = 1;
+const WAITING_MM = 2;
 const LOADING = 0;
 const ERROR = -1;
 
@@ -51,6 +62,7 @@ export class MattermostView extends EventEmitter {
         };
         this.isVisible = false;
         this.view = new BrowserView(this.options);
+        this.removeLoading = null;
         this.resetLoadingStatus();
 
         /**
@@ -131,7 +143,8 @@ export class MattermostView extends EventEmitter {
                 this.handleTitleUpdate(null, this.view.webContents.getTitle());
                 this.findUnreadState(null);
             }
-            this.status = READY;
+            this.status = WAITING_MM;
+            this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
             this.emit(LOAD_SUCCESS, this.server.name, loadURL.toString());
             this.view.webContents.send(SET_SERVER_NAME, this.server.name);
         };
@@ -192,15 +205,22 @@ export class MattermostView extends EventEmitter {
     }
 
     isReady = () => {
-        return this.status === READY;
+        return this.status !== LOADING;
     }
 
     needsLoadingScreen = () => {
-        return !(this.isInitialized && this.hasBeenShown);
+        return !(this.status === READY || this.status === ERROR);
     }
 
-    setInitialized = () => {
-        this.isInitialized = true;
+    setInitialized = (timedout) => {
+        this.status = READY;
+
+        if (timedout) {
+            log.info(`${this.server.name} timeout expired will show the browserview`);
+            this.emit(LOADSCREEN_END, this.server.name);
+        }
+        clearTimeout(this.removeLoading);
+        this.removeLoading = null;
     }
 
     openDevTools = () => {

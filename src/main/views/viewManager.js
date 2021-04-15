@@ -4,7 +4,15 @@ import log from 'electron-log';
 import {BrowserView, dialog} from 'electron';
 
 import {SECOND} from 'common/utils/constants';
-import {UPDATE_TARGET_URL, SET_SERVER_KEY, LOAD_SUCCESS, LOAD_FAILED, TOGGLE_LOADING_SCREEN_VISIBILITY, GET_LOADING_SCREEN_DATA} from 'common/communication';
+import {
+    UPDATE_TARGET_URL,
+    SET_SERVER_KEY,
+    LOAD_SUCCESS,
+    LOAD_FAILED,
+    TOGGLE_LOADING_SCREEN_VISIBILITY,
+    GET_LOADING_SCREEN_DATA,
+    LOADSCREEN_END,
+} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
 import contextMenu from '../contextMenu';
@@ -46,6 +54,8 @@ export class ViewManager {
         view.once(LOAD_SUCCESS, this.activateView);
         view.load();
         view.on(UPDATE_TARGET_URL, this.showURLView);
+        view.on(LOADSCREEN_END, this.finishLoading);
+        view.once(LOAD_FAILED, this.failLoading);
     }
 
     load = () => {
@@ -119,6 +129,9 @@ export class ViewManager {
                 contextMenu.reload(newView.getWebContents());
             } else {
                 log.warn(`couldn't show ${name}, not ready`);
+                if (newView.needsLoadingScreen()) {
+                    this.showLoadingScreen();
+                }
             }
         } else {
             log.warn(`Couldn't find a view with name: ${name}`);
@@ -143,6 +156,18 @@ export class ViewManager {
         }
         const view = this.views.get(viewName);
         addWebContentsEventListeners(view, this.getServers);
+    }
+
+    finishLoading = (server) => {
+        const view = this.views.get(server);
+        if (view && this.getCurrentView() === view) {
+            this.showByName(this.currentView);
+            this.fadeLoadingScreen();
+        }
+    }
+
+    failLoading = () => {
+        this.fadeLoadingScreen();
     }
 
     getCurrentView() {
