@@ -4,6 +4,7 @@
 import {BrowserView} from 'electron';
 import log from 'electron-log';
 
+import ContextMenu from '../contextMenu';
 import {getWindowBoundaries} from '../utils';
 
 const ACTIVE = 'active';
@@ -33,6 +34,8 @@ export class ModalView {
             log.error('there was an error loading the modal:');
             log.error(e);
         }
+
+        this.contextMenu = new ContextMenu({}, this.view);
     }
 
     show = (win, withDevTools) => {

@@ -7,7 +7,6 @@ import {SECOND} from 'common/utils/constants';
 import {UPDATE_TARGET_URL, SET_SERVER_KEY, LOAD_SUCCESS, LOAD_FAILED, TOGGLE_LOADING_SCREEN_VISIBILITY, GET_LOADING_SCREEN_DATA} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
-import contextMenu from '../contextMenu';
 import {MattermostServer} from '../MattermostServer';
 import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
 
@@ -116,7 +115,6 @@ export class ViewManager {
                 } else {
                     this.fadeLoadingScreen();
                 }
-                contextMenu.reload(newView.getWebContents());
             } else {
                 log.warn(`couldn't show ${name}, not ready`);
             }
