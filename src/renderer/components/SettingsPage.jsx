@@ -456,7 +456,7 @@ export default class SettingsPage extends React.PureComponent {
             >
                 {'Check spelling'}
                 <HelpBlock>
-                    {'Highlight misspelled words in your messages. OS language will be used. '}
+                    {'Highlight misspelled words in your messages based on your system language configuration.'}
                     {'Setting takes effect after restarting the app.'}
                 </HelpBlock>
             </Checkbox>);
