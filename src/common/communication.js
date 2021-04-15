@@ -75,3 +75,5 @@ export const SELECT_NEXT_TAB = 'select-next-tab';
 export const SELECT_PREVIOUS_TAB = 'select-previous-tab';
 export const ADD_SERVER = 'add-server';
 export const FOCUS_THREE_DOT_MENU = 'focus-three-dot-menu';
+
+export const LOADSCREEN_END = 'loadscreen-end';
