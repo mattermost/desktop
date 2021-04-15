@@ -81,11 +81,16 @@ export default class MainPage extends React.PureComponent {
         return {status: NOSERVERS};
     }
 
+    updateTabStatus(server, newStatusValue) {
+        const status = new Map(this.state.tabStatus);
+        status.set(server, newStatusValue);
+        this.setState({tabStatus: status});
+    }
+
     componentDidMount() {
         // set page on retry
         window.ipcRenderer.on(LOAD_RETRY, (_, server, retry, err, loadUrl) => {
             console.log(`${server}: failed to load ${err}, but retrying`);
-            const status = this.state.tabStatus;
             const statusValue = {
                 status: RETRY,
                 extra: {
@@ -94,19 +99,15 @@ export default class MainPage extends React.PureComponent {
                     url: loadUrl,
                 },
             };
-            status.set(server, statusValue);
-            this.setState({tabStatus: status});
+            this.updateTabStatus(server, statusValue);
         });
 
         window.ipcRenderer.on(LOAD_SUCCESS, (_, server) => {
-            const status = this.state.tabStatus;
-            status.set(server, {status: DONE});
-            this.setState({tabStatus: status});
+            this.updateTabStatus(server, {status: DONE});
         });
 
         window.ipcRenderer.on(LOAD_FAILED, (_, server, err, loadUrl) => {
             console.log(`${server}: failed to load ${err}`);
-            const status = this.state.tabStatus;
             const statusValue = {
                 status: FAILED,
                 extra: {
@@ -114,8 +115,7 @@ export default class MainPage extends React.PureComponent {
                     url: loadUrl,
                 },
             };
-            status.set(server, statusValue);
-            this.setState({tabStatus: status});
+            this.updateTabStatus(server, statusValue);
         });
 
         window.ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => {
