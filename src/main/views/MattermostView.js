@@ -21,6 +21,7 @@ import {
     LOADSCREEN_END,
 } from 'common/communication';
 
+import ContextMenu from '../contextMenu';
 import {getWindowBoundaries, getLocalPreload} from '../utils';
 import * as WindowManager from '../windows/windowManager';
 import * as appState from '../appState';
@@ -82,6 +83,8 @@ export class MattermostView extends EventEmitter {
             this.altLastPressed = false;
             this.view.webContents.on('before-input-event', this.handleInputEvents);
         }
+
+        this.contextMenu = new ContextMenu({}, this.view);
     }
 
     // use the same name as the server

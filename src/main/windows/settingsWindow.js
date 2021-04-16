@@ -4,6 +4,7 @@
 import {BrowserWindow} from 'electron';
 import log from 'electron-log';
 
+import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
 
 export function createSettingsWindow(mainWindow, config, withDevTools) {
@@ -20,6 +21,10 @@ export function createSettingsWindow(mainWindow, config, withDevTools) {
             spellcheck,
             enableRemoteModule: process.env.NODE_ENV === 'test',
         }});
+
+    const contextMenu = new ContextMenu({}, settingsWindow);
+    contextMenu.reload();
+
     const localURL = getLocalURLString('settings.html');
     settingsWindow.setMenuBarVisibility(false);
     settingsWindow.loadURL(localURL).catch(

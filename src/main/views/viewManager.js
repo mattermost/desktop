@@ -15,7 +15,6 @@ import {
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 
-import contextMenu from '../contextMenu';
 import {MattermostServer} from '../MattermostServer';
 import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
 
@@ -126,7 +125,6 @@ export class ViewManager {
                 } else {
                     this.fadeLoadingScreen();
                 }
-                contextMenu.reload(newView.getWebContents());
             } else {
                 log.warn(`couldn't show ${name}, not ready`);
                 if (newView.needsLoadingScreen()) {

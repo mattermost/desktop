@@ -12,7 +12,7 @@ import log from 'electron-log';
 import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB} from 'common/communication';
 
 import * as Validator from '../Validator';
-import contextMenu from '../contextMenu';
+import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
 
 function saveWindowState(file, window) {
@@ -165,7 +165,9 @@ function createMainWindow(config, options) {
         }
     });
 
-    contextMenu.setup({useSpellChecker: config.useSpellChecker});
+    const contextMenu = new ContextMenu({}, mainWindow);
+    contextMenu.reload();
+
     return mainWindow;
 }
 
