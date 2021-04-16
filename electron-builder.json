@@ -88,7 +88,7 @@
   }
   },
   "dmg": {
-    "background": "resources/osx/DMG_BG.png",
+    "background": "src/assets/osx/DMG_BG.png",
     "contents": [
       {
         "x": 152,
