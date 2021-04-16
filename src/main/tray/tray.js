@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
-import {app, nativeImage, nativeTheme, Tray, systemPreferences} from 'electron';
+import {app, nativeImage, Tray, systemPreferences} from 'electron';
 
 import {UPDATE_TRAY} from 'common/communication';
 
@@ -27,19 +27,17 @@ export function refreshTrayImages(trayIconTheme) {
         break;
     case 'darwin':
     {
+        const osxNormal = nativeImage.createFromPath(path.resolve(assetsDir, 'osx/menuIcons/MenuIcon16Template.png'));
+        const osxUnread = nativeImage.createFromPath(path.resolve(assetsDir, 'osx/menuIcons/MenuIconUnread16Template.png'));
+        osxNormal.setTemplateImage(true);
+        osxUnread.setTemplateImage(true);
+
         trayImages = {
-            light: {
-                normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIcon.png')),
-                unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconUnread.png')),
-                mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/MenuIconMention.png')),
-            },
-            clicked: {
-                normal: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIcon.png')),
-                unread: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconUnread.png')),
-                mention: nativeImage.createFromPath(path.resolve(assetsDir, 'osx/ClickedMenuIconMention.png')),
-            },
+            normal: osxNormal,
+            unread: osxUnread,
+            mention: osxUnread,
         };
-        switchMenuIconImages(trayImages, nativeTheme.shouldUseDarkColors);
+
         break;
     }
     case 'linux':
@@ -47,16 +45,16 @@ export function refreshTrayImages(trayIconTheme) {
         const theme = trayIconTheme;
         try {
             trayImages = {
-                normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconTemplate.png')),
-                unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconUnreadTemplate.png')),
-                mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconMentionTemplate.png')),
+                normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIcon.png')),
+                unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconUnread.png')),
+                mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconMention.png')),
             };
         } catch (e) {
             //Fallback for invalid theme setting
             trayImages = {
-                normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconTemplate.png')),
-                unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconUnreadTemplate.png')),
-                mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconMentionTemplate.png')),
+                normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIcon.png')),
+                unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconUnread.png')),
+                mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconMention.png')),
             };
         }
         break;
@@ -70,25 +68,12 @@ export function refreshTrayImages(trayIconTheme) {
     return trayImages;
 }
 
-export function switchMenuIconImages(icons, isDarkMode) {
-    if (isDarkMode) {
-        icons.normal = icons.clicked.normal;
-        icons.unread = icons.clicked.unread;
-        icons.mention = icons.clicked.mention;
-    } else {
-        icons.normal = icons.light.normal;
-        icons.unread = icons.light.unread;
-        icons.mention = icons.light.mention;
-    }
-}
-
 export function setupTray(icontheme) {
     refreshTrayImages(icontheme);
     trayIcon = new Tray(trayImages.normal);
     if (process.platform === 'darwin') {
         trayIcon.setPressedImage(trayImages.clicked.normal);
         systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
-            switchMenuIconImages(trayImages, nativeTheme.shouldUseDarkColors);
             trayIcon.setImage(trayImages.normal);
         });
     }

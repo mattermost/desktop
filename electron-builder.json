@@ -6,7 +6,7 @@
   "appId": "Mattermost.Desktop",
   "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
   "directories": {
-    "buildResources": "resources",
+    "buildResources": "src/assets",
     "output": "release"
   },
   "extraMetadata": {
@@ -57,7 +57,7 @@
         "from": "resources/linux",
         "filter": [
           "create_desktop_file.sh",
-          "icon.svg",
+          "app_icon.png",
           "README.md"
         ]
       }

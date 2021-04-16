@@ -62,7 +62,7 @@ export function showMainWindow(deeplinkingURL) {
         status.mainWindow.show();
     } else {
         status.mainWindow = createMainWindow(status.config, {
-            linuxAppIcon: path.join(assetsDir, 'appicon.png'),
+            linuxAppIcon: path.join(assetsDir, 'linux', 'app_icon.png'),
         });
 
         if (!status.mainWindow) {
