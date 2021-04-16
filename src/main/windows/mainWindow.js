@@ -18,6 +18,7 @@ import {getLocalPreload, getLocalURLString} from '../utils';
 function saveWindowState(file, window) {
     const windowState = window.getBounds();
     windowState.maximized = window.isMaximized();
+    windowState.fullscreen = window.isFullScreen();
     try {
         fs.writeFileSync(file, JSON.stringify(windowState));
     } catch (e) {
@@ -52,7 +53,6 @@ function createMainWindow(config, options) {
     }
 
     const {maximized: windowIsMaximized} = windowOptions;
-    const fullscreen = process.platform === 'darwin' && windowIsMaximized && windowOptions.x === 0 && windowOptions.y === 0;
 
     const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
 
@@ -67,7 +67,7 @@ function createMainWindow(config, options) {
         minWidth: minimumWindowWidth,
         minHeight: minimumWindowHeight,
         frame: !isFramelessWindow(),
-        fullscreen,
+        fullscreen: windowOptions.fullscreen,
         titleBarStyle: 'hidden',
         trafficLightPosition: {x: 12, y: 24},
         backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
