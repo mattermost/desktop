@@ -32,6 +32,7 @@ import {
     SELECT_PREVIOUS_TAB,
     ADD_SERVER,
     FOCUS_THREE_DOT_MENU,
+    GET_FULL_SCREEN_STATUS,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -149,6 +150,8 @@ export default class MainPage extends React.PureComponent {
 
         window.ipcRenderer.on('enter-full-screen', () => this.handleFullScreenState(true));
         window.ipcRenderer.on('leave-full-screen', () => this.handleFullScreenState(false));
+
+        window.ipcRenderer.invoke(GET_FULL_SCREEN_STATUS).then((fullScreenStatus) => this.handleFullScreenState(fullScreenStatus));
 
         window.ipcRenderer.on(ADD_SERVER, () => {
             this.addServer();
