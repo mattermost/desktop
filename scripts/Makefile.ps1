@@ -533,10 +533,6 @@ function Run-BuildElectron {
     Print-Info "Packaging nodejs/electron for Windows (running npm run package:windows)..."
     npm run package:windows
     #npm run package:windows --prefix="$(Get-RootDir)" "$(Get-RootDir)"
-
-    Print-Info "Cleaning build dir..."
-    Remove-Item "release\win-ia32-unpacked\resources\app.asar.unpacked\" -Force -Recurse
-    Remove-Item "release\win-unpacked\resources\app.asar.unpacked\" -Force -Recurse
 }
 
 function Run-BuildForceSignature {
