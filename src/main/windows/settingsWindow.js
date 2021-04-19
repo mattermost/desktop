@@ -14,6 +14,7 @@ export function createSettingsWindow(mainWindow, config, withDevTools) {
         ...config.data,
         parent: mainWindow,
         title: 'Desktop App Settings',
+        fullscreen: false,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
