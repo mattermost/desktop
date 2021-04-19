@@ -6,10 +6,10 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-import {app, BrowserWindow} from 'electron';
+import {app, BrowserWindow, ipcMain} from 'electron';
 import log from 'electron-log';
 
-import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB} from 'common/communication';
+import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS} from 'common/communication';
 
 import * as Validator from '../Validator';
 import ContextMenu from '../contextMenu';
@@ -18,6 +18,7 @@ import {getLocalPreload, getLocalURLString} from '../utils';
 function saveWindowState(file, window) {
     const windowState = window.getBounds();
     windowState.maximized = window.isMaximized();
+    windowState.fullscreen = window.isFullScreen();
     try {
         fs.writeFileSync(file, JSON.stringify(windowState));
     } catch (e) {
@@ -66,7 +67,7 @@ function createMainWindow(config, options) {
         minWidth: minimumWindowWidth,
         minHeight: minimumWindowHeight,
         frame: !isFramelessWindow(),
-        fullscreen: false,
+        fullscreen: windowOptions.fullscreen,
         titleBarStyle: 'hidden',
         trafficLightPosition: {x: 12, y: 24},
         backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
@@ -82,6 +83,8 @@ function createMainWindow(config, options) {
 
     const mainWindow = new BrowserWindow(windowOptions);
     mainWindow.setMenuBarVisibility(false);
+
+    ipcMain.handle(GET_FULL_SCREEN_STATUS, () => mainWindow.isFullScreen());
 
     const localURL = getLocalURLString('index.html');
     mainWindow.loadURL(localURL).catch(

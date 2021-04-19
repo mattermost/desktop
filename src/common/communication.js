@@ -45,6 +45,7 @@ export const WINDOW_CLOSE = 'window_close';
 export const WINDOW_MINIMIZE = 'window_minimize';
 export const WINDOW_MAXIMIZE = 'window_maximize';
 export const WINDOW_RESTORE = 'window_restore';
+export const GET_FULL_SCREEN_STATUS = 'get-full-screen-status';
 
 export const UPDATE_TARGET_URL = 'update_target_url';
 
