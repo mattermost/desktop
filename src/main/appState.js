@@ -32,7 +32,7 @@ const emitBadge = (expired, mentions, unreads) => {
     status.emitter.emit(UPDATE_BADGE, expired, mentions, unreads);
 };
 
-const emitStatus = () => {
+export const emitStatus = () => {
     const expired = anyExpired();
     const mentions = totalMentions();
     const unreads = anyUnreads();
