@@ -287,14 +287,14 @@ jobs:
       - run:
           name: "Don't upload if it's not on a tag"
           command: |
-            if [ -z `git tag -l --points-at master` ]; then
+            if [ -z `git name-rev --name-only --tags --no-undefined HEAD 2>/dev/null` ]; then
               circleci-agent step halt
             fi  
       - run:
           name: "Setup files for aws-s3"
           command: |
             mkdir -p ./aws-s3-dist
-            cp ./dist/{macos-release,win-release,linux}/* ./aws-s3-dist
+            cp --backup=numbered ./dist/{macos-release,win-release,linux}/* ./aws-s3-dist
       - aws-s3/copy:
           from: ./aws-s3-dist/
           to: s3://releases.mattermost.com/desktop/$(jq -r .version package.json)/
@@ -324,14 +324,14 @@ jobs:
       - run:
           name: "Don't upload if it's not on a tag"
           command: |
-            if [ -z `git tag -l --points-at master` ]; then
+            if [ -z `git name-rev --name-only --tags --no-undefined HEAD 2>/dev/null` ]; then
               circleci-agent step halt
             fi  
       - run:
           name: "Setup files for ghr"
           command: |
             mkdir -p ./ghr-dist
-            cp ./dist/{macos-release,win-release,linux}/* ./ghr-dist
+            cp --backup=numbered ./dist/{macos-release,win-release,linux}/* ./ghr-dist
       - run:
           name: "Publish Release on GitHub"
           command: |
