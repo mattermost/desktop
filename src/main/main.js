@@ -55,7 +55,7 @@ import {getLocalURLString, getLocalPreload} from './utils';
 import {destroyTray, refreshTrayImages, setTrayMenu, setupTray} from './tray/tray';
 import {AuthManager} from './authManager';
 import {CertificateManager} from './certificateManager';
-import {setupBadge} from './badge';
+import {setupBadge, setUnreadBadgeSetting} from './badge';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
     module.hot.accept();
@@ -247,6 +247,7 @@ function handleConfigUpdate(newConfig) {
             log.error('error:', err);
         });
         WindowManager.setConfig(newConfig.data);
+        setUnreadBadgeSetting(newConfig.data && newConfig.data.showUnreadBadge);
     }
 
     ipcMain.emit('update-menu', true, config);
@@ -255,6 +256,7 @@ function handleConfigUpdate(newConfig) {
 function handleConfigSynchronize() {
     // TODO: send this to server manager
     WindowManager.setConfig(config.data);
+    setUnreadBadgeSetting(config.data.showUnreadBadge);
     if (app.isReady()) {
         WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
     }
@@ -514,7 +516,7 @@ function initializeAfterAppReady() {
     if (shouldShowTrayIcon()) {
         setupTray(config.trayIconTheme);
     }
-    setupBadge();
+    setupBadge(config.showUnreadBadge);
 
     session.defaultSession.on('will-download', (event, item, webContents) => {
         const filename = item.getFilename();
