@@ -34,6 +34,7 @@ $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win-x64.zip")
 
 #### Mac
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-mac.dmg")
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-mac-arm64.dmg") (beta)
 
 #### Linux
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-ia32.tar.gz")
