@@ -72,7 +72,6 @@ export function setupTray(icontheme) {
     refreshTrayImages(icontheme);
     trayIcon = new Tray(trayImages.normal);
     if (process.platform === 'darwin') {
-        trayIcon.setPressedImage(trayImages.clicked.normal);
         systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
             trayIcon.setImage(trayImages.normal);
         });
@@ -107,9 +106,6 @@ function setTray(status, message) {
     lastStatus = status;
     lastMessage = message;
     trayIcon.setImage(trayImages[status]);
-    if (process.platform === 'darwin') {
-        trayIcon.setPressedImage(trayImages.clicked[status]);
-    }
     trayIcon.setToolTip(message);
 }
 
