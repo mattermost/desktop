@@ -59,7 +59,11 @@ export function showSettingsWindow() {
 
 export function showMainWindow(deeplinkingURL) {
     if (status.mainWindow) {
-        status.mainWindow.show();
+        if (status.mainWindow.isVisible()) {
+            status.mainWindow.focus();
+        } else {
+            status.mainWindow.show();
+        }
     } else {
         status.mainWindow = createMainWindow(status.config, {
             linuxAppIcon: path.join(assetsDir, 'linux', 'app_icon.png'),
