@@ -393,7 +393,6 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - fix-m1-release
 
       - build-mac-no-dmg:
           requires:
@@ -402,7 +401,6 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - fix-m1-release
 
       - msi_installer:
           requires:
@@ -415,7 +413,6 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - fix-m1-release
 
       - mac_installer:
           requires:
@@ -425,7 +422,6 @@ workflows:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - fix-m1-release
 
       - store_artifacts:
           # for master/PR builds
@@ -437,7 +433,6 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - fix-m1-release
 
       - upload_to_s3:
           # for release builds
@@ -450,7 +445,6 @@ workflows:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - fix-m1-release
 
       - upload_to_github:
           requires:
@@ -460,7 +454,6 @@ workflows:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - fix-m1-release
       - end-notification:
           requires:
             - upload_to_github
