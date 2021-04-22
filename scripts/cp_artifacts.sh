@@ -28,7 +28,7 @@ if [[ ${MM_WIN_INSTALLERS-0} -eq 1 && -f "${SRC}/mattermost-desktop-setup-${VERS
 fi
 if [[ -f "${SRC}/mattermost-desktop-${VERSION}-mac.zip" ]]; then
     echo -e "Copying mac\n"
-    cp "${SRC}"/mattermost-desktop-*-mac.* "${DEST}/"
+    cp "${SRC}"/mattermost-desktop-*-mac*.* "${DEST}/"
     if [[ -f "${SRC}"/mattermost-desktop-${VERSION}-mac.dmg ]]; then
         cp "${SRC}"/*.blockmap "${DEST}/"
     fi
