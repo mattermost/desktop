@@ -2,3 +2,4 @@
 // See LICENSE.txt for license information.
 
 import './trusted_origins_test';
+import './url_test';
