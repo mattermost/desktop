@@ -40,7 +40,7 @@ function parseURL(inputURL) {
         return inputURL;
     }
     try {
-        return new URL(inputURL);
+        return new URL(inputURL.replace(/([^:]\/)\/+/g, '$1'));
     } catch (e) {
         return null;
     }

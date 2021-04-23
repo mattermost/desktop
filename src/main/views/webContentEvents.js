@@ -136,6 +136,12 @@ const generateNewWindowListener = (getServersFunction, spellcheck) => {
             return;
         }
 
+        // Image proxy case
+        if (parsedURL.pathname.match(/^\/api\/v[3-4]\/image/)) {
+            shell.openExternal(url);
+            return;
+        }
+
         if (parsedURL.pathname.match(/^\/help\//)) {
             // Help links case
             // continue to open special case internal urls in default browser
