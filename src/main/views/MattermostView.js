@@ -22,15 +22,12 @@ import {
 } from 'common/communication';
 
 import ContextMenu from '../contextMenu';
-import {getWindowBoundaries, getLocalPreload} from '../utils';
+import {getWindowBoundaries, getLocalPreload, composeUserAgent} from '../utils';
 import * as WindowManager from '../windows/windowManager';
 import * as appState from '../appState';
 
 import {removeWebContentsListeners} from './webContentEvents';
 
-// copying what webview sends
-// TODO: review
-const userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.146 Electron/6.1.7 Safari/537.36 Mattermost/${app.getVersion()}`;
 const READY = 1;
 const WAITING_MM = 2;
 const LOADING = 0;
@@ -104,7 +101,7 @@ export class MattermostView extends EventEmitter {
     load = (someURL) => {
         const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : urlUtils.parseURL(someURL).toString();
         log.info(`[${Util.shorten(this.server.name)}] Loading ${loadURL}`);
-        const loading = this.view.webContents.loadURL(loadURL, {userAgent});
+        const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             this.loadRetry(loadURL, err);
         });
@@ -116,7 +113,7 @@ export class MattermostView extends EventEmitter {
             if (!this.view) {
                 return;
             }
-            const loading = this.view.webContents.loadURL(loadURL, {userAgent});
+            const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
             loading.then(this.loadSuccess(loadURL)).catch((err) => {
                 if (this.maxRetries-- > 0) {
                     this.loadRetry(loadURL, err);
