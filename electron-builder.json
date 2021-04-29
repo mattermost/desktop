@@ -37,7 +37,10 @@
   "afterPack": "scripts/afterpack.js",
   "afterSign": "scripts/notarize.js",
   "deb": {
-    "synopsis": "Mattermost Desktop App"
+    "synopsis": "Mattermost Desktop App",
+    "depends": ["gconf2", "gconf-service", "libnotify4", "libxtst6", "libnss3"],
+    "category": "contrib/net",
+    "priority": "optional"
   },
   "linux": {
     "category": "Network;InstantMessaging",
