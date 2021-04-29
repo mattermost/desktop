@@ -13,6 +13,7 @@ import * as WindowManager from '../windows/windowManager';
 import {protocols} from '../../../electron-builder.json';
 
 import allowProtocolDialog from '../allowProtocolDialog';
+import {composeUserAgent} from '../utils';
 
 const customLogins = {};
 const listeners = {};
@@ -27,18 +28,6 @@ function isTrustedPopupWindow(webContents) {
     }
     return Utils.browserWindowFromWebContents(webContents) === popupWindow;
 }
-
-const nixUA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari/537.36';
-
-const popupUserAgent = {
-    darwin: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari/537.36',
-    win32: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari/537.36',
-    aix: nixUA,
-    freebsd: nixUA,
-    linux: nixUA,
-    openbsd: nixUA,
-    sunos: nixUA,
-};
 
 const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];
 
@@ -191,7 +180,7 @@ const generateNewWindowListener = (getServersFunction, spellcheck) => {
                 // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth
                 // should be removed once a proper oAuth2 implementation is setup.
                 popupWindow.loadURL(url, {
-                    userAgent: popupUserAgent[process.platform],
+                    userAgent: composeUserAgent(),
                 });
             }
         }
