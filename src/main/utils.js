@@ -71,3 +71,12 @@ export function getLocalPreload(file) {
     }
     return path.resolve(__dirname, `../../dist/${file}`);
 }
+
+export function composeUserAgent() {
+    const baseUserAgent = app.userAgentFallback.split(' ');
+
+    // filter out the Mattermost tag that gets added earlier on
+    const filteredUserAgent = baseUserAgent.filter((ua) => !ua.startsWith('Mattermost'));
+
+    return `${filteredUserAgent.join(' ')} Mattermost/${app.getVersion()}`;
+}
