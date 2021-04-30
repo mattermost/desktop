@@ -257,6 +257,7 @@ function handleConfigSynchronize() {
     // TODO: send this to server manager
     WindowManager.setConfig(config.data);
     setUnreadBadgeSetting(config.data.showUnreadBadge);
+    app.setPath('downloads', config.data.downloadLocation);
     if (app.isReady()) {
         WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
     }
