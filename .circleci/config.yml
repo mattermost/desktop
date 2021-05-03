@@ -309,7 +309,7 @@ jobs:
       - run:
           name: "install renaming utility"
           command: |
-            apt-get install rename
+            sudo apt-get install rename
       - run:
           name: "Normalize folder names"
           command: |
