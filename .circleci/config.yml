@@ -317,9 +317,9 @@ jobs:
       - run:
           name: "Rename to daily for consistency"
           command: |
-            rename 's/\d+\.\d+\.\d+/daily/' macos/*
-            rename 's/\d+\.\d+\.\d+/daily/' linux/*
-            rename 's/\d+\.\d+\.\d+/daily/' win/*
+            rename 's/\d+\.\d+\.\d+/daily/' ./dist/macos/*
+            rename 's/\d+\.\d+\.\d+/daily/' ./dist/linux/*
+            rename 's/\d+\.\d+\.\d+/daily/' ./dist/win/*
       - aws-s3/copy:
           from: ./dist/
           to: s3://mattermost-desktop-daily-builds/
