@@ -78,7 +78,6 @@
     "electron-connect": "^0.6.3",
     "electron-mocha": "^10.0.0",
     "electron-notarize": "^1.0.0",
-    "electron-webpack": "^2.8.2",
     "eslint": "7.19.0",
     "eslint-import-resolver-webpack": "0.13.0",
     "eslint-plugin-babel": "5.3.1",
