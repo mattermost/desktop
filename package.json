@@ -16,7 +16,7 @@
     "url": "git://github.com/mattermost/desktop.git"
   },
   "config": {
-    "target": "11.3.0",
+    "target": "11.4.4",
     "arch": "x64",
     "target_arch": "x64",
     "disturl": "https://electronjs.org/headers",
@@ -73,12 +73,11 @@
     "cross-env": "^5.2.0",
     "css-loader": "^1.0.1",
     "devtron": "^1.4.0",
-    "electron": "^11.3.0",
+    "electron": "^11.4.4",
     "electron-builder": "^22.10.5",
     "electron-connect": "^0.6.3",
     "electron-mocha": "^10.0.0",
     "electron-notarize": "^1.0.0",
-    "electron-webpack": "^2.8.2",
     "eslint": "7.19.0",
     "eslint-import-resolver-webpack": "0.13.0",
     "eslint-plugin-babel": "5.3.1",
