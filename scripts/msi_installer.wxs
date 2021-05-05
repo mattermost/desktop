@@ -72,7 +72,6 @@
               <RegistryValue Id="RegShortcutStartMenu" Root="HKCU" Key="SOFTWARE\Mattermost\Desktop\settings" Name="MattermostDesktopShortcutStartMenu" Value="1" Type="integer" KeyPath="yes" />
               <Shortcut Id="MattermostDesktopShortcutStartMenu" Directory="ProgramMenuDir" Name="Mattermost" WorkingDirectory="INSTALLDIR" Icon="Mattermost.ico" IconIndex="0" Advertise="no" Target="[INSTALLDIR]Mattermost.exe">
                 <ShortcutProperty Key="System.AppUserModel.ID" Value="Mattermost.Desktop" />
-                <ShortcutProperty Key="System.AppUserModel.ToastActivatorCLSID" Value="{082F98DC-8BD8-4771-9D01-3A75930884D1}"></ShortcutProperty>
               </Shortcut>
             </Component>
             <Directory Id="GPOFiles" Name="gpo">
