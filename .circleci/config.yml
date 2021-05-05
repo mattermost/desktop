@@ -423,7 +423,7 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - MM-19510_MM-19511
+                - devinbinnie:MM-19510_MM-19511
 
       - mac_installer:
           requires:
