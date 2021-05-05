@@ -13,11 +13,9 @@ const getDefaultDownloadLocation = () => {
         return `/Users/${process.env.USER || process.env.USERNAME}/Downloads`;
     case 'win32':
         return `C:\\Users\\${process.env.USER || process.env.USERNAME}\\Downloads`;
-    case 'linux':
-        return `/home/${process.env.USER || process.env.USERNAME}/Downloads`;
     default:
-        return '';
-    };
+        return `/home/${process.env.USER || process.env.USERNAME}/Downloads`;
+    }
 };
 
 const defaultPreferences = {
