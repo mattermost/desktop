@@ -6,6 +6,18 @@
  * Default user preferences. End-users can change these parameters by editing config.json
  * @param {number} version - Scheme version. (Not application version)
  */
+
+const getDefaultDownloadLocation = () => {
+    switch (process.platform) {
+    case 'darwin':
+        return `/Users/${process.env.USER || process.env.USERNAME}/Downloads`;
+    case 'win32':
+        return `C:\\Users\\${process.env.USER || process.env.USERNAME}\\Downloads`;
+    default:
+        return `/home/${process.env.USER || process.env.USERNAME}/Downloads`;
+    }
+};
+
 const defaultPreferences = {
     version: 2,
     teams: [],
@@ -23,7 +35,7 @@ const defaultPreferences = {
     autostart: true,
     spellCheckerLocale: 'en-US',
     darkMode: false,
-    downloadLocation: `/Users/${process.env.USER || process.env.USERNAME}/Downloads`,
+    downloadLocation: getDefaultDownloadLocation(),
 };
 
 export default defaultPreferences;
