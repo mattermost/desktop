@@ -393,7 +393,7 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - MM-19510_MM-19511_release-4.7
+                - MM_19510_MM-19511_release-4.7
 
       - build-mac-no-dmg:
           requires:
@@ -414,7 +414,7 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - MM-19510_MM-19511_release-4.7
+                - MM_19510_MM-19511_release-4.7
 
       - mac_installer:
           requires:
