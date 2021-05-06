@@ -147,6 +147,7 @@ export class MattermostView extends EventEmitter {
             this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
             this.emit(LOAD_SUCCESS, this.server.name, loadURL.toString());
             this.view.webContents.send(SET_SERVER_NAME, this.server.name);
+            this.setBounds(getWindowBoundaries(this.window, !(urlUtils.isTeamUrl(this.server.url, this.view.webContents.getURL()) || urlUtils.isAdminUrl(this.server.url, this.view.webContents.getURL()))));
         };
     }
 
