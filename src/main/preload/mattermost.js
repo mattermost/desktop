@@ -63,7 +63,7 @@ window.addEventListener('load', () => {
 });
 
 const parentTag = (target) => {
-    if (target.parentNode) {
+    if (target.parentNode && target.parentNode.tagName) {
         return target.parentNode.tagName.toUpperCase();
     }
     return null;
