@@ -403,6 +403,8 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - MM-19510_MM-19511
+
 
       - build-mac-no-dmg:
           requires:
@@ -438,7 +440,7 @@ workflows:
           # for master/PR builds
           requires:
             - build-linux
-            - build-win-no-installer
+            - msi_installer
             - build-mac-no-dmg
           filters:
             branches:
