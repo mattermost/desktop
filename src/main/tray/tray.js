@@ -17,14 +17,14 @@ let lastStatus = 'normal';
 let lastMessage = app.name;
 
 export function refreshTrayImages(trayIconTheme) {
-    const theme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+    const winTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
 
     switch (process.platform) {
     case 'win32':
         trayImages = {
-            normal: nativeImage.createFromPath(path.resolve(assetsDir, `windows/tray_${theme}.ico`)),
-            unread: nativeImage.createFromPath(path.resolve(assetsDir, `windows/tray_${theme}_unread.ico`)),
-            mention: nativeImage.createFromPath(path.resolve(assetsDir, `windows/tray_${theme}_mention.ico`)),
+            normal: nativeImage.createFromPath(path.resolve(assetsDir, `windows/tray_${winTheme}.ico`)),
+            unread: nativeImage.createFromPath(path.resolve(assetsDir, `windows/tray_${winTheme}_unread.ico`)),
+            mention: nativeImage.createFromPath(path.resolve(assetsDir, `windows/tray_${winTheme}_mention.ico`)),
         };
         break;
     case 'darwin':
