@@ -404,7 +404,6 @@ workflows:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
-
       - build-mac-no-dmg:
           requires:
             - check
