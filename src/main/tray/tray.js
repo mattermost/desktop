@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
-import {app, nativeImage, Tray, systemPreferences} from 'electron';
+import {app, nativeImage, Tray, systemPreferences, nativeTheme} from 'electron';
 
 import {UPDATE_TRAY} from 'common/communication';
 
@@ -17,12 +17,14 @@ let lastStatus = 'normal';
 let lastMessage = app.name;
 
 export function refreshTrayImages(trayIconTheme) {
+    const winTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+
     switch (process.platform) {
     case 'win32':
         trayImages = {
-            normal: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray.ico')),
-            unread: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_unread.ico')),
-            mention: nativeImage.createFromPath(path.resolve(assetsDir, 'windows/tray_mention.ico')),
+            normal: nativeImage.createFromPath(path.resolve(assetsDir, `windows/tray_${winTheme}.ico`)),
+            unread: nativeImage.createFromPath(path.resolve(assetsDir, `windows/tray_${winTheme}_unread.ico`)),
+            mention: nativeImage.createFromPath(path.resolve(assetsDir, `windows/tray_${winTheme}_mention.ico`)),
         };
         break;
     case 'darwin':
