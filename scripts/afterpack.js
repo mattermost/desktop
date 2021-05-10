@@ -7,17 +7,29 @@ const {spawn} = require('electron-notarize/lib/spawn.js');
 
 const SETUID_PERMISSIONS = '4755';
 
+const {flipFuses, FuseVersion, FuseV1Options} = require('@electron/fuses');
+
+async function fixSetuid(target) {
+    if (!['appimage', 'snap'].includes(target.name.toLowerCase())) {
+        const result = await spawn('chmod', [SETUID_PERMISSIONS, path.join(context.appOutDir, 'chrome-sandbox')]);
+        if (result.code !== 0) {
+            throw new Error(
+                `Failed to set proper permissions for linux arch on ${target.name}`,
+            );
+        }
+    }
+}
+
 exports.default = async function afterPack(context) {
-    if (context.electronPlatformName === 'linux') {
-        context.targets.forEach(async (target) => {
-            if (!['appimage', 'snap'].includes(target.name.toLowerCase())) {
-                const result = await spawn('chmod', [SETUID_PERMISSIONS, path.join(context.appOutDir, 'chrome-sandbox')]);
-                if (result.code !== 0) {
-                    throw new Error(
-                        `Failed to set proper permissions for linux arch on ${target.name}`,
-                    );
-                }
-            }
+    await flipFuses(
+        // eslint-disable-next-line global-require
+        require('electron'), // Returns the path to the electron binary
+        {
+            version: FuseVersion.V1,
+            [FuseV1Options.RunAsNode]: false, // Disables ELECTRON_RUN_AS_NODE
         });
+
+    if (context.electronPlatformName === 'linux') {
+        context.targets.forEach(fixSetuid);
     }
 };
