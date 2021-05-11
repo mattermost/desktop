@@ -287,6 +287,9 @@ export function handleDoubleClick(e, windowType) {
         action = systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
     }
     const win = (windowType === 'settings') ? status.settingsWindow : status.mainWindow;
+    if (!win) {
+        return;
+    }
     switch (action) {
     case 'Minimize':
         if (win.isMinimized()) {
@@ -382,15 +385,21 @@ export function close() {
 }
 export function maximize() {
     const focused = BrowserWindow.getFocusedWindow();
-    focused.maximize();
+    if (focused) {
+        focused.maximize();
+    }
 }
 export function minimize() {
     const focused = BrowserWindow.getFocusedWindow();
-    focused.minimize();
+    if (focused) {
+        focused.minimize();
+    }
 }
 export function restore() {
     const focused = BrowserWindow.getFocusedWindow();
-    focused.restore();
+    if (focused) {
+        focused.restore();
+    }
 }
 
 export function reload() {
