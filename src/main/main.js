@@ -560,15 +560,12 @@ function initializeAfterAppReady() {
     ];
 
     session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
-        const requestHeaders = {...details.requestHeaders};
-        const headers = {...details.headers};
-        headers['Origin'] = null;
-        headers['Access-Control-Allow-Origin'] = '*';
-        requestHeaders['Origin'] = null;
-        requestHeaders['Access-Control-Allow-Origin'] = '*';
         if (!process.env.REDIRECT_FRONT) {
             return callback({cancel: false});
         }
+
+        const redirectFront = process.env.REDIRECT_FRONT;
+
         let requestUrl;
         try {
             requestUrl = new URL(details.url);
@@ -576,26 +573,67 @@ function initializeAfterAppReady() {
             log.info(`failed to convert url ${details.url}`);
             return callback({cancel: false});
         }
+
+        if (requestUrl.pathname.indexOf('/api/v4/websocket') !== -1) {
+            const wsUrl = config.teams[0].url.replace('http', 'ws');
+            const redirectURL = `${wsUrl}${requestUrl.pathname}${requestUrl.search}`;
+            log.warn(`Routing websocket: ${details.method} ${details.url} to ${redirectURL}`);
+            return callback({redirectURL});
+        }
+
+
         if (requestUrl.protocol.indexOf('http') === -1) {
             return callback({cancel: false});
         }
+
         if (requestUrl.pathname.indexOf('/api/v4') !== -1 ||
             requestUrl.pathname.indexOf('/plugins/') !== -1 ||
-            requestUrl.pathname.indexOf('/static/plugins/') === -1) {
-            if (details.url.indexOf(process.env.REDIRECT_FRONT) !== -1) {
+            requestUrl.pathname.indexOf('/oauth/') !== -1 ||
+            requestUrl.pathname.indexOf('/login/sso/saml/') !== -1 ||
+            requestUrl.pathname.indexOf('/static/plugins/') !== -1) {
+            if (details.url.indexOf(redirectFront) !== -1) {
                 const redirectURL = `${config.teams[0].url}${requestUrl.pathname}${requestUrl.search}`;
                 log.warn(`Routing back call: ${details.method} ${details.url} to ${redirectURL}`);
-                return callback({redirectURL, headers, requestHeaders});
+                return callback({redirectURL});
             }
-            log.warn('keeping request');
+            log.warn(`keeping request ${details.url}`);
             return callback({cancel: false});
         }
-        if (details.url.indexOf(process.env.REDIRECT_FRONT) !== -1) {
+
+        if (details.url.indexOf(redirectFront) !== -1) {
             return callback({cancel: false});
         }
-        const redirectURL = `${process.env.REDIRECT_FRONT}${requestUrl.pathname}${requestUrl.search}`;
+
+        const redirectURL = `${redirectFront}${requestUrl.pathname}${requestUrl.search}`;
         log.warn(`Intercepting call: ${details.method} ${details.url} to ${redirectURL}`);
-        return callback({redirectURL, headers, requestHeaders});
+        return callback({redirectURL});
+    });
+
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+        if (!process.env.REDIRECT_FRONT) {
+            return callback({cancel: false});
+        }
+
+
+        let requestUrl;
+        try {
+            requestUrl = new URL(details.url);
+        } catch {
+            log.info(`failed to convert url ${details.url}`);
+            return callback({cancel: false});
+        }
+
+        if (details.method === 'POST' && requestUrl.pathname.indexOf('/api/v4/users/login') !== -1 && details.responseHeaders.Token) {
+            const token = details.responseHeaders.Token[0];
+            const redirectFront = process.env.REDIRECT_FRONT;
+            session.defaultSession.cookies.set({url: redirectFront, name: 'MMAUTHTOKEN', value: token, httpOnly: true, secure: true});
+            const userId = details.responseHeaders['Set-Cookie'][1].substring(9, 35);
+            session.defaultSession.cookies.set({url: redirectFront, name: 'MMUSERID', value: userId, secure: true});
+            const crsfToken = details.responseHeaders['Set-Cookie'][2].substring(7, 33);
+            session.defaultSession.cookies.set({url: redirectFront, name: 'MMCSRF', value: crsfToken, secure: true});
+        }
+
+        return callback({cancel: false});
     });
 
     // handle permission requests
