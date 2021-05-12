@@ -579,10 +579,12 @@ function initializeAfterAppReady() {
         if (requestUrl.protocol.indexOf('http') === -1) {
             return callback({cancel: false});
         }
-        if (requestUrl.pathname.indexOf('api/v4') !== -1 || requestUrl.pathname.indexOf('plugins') !== -1) {
+        if (requestUrl.pathname.indexOf('/api/v4') !== -1 ||
+            requestUrl.pathname.indexOf('/plugins/') !== -1 ||
+            requestUrl.pathname.indexOf('/static/plugins/') === -1) {
             if (details.url.indexOf(process.env.REDIRECT_FRONT) !== -1) {
                 const redirectURL = `${config.teams[0].url}${requestUrl.pathname}${requestUrl.search}`;
-                log.warn(`Routing back call: ${details.url} to ${redirectURL}`);
+                log.warn(`Routing back call: ${details.method} ${details.url} to ${redirectURL}`);
                 return callback({redirectURL, headers, requestHeaders});
             }
             log.warn('keeping request');
@@ -592,7 +594,7 @@ function initializeAfterAppReady() {
             return callback({cancel: false});
         }
         const redirectURL = `${process.env.REDIRECT_FRONT}${requestUrl.pathname}${requestUrl.search}`;
-        log.warn(`Intercepting call: ${details.url} to ${redirectURL}`);
+        log.warn(`Intercepting call: ${details.method} ${details.url} to ${redirectURL}`);
         return callback({redirectURL, headers, requestHeaders});
     });
 
