@@ -58,6 +58,10 @@ const generateWillNavigate = (getServersFunction) => {
             return;
         }
 
+        if (process.env.REDIRECT_FRONT && url.indexOf(process.env.REDIRECT_FRONT) !== -1) {
+            return;
+        }
+
         log.info(`Prevented desktop from navigating to: ${url}`);
         event.preventDefault();
     };

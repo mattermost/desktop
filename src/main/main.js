@@ -84,6 +84,8 @@ let config = null;
 let authManager = null;
 let certificateManager = null;
 
+app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors');
+
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
  */
@@ -556,6 +558,43 @@ function initializeAfterAppReady() {
         'fullscreen',
         'openExternal',
     ];
+
+    session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
+        const requestHeaders = {...details.requestHeaders};
+        const headers = {...details.headers};
+        headers['Origin'] = null;
+        headers['Access-Control-Allow-Origin'] = '*';
+        requestHeaders['Origin'] = null;
+        requestHeaders['Access-Control-Allow-Origin'] = '*';
+        if (!process.env.REDIRECT_FRONT) {
+            return callback({cancel: false});
+        }
+        let requestUrl;
+        try {
+            requestUrl = new URL(details.url);
+        } catch {
+            log.info(`failed to convert url ${details.url}`);
+            return callback({cancel: false});
+        }
+        if (requestUrl.protocol.indexOf('http') === -1) {
+            return callback({cancel: false});
+        }
+        if (requestUrl.pathname.indexOf('api/v4') !== -1 || requestUrl.pathname.indexOf('plugins') !== -1) {
+            if (details.url.indexOf(process.env.REDIRECT_FRONT) !== -1) {
+                const redirectURL = `${config.teams[0].url}${requestUrl.pathname}${requestUrl.search}`;
+                log.warn(`Routing back call: ${details.url} to ${redirectURL}`);
+                return callback({redirectURL, headers, requestHeaders});
+            }
+            log.warn('keeping request');
+            return callback({cancel: false});
+        }
+        if (details.url.indexOf(process.env.REDIRECT_FRONT) !== -1) {
+            return callback({cancel: false});
+        }
+        const redirectURL = `${process.env.REDIRECT_FRONT}${requestUrl.pathname}${requestUrl.search}`;
+        log.warn(`Intercepting call: ${details.url} to ${redirectURL}`);
+        return callback({redirectURL, headers, requestHeaders});
+    });
 
     // handle permission requests
     // - approve if a supported permission type and the request comes from the renderer or one of the defined servers
