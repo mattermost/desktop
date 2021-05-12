@@ -264,6 +264,9 @@ export default class SettingsPage extends React.PureComponent {
     }
 
     saveDownloadLocation = (location) => {
+        if (!location) {
+            return;
+        }
         this.setState({
             downloadLocation: location,
         });
