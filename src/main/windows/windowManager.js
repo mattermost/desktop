@@ -124,35 +124,26 @@ function handleMainWindowWebContentsCrashed() {
 
 function handleMaximizeMainWindow() {
     sendToRenderer(MAXIMIZE_CHANGE, true);
-
-    // Workaround as part of https://mattermost.atlassian.net/browse/MM-33577
-    // Linux (or GNOME at least) seems to have issues with Electron and getting the size correctly when minimizing/maximizing
-    // So we need to manually force the browser view to resize after a small interval to get the size correct
-    // Please remove this once this issue has been resolved by Electron
-    if (process.platform === 'linux') {
-        setTimeout(setBoundsForCurrentView, 10);
-    }
 }
 
 function handleUnmaximizeMainWindow() {
     sendToRenderer(MAXIMIZE_CHANGE, false);
-
-    // Workaround as part of https://mattermost.atlassian.net/browse/MM-33577
-    // Linux (or GNOME at least) seems to have issues with Electron and getting the size correctly when minimizing/maximizing
-    // So we need to manually force the browser view to resize after a small interval to get the size correct
-    // Please remove this once this issue has been resolved by Electron
-    if (process.platform === 'linux') {
-        setTimeout(setBoundsForCurrentView, 10);
-    }
 }
 
-function handleResizeMainWindow(event, newBounds) {
-    setBoundsForCurrentView(event, newBounds);
-}
-
-function setBoundsForCurrentView(event, newBounds) {
+function handleResizeMainWindow() {
     const currentView = status.viewManager.getCurrentView();
-    const bounds = newBounds || status.mainWindow.getContentBounds();
+    let bounds;
+
+    // Workaround for linux maximizing/minimizing, which doesn't work properly because of these bugs:
+    // https://github.com/electron/electron/issues/28699
+    // https://github.com/electron/electron/issues/28106
+    if (process.platform === 'linux') {
+        const size = status.mainWindow.getSize();
+        bounds = {width: size[0], height: size[1]};
+    } else {
+        bounds = status.mainWindow.getContentBounds();
+    }
+
     if (currentView) {
         currentView.setBounds(getAdjustedWindowBoundaries(bounds.width, bounds.height, !urlUtils.isTeamUrl(currentView.server.url, currentView.view.webContents.getURL())));
     }
