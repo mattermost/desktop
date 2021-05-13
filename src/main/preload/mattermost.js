@@ -20,12 +20,14 @@ let appVersion;
 let appName;
 let sessionExpired;
 let serverName;
+let serverUrl;
 
 log.info('Initializing preload');
 
-ipcRenderer.invoke('get-app-version').then(({name, version}) => {
+ipcRenderer.invoke('get-app-version').then(({name, version, url}) => {
     appVersion = version;
     appName = name;
+    serverUrl = url;
 });
 
 function isReactAppInitialized() {
@@ -99,6 +101,7 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
                 message: {
                     version: appVersion,
                     name: appName,
+                    serverUrl,
                 },
             },
             window.location.origin || '*',

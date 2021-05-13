@@ -189,7 +189,8 @@ export class ViewManager {
 
         for ([serverName, view] of entries) {
             if (typeof serverName !== 'undefined') {
-                const wc = view.getWebContents();
+                //const wc = view.getWebContents();
+                const wc = view.view.webContents;
                 if (wc && wc.id === webContentId) {
                     found = serverName;
                 }

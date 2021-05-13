@@ -374,6 +374,14 @@ export function getServerNameByWebContentsId(webContentsId) {
     return null;
 }
 
+export function getServerByWebContentsId(webContentsId) {
+    const serverName = getServerNameByWebContentsId(webContentsId);
+    if (!serverName) {
+        return null;
+    }
+    return status.viewManager.views.get(serverName).server;
+}
+
 export function close() {
     const focused = BrowserWindow.getFocusedWindow();
     if (focused.id === status.mainWindow.id) {

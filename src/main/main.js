@@ -272,10 +272,13 @@ function handleReloadConfig() {
     WindowManager.setConfig(config.data);
 }
 
-function handleAppVersion() {
+function handleAppVersion(event) {
+    const server = WindowManager.getServerByWebContentsId(event.sender.id);
+    log.warn(`registering url as ${server ? server.url : null}`);
     return {
         name: app.getName(),
         version: app.getVersion(),
+        url: server ? server.url : null,
     };
 }
 
@@ -581,7 +584,6 @@ function initializeAfterAppReady() {
             return callback({redirectURL});
         }
 
-
         if (requestUrl.protocol.indexOf('http') === -1) {
             return callback({cancel: false});
         }
@@ -613,7 +615,6 @@ function initializeAfterAppReady() {
         if (!process.env.REDIRECT_FRONT) {
             return callback({cancel: false});
         }
-
 
         let requestUrl;
         try {
