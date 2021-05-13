@@ -577,13 +577,6 @@ function initializeAfterAppReady() {
             return callback({cancel: false});
         }
 
-        if (requestUrl.pathname.indexOf('/api/v4/websocket') !== -1) {
-            const wsUrl = config.teams[0].url.replace('http', 'ws');
-            const redirectURL = `${wsUrl}${requestUrl.pathname}${requestUrl.search}`;
-            log.warn(`Routing websocket: ${details.method} ${details.url} to ${redirectURL}`);
-            return callback({redirectURL});
-        }
-
         if (requestUrl.protocol.indexOf('http') === -1) {
             return callback({cancel: false});
         }
@@ -624,14 +617,19 @@ function initializeAfterAppReady() {
             return callback({cancel: false});
         }
 
-        if (details.method === 'POST' && requestUrl.pathname.indexOf('/api/v4/users/login') !== -1 && details.responseHeaders.Token) {
-            const token = details.responseHeaders.Token[0];
-            const redirectFront = process.env.REDIRECT_FRONT;
-            session.defaultSession.cookies.set({url: redirectFront, name: 'MMAUTHTOKEN', value: token, httpOnly: true, secure: true});
-            const userId = details.responseHeaders['Set-Cookie'][1].substring(9, 35);
-            session.defaultSession.cookies.set({url: redirectFront, name: 'MMUSERID', value: userId, secure: true});
-            const crsfToken = details.responseHeaders['Set-Cookie'][2].substring(7, 33);
-            session.defaultSession.cookies.set({url: redirectFront, name: 'MMCSRF', value: crsfToken, secure: true});
+        if (details.method === 'POST' && requestUrl.pathname.indexOf('/api/v4/users/login') !== -1) {
+            const tokenArray = details.responseHeaders.Token || details.responseHeaders.token ;
+            if (tokenArray && tokenArray.length) {
+                console.log(details.responseHeaders);
+                const token = tokenArray[0];
+                const redirectFront = process.env.REDIRECT_FRONT;
+                session.defaultSession.cookies.set({url: redirectFront, name: 'MMAUTHTOKEN', value: token, httpOnly: true, secure: true});
+                const setCookieArray = details.responseHeaders['Set-Cookie'] || details.responseHeaders['set-cookie']
+                const userId = setCookieArray[1].substring(9, 35);
+                session.defaultSession.cookies.set({url: redirectFront, name: 'MMUSERID', value: userId, secure: true});
+                const crsfToken = setCookieArray[2].substring(7, 33);
+                session.defaultSession.cookies.set({url: redirectFront, name: 'MMCSRF', value: crsfToken, secure: true});
+            }
         }
 
         return callback({cancel: false});
