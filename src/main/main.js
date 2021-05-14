@@ -584,8 +584,12 @@ function initializeAfterAppReady() {
         if (requestUrl.pathname.indexOf('/api/v4') !== -1 ||
             requestUrl.pathname.indexOf('/plugins/') !== -1 ||
             requestUrl.pathname.indexOf('/oauth/') !== -1 ||
-            requestUrl.pathname.indexOf('/login/sso/saml/') !== -1 ||
-            requestUrl.pathname.indexOf('/static/plugins/') !== -1) {
+            requestUrl.pathname.indexOf('/saml') !== -1 || // anything saml goes
+            requestUrl.pathname.indexOf('/sso') !== -1 || // anything sso goes
+            requestUrl.hostname.indexOf(process.env.SAML_HOST) !== -1 ||
+            requestUrl.pathname.indexOf('/recaptcha') !== -1 ||
+            requestUrl.pathname.indexOf('/login') !== -1 || // this might need to change as it belongs to onelogin
+            requestUrl.pathname.indexOf('/static/plugins') !== -1) {
             if (details.url.indexOf(redirectFront) !== -1) {
                 const redirectURL = `${config.teams[0].url}${requestUrl.pathname}${requestUrl.search}`;
                 log.warn(`Routing back call: ${details.method} ${details.url} to ${redirectURL}`);
@@ -617,7 +621,7 @@ function initializeAfterAppReady() {
             return callback({cancel: false});
         }
 
-        if (details.method === 'POST' && requestUrl.pathname.indexOf('/api/v4/users/login') !== -1) {
+        if (details.method === 'POST' && (requestUrl.pathname.indexOf('/api/v4/users/login') !== -1) || (requestUrl.pathname.indexOf('login/sso/saml') !== -1)) {
             const tokenArray = details.responseHeaders.Token || details.responseHeaders.token ;
             if (tokenArray && tokenArray.length) {
                 console.log(details.responseHeaders);

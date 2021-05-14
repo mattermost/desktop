@@ -62,6 +62,10 @@ const generateWillNavigate = (getServersFunction) => {
             return;
         }
 
+        if (parsedURL.hostname.indexOf(process.env.SAML_HOST) !== -1) { // we might need to change this for the provider.
+            return;
+        }
+
         log.info(`Prevented desktop from navigating to: ${url}`);
         event.preventDefault();
     };
