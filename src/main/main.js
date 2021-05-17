@@ -190,11 +190,11 @@ function initializeBeforeAppReady() {
     refreshTrayImages(config.trayIconTheme);
 
     // If there is already an instance, quit this one
-    const gotTheLock = app.requestSingleInstanceLock();
-    if (!gotTheLock) {
-        app.exit();
-        global.willAppQuit = true;
-    }
+    // const gotTheLock = app.requestSingleInstanceLock();
+    // if (!gotTheLock) {
+    //     app.exit();
+    //     global.willAppQuit = true;
+    // }
 
     allowProtocolDialog.init();
 
@@ -296,8 +296,8 @@ function handleDarkModeChange(darkMode) {
 function handleAppSecondInstance(event, argv) {
     // Protocol handler for win32
     // argv: An array of the second instance’s (command line / deep linked) arguments
-    const deeplinkingUrl = getDeeplinkingURL(argv);
-    openDeepLink(deeplinkingUrl);
+    // const deeplinkingUrl = getDeeplinkingURL(argv);
+    // openDeepLink(deeplinkingUrl);
 }
 
 function handleAppWindowAllClosed() {
