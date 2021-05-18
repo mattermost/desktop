@@ -389,7 +389,12 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - check
+      - check:
+          filters:
+            branches:
+              ignore:
+                - test_ci_branch
+
       - begin-notification:
           context: desktop-notify
           filters:
@@ -400,8 +405,8 @@ workflows:
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
       - build-linux:
-          requires:
-            - check
+          # requires:
+          #   - check
       - check-deps:
           context: sast-webhook
           requires:
@@ -426,8 +431,8 @@ workflows:
                 - test_ci_branch
 
       - msi_installer:
-          requires:
-            - check
+          # requires:
+            # - check
           context: windows-codesign
           filters:
             branches:
@@ -439,8 +444,8 @@ workflows:
                 - test_ci_branch
 
       - mac_installer:
-          requires:
-            - check
+          # requires:
+          #   - check
           context: codesign-certificates
           filters:
             branches:
