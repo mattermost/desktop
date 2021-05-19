@@ -19,7 +19,10 @@ contextBridge.exposeInMainWorld('os', {
 
 contextBridge.exposeInMainWorld('process', {
     platform: process.platform,
-    env: process.env,
+    env: {
+        user: process.env.USER,
+        username: process.env.USERNAME,
+    },
 });
 
 contextBridge.exposeInMainWorld('timers', {
