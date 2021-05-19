@@ -144,8 +144,18 @@ function handleResizeMainWindow() {
         bounds = status.mainWindow.getContentBounds();
     }
 
-    if (currentView) {
-        currentView.setBounds(getAdjustedWindowBoundaries(bounds.width, bounds.height, !urlUtils.isTeamUrl(currentView.server.url, currentView.view.webContents.getURL())));
+    const setBoundsFunction = () => {
+        if (currentView) {
+            currentView.setBounds(getAdjustedWindowBoundaries(bounds.width, bounds.height, !urlUtils.isTeamUrl(currentView.server.url, currentView.view.webContents.getURL())));
+        }
+    };
+
+    // Another workaround since the window doesn't update properly under Linux for some reason
+    // See above comment
+    if (process.platform === 'linux') {
+        setTimeout(setBoundsFunction, 10);
+    } else {
+        setBoundsFunction();
     }
     status.viewManager.setLoadingScreenBounds();
 }
