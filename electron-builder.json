@@ -47,7 +47,8 @@
     "target": [
       "deb",
       "tar.gz",
-      "appimage"
+      "appimage",
+      "rpm"
     ],
     "extraFiles": [
       {
