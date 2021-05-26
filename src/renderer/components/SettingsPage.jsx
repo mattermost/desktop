@@ -279,7 +279,7 @@ export default class SettingsPage extends React.PureComponent {
 
     selectDownloadLocation = () => {
         if (!this.state.userOpenedDownloadDialog) {
-            window.ipcRenderer.invoke(GET_DOWNLOAD_LOCATION, `/Users/${window.process.env.USER || window.process.env.USERNAME}/Downloads`).then((result) => this.saveDownloadLocation(result));
+            window.ipcRenderer.invoke(GET_DOWNLOAD_LOCATION, this.state.downloadLocation).then((result) => this.saveDownloadLocation(result));
             this.setState({userOpenedDownloadDialog: true});
         }
         this.setState({userOpenedDownloadDialog: false});
