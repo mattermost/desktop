@@ -621,7 +621,7 @@ function handleUpdateMenuEvent(event, menuConfig) {
 
 async function handleSelectDownload(event, startFrom) {
     const message = 'Specify the folder where files will download';
-    const result = await dialog.showOpenDialog({defaultPath: startFrom,
+    const result = await dialog.showOpenDialog({defaultPath: startFrom || config.data.downloadLocation,
         message,
         properties:
      ['openDirectory', 'createDirectory', 'dontAddToRecent', 'promptToCreate']});
