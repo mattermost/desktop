@@ -434,8 +434,6 @@ workflows:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - mac_installer:
-          requires:
-            - check
           context: codesign-certificates
           filters:
             branches:
