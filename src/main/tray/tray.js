@@ -44,19 +44,18 @@ export function refreshTrayImages(trayIconTheme) {
     }
     case 'linux':
     {
-        const theme = trayIconTheme;
-        try {
+        if (trayIconTheme.equals('dark')) {
             trayImages = {
-                normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIcon.png')),
-                unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconUnread.png')),
-                mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', theme, 'MenuIconMention.png')),
+                normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'top_bar_dark_16.png')),
+                unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'top_bar_dark_unread_16.png')),
+                mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'top_bar_dark_mention_16.png')),
             };
-        } catch (e) {
+        } else {
             //Fallback for invalid theme setting
             trayImages = {
-                normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIcon.png')),
-                unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconUnread.png')),
-                mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'light', 'MenuIconMention.png')),
+                normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'top_bar_light_16.png')),
+                unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'top_bar_light_unread_16.png')),
+                mention: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'top_bar_light_mention_16.png')),
             };
         }
         break;
