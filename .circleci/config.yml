@@ -434,12 +434,13 @@ workflows:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - mac_installer:
+          requires:
+            - check
           context: codesign-certificates
           filters:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - rename_m1
 
       - store_artifacts:
           # for master/PR builds
