@@ -16,7 +16,7 @@
     "url": "git://github.com/mattermost/desktop.git"
   },
   "config": {
-    "target": "12.0.7",
+    "target": "12.0.10",
     "arch": "x64",
     "target_arch": "x64",
     "disturl": "https://electronjs.org/headers",
@@ -54,7 +54,6 @@
     "check-build-config": "node -r @babel/register scripts/check_build_config.js"
   },
   "devDependencies": {
-    "7zip-bin": "^4.1.0",
     "@babel/core": "^7.2.0",
     "@babel/plugin-proposal-class-properties": "^7.8.3",
     "@babel/plugin-proposal-object-rest-spread": "^7.2.0",
@@ -65,6 +64,7 @@
     "@storybook/react": "^4.0.11",
     "@typescript-eslint/eslint-plugin": "4.15.0",
     "@typescript-eslint/parser": "4.15.0",
+    "7zip-bin": "^4.1.0",
     "awesome-node-loader": "^1.1.1",
     "babel-eslint": "^10.0.3",
     "babel-loader": "^8.0.4",
@@ -73,7 +73,7 @@
     "cross-env": "^5.2.0",
     "css-loader": "^1.0.1",
     "devtron": "^1.4.0",
-    "electron": "^12.0.7",
+    "electron": "^12.0.10",
     "electron-builder": "^22.10.5",
     "electron-connect": "^0.6.3",
     "electron-mocha": "^10.0.0",
