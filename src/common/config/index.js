@@ -336,7 +336,7 @@ export default class Config extends EventEmitter {
         let newTeams = teams;
         const uniqueURLs = new Set();
         newTeams = newTeams.filter((team) => {
-            return uniqueURLs.has(team.url) ? false : uniqueURLs.add(team.url);
+            return uniqueURLs.has(`${team.name}:${team.url}`) ? false : uniqueURLs.add(`${team.name}:${team.url}`);
         });
         return newTeams;
     }
