@@ -372,6 +372,8 @@ function handleAppCertificateError(event, webContents, url, error, certificate, 
                         type: 'error',
                         buttons: ['Trust Insecure Certificate', 'Cancel Connection'],
                         cancelId: 1,
+                        checkboxChecked: false,
+                        checkboxLabel: "Don't ask again",
                     });
                 }
                 return {response};
