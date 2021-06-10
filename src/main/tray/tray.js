@@ -44,7 +44,7 @@ export function refreshTrayImages(trayIconTheme) {
     }
     case 'linux':
     {
-        if (trayIconTheme.equals('dark')) {
+        if (trayIconTheme === 'dark') {
             trayImages = {
                 normal: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'top_bar_dark_16.png')),
                 unread: nativeImage.createFromPath(path.resolve(assetsDir, 'linux', 'top_bar_dark_unread_16.png')),
