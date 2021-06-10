@@ -72,7 +72,7 @@ export class ViewManager {
             if (recycle && recycle.isVisible) {
                 setFocus = recycle.name;
             }
-            if (recycle && recycle.server.url.toString() === urlUtils.parseURL(server.url).toString()) {
+            if (recycle && recycle.server.name === server.name && recycle.server.url.toString() === urlUtils.parseURL(server.url).toString()) {
                 oldviews.delete(recycle.name);
                 this.views.set(recycle.name, recycle);
             } else {
