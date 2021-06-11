@@ -405,7 +405,9 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-      - build-linux
+      - build-linux:
+          requires:
+            - check
 
       - build-win-no-installer:
           requires:
@@ -436,18 +438,20 @@ workflows:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - mac_installer:
+          requires:
+            - check
           context: codesign-certificates
           filters:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - fixPipeline
 
       - store_artifacts:
           # for master/PR builds
           requires:
             - build-linux
-            - mac_installer
+            - build-win-no-installer
+            - build-mac-no-dmg
           filters:
             branches:
               ignore:
@@ -456,7 +460,9 @@ workflows:
       - upload_to_s3:
           # for release builds
           requires:
+            - msi_installer
             - mac_installer
+            - build-linux
           context: mattermost-release-s3
           filters:
             branches:
