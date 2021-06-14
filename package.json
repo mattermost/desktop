@@ -52,7 +52,7 @@
     "lint:js-quiet": "eslint --ignore-path .gitignore --ignore-pattern node_modules --ext .js --ext .jsx . --quiet",
     "fix:js": "eslint --ignore-path .gitignore --ignore-pattern node_modules --quiet --ext .js --ext .jsx . --fix",
     "check-build-config": "node -r @babel/register scripts/check_build_config.js",
-    "prepare": "electron-rebuild"
+    "prepare": "./node_modules/.bin/electron-rebuild"
   },
   "devDependencies": {
     "7zip-bin": "^4.1.0",
@@ -108,7 +108,7 @@
     "webpack-cli": "^3.1.2",
     "webpack-dev-server": "^3.11.0",
     "webpack-merge": "^4.1.4",
-    "windows-quiet-hours": "2.0.0"
+    "windows-focus-assist": "1.2.1"
   },
   "dependencies": {
     "@hapi/joi": "^16.1.8",

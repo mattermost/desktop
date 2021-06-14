@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {shell, Notification} from 'electron';
-import {getIsQuietHours} from 'windows-quiet-hours';
+import {getFocusAssist} from 'windows-focus-assist';
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 import log from 'electron-log';
 
@@ -82,7 +82,9 @@ export function displayDownloadCompleted(fileName, path, serverInfo) {
 
 function getDoNotDisturb() {
     if (process.platform === 'win32') {
-        return getIsQuietHours();
+        log.info('should be win32');
+        log.info(getFocusAssist());
+        return false;
     }
 
     if (process.platform === 'darwin') {
