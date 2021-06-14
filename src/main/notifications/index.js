@@ -82,9 +82,7 @@ export function displayDownloadCompleted(fileName, path, serverInfo) {
 
 function getDoNotDisturb() {
     if (process.platform === 'win32') {
-        log.info('should be win32');
-        log.info(getFocusAssist());
-        return false;
+        return getFocusAssist().value;
     }
 
     if (process.platform === 'darwin') {
