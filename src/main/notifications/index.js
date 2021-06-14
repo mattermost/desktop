@@ -2,6 +2,8 @@
 // See LICENSE.txt for license information.
 
 import {shell, Notification} from 'electron';
+import {getIsQuietHours} from 'windows-quiet-hours';
+import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 import log from 'electron-log';
 
 import {PLAY_SOUND} from 'common/communication';
@@ -18,6 +20,11 @@ export function displayMention(title, body, channel, teamId, silent, webcontents
         log.error('notification not supported');
         return;
     }
+
+    if (getDoNotDisturb()) {
+        return;
+    }
+
     const serverName = windowManager.getServerNameByWebContentsId(webcontents.id);
 
     const options = {
@@ -71,4 +78,16 @@ export function displayDownloadCompleted(fileName, path, serverInfo) {
         shell.showItemInFolder(path.normalize());
     });
     download.show();
+}
+
+function getDoNotDisturb() {
+    if (process.platform === 'win32') {
+        return getIsQuietHours();
+    }
+
+    if (process.platform === 'darwin') {
+        return getDarwinDoNotDisturb();
+    }
+
+    return false;
 }

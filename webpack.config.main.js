@@ -26,6 +26,9 @@ module.exports = merge(base, {
         path: path.join(__dirname, 'dist/'),
         filename: '[name].js',
     },
+    externals: {
+        'macos-notification-state': 'require("macos-notification-state")',
+    },
     module: {
         rules: [{
             test: /\.js?$/,
@@ -39,14 +42,6 @@ module.exports = merge(base, {
             test: /\.mp3$/,
             use: {
                 loader: 'url-loader',
-            },
-        },
-        {
-            test: /\.node$/,
-            loader: 'awesome-node-loader',
-            options: {
-                name: '[name].[ext]',
-                rewritePath: path.resolve(__dirname, 'dist'),
             },
         }],
     },

@@ -9,6 +9,7 @@
 const childProcess = require('child_process');
 
 const webpack = require('webpack');
+const ElectronNativePlugin = require('electron-native-plugin');
 
 const path = require('path');
 
@@ -27,6 +28,8 @@ module.exports = {
     mode: isProduction ? 'none' : 'development',
     plugins: [
         new webpack.DefinePlugin(codeDefinitions),
+        new ElectronNativePlugin(),
+        new webpack.IgnorePlugin(/node-gyp/),
     ],
     devtool: isProduction ? false : '#inline-source-map',
     resolve: {
@@ -36,6 +39,27 @@ module.exports = {
             common: path.resolve(__dirname, './src/common'),
             static: path.resolve(__dirname, './src/assets'),
         },
+    },
+    module: {
+        rules: [
+            {
+                test: /\.js$/,
+                use:
+                [
+                    'electron-native-patch-loader',
+                    {
+                        loader: 'electron-native-loader',
+                        options: {
+                            outputPath: path.resolve(__dirname, 'dist'),
+                        },
+                    },
+                ],
+            },
+            {
+                test: /\.node$/,
+                use: 'electron-native-loader',
+            },
+        ],
     },
 };
 
