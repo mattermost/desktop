@@ -52,7 +52,7 @@
     "lint:js-quiet": "eslint --ignore-path .gitignore --ignore-pattern node_modules --ext .js --ext .jsx . --quiet",
     "fix:js": "eslint --ignore-path .gitignore --ignore-pattern node_modules --quiet --ext .js --ext .jsx . --fix",
     "check-build-config": "node -r @babel/register scripts/check_build_config.js",
-    "prepare": "./node_modules/.bin/electron-rebuild"
+    "postinstall": "electron-builder install-app-deps"
   },
   "devDependencies": {
     "7zip-bin": "^4.1.0",
@@ -81,7 +81,6 @@
     "electron-native-patch-loader": "^0.3.0",
     "electron-native-plugin": "^0.3.0",
     "electron-notarize": "^1.0.0",
-    "electron-rebuild": "2.3.5",
     "eslint": "7.19.0",
     "eslint-import-resolver-webpack": "0.13.0",
     "eslint-plugin-babel": "5.3.1",
