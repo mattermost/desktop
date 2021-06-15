@@ -44,6 +44,23 @@ module.exports = merge(base, {
             use: {
                 loader: 'url-loader',
             },
+        },
+        {
+            test: /\.js$/,
+            use:
+            [
+                'electron-native-patch-loader',
+                {
+                    loader: 'electron-native-loader',
+                    options: {
+                        outputPath: path.resolve(__dirname, 'dist'),
+                    },
+                },
+            ],
+        },
+        {
+            test: /\.node$/,
+            use: 'electron-native-loader',
         }],
     },
     plugins: [

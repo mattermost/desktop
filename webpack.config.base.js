@@ -40,27 +40,6 @@ module.exports = {
             static: path.resolve(__dirname, './src/assets'),
         },
     },
-    module: {
-        rules: [
-            {
-                test: /\.js$/,
-                use:
-                [
-                    'electron-native-patch-loader',
-                    {
-                        loader: 'electron-native-loader',
-                        options: {
-                            outputPath: path.resolve(__dirname, 'dist'),
-                        },
-                    },
-                ],
-            },
-            {
-                test: /\.node$/,
-                use: 'electron-native-loader',
-            },
-        ],
-    },
 };
 
 /* eslint-enable import/no-commonjs */
