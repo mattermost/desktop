@@ -1,14 +1,13 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import path from 'path';
 import log from 'electron-log';
 
 import * as WindowManager from './windows/windowManager';
 
 import {addModal} from './views/modalManager';
-import {getLocalURLString} from './utils';
+import {getLocalURLString, getLocalPreload} from './utils';
 
-const modalPreload = path.resolve(__dirname, '../../dist/modalPreload.js');
+const modalPreload = getLocalPreload('modalPreload.js');
 const html = getLocalURLString('certificateModal.html');
 
 export class CertificateManager {
