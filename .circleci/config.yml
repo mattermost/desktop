@@ -139,7 +139,7 @@ jobs:
             - "~/.cache/electron-builder"
 
   build-win-no-installer:
-    executor: wine-mono
+    executor: win/vs2019
     steps:
       - checkout
       - run: mkdir -p ./dist
