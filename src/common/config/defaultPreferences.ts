@@ -7,6 +7,8 @@
  * @param {number} version - Scheme version. (Not application version)
  */
 
+import {ConfigV2} from 'types/config';
+
 const getDefaultDownloadLocation = () => {
     switch (process.platform) {
     case 'darwin':
@@ -18,7 +20,7 @@ const getDefaultDownloadLocation = () => {
     }
 };
 
-const defaultPreferences = {
+const defaultPreferences: ConfigV2 = {
     version: 2,
     teams: [],
     showTrayIcon: true,

@@ -2,6 +2,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {BuildConfig} from 'types/config';
+
 // For detailed guides, please refer to https://docs.mattermost.com/deployment/desktop-app-deployment.html
 
 /**
@@ -17,7 +19,7 @@
  *                                          when "enableServerManagement is set to false
  * @prop {[]} managedResources - Defines which paths are managed
  */
-const buildConfig = {
+const buildConfig: BuildConfig = {
     defaultTeams: [/*
     {
       name: 'example',

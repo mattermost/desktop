@@ -4,7 +4,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO, MODAL_SEND_IPC_MESSAGE} from 'common/communication.js';
+import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO, MODAL_SEND_IPC_MESSAGE} from 'common/communication';
 
 import PermissionModal from './permissionModal.jsx';
 

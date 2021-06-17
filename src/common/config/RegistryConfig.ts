@@ -6,6 +6,8 @@ import {EventEmitter} from 'events';
 import log from 'electron-log';
 import WindowsRegistry from 'winreg-utf8';
 
+import {RegistryConfig as RegistryConfigType, Team} from 'types/config';
+
 const REGISTRY_HIVE_LIST = [WindowsRegistry.HKLM, WindowsRegistry.HKCU];
 const BASE_REGISTRY_KEY_PATH = '\\Software\\Policies\\Mattermost';
 export const REGISTRY_READ_EVENT = 'registry-read';
@@ -14,6 +16,9 @@ export const REGISTRY_READ_EVENT = 'registry-read';
  * Handles loading config data from the Windows registry set manually or by GPO
  */
 export default class RegistryConfig extends EventEmitter {
+    initialized: boolean;
+    data: Partial<RegistryConfigType>;
+
     constructor() {
         super();
         this.initialized = false;
@@ -33,7 +38,7 @@ export default class RegistryConfig extends EventEmitter {
             try {
                 const servers = await this.getServersListFromRegistry();
                 if (servers.length) {
-                    this.data.teams.push(...servers);
+                    this.data.teams?.push(...servers);
                 }
             } catch (error) {
                 log.warn('[RegistryConfig] Nothing retrieved for \'DefaultServerList\'', error);
@@ -70,12 +75,12 @@ export default class RegistryConfig extends EventEmitter {
    */
     async getServersListFromRegistry() {
         const defaultServers = await this.getRegistryEntry(`${BASE_REGISTRY_KEY_PATH}\\DefaultServerList`);
-        return defaultServers.flat(2).reduce((servers, server, index) => {
+        return defaultServers.flat(2).reduce((servers: Team[], server, index) => {
             if (server) {
                 servers.push({
-                    name: server.name,
-                    url: server.value,
-                    order: server.order || index,
+                    name: (server as WindowsRegistry.RegistryItem).name,
+                    url: (server as WindowsRegistry.RegistryItem).value,
+                    order: index,
                 });
             }
             return servers;
@@ -106,7 +111,7 @@ export default class RegistryConfig extends EventEmitter {
    * @param {string} key Path to the registry key to return
    * @param {string} name Name of specific entry in the registry key to retrieve (optional)
    */
-    async getRegistryEntry(key, name) {
+    async getRegistryEntry(key: string, name?: string) {
         const results = [];
         for (const hive of REGISTRY_HIVE_LIST) {
             results.push(this.getRegistryEntryValues(hive, key, name));
@@ -121,18 +126,18 @@ export default class RegistryConfig extends EventEmitter {
    * @param {WindowsRegistry} regKey A configured instance of the WindowsRegistry class
    * @param {string} name Name of the specific entry to retrieve (optional)
    */
-    getRegistryEntryValues(hive, key, name) {
+    getRegistryEntryValues(hive: string, key: string, name?: string) {
         const registry = new WindowsRegistry({hive, key, utf8: true});
-        return new Promise((resolve, reject) => {
+        return new Promise<string | WindowsRegistry.RegistryItem[] | undefined>((resolve, reject) => {
             try {
                 registry.values((error, results) => {
                     if (error || !results || results.length === 0) {
-                        resolve();
+                        resolve(undefined);
                         return;
                     }
                     if (name) { // looking for a single entry value
                         const registryItem = results.find((item) => item.name === name);
-                        resolve(registryItem && registryItem.value ? registryItem.value : null);
+                        resolve(registryItem && registryItem.value ? registryItem.value : undefined);
                     } else { // looking for an entry list
                         resolve(results);
                     }

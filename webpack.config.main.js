@@ -28,7 +28,7 @@ module.exports = merge(base, {
     },
     module: {
         rules: [{
-            test: /\.js?$/,
+            test: /\.(js|ts)?$/,
             use: {
                 loader: 'babel-loader',
                 options: {

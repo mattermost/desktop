@@ -4,7 +4,10 @@
 import fs from 'fs';
 
 export default class JsonFileManager {
-    constructor(file) {
+    jsonFile: string;
+    json: any;
+
+    constructor(file: string) {
         this.jsonFile = file;
         try {
             this.json = JSON.parse(fs.readFileSync(file, 'utf-8'));
@@ -13,7 +16,7 @@ export default class JsonFileManager {
         }
     }
 
-    writeToFile() {
+    writeToFile(): void {
         fs.writeFile(this.jsonFile, JSON.stringify(this.json, null, 2), (err) => {
             if (err) {
                 // No real point in bringing electron-log into this otherwise electron-free file
@@ -23,17 +26,17 @@ export default class JsonFileManager {
         });
     }
 
-    setJson(json) {
+    setJson(json: any): void {
         this.json = json;
         this.writeToFile();
     }
 
-    setValue(key, value) {
+    setValue(key: any, value: any): void {
         this.json[key] = value;
         this.writeToFile();
     }
 
-    getValue(key) {
+    getValue(key: any): void {
         return this.json[key];
     }
 }

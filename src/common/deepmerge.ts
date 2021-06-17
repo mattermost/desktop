@@ -3,6 +3,6 @@
 // See LICENSE.txt for license information.
 import deepmerge from 'deepmerge';
 
-export default function deepMergeProxy(x, y, options) {
+export default function deepMergeProxy<T>(x: Partial<T>, y: Partial<T>, options: deepmerge.Options) {
     return deepmerge(x, y, options); // due to webpack conversion
 }

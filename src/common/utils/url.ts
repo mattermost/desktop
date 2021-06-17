@@ -1,6 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {Team} from 'types/config';
 import {isHttpsUri, isHttpUri, isUri} from 'valid-url';
 
 import buildConfig from '../config/buildConfig';
@@ -19,20 +20,20 @@ const customLoginRegexPaths = [
     /^\/login\/sso\/saml$/i,
 ];
 
-function getDomain(inputURL) {
+function getDomain(inputURL: URL | string) {
     const parsedURL = parseURL(inputURL);
-    return parsedURL.origin;
+    return parsedURL?.origin;
 }
 
-function isValidURL(testURL) {
+function isValidURL(testURL: string) {
     return Boolean(isHttpUri(testURL) || isHttpsUri(testURL)) && parseURL(testURL) !== null;
 }
 
-function isValidURI(testURL) {
+function isValidURI(testURL: string) {
     return Boolean(isUri(testURL));
 }
 
-function parseURL(inputURL) {
+function parseURL(inputURL: URL | string) {
     if (!inputURL) {
         return null;
     }
@@ -46,7 +47,7 @@ function parseURL(inputURL) {
     }
 }
 
-function getHost(inputURL) {
+function getHost(inputURL: URL | string) {
     const parsedURL = parseURL(inputURL);
     if (parsedURL) {
         return parsedURL.origin;
@@ -57,7 +58,7 @@ function getHost(inputURL) {
 // isInternalURL determines if the target url is internal to the application.
 // - currentURL is the current url inside the webview
 // - basename is the global export from the Mattermost application defining the subpath, if any
-function isInternalURL(targetURL, currentURL, basename = '/') {
+function isInternalURL(targetURL: URL, currentURL: URL, basename = '/') {
     if (targetURL.host !== currentURL.host) {
         return false;
     }
@@ -69,7 +70,7 @@ function isInternalURL(targetURL, currentURL, basename = '/') {
     return true;
 }
 
-function getServerInfo(serverUrl) {
+function getServerInfo(serverUrl: URL | string) {
     const parsedServer = parseURL(serverUrl);
     if (!parsedServer) {
         return null;
@@ -78,7 +79,7 @@ function getServerInfo(serverUrl) {
     // does the server have a subpath?
     const pn = parsedServer.pathname.toLowerCase();
     const subpath = pn.endsWith('/') ? pn.toLowerCase() : `${pn}/`;
-    return {origin: parsedServer.origin, subpath, url: parsedServer};
+    return {subpath, url: parsedServer};
 }
 
 function getManagedResources() {
@@ -89,20 +90,20 @@ function getManagedResources() {
     return buildConfig.managedResources || [];
 }
 
-function isAdminUrl(serverUrl, inputUrl) {
+function isAdminUrl(serverUrl: URL | string, inputUrl: URL | string) {
     const parsedURL = parseURL(inputUrl);
     const server = getServerInfo(serverUrl);
-    if (!parsedURL || !server || (!equalUrlsIgnoringSubpath(server, parsedURL))) {
+    if (!parsedURL || !server || (!equalUrlsIgnoringSubpath(server.url, parsedURL))) {
         return null;
     }
     return (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}/admin_console/`) ||
     parsedURL.pathname.toLowerCase().startsWith('/admin_console/'));
 }
 
-function isTeamUrl(serverUrl, inputUrl, withApi) {
+function isTeamUrl(serverUrl: URL | string, inputUrl: URL | string, withApi: boolean) {
     const parsedURL = parseURL(inputUrl);
     const server = getServerInfo(serverUrl);
-    if (!parsedURL || !server || (!equalUrlsIgnoringSubpath(server, parsedURL))) {
+    if (!parsedURL || !server || (!equalUrlsIgnoringSubpath(server.url, parsedURL))) {
         return null;
     }
 
@@ -128,19 +129,19 @@ function isTeamUrl(serverUrl, inputUrl, withApi) {
     parsedURL.pathname.toLowerCase().startsWith(`/${testPath}/`))));
 }
 
-function isPluginUrl(serverUrl, inputURL) {
+function isPluginUrl(serverUrl: URL | string, inputURL: URL | string) {
     const server = getServerInfo(serverUrl);
     const parsedURL = parseURL(inputURL);
     if (!parsedURL || !server) {
         return false;
     }
     return (
-        equalUrlsIgnoringSubpath(server, parsedURL) &&
+        equalUrlsIgnoringSubpath(server.url, parsedURL) &&
     (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}plugins/`) ||
       parsedURL.pathname.toLowerCase().startsWith('/plugins/')));
 }
 
-function isManagedResource(serverUrl, inputURL) {
+function isManagedResource(serverUrl: URL | string, inputURL: URL | string) {
     const server = getServerInfo(serverUrl);
     const parsedURL = parseURL(inputURL);
     if (!parsedURL || !server) {
@@ -150,25 +151,25 @@ function isManagedResource(serverUrl, inputURL) {
     const managedResources = getManagedResources();
 
     return (
-        equalUrlsIgnoringSubpath(server, parsedURL) && managedResources && managedResources.length &&
+        equalUrlsIgnoringSubpath(server.url, parsedURL) && managedResources && managedResources.length &&
     managedResources.some((managedResource) => (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}${managedResource}/`) || parsedURL.pathname.toLowerCase().startsWith(`/${managedResource}/`))));
 }
 
-function getServer(inputURL, teams, ignoreScheme = false) {
+function getServer(inputURL: URL | string, teams: Team[], ignoreScheme = false) {
     const parsedURL = parseURL(inputURL);
     if (!parsedURL) {
         return null;
     }
-    let parsedServerUrl;
+    let parsedServerUrl: URL | null;
     let secondOption = null;
     for (let i = 0; i < teams.length; i++) {
         parsedServerUrl = parseURL(teams[i].url);
 
         // check server and subpath matches (without subpath pathname is \ so it always matches)
-        if (equalUrlsWithSubpath(parsedServerUrl, parsedURL, ignoreScheme)) {
+        if (equalUrlsWithSubpath(parsedServerUrl!, parsedURL, ignoreScheme)) {
             return {name: teams[i].name, url: parsedServerUrl, index: i};
         }
-        if (equalUrlsIgnoringSubpath(parsedServerUrl, parsedURL, ignoreScheme)) {
+        if (equalUrlsIgnoringSubpath(parsedServerUrl!, parsedURL, ignoreScheme)) {
             // in case the user added something on the path that doesn't really belong to the server
             // there might be more than one that matches, but we can't differentiate, so last one
             // is as good as any other in case there is no better match (e.g.: two subpath servers with the same origin)
@@ -180,21 +181,21 @@ function getServer(inputURL, teams, ignoreScheme = false) {
 }
 
 // next two functions are defined to clarify intent
-function equalUrlsWithSubpath(url1, url2, ignoreScheme) {
+function equalUrlsWithSubpath(url1: URL, url2: URL, ignoreScheme?: boolean) {
     if (ignoreScheme) {
         return url1.host === url2.host && url2.pathname.toLowerCase().startsWith(url1.pathname.toLowerCase());
     }
     return url1.origin === url2.origin && url2.pathname.toLowerCase().startsWith(url1.pathname.toLowerCase());
 }
 
-function equalUrlsIgnoringSubpath(url1, url2, ignoreScheme) {
+function equalUrlsIgnoringSubpath(url1: URL, url2: URL, ignoreScheme?: boolean) {
     if (ignoreScheme) {
         return url1.host.toLowerCase() === url2.host.toLowerCase();
     }
     return url1.origin.toLowerCase() === url2.origin.toLowerCase();
 }
 
-function isTrustedURL(url, teams) {
+function isTrustedURL(url: URL | string, teams: Team[]) {
     const parsedURL = parseURL(url);
     if (!parsedURL) {
         return false;
@@ -202,7 +203,7 @@ function isTrustedURL(url, teams) {
     return getServer(parsedURL, teams) !== null;
 }
 
-function isCustomLoginURL(url, server, teams) {
+function isCustomLoginURL(url: URL | string, server: {subpath: string; url: URL}, teams: Team[]): boolean {
     const subpath = (server === null || typeof server === 'undefined') ? '' : server.url.pathname;
     const parsedURL = parseURL(url);
     if (!parsedURL) {
@@ -212,7 +213,7 @@ function isCustomLoginURL(url, server, teams) {
         return false;
     }
     const urlPath = parsedURL.pathname;
-    if ((subpath !== '' || subpath !== '/') && urlPath.startsWith(subpath)) {
+    if (urlPath.startsWith(subpath)) {
         const replacement = subpath.endsWith('/') ? '/' : '';
         const replacedPath = urlPath.replace(subpath, replacement);
         for (const regexPath of customLoginRegexPaths) {

@@ -1,12 +1,14 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+import {ConfigV0, ConfigV1} from 'types/config';
+
 import defaultPreferences from './defaultPreferences';
 
 const pastDefaultPreferences = {
     0: {
         url: '',
-    },
+    } as ConfigV0,
     1: {
         version: 1,
         teams: [],
@@ -23,9 +25,8 @@ const pastDefaultPreferences = {
         enableHardwareAcceleration: true,
         autostart: true,
         spellCheckerLocale: 'en-US',
-    },
+    } as ConfigV1,
+    2: defaultPreferences,
 };
-
-pastDefaultPreferences[`${defaultPreferences.version}`] = defaultPreferences;
 
 export default pastDefaultPreferences;

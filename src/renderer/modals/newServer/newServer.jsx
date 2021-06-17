@@ -10,7 +10,7 @@ const urlParams = new URLSearchParams(queryString);
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import {MODAL_CANCEL, MODAL_RESULT} from 'common/communication.js';
+import {MODAL_CANCEL, MODAL_RESULT} from 'common/communication';
 
 import NewTeamModal from '../../components/NewTeamModal.jsx'; //'./addServer.jsx';
 

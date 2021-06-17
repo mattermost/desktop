@@ -51,7 +51,8 @@
     "lint:js": "eslint --ignore-path .gitignore --ignore-pattern node_modules --ext .js --ext .jsx .",
     "lint:js-quiet": "eslint --ignore-path .gitignore --ignore-pattern node_modules --ext .js --ext .jsx . --quiet",
     "fix:js": "eslint --ignore-path .gitignore --ignore-pattern node_modules --quiet --ext .js --ext .jsx . --fix",
-    "check-build-config": "node -r @babel/register scripts/check_build_config.js"
+    "check-build-config": "node -r @babel/register scripts/check_build_config.js",
+    "check-types": "tsc"
   },
   "devDependencies": {
     "@babel/core": "^7.2.0",
@@ -62,6 +63,9 @@
     "@babel/register": "^7.0.0",
     "@storybook/addon-actions": "^4.0.11",
     "@storybook/react": "^4.0.11",
+    "@types/hapi__joi": "^17.1.6",
+    "@types/valid-url": "^1.0.3",
+    "@types/winreg": "^1.2.30",
     "@typescript-eslint/eslint-plugin": "4.15.0",
     "@typescript-eslint/parser": "4.15.0",
     "7zip-bin": "^4.1.0",
