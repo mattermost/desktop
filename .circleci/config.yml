@@ -455,6 +455,8 @@ workflows:
             - build-linux
             - build-win-no-installer
             - build-mac-no-dmg
+            - msi_installer
+            - mac_installer
           filters:
             branches:
               ignore:
