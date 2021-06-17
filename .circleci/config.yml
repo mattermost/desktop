@@ -437,6 +437,7 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - MM-36326
 
       - mac_installer:
           requires:
@@ -445,6 +446,7 @@ workflows:
           filters:
             branches:
               only:
+                - MM-36326
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - store_artifacts:
