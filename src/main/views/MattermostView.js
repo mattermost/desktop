@@ -110,7 +110,7 @@ export class MattermostView extends EventEmitter {
     retry = (loadURL) => {
         return () => {
             // window was closed while retrying
-            if (!this.view) {
+            if (!this.view || !this.view.webContents) {
                 return;
             }
             const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
