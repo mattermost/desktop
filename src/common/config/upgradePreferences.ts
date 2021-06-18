@@ -19,7 +19,7 @@ function upgradeV0toV1(configV0: ConfigV0) {
 }
 
 function upgradeV1toV2(configV1: ConfigV1) {
-    const config = Object.assign({}, deepCopy<ConfigV2>(pastDefaultPreferences[2]), configV1);
+    const config: ConfigV2 = Object.assign({}, deepCopy<ConfigV2>(pastDefaultPreferences[2]), configV1);
     config.version = 2;
     config.teams = configV1.teams.map((value, index) => {
         return {

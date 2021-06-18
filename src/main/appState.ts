@@ -9,13 +9,13 @@ import {UPDATE_MENTIONS, UPDATE_TRAY, UPDATE_BADGE, SESSION_EXPIRED} from 'commo
 import * as WindowManager from './windows/windowManager';
 
 const status = {
-    unreads: new Map(),
-    mentions: new Map(),
-    expired: new Map(),
+    unreads: new Map<string, boolean>(),
+    mentions: new Map<string, number>(),
+    expired: new Map<string, boolean>(),
     emitter: new events.EventEmitter(),
 };
 
-const emitMentions = (serverName) => {
+const emitMentions = (serverName: string) => {
     const newMentions = getMentions(serverName);
     const newUnreads = getUnreads(serverName);
     const isExpired = getIsExpired(serverName);
@@ -24,11 +24,11 @@ const emitMentions = (serverName) => {
     emitStatus();
 };
 
-const emitTray = (expired, mentions, unreads) => {
+const emitTray = (expired?: boolean, mentions?: number, unreads?: boolean) => {
     status.emitter.emit(UPDATE_TRAY, expired, Boolean(mentions), unreads);
 };
 
-const emitBadge = (expired, mentions, unreads) => {
+const emitBadge = (expired?: boolean, mentions?: number, unreads?: boolean) => {
     status.emitter.emit(UPDATE_BADGE, expired, mentions, unreads);
 };
 
@@ -40,7 +40,7 @@ export const emitStatus = () => {
     emitBadge(expired, mentions, unreads);
 };
 
-export const updateMentions = (serverName, mentions, unreads) => {
+export const updateMentions = (serverName: string, mentions: number, unreads: boolean) => {
     if (typeof unreads !== 'undefined') {
         status.unreads.set(serverName, Boolean(unreads));
     }
@@ -48,20 +48,20 @@ export const updateMentions = (serverName, mentions, unreads) => {
     emitMentions(serverName);
 };
 
-export const updateUnreads = (serverName, unreads) => {
+export const updateUnreads = (serverName: string, unreads: boolean) => {
     status.unreads.set(serverName, Boolean(unreads));
     emitMentions(serverName);
 };
 
-export const getUnreads = (serverName) => {
+export const getUnreads = (serverName: string) => {
     return status.unreads.get(serverName) || false;
 };
 
-export const getMentions = (serverName) => {
+export const getMentions = (serverName: string) => {
     return status.mentions.get(serverName) || 0; // this might be undefined as a way to tell that we don't know as it might need to login still.
 };
 
-export const getIsExpired = (serverName) => {
+export const getIsExpired = (serverName: string) => {
     return status.expired.get(serverName) || false;
 };
 
@@ -101,11 +101,11 @@ export const anyExpired = () => {
 };
 
 // add any other event emitter methods if needed
-export const on = (event, listener) => {
+export const on = (event: string, listener: (...args: any[]) => void) => {
     status.emitter.on(event, listener);
 };
 
-export const setSessionExpired = (serverName, expired) => {
+export const setSessionExpired = (serverName: string, expired: boolean) => {
     const isExpired = Boolean(expired);
     const old = status.expired.get(serverName);
     status.expired.set(serverName, isExpired);

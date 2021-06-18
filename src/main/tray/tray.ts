@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
-import {app, nativeImage, Tray, systemPreferences, nativeTheme} from 'electron';
+import {app, nativeImage, Tray, systemPreferences, nativeTheme, BrowserWindow} from 'electron';
 
 import {UPDATE_TRAY} from 'common/communication';
 
@@ -11,12 +11,12 @@ import * as AppState from '../appState';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
-let trayImages;
-let trayIcon;
+let trayImages: Record<string, Electron.NativeImage>;
+let trayIcon: Tray;
 let lastStatus = 'normal';
 let lastMessage = app.name;
 
-export function refreshTrayImages(trayIconTheme) {
+export function refreshTrayImages(trayIconTheme: string) {
     const winTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
 
     switch (process.platform) {
@@ -69,12 +69,12 @@ export function refreshTrayImages(trayIconTheme) {
     return trayImages;
 }
 
-export function setupTray(icontheme) {
+export function setupTray(icontheme: string) {
     refreshTrayImages(icontheme);
-    trayIcon = new Tray(trayImages.normal);
+    trayIcon = new Tray(trayImages.normal!);
     if (process.platform === 'darwin') {
         systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
-            trayIcon.setImage(trayImages.normal);
+            trayIcon.setImage(trayImages.normal!);
         });
     }
 
@@ -103,7 +103,7 @@ export function setupTray(icontheme) {
     });
 }
 
-function setTray(status, message) {
+function setTray(status: string, message: string) {
     lastStatus = status;
     lastMessage = message;
     trayIcon.setImage(trayImages[status]);
@@ -116,7 +116,7 @@ export function destroyTray() {
     }
 }
 
-export function setTrayMenu(tMenu, mainWindow) {
+export function setTrayMenu(tMenu: Electron.Menu, mainWindow: BrowserWindow) {
     if (process.platform === 'darwin' || process.platform === 'linux') {
     // store the information, if the tray was initialized, for checking in the settings, if the application
     // was restarted after setting "Show icon on menu bar"

@@ -3,14 +3,15 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {app, Menu, session, shell, webContents} from 'electron';
+import {app, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, webContents} from 'electron';
 
 import {ADD_SERVER, SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB} from 'common/communication';
+import Config from 'common/config';
 
 import * as WindowManager from '../windows/windowManager';
 
-function createTemplate(config) {
-    const separatorItem = {
+function createTemplate(config: Config) {
+    const separatorItem: MenuItemConstructorOptions = {
         type: 'separator',
     };
 
@@ -39,7 +40,7 @@ function createTemplate(config) {
         },
     });
 
-    if (config.data.enableServerManagement === true) {
+    if (config.data?.enableServerManagement === true) {
         platformAppMenu.push({
             label: 'Sign in to Another Server',
             click() {
@@ -53,7 +54,7 @@ function createTemplate(config) {
             separatorItem, {
                 role: 'hide',
             }, {
-                role: 'hideothers',
+                role: 'hideOthers',
             }, {
                 role: 'unhide',
             }, separatorItem, {
@@ -139,7 +140,7 @@ function createTemplate(config) {
             }
             return 'Ctrl+Shift+I';
         })(),
-        click(item, focusedWindow) {
+        click(item: Electron.MenuItem, focusedWindow?: WebContents) {
             if (focusedWindow) {
                 // toggledevtools opens it in the last known position, so sometimes it goes below the browserview
                 if (focusedWindow.isDevToolsOpened()) {
@@ -193,7 +194,7 @@ function createTemplate(config) {
         }],
     });
 
-    const teams = config.data.teams || [];
+    const teams = config.data?.teams || [];
     const windowMenu = {
         label: '&Window',
         submenu: [{
@@ -209,7 +210,7 @@ function createTemplate(config) {
                 label: team.name,
                 accelerator: `CmdOrCtrl+${i + 1}`,
                 click() {
-                    WindowManager.switchServer(team.name, true);
+                    WindowManager.switchServer(team.name);
                 },
             };
         }), separatorItem, {
@@ -230,17 +231,19 @@ function createTemplate(config) {
     };
     template.push(windowMenu);
     const submenu = [];
-    if (config.data.helpLink) {
+    if (config.data?.helpLink) {
         submenu.push({
             label: 'Learn More...',
             click() {
-                shell.openExternal(config.data.helpLink);
+                shell.openExternal(config.data!.helpLink);
             },
         });
         submenu.push(separatorItem);
     }
     submenu.push({
-    // eslint-disable-next-line no-undef
+        // eslint-disable-next-line no-undef
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         label: `Version ${app.getVersion()} commit: ${__HASH_VERSION__}`,
         enabled: false,
     });
@@ -249,8 +252,9 @@ function createTemplate(config) {
     return template;
 }
 
-function createMenu(config) {
-    return Menu.buildFromTemplate(createTemplate(config));
+function createMenu(config: Config) {
+    // TODO TS DEVIN: Electron is enforcing certain variables that it doesn't need
+    return Menu.buildFromTemplate(createTemplate(config) as Array<MenuItemConstructorOptions | MenuItem>);
 }
 
 export default {

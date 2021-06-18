@@ -5,6 +5,8 @@ import {shell, Notification} from 'electron';
 import log from 'electron-log';
 
 import {PLAY_SOUND} from 'common/communication';
+import {MentionData} from 'types/notification';
+import {ServerFromURL} from 'types/utils';
 
 import * as windowManager from '../windows/windowManager';
 
@@ -13,7 +15,7 @@ import {DownloadNotification} from './Download';
 
 const currentNotifications = new Map();
 
-export function displayMention(title, body, channel, teamId, silent, webcontents, data) {
+export function displayMention(title: string, body: string, channel: {id: string}, teamId: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData) {
     if (!Notification.isSupported()) {
         log.error('notification not supported');
         return;
@@ -49,14 +51,14 @@ export function displayMention(title, body, channel, teamId, silent, webcontents
 
     mention.on('click', () => {
         if (serverName) {
-            windowManager.switchServer(serverName, true);
+            windowManager.switchServer(serverName);
             webcontents.send('notification-clicked', {channel, teamId});
         }
     });
     mention.show();
 }
 
-export function displayDownloadCompleted(fileName, path, serverInfo) {
+export function displayDownloadCompleted(fileName: string, path: string, serverInfo: ServerFromURL) {
     if (!Notification.isSupported()) {
         log.error('notification not supported');
         return;

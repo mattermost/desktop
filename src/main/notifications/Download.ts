@@ -3,6 +3,7 @@
 
 import path from 'path';
 import {app, Notification} from 'electron';
+import {ServerFromURL} from 'types/utils';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const appIconURL = path.resolve(assetsDir, 'appicon_48.png');
@@ -11,11 +12,12 @@ const defaultOptions = {
     title: 'Download Complete',
     silent: false,
     icon: appIconURL,
-    urgency: 'normal',
+    urgency: 'normal' as Notification['urgency'],
+    body: '',
 };
 
 export class DownloadNotification extends Notification {
-    constructor(fileName, serverInfo) {
+    constructor(fileName: string, serverInfo: ServerFromURL) {
         const options = {...defaultOptions};
         if (process.platform === 'win32') {
             options.icon = appIconURL;

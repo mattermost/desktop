@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {Team} from 'types/config';
+import {ServerFromURL} from 'types/utils';
 import {isHttpsUri, isHttpUri, isUri} from 'valid-url';
 
 import buildConfig from '../config/buildConfig';
@@ -155,7 +156,7 @@ function isManagedResource(serverUrl: URL | string, inputURL: URL | string) {
     managedResources.some((managedResource) => (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}${managedResource}/`) || parsedURL.pathname.toLowerCase().startsWith(`/${managedResource}/`))));
 }
 
-function getServer(inputURL: URL | string, teams: Team[], ignoreScheme = false) {
+function getServer(inputURL: URL | string, teams: Team[], ignoreScheme = false): ServerFromURL | null {
     const parsedURL = parseURL(inputURL);
     if (!parsedURL) {
         return null;

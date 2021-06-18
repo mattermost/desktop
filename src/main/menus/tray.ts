@@ -3,18 +3,19 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {Menu} from 'electron';
+import {Menu, MenuItem, MenuItemConstructorOptions} from 'electron';
+import {CombinedConfig} from 'types/config';
 
 import * as WindowManager from '../windows/windowManager';
 
-function createTemplate(config) {
+function createTemplate(config: CombinedConfig) {
     const teams = config.teams;
     const template = [
         ...teams.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).map((team) => {
             return {
                 label: team.name,
                 click: () => {
-                    WindowManager.switchServer(team.name, true);
+                    WindowManager.switchServer(team.name);
                 },
             };
         }), {
@@ -33,8 +34,9 @@ function createTemplate(config) {
     return template;
 }
 
-function createMenu(config) {
-    return Menu.buildFromTemplate(createTemplate(config));
+function createMenu(config: CombinedConfig) {
+    // TODO TS DEVIN: Electron is enforcing certain variables that it doesn't need
+    return Menu.buildFromTemplate(createTemplate(config) as Array<MenuItemConstructorOptions | MenuItem>);
 }
 
 export default {
