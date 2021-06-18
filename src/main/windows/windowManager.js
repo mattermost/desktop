@@ -108,7 +108,7 @@ export function showMainWindow(deeplinkingURL) {
 }
 
 export function getMainWindow(ensureCreated) {
-    if (ensureCreated && status.mainWindow === null) {
+    if (ensureCreated && !status.mainWindow) {
         showMainWindow();
     }
     return status.mainWindow;

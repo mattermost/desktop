@@ -7,6 +7,8 @@ export type Team = {
     order: number;
 }
 
+export type Config = ConfigV2;
+
 export type ConfigV2 = {
     version: 2;
     teams: Team[];

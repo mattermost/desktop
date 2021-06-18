@@ -1,8 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserWindow, shell} from 'electron';
+import {BrowserWindow, shell, Event} from 'electron';
 import log from 'electron-log';
+
+import {Team} from 'types/config';
 
 import {DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
@@ -15,11 +17,13 @@ import {protocols} from '../../../electron-builder.json';
 import allowProtocolDialog from '../allowProtocolDialog';
 import {composeUserAgent} from '../utils';
 
+import {MattermostView} from './MattermostView';
+
 const customLogins = {};
 const listeners = {};
-let popupWindow = null;
+let popupWindow: BrowserWindow;
 
-function isTrustedPopupWindow(webContents) {
+function isTrustedPopupWindow(webContents: Electron.WebContents) {
     if (!webContents) {
         return false;
     }
@@ -31,12 +35,12 @@ function isTrustedPopupWindow(webContents) {
 
 const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];
 
-const generateWillNavigate = (getServersFunction) => {
-    return (event, url) => {
+const generateWillNavigate = (getServersFunction: () => Team[]) => {
+    return (event: Event, url: string) => {
         const contentID = event.sender.id;
         const parsedURL = urlUtils.parseURL(url);
         const configServers = getServersFunction();
-        const server = urlUtils.getServer(parsedURL, configServers);
+        const server = urlUtils.getServer(parsedURL!, configServers);
 
         if (server && (urlUtils.isTeamUrl(server.url, parsedURL) || urlUtils.isAdminUrl(server.url, parsedURL) || isTrustedPopupWindow(event.sender))) {
             return;
@@ -193,7 +197,7 @@ export const removeWebContentsListeners = (id) => {
     }
 };
 
-export const addWebContentsEventListeners = (mmview, getServersFunction) => {
+export const addWebContentsEventListeners = (mmview: MattermostView, getServersFunction: () => Team[]) => {
     const contents = mmview.view.webContents;
 
     // initialize custom login tracking

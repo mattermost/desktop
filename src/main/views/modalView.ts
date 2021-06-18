@@ -1,18 +1,31 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView} from 'electron';
+import {BrowserView, BrowserWindow} from 'electron';
 import log from 'electron-log';
 
 import ContextMenu from '../contextMenu';
 import {getWindowBoundaries} from '../utils';
 
-const ACTIVE = 'active';
-const SHOWING = 'showing';
-const DONE = 'done';
+enum Status {
+    ACTIVE,
+    SHOWING,
+    DONE
+}
 
-export class ModalView {
-    constructor(key, html, preload, data, onResolve, onReject, currentWindow) {
+export class ModalView<T> {
+    key: string;
+    html: string;
+    data: T;
+    view: BrowserView;
+    onReject: (value: T) => void;
+    onResolve: (value: T) => void;
+    window: BrowserWindow;
+    windowAttached?: BrowserWindow;
+    status: Status;
+    contextMenu: ContextMenu;
+
+    constructor(key: string, html: string, preload: string, data: T, onResolve: (value: T) => void, onReject: (value: T) => void, currentWindow: BrowserWindow) {
         this.key = key;
         this.html = html;
         this.data = data;
@@ -26,8 +39,8 @@ export class ModalView {
         this.onReject = onReject;
         this.onResolve = onResolve;
         this.window = currentWindow;
-        this.windowAttached = null;
-        this.status = ACTIVE;
+
+        this.status = Status.ACTIVE;
         try {
             this.view.webContents.loadURL(this.html);
         } catch (e) {
@@ -38,7 +51,7 @@ export class ModalView {
         this.contextMenu = new ContextMenu({}, this.view);
     }
 
-    show = (win, withDevTools) => {
+    show = (win?: BrowserWindow, withDevTools?: boolean) => {
         if (this.windowAttached) {
         // we'll reatach
             this.windowAttached.removeBrowserView(this.view);
@@ -53,7 +66,7 @@ export class ModalView {
             horizontal: true,
             vertical: true,
         });
-        this.status = SHOWING;
+        this.status = Status.SHOWING;
         if (this.view.webContents.isLoading()) {
             this.view.webContents.once('did-finish-load', () => {
                 this.view.webContents.focus();
@@ -77,10 +90,12 @@ export class ModalView {
 
             // workaround to eliminate zombie processes
             // https://github.com/mattermost/desktop/pull/1519
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
             this.view.webContents.destroy();
 
-            this.windowAttached = null;
-            this.status = ACTIVE;
+            delete this.windowAttached;
+            this.status = Status.ACTIVE;
         }
     }
 
@@ -88,21 +103,21 @@ export class ModalView {
         return this.data;
     }
 
-    reject = (data) => {
+    reject = (data: T) => {
         if (this.onReject) {
             this.onReject(data);
         }
         this.hide();
-        this.status = DONE;
+        this.status = Status.DONE;
     }
 
-    resolve = (data) => {
+    resolve = (data: T) => {
         if (this.onResolve) {
             this.onResolve(data);
         }
         this.hide();
-        this.status = DONE;
+        this.status = Status.DONE;
     }
 
-    isActive = () => this.status !== DONE;
+    isActive = () => this.status !== Status.DONE;
 }

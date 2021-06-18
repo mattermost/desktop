@@ -1,7 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ipcMain} from 'electron';
+import {BrowserWindow, ipcMain} from 'electron';
+import {IpcMainEvent, IpcMainInvokeEvent} from 'electron/main';
 
 import {RETRIEVE_MODAL_INFO, MODAL_CANCEL, MODAL_RESULT, MODAL_OPEN, MODAL_CLOSE} from 'common/communication';
 
@@ -9,15 +10,15 @@ import * as WindowManager from '../windows/windowManager';
 
 import {ModalView} from './modalView';
 
-let modalQueue = [];
+let modalQueue: Array<ModalView<any>> = [];
 
 // TODO: add a queue/add differentiation, in case we need to put a modal first in line
 // should we return the original promise if called multiple times with the same key?
-export function addModal(key, html, preload, data, win) {
+export function addModal<T>(key: string, html: string, preload: string, data: T, win: BrowserWindow) {
     const foundModal = modalQueue.find((modal) => modal.key === key);
     if (!foundModal) {
         const modalPromise = new Promise((resolve, reject) => {
-            const mv = new ModalView(key, html, preload, data, resolve, reject, win);
+            const mv = new ModalView<T>(key, html, preload, data, resolve, reject, win);
             modalQueue.push(mv);
         });
 
@@ -34,7 +35,7 @@ ipcMain.handle(RETRIEVE_MODAL_INFO, handleInfoRequest);
 ipcMain.on(MODAL_RESULT, handleModalResult);
 ipcMain.on(MODAL_CANCEL, handleModalCancel);
 
-function findModalByCaller(event) {
+function findModalByCaller(event: IpcMainInvokeEvent) {
     if (modalQueue.length) {
         const requestModal = modalQueue.find((modal) => {
             return (modal.view && modal.view.webContents && modal.view.webContents.id === event.sender.id);
@@ -44,7 +45,7 @@ function findModalByCaller(event) {
     return null;
 }
 
-function handleInfoRequest(event) {
+function handleInfoRequest(event: IpcMainInvokeEvent) {
     const requestModal = findModalByCaller(event);
     if (requestModal) {
         return requestModal.handleInfoRequest();
@@ -53,12 +54,11 @@ function handleInfoRequest(event) {
 }
 
 export function showModal() {
-    let noWindow;
     const withDevTools = process.env.MM_DEBUG_MODALS || false;
     modalQueue.forEach((modal, index) => {
         if (index === 0) {
             WindowManager.sendToRenderer(MODAL_OPEN);
-            modal.show(noWindow, withDevTools);
+            modal.show(undefined, Boolean(withDevTools));
         } else {
             WindowManager.sendToRenderer(MODAL_CLOSE);
             modal.hide();
@@ -66,7 +66,7 @@ export function showModal() {
     });
 }
 
-function handleModalResult(event, data) {
+function handleModalResult(event: IpcMainEvent, data: unknown) {
     const requestModal = findModalByCaller(event);
     if (requestModal) {
         requestModal.resolve(data);
@@ -80,7 +80,7 @@ function handleModalResult(event, data) {
     }
 }
 
-function handleModalCancel(event, data) {
+function handleModalCancel(event: IpcMainEvent, data: unknown) {
     const requestModal = findModalByCaller(event);
     if (requestModal) {
         requestModal.reject(data);

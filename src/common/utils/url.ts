@@ -34,7 +34,7 @@ function isValidURI(testURL: string) {
     return Boolean(isUri(testURL));
 }
 
-function parseURL(inputURL: URL | string) {
+function parseURL(inputURL?: URL | string) {
     if (!inputURL) {
         return null;
     }
@@ -71,7 +71,7 @@ function isInternalURL(targetURL: URL, currentURL: URL, basename = '/') {
     return true;
 }
 
-function getServerInfo(serverUrl: URL | string) {
+function getServerInfo(serverUrl?: URL | string) {
     const parsedServer = parseURL(serverUrl);
     if (!parsedServer) {
         return null;
@@ -101,7 +101,7 @@ function isAdminUrl(serverUrl: URL | string, inputUrl: URL | string) {
     parsedURL.pathname.toLowerCase().startsWith('/admin_console/'));
 }
 
-function isTeamUrl(serverUrl: URL | string, inputUrl: URL | string, withApi: boolean) {
+function isTeamUrl(serverUrl?: URL | string, inputUrl?: URL | string, withApi?: boolean) {
     const parsedURL = parseURL(inputUrl);
     const server = getServerInfo(serverUrl);
     if (!parsedURL || !server || (!equalUrlsIgnoringSubpath(server.url, parsedURL))) {
@@ -205,7 +205,7 @@ function isTrustedURL(url: URL | string, teams: Team[]) {
 }
 
 function isCustomLoginURL(url: URL | string, server: {subpath: string; url: URL}, teams: Team[]): boolean {
-    const subpath = (server === null || typeof server === 'undefined') ? '' : server.url.pathname;
+    const subpath = server ? server.url.pathname : '';
     const parsedURL = parseURL(url);
     if (!parsedURL) {
         return false;

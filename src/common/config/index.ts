@@ -9,8 +9,9 @@ import {EventEmitter} from 'events';
 import {ipcMain, nativeTheme, app} from 'electron';
 import log from 'electron-log';
 
+import {AnyConfig, BuildConfig, CombinedConfig, Config as ConfigType, RegistryConfig as RegistryConfigType, Team} from 'types/config';
+
 import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION} from 'common/communication';
-import {AnyConfig, BuildConfig, CombinedConfig, ConfigV2, RegistryConfig as RegistryConfigType, Team} from 'types/config';
 
 import * as Validator from '../../main/Validator';
 
@@ -30,9 +31,9 @@ export default class Config extends EventEmitter {
 
     combinedData?: CombinedConfig;
     registryConfigData?: Partial<RegistryConfigType>;
-    defaultConfigData?: ConfigV2;
+    defaultConfigData?: ConfigType;
     buildConfigData?: BuildConfig;
-    localConfigData?: ConfigV2;
+    localConfigData?: ConfigType;
 
     constructor(configFilePath: string) {
         super();
@@ -88,7 +89,7 @@ export default class Config extends EventEmitter {
      * @param {string} key name of config property to be saved
      * @param {*} data value to save for provided key
      */
-    set = (key: keyof ConfigV2, data: ConfigV2[keyof ConfigV2]): void => {
+    set = (key: keyof ConfigType, data: ConfigType[keyof ConfigType]): void => {
         if (key && this.localConfigData) {
             this.localConfigData = Object.assign({}, this.localConfigData, {[key]: data});
             this.regenerateCombinedConfigData();
@@ -101,7 +102,7 @@ export default class Config extends EventEmitter {
      *
      * @param {array} properties an array of config properties to save
      */
-    setMultiple = (event: Electron.IpcMainEvent, properties: Array<{key: keyof ConfigV2; data: ConfigV2[keyof ConfigV2]}> = []): Partial<ConfigV2> | undefined => {
+    setMultiple = (event: Electron.IpcMainEvent, properties: Array<{key: keyof ConfigType; data: ConfigType[keyof ConfigType]}> = []): Partial<ConfigType> | undefined => {
         if (properties.length) {
             this.localConfigData = Object.assign({}, this.localConfigData, ...properties.map(({key, data}) => ({[key]: data})));
             this.regenerateCombinedConfigData();
@@ -121,7 +122,7 @@ export default class Config extends EventEmitter {
      *
      * @param {object} configData a new, config data object to completely replace the existing config data
      */
-    replace = (configData: ConfigV2) => {
+    replace = (configData: ConfigType) => {
         const newConfigData = configData;
 
         this.localConfigData = Object.assign({}, this.localConfigData, newConfigData);
@@ -283,7 +284,7 @@ export default class Config extends EventEmitter {
         } catch (error) {
             log.error(`Failed to update configuration to version ${this.defaultConfigData?.version}.`);
         }
-        return configData as ConfigV2;
+        return configData as ConfigType;
     }
 
     /**
@@ -367,10 +368,10 @@ export default class Config extends EventEmitter {
         // Make a best pass at interpreting sort order. If an order is not specified, assume it is 0.
         //
         const newTeams = mappedTeams.sort((x, y) => {
-            if (x.team.order == null) {
-                x.team.order = 0;
+            if (!x.team.order) {
+                x.team.order = 0;  
             }
-            if (y.team.order == null) {
+            if (!y.team.order) {
                 y.team.order = 0;
             }
 
@@ -394,7 +395,7 @@ export default class Config extends EventEmitter {
         return JSON.parse(fs.readFileSync(filePath, 'utf8'));
     }
 
-    writeFile = (filePath: string, configData: Partial<ConfigV2>, callback: fs.NoParamCallback) => {
+    writeFile = (filePath: string, configData: Partial<ConfigType>, callback: fs.NoParamCallback) => {
         if (configData.version !== this.defaultConfigData?.version) {
             throw new Error('version ' + configData.version + ' is not equal to ' + this.defaultConfigData?.version);
         }
@@ -402,7 +403,7 @@ export default class Config extends EventEmitter {
         fs.writeFile(filePath, json, 'utf8', callback);
     }
 
-    writeFileSync =(filePath: string, config: Partial<ConfigV2>) => {
+    writeFileSync =(filePath: string, config: Partial<ConfigType>) => {
         if (config.version !== this.defaultConfigData?.version) {
             throw new Error('version ' + config.version + ' is not equal to ' + this.defaultConfigData?.version);
         }
@@ -432,7 +433,7 @@ export default class Config extends EventEmitter {
         return config;
     }
 
-    handleGetLocalConfiguration = (event: Electron.IpcMainInvokeEvent, option: keyof ConfigV2) => {
+    handleGetLocalConfiguration = (event: Electron.IpcMainInvokeEvent, option: keyof ConfigType) => {
         const config: Partial<CombinedConfig> = {...this.localConfigData};
         config.appName = app.name;
         config.enableServerManagement = this.combinedData?.enableServerManagement;

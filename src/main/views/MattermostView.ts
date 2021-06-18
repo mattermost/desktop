@@ -1,7 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, app, ipcMain} from 'electron';
+import {BrowserView, app, ipcMain, BrowserWindow, WebContents} from 'electron';
+import {BrowserViewConstructorOptions, Event, Input} from 'electron/main';
 import log from 'electron-log';
 
 import {EventEmitter} from 'events';
@@ -20,6 +21,7 @@ import {
     SET_SERVER_NAME,
     LOADSCREEN_END,
 } from 'common/communication';
+import {MattermostServer} from 'main/MattermostServer';
 
 import ContextMenu from '../contextMenu';
 import {getWindowBoundaries, getLocalPreload, composeUserAgent} from '../utils';
@@ -28,49 +30,67 @@ import * as appState from '../appState';
 
 import {removeWebContentsListeners} from './webContentEvents';
 
-const READY = 1;
-const WAITING_MM = 2;
-const LOADING = 0;
-const ERROR = -1;
+enum Status {
+    LOADING,
+    READY,
+    WAITING_MM,
+    ERROR = -1,
+}
 
 const ASTERISK_GROUP = 3;
 const MENTIONS_GROUP = 2;
 
 export class MattermostView extends EventEmitter {
-    constructor(server, win, options) {
+    server?: MattermostServer;
+    window?: BrowserWindow;
+    view: BrowserView;
+    isVisible: boolean;
+    options: BrowserViewConstructorOptions;
+
+    removeLoading?: number;
+
+    /**
+     * for backward compatibility when reading the title.
+     * null means we have yet to figure out if it uses it or not but we consider it false until proven wrong
+     */
+    usesAsteriskForUnreads?: boolean;
+
+    faviconMemoize: Map<string, boolean>;
+    currentFavicon?: string;
+    isInitialized: boolean;
+    hasBeenShown: boolean;
+    altLastPressed?: boolean;
+    contextMenu: ContextMenu;
+
+    status?: Status;
+    retryLoad?: NodeJS.Timeout;
+    maxRetries: number;
+
+    constructor(server: MattermostServer, win: BrowserWindow, options: BrowserViewConstructorOptions) {
         super();
         this.server = server;
         this.window = win;
 
         const preload = getLocalPreload('preload.js');
-        const spellcheck = ((!options || typeof options.spellcheck === 'undefined') ? true : options.spellcheck);
         this.options = {
             webPreferences: {
                 contextIsolation: process.env.NODE_ENV !== 'test',
                 preload,
-                spellcheck,
                 additionalArguments: [
                     `version=${app.version}`,
                     `appName=${app.name}`,
                 ],
                 enableRemoteModule: process.env.NODE_ENV === 'test',
                 nodeIntegration: process.env.NODE_ENV === 'test',
+                ...options.webPreferences,
             },
             ...options,
         };
         this.isVisible = false;
         this.view = new BrowserView(this.options);
-        this.removeLoading = null;
         this.resetLoadingStatus();
 
-        /**
-     * for backward compatibility when reading the title.
-     * null means we have yet to figure out if it uses it or not but we consider it false until proven wrong
-     */
-        this.usesAsteriskForUnreads = null;
-
         this.faviconMemoize = new Map();
-        this.currentFavicon = null;
         log.info(`BrowserView created for server ${this.server.name}`);
 
         this.isInitialized = false;
@@ -82,32 +102,33 @@ export class MattermostView extends EventEmitter {
         }
 
         this.contextMenu = new ContextMenu({}, this.view);
+        this.maxRetries = MAX_SERVER_RETRIES;
     }
 
     // use the same name as the server
     // TODO: we'll need unique identifiers if we have multiple instances of the same server in different tabs (1:N relationships)
     get name() {
-        return this.server.name;
+        return this.server?.name;
     }
 
     resetLoadingStatus = () => {
-        if (this.status !== LOADING) { // if it's already loading, don't touch anything
-            this.retryLoad = null;
-            this.status = LOADING;
+        if (this.status !== Status.LOADING) { // if it's already loading, don't touch anything
+            delete this.retryLoad;
+            this.status = Status.LOADING;
             this.maxRetries = MAX_SERVER_RETRIES;
         }
     }
 
-    load = (someURL) => {
-        const loadURL = (typeof someURL === 'undefined') ? `${this.server.url.toString()}` : urlUtils.parseURL(someURL).toString();
-        log.info(`[${Util.shorten(this.server.name)}] Loading ${loadURL}`);
+    load = (someURL?: URL | string) => {
+        const loadURL = (typeof someURL === 'undefined') ? `${this.server?.url.toString()}` : urlUtils.parseURL(someURL)!.toString();
+        log.info(`[${Util.shorten(this.server?.name)}] Loading ${loadURL}`);
         const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             this.loadRetry(loadURL, err);
         });
     }
 
-    retry = (loadURL) => {
+    retry = (loadURL: string) => {
         return () => {
             // window was closed while retrying
             if (!this.view) {
@@ -118,50 +139,50 @@ export class MattermostView extends EventEmitter {
                 if (this.maxRetries-- > 0) {
                     this.loadRetry(loadURL, err);
                 } else {
-                    WindowManager.sendToRenderer(LOAD_FAILED, this.server.name, err.toString(), loadURL.toString());
-                    this.emit(LOAD_FAILED, this.server.name, err.toString(), loadURL.toString());
-                    log.info(`[${Util.shorten(this.server.name)}] Couldn't stablish a connection with ${loadURL}: ${err}.`);
-                    this.status = ERROR;
+                    WindowManager.sendToRenderer(LOAD_FAILED, this.server?.name, err.toString(), loadURL.toString());
+                    this.emit(LOAD_FAILED, this.server?.name, err.toString(), loadURL.toString());
+                    log.info(`[${Util.shorten(this.server?.name)}] Couldn't stablish a connection with ${loadURL}: ${err}.`);
+                    this.status = Status.ERROR;
                 }
             });
         };
     }
 
-    loadRetry = (loadURL, err) => {
+    loadRetry = (loadURL: string, err: any) => {
         this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
-        WindowManager.sendToRenderer(LOAD_RETRY, this.server.name, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
-        log.info(`[${Util.shorten(this.server.name)}] failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
+        WindowManager.sendToRenderer(LOAD_RETRY, this.server?.name, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
+        log.info(`[${Util.shorten(this.server?.name)}] failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
     }
 
-    loadSuccess = (loadURL) => {
+    loadSuccess = (loadURL: string) => {
         return () => {
-            log.info(`[${Util.shorten(this.server.name)}] finished loading ${loadURL}`);
-            WindowManager.sendToRenderer(LOAD_SUCCESS, this.server.name);
+            log.info(`[${Util.shorten(this.server?.name)}] finished loading ${loadURL}`);
+            WindowManager.sendToRenderer(LOAD_SUCCESS, this.server?.name);
             this.maxRetries = MAX_SERVER_RETRIES;
-            if (this.status === LOADING) {
+            if (this.status === Status.LOADING) {
                 ipcMain.on(UNREAD_RESULT, this.handleFaviconIsUnread);
-                this.handleTitleUpdate(null, this.view.webContents.getTitle());
+                this.updateMentionsFromTitle(this.view.webContents.getTitle());
                 this.findUnreadState(null);
             }
-            this.status = WAITING_MM;
+            this.status = Status.WAITING_MM;
             this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
-            this.emit(LOAD_SUCCESS, this.server.name, loadURL.toString());
-            this.view.webContents.send(SET_SERVER_NAME, this.server.name);
-            this.setBounds(getWindowBoundaries(this.window, !(urlUtils.isTeamUrl(this.server.url, this.view.webContents.getURL()) || urlUtils.isAdminUrl(this.server.url, this.view.webContents.getURL()))));
+            this.emit(LOAD_SUCCESS, this.server?.name, loadURL);
+            this.view.webContents.send(SET_SERVER_NAME, this.server?.name);
+            this.setBounds(getWindowBoundaries(this.window, !(urlUtils.isTeamUrl(this.server?.url || '', this.view.webContents.getURL()) || urlUtils.isAdminUrl(this.server?.url || '', this.view.webContents.getURL()))));
         };
     }
 
-    show = (requestedVisibility) => {
+    show = (requestedVisibility?: boolean) => {
         this.hasBeenShown = true;
         const request = typeof requestedVisibility === 'undefined' ? true : requestedVisibility;
         if (request && !this.isVisible) {
-            this.window.addBrowserView(this.view);
-            this.setBounds(getWindowBoundaries(this.window, !(urlUtils.isTeamUrl(this.server.url, this.view.webContents.getURL()) || urlUtils.isAdminUrl(this.server.url, this.view.webContents.getURL()))));
-            if (this.status === READY) {
+            this.window?.addBrowserView(this.view);
+            this.setBounds(getWindowBoundaries(this.window, !(urlUtils.isTeamUrl(this.server?.url || '', this.view.webContents.getURL()) || urlUtils.isAdminUrl(this.server?.url || '', this.view.webContents.getURL()))));
+            if (this.status === Status.READY) {
                 this.focus();
             }
         } else if (!request && this.isVisible) {
-            this.window.removeBrowserView(this.view);
+            this.window?.removeBrowserView(this.view);
         }
         this.isVisible = request;
     }
@@ -173,15 +194,12 @@ export class MattermostView extends EventEmitter {
 
     hide = () => this.show(false);
 
-    setBounds = (boundaries) => {
+    setBounds = (boundaries: Electron.Rectangle) => {
         // todo: review this, as it might not work properly with devtools/minimizing/resizing
         this.view.setBounds(boundaries);
     }
 
     destroy = () => {
-        if (this.retryLoad) {
-            clearTimeout(this.retryLoad);
-        }
         removeWebContentsListeners(this.view.webContents.id);
         if (this.window) {
             this.window.removeBrowserView(this.view);
@@ -189,12 +207,16 @@ export class MattermostView extends EventEmitter {
 
         // workaround to eliminate zombie processes
         // https://github.com/mattermost/desktop/pull/1519
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         this.view.webContents.destroy();
 
-        this.window = null;
-        this.server = null;
+        delete this.window;
+        delete this.server;
         this.isVisible = false;
-        clearTimeout(this.retryLoad);
+        if (this.retryLoad) {
+            clearTimeout(this.retryLoad);
+        }
     }
 
     focus = () => {
@@ -206,38 +228,38 @@ export class MattermostView extends EventEmitter {
     }
 
     isReady = () => {
-        return this.status !== LOADING;
+        return this.status !== Status.LOADING;
     }
 
     needsLoadingScreen = () => {
-        return !(this.status === READY || this.status === ERROR);
+        return !(this.status === Status.READY || this.status === Status.ERROR);
     }
 
-    setInitialized = (timedout) => {
-        this.status = READY;
+    setInitialized = (timedout?: boolean) => {
+        this.status = Status.READY;
 
         if (timedout) {
-            log.info(`${this.server.name} timeout expired will show the browserview`);
-            this.emit(LOADSCREEN_END, this.server.name);
+            log.info(`${this.server?.name} timeout expired will show the browserview`);
+            this.emit(LOADSCREEN_END, this.server?.name);
         }
         clearTimeout(this.removeLoading);
-        this.removeLoading = null;
+        delete this.removeLoading;
     }
 
     openDevTools = () => {
         this.view.webContents.openDevTools({mode: 'detach'});
     }
 
-    getWebContents = () => {
-        if (this.status === READY) {
+    getWebContents = (): WebContents => {
+        if (this.status === Status.READY) {
             return this.view.webContents;
         } else if (this.window) {
             return this.window.webContents; // if it's not ready you are looking at the renderer process
         }
-        return WindowManager.getMainWindow.webContents;
+        return WindowManager.getMainWindow().webContents;
     }
 
-    handleInputEvents = (_, input) => {
+    handleInputEvents = (_: Event, input: Input) => {
         // Handler for pressing the Alt key to focus the 3-dot menu
         if (input.key === 'Alt' && input.type === 'keyUp' && this.altLastPressed) {
             this.altLastPressed = false;
@@ -253,8 +275,8 @@ export class MattermostView extends EventEmitter {
         }
     }
 
-    handleDidNavigate = (event, url) => {
-        const isUrlTeamUrl = urlUtils.isTeamUrl(this.server.url, url) || urlUtils.isAdminUrl(this.server.url, url);
+    handleDidNavigate = (event: Event, url: string) => {
+        const isUrlTeamUrl = urlUtils.isTeamUrl(this.server?.url || '', url) || urlUtils.isAdminUrl(this.server?.url || '', url);
         if (isUrlTeamUrl) {
             this.setBounds(getWindowBoundaries(this.window));
             WindowManager.sendToRenderer(TOGGLE_BACK_BUTTON, false);
@@ -266,15 +288,19 @@ export class MattermostView extends EventEmitter {
         }
     }
 
-    handleUpdateTarget = (e, url) => {
-        if (!this.server.sameOrigin(url)) {
+    handleUpdateTarget = (e: Event, url: string) => {
+        if (!this.server?.sameOrigin(url)) {
             this.emit(UPDATE_TARGET_URL, url);
         }
     }
 
     titleParser = /(\((\d+)\) )?(\*)?/g
 
-    handleTitleUpdate = (e, title) => {
+    handleTitleUpdate = (e: Event, title: string) => {
+        this.updateMentionsFromTitle(title);
+    }
+
+    updateMentionsFromTitle = (title: string) => {
         //const title = this.view.webContents.getTitle();
         const resultsIterator = title.matchAll(this.titleParser);
         const results = resultsIterator.next(); // we are only interested in the first set
@@ -290,16 +316,16 @@ export class MattermostView extends EventEmitter {
         }
         const mentions = (results && results.value && parseInt(results.value[MENTIONS_GROUP], 10)) || 0;
 
-        appState.updateMentions(this.server.name, mentions, unreads);
+        appState.updateMentions(this.server?.name, mentions, unreads);
     }
 
-    handleFaviconUpdate = (e, favicons) => {
+    handleFaviconUpdate = (e: Event, favicons: string[]) => {
         if (!this.usesAsteriskForUnreads) {
             // if unread state is stored for that favicon, retrieve value.
             // if not, get related info from preload and store it for future changes
             this.currentFavicon = favicons[0];
             if (this.faviconMemoize.has(favicons[0])) {
-                appState.updateUnreads(this.server.name, this.faviconMemoize.get(favicons[0]));
+                appState.updateUnreads(this.server?.name, Boolean(this.faviconMemoize.get(favicons[0])));
             } else {
                 this.findUnreadState(favicons[0]);
             }
@@ -307,9 +333,9 @@ export class MattermostView extends EventEmitter {
     }
 
     // if favicon is null, it will affect appState, but won't be memoized
-    findUnreadState = (favicon) => {
+    findUnreadState = (favicon: string | null) => {
         try {
-            this.view.webContents.send(IS_UNREAD, favicon, this.server.name);
+            this.view.webContents.send(IS_UNREAD, favicon, this.server?.name);
         } catch (err) {
             log.error(`There was an error trying to request the unread state: ${err}`);
             log.error(err.stack);
@@ -318,12 +344,12 @@ export class MattermostView extends EventEmitter {
 
     // if favicon is null, it means it is the initial load,
     // so don't memoize as we don't have the favicons and there is no rush to find out.
-    handleFaviconIsUnread = (e, favicon, serverName, result) => {
+    handleFaviconIsUnread = (e: Event, favicon: string, serverName: string, result: boolean) => {
         if (this.server && serverName === this.server.name) {
             if (favicon) {
                 this.faviconMemoize.set(favicon, result);
             }
-            if (favicon === null || favicon === this.currentFavicon) {
+            if (!favicon || favicon === this.currentFavicon) {
                 appState.updateUnreads(serverName, result);
             }
         }

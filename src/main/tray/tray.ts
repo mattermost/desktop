@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
-import {app, nativeImage, Tray, systemPreferences, nativeTheme, BrowserWindow} from 'electron';
+import {app, nativeImage, Tray, systemPreferences, nativeTheme} from 'electron';
 
 import {UPDATE_TRAY} from 'common/communication';
 
@@ -116,17 +116,8 @@ export function destroyTray() {
     }
 }
 
-export function setTrayMenu(tMenu: Electron.Menu, mainWindow: BrowserWindow) {
-    if (process.platform === 'darwin' || process.platform === 'linux') {
-    // store the information, if the tray was initialized, for checking in the settings, if the application
-    // was restarted after setting "Show icon on menu bar"
-        if (trayIcon) {
-            trayIcon.setContextMenu(tMenu);
-            mainWindow.trayWasVisible = true;
-        } else {
-            mainWindow.trayWasVisible = false;
-        }
-    } else if (trayIcon) {
+export function setTrayMenu(tMenu: Electron.Menu) {
+    if (trayIcon) {
         trayIcon.setContextMenu(tMenu);
     }
 }

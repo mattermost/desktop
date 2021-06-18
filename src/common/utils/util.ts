@@ -29,7 +29,7 @@ function runMode() {
 
 // workaround until electron 12 hits, since fromWebContents return a null value if using a webcontent from browserview
 // TODO DEVIN TS: Remove this?
-function browserWindowFromWebContents(content: Electron.WebContents & {type: string}) {
+function browserWindowFromWebContents(content: Electron.WebContents & {type?: string}) {
     let window;
     if (content.type === 'browserview') {
         for (const win of BrowserWindow.getAllWindows()) {
@@ -47,7 +47,7 @@ function browserWindowFromWebContents(content: Electron.WebContents & {type: str
 
 const DEFAULT_MAX = 20;
 
-function shorten(string: string, max: number) {
+function shorten(string: string, max?: number) {
     const maxLength = (max && max >= 4) ? max : DEFAULT_MAX;
     if (string.length >= maxLength) {
         return `${string.slice(0, maxLength - 3)}...`;

@@ -40,7 +40,7 @@ export const emitStatus = () => {
     emitBadge(expired, mentions, unreads);
 };
 
-export const updateMentions = (serverName: string, mentions: number, unreads: boolean) => {
+export const updateMentions = (serverName: string, mentions: number, unreads?: boolean) => {
     if (typeof unreads !== 'undefined') {
         status.unreads.set(serverName, Boolean(unreads));
     }
