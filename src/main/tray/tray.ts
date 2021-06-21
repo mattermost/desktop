@@ -71,10 +71,10 @@ export function refreshTrayImages(trayIconTheme: string) {
 
 export function setupTray(icontheme: string) {
     refreshTrayImages(icontheme);
-    trayIcon = new Tray(trayImages.normal!);
+    trayIcon = new Tray(trayImages.normal);
     if (process.platform === 'darwin') {
         systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
-            trayIcon.setImage(trayImages.normal!);
+            trayIcon.setImage(trayImages.normal);
         });
     }
 

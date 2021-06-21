@@ -2,28 +2,31 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
-import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain} from 'electron';
+import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent} from 'electron';
 import log from 'electron-log';
 
 import {MAXIMIZE_CHANGE, HISTORY, GET_LOADING_SCREEN_DATA, REACT_APP_INITIALIZED, LOADING_SCREEN_ANIMATION_FINISHED, FOCUS_THREE_DOT_MENU} from 'common/communication';
+import {CombinedConfig} from 'types/config';
 import urlUtils from 'common/utils/url';
 
 import {getAdjustedWindowBoundaries} from '../utils';
 
 import {ViewManager} from '../views/viewManager';
-import {CriticalErrorHandler} from '../CriticalErrorHandler';
+import CriticalErrorHandler from '../CriticalErrorHandler';
 
 import {createSettingsWindow} from './settingsWindow';
 import createMainWindow from './mainWindow';
 
 // singleton module to manage application's windows
 
-const status = {
-    mainWindow: null,
-    settingsWindow: null,
-    config: null,
-    viewManager: null,
+type WindowManagerStatus = {
+    mainWindow?: BrowserWindow;
+    settingsWindow?: BrowserWindow;
+    config?: CombinedConfig;
+    viewManager?: ViewManager;
 };
+
+const status: WindowManagerStatus = {};
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
 ipcMain.on(HISTORY, handleHistory);
@@ -31,12 +34,12 @@ ipcMain.handle(GET_LOADING_SCREEN_DATA, handleLoadingScreenDataRequest);
 ipcMain.on(REACT_APP_INITIALIZED, handleReactAppInitialized);
 ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, handleLoadingScreenAnimationFinished);
 
-export function setConfig(data) {
+export function setConfig(data: CombinedConfig) {
     if (data) {
         status.config = data;
     }
-    if (status.viewManager) {
-        status.viewManager.reloadConfiguration(status.config.teams);
+    if (status.viewManager && status.config) {
+        status.viewManager.reloadConfiguration(status.config.teams || []);
     }
 }
 
@@ -47,17 +50,20 @@ export function showSettingsWindow() {
         if (!status.mainWindow) {
             showMainWindow();
         }
-        const withDevTools = process.env.MM_DEBUG_SETTINGS || false;
+        const withDevTools = Boolean(process.env.MM_DEBUG_SETTINGS) || false;
 
-        status.settingsWindow = createSettingsWindow(status.mainWindow, status.config, withDevTools);
+        if (!status.config) {
+            return;
+        }
+        status.settingsWindow = createSettingsWindow(status.mainWindow!, status.config, withDevTools);
         status.settingsWindow.on('closed', () => {
-            status.settingsWindow = null;
+            delete status.settingsWindow;
             focusBrowserView();
         });
     }
 }
 
-export function showMainWindow(deeplinkingURL) {
+export function showMainWindow(deeplinkingURL?: string) {
     if (status.mainWindow) {
         if (status.mainWindow.isVisible()) {
             status.mainWindow.focus();
@@ -65,6 +71,9 @@ export function showMainWindow(deeplinkingURL) {
             status.mainWindow.show();
         }
     } else {
+        if (!status.config) {
+            return;
+        }
         status.mainWindow = createMainWindow(status.config, {
             linuxAppIcon: path.join(assetsDir, 'linux', 'app_icon.png'),
         });
@@ -77,14 +86,13 @@ export function showMainWindow(deeplinkingURL) {
         // window handlers
         status.mainWindow.on('closed', () => {
             log.warn('main window closed');
-            status.mainWindow = null;
+            delete status.mainWindow;
         });
         status.mainWindow.on('unresponsive', () => {
             const criticalErrorHandler = new CriticalErrorHandler();
             criticalErrorHandler.setMainWindow(status.mainWindow);
             criticalErrorHandler.windowUnresponsiveHandler();
         });
-        status.mainWindow.on('crashed', handleMainWindowWebContentsCrashed);
         status.mainWindow.on('maximize', handleMaximizeMainWindow);
         status.mainWindow.on('unmaximize', handleUnmaximizeMainWindow);
         status.mainWindow.on('resize', handleResizeMainWindow);
@@ -103,24 +111,18 @@ export function showMainWindow(deeplinkingURL) {
     initializeViewManager();
 
     if (deeplinkingURL) {
-        status.viewManager.handleDeepLink(deeplinkingURL);
+        status.viewManager!.handleDeepLink(deeplinkingURL);
     }
 }
 
-export function getMainWindow(ensureCreated) {
+export function getMainWindow(ensureCreated: boolean) {
     if (ensureCreated && !status.mainWindow) {
         showMainWindow();
     }
     return status.mainWindow;
 }
 
-export function on(event, listener) {
-    return status.mainWindow.on(event, listener);
-}
-
-function handleMainWindowWebContentsCrashed() {
-    throw new Error('webContents \'crashed\' event has been emitted');
-}
+export const on = status.mainWindow?.on;
 
 function handleMaximizeMainWindow() {
     sendToRenderer(MAXIMIZE_CHANGE, true);
@@ -131,8 +133,11 @@ function handleUnmaximizeMainWindow() {
 }
 
 function handleResizeMainWindow() {
+    if (!(status.viewManager && status.mainWindow)) {
+        return;
+    }
     const currentView = status.viewManager.getCurrentView();
-    let bounds;
+    let bounds: Partial<Electron.Rectangle>;
 
     // Workaround for linux maximizing/minimizing, which doesn't work properly because of these bugs:
     // https://github.com/electron/electron/issues/28699
@@ -160,17 +165,17 @@ function handleResizeMainWindow() {
     status.viewManager.setLoadingScreenBounds();
 }
 
-export function sendToRenderer(channel, ...args) {
+export function sendToRenderer(channel: string, ...args: any[]) {
     if (!status.mainWindow) {
         showMainWindow();
     }
-    status.mainWindow.webContents.send(channel, ...args);
+    status.mainWindow!.webContents.send(channel, ...args);
     if (status.settingsWindow && status.settingsWindow.isVisible()) {
         status.settingsWindow.webContents.send(channel, ...args);
     }
 }
 
-export function sendToAll(channel, ...args) {
+export function sendToAll(channel: string, ...args: any[]) {
     sendToRenderer(channel, ...args);
     if (status.settingsWindow) {
         status.settingsWindow.webContents.send(channel, ...args);
@@ -179,7 +184,7 @@ export function sendToAll(channel, ...args) {
     // TODO: should we include popups?
 }
 
-export function sendToMattermostViews(channel, ...args) {
+export function sendToMattermostViews(channel: string, ...args: any[]) {
     if (status.viewManager) {
         status.viewManager.sendToAllViews(channel, ...args);
     }
@@ -190,16 +195,16 @@ export function restoreMain() {
     if (!status.mainWindow) {
         showMainWindow();
     }
-    if (!status.mainWindow.isVisible() || status.mainWindow.isMinimized()) {
-        if (status.mainWindow.isMinimized()) {
-            status.mainWindow.restore();
+    if (!status.mainWindow!.isVisible() || status.mainWindow!.isMinimized()) {
+        if (status.mainWindow!.isMinimized()) {
+            status.mainWindow!.restore();
         } else {
-            status.mainWindow.show();
+            status.mainWindow!.show();
         }
         if (status.settingsWindow) {
             status.settingsWindow.focus();
         } else {
-            status.mainWindow.focus();
+            status.mainWindow!.focus();
         }
         if (process.platform === 'darwin') {
             app.dock.show();
@@ -207,30 +212,35 @@ export function restoreMain() {
     } else if (status.settingsWindow) {
         status.settingsWindow.focus();
     } else {
-        status.mainWindow.focus();
+        status.mainWindow!.focus();
     }
 }
 
-export function flashFrame(flash) {
+export function flashFrame(flash: boolean) {
     if (process.platform === 'linux' || process.platform === 'win32') {
-        status.mainWindow.flashFrame(flash);
+        status.mainWindow?.flashFrame(flash);
         if (status.settingsWindow) {
             // main might be hidden behind the settings
             status.settingsWindow.flashFrame(flash);
         }
     }
-    if (process.platform === 'darwin' && status.config.notifications.bounceIcon) {
-        app.dock.bounce(status.config.notifications.bounceIconType);
+    if (process.platform === 'darwin' && status.config?.notifications.bounceIcon) {
+        app.dock.bounce(status.config?.notifications.bounceIconType);
     }
 }
 
-function drawBadge(text, small) {
+function drawBadge(text: string, small: boolean) {
     const scale = 2; // should rely display dpi
     const size = (small ? 20 : 16) * scale;
     const canvas = document.createElement('canvas');
-    canvas.setAttribute('width', size);
-    canvas.setAttribute('height', size);
+    canvas.setAttribute('width', `${size}`);
+    canvas.setAttribute('height', `${size}`);
     const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+        log.error('Could not create canvas context');
+        return null;
+    }
 
     // circle
     ctx.fillStyle = '#FF1744'; // Material Red A400
@@ -248,7 +258,7 @@ function drawBadge(text, small) {
     return canvas.toDataURL();
 }
 
-function createDataURL(text, small) {
+function createDataURL(text: string, small: boolean) {
     const win = status.mainWindow;
     if (!win) {
         return null;
@@ -263,26 +273,28 @@ function createDataURL(text, small) {
     return win.webContents.executeJavaScript(code);
 }
 
-export async function setOverlayIcon(badgeText, description, small) {
+export async function setOverlayIcon(badgeText: string, description: string, small: boolean) {
     if (process.platform === 'win32') {
         let overlay = null;
-        if (status.mainWindow && badgeText) {
-            try {
-                const dataUrl = await createDataURL(badgeText, small);
-                overlay = nativeImage.createFromDataURL(dataUrl);
-            } catch (err) {
-                log.error(`Couldn't generate a badge: ${err}`);
+        if (status.mainWindow) {
+            if (badgeText) {
+                try {
+                    const dataUrl = await createDataURL(badgeText, small);
+                    overlay = nativeImage.createFromDataURL(dataUrl);
+                } catch (err) {
+                    log.error(`Couldn't generate a badge: ${err}`);
+                }
             }
+            status.mainWindow.setOverlayIcon(overlay, description);
         }
-        status.mainWindow.setOverlayIcon(overlay, description);
     }
 }
 
-export function isMainWindow(window) {
+export function isMainWindow(window: BrowserWindow) {
     return status.mainWindow && status.mainWindow === window;
 }
 
-export function handleDoubleClick(e, windowType) {
+export function handleDoubleClick(e: IpcMainEvent, windowType?: string) {
     let action = 'Maximize';
     if (process.platform === 'darwin') {
         action = systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
@@ -311,16 +323,16 @@ export function handleDoubleClick(e, windowType) {
 }
 
 function initializeViewManager() {
-    if (!status.viewManager) {
+    if (!status.viewManager && status.config && status.mainWindow) {
         status.viewManager = new ViewManager(status.config, status.mainWindow);
         status.viewManager.load();
         status.viewManager.showInitial();
     }
 }
 
-export function switchServer(serverName) {
+export function switchServer(serverName: string) {
     showMainWindow();
-    status.viewManager.showByName(serverName);
+    status.viewManager?.showByName(serverName);
 }
 
 export function focusBrowserView() {
@@ -346,11 +358,11 @@ export function focusThreeDotMenu() {
 
 function handleLoadingScreenDataRequest() {
     return {
-        darkMode: status.config.darkMode,
+        darkMode: status.config?.darkMode || false,
     };
 }
 
-function handleReactAppInitialized(_, server) {
+function handleReactAppInitialized(e: IpcMainEvent, server: string) {
     if (status.viewManager) {
         status.viewManager.setServerInitialized(server);
     }
@@ -362,27 +374,26 @@ function handleLoadingScreenAnimationFinished() {
     }
 }
 
-export function updateLoadingScreenDarkMode(darkMode) {
+export function updateLoadingScreenDarkMode(darkMode: boolean) {
     if (status.viewManager) {
         status.viewManager.updateLoadingScreenDarkMode(darkMode);
     }
 }
 
-export function getServerNameByWebContentsId(webContentsId) {
-    if (status.viewManager) {
-        return status.viewManager.findByWebContent(webContentsId);
-    }
-    return null;
+export function getServerNameByWebContentsId(webContentsId: number) {
+    return status.viewManager?.findByWebContent(webContentsId);
 }
 
 export function close() {
     const focused = BrowserWindow.getFocusedWindow();
-    if (focused.id === status.mainWindow.id) {
-    // TODO: figure out logic for closing
-        focused.close();
-    } else {
-        focused.close();
-    }
+    focused?.close();
+
+    // if (focused.id === status.mainWindow.id) {
+    // // TODO: figure out logic for closing
+    //     focused.close();
+    // } else {
+    //    focused.close();
+    // }
 }
 export function maximize() {
     const focused = BrowserWindow.getFocusedWindow();
@@ -404,21 +415,21 @@ export function restore() {
 }
 
 export function reload() {
-    const currentView = status.viewManager.getCurrentView();
+    const currentView = status.viewManager?.getCurrentView();
     if (currentView) {
-        status.viewManager.showLoadingScreen();
+        status.viewManager?.showLoadingScreen();
         currentView.reload();
     }
 }
 
 export function sendToFind() {
-    const currentView = status.viewManager.getCurrentView();
+    const currentView = status.viewManager?.getCurrentView();
     if (currentView) {
-        currentView.view.webContents.sendInputEvent({type: 'keyDown', keyCode: 'F', modifiers: ['CmdOrCtrl', 'Shift']});
+        currentView.view.webContents.sendInputEvent({type: 'keyDown', keyCode: 'F', modifiers: ['CmdOrCtrl', 'shift']});
     }
 }
 
-export function handleHistory(event, offset) {
+export function handleHistory(event: IpcMainEvent, offset: number) {
     if (status.viewManager) {
         const activeView = status.viewManager.getCurrentView();
         if (activeView && activeView.view.webContents.canGoToOffset(offset)) {

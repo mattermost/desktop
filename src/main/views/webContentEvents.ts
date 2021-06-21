@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserWindow, shell, Event} from 'electron';
+import {BrowserWindow, shell, IpcMainEvent} from 'electron';
 import log from 'electron-log';
 
 import {Team} from 'types/config';
@@ -19,9 +19,13 @@ import {composeUserAgent} from '../utils';
 
 import {MattermostView} from './MattermostView';
 
-const customLogins = {};
-const listeners = {};
-let popupWindow: BrowserWindow;
+type CustomLogin = {
+    inProgress: boolean;
+}
+
+const customLogins: Record<number, CustomLogin> = {};
+const listeners: Record<number, () => void> = {};
+let popupWindow: BrowserWindow | undefined;
 
 function isTrustedPopupWindow(webContents: Electron.WebContents) {
     if (!webContents) {
@@ -36,17 +40,17 @@ function isTrustedPopupWindow(webContents: Electron.WebContents) {
 const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];
 
 const generateWillNavigate = (getServersFunction: () => Team[]) => {
-    return (event: Event, url: string) => {
+    return (event: IpcMainEvent, url: string) => {
         const contentID = event.sender.id;
-        const parsedURL = urlUtils.parseURL(url);
+        const parsedURL = urlUtils.parseURL(url)!;
         const configServers = getServersFunction();
-        const server = urlUtils.getServer(parsedURL!, configServers);
+        const server = urlUtils.getServer(parsedURL, configServers);
 
         if (server && (urlUtils.isTeamUrl(server.url, parsedURL) || urlUtils.isAdminUrl(server.url, parsedURL) || isTrustedPopupWindow(event.sender))) {
             return;
         }
 
-        if (urlUtils.isCustomLoginURL(parsedURL, server, configServers)) {
+        if (server && urlUtils.isCustomLoginURL(parsedURL, server, configServers)) {
             return;
         }
         if (parsedURL.protocol === 'mailto:') {
@@ -67,18 +71,18 @@ const generateWillNavigate = (getServersFunction: () => Team[]) => {
     };
 };
 
-const generateDidStartNavigation = (getServersFunction) => {
-    return (event, url) => {
+const generateDidStartNavigation = (getServersFunction: () => Team[]) => {
+    return (event: IpcMainEvent, url: string) => {
         const serverList = getServersFunction();
         const contentID = event.sender.id;
-        const parsedURL = urlUtils.parseURL(url);
+        const parsedURL = urlUtils.parseURL(url)!;
         const server = urlUtils.getServer(parsedURL, serverList);
 
         if (!urlUtils.isTrustedURL(parsedURL, serverList)) {
             return;
         }
 
-        if (urlUtils.isCustomLoginURL(parsedURL, server, serverList)) {
+        if (server && urlUtils.isCustomLoginURL(parsedURL, server, serverList)) {
             customLogins[contentID].inProgress = true;
         } else if (customLogins[contentID].inProgress) {
             customLogins[contentID].inProgress = false;
@@ -86,8 +90,8 @@ const generateDidStartNavigation = (getServersFunction) => {
     };
 };
 
-const generateNewWindowListener = (getServersFunction, spellcheck) => {
-    return (event, url) => {
+const generateNewWindowListener = (getServersFunction: () => Team[], spellcheck?: boolean) => {
+    return (event: Event, url: string) => {
         const parsedURL = urlUtils.parseURL(url);
         if (!parsedURL) {
             event.preventDefault();
@@ -171,10 +175,10 @@ const generateNewWindowListener = (getServersFunction, spellcheck) => {
                     },
                 });
                 popupWindow.once('ready-to-show', () => {
-                    popupWindow.show();
+                    popupWindow!.show();
                 });
                 popupWindow.once('closed', () => {
-                    popupWindow = null;
+                    popupWindow = undefined;
                 });
             }
 
@@ -191,7 +195,7 @@ const generateNewWindowListener = (getServersFunction, spellcheck) => {
     };
 };
 
-export const removeWebContentsListeners = (id) => {
+export const removeWebContentsListeners = (id: number) => {
     if (listeners[id]) {
         listeners[id]();
     }
@@ -220,7 +224,7 @@ export const addWebContentsEventListeners = (mmview: MattermostView, getServersF
     const didStartNavigation = generateDidStartNavigation(getServersFunction);
     contents.on('did-start-navigation', didStartNavigation);
 
-    const spellcheck = mmview.options.webPreferences.spellcheck;
+    const spellcheck = mmview.options.webPreferences?.spellcheck;
     const newWindow = generateNewWindowListener(getServersFunction, spellcheck);
     contents.on('new-window', newWindow);
 

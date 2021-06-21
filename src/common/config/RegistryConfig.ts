@@ -38,7 +38,7 @@ export default class RegistryConfig extends EventEmitter {
             try {
                 const servers = await this.getServersListFromRegistry();
                 if (servers.length) {
-                    this.data.teams?.push(...servers);
+                    this.data.teams!.push(...servers);
                 }
             } catch (error) {
                 log.warn('[RegistryConfig] Nothing retrieved for \'DefaultServerList\'', error);
@@ -130,7 +130,7 @@ export default class RegistryConfig extends EventEmitter {
         const registry = new WindowsRegistry({hive, key, utf8: true});
         return new Promise<string | WindowsRegistry.RegistryItem[] | undefined>((resolve, reject) => {
             try {
-                registry.values((error, results) => {
+                registry.values((error: Error, results: WindowsRegistry.RegistryItem[]) => {
                     if (error || !results || results.length === 0) {
                         resolve(undefined);
                         return;

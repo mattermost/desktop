@@ -18,7 +18,7 @@ export type ConfigV2 = {
     notifications: {
         flashWindow: number;
         bounceIcon: boolean;
-        bounceIconType: string;
+        bounceIconType: 'critical' | 'informational';
     };
     showUnreadBadge: boolean;
     useSpellChecker: boolean;
@@ -41,7 +41,7 @@ export type ConfigV1 = {
     notifications: {
         flashWindow: number;
         bounceIcon: boolean;
-        bounceIconType: string;
+        bounceIconType: 'critical' | 'informational';
     };
     showUnreadBadge: boolean;
     useSpellChecker: boolean;

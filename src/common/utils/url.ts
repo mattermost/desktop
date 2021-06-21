@@ -1,6 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import log from 'electron-log';
 import {Team} from 'types/config';
 import {ServerFromURL} from 'types/utils';
 import {isHttpsUri, isHttpUri, isUri} from 'valid-url';
@@ -34,17 +35,15 @@ function isValidURI(testURL: string) {
     return Boolean(isUri(testURL));
 }
 
-function parseURL(inputURL?: URL | string) {
-    if (!inputURL) {
-        return null;
-    }
+function parseURL(inputURL: URL | string) {
     if (inputURL instanceof URL) {
         return inputURL;
     }
     try {
         return new URL(inputURL.replace(/([^:]\/)\/+/g, '$1'));
     } catch (e) {
-        return null;
+        log.warn('parseURL failed to parse url', inputURL, e);
+        return undefined;
     }
 }
 
@@ -71,10 +70,10 @@ function isInternalURL(targetURL: URL, currentURL: URL, basename = '/') {
     return true;
 }
 
-function getServerInfo(serverUrl?: URL | string) {
+function getServerInfo(serverUrl: URL | string) {
     const parsedServer = parseURL(serverUrl);
     if (!parsedServer) {
-        return null;
+        return undefined;
     }
 
     // does the server have a subpath?
@@ -101,7 +100,10 @@ function isAdminUrl(serverUrl: URL | string, inputUrl: URL | string) {
     parsedURL.pathname.toLowerCase().startsWith('/admin_console/'));
 }
 
-function isTeamUrl(serverUrl?: URL | string, inputUrl?: URL | string, withApi?: boolean) {
+function isTeamUrl(serverUrl: URL | string, inputUrl: URL | string, withApi?: boolean) {
+    if (!serverUrl || !inputUrl) {
+        return false;
+    }
     const parsedURL = parseURL(inputUrl);
     const server = getServerInfo(serverUrl);
     if (!parsedURL || !server || (!equalUrlsIgnoringSubpath(server.url, parsedURL))) {
@@ -156,21 +158,24 @@ function isManagedResource(serverUrl: URL | string, inputURL: URL | string) {
     managedResources.some((managedResource) => (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}${managedResource}/`) || parsedURL.pathname.toLowerCase().startsWith(`/${managedResource}/`))));
 }
 
-function getServer(inputURL: URL | string, teams: Team[], ignoreScheme = false): ServerFromURL | null {
+function getServer(inputURL: URL | string, teams: Team[], ignoreScheme = false): ServerFromURL | undefined {
     const parsedURL = parseURL(inputURL);
     if (!parsedURL) {
-        return null;
+        return undefined;
     }
-    let parsedServerUrl: URL | null;
-    let secondOption = null;
+    let parsedServerUrl;
+    let secondOption;
     for (let i = 0; i < teams.length; i++) {
         parsedServerUrl = parseURL(teams[i].url);
+        if (!parsedServerUrl) {
+            continue;
+        }
 
         // check server and subpath matches (without subpath pathname is \ so it always matches)
-        if (equalUrlsWithSubpath(parsedServerUrl!, parsedURL, ignoreScheme)) {
+        if (equalUrlsWithSubpath(parsedServerUrl, parsedURL, ignoreScheme)) {
             return {name: teams[i].name, url: parsedServerUrl, index: i};
         }
-        if (equalUrlsIgnoringSubpath(parsedServerUrl!, parsedURL, ignoreScheme)) {
+        if (equalUrlsIgnoringSubpath(parsedServerUrl, parsedURL, ignoreScheme)) {
             // in case the user added something on the path that doesn't really belong to the server
             // there might be more than one that matches, but we can't differentiate, so last one
             // is as good as any other in case there is no better match (e.g.: two subpath servers with the same origin)
@@ -204,7 +209,7 @@ function isTrustedURL(url: URL | string, teams: Team[]) {
     return getServer(parsedURL, teams) !== null;
 }
 
-function isCustomLoginURL(url: URL | string, server: {subpath: string; url: URL}, teams: Team[]): boolean {
+function isCustomLoginURL(url: URL | string, server: ServerFromURL, teams: Team[]): boolean {
     const subpath = server ? server.url.pathname : '';
     const parsedURL = parseURL(url);
     if (!parsedURL) {

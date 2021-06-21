@@ -10,15 +10,23 @@ import {app, BrowserWindow, ipcMain} from 'electron';
 import log from 'electron-log';
 
 import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS} from 'common/communication';
+import {CombinedConfig} from 'types/config';
 
 import * as Validator from '../Validator';
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
 
-function saveWindowState(file, window) {
-    const windowState = window.getBounds();
-    windowState.maximized = window.isMaximized();
-    windowState.fullscreen = window.isFullScreen();
+type SavedWindowState = Electron.Rectangle & {
+    maximized: boolean;
+    fullscreen: boolean;
+}
+
+function saveWindowState(file: string, window: BrowserWindow) {
+    const windowState: SavedWindowState = {
+        ...window.getBounds(),
+        maximized: window.isMaximized(),
+        fullscreen: window.isFullScreen(),
+    };
     try {
         fs.writeFileSync(file, JSON.stringify(windowState));
     } catch (e) {
@@ -31,7 +39,8 @@ function isFramelessWindow() {
     return os.platform() === 'darwin' || (os.platform() === 'win32' && os.release().startsWith('10'));
 }
 
-function createMainWindow(config, options) {
+function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string}) {
+    log.info('createMainWindow', config);
     const defaultWindowWidth = 1000;
     const defaultWindowHeight = 700;
     const minimumWindowWidth = 400;
@@ -122,7 +131,7 @@ function createMainWindow(config, options) {
             saveWindowState(boundsInfoPath, mainWindow);
         } else { // Minimize or hide the window for close button.
             event.preventDefault();
-            function hideWindow(window) {
+            function hideWindow(window: BrowserWindow) {
                 window.blur(); // To move focus to the next top-level window in Windows
                 window.hide();
             }

@@ -138,9 +138,13 @@ export default class Config extends EventEmitter {
      * @emits {synchronize} emitted once all data has been saved; used to notify other config instances of changes
      * @emits {error} emitted if saving local config data to file fails
      */
-    saveLocalConfigData = () => {
+    saveLocalConfigData = (): void => {
+        if (!this.localConfigData) {
+            return;
+        }
+
         try {
-            this.writeFile(this.configFilePath, this.localConfigData!, (error: NodeJS.ErrnoException | null) => {
+            this.writeFile(this.configFilePath, this.localConfigData, (error: NodeJS.ErrnoException | null) => {
                 if (error) {
                     throw new Error(error.message);
                 }
@@ -275,15 +279,18 @@ export default class Config extends EventEmitter {
      */
     checkForConfigUpdates = (data: AnyConfig) => {
         let configData = data;
-        try {
-            if (configData.version !== this.defaultConfigData?.version) {
-                configData = upgradeConfigData(configData);
-                this.writeFileSync(this.configFilePath, configData);
-                log.info(`Configuration updated to version ${this.defaultConfigData?.version} successfully.`);
+        if (this.defaultConfigData) {
+            try {
+                if (configData.version !== this.defaultConfigData.version) {
+                    configData = upgradeConfigData(configData);
+                    this.writeFileSync(this.configFilePath, configData);
+                    log.info(`Configuration updated to version ${this.defaultConfigData.version} successfully.`);
+                }
+            } catch (error) {
+                log.error(`Failed to update configuration to version ${this.defaultConfigData.version}.`);
             }
-        } catch (error) {
-            log.error(`Failed to update configuration to version ${this.defaultConfigData?.version}.`);
         }
+
         return configData as ConfigType;
     }
 
@@ -295,24 +302,24 @@ export default class Config extends EventEmitter {
         this.combinedData = Object.assign({}, this.defaultConfigData, this.localConfigData, this.buildConfigData, this.registryConfigData);
 
         // remove unecessary data pulled from default and build config
-        delete this.combinedData?.defaultTeams;
+        delete this.combinedData!.defaultTeams;
 
         // IMPORTANT: properly combine teams from all sources
         let combinedTeams = [];
 
         // - start by adding default teams from buildConfig, if any
-        if (this.buildConfigData?.defaultTeams && this.buildConfigData.defaultTeams.length) {
+        if (this.buildConfigData?.defaultTeams?.length) {
             combinedTeams.push(...this.buildConfigData.defaultTeams);
         }
 
         // - add registry defined teams, if any
-        if (this.registryConfigData?.teams && this.registryConfigData.teams.length) {
+        if (this.registryConfigData?.teams?.length) {
             combinedTeams.push(...this.registryConfigData.teams);
         }
 
         // - add locally defined teams only if server management is enabled
-        if (this.enableServerManagement) {
-            combinedTeams.push(...this.localConfigData?.teams || []);
+        if (this.localConfigData && this.enableServerManagement) {
+            combinedTeams.push(...this.localConfigData.teams || []);
         }
 
         combinedTeams = this.filterOutDuplicateTeams(combinedTeams);
@@ -369,7 +376,7 @@ export default class Config extends EventEmitter {
         //
         const newTeams = mappedTeams.sort((x, y) => {
             if (!x.team.order) {
-                x.team.order = 0;  
+                x.team.order = 0;
             }
             if (!y.team.order) {
                 y.team.order = 0;
@@ -396,16 +403,24 @@ export default class Config extends EventEmitter {
     }
 
     writeFile = (filePath: string, configData: Partial<ConfigType>, callback: fs.NoParamCallback) => {
-        if (configData.version !== this.defaultConfigData?.version) {
-            throw new Error('version ' + configData.version + ' is not equal to ' + this.defaultConfigData?.version);
+        if (!this.defaultConfigData) {
+            return;
+        }
+
+        if (configData.version !== this.defaultConfigData.version) {
+            throw new Error('version ' + configData.version + ' is not equal to ' + this.defaultConfigData.version);
         }
         const json = JSON.stringify(configData, null, '  ');
         fs.writeFile(filePath, json, 'utf8', callback);
     }
 
-    writeFileSync =(filePath: string, config: Partial<ConfigType>) => {
-        if (config.version !== this.defaultConfigData?.version) {
-            throw new Error('version ' + config.version + ' is not equal to ' + this.defaultConfigData?.version);
+    writeFileSync = (filePath: string, config: Partial<ConfigType>) => {
+        if (!this.defaultConfigData) {
+            return;
+        }
+
+        if (config.version !== this.defaultConfigData.version) {
+            throw new Error('version ' + config.version + ' is not equal to ' + this.defaultConfigData.version);
         }
 
         const dir = path.dirname(filePath);
@@ -445,7 +460,7 @@ export default class Config extends EventEmitter {
 
     handleUpdateTeams = (event: Electron.IpcMainInvokeEvent, newTeams: Team[]) => {
         this.set('teams', newTeams);
-        return this.combinedData?.teams;
+        return this.combinedData!.teams;
     }
 
     /**
@@ -464,7 +479,11 @@ export default class Config extends EventEmitter {
      * @emits 'darkModeChange'
      */
     toggleDarkModeManually = () => {
-        this.set('darkMode', !this.combinedData?.darkMode);
-        this.emit('darkModeChange', this.combinedData?.darkMode);
+        if (!this.combinedData) {
+            return;
+        }
+
+        this.set('darkMode', !this.combinedData.darkMode);
+        this.emit('darkModeChange', this.combinedData.darkMode);
     }
 }

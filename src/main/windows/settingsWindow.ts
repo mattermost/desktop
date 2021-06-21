@@ -3,11 +3,12 @@
 
 import {BrowserWindow} from 'electron';
 import log from 'electron-log';
+import {CombinedConfig} from 'types/config';
 
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
 
-export function createSettingsWindow(mainWindow, config, withDevTools) {
+export function createSettingsWindow(mainWindow: BrowserWindow, config: CombinedConfig, withDevTools: boolean) {
     const preload = getLocalPreload('mainWindow.js');
     const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
     const settingsWindow = new BrowserWindow({

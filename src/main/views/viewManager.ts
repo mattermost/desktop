@@ -4,7 +4,7 @@ import log from 'electron-log';
 import {BrowserView, BrowserWindow, dialog} from 'electron';
 import {BrowserViewConstructorOptions} from 'electron/main';
 
-import {Config, Team} from 'types/config';
+import {CombinedConfig, Team} from 'types/config';
 
 import {SECOND} from 'common/utils/constants';
 import {
@@ -38,7 +38,7 @@ export class ViewManager {
     mainWindow: BrowserWindow;
     loadingScreen?: BrowserView;
 
-    constructor(config: Config, mainWindow: BrowserWindow) {
+    constructor(config: CombinedConfig, mainWindow: BrowserWindow) {
         this.configServers = config.teams;
         this.viewOptions = {webPreferences: {spellcheck: config.useSpellChecker}};
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
@@ -82,7 +82,7 @@ export class ViewManager {
             if (recycle && recycle.isVisible) {
                 setFocus = recycle.name;
             }
-            if (recycle && recycle.server?.name === server.name && recycle.server.url.toString() === urlUtils.parseURL(server?.url || '')!.toString()) {
+            if (recycle && recycle.server.name === server.name && recycle.server.url.toString() === urlUtils.parseURL(server.url)!.toString()) {
                 oldviews.delete(recycle.name);
                 this.views.set(recycle.name, recycle);
             } else {
@@ -110,10 +110,10 @@ export class ViewManager {
 
     showByName = (name: string) => {
         const newView = this.views.get(name);
-        if (newView?.isVisible) {
-            return;
-        }
         if (newView) {
+            if (newView.isVisible) {
+                return;
+            }
             if (this.currentView && this.currentView !== name) {
                 const previous = this.getCurrentView();
                 if (previous) {
@@ -125,8 +125,12 @@ export class ViewManager {
             if (newView.needsLoadingScreen()) {
                 this.showLoadingScreen();
             }
-            const serverInfo = this.configServers.find((candidate) => candidate.name === newView.server?.name);
-            newView.window?.webContents.send(SET_SERVER_KEY, serverInfo?.order);
+            const serverInfo = this.configServers.find((candidate) => candidate.name === newView.server.name);
+            if (!serverInfo) {
+                log.error(`Couldn't find a server in the config with the name ${newView.server.name}`);
+                return;
+            }
+            newView.window.webContents.send(SET_SERVER_KEY, serverInfo.order);
             if (newView.isReady()) {
                 // if view is not ready, the renderer will have something to display instead.
                 newView.show();
@@ -163,6 +167,10 @@ export class ViewManager {
             this.showByName(this.currentView);
         }
         const view = this.views.get(viewName);
+        if (!view) {
+            log.error(`Couldn't find a view with the name ${viewName}`);
+            return;
+        }
         addWebContentsEventListeners(view, this.getServers);
     }
 
@@ -179,7 +187,11 @@ export class ViewManager {
     }
 
     getCurrentView() {
-        return this.views.get(this.currentView!);
+        if (this.currentView) {
+            return this.views.get(this.currentView);
+        }
+
+        return undefined;
     }
 
     openViewDevTools = () => {
@@ -223,19 +235,18 @@ export class ViewManager {
             const query = new Map([['url', urlString]]);
             const localURL = getLocalURLString('urlView.html', query);
             urlView.webContents.loadURL(localURL);
-            const currentWindow = this.getCurrentView()?.window;
-            currentWindow?.addBrowserView(urlView);
-            const boundaries = currentWindow?.getBounds();
+            this.mainWindow.addBrowserView(urlView);
+            const boundaries = this.mainWindow.getBounds();
             urlView.setBounds({
                 x: 0,
-                y: boundaries!.height - URL_VIEW_HEIGHT,
-                width: Math.floor(boundaries!.width / 3),
+                y: boundaries.height - URL_VIEW_HEIGHT,
+                width: Math.floor(boundaries.width / 3),
                 height: URL_VIEW_HEIGHT,
             });
 
             const hideView = () => {
                 delete this.urlViewCancel;
-                currentWindow?.removeBrowserView(urlView);
+                this.mainWindow.removeBrowserView(urlView);
 
                 // workaround to eliminate zombie processes
                 // https://github.com/mattermost/desktop/pull/1519
@@ -275,7 +286,7 @@ export class ViewManager {
             this.createLoadingScreen();
         }
 
-        this.loadingScreen?.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
+        this.loadingScreen!.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
 
         if (this.mainWindow.getBrowserViews().includes(this.loadingScreen!)) {
             this.mainWindow.setTopBrowserView(this.loadingScreen!);
@@ -316,14 +327,20 @@ export class ViewManager {
 
     deeplinkSuccess = (serverName: string) => {
         const view = this.views.get(serverName);
+        if (!view) {
+            return;
+        }
         this.showByName(serverName);
-        view?.removeListener(LOAD_FAILED, this.deeplinkFailed);
+        view.removeListener(LOAD_FAILED, this.deeplinkFailed);
     };
 
     deeplinkFailed = (serverName: string, err: string, url: string) => {
-        const view = this.views.get(serverName);
         log.error(`[${serverName}] failed to load deeplink ${url}: ${err}`);
-        view?.removeListener(LOAD_SUCCESS, this.deeplinkSuccess);
+        const view = this.views.get(serverName);
+        if (!view) {
+            return;
+        }
+        view.removeListener(LOAD_SUCCESS, this.deeplinkSuccess);
     }
 
     handleDeepLink = (url: string) => {
@@ -332,13 +349,17 @@ export class ViewManager {
             const server = urlUtils.getServer(parsedURL, this.configServers, true);
             if (server) {
                 const view = this.views.get(server.name);
+                if (!view) {
+                    log.error(`Couldn't find a view matching the name ${server.name}`);
+                    return;
+                }
 
                 // attempting to change parsedURL protocol results in it not being modified.
-                const urlWithSchema = `${view?.server?.url.origin}${parsedURL.pathname}${parsedURL.search}`;
-                view?.resetLoadingStatus();
-                view?.load(urlWithSchema);
-                view?.once(LOAD_SUCCESS, this.deeplinkSuccess);
-                view?.once(LOAD_FAILED, this.deeplinkFailed);
+                const urlWithSchema = `${view.server.url.origin}${parsedURL.pathname}${parsedURL.search}`;
+                view.resetLoadingStatus();
+                view.load(urlWithSchema);
+                view.once(LOAD_SUCCESS, this.deeplinkSuccess);
+                view.once(LOAD_FAILED, this.deeplinkFailed);
             } else {
                 dialog.showErrorBox('No matching server', `there is no configured server in the app that matches the requested url: ${parsedURL.toString()}`);
             }
