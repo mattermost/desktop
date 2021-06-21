@@ -12,7 +12,6 @@ export function createSettingsWindow(mainWindow: BrowserWindow, config: Combined
     const preload = getLocalPreload('mainWindow.js');
     const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
     const settingsWindow = new BrowserWindow({
-        ...config.data,
         parent: mainWindow,
         title: 'Desktop App Settings',
         fullscreen: false,

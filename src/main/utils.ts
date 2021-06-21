@@ -2,16 +2,17 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import electron, {app} from 'electron';
+import electron, {app, BrowserWindow} from 'electron';
 import path from 'path';
 
 import {PRODUCTION} from 'common/utils/constants';
 import Utils from 'common/utils/util';
+import {Args} from 'types/args';
 
 const TAB_BAR_HEIGHT = 40;
 const BACK_BAR_HEIGHT = 36;
 
-export function shouldBeHiddenOnStartup(parsedArgv) {
+export function shouldBeHiddenOnStartup(parsedArgv: Args) {
     if (parsedArgv.hidden) {
         return true;
     }
@@ -23,12 +24,12 @@ export function shouldBeHiddenOnStartup(parsedArgv) {
     return false;
 }
 
-export function getWindowBoundaries(win, hasBackBar = false) {
+export function getWindowBoundaries(win: BrowserWindow, hasBackBar = false) {
     const {width, height} = win.getContentBounds();
     return getAdjustedWindowBoundaries(width, height, hasBackBar);
 }
 
-export function getAdjustedWindowBoundaries(width, height, hasBackBar = false) {
+export function getAdjustedWindowBoundaries(width: number, height: number, hasBackBar = false) {
     return {
         x: 0,
         y: TAB_BAR_HEIGHT + (hasBackBar ? BACK_BAR_HEIGHT : 0),
@@ -37,12 +38,12 @@ export function getAdjustedWindowBoundaries(width, height, hasBackBar = false) {
     };
 }
 
-export function getLocalURLString(urlPath, query, isMain) {
+export function getLocalURLString(urlPath: string, query?: Map<string, string>, isMain?: boolean) {
     const localURL = getLocalURL(urlPath, query, isMain);
     return localURL.href;
 }
 
-export function getLocalURL(urlPath, query, isMain) {
+export function getLocalURL(urlPath: string, query?: Map<string, string>, isMain?: boolean) {
     let pathname;
     const processPath = isMain ? '' : '/renderer';
     const mode = Utils.runMode();
@@ -57,7 +58,7 @@ export function getLocalURL(urlPath, query, isMain) {
     const localUrl = new URL(`${protocol}://${hostname}${port}`);
     localUrl.pathname = pathname;
     if (query) {
-        query.forEach((value, key) => {
+        query.forEach((value: string, key: string) => {
             localUrl.searchParams.append(encodeURIComponent(key), encodeURIComponent(value));
         });
     }
@@ -65,7 +66,7 @@ export function getLocalURL(urlPath, query, isMain) {
     return localUrl;
 }
 
-export function getLocalPreload(file) {
+export function getLocalPreload(file: string) {
     if (Utils.runMode() === PRODUCTION) {
         return path.join(electron.app.getAppPath(), `${file}`);
     }

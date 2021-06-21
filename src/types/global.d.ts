@@ -4,5 +4,12 @@
 declare namespace NodeJS {
     export interface Global {
         willAppQuit: boolean;
+        isDev: boolean;
+        args: {
+            hidden?: boolean;
+            disableDevMode?: boolean;
+            dataDir?: string;
+            version?: boolean;
+        };
     }
 }

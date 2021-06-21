@@ -6,20 +6,16 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-import {app, BrowserWindow, ipcMain} from 'electron';
+import {app, BrowserWindow, BrowserWindowConstructorOptions, ipcMain} from 'electron';
 import log from 'electron-log';
 
 import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS} from 'common/communication';
 import {CombinedConfig} from 'types/config';
+import {SavedWindowState} from 'types/mainWindow';
 
 import * as Validator from '../Validator';
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
-
-type SavedWindowState = Electron.Rectangle & {
-    maximized: boolean;
-    fullscreen: boolean;
-}
 
 function saveWindowState(file: string, window: BrowserWindow) {
     const windowState: SavedWindowState = {
@@ -40,7 +36,6 @@ function isFramelessWindow() {
 }
 
 function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string}) {
-    log.info('createMainWindow', config);
     const defaultWindowWidth = 1000;
     const defaultWindowHeight = 700;
     const minimumWindowWidth = 400;
@@ -49,26 +44,23 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
     // Create the browser window.
     const preload = getLocalPreload('mainWindow.js');
     const boundsInfoPath = path.join(app.getPath('userData'), 'bounds-info.json');
-    let windowOptions;
+    let savedWindowState;
     try {
-        windowOptions = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));
-        windowOptions = Validator.validateBoundsInfo(windowOptions);
-        if (!windowOptions) {
+        savedWindowState = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));
+        savedWindowState = Validator.validateBoundsInfo(savedWindowState);
+        if (!savedWindowState) {
             throw new Error('Provided bounds info file does not validate, using defaults instead.');
         }
     } catch (e) {
     // Follow Electron's defaults, except for window dimensions which targets 1024x768 screen resolution.
-        windowOptions = {width: defaultWindowWidth, height: defaultWindowHeight};
+        savedWindowState = {width: defaultWindowWidth, height: defaultWindowHeight};
     }
 
-    const {maximized: windowIsMaximized} = windowOptions;
+    const {maximized: windowIsMaximized} = savedWindowState;
 
     const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
 
-    if (process.platform === 'linux') {
-        windowOptions.icon = options.linuxAppIcon;
-    }
-    Object.assign(windowOptions, {
+    const windowOptions: BrowserWindowConstructorOptions = Object.assign({}, savedWindowState, {
         title: app.name,
         fullscreenable: true,
         show: false, // don't start the window until it is ready and only if it isn't hidden
@@ -76,8 +68,8 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
         minWidth: minimumWindowWidth,
         minHeight: minimumWindowHeight,
         frame: !isFramelessWindow(),
-        fullscreen: windowOptions.fullscreen,
-        titleBarStyle: 'hidden',
+        fullscreen: savedWindowState.fullscreen,
+        titleBarStyle: 'hidden' as const,
         trafficLightPosition: {x: 12, y: 24},
         backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
         webPreferences: {
@@ -89,6 +81,10 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
             enableRemoteModule: process.env.NODE_ENV === 'test',
         },
     });
+
+    if (process.platform === 'linux') {
+        windowOptions.icon = options.linuxAppIcon;
+    }
 
     const mainWindow = new BrowserWindow(windowOptions);
     mainWindow.setMenuBarVisibility(false);

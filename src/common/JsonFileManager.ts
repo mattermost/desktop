@@ -3,16 +3,16 @@
 // See LICENSE.txt for license information.
 import fs from 'fs';
 
-export default class JsonFileManager {
+export default class JsonFileManager<T> {
     jsonFile: string;
-    json: any;
+    json: T;
 
     constructor(file: string) {
         this.jsonFile = file;
         try {
             this.json = JSON.parse(fs.readFileSync(file, 'utf-8'));
         } catch (err) {
-            this.json = {};
+            this.json = {} as T;
         }
     }
 
@@ -26,17 +26,17 @@ export default class JsonFileManager {
         });
     }
 
-    setJson(json: any): void {
+    setJson(json: T): void {
         this.json = json;
         this.writeToFile();
     }
 
-    setValue(key: any, value: any): void {
+    setValue(key: keyof T, value: T[keyof T]): void {
         this.json[key] = value;
         this.writeToFile();
     }
 
-    getValue(key: any): void {
+    getValue(key: keyof T): T[keyof T] {
         return this.json[key];
     }
 }

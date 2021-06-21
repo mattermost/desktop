@@ -16,9 +16,9 @@ import * as Validator from './Validator';
 import {getMainWindow} from './windows/windowManager';
 
 const allowedProtocolFile = path.resolve(app.getPath('userData'), 'allowedProtocols.json');
-let allowedProtocols = [];
+let allowedProtocols: string[] = [];
 
-function addScheme(scheme) {
+function addScheme(scheme: string) {
     const proto = `${scheme}:`;
     if (!allowedProtocols.includes(proto)) {
         allowedProtocols.push(proto);
@@ -41,12 +41,16 @@ function init() {
     });
 }
 
-function handleDialogEvent(protocol, URL) {
+function handleDialogEvent(protocol: string, URL: string) {
     if (allowedProtocols.indexOf(protocol) !== -1) {
         shell.openExternal(URL);
         return;
     }
-    dialog.showMessageBox(getMainWindow(), {
+    const mainWindow = getMainWindow();
+    if (!mainWindow) {
+        return;
+    }
+    dialog.showMessageBox(mainWindow, {
         title: 'Non http(s) protocol',
         message: `${protocol} link requires an external application.`,
         detail: `The requested link is ${URL} . Do you want to continue?`,
@@ -63,7 +67,7 @@ function handleDialogEvent(protocol, URL) {
         switch (response) {
         case 1: {
             allowedProtocols.push(protocol);
-            function handleError(err) {
+            function handleError(err: NodeJS.ErrnoException | null) {
                 if (err) {
                     log.error(err);
                 }

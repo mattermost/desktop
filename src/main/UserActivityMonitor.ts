@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import EventEmitter from 'events';
+import {EventEmitter} from 'events';
 
 import electron from 'electron';
 import log from 'electron-log';
@@ -12,12 +12,21 @@ const {app} = electron;
  * Monitors system idle time, listens for system events and fires status updates as needed
  */
 export default class UserActivityMonitor extends EventEmitter {
+    isActive: boolean;
+    idleTime: number;
+    lastSetActive?: number;
+    systemIdleTimeIntervalID: number;
+    config: {
+        updateFrequencyMs: number;
+        inactiveThresholdMs: number;
+        statusUpdateThresholdMs: number;
+    };
+
     constructor() {
         super();
 
         this.isActive = true;
         this.idleTime = 0;
-        this.lastSetActive = null;
         this.systemIdleTimeIntervalID = -1;
 
         this.config = {
@@ -58,13 +67,14 @@ export default class UserActivityMonitor extends EventEmitter {
 
         this.config = Object.assign({}, this.config, config);
 
+        // TODO DEVIN TS Node typings don't map Timeout to number, but then clearInterval requires a number?
         this.systemIdleTimeIntervalID = setInterval(() => {
             try {
                 this.updateIdleTime(electron.powerMonitor.getSystemIdleTime());
             } catch (err) {
                 log.error('Error getting system idle time:', err);
             }
-        }, this.config.updateFrequencyMs);
+        }, this.config.updateFrequencyMs) as unknown as number;
     }
 
     /**
@@ -80,7 +90,7 @@ export default class UserActivityMonitor extends EventEmitter {
    * @param {integer} idleTime
    * @private
    */
-    updateIdleTime(idleTime) {
+    updateIdleTime(idleTime: number) {
         this.idleTime = idleTime;
         if (idleTime * 1000 > this.config.inactiveThresholdMs) { // eslint-disable-line no-magic-numbers
             this.setActivityState(false);
@@ -110,7 +120,7 @@ export default class UserActivityMonitor extends EventEmitter {
             this.sendStatusUpdate(false);
             this.lastSetActive = now;
         } else if (!isActive) {
-            this.lastSetActive = null;
+            delete this.lastSetActive;
         }
     }
 

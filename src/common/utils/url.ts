@@ -1,7 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import log from 'electron-log';
 import {Team} from 'types/config';
 import {ServerFromURL} from 'types/utils';
 import {isHttpsUri, isHttpUri, isUri} from 'valid-url';
@@ -42,7 +41,7 @@ function parseURL(inputURL: URL | string) {
     try {
         return new URL(inputURL.replace(/([^:]\/)\/+/g, '$1'));
     } catch (e) {
-        log.warn('parseURL failed to parse url', inputURL, e);
+        console.log('parseURL failed to parse url', inputURL, e);
         return undefined;
     }
 }

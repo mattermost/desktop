@@ -10,15 +10,15 @@ import * as WindowManager from '../windows/windowManager';
 
 import {ModalView} from './modalView';
 
-let modalQueue: Array<ModalView<any>> = [];
+let modalQueue: Array<ModalView<any, any>> = [];
 
 // TODO: add a queue/add differentiation, in case we need to put a modal first in line
 // should we return the original promise if called multiple times with the same key?
-export function addModal<T>(key: string, html: string, preload: string, data: T, win: BrowserWindow) {
+export function addModal<T, T2>(key: string, html: string, preload: string, data: T, win: BrowserWindow) {
     const foundModal = modalQueue.find((modal) => modal.key === key);
     if (!foundModal) {
-        const modalPromise = new Promise((resolve, reject) => {
-            const mv = new ModalView<T>(key, html, preload, data, resolve, reject, win);
+        const modalPromise = new Promise((resolve: (value: T2) => void, reject) => {
+            const mv = new ModalView<T, T2>(key, html, preload, data, resolve, reject, win);
             modalQueue.push(mv);
         });
 

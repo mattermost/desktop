@@ -10,9 +10,9 @@ import * as AppState from './appState';
 
 const MAX_WIN_COUNT = 99;
 
-let showUnreadBadgeSetting;
+let showUnreadBadgeSetting: boolean;
 
-function showBadgeWindows(sessionExpired, showUnreadBadge, mentionCount) {
+function showBadgeWindows(sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean) {
     let description = 'You have no unread messages';
     let text;
     if (sessionExpired) {
@@ -28,7 +28,7 @@ function showBadgeWindows(sessionExpired, showUnreadBadge, mentionCount) {
     WindowManager.setOverlayIcon(text, description, mentionCount > 99);
 }
 
-function showBadgeOSX(sessionExpired, showUnreadBadge, mentionCount) {
+function showBadgeOSX(sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean) {
     let badge = '';
     if (sessionExpired) {
         badge = '•';
@@ -40,28 +40,28 @@ function showBadgeOSX(sessionExpired, showUnreadBadge, mentionCount) {
     app.dock.setBadge(badge);
 }
 
-function showBadgeLinux(sessionExpired, showUnreadBadge, mentionCount) {
+function showBadgeLinux(sessionExpired: boolean, mentionCount: number) {
     if (app.isUnityRunning()) {
         const countExpired = sessionExpired ? 1 : 0;
         app.setBadgeCount(mentionCount + countExpired);
     }
 }
 
-function showBadge(sessionExpired, mentionCount, showUnreadBadge) {
+function showBadge(sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean) {
     switch (process.platform) {
     case 'win32':
-        showBadgeWindows(sessionExpired, showUnreadBadge, mentionCount);
+        showBadgeWindows(sessionExpired, mentionCount, showUnreadBadge);
         break;
     case 'darwin':
-        showBadgeOSX(sessionExpired, showUnreadBadge, mentionCount);
+        showBadgeOSX(sessionExpired, mentionCount, showUnreadBadge);
         break;
     case 'linux':
-        showBadgeLinux(sessionExpired, showUnreadBadge, mentionCount);
+        showBadgeLinux(sessionExpired, mentionCount);
         break;
     }
 }
 
-export function setUnreadBadgeSetting(showUnreadBadge) {
+export function setUnreadBadgeSetting(showUnreadBadge: boolean) {
     showUnreadBadgeSetting = showUnreadBadge;
     AppState.emitStatus();
 }

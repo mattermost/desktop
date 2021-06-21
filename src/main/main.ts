@@ -1,18 +1,17 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
+
+/* eslint-disable max-lines */
 import fs from 'fs';
 
 import path from 'path';
 
-import electron from 'electron';
+import electron, {BrowserWindow, IpcMainEvent, IpcMainInvokeEvent, Rectangle} from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
-
-import Utils from 'common/utils/util';
-import urlUtils from 'common/utils/url';
 
 import {
     SWITCH_SERVER,
@@ -32,6 +31,14 @@ import {
     USER_ACTIVITY_UPDATE,
 } from 'common/communication';
 import Config from 'common/config';
+
+import Utils from 'common/utils/util';
+
+import {Team} from 'types/config';
+import {MentionData} from 'types/notification';
+import {Boundaries} from 'types/utils';
+
+import urlUtils from 'common/utils/url';
 
 import {protocols} from '../../electron-builder.json';
 
@@ -76,13 +83,13 @@ const certificateErrorCallbacks = new Map();
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-let certificateStore = null;
-let trustedOriginsStore = null;
-let scheme = null;
+let certificateStore: CertificateStore;
+let trustedOriginsStore;
+let scheme: string;
 let appVersion = null;
-let config = null;
-let authManager = null;
-let certificateManager = null;
+let config: Config;
+let authManager: AuthManager;
+let certificateManager: CertificateManager;
 
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
@@ -140,7 +147,7 @@ function initializeArgs() {
 }
 
 async function initializeConfig() {
-    const loadConfig = new Promise((resolve) => {
+    const loadConfig = new Promise<void>((resolve) => {
         config = new Config(app.getPath('userData') + '/config.json');
         config.once('update', (configData) => {
             config.on('update', handleConfigUpdate);
@@ -169,7 +176,11 @@ function initializeAppEventListeners() {
 }
 
 function initializeBeforeAppReady() {
-    certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
+    if (!config || !config.data) {
+        log.error('No config loaded');
+        return;
+    }
+    certificateStore = new CertificateStore(path.resolve(app.getPath('userData'), 'certificate.json'));
     trustedOriginsStore = new TrustedOriginsStore(path.resolve(app.getPath('userData'), 'trustedOrigins.json'));
     trustedOriginsStore.load();
 
@@ -196,7 +207,7 @@ function initializeBeforeAppReady() {
 
     allowProtocolDialog.init();
 
-    authManager = new AuthManager(config, trustedOriginsStore);
+    authManager = new AuthManager(config.data, trustedOriginsStore);
     certificateManager = new CertificateManager();
 
     if (isDev) {
@@ -237,7 +248,10 @@ function initializeInterCommunicationEventListeners() {
 // config event handlers
 //
 
-function handleConfigUpdate(newConfig) {
+function handleConfigUpdate(newConfig: Config) {
+    if (!newConfig.data) {
+        return;
+    }
     if (process.platform === 'win32' || process.platform === 'linux') {
         const appLauncher = new AutoLauncher();
         const autoStartTask = config.autostart ? appLauncher.enable() : appLauncher.disable();
@@ -247,6 +261,7 @@ function handleConfigUpdate(newConfig) {
             log.error('error:', err);
         });
         WindowManager.setConfig(newConfig.data);
+        authManager.handleConfigUpdate(newConfig.data);
         setUnreadBadgeSetting(newConfig.data && newConfig.data.showUnreadBadge);
     }
 
@@ -254,6 +269,10 @@ function handleConfigUpdate(newConfig) {
 }
 
 function handleConfigSynchronize() {
+    if (!config.data) {
+        return;
+    }
+
     // TODO: send this to server manager
     WindowManager.setConfig(config.data);
     setUnreadBadgeSetting(config.data.showUnreadBadge);
@@ -267,7 +286,7 @@ function handleConfigSynchronize() {
 
 function handleReloadConfig() {
     config.reload();
-    WindowManager.setConfig(config.data);
+    WindowManager.setConfig(config.data!);
 }
 
 function handleAppVersion() {
@@ -277,7 +296,7 @@ function handleAppVersion() {
     };
 }
 
-function handleDarkModeChange(darkMode) {
+function handleDarkModeChange(darkMode: boolean) {
     refreshTrayImages(config.trayIconTheme);
     WindowManager.sendToRenderer(DARK_MODE_CHANGE, darkMode);
     WindowManager.updateLoadingScreenDarkMode(darkMode);
@@ -288,11 +307,13 @@ function handleDarkModeChange(darkMode) {
 //
 
 // activate first app instance, subsequent instances will quit themselves
-function handleAppSecondInstance(event, argv) {
+function handleAppSecondInstance(event: Event, argv: string[]) {
     // Protocol handler for win32
     // argv: An array of the second instance’s (command line / deep linked) arguments
     const deeplinkingUrl = getDeeplinkingURL(argv);
-    openDeepLink(deeplinkingUrl);
+    if (deeplinkingUrl) {
+        openDeepLink(deeplinkingUrl);
+    }
 }
 
 function handleAppWindowAllClosed() {
@@ -303,9 +324,9 @@ function handleAppWindowAllClosed() {
     }
 }
 
-function handleAppBrowserWindowCreated(error, newWindow) {
+function handleAppBrowserWindowCreated(event: Event, newWindow: BrowserWindow) {
     // Screen cannot be required before app is ready
-    resizeScreen(electron.screen, newWindow);
+    resizeScreen(newWindow);
 }
 
 function handleAppActivate() {
@@ -318,18 +339,18 @@ function handleAppBeforeQuit() {
     global.willAppQuit = true;
 }
 
-function handleQuit(e, reason, stack) {
+function handleQuit(e: IpcMainEvent, reason: string, stack: string) {
     log.error(`Exiting App. Reason: ${reason}`);
     log.info(`Stacktrace:\n${stack}`);
     handleAppBeforeQuit();
     app.quit();
 }
 
-function handleSelectCertificate(event, webContents, url, list, callback) {
+function handleSelectCertificate(event: electron.Event, webContents: electron.WebContents, url: string, list: electron.Certificate[], callback: (certificate?: electron.Certificate | undefined) => void) {
     certificateManager.handleSelectCertificate(event, webContents, url, list, callback);
 }
 
-function handleAppCertificateError(event, webContents, url, error, certificate, callback) {
+function handleAppCertificateError(event: electron.Event, webContents: electron.WebContents, url: string, error: string, certificate: electron.Certificate, callback: (isTrusted: boolean) => void) {
     const parsedURL = new URL(url);
     if (!parsedURL) {
         return;
@@ -355,6 +376,9 @@ function handleAppCertificateError(event, webContents, url, error, certificate, 
 
         // TODO: should we move this to window manager or provide a handler for dialogs?
         const mainWindow = WindowManager.getMainWindow();
+        if (!mainWindow) {
+            return;
+        }
         dialog.showMessageBox(mainWindow, {
             title: 'Certificate Error',
             message: 'There is a configuration issue with this Mattermost server, or someone is trying to intercept your connection. You also may need to sign into the Wi-Fi you are connected to using your web browser.',
@@ -395,15 +419,15 @@ function handleAppCertificateError(event, webContents, url, error, certificate, 
     }
 }
 
-function handleAppLogin(event, webContents, request, authInfo, callback) {
+function handleAppLogin(event: electron.Event, webContents: electron.WebContents, request: electron.AuthenticationResponseDetails, authInfo: electron.AuthInfo, callback: (username?: string | undefined, password?: string | undefined) => void) {
     authManager.handleAppLogin(event, webContents, request, authInfo, callback);
 }
 
-function handleAppGPUProcessCrashed(event, killed) {
+function handleAppGPUProcessCrashed(event: electron.Event, killed: boolean) {
     log.error(`The GPU process has crashed (killed = ${killed})`);
 }
 
-function openDeepLink(deeplinkingUrl) {
+function openDeepLink(deeplinkingUrl: string) {
     try {
         WindowManager.showMainWindow(deeplinkingUrl);
     } catch (err) {
@@ -427,7 +451,7 @@ function handleAppWillFinishLaunching() {
     });
 }
 
-function handleSwitchServer(event, serverName) {
+function handleSwitchServer(event: IpcMainEvent, serverName: string) {
     WindowManager.switchServer(serverName);
 }
 
@@ -436,7 +460,11 @@ function handleNewServerModal() {
 
     const modalPreload = getLocalPreload('modalPreload.js');
 
-    const modalPromise = addModal('newServer', html, modalPreload, {}, WindowManager.getMainWindow());
+    const mainWindow = WindowManager.getMainWindow();
+    if (!mainWindow) {
+        return;
+    }
+    const modalPromise = addModal<unknown, Team>('newServer', html, modalPreload, {}, mainWindow);
     if (modalPromise) {
         modalPromise.then((data) => {
             const teams = config.teams;
@@ -506,7 +534,7 @@ function initializeAfterAppReady() {
         WindowManager.showSettingsWindow();
     }
 
-    criticalErrorHandler.setMainWindow(WindowManager.getMainWindow());
+    criticalErrorHandler.setMainWindow(WindowManager.getMainWindow()!);
 
     // listen for status updates and pass on to renderer
     userActivityMonitor.on('status', (status) => {
@@ -519,7 +547,7 @@ function initializeAfterAppReady() {
     if (shouldShowTrayIcon()) {
         setupTray(config.trayIconTheme);
     }
-    setupBadge(config.showUnreadBadge);
+    setupBadge();
 
     session.defaultSession.on('will-download', (event, item, webContents) => {
         const filename = item.getFilename();
@@ -533,13 +561,13 @@ function initializeAfterAppReady() {
         }
         item.setSaveDialogOptions({
             title: filename,
-            defaultPath: path.resolve(config.combinedData.downloadLocation, filename),
+            defaultPath: path.resolve(config.downloadLocation, filename),
             filters,
         });
 
         item.on('done', (doneEvent, state) => {
             if (state === 'completed') {
-                displayDownloadCompleted(filename, item.savePath, urlUtils.getServer(webContents.getURL(), config.teams));
+                displayDownloadCompleted(filename, item.savePath, urlUtils.getServer(webContents.getURL(), config.teams)!);
             }
         });
     });
@@ -584,7 +612,7 @@ function initializeAfterAppReady() {
 // ipc communication event handlers
 //
 
-function handleMentionNotification(event, title, body, channel, teamId, silent, data) {
+function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channel: {id: string}, teamId: string, silent: boolean, data: MentionData) {
     displayMention(title, body, channel, teamId, silent, event.sender, data);
 }
 
@@ -617,9 +645,9 @@ function handleUpdateMenuEvent(event, menuConfig) {
     }
 }
 
-async function handleSelectDownload(event, startFrom) {
+async function handleSelectDownload(event: IpcMainInvokeEvent, startFrom: string) {
     const message = 'Specify the folder where files will download';
-    const result = await dialog.showOpenDialog({defaultPath: startFrom || config.data.downloadLocation,
+    const result = await dialog.showOpenDialog({defaultPath: startFrom || config.downloadLocation,
         message,
         properties:
      ['openDirectory', 'createDirectory', 'dontAddToRecent', 'promptToCreate']});
@@ -630,7 +658,7 @@ async function handleSelectDownload(event, startFrom) {
 // helper functions
 //
 
-function getDeeplinkingURL(args) {
+function getDeeplinkingURL(args: string[]) {
     if (Array.isArray(args) && args.length) {
     // deeplink urls should always be the last argument, but may not be the first (i.e. Windows with the app already running)
         const url = args[args.length - 1];
@@ -638,14 +666,14 @@ function getDeeplinkingURL(args) {
             return url;
         }
     }
-    return null;
+    return undefined;
 }
 
 function shouldShowTrayIcon() {
     return config.showTrayIcon || process.platform === 'win32';
 }
 
-function wasUpdated(lastAppVersion) {
+function wasUpdated(lastAppVersion?: string) {
     return lastAppVersion !== app.getVersion();
 }
 
@@ -660,7 +688,7 @@ function clearAppCache() {
     }
 }
 
-function isWithinDisplay(state, display) {
+function isWithinDisplay(state: Rectangle, display: Boundaries) {
     const startsWithinDisplay = !(state.x > display.maxX || state.y > display.maxY || state.x < display.minX || state.y < display.minY);
     if (!startsWithinDisplay) {
         return false;
@@ -672,7 +700,7 @@ function isWithinDisplay(state, display) {
     return !(midX > display.maxX || midY > display.maxY);
 }
 
-function getValidWindowPosition(state) {
+function getValidWindowPosition(state: Rectangle) {
     // Check if the previous position is out of the viewable area
     // (e.g. because the screen has been plugged off)
     const boundaries = Utils.getDisplayBoundaries();
@@ -686,7 +714,7 @@ function getValidWindowPosition(state) {
     return {x: state.x, y: state.y};
 }
 
-function resizeScreen(screen, browserWindow) {
+function resizeScreen(browserWindow: BrowserWindow) {
     function handle() {
         const position = browserWindow.getPosition();
         const size = browserWindow.getSize();

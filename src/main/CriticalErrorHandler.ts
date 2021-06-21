@@ -7,7 +7,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-import {app, dialog} from 'electron';
+import {app, BrowserWindow, dialog} from 'electron';
 
 import log from 'electron-log';
 
@@ -15,15 +15,17 @@ const BUTTON_OK = 'OK';
 const BUTTON_SHOW_DETAILS = 'Show Details';
 const BUTTON_REOPEN = 'Reopen';
 
-function createErrorReport(err) {
+function createErrorReport(err: Error) {
     // eslint-disable-next-line no-undef
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     return `Application: ${app.name} ${app.getVersion()} [commit: ${__HASH_VERSION__}]\n` +
          `Platform: ${os.type()} ${os.release()} ${os.arch()}\n` +
          `${err.stack}`;
 }
 
-function openDetachedExternal(url) {
-    const spawnOption = {detached: true, stdio: 'ignore'};
+function openDetachedExternal(url: string) {
+    const spawnOption = {detached: true, stdio: 'ignore' as any};
     switch (process.platform) {
     case 'win32':
         return spawn('cmd', ['/C', 'start', url], spawnOption);
@@ -32,20 +34,21 @@ function openDetachedExternal(url) {
     case 'linux':
         return spawn('xdg-open', [url], spawnOption);
     default:
-        return null;
+        return undefined;
     }
 }
 
 export default class CriticalErrorHandler {
-    constructor() {
-        this.mainWindow = null;
-    }
+    mainWindow?: BrowserWindow;
 
-    setMainWindow(mainWindow) {
+    setMainWindow(mainWindow: BrowserWindow) {
         this.mainWindow = mainWindow;
     }
 
     windowUnresponsiveHandler() {
+        if (!this.mainWindow) {
+            return;
+        }
         dialog.showMessageBox(this.mainWindow, {
             type: 'warning',
             title: app.name,
@@ -59,7 +62,7 @@ export default class CriticalErrorHandler {
         });
     }
 
-    processUncaughtExceptionHandler(err) {
+    processUncaughtExceptionHandler(err: Error) {
         const file = path.join(app.getPath('userData'), `uncaughtException-${Date.now()}.txt`);
         const report = createErrorReport(err);
         fs.writeFileSync(file, report.replace(new RegExp('\\n', 'g'), os.EOL));
@@ -69,9 +72,11 @@ export default class CriticalErrorHandler {
             if (process.platform === 'darwin') {
                 buttons.reverse();
             }
-            const bindWindow = this.mainWindow && this.mainWindow.isVisible() ? this.mainWindow : null;
+            if (!this.mainWindow?.isVisible) {
+                return;
+            }
             dialog.showMessageBox(
-                bindWindow,
+                this.mainWindow,
                 {
                     type: 'error',
                     title: app.name,
@@ -102,7 +107,7 @@ export default class CriticalErrorHandler {
                 app.exit(-1);
             });
         } else {
-            log.err(`Window wasn't ready to handle the error: ${err}\ntrace: ${err.stack}`);
+            log.error(`Window wasn't ready to handle the error: ${err}\ntrace: ${err.stack}`);
             throw err;
         }
     }

@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, app, ipcMain, BrowserWindow, WebContents} from 'electron';
+import {BrowserView, app, ipcMain, BrowserWindow} from 'electron';
 import {BrowserViewConstructorOptions, Event, Input} from 'electron/main';
 import log from 'electron-log';
 
@@ -78,7 +78,7 @@ export class MattermostView extends EventEmitter {
                 contextIsolation: process.env.NODE_ENV !== 'test',
                 preload,
                 additionalArguments: [
-                    `version=${app.version}`,
+                    `version=${app.getVersion()}`,
                     `appName=${app.name}`,
                 ],
                 enableRemoteModule: process.env.NODE_ENV === 'test',
@@ -267,13 +267,13 @@ export class MattermostView extends EventEmitter {
         this.view.webContents.openDevTools({mode: 'detach'});
     }
 
-    getWebContents = (): WebContents => {
+    getWebContents = () => {
         if (this.status === Status.READY) {
             return this.view.webContents;
         } else if (this.window) {
             return this.window.webContents; // if it's not ready you are looking at the renderer process
         }
-        return WindowManager.getMainWindow().webContents;
+        return WindowManager.getMainWindow()?.webContents;
     }
 
     handleInputEvents = (_: Event, input: Input) => {
@@ -306,7 +306,7 @@ export class MattermostView extends EventEmitter {
     }
 
     handleUpdateTarget = (e: Event, url: string) => {
-        if (!this.server.sameOrigin(url)) {
+        if (!url || !this.server.sameOrigin(url)) {
             this.emit(UPDATE_TARGET_URL, url);
         }
     }

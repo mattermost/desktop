@@ -8,6 +8,8 @@ import isDev from 'electron-is-dev';
 import log from 'electron-log';
 
 export default class AutoLauncher {
+    appLauncher: AutoLaunch;
+
     constructor() {
         this.appLauncher = new AutoLaunch({
             name: app.name,

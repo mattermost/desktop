@@ -63,7 +63,7 @@ export function showSettingsWindow() {
     }
 }
 
-export function showMainWindow(deeplinkingURL?: string) {
+export function showMainWindow(deeplinkingURL?: string | URL) {
     if (status.mainWindow) {
         if (status.mainWindow.isVisible()) {
             status.mainWindow.focus();
@@ -90,7 +90,7 @@ export function showMainWindow(deeplinkingURL?: string) {
         });
         status.mainWindow.on('unresponsive', () => {
             const criticalErrorHandler = new CriticalErrorHandler();
-            criticalErrorHandler.setMainWindow(status.mainWindow);
+            criticalErrorHandler.setMainWindow(status.mainWindow!);
             criticalErrorHandler.windowUnresponsiveHandler();
         });
         status.mainWindow.on('maximize', handleMaximizeMainWindow);
@@ -115,7 +115,7 @@ export function showMainWindow(deeplinkingURL?: string) {
     }
 }
 
-export function getMainWindow(ensureCreated: boolean) {
+export function getMainWindow(ensureCreated?: boolean) {
     if (ensureCreated && !status.mainWindow) {
         showMainWindow();
     }
@@ -151,7 +151,7 @@ function handleResizeMainWindow() {
 
     const setBoundsFunction = () => {
         if (currentView) {
-            currentView.setBounds(getAdjustedWindowBoundaries(bounds.width, bounds.height, !urlUtils.isTeamUrl(currentView.server.url, currentView.view.webContents.getURL())));
+            currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, !urlUtils.isTeamUrl(currentView.server.url, currentView.view.webContents.getURL())));
         }
     };
 
@@ -273,7 +273,7 @@ function createDataURL(text: string, small: boolean) {
     return win.webContents.executeJavaScript(code);
 }
 
-export async function setOverlayIcon(badgeText: string, description: string, small: boolean) {
+export async function setOverlayIcon(badgeText: string | undefined, description: string, small: boolean) {
     if (process.platform === 'win32') {
         let overlay = null;
         if (status.mainWindow) {
@@ -425,7 +425,7 @@ export function reload() {
 export function sendToFind() {
     const currentView = status.viewManager?.getCurrentView();
     if (currentView) {
-        currentView.view.webContents.sendInputEvent({type: 'keyDown', keyCode: 'F', modifiers: ['CmdOrCtrl', 'shift']});
+        currentView.view.webContents.sendInputEvent({type: 'keyDown', keyCode: 'F', modifiers: [process.platform === 'darwin' ? 'cmd' : 'ctrl', 'shift']});
     }
 }
 

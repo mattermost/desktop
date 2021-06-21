@@ -343,7 +343,7 @@ export class ViewManager {
         view.removeListener(LOAD_SUCCESS, this.deeplinkSuccess);
     }
 
-    handleDeepLink = (url: string) => {
+    handleDeepLink = (url: string | URL) => {
         if (url) {
             const parsedURL = urlUtils.parseURL(url)!;
             const server = urlUtils.getServer(parsedURL, this.configServers, true);

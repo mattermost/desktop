@@ -4,9 +4,11 @@
 import urlUtils from 'common/utils/url';
 
 export class MattermostServer {
-    constructor(name, serverUrl) {
+    name: string;
+    url: URL;
+    constructor(name: string, serverUrl: string) {
         this.name = name;
-        this.url = urlUtils.parseURL(serverUrl);
+        this.url = urlUtils.parseURL(serverUrl)!;
         if (!this.url) {
             throw new Error('Invalid url for creating a server');
         }
@@ -19,12 +21,12 @@ export class MattermostServer {
         return {origin: this.url.origin, subpath, url: this.url.toString()};
     }
 
-    sameOrigin = (otherURL) => {
+    sameOrigin = (otherURL: string) => {
         const parsedUrl = urlUtils.parseURL(otherURL);
         return parsedUrl && this.url.origin === parsedUrl.origin;
     }
 
-    equals = (otherServer) => {
+    equals = (otherServer: MattermostServer) => {
         return (this.name === otherServer.name) && (this.url.toString() === otherServer.url.toString());
     }
 }

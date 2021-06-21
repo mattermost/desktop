@@ -15,7 +15,7 @@ import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGU
 
 import * as Validator from '../../main/Validator';
 
-import defaultPreferences from './defaultPreferences';
+import defaultPreferences, {getDefaultDownloadLocation} from './defaultPreferences';
 import upgradeConfigData from './upgradePreferences';
 import buildConfig from './buildConfig';
 import RegistryConfig, {REGISTRY_READ_EVENT} from './RegistryConfig';
@@ -162,13 +162,13 @@ export default class Config extends EventEmitter {
         return this.combinedData;
     }
     get localData() {
-        return this.localConfigData;
+        return this.localConfigData || defaultPreferences;
     }
     get defaultData() {
-        return this.defaultConfigData;
+        return this.defaultConfigData || defaultPreferences;
     }
     get buildData() {
-        return this.buildConfigData;
+        return this.buildConfigData || buildConfig;
     }
     get registryData() {
         return this.registryConfigData;
@@ -177,49 +177,52 @@ export default class Config extends EventEmitter {
     // convenience getters
 
     get version() {
-        return this.combinedData?.version;
+        return this.combinedData?.version || defaultPreferences.version;
     }
     get teams() {
-        return this.combinedData?.teams;
+        return this.combinedData?.teams || defaultPreferences.teams;
     }
     get darkMode() {
-        return this.combinedData?.darkMode;
+        return this.combinedData?.darkMode || defaultPreferences.darkMode;
     }
     get localTeams() {
-        return this.localConfigData?.teams;
+        return this.localConfigData?.teams || defaultPreferences.version;
     }
     get predefinedTeams() {
         return [...this.buildConfigData?.defaultTeams || [], ...this.registryConfigData?.teams || []];
     }
     get enableHardwareAcceleration() {
-        return this.combinedData?.enableHardwareAcceleration;
+        return this.combinedData?.enableHardwareAcceleration || defaultPreferences.enableHardwareAcceleration;
     }
     get enableServerManagement() {
-        return this.combinedData?.enableServerManagement;
+        return this.combinedData?.enableServerManagement || buildConfig.enableServerManagement;
     }
     get enableAutoUpdater() {
-        return this.combinedData?.enableAutoUpdater;
+        return this.combinedData?.enableAutoUpdater || buildConfig.enableAutoUpdater;
     }
     get autostart() {
-        return this.combinedData?.autostart;
+        return this.combinedData?.autostart || defaultPreferences.autostart;
     }
     get notifications() {
-        return this.combinedData?.notifications;
+        return this.combinedData?.notifications || defaultPreferences.notifications;
     }
     get showUnreadBadge() {
-        return this.combinedData?.showUnreadBadge;
+        return this.combinedData?.showUnreadBadge || defaultPreferences.showUnreadBadge;
     }
     get useSpellChecker() {
-        return this.combinedData?.useSpellChecker;
+        return this.combinedData?.useSpellChecker || defaultPreferences.useSpellChecker;
     }
     get spellCheckerLocale() {
-        return this.combinedData?.spellCheckerLocale;
+        return this.combinedData?.spellCheckerLocale || defaultPreferences.spellCheckerLocale;
     }
     get showTrayIcon() {
-        return this.combinedData?.showTrayIcon;
+        return this.combinedData?.showTrayIcon || defaultPreferences.showTrayIcon;
     }
     get trayIconTheme() {
-        return this.combinedData?.trayIconTheme;
+        return this.combinedData?.trayIconTheme || defaultPreferences.trayIconTheme;
+    }
+    get downloadLocation() {
+        return this.combinedData?.downloadLocation || getDefaultDownloadLocation();
     }
     get helpLink() {
         return this.combinedData?.helpLink;
@@ -252,13 +255,13 @@ export default class Config extends EventEmitter {
             // validate based on config file version
             switch (configData.version) {
             case 2:
-                configData = Validator.validateV2ConfigData(configData);
+                configData = Validator.validateV2ConfigData(configData)!;
                 break;
             case 1:
-                configData = Validator.validateV1ConfigData(configData);
+                configData = Validator.validateV1ConfigData(configData)!;
                 break;
             default:
-                configData = Validator.validateV0ConfigData(configData);
+                configData = Validator.validateV0ConfigData(configData)!;
             }
             if (!configData) {
                 throw new Error('Provided configuration file does not validate, using defaults instead.');

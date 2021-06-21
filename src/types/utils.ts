@@ -6,3 +6,12 @@ export type ServerFromURL = {
     url: URL;
     index: number;
 }
+
+export type Boundaries = {
+    maxX: number;
+    maxY: number;
+    minX: number;
+    minY: number;
+    maxWidth: number;
+    maxHeight: number;
+}

@@ -63,6 +63,8 @@
     "@babel/register": "^7.0.0",
     "@storybook/addon-actions": "^4.0.11",
     "@storybook/react": "^4.0.11",
+    "@types/auto-launch": "^5.0.1",
+    "@types/electron-devtools-installer": "^2.2.0",
     "@types/hapi__joi": "^17.1.6",
     "@types/valid-url": "^1.0.3",
     "@types/winreg": "^1.2.30",

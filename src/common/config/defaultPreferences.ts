@@ -9,7 +9,7 @@
 
 import {ConfigV2} from 'types/config';
 
-const getDefaultDownloadLocation = () => {
+export const getDefaultDownloadLocation = () => {
     switch (process.platform) {
     case 'darwin':
         return `/Users/${process.env.USER || process.env.USERNAME}/Downloads`;

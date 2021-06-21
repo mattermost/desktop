@@ -13,19 +13,19 @@ enum Status {
     DONE
 }
 
-export class ModalView<T> {
+export class ModalView<T, T2> {
     key: string;
     html: string;
     data: T;
     view: BrowserView;
-    onReject: (value: T) => void;
-    onResolve: (value: T) => void;
+    onReject: (value: T2) => void;
+    onResolve: (value: T2) => void;
     window: BrowserWindow;
     windowAttached?: BrowserWindow;
     status: Status;
     contextMenu: ContextMenu;
 
-    constructor(key: string, html: string, preload: string, data: T, onResolve: (value: T) => void, onReject: (value: T) => void, currentWindow: BrowserWindow) {
+    constructor(key: string, html: string, preload: string, data: T, onResolve: (value: T2) => void, onReject: (value: T2) => void, currentWindow: BrowserWindow) {
         this.key = key;
         this.html = html;
         this.data = data;
@@ -103,7 +103,7 @@ export class ModalView<T> {
         return this.data;
     }
 
-    reject = (data: T) => {
+    reject = (data: T2) => {
         if (this.onReject) {
             this.onReject(data);
         }
@@ -111,7 +111,7 @@ export class ModalView<T> {
         this.status = Status.DONE;
     }
 
-    resolve = (data: T) => {
+    resolve = (data: T2) => {
         if (this.onResolve) {
             this.onResolve(data);
         }

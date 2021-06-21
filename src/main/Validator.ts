@@ -4,6 +4,13 @@ import log from 'electron-log';
 
 import Joi from '@hapi/joi';
 
+import {Args} from 'types/args';
+import {ConfigV0, ConfigV1, ConfigV2} from 'types/config';
+import {SavedWindowState} from 'types/mainWindow';
+import {AppState} from 'types/appState';
+import {ComparableCertificate} from 'types/certificate';
+import {PermissionType, TrustedOrigin} from 'types/trustedOrigin';
+
 import urlUtils from 'common/utils/url';
 
 const defaultOptions = {
@@ -14,14 +21,14 @@ const defaultWindowHeight = 700;
 const minWindowWidth = 400;
 const minWindowHeight = 240;
 
-const argsSchema = Joi.object({
+const argsSchema = Joi.object<Args>({
     hidden: Joi.boolean(),
     disableDevMode: Joi.boolean(),
     dataDir: Joi.string(),
     version: Joi.boolean(),
 });
 
-const boundsInfoSchema = Joi.object({
+const boundsInfoSchema = Joi.object<SavedWindowState>({
     x: Joi.number().integer().default(0),
     y: Joi.number().integer().default(0),
     width: Joi.number().integer().min(minWindowWidth).required().default(defaultWindowWidth),
@@ -30,17 +37,17 @@ const boundsInfoSchema = Joi.object({
     fullscreen: Joi.boolean().default(false),
 });
 
-const appStateSchema = Joi.object({
+const appStateSchema = Joi.object<AppState>({
     lastAppVersion: Joi.string(),
     skippedVersion: Joi.string(),
     updateCheckedDate: Joi.string(),
 });
 
-const configDataSchemaV0 = Joi.object({
+const configDataSchemaV0 = Joi.object<ConfigV0>({
     url: Joi.string().required(),
 });
 
-const configDataSchemaV1 = Joi.object({
+const configDataSchemaV1 = Joi.object<ConfigV1>({
     version: Joi.number().min(1).default(1),
     teams: Joi.array().items(Joi.object({
         name: Joi.string().required(),
@@ -61,7 +68,7 @@ const configDataSchemaV1 = Joi.object({
     spellCheckerLocale: Joi.string().regex(/^[a-z]{2}-[A-Z]{2}$/).default('en-US'),
 });
 
-const configDataSchemaV2 = Joi.object({
+const configDataSchemaV2 = Joi.object<ConfigV2>({
     version: Joi.number().min(2).default(2),
     teams: Joi.array().items(Joi.object({
         name: Joi.string().required(),
@@ -88,13 +95,13 @@ const configDataSchemaV2 = Joi.object({
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};
 const certificateStoreSchema = Joi.object().pattern(
     Joi.string().uri(),
-    Joi.object({
+    Joi.object<ComparableCertificate>({
         data: Joi.string(),
         issuerName: Joi.string(),
     }),
 );
 
-const originPermissionsSchema = Joi.object().keys({
+const originPermissionsSchema = Joi.object<TrustedOrigin>().keys({
     canBasicAuth: Joi.boolean().default(false), // we can add more permissions later if we want
 });
 
@@ -108,27 +115,27 @@ const trustedOriginsSchema = Joi.object({}).pattern(
 const allowedProtocolsSchema = Joi.array().items(Joi.string().regex(/^[a-z-]+:$/i));
 
 // validate bounds_info.json
-export function validateArgs(data) {
+export function validateArgs(data: Args) {
     return validateAgainstSchema(data, argsSchema);
 }
 
 // validate bounds_info.json
-export function validateBoundsInfo(data) {
+export function validateBoundsInfo(data: SavedWindowState) {
     return validateAgainstSchema(data, boundsInfoSchema);
 }
 
 // validate app_state.json
-export function validateAppState(data) {
+export function validateAppState(data: AppState) {
     return validateAgainstSchema(data, appStateSchema);
 }
 
 // validate v.0 config.json
-export function validateV0ConfigData(data) {
+export function validateV0ConfigData(data: ConfigV0) {
     return validateAgainstSchema(data, configDataSchemaV0);
 }
 
 // validate v.1 config.json
-export function validateV1ConfigData(data) {
+export function validateV1ConfigData(data: ConfigV1) {
     if (Array.isArray(data.teams) && data.teams.length) {
     // first replace possible backslashes with forward slashes
         let teams = data.teams.map(({name, url}) => {
@@ -148,7 +155,7 @@ export function validateV1ConfigData(data) {
     return validateAgainstSchema(data, configDataSchemaV1);
 }
 
-export function validateV2ConfigData(data) {
+export function validateV2ConfigData(data: ConfigV2) {
     if (Array.isArray(data.teams) && data.teams.length) {
     // first replace possible backslashes with forward slashes
         let teams = data.teams.map(({name, url, order}) => {
@@ -169,39 +176,39 @@ export function validateV2ConfigData(data) {
 }
 
 // validate certificate.json
-export function validateCertificateStore(data) {
+export function validateCertificateStore(data: string | Record<string, ComparableCertificate>) {
     const jsonData = (typeof data === 'object' ? data : JSON.parse(data));
     return validateAgainstSchema(jsonData, certificateStoreSchema);
 }
 
 // validate allowedProtocols.json
-export function validateAllowedProtocols(data) {
+export function validateAllowedProtocols(data: string[]) {
     return validateAgainstSchema(data, allowedProtocolsSchema);
 }
 
-export function validateTrustedOriginsStore(data) {
-    const jsonData = (typeof data === 'object' ? data : JSON.parse(data));
+export function validateTrustedOriginsStore(data: string | Record<PermissionType, TrustedOrigin>) {
+    const jsonData: Record<PermissionType, TrustedOrigin> = (typeof data === 'object' ? data : JSON.parse(data));
     return validateAgainstSchema(jsonData, trustedOriginsSchema);
 }
 
-export function validateOriginPermissions(data) {
-    const jsonData = (typeof data === 'object' ? data : JSON.parse(data));
+export function validateOriginPermissions(data: string | TrustedOrigin) {
+    const jsonData: TrustedOrigin = (typeof data === 'object' ? data : JSON.parse(data));
     return validateAgainstSchema(jsonData, originPermissionsSchema);
 }
 
-function validateAgainstSchema(data, schema) {
+function validateAgainstSchema<T>(data: T, schema: Joi.ObjectSchema<T> | Joi.ArraySchema): T | null {
     if (typeof data !== 'object') {
         log.error(`Input 'data' is not an object we can validate: ${typeof data}`);
-        return false;
+        return null;
     }
     if (!schema) {
         log.error('No schema provided to validate');
-        return false;
+        return null;
     }
     const {error, value} = schema.validate(data, defaultOptions);
     if (error) {
         log.error(`Validation failed due to: ${error}`);
-        return false;
+        return null;
     }
     return value;
 }

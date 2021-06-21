@@ -1,12 +1,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserWindow, shell, IpcMainEvent} from 'electron';
+import {BrowserWindow, shell, WebContents} from 'electron';
 import log from 'electron-log';
 
 import {Team} from 'types/config';
 
-import {DEVELOPMENT, PRODUCTION} from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 
@@ -27,7 +26,7 @@ const customLogins: Record<number, CustomLogin> = {};
 const listeners: Record<number, () => void> = {};
 let popupWindow: BrowserWindow | undefined;
 
-function isTrustedPopupWindow(webContents: Electron.WebContents) {
+function isTrustedPopupWindow(webContents: WebContents) {
     if (!webContents) {
         return false;
     }
@@ -40,7 +39,7 @@ function isTrustedPopupWindow(webContents: Electron.WebContents) {
 const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];
 
 const generateWillNavigate = (getServersFunction: () => Team[]) => {
-    return (event: IpcMainEvent, url: string) => {
+    return (event: Event & {sender: WebContents}, url: string) => {
         const contentID = event.sender.id;
         const parsedURL = urlUtils.parseURL(url)!;
         const configServers = getServersFunction();
@@ -59,12 +58,6 @@ const generateWillNavigate = (getServersFunction: () => Team[]) => {
         if (customLogins[contentID].inProgress) {
             return;
         }
-        const mode = Utils.runMode();
-        if (((mode === DEVELOPMENT || mode === PRODUCTION) &&
-        (parsedURL.path === 'renderer/index.html' || parsedURL.path === 'renderer/settings.html'))) {
-            log.info('loading settings page');
-            return;
-        }
 
         log.info(`Prevented desktop from navigating to: ${url}`);
         event.preventDefault();
@@ -72,7 +65,7 @@ const generateWillNavigate = (getServersFunction: () => Team[]) => {
 };
 
 const generateDidStartNavigation = (getServersFunction: () => Team[]) => {
-    return (event: IpcMainEvent, url: string) => {
+    return (event: Event & {sender: WebContents}, url: string) => {
         const serverList = getServersFunction();
         const contentID = event.sender.id;
         const parsedURL = urlUtils.parseURL(url)!;
@@ -154,14 +147,14 @@ const generateNewWindowListener = (getServersFunction: () => Team[], spellcheck?
             log.info(`${url} is an admin console page, preventing to open a new window`);
             return;
         }
-        if (popupWindow && !popupWindow.closed && popupWindow.getURL() === url) {
+        if (popupWindow && popupWindow.webContents.getURL() === url) {
             log.info(`Popup window already open at provided url: ${url}`);
             return;
         }
 
         // TODO: move popups to its own and have more than one.
         if (urlUtils.isPluginUrl(server.url, parsedURL) || urlUtils.isManagedResource(server.url, parsedURL)) {
-            if (!popupWindow || popupWindow.closed) {
+            if (!popupWindow) {
                 popupWindow = new BrowserWindow({
                     backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
                     //parent: WindowManager.getMainWindow(),

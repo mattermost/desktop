@@ -2,9 +2,13 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// TODO TS DEVIN: This needs to be rebuilt anyways, skipping for now
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+//@ts-nocheck
+
 import path from 'path';
 
-import {app, BrowserWindow, dialog, ipcMain, shell} from 'electron';
+import {app, BrowserWindow, BrowserWindowConstructorOptions, dialog, ipcMain, IpcMainEvent, shell} from 'electron';
 
 import log from 'electron-log';
 import {autoUpdater, CancellationToken} from 'electron-updater';
@@ -18,18 +22,18 @@ autoUpdater.log.transports.file.level = 'info';
 
 let updaterModal = null;
 
-function createEventListener(win, eventName) {
-    return (event) => {
+function createEventListener(win: BrowserWindow, eventName: string) {
+    return (event: IpcMainEvent) => {
         if (event.sender === win.webContents) {
             win.emit(eventName);
         }
     };
 }
 
-function createUpdaterModal(parentWindow, options) {
+function createUpdaterModal(parentWindow: BrowserWindow, options: {linuxAppIcon: string; notifyOnly: boolean}) {
     const windowWidth = 480;
     const windowHeight = 280;
-    const windowOptions = {
+    const windowOptions: BrowserWindowConstructorOptions = {
         title: `${app.name} Updater`,
         parent: parentWindow,
         modal: true,
@@ -67,7 +71,7 @@ function createUpdaterModal(parentWindow, options) {
     return modal;
 }
 
-function isUpdateApplicable(now, skippedVersion, updateInfo) {
+function isUpdateApplicable(now: Date, skippedVersion, updateInfo) {
     const releaseTime = new Date(updateInfo.releaseDate).getTime();
 
     // 48 hours after a new version is added to releases.mattermost.com, user receives a “New update is available” dialog
@@ -83,7 +87,7 @@ function isUpdateApplicable(now, skippedVersion, updateInfo) {
     return true;
 }
 
-function downloadAndInstall(cancellationToken) {
+function downloadAndInstall(cancellationToken?: CancellationToken) {
     autoUpdater.on('update-downloaded', () => {
         global.willAppQuit = true;
         autoUpdater.quitAndInstall();
@@ -150,7 +154,7 @@ function initialize(appState, mainWindow, notifyOnly = false) {
     });
 }
 
-function shouldCheckForUpdatesOnStart(updateCheckedDate) {
+function shouldCheckForUpdatesOnStart(updateCheckedDate: Date) {
     if (updateCheckedDate) {
         if (Date.now() - updateCheckedDate.getTime() < UPDATER_INTERVAL_IN_MS) {
             return false;
@@ -167,6 +171,8 @@ function checkForUpdates(isManual = false) {
 }
 
 class AutoUpdaterConfig {
+    data: {notifyOnly?: boolean};
+
     constructor() {
         this.data = {};
     }

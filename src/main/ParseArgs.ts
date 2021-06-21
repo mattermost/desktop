@@ -1,17 +1,18 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {Args} from 'types/args';
 import yargs from 'yargs';
 
 import {protocols} from '../../electron-builder.json';
 
 import * as Validator from './Validator';
 
-export default function parse(args) {
+export default function parse(args: string[]) {
     return validateArgs(parseArgs(triageArgs(args)));
 }
 
-function triageArgs(args) {
+function triageArgs(args: string[]) {
     // ensure any args following a possible deeplink are discarded
     if (protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0]) {
         const scheme = protocols[0].schemes[0].toLowerCase();
@@ -23,7 +24,7 @@ function triageArgs(args) {
     return args;
 }
 
-function parseArgs(args) {
+function parseArgs(args: string[]) {
     return yargs.
         alias('dataDir', 'd').string('dataDir').describe('dataDir', 'Set the path to where user data is stored.').
         alias('disableDevMode', 'p').boolean('disableDevMode').describe('disableDevMode', 'Disable development mode. Allows for testing as if it was Production.').
@@ -32,6 +33,6 @@ function parseArgs(args) {
         parse(args);
 }
 
-function validateArgs(args) {
+function validateArgs(args: Args) {
     return Validator.validateArgs(args) || {};
 }

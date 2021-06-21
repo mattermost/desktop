@@ -2,12 +2,14 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
+import {AppState} from 'types/appState';
+
 import JsonFileManager from '../common/JsonFileManager';
 
 import * as Validator from './Validator';
 
-export default class AppVersionManager extends JsonFileManager {
-    constructor(file) {
+export default class AppVersionManager extends JsonFileManager<AppState> {
+    constructor(file: string) {
         super(file);
 
         // ensure data loaded from file is valid
@@ -33,7 +35,7 @@ export default class AppVersionManager extends JsonFileManager {
     }
 
     set updateCheckedDate(date) {
-        this.setValue('updateCheckedDate', date.toISOString());
+        this.setValue('updateCheckedDate', date?.toISOString());
     }
 
     get updateCheckedDate() {
