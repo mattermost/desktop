@@ -16,6 +16,7 @@ const WEBSERVER_PORT = 9001;
 module.exports = merge(base, {
     entry: {
         test: './test/unit/index.js',
+        e2e: './test/specs/app_test.js',
     },
     output: {
         path: path.resolve(__dirname, 'dist/tests'),
@@ -24,7 +25,7 @@ module.exports = merge(base, {
     module: {
         rules: [{
             test: /\.(js|jsx|ts|tsx)?$/,
-            use: ['babel-loader'],
+            use: ['babel-loader', 'shebang-loader'],
         }],
     },
     externals: {
@@ -37,6 +38,7 @@ module.exports = merge(base, {
         net: 'require("net")',
         repl: 'require("repl")',
         tls: 'require("tls")',
+        spectron: 'require("spectron")',
     },
     node: {
         __filename: false,
