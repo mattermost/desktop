@@ -17,14 +17,14 @@ const WEBSERVER_PORT = 9001;
 
 module.exports = merge(base, {
     entry: {
-        index: './src/renderer/index.jsx',
-        settings: './src/renderer/settings.jsx',
-        urlView: './src/renderer/modals/urlView/urlView.jsx',
-        newServer: './src/renderer/modals/newServer/newServer.jsx',
-        loginModal: './src/renderer/modals/login/login.jsx',
-        permissionModal: './src/renderer/modals/permission/permission.jsx',
-        certificateModal: './src/renderer/modals/certificate/certificate.jsx',
-        loadingScreen: './src/renderer/modals/loadingScreen/index.jsx',
+        index: './src/renderer/index.tsx',
+        settings: './src/renderer/settings.tsx',
+        urlView: './src/renderer/modals/urlView/urlView.tsx',
+        newServer: './src/renderer/modals/newServer/newServer.tsx',
+        loginModal: './src/renderer/modals/login/login.tsx',
+        permissionModal: './src/renderer/modals/permission/permission.tsx',
+        certificateModal: './src/renderer/modals/certificate/certificate.tsx',
+        loadingScreen: './src/renderer/modals/loadingScreen/index.tsx',
     },
     output: {
         path: path.resolve(__dirname, 'dist/renderer'),

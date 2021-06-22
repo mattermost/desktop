@@ -6,6 +6,7 @@ import log from 'electron-log';
 import {BASIC_AUTH_PERMISSION} from 'common/permissions';
 import {CombinedConfig} from 'types/config';
 import {PermissionType} from 'types/trustedOrigin';
+import {LoginModalData} from 'types/auth';
 
 import urlUtils from 'common/utils/url';
 
@@ -15,14 +16,10 @@ import {addModal} from './views/modalManager';
 import {getLocalURLString, getLocalPreload} from './utils';
 import TrustedOriginsStore from './trustedOrigins';
 
+
 const modalPreload = getLocalPreload('modalPreload.js');
 const loginModalHtml = getLocalURLString('loginModal.html');
 const permissionModalHtml = getLocalURLString('permissionModal.html');
-
-type LoginModalData = {
-    request: AuthenticationResponseDetails;
-    authInfo: AuthInfo;
-}
 
 type LoginModalResult = {
     username: string;

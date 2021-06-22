@@ -3,6 +3,8 @@
 import log from 'electron-log';
 import {Certificate, WebContents} from 'electron';
 
+import {CertificateModalData} from 'types/certificate';
+
 import * as WindowManager from './windows/windowManager';
 
 import {addModal} from './views/modalManager';
@@ -10,11 +12,6 @@ import {getLocalURLString, getLocalPreload} from './utils';
 
 const modalPreload = getLocalPreload('modalPreload.js');
 const html = getLocalURLString('certificateModal.html');
-
-type CertificateModalData = {
-    url: string;
-    list: Certificate[];
-}
 
 type CertificateModalResult = {
     cert: Certificate;

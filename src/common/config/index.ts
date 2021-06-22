@@ -9,7 +9,7 @@ import {EventEmitter} from 'events';
 import {ipcMain, nativeTheme, app} from 'electron';
 import log from 'electron-log';
 
-import {AnyConfig, BuildConfig, CombinedConfig, Config as ConfigType, RegistryConfig as RegistryConfigType, Team} from 'types/config';
+import {AnyConfig, BuildConfig, CombinedConfig, Config as ConfigType, LocalConfiguration, RegistryConfig as RegistryConfigType, Team} from 'types/config';
 
 import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION} from 'common/communication';
 
@@ -452,7 +452,7 @@ export default class Config extends EventEmitter {
     }
 
     handleGetLocalConfiguration = (event: Electron.IpcMainInvokeEvent, option: keyof ConfigType) => {
-        const config: Partial<CombinedConfig> = {...this.localConfigData};
+        const config: Partial<LocalConfiguration> = {...this.localConfigData};
         config.appName = app.name;
         config.enableServerManagement = this.combinedData?.enableServerManagement;
         if (option) {

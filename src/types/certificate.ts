@@ -1,7 +1,14 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {Certificate} from 'electron/common';
+
 export type ComparableCertificate = {
     data: string;
     issuerName: string;
+}
+
+export type CertificateModalData = {
+    url: string;
+    list: Certificate[];
 }

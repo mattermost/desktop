@@ -7,6 +7,8 @@ export type Team = {
     order: number;
 }
 
+export type TeamWithIndex = Team & {index: number};
+
 export type Config = ConfigV2;
 
 export type ConfigV2 = {
@@ -71,4 +73,9 @@ export type RegistryConfig = {
 export type CombinedConfig = ConfigV2 & BuildConfig & {
     registryTeams: Team[];
     appName: string;
+}
+
+export type LocalConfiguration = Config & {
+    appName: string;
+    enableServerManagement: boolean;
 }
