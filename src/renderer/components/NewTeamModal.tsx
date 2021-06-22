@@ -1,12 +1,13 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-// Copyright (c) 2015-2016 Yuya Ochiai
 
 import React from 'react';
 import {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} from 'react-bootstrap';
 
-import urlUtils from 'common/utils/url';
 import {TeamWithIndex} from 'types/config';
+
+import urlUtils from 'common/utils/url';
 
 type Props = {
     onClose: () => void;

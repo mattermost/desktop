@@ -3,10 +3,11 @@
 import {AuthenticationResponseDetails, AuthInfo, WebContents} from 'electron';
 import log from 'electron-log';
 
-import {BASIC_AUTH_PERMISSION} from 'common/permissions';
 import {CombinedConfig} from 'types/config';
 import {PermissionType} from 'types/trustedOrigin';
 import {LoginModalData} from 'types/auth';
+
+import {BASIC_AUTH_PERMISSION} from 'common/permissions';
 
 import urlUtils from 'common/utils/url';
 
@@ -15,7 +16,6 @@ import * as WindowManager from './windows/windowManager';
 import {addModal} from './views/modalManager';
 import {getLocalURLString, getLocalPreload} from './utils';
 import TrustedOriginsStore from './trustedOrigins';
-
 
 const modalPreload = getLocalPreload('modalPreload.js');
 const loginModalHtml = getLocalURLString('loginModal.html');

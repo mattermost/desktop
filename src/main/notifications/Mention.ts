@@ -4,8 +4,9 @@
 import path from 'path';
 import {app, Notification} from 'electron';
 
-import osVersion from 'common/osVersion';
 import {MentionOptions} from 'types/notification';
+
+import osVersion from 'common/osVersion';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const appIconURL = path.resolve(assetsDir, 'appicon_48.png');
@@ -20,7 +21,7 @@ export const DEFAULT_WIN7 = 'Ding';
 
 export class Mention extends Notification {
     customSound: boolean;
-    channel: {id: string};// TODO TS DEVIN: Channel from mattermost-redux
+    channel: {id: string}; // TODO: Channel from mattermost-redux
     teamId: string;
 
     constructor(customOptions: MentionOptions, channel: {id: string}, teamId: string) {

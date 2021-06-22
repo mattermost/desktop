@@ -7,8 +7,9 @@ import 'renderer/css/modals.css';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import {MODAL_CANCEL, MODAL_RESULT} from 'common/communication';
 import {TeamWithIndex} from 'types/config';
+
+import {MODAL_CANCEL, MODAL_RESULT} from 'common/communication';
 
 import NewTeamModal from '../../components/NewTeamModal'; //'./addServer.jsx';
 

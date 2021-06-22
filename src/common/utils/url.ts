@@ -41,7 +41,6 @@ function parseURL(inputURL: URL | string) {
     try {
         return new URL(inputURL.replace(/([^:]\/)\/+/g, '$1'));
     } catch (e) {
-        console.log('parseURL failed to parse url', inputURL, e);
         return undefined;
     }
 }

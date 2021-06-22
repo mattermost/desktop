@@ -5,9 +5,10 @@ import {Certificate} from 'electron/renderer';
 import React, {Fragment} from 'react';
 import {Modal, Button, Table, Row, Col} from 'react-bootstrap';
 
-import {MODAL_INFO} from 'common/communication';
 import {CertificateModalData} from 'types/certificate';
 import {ModalMessage} from 'types/modals';
+
+import {MODAL_INFO} from 'common/communication';
 
 import ShowCertificateModal from '../../components/showCertificateModal';
 
@@ -141,7 +142,6 @@ export default class SelectCertificateModal extends React.PureComponent<Props, S
                     <Table
                         striped={true}
                         hover={true}
-                        size={'sm'}
                         responsive={true}
                         className='certificate-list'
                         tabIndex={1}

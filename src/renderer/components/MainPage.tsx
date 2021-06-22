@@ -1,12 +1,14 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-// Copyright (c) 2015-2016 Yuya Ochiai
 
 import React, {Fragment} from 'react';
 import {Grid, Row} from 'react-bootstrap';
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 import {IpcRendererEvent} from 'electron/renderer';
 import {DropResult} from 'react-smooth-dnd';
+
+import {Team} from 'types/config';
 
 import {
     FOCUS_BROWSERVIEW,
@@ -35,7 +37,6 @@ import {
     FOCUS_THREE_DOT_MENU,
     GET_FULL_SCREEN_STATUS,
 } from 'common/communication';
-import {Team} from 'types/config';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
@@ -59,7 +60,7 @@ enum Status {
 type Props = {
     teams: Team[];
     showAddServerButton: boolean;
-    moveTabs: (originalOrder: number, newOrder: number) => number;
+    moveTabs: (originalOrder: number, newOrder: number) => Promise<number | undefined>;
     openMenu: () => void;
     darkMode: boolean;
     appName: string;
@@ -261,6 +262,9 @@ export default class MainPage extends React.PureComponent<Props, State> {
         }
         if (removedIndex !== addedIndex) {
             const teamIndex = await this.props.moveTabs(removedIndex, addedIndex < this.props.teams.length ? addedIndex : this.props.teams.length - 1);
+            if (!teamIndex) {
+                return;
+            }
             const name = this.props.teams[teamIndex].name;
             this.handleSelect(name, teamIndex);
         }

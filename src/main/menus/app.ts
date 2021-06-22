@@ -253,7 +253,7 @@ function createTemplate(config: Config) {
 }
 
 function createMenu(config: Config) {
-    // TODO TS DEVIN: Electron is enforcing certain variables that it doesn't need
+    // TODO: Electron is enforcing certain variables that it doesn't need
     return Menu.buildFromTemplate(createTemplate(config) as Array<MenuItemConstructorOptions | MenuItem>);
 }
 

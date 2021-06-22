@@ -1,6 +1,6 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-// Copyright (c) 2015-2016 Yuya Ochiai
 
 /* eslint-disable max-lines */
 
@@ -11,9 +11,10 @@ import {Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row, Button} f
 
 import {debounce} from 'underscore';
 
-import {GET_LOCAL_CONFIGURATION, UPDATE_CONFIGURATION, DOUBLE_CLICK_ON_WINDOW, GET_DOWNLOAD_LOCATION, SWITCH_SERVER, ADD_SERVER, RELOAD_CONFIGURATION} from 'common/communication';
 import {CombinedConfig, LocalConfiguration, Team} from 'types/config';
 import {DeepPartial} from 'types/utils';
+
+import {GET_LOCAL_CONFIGURATION, UPDATE_CONFIGURATION, DOUBLE_CLICK_ON_WINDOW, GET_DOWNLOAD_LOCATION, SWITCH_SERVER, ADD_SERVER, RELOAD_CONFIGURATION} from 'common/communication';
 
 import TeamList from './TeamList';
 import AutoSaveIndicator, {SavingState} from './AutoSaveIndicator';
@@ -107,7 +108,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
 
     getConfig = () => {
         window.ipcRenderer.invoke(GET_LOCAL_CONFIGURATION).then((config) => {
-            this.setState({ready: true, maximized: false, ...this.convertConfigDataToState(config)});
+            this.setState({ready: true, maximized: false, ...this.convertConfigDataToState(config) as Omit<State, 'ready'>});
         });
     }
 
@@ -126,7 +127,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         return newState;
     }
 
-    saveSetting = (configType: ConfigType, {key, data}: {key: keyof CombinedConfig, data: CombinedConfig[keyof CombinedConfig]}) => {
+    saveSetting = (configType: ConfigType, {key, data}: {key: keyof CombinedConfig; data: CombinedConfig[keyof CombinedConfig]}) => {
         this.saveQueue.push({
             configType,
             key,
@@ -225,7 +226,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         this.setState({
             showAddTeamForm: !this.state.showAddTeamForm,
         });
-        document.activeElement.blur();
+        (document.activeElement as HTMLElement).blur();
     }
 
     setShowTeamFormVisibility = (val: boolean) => {
@@ -266,7 +267,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         });
     }
 
-    handleBounceIconType = (event: React.ChangeEvent<HTMLInputElement>) => {
+    handleBounceIconType = (event: React.ChangeEvent<Radio & HTMLInputElement>) => {
         window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {
             key: 'notifications',
             data: {

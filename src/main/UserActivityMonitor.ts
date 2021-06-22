@@ -67,7 +67,7 @@ export default class UserActivityMonitor extends EventEmitter {
 
         this.config = Object.assign({}, this.config, config);
 
-        // TODO DEVIN TS Node typings don't map Timeout to number, but then clearInterval requires a number?
+        // TODO: Node typings don't map Timeout to number, but then clearInterval requires a number?
         this.systemIdleTimeIntervalID = setInterval(() => {
             try {
                 this.updateIdleTime(electron.powerMonitor.getSystemIdleTime());

@@ -5,9 +5,10 @@
 import electron, {app, BrowserWindow} from 'electron';
 import path from 'path';
 
+import {Args} from 'types/args';
+
 import {PRODUCTION} from 'common/utils/constants';
 import Utils from 'common/utils/util';
-import {Args} from 'types/args';
 
 const TAB_BAR_HEIGHT = 40;
 const BACK_BAR_HEIGHT = 36;

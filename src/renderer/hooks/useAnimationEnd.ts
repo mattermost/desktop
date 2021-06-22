@@ -14,7 +14,7 @@ import React from 'react';
  */
 function useAnimationEnd<T extends Element>(
     ref: React.RefObject<T>,
-    callback: (event: AnimationEvent) => void,
+    callback: (event: Event) => void,
     animationName: string,
     listenForEventBubbling = true,
 ): void {
@@ -23,7 +23,7 @@ function useAnimationEnd<T extends Element>(
             return undefined;
         }
 
-        function handleAnimationend(event: AnimationEvent) {
+        function handleAnimationend(event: Event & {animationName?: string}) {
             if (!listenForEventBubbling && event.target !== ref.current) {
                 return;
             }

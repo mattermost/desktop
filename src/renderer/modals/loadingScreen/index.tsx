@@ -4,8 +4,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import {RECEIVED_LOADING_SCREEN_DATA, GET_LOADING_SCREEN_DATA, LOADING_SCREEN_ANIMATION_FINISHED, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
 import {ModalMessage} from 'types/modals';
+
+import {RECEIVED_LOADING_SCREEN_DATA, GET_LOADING_SCREEN_DATA, LOADING_SCREEN_ANIMATION_FINISHED, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
 
 import LoadingScreen from '../../components/LoadingScreen';
 

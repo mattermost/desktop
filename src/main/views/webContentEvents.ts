@@ -207,7 +207,7 @@ export const addWebContentsEventListeners = (mmview: MattermostView, getServersF
     }
 
     const willNavigate = generateWillNavigate(getServersFunction);
-    contents.on('will-navigate', willNavigate);
+    contents.on('will-navigate', willNavigate as (e: Event, u: string) => void); // TODO: Electron types don't include sender for some reason
 
     // handle custom login requests (oath, saml):
     // 1. are we navigating to a supported local custom login path from the `/login` page?
@@ -215,7 +215,7 @@ export const addWebContentsEventListeners = (mmview: MattermostView, getServersF
     // 2. are we finished with the custom login process?
     //    - indicate custom login is NOT in progress
     const didStartNavigation = generateDidStartNavigation(getServersFunction);
-    contents.on('did-start-navigation', didStartNavigation);
+    contents.on('did-start-navigation', didStartNavigation as (e: Event, u: string) => void);
 
     const spellcheck = mmview.options.webPreferences?.spellcheck;
     const newWindow = generateNewWindowListener(getServersFunction, spellcheck);
@@ -228,8 +228,8 @@ export const addWebContentsEventListeners = (mmview: MattermostView, getServersF
 
     const removeListeners = () => {
         try {
-            contents.removeListener('will-navigate', willNavigate);
-            contents.removeListener('did-start-navigation', didStartNavigation);
+            contents.removeListener('will-navigate', willNavigate as (e: Event, u: string) => void);
+            contents.removeListener('did-start-navigation', didStartNavigation as (e: Event, u: string) => void);
             contents.removeListener('new-window', newWindow);
             contents.removeListener('page-title-updated', mmview.handleTitleUpdate);
             contents.removeListener('page-favicon-updated', mmview.handleFaviconUpdate);

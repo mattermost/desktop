@@ -14,7 +14,7 @@ import React from 'react';
  */
 function useTransitionend<T extends Element>(
     ref: React.RefObject<T>,
-    callback: (event: TransitionEvent) => void,
+    callback: (event: Event) => void,
     properties: string[],
     listenForEventBubbling = true,
 ) {
@@ -23,7 +23,7 @@ function useTransitionend<T extends Element>(
             return undefined;
         }
 
-        function handleTransitionEnd(event: TransitionEvent) {
+        function handleTransitionEnd(event: Event & {propertyName?: string}) {
             if (!listenForEventBubbling && event.target !== ref.current) {
                 return;
             }

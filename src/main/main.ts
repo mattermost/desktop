@@ -1,6 +1,6 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-// Copyright (c) 2015-2016 Yuya Ochiai
 
 /* eslint-disable max-lines */
 import fs from 'fs';
@@ -12,6 +12,12 @@ import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
+
+import {Team} from 'types/config';
+
+import {MentionData} from 'types/notification';
+
+import {Boundaries} from 'types/utils';
 
 import {
     SWITCH_SERVER,
@@ -33,10 +39,6 @@ import {
 import Config from 'common/config';
 
 import Utils from 'common/utils/util';
-
-import {Team} from 'types/config';
-import {MentionData} from 'types/notification';
-import {Boundaries} from 'types/utils';
 
 import urlUtils from 'common/utils/url';
 

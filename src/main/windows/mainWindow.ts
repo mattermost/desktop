@@ -9,9 +9,10 @@ import os from 'os';
 import {app, BrowserWindow, BrowserWindowConstructorOptions, ipcMain} from 'electron';
 import log from 'electron-log';
 
-import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS} from 'common/communication';
 import {CombinedConfig} from 'types/config';
 import {SavedWindowState} from 'types/mainWindow';
+
+import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS} from 'common/communication';
 
 import * as Validator from '../Validator';
 import ContextMenu from '../contextMenu';

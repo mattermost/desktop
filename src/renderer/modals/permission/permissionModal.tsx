@@ -4,11 +4,13 @@
 import React from 'react';
 import {Modal, Button} from 'react-bootstrap';
 
+import {PermissionType} from 'types/trustedOrigin';
+
+import {ModalMessage} from 'types/modals';
+
 import urlUtil from 'common/utils/url';
 import {MODAL_INFO} from 'common/communication';
 import {PERMISSION_DESCRIPTION} from 'common/permissions';
-import {PermissionType} from 'types/trustedOrigin';
-import {ModalMessage} from 'types/modals';
 
 type Props = {
     handleDeny: React.MouseEventHandler<Button>;

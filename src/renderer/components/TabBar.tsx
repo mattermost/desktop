@@ -1,14 +1,15 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-// Copyright (c) 2015-2016 Yuya Ochiai
 
 import React from 'react';
 import {Nav, NavItem} from 'react-bootstrap';
 import {Container, Draggable, OnDropCallback} from 'react-smooth-dnd';
 import PlusIcon from 'mdi-react/PlusIcon';
 
-import {GET_CONFIGURATION} from 'common/communication';
 import {Team} from 'types/config';
+
+import {GET_CONFIGURATION} from 'common/communication';
 
 type Props = {
     activeKey: number;

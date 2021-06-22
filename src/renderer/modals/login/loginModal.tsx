@@ -5,11 +5,12 @@
 import React from 'react';
 import {Button, Col, ControlLabel, Form, FormGroup, FormControl, Modal} from 'react-bootstrap';
 
-import {MODAL_INFO} from 'common/communication';
-import urlUtils from 'common/utils/url';
 import {LoginModalData} from 'types/auth';
 import {ModalMessage} from 'types/modals';
 import {AuthenticationResponseDetails, AuthInfo} from 'electron/renderer';
+
+import urlUtils from 'common/utils/url';
+import {MODAL_INFO} from 'common/communication';
 
 type Props = {
     onCancel: (request: AuthenticationResponseDetails) => void;

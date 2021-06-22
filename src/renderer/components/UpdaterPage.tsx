@@ -1,14 +1,14 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-// Copyright (c) 2015-2016 Yuya Ochiai
 
 import React from 'react';
 import {Button, Navbar, ProgressBar} from 'react-bootstrap';
 
 type InstallButtonProps = {
-    notifyOnly: boolean;
-    onClickInstall: React.MouseEventHandler<Button>;
-    onClickDownload: React.MouseEventHandler<Button>;
+    notifyOnly?: boolean;
+    onClickInstall?: React.MouseEventHandler<Button>;
+    onClickDownload?: React.MouseEventHandler<Button>;
 };
 
 function InstallButton(props: InstallButtonProps) {
@@ -30,15 +30,15 @@ function InstallButton(props: InstallButtonProps) {
 
 type UpdaterPageProps = {
     appName: string;
-    notifyOnly: boolean;
+    notifyOnly?: boolean;
     isDownloading?: boolean;
     progress?: number;
-    onClickInstall: React.MouseEventHandler<Button>;
-    onClickDownload: React.MouseEventHandler<Button>;
-    onClickReleaseNotes: React.MouseEventHandler<HTMLAnchorElement>;
-    onClickRemind: React.MouseEventHandler<Button>;
-    onClickSkip: React.MouseEventHandler<Button>;
-    onClickCancel: React.MouseEventHandler<Button>;
+    onClickInstall?: React.MouseEventHandler<Button>;
+    onClickDownload?: React.MouseEventHandler<Button>;
+    onClickReleaseNotes?: React.MouseEventHandler<HTMLAnchorElement>;
+    onClickRemind?: React.MouseEventHandler<Button>;
+    onClickSkip?: React.MouseEventHandler<Button>;
+    onClickCancel?: React.MouseEventHandler<Button>;
 };
 
 function UpdaterPage(props: UpdaterPageProps) {

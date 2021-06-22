@@ -4,9 +4,10 @@
 import {shell, Notification} from 'electron';
 import log from 'electron-log';
 
-import {PLAY_SOUND} from 'common/communication';
 import {MentionData} from 'types/notification';
 import {ServerFromURL} from 'types/utils';
+
+import {PLAY_SOUND} from 'common/communication';
 
 import * as windowManager from '../windows/windowManager';
 

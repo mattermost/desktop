@@ -1,6 +1,6 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-// Copyright (c) 2015-2016 Yuya Ochiai
 
 import React from 'react';
 import {ListGroup} from 'react-bootstrap';
@@ -37,7 +37,7 @@ export default class TeamList extends React.PureComponent<Props, State> {
             team: {
                 url: '',
                 name: '',
-                index: 0, // TODO DEVIN TS
+                index: 0,
                 order: props.teams.length,
             },
         };
@@ -73,7 +73,7 @@ export default class TeamList extends React.PureComponent<Props, State> {
             team: {
                 url: '',
                 name: '',
-                index: false,
+                index: 0,
                 order: teams.length,
             },
         });
@@ -91,14 +91,14 @@ export default class TeamList extends React.PureComponent<Props, State> {
 
     handleTeamRemovePrompt = (index: number) => {
         return () => {
-            document.activeElement.blur();
+            (document.activeElement as HTMLElement).blur();
             this.openServerRemoveModal(index);
         };
     }
 
     handleTeamEditing = (team: Team, index: number) => {
         return () => {
-            document.activeElement.blur();
+            (document.activeElement as HTMLElement).blur();
             this.setState({
                 showEditTeamForm: true,
                 team: {
@@ -154,7 +154,6 @@ export default class TeamList extends React.PureComponent<Props, State> {
                         this.props.updateTeam(newTeam.index, teamData);
                     }
                     this.setState({
-                        showNewTeamModal: false,
                         showEditTeamForm: false,
                         team: {
                             name: '',
