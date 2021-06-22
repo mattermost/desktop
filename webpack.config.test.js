@@ -23,7 +23,7 @@ module.exports = merge(base, {
     },
     module: {
         rules: [{
-            test: /\.(js|jsx)?$/,
+            test: /\.(js|jsx|ts|tsx)?$/,
             use: ['babel-loader'],
         }],
     },
