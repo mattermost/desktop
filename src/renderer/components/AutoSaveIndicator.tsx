@@ -31,6 +31,7 @@ function getClassNameAndMessage(savingState: SavingState, errorMessage?: string)
 }
 
 type Props = {
+    id?: string;
     savingState: SavingState;
     errorMessage?: string;
 };

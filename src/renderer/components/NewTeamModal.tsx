@@ -51,7 +51,7 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
         this.setState({
             teamName: this.props.team ? this.props.team.name : '',
             teamUrl: this.props.team ? this.props.team.url : '',
-            teamIndex: this.props.team ? this.props.team.index : false,
+            teamIndex: this.props.team?.index,
             teamOrder: this.props.team ? this.props.team.order : (this.props.currentOrder || 0),
             saveStarted: false,
         });
@@ -127,7 +127,7 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
                 this.props.onSave?.({
                     url: this.state.teamUrl,
                     name: this.state.teamName,
-                    index: this.state.teamIndex,
+                    index: this.state.teamIndex!,
                     order: this.state.teamOrder,
                 });
             }

@@ -37,7 +37,7 @@ export default class TeamList extends React.PureComponent<Props, State> {
             team: {
                 url: '',
                 name: '',
-                index: false,
+                index: 0, // TODO DEVIN TS
                 order: props.teams.length,
             },
         };
@@ -136,7 +136,7 @@ export default class TeamList extends React.PureComponent<Props, State> {
                         team: {
                             name: '',
                             url: '',
-                            index: false,
+                            index: 0,
                             order: this.props.teams.length,
                         },
                     });
@@ -159,7 +159,7 @@ export default class TeamList extends React.PureComponent<Props, State> {
                         team: {
                             name: '',
                             url: '',
-                            index: false,
+                            index: 0,
                             order: newTeam.order + 1,
                         },
                     });

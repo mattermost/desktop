@@ -65,7 +65,7 @@ export default function ErrorView(props: Props) {
                                         target='_blank'
                                         rel='noreferrer'
                                     >
-                                        {props.errorInfo?.validatedURL}
+                                        {props.url}
                                     </a>{' from a browser window.'}</li>
                             </ul>
                             <br/>

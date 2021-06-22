@@ -228,7 +228,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         document.activeElement.blur();
     }
 
-    setShowTeamFormVisibility = (val) => {
+    setShowTeamFormVisibility = (val: boolean) => {
         this.setState({
             showAddTeamForm: val,
         });
@@ -266,7 +266,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         });
     }
 
-    handleBounceIconType = (event) => {
+    handleBounceIconType = (event: React.ChangeEvent<HTMLInputElement>) => {
         window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {
             key: 'notifications',
             data: {
@@ -277,7 +277,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         this.setState({
             notifications: {
                 ...this.state.notifications,
-                bounceIconType: event.target.value,
+                bounceIconType: event.target.value as 'critical' | 'informational',
             },
         });
     }

@@ -633,14 +633,14 @@ function handleCloseAppMenu() {
     WindowManager.focusBrowserView();
 }
 
-function handleUpdateMenuEvent(event, menuConfig) {
+function handleUpdateMenuEvent(event: IpcMainEvent, menuConfig: Config) {
     const aMenu = appMenu.createMenu(menuConfig);
     Menu.setApplicationMenu(aMenu);
     aMenu.addListener('menu-will-close', handleCloseAppMenu);
 
     // set up context menu for tray icon
     if (shouldShowTrayIcon()) {
-        const tMenu = trayMenu.createMenu(menuConfig.data);
+        const tMenu = trayMenu.createMenu(menuConfig.data!);
         setTrayMenu(tMenu);
     }
 }
