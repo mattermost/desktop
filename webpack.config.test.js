@@ -16,7 +16,7 @@ const WEBSERVER_PORT = 9001;
 module.exports = merge(base, {
     entry: {
         test: './test/unit/index.js',
-        e2e: './test/specs/app_test.js',
+        e2e: './test/specs/index.js',
     },
     output: {
         path: path.resolve(__dirname, 'dist/tests'),

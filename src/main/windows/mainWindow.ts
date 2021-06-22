@@ -90,7 +90,11 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
     const mainWindow = new BrowserWindow(windowOptions);
     mainWindow.setMenuBarVisibility(false);
 
-    ipcMain.handle(GET_FULL_SCREEN_STATUS, () => mainWindow.isFullScreen());
+    try {
+        ipcMain.handle(GET_FULL_SCREEN_STATUS, () => mainWindow.isFullScreen());
+    } catch (e) {
+        log.error('Tried to register second handler, skipping');
+    }
 
     const localURL = getLocalURLString('index.html');
     mainWindow.loadURL(localURL).catch(
