@@ -7,22 +7,22 @@ import {Button, Navbar, ProgressBar} from 'react-bootstrap';
 
 type InstallButtonProps = {
     notifyOnly?: boolean;
-    onClickInstall?: React.MouseEventHandler<Button>;
-    onClickDownload?: React.MouseEventHandler<Button>;
+    onClickInstall?: React.MouseEventHandler<HTMLButtonElement>;
+    onClickDownload?: React.MouseEventHandler<HTMLButtonElement>;
 };
 
 function InstallButton(props: InstallButtonProps) {
     if (props.notifyOnly) {
         return (
             <Button
-                bsStyle='primary'
+                variant='primary'
                 onClick={props.onClickDownload}
             >{'Download Update'}</Button>
         );
     }
     return (
         <Button
-            bsStyle='primary'
+            variant='primary'
             onClick={props.onClickInstall}
         >{'Install Update'}</Button>
     );
@@ -33,12 +33,12 @@ type UpdaterPageProps = {
     notifyOnly?: boolean;
     isDownloading?: boolean;
     progress?: number;
-    onClickInstall?: React.MouseEventHandler<Button>;
-    onClickDownload?: React.MouseEventHandler<Button>;
+    onClickInstall?: React.MouseEventHandler<HTMLButtonElement>;
+    onClickDownload?: React.MouseEventHandler<HTMLButtonElement>;
     onClickReleaseNotes?: React.MouseEventHandler<HTMLAnchorElement>;
-    onClickRemind?: React.MouseEventHandler<Button>;
-    onClickSkip?: React.MouseEventHandler<Button>;
-    onClickCancel?: React.MouseEventHandler<Button>;
+    onClickRemind?: React.MouseEventHandler<HTMLButtonElement>;
+    onClickSkip?: React.MouseEventHandler<HTMLButtonElement>;
+    onClickCancel?: React.MouseEventHandler<HTMLButtonElement>;
 };
 
 function UpdaterPage(props: UpdaterPageProps) {
@@ -47,11 +47,10 @@ function UpdaterPage(props: UpdaterPageProps) {
         footer = (
             <Navbar
                 className='UpdaterPage-footer'
-                fixedBottom={true}
-                fluid={true}
+                fixed='bottom'
             >
                 <ProgressBar
-                    active={true}
+                    animated={true}
                     now={props.progress}
                     label={`${props.progress}%`}
                 />
@@ -66,17 +65,16 @@ function UpdaterPage(props: UpdaterPageProps) {
         footer = (
             <Navbar
                 className='UpdaterPage-footer'
-                fixedBottom={true}
-                fluid={true}
+                fixed='bottom'
             >
                 <Button
                     className='UpdaterPage-skipButton'
-                    bsStyle='link'
+                    variant='link'
                     onClick={props.onClickSkip}
                 >{'Skip this version'}</Button>
                 <div className='pull-right'>
                     <Button
-                        bsStyle='link'
+                        variant='link'
                         onClick={props.onClickRemind}
                     >{'Remind me in 2 days'}</Button>
                     <InstallButton
@@ -91,7 +89,7 @@ function UpdaterPage(props: UpdaterPageProps) {
 
     return (
         <div className='UpdaterPage'>
-            <Navbar fluid={true} >
+            <Navbar>
                 <h1 className='UpdaterPage-heading'>{'New update is available'}</h1>
             </Navbar>
             <div className='container-fluid'>

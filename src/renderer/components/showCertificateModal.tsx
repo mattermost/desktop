@@ -105,6 +105,7 @@ export default class ShowCertificateModal extends React.PureComponent<Props, Sta
                         <Row>
                             <Col>
                                 <Button
+                                    variant='primary'
                                     onClick={this.handleOk}
                                     className={'primary'}
                                 >{'Close'}</Button>

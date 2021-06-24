@@ -14,15 +14,15 @@ storiesOf('Button', module).
             <Button onClick={action('clicked default')}>{'Default'}</Button>
             <Button
                 onClick={action('clicked primary')}
-                bsStyle='primary'
+                variant='primary'
             >{'Primary'}</Button>
             <Button
                 onClick={action('clicked danger')}
-                bsStyle='danger'
+                variant='danger'
             >{'Danger'}</Button>
             <Button
                 onClick={action('clicked link')}
-                bsStyle='link'
+                variant='link'
             >{'Link'}</Button>
         </ButtonToolbar>
     ));

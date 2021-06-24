@@ -69,7 +69,7 @@ body {
 }
 
 .has-error .control-label,
-.has-error .help-block {
+.has-error .form-text {
   color: #333;
 }
 

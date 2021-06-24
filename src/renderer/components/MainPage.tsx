@@ -3,7 +3,7 @@
 // See LICENSE.txt for license information.
 
 import React, {Fragment} from 'react';
-import {Grid, Row} from 'react-bootstrap';
+import {Container, Row} from 'react-bootstrap';
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 import {IpcRendererEvent} from 'electron/renderer';
 import {DropResult} from 'react-smooth-dnd';
@@ -471,10 +471,10 @@ export default class MainPage extends React.PureComponent<Props, State> {
                 className='MainPage'
                 onClick={this.focusOnWebView}
             >
-                <Grid fluid={true}>
+                <Container fluid={true}>
                     {topRow}
                     {viewsRow}
-                </Grid>
+                </Container>
             </div>
         );
     }

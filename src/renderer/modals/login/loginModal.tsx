@@ -3,7 +3,7 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 
 import React from 'react';
-import {Button, Col, ControlLabel, Form, FormGroup, FormControl, Modal} from 'react-bootstrap';
+import {Button, Col, FormLabel, Form, FormGroup, FormControl, Modal} from 'react-bootstrap';
 
 import {LoginModalData} from 'types/auth';
 import {ModalMessage} from 'types/modals';
@@ -56,7 +56,7 @@ export default class LoginModal extends React.PureComponent<Props, State> {
         }
     }
 
-    handleSubmit = (event: React.MouseEvent<Button>) => {
+    handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         this.props.onLogin(this.state.request!, this.state.username, this.state.password);
         this.setState({
@@ -67,7 +67,7 @@ export default class LoginModal extends React.PureComponent<Props, State> {
         });
     }
 
-    handleCancel = (event: React.MouseEvent<Button>) => {
+    handleCancel = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
         this.props.onCancel(this.state.request!);
         this.setState({
@@ -78,11 +78,11 @@ export default class LoginModal extends React.PureComponent<Props, State> {
         });
     }
 
-    setUsername = (e: React.ChangeEvent<FormControl & HTMLInputElement>) => {
+    setUsername = (e: React.ChangeEvent<HTMLInputElement>) => {
         this.setState({username: e.target.value});
     }
 
-    setPassword = (e: React.ChangeEvent<FormControl & HTMLInputElement>) => {
+    setPassword = (e: React.ChangeEvent<HTMLInputElement>) => {
         this.setState({password: e.target.value});
     }
 
@@ -100,7 +100,6 @@ export default class LoginModal extends React.PureComponent<Props, State> {
         return (
             <Modal
                 show={Boolean(this.state.request && this.state.authInfo)}
-                onHide={() => {}}
             >
                 <Modal.Header>
                     <Modal.Title>{'Authentication Required'}</Modal.Title>
@@ -110,12 +109,11 @@ export default class LoginModal extends React.PureComponent<Props, State> {
                         { message }
                     </p>
                     <Form
-                        horizontal={true}
                         onSubmit={this.handleSubmit}
                     >
                         <FormGroup>
                             <Col
-                                componentClass={ControlLabel}
+                                as={FormLabel}
                                 sm={2}
                             >{'User Name'}</Col>
                             <Col sm={10}>
@@ -124,7 +122,7 @@ export default class LoginModal extends React.PureComponent<Props, State> {
                                     placeholder='User Name'
                                     onChange={this.setUsername}
                                     value={this.state.username}
-                                    onClick={(e) => {
+                                    onClick={(e: React.MouseEvent<HTMLInputElement>) => {
                                         e.stopPropagation();
                                     }}
                                 />
@@ -132,7 +130,7 @@ export default class LoginModal extends React.PureComponent<Props, State> {
                         </FormGroup>
                         <FormGroup>
                             <Col
-                                componentClass={ControlLabel}
+                                as={FormLabel}
                                 sm={2}
                             >{'Password'}</Col>
                             <Col sm={10}>
@@ -141,7 +139,7 @@ export default class LoginModal extends React.PureComponent<Props, State> {
                                     placeholder='Password'
                                     onChange={this.setPassword}
                                     value={this.state.password}
-                                    onClick={(e) => {
+                                    onClick={(e: React.MouseEvent<HTMLInputElement>) => {
                                         e.stopPropagation();
                                     }}
                                 />
@@ -152,7 +150,7 @@ export default class LoginModal extends React.PureComponent<Props, State> {
                                 <div className='pull-right'>
                                     <Button
                                         type='submit'
-                                        bsStyle='primary'
+                                        variant='primary'
                                     >{'Login'}</Button>
                                     { ' ' }
                                     <Button onClick={this.handleCancel}>{'Cancel'}</Button>

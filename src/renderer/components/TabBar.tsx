@@ -3,9 +3,10 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Nav, NavItem} from 'react-bootstrap';
+import {Nav, NavItem, NavLink} from 'react-bootstrap';
 import {Container, Draggable, OnDropCallback} from 'react-smooth-dnd';
 import PlusIcon from 'mdi-react/PlusIcon';
+import classNames from 'classnames';
 
 import {Team} from 'types/config';
 
@@ -79,12 +80,10 @@ export default class TabBar extends React.PureComponent<Props, State> { // need 
             const id = `teamTabItem${index}`;
             const navItem = () => (
                 <NavItem
+                    as='li'
                     key={index}
                     id={id}
-                    eventKey={index}
                     draggable={false}
-                    ref={id}
-                    active={this.props.activeKey === index}
                     onMouseDown={() => {
                         this.props.onSelect(team.name, index);
                     }}
@@ -92,14 +91,20 @@ export default class TabBar extends React.PureComponent<Props, State> { // need 
                         this.props.onSelect(team.name, index);
                     }}
                     title={team.name}
-                    disabled={this.props.tabsDisabled}
                 >
-                    <div className='TabBar-tabSeperator'>
-                        <span>
-                            {team.name}
-                        </span>
-                        { badgeDiv }
-                    </div>
+                    <NavLink
+                        eventKey={index}
+                        draggable={false}
+                        active={this.props.activeKey === index}
+                        disabled={this.props.tabsDisabled}
+                    >
+                        <div className='TabBar-tabSeperator'>
+                            <span>
+                                {team.name}
+                            </span>
+                            { badgeDiv }
+                        </div>
+                    </NavLink>
                 </NavItem>
             );
 
@@ -107,36 +112,43 @@ export default class TabBar extends React.PureComponent<Props, State> { // need 
                 <Draggable
                     key={id}
                     render={navItem}
-                    className='teamTabItem'
+                    className={classNames('teamTabItem', {
+                        active: this.props.activeKey === index,
+                    })}
                 />);
         });
         if (this.props.showAddServerButton === true) {
             tabs.push(
                 <NavItem
+                    as='li'
                     className='TabBar-addServerButton'
                     key='addServerButton'
                     id='addServerButton'
-                    eventKey='addServerButton'
                     draggable={false}
                     title='Add new server'
                     onSelect={() => {
                         this.props.onAddServer();
                     }}
-                    disabled={this.props.tabsDisabled}
                 >
-                    <div className='TabBar-tabSeperator'>
-                        <PlusIcon size={20}/>
-                    </div>
+                    <NavLink
+                        eventKey='addServerButton'
+                        draggable={false}
+                        disabled={this.props.tabsDisabled}
+                    >
+                        <div className='TabBar-tabSeperator'>
+                            <PlusIcon size={20}/>
+                        </div>
+                    </NavLink>
                 </NavItem>,
             );
         }
 
-        const navContainer = (ref: React.RefObject<Nav>) => (
+        const navContainer = (ref: React.RefObject<HTMLDivElement>) => (
             <Nav
                 ref={ref}
                 className={`smooth-dnd-container TabBar${this.props.isDarkMode ? ' darkMode' : ''}`}
                 id={this.props.id}
-                bsStyle='tabs'
+                variant='tabs'
             >
                 { tabs }
             </Nav>

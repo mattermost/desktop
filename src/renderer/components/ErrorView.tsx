@@ -5,7 +5,7 @@
 // ErrorCode: https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
 
 import React from 'react';
-import {Grid, Row, Col} from 'react-bootstrap';
+import {Container, Row, Col} from 'react-bootstrap';
 
 type Props = {
     errorInfo?: string;
@@ -22,9 +22,8 @@ export default function ErrorView(props: Props) {
     }
 
     return (
-        <Grid
+        <Container
             id={props.id}
-            bsClass={classNames.join(' ')}
         >
             <div className='ErrorView-table'>
                 <div className='ErrorView-cell'>
@@ -82,6 +81,6 @@ export default function ErrorView(props: Props) {
                     </Row>
                 </div>
             </div>
-        </Grid>
+        </Container>
     );
 }

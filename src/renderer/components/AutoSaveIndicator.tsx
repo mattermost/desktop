@@ -43,7 +43,7 @@ export default function AutoSaveIndicator(props: Props) {
         <Alert
             className={className}
             {...rest}
-            bsStyle={savingState === 'error' ? 'danger' : 'info'}
+            variant={savingState === 'error' ? 'danger' : 'info'}
         >
             {message}
         </Alert>

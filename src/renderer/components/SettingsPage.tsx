@@ -7,7 +7,7 @@
 import 'renderer/css/settings.css';
 
 import React from 'react';
-import {Checkbox, Col, FormGroup, Grid, HelpBlock, Navbar, Radio, Row, Button} from 'react-bootstrap';
+import {FormCheck, Col, FormGroup, FormText, Container, Navbar, Row, Button} from 'react-bootstrap';
 
 import {debounce} from 'underscore';
 
@@ -52,16 +52,16 @@ function backToIndex(serverName: string) {
 }
 
 export default class SettingsPage extends React.PureComponent<Record<string, never>, State> {
-    trayIconThemeRef: React.RefObject<FormGroup>;
+    trayIconThemeRef: React.RefObject<HTMLDivElement>;
     downloadLocationRef: React.RefObject<HTMLInputElement>;
-    showTrayIconRef: React.RefObject<Checkbox>;
-    autostartRef: React.RefObject<Checkbox>;
-    minimizeToTrayRef: React.RefObject<Checkbox>;
-    flashWindowRef: React.RefObject<Checkbox>;
-    bounceIconRef: React.RefObject<Checkbox>;
-    showUnreadBadgeRef: React.RefObject<Checkbox>;
-    useSpellCheckerRef: React.RefObject<Checkbox>;
-    enableHardwareAccelerationRef: React.RefObject<Checkbox>;
+    showTrayIconRef: React.RefObject<HTMLInputElement>;
+    autostartRef: React.RefObject<HTMLInputElement>;
+    minimizeToTrayRef: React.RefObject<HTMLInputElement>;
+    flashWindowRef: React.RefObject<HTMLInputElement>;
+    bounceIconRef: React.RefObject<HTMLInputElement>;
+    showUnreadBadgeRef: React.RefObject<HTMLInputElement>;
+    useSpellCheckerRef: React.RefObject<HTMLInputElement>;
+    enableHardwareAccelerationRef: React.RefObject<HTMLInputElement>;
 
     saveQueue: SaveQueueItem[];
 
@@ -186,7 +186,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
     }
 
     handleChangeShowTrayIcon = () => {
-        const shouldShowTrayIcon = !this.showTrayIconRef.current?.props.checked;
+        const shouldShowTrayIcon = !this.showTrayIconRef.current?.checked;
         window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'showTrayIcon', data: shouldShowTrayIcon});
         this.setState({
             showTrayIcon: shouldShowTrayIcon,
@@ -207,14 +207,14 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
     }
 
     handleChangeAutoStart = () => {
-        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'autostart', data: !this.autostartRef.current?.props.checked});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'autostart', data: !this.autostartRef.current?.checked});
         this.setState({
-            autostart: !this.autostartRef.current?.props.checked,
+            autostart: !this.autostartRef.current?.checked,
         });
     }
 
     handleChangeMinimizeToTray = () => {
-        const shouldMinimizeToTray = this.state.showTrayIcon && !this.minimizeToTrayRef.current?.props.checked;
+        const shouldMinimizeToTray = this.state.showTrayIcon && !this.minimizeToTrayRef.current?.checked;
 
         window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'minimizeToTray', data: shouldMinimizeToTray});
         this.setState({
@@ -240,13 +240,13 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
             key: 'notifications',
             data: {
                 ...this.state.notifications,
-                flashWindow: this.flashWindowRef.current?.props.checked ? 0 : 2,
+                flashWindow: this.flashWindowRef.current?.checked ? 0 : 2,
             },
         });
         this.setState({
             notifications: {
                 ...this.state.notifications,
-                flashWindow: this.flashWindowRef.current?.props.checked ? 0 : 2,
+                flashWindow: this.flashWindowRef.current?.checked ? 0 : 2,
             },
         });
     }
@@ -256,18 +256,18 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
             key: 'notifications',
             data: {
                 ...this.state.notifications,
-                bounceIcon: !this.bounceIconRef.current?.props.checked,
+                bounceIcon: !this.bounceIconRef.current?.checked,
             },
         });
         this.setState({
             notifications: {
                 ...this.state.notifications,
-                bounceIcon: !this.bounceIconRef.current?.props.checked,
+                bounceIcon: !this.bounceIconRef.current?.checked,
             },
         });
     }
 
-    handleBounceIconType = (event: React.ChangeEvent<Radio & HTMLInputElement>) => {
+    handleBounceIconType = (event: React.ChangeEvent<HTMLInputElement>) => {
         window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {
             key: 'notifications',
             data: {
@@ -284,23 +284,23 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
     }
 
     handleShowUnreadBadge = () => {
-        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'showUnreadBadge', data: !this.showUnreadBadgeRef.current?.props.checked});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'showUnreadBadge', data: !this.showUnreadBadgeRef.current?.checked});
         this.setState({
-            showUnreadBadge: !this.showUnreadBadgeRef.current?.props.checked,
+            showUnreadBadge: !this.showUnreadBadgeRef.current?.checked,
         });
     }
 
     handleChangeUseSpellChecker = () => {
-        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'useSpellChecker', data: !this.useSpellCheckerRef.current?.props.checked});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'useSpellChecker', data: !this.useSpellCheckerRef.current?.checked});
         this.setState({
-            useSpellChecker: !this.useSpellCheckerRef.current?.props.checked,
+            useSpellChecker: !this.useSpellCheckerRef.current?.checked,
         });
     }
 
     handleChangeEnableHardwareAcceleration = () => {
-        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'enableHardwareAcceleration', data: !this.enableHardwareAccelerationRef.current?.props.checked});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'enableHardwareAcceleration', data: !this.enableHardwareAccelerationRef.current?.checked});
         this.setState({
-            enableHardwareAcceleration: !this.enableHardwareAccelerationRef.current?.props.checked,
+            enableHardwareAcceleration: !this.enableHardwareAccelerationRef.current?.checked,
         });
     }
 
@@ -468,7 +468,8 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         // MacOS has an option in the Dock, to set the app to autostart, so we choose to not support this option for OSX
         if (window.process.platform === 'win32' || window.process.platform === 'linux') {
             options.push(
-                <Checkbox
+                <FormCheck
+                    type='checkbox'
                     key='inputAutoStart'
                     id='inputAutoStart'
                     ref={this.autostartRef}
@@ -476,14 +477,15 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     onChange={this.handleChangeAutoStart}
                 >
                     {'Start app on login'}
-                    <HelpBlock>
+                    <FormText>
                         {'If enabled, the app starts automatically when you log in to your machine.'}
-                    </HelpBlock>
-                </Checkbox>);
+                    </FormText>
+                </FormCheck>);
         }
 
         options.push(
-            <Checkbox
+            <FormCheck
+                type='checkbox'
                 key='inputSpellChecker'
                 id='inputSpellChecker'
                 ref={this.useSpellCheckerRef}
@@ -491,16 +493,17 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 onChange={this.handleChangeUseSpellChecker}
             >
                 {'Check spelling'}
-                <HelpBlock>
+                <FormText>
                     {'Highlight misspelled words in your messages based on your system language configuration. '}
                     {'Setting takes effect after restarting the app.'}
-                </HelpBlock>
-            </Checkbox>);
+                </FormText>
+            </FormCheck>);
 
         if (window.process.platform === 'darwin' || window.process.platform === 'win32') {
             const TASKBAR = window.process.platform === 'win32' ? 'taskbar' : 'Dock';
             options.push(
-                <Checkbox
+                <FormCheck
+                    type='checkbox'
                     key='inputShowUnreadBadge'
                     id='inputShowUnreadBadge'
                     ref={this.showUnreadBadgeRef}
@@ -508,15 +511,16 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     onChange={this.handleShowUnreadBadge}
                 >
                     {`Show red badge on ${TASKBAR} icon to indicate unread messages`}
-                    <HelpBlock>
+                    <FormText>
                         {`Regardless of this setting, mentions are always indicated with a red badge and item count on the ${TASKBAR} icon.`}
-                    </HelpBlock>
-                </Checkbox>);
+                    </FormText>
+                </FormCheck>);
         }
 
         if (window.process.platform === 'win32' || window.process.platform === 'linux') {
             options.push(
-                <Checkbox
+                <FormCheck
+                    type='checkbox'
                     key='flashWindow'
                     id='inputflashWindow'
                     ref={this.flashWindowRef}
@@ -524,10 +528,10 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     onChange={this.handleFlashWindow}
                 >
                     {'Flash app window and taskbar icon when a new message is received'}
-                    <HelpBlock>
+                    <FormText>
                         {'If enabled, app window and taskbar icon flash for a few seconds when a new message is received.'}
-                    </HelpBlock>
-                </Checkbox>);
+                    </FormText>
+                </FormCheck>);
         }
 
         if (window.process.platform === 'darwin') {
@@ -535,7 +539,8 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 <FormGroup
                     key='OptionsForm'
                 >
-                    <Checkbox
+                    <FormCheck
+                        type='checkbox'
                         inline={true}
                         key='bounceIcon'
                         id='inputBounceIcon'
@@ -545,8 +550,9 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         style={{marginRight: '10px'}}
                     >
                         {'Bounce the Dock icon'}
-                    </Checkbox>
-                    <Radio
+                    </FormCheck>
+                    <FormCheck
+                        type='radio'
                         inline={true}
                         name='bounceIconType'
                         value='informational'
@@ -559,9 +565,10 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         onChange={this.handleBounceIconType}
                     >
                         {'once'}
-                    </Radio>
+                    </FormCheck>
                     {' '}
-                    <Radio
+                    <FormCheck
+                        type='radio'
                         inline={true}
                         name='bounceIconType'
                         value='critical'
@@ -570,19 +577,20 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         onChange={this.handleBounceIconType}
                     >
                         {'until I open the app'}
-                    </Radio>
-                    <HelpBlock
+                    </FormCheck>
+                    <FormText
                         style={{marginLeft: '20px'}}
                     >
                         {'If enabled, the Dock icon bounces once or until the user opens the app when a new notification is received.'}
-                    </HelpBlock>
+                    </FormText>
                 </FormGroup>,
             );
         }
 
         if (window.process.platform === 'darwin' || window.process.platform === 'linux') {
             options.push(
-                <Checkbox
+                <FormCheck
+                    type='checkbox'
                     key='inputShowTrayIcon'
                     id='inputShowTrayIcon'
                     ref={this.showTrayIconRef}
@@ -590,10 +598,10 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     onChange={this.handleChangeShowTrayIcon}
                 >
                     {window.process.platform === 'darwin' ? `Show ${this.state.appName} icon in the menu bar` : 'Show icon in the notification area'}
-                    <HelpBlock>
+                    <FormText>
                         {'Setting takes effect after restarting the app.'}
-                    </HelpBlock>
-                </Checkbox>);
+                    </FormText>
+                </FormCheck>);
         }
 
         if (window.process.platform === 'linux') {
@@ -604,7 +612,8 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     style={{marginLeft: '20px'}}
                 >
                     {'Icon theme: '}
-                    <Radio
+                    <FormCheck
+                        type='radio'
                         inline={true}
                         name='trayIconTheme'
                         value='light'
@@ -612,22 +621,24 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         onChange={() => this.handleChangeTrayIconTheme('light')}
                     >
                         {'Light'}
-                    </Radio>
+                    </FormCheck>
                     {' '}
-                    <Radio
+                    <FormCheck
+                        type='radio'
                         inline={true}
                         name='trayIconTheme'
                         value='dark'
                         defaultChecked={this.state.trayIconTheme === 'dark'}
                         onChange={() => this.handleChangeTrayIconTheme('dark')}
-                    >{'Dark'}</Radio>
+                    >{'Dark'}</FormCheck>
                 </FormGroup>,
             );
         }
 
         if (window.process.platform === 'linux') {
             options.push(
-                <Checkbox
+                <FormCheck
+                    type='radio'
                     key='inputMinimizeToTray'
                     id='inputMinimizeToTray'
                     ref={this.minimizeToTrayRef}
@@ -636,15 +647,16 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     onChange={this.handleChangeMinimizeToTray}
                 >
                     {'Leave app running in notification area when application window is closed'}
-                    <HelpBlock>
+                    <FormText>
                         {'If enabled, the app stays running in the notification area after app window is closed.'}
                         {this.state.trayWasVisible || !this.state.showTrayIcon ? '' : ' Setting takes effect after restarting the app.'}
-                    </HelpBlock>
-                </Checkbox>);
+                    </FormText>
+                </FormCheck>);
         }
 
         options.push(
-            <Checkbox
+            <FormCheck
+                type='checkbox'
                 key='inputEnableHardwareAcceleration'
                 id='inputEnableHardwareAcceleration'
                 ref={this.enableHardwareAccelerationRef}
@@ -652,11 +664,11 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 onChange={this.handleChangeEnableHardwareAcceleration}
             >
                 {'Use GPU hardware acceleration'}
-                <HelpBlock>
+                <FormText>
                     {'If enabled, Mattermost UI is rendered more efficiently but can lead to decreased stability for some systems.'}
                     {' Setting takes effect after restarting the app.'}
-                </HelpBlock>
-            </Checkbox>,
+                </FormText>
+            </FormCheck>,
         );
 
         options.push(
@@ -679,9 +691,9 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 >
                     <span>{'Change'}</span>
                 </Button>
-                <HelpBlock>
+                <FormText>
                     {'Specify the folder where files will download.'}
-                </HelpBlock>
+                </FormText>
             </div>,
         );
 
@@ -742,11 +754,11 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                             <h1 style={settingsPage.heading}>{'Settings'}</h1>
                         </div>
                     </Navbar>
-                    <Grid
+                    <Container
                         className='settingsPage'
                     >
                         {waitForIpc}
-                    </Grid>
+                    </Container>
                 </div>
             </div>
         );
