@@ -51,10 +51,13 @@
     "lint:js": "eslint --ignore-path .gitignore --ignore-pattern node_modules --ext .js --ext .jsx --ext .ts --ext .tsx .",
     "lint:js-quiet": "eslint --ignore-path .gitignore --ignore-pattern node_modules --ext .js --ext .jsx --ext .ts --ext .tsx . --quiet",
     "fix:js": "eslint --ignore-path .gitignore --ignore-pattern node_modules --quiet --ext .js --ext .jsx --ext .ts --ext .tsx . --fix",
-    "check-build-config": "node -r @babel/register scripts/check_build_config.js",
+    "check-build-config": "npm-run-all check-build-config:build check-build-config:run",
+    "check-build-config:build": "babel ./src/common/config/buildConfig.ts -o ./dist/buildConfig.js",
+    "check-build-config:run": "node -r @babel/register scripts/check_build_config.js",
     "check-types": "tsc"
   },
   "devDependencies": {
+    "@babel/cli": "^7.14.5",
     "@babel/core": "^7.2.0",
     "@babel/plugin-proposal-class-properties": "^7.8.3",
     "@babel/plugin-proposal-object-rest-spread": "^7.2.0",
