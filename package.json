@@ -120,7 +120,7 @@
   "dependencies": {
     "@hapi/joi": "^16.1.8",
     "auto-launch": "^5.0.5",
-    "bootstrap": "^3.3.7",
+    "bootstrap": "^4.6.0",
     "brace-expansion": "^2.0.0",
     "classnames": "^2.3.1",
     "electron-context-menu": "^2.5.0",

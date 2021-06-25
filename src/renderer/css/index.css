@@ -86,6 +86,7 @@ body {
   overflow: hidden;
   height: 36px;
   background-color: rgba(0,0,0,0.1);
+  width: 100%;
 }
 
 .topBar>.topBar-bg.unfocused {
