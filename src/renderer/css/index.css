@@ -45,6 +45,7 @@
 
 html {
   height: 100%;
+  font-size: 14px;
 }
 body {
   min-height: 100%;
@@ -68,8 +69,8 @@ body {
   transition: opacity 500ms ease-in-out;
 }
 
-.has-error .control-label,
-.has-error .form-text {
+:invalid .col-form-label,
+:invalid .form-text {
   color: #333;
 }
 

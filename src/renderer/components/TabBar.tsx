@@ -85,10 +85,9 @@ export default class TabBar extends React.PureComponent<Props, State> { // need 
                     id={id}
                     draggable={false}
                     onMouseDown={() => {
-                        this.props.onSelect(team.name, index);
-                    }}
-                    onSelect={() => {
-                        this.props.onSelect(team.name, index);
+                        if (!this.props.tabsDisabled) {
+                            this.props.onSelect(team.name, index);
+                        }
                     }}
                     title={team.name}
                 >
@@ -97,6 +96,9 @@ export default class TabBar extends React.PureComponent<Props, State> { // need 
                         draggable={false}
                         active={this.props.activeKey === index}
                         disabled={this.props.tabsDisabled}
+                        onSelect={() => {
+                            this.props.onSelect(team.name, index);
+                        }}
                     >
                         <div className='TabBar-tabSeperator'>
                             <span>
@@ -126,14 +128,14 @@ export default class TabBar extends React.PureComponent<Props, State> { // need 
                     id='addServerButton'
                     draggable={false}
                     title='Add new server'
-                    onSelect={() => {
-                        this.props.onAddServer();
-                    }}
                 >
                     <NavLink
                         eventKey='addServerButton'
                         draggable={false}
                         disabled={this.props.tabsDisabled}
+                        onSelect={() => {
+                            this.props.onAddServer();
+                        }}
                     >
                         <div className='TabBar-tabSeperator'>
                             <PlusIcon size={20}/>

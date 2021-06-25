@@ -173,7 +173,7 @@ button.default:focus {
   color: #a94442;
 }
 
-.has-error .form-control {
+:invalid .form-control {
   border-color: #a94442;
 }
 
