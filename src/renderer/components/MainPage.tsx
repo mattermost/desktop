@@ -4,9 +4,9 @@
 
 import React, {Fragment} from 'react';
 import {Container, Row} from 'react-bootstrap';
+import {DropResult} from 'react-beautiful-dnd';
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 import {IpcRendererEvent} from 'electron/renderer';
-import {DropResult} from 'react-smooth-dnd';
 
 import {Team} from 'types/config';
 
@@ -256,18 +256,17 @@ export default class MainPage extends React.PureComponent<Props, State> {
     }
 
     handleDragAndDrop = async (dropResult: DropResult) => {
-        const {removedIndex, addedIndex} = dropResult;
-        if (removedIndex === null || addedIndex === null) {
+        const removedIndex = dropResult.source.index;
+        const addedIndex = dropResult.destination?.index;
+        if (addedIndex === undefined || removedIndex === addedIndex) {
             return;
         }
-        if (removedIndex !== addedIndex) {
-            const teamIndex = await this.props.moveTabs(removedIndex, addedIndex < this.props.teams.length ? addedIndex : this.props.teams.length - 1);
-            if (!teamIndex) {
-                return;
-            }
-            const name = this.props.teams[teamIndex].name;
-            this.handleSelect(name, teamIndex);
+        const teamIndex = await this.props.moveTabs(removedIndex, addedIndex < this.props.teams.length ? addedIndex : this.props.teams.length - 1);
+        if (!teamIndex) {
+            return;
         }
+        const name = this.props.teams[teamIndex].name;
+        this.handleSelect(name, teamIndex);
     }
 
     handleClose = (e: React.MouseEvent<HTMLDivElement>) => {

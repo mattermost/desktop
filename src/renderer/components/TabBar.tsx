@@ -4,7 +4,7 @@
 
 import React from 'react';
 import {Nav, NavItem, NavLink} from 'react-bootstrap';
-import {Container, Draggable, OnDropCallback} from 'react-smooth-dnd';
+import {DragDropContext, Draggable, DraggingStyle, Droppable, DropResult, NotDraggingStyle} from 'react-beautiful-dnd';
 import PlusIcon from 'mdi-react/PlusIcon';
 import classNames from 'classnames';
 
@@ -23,7 +23,7 @@ type Props = {
     mentionCounts: Record<string, number>;
     showAddServerButton: boolean;
     onAddServer: () => void;
-    onDrop: OnDropCallback;
+    onDrop: (result: DropResult) => void;
     tabsDisabled?: boolean;
 };
 
@@ -31,9 +31,18 @@ type State = {
     hasGPOTeams: boolean;
 };
 
-export default class TabBar extends React.PureComponent<Props, State> { // need "this"
-    container?: React.RefObject<Container>;
+function getStyle(style?: DraggingStyle | NotDraggingStyle) {
+    if (style?.transform) {
+        const axisLockX = `${style.transform.slice(0, style.transform.indexOf(','))}, 0px)`;
+        return {
+            ...style,
+            transform: axisLockX,
+        };
+    }
+    return style;
+}
 
+export default class TabBar extends React.PureComponent<Props, State> { // need "this"
     constructor(props: Props) {
         super(props);
         this.state = {
@@ -49,7 +58,7 @@ export default class TabBar extends React.PureComponent<Props, State> { // need 
 
     render() {
         const orderedTabs = this.props.teams.concat().sort((a, b) => a.order - b.order);
-        const tabs = orderedTabs.map((team) => {
+        const tabs = orderedTabs.map((team, orderedIndex) => {
             const index = this.props.teams.indexOf(team);
 
             const sessionExpired = this.props.sessionsExpired[index];
@@ -77,96 +86,106 @@ export default class TabBar extends React.PureComponent<Props, State> { // need 
                 );
             }
 
-            const id = `teamTabItem${index}`;
-            const navItem = () => (
-                <NavItem
-                    as='li'
-                    key={index}
-                    id={id}
-                    draggable={false}
-                    onMouseDown={() => {
-                        if (!this.props.tabsDisabled) {
-                            this.props.onSelect(team.name, index);
-                        }
-                    }}
-                    title={team.name}
-                >
-                    <NavLink
-                        eventKey={index}
-                        draggable={false}
-                        active={this.props.activeKey === index}
-                        disabled={this.props.tabsDisabled}
-                        onSelect={() => {
-                            this.props.onSelect(team.name, index);
-                        }}
-                    >
-                        <div className='TabBar-tabSeperator'>
-                            <span>
-                                {team.name}
-                            </span>
-                            { badgeDiv }
-                        </div>
-                    </NavLink>
-                </NavItem>
-            );
-
             return (
                 <Draggable
-                    key={id}
-                    render={navItem}
-                    className={classNames('teamTabItem', {
-                        active: this.props.activeKey === index,
-                    })}
-                />);
+                    key={index}
+                    draggableId={`teamTabItem${index}`}
+                    index={orderedIndex}
+                >
+                    {(provided, snapshot) => (
+                        <NavItem
+                            ref={provided.innerRef}
+                            as='li'
+                            id={`teamTabItem${index}`}
+                            draggable={false}
+                            title={team.name}
+                            className={classNames('teamTabItem', {
+                                active: this.props.activeKey === index,
+                                dragging: snapshot.isDragging,
+                            })}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            style={getStyle(provided.draggableProps.style)}
+                        >
+                            <NavLink
+                                eventKey={index}
+                                draggable={false}
+                                active={this.props.activeKey === index}
+                                disabled={this.props.tabsDisabled}
+                                onSelect={() => {
+                                    this.props.onSelect(team.name, index);
+                                }}
+                            >
+                                <div className='TabBar-tabSeperator'>
+                                    <span>
+                                        {team.name}
+                                    </span>
+                                    { badgeDiv }
+                                </div>
+                            </NavLink>
+                        </NavItem>
+                    )}
+                </Draggable>
+            );
         });
         if (this.props.showAddServerButton === true) {
             tabs.push(
-                <NavItem
-                    as='li'
-                    className='TabBar-addServerButton'
-                    key='addServerButton'
-                    id='addServerButton'
-                    draggable={false}
-                    title='Add new server'
+                <Draggable
+                    draggableId={'TabBar-addServerButton'}
+                    index={this.props.teams.length}
+                    isDragDisabled={true}
                 >
-                    <NavLink
-                        eventKey='addServerButton'
-                        draggable={false}
-                        disabled={this.props.tabsDisabled}
-                        onSelect={() => {
-                            this.props.onAddServer();
-                        }}
-                    >
-                        <div className='TabBar-tabSeperator'>
-                            <PlusIcon size={20}/>
-                        </div>
-                    </NavLink>
-                </NavItem>,
+                    {(provided) => (
+                        <NavItem
+                            ref={provided.innerRef}
+                            as='li'
+                            className='TabBar-addServerButton'
+                            key='addServerButton'
+                            id='addServerButton'
+                            draggable={false}
+                            title='Add new server'
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                        >
+                            <NavLink
+                                eventKey='addServerButton'
+                                draggable={false}
+                                disabled={this.props.tabsDisabled}
+                                onSelect={() => {
+                                    this.props.onAddServer();
+                                }}
+                            >
+                                <div className='TabBar-tabSeperator'>
+                                    <PlusIcon size={20}/>
+                                </div>
+                            </NavLink>
+                        </NavItem>
+                    )}
+                </Draggable>,
             );
         }
 
-        const navContainer = (ref: React.RefObject<HTMLDivElement>) => (
-            <Nav
-                ref={ref}
-                className={`smooth-dnd-container TabBar${this.props.isDarkMode ? ' darkMode' : ''}`}
-                id={this.props.id}
-                variant='tabs'
-            >
-                { tabs }
-            </Nav>
-        );
         return (
-            <Container
-                ref={this.container}
-                render={navContainer}
-                orientation='horizontal'
-                lockAxis={'x'}
-                onDrop={this.props.onDrop}
-                animationDuration={300}
-                shouldAcceptDrop={() => {
-                    return !this.state.hasGPOTeams && !this.props.tabsDisabled;
-                }}
-            />
+            <DragDropContext onDragEnd={this.props.onDrop}>
+                <Droppable
+                    isDropDisabled={this.state.hasGPOTeams || this.props.tabsDisabled}
+                    droppableId='tabBar'
+                    direction='horizontal'
+                >
+                    {(provided) => (
+                        <Nav
+                            ref={provided.innerRef}
+                            className={`TabBar${this.props.isDarkMode ? ' darkMode' : ''}`}
+                            id={this.props.id}
+                            variant='tabs'
+                            {...provided.droppableProps}
+                        >
+                            {tabs}
+                            {provided.placeholder}
+                        </Nav>
+                    )}
+                </Droppable>
+            </DragDropContext>
         );
     }
 }
