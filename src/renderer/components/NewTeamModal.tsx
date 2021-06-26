@@ -186,9 +186,7 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
 
                 <Modal.Body>
                     <form>
-                        <FormGroup
-                            validationState={this.getTeamNameValidationState()}
-                        >
+                        <FormGroup>
                             <FormLabel>{'Server Display Name'}</FormLabel>
                             <FormControl
                                 id='teamNameInput'
@@ -206,13 +204,13 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
                                     e.stopPropagation();
                                 }}
                                 autoFocus={true}
+                                isInvalid={Boolean(this.getTeamNameValidationState())}
                             />
                             <FormControl.Feedback/>
                             <FormText>{'The name of the server displayed on your desktop app tab bar.'}</FormText>
                         </FormGroup>
                         <FormGroup
                             className='NewTeamModal-noBottomSpace'
-                            validationState={this.getTeamUrlValidationState()}
                         >
                             <FormLabel>{'Server URL'}</FormLabel>
                             <FormControl
@@ -224,6 +222,7 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
                                 onClick={(e: React.MouseEvent<HTMLInputElement>) => {
                                     e.stopPropagation();
                                 }}
+                                isInvalid={Boolean(this.getTeamUrlValidationState())}
                             />
                             <FormControl.Feedback/>
                             <FormText className='NewTeamModal-noBottomSpace'>{'The URL of your Mattermost server. Must start with http:// or https://.'}</FormText>

@@ -60,7 +60,7 @@ enum Status {
 type Props = {
     teams: Team[];
     showAddServerButton: boolean;
-    moveTabs: (originalOrder: number, newOrder: number) => Promise<number | undefined>;
+    moveTabs: (originalOrder: number, newOrder: number) => number | undefined;
     openMenu: () => void;
     darkMode: boolean;
     appName: string;
@@ -261,7 +261,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
         if (addedIndex === undefined || removedIndex === addedIndex) {
             return;
         }
-        const teamIndex = await this.props.moveTabs(removedIndex, addedIndex < this.props.teams.length ? addedIndex : this.props.teams.length - 1);
+        const teamIndex = this.props.moveTabs(removedIndex, addedIndex < this.props.teams.length ? addedIndex : this.props.teams.length - 1);
         if (!teamIndex) {
             return;
         }
