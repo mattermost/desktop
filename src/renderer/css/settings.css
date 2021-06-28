@@ -30,3 +30,8 @@ body {
 #content {
   height: 100%;
 }
+
+.btn-primary {
+    background-color: #166de0;
+    border-color: #166de0;
+}
