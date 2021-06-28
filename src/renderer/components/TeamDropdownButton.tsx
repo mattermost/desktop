@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import classNames from 'classnames';
-import React, {useState} from 'react';
+import React from 'react';
 
 import {CLOSE_TEAMS_DROPDOWN, OPEN_TEAMS_DROPDOWN} from 'common/communication';
 
@@ -11,15 +11,15 @@ import '../css/components/TeamDropdownButton.css';
 type Props = {
     activeServerName: string;
     totalMentionCount: number;
+    isMenuOpen: boolean;
 }
 
 const TeamDropdownButton: React.FC<Props> = (props: Props) => {
-    const {activeServerName, totalMentionCount} = props;
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const {activeServerName, totalMentionCount, isMenuOpen} = props;
 
-    const handleToggleButton = () => {
+    const handleToggleButton = (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
         window.ipcRenderer.send(isMenuOpen ? CLOSE_TEAMS_DROPDOWN : OPEN_TEAMS_DROPDOWN);
-        setIsMenuOpen(!isMenuOpen);
     };
 
     return (
@@ -32,7 +32,7 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
                 event.stopPropagation();
             }}
         >
-            {`${totalMentionCount} - ${activeServerName}`}
+            {`${totalMentionCount} - ${activeServerName} - ${isMenuOpen ? 'open' : 'closed'}`}
         </button>
     );
 };

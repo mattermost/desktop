@@ -17,6 +17,7 @@ import {
 import * as AppState from '../appState';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC} from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString, getWindowBoundaries} from 'main/utils';
+import * as WindowManager from '../windows/windowManager';
 
 export default class TeamDropdownView {
     view: BrowserView;
@@ -39,9 +40,6 @@ export default class TeamDropdownView {
             enableRemoteModule: process.env.NODE_ENV === 'test',
         }});
 
-        // TODO: get rid of this if we can?
-        this.view.setBounds(getWindowBoundaries(this.window));
-
         this.view.webContents.loadURL(getLocalURLString('dropdown.html'));
         this.view.webContents.openDevTools({mode: 'detach'});
 
@@ -59,7 +57,6 @@ export default class TeamDropdownView {
     }
 
     updateMentions = (expired: Map<string, boolean>, mentions: Map<string, number>, unreads: Map<string, boolean>) => {
-        log.info('update mentions');
         this.unreads = unreads;
         this.mentions = mentions;
         this.expired = expired;
@@ -67,24 +64,21 @@ export default class TeamDropdownView {
     }
 
     updateDropdown = () => {
-        log.info('update dropdown');
         this.view.webContents.send(UPDATE_TEAMS_DROPDOWN, this.teams, this.expired, this.mentions, this.unreads);
     }
 
     handleOpen = () => {
-        log.info('handle open');
         this.window.addBrowserView(this.view);
+        WindowManager.sendToRenderer(OPEN_TEAMS_DROPDOWN);
     }
 
     handleClose = () => {
-        log.info('handle close');
         this.window.removeBrowserView(this.view);
+        WindowManager.sendToRenderer(CLOSE_TEAMS_DROPDOWN);
     }
 
     handleReceivedMenuSize = (event: IpcMainEvent, width: number, height: number) => {
-        log.info('handle received menu size', width, height);
         const bounds = this.getBounds(width, height);
-        log.info('set bounds', bounds);
         this.view.setBounds(bounds);
     }
 

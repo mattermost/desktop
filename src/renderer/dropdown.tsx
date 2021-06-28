@@ -46,12 +46,15 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
     }
 
     componentDidUpdate() {
-        window.postMessage({type: SEND_DROPDOWN_MENU_SIZE, data: {width: this.wrapperRef.current?.clientWidth, height: this.wrapperRef.current?.clientHeight}}, window.location.href);
+        window.postMessage({type: SEND_DROPDOWN_MENU_SIZE, data: {width: this.wrapperRef.current?.scrollWidth, height: this.wrapperRef.current?.scrollHeight}}, window.location.href);
     }
 
     render() {
         return (
-            <div ref={this.wrapperRef}>
+            <div
+                className='TeamDropdown'
+                ref={this.wrapperRef}
+            >
                 {this.state.teams?.map((team, index) => (
                     <div key={index}>{`${team.name}-${this.state.unreads?.get(team.name)}-${this.state.mentions?.get(team.name)}-${this.state.expired?.get(team.name)}`}</div>
                 ))}

@@ -2,3 +2,8 @@ body {
     margin: 0;
     background-color: white;
 }
+
+.TeamDropdown {
+    min-width: 400px;
+    min-height: 400px;
+}

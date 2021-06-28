@@ -36,6 +36,8 @@ import {
     ADD_SERVER,
     FOCUS_THREE_DOT_MENU,
     GET_FULL_SCREEN_STATUS,
+    CLOSE_TEAMS_DROPDOWN,
+    OPEN_TEAMS_DROPDOWN,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -79,6 +81,7 @@ type State = {
     modalOpen?: boolean;
     fullScreen?: boolean;
     showExtraBar?: boolean;
+    isMenuOpen: boolean;
 };
 
 type TabStatus = {
@@ -108,6 +111,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
             maximized: false,
             tabStatus: new Map(this.props.teams.map((server) => [server.name, {status: Status.LOADING}])),
             darkMode: this.props.darkMode,
+            isMenuOpen: false,
         };
     }
 
@@ -229,6 +233,14 @@ export default class MainPage extends React.PureComponent<Props, State> {
             this.setState({unreadCounts: newUnreads, mentionCounts: newMentionCounts, sessionsExpired: expired});
         });
 
+        window.ipcRenderer.on(CLOSE_TEAMS_DROPDOWN, () => {
+            this.setState({isMenuOpen: false});
+        });
+
+        window.ipcRenderer.on(OPEN_TEAMS_DROPDOWN, () => {
+            this.setState({isMenuOpen: true});
+        });
+
         if (window.process.platform !== 'darwin') {
             window.ipcRenderer.on(FOCUS_THREE_DOT_MENU, () => {
                 if (this.threeDotMenu.current) {
@@ -306,6 +318,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
 
     focusOnWebView = () => {
         window.ipcRenderer.send(FOCUS_BROWSERVIEW);
+        window.ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
     }
 
     render() {
@@ -408,6 +421,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
                     <TeamDropdownButton
                         activeServerName={this.props.teams[this.state.key].name}
                         totalMentionCount={totalMentionCount}
+                        isMenuOpen={this.state.isMenuOpen}
                     />
                     {tabsRow}
                     {overlayGradient}
