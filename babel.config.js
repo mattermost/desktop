@@ -13,6 +13,10 @@ module.exports = (api) => { // eslint-disable-line import/no-commonjs
                 },
             }],
             '@babel/preset-react',
+            ['@babel/typescript', {
+                allExtensions: true,
+                isTSX: true,
+            }],
         ],
         plugins: ['@babel/plugin-proposal-object-rest-spread', '@babel/plugin-proposal-class-properties'],
     };

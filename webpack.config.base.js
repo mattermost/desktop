@@ -36,6 +36,7 @@ module.exports = {
             common: path.resolve(__dirname, './src/common'),
             static: path.resolve(__dirname, './src/assets'),
         },
+        extensions: ['.ts', '.tsx', '.js', '.jsx'],
     },
 };
 
