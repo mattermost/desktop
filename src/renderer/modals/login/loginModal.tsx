@@ -153,7 +153,10 @@ export default class LoginModal extends React.PureComponent<Props, State> {
                                         variant='primary'
                                     >{'Login'}</Button>
                                     { ' ' }
-                                    <Button onClick={this.handleCancel}>{'Cancel'}</Button>
+                                    <Button
+                                        variant='link'
+                                        onClick={this.handleCancel}
+                                    >{'Cancel'}</Button>
                                 </div>
                             </Col>
                         </FormGroup>

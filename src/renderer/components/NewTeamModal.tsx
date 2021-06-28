@@ -240,6 +240,7 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
                     <Button
                         id='cancelNewServerModal'
                         onClick={this.props.onClose}
+                        variant='link'
                     >{'Cancel'}</Button>
                     <Button
                         id='saveNewServerModal'

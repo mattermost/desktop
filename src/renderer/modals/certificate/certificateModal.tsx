@@ -172,7 +172,7 @@ export default class SelectCertificateModal extends React.PureComponent<Props, S
                             </Col>
                             <Col sm={8}>
                                 <Button
-                                    variant='secondary'
+                                    variant='link'
                                     onClick={this.props.onCancel}
                                     className={'secondary'}
                                 >{'Cancel'}</Button>

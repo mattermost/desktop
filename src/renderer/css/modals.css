@@ -1,3 +1,8 @@
 body {
   background-color: transparent;
 }
+
+.btn-primary {
+    background-color: #166de0;
+    border-color: #166de0;
+}
