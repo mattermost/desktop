@@ -10,3 +10,8 @@ export const RELOAD_INTERVAL = 5 * SECOND;
 export const MAX_SERVER_RETRIES = 3;
 
 export const MAX_LOADING_SCREEN_SECONDS = 4 * SECOND;
+
+export const TAB_BAR_HEIGHT = 40;
+export const BACK_BAR_HEIGHT = 36;
+export const THREE_DOT_MENU_WIDTH = 40;
+export const THREE_DOT_MENU_WIDTH_MAC = 80;

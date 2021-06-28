@@ -7,11 +7,8 @@ import path from 'path';
 
 import {Args} from 'types/args';
 
-import {PRODUCTION} from 'common/utils/constants';
+import {BACK_BAR_HEIGHT, PRODUCTION, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import Utils from 'common/utils/util';
-
-const TAB_BAR_HEIGHT = 40;
-const BACK_BAR_HEIGHT = 36;
 
 export function shouldBeHiddenOnStartup(parsedArgv: Args) {
     if (parsedArgv.hidden) {

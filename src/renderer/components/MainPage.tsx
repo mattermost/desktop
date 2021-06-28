@@ -48,6 +48,7 @@ import {playSound} from '../notificationSounds';
 import TabBar from './TabBar';
 import ExtraBar from './ExtraBar';
 import ErrorView from './ErrorView';
+import TeamDropdownButton from './TeamDropdownButton';
 
 enum Status {
     LOADING = 1,
@@ -385,6 +386,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
             );
         }
 
+        const totalMentionCount = Object.values(this.state.mentionCounts).reduce((sum, value) => sum + value, 0);
         const topRow = (
             <Row
                 className={topBarClassName}
@@ -403,6 +405,10 @@ export default class MainPage extends React.PureComponent<Props, State> {
                     >
                         <DotsVerticalIcon/>
                     </button>
+                    <TeamDropdownButton
+                        activeServerName={this.props.teams[this.state.key].name}
+                        totalMentionCount={totalMentionCount}
+                    />
                     {tabsRow}
                     {overlayGradient}
                     {titleBarButtons}

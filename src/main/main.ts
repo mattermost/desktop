@@ -35,6 +35,7 @@ import {
     SHOW_SETTINGS_WINDOW,
     RELOAD_CONFIGURATION,
     USER_ACTIVITY_UPDATE,
+    EMIT_CONFIGURATION,
 } from 'common/communication';
 import Config from 'common/config';
 
@@ -268,6 +269,7 @@ function handleConfigUpdate(newConfig: Config) {
     }
 
     ipcMain.emit('update-menu', true, config);
+    ipcMain.emit(EMIT_CONFIGURATION, newConfig.data);
 }
 
 function handleConfigSynchronize() {
@@ -284,6 +286,9 @@ function handleConfigSynchronize() {
     if (app.isReady()) {
         WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
     }
+
+    log.info('sent test event');
+    ipcMain.emit('i-am-a-test-event');
 }
 
 function handleReloadConfig() {
