@@ -9,7 +9,15 @@ import {EventEmitter} from 'events';
 import {ipcMain, nativeTheme, app} from 'electron';
 import log from 'electron-log';
 
-import {AnyConfig, BuildConfig, CombinedConfig, Config as ConfigType, LocalConfiguration, RegistryConfig as RegistryConfigType, Team} from 'types/config';
+import {
+    AnyConfig,
+    BuildConfig,
+    CombinedConfig,
+    Config as ConfigType,
+    LocalConfiguration,
+    RegistryConfig as RegistryConfigType,
+    Team,
+} from 'types/config';
 
 import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION} from 'common/communication';
 
@@ -162,13 +170,13 @@ export default class Config extends EventEmitter {
         return this.combinedData;
     }
     get localData() {
-        return this.localConfigData || defaultPreferences;
+        return this.localConfigData ?? defaultPreferences;
     }
     get defaultData() {
-        return this.defaultConfigData || defaultPreferences;
+        return this.defaultConfigData ?? defaultPreferences;
     }
     get buildData() {
-        return this.buildConfigData || buildConfig;
+        return this.buildConfigData ?? buildConfig;
     }
     get registryData() {
         return this.registryConfigData;
@@ -177,52 +185,52 @@ export default class Config extends EventEmitter {
     // convenience getters
 
     get version() {
-        return this.combinedData?.version || defaultPreferences.version;
+        return this.combinedData?.version ?? defaultPreferences.version;
     }
     get teams() {
-        return this.combinedData?.teams || defaultPreferences.teams;
+        return this.combinedData?.teams ?? defaultPreferences.teams;
     }
     get darkMode() {
-        return this.combinedData?.darkMode || defaultPreferences.darkMode;
+        return this.combinedData?.darkMode ?? defaultPreferences.darkMode;
     }
     get localTeams() {
-        return this.localConfigData?.teams || defaultPreferences.version;
+        return this.localConfigData?.teams ?? defaultPreferences.version;
     }
     get predefinedTeams() {
-        return [...this.buildConfigData?.defaultTeams || [], ...this.registryConfigData?.teams || []];
+        return [...this.buildConfigData?.defaultTeams ?? [], ...this.registryConfigData?.teams ?? []];
     }
     get enableHardwareAcceleration() {
-        return this.combinedData?.enableHardwareAcceleration || defaultPreferences.enableHardwareAcceleration;
+        return this.combinedData?.enableHardwareAcceleration ?? defaultPreferences.enableHardwareAcceleration;
     }
     get enableServerManagement() {
-        return this.combinedData?.enableServerManagement || buildConfig.enableServerManagement;
+        return this.combinedData?.enableServerManagement ?? buildConfig.enableServerManagement;
     }
     get enableAutoUpdater() {
-        return this.combinedData?.enableAutoUpdater || buildConfig.enableAutoUpdater;
+        return this.combinedData?.enableAutoUpdater ?? buildConfig.enableAutoUpdater;
     }
     get autostart() {
-        return this.combinedData?.autostart || defaultPreferences.autostart;
+        return this.combinedData?.autostart ?? defaultPreferences.autostart;
     }
     get notifications() {
-        return this.combinedData?.notifications || defaultPreferences.notifications;
+        return this.combinedData?.notifications ?? defaultPreferences.notifications;
     }
     get showUnreadBadge() {
-        return this.combinedData?.showUnreadBadge || defaultPreferences.showUnreadBadge;
+        return this.combinedData?.showUnreadBadge ?? defaultPreferences.showUnreadBadge;
     }
     get useSpellChecker() {
-        return this.combinedData?.useSpellChecker || defaultPreferences.useSpellChecker;
+        return this.combinedData?.useSpellChecker ?? defaultPreferences.useSpellChecker;
     }
     get spellCheckerLocale() {
-        return this.combinedData?.spellCheckerLocale || defaultPreferences.spellCheckerLocale;
+        return this.combinedData?.spellCheckerLocale ?? defaultPreferences.spellCheckerLocale;
     }
     get showTrayIcon() {
-        return this.combinedData?.showTrayIcon || defaultPreferences.showTrayIcon;
+        return this.combinedData?.showTrayIcon ?? defaultPreferences.showTrayIcon;
     }
     get trayIconTheme() {
-        return this.combinedData?.trayIconTheme || defaultPreferences.trayIconTheme;
+        return this.combinedData?.trayIconTheme ?? defaultPreferences.trayIconTheme;
     }
     get downloadLocation() {
-        return this.combinedData?.downloadLocation || getDefaultDownloadLocation();
+        return this.combinedData?.downloadLocation ?? getDefaultDownloadLocation();
     }
     get helpLink() {
         return this.combinedData?.helpLink;

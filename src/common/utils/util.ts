@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
-import electron, {BrowserWindow} from 'electron';
+import electron from 'electron';
 
 import {DEVELOPMENT, PRODUCTION} from './constants';
 
@@ -27,24 +27,6 @@ function runMode() {
     return process.env.NODE_ENV === PRODUCTION ? PRODUCTION : DEVELOPMENT;
 }
 
-// workaround until electron 12 hits, since fromWebContents return a null value if using a webcontent from browserview
-// TODO DEVIN TS: Remove this?
-function browserWindowFromWebContents(content: Electron.WebContents & {type?: string}) {
-    let window;
-    if (content.type === 'browserview') {
-        for (const win of BrowserWindow.getAllWindows()) {
-            for (const view of win.getBrowserViews()) {
-                if (view.webContents.id === content.id) {
-                    window = win;
-                }
-            }
-        }
-    } else {
-        window = BrowserWindow.fromWebContents(content);
-    }
-    return window;
-}
-
 const DEFAULT_MAX = 20;
 
 function shorten(string: string, max?: number) {
@@ -58,6 +40,5 @@ function shorten(string: string, max?: number) {
 export default {
     getDisplayBoundaries,
     runMode,
-    browserWindowFromWebContents,
     shorten,
 };

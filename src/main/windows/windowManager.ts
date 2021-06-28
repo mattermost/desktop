@@ -388,13 +388,6 @@ export function getServerNameByWebContentsId(webContentsId: number) {
 export function close() {
     const focused = BrowserWindow.getFocusedWindow();
     focused?.close();
-
-    // if (focused.id === status.mainWindow.id) {
-    // // TODO: figure out logic for closing
-    //     focused.close();
-    // } else {
-    //    focused.close();
-    // }
 }
 export function maximize() {
     const focused = BrowserWindow.getFocusedWindow();

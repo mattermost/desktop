@@ -217,7 +217,7 @@ function isCustomLoginURL(url: URL | string, server: ServerFromURL, teams: Team[
         return false;
     }
     const urlPath = parsedURL.pathname;
-    if (urlPath.startsWith(subpath)) {
+    if (subpath !== '' && subpath !== '/' && urlPath.startsWith(subpath)) {
         const replacement = subpath.endsWith('/') ? '/' : '';
         const replacedPath = urlPath.replace(subpath, replacement);
         for (const regexPath of customLoginRegexPaths) {

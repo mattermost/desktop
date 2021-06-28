@@ -7,7 +7,6 @@ import log from 'electron-log';
 import {Team} from 'types/config';
 
 import urlUtils from 'common/utils/url';
-import Utils from 'common/utils/util';
 
 import * as WindowManager from '../windows/windowManager';
 
@@ -33,7 +32,7 @@ function isTrustedPopupWindow(webContents: WebContents) {
     if (!popupWindow) {
         return false;
     }
-    return Utils.browserWindowFromWebContents(webContents) === popupWindow;
+    return BrowserWindow.fromWebContents(webContents) === popupWindow;
 }
 
 const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];
