@@ -18,7 +18,7 @@ Originally created as "electron-mattermost" by Yuya Ochiai. Developed using [Ele
   * OS X: Notification Center
   * Linux: [libnotify](http://electron.atom.io/docs/v0.36.0/tutorial/desktop-environment-integration/#linux)
 * Badges for unread channels and mentions
-* Installs as native application
+* Installs as a native application
 
 ### Pre-packaged
 You don't have to install any other software.
