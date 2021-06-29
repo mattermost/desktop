@@ -5,7 +5,15 @@
 
 import {ipcRenderer} from 'electron';
 
-import {UPDATE_TEAMS_DROPDOWN, REQUEST_TEAMS_DROPDOWN_INFO, RECEIVE_DROPDOWN_MENU_SIZE, SEND_DROPDOWN_MENU_SIZE} from 'common/communication';
+import {
+    UPDATE_TEAMS_DROPDOWN,
+    REQUEST_TEAMS_DROPDOWN_INFO,
+    RECEIVE_DROPDOWN_MENU_SIZE,
+    SEND_DROPDOWN_MENU_SIZE,
+    SWITCH_SERVER,
+    CLOSE_TEAMS_DROPDOWN,
+    SHOW_NEW_SERVER_MODAL,
+} from 'common/communication';
 
 console.log('preloaded for the dropdown!');
 
@@ -16,6 +24,14 @@ window.addEventListener('message', async (event) => {
         break;
     case SEND_DROPDOWN_MENU_SIZE:
         ipcRenderer.send(RECEIVE_DROPDOWN_MENU_SIZE, event.data.data.width, event.data.data.height);
+        break;
+    case SWITCH_SERVER:
+        ipcRenderer.send(SWITCH_SERVER, event.data.data);
+        ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
+        break;
+    case SHOW_NEW_SERVER_MODAL:
+        ipcRenderer.send(SHOW_NEW_SERVER_MODAL);
+        ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
         break;
     default:
         console.log(`got a message: ${event}`);

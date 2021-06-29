@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent} from 'electron';
-import log from 'electron-log';
 import {CombinedConfig, Team} from 'types/config';
 
 import {
@@ -16,7 +15,7 @@ import {
 } from 'common/communication';
 import * as AppState from '../appState';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC} from 'common/utils/constants';
-import {getLocalPreload, getLocalURLString, getWindowBoundaries} from 'main/utils';
+import {getLocalPreload, getLocalURLString} from 'main/utils';
 import * as WindowManager from '../windows/windowManager';
 
 export default class TeamDropdownView {
