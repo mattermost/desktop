@@ -86,6 +86,7 @@ body {
     padding: 10px 18px;
     display: flex;
     width: 100%;
+    align-items: center;
 }
 
 .TeamDropdown__button:hover {
@@ -101,6 +102,7 @@ body {
     font-size: 18px;
     line-height: 21px;
     color: rgba(61, 60, 64, 0.56);
+    margin-bottom: -1px;
 }
 
 .TeamDropdown__button>i.icon-check {
@@ -112,5 +114,53 @@ body {
     line-height: 20px;
     color: #3D3C40;
     margin-left: 10px;
+    margin-right: 16px;
     white-space: nowrap;
 }
+
+.TeamDropdown__badge-dot {
+    background: #579EFF;
+    float: right;
+    height: 6px;
+    width: 6px;
+    margin-left: auto;
+    border-radius: 4px;
+    flex: 0 0 6px;
+  }
+  
+  .TeamDropdown__badge-expired {
+    float: right;
+    height: 16px;
+    width: 16px;
+    margin-left: auto;
+    background-image: url(../../assets/icon-session-expired.svg);
+    flex: 0 0 16px;
+
+  }
+  
+  .TabBar.darkMode .TeamDropdown__badge-expired {
+    filter: invert(100%);
+    -webkit-filter: invert(100%);
+  }
+  
+  .TeamDropdown__badge {
+    background: #CB2431;
+    float: right;
+    color: white;
+    font-size: 11px;
+    text-align: center;
+    line-height: 18px;
+    height: 18px;
+    margin-left: auto;
+    border-radius: 100px;
+    padding: 0 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: "Open Sans", sans-serif;
+    font-weight: bold;
+    min-width: 18px;
+    letter-spacing: normal;
+    -webkit-font-smoothing: antialiased;
+    flex: 0 0 18px;
+  }

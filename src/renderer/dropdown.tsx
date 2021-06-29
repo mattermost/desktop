@@ -89,16 +89,40 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                     <span>{'Servers'}</span>
                 </div>
                 <hr className='TeamDropdown__divider'/>
-                {this.state.orderedTeams?.map((team, index) => (
-                    <button
-                        className={'TeamDropdown__button'}
-                        onClick={this.selectServer(team)}
-                        key={index}
-                    >
-                        {this.isActiveTeam(team) ? <i className='icon-check'/> : <i className='icon-server-variant'/>}
-                        <span>{team.name}</span>
-                    </button>
-                ))}
+                {this.state.orderedTeams?.map((team, index) => {
+                    const sessionExpired = this.state.expired?.get(team.name);
+                    const hasUnreads = this.state.unreads?.get(team.name);
+                    const mentionCount = this.state.mentions?.get(team.name);
+
+                    let badgeDiv: React.ReactNode;
+                    if (sessionExpired) {
+                        badgeDiv = (
+                            <div className='TeamDropdown__badge-expired'/>
+                        );
+                    } else if (mentionCount && mentionCount > 0) {
+                        badgeDiv = (
+                            <div className='TeamDropdown__badge'>
+                                {mentionCount}
+                            </div>
+                        );
+                    } else if (hasUnreads) {
+                        badgeDiv = (
+                            <div className='TeamDropdown__badge-dot'/>
+                        );
+                    }
+
+                    return (
+                        <button
+                            className={'TeamDropdown__button'}
+                            onClick={this.selectServer(team)}
+                            key={index}
+                        >
+                            {this.isActiveTeam(team) ? <i className='icon-check'/> : <i className='icon-server-variant'/>}
+                            <span>{team.name}</span>
+                            {badgeDiv}
+                        </button>
+                    );
+                })}
                 <hr className='TeamDropdown__divider'/>
                 <button
                     className='TeamDropdown__button'

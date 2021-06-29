@@ -78,6 +78,7 @@ export default class TeamDropdownView {
         this.window.addBrowserView(this.view);
         const bounds = this.view.getBounds();
         this.view.setBounds(this.getBounds(bounds.width, bounds.height));
+        this.window.setTopBrowserView(this.view);
         this.view.webContents.focus();
         WindowManager.sendToRenderer(OPEN_TEAMS_DROPDOWN);
     }

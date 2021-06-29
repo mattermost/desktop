@@ -422,6 +422,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
                         activeServerName={this.props.teams[this.state.key].name}
                         totalMentionCount={totalMentionCount}
                         isMenuOpen={this.state.isMenuOpen}
+                        darkMode={this.state.darkMode}
                     />
                     {tabsRow}
                     {overlayGradient}
