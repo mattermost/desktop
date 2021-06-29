@@ -15,3 +15,4 @@ export const TAB_BAR_HEIGHT = 40;
 export const BACK_BAR_HEIGHT = 36;
 export const THREE_DOT_MENU_WIDTH = 40;
 export const THREE_DOT_MENU_WIDTH_MAC = 80;
+export const MENU_SHADOW_WIDTH = 24;

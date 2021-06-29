@@ -6,34 +6,35 @@ import ReactDOM from 'react-dom';
 
 import {Team} from 'types/config';
 
-import {REQUEST_TEAMS_DROPDOWN_INFO, SEND_DROPDOWN_MENU_SIZE, SHOW_NEW_SERVER_MODAL, SWITCH_SERVER, UPDATE_TEAMS_DROPDOWN} from 'common/communication';
+import {CLOSE_TEAMS_DROPDOWN, REQUEST_TEAMS_DROPDOWN_INFO, SEND_DROPDOWN_MENU_SIZE, SHOW_NEW_SERVER_MODAL, SWITCH_SERVER, UPDATE_TEAMS_DROPDOWN} from 'common/communication';
 
 import './css/dropdown.css';
+import './css/compass-icons.css';
 
 type State = {
     teams?: Team[];
+    orderedTeams?: Team[];
+    activeTeam?: string;
     unreads?: Map<string, boolean>;
     mentions?: Map<string, number>;
     expired?: Map<string, boolean>;
 }
 
 class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
-    wrapperRef: React.RefObject<HTMLDivElement>;
-
     constructor(props: Record<string, never>) {
         super(props);
         this.state = {};
-
-        this.wrapperRef = React.createRef();
 
         window.addEventListener('message', this.handleMessageEvent);
     }
 
     handleMessageEvent = (event: MessageEvent) => {
         if (event.data.type === UPDATE_TEAMS_DROPDOWN) {
-            const {teams, unreads, mentions, expired} = event.data.data;
+            const {teams, activeTeam, unreads, mentions, expired} = event.data.data;
             this.setState({
                 teams,
+                orderedTeams: teams.concat().sort((a: Team, b: Team) => a.order - b.order),
+                activeTeam,
                 unreads,
                 mentions,
                 expired,
@@ -44,36 +45,68 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
     selectServer = (team: Team) => {
         return () => {
             window.postMessage({type: SWITCH_SERVER, data: team.name}, window.location.href);
+            this.closeMenu();
         };
+    }
+
+    closeMenu = () => {
+        window.postMessage({type: CLOSE_TEAMS_DROPDOWN}, window.location.href);
+    }
+
+    preventPropogation = (event: React.MouseEvent<HTMLDivElement>) => {
+        event.stopPropagation();
     }
 
     addServer = () => {
         window.postMessage({type: SHOW_NEW_SERVER_MODAL}, window.location.href);
+        this.closeMenu();
+    }
+
+    isActiveTeam = (team: Team) => {
+        return team.name === this.state.activeTeam;
     }
 
     componentDidMount() {
         window.postMessage({type: REQUEST_TEAMS_DROPDOWN_INFO}, window.location.href);
+        window.addEventListener('click', this.closeMenu);
     }
 
     componentDidUpdate() {
-        window.postMessage({type: SEND_DROPDOWN_MENU_SIZE, data: {width: this.wrapperRef.current?.scrollWidth, height: this.wrapperRef.current?.scrollHeight}}, window.location.href);
+        window.postMessage({type: SEND_DROPDOWN_MENU_SIZE, data: {width: document.body.scrollWidth, height: document.body.scrollHeight}}, window.location.href);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('click', this.closeMenu);
     }
 
     render() {
         return (
             <div
+                onClick={this.preventPropogation}
                 className='TeamDropdown'
-                ref={this.wrapperRef}
             >
-                {this.state.teams?.map((team, index) => (
+                <div className='TeamDropdown__header'>
+                    <span>{'Servers'}</span>
+                </div>
+                <hr className='TeamDropdown__divider'/>
+                {this.state.orderedTeams?.map((team, index) => (
                     <button
+                        className={'TeamDropdown__button'}
                         onClick={this.selectServer(team)}
                         key={index}
                     >
-                        {`${team.name}-${this.state.unreads?.get(team.name)}-${this.state.mentions?.get(team.name)}-${this.state.expired?.get(team.name)}`}
+                        {this.isActiveTeam(team) ? <i className='icon-check'/> : <i className='icon-server-variant'/>}
+                        <span>{team.name}</span>
                     </button>
                 ))}
-                <button onClick={this.addServer}>{'Add Server'}</button>
+                <hr className='TeamDropdown__divider'/>
+                <button
+                    className='TeamDropdown__button'
+                    onClick={this.addServer}
+                >
+                    <i className='icon-plus'/>
+                    <span>{'Add a server'}</span>
+                </button>
             </div>
         );
     }

@@ -1,9 +1,116 @@
+@font-face {
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 300;
+    src: url('../../assets/fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_cyrillic_vietnamese-300.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Open Sans';
+    font-style: italic;
+    font-weight: 300;
+    src: url('../../assets/fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_cyrillic_vietnamese-300italic.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 400;
+    src: url('../../assets/fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_cyrillic_vietnamese-regular.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Open Sans';
+    font-style: italic;
+    font-weight: 400;
+    src: url('../../assets/fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_cyrillic_vietnamese-italic.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 600;
+    src: url('../../assets/fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_cyrillic_vietnamese-600.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Open Sans';
+    font-style: italic;
+    font-weight: 600;
+    src: url('../../assets/fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_cyrillic_vietnamese-600italic.woff2') format('woff2');
+}
+  
 body {
     margin: 0;
-    background-color: white;
+    background-color: transparent;
+    font-family: Open Sans;
+    overflow: hidden;
+}
+
+#app {
+    padding: 24px;
+    display: inline-block;
 }
 
 .TeamDropdown {
-    min-width: 400px;
-    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 8px 0px;
+    background: #FFFFFF;
+    border: 1px solid rgba(61, 60, 64, 0.16);
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+}
+
+.TeamDropdown__header {
+    padding: 6px 20px;
+}
+
+.TeamDropdown__header>span {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 20px;
+    color: #3D3C40;
+}
+
+.TeamDropdown__divider {
+    border: 1px solid rgba(61, 60, 64, 0.08);
+    width: 100%;
+    margin: 8px 0;
+}
+
+.TeamDropdown__button {
+    background-color: transparent;
+    border: none;
+    padding: 10px 18px;
+    display: flex;
+    width: 100%;
+}
+
+.TeamDropdown__button:hover {
+    background-color: rgba(61, 60, 64, 0.08);
+}
+
+.TeamDropdown__button:focus {
+    background-color: rgba(61, 60, 64, 0.08);
+    outline: none;
+}
+
+.TeamDropdown__button>i {
+    font-size: 18px;
+    line-height: 21px;
+    color: rgba(61, 60, 64, 0.56);
+}
+
+.TeamDropdown__button>i.icon-check {
+    color: #166de0;
+}
+
+.TeamDropdown__button>span {
+    font-size: 14px;
+    line-height: 20px;
+    color: #3D3C40;
+    margin-left: 10px;
+    white-space: nowrap;
 }

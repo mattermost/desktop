@@ -269,7 +269,7 @@ function handleConfigUpdate(newConfig: Config) {
     }
 
     ipcMain.emit('update-menu', true, config);
-    ipcMain.emit(EMIT_CONFIGURATION, newConfig.data);
+    ipcMain.emit(EMIT_CONFIGURATION, true, newConfig.data);
 }
 
 function handleConfigSynchronize() {
@@ -287,8 +287,7 @@ function handleConfigSynchronize() {
         WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
     }
 
-    log.info('sent test event');
-    ipcMain.emit('i-am-a-test-event');
+    ipcMain.emit(EMIT_CONFIGURATION, true, config.data);
 }
 
 function handleReloadConfig() {

@@ -12,9 +12,10 @@ import {
     UPDATE_DROPDOWN_MENTIONS,
     REQUEST_TEAMS_DROPDOWN_INFO,
     RECEIVE_DROPDOWN_MENU_SIZE,
+    SET_SERVER_KEY,
 } from 'common/communication';
 import * as AppState from '../appState';
-import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC} from 'common/utils/constants';
+import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 import * as WindowManager from '../windows/windowManager';
 
@@ -22,6 +23,7 @@ export default class TeamDropdownView {
     view: BrowserView;
     bounds?: Electron.Rectangle;
     teams: Team[];
+    activeTeam?: string;
     unreads?: Map<string, boolean>;
     mentions?: Map<string, number>;
     expired?: Map<string, boolean>;
@@ -47,11 +49,17 @@ export default class TeamDropdownView {
         ipcMain.on(EMIT_CONFIGURATION, this.updateTeams);
         ipcMain.on(REQUEST_TEAMS_DROPDOWN_INFO, this.updateDropdown);
         ipcMain.on(RECEIVE_DROPDOWN_MENU_SIZE, this.handleReceivedMenuSize);
+        ipcMain.on(SET_SERVER_KEY, this.updateActiveTeam);
         AppState.on(UPDATE_DROPDOWN_MENTIONS, this.updateMentions);
     }
 
     updateTeams = (event: IpcMainEvent, config: CombinedConfig) => {
         this.teams = config.teams;
+        this.updateDropdown();
+    }
+
+    updateActiveTeam = (event: IpcMainEvent, name: string) => {
+        this.activeTeam = name;
         this.updateDropdown();
     }
 
@@ -63,11 +71,14 @@ export default class TeamDropdownView {
     }
 
     updateDropdown = () => {
-        this.view.webContents.send(UPDATE_TEAMS_DROPDOWN, this.teams, this.expired, this.mentions, this.unreads);
+        this.view.webContents.send(UPDATE_TEAMS_DROPDOWN, this.teams, this.activeTeam, this.expired, this.mentions, this.unreads);
     }
 
     handleOpen = () => {
         this.window.addBrowserView(this.view);
+        const bounds = this.view.getBounds();
+        this.view.setBounds(this.getBounds(bounds.width, bounds.height));
+        this.view.webContents.focus();
         WindowManager.sendToRenderer(OPEN_TEAMS_DROPDOWN);
     }
 
@@ -83,8 +94,8 @@ export default class TeamDropdownView {
 
     getBounds = (width: number, height: number) => {
         return {
-            x: process.platform === 'darwin' ? THREE_DOT_MENU_WIDTH_MAC : THREE_DOT_MENU_WIDTH,
-            y: TAB_BAR_HEIGHT,
+            x: (process.platform === 'darwin' ? THREE_DOT_MENU_WIDTH_MAC : THREE_DOT_MENU_WIDTH) - MENU_SHADOW_WIDTH,
+            y: TAB_BAR_HEIGHT - MENU_SHADOW_WIDTH,
             width,
             height,
         };

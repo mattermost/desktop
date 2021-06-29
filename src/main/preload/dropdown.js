@@ -27,10 +27,11 @@ window.addEventListener('message', async (event) => {
         break;
     case SWITCH_SERVER:
         ipcRenderer.send(SWITCH_SERVER, event.data.data);
-        ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
         break;
     case SHOW_NEW_SERVER_MODAL:
         ipcRenderer.send(SHOW_NEW_SERVER_MODAL);
+        break;
+    case CLOSE_TEAMS_DROPDOWN:
         ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
         break;
     default:
@@ -39,7 +40,7 @@ window.addEventListener('message', async (event) => {
     }
 });
 
-ipcRenderer.on(UPDATE_TEAMS_DROPDOWN, (event, teams, expired, mentions, unreads) => {
+ipcRenderer.on(UPDATE_TEAMS_DROPDOWN, (event, teams, activeTeam, expired, mentions, unreads) => {
     console.log('update teams dropdown');
-    window.postMessage({type: UPDATE_TEAMS_DROPDOWN, data: {teams, expired, mentions, unreads}}, window.location.href);
+    window.postMessage({type: UPDATE_TEAMS_DROPDOWN, data: {teams, activeTeam, expired, mentions, unreads}}, window.location.href);
 });

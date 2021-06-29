@@ -7,6 +7,7 @@ import React from 'react';
 import {CLOSE_TEAMS_DROPDOWN, OPEN_TEAMS_DROPDOWN} from 'common/communication';
 
 import '../css/components/TeamDropdownButton.css';
+import '../css/compass-icons.css';
 
 type Props = {
     activeServerName: string;
@@ -32,6 +33,7 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
                 event.stopPropagation();
             }}
         >
+            <i className='icon-server-variant'/>
             {`${totalMentionCount} - ${activeServerName} - ${isMenuOpen ? 'open' : 'closed'}`}
         </button>
     );
