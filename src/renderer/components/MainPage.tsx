@@ -400,6 +400,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
         }
 
         const totalMentionCount = Object.values(this.state.mentionCounts).reduce((sum, value) => sum + value, 0);
+        const totalUnreadCount = Object.values(this.state.unreadCounts).reduce((sum, value) => sum + value, 0);
         const topRow = (
             <Row
                 className={topBarClassName}
@@ -421,6 +422,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
                     <TeamDropdownButton
                         activeServerName={this.props.teams[this.state.key].name}
                         totalMentionCount={totalMentionCount}
+                        hasUnreads={totalUnreadCount > 0}
                         isMenuOpen={this.state.isMenuOpen}
                         darkMode={this.state.darkMode}
                     />

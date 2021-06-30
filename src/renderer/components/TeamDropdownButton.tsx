@@ -6,18 +6,19 @@ import React from 'react';
 
 import {CLOSE_TEAMS_DROPDOWN, OPEN_TEAMS_DROPDOWN} from 'common/communication';
 
-import '../css/components/TeamDropdownButton.css';
+import '../css/components/TeamDropdownButton.scss';
 import '../css/compass-icons.css';
 
 type Props = {
     activeServerName: string;
     totalMentionCount: number;
+    hasUnreads: boolean;
     isMenuOpen: boolean;
     darkMode: boolean;
 }
 
 const TeamDropdownButton: React.FC<Props> = (props: Props) => {
-    const {activeServerName, totalMentionCount, isMenuOpen, darkMode} = props;
+    const {activeServerName, totalMentionCount, hasUnreads, isMenuOpen, darkMode} = props;
 
     const handleToggleButton = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
@@ -25,10 +26,23 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
         window.ipcRenderer.send(isMenuOpen ? CLOSE_TEAMS_DROPDOWN : OPEN_TEAMS_DROPDOWN);
     };
 
+    let badgeDiv: React.ReactNode;
+    if (totalMentionCount > 0) {
+        badgeDiv = (
+            <div className='TeamDropdownButton__badge-count'>
+                <span>{totalMentionCount}</span>
+            </div>
+        );
+    } else if (hasUnreads) {
+        badgeDiv = (
+            <div className='TeamDropdownButton__badge-unreads'/>
+        );
+    }
+
     return (
         <button
             className={classNames('TeamDropdownButton', {
-                open: isMenuOpen,
+                isMenuOpen,
                 darkMode,
             })}
             onClick={handleToggleButton}
@@ -38,11 +52,7 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
         >
             <div className='TeamDropdownButton__badge'>
                 <i className='icon-server-variant'/>
-                {totalMentionCount > 0 && (
-                    <div className='TeamDropdownButton__badge-count'>
-                        {totalMentionCount}
-                    </div>
-                )}
+                {badgeDiv}
             </div>
             <span>{activeServerName}</span>
             <i className='icon-chevron-down'/>

@@ -3,18 +3,20 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
+import classNames from 'classnames';
 
 import {Team} from 'types/config';
 
 import {CLOSE_TEAMS_DROPDOWN, REQUEST_TEAMS_DROPDOWN_INFO, SEND_DROPDOWN_MENU_SIZE, SHOW_NEW_SERVER_MODAL, SWITCH_SERVER, UPDATE_TEAMS_DROPDOWN} from 'common/communication';
 
-import './css/dropdown.css';
+import './css/dropdown.scss';
 import './css/compass-icons.css';
 
 type State = {
     teams?: Team[];
     orderedTeams?: Team[];
     activeTeam?: string;
+    darkMode?: boolean;
     unreads?: Map<string, boolean>;
     mentions?: Map<string, number>;
     expired?: Map<string, boolean>;
@@ -30,11 +32,12 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
 
     handleMessageEvent = (event: MessageEvent) => {
         if (event.data.type === UPDATE_TEAMS_DROPDOWN) {
-            const {teams, activeTeam, unreads, mentions, expired} = event.data.data;
+            const {teams, activeTeam, darkMode, unreads, mentions, expired} = event.data.data;
             this.setState({
                 teams,
                 orderedTeams: teams.concat().sort((a: Team, b: Team) => a.order - b.order),
                 activeTeam,
+                darkMode,
                 unreads,
                 mentions,
                 expired,
@@ -83,7 +86,9 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
         return (
             <div
                 onClick={this.preventPropogation}
-                className='TeamDropdown'
+                className={classNames('TeamDropdown', {
+                    darkMode: this.state.darkMode,
+                })}
             >
                 <div className='TeamDropdown__header'>
                     <span>{'Servers'}</span>
@@ -97,12 +102,14 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                     let badgeDiv: React.ReactNode;
                     if (sessionExpired) {
                         badgeDiv = (
-                            <div className='TeamDropdown__badge-expired'/>
+                            <div className='TeamDropdown__badge-expired'>
+                                <i className='icon-alert-circle-outline'/>
+                            </div>
                         );
                     } else if (mentionCount && mentionCount > 0) {
                         badgeDiv = (
-                            <div className='TeamDropdown__badge'>
-                                {mentionCount}
+                            <div className='TeamDropdown__badge-count'>
+                                <span>{mentionCount}</span>
                             </div>
                         );
                     } else if (hasUnreads) {
@@ -119,7 +126,23 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                         >
                             {this.isActiveTeam(team) ? <i className='icon-check'/> : <i className='icon-server-variant'/>}
                             <span>{team.name}</span>
-                            {badgeDiv}
+                            <div className='TeamDropdown__indicators'>
+                                <button
+                                    className='TeamDropdown__button-edit'
+                                    disabled={true}
+                                >
+                                    <i className='icon-pencil-outline'/>
+                                </button>
+                                <button
+                                    className='TeamDropdown__button-remove'
+                                    disabled={true}
+                                >
+                                    <i className='icon-trash-can-outline'/>
+                                </button>
+                                {badgeDiv && <div className='TeamDropdown__badge'>
+                                    {badgeDiv}
+                                </div>}
+                            </div>
                         </button>
                     );
                 })}

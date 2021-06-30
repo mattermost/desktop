@@ -112,7 +112,7 @@ export function showMainWindow(deeplinkingURL?: string | URL) {
             status.viewManager.updateMainWindow(status.mainWindow);
         }
 
-        status.teamDropdown = new TeamDropdownView(status.mainWindow, status.config.teams);
+        status.teamDropdown = new TeamDropdownView(status.mainWindow, status.config.teams, status.config.darkMode);
     }
     initializeViewManager();
 

@@ -40,7 +40,7 @@ window.addEventListener('message', async (event) => {
     }
 });
 
-ipcRenderer.on(UPDATE_TEAMS_DROPDOWN, (event, teams, activeTeam, expired, mentions, unreads) => {
+ipcRenderer.on(UPDATE_TEAMS_DROPDOWN, (event, teams, activeTeam, darkMode, expired, mentions, unreads) => {
     console.log('update teams dropdown');
-    window.postMessage({type: UPDATE_TEAMS_DROPDOWN, data: {teams, activeTeam, expired, mentions, unreads}}, window.location.href);
+    window.postMessage({type: UPDATE_TEAMS_DROPDOWN, data: {teams, activeTeam, darkMode, expired, mentions, unreads}}, window.location.href);
 });

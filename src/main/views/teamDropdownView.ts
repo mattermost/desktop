@@ -24,14 +24,16 @@ export default class TeamDropdownView {
     bounds?: Electron.Rectangle;
     teams: Team[];
     activeTeam?: string;
+    darkMode: boolean;
     unreads?: Map<string, boolean>;
     mentions?: Map<string, number>;
     expired?: Map<string, boolean>;
     window: BrowserWindow;
 
-    constructor(window: BrowserWindow, teams: Team[]) {
+    constructor(window: BrowserWindow, teams: Team[], darkMode: boolean) {
         this.teams = teams;
         this.window = window;
+        this.darkMode = darkMode;
 
         const preload = getLocalPreload('dropdown.js');
         this.view = new BrowserView({webPreferences: {
@@ -46,15 +48,16 @@ export default class TeamDropdownView {
 
         ipcMain.on(OPEN_TEAMS_DROPDOWN, this.handleOpen);
         ipcMain.on(CLOSE_TEAMS_DROPDOWN, this.handleClose);
-        ipcMain.on(EMIT_CONFIGURATION, this.updateTeams);
+        ipcMain.on(EMIT_CONFIGURATION, this.updateConfig);
         ipcMain.on(REQUEST_TEAMS_DROPDOWN_INFO, this.updateDropdown);
         ipcMain.on(RECEIVE_DROPDOWN_MENU_SIZE, this.handleReceivedMenuSize);
         ipcMain.on(SET_SERVER_KEY, this.updateActiveTeam);
         AppState.on(UPDATE_DROPDOWN_MENTIONS, this.updateMentions);
     }
 
-    updateTeams = (event: IpcMainEvent, config: CombinedConfig) => {
+    updateConfig = (event: IpcMainEvent, config: CombinedConfig) => {
         this.teams = config.teams;
+        this.darkMode = config.darkMode;
         this.updateDropdown();
     }
 
@@ -71,7 +74,7 @@ export default class TeamDropdownView {
     }
 
     updateDropdown = () => {
-        this.view.webContents.send(UPDATE_TEAMS_DROPDOWN, this.teams, this.activeTeam, this.expired, this.mentions, this.unreads);
+        this.view.webContents.send(UPDATE_TEAMS_DROPDOWN, this.teams, this.activeTeam, this.darkMode, this.expired, this.mentions, this.unreads);
     }
 
     handleOpen = () => {

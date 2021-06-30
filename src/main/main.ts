@@ -306,6 +306,8 @@ function handleDarkModeChange(darkMode: boolean) {
     refreshTrayImages(config.trayIconTheme);
     WindowManager.sendToRenderer(DARK_MODE_CHANGE, darkMode);
     WindowManager.updateLoadingScreenDarkMode(darkMode);
+
+    ipcMain.emit(EMIT_CONFIGURATION, true, config.data);
 }
 
 //

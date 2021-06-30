@@ -105,6 +105,13 @@ module.exports = merge(base, {
                 'css-loader',
             ],
         }, {
+            test: /\.scss$/,
+            use: [
+                MiniCssExtractPlugin.loader,
+                'css-loader',
+                'sass-loader',
+            ],
+        }, {
             test: /\.mp3$/,
             use: {
                 loader: 'url-loader',
