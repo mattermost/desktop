@@ -478,7 +478,6 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 </FormCheck>);
         }
 
-        console.log(this.state.useSpellChecker);
         options.push(
             <FormCheck>
                 <FormCheck.Input
@@ -626,7 +625,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         value='dark'
                         defaultChecked={this.state.trayIconTheme === 'dark'}
                         onChange={() => this.handleChangeTrayIconTheme('dark')}
-                        label={'Light'}
+                        label={'Dark'}
                     />
                 </FormGroup>,
             );
