@@ -51,11 +51,21 @@ body {
 
     &:hover {
         background-color: rgba(61, 60, 64, 0.08);
+
+        .TeamDropdown__button-edit, .TeamDropdown__button-remove {
+            opacity: 1;
+            pointer-events: all;
+        }
     }
 
-    &:focus {
+    &:focus, &:focus-within {
         background-color: rgba(22, 109, 224, 0.08);
         outline: none;
+
+        .TeamDropdown__button-edit, .TeamDropdown__button-remove {
+            opacity: 1;
+            pointer-events: all;
+        }
     }
 
     i {
@@ -129,6 +139,11 @@ body {
             margin: 0;
         }
     }
+}
+
+.TeamDropdown__button-edit, .TeamDropdown__button-remove {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .TeamDropdown__button-remove > i {
