@@ -11,8 +11,8 @@ type Props = {
     acceptLabel: string;
     cancelLabel: string;
     onHide: () => void;
-    onAccept: React.MouseEventHandler<Button>;
-    onCancel: React.MouseEventHandler<Button>;
+    onAccept: React.MouseEventHandler<HTMLButtonElement>;
+    onCancel: React.MouseEventHandler<HTMLButtonElement>;
 };
 
 export default function DestructiveConfirmationModal(props: Props) {
@@ -36,11 +36,11 @@ export default function DestructiveConfirmationModal(props: Props) {
             {body}
             <Modal.Footer>
                 <Button
-                    bsStyle='link'
+                    variant='link'
                     onClick={onCancel}
                 >{cancelLabel}</Button>
                 <Button
-                    bsStyle='danger'
+                    variant='danger'
                     onClick={onAccept}
                 >{acceptLabel}</Button>
             </Modal.Footer>

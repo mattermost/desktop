@@ -17,15 +17,6 @@
   transition: opacity 1s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-.TeamListItem p {
-    overflow-wrap: break-word;
-}
-
-.TeamListItem h4 {
-  overflow: hidden;
-  text-overflow: ellipsis;
-};
-
 .checkbox > label {
   width: 100%;
 }
@@ -38,4 +29,9 @@ body {
 
 #content {
   height: 100%;
+}
+
+.btn-primary {
+    background-color: #166de0;
+    border-color: #166de0;
 }

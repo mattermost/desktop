@@ -46,7 +46,7 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         this.setState({config});
     }
 
-    moveTabs = async (originalOrder: number, newOrder: number): Promise<number | undefined> => {
+    moveTabs = (originalOrder: number, newOrder: number): number | undefined => {
         if (!this.state.config) {
             throw new Error('No config');
         }
@@ -61,20 +61,27 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         const team = tabOrder.splice(originalOrder, 1);
         tabOrder.splice(newOrder, 0, team[0]);
 
-        let teamIndex;
+        let teamIndex: number | undefined;
         tabOrder.forEach((t, order) => {
             if (order === newOrder) {
                 teamIndex = t.index;
             }
             teams[t.index].order = order;
         });
-        await this.teamConfigChange(teams);
+        this.setState({
+            config: {
+                ...this.state.config,
+                teams,
+            },
+        });
+        this.teamConfigChange(teams);
         return teamIndex;
     };
 
     teamConfigChange = async (updatedTeams: Team[]) => {
-        await window.ipcRenderer.invoke(UPDATE_TEAMS, updatedTeams);
-        await this.reloadConfig();
+        window.ipcRenderer.invoke(UPDATE_TEAMS, updatedTeams).then(() => {
+            this.reloadConfig();
+        });
     };
 
     reloadConfig = async () => {

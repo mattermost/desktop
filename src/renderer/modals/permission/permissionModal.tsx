@@ -13,8 +13,8 @@ import {MODAL_INFO} from 'common/communication';
 import {PERMISSION_DESCRIPTION} from 'common/permissions';
 
 type Props = {
-    handleDeny: React.MouseEventHandler<Button>;
-    handleGrant: React.MouseEventHandler<Button>;
+    handleDeny: React.MouseEventHandler<HTMLButtonElement>;
+    handleGrant: React.MouseEventHandler<HTMLButtonElement>;
     getPermissionInfo: () => void;
     openExternalLink: (protocol: string, url: string) => void;
 };
@@ -107,7 +107,7 @@ export default class PermissionModal extends React.PureComponent<Props, State> {
                             onClick={this.props.handleDeny}
                         >{'Cancel'}</Button>
                         <Button
-                            bsStyle='primary'
+                            variant='primary'
                             onClick={this.props.handleGrant}
                         >{'Accept'}</Button>
                     </div>

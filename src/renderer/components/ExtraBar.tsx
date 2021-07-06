@@ -34,8 +34,8 @@ export default class ExtraBar extends React.PureComponent<Props> {
                     onClick={this.handleBack}
                 >
                     <Button
-                        bsStyle={'link'}
-                        bsSize={'xsmall'}
+                        variant={'link'}
+                        size={'sm'}
                     >
                         <span className={'backIcon fa fa-1x fa-angle-left'}/>
                         <span className={'backLabel'}>

@@ -3,10 +3,10 @@
 // See LICENSE.txt for license information.
 
 import React, {Fragment} from 'react';
-import {Grid, Row} from 'react-bootstrap';
+import {Container, Row} from 'react-bootstrap';
+import {DropResult} from 'react-beautiful-dnd';
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 import {IpcRendererEvent} from 'electron/renderer';
-import {DropResult} from 'react-smooth-dnd';
 
 import {Team} from 'types/config';
 
@@ -60,7 +60,7 @@ enum Status {
 type Props = {
     teams: Team[];
     showAddServerButton: boolean;
-    moveTabs: (originalOrder: number, newOrder: number) => Promise<number | undefined>;
+    moveTabs: (originalOrder: number, newOrder: number) => number | undefined;
     openMenu: () => void;
     darkMode: boolean;
     appName: string;
@@ -256,18 +256,17 @@ export default class MainPage extends React.PureComponent<Props, State> {
     }
 
     handleDragAndDrop = async (dropResult: DropResult) => {
-        const {removedIndex, addedIndex} = dropResult;
-        if (removedIndex === null || addedIndex === null) {
+        const removedIndex = dropResult.source.index;
+        const addedIndex = dropResult.destination?.index;
+        if (addedIndex === undefined || removedIndex === addedIndex) {
             return;
         }
-        if (removedIndex !== addedIndex) {
-            const teamIndex = await this.props.moveTabs(removedIndex, addedIndex < this.props.teams.length ? addedIndex : this.props.teams.length - 1);
-            if (!teamIndex) {
-                return;
-            }
-            const name = this.props.teams[teamIndex].name;
-            this.handleSelect(name, teamIndex);
+        const teamIndex = this.props.moveTabs(removedIndex, addedIndex < this.props.teams.length ? addedIndex : this.props.teams.length - 1);
+        if (!teamIndex) {
+            return;
         }
+        const name = this.props.teams[teamIndex].name;
+        this.handleSelect(name, teamIndex);
     }
 
     handleClose = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -471,10 +470,10 @@ export default class MainPage extends React.PureComponent<Props, State> {
                 className='MainPage'
                 onClick={this.focusOnWebView}
             >
-                <Grid fluid={true}>
+                <Container fluid={true}>
                     {topRow}
                     {viewsRow}
-                </Grid>
+                </Container>
             </div>
         );
     }

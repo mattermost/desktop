@@ -1,8 +1,21 @@
+.TeamListItem {
+  display: flex;
+}
+
 .TeamListItem:hover {
   background: #eee;
 }
 
 .TeamListItem-left {
-  display: inline-block;
-  width: calc(100% - 100px);
+  flex-grow: 1;
 }
+
+.TeamListItem p {
+    overflow-wrap: break-word;
+    margin-bottom: 0;
+}
+
+.TeamListItem h4 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+};

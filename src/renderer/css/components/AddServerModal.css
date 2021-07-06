@@ -72,7 +72,7 @@ label {
   outline: 0;
 }
 
-.help-block {
+.form-text {
   display: block;
   margin-top: 5px;
   margin-bottom: 10px;
@@ -173,7 +173,7 @@ button.default:focus {
   color: #a94442;
 }
 
-.has-error .form-control {
+:invalid .form-control {
   border-color: #a94442;
 }
 

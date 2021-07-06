@@ -164,6 +164,7 @@ export default class SelectCertificateModal extends React.PureComponent<Props, S
                         <Row>
                             <Col sm={4}>
                                 <Button
+                                    variant='info'
                                     disabled={this.state.selectedIndex === null}
                                     onClick={this.handleCertificateInfo}
                                     className={'info'}
@@ -171,10 +172,12 @@ export default class SelectCertificateModal extends React.PureComponent<Props, S
                             </Col>
                             <Col sm={8}>
                                 <Button
+                                    variant='link'
                                     onClick={this.props.onCancel}
                                     className={'secondary'}
                                 >{'Cancel'}</Button>
                                 <Button
+                                    variant='primary'
                                     onClick={this.handleOk}
                                     disabled={this.state.selectedIndex === null}
                                     className={'primary'}

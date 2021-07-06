@@ -446,6 +446,7 @@ workflows:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - react_bootstrap_upgrade
 
       - store_artifacts:
           # for master/PR builds
@@ -453,6 +454,7 @@ workflows:
             - build-linux
             - build-win-no-installer
             - build-mac-no-dmg
+            - mac_installer
           filters:
             branches:
               ignore:

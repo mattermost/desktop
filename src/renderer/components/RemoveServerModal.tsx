@@ -3,7 +3,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Button, Modal} from 'react-bootstrap';
+import {Modal} from 'react-bootstrap';
 
 import DestructiveConfirmationModal from './DestructiveConfirmModal';
 
@@ -11,8 +11,8 @@ type Props = {
     show: boolean;
     serverName: string;
     onHide: () => void;
-    onAccept: React.MouseEventHandler<Button>;
-    onCancel: React.MouseEventHandler<Button>;
+    onAccept: React.MouseEventHandler<HTMLButtonElement>;
+    onCancel: React.MouseEventHandler<HTMLButtonElement>;
 }
 
 export default function RemoveServerModal(props: Props) {

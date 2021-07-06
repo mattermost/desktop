@@ -26,6 +26,7 @@
   -webkit-user-select: none;
   min-width: 48px;
   max-width: 224px;
+  position: relative;
 }
 
 .TabBar>li>a {
@@ -41,6 +42,7 @@
   font-size: 14px;
   letter-spacing: -0.2px;
   transition: 0.3s;
+  border: none !important;
 }
 
 .TabBar.darkMode>li>a {
@@ -80,7 +82,7 @@
   flex: 0 0 6px;
 } 
 
-.TabBar>li.teamTabItem.active:before, .TabBar>li.teamTabItem.smooth-dnd-ghost:before {
+.TabBar>li.teamTabItem.active:before, .TabBar>li.teamTabItem.dragging:before {
   left: -4px;
   border-bottom-right-radius: 6px;
   border-right: 2px solid #fff;
@@ -88,12 +90,12 @@
   z-index: 9;
 }
 
-.TabBar.darkMode>li.teamTabItem.active:before, .TabBar.darkMode>li.teamTabItem.smooth-dnd-ghost:before {
+.TabBar.darkMode>li.teamTabItem.active:before, .TabBar.darkMode>li.teamTabItem.dragging:before {
   border-right: 2px solid #323639;
   border-bottom: 2px solid #323639;
 }
 
-.TabBar>li.teamTabItem.active:after, .TabBar>li.teamTabItem.smooth-dnd-ghost:after {
+.TabBar>li.teamTabItem.active:after, .TabBar>li.teamTabItem.dragging:after {
   border-bottom-left-radius: 6px;
   right: -5px;
   border-left: 2px solid #fff;
@@ -101,7 +103,7 @@
   z-index: 9;
 }
 
-.TabBar.darkMode>li.teamTabItem.active:after, .TabBar.darkMode>li.teamTabItem.smooth-dnd-ghost:after {
+.TabBar.darkMode>li.teamTabItem.active:after, .TabBar.darkMode>li.teamTabItem.dragging:after {
   border-left: 2px solid #323639;
   border-bottom: 2px solid #323639;
 }
@@ -113,8 +115,6 @@
 }
 
 .TabBar>li.TabBar-addServerButton{
-  transition: none !important;
-  transform: none !important;
   flex: 0 0 auto;
   min-width: 40px;
 }
@@ -122,6 +122,10 @@
 .TabBar>li.TabBar-addServerButton>a{
   color: rgba(61,60,64,0.7);
   transition: opacity 0.3s ease-in;
+}
+
+.TabBar>li.TabBar-addServerButton>a.active{
+  background-color: transparent;
 }
 
 .TabBar>li.TabBar-addServerButton svg{
@@ -132,7 +136,7 @@
   color: rgba(243,243,243,0.7);
 }
 
-.TabBar>li.teamTabItem.active>a, .TabBar>li.teamTabItem.smooth-dnd-ghost>a {
+.TabBar>li.teamTabItem.active>a, .TabBar>li.teamTabItem.dragging>a {
   border: none;
   border-radius: 6px 6px 0 0;
   color: rgba(61,60,64,1);
@@ -140,11 +144,7 @@
   z-index: 9;
 }
 
-.smooth-dnd-no-user-select li.TabBar-addServerButton>a {
-  opacity: 0;
-}
-
-.TabBar.darkMode>li.teamTabItem.active>a, .TabBar.darkMode>li.teamTabItem.smooth-dnd-ghost>a {
+.TabBar.darkMode>li.teamTabItem.active>a, .TabBar.darkMode>li.teamTabItem.dragging>a {
   color: #f3f3f3;
   background-color: #323639;
 }

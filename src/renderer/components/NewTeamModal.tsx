@@ -3,7 +3,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Modal, Button, FormGroup, FormControl, ControlLabel, HelpBlock} from 'react-bootstrap';
+import {Modal, Button, FormGroup, FormControl, FormLabel, FormText} from 'react-bootstrap';
 
 import {TeamWithIndex} from 'types/config';
 
@@ -69,7 +69,7 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
         return this.getTeamNameValidationError() === null ? null : 'error';
     }
 
-    handleTeamNameChange = (e: React.ChangeEvent<FormControl & HTMLInputElement>) => {
+    handleTeamNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         this.setState({
             teamName: e.target.value,
         });
@@ -95,7 +95,7 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
         return this.getTeamUrlValidationError() === null ? null : 'error';
     }
 
-    handleTeamUrlChange = (e: React.ChangeEvent<FormControl & HTMLInputElement>) => {
+    handleTeamUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         this.setState({
             teamUrl: e.target.value,
         });
@@ -165,7 +165,7 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
                 onEntered={() => this.teamNameInputRef?.focus()}
                 onHide={this.props.onClose}
                 restoreFocus={this.props.restoreFocus}
-                onKeyDown={(e) => {
+                onKeyDown={(e: React.KeyboardEvent) => {
                     switch (e.key) {
                     case 'Enter':
                         this.save();
@@ -186,47 +186,46 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
 
                 <Modal.Body>
                     <form>
-                        <FormGroup
-                            validationState={this.getTeamNameValidationState()}
-                        >
-                            <ControlLabel>{'Server Display Name'}</ControlLabel>
+                        <FormGroup>
+                            <FormLabel>{'Server Display Name'}</FormLabel>
                             <FormControl
                                 id='teamNameInput'
                                 type='text'
                                 value={this.state.teamName}
                                 placeholder='Server Name'
                                 onChange={this.handleTeamNameChange}
-                                inputRef={(ref) => {
+                                ref={(ref: HTMLInputElement) => {
                                     this.teamNameInputRef = ref;
                                     if (this.props.setInputRef) {
                                         this.props.setInputRef(ref);
                                     }
                                 }}
-                                onClick={(e) => {
+                                onClick={(e: React.MouseEvent<HTMLInputElement>) => {
                                     e.stopPropagation();
                                 }}
                                 autoFocus={true}
+                                isInvalid={Boolean(this.getTeamNameValidationState())}
                             />
                             <FormControl.Feedback/>
-                            <HelpBlock>{'The name of the server displayed on your desktop app tab bar.'}</HelpBlock>
+                            <FormText>{'The name of the server displayed on your desktop app tab bar.'}</FormText>
                         </FormGroup>
                         <FormGroup
                             className='NewTeamModal-noBottomSpace'
-                            validationState={this.getTeamUrlValidationState()}
                         >
-                            <ControlLabel>{'Server URL'}</ControlLabel>
+                            <FormLabel>{'Server URL'}</FormLabel>
                             <FormControl
                                 id='teamUrlInput'
                                 type='text'
                                 value={this.state.teamUrl}
                                 placeholder='https://example.com'
                                 onChange={this.handleTeamUrlChange}
-                                onClick={(e) => {
+                                onClick={(e: React.MouseEvent<HTMLInputElement>) => {
                                     e.stopPropagation();
                                 }}
+                                isInvalid={Boolean(this.getTeamUrlValidationState())}
                             />
                             <FormControl.Feedback/>
-                            <HelpBlock className='NewTeamModal-noBottomSpace'>{'The URL of your Mattermost server. Must start with http:// or https://.'}</HelpBlock>
+                            <FormText className='NewTeamModal-noBottomSpace'>{'The URL of your Mattermost server. Must start with http:// or https://.'}</FormText>
                         </FormGroup>
                     </form>
                 </Modal.Body>
@@ -241,12 +240,13 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
                     <Button
                         id='cancelNewServerModal'
                         onClick={this.props.onClose}
+                        variant='link'
                     >{'Cancel'}</Button>
                     <Button
                         id='saveNewServerModal'
                         onClick={this.save}
                         disabled={!this.validateForm()}
-                        bsStyle='primary'
+                        variant='primary'
                     >{this.getSaveButtonLabel()}</Button>
                 </Modal.Footer>
 

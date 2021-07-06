@@ -31,7 +31,7 @@ export default class TeamListItem extends React.PureComponent<Props> {
                         { this.props.url }
                     </p>
                 </div>
-                <div className='pull-right'>
+                <div>
                     <a
                         href='#'
                         onClick={this.handleTeamEditing}
