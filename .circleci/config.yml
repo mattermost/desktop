@@ -446,7 +446,7 @@ workflows:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - react_bootstrap_upgrade
+                - pull/1647
 
       - store_artifacts:
           # for master/PR builds
