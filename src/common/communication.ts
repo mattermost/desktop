@@ -16,6 +16,7 @@ export const GET_CONFIGURATION = 'get-configuration';
 export const UPDATE_CONFIGURATION = 'update-configuration';
 export const GET_LOCAL_CONFIGURATION = 'get-local-configuration';
 export const RELOAD_CONFIGURATION = 'reload-config';
+export const EMIT_CONFIGURATION = 'emit-configuration';
 
 export const UPDATE_TEAMS = 'update-teams';
 export const DARK_MODE_CHANGE = 'dark_mode_change';
@@ -79,3 +80,11 @@ export const ADD_SERVER = 'add-server';
 export const FOCUS_THREE_DOT_MENU = 'focus-three-dot-menu';
 
 export const LOADSCREEN_END = 'loadscreen-end';
+
+export const OPEN_TEAMS_DROPDOWN = 'open-teams-dropdown';
+export const CLOSE_TEAMS_DROPDOWN = 'close-teams-dropdown';
+export const UPDATE_TEAMS_DROPDOWN = 'update-teams-dropdown';
+export const UPDATE_DROPDOWN_MENTIONS = 'update-dropdown-mentions';
+export const REQUEST_TEAMS_DROPDOWN_INFO = 'request-teams-dropdown-info';
+export const RECEIVE_DROPDOWN_MENU_SIZE = 'receive-dropdown-menu-size';
+export const SEND_DROPDOWN_MENU_SIZE = 'send-dropdown-menu-size';

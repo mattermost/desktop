@@ -19,6 +19,7 @@ module.exports = merge(base, {
     entry: {
         index: './src/renderer/index.tsx',
         settings: './src/renderer/settings.tsx',
+        dropdown: './src/renderer/dropdown.tsx',
         urlView: './src/renderer/modals/urlView/urlView.tsx',
         newServer: './src/renderer/modals/newServer/newServer.tsx',
         loginModal: './src/renderer/modals/login/login.tsx',
@@ -42,6 +43,12 @@ module.exports = merge(base, {
             template: 'src/renderer/index.html',
             chunks: ['settings'],
             filename: 'settings.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['dropdown'],
+            filename: 'dropdown.html',
         }),
         new HtmlWebpackPlugin({
             title: 'Mattermost Desktop Settings',
@@ -108,6 +115,13 @@ module.exports = merge(base, {
                     },
                 },
                 'css-loader',
+            ],
+        }, {
+            test: /\.scss$/,
+            use: [
+                MiniCssExtractPlugin.loader,
+                'css-loader',
+                'sass-loader',
             ],
         }, {
             test: /\.mp3$/,

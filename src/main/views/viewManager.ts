@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import log from 'electron-log';
-import {BrowserView, BrowserWindow, dialog} from 'electron';
+import {BrowserView, BrowserWindow, dialog, ipcMain} from 'electron';
 import {BrowserViewConstructorOptions} from 'electron/main';
 
 import {CombinedConfig, Team} from 'types/config';
@@ -131,6 +131,7 @@ export class ViewManager {
                 return;
             }
             newView.window.webContents.send(SET_SERVER_KEY, serverInfo.order);
+            ipcMain.emit(SET_SERVER_KEY, true, name);
             if (newView.isReady()) {
                 // if view is not ready, the renderer will have something to display instead.
                 newView.show();

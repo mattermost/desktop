@@ -4,7 +4,7 @@
 import events from 'events';
 import {ipcMain} from 'electron';
 
-import {UPDATE_MENTIONS, UPDATE_TRAY, UPDATE_BADGE, SESSION_EXPIRED} from 'common/communication';
+import {UPDATE_MENTIONS, UPDATE_TRAY, UPDATE_BADGE, SESSION_EXPIRED, UPDATE_DROPDOWN_MENTIONS} from 'common/communication';
 
 import * as WindowManager from './windows/windowManager';
 
@@ -32,12 +32,17 @@ const emitBadge = (expired?: boolean, mentions?: number, unreads?: boolean) => {
     status.emitter.emit(UPDATE_BADGE, expired, mentions, unreads);
 };
 
+const emitDropdown = (expired?: Map<string, boolean>, mentions?: Map<string, number>, unreads?: Map<string, boolean>) => {
+    status.emitter.emit(UPDATE_DROPDOWN_MENTIONS, expired, mentions, unreads);
+};
+
 export const emitStatus = () => {
     const expired = anyExpired();
     const mentions = totalMentions();
     const unreads = anyUnreads();
     emitTray(expired, mentions, unreads);
     emitBadge(expired, mentions, unreads);
+    emitDropdown(status.expired, status.mentions, status.unreads);
 };
 
 export const updateMentions = (serverName: string, mentions: number, unreads?: boolean) => {
