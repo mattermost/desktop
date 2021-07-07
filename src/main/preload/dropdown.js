@@ -13,6 +13,7 @@ import {
     SWITCH_SERVER,
     CLOSE_TEAMS_DROPDOWN,
     SHOW_NEW_SERVER_MODAL,
+    UPDATE_TEAMS,
 } from 'common/communication';
 
 console.log('preloaded for the dropdown!');
@@ -34,12 +35,15 @@ window.addEventListener('message', async (event) => {
     case CLOSE_TEAMS_DROPDOWN:
         ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
         break;
+    case UPDATE_TEAMS:
+        ipcRenderer.invoke(UPDATE_TEAMS, event.data.data);
+        break;
     default:
         console.log(`got a message: ${event}`);
         console.log(event);
     }
 });
 
-ipcRenderer.on(UPDATE_TEAMS_DROPDOWN, (event, teams, activeTeam, darkMode, expired, mentions, unreads) => {
-    window.postMessage({type: UPDATE_TEAMS_DROPDOWN, data: {teams, activeTeam, darkMode, expired, mentions, unreads}}, window.location.href);
+ipcRenderer.on(UPDATE_TEAMS_DROPDOWN, (event, teams, activeTeam, darkMode, hasGPOTeams, expired, mentions, unreads) => {
+    window.postMessage({type: UPDATE_TEAMS_DROPDOWN, data: {teams, activeTeam, darkMode, hasGPOTeams, expired, mentions, unreads}}, window.location.href);
 });

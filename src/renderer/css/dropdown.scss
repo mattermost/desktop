@@ -24,6 +24,15 @@ body {
     min-width: 354px;
 }
 
+.TeamDropdown__droppable {
+    width: 100%;
+
+    > button {
+        border: none;
+        background: transparent;
+    }
+}
+
 .TeamDropdown__header {
     padding: 6px 20px;
 
@@ -51,7 +60,7 @@ body {
     align-items: center;
     font-family: Open Sans;
 
-    &:hover {
+    &:not(.dragging):hover {
         background-color: rgba(61, 60, 64, 0.08);
 
         .TeamDropdown__button-edit, .TeamDropdown__button-remove {
@@ -76,8 +85,20 @@ body {
         color: rgba(61, 60, 64, 0.56);
     }
 
-    > i.icon-check {
+    > div > i::before {
+        content: '\e81f'; // icon-server-variant
+    }
+
+    &.active > div > i {
         color: #166de0;
+
+        &::before {
+            content: '\f12c'; // icon-check
+        }
+    }
+
+    > div:hover > i::before, &.dragging > div > i::before {
+        content: '\f35c'; // icon-menu
     }
 
     > span {
@@ -171,7 +192,7 @@ body {
     }
 
     .TeamDropdown__button {   
-        &:hover {
+        &:not(.dragging):hover {
             background-color: rgba(221, 221, 221, 0.08);
         }
     
@@ -179,7 +200,7 @@ body {
             background-color: rgba(1, 119, 231, 0.08);
         }
 
-        > i.icon-server-variant, i.icon-plus {
+        &:not(.active) > div > i, i.icon-plus {
             color: rgba(221, 221, 221, 0.56);
         }
     
