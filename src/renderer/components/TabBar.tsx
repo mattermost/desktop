@@ -165,6 +165,8 @@ export default class TabBar extends React.PureComponent<Props, State> { // need 
             );
         }
 
+        // TODO: Replace with products
+        tabs.length = 0;
         return (
             <DragDropContext onDragEnd={this.props.onDrop}>
                 <Droppable

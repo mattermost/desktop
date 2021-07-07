@@ -6,7 +6,13 @@
 
 import {ipcRenderer} from 'electron';
 
-import {RECEIVED_LOADING_SCREEN_DATA, GET_LOADING_SCREEN_DATA, LOADING_SCREEN_ANIMATION_FINISHED, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
+import {
+    RECEIVED_LOADING_SCREEN_DATA,
+    GET_LOADING_SCREEN_DATA,
+    LOADING_SCREEN_ANIMATION_FINISHED,
+    TOGGLE_LOADING_SCREEN_VISIBILITY,
+    CLOSE_TEAMS_DROPDOWN,
+} from 'common/communication';
 
 console.log('preloaded for the loading screen!');
 
@@ -30,4 +36,8 @@ ipcRenderer.on(GET_LOADING_SCREEN_DATA, (_, result) => {
 
 ipcRenderer.on(TOGGLE_LOADING_SCREEN_VISIBILITY, (_, toggle) => {
     window.postMessage({type: TOGGLE_LOADING_SCREEN_VISIBILITY, data: toggle}, window.location.href);
+});
+
+window.addEventListener('click', () => {
+    ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
 });

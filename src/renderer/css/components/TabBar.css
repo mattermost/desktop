@@ -9,10 +9,6 @@
   margin-top: 4px;
 }
 
-.TabBar.darkMode {
-  background-color: #202124;
-}
-
 .TabBar .teamTabItem span {
   flex: 0 1 auto;
   overflow: hidden;

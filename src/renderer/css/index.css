@@ -1,47 +1,7 @@
 @import url("components/index.css");
+@import url("fonts.css");
 @import '~font-awesome/css/font-awesome.css';
 
-@font-face {
-  font-family: 'Open Sans';
-  font-style: normal;
-  font-weight: 300;
-  src: url('../../assets/fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_cyrillic_vietnamese-300.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Open Sans';
-  font-style: italic;
-  font-weight: 300;
-  src: url('../../assets/fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_cyrillic_vietnamese-300italic.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Open Sans';
-  font-style: normal;
-  font-weight: 400;
-  src: url('../../assets/fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_cyrillic_vietnamese-regular.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Open Sans';
-  font-style: italic;
-  font-weight: 400;
-  src: url('../../assets/fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_cyrillic_vietnamese-italic.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Open Sans';
-  font-style: normal;
-  font-weight: 600;
-  src: url('../../assets/fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_cyrillic_vietnamese-600.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Open Sans';
-  font-style: italic;
-  font-weight: 600;
-  src: url('../../assets/fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_cyrillic_vietnamese-600italic.woff2') format('woff2');
-}
 
 html {
   height: 100%;
@@ -85,8 +45,8 @@ body {
 .topBar>.topBar-bg {
   display: flex;
   overflow: hidden;
-  height: 36px;
-  background-color: rgba(0,0,0,0.1);
+  height: 40px;
+  background-color: #efefef;
   width: 100%;
 }
 
@@ -94,13 +54,8 @@ body {
   opacity: 0.4;
 }
 
-.topBar.darkMode {
-  background-color: #323639;
-  color: #fff;
-}
-
 .topBar.darkMode>.topBar-bg {
-  background-color: #202124;
+  background-color: #2e2e2e;
 }
 
 .topBar .three-dot-menu {
@@ -114,7 +69,7 @@ body {
   z-index: 9;
   color: rgba(61,60,64,0.7);
   -webkit-app-region: no-drag;
-  background-color: rgba(229, 229, 229, 1);
+  background-color: transparent;
 }
 
 .topBar .three-dot-menu svg {
@@ -155,13 +110,11 @@ body {
 }
 
 .topBar.darkMode .three-dot-menu {
-  background-color: #202124;
   color: rgba(243,243,243,0.7);
 }
 
 .topBar.darkMode .title-bar-btns {
   color: rgba(243,243,243,0.7);
-  background-color: #202124;
 }
 
 .topBar .title-bar-btns {
@@ -173,7 +126,6 @@ body {
   -webkit-app-region: no-drag;
   display: grid;
   grid-template-columns: repeat(3, 46px);
-  background-color: #e5e5e5;
 }
 
 .topBar .title-bar-btns>.button {
@@ -244,11 +196,11 @@ body {
 .topBar .overlay-gradient {
   flex: 0 0 40px;
   z-index: 9;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #e5e5e5 100%);
+  /* background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #e5e5e5 100%); */
   -webkit-app-region: drag;
   margin-top: 4px;
 }
 
 .topBar.darkMode .overlay-gradient {
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #202124 100%);
+  /* background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #202124 100%); */
 }

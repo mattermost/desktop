@@ -9,7 +9,7 @@
 import {ipcRenderer, webFrame} from 'electron';
 import log from 'electron-log';
 
-import {NOTIFY_MENTION, IS_UNREAD, UNREAD_RESULT, SESSION_EXPIRED, SET_SERVER_NAME, REACT_APP_INITIALIZED, USER_ACTIVITY_UPDATE} from 'common/communication';
+import {NOTIFY_MENTION, IS_UNREAD, UNREAD_RESULT, SESSION_EXPIRED, SET_SERVER_NAME, REACT_APP_INITIALIZED, USER_ACTIVITY_UPDATE, CLOSE_TEAMS_DROPDOWN} from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
@@ -204,5 +204,9 @@ ipcRenderer.on('exit-fullscreen', () => {
 setInterval(() => {
     webFrame.clearCache();
 }, CLEAR_CACHE_INTERVAL);
+
+window.addEventListener('click', () => {
+    ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
+});
 
 /* eslint-enable no-magic-numbers */

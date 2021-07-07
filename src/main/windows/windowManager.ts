@@ -15,6 +15,8 @@ import {getAdjustedWindowBoundaries} from '../utils';
 import {ViewManager} from '../views/viewManager';
 import CriticalErrorHandler from '../CriticalErrorHandler';
 
+import TeamDropdownView from '../views/teamDropdownView';
+
 import {createSettingsWindow} from './settingsWindow';
 import createMainWindow from './mainWindow';
 
@@ -25,6 +27,7 @@ type WindowManagerStatus = {
     settingsWindow?: BrowserWindow;
     config?: CombinedConfig;
     viewManager?: ViewManager;
+    teamDropdown?: TeamDropdownView;
 };
 
 const status: WindowManagerStatus = {};
@@ -108,6 +111,8 @@ export function showMainWindow(deeplinkingURL?: string | URL) {
         if (status.viewManager) {
             status.viewManager.updateMainWindow(status.mainWindow);
         }
+
+        status.teamDropdown = new TeamDropdownView(status.mainWindow, status.config.teams, status.config.darkMode);
     }
     initializeViewManager();
 

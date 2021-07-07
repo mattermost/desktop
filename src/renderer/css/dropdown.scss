@@ -1,0 +1,198 @@
+@import url("fonts.css");
+  
+body {
+    margin: 0;
+    background-color: transparent;
+    font-family: Open Sans;
+    overflow: hidden;
+}
+
+#app {
+    padding: 24px;
+    display: inline-block;
+}
+
+.TeamDropdown {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 8px 0px;
+    background: #FFFFFF;
+    border: 1px solid rgba(61, 60, 64, 0.16);
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+    min-width: 354px;
+}
+
+.TeamDropdown__header {
+    padding: 6px 20px;
+
+    > span {
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 20px;
+        color: #3D3C40;
+    }
+}
+
+.TeamDropdown__divider {
+    border-top: 1px solid rgba(61, 60, 64, 0.08);
+    border-bottom: 0;
+    width: 100%;
+    margin: 8px 0;
+}
+
+.TeamDropdown__button {
+    background-color: transparent;
+    border: none;
+    padding: 8px 18px;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    font-family: Open Sans;
+
+    &:hover {
+        background-color: rgba(61, 60, 64, 0.08);
+
+        .TeamDropdown__button-edit, .TeamDropdown__button-remove {
+            opacity: 1;
+            pointer-events: all;
+        }
+    }
+
+    &:focus, &:focus-within {
+        background-color: rgba(22, 109, 224, 0.08);
+        outline: none;
+
+        .TeamDropdown__button-edit, .TeamDropdown__button-remove {
+            opacity: 1;
+            pointer-events: all;
+        }
+    }
+
+    i {
+        font-size: 18px;
+        line-height: 20px;
+        color: rgba(61, 60, 64, 0.56);
+    }
+
+    > i.icon-check {
+        color: #166de0;
+    }
+
+    > span {
+        font-size: 14px;
+        line-height: 20px;
+        color: #3D3C40;
+        margin-left: 12px;
+        white-space: nowrap;
+    }
+}
+
+.TeamDropdown__badge {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-left: 18px;
+    min-width: 32px;
+}
+
+.TeamDropdown__badge-dot {
+    background: #579EFF;
+    height: 8px;
+    width: 8px;
+    border-radius: 8px;
+    flex: 0 0 8px;
+}
+  
+.TeamDropdown__badge-count {
+    background: #F74343;
+    text-align: center;
+    border-radius: 8px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    > span {
+        letter-spacing: 0.02em;
+        -webkit-font-smoothing: antialiased;
+        font-family: "Open Sans", sans-serif;
+        line-height: 16px;
+        padding: 0 2.5px;
+        color: white;
+        font-size: 11px;
+        font-weight: bold;
+    }
+}
+
+.TeamDropdown__indicators {
+    margin-left: auto;
+    display: flex;
+
+    > button {
+        margin-left: 18px;
+        background-color: transparent;
+        border: none;
+        padding: 0;
+
+        > i::before {
+            margin: 0;
+        }
+    }
+}
+
+.TeamDropdown__button-edit, .TeamDropdown__button-remove {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.TeamDropdown__button-remove {
+    margin-right: 7px;
+
+    + .TeamDropdown__badge {
+        margin-left: 7px;
+    }
+
+    i {
+        color: #f74343;
+    }
+}
+
+.TeamDropdown.darkMode {
+    background: #1f1f1f;
+
+    .TeamDropdown__header > span {
+        color: #DDD;
+    }
+
+    .TeamDropdown__divider {
+        border-color: rgba(221, 221, 221, 0.08);
+    }
+
+    .TeamDropdown__button {   
+        &:hover {
+            background-color: rgba(221, 221, 221, 0.08);
+        }
+    
+        &:focus {
+            background-color: rgba(1, 119, 231, 0.08);
+        }
+
+        > i.icon-server-variant, i.icon-plus {
+            color: rgba(221, 221, 221, 0.56);
+        }
+    
+        > span {
+            color: #DDD;
+        }
+    }
+
+    .TeamDropdown__badge-expired i {
+        color: rgba(221, 221, 221, 0.56);
+    }
+
+    .TeamDropdown__button-edit > i {
+        color: rgba(221, 221, 221, 0.56);
+    }
+}

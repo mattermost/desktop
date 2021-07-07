@@ -35,6 +35,7 @@ import {
     SHOW_SETTINGS_WINDOW,
     RELOAD_CONFIGURATION,
     USER_ACTIVITY_UPDATE,
+    EMIT_CONFIGURATION,
 } from 'common/communication';
 import Config from 'common/config';
 
@@ -268,6 +269,7 @@ function handleConfigUpdate(newConfig: Config) {
     }
 
     ipcMain.emit('update-menu', true, config);
+    ipcMain.emit(EMIT_CONFIGURATION, true, newConfig.data);
 }
 
 function handleConfigSynchronize() {
@@ -284,6 +286,8 @@ function handleConfigSynchronize() {
     if (app.isReady()) {
         WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
     }
+
+    ipcMain.emit(EMIT_CONFIGURATION, true, config.data);
 }
 
 function handleReloadConfig() {
@@ -302,6 +306,8 @@ function handleDarkModeChange(darkMode: boolean) {
     refreshTrayImages(config.trayIconTheme);
     WindowManager.sendToRenderer(DARK_MODE_CHANGE, darkMode);
     WindowManager.updateLoadingScreenDarkMode(darkMode);
+
+    ipcMain.emit(EMIT_CONFIGURATION, true, config.data);
 }
 
 //

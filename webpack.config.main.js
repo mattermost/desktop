@@ -18,6 +18,7 @@ module.exports = merge(base, {
     entry: {
         index: './src/main/main.ts',
         mainWindow: './src/main/preload/mainWindow.js',
+        dropdown: './src/main/preload/dropdown.js',
         preload: './src/main/preload/mattermost.js',
         modalPreload: './src/main/preload/modalPreload.js',
         loadingScreenPreload: './src/main/preload/loadingScreenPreload.js',
