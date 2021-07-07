@@ -5,6 +5,7 @@
     border-style: solid;
     display: flex;
     align-items: center;
+    font-family: Open Sans;
 
     &:hover {
         background-color: #f4f4f4;
@@ -44,20 +45,19 @@
 .TeamDropdownButton__badge-count {
     background: #F74343;
     border-radius: 8px;
-    padding: 0.5px 2px;
     display: flex;
     align-items: center;
     flex: 0 0 auto;
     position: absolute;
     top: -4px;
     right: -2px;
-    border: 2px solid #9e9b9b;
+    border: 2px solid #efefef;
 
     > span {
         color: white;
         font-size: 10px;
         line-height: 11px;
-        padding: 0px 2.5px;
+        padding: 1px 5px;
         display: flex;
         justify-content: center;
         align-items: center;

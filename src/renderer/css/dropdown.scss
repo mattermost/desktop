@@ -37,6 +37,7 @@ body {
 
 .TeamDropdown__divider {
     border-top: 1px solid rgba(61, 60, 64, 0.08);
+    border-bottom: 0;
     width: 100%;
     margin: 8px 0;
 }
@@ -178,7 +179,7 @@ body {
             background-color: rgba(1, 119, 231, 0.08);
         }
 
-        > i.icon-server-variant {
+        > i.icon-server-variant, i.icon-plus {
             color: rgba(221, 221, 221, 0.56);
         }
     
@@ -188,6 +189,10 @@ body {
     }
 
     .TeamDropdown__badge-expired i {
+        color: rgba(221, 221, 221, 0.56);
+    }
+
+    .TeamDropdown__button-edit > i {
         color: rgba(221, 221, 221, 0.56);
     }
 }
