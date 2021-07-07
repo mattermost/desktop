@@ -6,7 +6,7 @@ import {IpcMainEvent, IpcMainInvokeEvent} from 'electron/main';
 
 import {CombinedConfig} from 'types/config';
 
-import {RETRIEVE_MODAL_INFO, MODAL_CANCEL, MODAL_RESULT, MODAL_OPEN, MODAL_CLOSE, DARK_MODE_CHANGE} from 'common/communication';
+import {RETRIEVE_MODAL_INFO, MODAL_CANCEL, MODAL_RESULT, MODAL_OPEN, MODAL_CLOSE, EMIT_CONFIGURATION, DARK_MODE_CHANGE} from 'common/communication';
 
 import * as WindowManager from '../windows/windowManager';
 
