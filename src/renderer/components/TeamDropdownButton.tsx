@@ -30,7 +30,7 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
     if (totalMentionCount > 0) {
         badgeDiv = (
             <div className='TeamDropdownButton__badge-count'>
-                <span>{totalMentionCount}</span>
+                <span>{totalMentionCount > 99 ? '99+' : totalMentionCount}</span>
             </div>
         );
     } else if (hasUnreads) {

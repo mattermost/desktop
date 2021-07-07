@@ -7,11 +7,19 @@
     align-items: center;
 
     &:hover {
-        background-color: rgb(255, 255, 255, 0.32);
+        background-color: #f4f4f4;
+
+        .TeamDropdownButton__badge-count, .TeamDropdownButton__badge-unreads {
+            border-color: #f4f4f4;
+        }
     }
 
     &:focus, &.isMenuOpen {
         background-color: #fff;
+
+        .TeamDropdownButton__badge-count, .TeamDropdownButton__badge-unreads {
+            border-color: #fff;
+        }
     }
 
     > span {
@@ -43,7 +51,7 @@
     position: absolute;
     top: -4px;
     right: -2px;
-    border: 2px solid #efefef;
+    border: 2px solid #9e9b9b;
 
     > span {
         color: white;
@@ -75,11 +83,19 @@
     border-color: rgba(221, 221, 221, 0.08);
 
     &:hover {
-        background-color: rgb(31, 31, 31, 0.32);
+        background-color: #292929;
+
+        .TeamDropdownButton__badge-count, .TeamDropdownButton__badge-unreads {
+            border-color: #292929;
+        }
     }
 
     &:focus, &.isMenuOpen {
         background-color: #1f1f1f;
+
+        .TeamDropdownButton__badge-count, .TeamDropdownButton__badge-unreads {
+            border-color: #1f1f1f;
+        }
     }
 
     > span {

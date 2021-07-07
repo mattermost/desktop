@@ -36,7 +36,7 @@ body {
 }
 
 .TeamDropdown__divider {
-    border: 1px solid rgba(61, 60, 64, 0.08);
+    border-top: 1px solid rgba(61, 60, 64, 0.08);
     width: 100%;
     margin: 8px 0;
 }
@@ -44,10 +44,11 @@ body {
 .TeamDropdown__button {
     background-color: transparent;
     border: none;
-    padding: 10px 18px;
+    padding: 8px 18px;
     display: flex;
     width: 100%;
     align-items: center;
+    font-family: Open Sans;
 
     &:hover {
         background-color: rgba(61, 60, 64, 0.08);
@@ -70,9 +71,8 @@ body {
 
     i {
         font-size: 18px;
-        line-height: 21px;
+        line-height: 20px;
         color: rgba(61, 60, 64, 0.56);
-        margin-bottom: -1px;
     }
 
     > i.icon-check {
@@ -93,7 +93,7 @@ body {
     justify-content: center;
     align-items: center;
     margin-left: 18px;
-    min-width: 18px;
+    min-width: 32px;
 }
 
 .TeamDropdown__badge-dot {
@@ -146,8 +146,16 @@ body {
     pointer-events: none;
 }
 
-.TeamDropdown__button-remove > i {
-    color: #f74343;
+.TeamDropdown__button-remove {
+    margin-right: 7px;
+
+    + .TeamDropdown__badge {
+        margin-left: 7px;
+    }
+
+    i {
+        color: #f74343;
+    }
 }
 
 .TeamDropdown.darkMode {

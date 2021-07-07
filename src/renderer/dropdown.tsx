@@ -53,6 +53,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
     }
 
     closeMenu = () => {
+        (document.activeElement as HTMLElement).blur();
         window.postMessage({type: CLOSE_TEAMS_DROPDOWN}, window.location.href);
     }
 
@@ -109,7 +110,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                     } else if (mentionCount && mentionCount > 0) {
                         badgeDiv = (
                             <div className='TeamDropdown__badge-count'>
-                                <span>{mentionCount}</span>
+                                <span>{mentionCount > 99 ? '99+' : mentionCount}</span>
                             </div>
                         );
                     } else if (hasUnreads) {
