@@ -60,7 +60,7 @@ body {
     align-items: center;
     font-family: Open Sans;
 
-    &:not(.dragging):hover {
+    &:not(.anyDragging):hover {
         background-color: rgba(61, 60, 64, 0.08);
 
         .TeamDropdown__button-edit, .TeamDropdown__button-remove {
@@ -68,9 +68,8 @@ body {
             pointer-events: all;
         }
 
-        .TeamDropdown__draggable-handle {
+        .TeamDropdown__draggable-handle > i.icon-drag-vertical {
             opacity: 1;
-            pointer-events: all;
         }
     }
 
@@ -83,9 +82,8 @@ body {
             pointer-events: all;
         }
 
-        .TeamDropdown__draggable-handle {
+        .TeamDropdown__draggable-handle > i.icon-drag-vertical {
             opacity: 1;
-            pointer-events: all;
         }
     }
 
@@ -104,19 +102,27 @@ body {
         color: #166de0;
     }
 
-    > span {
+    > .TeamDropdown__draggable-handle > span, &.addServer > span {
         font-size: 14px;
         line-height: 20px;
         color: #3D3C40;
         margin-left: 12px;
         white-space: nowrap;
     }
+
+    &.addServer {
+        padding-left: 24px;
+
+        > i.icon-plus::before {
+            margin: 0;
+        }
+    }
 }
 
-.TeamDropdown__draggable-handle {
+.TeamDropdown__draggable-handle > i.icon-drag-vertical {
     opacity: 0;
 
-    > i::before {
+    &::before {
         margin: 0;
         color: rgba(61, 60, 64, 0.32);
         font-size: 14px;
@@ -205,7 +211,7 @@ body {
     }
 
     .TeamDropdown__button {   
-        &:not(.dragging):hover {
+        &:not(.anyDragging):hover {
             background-color: rgba(221, 221, 221, 0.08);
         }
     
@@ -217,7 +223,7 @@ body {
             color: rgba(221, 221, 221, 0.56);
         }
     
-        > span {
+        > .TeamDropdown__draggable-handle > span, &.addServer > span {
             color: #DDD;
         }
     }
@@ -230,7 +236,7 @@ body {
         color: rgba(221, 221, 221, 0.56);
     }
 
-    .TeamDropdown__draggable-handle > i::before {
+    .TeamDropdown__draggable-handle > i.icon-drag-vertical::before {
         color:rgba(221, 221, 221, 0.32);
     }
 }

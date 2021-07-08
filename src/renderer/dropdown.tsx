@@ -193,10 +193,11 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                                             index={orderedIndex}
                                             disableInteractiveElementBlocking={true}
                                         >
-                                            {(provided) => (
+                                            {(provided, snapshot) => (
                                                 <button
                                                     className={classNames('TeamDropdown__button', {
-                                                        dragging: this.state.isAnyDragging,
+                                                        dragging: snapshot.isDragging,
+                                                        anyDragging: this.state.isAnyDragging,
                                                         active: this.isActiveTeam(team),
                                                     })}
                                                     onClick={this.selectServer(team)}
@@ -210,9 +211,9 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                                                         {...provided.dragHandleProps}
                                                     >
                                                         <i className='icon-drag-vertical'/>
+                                                        {this.isActiveTeam(team) ? <i className='icon-check'/> : <i className='icon-server-variant'/>}
+                                                        <span>{team.name}</span>
                                                     </div>
-                                                    {this.isActiveTeam(team) ? <i className='icon-check'/> : <i className='icon-server-variant'/>}
-                                                    <span>{team.name}</span>
                                                     <div className='TeamDropdown__indicators'>
                                                         <button
                                                             className='TeamDropdown__button-edit'
@@ -242,7 +243,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                 </DragDropContext>
                 <hr className='TeamDropdown__divider'/>
                 <button
-                    className='TeamDropdown__button'
+                    className='TeamDropdown__button addServer'
                     onClick={this.addServer}
                 >
                     <i className='icon-plus'/>
