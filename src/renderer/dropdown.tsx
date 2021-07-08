@@ -204,9 +204,14 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                                                     {...provided.draggableProps}
                                                     style={getStyle(provided.draggableProps.style)}
                                                 >
-                                                    <div {...provided.dragHandleProps}>
-                                                        <i className='icon-'/>
+                                                    <div
+                                                        className='TeamDropdown__draggable-handle'
+                                                        onClick={this.preventPropogation}
+                                                        {...provided.dragHandleProps}
+                                                    >
+                                                        <i className='icon-drag-vertical'/>
                                                     </div>
+                                                    {this.isActiveTeam(team) ? <i className='icon-check'/> : <i className='icon-server-variant'/>}
                                                     <span>{team.name}</span>
                                                     <div className='TeamDropdown__indicators'>
                                                         <button

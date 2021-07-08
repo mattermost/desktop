@@ -54,7 +54,7 @@ body {
 .TeamDropdown__button {
     background-color: transparent;
     border: none;
-    padding: 8px 18px;
+    padding: 8px 18px 8px 7px;
     display: flex;
     width: 100%;
     align-items: center;
@@ -64,6 +64,11 @@ body {
         background-color: rgba(61, 60, 64, 0.08);
 
         .TeamDropdown__button-edit, .TeamDropdown__button-remove {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .TeamDropdown__draggable-handle {
             opacity: 1;
             pointer-events: all;
         }
@@ -77,6 +82,16 @@ body {
             opacity: 1;
             pointer-events: all;
         }
+
+        .TeamDropdown__draggable-handle {
+            opacity: 1;
+            pointer-events: all;
+        }
+    }
+
+    &.dragging .TeamDropdown__draggable-handle {
+        opacity: 1;
+        pointer-events: all;
     }
 
     i {
@@ -85,20 +100,8 @@ body {
         color: rgba(61, 60, 64, 0.56);
     }
 
-    > div > i::before {
-        content: '\e81f'; // icon-server-variant
-    }
-
-    &.active > div > i {
+    &.active i.icon-check {
         color: #166de0;
-
-        &::before {
-            content: '\f12c'; // icon-check
-        }
-    }
-
-    > div:hover > i::before, &.dragging > div > i::before {
-        content: '\f35c'; // icon-menu
     }
 
     > span {
@@ -107,6 +110,16 @@ body {
         color: #3D3C40;
         margin-left: 12px;
         white-space: nowrap;
+    }
+}
+
+.TeamDropdown__draggable-handle {
+    opacity: 0;
+
+    > i::before {
+        margin: 0;
+        color: rgba(61, 60, 64, 0.32);
+        font-size: 14px;
     }
 }
 
@@ -200,7 +213,7 @@ body {
             background-color: rgba(1, 119, 231, 0.08);
         }
 
-        &:not(.active) > div > i, i.icon-plus {
+        &:not(.active) i, i.icon-drag-vertical {
             color: rgba(221, 221, 221, 0.56);
         }
     
@@ -215,5 +228,9 @@ body {
 
     .TeamDropdown__button-edit > i {
         color: rgba(221, 221, 221, 0.56);
+    }
+
+    .TeamDropdown__draggable-handle > i::before {
+        color:rgba(221, 221, 221, 0.32);
     }
 }
