@@ -4,7 +4,9 @@
 import {BrowserWindow, ipcMain} from 'electron';
 import {IpcMainEvent, IpcMainInvokeEvent} from 'electron/main';
 
-import {RETRIEVE_MODAL_INFO, MODAL_CANCEL, MODAL_RESULT, MODAL_OPEN, MODAL_CLOSE} from 'common/communication';
+import {CombinedConfig} from 'types/config';
+
+import {RETRIEVE_MODAL_INFO, MODAL_CANCEL, MODAL_RESULT, MODAL_OPEN, MODAL_CLOSE, EMIT_CONFIGURATION, DARK_MODE_CHANGE} from 'common/communication';
 
 import * as WindowManager from '../windows/windowManager';
 
@@ -107,3 +109,9 @@ export function focusCurrentModal() {
         modalQueue[0].view.webContents.focus();
     }
 }
+
+ipcMain.on(EMIT_CONFIGURATION, (event: IpcMainEvent, config: CombinedConfig) => {
+    modalQueue.forEach((modal) => {
+        modal.view.webContents.send(DARK_MODE_CHANGE, config.darkMode);
+    });
+});

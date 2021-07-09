@@ -7,11 +7,15 @@ import {Certificate} from 'electron/renderer';
 
 import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO} from 'common/communication';
 
-import SelectCertificateModal from './certificateModal';
-
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'renderer/css/modals.css';
 import 'renderer/css/components/CertificateModal.css';
+
+import setupDarkMode from '../darkMode';
+
+import SelectCertificateModal from './certificateModal';
+
+setupDarkMode();
 
 const handleCancel = () => {
     window.postMessage({type: MODAL_CANCEL}, window.location.href);

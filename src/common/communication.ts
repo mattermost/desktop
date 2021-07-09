@@ -20,6 +20,7 @@ export const EMIT_CONFIGURATION = 'emit-configuration';
 
 export const UPDATE_TEAMS = 'update-teams';
 export const DARK_MODE_CHANGE = 'dark_mode_change';
+export const GET_DARK_MODE = 'get-dark-mode';
 export const USER_ACTIVITY_UPDATE = 'user-activity-update';
 
 export const LOAD_RETRY = 'load_retry';

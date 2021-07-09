@@ -13,6 +13,10 @@ import {MODAL_CANCEL, MODAL_RESULT} from 'common/communication';
 
 import NewTeamModal from '../../components/NewTeamModal'; //'./addServer.jsx';
 
+import setupDarkMode from '../darkMode';
+
+setupDarkMode();
+
 const onClose = () => {
     window.postMessage({type: MODAL_CANCEL}, window.location.href);
 };

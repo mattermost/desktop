@@ -6,7 +6,7 @@
 
 import {ipcRenderer} from 'electron';
 
-import {MODAL_CANCEL, MODAL_RESULT, MODAL_INFO, RETRIEVE_MODAL_INFO, MODAL_SEND_IPC_MESSAGE} from 'common/communication';
+import {MODAL_CANCEL, MODAL_RESULT, MODAL_INFO, RETRIEVE_MODAL_INFO, MODAL_SEND_IPC_MESSAGE, GET_DARK_MODE, DARK_MODE_CHANGE} from 'common/communication';
 
 console.log('preloaded for the modal!');
 
@@ -30,6 +30,10 @@ window.addEventListener('message', async (event) => {
         console.log('sending custom ipc message');
         ipcRenderer.send(event.data.data.type, ...event.data.data.args);
         break;
+    case GET_DARK_MODE:
+        console.log('getting dark mode value');
+        window.postMessage({type: DARK_MODE_CHANGE, data: await ipcRenderer.invoke(GET_DARK_MODE)}, window.location.href);
+        break;
     default:
         console.log(`got a message: ${event}`);
         console.log(event);
@@ -40,4 +44,8 @@ window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         ipcRenderer.send(MODAL_CANCEL);
     }
+});
+
+ipcRenderer.on(DARK_MODE_CHANGE, (event, darkMode) => {
+    window.postMessage({type: DARK_MODE_CHANGE, data: darkMode}, window.location.href);
 });
