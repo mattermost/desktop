@@ -25,10 +25,12 @@ export default class Config extends EventEmitter {
     constructor(configFilePath) {
         super();
         this.configFilePath = configFilePath;
+        this.registryConfigData = new Object();
     }
 
     // separating constructor from init so main can setup event listeners
     init = () => {
+        this.reload();
         this.registryConfig = new RegistryConfig();
         this.registryConfig.once(REGISTRY_READ_EVENT, this.loadRegistry);
         this.registryConfig.init();
@@ -65,7 +67,6 @@ export default class Config extends EventEmitter {
         this.localConfigData = this.loadLocalConfigFile();
         this.localConfigData = this.checkForConfigUpdates(this.localConfigData);
         this.regenerateCombinedConfigData();
-
         this.emit('update', this.combinedData);
         this.emit('synchronize');
     }
