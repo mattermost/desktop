@@ -66,6 +66,7 @@ import {destroyTray, refreshTrayImages, setTrayMenu, setupTray} from './tray/tra
 import {AuthManager} from './authManager';
 import {CertificateManager} from './certificateManager';
 import {setupBadge, setUnreadBadgeSetting} from './badge';
+import {getDefaultTeamWithTabsFromTeam} from './tabs/ServerTab';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
     module.hot.accept();
@@ -477,7 +478,7 @@ function handleNewServerModal() {
         modalPromise.then((data) => {
             const teams = config.teams;
             const order = teams.length;
-            teams.push({...data, order});
+            teams.push(getDefaultTeamWithTabsFromTeam({...data, order}));
             config.set('teams', teams);
         }).catch((e) => {
             // e is undefined for user cancellation
