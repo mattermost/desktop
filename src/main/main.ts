@@ -157,6 +157,12 @@ async function initializeConfig() {
             config.on('synchronize', handleConfigSynchronize);
             config.on('darkModeChange', handleDarkModeChange);
             handleConfigUpdate(configData);
+
+            // can only call this before the app is ready
+            if (config.enableHardwareAcceleration === false) {
+                app.disableHardwareAcceleration();
+            }
+
             resolve();
         });
         config.init();
@@ -192,11 +198,6 @@ function initializeBeforeAppReady() {
     if (process.cwd() !== expectedPath && !isDev) {
         log.warn(`Current working directory is ${process.cwd()}, changing into ${expectedPath}`);
         process.chdir(expectedPath);
-    }
-
-    // can only call this before the app is ready
-    if (config.enableHardwareAcceleration === false) {
-        app.disableHardwareAcceleration();
     }
 
     refreshTrayImages(config.trayIconTheme);

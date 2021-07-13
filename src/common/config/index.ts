@@ -35,7 +35,7 @@ import RegistryConfig, {REGISTRY_READ_EVENT} from './RegistryConfig';
 export default class Config extends EventEmitter {
     configFilePath: string;
 
-    registryConfig?: RegistryConfig;
+    registryConfig: RegistryConfig;
 
     combinedData?: CombinedConfig;
     registryConfigData?: Partial<RegistryConfigType>;
@@ -46,11 +46,12 @@ export default class Config extends EventEmitter {
     constructor(configFilePath: string) {
         super();
         this.configFilePath = configFilePath;
+        this.registryConfig = new RegistryConfig();
     }
 
     // separating constructor from init so main can setup event listeners
     init = (): void => {
-        this.registryConfig = new RegistryConfig();
+        this.reload();
         this.registryConfig.once(REGISTRY_READ_EVENT, this.loadRegistry);
         this.registryConfig.init();
     }
