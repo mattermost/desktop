@@ -25,7 +25,7 @@ export default class Config extends EventEmitter {
     constructor(configFilePath) {
         super();
         this.configFilePath = configFilePath;
-        this.registryConfigData = new Object();
+        this.registryConfigData = {};
     }
 
     // separating constructor from init so main can setup event listeners
