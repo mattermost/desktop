@@ -7,7 +7,7 @@ import log from 'electron-log';
 
 import {CombinedConfig} from 'types/config';
 
-import {MAXIMIZE_CHANGE, HISTORY, GET_LOADING_SCREEN_DATA, REACT_APP_INITIALIZED, LOADING_SCREEN_ANIMATION_FINISHED, FOCUS_THREE_DOT_MENU} from 'common/communication';
+import {MAXIMIZE_CHANGE, HISTORY, GET_LOADING_SCREEN_DATA, REACT_APP_INITIALIZED, LOADING_SCREEN_ANIMATION_FINISHED, FOCUS_THREE_DOT_MENU, GET_DARK_MODE} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
 import {getTabViewName} from 'common/tabs/TabView';
@@ -37,6 +37,7 @@ const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
 ipcMain.on(HISTORY, handleHistory);
 ipcMain.handle(GET_LOADING_SCREEN_DATA, handleLoadingScreenDataRequest);
+ipcMain.handle(GET_DARK_MODE, handleGetDarkMode);
 ipcMain.on(REACT_APP_INITIALIZED, handleReactAppInitialized);
 ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, handleLoadingScreenAnimationFinished);
 
@@ -495,4 +496,8 @@ export function selectPreviousTab() {
     const nextIndex = currentTeamTabs.findIndex((tab) => tab.order === nextOrder);
     const newTab = currentTeamTabs[nextIndex];
     switchTab(currentView.tab.server.name, newTab.name);
+}
+
+function handleGetDarkMode() {
+    return status.config?.darkMode;
 }

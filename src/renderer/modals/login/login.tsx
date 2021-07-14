@@ -7,10 +7,14 @@ import {AuthenticationResponseDetails} from 'electron/renderer';
 
 import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO} from 'common/communication';
 
-import LoginModal from './loginModal';
-
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'renderer/css/modals.css';
+
+import setupDarkMode from '../darkMode';
+
+import LoginModal from './loginModal';
+
+setupDarkMode();
 
 const handleLoginCancel = (request: AuthenticationResponseDetails) => {
     window.postMessage({type: MODAL_CANCEL, data: {request}}, window.location.href);

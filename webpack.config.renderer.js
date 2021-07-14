@@ -100,8 +100,20 @@ module.exports = merge(base, {
             },
         }, {
             test: /\.css$/,
+            exclude: /\.lazy\.css$/,
             use: [
                 MiniCssExtractPlugin.loader,
+                'css-loader',
+            ],
+        }, {
+            test: /\.lazy\.css$/,
+            use: [
+                {
+                    loader: 'style-loader',
+                    options: {
+                        injectType: 'lazyStyleTag',
+                    },
+                },
                 'css-loader',
             ],
         }, {
