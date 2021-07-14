@@ -10,7 +10,7 @@ import {CombinedConfig} from 'types/config';
 import {MAXIMIZE_CHANGE, HISTORY, GET_LOADING_SCREEN_DATA, REACT_APP_INITIALIZED, LOADING_SCREEN_ANIMATION_FINISHED, FOCUS_THREE_DOT_MENU} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
-import {getTabViewName} from 'main/tabs/TabView';
+import {getTabViewName} from 'common/tabs/TabView';
 
 import {getAdjustedWindowBoundaries} from '../utils';
 
@@ -114,7 +114,7 @@ export function showMainWindow(deeplinkingURL?: string | URL) {
             status.viewManager.updateMainWindow(status.mainWindow);
         }
 
-        status.teamDropdown = new TeamDropdownView(status.mainWindow, status.config.teams, status.config.darkMode);
+        status.teamDropdown = new TeamDropdownView(status.mainWindow, status.config.teams, status.config.darkMode, status.config.enableServerManagement);
     }
     initializeViewManager();
 

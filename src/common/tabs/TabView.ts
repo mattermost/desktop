@@ -3,7 +3,7 @@
 
 import {Tab, Team} from 'types/config';
 
-import {MattermostServer} from 'main/MattermostServer';
+import {MattermostServer} from 'common/servers/MattermostServer';
 
 import MessagingTabView from './MessagingTabView';
 import FocalboardTabView from './FocalboardTabView';

@@ -22,7 +22,7 @@ import {
 import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION} from 'common/communication';
 
 import * as Validator from 'main/Validator';
-import {getDefaultTeamWithTabsFromTeam} from 'main/tabs/TabView';
+import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 
 import defaultPreferences, {getDefaultDownloadLocation} from './defaultPreferences';
 import upgradeConfigData from './upgradePreferences';

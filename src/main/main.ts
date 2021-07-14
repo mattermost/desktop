@@ -39,7 +39,7 @@ import {
     SWITCH_TAB,
 } from 'common/communication';
 import Config from 'common/config';
-
+import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 import Utils from 'common/utils/util';
 
 import urlUtils from 'common/utils/url';
@@ -67,7 +67,6 @@ import {destroyTray, refreshTrayImages, setTrayMenu, setupTray} from './tray/tra
 import {AuthManager} from './authManager';
 import {CertificateManager} from './certificateManager';
 import {setupBadge, setUnreadBadgeSetting} from './badge';
-import {getDefaultTeamWithTabsFromTeam} from './tabs/TabView';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
     module.hot.accept();
@@ -582,7 +581,7 @@ function initializeAfterAppReady() {
 
         item.on('done', (doneEvent, state) => {
             if (state === 'completed') {
-                displayDownloadCompleted(filename, item.savePath, urlUtils.getServer(webContents.getURL(), config.teams)!);
+                displayDownloadCompleted(filename, item.savePath, urlUtils.getView(webContents.getURL(), config.teams)!);
             }
         });
     });

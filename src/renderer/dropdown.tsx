@@ -5,16 +5,18 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import classNames from 'classnames';
 
-import {Team} from 'types/config';
+import {Team, TeamWithTabs} from 'types/config';
 
 import {CLOSE_TEAMS_DROPDOWN, REQUEST_TEAMS_DROPDOWN_INFO, SEND_DROPDOWN_MENU_SIZE, SHOW_NEW_SERVER_MODAL, SWITCH_SERVER, UPDATE_TEAMS_DROPDOWN} from 'common/communication';
+
+import {getTabViewName} from 'common/tabs/TabView';
 
 import './css/dropdown.scss';
 import './css/compass-icons.css';
 
 type State = {
-    teams?: Team[];
-    orderedTeams?: Team[];
+    teams?: TeamWithTabs[];
+    orderedTeams?: TeamWithTabs[];
     activeTeam?: string;
     darkMode?: boolean;
     enableServerManagement?: boolean;
@@ -36,7 +38,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
             const {teams, activeTeam, darkMode, enableServerManagement, unreads, mentions, expired} = event.data.data;
             this.setState({
                 teams,
-                orderedTeams: teams.concat().sort((a: Team, b: Team) => a.order - b.order),
+                orderedTeams: teams.concat().sort((a: TeamWithTabs, b: TeamWithTabs) => a.order - b.order),
                 activeTeam,
                 darkMode,
                 enableServerManagement,
@@ -98,9 +100,13 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                 </div>
                 <hr className='TeamDropdown__divider'/>
                 {this.state.orderedTeams?.map((team, index) => {
-                    const sessionExpired = this.state.expired?.get(team.name);
-                    const hasUnreads = this.state.unreads?.get(team.name);
-                    const mentionCount = this.state.mentions?.get(team.name);
+                    const {sessionExpired, hasUnreads, mentionCount} = team.tabs.reduce((counts, tab) => {
+                        const tabName = getTabViewName(team.name, tab.name);
+                        counts.sessionExpired = this.state.expired?.get(tabName) || counts.sessionExpired;
+                        counts.hasUnreads = this.state.unreads?.get(tabName) || counts.hasUnreads;
+                        counts.mentionCount += this.state.mentions?.get(tabName) || 0;
+                        return counts;
+                    }, {sessionExpired: false, hasUnreads: false, mentionCount: 0});
 
                     let badgeDiv: React.ReactNode;
                     if (sessionExpired) {

@@ -9,6 +9,8 @@ import classNames from 'classnames';
 
 import {Tab} from 'types/config';
 
+import {getTabViewName} from 'common/tabs/TabView';
+
 type Props = {
     activeTabName: string;
     activeServerName: string;
@@ -39,13 +41,14 @@ export default class TabBar extends React.PureComponent<Props> {
         const orderedTabs = this.props.tabs.concat().sort((a, b) => a.order - b.order);
         const tabs = orderedTabs.map((tab, orderedIndex) => {
             const index = this.props.tabs.indexOf(tab);
+            const tabName = getTabViewName(this.props.activeServerName, tab.name);
 
-            const sessionExpired = this.props.sessionsExpired[index];
-            const hasUnreads = this.props.unreadCounts[index];
+            const sessionExpired = this.props.sessionsExpired[tabName];
+            const hasUnreads = this.props.unreadCounts[tabName];
 
             let mentionCount = 0;
-            if (this.props.mentionCounts[index] > 0) {
-                mentionCount = this.props.mentionCounts[index];
+            if (this.props.mentionCounts[tabName] > 0) {
+                mentionCount = this.props.mentionCounts[tabName];
             }
 
             let badgeDiv: React.ReactNode;

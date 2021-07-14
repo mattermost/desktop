@@ -44,7 +44,7 @@ export class AuthManager {
     handleAppLogin = (event: Event, webContents: WebContents, request: AuthenticationResponseDetails, authInfo: AuthInfo, callback?: (username?: string, password?: string) => void) => {
         event.preventDefault();
         const parsedURL = new URL(request.url);
-        const server = urlUtils.getServer(parsedURL, this.config.teams);
+        const server = urlUtils.getView(parsedURL, this.config.teams);
         if (!server) {
             return;
         }

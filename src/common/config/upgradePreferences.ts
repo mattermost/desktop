@@ -4,7 +4,7 @@
 
 import {ConfigV3, ConfigV2, ConfigV1, ConfigV0, AnyConfig} from 'types/config';
 
-import {getDefaultTeamWithTabsFromTeam} from 'main/tabs/TabView';
+import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 
 import pastDefaultPreferences from './pastDefaultPreferences';
 

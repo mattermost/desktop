@@ -10,7 +10,7 @@ import {IpcRendererEvent} from 'electron/renderer';
 
 import {TeamWithTabs} from 'types/config';
 
-import {getTabViewName} from 'main/tabs/TabView';
+import {getTabViewName} from 'common/tabs/TabView';
 
 import {
     FOCUS_BROWSERVIEW,
@@ -188,18 +188,17 @@ export default class MainPage extends React.PureComponent<Props, State> {
             this.setState({showExtraBar});
         });
 
-        window.ipcRenderer.on(UPDATE_MENTIONS, (_event, team, mentions, unreads, isExpired) => {
-            const key = this.props.teams.findIndex((server) => server.name === team);
+        window.ipcRenderer.on(UPDATE_MENTIONS, (_event, view, mentions, unreads, isExpired) => {
             const {unreadCounts, mentionCounts, sessionsExpired} = this.state;
 
             const newMentionCounts = {...mentionCounts};
-            newMentionCounts[key] = mentions || 0;
+            newMentionCounts[view] = mentions || 0;
 
             const newUnreads = {...unreadCounts};
-            newUnreads[key] = unreads || false;
+            newUnreads[view] = unreads || false;
 
             const expired = {...sessionsExpired};
-            expired[key] = isExpired || false;
+            expired[view] = isExpired || false;
 
             this.setState({unreadCounts: newUnreads, mentionCounts: newMentionCounts, sessionsExpired: expired});
         });

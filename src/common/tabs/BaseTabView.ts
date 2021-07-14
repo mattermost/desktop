@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {MattermostServer} from 'main/MattermostServer';
+import {MattermostServer} from 'common/servers/MattermostServer';
 
 import {getTabViewName, TabType, TabView} from './TabView';
 

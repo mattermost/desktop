@@ -4,7 +4,7 @@
 import {BrowserWindow, shell, WebContents} from 'electron';
 import log from 'electron-log';
 
-import {Team} from 'types/config';
+import {TeamWithTabs} from 'types/config';
 
 import urlUtils from 'common/utils/url';
 
@@ -37,12 +37,12 @@ function isTrustedPopupWindow(webContents: WebContents) {
 
 const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];
 
-const generateWillNavigate = (getServersFunction: () => Team[]) => {
+const generateWillNavigate = (getServersFunction: () => TeamWithTabs[]) => {
     return (event: Event & {sender: WebContents}, url: string) => {
         const contentID = event.sender.id;
         const parsedURL = urlUtils.parseURL(url)!;
         const configServers = getServersFunction();
-        const server = urlUtils.getServer(parsedURL, configServers);
+        const server = urlUtils.getView(parsedURL, configServers);
 
         if (server && (urlUtils.isTeamUrl(server.url, parsedURL) || urlUtils.isAdminUrl(server.url, parsedURL) || isTrustedPopupWindow(event.sender))) {
             return;
@@ -63,12 +63,12 @@ const generateWillNavigate = (getServersFunction: () => Team[]) => {
     };
 };
 
-const generateDidStartNavigation = (getServersFunction: () => Team[]) => {
+const generateDidStartNavigation = (getServersFunction: () => TeamWithTabs[]) => {
     return (event: Event & {sender: WebContents}, url: string) => {
         const serverList = getServersFunction();
         const contentID = event.sender.id;
         const parsedURL = urlUtils.parseURL(url)!;
-        const server = urlUtils.getServer(parsedURL, serverList);
+        const server = urlUtils.getView(parsedURL, serverList);
 
         if (!urlUtils.isTrustedURL(parsedURL, serverList)) {
             return;
@@ -82,7 +82,7 @@ const generateDidStartNavigation = (getServersFunction: () => Team[]) => {
     };
 };
 
-const generateNewWindowListener = (getServersFunction: () => Team[], spellcheck?: boolean) => {
+const generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spellcheck?: boolean) => {
     return (event: Event, url: string) => {
         const parsedURL = urlUtils.parseURL(url);
         if (!parsedURL) {
@@ -110,7 +110,7 @@ const generateNewWindowListener = (getServersFunction: () => Team[], spellcheck?
             return;
         }
 
-        const server = urlUtils.getServer(parsedURL, configServers);
+        const server = urlUtils.getView(parsedURL, configServers);
 
         if (!server) {
             shell.openExternal(url);
@@ -193,7 +193,7 @@ export const removeWebContentsListeners = (id: number) => {
     }
 };
 
-export const addWebContentsEventListeners = (mmview: MattermostView, getServersFunction: () => Team[]) => {
+export const addWebContentsEventListeners = (mmview: MattermostView, getServersFunction: () => TeamWithTabs[]) => {
     const contents = mmview.view.webContents;
 
     // initialize custom login tracking

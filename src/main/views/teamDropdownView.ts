@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent} from 'electron';
-import {CombinedConfig, Team} from 'types/config';
+import {CombinedConfig, TeamWithTabs} from 'types/config';
 
 import {
     CLOSE_TEAMS_DROPDOWN,
@@ -22,7 +22,7 @@ import * as WindowManager from '../windows/windowManager';
 export default class TeamDropdownView {
     view: BrowserView;
     bounds?: Electron.Rectangle;
-    teams: Team[];
+    teams: TeamWithTabs[];
     activeTeam?: string;
     darkMode: boolean;
     enableServerManagement?: boolean;
@@ -31,10 +31,11 @@ export default class TeamDropdownView {
     expired?: Map<string, boolean>;
     window: BrowserWindow;
 
-    constructor(window: BrowserWindow, teams: Team[], darkMode: boolean) {
+    constructor(window: BrowserWindow, teams: TeamWithTabs[], darkMode: boolean, enableServerManagement: boolean) {
         this.teams = teams;
         this.window = window;
         this.darkMode = darkMode;
+        this.enableServerManagement = enableServerManagement;
 
         const preload = getLocalPreload('dropdown.js');
         this.view = new BrowserView({webPreferences: {

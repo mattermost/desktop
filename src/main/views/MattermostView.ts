@@ -22,7 +22,7 @@ import {
     LOADSCREEN_END,
 } from 'common/communication';
 
-import {TabView} from 'main/tabs/TabView';
+import {TabView} from 'common/tabs/TabView';
 
 import ContextMenu from '../contextMenu';
 import {getWindowBoundaries, getLocalPreload, composeUserAgent} from '../utils';

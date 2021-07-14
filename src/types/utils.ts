@@ -4,7 +4,6 @@
 export type ServerFromURL = {
     name: string;
     url: URL;
-    index: number;
 }
 
 export type Boundaries = {

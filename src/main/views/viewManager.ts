@@ -18,9 +18,9 @@ import {
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 
-import {getServerView} from 'main/tabs/TabView';
+import {getServerView, getTabViewName} from 'common/tabs/TabView';
 
-import {MattermostServer} from '../MattermostServer';
+import {MattermostServer} from '../../common/servers/MattermostServer';
 import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
 
 import {MattermostView} from './MattermostView';
@@ -114,7 +114,11 @@ export class ViewManager {
         if (this.configServers.length) {
             const element = this.configServers.find((e) => e.order === 0);
             if (element) {
-                this.showByName(element.name);
+                const tab = element.tabs.find((e) => e.order === 0);
+                if (tab) {
+                    const tabView = getTabViewName(element.name, tab.name);
+                    this.showByName(tabView);
+                }
             }
         }
     }
@@ -354,11 +358,11 @@ export class ViewManager {
         // TODO: fix for new tabs
         if (url) {
             const parsedURL = urlUtils.parseURL(url)!;
-            const server = urlUtils.getServer(parsedURL, this.configServers, true);
-            if (server) {
-                const view = this.views.get(server.name);
+            const tabView = urlUtils.getView(parsedURL, this.configServers, true);
+            if (tabView) {
+                const view = this.views.get(tabView.name);
                 if (!view) {
-                    log.error(`Couldn't find a view matching the name ${server.name}`);
+                    log.error(`Couldn't find a view matching the name ${tabView.name}`);
                     return;
                 }
 
