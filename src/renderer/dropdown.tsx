@@ -134,6 +134,12 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
         window.removeEventListener('click', this.closeMenu);
     }
 
+    handleClickOnDragHandle = (event: React.MouseEvent<HTMLDivElement>) => {
+        if (this.state.isAnyDragging) {
+            event.stopPropagation();
+        }
+    }
+
     render() {
         return (
             <div
@@ -200,15 +206,17 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                                                         anyDragging: this.state.isAnyDragging,
                                                         active: this.isActiveTeam(team),
                                                     })}
-                                                    onClick={this.selectServer(team)}
                                                     ref={provided.innerRef}
                                                     {...provided.draggableProps}
+                                                    onClick={this.selectServer(team)}
                                                     style={getStyle(provided.draggableProps.style)}
                                                 >
                                                     <div
-                                                        className='TeamDropdown__draggable-handle'
-                                                        onClick={this.preventPropogation}
+                                                        className={classNames('TeamDropdown__draggable-handle', {
+                                                            dragging: snapshot.isDragging,
+                                                        })}
                                                         {...provided.dragHandleProps}
+                                                        onClick={this.handleClickOnDragHandle}
                                                     >
                                                         <i className='icon-drag-vertical'/>
                                                         {this.isActiveTeam(team) ? <i className='icon-check'/> : <i className='icon-server-variant'/>}

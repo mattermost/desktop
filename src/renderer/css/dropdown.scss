@@ -119,13 +119,21 @@ body {
     }
 }
 
-.TeamDropdown__draggable-handle > i.icon-drag-vertical {
-    opacity: 0;
+.TeamDropdown__draggable-handle {
+    cursor: pointer !important;
+    
+    &.dragging {
+        cursor: grabbing !important;
+    }
 
-    &::before {
-        margin: 0;
-        color: rgba(61, 60, 64, 0.32);
-        font-size: 14px;
+    > i.icon-drag-vertical {
+        opacity: 0;
+
+        &::before {
+            margin: 0;
+            color: rgba(61, 60, 64, 0.32);
+            font-size: 14px;
+        }
     }
 }
 
