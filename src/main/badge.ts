@@ -64,7 +64,7 @@ function showBadge(sessionExpired: boolean, mentionCount: number, showUnreadBadg
 
 export function setUnreadBadgeSetting(showUnreadBadge: boolean) {
     showUnreadBadgeSetting = showUnreadBadge;
-    AppState.emitStatus();
+    AppState.updateBadge();
 }
 
 export function setupBadge() {

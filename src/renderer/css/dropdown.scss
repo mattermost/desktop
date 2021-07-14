@@ -24,6 +24,15 @@ body {
     min-width: 354px;
 }
 
+.TeamDropdown__droppable {
+    width: 100%;
+
+    > button {
+        border: none;
+        background: transparent;
+    }
+}
+
 .TeamDropdown__header {
     padding: 6px 20px;
 
@@ -45,18 +54,22 @@ body {
 .TeamDropdown__button {
     background-color: transparent;
     border: none;
-    padding: 8px 18px;
+    padding: 8px 18px 8px 7px;
     display: flex;
     width: 100%;
     align-items: center;
     font-family: Open Sans;
 
-    &:hover {
+    &:not(.anyDragging):hover {
         background-color: rgba(61, 60, 64, 0.08);
 
         .TeamDropdown__button-edit, .TeamDropdown__button-remove {
             opacity: 1;
             pointer-events: all;
+        }
+
+        .TeamDropdown__draggable-handle > i.icon-drag-vertical {
+            opacity: 1;
         }
     }
 
@@ -68,6 +81,15 @@ body {
             opacity: 1;
             pointer-events: all;
         }
+
+        .TeamDropdown__draggable-handle > i.icon-drag-vertical {
+            opacity: 1;
+        }
+    }
+
+    &.dragging .TeamDropdown__draggable-handle {
+        opacity: 1;
+        pointer-events: all;
     }
 
     i {
@@ -76,16 +98,42 @@ body {
         color: rgba(61, 60, 64, 0.56);
     }
 
-    > i.icon-check {
+    &.active i.icon-check {
         color: #166de0;
     }
 
-    > span {
+    > .TeamDropdown__draggable-handle > span, &.addServer > span {
         font-size: 14px;
         line-height: 20px;
         color: #3D3C40;
         margin-left: 12px;
         white-space: nowrap;
+    }
+
+    &.addServer {
+        padding-left: 24px;
+
+        > i.icon-plus::before {
+            margin: 0;
+        }
+    }
+}
+
+.TeamDropdown__draggable-handle {
+    cursor: pointer !important;
+    
+    &.dragging {
+        cursor: grabbing !important;
+    }
+
+    > i.icon-drag-vertical {
+        opacity: 0;
+
+        &::before {
+            margin: 0;
+            color: rgba(61, 60, 64, 0.32);
+            font-size: 14px;
+        }
     }
 }
 
@@ -171,7 +219,7 @@ body {
     }
 
     .TeamDropdown__button {   
-        &:hover {
+        &:not(.anyDragging):hover {
             background-color: rgba(221, 221, 221, 0.08);
         }
     
@@ -179,11 +227,11 @@ body {
             background-color: rgba(1, 119, 231, 0.08);
         }
 
-        > i.icon-server-variant, i.icon-plus {
+        &:not(.active) i, i.icon-drag-vertical {
             color: rgba(221, 221, 221, 0.56);
         }
     
-        > span {
+        > .TeamDropdown__draggable-handle > span, &.addServer > span {
             color: #DDD;
         }
     }
@@ -194,5 +242,9 @@ body {
 
     .TeamDropdown__button-edit > i {
         color: rgba(221, 221, 221, 0.56);
+    }
+
+    .TeamDropdown__draggable-handle > i.icon-drag-vertical::before {
+        color:rgba(221, 221, 221, 0.32);
     }
 }
