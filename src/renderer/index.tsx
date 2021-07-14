@@ -46,12 +46,15 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         this.setState({config});
     }
 
-    moveTabs = (originalOrder: number, newOrder: number): number | undefined => {
+    moveTabs = (teamName: string, originalOrder: number, newOrder: number): number | undefined => {
         if (!this.state.config) {
             throw new Error('No config');
         }
         const teams = this.state.config.teams.concat();
-        const tabOrder = teams.map((team, index) => {
+        const currentTeamIndex = teams.findIndex((team) => team.name === teamName);
+        const tabs = teams[currentTeamIndex].tabs.concat();
+
+        const tabOrder = tabs.map((team, index) => {
             return {
                 index,
                 order: team.order,
@@ -66,8 +69,9 @@ class Root extends React.PureComponent<Record<string, never>, State> {
             if (order === newOrder) {
                 teamIndex = t.index;
             }
-            teams[t.index].order = order;
+            tabs[t.index].order = order;
         });
+        teams[currentTeamIndex].tabs = tabs;
         this.setState({
             config: {
                 ...this.state.config,
@@ -118,7 +122,6 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         return (
             <MainPage
                 teams={config.teams}
-                showAddServerButton={config.enableServerManagement}
                 moveTabs={this.moveTabs}
                 openMenu={this.openMenu}
                 darkMode={config.darkMode}

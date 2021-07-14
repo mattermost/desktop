@@ -2,7 +2,8 @@
 // See LICENSE.txt for license information.
 
 export const SWITCH_SERVER = 'switch-server';
-export const SET_SERVER_KEY = 'set-server-key';
+export const SWITCH_TAB = 'switch-tab';
+export const SET_ACTIVE_VIEW = 'set-active-view';
 export const MARK_READ = 'mark-read';
 export const FOCUS_BROWSERVIEW = 'focus-browserview';
 export const ZOOM = 'zoom';
@@ -61,7 +62,7 @@ export const SESSION_EXPIRED = 'session_expired';
 export const UPDATE_TRAY = 'update_tray';
 export const UPDATE_BADGE = 'update_badge';
 
-export const SET_SERVER_NAME = 'set-server-name';
+export const SET_VIEW_NAME = 'set-view-name';
 export const REACT_APP_INITIALIZED = 'react-app-initialized';
 
 export const TOGGLE_BACK_BUTTON = 'toggle-back-button';

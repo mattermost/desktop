@@ -1,9 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BaseServerTab, TabType, TAB_MESSAGING} from './ServerTab';
+import BaseTabView from './BaseTabView';
+import {TabType, TAB_MESSAGING} from './TabView';
 
-export class MessagingTab extends BaseServerTab {
+export default class MessagingTabView extends BaseTabView {
     get url(): URL {
         return this.server.url;
     }

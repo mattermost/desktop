@@ -10,6 +10,8 @@ import {CombinedConfig} from 'types/config';
 import {MAXIMIZE_CHANGE, HISTORY, GET_LOADING_SCREEN_DATA, REACT_APP_INITIALIZED, LOADING_SCREEN_ANIMATION_FINISHED, FOCUS_THREE_DOT_MENU} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
+import {getTabViewName} from 'main/tabs/TabView';
+
 import {getAdjustedWindowBoundaries} from '../utils';
 
 import {ViewManager} from '../views/viewManager';
@@ -157,7 +159,7 @@ function handleResizeMainWindow() {
 
     const setBoundsFunction = () => {
         if (currentView) {
-            currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, !urlUtils.isTeamUrl(currentView.server.url, currentView.view.webContents.getURL())));
+            currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, !urlUtils.isTeamUrl(currentView.tab.url, currentView.view.webContents.getURL())));
         }
     };
 
@@ -338,7 +340,20 @@ function initializeViewManager() {
 
 export function switchServer(serverName: string) {
     showMainWindow();
-    status.viewManager?.showByName(serverName);
+    const server = status.config?.teams.find((team) => team.name === serverName);
+    if (!server) {
+        log.error('Cannot find server in config');
+        return;
+    }
+    const lastActiveTab = server.tabs[server.lastActiveTab || 0];
+    const tabViewName = getTabViewName(serverName, lastActiveTab.name);
+    status.viewManager?.showByName(tabViewName);
+}
+
+export function switchTab(serverName: string, tabName: string) {
+    showMainWindow();
+    const tabViewName = getTabViewName(serverName, tabName);
+    status.viewManager?.showByName(tabViewName);
 }
 
 export function focusBrowserView() {
@@ -368,9 +383,9 @@ function handleLoadingScreenDataRequest() {
     };
 }
 
-function handleReactAppInitialized(e: IpcMainEvent, server: string) {
+function handleReactAppInitialized(e: IpcMainEvent, view: string) {
     if (status.viewManager) {
-        status.viewManager.setServerInitialized(server);
+        status.viewManager.setServerInitialized(view);
     }
 }
 
@@ -436,8 +451,48 @@ export function handleHistory(event: IpcMainEvent, offset: number) {
                 activeView.view.webContents.goToOffset(offset);
             } catch (error) {
                 log.error(error);
-                activeView.load(activeView.server.url);
+                activeView.load(activeView.tab.url);
             }
         }
     }
+}
+
+export function selectNextTab() {
+    const currentView = status.viewManager?.getCurrentView();
+    if (!currentView) {
+        return;
+    }
+
+    const currentTeamTabs = status.config?.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
+    const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
+    if (!currentTeamTabs || !currentTab) {
+        return;
+    }
+
+    const currentOrder = currentTab.order;
+    const nextOrder = ((currentOrder + 1) % currentTeamTabs.length);
+    const nextIndex = currentTeamTabs.findIndex((tab) => tab.order === nextOrder);
+    const newTab = currentTeamTabs[nextIndex];
+    switchTab(currentView.tab.server.name, newTab.name);
+}
+
+export function selectPreviousTab() {
+    const currentView = status.viewManager?.getCurrentView();
+    if (!currentView) {
+        return;
+    }
+
+    const currentTeamTabs = status.config?.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
+    const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
+    if (!currentTeamTabs || !currentTab) {
+        return;
+    }
+
+    const currentOrder = currentTab.order;
+
+    // js modulo operator returns a negative number if result is negative, so we have to ensure it's positive
+    const nextOrder = ((currentTeamTabs.length + (currentOrder - 1)) % currentTeamTabs.length);
+    const nextIndex = currentTeamTabs.findIndex((tab) => tab.order === nextOrder);
+    const newTab = currentTeamTabs[nextIndex];
+    switchTab(currentView.tab.server.name, newTab.name);
 }

@@ -17,6 +17,7 @@ type State = {
     orderedTeams?: Team[];
     activeTeam?: string;
     darkMode?: boolean;
+    enableServerManagement?: boolean;
     unreads?: Map<string, boolean>;
     mentions?: Map<string, number>;
     expired?: Map<string, boolean>;
@@ -32,12 +33,13 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
 
     handleMessageEvent = (event: MessageEvent) => {
         if (event.data.type === UPDATE_TEAMS_DROPDOWN) {
-            const {teams, activeTeam, darkMode, unreads, mentions, expired} = event.data.data;
+            const {teams, activeTeam, darkMode, enableServerManagement, unreads, mentions, expired} = event.data.data;
             this.setState({
                 teams,
                 orderedTeams: teams.concat().sort((a: Team, b: Team) => a.order - b.order),
                 activeTeam,
                 darkMode,
+                enableServerManagement,
                 unreads,
                 mentions,
                 expired,
@@ -148,13 +150,15 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                     );
                 })}
                 <hr className='TeamDropdown__divider'/>
-                <button
-                    className='TeamDropdown__button'
-                    onClick={this.addServer}
-                >
-                    <i className='icon-plus'/>
-                    <span>{'Add a server'}</span>
-                </button>
+                {this.state.enableServerManagement &&
+                    <button
+                        className='TeamDropdown__button'
+                        onClick={this.addServer}
+                    >
+                        <i className='icon-plus'/>
+                        <span>{'Add a server'}</span>
+                    </button>
+                }
             </div>
         );
     }

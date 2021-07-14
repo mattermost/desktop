@@ -36,6 +36,7 @@ import {
     RELOAD_CONFIGURATION,
     USER_ACTIVITY_UPDATE,
     EMIT_CONFIGURATION,
+    SWITCH_TAB,
 } from 'common/communication';
 import Config from 'common/config';
 
@@ -66,7 +67,7 @@ import {destroyTray, refreshTrayImages, setTrayMenu, setupTray} from './tray/tra
 import {AuthManager} from './authManager';
 import {CertificateManager} from './certificateManager';
 import {setupBadge, setUnreadBadgeSetting} from './badge';
-import {getDefaultTeamWithTabsFromTeam} from './tabs/ServerTab';
+import {getDefaultTeamWithTabsFromTeam} from './tabs/TabView';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
     module.hot.accept();
@@ -234,6 +235,7 @@ function initializeInterCommunicationEventListeners() {
     }
 
     ipcMain.on(SWITCH_SERVER, handleSwitchServer);
+    ipcMain.on(SWITCH_TAB, handleSwitchTab);
 
     ipcMain.on(QUIT, handleQuit);
 
@@ -462,6 +464,10 @@ function handleAppWillFinishLaunching() {
 
 function handleSwitchServer(event: IpcMainEvent, serverName: string) {
     WindowManager.switchServer(serverName);
+}
+
+function handleSwitchTab(event: IpcMainEvent, serverName: string, tabName: string) {
+    WindowManager.switchTab(serverName, tabName);
 }
 
 function handleNewServerModal() {

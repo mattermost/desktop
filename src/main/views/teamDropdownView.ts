@@ -12,7 +12,7 @@ import {
     UPDATE_DROPDOWN_MENTIONS,
     REQUEST_TEAMS_DROPDOWN_INFO,
     RECEIVE_DROPDOWN_MENU_SIZE,
-    SET_SERVER_KEY,
+    SET_ACTIVE_VIEW,
 } from 'common/communication';
 import * as AppState from '../appState';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
@@ -25,6 +25,7 @@ export default class TeamDropdownView {
     teams: Team[];
     activeTeam?: string;
     darkMode: boolean;
+    enableServerManagement?: boolean;
     unreads?: Map<string, boolean>;
     mentions?: Map<string, number>;
     expired?: Map<string, boolean>;
@@ -50,13 +51,14 @@ export default class TeamDropdownView {
         ipcMain.on(EMIT_CONFIGURATION, this.updateConfig);
         ipcMain.on(REQUEST_TEAMS_DROPDOWN_INFO, this.updateDropdown);
         ipcMain.on(RECEIVE_DROPDOWN_MENU_SIZE, this.handleReceivedMenuSize);
-        ipcMain.on(SET_SERVER_KEY, this.updateActiveTeam);
+        ipcMain.on(SET_ACTIVE_VIEW, this.updateActiveTeam);
         AppState.on(UPDATE_DROPDOWN_MENTIONS, this.updateMentions);
     }
 
     updateConfig = (event: IpcMainEvent, config: CombinedConfig) => {
         this.teams = config.teams;
         this.darkMode = config.darkMode;
+        this.enableServerManagement = config.enableServerManagement;
         this.updateDropdown();
     }
 
@@ -73,7 +75,7 @@ export default class TeamDropdownView {
     }
 
     updateDropdown = () => {
-        this.view.webContents.send(UPDATE_TEAMS_DROPDOWN, this.teams, this.activeTeam, this.darkMode, this.expired, this.mentions, this.unreads);
+        this.view.webContents.send(UPDATE_TEAMS_DROPDOWN, this.teams, this.activeTeam, this.darkMode, this.enableServerManagement, this.expired, this.mentions, this.unreads);
     }
 
     handleOpen = () => {

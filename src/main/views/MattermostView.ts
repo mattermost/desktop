@@ -18,11 +18,11 @@ import {
     IS_UNREAD,
     UNREAD_RESULT,
     TOGGLE_BACK_BUTTON,
-    SET_SERVER_NAME,
+    SET_VIEW_NAME,
     LOADSCREEN_END,
 } from 'common/communication';
 
-import {MattermostServer} from 'main/MattermostServer';
+import {TabView} from 'main/tabs/TabView';
 
 import ContextMenu from '../contextMenu';
 import {getWindowBoundaries, getLocalPreload, composeUserAgent} from '../utils';
@@ -42,7 +42,7 @@ const ASTERISK_GROUP = 3;
 const MENTIONS_GROUP = 2;
 
 export class MattermostView extends EventEmitter {
-    server: MattermostServer;
+    tab: TabView;
     window: BrowserWindow;
     view: BrowserView;
     isVisible: boolean;
@@ -67,9 +67,9 @@ export class MattermostView extends EventEmitter {
     retryLoad?: NodeJS.Timeout;
     maxRetries: number;
 
-    constructor(server: MattermostServer, win: BrowserWindow, options: BrowserViewConstructorOptions) {
+    constructor(tab: TabView, win: BrowserWindow, options: BrowserViewConstructorOptions) {
         super();
-        this.server = server;
+        this.tab = tab;
         this.window = win;
 
         const preload = getLocalPreload('preload.js');
@@ -90,7 +90,7 @@ export class MattermostView extends EventEmitter {
         this.resetLoadingStatus();
 
         this.faviconMemoize = new Map();
-        log.info(`BrowserView created for server ${this.server.name}`);
+        log.info(`BrowserView created for server ${this.tab.name}`);
 
         this.isInitialized = false;
         this.hasBeenShown = false;
@@ -107,7 +107,7 @@ export class MattermostView extends EventEmitter {
     // use the same name as the server
     // TODO: we'll need unique identifiers if we have multiple instances of the same server in different tabs (1:N relationships)
     get name() {
-        return this.server?.name;
+        return this.tab.name;
     }
 
     resetLoadingStatus = () => {
@@ -119,7 +119,7 @@ export class MattermostView extends EventEmitter {
     }
 
     load = (someURL?: URL | string) => {
-        if (!this.server) {
+        if (!this.tab) {
             return;
         }
 
@@ -130,12 +130,12 @@ export class MattermostView extends EventEmitter {
                 loadURL = parsedURL.toString();
             } else {
                 log.error('Cannot parse provided url, using current server url', someURL);
-                loadURL = this.server.url.toString();
+                loadURL = this.tab.url.toString();
             }
         } else {
-            loadURL = this.server.url.toString();
+            loadURL = this.tab.url.toString();
         }
-        log.info(`[${Util.shorten(this.server.name)}] Loading ${loadURL}`);
+        log.info(`[${Util.shorten(this.tab.name)}] Loading ${loadURL}`);
         const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             this.loadRetry(loadURL, err);
@@ -153,9 +153,9 @@ export class MattermostView extends EventEmitter {
                 if (this.maxRetries-- > 0) {
                     this.loadRetry(loadURL, err);
                 } else {
-                    WindowManager.sendToRenderer(LOAD_FAILED, this.server.name, err.toString(), loadURL.toString());
-                    this.emit(LOAD_FAILED, this.server.name, err.toString(), loadURL.toString());
-                    log.info(`[${Util.shorten(this.server.name)}] Couldn't stablish a connection with ${loadURL}: ${err}.`);
+                    WindowManager.sendToRenderer(LOAD_FAILED, this.tab.name, err.toString(), loadURL.toString());
+                    this.emit(LOAD_FAILED, this.tab.name, err.toString(), loadURL.toString());
+                    log.info(`[${Util.shorten(this.tab.name)}] Couldn't stablish a connection with ${loadURL}: ${err}.`);
                     this.status = Status.ERROR;
                 }
             });
@@ -164,14 +164,14 @@ export class MattermostView extends EventEmitter {
 
     loadRetry = (loadURL: string, err: any) => {
         this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
-        WindowManager.sendToRenderer(LOAD_RETRY, this.server.name, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
-        log.info(`[${Util.shorten(this.server.name)}] failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
+        WindowManager.sendToRenderer(LOAD_RETRY, this.tab.name, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
+        log.info(`[${Util.shorten(this.tab.name)}] failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
     }
 
     loadSuccess = (loadURL: string) => {
         return () => {
-            log.info(`[${Util.shorten(this.server.name)}] finished loading ${loadURL}`);
-            WindowManager.sendToRenderer(LOAD_SUCCESS, this.server.name);
+            log.info(`[${Util.shorten(this.tab.name)}] finished loading ${loadURL}`);
+            WindowManager.sendToRenderer(LOAD_SUCCESS, this.tab.name);
             this.maxRetries = MAX_SERVER_RETRIES;
             if (this.status === Status.LOADING) {
                 ipcMain.on(UNREAD_RESULT, this.handleFaviconIsUnread);
@@ -180,9 +180,9 @@ export class MattermostView extends EventEmitter {
             }
             this.status = Status.WAITING_MM;
             this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
-            this.emit(LOAD_SUCCESS, this.server.name, loadURL);
-            this.view.webContents.send(SET_SERVER_NAME, this.server.name);
-            this.setBounds(getWindowBoundaries(this.window, !(urlUtils.isTeamUrl(this.server.url || '', this.view.webContents.getURL()) || urlUtils.isAdminUrl(this.server.url || '', this.view.webContents.getURL()))));
+            this.emit(LOAD_SUCCESS, this.tab.name, loadURL);
+            this.view.webContents.send(SET_VIEW_NAME, this.tab.name);
+            this.setBounds(getWindowBoundaries(this.window, !(urlUtils.isTeamUrl(this.tab.url || '', this.view.webContents.getURL()) || urlUtils.isAdminUrl(this.tab.url || '', this.view.webContents.getURL()))));
         };
     }
 
@@ -191,7 +191,7 @@ export class MattermostView extends EventEmitter {
         const request = typeof requestedVisibility === 'undefined' ? true : requestedVisibility;
         if (request && !this.isVisible) {
             this.window.addBrowserView(this.view);
-            this.setBounds(getWindowBoundaries(this.window, !(urlUtils.isTeamUrl(this.server.url || '', this.view.webContents.getURL()) || urlUtils.isAdminUrl(this.server.url || '', this.view.webContents.getURL()))));
+            this.setBounds(getWindowBoundaries(this.window, !(urlUtils.isTeamUrl(this.tab.url || '', this.view.webContents.getURL()) || urlUtils.isAdminUrl(this.tab.url || '', this.view.webContents.getURL()))));
             if (this.status === Status.READY) {
                 this.focus();
             }
@@ -254,8 +254,8 @@ export class MattermostView extends EventEmitter {
         this.status = Status.READY;
 
         if (timedout) {
-            log.info(`${this.server.name} timeout expired will show the browserview`);
-            this.emit(LOADSCREEN_END, this.server.name);
+            log.info(`${this.tab.name} timeout expired will show the browserview`);
+            this.emit(LOADSCREEN_END, this.tab.name);
         }
         clearTimeout(this.removeLoading);
         delete this.removeLoading;
@@ -291,7 +291,7 @@ export class MattermostView extends EventEmitter {
     }
 
     handleDidNavigate = (event: Event, url: string) => {
-        const isUrlTeamUrl = urlUtils.isTeamUrl(this.server.url || '', url) || urlUtils.isAdminUrl(this.server.url || '', url);
+        const isUrlTeamUrl = urlUtils.isTeamUrl(this.tab.url || '', url) || urlUtils.isAdminUrl(this.tab.url || '', url);
         if (isUrlTeamUrl) {
             this.setBounds(getWindowBoundaries(this.window));
             WindowManager.sendToRenderer(TOGGLE_BACK_BUTTON, false);
@@ -304,7 +304,7 @@ export class MattermostView extends EventEmitter {
     }
 
     handleUpdateTarget = (e: Event, url: string) => {
-        if (!url || !this.server.sameOrigin(url)) {
+        if (!url || !this.tab.server.sameOrigin(url)) {
             this.emit(UPDATE_TARGET_URL, url);
         }
     }
@@ -331,7 +331,7 @@ export class MattermostView extends EventEmitter {
         }
         const mentions = (results && results.value && parseInt(results.value[MENTIONS_GROUP], 10)) || 0;
 
-        appState.updateMentions(this.server.name, mentions, unreads);
+        appState.updateMentions(this.tab.name, mentions, unreads);
     }
 
     handleFaviconUpdate = (e: Event, favicons: string[]) => {
@@ -340,7 +340,7 @@ export class MattermostView extends EventEmitter {
             // if not, get related info from preload and store it for future changes
             this.currentFavicon = favicons[0];
             if (this.faviconMemoize.has(favicons[0])) {
-                appState.updateUnreads(this.server.name, Boolean(this.faviconMemoize.get(favicons[0])));
+                appState.updateUnreads(this.tab.name, Boolean(this.faviconMemoize.get(favicons[0])));
             } else {
                 this.findUnreadState(favicons[0]);
             }
@@ -350,7 +350,7 @@ export class MattermostView extends EventEmitter {
     // if favicon is null, it will affect appState, but won't be memoized
     findUnreadState = (favicon: string | null) => {
         try {
-            this.view.webContents.send(IS_UNREAD, favicon, this.server.name);
+            this.view.webContents.send(IS_UNREAD, favicon, this.tab.name);
         } catch (err) {
             log.error(`There was an error trying to request the unread state: ${err}`);
             log.error(err.stack);
@@ -359,13 +359,13 @@ export class MattermostView extends EventEmitter {
 
     // if favicon is null, it means it is the initial load,
     // so don't memoize as we don't have the favicons and there is no rush to find out.
-    handleFaviconIsUnread = (e: Event, favicon: string, serverName: string, result: boolean) => {
-        if (this.server && serverName === this.server.name) {
+    handleFaviconIsUnread = (e: Event, favicon: string, viewName: string, result: boolean) => {
+        if (this.tab && viewName === this.tab.name) {
             if (favicon) {
                 this.faviconMemoize.set(favicon, result);
             }
             if (!favicon || favicon === this.currentFavicon) {
-                appState.updateUnreads(serverName, result);
+                appState.updateUnreads(viewName, result);
             }
         }
     }

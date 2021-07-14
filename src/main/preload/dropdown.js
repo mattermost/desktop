@@ -40,6 +40,6 @@ window.addEventListener('message', async (event) => {
     }
 });
 
-ipcRenderer.on(UPDATE_TEAMS_DROPDOWN, (event, teams, activeTeam, darkMode, expired, mentions, unreads) => {
-    window.postMessage({type: UPDATE_TEAMS_DROPDOWN, data: {teams, activeTeam, darkMode, expired, mentions, unreads}}, window.location.href);
+ipcRenderer.on(UPDATE_TEAMS_DROPDOWN, (event, teams, activeTeam, darkMode, enableServerManagement, expired, mentions, unreads) => {
+    window.postMessage({type: UPDATE_TEAMS_DROPDOWN, data: {teams, activeTeam, darkMode, enableServerManagement, expired, mentions, unreads}}, window.location.href);
 });
