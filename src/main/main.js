@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
+/* eslint-disable max-lines */
+
 import fs from 'fs';
 
 import path from 'path';
@@ -152,6 +154,10 @@ async function initializeConfig() {
             // can only call this before the app is ready
             if (config.enableHardwareAcceleration === false) {
                 app.disableHardwareAcceleration();
+            }
+
+            if (process.platform !== 'darwin' && config.spellCheckerURL) {
+                session.defaultSession.setSpellCheckerDictionaryDownloadURL(config.spellCheckerURL);
             }
 
             resolve();
@@ -544,6 +550,18 @@ function initializeAfterAppReady() {
                 displayDownloadCompleted(filename, item.savePath, urlUtils.getServer(webContents.getURL(), config.teams));
             }
         });
+    });
+
+    session.defaultSession.on('spellcheck-dictionary-download-begin', (event, lang) => {
+        log.info(`Downloading dictionary for ${lang}`);
+    });
+
+    session.defaultSession.on('spellcheck-dictionary-download-failure', (event, lang) => {
+        if (config.spellCheckerURL) {
+            log.error(`There was an error while trying to load the dictionary definitions for ${lang} from the specified url. Please review you have access to the needed files. Url used was ${config.spellCheckerURL}`);
+        } else {
+            log.warn(`There was an error while trying to download the dictionary definitions for ${lang}, spellchecking might not work properly.`);
+        }
     });
 
     ipcMain.emit('update-menu', true, config);
