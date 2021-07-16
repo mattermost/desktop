@@ -26,6 +26,7 @@ export default class TeamDropdownView {
     activeTeam?: string;
     darkMode: boolean;
     enableServerManagement?: boolean;
+    hasGPOTeams?: boolean;
     unreads?: Map<string, boolean>;
     mentions?: Map<string, number>;
     expired?: Map<string, boolean>;
@@ -60,6 +61,7 @@ export default class TeamDropdownView {
         this.teams = config.teams;
         this.darkMode = config.darkMode;
         this.enableServerManagement = config.enableServerManagement;
+        this.hasGPOTeams = config.registryTeams && config.registryTeams.length > 0;
         this.updateDropdown();
     }
 
@@ -76,7 +78,17 @@ export default class TeamDropdownView {
     }
 
     updateDropdown = () => {
-        this.view.webContents.send(UPDATE_TEAMS_DROPDOWN, this.teams, this.activeTeam, this.darkMode, this.enableServerManagement, this.expired, this.mentions, this.unreads);
+        this.view.webContents.send(
+            UPDATE_TEAMS_DROPDOWN,
+            this.teams,
+            this.activeTeam,
+            this.darkMode,
+            this.enableServerManagement,
+            this.hasGPOTeams,
+            this.expired,
+            this.mentions,
+            this.unreads,
+        );
     }
 
     handleOpen = () => {

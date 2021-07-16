@@ -58,6 +58,13 @@ export const updateUnreads = (serverName: string, unreads: boolean) => {
     emitMentions(serverName);
 };
 
+export const updateBadge = () => {
+    const expired = anyExpired();
+    const mentions = totalMentions();
+    const unreads = anyUnreads();
+    emitBadge(expired, mentions, unreads);
+};
+
 export const getUnreads = (serverName: string) => {
     return status.unreads.get(serverName) || false;
 };

@@ -1,13 +1,12 @@
 @charset "UTF-8";
-
- @font-face {
+@font-face {
   font-family: 'compass-icons';
-  src: url('../assets/fonts/compass-icons/compass-icons.eot?45182295');
-  src: url('../assets/fonts/compass-icons/compass-icons.eot?45182295#iefix') format('embedded-opentype'),
-       url('../assets/fonts/compass-icons/compass-icons.woff2?45182295') format('woff2'),
-       url('../assets/fonts/compass-icons/compass-icons.woff?45182295') format('woff'),
-       url('../assets/fonts/compass-icons/compass-icons.ttf?45182295') format('truetype'),
-       url('../assets/fonts/compass-icons/compass-icons.svg?45182295#compass-icons') format('svg');
+  src: url('../assets/fonts/compass-icons/compass-icons.eot?81398164');
+  src: url('../assets/fonts/compass-icons/compass-icons.eot?81398164#iefix') format('embedded-opentype'),
+       url('../assets/fonts/compass-icons/compass-icons.woff2?81398164') format('woff2'),
+       url('../assets/fonts/compass-icons/compass-icons.woff?81398164') format('woff'),
+       url('../assets/fonts/compass-icons/compass-icons.ttf?81398164') format('truetype'),
+       url('../assets/fonts/compass-icons/compass-icons.svg?81398164#compass-icons') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -17,11 +16,10 @@
 @media screen and (-webkit-min-device-pixel-ratio:0) {
   @font-face {
     font-family: 'compass-icons';
-    src: url('../fonts/compass-icons/compass-icons.svg?45182295#compass-icons') format('svg');
+    src: url('../font/compass-icons.svg?81398164#compass-icons') format('svg');
   }
 }
 */
-
 [class^="icon-"]:before, [class*=" icon-"]:before {
   font-family: "compass-icons";
   font-style: normal;
@@ -238,6 +236,7 @@
 .icon-content-copy:before { content: '󰆏'; } /* '\f018f' */
 .icon-send-outline:before { content: '󰆐'; } /* '\f0190' */
 .icon-credit-card-outline:before { content: '󰆛'; } /* '\f019b' */
+.icon-drag-vertical:before { content: '󰇝'; } /* '\f01dd' */
 .icon-view-grid-outline:before { content: '󰈄'; } /* '\f0204' */
 .icon-exit-to-app:before { content: '󰈆'; } /* '\f0206' */
 .icon-file-outline:before { content: '󰈤'; } /* '\f0224' */
@@ -253,6 +252,7 @@
 .icon-message-text-outline:before { content: '󰍪'; } /* '\f036a' */
 .icon-minus:before { content: '󰍴'; } /* '\f0374' */
 .icon-minus-circle-outline:before { content: '󰍷'; } /* '\f0377' */
+.icon-open-in-new:before { content: '󰏌'; } /* '\f03cc' */
 .icon-pause:before { content: '󰏤'; } /* '\f03e4' */
 .icon-play:before { content: '󰐊'; } /* '\f040a' */
 .icon-radiobox-blank:before { content: '󰐽'; } /* '\f043d' */
@@ -265,6 +265,7 @@
 .icon-update:before { content: '󰚰'; } /* '\f06b0' */
 .icon-eye-off-outline:before { content: '󰛑'; } /* '\f06d1' */
 .icon-infinity:before { content: '󰛤'; } /* '\f06e4' */
+.icon-plus-box-outline:before { content: '󰜄'; } /* '\f0704' */
 .icon-arrow-right-bold-outline:before { content: '󰧂'; } /* '\f09c2' */
 .icon-trash-can-outline:before { content: '󰩺'; } /* '\f0a7a' */
 .icon-account-minus-outline:before { content: '󰫬'; } /* '\f0aec' */
