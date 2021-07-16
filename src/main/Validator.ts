@@ -98,7 +98,7 @@ const configDataSchemaV3 = Joi.object<ConfigV3>({
         name: Joi.string().required(),
         url: Joi.string().required(),
         order: Joi.number().integer().min(0),
-        lastActiveTab: Joi.number().integer().min(0),
+        lastActiveTab: Joi.number().integer().min(0).default(0),
         tabs: Joi.array().items(Joi.object({
             name: Joi.string().required(),
             order: Joi.number().integer().min(0),

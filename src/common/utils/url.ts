@@ -165,30 +165,29 @@ function getView(inputURL: URL | string, teams: TeamWithTabs[], ignoreScheme = f
         return undefined;
     }
     let parsedServerUrl;
+    let firstOption;
     let secondOption;
-    for (let i = 0; i < teams.length; i++) {
-        const srv = new MattermostServer(teams[i].name, teams[i].url);
-        for (let j = 0; j < teams[i].tabs.length; j++) {
-            const tabView = getServerView(srv, teams[i].tabs[j]);
+    teams.forEach((team) => {
+        const srv = new MattermostServer(team.name, team.url);
+        team.tabs.forEach((tab) => {
+            const tabView = getServerView(srv, tab);
             parsedServerUrl = parseURL(tabView.url);
-            if (!parsedServerUrl) {
-                continue;
+            if (parsedServerUrl) {
+                // check server and subpath matches (without subpath pathname is \ so it always matches)
+                if (equalUrlsWithSubpath(parsedServerUrl, parsedURL, ignoreScheme)) {
+                    firstOption = {name: tabView.name, url: parsedServerUrl};
+                }
+                if (equalUrlsIgnoringSubpath(parsedServerUrl, parsedURL, ignoreScheme)) {
+                    // in case the user added something on the path that doesn't really belong to the server
+                    // there might be more than one that matches, but we can't differentiate, so last one
+                    // is as good as any other in case there is no better match (e.g.: two subpath servers with the same origin)
+                    // e.g.: https://community.mattermost.com/core
+                    secondOption = {name: tabView.name, url: parsedServerUrl};
+                }
             }
-
-            // check server and subpath matches (without subpath pathname is \ so it always matches)
-            if (equalUrlsWithSubpath(parsedServerUrl, parsedURL, ignoreScheme)) {
-                return {name: tabView.name, url: parsedServerUrl};
-            }
-            if (equalUrlsIgnoringSubpath(parsedServerUrl, parsedURL, ignoreScheme)) {
-                // in case the user added something on the path that doesn't really belong to the server
-                // there might be more than one that matches, but we can't differentiate, so last one
-                // is as good as any other in case there is no better match (e.g.: two subpath servers with the same origin)
-                // e.g.: https://community.mattermost.com/core
-                secondOption = {name: tabView.name, url: parsedServerUrl};
-            }
-        }
-    }
-    return secondOption;
+        });
+    });
+    return firstOption || secondOption;
 }
 
 // next two functions are defined to clarify intent
