@@ -260,7 +260,11 @@ function handleConfigSynchronize() {
     WindowManager.setConfig(config.data);
     setUnreadBadgeSetting(config.data.showUnreadBadge);
     if (config.data.downloadLocation) {
-        app.setPath('downloads', config.data.downloadLocation);
+        try {
+            app.setPath('downloads', config.data.downloadLocation);
+        } catch (e) {
+            log.error(`There was a problem trying to set the default download path: ${e}`);
+        }
     }
     if (app.isReady()) {
         WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
