@@ -67,8 +67,8 @@ type Props = {
 };
 
 type State = {
-    activeServerName: string;
-    activeTabName: string;
+    activeServerName?: string;
+    activeTabName?: string;
     sessionsExpired: Record<string, boolean>;
     unreadCounts: Record<string, number>;
     mentionCounts: Record<string, number>;
@@ -99,12 +99,12 @@ export default class MainPage extends React.PureComponent<Props, State> {
         this.topBar = React.createRef();
         this.threeDotMenu = React.createRef();
 
-        const firstServer = this.props.teams.find((team) => team.order === 0) || this.props.teams[0];
-        const firstTab = firstServer.tabs.find((tab) => tab.order === (firstServer.lastActiveTab || 0)) || firstServer.tabs[0];
+        const firstServer = this.props.teams.find((team) => team.order === 0);
+        const firstTab = firstServer?.tabs.find((tab) => tab.order === (firstServer.lastActiveTab || 0)) || firstServer?.tabs[0];
 
         this.state = {
-            activeServerName: firstServer.name,
-            activeTabName: firstTab.name,
+            activeServerName: firstServer?.name,
+            activeTabName: firstTab?.name,
             sessionsExpired: {},
             unreadCounts: {},
             mentionCounts: {},
@@ -116,6 +116,9 @@ export default class MainPage extends React.PureComponent<Props, State> {
     }
 
     getTabViewStatus() {
+        if (!this.state.activeServerName || !this.state.activeTabName) {
+            return undefined;
+        }
         return this.state.tabViewStatus.get(getTabViewName(this.state.activeServerName, this.state.activeTabName)) ?? {status: Status.NOSERVERS};
     }
 
@@ -238,6 +241,9 @@ export default class MainPage extends React.PureComponent<Props, State> {
         if (addedIndex === undefined || removedIndex === addedIndex) {
             return;
         }
+        if (!this.state.activeServerName) {
+            return;
+        }
         const currentTabs = this.props.teams.find((team) => team.name === this.state.activeServerName)?.tabs;
         if (!currentTabs) {
             // TODO: figure out something here
@@ -287,6 +293,9 @@ export default class MainPage extends React.PureComponent<Props, State> {
     }
 
     render() {
+        if (!this.state.activeServerName || !this.state.activeTabName) {
+            return null;
+        }
         const currentTabs = this.props.teams.find((team) => team.name === this.state.activeServerName)?.tabs;
         if (!currentTabs) {
             // TODO: figure out something here
