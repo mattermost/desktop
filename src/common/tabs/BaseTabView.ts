@@ -5,7 +5,7 @@ import {MattermostServer} from 'common/servers/MattermostServer';
 
 import {getTabViewName, TabType, TabView} from './TabView';
 
-export default class BaseTabView implements TabView {
+export default abstract class BaseTabView implements TabView {
     server: MattermostServer;
 
     constructor(server: MattermostServer) {
