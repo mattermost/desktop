@@ -103,7 +103,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
         this.threeDotMenu = React.createRef();
 
         this.state = {
-            key: this.props.teams.findIndex((team) => team.order === 0),
+            key: this.props.teams.length ? this.props.teams.findIndex((team) => team.order === 0) : 0,
             sessionsExpired: {},
             unreadCounts: {},
             mentionCounts: {},
@@ -259,7 +259,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
     }
 
     handleSetServerKey = (key: number) => {
-        const newKey = (this.props.teams.length + key) % this.props.teams.length;
+        const newKey = ((this.props.teams.length + key) % this.props.teams.length) || 0;
         this.setState({key: newKey});
     }
 
@@ -322,6 +322,10 @@ export default class MainPage extends React.PureComponent<Props, State> {
     }
 
     render() {
+        if (!this.props.teams.length) {
+            return null;
+        }
+
         const tabsRow = (
             <TabBar
                 id='tabBar'
