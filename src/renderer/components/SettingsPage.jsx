@@ -289,35 +289,29 @@ export default class SettingsPage extends React.PureComponent {
         this.setState({userOpenedDownloadDialog: false});
     }
 
-    saveSpellCheckerURL = (dictionaryURL) => {
-        this.setState({SpellCheckerURL: dictionaryURL});
-        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'spellCheckerURL', data: dictionaryURL});
+    saveSpellCheckerURL = () => {
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'spellCheckerURL', data: this.state.spellCheckerURL});
+    }
+
+    resetSpellCheckerURL = () => {
+        this.setState({spellCheckerURL: null, allowSaveSpellCheckerURL: false});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'spellCheckerURL', data: null});
     }
 
     handleChangeSpellCheckerURL= (e) => {
         const dictionaryURL = e.target.value;
         let allowSaveSpellCheckerURL;
-        if (dictionaryURL) {
-            try {
-                // eslint-disable-next-line no-new
-                new URL(dictionaryURL);
-                allowSaveSpellCheckerURL = true;
-            } catch {
-                allowSaveSpellCheckerURL = false;
-            }
-
-            this.setState({
-                SpellCheckerURL: dictionaryURL,
-                allowSaveSpellCheckerURL,
-            });
-        } else {
-            // use default
+        try {
+            // eslint-disable-next-line no-new
+            new URL(dictionaryURL);
             allowSaveSpellCheckerURL = true;
-            this.setState({
-                SpellCheckerURL: null,
-                allowSaveSpellCheckerURL,
-            });
+        } catch {
+            allowSaveSpellCheckerURL = false;
         }
+        this.setState({
+            spellCheckerURL: dictionaryURL,
+            allowSaveSpellCheckerURL,
+        });
     }
 
     updateTeam = (index, newData) => {
@@ -499,32 +493,52 @@ export default class SettingsPage extends React.PureComponent {
                 </HelpBlock>
             </Checkbox>);
 
-        // if ( process.platform !== 'darwin') {
-            options.push(
-                <div style={settingsPage.container}>
-                    <div>{'Use alternate url for dictionary downloads'}</div>
-                    <input
-                        disabled={!this.state.useSpellChecker}
-                        style={settingsPage.downloadLocationInput}
-                        key='inputSpellCheckerURL'
-                        id='inputSpellCheckerURL'
-                        ref={this.spellCheckerURLRef}
-                        onChange={this.handleChangeSpellCheckerURL}
-                        value={this.state.spellCheckerURL}
-                    />
+        if (process.platform !== 'darwin') {
+            if (this.state.spellCheckerURL === null || typeof this.state.spellCheckerURL === 'undefined') {
+                options.push(
                     <Button
-                        disabled={!this.state.useSpellChecker && !this.state.allowSaveSpellCheckerURL}
-                        style={settingsPage.downloadLocationButton}
-                        id='saveSpellCheckerURL'
-                        onClick={this.saveSpellCheckerURL}
+                        id='editSpellcheckerURL'
+                        key='editSpellcheckerURL'
+                        onClick={() => this.setState({spellCheckerURL: '', allowSaveSpellCheckerURL: false})}
+                        bsStyle='link'
+                    >{'Use alternate dictionary URL'}</Button>,
+                );
+            } else {
+                options.push(
+                    <div
+                        style={settingsPage.container}
+                        key='containerInputSpellchekerURL'
                     >
-                        <span>{'Save'}</span>
-                    </Button>
-                    <HelpBlock>
-                        {'Specify the url where dictionary definitions can be retrieved, leave blank for default'}
-                    </HelpBlock>
-                </div>);
-        // }
+                        <input
+                            disabled={!this.state.useSpellChecker}
+                            style={settingsPage.downloadLocationInput}
+                            key='inputSpellCheckerURL'
+                            id='inputSpellCheckerURL'
+                            ref={this.spellCheckerURLRef}
+                            onChange={this.handleChangeSpellCheckerURL}
+                            value={this.state.spellCheckerURL}
+                        />
+                        <Button
+                            disabled={!this.state.allowSaveSpellCheckerURL}
+                            key='saveSpellCheckerURL'
+                            style={settingsPage.downloadLocationButton}
+                            id='saveSpellCheckerURL'
+                            onClick={this.saveSpellCheckerURL}
+                        >
+                            <span>{'Save'}</span>
+                        </Button>
+                        <HelpBlock>
+                            {'Specify the url where dictionary definitions can be retrieved'}
+                        </HelpBlock>
+                        <Button
+                            id='revertSpellcheckerURL'
+                            key='revertSpellcheckerURL'
+                            onClick={this.resetSpellCheckerURL}
+                            bsStyle='link'
+                        >{'Revert to default'}</Button>
+                    </div>);
+            }
+        }
 
         if (window.process.platform === 'darwin' || window.process.platform === 'win32') {
             const TASKBAR = window.process.platform === 'win32' ? 'taskbar' : 'Dock';

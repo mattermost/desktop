@@ -78,7 +78,7 @@ const configDataSchemaV2 = Joi.object({
     }),
     showUnreadBadge: Joi.boolean().default(true),
     useSpellChecker: Joi.boolean().default(true),
-    spellCheckerURL: Joi.string(),
+    spellCheckerURL: Joi.string().allow(null),
     enableHardwareAcceleration: Joi.boolean().default(true),
     autostart: Joi.boolean().default(true),
     spellCheckerLocale: Joi.string().regex(/^[a-z]{2}-[A-Z]{2}$/).default('en-US'),
