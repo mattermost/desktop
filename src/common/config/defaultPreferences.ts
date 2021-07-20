@@ -10,14 +10,14 @@ import os from 'os';
  * @param {number} version - Scheme version. (Not application version)
  */
 
-import {ConfigV2} from 'types/config';
+import {ConfigV3} from 'types/config';
 
 export const getDefaultDownloadLocation = (): string => {
     return path.join(os.homedir(), 'Downloads');
 };
 
-const defaultPreferences: ConfigV2 = {
-    version: 2,
+const defaultPreferences: ConfigV3 = {
+    version: 3,
     teams: [],
     showTrayIcon: true,
     trayIconTheme: 'light',

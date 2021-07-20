@@ -44,6 +44,6 @@ window.addEventListener('message', async (event) => {
     }
 });
 
-ipcRenderer.on(UPDATE_TEAMS_DROPDOWN, (event, teams, activeTeam, darkMode, hasGPOTeams, expired, mentions, unreads) => {
-    window.postMessage({type: UPDATE_TEAMS_DROPDOWN, data: {teams, activeTeam, darkMode, hasGPOTeams, expired, mentions, unreads}}, window.location.href);
+ipcRenderer.on(UPDATE_TEAMS_DROPDOWN, (event, teams, activeTeam, darkMode, enableServerManagement, hasGPOTeams, expired, mentions, unreads) => {
+    window.postMessage({type: UPDATE_TEAMS_DROPDOWN, data: {teams, activeTeam, darkMode, enableServerManagement, hasGPOTeams, expired, mentions, unreads}}, window.location.href);
 });

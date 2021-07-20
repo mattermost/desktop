@@ -4,21 +4,23 @@ import log from 'electron-log';
 import {BrowserView, BrowserWindow, dialog, ipcMain} from 'electron';
 import {BrowserViewConstructorOptions} from 'electron/main';
 
-import {CombinedConfig, Team} from 'types/config';
+import {CombinedConfig, Tab, TeamWithTabs} from 'types/config';
 
 import {SECOND} from 'common/utils/constants';
 import {
     UPDATE_TARGET_URL,
-    SET_SERVER_KEY,
     LOAD_SUCCESS,
     LOAD_FAILED,
     TOGGLE_LOADING_SCREEN_VISIBILITY,
     GET_LOADING_SCREEN_DATA,
     LOADSCREEN_END,
+    SET_ACTIVE_VIEW,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 
-import {MattermostServer} from '../MattermostServer';
+import {getServerView, getTabViewName} from 'common/tabs/TabView';
+
+import {MattermostServer} from '../../common/servers/MattermostServer';
 import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
 
 import {MattermostView} from './MattermostView';
@@ -29,7 +31,7 @@ const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 36;
 
 export class ViewManager {
-    configServers: Team[];
+    configServers: TeamWithTabs[];
     viewOptions: BrowserViewConstructorOptions;
     views: Map<string, MattermostView>;
     currentView?: string;
@@ -53,10 +55,15 @@ export class ViewManager {
         return this.configServers;
     }
 
-    loadServer = (server: Team) => {
+    loadServer = (server: TeamWithTabs) => {
         const srv = new MattermostServer(server.name, server.url);
-        const view = new MattermostView(srv, this.mainWindow, this.viewOptions);
-        this.views.set(server.name, view);
+        server.tabs.forEach((tab) => this.loadView(srv, tab));
+    }
+
+    loadView = (srv: MattermostServer, tab: Tab) => {
+        const tabView = getServerView(srv, tab);
+        const view = new MattermostView(tabView, this.mainWindow, this.viewOptions);
+        this.views.set(tabView.name, view);
         if (!this.loadingScreen) {
             this.createLoadingScreen();
         }
@@ -71,23 +78,27 @@ export class ViewManager {
         this.configServers.forEach((server) => this.loadServer(server));
     }
 
-    reloadConfiguration = (configServers: Team[]) => {
+    reloadConfiguration = (configServers: TeamWithTabs[]) => {
         this.configServers = configServers.concat();
         const oldviews = this.views;
         this.views = new Map();
         const sorted = this.configServers.sort((a, b) => a.order - b.order);
         let setFocus;
         sorted.forEach((server) => {
-            const recycle = oldviews.get(server.name);
-            if (recycle && recycle.isVisible) {
-                setFocus = recycle.name;
-            }
-            if (recycle && recycle.server.name === server.name && recycle.server.url.toString() === urlUtils.parseURL(server.url)!.toString()) {
-                oldviews.delete(recycle.name);
-                this.views.set(recycle.name, recycle);
-            } else {
-                this.loadServer(server);
-            }
+            const srv = new MattermostServer(server.name, server.url);
+            server.tabs.forEach((tab) => {
+                const tabView = getServerView(srv, tab);
+                const recycle = oldviews.get(tabView.name);
+                if (recycle && recycle.isVisible) {
+                    setFocus = recycle.name;
+                }
+                if (recycle && recycle.tab.name === tabView.name && recycle.tab.url.toString() === urlUtils.parseURL(tabView.url)!.toString()) {
+                    oldviews.delete(recycle.name);
+                    this.views.set(recycle.name, recycle);
+                } else {
+                    this.loadView(srv, tab);
+                }
+            });
         });
         oldviews.forEach((unused) => {
             unused.destroy();
@@ -103,7 +114,11 @@ export class ViewManager {
         if (this.configServers.length) {
             const element = this.configServers.find((e) => e.order === 0);
             if (element) {
-                this.showByName(element.name);
+                const tab = element.tabs.find((e) => e.order === 0);
+                if (tab) {
+                    const tabView = getTabViewName(element.name, tab.name);
+                    this.showByName(tabView);
+                }
             }
         }
     }
@@ -125,13 +140,8 @@ export class ViewManager {
             if (newView.needsLoadingScreen()) {
                 this.showLoadingScreen();
             }
-            const serverInfo = this.configServers.find((candidate) => candidate.name === newView.server.name);
-            if (!serverInfo) {
-                log.error(`Couldn't find a server in the config with the name ${newView.server.name}`);
-                return;
-            }
-            newView.window.webContents.send(SET_SERVER_KEY, serverInfo.order);
-            ipcMain.emit(SET_SERVER_KEY, true, name);
+            newView.window.webContents.send(SET_ACTIVE_VIEW, newView.tab.server.name, newView.tab.type);
+            ipcMain.emit(SET_ACTIVE_VIEW, true, newView.tab.server.name, newView.tab.type);
             if (newView.isReady()) {
                 // if view is not ready, the renderer will have something to display instead.
                 newView.show();
@@ -326,18 +336,18 @@ export class ViewManager {
         }
     }
 
-    deeplinkSuccess = (serverName: string) => {
-        const view = this.views.get(serverName);
+    deeplinkSuccess = (viewName: string) => {
+        const view = this.views.get(viewName);
         if (!view) {
             return;
         }
-        this.showByName(serverName);
+        this.showByName(viewName);
         view.removeListener(LOAD_FAILED, this.deeplinkFailed);
     };
 
-    deeplinkFailed = (serverName: string, err: string, url: string) => {
-        log.error(`[${serverName}] failed to load deeplink ${url}: ${err}`);
-        const view = this.views.get(serverName);
+    deeplinkFailed = (viewName: string, err: string, url: string) => {
+        log.error(`[${viewName}] failed to load deeplink ${url}: ${err}`);
+        const view = this.views.get(viewName);
         if (!view) {
             return;
         }
@@ -345,18 +355,19 @@ export class ViewManager {
     }
 
     handleDeepLink = (url: string | URL) => {
+        // TODO: fix for new tabs
         if (url) {
             const parsedURL = urlUtils.parseURL(url)!;
-            const server = urlUtils.getServer(parsedURL, this.configServers, true);
-            if (server) {
-                const view = this.views.get(server.name);
+            const tabView = urlUtils.getView(parsedURL, this.configServers, true);
+            if (tabView) {
+                const view = this.views.get(tabView.name);
                 if (!view) {
-                    log.error(`Couldn't find a view matching the name ${server.name}`);
+                    log.error(`Couldn't find a view matching the name ${tabView.name}`);
                     return;
                 }
 
                 // attempting to change parsedURL protocol results in it not being modified.
-                const urlWithSchema = `${view.server.url.origin}${parsedURL.pathname}${parsedURL.search}`;
+                const urlWithSchema = `${view.tab.url.origin}${parsedURL.pathname}${parsedURL.search}`;
                 view.resetLoadingStatus();
                 view.load(urlWithSchema);
                 view.once(LOAD_SUCCESS, this.deeplinkSuccess);

@@ -8,7 +8,9 @@ import {DropResult} from 'react-beautiful-dnd';
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 import {IpcRendererEvent} from 'electron/renderer';
 
-import {Team} from 'types/config';
+import {TeamWithTabs} from 'types/config';
+
+import {getTabViewName} from 'common/tabs/TabView';
 
 import {
     FOCUS_BROWSERVIEW,
@@ -18,8 +20,6 @@ import {
     LOAD_RETRY,
     LOAD_SUCCESS,
     LOAD_FAILED,
-    SHOW_NEW_SERVER_MODAL,
-    SWITCH_SERVER,
     WINDOW_CLOSE,
     WINDOW_MINIMIZE,
     WINDOW_RESTORE,
@@ -28,16 +28,14 @@ import {
     PLAY_SOUND,
     MODAL_OPEN,
     MODAL_CLOSE,
-    SET_SERVER_KEY,
+    SET_ACTIVE_VIEW,
     UPDATE_MENTIONS,
     TOGGLE_BACK_BUTTON,
-    SELECT_NEXT_TAB,
-    SELECT_PREVIOUS_TAB,
-    ADD_SERVER,
     FOCUS_THREE_DOT_MENU,
     GET_FULL_SCREEN_STATUS,
     CLOSE_TEAMS_DROPDOWN,
     OPEN_TEAMS_DROPDOWN,
+    SWITCH_TAB,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -61,22 +59,21 @@ enum Status {
 }
 
 type Props = {
-    teams: Team[];
-    showAddServerButton: boolean;
-    moveTabs: (originalOrder: number, newOrder: number) => number | undefined;
+    teams: TeamWithTabs[];
+    moveTabs: (teamName: string, originalOrder: number, newOrder: number) => number | undefined;
     openMenu: () => void;
     darkMode: boolean;
     appName: string;
 };
 
 type State = {
-    key: number;
+    activeServerName?: string;
+    activeTabName?: string;
     sessionsExpired: Record<string, boolean>;
     unreadCounts: Record<string, number>;
     mentionCounts: Record<string, number>;
-    targetURL: string;
     maximized: boolean;
-    tabStatus: Map<string, TabStatus>;
+    tabViewStatus: Map<string, TabViewStatus>;
     darkMode: boolean;
     modalOpen?: boolean;
     fullScreen?: boolean;
@@ -84,7 +81,7 @@ type State = {
     isMenuOpen: boolean;
 };
 
-type TabStatus = {
+type TabViewStatus = {
     status: Status;
     extra?: {
         url: string;
@@ -102,40 +99,39 @@ export default class MainPage extends React.PureComponent<Props, State> {
         this.topBar = React.createRef();
         this.threeDotMenu = React.createRef();
 
+        const firstServer = this.props.teams.find((team) => team.order === 0);
+        const firstTab = firstServer?.tabs.find((tab) => tab.order === (firstServer.lastActiveTab || 0)) || firstServer?.tabs[0];
+
         this.state = {
-            key: this.props.teams.length ? this.props.teams.findIndex((team) => team.order === 0) : 0,
+            activeServerName: firstServer?.name,
+            activeTabName: firstTab?.name,
             sessionsExpired: {},
             unreadCounts: {},
             mentionCounts: {},
-            targetURL: '',
             maximized: false,
-            tabStatus: new Map(this.props.teams.map((server) => [server.name, {status: Status.LOADING}])),
+            tabViewStatus: new Map(this.props.teams.map((team) => team.tabs.map((tab) => getTabViewName(team.name, tab.name))).flat().map((tabViewName) => [tabViewName, {status: Status.LOADING}])),
             darkMode: this.props.darkMode,
             isMenuOpen: false,
         };
     }
 
-    getTabStatus() {
-        if (this.props.teams.length) {
-            const tab = this.props.teams[this.state.key];
-            if (tab) {
-                const tabname = tab.name;
-                return this.state.tabStatus.get(tabname);
-            }
+    getTabViewStatus() {
+        if (!this.state.activeServerName || !this.state.activeTabName) {
+            return undefined;
         }
-        return {status: Status.NOSERVERS};
+        return this.state.tabViewStatus.get(getTabViewName(this.state.activeServerName, this.state.activeTabName)) ?? {status: Status.NOSERVERS};
     }
 
-    updateTabStatus(server: string, newStatusValue: TabStatus) {
-        const status = new Map(this.state.tabStatus);
-        status.set(server, newStatusValue);
-        this.setState({tabStatus: status});
+    updateTabStatus(tabViewName: string, newStatusValue: TabViewStatus) {
+        const status = new Map(this.state.tabViewStatus);
+        status.set(tabViewName, newStatusValue);
+        this.setState({tabViewStatus: status});
     }
 
     componentDidMount() {
         // set page on retry
-        window.ipcRenderer.on(LOAD_RETRY, (_, server, retry, err, loadUrl) => {
-            console.log(`${server}: failed to load ${err}, but retrying`);
+        window.ipcRenderer.on(LOAD_RETRY, (_, viewName, retry, err, loadUrl) => {
+            console.log(`${viewName}: failed to load ${err}, but retrying`);
             const statusValue = {
                 status: Status.RETRY,
                 extra: {
@@ -144,15 +140,15 @@ export default class MainPage extends React.PureComponent<Props, State> {
                     url: loadUrl,
                 },
             };
-            this.updateTabStatus(server, statusValue);
+            this.updateTabStatus(viewName, statusValue);
         });
 
-        window.ipcRenderer.on(LOAD_SUCCESS, (_, server) => {
-            this.updateTabStatus(server, {status: Status.DONE});
+        window.ipcRenderer.on(LOAD_SUCCESS, (_, viewName) => {
+            this.updateTabStatus(viewName, {status: Status.DONE});
         });
 
-        window.ipcRenderer.on(LOAD_FAILED, (_, server, err, loadUrl) => {
-            console.log(`${server}: failed to load ${err}`);
+        window.ipcRenderer.on(LOAD_FAILED, (_, viewName, err, loadUrl) => {
+            console.log(`${viewName}: failed to load ${err}`);
             const statusValue = {
                 status: Status.FAILED,
                 extra: {
@@ -160,7 +156,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
                     url: loadUrl,
                 },
             };
-            this.updateTabStatus(server, statusValue);
+            this.updateTabStatus(viewName, statusValue);
         });
 
         window.ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => {
@@ -168,26 +164,8 @@ export default class MainPage extends React.PureComponent<Props, State> {
         });
 
         // can't switch tabs sequentially for some reason...
-        window.ipcRenderer.on(SET_SERVER_KEY, (event, key) => {
-            const nextIndex = this.props.teams.findIndex((team) => team.order === key);
-            this.handleSetServerKey(nextIndex);
-        });
-        window.ipcRenderer.on(SELECT_NEXT_TAB, () => {
-            const currentOrder = this.props.teams[this.state.key].order;
-            const nextOrder = ((currentOrder + 1) % this.props.teams.length);
-            const nextIndex = this.props.teams.findIndex((team) => team.order === nextOrder);
-            const team = this.props.teams[nextIndex];
-            this.handleSelect(team.name, nextIndex);
-        });
-
-        window.ipcRenderer.on(SELECT_PREVIOUS_TAB, () => {
-            const currentOrder = this.props.teams[this.state.key].order;
-
-            // js modulo operator returns a negative number if result is negative, so we have to ensure it's positive
-            const nextOrder = ((this.props.teams.length + (currentOrder - 1)) % this.props.teams.length);
-            const nextIndex = this.props.teams.findIndex((team) => team.order === nextOrder);
-            const team = this.props.teams[nextIndex];
-            this.handleSelect(team.name, nextIndex);
+        window.ipcRenderer.on(SET_ACTIVE_VIEW, (event, serverName, tabName) => {
+            this.setState({activeServerName: serverName, activeTabName: tabName});
         });
 
         window.ipcRenderer.on(MAXIMIZE_CHANGE, this.handleMaximizeState);
@@ -196,10 +174,6 @@ export default class MainPage extends React.PureComponent<Props, State> {
         window.ipcRenderer.on('leave-full-screen', () => this.handleFullScreenState(false));
 
         window.ipcRenderer.invoke(GET_FULL_SCREEN_STATUS).then((fullScreenStatus) => this.handleFullScreenState(fullScreenStatus));
-
-        window.ipcRenderer.on(ADD_SERVER, () => {
-            this.addServer();
-        });
 
         window.ipcRenderer.on(PLAY_SOUND, (_event, soundName) => {
             playSound(soundName);
@@ -217,18 +191,17 @@ export default class MainPage extends React.PureComponent<Props, State> {
             this.setState({showExtraBar});
         });
 
-        window.ipcRenderer.on(UPDATE_MENTIONS, (_event, team, mentions, unreads, isExpired) => {
-            const key = this.props.teams.findIndex((server) => server.name === team);
+        window.ipcRenderer.on(UPDATE_MENTIONS, (_event, view, mentions, unreads, isExpired) => {
             const {unreadCounts, mentionCounts, sessionsExpired} = this.state;
 
             const newMentionCounts = {...mentionCounts};
-            newMentionCounts[key] = mentions || 0;
+            newMentionCounts[view] = mentions || 0;
 
             const newUnreads = {...unreadCounts};
-            newUnreads[key] = unreads || false;
+            newUnreads[view] = unreads || false;
 
             const expired = {...sessionsExpired};
-            expired[key] = isExpired || false;
+            expired[view] = isExpired || false;
 
             this.setState({unreadCounts: newUnreads, mentionCounts: newMentionCounts, sessionsExpired: expired});
         });
@@ -258,14 +231,8 @@ export default class MainPage extends React.PureComponent<Props, State> {
         this.setState({fullScreen: isFullScreen});
     }
 
-    handleSetServerKey = (key: number) => {
-        const newKey = ((this.props.teams.length + key) % this.props.teams.length) || 0;
-        this.setState({key: newKey});
-    }
-
-    handleSelect = (name: string, key: number) => {
-        window.ipcRenderer.send(SWITCH_SERVER, name);
-        this.handleSetServerKey(key);
+    handleSelectTab = (name: string) => {
+        window.ipcRenderer.send(SWITCH_TAB, this.state.activeServerName, name);
     }
 
     handleDragAndDrop = async (dropResult: DropResult) => {
@@ -274,12 +241,20 @@ export default class MainPage extends React.PureComponent<Props, State> {
         if (addedIndex === undefined || removedIndex === addedIndex) {
             return;
         }
-        const teamIndex = this.props.moveTabs(removedIndex, addedIndex < this.props.teams.length ? addedIndex : this.props.teams.length - 1);
+        if (!this.state.activeServerName) {
+            return;
+        }
+        const currentTabs = this.props.teams.find((team) => team.name === this.state.activeServerName)?.tabs;
+        if (!currentTabs) {
+            // TODO: figure out something here
+            return;
+        }
+        const teamIndex = this.props.moveTabs(this.state.activeServerName, removedIndex, addedIndex < currentTabs.length ? addedIndex : currentTabs.length - 1);
         if (!teamIndex) {
             return;
         }
-        const name = this.props.teams[teamIndex].name;
-        this.handleSelect(name, teamIndex);
+        const name = currentTabs[teamIndex].name;
+        this.handleSelectTab(name);
     }
 
     handleClose = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -312,17 +287,18 @@ export default class MainPage extends React.PureComponent<Props, State> {
         window.ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW);
     }
 
-    addServer = () => {
-        window.ipcRenderer.send(SHOW_NEW_SERVER_MODAL);
-    }
-
     focusOnWebView = () => {
         window.ipcRenderer.send(FOCUS_BROWSERVIEW);
         window.ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
     }
 
     render() {
-        if (!this.props.teams.length) {
+        if (!this.state.activeServerName || !this.state.activeTabName) {
+            return null;
+        }
+        const currentTabs = this.props.teams.find((team) => team.name === this.state.activeServerName)?.tabs;
+        if (!currentTabs) {
+            // TODO: figure out something here
             return null;
         }
 
@@ -330,14 +306,13 @@ export default class MainPage extends React.PureComponent<Props, State> {
             <TabBar
                 id='tabBar'
                 isDarkMode={this.state.darkMode}
-                teams={this.props.teams}
+                tabs={currentTabs}
                 sessionsExpired={this.state.sessionsExpired}
                 unreadCounts={this.state.unreadCounts}
                 mentionCounts={this.state.mentionCounts}
-                activeKey={this.state.key}
-                onSelect={this.handleSelect}
-                onAddServer={this.addServer}
-                showAddServerButton={this.props.showAddServerButton}
+                activeServerName={this.state.activeServerName}
+                activeTabName={this.state.activeTabName}
+                onSelect={this.handleSelectTab}
                 onDrop={this.handleDragAndDrop}
                 tabsDisabled={this.state.modalOpen}
             />
@@ -424,7 +399,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
                         <DotsVerticalIcon/>
                     </button>
                     <TeamDropdownButton
-                        activeServerName={this.props.teams[this.state.key].name}
+                        activeServerName={this.state.activeServerName}
                         totalMentionCount={totalMentionCount}
                         hasUnreads={totalUnreadCount > 0}
                         isMenuOpen={this.state.isMenuOpen}
@@ -439,11 +414,10 @@ export default class MainPage extends React.PureComponent<Props, State> {
 
         const views = () => {
             let component;
-            const tabStatus = this.getTabStatus();
+            const tabStatus = this.getTabViewStatus();
             if (!tabStatus) {
-                const tab = this.props.teams[this.state.key];
-                if (tab) {
-                    console.error(`Not tabStatus for ${this.props.teams[this.state.key].name}`);
+                if (this.state.activeTabName) {
+                    console.error(`Not tabStatus for ${this.state.activeTabName}`);
                 } else {
                     console.error('No tab status, tab doesn\'t exist anymore');
                 }
@@ -463,7 +437,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
             case Status.FAILED:
                 component = (
                     <ErrorView
-                        id={this.state.key + '-fail'}
+                        id={this.state.activeTabName + '-fail'}
                         errorInfo={tabStatus.extra?.error}
                         url={tabStatus.extra ? tabStatus.extra.url : ''}
                         active={true}

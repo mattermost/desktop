@@ -9,7 +9,7 @@
 import {ipcRenderer, webFrame} from 'electron';
 import log from 'electron-log';
 
-import {NOTIFY_MENTION, IS_UNREAD, UNREAD_RESULT, SESSION_EXPIRED, SET_SERVER_NAME, REACT_APP_INITIALIZED, USER_ACTIVITY_UPDATE, CLOSE_TEAMS_DROPDOWN} from 'common/communication';
+import {NOTIFY_MENTION, IS_UNREAD, UNREAD_RESULT, SESSION_EXPIRED, SET_VIEW_NAME, REACT_APP_INITIALIZED, USER_ACTIVITY_UPDATE, CLOSE_TEAMS_DROPDOWN} from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
@@ -19,7 +19,7 @@ Reflect.deleteProperty(global.Buffer); // http://electron.atom.io/docs/tutorial/
 let appVersion;
 let appName;
 let sessionExpired;
-let serverName;
+let viewName;
 
 log.info('Initializing preload');
 
@@ -58,7 +58,7 @@ window.addEventListener('load', () => {
         return;
     }
     watchReactAppUntilInitialized(() => {
-        ipcRenderer.send(REACT_APP_INITIALIZED, serverName);
+        ipcRenderer.send(REACT_APP_INITIALIZED, viewName);
     });
 });
 
@@ -146,12 +146,12 @@ const findUnread = (favicon) => {
         const result = document.getElementsByClassName(classPair);
         return result && result.length > 0;
     });
-    ipcRenderer.send(UNREAD_RESULT, favicon, serverName, isUnread);
+    ipcRenderer.send(UNREAD_RESULT, favicon, viewName, isUnread);
 };
 
 ipcRenderer.on(IS_UNREAD, (event, favicon, server) => {
-    if (typeof serverName === 'undefined') {
-        serverName = server;
+    if (typeof viewName === 'undefined') {
+        viewName = server;
     }
     if (isReactAppInitialized()) {
         findUnread(favicon);
@@ -162,13 +162,13 @@ ipcRenderer.on(IS_UNREAD, (event, favicon, server) => {
     }
 });
 
-ipcRenderer.on(SET_SERVER_NAME, (_, name) => {
-    serverName = name;
+ipcRenderer.on(SET_VIEW_NAME, (_, name) => {
+    viewName = name;
 });
 
 function getUnreadCount() {
     // LHS not found => Log out => Count should be 0, but session may be expired.
-    if (typeof serverName !== 'undefined') {
+    if (typeof viewName !== 'undefined') {
         let isExpired;
         if (document.getElementById('sidebar-left') === null) {
             const extraParam = (new URLSearchParams(window.location.search)).get('extra');
@@ -178,7 +178,7 @@ function getUnreadCount() {
         }
         if (isExpired !== sessionExpired) {
             sessionExpired = isExpired;
-            ipcRenderer.send(SESSION_EXPIRED, sessionExpired, serverName);
+            ipcRenderer.send(SESSION_EXPIRED, sessionExpired, viewName);
         }
     }
 }

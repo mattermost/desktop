@@ -36,9 +36,10 @@ import {
     RELOAD_CONFIGURATION,
     USER_ACTIVITY_UPDATE,
     EMIT_CONFIGURATION,
+    SWITCH_TAB,
 } from 'common/communication';
 import Config from 'common/config';
-
+import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 import Utils from 'common/utils/util';
 
 import urlUtils from 'common/utils/url';
@@ -234,6 +235,7 @@ function initializeInterCommunicationEventListeners() {
     }
 
     ipcMain.on(SWITCH_SERVER, handleSwitchServer);
+    ipcMain.on(SWITCH_TAB, handleSwitchTab);
 
     ipcMain.on(QUIT, handleQuit);
 
@@ -468,6 +470,10 @@ function handleSwitchServer(event: IpcMainEvent, serverName: string) {
     WindowManager.switchServer(serverName);
 }
 
+function handleSwitchTab(event: IpcMainEvent, serverName: string, tabName: string) {
+    WindowManager.switchTab(serverName, tabName);
+}
+
 function handleNewServerModal() {
     const html = getLocalURLString('newServer.html');
 
@@ -482,7 +488,7 @@ function handleNewServerModal() {
         modalPromise.then((data) => {
             const teams = config.teams;
             const order = teams.length;
-            teams.push({...data, order});
+            teams.push(getDefaultTeamWithTabsFromTeam({...data, order}));
             config.set('teams', teams);
         }).catch((e) => {
             // e is undefined for user cancellation
@@ -580,7 +586,7 @@ function initializeAfterAppReady() {
 
         item.on('done', (doneEvent, state) => {
             if (state === 'completed') {
-                displayDownloadCompleted(filename, item.savePath, urlUtils.getServer(webContents.getURL(), config.teams)!);
+                displayDownloadCompleted(filename, item.savePath, urlUtils.getView(webContents.getURL(), config.teams)!);
             }
         });
     });

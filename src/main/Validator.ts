@@ -5,7 +5,7 @@ import log from 'electron-log';
 import Joi from '@hapi/joi';
 
 import {Args} from 'types/args';
-import {ConfigV0, ConfigV1, ConfigV2} from 'types/config';
+import {ConfigV0, ConfigV1, ConfigV2, ConfigV3} from 'types/config';
 import {SavedWindowState} from 'types/mainWindow';
 import {AppState} from 'types/appState';
 import {ComparableCertificate} from 'types/certificate';
@@ -92,6 +92,35 @@ const configDataSchemaV2 = Joi.object<ConfigV2>({
     downloadLocation: Joi.string(),
 });
 
+const configDataSchemaV3 = Joi.object<ConfigV3>({
+    version: Joi.number().min(2).default(2),
+    teams: Joi.array().items(Joi.object({
+        name: Joi.string().required(),
+        url: Joi.string().required(),
+        order: Joi.number().integer().min(0),
+        lastActiveTab: Joi.number().integer().min(0).default(0),
+        tabs: Joi.array().items(Joi.object({
+            name: Joi.string().required(),
+            order: Joi.number().integer().min(0),
+        })).default([]),
+    })).default([]),
+    showTrayIcon: Joi.boolean().default(false),
+    trayIconTheme: Joi.any().allow('').valid('light', 'dark').default('light'),
+    minimizeToTray: Joi.boolean().default(false),
+    notifications: Joi.object({
+        flashWindow: Joi.any().valid(0, 2).default(0),
+        bounceIcon: Joi.boolean().default(false),
+        bounceIconType: Joi.any().allow('').valid('informational', 'critical').default('informational'),
+    }),
+    showUnreadBadge: Joi.boolean().default(true),
+    useSpellChecker: Joi.boolean().default(true),
+    enableHardwareAcceleration: Joi.boolean().default(true),
+    autostart: Joi.boolean().default(true),
+    spellCheckerLocale: Joi.string().regex(/^[a-z]{2}-[A-Z]{2}$/).default('en-US'),
+    darkMode: Joi.boolean().default(false),
+    downloadLocation: Joi.string(),
+});
+
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};
 const certificateStoreSchema = Joi.object().pattern(
     Joi.string().uri(),
@@ -155,15 +184,22 @@ export function validateV1ConfigData(data: ConfigV1) {
     return validateAgainstSchema(data, configDataSchemaV1);
 }
 
+function cleanURL(url: string): string {
+    let updatedURL = url;
+    if (updatedURL.includes('\\')) {
+        updatedURL = updatedURL.toLowerCase().replace(/\\/gi, '/');
+    }
+    return updatedURL;
+}
+
 export function validateV2ConfigData(data: ConfigV2) {
     if (Array.isArray(data.teams) && data.teams.length) {
-    // first replace possible backslashes with forward slashes
-        let teams = data.teams.map(({name, url, order}) => {
-            let updatedURL = url;
-            if (updatedURL.includes('\\')) {
-                updatedURL = updatedURL.toLowerCase().replace(/\\/gi, '/');
-            }
-            return {name, url: updatedURL, order};
+        // first replace possible backslashes with forward slashes
+        let teams = data.teams.map((team) => {
+            return {
+                ...team,
+                url: cleanURL(team.url),
+            };
         });
 
         // next filter out urls that are still invalid so all is not lost
@@ -173,6 +209,25 @@ export function validateV2ConfigData(data: ConfigV2) {
         data.teams = teams;
     }
     return validateAgainstSchema(data, configDataSchemaV2);
+}
+
+export function validateV3ConfigData(data: ConfigV3) {
+    if (Array.isArray(data.teams) && data.teams.length) {
+    // first replace possible backslashes with forward slashes
+        let teams = data.teams.map((team) => {
+            return {
+                ...team,
+                url: cleanURL(team.url),
+            };
+        });
+
+        // next filter out urls that are still invalid so all is not lost
+        teams = teams.filter(({url}) => urlUtils.isValidURL(url));
+
+        // replace original teams
+        data.teams = teams;
+    }
+    return validateAgainstSchema(data, configDataSchemaV3);
 }
 
 // validate certificate.json

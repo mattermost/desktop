@@ -15,6 +15,7 @@ import {CombinedConfig, LocalConfiguration, Team} from 'types/config';
 import {DeepPartial} from 'types/utils';
 
 import {GET_LOCAL_CONFIGURATION, UPDATE_CONFIGURATION, DOUBLE_CLICK_ON_WINDOW, GET_DOWNLOAD_LOCATION, SWITCH_SERVER, ADD_SERVER, RELOAD_CONFIGURATION} from 'common/communication';
+import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 
 import TeamList from './TeamList';
 import AutoSaveIndicator, {SavingState} from './AutoSaveIndicator';
@@ -337,7 +338,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
 
     addServer = (team: Team) => {
         const teams = this.state.teams || [];
-        teams.push(team);
+        teams.push(getDefaultTeamWithTabsFromTeam(team));
         window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
         this.setState({
             teams,

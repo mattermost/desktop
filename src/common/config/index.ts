@@ -16,12 +16,13 @@ import {
     Config as ConfigType,
     LocalConfiguration,
     RegistryConfig as RegistryConfigType,
-    Team,
+    TeamWithTabs,
 } from 'types/config';
 
 import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION} from 'common/communication';
 
-import * as Validator from '../../main/Validator';
+import * as Validator from 'main/Validator';
+import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 
 import defaultPreferences, {getDefaultDownloadLocation} from './defaultPreferences';
 import upgradeConfigData from './upgradePreferences';
@@ -263,6 +264,9 @@ export default class Config extends EventEmitter {
 
             // validate based on config file version
             switch (configData.version) {
+            case 3:
+                configData = Validator.validateV3ConfigData(configData)!;
+                break;
             case 2:
                 configData = Validator.validateV2ConfigData(configData)!;
                 break;
@@ -317,16 +321,16 @@ export default class Config extends EventEmitter {
         delete this.combinedData!.defaultTeams;
 
         // IMPORTANT: properly combine teams from all sources
-        let combinedTeams = [];
+        let combinedTeams: TeamWithTabs[] = [];
 
         // - start by adding default teams from buildConfig, if any
         if (this.buildConfigData?.defaultTeams?.length) {
-            combinedTeams.push(...this.buildConfigData.defaultTeams);
+            combinedTeams.push(...this.buildConfigData.defaultTeams.map((team) => getDefaultTeamWithTabsFromTeam(team)));
         }
 
         // - add registry defined teams, if any
         if (this.registryConfigData?.teams?.length) {
-            combinedTeams.push(...this.registryConfigData.teams);
+            combinedTeams.push(...this.registryConfigData.teams.map((team) => getDefaultTeamWithTabsFromTeam(team)));
         }
 
         // - add locally defined teams only if server management is enabled
@@ -352,7 +356,7 @@ export default class Config extends EventEmitter {
      *
      * @param {array} teams array of teams to check for duplicates
      */
-    filterOutDuplicateTeams = (teams: Team[]) => {
+    filterOutDuplicateTeams = (teams: TeamWithTabs[]) => {
         let newTeams = teams;
         const uniqueURLs = new Set();
         newTeams = newTeams.filter((team) => {
@@ -365,7 +369,7 @@ export default class Config extends EventEmitter {
      * Returns the provided array fo teams with existing teams filtered out
      * @param {array} teams array of teams to check for already defined teams
      */
-    filterOutPredefinedTeams = (teams: Team[]) => {
+    filterOutPredefinedTeams = (teams: TeamWithTabs[]) => {
         let newTeams = teams;
 
         // filter out predefined teams
@@ -380,7 +384,7 @@ export default class Config extends EventEmitter {
      * Apply a default sort order to the team list, if no order is specified.
      * @param {array} teams to sort
      */
-    sortUnorderedTeams = (teams: Team[]) => {
+    sortUnorderedTeams = (teams: TeamWithTabs[]) => {
         // We want to preserve the array order of teams in the config, otherwise a lot of bugs will occur
         const mappedTeams = teams.map((team, index) => ({team, originalOrder: index}));
 
@@ -470,7 +474,7 @@ export default class Config extends EventEmitter {
         return config;
     }
 
-    handleUpdateTeams = (event: Electron.IpcMainInvokeEvent, newTeams: Team[]) => {
+    handleUpdateTeams = (event: Electron.IpcMainInvokeEvent, newTeams: TeamWithTabs[]) => {
         this.set('teams', newTeams);
         return this.combinedData!.teams;
     }

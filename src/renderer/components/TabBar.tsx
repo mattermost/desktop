@@ -5,30 +5,24 @@
 import React from 'react';
 import {Nav, NavItem, NavLink} from 'react-bootstrap';
 import {DragDropContext, Draggable, DraggingStyle, Droppable, DropResult, NotDraggingStyle} from 'react-beautiful-dnd';
-import PlusIcon from 'mdi-react/PlusIcon';
 import classNames from 'classnames';
 
-import {Team} from 'types/config';
+import {Tab} from 'types/config';
 
-import {GET_CONFIGURATION} from 'common/communication';
+import {getTabViewName} from 'common/tabs/TabView';
 
 type Props = {
-    activeKey: number;
+    activeTabName: string;
+    activeServerName: string;
     id: string;
     isDarkMode: boolean;
     onSelect: (name: string, index: number) => void;
-    teams: Team[];
+    tabs: Tab[];
     sessionsExpired: Record<string, boolean>;
     unreadCounts: Record<string, number>;
     mentionCounts: Record<string, number>;
-    showAddServerButton: boolean;
-    onAddServer: () => void;
     onDrop: (result: DropResult) => void;
     tabsDisabled?: boolean;
-};
-
-type State = {
-    hasGPOTeams: boolean;
 };
 
 function getStyle(style?: DraggingStyle | NotDraggingStyle) {
@@ -42,31 +36,19 @@ function getStyle(style?: DraggingStyle | NotDraggingStyle) {
     return style;
 }
 
-export default class TabBar extends React.PureComponent<Props, State> { // need "this"
-    constructor(props: Props) {
-        super(props);
-        this.state = {
-            hasGPOTeams: false,
-        };
-    }
-
-    componentDidMount() {
-        window.ipcRenderer.invoke(GET_CONFIGURATION).then((config) => {
-            this.setState({hasGPOTeams: config.registryTeams && config.registryTeams.length > 0});
-        });
-    }
-
+export default class TabBar extends React.PureComponent<Props> {
     render() {
-        const orderedTabs = this.props.teams.concat().sort((a, b) => a.order - b.order);
-        const tabs = orderedTabs.map((team, orderedIndex) => {
-            const index = this.props.teams.indexOf(team);
+        const orderedTabs = this.props.tabs.concat().sort((a, b) => a.order - b.order);
+        const tabs = orderedTabs.map((tab, orderedIndex) => {
+            const index = this.props.tabs.indexOf(tab);
+            const tabName = getTabViewName(this.props.activeServerName, tab.name);
 
-            const sessionExpired = this.props.sessionsExpired[index];
-            const hasUnreads = this.props.unreadCounts[index];
+            const sessionExpired = this.props.sessionsExpired[tabName];
+            const hasUnreads = this.props.unreadCounts[tabName];
 
             let mentionCount = 0;
-            if (this.props.mentionCounts[index] > 0) {
-                mentionCount = this.props.mentionCounts[index];
+            if (this.props.mentionCounts[tabName] > 0) {
+                mentionCount = this.props.mentionCounts[tabName];
             }
 
             let badgeDiv: React.ReactNode;
@@ -98,9 +80,9 @@ export default class TabBar extends React.PureComponent<Props, State> { // need 
                             as='li'
                             id={`teamTabItem${index}`}
                             draggable={false}
-                            title={team.name}
+                            title={tab.name}
                             className={classNames('teamTabItem', {
-                                active: this.props.activeKey === index,
+                                active: this.props.activeTabName === tab.name,
                                 dragging: snapshot.isDragging,
                             })}
                             {...provided.draggableProps}
@@ -110,15 +92,15 @@ export default class TabBar extends React.PureComponent<Props, State> { // need 
                             <NavLink
                                 eventKey={index}
                                 draggable={false}
-                                active={this.props.activeKey === index}
+                                active={this.props.activeTabName === tab.name}
                                 disabled={this.props.tabsDisabled}
                                 onSelect={() => {
-                                    this.props.onSelect(team.name, index);
+                                    this.props.onSelect(tab.name, index);
                                 }}
                             >
                                 <div className='TabBar-tabSeperator'>
                                     <span>
-                                        {team.name}
+                                        {tab.name}
                                     </span>
                                     { badgeDiv }
                                 </div>
@@ -128,49 +110,11 @@ export default class TabBar extends React.PureComponent<Props, State> { // need 
                 </Draggable>
             );
         });
-        if (this.props.showAddServerButton === true) {
-            tabs.push(
-                <Draggable
-                    draggableId={'TabBar-addServerButton'}
-                    index={this.props.teams.length}
-                    isDragDisabled={true}
-                >
-                    {(provided) => (
-                        <NavItem
-                            ref={provided.innerRef}
-                            as='li'
-                            className='TabBar-addServerButton'
-                            key='addServerButton'
-                            id='addServerButton'
-                            draggable={false}
-                            title='Add new server'
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                        >
-                            <NavLink
-                                eventKey='addServerButton'
-                                draggable={false}
-                                disabled={this.props.tabsDisabled}
-                                onSelect={() => {
-                                    this.props.onAddServer();
-                                }}
-                            >
-                                <div className='TabBar-tabSeperator'>
-                                    <PlusIcon size={20}/>
-                                </div>
-                            </NavLink>
-                        </NavItem>
-                    )}
-                </Draggable>,
-            );
-        }
 
-        // TODO: Replace with products
-        tabs.length = 0;
         return (
             <DragDropContext onDragEnd={this.props.onDrop}>
                 <Droppable
-                    isDropDisabled={this.state.hasGPOTeams || this.props.tabsDisabled}
+                    isDropDisabled={this.props.tabsDisabled}
                     droppableId='tabBar'
                     direction='horizontal'
                 >

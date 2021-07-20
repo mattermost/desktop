@@ -5,7 +5,7 @@
 
 import {app, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, webContents} from 'electron';
 
-import {ADD_SERVER, SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB} from 'common/communication';
+import {ADD_SERVER} from 'common/communication';
 import Config from 'common/config';
 
 import * as WindowManager from '../windows/windowManager';
@@ -217,14 +217,14 @@ function createTemplate(config: Config) {
             label: 'Select Next Server',
             accelerator: 'Ctrl+Tab',
             click() {
-                WindowManager.sendToRenderer(SELECT_NEXT_TAB);
+                WindowManager.selectNextTab();
             },
             enabled: (teams.length > 1),
         }, {
             label: 'Select Previous Server',
             accelerator: 'Ctrl+Shift+Tab',
             click() {
-                WindowManager.sendToRenderer(SELECT_PREVIOUS_TAB);
+                WindowManager.selectPreviousTab();
             },
             enabled: (teams.length > 1),
         }],

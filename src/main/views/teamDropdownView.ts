@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent} from 'electron';
-import {CombinedConfig, Team} from 'types/config';
+import {CombinedConfig, TeamWithTabs} from 'types/config';
 
 import {
     CLOSE_TEAMS_DROPDOWN,
@@ -12,7 +12,7 @@ import {
     UPDATE_DROPDOWN_MENTIONS,
     REQUEST_TEAMS_DROPDOWN_INFO,
     RECEIVE_DROPDOWN_MENU_SIZE,
-    SET_SERVER_KEY,
+    SET_ACTIVE_VIEW,
 } from 'common/communication';
 import * as AppState from '../appState';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
@@ -22,19 +22,21 @@ import * as WindowManager from '../windows/windowManager';
 export default class TeamDropdownView {
     view: BrowserView;
     bounds?: Electron.Rectangle;
-    teams: Team[];
+    teams: TeamWithTabs[];
     activeTeam?: string;
     darkMode: boolean;
+    enableServerManagement?: boolean;
     hasGPOTeams?: boolean;
     unreads?: Map<string, boolean>;
     mentions?: Map<string, number>;
     expired?: Map<string, boolean>;
     window: BrowserWindow;
 
-    constructor(window: BrowserWindow, teams: Team[], darkMode: boolean) {
+    constructor(window: BrowserWindow, teams: TeamWithTabs[], darkMode: boolean, enableServerManagement: boolean) {
         this.teams = teams;
         this.window = window;
         this.darkMode = darkMode;
+        this.enableServerManagement = enableServerManagement;
 
         const preload = getLocalPreload('dropdown.js');
         this.view = new BrowserView({webPreferences: {
@@ -51,13 +53,14 @@ export default class TeamDropdownView {
         ipcMain.on(EMIT_CONFIGURATION, this.updateConfig);
         ipcMain.on(REQUEST_TEAMS_DROPDOWN_INFO, this.updateDropdown);
         ipcMain.on(RECEIVE_DROPDOWN_MENU_SIZE, this.handleReceivedMenuSize);
-        ipcMain.on(SET_SERVER_KEY, this.updateActiveTeam);
+        ipcMain.on(SET_ACTIVE_VIEW, this.updateActiveTeam);
         AppState.on(UPDATE_DROPDOWN_MENTIONS, this.updateMentions);
     }
 
     updateConfig = (event: IpcMainEvent, config: CombinedConfig) => {
         this.teams = config.teams;
         this.darkMode = config.darkMode;
+        this.enableServerManagement = config.enableServerManagement;
         this.hasGPOTeams = config.registryTeams && config.registryTeams.length > 0;
         this.updateDropdown();
     }
@@ -75,7 +78,17 @@ export default class TeamDropdownView {
     }
 
     updateDropdown = () => {
-        this.view.webContents.send(UPDATE_TEAMS_DROPDOWN, this.teams, this.activeTeam, this.darkMode, this.hasGPOTeams, this.expired, this.mentions, this.unreads);
+        this.view.webContents.send(
+            UPDATE_TEAMS_DROPDOWN,
+            this.teams,
+            this.activeTeam,
+            this.darkMode,
+            this.enableServerManagement,
+            this.hasGPOTeams,
+            this.expired,
+            this.mentions,
+            this.unreads,
+        );
     }
 
     handleOpen = () => {
