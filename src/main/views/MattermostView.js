@@ -136,6 +136,10 @@ export class MattermostView extends EventEmitter {
     loadSuccess = (loadURL) => {
         return () => {
             log.info(`[${Util.shorten(this.server.name)}] finished loading ${loadURL}`);
+            this.view.webContents.session.on('spellcheck-dictionary-initialized', (e, lang) => {
+                log.info(`spellchecker initialized: ${lang}`);
+                log.info(e);
+            });
             WindowManager.sendToRenderer(LOAD_SUCCESS, this.server.name);
             this.maxRetries = MAX_SERVER_RETRIES;
             if (this.status === LOADING) {

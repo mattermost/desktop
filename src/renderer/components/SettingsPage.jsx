@@ -1,6 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
+/* eslint-disable max-lines */
 
 import 'renderer/css/settings.css';
 
@@ -35,6 +36,7 @@ export default class SettingsPage extends React.PureComponent {
                 servers: AutoSaveIndicator.SAVING_STATE_DONE,
             },
             userOpenedDownloadDialog: false,
+            allowSaveSpellCheckerURL: false,
         };
 
         this.getConfig();
@@ -48,6 +50,7 @@ export default class SettingsPage extends React.PureComponent {
         this.showUnreadBadgeRef = React.createRef();
         this.useSpellCheckerRef = React.createRef();
         this.enableHardwareAccelerationRef = React.createRef();
+        this.spellCheckerURLRef = React.createRef();
 
         this.saveQueue = [];
     }
@@ -83,6 +86,7 @@ export default class SettingsPage extends React.PureComponent {
             appOptions: AutoSaveIndicator.SAVING_STATE_DONE,
             servers: AutoSaveIndicator.SAVING_STATE_DONE,
         };
+        newState.allowSaveSpellCheckerURL = true;
         return newState;
     }
 
@@ -285,6 +289,31 @@ export default class SettingsPage extends React.PureComponent {
         this.setState({userOpenedDownloadDialog: false});
     }
 
+    saveSpellCheckerURL = () => {
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'spellCheckerURL', data: this.state.spellCheckerURL});
+    }
+
+    resetSpellCheckerURL = () => {
+        this.setState({spellCheckerURL: null, allowSaveSpellCheckerURL: false});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'spellCheckerURL', data: null});
+    }
+
+    handleChangeSpellCheckerURL= (e) => {
+        const dictionaryURL = e.target.value;
+        let allowSaveSpellCheckerURL;
+        try {
+            // eslint-disable-next-line no-new
+            new URL(dictionaryURL);
+            allowSaveSpellCheckerURL = true;
+        } catch {
+            allowSaveSpellCheckerURL = false;
+        }
+        this.setState({
+            spellCheckerURL: dictionaryURL,
+            allowSaveSpellCheckerURL,
+        });
+    }
+
     updateTeam = (index, newData) => {
         const teams = this.state.teams;
         teams[index] = newData;
@@ -463,6 +492,53 @@ export default class SettingsPage extends React.PureComponent {
                     {'Setting takes effect after restarting the app.'}
                 </HelpBlock>
             </Checkbox>);
+
+        if (process.platform !== 'darwin') {
+            if (this.state.spellCheckerURL === null || typeof this.state.spellCheckerURL === 'undefined') {
+                options.push(
+                    <Button
+                        id='editSpellcheckerURL'
+                        key='editSpellcheckerURL'
+                        onClick={() => this.setState({spellCheckerURL: '', allowSaveSpellCheckerURL: false})}
+                        bsStyle='link'
+                    >{'Use an alternative dictionary URL'}</Button>,
+                );
+            } else {
+                options.push(
+                    <div
+                        style={settingsPage.container}
+                        key='containerInputSpellchekerURL'
+                    >
+                        <input
+                            disabled={!this.state.useSpellChecker}
+                            style={settingsPage.downloadLocationInput}
+                            key='inputSpellCheckerURL'
+                            id='inputSpellCheckerURL'
+                            ref={this.spellCheckerURLRef}
+                            onChange={this.handleChangeSpellCheckerURL}
+                            value={this.state.spellCheckerURL}
+                        />
+                        <Button
+                            disabled={!this.state.allowSaveSpellCheckerURL}
+                            key='saveSpellCheckerURL'
+                            style={settingsPage.downloadLocationButton}
+                            id='saveSpellCheckerURL'
+                            onClick={this.saveSpellCheckerURL}
+                        >
+                            <span>{'Save'}</span>
+                        </Button>
+                        <HelpBlock>
+                            {'Specify the url where dictionary definitions can be retrieved'}
+                        </HelpBlock>
+                        <Button
+                            id='revertSpellcheckerURL'
+                            key='revertSpellcheckerURL'
+                            onClick={this.resetSpellCheckerURL}
+                            bsStyle='link'
+                        >{'Revert to default'}</Button>
+                    </div>);
+            }
+        }
 
         if (window.process.platform === 'darwin' || window.process.platform === 'win32') {
             const TASKBAR = window.process.platform === 'win32' ? 'taskbar' : 'Dock';

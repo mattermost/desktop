@@ -200,6 +200,11 @@ export default class Config extends EventEmitter {
     get useSpellChecker() {
         return this.combinedData.useSpellChecker;
     }
+
+    get spellCheckerURL() {
+        return this.combinedData.spellCheckerURL;
+    }
+
     get spellCheckerLocale() {
         return this.combinedData.spellCheckerLocale;
     }

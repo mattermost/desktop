@@ -78,6 +78,7 @@ const configDataSchemaV2 = Joi.object({
     }),
     showUnreadBadge: Joi.boolean().default(true),
     useSpellChecker: Joi.boolean().default(true),
+    spellCheckerURL: Joi.string().allow(null),
     enableHardwareAcceleration: Joi.boolean().default(true),
     autostart: Joi.boolean().default(true),
     spellCheckerLocale: Joi.string().regex(/^[a-z]{2}-[A-Z]{2}$/).default('en-US'),
@@ -164,6 +165,10 @@ export function validateV2ConfigData(data) {
 
         // replace original teams
         data.teams = teams;
+    }
+    if (data.spellCheckerURL && !urlUtils.isValidURL(data.spellCheckerURL)) {
+        log.error('Invalid download location for spellchecker dictionary, removing from config');
+        delete data.spellCheckerURL;
     }
     return validateAgainstSchema(data, configDataSchemaV2);
 }
