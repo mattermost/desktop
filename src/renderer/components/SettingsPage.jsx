@@ -501,7 +501,7 @@ export default class SettingsPage extends React.PureComponent {
                         key='editSpellcheckerURL'
                         onClick={() => this.setState({spellCheckerURL: '', allowSaveSpellCheckerURL: false})}
                         bsStyle='link'
-                    >{'Use alternate dictionary URL'}</Button>,
+                    >{'Use an alternative dictionary URL'}</Button>,
                 );
             } else {
                 options.push(

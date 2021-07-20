@@ -463,7 +463,7 @@ function initializeAfterAppReady() {
 
     defaultSession.on('spellcheck-dictionary-download-failure', (event, lang) => {
         if (config.spellCheckerURL) {
-            log.error(`There was an error while trying to load the dictionary definitions dor ${lang} fromfully the specified url. Please review you have access to the needed files. Url used was ${config.spellCheckerURL}`);
+            log.error(`There was an error while trying to load the dictionary definitions for ${lang} fromfully the specified url. Please review you have access to the needed files. Url used was ${config.spellCheckerURL}`);
         } else {
             log.warn(`There was an error while trying to download the dictionary definitions for ${lang}, spellchecking might not work properly.`);
         }
