@@ -461,33 +461,21 @@ function initializeAfterAppReady() {
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
 
-    defaultSession.on('spellcheck-dictionary-initialized', (e, lang) => {
-        log.info(`spellchecker initialized: ${lang}`);
+    defaultSession.on('spellcheck-dictionary-download-failure', (event, lang) => {
+        if (config.spellCheckerURL) {
+            log.error(`There was an error while trying to load the dictionary definitions dor ${lang} fromfully the specified url. Please review you have access to the needed files. Url used was ${config.spellCheckerURL}`);
+        } else {
+            log.warn(`There was an error while trying to download the dictionary definitions for ${lang}, spellchecking might not work properly.`);
+        }
     });
 
-    log.info(`spellcheckerURL: ${config.spellCheckerURL}`);
     if (process.platform !== 'darwin' && config.spellCheckerURL) {
         const spellCheckerURL = config.spellCheckerURL.endsWith('/') ? config.spellCheckerURL : `${config.spellCheckerURL}/`;
         log.info(`Configuring spellchecker using download URL: ${spellCheckerURL}`);
         defaultSession.setSpellCheckerDictionaryDownloadURL(spellCheckerURL);
-        defaultSession.on('spellcheck-dictionary-download-begin', (event, lang) => {
-            log.info(`### Downloading dictionary for ${lang}`);
-        });
-
-        defaultSession.on('spellcheck-dictionary-download-begin', (event, lang) => {
-            log.info(`### starting dictionary download ${lang}`);
-        });
 
         defaultSession.on('spellcheck-dictionary-download-success', (event, lang) => {
-            log.info(`### Download success for ${lang}`);
-        });
-
-        defaultSession.on('spellcheck-dictionary-download-failure', (event, lang) => {
-            if (config.spellCheckerURL) {
-                log.error(`There was an error while trying to load the dictionary definitions for ${lang} from the specified url. Please review you have access to the needed files. Url used was ${config.spellCheckerURL}`);
-            } else {
-                log.warn(`There was an error while trying to download the dictionary definitions for ${lang}, spellchecking might not work properly.`);
-            }
+            log.info(`Dictionary definitions downloaded successfully for ${lang}`);
         });
     }
 
