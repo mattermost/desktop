@@ -82,6 +82,12 @@ const generateDidStartNavigation = (getServersFunction: () => TeamWithTabs[]) =>
     };
 };
 
+const denyNewWindow = (event: Event, url: string) => {
+    event.preventDefault();
+    log.warn(`Prevented popup window to open a new window to ${url}.`);
+    return null;
+};
+
 const generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spellcheck?: boolean) => {
     return (event: Event, url: string) => {
         const parsedURL = urlUtils.parseURL(url);
@@ -166,6 +172,7 @@ const generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spe
                         enableRemoteModule: process.env.NODE_ENV === 'test',
                     },
                 });
+                popupWindow.webContents.on('new-window', denyNewWindow);
                 popupWindow.once('ready-to-show', () => {
                     popupWindow!.show();
                 });
