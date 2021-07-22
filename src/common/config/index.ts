@@ -50,7 +50,11 @@ export default class Config extends EventEmitter {
         super();
         this.configFilePath = configFilePath;
         this.registryConfig = new RegistryConfig();
-        this.useNativeWindow = os.platform() === 'win32' && os.release().startsWith('10');
+        try {
+            this.useNativeWindow = os.platform() === 'win32' && (parseInt(os.release().split('.')[0], 10) < 10);
+        } catch {
+            this.useNativeWindow = false;
+        }
     }
 
     // separating constructor from init so main can setup event listeners
