@@ -190,7 +190,9 @@ function initializeBeforeAppReady() {
         log.error('No config loaded');
         return;
     }
-    app.enableSandbox();
+    if (process.env.NODE_ENV !== 'test') {
+        app.enableSandbox();
+    }
     certificateStore = new CertificateStore(path.resolve(app.getPath('userData'), 'certificate.json'));
     trustedOriginsStore = new TrustedOriginsStore(path.resolve(app.getPath('userData'), 'trustedOrigins.json'));
     trustedOriginsStore.load();
