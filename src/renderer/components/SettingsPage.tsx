@@ -572,7 +572,9 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         if (window.process.platform === 'darwin' || window.process.platform === 'win32') {
             const TASKBAR = window.process.platform === 'win32' ? 'taskbar' : 'Dock';
             options.push(
-                <FormCheck>
+                <FormCheck
+                    key='showunreadbadge'
+                >
                     <FormCheck.Input
                         type='checkbox'
                         key='inputShowUnreadBadge'
@@ -658,10 +660,11 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
 
         if (window.process.platform === 'darwin' || window.process.platform === 'linux') {
             options.push(
-                <FormCheck>
+                <FormCheck
+                    key='inputShowTrayIcon'
+                >
                     <FormCheck.Input
                         type='checkbox'
-                        key='inputShowTrayIcon'
                         id='inputShowTrayIcon'
                         ref={this.showTrayIconRef}
                         checked={this.state.showTrayIcon}
@@ -725,10 +728,11 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         }
 
         options.push(
-            <FormCheck>
+            <FormCheck
+                key='inputEnableHardwareAcceleration'
+            >
                 <FormCheck.Input
                     type='checkbox'
-                    key='inputEnableHardwareAcceleration'
                     id='inputEnableHardwareAcceleration'
                     ref={this.enableHardwareAccelerationRef}
                     checked={this.state.enableHardwareAcceleration}
@@ -743,7 +747,10 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         );
 
         options.push(
-            <div style={settingsPage.container}>
+            <div
+                style={settingsPage.container}
+                key='containerDownloadLocation'
+            >
                 <hr/>
                 <div>{'Download Location'}</div>
                 <input
