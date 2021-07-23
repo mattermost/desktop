@@ -82,6 +82,12 @@ const generateDidStartNavigation = (getServersFunction) => {
     };
 };
 
+const denyNewWindow = (event, url) => {
+    event.preventDefault();
+    log.warn(`Prevented popup window to open a new window to ${url}.`);
+    return null;
+};
+
 const generateNewWindowListener = (getServersFunction, spellcheck) => {
     return (event, url) => {
         const parsedURL = urlUtils.parseURL(url);
@@ -160,12 +166,14 @@ const generateNewWindowListener = (getServersFunction, spellcheck) => {
                     show: false,
                     center: true,
                     webPreferences: {
+                        nativeWindowOpen: true,
                         nodeIntegration: process.env.NODE_ENV === 'test',
                         contextIsolation: process.env.NODE_ENV !== 'test',
                         spellcheck: (typeof spellcheck === 'undefined' ? true : spellcheck),
                         enableRemoteModule: process.env.NODE_ENV === 'test',
                     },
                 });
+                popupWindow.webContents.on('new-window', denyNewWindow);
                 popupWindow.once('ready-to-show', () => {
                     popupWindow.show();
                 });

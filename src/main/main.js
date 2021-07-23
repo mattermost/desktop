@@ -177,6 +177,9 @@ function initializeAppEventListeners() {
 }
 
 function initializeBeforeAppReady() {
+    if (process.env.NODE_ENV !== 'test') {
+        app.enableSandbox();
+    }
     certificateStore = CertificateStore.load(path.resolve(app.getPath('userData'), 'certificate.json'));
     trustedOriginsStore = new TrustedOriginsStore(path.resolve(app.getPath('userData'), 'trustedOrigins.json'));
     trustedOriginsStore.load();
