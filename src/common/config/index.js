@@ -3,6 +3,7 @@
 // See LICENSE.txt for license information.
 import fs from 'fs';
 
+import os from 'os';
 import path from 'path';
 
 import {EventEmitter} from 'events';
@@ -26,6 +27,11 @@ export default class Config extends EventEmitter {
         super();
         this.configFilePath = configFilePath;
         this.registryConfigData = {};
+        try {
+            this.useNativeWindow = os.platform() === 'win32' && (parseInt(os.release().split('.')[0], 10) < 10);
+        } catch {
+            this.useNativeWindow = false;
+        }
     }
 
     // separating constructor from init so main can setup event listeners
@@ -296,7 +302,12 @@ export default class Config extends EventEmitter {
      */
     regenerateCombinedConfigData = () => {
         // combine all config data in the correct order
-        this.combinedData = Object.assign({}, this.defaultConfigData, this.localConfigData, this.buildConfigData, this.registryConfigData);
+        this.combinedData = Object.assign({},
+            this.defaultConfigData,
+            this.localConfigData,
+            this.buildConfigData,
+            this.registryConfigData,
+            {useNativeWindow: this.useNativeWindow});
 
         // remove unecessary data pulled from default and build config
         delete this.combinedData.defaultTeam;

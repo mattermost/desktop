@@ -109,6 +109,7 @@ class Root extends React.PureComponent {
                 openMenu={this.openMenu}
                 darkMode={config.darkMode}
                 appName={config.appName}
+                useNativeWindow={config.useNativeWindow}
             />
         );
     }
