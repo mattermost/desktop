@@ -7,7 +7,7 @@ import log from 'electron-log';
 
 import {CombinedConfig} from 'types/config';
 
-import {MAXIMIZE_CHANGE, HISTORY, GET_LOADING_SCREEN_DATA, REACT_APP_INITIALIZED, LOADING_SCREEN_ANIMATION_FINISHED, FOCUS_THREE_DOT_MENU, GET_DARK_MODE} from 'common/communication';
+import {MAXIMIZE_CHANGE, HISTORY, GET_LOADING_SCREEN_DATA, REACT_APP_INITIALIZED, LOADING_SCREEN_ANIMATION_FINISHED, FOCUS_THREE_DOT_MENU, GET_DARK_MODE, BROWSER_HISTORY_PUSH} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
 import {getTabViewName} from 'common/tabs/TabView';
@@ -40,6 +40,7 @@ ipcMain.handle(GET_LOADING_SCREEN_DATA, handleLoadingScreenDataRequest);
 ipcMain.handle(GET_DARK_MODE, handleGetDarkMode);
 ipcMain.on(REACT_APP_INITIALIZED, handleReactAppInitialized);
 ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, handleLoadingScreenAnimationFinished);
+ipcMain.on(BROWSER_HISTORY_PUSH, handleBrowserHistoryPush);
 
 export function setConfig(data: CombinedConfig) {
     if (data) {
@@ -500,4 +501,15 @@ export function selectPreviousTab() {
 
 function handleGetDarkMode() {
     return status.config?.darkMode;
+}
+
+function handleBrowserHistoryPush(e: IpcMainEvent, viewName: string, pathName: string) {
+    const currentView = status.viewManager?.views.get(viewName);
+    const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${pathName}`, status.config!.teams);
+    const redirectedView = redirectedViewName ? status.viewManager?.views.get(redirectedViewName?.name) : currentView;
+    if (redirectedView !== currentView) {
+        log.info('redirecting to a new view', currentView?.name, redirectedView?.name);
+        status.viewManager?.showByName(redirectedView?.name || viewName);
+    }
+    redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
 }

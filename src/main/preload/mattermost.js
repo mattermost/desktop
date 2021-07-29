@@ -9,7 +9,17 @@
 import {ipcRenderer, webFrame} from 'electron';
 import log from 'electron-log';
 
-import {NOTIFY_MENTION, IS_UNREAD, UNREAD_RESULT, SESSION_EXPIRED, SET_VIEW_NAME, REACT_APP_INITIALIZED, USER_ACTIVITY_UPDATE, CLOSE_TEAMS_DROPDOWN} from 'common/communication';
+import {
+    NOTIFY_MENTION,
+    IS_UNREAD,
+    UNREAD_RESULT,
+    SESSION_EXPIRED,
+    SET_VIEW_NAME,
+    REACT_APP_INITIALIZED,
+    USER_ACTIVITY_UPDATE,
+    CLOSE_TEAMS_DROPDOWN,
+    BROWSER_HISTORY_PUSH,
+} from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
@@ -113,6 +123,11 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
         ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, silent, messageData);
         break;
     }
+    case 'browser-history-push': {
+        const {path} = message;
+        ipcRenderer.send(BROWSER_HISTORY_PUSH, viewName, path);
+        break;
+    }
     default:
         if (typeof type === 'undefined') {
             console.log('ignoring message of undefined type:');
@@ -207,6 +222,18 @@ setInterval(() => {
 
 window.addEventListener('click', () => {
     ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
+});
+
+ipcRenderer.on(BROWSER_HISTORY_PUSH, (event, pathName) => {
+    window.postMessage(
+        {
+            type: 'browser-history-push-return',
+            message: {
+                pathName,
+            },
+        },
+        window.location.origin,
+    );
 });
 
 /* eslint-enable no-magic-numbers */
