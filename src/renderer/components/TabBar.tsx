@@ -9,7 +9,7 @@ import classNames from 'classnames';
 
 import {Tab} from 'types/config';
 
-import {getTabViewName} from 'common/tabs/TabView';
+import {getTabDisplayName, getTabViewName} from 'common/tabs/TabView';
 
 type Props = {
     activeTabName: string;
@@ -100,7 +100,7 @@ export default class TabBar extends React.PureComponent<Props> {
                             >
                                 <div className='TabBar-tabSeperator'>
                                     <span>
-                                        {tab.name}
+                                        {getTabDisplayName(tab.name)}
                                     </span>
                                     { badgeDiv }
                                 </div>

@@ -59,3 +59,16 @@ export function getServerView(srv: MattermostServer, tab: Tab) {
 export function getTabViewName(serverName: string, tabType: string) {
     return `${serverName}___${tabType}`;
 }
+
+export function getTabDisplayName(tabType: TabType) {
+    switch (tabType) {
+    case TAB_MESSAGING:
+        return 'Messaging';
+    case TAB_FOCALBOARD:
+        return 'Focalboard';
+    case TAB_PLAYBOOKS:
+        return 'Playbooks';
+    default:
+        throw new Error('Not implemeneted');
+    }
+}

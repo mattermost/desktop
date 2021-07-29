@@ -58,7 +58,6 @@ export class MattermostView extends EventEmitter {
 
     faviconMemoize: Map<string, boolean>;
     currentFavicon?: string;
-    isInitialized: boolean;
     hasBeenShown: boolean;
     altLastPressed?: boolean;
     contextMenu: ContextMenu;
@@ -92,7 +91,6 @@ export class MattermostView extends EventEmitter {
         this.faviconMemoize = new Map();
         log.info(`BrowserView created for server ${this.tab.name}`);
 
-        this.isInitialized = false;
         this.hasBeenShown = false;
 
         if (process.platform !== 'darwin') {
@@ -259,6 +257,10 @@ export class MattermostView extends EventEmitter {
         }
         clearTimeout(this.removeLoading);
         delete this.removeLoading;
+    }
+
+    isInitialized = () => {
+        return this.status === Status.READY;
     }
 
     openDevTools = () => {

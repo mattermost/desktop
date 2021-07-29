@@ -79,8 +79,12 @@ function getServerInfo(serverUrl: URL | string) {
 
     // does the server have a subpath?
     const pn = parsedServer.pathname.toLowerCase();
-    const subpath = pn.endsWith('/') ? pn.toLowerCase() : `${pn}/`;
+    const subpath = getFormattedPathName(pn);
     return {subpath, url: parsedServer};
+}
+
+export function getFormattedPathName(pn: string) {
+    return pn.endsWith('/') ? pn.toLowerCase() : `${pn}/`;
 }
 
 function getManagedResources() {
@@ -164,25 +168,24 @@ function getView(inputURL: URL | string, teams: TeamWithTabs[], ignoreScheme = f
     if (!parsedURL) {
         return undefined;
     }
-    let parsedServerUrl;
     let firstOption;
     let secondOption;
     teams.forEach((team) => {
         const srv = new MattermostServer(team.name, team.url);
         team.tabs.forEach((tab) => {
             const tabView = getServerView(srv, tab);
-            parsedServerUrl = parseURL(tabView.url);
+            const parsedServerUrl = parseURL(tabView.url);
             if (parsedServerUrl) {
                 // check server and subpath matches (without subpath pathname is \ so it always matches)
                 if (equalUrlsWithSubpath(parsedServerUrl, parsedURL, ignoreScheme)) {
-                    firstOption = {name: tabView.name, url: parsedServerUrl};
+                    firstOption = {name: tabView.name, url: parsedServerUrl.toString()};
                 }
                 if (equalUrlsIgnoringSubpath(parsedServerUrl, parsedURL, ignoreScheme)) {
                     // in case the user added something on the path that doesn't really belong to the server
                     // there might be more than one that matches, but we can't differentiate, so last one
                     // is as good as any other in case there is no better match (e.g.: two subpath servers with the same origin)
                     // e.g.: https://community.mattermost.com/core
-                    secondOption = {name: tabView.name, url: parsedServerUrl};
+                    secondOption = {name: tabView.name, url: parsedServerUrl.toString()};
                 }
             }
         });
@@ -214,7 +217,8 @@ function isTrustedURL(url: URL | string, teams: TeamWithTabs[]) {
 }
 
 function isCustomLoginURL(url: URL | string, server: ServerFromURL, teams: TeamWithTabs[]): boolean {
-    const subpath = server ? server.url.pathname : '';
+    const serverURL = parseURL(server.url);
+    const subpath = server && serverURL ? serverURL.pathname : '';
     const parsedURL = parseURL(url);
     if (!parsedURL) {
         return false;
