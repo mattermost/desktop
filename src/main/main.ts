@@ -67,6 +67,7 @@ import {destroyTray, refreshTrayImages, setTrayMenu, setupTray} from './tray/tra
 import {AuthManager} from './authManager';
 import {CertificateManager} from './certificateManager';
 import {setupBadge, setUnreadBadgeSetting} from './badge';
+import {checkForUpdates} from './autoUpdater';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
     module.hot.accept();
@@ -534,6 +535,8 @@ function initializeAfterAppReady() {
         clearAppCache();
     }
     appVersion.lastAppVersion = app.getVersion();
+
+    checkForUpdates();
 
     if (!global.isDev) {
         upgradeAutoLaunch();
