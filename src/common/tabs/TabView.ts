@@ -29,14 +29,17 @@ export function getDefaultTeamWithTabsFromTeam(team: Team) {
             {
                 name: TAB_MESSAGING,
                 order: 0,
+                isClosed: false,
             },
             {
                 name: TAB_FOCALBOARD,
                 order: 1,
+                isClosed: false,
             },
             {
                 name: TAB_PLAYBOOKS,
                 order: 2,
+                isClosed: false,
             },
         ],
     };
@@ -71,4 +74,9 @@ export function getTabDisplayName(tabType: TabType) {
     default:
         throw new Error('Not implemeneted');
     }
+}
+
+export function canCloseTab(tabType: TabType) {
+    // TODO: maybe rework to make the property belong to the class somehow
+    return tabType !== TAB_MESSAGING;
 }

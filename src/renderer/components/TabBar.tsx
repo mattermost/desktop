@@ -9,7 +9,7 @@ import classNames from 'classnames';
 
 import {Tab} from 'types/config';
 
-import {getTabDisplayName, getTabViewName} from 'common/tabs/TabView';
+import {getTabDisplayName, getTabViewName, TabType, canCloseTab} from 'common/tabs/TabView';
 
 type Props = {
     activeTabName: string;
@@ -17,6 +17,7 @@ type Props = {
     id: string;
     isDarkMode: boolean;
     onSelect: (name: string, index: number) => void;
+    onCloseTab: (name: string) => void;
     tabs: Tab[];
     sessionsExpired: Record<string, boolean>;
     unreadCounts: Record<string, number>;
@@ -37,9 +38,16 @@ function getStyle(style?: DraggingStyle | NotDraggingStyle) {
 }
 
 export default class TabBar extends React.PureComponent<Props> {
+    onCloseTab = (name: string) => {
+        return (event: React.MouseEvent<HTMLButtonElement>) => {
+            event.stopPropagation();
+            this.props.onCloseTab(name);
+        };
+    }
+
     render() {
         const orderedTabs = this.props.tabs.concat().sort((a, b) => a.order - b.order);
-        const tabs = orderedTabs.map((tab, orderedIndex) => {
+        const tabs = orderedTabs.filter((tab) => !tab.isClosed).map((tab, orderedIndex) => {
             const index = this.props.tabs.indexOf(tab);
             const tabName = getTabViewName(this.props.activeServerName, tab.name);
 
@@ -100,8 +108,16 @@ export default class TabBar extends React.PureComponent<Props> {
                             >
                                 <div className='TabBar-tabSeperator'>
                                     <span>
-                                        {getTabDisplayName(tab.name)}
+                                        {getTabDisplayName(tab.name as TabType)}
                                     </span>
+                                    {canCloseTab(tab.name as TabType) &&
+                                        <button
+                                            className='teamTabItem__close'
+                                            onClick={this.onCloseTab(tab.name)}
+                                        >
+                                            <i className='icon-close'/>
+                                        </button>
+                                    }
                                     { badgeDiv }
                                 </div>
                             </NavLink>

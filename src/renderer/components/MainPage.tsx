@@ -36,6 +36,7 @@ import {
     CLOSE_TEAMS_DROPDOWN,
     OPEN_TEAMS_DROPDOWN,
     SWITCH_TAB,
+    CLOSE_TAB,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -235,6 +236,10 @@ export default class MainPage extends React.PureComponent<Props, State> {
         window.ipcRenderer.send(SWITCH_TAB, this.state.activeServerName, name);
     }
 
+    handleCloseTab = (name: string) => {
+        window.ipcRenderer.send(CLOSE_TAB, this.state.activeServerName, name);
+    }
+
     handleDragAndDrop = async (dropResult: DropResult) => {
         const removedIndex = dropResult.source.index;
         const addedIndex = dropResult.destination?.index;
@@ -313,6 +318,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
                 activeServerName={this.state.activeServerName}
                 activeTabName={this.state.activeTabName}
                 onSelect={this.handleSelectTab}
+                onCloseTab={this.handleCloseTab}
                 onDrop={this.handleDragAndDrop}
                 tabsDisabled={this.state.modalOpen}
             />

@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {getFormattedPathName} from 'common/utils/url';
+
 import BaseTabView from './BaseTabView';
 import {TabType, TAB_PLAYBOOKS} from './TabView';
 

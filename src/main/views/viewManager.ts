@@ -15,6 +15,7 @@ import {
     GET_LOADING_SCREEN_DATA,
     LOADSCREEN_END,
     SET_ACTIVE_VIEW,
+    OPEN_TAB,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 
@@ -33,6 +34,7 @@ const URL_VIEW_HEIGHT = 36;
 export class ViewManager {
     configServers: TeamWithTabs[];
     viewOptions: BrowserViewConstructorOptions;
+    closedViews: Map<string, {srv: MattermostServer; tab: Tab}>;
     views: Map<string, MattermostView>;
     currentView?: string;
     urlView?: BrowserView;
@@ -45,6 +47,7 @@ export class ViewManager {
         this.viewOptions = {webPreferences: {spellcheck: config.useSpellChecker}};
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
         this.mainWindow = mainWindow;
+        this.closedViews = new Map();
     }
 
     updateMainWindow = (mainWindow: BrowserWindow) => {
@@ -60,15 +63,19 @@ export class ViewManager {
         server.tabs.forEach((tab) => this.loadView(srv, tab));
     }
 
-    loadView = (srv: MattermostServer, tab: Tab) => {
+    loadView = (srv: MattermostServer, tab: Tab, url?: string) => {
         const tabView = getServerView(srv, tab);
+        if (tab.isClosed) {
+            this.closedViews.set(tabView.name, {srv, tab});
+            return;
+        }
         const view = new MattermostView(tabView, this.mainWindow, this.viewOptions);
         this.views.set(tabView.name, view);
         if (!this.loadingScreen) {
             this.createLoadingScreen();
         }
         view.once(LOAD_SUCCESS, this.activateView);
-        view.load();
+        view.load(url);
         view.on(UPDATE_TARGET_URL, this.showURLView);
         view.on(LOADSCREEN_END, this.finishLoading);
         view.once(LOAD_FAILED, this.failLoading);
@@ -92,7 +99,9 @@ export class ViewManager {
                 if (recycle && recycle.isVisible) {
                     setFocus = recycle.name;
                 }
-                if (recycle && recycle.tab.name === tabView.name && recycle.tab.url.toString() === urlUtils.parseURL(tabView.url)!.toString()) {
+                if (tab.isClosed) {
+                    this.closedViews.set(tabView.name, {srv, tab});
+                } else if (recycle && recycle.tab.name === tabView.name && recycle.tab.url.toString() === urlUtils.parseURL(tabView.url)!.toString()) {
                     oldviews.delete(recycle.name);
                     this.views.set(recycle.name, recycle);
                 } else {
@@ -114,7 +123,8 @@ export class ViewManager {
         if (this.configServers.length) {
             const element = this.configServers.find((e) => e.order === 0);
             if (element) {
-                const tab = element.tabs.find((e) => e.order === 0);
+                const openTabs = element.tabs.filter((tab) => !tab.isClosed);
+                const tab = openTabs.find((e) => e.order === 0) || openTabs[0];
                 if (tab) {
                     const tabView = getTabViewName(element.name, tab.name);
                     this.showByName(tabView);
@@ -191,6 +201,24 @@ export class ViewManager {
             this.showByName(this.currentView!);
             this.fadeLoadingScreen();
         }
+    }
+
+    openClosedTab = (name: string, url?: string) => {
+        if (!this.closedViews.has(name)) {
+            return;
+        }
+        const {srv, tab} = this.closedViews.get(name)!;
+        tab.isClosed = false;
+        this.closedViews.delete(name);
+        this.loadView(srv, tab, url);
+        this.showByName(name);
+        const view = this.views.get(name)!;
+        view.isVisible = true;
+        view.on(LOAD_SUCCESS, () => {
+            view.isVisible = false;
+            this.showByName(name);
+        });
+        ipcMain.emit(OPEN_TAB, null, srv.name, tab.name);
     }
 
     failLoading = () => {
@@ -360,18 +388,22 @@ export class ViewManager {
             const parsedURL = urlUtils.parseURL(url)!;
             const tabView = urlUtils.getView(parsedURL, this.configServers, true);
             if (tabView) {
-                const view = this.views.get(tabView.name);
-                if (!view) {
-                    log.error(`Couldn't find a view matching the name ${tabView.name}`);
-                    return;
-                }
+                const urlWithSchema = `${urlUtils.parseURL(tabView.url)?.origin}${parsedURL.pathname}${parsedURL.search}`;
+                if (this.closedViews.has(tabView.name)) {
+                    this.openClosedTab(tabView.name, urlWithSchema);
+                } else {
+                    const view = this.views.get(tabView.name);
+                    if (!view) {
+                        log.error(`Couldn't find a view matching the name ${tabView.name}`);
+                        return;
+                    }
 
-                // attempting to change parsedURL protocol results in it not being modified.
-                const urlWithSchema = `${view.tab.url.origin}${parsedURL.pathname}${parsedURL.search}`;
-                view.resetLoadingStatus();
-                view.load(urlWithSchema);
-                view.once(LOAD_SUCCESS, this.deeplinkSuccess);
-                view.once(LOAD_FAILED, this.deeplinkFailed);
+                    // attempting to change parsedURL protocol results in it not being modified.
+                    view.resetLoadingStatus();
+                    view.load(urlWithSchema);
+                    view.once(LOAD_SUCCESS, this.deeplinkSuccess);
+                    view.once(LOAD_FAILED, this.deeplinkFailed);
+                }
             } else {
                 dialog.showErrorBox('No matching server', `there is no configured server in the app that matches the requested url: ${parsedURL.toString()}`);
             }

@@ -37,6 +37,8 @@ import {
     USER_ACTIVITY_UPDATE,
     EMIT_CONFIGURATION,
     SWITCH_TAB,
+    CLOSE_TAB,
+    OPEN_TAB,
 } from 'common/communication';
 import Config from 'common/config';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
@@ -236,6 +238,8 @@ function initializeInterCommunicationEventListeners() {
 
     ipcMain.on(SWITCH_SERVER, handleSwitchServer);
     ipcMain.on(SWITCH_TAB, handleSwitchTab);
+    ipcMain.on(CLOSE_TAB, handleCloseTab);
+    ipcMain.on(OPEN_TAB, handleOpenTab);
 
     ipcMain.on(QUIT, handleQuit);
 
@@ -472,6 +476,37 @@ function handleSwitchServer(event: IpcMainEvent, serverName: string) {
 
 function handleSwitchTab(event: IpcMainEvent, serverName: string, tabName: string) {
     WindowManager.switchTab(serverName, tabName);
+}
+
+function handleCloseTab(event: IpcMainEvent, serverName: string, tabName: string) {
+    const teams = config.teams;
+    teams.forEach((team) => {
+        if (team.name === serverName) {
+            team.tabs.forEach((tab) => {
+                if (tab.name === tabName) {
+                    tab.isClosed = true;
+                }
+            });
+        }
+    });
+    const nextTab = teams.find((team) => team.name === serverName)!.tabs.filter((tab) => !tab.isClosed)[0].name;
+    WindowManager.switchTab(serverName, nextTab);
+    config.set('teams', teams);
+}
+
+function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: string) {
+    const teams = config.teams;
+    teams.forEach((team) => {
+        if (team.name === serverName) {
+            team.tabs.forEach((tab) => {
+                if (tab.name === tabName) {
+                    tab.isClosed = false;
+                }
+            });
+        }
+    });
+    WindowManager.switchTab(serverName, tabName);
+    config.set('teams', teams);
 }
 
 function handleNewServerModal() {

@@ -3,6 +3,8 @@
 
 export const SWITCH_SERVER = 'switch-server';
 export const SWITCH_TAB = 'switch-tab';
+export const CLOSE_TAB = 'close-tab';
+export const OPEN_TAB = 'open-tab';
 export const SET_ACTIVE_VIEW = 'set-active-view';
 export const MARK_READ = 'mark-read';
 export const FOCUS_BROWSERVIEW = 'focus-browserview';

@@ -466,15 +466,21 @@ export function selectNextTab() {
     }
 
     const currentTeamTabs = status.config?.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
+    const filteredTabs = currentTeamTabs?.filter((tab) => !tab.isClosed);
     const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
-    if (!currentTeamTabs || !currentTab) {
+    if (!currentTeamTabs || !currentTab || !filteredTabs) {
         return;
     }
 
-    const currentOrder = currentTab.order;
-    const nextOrder = ((currentOrder + 1) % currentTeamTabs.length);
-    const nextIndex = currentTeamTabs.findIndex((tab) => tab.order === nextOrder);
-    const newTab = currentTeamTabs[nextIndex];
+    let currentOrder = currentTab.order;
+    let nextIndex = -1;
+    while (nextIndex === -1) {
+        const nextOrder = ((currentOrder + 1) % currentTeamTabs.length);
+        nextIndex = filteredTabs.findIndex((tab) => tab.order === nextOrder);
+        currentOrder = nextOrder;
+    }
+
+    const newTab = filteredTabs[nextIndex];
     switchTab(currentView.tab.server.name, newTab.name);
 }
 
@@ -485,17 +491,22 @@ export function selectPreviousTab() {
     }
 
     const currentTeamTabs = status.config?.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
+    const filteredTabs = currentTeamTabs?.filter((tab) => !tab.isClosed);
     const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
-    if (!currentTeamTabs || !currentTab) {
+    if (!currentTeamTabs || !currentTab || !filteredTabs) {
         return;
     }
 
-    const currentOrder = currentTab.order;
-
     // js modulo operator returns a negative number if result is negative, so we have to ensure it's positive
-    const nextOrder = ((currentTeamTabs.length + (currentOrder - 1)) % currentTeamTabs.length);
-    const nextIndex = currentTeamTabs.findIndex((tab) => tab.order === nextOrder);
-    const newTab = currentTeamTabs[nextIndex];
+    let currentOrder = currentTab.order;
+    let nextIndex = -1;
+    while (nextIndex === -1) {
+        const nextOrder = ((currentTeamTabs.length + (currentOrder - 1)) % currentTeamTabs.length);
+        nextIndex = filteredTabs.findIndex((tab) => tab.order === nextOrder);
+        currentOrder = nextOrder;
+    }
+
+    const newTab = filteredTabs[nextIndex];
     switchTab(currentView.tab.server.name, newTab.name);
 }
 
@@ -505,10 +516,13 @@ function handleGetDarkMode() {
 
 function handleBrowserHistoryPush(e: IpcMainEvent, viewName: string, pathName: string) {
     const currentView = status.viewManager?.views.get(viewName);
-    const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${pathName}`, status.config!.teams);
-    const redirectedView = redirectedViewName ? status.viewManager?.views.get(redirectedViewName?.name) : currentView;
+    const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${pathName}`, status.config!.teams)?.name || viewName;
+    if (status.viewManager?.closedViews.has(redirectedViewName)) {
+        status.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${pathName}`);
+    }
+    const redirectedView = status.viewManager?.views.get(redirectedViewName) || currentView;
     if (redirectedView !== currentView) {
-        log.info('redirecting to a new view', currentView?.name, redirectedView?.name);
+        log.info('redirecting to a new view', redirectedView?.name || viewName);
         status.viewManager?.showByName(redirectedView?.name || viewName);
     }
     redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
