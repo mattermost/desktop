@@ -62,7 +62,9 @@ export default class TabBar extends React.PureComponent<Props> {
             let badgeDiv: React.ReactNode;
             if (sessionExpired) {
                 badgeDiv = (
-                    <div className='TabBar-expired'/>
+                    <div className='TabBar-expired'>
+                        <i className='icon-alert-circle-outline'/>
+                    </div>
                 );
             } else if (mentionCount !== 0) {
                 badgeDiv = (
@@ -110,6 +112,7 @@ export default class TabBar extends React.PureComponent<Props> {
                                     <span>
                                         {getTabDisplayName(tab.name as TabType)}
                                     </span>
+                                    { badgeDiv }
                                     {canCloseTab(tab.name as TabType) &&
                                         <button
                                             className='teamTabItem__close'
@@ -118,7 +121,6 @@ export default class TabBar extends React.PureComponent<Props> {
                                             <i className='icon-close'/>
                                         </button>
                                     }
-                                    { badgeDiv }
                                 </div>
                             </NavLink>
                         </NavItem>
