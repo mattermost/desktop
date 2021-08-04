@@ -184,6 +184,10 @@ body {
         border: none;
         padding: 0;
 
+        &:focus {
+            outline: none;
+        }
+
         > i::before {
             margin: 0;
         }
@@ -203,7 +207,7 @@ body {
     }
 
     i {
-        color: #f74343;
+        color: #F74343;
     }
 }
 
@@ -234,6 +238,10 @@ body {
         > .TeamDropdown__draggable-handle > span, &.addServer > span {
             color: #DDD;
         }
+
+        .TeamDropdown__button-remove i {
+            color: #F74343;
+        }
     }
 
     .TeamDropdown__badge-expired i {
@@ -246,5 +254,13 @@ body {
 
     .TeamDropdown__draggable-handle > i.icon-drag-vertical::before {
         color:rgba(221, 221, 221, 0.32);
+    }
+
+    .TeamDropdown__badge-count i {
+        color: #e81023;
+    }
+
+    .TeamDropdown__badge-dot {
+        background: #196CAF;
     }
 }
