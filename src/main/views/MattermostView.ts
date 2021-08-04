@@ -98,6 +98,10 @@ export class MattermostView extends EventEmitter {
             this.view.webContents.on('before-input-event', this.handleInputEvents);
         }
 
+        this.view.webContents.on('did-finish-load', () => {
+            this.view.webContents.send(SET_VIEW_NAME, this.tab.name);
+        });
+
         this.contextMenu = new ContextMenu({}, this.view);
         this.maxRetries = MAX_SERVER_RETRIES;
     }
@@ -179,7 +183,6 @@ export class MattermostView extends EventEmitter {
             this.status = Status.WAITING_MM;
             this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
             this.emit(LOAD_SUCCESS, this.tab.name, loadURL);
-            this.view.webContents.send(SET_VIEW_NAME, this.tab.name);
             this.setBounds(getWindowBoundaries(this.window, !(urlUtils.isTeamUrl(this.tab.url || '', this.view.webContents.getURL()) || urlUtils.isAdminUrl(this.tab.url || '', this.view.webContents.getURL()))));
         };
     }

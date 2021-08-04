@@ -8,7 +8,7 @@ import {TabType, TAB_PLAYBOOKS} from './TabView';
 
 export default class PlaybooksTabView extends BaseTabView {
     get url(): URL {
-        return new URL(`${this.server.url.origin}${getFormattedPathName(this.server.url.pathname)}devins-team/com.mattermost.plugin-incident-management`);
+        return new URL(`${this.server.url.origin}${getFormattedPathName(this.server.url.pathname)}playbooks`);
     }
 
     get type(): TabType {
