@@ -14,10 +14,9 @@ import {debounce} from 'underscore';
 import {CombinedConfig, LocalConfiguration, Team} from 'types/config';
 import {DeepPartial} from 'types/utils';
 
-import {GET_LOCAL_CONFIGURATION, UPDATE_CONFIGURATION, DOUBLE_CLICK_ON_WINDOW, GET_DOWNLOAD_LOCATION, SWITCH_SERVER, ADD_SERVER, RELOAD_CONFIGURATION} from 'common/communication';
+import {GET_LOCAL_CONFIGURATION, UPDATE_CONFIGURATION, DOUBLE_CLICK_ON_WINDOW, GET_DOWNLOAD_LOCATION, ADD_SERVER, RELOAD_CONFIGURATION} from 'common/communication';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 
-import TeamList from './TeamList';
 import AutoSaveIndicator, {SavingState} from './AutoSaveIndicator';
 
 const CONFIG_TYPE_SERVERS = 'servers';
@@ -46,11 +45,6 @@ type SaveQueueItem = {
     configType: ConfigType;
     key: keyof CombinedConfig;
     data: CombinedConfig[keyof CombinedConfig];
-}
-
-function backToIndex(serverName: string) {
-    window.ipcRenderer.send(SWITCH_SERVER, serverName);
-    window.close();
 }
 
 export default class SettingsPage extends React.PureComponent<Record<string, never>, State> {
@@ -428,64 +422,6 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
             },
         };
 
-        const teamsRow = (
-            <Row>
-                <Col md={12}>
-                    <TeamList
-                        teams={this.state.teams!}
-                        showAddTeamForm={this.state.showAddTeamForm}
-                        setAddTeamFormVisibility={this.setShowTeamFormVisibility}
-                        onTeamsChange={this.handleTeamsChange}
-                        updateTeam={this.updateTeam}
-                        addServer={this.addServer}
-                        onTeamClick={(name) => {
-                            backToIndex(name);
-                        }}
-                    />
-                </Col>
-            </Row>
-        );
-
-        const serversRow = (
-            <Row>
-                <Col
-                    xs={8}
-                >
-                    <h2 style={settingsPage.sectionHeading}>{'Server Management'}</h2>
-                    <div className='IndicatorContainer'>
-                        <AutoSaveIndicator
-                            id='serversSaveIndicator'
-                            savingState={this.state.savingState.servers}
-                            errorMessage={'Can\'t save your changes. Please try again.'}
-                        />
-                    </div>
-                </Col>
-                <Col
-                    xs={4}
-                >
-                    <p className='text-right'>
-                        <a
-                            style={settingsPage.sectionHeadingLink}
-                            id='addNewServer'
-                            href='#'
-                            onClick={this.toggleShowTeamForm}
-                        >{'+ Add New Server'}</a>
-                    </p>
-                </Col>
-            </Row>
-        );
-
-        let srvMgmt;
-        if (this.state.enableServerManagement === true) {
-            srvMgmt = (
-                <div>
-                    {serversRow}
-                    {teamsRow}
-                    <hr/>
-                </div>
-            );
-        }
-
         const options = [];
 
         // MacOS has an option in the Dock, to set the app to autostart, so we choose to not support this option for OSX
@@ -800,12 +736,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
 
         let waitForIpc;
         if (this.state.ready) {
-            waitForIpc = (
-                <>
-                    {srvMgmt}
-                    {optionsRow}
-                </>
-            );
+            waitForIpc = optionsRow;
         } else {
             waitForIpc = (<p>{'Loading configuration...'}</p>);
         }
