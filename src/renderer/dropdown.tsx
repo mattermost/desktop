@@ -8,7 +8,16 @@ import {DragDropContext, Draggable, DraggingStyle, Droppable, DropResult, NotDra
 
 import {Team, TeamWithTabs} from 'types/config';
 
-import {CLOSE_TEAMS_DROPDOWN, REQUEST_TEAMS_DROPDOWN_INFO, SEND_DROPDOWN_MENU_SIZE, SHOW_NEW_SERVER_MODAL, SWITCH_SERVER, UPDATE_TEAMS, UPDATE_TEAMS_DROPDOWN} from 'common/communication';
+import {
+    CLOSE_TEAMS_DROPDOWN,
+    REQUEST_TEAMS_DROPDOWN_INFO,
+    SEND_DROPDOWN_MENU_SIZE,
+    SHOW_NEW_SERVER_MODAL,
+    SHOW_EDIT_SERVER_MODAL,
+    SHOW_REMOVE_SERVER_MODAL,
+    SWITCH_SERVER, UPDATE_TEAMS,
+    UPDATE_TEAMS_DROPDOWN,
+} from 'common/communication';
 
 import {getTabViewName} from 'common/tabs/TabView';
 
@@ -144,6 +153,22 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
         }
     }
 
+    editServer = (team: string) => {
+        return (event: React.MouseEvent<HTMLButtonElement>) => {
+            event.stopPropagation();
+            window.postMessage({type: SHOW_EDIT_SERVER_MODAL, data: {name: team}}, window.location.href);
+            this.closeMenu();
+        };
+    }
+
+    removeServer = (team: string) => {
+        return (event: React.MouseEvent<HTMLButtonElement>) => {
+            event.stopPropagation();
+            window.postMessage({type: SHOW_REMOVE_SERVER_MODAL, data: {name: team}}, window.location.href);
+            this.closeMenu();
+        };
+    }
+
     render() {
         return (
             <div
@@ -232,13 +257,13 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                                                     <div className='TeamDropdown__indicators'>
                                                         <button
                                                             className='TeamDropdown__button-edit'
-                                                            disabled={true}
+                                                            onClick={this.editServer(team.name)}
                                                         >
                                                             <i className='icon-pencil-outline'/>
                                                         </button>
                                                         <button
                                                             className='TeamDropdown__button-remove'
-                                                            disabled={true}
+                                                            onClick={this.removeServer(team.name)}
                                                         >
                                                             <i className='icon-trash-can-outline'/>
                                                         </button>
