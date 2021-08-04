@@ -66,9 +66,9 @@ export function getTabViewName(serverName: string, tabType: string) {
 export function getTabDisplayName(tabType: TabType) {
     switch (tabType) {
     case TAB_MESSAGING:
-        return 'Messaging';
+        return 'Channels';
     case TAB_FOCALBOARD:
-        return 'Focalboard';
+        return 'Boards';
     case TAB_PLAYBOOKS:
         return 'Playbooks';
     default:
