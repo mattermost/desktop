@@ -217,6 +217,9 @@ jobs:
       - attach_workspace:
           at: ./dist
       - run:
+          name: Update node to v16
+          command: brew upgrade node || true
+      - run:
           name: Installing npm dependencies
           command: npm ci
       - build:
