@@ -88,6 +88,7 @@ const configDataSchemaV2 = Joi.object<ConfigV2>({
     enableHardwareAcceleration: Joi.boolean().default(true),
     autostart: Joi.boolean().default(true),
     spellCheckerLocale: Joi.string().regex(/^[a-z]{2}-[A-Z]{2}$/).default('en-US'),
+    spellCheckerURL: Joi.string().allow(null),
     darkMode: Joi.boolean().default(false),
     downloadLocation: Joi.string(),
 });
@@ -118,6 +119,7 @@ const configDataSchemaV3 = Joi.object<ConfigV3>({
     enableHardwareAcceleration: Joi.boolean().default(true),
     autostart: Joi.boolean().default(true),
     spellCheckerLocale: Joi.string().regex(/^[a-z]{2}-[A-Z]{2}$/).default('en-US'),
+    spellCheckerURL: Joi.string().allow(null),
     darkMode: Joi.boolean().default(false),
     downloadLocation: Joi.string(),
 });
@@ -209,6 +211,10 @@ export function validateV2ConfigData(data: ConfigV2) {
         // replace original teams
         data.teams = teams;
     }
+    if (data.spellCheckerURL && !urlUtils.isValidURL(data.spellCheckerURL)) {
+        log.error('Invalid download location for spellchecker dictionary, removing from config');
+        delete data.spellCheckerURL;
+    }
     return validateAgainstSchema(data, configDataSchemaV2);
 }
 
@@ -227,6 +233,10 @@ export function validateV3ConfigData(data: ConfigV3) {
 
         // replace original teams
         data.teams = teams;
+    }
+    if (data.spellCheckerURL && !urlUtils.isValidURL(data.spellCheckerURL)) {
+        log.error('Invalid download location for spellchecker dictionary, removing from config');
+        delete data.spellCheckerURL;
     }
     return validateAgainstSchema(data, configDataSchemaV3);
 }

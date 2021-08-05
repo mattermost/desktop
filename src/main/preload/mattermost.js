@@ -7,7 +7,10 @@
 /* eslint-disable no-magic-numbers */
 
 import {ipcRenderer, webFrame} from 'electron';
-import log from 'electron-log';
+
+// I've filed an issue in electron-log https://github.com/megahertz/electron-log/issues/267
+// we'll be able to use it again if there is a workaround for the 'os' import
+//import log from 'electron-log';
 
 import {
     NOTIFY_MENTION,
@@ -24,14 +27,12 @@ import {
 const UNREAD_COUNT_INTERVAL = 1000;
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 
-Reflect.deleteProperty(global.Buffer); // http://electron.atom.io/docs/tutorial/security/#buffer-global
-
 let appVersion;
 let appName;
 let sessionExpired;
 let viewName;
 
-log.info('Initializing preload');
+console.log('Preload initialized');
 
 ipcRenderer.invoke('get-app-version').then(({name, version}) => {
     appVersion = version;

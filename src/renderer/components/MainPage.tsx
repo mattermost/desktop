@@ -65,6 +65,7 @@ type Props = {
     openMenu: () => void;
     darkMode: boolean;
     appName: string;
+    useNativeWindow: boolean;
 };
 
 type State = {
@@ -364,7 +365,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
         }
 
         let titleBarButtons;
-        if (window.os.isWindows10) {
+        if (window.process.platform === 'win32' && !this.props.useNativeWindow) {
             titleBarButtons = (
                 <span className='title-bar-btns'>
                     <div
