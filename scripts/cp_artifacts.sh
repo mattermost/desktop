@@ -39,6 +39,7 @@ if [[ -f "${SRC}/mattermost-desktop-${VERSION}-mac-x64.zip" ]]; then
     cp "${SRC}/mattermost-desktop-${VERSION}-mac-x64.zip" "${DEST}/mattermost-desktop-${VERSION}-mac-x64.zip"
     if [[ -f "${SRC}"/mattermost-desktop-${VERSION}-mac-x64.dmg ]]; then
         cp "${SRC}/mattermost-desktop-${VERSION}-mac-x64.dmg.blockmap" "${DEST}/mattermost-desktop-${VERSION}-mac-x64.dmg.blockmap"
+        cp "${SRC}/mattermost-desktop-${VERSION}-mac-x64.dmg" "${DEST}/mattermost-desktop-${VERSION}-mac-x64.dmg"
     fi
     SOMETHING_COPIED=$((SOMETHING_COPIED + 8))
 fi
@@ -47,6 +48,7 @@ if [[ -f "${SRC}/mattermost-desktop-${VERSION}-mac-arm64.zip" ]]; then
     cp "${SRC}/mattermost-desktop-${VERSION}-mac-arm64.zip" "${DEST}/mattermost-desktop-${VERSION}-mac-arm64.zip"
     if [[ -f "${SRC}"/mattermost-desktop-${VERSION}-mac-arm64.dmg ]]; then
         cp "${SRC}/mattermost-desktop-${VERSION}-mac-arm64.dmg.blockmap" "${DEST}/mattermost-desktop-${VERSION}-mac-arm64.dmg.blockmap"
+        cp "${SRC}/mattermost-desktop-${VERSION}-mac-arm64.dmg" "${DEST}/mattermost-desktop-${VERSION}-mac-arm64.dmg"
     fi
     SOMETHING_COPIED=$((SOMETHING_COPIED + 16))
 fi
