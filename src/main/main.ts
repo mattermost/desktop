@@ -13,10 +13,9 @@ import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-install
 import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
 
-import {Team} from 'types/config';
-
+import {Team, TeamWithTabs} from 'types/config';
 import {MentionData} from 'types/notification';
-
+import {RemoteInfo} from 'types/server';
 import {Boundaries} from 'types/utils';
 
 import {
@@ -41,8 +40,9 @@ import {
     OPEN_TAB,
 } from 'common/communication';
 import Config from 'common/config';
-import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
-import Utils from 'common/utils/util';
+import {MattermostServer} from 'common/servers/MattermostServer';
+import {getDefaultTeamWithTabsFromTeam, TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS} from 'common/tabs/TabView';
+import Utils, {isServerVersionGreaterThanOrEqualTo} from 'common/utils/util';
 
 import urlUtils from 'common/utils/url';
 
@@ -69,6 +69,7 @@ import {destroyTray, refreshTrayImages, setTrayMenu, setupTray} from './tray/tra
 import {AuthManager} from './authManager';
 import {CertificateManager} from './certificateManager';
 import {setupBadge, setUnreadBadgeSetting} from './badge';
+import {ServerInfo} from './server/serverInfo';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
     module.hot.accept();
@@ -526,8 +527,10 @@ function handleNewServerModal() {
         modalPromise.then((data) => {
             const teams = config.teams;
             const order = teams.length;
-            teams.push(getDefaultTeamWithTabsFromTeam({...data, order}));
+            const newTeam = getDefaultTeamWithTabsFromTeam({...data, order});
+            teams.push(newTeam);
             config.set('teams', teams);
+            updateServerInfos([newTeam]);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -540,6 +543,7 @@ function handleNewServerModal() {
 }
 
 function initializeAfterAppReady() {
+    updateServerInfos(config.teams);
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
 
@@ -692,6 +696,41 @@ function initializeAfterAppReady() {
 
 function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channel: {id: string}, teamId: string, silent: boolean, data: MentionData) {
     displayMention(title, body, channel, teamId, silent, event.sender, data);
+}
+
+function updateServerInfos(teams: TeamWithTabs[]) {
+    const serverInfos: Array<Promise<RemoteInfo | string | undefined>> = [];
+    teams.forEach((team) => {
+        const serverInfo = new ServerInfo(new MattermostServer(team.name, team.url));
+        serverInfos.push(serverInfo.promise);
+    });
+    Promise.all(serverInfos).then((data: Array<RemoteInfo | string | undefined>) => {
+        const teams = config.teams;
+        teams.forEach((team) => closeUnneededTabs(data, team));
+        config.set('teams', teams);
+    }).catch((reason: any) => {
+        log.error('Error getting server infos', reason);
+    });
+}
+
+function closeUnneededTabs(data: Array<RemoteInfo | string | undefined>, team: TeamWithTabs) {
+    const remoteInfo = data.find((info) => info && typeof info !== 'string' && info.name === team.name) as RemoteInfo;
+    if (remoteInfo) {
+        team.tabs.forEach((tab) => {
+            if (tab.name === TAB_PLAYBOOKS && !remoteInfo.hasPlaybooks) {
+                log.info(`closing ${team.name}___${tab.name} on !hasPlaybooks`);
+                tab.isClosed = true;
+            }
+            if (tab.name === TAB_FOCALBOARD && !remoteInfo.hasFocalboard) {
+                log.info(`closing ${team.name}___${tab.name} on !hasFocalboard`);
+                tab.isClosed = true;
+            }
+            if (tab.name !== TAB_MESSAGING && remoteInfo.serverVersion && !isServerVersionGreaterThanOrEqualTo(remoteInfo.serverVersion, '6.0.0')) {
+                log.info(`closing ${team.name}___${tab.name} on !serverVersion`);
+                tab.isClosed = true;
+            }
+        });
+    }
 }
 
 function handleOpenAppMenu() {
