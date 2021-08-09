@@ -35,6 +35,8 @@ export const OPEN_EXTERNAL = 'open_external';
 export const DOUBLE_CLICK_ON_WINDOW = 'double_click';
 
 export const SHOW_NEW_SERVER_MODAL = 'show_new_server_modal';
+export const SHOW_EDIT_SERVER_MODAL = 'show-edit-server-modal';
+export const SHOW_REMOVE_SERVER_MODAL = 'show-remove-server-modal';
 
 export const RETRIEVE_MODAL_INFO = 'retrieve-modal-info';
 export const MODAL_INFO = 'modal-info';

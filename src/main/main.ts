@@ -37,6 +37,8 @@ import {
     USER_ACTIVITY_UPDATE,
     EMIT_CONFIGURATION,
     SWITCH_TAB,
+    SHOW_EDIT_SERVER_MODAL,
+    SHOW_REMOVE_SERVER_MODAL,
 } from 'common/communication';
 import Config from 'common/config';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
@@ -245,6 +247,8 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(DOUBLE_CLICK_ON_WINDOW, WindowManager.handleDoubleClick);
 
     ipcMain.on(SHOW_NEW_SERVER_MODAL, handleNewServerModal);
+    ipcMain.on(SHOW_EDIT_SERVER_MODAL, handleEditServerModal);
+    ipcMain.on(SHOW_REMOVE_SERVER_MODAL, handleRemoveServerModal);
     ipcMain.on(WINDOW_CLOSE, WindowManager.close);
     ipcMain.on(WINDOW_MAXIMIZE, WindowManager.maximize);
     ipcMain.on(WINDOW_MINIMIZE, WindowManager.minimize);
@@ -501,6 +505,75 @@ function handleNewServerModal() {
         });
     } else {
         log.warn('There is already a new server modal');
+    }
+}
+
+function handleEditServerModal(e: IpcMainEvent, name: string) {
+    const html = getLocalURLString('editServer.html');
+
+    const modalPreload = getLocalPreload('modalPreload.js');
+
+    const mainWindow = WindowManager.getMainWindow();
+    if (!mainWindow) {
+        return;
+    }
+    const serverIndex = config.teams.findIndex((team) => team.name === name);
+    if (serverIndex < 0) {
+        return;
+    }
+    const modalPromise = addModal<Team, Team>('editServer', html, modalPreload, config.teams[serverIndex], mainWindow);
+    if (modalPromise) {
+        modalPromise.then((data) => {
+            const teams = config.teams;
+            teams[serverIndex].name = data.name;
+            teams[serverIndex].url = data.url;
+            config.set('teams', teams);
+        }).catch((e) => {
+            // e is undefined for user cancellation
+            if (e) {
+                log.error(`there was an error in the edit server modal: ${e}`);
+            }
+        });
+    } else {
+        log.warn('There is already an edit server modal');
+    }
+}
+
+function handleRemoveServerModal(e: IpcMainEvent, name: string) {
+    const html = getLocalURLString('removeServer.html');
+
+    const modalPreload = getLocalPreload('modalPreload.js');
+
+    const mainWindow = WindowManager.getMainWindow();
+    if (!mainWindow) {
+        return;
+    }
+    const modalPromise = addModal<string, boolean>('removeServer', html, modalPreload, name, mainWindow);
+    if (modalPromise) {
+        modalPromise.then((remove) => {
+            if (remove) {
+                const teams = config.teams;
+                const removedTeam = teams.findIndex((team) => team.name === name);
+                if (removedTeam < 0) {
+                    return;
+                }
+                const removedOrder = teams[removedTeam].order;
+                teams.splice(removedTeam, 1);
+                teams.forEach((value) => {
+                    if (value.order > removedOrder) {
+                        value.order--;
+                    }
+                });
+                config.set('teams', teams);
+            }
+        }).catch((e) => {
+            // e is undefined for user cancellation
+            if (e) {
+                log.error(`there was an error in the edit server modal: ${e}`);
+            }
+        });
+    } else {
+        log.warn('There is already an edit server modal');
     }
 }
 
