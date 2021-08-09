@@ -121,6 +121,7 @@ body {
 
 .TeamDropdown__draggable-handle {
     cursor: pointer !important;
+    display: flex;
     
     &.dragging {
         cursor: grabbing !important;
