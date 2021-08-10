@@ -22,6 +22,8 @@ module.exports = merge(base, {
         dropdown: './src/renderer/dropdown.tsx',
         urlView: './src/renderer/modals/urlView/urlView.tsx',
         newServer: './src/renderer/modals/newServer/newServer.tsx',
+        editServer: './src/renderer/modals/editServer/editServer.tsx',
+        removeServer: './src/renderer/modals/removeServer/removeServer.tsx',
         loginModal: './src/renderer/modals/login/login.tsx',
         permissionModal: './src/renderer/modals/permission/permission.tsx',
         certificateModal: './src/renderer/modals/certificate/certificate.tsx',
@@ -61,6 +63,18 @@ module.exports = merge(base, {
             template: 'src/renderer/index.html',
             chunks: ['newServer'],
             filename: 'newServer.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['editServer'],
+            filename: 'editServer.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['removeServer'],
+            filename: 'removeServer.html',
         }),
         new HtmlWebpackPlugin({
             title: 'Mattermost Desktop Settings',
