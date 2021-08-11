@@ -209,7 +209,7 @@ function createTemplate(config: Config) {
             const items = [];
             items.push({
                 label: team.name,
-                accelerator: `Cmd+Ctrl+${i + 1}`,
+                accelerator: `CmdOrCtrl+Shift+${i + 1}`,
                 click() {
                     WindowManager.switchServer(team.name);
                 },

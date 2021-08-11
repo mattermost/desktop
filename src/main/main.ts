@@ -727,7 +727,7 @@ function initializeAfterAppReady() {
         callback(urlUtils.isTrustedURL(requestingURL, config.teams));
     });
 
-    globalShortcut.register('Ctrl+Cmd+S', () => {
+    globalShortcut.register('CmdOrCtrl+Shift+S', () => {
         ipcMain.emit(OPEN_TEAMS_DROPDOWN);
     });
 }
