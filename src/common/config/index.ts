@@ -60,6 +60,14 @@ export default class Config extends EventEmitter {
     // separating constructor from init so main can setup event listeners
     init = (): void => {
         this.reload();
+        ipcMain.handle(GET_CONFIGURATION, this.handleGetConfiguration);
+        ipcMain.handle(GET_LOCAL_CONFIGURATION, this.handleGetLocalConfiguration);
+        ipcMain.handle(UPDATE_TEAMS, this.handleUpdateTeams);
+        ipcMain.on(UPDATE_CONFIGURATION, this.setMultiple);
+        if (process.platform === 'darwin' || process.platform === 'win32') {
+            nativeTheme.on('updated', this.handleUpdateTheme);
+        }
+        this.registryConfig = new RegistryConfig();
         this.registryConfig.once(REGISTRY_READ_EVENT, this.loadRegistry);
         this.registryConfig.init();
     }
@@ -73,13 +81,6 @@ export default class Config extends EventEmitter {
     loadRegistry = (registryData: Partial<RegistryConfigType>): void => {
         this.registryConfigData = registryData;
         this.reload();
-        ipcMain.handle(GET_CONFIGURATION, this.handleGetConfiguration);
-        ipcMain.handle(GET_LOCAL_CONFIGURATION, this.handleGetLocalConfiguration);
-        ipcMain.handle(UPDATE_TEAMS, this.handleUpdateTeams);
-        ipcMain.on(UPDATE_CONFIGURATION, this.setMultiple);
-        if (process.platform === 'darwin' || process.platform === 'win32') {
-            nativeTheme.on('updated', this.handleUpdateTheme);
-        }
     }
 
     /**
