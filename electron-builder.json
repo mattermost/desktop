@@ -96,18 +96,18 @@
     "background": "src/assets/osx/DMG_BG.png",
     "contents": [
       {
-        "x": 152,
-        "y": 201
+        "x": 135,
+        "y": 165
       },
       {
-        "x": 445,
-        "y": 201,
+        "x": 407,
+        "y": 165,
         "type": "link",
         "path": "/Applications"
       }
     ],
-    "iconSize": 110,
-    "iconTextSize": 13
+    "iconSize": 120,
+    "iconTextSize": 14
   },
   "squirrelWindows": {
     "iconUrl": "file://src/assets/icon.ico",
