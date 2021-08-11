@@ -48,12 +48,19 @@ function getStyle(style?: DraggingStyle | NotDraggingStyle) {
     return style;
 }
 class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
+    buttonRefs: Map<number, HTMLButtonElement>;
+    addServerRef: React.RefObject<HTMLButtonElement>;
+    focusedIndex: number | null;
+
     constructor(props: Record<string, never>) {
         super(props);
         this.state = {
             isAnyDragging: false,
         };
+        this.focusedIndex = null;
 
+        this.buttonRefs = new Map();
+        this.addServerRef = React.createRef();
         window.addEventListener('message', this.handleMessageEvent);
     }
 
@@ -137,6 +144,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
     componentDidMount() {
         window.postMessage({type: REQUEST_TEAMS_DROPDOWN_INFO}, window.location.href);
         window.addEventListener('click', this.closeMenu);
+        window.addEventListener('keydown', this.handleKeyboardShortcuts);
     }
 
     componentDidUpdate() {
@@ -145,6 +153,53 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
 
     componentWillUnmount() {
         window.removeEventListener('click', this.closeMenu);
+        window.removeEventListener('keydown', this.handleKeyboardShortcuts);
+    }
+
+    setButtonRef = (teamIndex: number, refMethod?: (element: HTMLButtonElement) => any) => {
+        return (ref: HTMLButtonElement) => {
+            this.addButtonRef(teamIndex, ref);
+            refMethod?.(ref);
+        };
+    }
+
+    addButtonRef = (teamIndex: number, ref: HTMLButtonElement | null) => {
+        if (ref) {
+            this.buttonRefs.set(teamIndex, ref);
+            ref.addEventListener('focusin', () => {
+                this.focusedIndex = teamIndex;
+            });
+            ref.addEventListener('blur', () => {
+                this.focusedIndex = null;
+            });
+        }
+    }
+
+    handleKeyboardShortcuts = (event: KeyboardEvent) => {
+        if (event.key === 'ArrowDown') {
+            if (this.focusedIndex === null) {
+                this.focusedIndex = 0;
+            } else {
+                this.focusedIndex = (this.focusedIndex + 1) % this.buttonRefs.size;
+            }
+            this.buttonRefs.get(this.focusedIndex)?.focus();
+        }
+        if (event.key === 'ArrowUp') {
+            if (this.focusedIndex === null || this.focusedIndex === 0) {
+                this.focusedIndex = this.buttonRefs.size - 1;
+            } else {
+                this.focusedIndex = (this.focusedIndex - 1) % this.buttonRefs.size;
+            }
+            this.buttonRefs.get(this.focusedIndex)?.focus();
+        }
+        if (event.key === 'Escape') {
+            this.closeMenu();
+        }
+        this.buttonRefs.forEach((button, index) => {
+            if (event.key === String(index + 1)) {
+                button.focus();
+            }
+        });
     }
 
     handleClickOnDragHandle = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -238,7 +293,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                                                         anyDragging: this.state.isAnyDragging,
                                                         active: this.isActiveTeam(team),
                                                     })}
-                                                    ref={provided.innerRef}
+                                                    ref={this.setButtonRef(orderedIndex, provided.innerRef)}
                                                     {...provided.draggableProps}
                                                     onClick={this.selectServer(team)}
                                                     style={getStyle(provided.draggableProps.style)}
@@ -284,6 +339,9 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                 <hr className='TeamDropdown__divider'/>
                 {this.state.enableServerManagement &&
                     <button
+                        ref={(ref) => {
+                            this.addButtonRef(this.state.orderedTeams?.length || 0, ref);
+                        }}
                         className='TeamDropdown__button addServer'
                         onClick={this.addServer}
                     >

@@ -23,6 +23,7 @@ export const UPDATE_TEAMS = 'update-teams';
 export const DARK_MODE_CHANGE = 'dark_mode_change';
 export const GET_DARK_MODE = 'get-dark-mode';
 export const USER_ACTIVITY_UPDATE = 'user-activity-update';
+export const UPDATE_SHORTCUT_MENU = 'update-shortcut-menu';
 
 export const LOAD_RETRY = 'load_retry';
 export const LOAD_SUCCESS = 'load_success';
