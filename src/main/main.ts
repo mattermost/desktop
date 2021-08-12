@@ -98,6 +98,7 @@ let appVersion = null;
 let config: Config;
 let authManager: AuthManager;
 let certificateManager: CertificateManager;
+let didCheckForAddServerModal = false;
 
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
@@ -302,6 +303,13 @@ function handleConfigSynchronize() {
     }
     if (app.isReady()) {
         WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
+    }
+
+    if (process.platform === 'win32' && !didCheckForAddServerModal && typeof config.registryConfigData !== 'undefined') {
+        didCheckForAddServerModal = true;
+        if (config.teams.length === 0) {
+            handleNewServerModal();
+        }
     }
 
     ipcMain.emit('update-menu', true, config);
@@ -650,8 +658,11 @@ function initializeAfterAppReady() {
 
     WindowManager.showMainWindow(deeplinkingURL);
 
-    if (config.teams.length === 0) {
-        handleNewServerModal();
+    // only check for non-Windows, as with Windows we have to wait for GPO teams
+    if (process.platform !== 'win32' || typeof config.registryConfigData !== 'undefined') {
+        if (config.teams.length === 0) {
+            handleNewServerModal();
+        }
     }
 
     criticalErrorHandler.setMainWindow(WindowManager.getMainWindow()!);
