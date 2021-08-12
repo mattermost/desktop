@@ -239,13 +239,13 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
             key: 'notifications',
             data: {
                 ...this.state.notifications,
-                flashWindow: this.flashWindowRef.current?.checked ? 0 : 2,
+                flashWindow: this.flashWindowRef.current?.checked ? 2 : 0,
             },
         });
         this.setState({
             notifications: {
                 ...this.state.notifications,
-                flashWindow: this.flashWindowRef.current?.checked ? 0 : 2,
+                flashWindow: this.flashWindowRef.current?.checked ? 2 : 0,
             },
         });
     }
