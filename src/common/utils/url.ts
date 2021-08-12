@@ -30,7 +30,7 @@ function getDomain(inputURL: URL | string) {
 }
 
 function isValidURL(testURL: string) {
-    return Boolean(isHttpUri(testURL) || isHttpsUri(testURL)) && parseURL(testURL) !== null;
+    return Boolean(isHttpUri(testURL) || isHttpsUri(testURL)) && Boolean(parseURL(testURL));
 }
 
 function isValidURI(testURL: string) {
