@@ -31,7 +31,7 @@
     "start": "electron dist/ --disable-dev-mode",
     "restart": "npm run build && npm run start",
     "storybook": "start-storybook -p 9001 -c src/.storybook",
-    "clean": "rm -rf release/ node_modules/ dist/ && find src -name '*_bundle.js' | xargs rm",
+    "clean": "rm -rf release/ node_modules/ src/node_modules/ dist/ && find src -name '*_bundle.js' | xargs rm",
     "clean-install": "npm run clean && npm install",
     "clean-dist": "rm -rf dist/",
     "watch": "run-p watch:*",
