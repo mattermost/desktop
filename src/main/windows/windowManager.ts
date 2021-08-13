@@ -227,10 +227,12 @@ export function restoreMain() {
 
 export function flashFrame(flash: boolean) {
     if (process.platform === 'linux' || process.platform === 'win32') {
-        status.mainWindow?.flashFrame(flash);
-        if (status.settingsWindow) {
-            // main might be hidden behind the settings
-            status.settingsWindow.flashFrame(flash);
+        if (status.config?.notifications.flashWindow) {
+            status.mainWindow?.flashFrame(flash);
+            if (status.settingsWindow) {
+                // main might be hidden behind the settings
+                status.settingsWindow.flashFrame(flash);
+            }
         }
     }
     if (process.platform === 'darwin' && status.config?.notifications.bounceIcon) {
