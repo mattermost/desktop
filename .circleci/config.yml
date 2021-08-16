@@ -99,6 +99,19 @@ commands:
           root: ./dist
           paths:
             - "./<< parameters.subpath >>/"
+  save:
+    description: "Save binaries artifacts"
+    parameters:
+      filename:
+        type: string
+    steps:
+      - run:
+          name: Copying artifacts
+          command: |
+            mkdir /tmp/artifacts;
+            cp ~/desktop/release/<<parameters.filename>> /tmp/artifacts;
+      - store_artifacts:
+          path: /tmp/artifacts
 jobs:
   check:
     executor: wine-chrome
@@ -231,6 +244,8 @@ jobs:
           root: ./dist/
           paths:
             - "./win-release/"
+      - save:
+          filename: "*.msi"
 
   build-ios-pr:
     executor: mac
@@ -263,6 +278,8 @@ jobs:
           root: ./dist
           paths:
             - "./macos-release/"
+      - save:
+          filename: "*-x64.dmg"
 
   mac_installer:
     executor: mac
