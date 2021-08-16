@@ -528,11 +528,17 @@ workflows:
           requires:
             - check
           context: windows-codesign
+          filters:
+            branches:
+              only: /^build-pr-.*/
 
       - build-ios-pr:
           requires:
             - check
           context: codesign-certificates
+          filters:
+            branches:
+              only: /^build-pr-.*/
 
       - store_artifacts:
           # for master/PR builds
