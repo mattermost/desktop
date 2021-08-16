@@ -520,6 +520,7 @@ workflows:
           requires:
             - store_artifacts
   build_installers_for_testing:
+    when: false
     jobs:
       - build-linux
       - build-win-no-installer:
