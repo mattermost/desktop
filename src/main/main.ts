@@ -7,7 +7,7 @@ import fs from 'fs';
 
 import path from 'path';
 
-import electron, {BrowserWindow, IpcMainEvent, IpcMainInvokeEvent, Rectangle} from 'electron';
+import electron, {BrowserWindow, globalShortcut, IpcMainEvent, IpcMainInvokeEvent, Rectangle} from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import log from 'electron-log';
@@ -40,6 +40,8 @@ import {
     OPEN_TAB,
     SHOW_EDIT_SERVER_MODAL,
     SHOW_REMOVE_SERVER_MODAL,
+    UPDATE_SHORTCUT_MENU,
+    OPEN_TEAMS_DROPDOWN,
 } from 'common/communication';
 import Config from 'common/config';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -99,6 +101,7 @@ let appVersion = null;
 let config: Config;
 let authManager: AuthManager;
 let certificateManager: CertificateManager;
+let didCheckForAddServerModal = false;
 
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
@@ -236,6 +239,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
     ipcMain.handle('get-app-version', handleAppVersion);
     ipcMain.on('update-menu', handleUpdateMenuEvent);
+    ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateShortcutMenuEvent);
     ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
 
     if (process.platform !== 'darwin') {
@@ -306,6 +310,14 @@ function handleConfigSynchronize() {
         WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
     }
 
+    if (process.platform === 'win32' && !didCheckForAddServerModal && typeof config.registryConfigData !== 'undefined') {
+        didCheckForAddServerModal = true;
+        if (config.teams.length === 0) {
+            handleNewServerModal();
+        }
+    }
+
+    ipcMain.emit('update-menu', true, config);
     ipcMain.emit(EMIT_CONFIGURATION, true, config.data);
 }
 
@@ -685,8 +697,11 @@ function initializeAfterAppReady() {
 
     WindowManager.showMainWindow(deeplinkingURL);
 
-    if (config.teams.length === 0) {
-        WindowManager.showSettingsWindow();
+    // only check for non-Windows, as with Windows we have to wait for GPO teams
+    if (process.platform !== 'win32' || typeof config.registryConfigData !== 'undefined') {
+        if (config.teams.length === 0) {
+            handleNewServerModal();
+        }
     }
 
     criticalErrorHandler.setMainWindow(WindowManager.getMainWindow()!);
@@ -761,6 +776,10 @@ function initializeAfterAppReady() {
         // is the requesting url trusted?
         callback(urlUtils.isTrustedURL(requestingURL, config.teams));
     });
+
+    globalShortcut.register(`${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`, () => {
+        ipcMain.emit(OPEN_TEAMS_DROPDOWN);
+    });
 }
 
 //
@@ -833,6 +852,10 @@ function handleUpdateMenuEvent(event: IpcMainEvent, menuConfig: Config) {
         const tMenu = trayMenu.createMenu(menuConfig.data!);
         setTrayMenu(tMenu);
     }
+}
+
+function handleUpdateShortcutMenuEvent(event: IpcMainEvent) {
+    handleUpdateMenuEvent(event, config);
 }
 
 async function handleSelectDownload(event: IpcMainInvokeEvent, startFrom: string) {

@@ -406,6 +406,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
                         <DotsVerticalIcon/>
                     </button>
                     <TeamDropdownButton
+                        isDisabled={this.state.modalOpen}
                         activeServerName={this.state.activeServerName}
                         totalMentionCount={totalMentionCount}
                         hasUnreads={totalUnreadCount > 0}

@@ -7,7 +7,17 @@ import log from 'electron-log';
 
 import {CombinedConfig} from 'types/config';
 
-import {MAXIMIZE_CHANGE, HISTORY, GET_LOADING_SCREEN_DATA, REACT_APP_INITIALIZED, LOADING_SCREEN_ANIMATION_FINISHED, FOCUS_THREE_DOT_MENU, GET_DARK_MODE, BROWSER_HISTORY_PUSH} from 'common/communication';
+import {
+    MAXIMIZE_CHANGE,
+    HISTORY,
+    GET_LOADING_SCREEN_DATA,
+    REACT_APP_INITIALIZED,
+    LOADING_SCREEN_ANIMATION_FINISHED,
+    FOCUS_THREE_DOT_MENU,
+    GET_DARK_MODE,
+    UPDATE_SHORTCUT_MENU,
+    BROWSER_HISTORY_PUSH,
+} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
 import {getTabViewName} from 'common/tabs/TabView';
@@ -30,6 +40,7 @@ type WindowManagerStatus = {
     config?: CombinedConfig;
     viewManager?: ViewManager;
     teamDropdown?: TeamDropdownView;
+    currentServerName?: string;
 };
 
 const status: WindowManagerStatus = {};
@@ -228,10 +239,12 @@ export function restoreMain() {
 
 export function flashFrame(flash: boolean) {
     if (process.platform === 'linux' || process.platform === 'win32') {
-        status.mainWindow?.flashFrame(flash);
-        if (status.settingsWindow) {
-            // main might be hidden behind the settings
-            status.settingsWindow.flashFrame(flash);
+        if (status.config?.notifications.flashWindow) {
+            status.mainWindow?.flashFrame(flash);
+            if (status.settingsWindow) {
+                // main might be hidden behind the settings
+                status.settingsWindow.flashFrame(flash);
+            }
         }
     }
     if (process.platform === 'darwin' && status.config?.notifications.bounceIcon) {
@@ -337,6 +350,7 @@ function initializeViewManager() {
         status.viewManager = new ViewManager(status.config, status.mainWindow);
         status.viewManager.load();
         status.viewManager.showInitial();
+        status.currentServerName = status.config.teams.find((team) => team.order === 0)?.name;
     }
 }
 
@@ -347,9 +361,11 @@ export function switchServer(serverName: string) {
         log.error('Cannot find server in config');
         return;
     }
+    status.currentServerName = serverName;
     const lastActiveTab = server.tabs[server.lastActiveTab || 0];
     const tabViewName = getTabViewName(serverName, lastActiveTab.name);
     status.viewManager?.showByName(tabViewName);
+    ipcMain.emit(UPDATE_SHORTCUT_MENU);
 }
 
 export function switchTab(serverName: string, tabName: string) {
@@ -526,4 +542,8 @@ function handleBrowserHistoryPush(e: IpcMainEvent, viewName: string, pathName: s
         status.viewManager?.showByName(redirectedView?.name || viewName);
     }
     redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
+}
+
+export function getCurrentTeamName() {
+    return status.currentServerName;
 }
