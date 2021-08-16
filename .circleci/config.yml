@@ -524,6 +524,16 @@ workflows:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
                 - pull/1695
 
+      - build-android-pr:
+          requires:
+            - check
+          context: windows-codesign
+
+      - build-ios-pr:
+          requires:
+            - check
+          context: codesign-certificates
+
       - store_artifacts:
           # for master/PR builds
           requires:
@@ -531,6 +541,8 @@ workflows:
             - build-win-no-installer
             - build-mac-no-dmg
             - mac_installer
+            - build-android-pr
+            - build-ios-pr
           filters:
             branches:
               ignore:
