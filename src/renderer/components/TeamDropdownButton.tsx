@@ -10,6 +10,7 @@ import '../css/components/TeamDropdownButton.scss';
 import '../css/compass-icons.css';
 
 type Props = {
+    isDisabled?: boolean;
     activeServerName: string;
     totalMentionCount: number;
     hasUnreads: boolean;
@@ -18,7 +19,7 @@ type Props = {
 }
 
 const TeamDropdownButton: React.FC<Props> = (props: Props) => {
-    const {activeServerName, totalMentionCount, hasUnreads, isMenuOpen, darkMode} = props;
+    const {isDisabled, activeServerName, totalMentionCount, hasUnreads, isMenuOpen, darkMode} = props;
 
     const handleToggleButton = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
@@ -41,7 +42,9 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
 
     return (
         <button
+            disabled={isDisabled}
             className={classNames('TeamDropdownButton', {
+                disabled: isDisabled,
                 isMenuOpen,
                 darkMode,
             })}
