@@ -519,4 +519,20 @@ workflows:
           context: desktop_browserview
           requires:
             - store_artifacts
+  build_installers_for_testing:
+    jobs:
+      - build-linux
+      - build-win-no-installer:
+          context: electron-installer
+      - mac_installer:
+          context: codesign-certificates
+      - msi_installer
+      - store_artifacts:
+          context: desktop_browserview
+          # for master/PR builds
+          requires:
+            - build-linux
+            - build-win-no-installer
+            - msi_installer
+            - mac_installer
 
