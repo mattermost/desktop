@@ -231,7 +231,7 @@ jobs:
           at: ./dist
       - run:
           name: Update node to v16
-          command: nvm install 16.6.0 && nvm use 16.6.0
+          command: nvm install 16.6.0; nvm use 16.6.0
       - win_make:
           operation: optimize
       - win_make:
