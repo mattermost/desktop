@@ -76,7 +76,7 @@ const generateDidStartNavigation = (getServersFunction: () => TeamWithTabs[]) =>
 
         if (server && urlUtils.isCustomLoginURL(parsedURL, server, serverList)) {
             customLogins[contentID].inProgress = true;
-        } else if (customLogins[contentID].inProgress) {
+        } else if (server && customLogins[contentID].inProgress && urlUtils.isInternalURL(server.url, parsedURL)) {
             customLogins[contentID].inProgress = false;
         }
     };
