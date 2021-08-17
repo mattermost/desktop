@@ -534,8 +534,6 @@ workflows:
             - build-win-no-installer
             - build-mac-no-dmg
             - mac_installer
-            - build-android-pr
-            - build-ios-pr
           filters:
             branches:
               ignore:
