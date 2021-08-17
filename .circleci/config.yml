@@ -483,6 +483,10 @@ workflows:
       - build-linux:
           requires:
             - check
+          filters:
+            branches:
+              ignore:
+                - /^build-pr-.*/
 
       - build-win-no-installer:
           requires:
@@ -491,6 +495,7 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - /^build-pr-.*/
 
       - build-mac-no-dmg:
           requires:
@@ -499,6 +504,7 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - /^build-pr-.*/
 
       - msi_installer:
           requires:
@@ -520,23 +526,6 @@ workflows:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - pull/1695
-
-      - build-android-pr:
-          requires:
-            - check
-          context: electron-installer
-          filters:
-            branches:
-              only: /^build-pr-.*/
-
-      - build-ios-pr:
-          requires:
-            - check
-          context: codesign-certificates
-          filters:
-            branches:
-              only: /^build-pr-.*/
 
       - store_artifacts:
           # for master/PR builds
@@ -551,6 +540,7 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - /^build-pr-.*/
 
       - upload_to_s3:
           # for release builds
@@ -583,6 +573,36 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+  test_builds:
+    jobs:
+      - build-android-pr:
+          requires:
+            - check
+          context: electron-installer
+          filters:
+            branches:
+              only: /^build-pr-.*/
+
+      - build-ios-pr:
+          requires:
+            - check
+          context: codesign-certificates
+          filters:
+            branches:
+              only: /^build-pr-.*/
+
+      - store_artifacts:
+          # for master/PR builds
+          requires:
+            - build-linux
+            - build-win-no-installer
+            - build-mac-no-dmg
+            - mac_installer
+            - build-android-pr
+            - build-ios-pr
+          filters:
+            branches:
+              only: /^build-pr-.*/
   nightly_browser_view:
     when: << pipeline.parameters.run_nightly >>
     jobs:
