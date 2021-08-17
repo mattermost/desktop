@@ -109,7 +109,7 @@ commands:
           name: Copying artifacts
           command: |
             mkdir /tmp/artifacts;
-            cp ~/desktop/release/<<parameters.filename>> /tmp/artifacts;
+            cp ~/mattermost-desktop/release/<<parameters.filename>> /tmp/artifacts;
       - store_artifacts:
           path: /tmp/artifacts
 jobs:
@@ -229,6 +229,9 @@ jobs:
       - run: mkdir -p ./dist/
       - attach_workspace:
           at: ./dist
+      - run:
+          name: Update node to v16
+          command: nvm install 16.6.0 && nvm use 16.6.0
       - win_make:
           operation: optimize
       - win_make:
