@@ -562,7 +562,7 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-  test_builds:
+  build:
     jobs:
       - build-android-pr:
           context: electron-installer
