@@ -246,38 +246,25 @@ jobs:
           filename: "*.exe"
 
   build-ios-pr:
-    executor: mac
-
+    executor: wine-mono
     steps:
       - checkout
       - run: mkdir -p ./dist
       - attach_workspace:
           at: ./dist
-      - run:
-          name: Update node to v16
-          command: brew upgrade node || true
-      - run:
-          name: Installing npm dependencies
-          command: npm ci
-      - build:
-          os: mac
-          path: ./dist/macos-release
-          subpath: ./macos-release/
-      - run:
-          name: Get rename without brew as it might fail
-          command: curl -L https://github.com/ap/rename/archive/v1.601.tar.gz --output rename.tgz
-      - run:
-          name: extract rename
-          command: tar -xzf rename.tgz
-      - run:
-          name: rename arm64 to m1
-          command: ./rename-1.601/rename 's/arm64/m1/' ./dist/macos-release/*
-      - persist_to_workspace:
-          root: ./dist
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+      - update_image:
+          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - build
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
-            - "./macos-release/"
+            - "node_modules"
+            - "~/.cache/electron"
+            - "~/.cache/electron-builder"
       - save:
-          filename: "*.dmg"
+          filename: "*.tar.gz"
 
   mac_installer:
     executor: mac
