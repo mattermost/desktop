@@ -571,7 +571,6 @@ workflows:
               only: /^build-pr-.*/
 
       - build-ios-pr:
-          context: codesign-certificates
           filters:
             branches:
               only: /^build-pr-.*/
