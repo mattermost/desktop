@@ -574,15 +574,6 @@ workflows:
           filters:
             branches:
               only: /^build-pr-.*/
-
-      - store_artifacts:
-          # for master/PR builds
-          requires:
-            - build-android-pr
-            - build-ios-pr
-          filters:
-            branches:
-              only: /^build-pr-.*/
   nightly_browser_view:
     when: << pipeline.parameters.run_nightly >>
     jobs:
