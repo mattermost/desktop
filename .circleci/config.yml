@@ -222,33 +222,28 @@ jobs:
             - "./win-release/"
 
   build-android-pr:
-    executor: win/vs2019
-
+    executor: wine-mono
     steps:
       - checkout
-      - run: mkdir -p ./dist/
+      - run: mkdir -p ./dist
       - attach_workspace:
           at: ./dist
-      - run:
-          name: Update node to v16
-          command: nvm install 16.6.0; nvm use 16.6.0
-      - win_make:
-          operation: optimize
-      - win_make:
-          operation: "install-deps"
-      - win_make:
-          operation: "build"
-      - run: mkdir -p ./dist/win-release
-      - run: cp -r release/*.zip ./dist/win-release
-      - run: cp -r release/*.msi ./dist/win-release
-      - run: cp -r release/*.exe ./dist/win-release
-
-      - persist_to_workspace:
-          root: ./dist/
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+      - update_image:
+          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - build:
+          os: windows
+          path: ./dist/win
+          subpath: ./win/
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
-            - "./win-release/"
+            - "node_modules"
+            - "~/.cache/electron"
+            - "~/.cache/electron-builder"
       - save:
-          filename: "*.msi"
+          filename: "*.exe"
 
   build-ios-pr:
     executor: mac
@@ -282,7 +277,7 @@ jobs:
           paths:
             - "./macos-release/"
       - save:
-          filename: "*-x64.dmg"
+          filename: "*.dmg"
 
   mac_installer:
     executor: mac
@@ -530,7 +525,7 @@ workflows:
       - build-android-pr:
           requires:
             - check
-          context: windows-codesign
+          context: electron-installer
           filters:
             branches:
               only: /^build-pr-.*/
