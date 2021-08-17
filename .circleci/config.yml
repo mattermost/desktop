@@ -574,16 +574,12 @@ workflows:
   test_builds:
     jobs:
       - build-android-pr:
-          requires:
-            - check
           context: electron-installer
           filters:
             branches:
               only: /^build-pr-.*/
 
       - build-ios-pr:
-          requires:
-            - check
           context: codesign-certificates
           filters:
             branches:
@@ -592,10 +588,6 @@ workflows:
       - store_artifacts:
           # for master/PR builds
           requires:
-            - build-linux
-            - build-win-no-installer
-            - build-mac-no-dmg
-            - mac_installer
             - build-android-pr
             - build-ios-pr
           filters:
