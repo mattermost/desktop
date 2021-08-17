@@ -109,7 +109,7 @@ commands:
           name: Copying artifacts
           command: |
             mkdir /tmp/artifacts;
-            cp ~/mattermost-desktop/release/<<parameters.filename>> /tmp/artifacts;
+            cp release/<<parameters.filename>> /tmp/artifacts;
       - store_artifacts:
           path: /tmp/artifacts
 jobs:
