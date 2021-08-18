@@ -71,7 +71,7 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
         frame: !isFramelessWindow(),
         fullscreen: savedWindowState.fullscreen,
         titleBarStyle: 'hidden' as const,
-        trafficLightPosition: {x: 12, y: 24},
+        trafficLightPosition: {x: 12, y: 12},
         backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
         webPreferences: {
             nodeIntegration: process.env.NODE_ENV === 'test',
