@@ -74,9 +74,11 @@ const generateDidStartNavigation = (getServersFunction: () => TeamWithTabs[]) =>
             return;
         }
 
+        const serverURL = urlUtils.parseURL(server?.url || '');
+
         if (server && urlUtils.isCustomLoginURL(parsedURL, server, serverList)) {
             customLogins[contentID].inProgress = true;
-        } else if (server && customLogins[contentID].inProgress && urlUtils.isInternalURL(server.url, parsedURL)) {
+        } else if (server && customLogins[contentID].inProgress && urlUtils.isInternalURL(serverURL || new URL(''), parsedURL)) {
             customLogins[contentID].inProgress = false;
         }
     };
