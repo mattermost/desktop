@@ -85,6 +85,7 @@ let appVersion = null;
 let config = null;
 let authManager = null;
 let certificateManager = null;
+let didCheckForAddServerModal = false;
 
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
@@ -272,6 +273,13 @@ function handleConfigSynchronize() {
     }
     if (app.isReady()) {
         WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
+    }
+
+    if (process.platform === 'win32' && !didCheckForAddServerModal && typeof config.registryConfigData.teams !== 'undefined') {
+        didCheckForAddServerModal = true;
+        if (config.teams.length === 0) {
+            handleNewServerModal();
+        }
     }
 }
 
@@ -531,8 +539,11 @@ function initializeAfterAppReady() {
 
     WindowManager.showMainWindow(deeplinkingURL);
 
-    if (config.teams.length === 0) {
-        WindowManager.showSettingsWindow();
+    // only check for non-Windows, as with Windows we have to wait for GPO teams
+    if (process.platform !== 'win32' || typeof config.registryConfigData.teams !== 'undefined') {
+        if (config.teams.length === 0) {
+            handleNewServerModal();
+        }
     }
 
     criticalErrorHandler.setMainWindow(WindowManager.getMainWindow());
