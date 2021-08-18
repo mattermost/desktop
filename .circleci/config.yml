@@ -449,7 +449,7 @@ workflows:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - pull/1695
+                - pull/1706
 
       - store_artifacts:
           # for master/PR builds
