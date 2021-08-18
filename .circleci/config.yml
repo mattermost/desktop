@@ -449,7 +449,7 @@ workflows:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - pull/1706
+                - MM-37090_loading-screen-branding-refresh
 
       - store_artifacts:
           # for master/PR builds
