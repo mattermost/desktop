@@ -7,6 +7,7 @@ import classNames from 'classnames';
 import useTransitionEnd from '../../hooks/useTransitionEnd';
 
 import LoadingAnimation from '../LoadingAnimation';
+
 import LoadingBackground from './LoadingBackground';
 
 type Props = {
