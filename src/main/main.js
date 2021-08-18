@@ -610,8 +610,8 @@ function initializeAfterAppReady() {
 // ipc communication event handlers
 //
 
-function handleMentionNotification(event, title, body, channel, teamId, silent, data) {
-    displayMention(title, body, channel, teamId, silent, event.sender, data);
+function handleMentionNotification(event, title, body, channel, teamId, url, silent, data) {
+    displayMention(title, body, channel, teamId, url, silent, event.sender, data);
 }
 
 function handleOpenAppMenu() {

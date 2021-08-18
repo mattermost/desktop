@@ -13,7 +13,7 @@ import {DownloadNotification} from './Download';
 
 const currentNotifications = new Map();
 
-export function displayMention(title, body, channel, teamId, silent, webcontents, data) {
+export function displayMention(title, body, channel, teamId, url, silent, webcontents, data) {
     if (!Notification.isSupported()) {
         log.error('notification not supported');
         return;
@@ -50,7 +50,7 @@ export function displayMention(title, body, channel, teamId, silent, webcontents
     mention.on('click', () => {
         if (serverName) {
             windowManager.switchServer(serverName, true);
-            webcontents.send('notification-clicked', {channel, teamId});
+            webcontents.send('notification-clicked', {channel, teamId, url});
         }
     });
     mention.show();
