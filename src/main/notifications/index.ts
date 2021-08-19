@@ -16,7 +16,7 @@ import {DownloadNotification} from './Download';
 
 const currentNotifications = new Map();
 
-export function displayMention(title: string, body: string, channel: {id: string}, teamId: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData) {
+export function displayMention(title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData) {
     if (!Notification.isSupported()) {
         log.error('notification not supported');
         return;
@@ -53,7 +53,7 @@ export function displayMention(title: string, body: string, channel: {id: string
     mention.on('click', () => {
         if (serverName) {
             windowManager.switchServer(serverName);
-            webcontents.send('notification-clicked', {channel, teamId});
+            webcontents.send('notification-clicked', {channel, teamId, url});
         }
     });
     mention.show();

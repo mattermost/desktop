@@ -120,8 +120,8 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
     // it will be captured by itself too
         break;
     case 'dispatch-notification': {
-        const {title, body, channel, teamId, silent, data: messageData} = message;
-        ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, silent, messageData);
+        const {title, body, channel, teamId, url, silent, data: messageData} = message;
+        ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, url, silent, messageData);
         break;
     }
     case 'browser-history-push': {
@@ -139,13 +139,14 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
     }
 });
 
-const handleNotificationClick = ({channel, teamId}) => {
+const handleNotificationClick = ({channel, teamId, url}) => {
     window.postMessage(
         {
             type: 'notification-clicked',
             message: {
                 channel,
                 teamId,
+                url,
             },
         },
         window.location.origin,

@@ -786,8 +786,8 @@ function initializeAfterAppReady() {
 // ipc communication event handlers
 //
 
-function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channel: {id: string}, teamId: string, silent: boolean, data: MentionData) {
-    displayMention(title, body, channel, teamId, silent, event.sender, data);
+function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, data: MentionData) {
+    displayMention(title, body, channel, teamId, url, silent, event.sender, data);
 }
 
 function updateServerInfos(teams: TeamWithTabs[]) {
