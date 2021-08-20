@@ -13,10 +13,11 @@ import * as windowManager from '../windows/windowManager';
 
 import {Mention} from './Mention';
 import {DownloadNotification} from './Download';
+import {UpgradeNotification} from './Upgrade';
 
 const currentNotifications = new Map();
 
-export function displayMention(title: string, body: string, channel: {id: string}, teamId: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData) {
+export function displayMention(title: string, body: string, channel: {id: string}, teamId: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData): void {
     if (!Notification.isSupported()) {
         log.error('notification not supported');
         return;
@@ -59,7 +60,7 @@ export function displayMention(title: string, body: string, channel: {id: string
     mention.show();
 }
 
-export function displayDownloadCompleted(fileName: string, path: string, serverInfo: ServerFromURL) {
+export function displayDownloadCompleted(fileName: string, path: string, serverInfo: ServerFromURL): void {
     if (!Notification.isSupported()) {
         log.error('notification not supported');
         return;
@@ -74,4 +75,13 @@ export function displayDownloadCompleted(fileName: string, path: string, serverI
         shell.showItemInFolder(path.normalize());
     });
     download.show();
+}
+
+export function displayUpgrade(version: string, handleUpgrade: () => void): void {
+    const upgrade = new UpgradeNotification();
+    upgrade.on('click', () => {
+        log.info(`User clicked to upgrade to ${version}`);
+        handleUpgrade();
+    });
+    upgrade.show();
 }

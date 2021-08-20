@@ -67,7 +67,7 @@ import {destroyTray, refreshTrayImages, setTrayMenu, setupTray} from './tray/tra
 import {AuthManager} from './authManager';
 import {CertificateManager} from './certificateManager';
 import {setupBadge, setUnreadBadgeSetting} from './badge';
-import {checkForUpdates} from './autoUpdater';
+import UpdateManager from './autoupdater/autoUpdater';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
     module.hot.accept();
@@ -95,6 +95,7 @@ let appVersion = null;
 let config: Config;
 let authManager: AuthManager;
 let certificateManager: CertificateManager;
+let updateManager: UpdateManager;
 
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
@@ -536,7 +537,8 @@ function initializeAfterAppReady() {
     }
     appVersion.lastAppVersion = app.getVersion();
 
-    checkForUpdates();
+    updateManager = new UpdateManager();
+    updateManager.checkForUpdates(false);
 
     if (!global.isDev) {
         upgradeAutoLaunch();
