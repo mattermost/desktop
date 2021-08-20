@@ -58,7 +58,7 @@
         ]
       },
       {
-        "from": "resources/linux",
+        "from": "src/assets",
         "filter": [
           "create_desktop_file.sh",
           "app_icon.png",
