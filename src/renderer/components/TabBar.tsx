@@ -47,7 +47,7 @@ export default class TabBar extends React.PureComponent<Props> {
 
     render() {
         const orderedTabs = this.props.tabs.concat().sort((a, b) => a.order - b.order);
-        const tabs = orderedTabs.filter((tab) => !tab.isClosed).map((tab, orderedIndex) => {
+        const tabs = orderedTabs.map((tab, orderedIndex) => {
             const index = this.props.tabs.indexOf(tab);
             const tabName = getTabViewName(this.props.activeServerName, tab.name);
 
@@ -84,47 +84,59 @@ export default class TabBar extends React.PureComponent<Props> {
                     draggableId={`teamTabItem${index}`}
                     index={orderedIndex}
                 >
-                    {(provided, snapshot) => (
-                        <NavItem
-                            ref={provided.innerRef}
-                            as='li'
-                            id={`teamTabItem${index}`}
-                            draggable={false}
-                            title={tab.name}
-                            className={classNames('teamTabItem', {
-                                active: this.props.activeTabName === tab.name,
-                                dragging: snapshot.isDragging,
-                            })}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            style={getStyle(provided.draggableProps.style)}
-                        >
-                            <NavLink
-                                eventKey={index}
+                    {(provided, snapshot) => {
+                        if (tab.isClosed) {
+                            return (
+                                <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                />
+                            );
+                        }
+
+                        return (
+                            <NavItem
+                                ref={provided.innerRef}
+                                as='li'
+                                id={`teamTabItem${index}`}
                                 draggable={false}
-                                active={this.props.activeTabName === tab.name}
-                                disabled={this.props.tabsDisabled}
-                                onSelect={() => {
-                                    this.props.onSelect(tab.name, index);
-                                }}
+                                title={tab.name}
+                                className={classNames('teamTabItem', {
+                                    active: this.props.activeTabName === tab.name,
+                                    dragging: snapshot.isDragging,
+                                })}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                style={getStyle(provided.draggableProps.style)}
                             >
-                                <div className='TabBar-tabSeperator'>
-                                    <span>
-                                        {getTabDisplayName(tab.name as TabType)}
-                                    </span>
-                                    { badgeDiv }
-                                    {canCloseTab(tab.name as TabType) &&
-                                        <button
-                                            className='teamTabItem__close'
-                                            onClick={this.onCloseTab(tab.name)}
-                                        >
-                                            <i className='icon-close'/>
-                                        </button>
-                                    }
-                                </div>
-                            </NavLink>
-                        </NavItem>
-                    )}
+                                <NavLink
+                                    eventKey={index}
+                                    draggable={false}
+                                    active={this.props.activeTabName === tab.name}
+                                    disabled={this.props.tabsDisabled}
+                                    onSelect={() => {
+                                        this.props.onSelect(tab.name, index);
+                                    }}
+                                >
+                                    <div className='TabBar-tabSeperator'>
+                                        <span>
+                                            {getTabDisplayName(tab.name as TabType)}
+                                        </span>
+                                        { badgeDiv }
+                                        {canCloseTab(tab.name as TabType) &&
+                                            <button
+                                                className='teamTabItem__close'
+                                                onClick={this.onCloseTab(tab.name)}
+                                            >
+                                                <i className='icon-close'/>
+                                            </button>
+                                        }
+                                    </div>
+                                </NavLink>
+                            </NavItem>
+                        );
+                    }}
                 </Draggable>
             );
         });

@@ -8,7 +8,7 @@ import {TabType, TAB_FOCALBOARD} from './TabView';
 
 export default class FocalboardTabView extends BaseTabView {
     get url(): URL {
-        return new URL(`${this.server.url.origin}${getFormattedPathName(this.server.url.pathname)}boards`);
+        return new URL(`${this.server.url.origin}${getFormattedPathName(this.server.url.pathname)}plug/focalboard`);
     }
 
     get type(): TabType {
