@@ -3,25 +3,26 @@
 
 import path from 'path';
 
-import {dialog, ipcMain, app, NativeImage} from 'electron';
+import {dialog, ipcMain, app, nativeImage} from 'electron';
 import log from 'electron-log';
 import {autoUpdater, UpdateCheckResult, UpdateInfo} from 'electron-updater';
 
 import {displayUpgrade} from 'main/notifications';
 
-import {sendToRenderer} from '../windows/windowManager';
+import * as WindowManager from '../windows/windowManager';
 
 import {CANCEL_UPGRADE, UPDATE_AVAILABLE} from 'common/communication';
 
 const NEXT_NOTIFY = 86400000; // 24 hours
-const NEXT_CHECK = 3600000;
+//const NEXT_CHECK = 3600000;
+const NEXT_CHECK = 60000; // todo: remove me
 
 log.transports.file.level = 'info';
 autoUpdater.logger = log;
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const appIconURL = path.resolve(assetsDir, 'appicon_48.png');
-const appIcon = NativeImage.createFromPath(appIconURL);
+const appIcon = nativeImage.createFromPath(appIconURL);
 
 export default class UpdateManager {
     hooksSetup: boolean;
@@ -37,21 +38,19 @@ export default class UpdateManager {
         if (this.hooksSetup) {
             return;
         }
+        log.info('[Mattermost] setting up hooks');
         autoUpdater.on('error', (err: Error) => {
-            log.error(`There was an error while trying to update: ${err}`);
+            log.error(`[Mattermost] There was an error while trying to update: ${err}`);
         });
 
         autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
             this.versionAvailable = info.version;
-            sendToRenderer(UPDATE_AVAILABLE);
-            if (this.lastNotification) {
-                clearTimeout(this.lastNotification);
-            }
-            this.lastNotification = setTimeout(this.notify, NEXT_NOTIFY);
+            log.info(`[Mattermost] downloaded version ${info.version}`);
+            this.notify();
         });
 
         ipcMain.on(CANCEL_UPGRADE, () => {
-            log.info('User Canceled upgrade');
+            log.info('[Mattermost] User Canceled upgrade');
         });
 
         // we only set this once.
@@ -59,11 +58,20 @@ export default class UpdateManager {
     }
 
     notify = (): void => {
+        log.info('[Mattermost] notifying user');
+        WindowManager.sendToRenderer(UPDATE_AVAILABLE, this.versionAvailable);
+
+        if (this.lastNotification) {
+            clearTimeout(this.lastNotification);
+        }
+        log.info('[Mattermost] setup next notification');
+        this.lastNotification = setTimeout(this.notify, NEXT_NOTIFY);
+        log.info('[Mattermost] notifying');
         displayUpgrade(this.versionAvailable || 'unknown', this.handleUpgrade);
     }
 
     handleUpgrade = (): void => {
-        log.info('Performing update');
+        log.info('[Mattermost] Performing update');
         if (this.lastCheck) {
             clearTimeout(this.lastCheck);
         }
@@ -90,7 +98,7 @@ export default class UpdateManager {
         if (!this.lastNotification) {
             const version = app.getVersion();
             autoUpdater.checkForUpdates().catch((reason) => {
-                log.error(`Failed to check for updates: ${reason}`);
+                log.error(`[Mattermost] Failed to check for updates: ${reason}`);
             }).then((result: void | UpdateCheckResult) => {
                 if (!result && manually) {
                     dialog.showMessageBox({

@@ -180,7 +180,11 @@ export function sendToRenderer(channel: string, ...args: any[]) {
     }
     status.mainWindow!.webContents.send(channel, ...args);
     if (status.settingsWindow && status.settingsWindow.isVisible()) {
-        status.settingsWindow.webContents.send(channel, ...args);
+        try {
+            status.settingsWindow.webContents.send(channel, ...args);
+        } catch (e) {
+            log.error(`There was an error while trying to communicate with the renderer: ${e}`);
+        }
     }
 }
 
