@@ -1,5 +1,9 @@
 {
   "publish": [{
+      "provider": "generic",
+      "url": "http://localhost:8000"
+    },
+    {
     "provider": "generic",
     "url": "https://releases.mattermost.com/desktop/"
   }],

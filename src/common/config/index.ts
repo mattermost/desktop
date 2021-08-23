@@ -45,10 +45,17 @@ export default class Config extends EventEmitter {
     buildConfigData?: BuildConfig;
     localConfigData?: ConfigType;
     useNativeWindow: boolean;
+    canUpgradeValue?: boolean
 
     constructor(configFilePath: string) {
         super();
         this.configFilePath = configFilePath;
+        fs.access(app.getAppPath(), fs.constants.W_OK, (error) => {
+            // eslint-disable-next-line no-undef
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            this.canUpgradeValue = !error && __CAN_UPGRADE__; // prevent showing the option if the path is not writeable, like in a managed environment.
+        });
         this.registryConfig = new RegistryConfig();
         try {
             this.useNativeWindow = os.platform() === 'win32' && (parseInt(os.release().split('.')[0], 10) < 10);
@@ -248,6 +255,10 @@ export default class Config extends EventEmitter {
     }
     get helpLink() {
         return this.combinedData?.helpLink;
+    }
+
+    get canUpgrade() {
+        return this.canUpgradeValue;
     }
 
     // initialization/processing methods

@@ -17,6 +17,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 const codeDefinitions = {
     __HASH_VERSION__: JSON.stringify(VERSION),
+    __CAN_UPGRADE__: JSON.stringify(true), // we should set this to false when working on a store version. Hardcoding for now.
 };
 codeDefinitions['process.env.NODE_ENV'] = JSON.stringify(process.env.NODE_ENV);
 

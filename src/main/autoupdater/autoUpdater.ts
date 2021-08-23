@@ -19,6 +19,7 @@ const NEXT_CHECK = 60000; // todo: remove me
 
 log.transports.file.level = 'info';
 autoUpdater.logger = log;
+autoUpdater.autoDownload = false;
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const appIconURL = path.resolve(assetsDir, 'appicon_48.png');
@@ -43,10 +44,16 @@ export default class UpdateManager {
             log.error(`[Mattermost] There was an error while trying to update: ${err}`);
         });
 
+        autoUpdater.on('update-available', (info: UpdateInfo) => {
+            this.versionAvailable = info.version;
+            log.info(`[Mattermost] available version ${info.version}`);
+            this.notify();
+        });
+
         autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
             this.versionAvailable = info.version;
             log.info(`[Mattermost] downloaded version ${info.version}`);
-            this.notify();
+            this.handleUpgrade();
         });
 
         ipcMain.on(CANCEL_UPGRADE, () => {
@@ -67,18 +74,37 @@ export default class UpdateManager {
         log.info('[Mattermost] setup next notification');
         this.lastNotification = setTimeout(this.notify, NEXT_NOTIFY);
         log.info('[Mattermost] notifying');
-        displayUpgrade(this.versionAvailable || 'unknown', this.handleUpgrade);
+        displayUpgrade(this.versionAvailable || 'unknown', this.handleUpdate);
     }
 
-    handleUpgrade = (): void => {
+    handleUpdate = (): void => {
         log.info('[Mattermost] Performing update');
         if (this.lastCheck) {
             clearTimeout(this.lastCheck);
         }
         dialog.showMessageBox({
             title: 'New desktop version available',
-            message: `A new version of the Mattermost Desktop App (version ${this.versionAvailable}) is available to install`,
-            buttons: ['Restart and Update', 'Remind me Later'],
+            message: `A new version of the Mattermost Desktop App (version ${this.versionAvailable}) is available to download and install`,
+            buttons: ['Download new version', 'Remind me Later'],
+            type: 'info',
+            defaultId: 0,
+            cancelId: 1,
+            icon: appIcon,
+        }).then(({response}) => {
+            if (response === 1) {
+                autoUpdater.downloadUpdate();
+            }
+        });
+    }
+
+    handleUpgrade = (): void => {
+        if (this.lastNotification) {
+            clearTimeout(this.lastNotification);
+        }
+        dialog.showMessageBox({
+            title: 'New desktop version ready',
+            message: `A new version of the Mattermost Desktop App (version ${this.versionAvailable}) has been downloaded and is ready to install`,
+            buttons: ['Quit and Install', 'Manually restart the app'],
             type: 'info',
             defaultId: 0,
             cancelId: 1,

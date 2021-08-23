@@ -537,8 +537,12 @@ function initializeAfterAppReady() {
     }
     appVersion.lastAppVersion = app.getVersion();
 
-    updateManager = new UpdateManager();
-    updateManager.checkForUpdates(false);
+    if (config.canUpgrade) {
+        updateManager = new UpdateManager();
+        updateManager.checkForUpdates(false);
+    } else {
+        log.info(`Autoupgrade disabled: ${config.canUpgrade}`);
+    }
 
     if (!global.isDev) {
         upgradeAutoLaunch();
