@@ -15,9 +15,25 @@ const defaultOptions = {
     body: '',
 };
 
+export class NewVersionNotification extends Notification {
+    constructor() {
+        const options = {...defaultOptions};
+        if (process.platform === 'win32') {
+            options.icon = appIconURL;
+        } else if (process.platform === 'darwin') {
+            // Notification Center shows app's icon, so there were two icons on the notification.
+            Reflect.deleteProperty(options, 'icon');
+        }
+
+        super(options);
+    }
+}
+
 export class UpgradeNotification extends Notification {
     constructor() {
         const options = {...defaultOptions};
+        options.title = 'New Desktop version downloaded';
+        options.body = 'Click the notification to upgrade';
         if (process.platform === 'win32') {
             options.icon = appIconURL;
         } else if (process.platform === 'darwin') {

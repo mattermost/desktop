@@ -2,6 +2,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import classNames from 'classnames';
 import React, {Fragment} from 'react';
 import {Container, Row} from 'react-bootstrap';
 import {DropResult} from 'react-beautiful-dnd';
@@ -36,6 +37,8 @@ import {
     CLOSE_TEAMS_DROPDOWN,
     OPEN_TEAMS_DROPDOWN,
     SWITCH_TAB,
+    UPDATE_AVAILABLE,
+    START_UPGRADE,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -49,6 +52,7 @@ import TabBar from './TabBar';
 import ExtraBar from './ExtraBar';
 import ErrorView from './ErrorView';
 import TeamDropdownButton from './TeamDropdownButton';
+import '../css/components/UpgradeButton.scss';
 
 enum Status {
     LOADING = 1,
@@ -80,6 +84,7 @@ type State = {
     fullScreen?: boolean;
     showExtraBar?: boolean;
     isMenuOpen: boolean;
+    upgradeAvailable: boolean;
 };
 
 type TabViewStatus = {
@@ -113,6 +118,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
             tabViewStatus: new Map(this.props.teams.map((team) => team.tabs.map((tab) => getTabViewName(team.name, tab.name))).flat().map((tabViewName) => [tabViewName, {status: Status.LOADING}])),
             darkMode: this.props.darkMode,
             isMenuOpen: false,
+            upgradeAvailable: false,
         };
     }
 
@@ -213,6 +219,11 @@ export default class MainPage extends React.PureComponent<Props, State> {
 
         window.ipcRenderer.on(OPEN_TEAMS_DROPDOWN, () => {
             this.setState({isMenuOpen: true});
+        });
+
+        window.ipcRenderer.on(UPDATE_AVAILABLE, () => {
+            console.log('there is a new mattermost version!');
+            this.setState({upgradeAvailable: true});
         });
 
         if (window.process.platform !== 'darwin') {
@@ -319,16 +330,11 @@ export default class MainPage extends React.PureComponent<Props, State> {
             />
         );
 
-        let topBarClassName = 'topBar';
-        if (window.process.platform === 'darwin') {
-            topBarClassName += ' macOS';
-        }
-        if (this.state.darkMode) {
-            topBarClassName += ' darkMode';
-        }
-        if (this.state.fullScreen) {
-            topBarClassName += ' fullScreen';
-        }
+        const topBarClassName = classNames('topBar', {
+            macOS: window.process.platform === 'darwin',
+            darkMode: this.state.darkMode,
+            fullScreen: this.state.fullScreen,
+        });
 
         let maxButton;
         if (this.state.maximized) {
@@ -349,6 +355,25 @@ export default class MainPage extends React.PureComponent<Props, State> {
                     <img src={maximizeButton}/>
                 </div>
             );
+        }
+
+        let upgradeIcon;
+        if (this.state.upgradeAvailable) {
+            console.log('showing upgrade available to the user');
+            upgradeIcon = (
+                <span className={classNames('upgrade-btns', {darkMode: this.state.darkMode})}>
+                    <div
+                        className='button upgrade-button'
+                        onClick={() => {
+                            window.ipcRenderer.send(START_UPGRADE);
+                        }}
+                    >
+                        <i
+                            className={'icon-archive-arrow-up-outline'}
+                        />
+                        <i className={'circle'}/>
+                    </div>
+                </span>);
         }
 
         let overlayGradient;
@@ -407,6 +432,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
                         darkMode={this.state.darkMode}
                     />
                     {tabsRow}
+                    {upgradeIcon}
                     {overlayGradient}
                     {titleBarButtons}
                 </div>

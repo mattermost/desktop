@@ -37,6 +37,7 @@ import {
     USER_ACTIVITY_UPDATE,
     EMIT_CONFIGURATION,
     SWITCH_TAB,
+    START_UPGRADE,
 } from 'common/communication';
 import Config from 'common/config';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
@@ -253,6 +254,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(WINDOW_RESTORE, WindowManager.restore);
     ipcMain.on(SHOW_SETTINGS_WINDOW, WindowManager.showSettingsWindow);
     ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
+    ipcMain.on(START_UPGRADE, handleStartUpgrade);
 }
 
 //
@@ -686,7 +688,7 @@ function handleCloseAppMenu() {
 }
 
 function handleUpdateMenuEvent(event: IpcMainEvent, menuConfig: Config) {
-    const aMenu = appMenu.createMenu(menuConfig);
+    const aMenu = appMenu.createMenu(menuConfig, updateManager);
     Menu.setApplicationMenu(aMenu);
     aMenu.addListener('menu-will-close', handleCloseAppMenu);
 
@@ -704,6 +706,12 @@ async function handleSelectDownload(event: IpcMainInvokeEvent, startFrom: string
         properties:
      ['openDirectory', 'createDirectory', 'dontAddToRecent', 'promptToCreate']});
     return result.filePaths[0];
+}
+
+function handleStartUpgrade() {
+    if (updateManager) {
+        updateManager.handleUpdate();
+    }
 }
 
 //

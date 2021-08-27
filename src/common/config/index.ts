@@ -50,7 +50,11 @@ export default class Config extends EventEmitter {
     constructor(configFilePath: string) {
         super();
         this.configFilePath = configFilePath;
-        fs.access(app.getAppPath(), fs.constants.W_OK, (error) => {
+        fs.access(path.dirname(app.getAppPath()), fs.constants.W_OK, (error) => {
+            if (error) {
+                log.info(`${app.getAppPath()}: ${error}`);
+                log.warn('autoupgrade disabled');
+            }
             // eslint-disable-next-line no-undef
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore

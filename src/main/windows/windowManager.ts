@@ -9,7 +9,7 @@ import {CombinedConfig} from 'types/config';
 
 import {MAXIMIZE_CHANGE, HISTORY, GET_LOADING_SCREEN_DATA, REACT_APP_INITIALIZED, LOADING_SCREEN_ANIMATION_FINISHED, FOCUS_THREE_DOT_MENU, GET_DARK_MODE} from 'common/communication';
 import urlUtils from 'common/utils/url';
-
+import {SECOND} from 'common/utils/constants';
 import {getTabViewName} from 'common/tabs/TabView';
 
 import {getAdjustedWindowBoundaries} from '../utils';
@@ -26,13 +26,14 @@ import createMainWindow from './mainWindow';
 
 type WindowManagerStatus = {
     mainWindow?: BrowserWindow;
+    mainWindowReady: boolean;
     settingsWindow?: BrowserWindow;
     config?: CombinedConfig;
     viewManager?: ViewManager;
     teamDropdown?: TeamDropdownView;
 };
 
-const status: WindowManagerStatus = {};
+const status: WindowManagerStatus = {mainWindowReady: false};
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
 ipcMain.on(HISTORY, handleHistory);
@@ -81,8 +82,12 @@ export function showMainWindow(deeplinkingURL?: string | URL) {
         if (!status.config) {
             return;
         }
+        status.mainWindowReady = false;
         status.mainWindow = createMainWindow(status.config, {
             linuxAppIcon: path.join(assetsDir, 'linux', 'app_icon.png'),
+        });
+        status.mainWindow.once('ready-to-show', () => {
+            status.mainWindowReady = true;
         });
 
         if (!status.mainWindow) {
@@ -94,6 +99,7 @@ export function showMainWindow(deeplinkingURL?: string | URL) {
         status.mainWindow.on('closed', () => {
             log.warn('main window closed');
             delete status.mainWindow;
+            status.mainWindowReady = false;
         });
         status.mainWindow.on('unresponsive', () => {
             const criticalErrorHandler = new CriticalErrorHandler();
@@ -174,10 +180,21 @@ function handleResizeMainWindow() {
     status.viewManager.setLoadingScreenBounds();
 }
 
-export function sendToRenderer(channel: string, ...args: any[]) {
-    if (!status.mainWindow) {
+// max retries allows the message to get to the renderer even if it is sent while the app is starting up.
+function sendToRendererWithRetry(maxRetries: number, channel: string, ...args: any[]) {
+    if (!status.mainWindow || !status.mainWindowReady) {
         showMainWindow();
+        if (maxRetries > 0) {
+            log.info(`Can't send ${channel}, will retry`);
+            setTimeout(() => {
+                sendToRendererWithRetry(maxRetries - 1, channel, ...args);
+            }, SECOND);
+        } else {
+            log.error(`Unable to send the message to the main window for message type ${channel}`);
+        }
+        return;
     }
+    log.info(`Sending ${channel}`);
     status.mainWindow!.webContents.send(channel, ...args);
     if (status.settingsWindow && status.settingsWindow.isVisible()) {
         try {
@@ -186,6 +203,10 @@ export function sendToRenderer(channel: string, ...args: any[]) {
             log.error(`There was an error while trying to communicate with the renderer: ${e}`);
         }
     }
+}
+
+export function sendToRenderer(channel: string, ...args: any[]): void {
+    sendToRendererWithRetry(3, channel, ...args);
 }
 
 export function sendToAll(channel: string, ...args: any[]) {

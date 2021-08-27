@@ -13,7 +13,7 @@ import * as windowManager from '../windows/windowManager';
 
 import {Mention} from './Mention';
 import {DownloadNotification} from './Download';
-import {UpgradeNotification} from './Upgrade';
+import {NewVersionNotification, UpgradeNotification} from './Upgrade';
 
 const currentNotifications = new Map();
 
@@ -77,11 +77,23 @@ export function displayDownloadCompleted(fileName: string, path: string, serverI
     download.show();
 }
 
+let upgrade;
+
 export function displayUpgrade(version: string, handleUpgrade: () => void): void {
-    const upgrade = new UpgradeNotification();
+    upgrade = new NewVersionNotification();
     upgrade.on('click', () => {
         log.info(`User clicked to upgrade to ${version}`);
         handleUpgrade();
     });
     upgrade.show();
+}
+
+let restartToUpgrade;
+export function displayRestartToUpgrade(version: string, handleUpgrade: () => void): void {
+    restartToUpgrade = new UpgradeNotification();
+    restartToUpgrade.on('click', () => {
+        log.info(`User requested perform the upgrade now to ${version}`);
+        handleUpgrade();
+    });
+    restartToUpgrade.show();
 }

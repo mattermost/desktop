@@ -1,0 +1,23 @@
+.upgrade-btns {
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+  padding-top: 5px;
+}
+
+.upgrade-btns.darkMode {
+  color: rgba(221, 221, 221, 0.56);
+}
+
+.circle {
+  position: relative;
+  top: -9px;
+  left: -13px;
+}
+
+.circle::before {
+  content: ' \25CF';
+  font-size: 8px;
+  border: 2px;
+  color: #F74343;
+}

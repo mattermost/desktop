@@ -9,8 +9,9 @@ import {ADD_SERVER} from 'common/communication';
 import Config from 'common/config';
 
 import * as WindowManager from '../windows/windowManager';
+import UpdateManager from 'main/autoupdater/autoUpdater';
 
-function createTemplate(config: Config) {
+function createTemplate(config: Config, updateManager: UpdateManager) {
     const separatorItem: MenuItemConstructorOptions = {
         type: 'separator',
     };
@@ -231,6 +232,14 @@ function createTemplate(config: Config) {
     };
     template.push(windowMenu);
     const submenu = [];
+    if (updateManager) {
+        submenu.push({
+            label: 'Check for Updates',
+            click() {
+                updateManager.checkForUpdates(true);
+            },
+        });
+    }
     if (config.data?.helpLink) {
         submenu.push({
             label: 'Learn More...',
@@ -252,9 +261,9 @@ function createTemplate(config: Config) {
     return template;
 }
 
-function createMenu(config: Config) {
+function createMenu(config: Config, updateManager: UpdateManager) {
     // TODO: Electron is enforcing certain variables that it doesn't need
-    return Menu.buildFromTemplate(createTemplate(config) as Array<MenuItemConstructorOptions | MenuItem>);
+    return Menu.buildFromTemplate(createTemplate(config, updateManager) as Array<MenuItemConstructorOptions | MenuItem>);
 }
 
 export default {

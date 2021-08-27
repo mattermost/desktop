@@ -92,3 +92,4 @@ export const SEND_DROPDOWN_MENU_SIZE = 'send-dropdown-menu-size';
 
 export const UPDATE_AVAILABLE = 'update_available';
 export const CANCEL_UPGRADE = 'cancel_upgrade';
+export const START_UPGRADE = 'start_upgrade';

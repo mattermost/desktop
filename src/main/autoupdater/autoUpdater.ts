@@ -7,15 +7,16 @@ import {dialog, ipcMain, app, nativeImage} from 'electron';
 import log from 'electron-log';
 import {autoUpdater, UpdateCheckResult, UpdateInfo} from 'electron-updater';
 
-import {displayUpgrade} from 'main/notifications';
+import {displayUpgrade, displayRestartToUpgrade} from 'main/notifications';
 
 import * as WindowManager from '../windows/windowManager';
 
 import {CANCEL_UPGRADE, UPDATE_AVAILABLE} from 'common/communication';
 
-const NEXT_NOTIFY = 86400000; // 24 hours
+//const NEXT_NOTIFY = 86400000; // 24 hours
 //const NEXT_CHECK = 3600000;
 const NEXT_CHECK = 60000; // todo: remove me
+const NEXT_NOTIFY = 60000;
 
 log.transports.file.level = 'info';
 autoUpdater.logger = log;
@@ -24,6 +25,21 @@ autoUpdater.autoDownload = false;
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const appIconURL = path.resolve(assetsDir, 'appicon_48.png');
 const appIcon = nativeImage.createFromPath(appIconURL);
+
+/** to test this during development
+ * add the following to electron-builder.json in the publish entry
+    {
+      "provider": "generic",
+      "url": "http://localhost:8000"
+    },
+ * create a packaged build, copy that to a directory B (I usually do a third C copy to be able to go back without packaging again)
+ * upgrade the package.json version
+ * package a second copy of the app
+ * on release dir setup an http server (using `python -m SimpleHTTPServer` should match the above entry)
+ * start the app from directory B
+ * if the app upgraded and you want to repeat, simply copy C into B if you did the C step, if not, package again.
+ * yeah, it is a time consuming process :( improve this doc if you find a way to go faster.
+**/
 
 export default class UpdateManager {
     hooksSetup: boolean;
@@ -91,7 +107,7 @@ export default class UpdateManager {
             cancelId: 1,
             icon: appIcon,
         }).then(({response}) => {
-            if (response === 1) {
+            if (response === 0) {
                 autoUpdater.downloadUpdate();
             }
         });
@@ -101,18 +117,8 @@ export default class UpdateManager {
         if (this.lastNotification) {
             clearTimeout(this.lastNotification);
         }
-        dialog.showMessageBox({
-            title: 'New desktop version ready',
-            message: `A new version of the Mattermost Desktop App (version ${this.versionAvailable}) has been downloaded and is ready to install`,
-            buttons: ['Quit and Install', 'Manually restart the app'],
-            type: 'info',
-            defaultId: 0,
-            cancelId: 1,
-            icon: appIcon,
-        }).then(({response}) => {
-            if (response === 1) {
-                autoUpdater.quitAndInstall();
-            }
+        displayRestartToUpgrade(this.versionAvailable || '', () => {
+            autoUpdater.quitAndInstall();
         });
     }
 
