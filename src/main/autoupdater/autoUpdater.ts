@@ -5,7 +5,7 @@ import path from 'path';
 
 import {dialog, ipcMain, app, nativeImage} from 'electron';
 import log from 'electron-log';
-import {autoUpdater, UpdateCheckResult, UpdateInfo} from 'electron-updater';
+import {autoUpdater, UpdateInfo} from 'electron-updater';
 
 import {displayUpgrade, displayRestartToUpgrade} from 'main/notifications';
 
@@ -61,6 +61,7 @@ export default class UpdateManager {
         });
 
         autoUpdater.on('update-available', (info: UpdateInfo) => {
+            autoUpdater.removeListener('update-not-available', this.displayNoUpgrade);
             this.versionAvailable = info.version;
             log.info(`[Mattermost] available version ${info.version}`);
             this.notify();
@@ -122,25 +123,29 @@ export default class UpdateManager {
         });
     }
 
+    displayNoUpgrade = (): void => {
+        const version = app.getVersion();
+        dialog.showMessageBox({
+            title: 'You\'re up to date',
+            type: 'info',
+            buttons: ['OK'],
+            icon: appIcon,
+            message: `You are using the latest version of the Mattermost Desktop App (version ${version}). You'll be notified when a new version is available to install`,
+        });
+    }
+
     checkForUpdates = (manually: boolean): void => {
         this.setupHooks();
         if (this.lastCheck) {
             clearTimeout(this.lastCheck);
         }
-        if (!this.lastNotification) {
-            const version = app.getVersion();
+        if (!this.lastNotification || manually) {
+            if (manually) {
+                log.info('setting up hook for not available');
+                autoUpdater.once('update-not-available', this.displayNoUpgrade);
+            }
             autoUpdater.checkForUpdates().catch((reason) => {
                 log.error(`[Mattermost] Failed to check for updates: ${reason}`);
-            }).then((result: void | UpdateCheckResult) => {
-                if (!result && manually) {
-                    dialog.showMessageBox({
-                        title: 'You\'re up to date',
-                        type: 'info',
-                        buttons: ['OK'],
-                        icon: appIcon,
-                        message: `You are using the latest version of the Mattermost Desktop App (version ${version}). You'll be notified when a new version is available to install`,
-                    });
-                }
             });
             this.lastCheck = setTimeout(() => this.checkForUpdates(false), NEXT_CHECK);
         }
