@@ -7,7 +7,7 @@ import fs from 'fs';
 
 import path from 'path';
 
-import electron, {BrowserWindow, IpcMainEvent, IpcMainInvokeEvent, Rectangle} from 'electron';
+import electron, {BrowserWindow, globalShortcut, IpcMainEvent, IpcMainInvokeEvent, Rectangle} from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import log from 'electron-log';
@@ -38,6 +38,10 @@ import {
     EMIT_CONFIGURATION,
     SWITCH_TAB,
     START_UPGRADE,
+    SHOW_EDIT_SERVER_MODAL,
+    SHOW_REMOVE_SERVER_MODAL,
+    UPDATE_SHORTCUT_MENU,
+    OPEN_TEAMS_DROPDOWN,
 } from 'common/communication';
 import Config from 'common/config';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
@@ -97,6 +101,7 @@ let config: Config;
 let authManager: AuthManager;
 let certificateManager: CertificateManager;
 let updateManager: UpdateManager;
+let didCheckForAddServerModal = false;
 
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
@@ -234,6 +239,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
     ipcMain.handle('get-app-version', handleAppVersion);
     ipcMain.on('update-menu', handleUpdateMenuEvent);
+    ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateShortcutMenuEvent);
     ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
 
     if (process.platform !== 'darwin') {
@@ -248,6 +254,8 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(DOUBLE_CLICK_ON_WINDOW, WindowManager.handleDoubleClick);
 
     ipcMain.on(SHOW_NEW_SERVER_MODAL, handleNewServerModal);
+    ipcMain.on(SHOW_EDIT_SERVER_MODAL, handleEditServerModal);
+    ipcMain.on(SHOW_REMOVE_SERVER_MODAL, handleRemoveServerModal);
     ipcMain.on(WINDOW_CLOSE, WindowManager.close);
     ipcMain.on(WINDOW_MAXIMIZE, WindowManager.maximize);
     ipcMain.on(WINDOW_MINIMIZE, WindowManager.minimize);
@@ -301,6 +309,14 @@ function handleConfigSynchronize() {
         WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
     }
 
+    if (process.platform === 'win32' && !didCheckForAddServerModal && typeof config.registryConfigData !== 'undefined') {
+        didCheckForAddServerModal = true;
+        if (config.teams.length === 0) {
+            handleNewServerModal();
+        }
+    }
+
+    ipcMain.emit('update-menu', true, config);
     ipcMain.emit(EMIT_CONFIGURATION, true, config.data);
 }
 
@@ -508,6 +524,75 @@ function handleNewServerModal() {
     }
 }
 
+function handleEditServerModal(e: IpcMainEvent, name: string) {
+    const html = getLocalURLString('editServer.html');
+
+    const modalPreload = getLocalPreload('modalPreload.js');
+
+    const mainWindow = WindowManager.getMainWindow();
+    if (!mainWindow) {
+        return;
+    }
+    const serverIndex = config.teams.findIndex((team) => team.name === name);
+    if (serverIndex < 0) {
+        return;
+    }
+    const modalPromise = addModal<Team, Team>('editServer', html, modalPreload, config.teams[serverIndex], mainWindow);
+    if (modalPromise) {
+        modalPromise.then((data) => {
+            const teams = config.teams;
+            teams[serverIndex].name = data.name;
+            teams[serverIndex].url = data.url;
+            config.set('teams', teams);
+        }).catch((e) => {
+            // e is undefined for user cancellation
+            if (e) {
+                log.error(`there was an error in the edit server modal: ${e}`);
+            }
+        });
+    } else {
+        log.warn('There is already an edit server modal');
+    }
+}
+
+function handleRemoveServerModal(e: IpcMainEvent, name: string) {
+    const html = getLocalURLString('removeServer.html');
+
+    const modalPreload = getLocalPreload('modalPreload.js');
+
+    const mainWindow = WindowManager.getMainWindow();
+    if (!mainWindow) {
+        return;
+    }
+    const modalPromise = addModal<string, boolean>('removeServer', html, modalPreload, name, mainWindow);
+    if (modalPromise) {
+        modalPromise.then((remove) => {
+            if (remove) {
+                const teams = config.teams;
+                const removedTeam = teams.findIndex((team) => team.name === name);
+                if (removedTeam < 0) {
+                    return;
+                }
+                const removedOrder = teams[removedTeam].order;
+                teams.splice(removedTeam, 1);
+                teams.forEach((value) => {
+                    if (value.order > removedOrder) {
+                        value.order--;
+                    }
+                });
+                config.set('teams', teams);
+            }
+        }).catch((e) => {
+            // e is undefined for user cancellation
+            if (e) {
+                log.error(`there was an error in the edit server modal: ${e}`);
+            }
+        });
+    } else {
+        log.warn('There is already an edit server modal');
+    }
+}
+
 function initializeAfterAppReady() {
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
@@ -584,8 +669,11 @@ function initializeAfterAppReady() {
 
     WindowManager.showMainWindow(deeplinkingURL);
 
-    if (config.teams.length === 0) {
-        WindowManager.showSettingsWindow();
+    // only check for non-Windows, as with Windows we have to wait for GPO teams
+    if (process.platform !== 'win32' || typeof config.registryConfigData !== 'undefined') {
+        if (config.teams.length === 0) {
+            handleNewServerModal();
+        }
     }
 
     criticalErrorHandler.setMainWindow(WindowManager.getMainWindow()!);
@@ -660,14 +748,18 @@ function initializeAfterAppReady() {
         // is the requesting url trusted?
         callback(urlUtils.isTrustedURL(requestingURL, config.teams));
     });
+
+    globalShortcut.register(`${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`, () => {
+        ipcMain.emit(OPEN_TEAMS_DROPDOWN);
+    });
 }
 
 //
 // ipc communication event handlers
 //
 
-function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channel: {id: string}, teamId: string, silent: boolean, data: MentionData) {
-    displayMention(title, body, channel, teamId, silent, event.sender, data);
+function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, data: MentionData) {
+    displayMention(title, body, channel, teamId, url, silent, event.sender, data);
 }
 
 function handleOpenAppMenu() {
@@ -697,6 +789,10 @@ function handleUpdateMenuEvent(event: IpcMainEvent, menuConfig: Config) {
         const tMenu = trayMenu.createMenu(menuConfig.data!);
         setTrayMenu(tMenu);
     }
+}
+
+function handleUpdateShortcutMenuEvent(event: IpcMainEvent) {
+    handleUpdateMenuEvent(event, config);
 }
 
 async function handleSelectDownload(event: IpcMainInvokeEvent, startFrom: string) {

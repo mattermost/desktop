@@ -13,6 +13,8 @@ import {
     SWITCH_SERVER,
     CLOSE_TEAMS_DROPDOWN,
     SHOW_NEW_SERVER_MODAL,
+    SHOW_EDIT_SERVER_MODAL,
+    SHOW_REMOVE_SERVER_MODAL,
     UPDATE_TEAMS,
 } from 'common/communication';
 
@@ -31,6 +33,12 @@ window.addEventListener('message', async (event) => {
         break;
     case SHOW_NEW_SERVER_MODAL:
         ipcRenderer.send(SHOW_NEW_SERVER_MODAL);
+        break;
+    case SHOW_EDIT_SERVER_MODAL:
+        ipcRenderer.send(SHOW_EDIT_SERVER_MODAL, event.data.data.name);
+        break;
+    case SHOW_REMOVE_SERVER_MODAL:
+        ipcRenderer.send(SHOW_REMOVE_SERVER_MODAL, event.data.data.name);
         break;
     case CLOSE_TEAMS_DROPDOWN:
         ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);

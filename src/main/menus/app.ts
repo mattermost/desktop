@@ -3,9 +3,9 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {app, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, webContents} from 'electron';
+import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, webContents} from 'electron';
 
-import {ADD_SERVER} from 'common/communication';
+import {SHOW_NEW_SERVER_MODAL} from 'common/communication';
 import Config from 'common/config';
 
 import * as WindowManager from '../windows/windowManager';
@@ -45,7 +45,7 @@ function createTemplate(config: Config, updateManager: UpdateManager) {
         platformAppMenu.push({
             label: 'Sign in to Another Server',
             click() {
-                WindowManager.sendToRenderer(ADD_SERVER);
+                ipcMain.emit(SHOW_NEW_SERVER_MODAL);
             },
         });
     }
@@ -152,7 +152,7 @@ function createTemplate(config: Config, updateManager: UpdateManager) {
             }
         },
     }, {
-        label: 'Developer Tools for Current Server',
+        label: 'Developer Tools for Current Tab',
         click() {
             WindowManager.openBrowserViewDevTools();
         },
@@ -207,22 +207,35 @@ function createTemplate(config: Config, updateManager: UpdateManager) {
             role: 'close',
             accelerator: 'CmdOrCtrl+W',
         }, separatorItem, ...teams.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).map((team, i) => {
-            return {
+            const items = [];
+            items.push({
                 label: team.name,
-                accelerator: `CmdOrCtrl+${i + 1}`,
+                accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+${i + 1}`,
                 click() {
                     WindowManager.switchServer(team.name);
                 },
-            };
-        }), separatorItem, {
-            label: 'Select Next Server',
+            });
+            if (WindowManager.getCurrentTeamName() === team.name) {
+                team.tabs.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).forEach((tab, i) => {
+                    items.push({
+                        label: `    ${tab.name}`, // TODO
+                        accelerator: `CmdOrCtrl+${i + 1}`,
+                        click() {
+                            WindowManager.switchTab(team.name, tab.name);
+                        },
+                    });
+                });
+            }
+            return items;
+        }).flat(), separatorItem, {
+            label: 'Select Next Tab',
             accelerator: 'Ctrl+Tab',
             click() {
                 WindowManager.selectNextTab();
             },
             enabled: (teams.length > 1),
         }, {
-            label: 'Select Previous Server',
+            label: 'Select Previous Tab',
             accelerator: 'Ctrl+Shift+Tab',
             click() {
                 WindowManager.selectPreviousTab();

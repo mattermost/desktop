@@ -8,7 +8,16 @@ import {DragDropContext, Draggable, DraggingStyle, Droppable, DropResult, NotDra
 
 import {Team, TeamWithTabs} from 'types/config';
 
-import {CLOSE_TEAMS_DROPDOWN, REQUEST_TEAMS_DROPDOWN_INFO, SEND_DROPDOWN_MENU_SIZE, SHOW_NEW_SERVER_MODAL, SWITCH_SERVER, UPDATE_TEAMS, UPDATE_TEAMS_DROPDOWN} from 'common/communication';
+import {
+    CLOSE_TEAMS_DROPDOWN,
+    REQUEST_TEAMS_DROPDOWN_INFO,
+    SEND_DROPDOWN_MENU_SIZE,
+    SHOW_NEW_SERVER_MODAL,
+    SHOW_EDIT_SERVER_MODAL,
+    SHOW_REMOVE_SERVER_MODAL,
+    SWITCH_SERVER, UPDATE_TEAMS,
+    UPDATE_TEAMS_DROPDOWN,
+} from 'common/communication';
 
 import {getTabViewName} from 'common/tabs/TabView';
 
@@ -39,12 +48,19 @@ function getStyle(style?: DraggingStyle | NotDraggingStyle) {
     return style;
 }
 class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
+    buttonRefs: Map<number, HTMLButtonElement>;
+    addServerRef: React.RefObject<HTMLButtonElement>;
+    focusedIndex: number | null;
+
     constructor(props: Record<string, never>) {
         super(props);
         this.state = {
             isAnyDragging: false,
         };
+        this.focusedIndex = null;
 
+        this.buttonRefs = new Map();
+        this.addServerRef = React.createRef();
         window.addEventListener('message', this.handleMessageEvent);
     }
 
@@ -128,6 +144,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
     componentDidMount() {
         window.postMessage({type: REQUEST_TEAMS_DROPDOWN_INFO}, window.location.href);
         window.addEventListener('click', this.closeMenu);
+        window.addEventListener('keydown', this.handleKeyboardShortcuts);
     }
 
     componentDidUpdate() {
@@ -136,12 +153,75 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
 
     componentWillUnmount() {
         window.removeEventListener('click', this.closeMenu);
+        window.removeEventListener('keydown', this.handleKeyboardShortcuts);
+    }
+
+    setButtonRef = (teamIndex: number, refMethod?: (element: HTMLButtonElement) => any) => {
+        return (ref: HTMLButtonElement) => {
+            this.addButtonRef(teamIndex, ref);
+            refMethod?.(ref);
+        };
+    }
+
+    addButtonRef = (teamIndex: number, ref: HTMLButtonElement | null) => {
+        if (ref) {
+            this.buttonRefs.set(teamIndex, ref);
+            ref.addEventListener('focusin', () => {
+                this.focusedIndex = teamIndex;
+            });
+            ref.addEventListener('blur', () => {
+                this.focusedIndex = null;
+            });
+        }
+    }
+
+    handleKeyboardShortcuts = (event: KeyboardEvent) => {
+        if (event.key === 'ArrowDown') {
+            if (this.focusedIndex === null) {
+                this.focusedIndex = 0;
+            } else {
+                this.focusedIndex = (this.focusedIndex + 1) % this.buttonRefs.size;
+            }
+            this.buttonRefs.get(this.focusedIndex)?.focus();
+        }
+        if (event.key === 'ArrowUp') {
+            if (this.focusedIndex === null || this.focusedIndex === 0) {
+                this.focusedIndex = this.buttonRefs.size - 1;
+            } else {
+                this.focusedIndex = (this.focusedIndex - 1) % this.buttonRefs.size;
+            }
+            this.buttonRefs.get(this.focusedIndex)?.focus();
+        }
+        if (event.key === 'Escape') {
+            this.closeMenu();
+        }
+        this.buttonRefs.forEach((button, index) => {
+            if (event.key === String(index + 1)) {
+                button.focus();
+            }
+        });
     }
 
     handleClickOnDragHandle = (event: React.MouseEvent<HTMLDivElement>) => {
         if (this.state.isAnyDragging) {
             event.stopPropagation();
         }
+    }
+
+    editServer = (team: string) => {
+        return (event: React.MouseEvent<HTMLButtonElement>) => {
+            event.stopPropagation();
+            window.postMessage({type: SHOW_EDIT_SERVER_MODAL, data: {name: team}}, window.location.href);
+            this.closeMenu();
+        };
+    }
+
+    removeServer = (team: string) => {
+        return (event: React.MouseEvent<HTMLButtonElement>) => {
+            event.stopPropagation();
+            window.postMessage({type: SHOW_REMOVE_SERVER_MODAL, data: {name: team}}, window.location.href);
+            this.closeMenu();
+        };
     }
 
     render() {
@@ -213,7 +293,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                                                         anyDragging: this.state.isAnyDragging,
                                                         active: this.isActiveTeam(team),
                                                     })}
-                                                    ref={provided.innerRef}
+                                                    ref={this.setButtonRef(orderedIndex, provided.innerRef)}
                                                     {...provided.draggableProps}
                                                     onClick={this.selectServer(team)}
                                                     style={getStyle(provided.draggableProps.style)}
@@ -232,13 +312,13 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                                                     <div className='TeamDropdown__indicators'>
                                                         <button
                                                             className='TeamDropdown__button-edit'
-                                                            disabled={true}
+                                                            onClick={this.editServer(team.name)}
                                                         >
                                                             <i className='icon-pencil-outline'/>
                                                         </button>
                                                         <button
                                                             className='TeamDropdown__button-remove'
-                                                            disabled={true}
+                                                            onClick={this.removeServer(team.name)}
                                                         >
                                                             <i className='icon-trash-can-outline'/>
                                                         </button>
@@ -259,6 +339,9 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                 <hr className='TeamDropdown__divider'/>
                 {this.state.enableServerManagement &&
                     <button
+                        ref={(ref) => {
+                            this.addButtonRef(this.state.orderedTeams?.length || 0, ref);
+                        }}
                         className='TeamDropdown__button addServer'
                         onClick={this.addServer}
                     >
