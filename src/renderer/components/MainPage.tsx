@@ -222,7 +222,6 @@ export default class MainPage extends React.PureComponent<Props, State> {
         });
 
         window.ipcRenderer.on(UPDATE_AVAILABLE, () => {
-            console.log('there is a new mattermost version!');
             this.setState({upgradeAvailable: true});
         });
 
@@ -359,7 +358,6 @@ export default class MainPage extends React.PureComponent<Props, State> {
 
         let upgradeIcon;
         if (this.state.upgradeAvailable) {
-            console.log('showing upgrade available to the user');
             upgradeIcon = (
                 <span className={classNames('upgrade-btns', {darkMode: this.state.darkMode})}>
                     <div

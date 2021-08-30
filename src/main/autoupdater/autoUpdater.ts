@@ -55,7 +55,6 @@ export default class UpdateManager {
         if (this.hooksSetup) {
             return;
         }
-        log.info('[Mattermost] setting up hooks');
         autoUpdater.on('error', (err: Error) => {
             log.error(`[Mattermost] There was an error while trying to update: ${err}`);
         });
@@ -82,20 +81,16 @@ export default class UpdateManager {
     }
 
     notify = (): void => {
-        log.info('[Mattermost] notifying user');
         WindowManager.sendToRenderer(UPDATE_AVAILABLE, this.versionAvailable);
 
         if (this.lastNotification) {
             clearTimeout(this.lastNotification);
         }
-        log.info('[Mattermost] setup next notification');
         this.lastNotification = setTimeout(this.notify, NEXT_NOTIFY);
-        log.info('[Mattermost] notifying');
         displayUpgrade(this.versionAvailable || 'unknown', this.handleUpdate);
     }
 
     handleUpdate = (): void => {
-        log.info('[Mattermost] Performing update');
         if (this.lastCheck) {
             clearTimeout(this.lastCheck);
         }
@@ -141,7 +136,6 @@ export default class UpdateManager {
         }
         if (!this.lastNotification || manually) {
             if (manually) {
-                log.info('setting up hook for not available');
                 autoUpdater.once('update-not-available', this.displayNoUpgrade);
             }
             autoUpdater.checkForUpdates().catch((reason) => {
