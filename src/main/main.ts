@@ -624,7 +624,17 @@ function initializeAfterAppReady() {
     }
     appVersion.lastAppVersion = app.getVersion();
 
-    if (config.canUpgrade) {
+    if (typeof config.canUpgrade === 'undefined') {
+        // windows might not be ready, so we have to wait until it is
+        config.once('update', () => {
+            if (config.canUpgrade) {
+                updateManager = new UpdateManager();
+                updateManager.checkForUpdates(false);
+            } else {
+                log.info(`Autoupgrade disabled: ${config.canUpgrade}`);
+            }
+        });
+    } else if (config.canUpgrade) {
         updateManager = new UpdateManager();
         updateManager.checkForUpdates(false);
     } else {

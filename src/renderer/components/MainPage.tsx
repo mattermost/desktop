@@ -376,13 +376,6 @@ export default class MainPage extends React.PureComponent<Props, State> {
                 </span>);
         }
 
-        let overlayGradient;
-        if (window.process.platform !== 'darwin') {
-            overlayGradient = (
-                <span className='overlay-gradient'/>
-            );
-        }
-
         let titleBarButtons;
         if (window.process.platform === 'win32' && !this.props.useNativeWindow) {
             titleBarButtons = (
@@ -434,7 +427,6 @@ export default class MainPage extends React.PureComponent<Props, State> {
                     />
                     {tabsRow}
                     {upgradeIcon}
-                    {overlayGradient}
                     {titleBarButtons}
                 </div>
             </Row>

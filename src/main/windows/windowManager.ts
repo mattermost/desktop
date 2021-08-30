@@ -204,7 +204,6 @@ function sendToRendererWithRetry(maxRetries: number, channel: string, ...args: a
         }
         return;
     }
-    log.info(`Sending ${channel}`);
     status.mainWindow!.webContents.send(channel, ...args);
     if (status.settingsWindow && status.settingsWindow.isVisible()) {
         try {

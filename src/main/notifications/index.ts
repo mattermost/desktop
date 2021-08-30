@@ -77,9 +77,12 @@ export function displayDownloadCompleted(fileName: string, path: string, serverI
     download.show();
 }
 
-let upgrade;
+let upgrade: NewVersionNotification;
 
 export function displayUpgrade(version: string, handleUpgrade: () => void): void {
+    if (upgrade) {
+        upgrade.close();
+    }
     upgrade = new NewVersionNotification();
     upgrade.on('click', () => {
         log.info(`User clicked to upgrade to ${version}`);
