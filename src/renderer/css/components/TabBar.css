@@ -157,25 +157,22 @@
 }
 
 .TabBar .TabBar-badge {
-  background: #e81023;
-  float: right;
-  color: white;
-  text-align: center;
-  line-height: 12px;
-  height: 12px;
-  margin-left: 6px;
-  border-radius: 8px;
-  padding: 0 5px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-family: "Open Sans", sans-serif;
-  font-size: 10px;
-  font-weight: bold;
-  letter-spacing: normal;
-  -webkit-font-smoothing: antialiased;
-  flex: 1 0 12px;
-  margin-top: 2px;
+    background: #F74343;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    color: white;
+    font-size: 10px;
+    padding: 0px 5px;
+    font-family: "Open Sans", sans-serif;
+    font-weight: bold;
+    letter-spacing: normal;
+    -webkit-font-smoothing: antialiased;
+    margin-left: 6px;
+    margin-top: 2px;
+    height: 12px;
 }
 
 .TabBar .TabBar-badge.TabBar-badge-nomention:after {

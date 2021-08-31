@@ -69,7 +69,7 @@ export default class TabBar extends React.PureComponent<Props> {
             } else if (mentionCount !== 0) {
                 badgeDiv = (
                     <div className='TabBar-badge'>
-                        {mentionCount}
+                        <span>{mentionCount}</span>
                     </div>
                 );
             } else if (hasUnreads) {
