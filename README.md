@@ -19,7 +19,7 @@ Originally created as "electron-mattermost" by Yuya Ochiai. Developed using [Ele
   * Linux: [libnotify](http://electron.atom.io/docs/v0.36.0/tutorial/desktop-environment-integration/#linux)
 * Badges for unread channels and mentions
 * Installs as a native application
-
+cdcdcd
 ### Pre-packaged
 You don't have to install any other software.
 Packages are available on the [releases page](http://github.com/mattermost/desktop/releases).
