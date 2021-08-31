@@ -10,7 +10,7 @@ Originally created as "electron-mattermost" by Yuya Ochiai. Developed using [Ele
 
 ## Features
 
-### Desktop integration
+### Desktop integrationcdscdscdscds
 * Tabs for multiple teams across multiple servers
 * Desktop Notifications
   * Windows 10: Toast
