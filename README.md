@@ -1,4 +1,4 @@
-# Mattermost Desktop
+TEST # Mattermost Desktop
 
 Native desktop application for [Mattermost](http://www.mattermost.org/) running on Windows, Mac, and Linux.
 
