@@ -31,12 +31,15 @@ export default class TeamDropdownView {
     mentions?: Map<string, number>;
     expired?: Map<string, boolean>;
     window: BrowserWindow;
+    windowBounds: Electron.Rectangle;
 
     constructor(window: BrowserWindow, teams: TeamWithTabs[], darkMode: boolean, enableServerManagement: boolean) {
         this.teams = teams;
         this.window = window;
         this.darkMode = darkMode;
         this.enableServerManagement = enableServerManagement;
+
+        this.windowBounds = this.window.getContentBounds();
 
         const preload = getLocalPreload('dropdown.js');
         this.view = new BrowserView({webPreferences: {
@@ -77,6 +80,11 @@ export default class TeamDropdownView {
         this.updateDropdown();
     }
 
+    updateWindowBounds = () => {
+        this.windowBounds = this.window.getContentBounds();
+        this.updateDropdown();
+    }
+
     updateDropdown = () => {
         this.view.webContents.send(
             UPDATE_TEAMS_DROPDOWN,
@@ -88,6 +96,7 @@ export default class TeamDropdownView {
             this.expired,
             this.mentions,
             this.unreads,
+            this.windowBounds,
         );
     }
 
