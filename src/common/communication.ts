@@ -3,6 +3,8 @@
 
 export const SWITCH_SERVER = 'switch-server';
 export const SWITCH_TAB = 'switch-tab';
+export const CLOSE_TAB = 'close-tab';
+export const OPEN_TAB = 'open-tab';
 export const SET_ACTIVE_VIEW = 'set-active-view';
 export const MARK_READ = 'mark-read';
 export const FOCUS_BROWSERVIEW = 'focus-browserview';
@@ -92,3 +94,5 @@ export const UPDATE_DROPDOWN_MENTIONS = 'update-dropdown-mentions';
 export const REQUEST_TEAMS_DROPDOWN_INFO = 'request-teams-dropdown-info';
 export const RECEIVE_DROPDOWN_MENU_SIZE = 'receive-dropdown-menu-size';
 export const SEND_DROPDOWN_MENU_SIZE = 'send-dropdown-menu-size';
+
+export const BROWSER_HISTORY_PUSH = 'browser-history-push';

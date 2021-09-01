@@ -4,9 +4,12 @@
 export type Tab = {
     name: string;
     order: number;
+    isClosed?: boolean;
 }
 
-export type Team = Tab & {
+export type Team = {
+    name: string;
+    order: number;
     url: string;
     lastActiveTab?: number;
 }

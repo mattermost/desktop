@@ -4,9 +4,11 @@
 import React from 'react';
 import classNames from 'classnames';
 
-import useTransitionEnd from '../hooks/useTransitionEnd';
+import useTransitionEnd from '../../hooks/useTransitionEnd';
 
-import LoadingAnimation from './LoadingAnimation';
+import LoadingAnimation from '../LoadingAnimation';
+
+import LoadingBackground from './LoadingBackground';
 
 type Props = {
     loading?: boolean;
@@ -63,6 +65,7 @@ function LoadingScreen({loading = false, darkMode = false, onFadeOutComplete = (
                 'LoadingScreen--loaded': loadingIsComplete && loadAnimationIsComplete,
             })}
         >
+            <LoadingBackground/>
             <LoadingAnimation
                 loading={loading}
                 darkMode={darkMode}

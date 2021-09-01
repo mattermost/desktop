@@ -57,7 +57,6 @@ export class MattermostView extends EventEmitter {
     usesAsteriskForUnreads?: boolean;
 
     currentFavicon?: string;
-    isInitialized: boolean;
     hasBeenShown: boolean;
     altLastPressed?: boolean;
     contextMenu: ContextMenu;
@@ -90,13 +89,16 @@ export class MattermostView extends EventEmitter {
 
         log.info(`BrowserView created for server ${this.tab.name}`);
 
-        this.isInitialized = false;
         this.hasBeenShown = false;
 
         if (process.platform !== 'darwin') {
             this.altLastPressed = false;
             this.view.webContents.on('before-input-event', this.handleInputEvents);
         }
+
+        this.view.webContents.on('did-finish-load', () => {
+            this.view.webContents.send(SET_VIEW_NAME, this.tab.name);
+        });
 
         this.contextMenu = new ContextMenu({}, this.view);
         this.maxRetries = MAX_SERVER_RETRIES;
@@ -179,7 +181,6 @@ export class MattermostView extends EventEmitter {
             this.status = Status.WAITING_MM;
             this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
             this.emit(LOAD_SUCCESS, this.tab.name, loadURL);
-            this.view.webContents.send(SET_VIEW_NAME, this.tab.name);
             this.setBounds(getWindowBoundaries(this.window, !(urlUtils.isTeamUrl(this.tab.url || '', this.view.webContents.getURL()) || urlUtils.isAdminUrl(this.tab.url || '', this.view.webContents.getURL()))));
         };
     }
@@ -257,6 +258,10 @@ export class MattermostView extends EventEmitter {
         }
         clearTimeout(this.removeLoading);
         delete this.removeLoading;
+    }
+
+    isInitialized = () => {
+        return this.status === Status.READY;
     }
 
     openDevTools = () => {
