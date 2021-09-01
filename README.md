@@ -17,7 +17,7 @@ Originally created as "electron-mattermost" by Yuya Ochiai. Developed using [Ele
   * Windows 7-8.1: Popup like Toast
   * OS X: Notification Center
   * Linux: [libnotify](http://electron.atom.io/docs/v0.36.0/tutorial/desktop-environment-integration/#linux)
-* Badges for unread channels and mentionscdscdscdsmnmnmnmnmn
+* Badges for unread channels and mentionscdscdscdsmnmnmnmnmncdscdscdscds
 * Installs as a native application
 cdcdcd
 ### Pre-packaged
