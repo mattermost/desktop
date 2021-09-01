@@ -11,7 +11,7 @@ Originally created as "electron-mattermost" by Yuya Ochiai. Developed using [Ele
 ## Features
 
 ### Desktop integrationcdscdscdscds
-* Tabs for multiple teams across multiple servers
+* Tabs for multiple teams across mcdscdscdsultiple servers
 * Desktop Notifications
   * Windows 10: Toast
   * Windows 7-8.1: Popup like Toast
