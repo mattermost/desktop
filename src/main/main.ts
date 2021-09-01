@@ -845,6 +845,7 @@ function handleCloseAppMenu() {
 function handleUpdateMenuEvent(event: IpcMainEvent, menuConfig: Config) {
     const aMenu = appMenu.createMenu(menuConfig);
     Menu.setApplicationMenu(aMenu);
+    WindowManager.removeWindowMenu();
     aMenu.addListener('menu-will-close', handleCloseAppMenu);
 
     // set up context menu for tray icon
