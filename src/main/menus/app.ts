@@ -7,6 +7,7 @@ import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell
 
 import {SHOW_NEW_SERVER_MODAL} from 'common/communication';
 import Config from 'common/config';
+import {TabType, getTabDisplayName} from 'common/tabs/TabView';
 
 import * as WindowManager from '../windows/windowManager';
 
@@ -217,7 +218,7 @@ function createTemplate(config: Config) {
             if (WindowManager.getCurrentTeamName() === team.name) {
                 team.tabs.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).forEach((tab, i) => {
                     items.push({
-                        label: `    ${tab.name}`, // TODO
+                        label: `    ${getTabDisplayName(tab.name as TabType)}`,
                         accelerator: `CmdOrCtrl+${i + 1}`,
                         click() {
                             WindowManager.switchTab(team.name, tab.name);

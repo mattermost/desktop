@@ -13,10 +13,9 @@ import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-install
 import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
 
-import {Team} from 'types/config';
-
+import {Team, TeamWithTabs} from 'types/config';
 import {MentionData} from 'types/notification';
-
+import {RemoteInfo} from 'types/server';
 import {Boundaries} from 'types/utils';
 
 import {
@@ -37,14 +36,17 @@ import {
     USER_ACTIVITY_UPDATE,
     EMIT_CONFIGURATION,
     SWITCH_TAB,
+    CLOSE_TAB,
+    OPEN_TAB,
     SHOW_EDIT_SERVER_MODAL,
     SHOW_REMOVE_SERVER_MODAL,
     UPDATE_SHORTCUT_MENU,
     OPEN_TEAMS_DROPDOWN,
 } from 'common/communication';
 import Config from 'common/config';
-import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
-import Utils from 'common/utils/util';
+import {MattermostServer} from 'common/servers/MattermostServer';
+import {getDefaultTeamWithTabsFromTeam, TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS} from 'common/tabs/TabView';
+import Utils, {isServerVersionGreaterThanOrEqualTo} from 'common/utils/util';
 
 import urlUtils from 'common/utils/url';
 
@@ -71,6 +73,7 @@ import {destroyTray, refreshTrayImages, setTrayMenu, setupTray} from './tray/tra
 import {AuthManager} from './authManager';
 import {CertificateManager} from './certificateManager';
 import {setupBadge, setUnreadBadgeSetting} from './badge';
+import {ServerInfo} from './server/serverInfo';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
     module.hot.accept();
@@ -245,6 +248,8 @@ function initializeInterCommunicationEventListeners() {
 
     ipcMain.on(SWITCH_SERVER, handleSwitchServer);
     ipcMain.on(SWITCH_TAB, handleSwitchTab);
+    ipcMain.on(CLOSE_TAB, handleCloseTab);
+    ipcMain.on(OPEN_TAB, handleOpenTab);
 
     ipcMain.on(QUIT, handleQuit);
 
@@ -493,6 +498,37 @@ function handleSwitchTab(event: IpcMainEvent, serverName: string, tabName: strin
     WindowManager.switchTab(serverName, tabName);
 }
 
+function handleCloseTab(event: IpcMainEvent, serverName: string, tabName: string) {
+    const teams = config.teams;
+    teams.forEach((team) => {
+        if (team.name === serverName) {
+            team.tabs.forEach((tab) => {
+                if (tab.name === tabName) {
+                    tab.isClosed = true;
+                }
+            });
+        }
+    });
+    const nextTab = teams.find((team) => team.name === serverName)!.tabs.filter((tab) => !tab.isClosed)[0].name;
+    WindowManager.switchTab(serverName, nextTab);
+    config.set('teams', teams);
+}
+
+function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: string) {
+    const teams = config.teams;
+    teams.forEach((team) => {
+        if (team.name === serverName) {
+            team.tabs.forEach((tab) => {
+                if (tab.name === tabName) {
+                    tab.isClosed = false;
+                }
+            });
+        }
+    });
+    WindowManager.switchTab(serverName, tabName);
+    config.set('teams', teams);
+}
+
 function handleNewServerModal() {
     const html = getLocalURLString('newServer.html');
 
@@ -507,8 +543,10 @@ function handleNewServerModal() {
         modalPromise.then((data) => {
             const teams = config.teams;
             const order = teams.length;
-            teams.push(getDefaultTeamWithTabsFromTeam({...data, order}));
+            const newTeam = getDefaultTeamWithTabsFromTeam({...data, order});
+            teams.push(newTeam);
             config.set('teams', teams);
+            updateServerInfos([newTeam]);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -590,6 +628,7 @@ function handleRemoveServerModal(e: IpcMainEvent, name: string) {
 }
 
 function initializeAfterAppReady() {
+    updateServerInfos(config.teams);
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
 
@@ -749,6 +788,41 @@ function initializeAfterAppReady() {
 
 function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, data: MentionData) {
     displayMention(title, body, channel, teamId, url, silent, event.sender, data);
+}
+
+function updateServerInfos(teams: TeamWithTabs[]) {
+    const serverInfos: Array<Promise<RemoteInfo | string | undefined>> = [];
+    teams.forEach((team) => {
+        const serverInfo = new ServerInfo(new MattermostServer(team.name, team.url));
+        serverInfos.push(serverInfo.promise);
+    });
+    Promise.all(serverInfos).then((data: Array<RemoteInfo | string | undefined>) => {
+        const teams = config.teams;
+        teams.forEach((team) => closeUnneededTabs(data, team));
+        config.set('teams', teams);
+    }).catch((reason: any) => {
+        log.error('Error getting server infos', reason);
+    });
+}
+
+function closeUnneededTabs(data: Array<RemoteInfo | string | undefined>, team: TeamWithTabs) {
+    const remoteInfo = data.find((info) => info && typeof info !== 'string' && info.name === team.name) as RemoteInfo;
+    if (remoteInfo) {
+        team.tabs.forEach((tab) => {
+            if (tab.name === TAB_PLAYBOOKS && !remoteInfo.hasPlaybooks) {
+                log.info(`closing ${team.name}___${tab.name} on !hasPlaybooks`);
+                tab.isClosed = true;
+            }
+            if (tab.name === TAB_FOCALBOARD && !remoteInfo.hasFocalboard) {
+                log.info(`closing ${team.name}___${tab.name} on !hasFocalboard`);
+                tab.isClosed = true;
+            }
+            if (tab.name !== TAB_MESSAGING && remoteInfo.serverVersion && !isServerVersionGreaterThanOrEqualTo(remoteInfo.serverVersion, '6.0.0')) {
+                log.info(`closing ${team.name}___${tab.name} on !serverVersion`);
+                tab.isClosed = true;
+            }
+        });
+    }
 }
 
 function handleOpenAppMenu() {

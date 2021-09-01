@@ -3,7 +3,7 @@
 
 export type ServerFromURL = {
     name: string;
-    url: URL;
+    url: string;
 }
 
 export type Boundaries = {
