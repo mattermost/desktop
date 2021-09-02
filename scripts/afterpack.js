@@ -36,7 +36,6 @@ function getAppFileName(context) {
 }
 
 exports.default = async function afterPack(context) {
-    console.log('afterPack', context);
     await flipFuses(
         `${context.appOutDir}/${getAppFileName(context)}`, // Returns the path to the electron binary
         {
