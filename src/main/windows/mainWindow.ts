@@ -13,6 +13,7 @@ import {CombinedConfig} from 'types/config';
 import {SavedWindowState} from 'types/mainWindow';
 
 import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS} from 'common/communication';
+import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH} from 'common/utils/constants';
 
 import * as Validator from '../Validator';
 import ContextMenu from '../contextMenu';
@@ -37,11 +38,6 @@ function isFramelessWindow() {
 }
 
 function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string}) {
-    const defaultWindowWidth = 1000;
-    const defaultWindowHeight = 700;
-    const minimumWindowWidth = 400;
-    const minimumWindowHeight = 240;
-
     // Create the browser window.
     const preload = getLocalPreload('mainWindow.js');
     const boundsInfoPath = path.join(app.getPath('userData'), 'bounds-info.json');
@@ -54,7 +50,7 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
         }
     } catch (e) {
     // Follow Electron's defaults, except for window dimensions which targets 1024x768 screen resolution.
-        savedWindowState = {width: defaultWindowWidth, height: defaultWindowHeight};
+        savedWindowState = {width: DEFAULT_WINDOW_WIDTH, height: DEFAULT_WINDOW_HEIGHT};
     }
 
     const {maximized: windowIsMaximized} = savedWindowState;
@@ -66,8 +62,8 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
         fullscreenable: true,
         show: false, // don't start the window until it is ready and only if it isn't hidden
         paintWhenInitiallyHidden: true, // we want it to start painting to get info from the webapp
-        minWidth: minimumWindowWidth,
-        minHeight: minimumWindowHeight,
+        minWidth: MINIMUM_WINDOW_WIDTH,
+        minHeight: MINIMUM_WINDOW_HEIGHT,
         frame: !isFramelessWindow(),
         fullscreen: savedWindowState.fullscreen,
         titleBarStyle: 'hidden' as const,

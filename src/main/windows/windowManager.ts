@@ -184,6 +184,7 @@ function handleResizeMainWindow() {
         setBoundsFunction();
     }
     status.viewManager.setLoadingScreenBounds();
+    status.teamDropdown?.updateWindowBounds();
 }
 
 export function sendToRenderer(channel: string, ...args: any[]) {
