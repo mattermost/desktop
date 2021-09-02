@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 const path = require('path');
-const electron = require('electron');
 
 const {spawn} = require('electron-notarize/lib/spawn.js');
 
@@ -23,9 +22,23 @@ function fixSetuid(context) {
     };
 }
 
+function getAppFileName(context) {
+    switch (context.electronPlatformName) {
+    case 'win32':
+        return 'Mattermost.exe';
+    case 'darwin':
+        return 'Mattermost.app';
+    case 'linux':
+        return context.packager.executableName;
+    default:
+        return '';
+    }
+}
+
 exports.default = async function afterPack(context) {
+    console.log('afterPack', context);
     await flipFuses(
-        electron, // Returns the path to the electron binary
+        `${context.appOutDir}/${getAppFileName(context)}`, // Returns the path to the electron binary
         {
             version: FuseVersion.V1,
             [FuseV1Options.RunAsNode]: false, // Disables ELECTRON_RUN_AS_NODE
