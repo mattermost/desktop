@@ -548,3 +548,7 @@ function handleBrowserHistoryPush(e: IpcMainEvent, viewName: string, pathName: s
 export function getCurrentTeamName() {
     return status.currentServerName;
 }
+
+export function removeWindowMenu() {
+    status.mainWindow?.removeMenu();
+}
