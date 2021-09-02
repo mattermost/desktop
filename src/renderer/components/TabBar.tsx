@@ -12,8 +12,8 @@ import {Tab} from 'types/config';
 import {getTabDisplayName, getTabViewName, TabType, canCloseTab} from 'common/tabs/TabView';
 
 type Props = {
-    activeTabName: string;
-    activeServerName: string;
+    activeTabName?: string;
+    activeServerName?: string;
     id: string;
     isDarkMode: boolean;
     onSelect: (name: string, index: number) => void;
@@ -49,7 +49,7 @@ export default class TabBar extends React.PureComponent<Props> {
         const orderedTabs = this.props.tabs.concat().sort((a, b) => a.order - b.order);
         const tabs = orderedTabs.map((tab, orderedIndex) => {
             const index = this.props.tabs.indexOf(tab);
-            const tabName = getTabViewName(this.props.activeServerName, tab.name);
+            const tabName = getTabViewName(this.props.activeServerName!, tab.name);
 
             const sessionExpired = this.props.sessionsExpired[tabName];
             const hasUnreads = this.props.unreadCounts[tabName];
