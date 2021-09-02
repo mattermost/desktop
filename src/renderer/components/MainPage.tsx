@@ -102,7 +102,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
         this.threeDotMenu = React.createRef();
 
         const firstServer = this.props.teams.find((team) => team.order === 0);
-        const firstTab = firstServer?.tabs.find((tab) => tab.order === (firstServer.lastActiveTab || 0)) || firstServer?.tabs[0];
+        const firstTab = firstServer?.tabs.find((tab, index) => index === (firstServer.lastActiveTab || 0)) || firstServer?.tabs[0];
 
         this.state = {
             activeServerName: firstServer?.name,
