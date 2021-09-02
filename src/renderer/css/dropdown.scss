@@ -26,6 +26,11 @@ body {
 
 .TeamDropdown__droppable {
     width: 100%;
+    overflow-y: scroll;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
 
     > button {
         border: none;
@@ -122,6 +127,7 @@ body {
 .TeamDropdown__draggable-handle {
     cursor: pointer !important;
     display: flex;
+    overflow: hidden;
     
     &.dragging {
         cursor: grabbing !important;
@@ -135,6 +141,11 @@ body {
             color: rgba(61, 60, 64, 0.32);
             font-size: 14px;
         }
+    }
+
+    > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
 

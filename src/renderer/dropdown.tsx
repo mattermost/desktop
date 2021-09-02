@@ -18,8 +18,8 @@ import {
     SWITCH_SERVER, UPDATE_TEAMS,
     UPDATE_TEAMS_DROPDOWN,
 } from 'common/communication';
-
 import {getTabViewName} from 'common/tabs/TabView';
+import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH_MAC} from 'common/utils/constants';
 
 import './css/dropdown.scss';
 import './css/compass-icons.css';
@@ -35,6 +35,7 @@ type State = {
     expired?: Map<string, boolean>;
     hasGPOTeams?: boolean;
     isAnyDragging: boolean;
+    windowBounds?: Electron.Rectangle;
 }
 
 function getStyle(style?: DraggingStyle | NotDraggingStyle) {
@@ -66,7 +67,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
 
     handleMessageEvent = (event: MessageEvent) => {
         if (event.data.type === UPDATE_TEAMS_DROPDOWN) {
-            const {teams, activeTeam, darkMode, enableServerManagement, hasGPOTeams, unreads, mentions, expired} = event.data.data;
+            const {teams, activeTeam, darkMode, enableServerManagement, hasGPOTeams, unreads, mentions, expired, windowBounds} = event.data.data;
             this.setState({
                 teams,
                 orderedTeams: teams.concat().sort((a: TeamWithTabs, b: TeamWithTabs) => a.order - b.order),
@@ -77,6 +78,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                 unreads,
                 mentions,
                 expired,
+                windowBounds,
             });
         }
     }
@@ -231,6 +233,10 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                 className={classNames('TeamDropdown', {
                     darkMode: this.state.darkMode,
                 })}
+                style={{
+                    maxHeight: this.state.windowBounds ? (this.state.windowBounds.height - TAB_BAR_HEIGHT - 16) : undefined,
+                    maxWidth: this.state.windowBounds ? (this.state.windowBounds.width - THREE_DOT_MENU_WIDTH_MAC) : undefined,
+                }}
             >
                 <div className='TeamDropdown__header'>
                     <span>{'Servers'}</span>

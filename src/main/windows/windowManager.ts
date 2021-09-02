@@ -172,7 +172,7 @@ function handleResizeMainWindow() {
 
     const setBoundsFunction = () => {
         if (currentView) {
-            currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, !urlUtils.isTeamUrl(currentView.tab.url, currentView.view.webContents.getURL())));
+            currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, !(urlUtils.isTeamUrl(currentView.tab.url, currentView.view.webContents.getURL()) || urlUtils.isAdminUrl(currentView.tab.url, currentView.view.webContents.getURL()))));
         }
     };
 
@@ -184,6 +184,7 @@ function handleResizeMainWindow() {
         setBoundsFunction();
     }
     status.viewManager.setLoadingScreenBounds();
+    status.teamDropdown?.updateWindowBounds();
 }
 
 export function sendToRenderer(channel: string, ...args: any[]) {
@@ -546,4 +547,8 @@ function handleBrowserHistoryPush(e: IpcMainEvent, viewName: string, pathName: s
 
 export function getCurrentTeamName() {
     return status.currentServerName;
+}
+
+export function removeWindowMenu() {
+    status.mainWindow?.removeMenu();
 }
