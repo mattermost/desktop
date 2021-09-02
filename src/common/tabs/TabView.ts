@@ -20,6 +20,7 @@ export interface TabView {
     get name(): string;
     get type(): TabType;
     get url(): URL;
+    get shouldNotify(): boolean;
 }
 
 export function getDefaultTeamWithTabsFromTeam(team: Team) {

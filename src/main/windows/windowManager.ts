@@ -419,8 +419,14 @@ export function updateLoadingScreenDarkMode(darkMode: boolean) {
     }
 }
 
+export function getViewNameByWebContentsId(webContentsId: number) {
+    const view = status.viewManager?.findViewByWebContent(webContentsId);
+    return view?.name;
+}
+
 export function getServerNameByWebContentsId(webContentsId: number) {
-    return status.viewManager?.findByWebContent(webContentsId);
+    const view = status.viewManager?.findViewByWebContent(webContentsId);
+    return view?.tab.server.name;
 }
 
 export function close() {

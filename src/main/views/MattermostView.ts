@@ -18,7 +18,7 @@ import {
     IS_UNREAD,
     UNREAD_RESULT,
     TOGGLE_BACK_BUTTON,
-    SET_VIEW_NAME,
+    SET_VIEW_OPTIONS,
     LOADSCREEN_END,
 } from 'common/communication';
 
@@ -97,7 +97,7 @@ export class MattermostView extends EventEmitter {
         }
 
         this.view.webContents.on('did-finish-load', () => {
-            this.view.webContents.send(SET_VIEW_NAME, this.tab.name);
+            this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.name, this.tab.shouldNotify);
         });
 
         this.contextMenu = new ContextMenu({}, this.view);

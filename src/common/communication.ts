@@ -68,7 +68,7 @@ export const SESSION_EXPIRED = 'session_expired';
 export const UPDATE_TRAY = 'update_tray';
 export const UPDATE_BADGE = 'update_badge';
 
-export const SET_VIEW_NAME = 'set-view-name';
+export const SET_VIEW_OPTIONS = 'set-view-name';
 export const REACT_APP_INITIALIZED = 'react-app-initialized';
 
 export const TOGGLE_BACK_BUTTON = 'toggle-back-button';
