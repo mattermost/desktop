@@ -101,7 +101,7 @@ export default class TabBar extends React.PureComponent<Props> {
                                 as='li'
                                 id={`teamTabItem${index}`}
                                 draggable={false}
-                                title={tab.name}
+                                title={getTabDisplayName(tab.name as TabType)}
                                 className={classNames('teamTabItem', {
                                     active: this.props.activeTabName === tab.name,
                                     dragging: snapshot.isDragging,

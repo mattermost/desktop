@@ -242,18 +242,15 @@ export class ViewManager {
         }
     }
 
-    findByWebContent(webContentId: number) {
+    findViewByWebContent(webContentId: number) {
         let found = null;
-        let serverName;
         let view;
-        const entries = this.views.entries();
+        const entries = this.views.values();
 
-        for ([serverName, view] of entries) {
-            if (typeof serverName !== 'undefined') {
-                const wc = view.getWebContents();
-                if (wc && wc.id === webContentId) {
-                    found = serverName;
-                }
+        for (view of entries) {
+            const wc = view.getWebContents();
+            if (wc && wc.id === webContentId) {
+                found = view;
             }
         }
         return found;
