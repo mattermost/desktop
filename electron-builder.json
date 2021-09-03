@@ -132,7 +132,8 @@
           "NOTICE.txt"
         ]
       }
-    ]
+    ],
+    "publisherName": "Mattermost, Inc."
   },
   "nsis": {
     "artifactName": "${name}-setup-${version}-win.${ext}"
