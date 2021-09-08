@@ -13,7 +13,7 @@ import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-install
 import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
 
-import {Team, TeamWithTabs} from 'types/config';
+import {CombinedConfig, Team, TeamWithTabs} from 'types/config';
 import {MentionData} from 'types/notification';
 import {RemoteInfo} from 'types/server';
 import {Boundaries} from 'types/utils';
@@ -272,8 +272,8 @@ function initializeInterCommunicationEventListeners() {
 // config event handlers
 //
 
-function handleConfigUpdate(newConfig: Config) {
-    if (!newConfig.data) {
+function handleConfigUpdate(newConfig: CombinedConfig) {
+    if (!newConfig) {
         return;
     }
     if (process.platform === 'win32' || process.platform === 'linux') {
@@ -284,13 +284,15 @@ function handleConfigUpdate(newConfig: Config) {
         }).catch((err) => {
             log.error('error:', err);
         });
-        WindowManager.setConfig(newConfig.data);
-        authManager.handleConfigUpdate(newConfig.data);
-        setUnreadBadgeSetting(newConfig.data && newConfig.data.showUnreadBadge);
+        WindowManager.setConfig(newConfig);
+        if (authManager) {
+            authManager.handleConfigUpdate(newConfig);
+        }
+        setUnreadBadgeSetting(newConfig && newConfig.showUnreadBadge);
     }
 
     ipcMain.emit('update-menu', true, config);
-    ipcMain.emit(EMIT_CONFIGURATION, true, newConfig.data);
+    ipcMain.emit(EMIT_CONFIGURATION, true, newConfig);
 }
 
 function handleConfigSynchronize() {
@@ -318,9 +320,6 @@ function handleConfigSynchronize() {
             handleNewServerModal();
         }
     }
-
-    ipcMain.emit('update-menu', true, config);
-    ipcMain.emit(EMIT_CONFIGURATION, true, config.data);
 }
 
 function handleReloadConfig() {
