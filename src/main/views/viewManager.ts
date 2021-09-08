@@ -16,15 +16,18 @@ import {
     LOADSCREEN_END,
     SET_ACTIVE_VIEW,
     OPEN_TAB,
+    BROWSER_HISTORY_PUSH,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
+import {isServerVersionGreaterThanOrEqualTo} from 'common/utils/util';
 
 import {getServerView, getTabViewName} from 'common/tabs/TabView';
 
+import {ServerInfo} from 'main/server/serverInfo';
 import {MattermostServer} from '../../common/servers/MattermostServer';
 import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
 
-import {MattermostView} from './MattermostView';
+import {MattermostView, Status} from './MattermostView';
 import {showModal, isModalDisplayed, focusCurrentModal} from './modalManager';
 import {addWebContentsEventListeners} from './webContentEvents';
 
@@ -60,16 +63,17 @@ export class ViewManager {
 
     loadServer = (server: TeamWithTabs) => {
         const srv = new MattermostServer(server.name, server.url);
-        server.tabs.forEach((tab) => this.loadView(srv, tab));
+        const serverInfo = new ServerInfo(srv);
+        server.tabs.forEach((tab) => this.loadView(srv, serverInfo, tab));
     }
 
-    loadView = (srv: MattermostServer, tab: Tab, url?: string) => {
+    loadView = (srv: MattermostServer, serverInfo: ServerInfo, tab: Tab, url?: string) => {
         const tabView = getServerView(srv, tab);
         if (tab.isClosed) {
             this.closedViews.set(tabView.name, {srv, tab});
             return;
         }
-        const view = new MattermostView(tabView, this.mainWindow, this.viewOptions);
+        const view = new MattermostView(tabView, serverInfo, this.mainWindow, this.viewOptions);
         this.views.set(tabView.name, view);
         if (!this.loadingScreen) {
             this.createLoadingScreen();
@@ -93,6 +97,7 @@ export class ViewManager {
         let setFocus;
         sorted.forEach((server) => {
             const srv = new MattermostServer(server.name, server.url);
+            const serverInfo = new ServerInfo(srv);
             server.tabs.forEach((tab) => {
                 const tabView = getServerView(srv, tab);
                 const recycle = oldviews.get(tabView.name);
@@ -105,7 +110,7 @@ export class ViewManager {
                     oldviews.delete(recycle.name);
                     this.views.set(recycle.name, recycle);
                 } else {
-                    this.loadView(srv, tab);
+                    this.loadView(srv, serverInfo, tab);
                 }
             });
         });
@@ -210,7 +215,7 @@ export class ViewManager {
         const {srv, tab} = this.closedViews.get(name)!;
         tab.isClosed = false;
         this.closedViews.delete(name);
-        this.loadView(srv, tab, url);
+        this.loadView(srv, new ServerInfo(srv), tab, url);
         this.showByName(name);
         const view = this.views.get(name)!;
         view.isVisible = true;
@@ -395,11 +400,17 @@ export class ViewManager {
                         return;
                     }
 
-                    // attempting to change parsedURL protocol results in it not being modified.
-                    view.resetLoadingStatus();
-                    view.load(urlWithSchema);
-                    view.once(LOAD_SUCCESS, this.deeplinkSuccess);
-                    view.once(LOAD_FAILED, this.deeplinkFailed);
+                    if (view.status === Status.READY && view.serverInfo.remoteInfo.serverVersion && isServerVersionGreaterThanOrEqualTo(view.serverInfo.remoteInfo.serverVersion, '6.0.0')) {
+                        const pathName = `/${urlWithSchema.replace(view.tab.server.url.toString(), '')}`;
+                        view.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
+                        this.deeplinkSuccess(view.name);
+                    } else {
+                        // attempting to change parsedURL protocol results in it not being modified.
+                        view.resetLoadingStatus();
+                        view.load(urlWithSchema);
+                        view.once(LOAD_SUCCESS, this.deeplinkSuccess);
+                        view.once(LOAD_FAILED, this.deeplinkFailed);
+                    }
                 }
             } else {
                 dialog.showErrorBox('No matching server', `there is no configured server in the app that matches the requested url: ${parsedURL.toString()}`);
