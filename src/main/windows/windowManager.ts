@@ -363,7 +363,7 @@ export function switchServer(serverName: string) {
         return;
     }
     status.currentServerName = serverName;
-    const lastActiveTab = server.tabs[server.lastActiveTab || 0];
+    const lastActiveTab = server.tabs.find((tab) => !tab.isClosed && tab.order === (server.lastActiveTab || 0)) || server.tabs[0];
     const tabViewName = getTabViewName(serverName, lastActiveTab.name);
     status.viewManager?.showByName(tabViewName);
     ipcMain.emit(UPDATE_SHORTCUT_MENU);
@@ -544,7 +544,7 @@ function handleBrowserHistoryPush(e: IpcMainEvent, viewName: string, pathName: s
         status.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${pathName}`);
     }
     const redirectedView = status.viewManager?.views.get(redirectedViewName) || currentView;
-    if (redirectedView !== currentView) {
+    if (redirectedView !== currentView && redirectedView?.tab.server.name === status.currentServerName) {
         log.info('redirecting to a new view', redirectedView?.name || viewName);
         status.viewManager?.showByName(redirectedView?.name || viewName);
     }

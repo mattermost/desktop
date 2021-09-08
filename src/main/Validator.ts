@@ -122,6 +122,7 @@ const configDataSchemaV3 = Joi.object<ConfigV3>({
     spellCheckerURL: Joi.string().allow(null),
     darkMode: Joi.boolean().default(false),
     downloadLocation: Joi.string(),
+    lastActiveTeam: Joi.number().integer().min(0).default(0),
 });
 
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};

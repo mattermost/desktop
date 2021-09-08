@@ -42,7 +42,7 @@ import {
     SHOW_REMOVE_SERVER_MODAL,
     UPDATE_SHORTCUT_MENU,
     OPEN_TEAMS_DROPDOWN,
-    SET_ACTIVE_VIEW,
+    UPDATE_LAST_ACTIVE,
 } from 'common/communication';
 import Config from 'common/config';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -242,7 +242,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on('update-menu', handleUpdateMenuEvent);
     ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateShortcutMenuEvent);
     ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
-    ipcMain.on(SET_ACTIVE_VIEW, handleUpdateLastActiveTab);
+    ipcMain.on(UPDATE_LAST_ACTIVE, handleUpdateLastActive);
 
     if (process.platform !== 'darwin') {
         ipcMain.on('open-app-menu', handleOpenAppMenu);
@@ -950,14 +950,15 @@ function resizeScreen(browserWindow: BrowserWindow) {
     browserWindow.on('restore', handle);
     handle();
 }
-function handleUpdateLastActiveTab(event: IpcMainEvent, serverName: string, viewName: string) {
+function handleUpdateLastActive(event: IpcMainEvent, serverName: string, viewName: string) {
     const teams = config.teams;
     teams.forEach((team) => {
         if (team.name === serverName) {
-            const viewIndex = team?.tabs.findIndex((tab) => tab.name === viewName);
-            team.lastActiveTab = viewIndex;
+            const viewOrder = team?.tabs.find((tab) => tab.name === viewName)?.order || 0;
+            team.lastActiveTab = viewOrder;
         }
     });
     config.set('teams', teams);
+    config.set('lastActiveTeam', teams.find((team) => team.name === serverName)?.order || 0);
 }
 
