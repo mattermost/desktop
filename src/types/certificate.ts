@@ -6,6 +6,7 @@ import {Certificate} from 'electron/common';
 export type ComparableCertificate = {
     data: string;
     issuerName: string;
+    dontTrust: boolean;
 }
 
 export type CertificateModalData = {
