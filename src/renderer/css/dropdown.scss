@@ -21,7 +21,6 @@ body {
     border: 1px solid rgba(61, 60, 64, 0.16);
     box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
     border-radius: 4px;
-    min-width: 354px;
 }
 
 .TeamDropdown__droppable {
@@ -104,6 +103,10 @@ body {
         color: rgba(61, 60, 64, 0.56);
     }
 
+    i.icon-server-variant {
+        margin-top: -1px;
+    }
+
     &.active i.icon-check {
         color: #166de0;
     }
@@ -120,7 +123,7 @@ body {
         padding-left: 24px;
 
         > i.icon-plus {
-            margin-top: -1px;
+            margin-top: -2px;
     
             &::before {
                 margin: 0;
@@ -133,6 +136,7 @@ body {
     cursor: pointer !important;
     display: flex;
     overflow: hidden;
+    margin-right: 36px;
     
     &.dragging {
         cursor: grabbing !important;
@@ -140,7 +144,7 @@ body {
 
     > i.icon-drag-vertical {
         opacity: 0;
-        margin-top: -1px;
+        margin-top: -2px;
 
         &::before {
             margin: 0;
