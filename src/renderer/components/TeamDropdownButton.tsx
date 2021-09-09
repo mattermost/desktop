@@ -65,7 +65,7 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
                 <i className='icon-server-variant'/>
                 {badgeDiv}
             </div>
-            <span>{activeServerName || 'No servers found'}</span>
+            <span>{activeServerName || 'No servers configured'}</span>
             <i className='icon-chevron-down'/>
         </button>
     );
