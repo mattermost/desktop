@@ -388,8 +388,20 @@ export default class MainPage extends React.PureComponent<Props, State> {
             );
         }
 
-        const totalMentionCount = Object.values(this.state.mentionCounts).reduce((sum, value) => sum + value, 0);
-        const totalUnreadCount = Object.values(this.state.unreadCounts).reduce((sum, value) => sum + value, 0);
+        const serverMatch = `${this.state.activeServerName}___TAB_[A-Z]+`;
+        const totalMentionCount = Object.keys(this.state.mentionCounts).reduce((sum, key) => {
+            // Strip out current server from unread and mention counts
+            if (this.state.activeServerName && key.match(serverMatch)) {
+                return sum;
+            }
+            return sum + this.state.mentionCounts[key];
+        }, 0);
+        const totalUnreadCount = Object.keys(this.state.unreadCounts).reduce((sum, key) => {
+            if (this.state.activeServerName && key.match(serverMatch)) {
+                return sum;
+            }
+            return sum + this.state.unreadCounts[key];
+        }, 0);
         const topRow = (
             <Row
                 className={topBarClassName}
