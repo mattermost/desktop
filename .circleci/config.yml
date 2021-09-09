@@ -92,13 +92,29 @@ commands:
         type: string
         default: "./linux/"
     steps:
-      - run: npm run package:<< parameters.os >>
+      - run: 
+          name: npn run
+          command: npm run package:<< parameters.os >>
+          no_output_timeout: 30m
       - run: mkdir -p << parameters.path >>
       - run: bash -x ./scripts/cp_artifacts.sh release << parameters.path >>
       - persist_to_workspace:
           root: ./dist
           paths:
             - "./<< parameters.subpath >>/"
+  save:
+    description: "Save binaries artifacts"
+    parameters:
+      filename:
+        type: string
+    steps:
+      - run:
+          name: Copying artifacts
+          command: |
+            mkdir /tmp/artifacts;
+            cp release/<<parameters.filename>> /tmp/artifacts;
+      - store_artifacts:
+          path: /tmp/artifacts
 jobs:
   check:
     executor: wine-chrome
@@ -108,6 +124,7 @@ jobs:
           apt_opts: "--no-install-recommends"
       - restore_cache:
           key: lint-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+      - run: npm run check-types
       - run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run npm run test
       - run: mkdir -p /tmp/test-results
       - run: cp test-results.xml /tmp/test-results/
@@ -207,6 +224,85 @@ jobs:
           paths:
             - "./win-release/"
 
+  build-windows-pr:
+    executor: wine-mono
+    steps:
+      - checkout
+      - run: mkdir -p ./dist
+      - attach_workspace:
+          at: ./dist
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+      - update_image:
+          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - build:
+          os: windows
+          path: ./dist/win
+          subpath: ./win/
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          paths:
+            - "node_modules"
+            - "~/.cache/electron"
+            - "~/.cache/electron-builder"
+      - save:
+          filename: "*.exe"
+
+  build-mac-pr:
+    executor: mac
+
+    steps:
+      - checkout
+      - run: mkdir -p ./dist
+      - attach_workspace:
+          at: ./dist
+      - run:
+          name: Update node to v16
+          command: brew upgrade node || true
+      - run:
+          name: Installing npm dependencies
+          command: npm ci
+      - build:
+          os: mac
+          path: ./dist/macos-release
+          subpath: ./macos-release/
+      - run:
+          name: Get rename without brew as it might fail
+          command: curl -L https://github.com/ap/rename/archive/v1.601.tar.gz --output rename.tgz
+      - run:
+          name: extract rename
+          command: tar -xzf rename.tgz
+      - run:
+          name: rename arm64 to m1
+          command: ./rename-1.601/rename 's/arm64/m1/' ./dist/macos-release/*
+      - persist_to_workspace:
+          root: ./dist
+          paths:
+            - "./macos-release/"
+      - save:
+          filename: "*.dmg"
+
+  build-linux-pr:
+    executor: wine-mono
+    steps:
+      - checkout
+      - run: mkdir -p ./dist
+      - attach_workspace:
+          at: ./dist
+      - restore_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+      - update_image:
+          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - build
+      - save_cache:
+          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          paths:
+            - "node_modules"
+            - "~/.cache/electron"
+            - "~/.cache/electron-builder"
+      - save:
+          filename: "*.tar.gz"
+
   mac_installer:
     executor: mac
 
@@ -216,12 +312,28 @@ jobs:
       - attach_workspace:
           at: ./dist
       - run:
+          name: Update node to v16
+          command: brew upgrade node || true
+      - run:
           name: Installing npm dependencies
           command: npm ci
       - build:
           os: mac
           path: ./dist/macos-release
           subpath: ./macos-release/
+      - run:
+          name: Get rename without brew as it might fail
+          command: curl -L https://github.com/ap/rename/archive/v1.601.tar.gz --output rename.tgz
+      - run:
+          name: extract rename
+          command: tar -xzf rename.tgz
+      - run:
+          name: rename arm64 to m1
+          command: ./rename-1.601/rename 's/arm64/m1/' ./dist/macos-release/*
+      - persist_to_workspace:
+          root: ./dist
+          paths:
+            - "./macos-release/"
 
   store_artifacts:
     executor: wine-chrome
@@ -382,7 +494,11 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - check
+      - check:
+         filters:
+            branches:
+              ignore:
+                - /^build-pr-.*/
       - begin-notification:
           context: desktop-notify
           filters:
@@ -395,6 +511,10 @@ workflows:
       - build-linux:
           requires:
             - check
+          filters:
+            branches:
+              ignore:
+                - /^build-pr-.*/
 
       - build-win-no-installer:
           requires:
@@ -403,6 +523,7 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - /^build-pr-.*/
 
       - build-mac-no-dmg:
           requires:
@@ -411,6 +532,7 @@ workflows:
             branches:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - /^build-pr-.*/
 
       - msi_installer:
           requires:
@@ -432,6 +554,7 @@ workflows:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - pull/1680
 
       - store_artifacts:
           # for master/PR builds
@@ -439,10 +562,12 @@ workflows:
             - build-linux
             - build-win-no-installer
             - build-mac-no-dmg
+            - mac_installer
           filters:
             branches:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - /^build-pr-.*/
 
       - upload_to_s3:
           # for release builds
@@ -475,6 +600,22 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+  build-for-pr:
+    jobs:
+      - build-windows-pr:
+          context: electron-installer
+          filters:
+            branches:
+              only: /^build-pr-.*/
+      - build-mac-pr:
+          context: codesign-certificates
+          filters:
+            branches:
+              only: /^build-pr-.*/
+      - build-linux-pr:
+          filters:
+            branches:
+              only: /^build-pr-.*/
   nightly_browser_view:
     when: << pipeline.parameters.run_nightly >>
     jobs:

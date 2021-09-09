@@ -1,0 +1,296 @@
+@import url("fonts.css");
+  
+body {
+    margin: 0;
+    background-color: transparent;
+    font-family: Open Sans;
+    overflow: hidden;
+}
+
+#app {
+    padding: 24px;
+    display: inline-block;
+}
+
+.TeamDropdown {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 8px 0px;
+    background: #FFFFFF;
+    border: 1px solid rgba(61, 60, 64, 0.16);
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+    min-width: 354px;
+}
+
+.TeamDropdown__droppable {
+    width: 100%;
+    overflow-y: scroll;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    > button {
+        border: none;
+        background: transparent;
+    }
+}
+
+.TeamDropdown__header {
+    padding: 6px 20px;
+
+    > span {
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 20px;
+        color: #3D3C40;
+    }
+}
+
+.TeamDropdown__divider {
+    border-top: 1px solid rgba(61, 60, 64, 0.08);
+    border-bottom: 0;
+    width: 100%;
+    margin: 8px 0;
+}
+
+.TeamDropdown__button {
+    background-color: transparent;
+    border: none;
+    padding: 8px 18px 8px 7px;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    font-family: Open Sans;
+
+    &:not(.anyDragging):hover {
+        background-color: rgba(61, 60, 64, 0.08);
+
+        .TeamDropdown__button-edit, .TeamDropdown__button-remove {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .TeamDropdown__draggable-handle > i.icon-drag-vertical {
+            opacity: 1;
+        }
+    }
+
+    &:focus, &:focus-within {
+        background-color: rgba(22, 109, 224, 0.08);
+        outline: none;
+
+        .TeamDropdown__button-edit, .TeamDropdown__button-remove {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .TeamDropdown__draggable-handle > i.icon-drag-vertical {
+            opacity: 1;
+        }
+    }
+
+    &.dragging .TeamDropdown__draggable-handle {
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    i {
+        font-size: 18px;
+        line-height: 20px;
+        color: rgba(61, 60, 64, 0.56);
+    }
+
+    &.active i.icon-check {
+        color: #166de0;
+    }
+
+    > .TeamDropdown__draggable-handle > span, &.addServer > span {
+        font-size: 14px;
+        line-height: 20px;
+        color: #3D3C40;
+        margin-left: 12px;
+        white-space: nowrap;
+    }
+
+    &.addServer {
+        padding-left: 24px;
+
+        > i.icon-plus::before {
+            margin: 0;
+        }
+    }
+}
+
+.TeamDropdown__draggable-handle {
+    cursor: pointer !important;
+    display: flex;
+    overflow: hidden;
+    
+    &.dragging {
+        cursor: grabbing !important;
+    }
+
+    > i.icon-drag-vertical {
+        opacity: 0;
+
+        &::before {
+            margin: 0;
+            color: rgba(61, 60, 64, 0.32);
+            font-size: 14px;
+        }
+    }
+
+    > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+.TeamDropdown__badge {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-left: 18px;
+    min-width: 32px;
+}
+
+.TeamDropdown__badge-dot {
+    background: #579EFF;
+    height: 8px;
+    width: 8px;
+    border-radius: 8px;
+    flex: 0 0 8px;
+}
+  
+.TeamDropdown__badge-count {
+    background: #F74343;
+    text-align: center;
+    border-radius: 8px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    > span {
+        letter-spacing: 0.02em;
+        -webkit-font-smoothing: antialiased;
+        font-family: "Open Sans", sans-serif;
+        line-height: 16px;
+        padding: 0 2.5px;
+        color: white;
+        font-size: 11px;
+        font-weight: bold;
+    }
+}
+
+.TeamDropdown__indicators {
+    margin-left: auto;
+    display: flex;
+
+    > button {
+        margin-left: 18px;
+        background-color: transparent;
+        border: none;
+        border-radius: 2px;
+        padding: 0;
+
+        &:hover, &:focus {
+            background: rgba(61, 60, 64, 0.08);
+            box-shadow: 0px 0px 0px 4px rgba(61, 60, 64, 0.08);
+            outline: none;
+        }
+
+        &.TeamDropdown__button-remove:hover, &.TeamDropdown__button-remove:focus {
+            background: rgba(247, 67, 67, 0.16);
+            box-shadow: 0px 0px 0px 4px rgba(247, 67, 67, 0.16);
+        }
+
+        > i::before {
+            margin: 0;
+        }
+    }
+}
+
+.TeamDropdown__button-edit, .TeamDropdown__button-remove {
+    opacity: 0;
+    pointer-events: none;
+
+    &:focus {
+        opacity: 1;
+        pointer-events: all;
+    }
+}
+
+.TeamDropdown__button-remove {
+    margin-right: 7px;
+
+    + .TeamDropdown__badge {
+        margin-left: 7px;
+    }
+
+    i {
+        color: #F74343;
+    }
+}
+
+.TeamDropdown.darkMode {
+    background: #1f1f1f;
+
+    .TeamDropdown__header > span {
+        color: #DDD;
+    }
+
+    .TeamDropdown__divider {
+        border-color: rgba(221, 221, 221, 0.08);
+    }
+
+    .TeamDropdown__button {   
+        &:not(.anyDragging):hover {
+            background-color: rgba(221, 221, 221, 0.08);
+        }
+    
+        &:focus {
+            background-color: rgba(1, 119, 231, 0.08);
+        }
+
+        &:not(.active) i, i.icon-drag-vertical {
+            color: rgba(221, 221, 221, 0.56);
+        }
+    
+        > .TeamDropdown__draggable-handle > span, &.addServer > span {
+            color: #DDD;
+        }
+
+        .TeamDropdown__button-remove i {
+            color: #F74343;
+        }
+
+        .TeamDropdown__button-edit:hover, .TeamDropdown__button-edit:focus {
+            background: rgba(221, 223, 228, 0.08);
+            box-shadow: 0px 0px 0px 4px rgba(221, 223, 228, 0.08);
+        }
+    }
+
+    .TeamDropdown__badge-expired i {
+        color: rgba(221, 221, 221, 0.56);
+    }
+
+    .TeamDropdown__button-edit > i {
+        color: rgba(221, 221, 221, 0.56);
+    }
+
+    .TeamDropdown__draggable-handle > i.icon-drag-vertical::before {
+        color:rgba(221, 221, 221, 0.32);
+    }
+
+    .TeamDropdown__badge-count i {
+        color: #e81023;
+    }
+
+    .TeamDropdown__badge-dot {
+        background: #196CAF;
+    }
+}

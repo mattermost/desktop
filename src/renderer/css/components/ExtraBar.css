@@ -10,7 +10,7 @@
 }
 
 #extra-bar.hidden {
-    max-height: 0px;
+    display: none;
 }
 
 span.backLabel {
@@ -25,7 +25,6 @@ span.backLabel {
 
 span.backIcon {
     margin-right: 4px;
-    font-size: 1.6rem;
 }
 
 .container-fluid button:first-child {

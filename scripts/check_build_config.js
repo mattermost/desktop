@@ -1,7 +1,7 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-const buildConfig = require('../src/common/config/buildConfig');
+const buildConfig = require('../dist/buildConfig');
 
 function validateBuildConfig(config) {
     if (config.enableServerManagement === false && config.defaultTeams && config.defaultTeams.length === 0) {

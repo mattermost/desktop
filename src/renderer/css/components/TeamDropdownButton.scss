@@ -1,0 +1,124 @@
+.TeamDropdownButton {
+    background-color: transparent;
+    border-width: 0 1px;
+    border-color: rgba(61, 60, 64, 0.08);
+    border-style: solid;
+    display: flex;
+    align-items: center;
+    font-family: Open Sans;
+    overflow: hidden;
+
+    &.disabled {
+        opacity: 0.5;
+    }
+
+    &:not(.disabled):hover {
+        background-color: #f4f4f4;
+
+        .TeamDropdownButton__badge-count, .TeamDropdownButton__badge-unreads {
+            border-color: #f4f4f4;
+        }
+    }
+
+    &:not(.disabled):focus, &.isMenuOpen {
+        background-color: #fff;
+
+        .TeamDropdownButton__badge-count, .TeamDropdownButton__badge-unreads {
+            border-color: #fff;
+        }
+    }
+
+    > span {
+        color: rgba(61, 60, 64, 0.64);
+        font-weight: 600;
+        font-size: 12px;
+        line-height: 16px;
+        margin-left: 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    i {
+        color: rgba(61, 60, 64, 0.56);
+        font-size: 18px;
+        line-height: 21px;
+    }    
+}
+
+.TeamDropdownButton__badge {
+    position: relative;
+}
+
+.TeamDropdownButton__badge-count {
+    background: #F74343;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    position: absolute;
+    top: -4px;
+    right: -2px;
+    border: 2px solid #efefef;
+    height: 16px;
+
+    > span {
+        color: white;
+        font-size: 10px;
+        padding: 0px 5px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: "Open Sans", sans-serif;
+        font-weight: bold;
+        letter-spacing: normal;
+        -webkit-font-smoothing: antialiased;
+    }
+}
+
+.TeamDropdownButton__badge-unreads {
+    background: #579eff;
+    border-radius: 100px;
+    width: 12px;
+    height: 12px;
+    position: absolute;
+    top: -4px;
+    right: -2px;
+    border: 2px solid #efefef;
+}
+
+.TeamDropdownButton.darkMode {
+    border-color: rgba(221, 221, 221, 0.08);
+
+    &:hover {
+        background-color: #292929;
+
+        .TeamDropdownButton__badge-count, .TeamDropdownButton__badge-unreads {
+            border-color: #292929;
+        }
+    }
+
+    &:focus, &.isMenuOpen {
+        background-color: #1f1f1f;
+
+        .TeamDropdownButton__badge-count, .TeamDropdownButton__badge-unreads {
+            border-color: #1f1f1f;
+        }
+    }
+
+    > span {
+        color: rgba(221, 221, 221, 0.64);
+    }
+
+    i {
+        color: rgba(221, 221, 221, 0.56);
+    }
+
+    .TeamDropdownButton__badge-count {
+        border-color: #2e2e2e;
+    }
+
+    .TeamDropdownButton__badge-unreads {
+        border-color: #2e2e2e;
+    }
+}

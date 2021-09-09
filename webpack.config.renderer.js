@@ -17,14 +17,17 @@ const WEBSERVER_PORT = 9001;
 
 module.exports = merge(base, {
     entry: {
-        index: './src/renderer/index.jsx',
-        settings: './src/renderer/settings.jsx',
-        urlView: './src/renderer/modals/urlView/urlView.jsx',
-        newServer: './src/renderer/modals/newServer/newServer.jsx',
-        loginModal: './src/renderer/modals/login/login.jsx',
-        permissionModal: './src/renderer/modals/permission/permission.jsx',
-        certificateModal: './src/renderer/modals/certificate/certificate.jsx',
-        loadingScreen: './src/renderer/modals/loadingScreen/index.jsx',
+        index: './src/renderer/index.tsx',
+        settings: './src/renderer/settings.tsx',
+        dropdown: './src/renderer/dropdown.tsx',
+        urlView: './src/renderer/modals/urlView/urlView.tsx',
+        newServer: './src/renderer/modals/newServer/newServer.tsx',
+        editServer: './src/renderer/modals/editServer/editServer.tsx',
+        removeServer: './src/renderer/modals/removeServer/removeServer.tsx',
+        loginModal: './src/renderer/modals/login/login.tsx',
+        permissionModal: './src/renderer/modals/permission/permission.tsx',
+        certificateModal: './src/renderer/modals/certificate/certificate.tsx',
+        loadingScreen: './src/renderer/modals/loadingScreen/index.tsx',
     },
     output: {
         path: path.resolve(__dirname, 'dist/renderer'),
@@ -46,6 +49,12 @@ module.exports = merge(base, {
         new HtmlWebpackPlugin({
             title: 'Mattermost Desktop Settings',
             template: 'src/renderer/index.html',
+            chunks: ['dropdown'],
+            filename: 'dropdown.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
             chunks: ['urlView'],
             filename: 'urlView.html',
         }),
@@ -54,6 +63,18 @@ module.exports = merge(base, {
             template: 'src/renderer/index.html',
             chunks: ['newServer'],
             filename: 'newServer.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['editServer'],
+            filename: 'editServer.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['removeServer'],
+            filename: 'removeServer.html',
         }),
         new HtmlWebpackPlugin({
             title: 'Mattermost Desktop Settings',
@@ -87,15 +108,34 @@ module.exports = merge(base, {
     ],
     module: {
         rules: [{
-            test: /\.(js|jsx)?$/,
+            test: /\.(js|jsx|ts|tsx)?$/,
             use: {
                 loader: 'babel-loader',
             },
         }, {
             test: /\.css$/,
+            exclude: /\.lazy\.css$/,
             use: [
                 MiniCssExtractPlugin.loader,
                 'css-loader',
+            ],
+        }, {
+            test: /\.lazy\.css$/,
+            use: [
+                {
+                    loader: 'style-loader',
+                    options: {
+                        injectType: 'lazyStyleTag',
+                    },
+                },
+                'css-loader',
+            ],
+        }, {
+            test: /\.scss$/,
+            use: [
+                MiniCssExtractPlugin.loader,
+                'css-loader',
+                'sass-loader',
             ],
         }, {
             test: /\.mp3$/,
