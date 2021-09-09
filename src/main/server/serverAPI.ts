@@ -41,7 +41,9 @@ export async function getServerAPI<T>(url: URL, isAuthenticated: boolean, onSucc
                         const data = JSON.parse(raw) as T;
                         onSuccess(data);
                     } catch (e) {
-                        log.error('Error parsing server data from', url.toString());
+                        const error = `Error parsing server data from ${url.toString()}`;
+                        log.error(error);
+                        onError?.(new Error(error));
                     }
                 });
             } else {
