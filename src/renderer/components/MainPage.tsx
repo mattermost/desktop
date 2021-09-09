@@ -223,6 +223,16 @@ export default class MainPage extends React.PureComponent<Props, State> {
                 }
             });
         }
+
+        window.addEventListener('click', this.handleCloseTeamsDropdown);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('click', this.handleCloseTeamsDropdown);
+    }
+
+    handleCloseTeamsDropdown = () => {
+        window.ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
     }
 
     handleMaximizeState = (_: IpcRendererEvent, maximized: boolean) => {
@@ -295,18 +305,11 @@ export default class MainPage extends React.PureComponent<Props, State> {
 
     focusOnWebView = () => {
         window.ipcRenderer.send(FOCUS_BROWSERVIEW);
-        window.ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
+        this.handleCloseTeamsDropdown();
     }
 
     render() {
-        if (!this.state.activeServerName || !this.state.activeTabName) {
-            return null;
-        }
-        const currentTabs = this.props.teams.find((team) => team.name === this.state.activeServerName)?.tabs;
-        if (!currentTabs) {
-            // TODO: figure out something here
-            return null;
-        }
+        const currentTabs = this.props.teams.find((team) => team.name === this.state.activeServerName)?.tabs || [];
 
         const tabsRow = (
             <TabBar

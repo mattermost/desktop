@@ -11,7 +11,7 @@ import '../css/compass-icons.css';
 
 type Props = {
     isDisabled?: boolean;
-    activeServerName: string;
+    activeServerName?: string;
     totalMentionCount: number;
     hasUnreads: boolean;
     isMenuOpen: boolean;
@@ -65,7 +65,7 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
                 <i className='icon-server-variant'/>
                 {badgeDiv}
             </div>
-            <span>{activeServerName}</span>
+            <span>{activeServerName || 'No servers configured'}</span>
             <i className='icon-chevron-down'/>
         </button>
     );
