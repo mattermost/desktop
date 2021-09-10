@@ -781,6 +781,12 @@ function initializeAfterAppReady() {
     globalShortcut.register(`${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`, () => {
         ipcMain.emit(OPEN_TEAMS_DROPDOWN);
     });
+
+    if (process.platform === 'linux') {
+        globalShortcut.registerAll(['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'], () => {
+            // do nothing because we want to supress the menu popping up
+        });
+    }
 }
 
 //
@@ -846,7 +852,6 @@ function handleCloseAppMenu() {
 function handleUpdateMenuEvent(event: IpcMainEvent, menuConfig: Config) {
     const aMenu = appMenu.createMenu(menuConfig);
     Menu.setApplicationMenu(aMenu);
-    WindowManager.removeWindowMenu();
     aMenu.addListener('menu-will-close', handleCloseAppMenu);
 
     // set up context menu for tray icon
