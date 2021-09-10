@@ -56,25 +56,21 @@
     border-radius: 8px;
     display: flex;
     align-items: center;
+    justify-content: center;
     flex: 0 0 auto;
+    color: white;
+    font-size: 9px;
+    padding: 0px 5px;
+    font-family: "Open Sans", sans-serif;
+    font-weight: bold;
+    letter-spacing: normal;
+    -webkit-font-smoothing: auto;
+
     position: absolute;
     top: -4px;
     right: -2px;
     border: 2px solid #efefef;
     height: 16px;
-
-    > span {
-        color: white;
-        font-size: 9px;
-        padding: 0px 5px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-family: "Open Sans", sans-serif;
-        font-weight: bold;
-        letter-spacing: normal;
-        -webkit-font-smoothing: antialiased;
-    }
 }
 
 .TeamDropdownButton__badge-unreads {

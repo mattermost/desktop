@@ -174,7 +174,8 @@
     font-family: "Open Sans", sans-serif;
     font-weight: bold;
     letter-spacing: normal;
-    -webkit-font-smoothing: antialiased;
+    -webkit-font-smoothing: auto;
+    
     margin-left: 6px;
     height: 12px;
 }
