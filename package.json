@@ -16,7 +16,7 @@
     "url": "git://github.com/mattermost/desktop.git"
   },
   "config": {
-    "target": "12.0.1",
+    "target": "13.2.0",
     "arch": "x64",
     "target_arch": "x64",
     "disturl": "https://electronjs.org/headers",
@@ -64,6 +64,7 @@
     "@babel/preset-env": "^7.2.0",
     "@babel/preset-react": "^7.10.4",
     "@babel/register": "^7.0.0",
+    "@electron/fuses": "^1.4.0",
     "@storybook/addon-actions": "^6.2.9",
     "@storybook/react": "^6.2.9",
     "@types/auto-launch": "^5.0.1",

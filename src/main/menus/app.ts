@@ -198,12 +198,16 @@ function createTemplate(config: Config) {
     const teams = config.data?.teams || [];
     const windowMenu = {
         label: '&Window',
+        role: isMac ? 'windowMenu' : null,
         submenu: [{
             role: 'minimize',
 
             // empty string removes shortcut on Windows; null will default by OS
             accelerator: process.platform === 'win32' ? '' : null,
-        }, {
+        }, ...(isMac ? [{
+            role: 'zoom',
+        }, separatorItem,
+        ] : []), {
             role: 'close',
             accelerator: 'CmdOrCtrl+W',
         }, separatorItem, ...teams.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).map((team, i) => {
@@ -241,7 +245,10 @@ function createTemplate(config: Config) {
                 WindowManager.selectPreviousTab();
             },
             enabled: (teams.length > 1),
-        }],
+        }, ...(isMac ? [separatorItem, {
+            role: 'front',
+        }] : []),
+        ],
     };
     template.push(windowMenu);
     const submenu = [];

@@ -61,6 +61,7 @@ enum Status {
 
 type Props = {
     teams: TeamWithTabs[];
+    lastActiveTeam?: number;
     moveTabs: (teamName: string, originalOrder: number, newOrder: number) => number | undefined;
     openMenu: () => void;
     darkMode: boolean;
@@ -101,8 +102,12 @@ export default class MainPage extends React.PureComponent<Props, State> {
         this.topBar = React.createRef();
         this.threeDotMenu = React.createRef();
 
-        const firstServer = this.props.teams.find((team) => team.order === 0);
-        const firstTab = firstServer?.tabs.find((tab, index) => index === (firstServer.lastActiveTab || 0)) || firstServer?.tabs[0];
+        const firstServer = this.props.teams.find((team) => team.order === this.props.lastActiveTeam || 0);
+        let firstTab = firstServer?.tabs.find((tab) => tab.order === firstServer.lastActiveTab || 0);
+        if (firstTab?.isClosed) {
+            const openTabs = firstServer?.tabs.filter((tab) => !tab.isClosed) || [];
+            firstTab = openTabs?.find((e) => e.order === 0) || openTabs[0];
+        }
 
         this.state = {
             activeServerName: firstServer?.name,
@@ -223,6 +228,16 @@ export default class MainPage extends React.PureComponent<Props, State> {
                 }
             });
         }
+
+        window.addEventListener('click', this.handleCloseTeamsDropdown);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('click', this.handleCloseTeamsDropdown);
+    }
+
+    handleCloseTeamsDropdown = () => {
+        window.ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
     }
 
     handleMaximizeState = (_: IpcRendererEvent, maximized: boolean) => {
@@ -295,18 +310,11 @@ export default class MainPage extends React.PureComponent<Props, State> {
 
     focusOnWebView = () => {
         window.ipcRenderer.send(FOCUS_BROWSERVIEW);
-        window.ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
+        this.handleCloseTeamsDropdown();
     }
 
     render() {
-        if (!this.state.activeServerName || !this.state.activeTabName) {
-            return null;
-        }
-        const currentTabs = this.props.teams.find((team) => team.name === this.state.activeServerName)?.tabs;
-        if (!currentTabs) {
-            // TODO: figure out something here
-            return null;
-        }
+        const currentTabs = this.props.teams.find((team) => team.name === this.state.activeServerName)?.tabs || [];
 
         const tabsRow = (
             <TabBar
