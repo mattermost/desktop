@@ -70,7 +70,9 @@
     top: -4px;
     right: -2px;
     border: 2px solid #efefef;
-    height: 16px;
+    height: 12px;
+    line-height: 12px;
+    box-sizing: unset;
 }
 
 .TeamDropdownButton__badge-unreads {
