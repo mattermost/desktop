@@ -37,8 +37,14 @@ export async function getServerAPI<T>(url: URL, isAuthenticated: boolean, onSucc
             if (response.statusCode === 200) {
                 response.on('data', (chunk: Buffer) => {
                     const raw = `${chunk}`;
-                    const data = JSON.parse(raw) as T;
-                    onSuccess(data);
+                    try {
+                        const data = JSON.parse(raw) as T;
+                        onSuccess(data);
+                    } catch (e) {
+                        const error = `Error parsing server data from ${url.toString()}`;
+                        log.error(error);
+                        onError?.(new Error(error));
+                    }
                 });
             } else {
                 onError?.(new Error(`Bad status code requesting from ${url.toString()}`));

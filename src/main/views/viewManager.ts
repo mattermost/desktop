@@ -17,6 +17,7 @@ import {
     SET_ACTIVE_VIEW,
     OPEN_TAB,
     BROWSER_HISTORY_PUSH,
+    UPDATE_LAST_ACTIVE,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {isServerVersionGreaterThanOrEqualTo} from 'common/utils/util';
@@ -36,6 +37,7 @@ const URL_VIEW_HEIGHT = 36;
 
 export class ViewManager {
     configServers: TeamWithTabs[];
+    lastActiveServer?: number;
     viewOptions: BrowserViewConstructorOptions;
     closedViews: Map<string, {srv: MattermostServer; tab: Tab}>;
     views: Map<string, MattermostView>;
@@ -47,6 +49,7 @@ export class ViewManager {
 
     constructor(config: CombinedConfig, mainWindow: BrowserWindow) {
         this.configServers = config.teams;
+        this.lastActiveServer = config.lastActiveTeam;
         this.viewOptions = {webPreferences: {spellcheck: config.useSpellChecker}};
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
         this.mainWindow = mainWindow;
@@ -126,10 +129,13 @@ export class ViewManager {
 
     showInitial = () => {
         if (this.configServers.length) {
-            const element = this.configServers.find((e) => e.order === 0);
-            if (element) {
-                const openTabs = element.tabs.filter((tab) => !tab.isClosed);
-                const tab = openTabs.find((e) => e.order === 0) || openTabs[0];
+            const element = this.configServers.find((e) => e.order === this.lastActiveServer || 0);
+            if (element && element.tabs.length) {
+                let tab = element.tabs.find((tab) => tab.order === element.lastActiveTab || 0);
+                if (tab?.isClosed) {
+                    const openTabs = element.tabs.filter((tab) => !tab.isClosed);
+                    tab = openTabs.find((e) => e.order === 0) || openTabs[0];
+                }
                 if (tab) {
                     const tabView = getTabViewName(element.name, tab.name);
                     this.showByName(tabView);
@@ -160,6 +166,7 @@ export class ViewManager {
             if (newView.isReady()) {
                 // if view is not ready, the renderer will have something to display instead.
                 newView.show();
+                ipcMain.emit(UPDATE_LAST_ACTIVE, true, newView.tab.server.name, newView.tab.type);
                 if (newView.needsLoadingScreen()) {
                     this.showLoadingScreen();
                 } else {

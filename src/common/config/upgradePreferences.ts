@@ -42,6 +42,7 @@ function upgradeV2toV3(configV2: ConfigV2) {
             lastActiveTab: 0,
         };
     });
+    config.lastActiveTeam = 0;
     return config;
 }
 

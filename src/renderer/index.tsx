@@ -122,6 +122,7 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         return (
             <MainPage
                 teams={config.teams}
+                lastActiveTeam={config.lastActiveTeam}
                 moveTabs={this.moveTabs}
                 openMenu={this.openMenu}
                 darkMode={config.darkMode}
