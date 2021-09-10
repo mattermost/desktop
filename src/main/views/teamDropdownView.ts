@@ -32,12 +32,14 @@ export default class TeamDropdownView {
     expired?: Map<string, boolean>;
     window: BrowserWindow;
     windowBounds: Electron.Rectangle;
+    isOpen: boolean;
 
     constructor(window: BrowserWindow, teams: TeamWithTabs[], darkMode: boolean, enableServerManagement: boolean) {
         this.teams = teams;
         this.window = window;
         this.darkMode = darkMode;
         this.enableServerManagement = enableServerManagement;
+        this.isOpen = false;
 
         this.windowBounds = this.window.getContentBounds();
 
@@ -50,6 +52,7 @@ export default class TeamDropdownView {
         }});
 
         this.view.webContents.loadURL(getLocalURLString('dropdown.html'));
+        this.window.addBrowserView(this.view);
 
         ipcMain.on(OPEN_TEAMS_DROPDOWN, this.handleOpen);
         ipcMain.on(CLOSE_TEAMS_DROPDOWN, this.handleClose);
@@ -101,22 +104,27 @@ export default class TeamDropdownView {
     }
 
     handleOpen = () => {
-        this.window.addBrowserView(this.view);
-        const bounds = this.view.getBounds();
-        this.view.setBounds(this.getBounds(bounds.width, bounds.height));
+        if (!this.bounds) {
+            return;
+        }
+        this.view.setBounds(this.bounds);
         this.window.setTopBrowserView(this.view);
         this.view.webContents.focus();
         WindowManager.sendToRenderer(OPEN_TEAMS_DROPDOWN);
+        this.isOpen = true;
     }
 
     handleClose = () => {
-        this.window.removeBrowserView(this.view);
+        this.view.setBounds(this.getBounds(0, 0));
         WindowManager.sendToRenderer(CLOSE_TEAMS_DROPDOWN);
+        this.isOpen = false;
     }
 
     handleReceivedMenuSize = (event: IpcMainEvent, width: number, height: number) => {
-        const bounds = this.getBounds(width, height);
-        this.view.setBounds(bounds);
+        this.bounds = this.getBounds(width, height);
+        if (this.isOpen) {
+            this.view.setBounds(this.bounds);
+        }
     }
 
     getBounds = (width: number, height: number) => {
