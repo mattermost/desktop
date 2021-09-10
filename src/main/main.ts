@@ -13,7 +13,7 @@ import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-install
 import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
 
-import {Team, TeamWithTabs} from 'types/config';
+import {CombinedConfig, Team, TeamWithTabs} from 'types/config';
 import {MentionData} from 'types/notification';
 import {RemoteInfo} from 'types/server';
 import {Boundaries} from 'types/utils';
@@ -42,7 +42,7 @@ import {
     SHOW_REMOVE_SERVER_MODAL,
     UPDATE_SHORTCUT_MENU,
     OPEN_TEAMS_DROPDOWN,
-    SET_ACTIVE_VIEW,
+    UPDATE_LAST_ACTIVE,
 } from 'common/communication';
 import Config from 'common/config';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -242,7 +242,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on('update-menu', handleUpdateMenuEvent);
     ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateShortcutMenuEvent);
     ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
-    ipcMain.on(SET_ACTIVE_VIEW, handleUpdateLastActiveTab);
+    ipcMain.on(UPDATE_LAST_ACTIVE, handleUpdateLastActive);
 
     if (process.platform !== 'darwin') {
         ipcMain.on('open-app-menu', handleOpenAppMenu);
@@ -272,8 +272,8 @@ function initializeInterCommunicationEventListeners() {
 // config event handlers
 //
 
-function handleConfigUpdate(newConfig: Config) {
-    if (!newConfig.data) {
+function handleConfigUpdate(newConfig: CombinedConfig) {
+    if (!newConfig) {
         return;
     }
     if (process.platform === 'win32' || process.platform === 'linux') {
@@ -284,13 +284,15 @@ function handleConfigUpdate(newConfig: Config) {
         }).catch((err) => {
             log.error('error:', err);
         });
-        WindowManager.setConfig(newConfig.data);
-        authManager.handleConfigUpdate(newConfig.data);
-        setUnreadBadgeSetting(newConfig.data && newConfig.data.showUnreadBadge);
+        WindowManager.setConfig(newConfig);
+        if (authManager) {
+            authManager.handleConfigUpdate(newConfig);
+        }
+        setUnreadBadgeSetting(newConfig && newConfig.showUnreadBadge);
     }
 
     ipcMain.emit('update-menu', true, config);
-    ipcMain.emit(EMIT_CONFIGURATION, true, newConfig.data);
+    ipcMain.emit(EMIT_CONFIGURATION, true, newConfig);
 }
 
 function handleConfigSynchronize() {
@@ -318,9 +320,6 @@ function handleConfigSynchronize() {
             handleNewServerModal();
         }
     }
-
-    ipcMain.emit('update-menu', true, config);
-    ipcMain.emit(EMIT_CONFIGURATION, true, config.data);
 }
 
 function handleReloadConfig() {
@@ -950,14 +949,15 @@ function resizeScreen(browserWindow: BrowserWindow) {
     browserWindow.on('restore', handle);
     handle();
 }
-function handleUpdateLastActiveTab(event: IpcMainEvent, serverName: string, viewName: string) {
+function handleUpdateLastActive(event: IpcMainEvent, serverName: string, viewName: string) {
     const teams = config.teams;
     teams.forEach((team) => {
         if (team.name === serverName) {
-            const viewIndex = team?.tabs.findIndex((tab) => tab.name === viewName);
-            team.lastActiveTab = viewIndex;
+            const viewOrder = team?.tabs.find((tab) => tab.name === viewName)?.order || 0;
+            team.lastActiveTab = viewOrder;
         }
     });
     config.set('teams', teams);
+    config.set('lastActiveTeam', teams.find((team) => team.name === serverName)?.order || 0);
 }
 

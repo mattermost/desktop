@@ -38,6 +38,7 @@ export type ConfigV3 = {
     darkMode: boolean;
     downloadLocation: string;
     spellCheckerURL?: string;
+    lastActiveTeam?: number;
 }
 
 export type ConfigV2 = {
