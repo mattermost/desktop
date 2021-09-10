@@ -7,6 +7,7 @@
     align-items: center;
     font-family: Open Sans;
     overflow: hidden;
+    -webkit-font-smoothing: auto;
 
     &.disabled {
         opacity: 0.5;
@@ -55,25 +56,23 @@
     border-radius: 8px;
     display: flex;
     align-items: center;
+    justify-content: center;
     flex: 0 0 auto;
+    color: white;
+    font-size: 9px;
+    padding: 0px 5px;
+    font-family: "Open Sans", sans-serif;
+    font-weight: bold;
+    letter-spacing: normal;
+    -webkit-font-smoothing: auto;
+
     position: absolute;
     top: -4px;
     right: -2px;
     border: 2px solid #efefef;
-    height: 16px;
-
-    > span {
-        color: white;
-        font-size: 10px;
-        padding: 0px 5px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-family: "Open Sans", sans-serif;
-        font-weight: bold;
-        letter-spacing: normal;
-        -webkit-font-smoothing: antialiased;
-    }
+    height: 12px;
+    line-height: 12px;
+    box-sizing: unset;
 }
 
 .TeamDropdownButton__badge-unreads {
@@ -82,8 +81,8 @@
     width: 12px;
     height: 12px;
     position: absolute;
-    top: -4px;
-    right: -2px;
+    top: -5px;
+    right: -1px;
     border: 2px solid #efefef;
 }
 
@@ -120,5 +119,9 @@
 
     .TeamDropdownButton__badge-unreads {
         border-color: #2e2e2e;
+    }
+
+    .TeamDropdownButton__badge-unreads {
+        background: #196CAF;
     }
 }
