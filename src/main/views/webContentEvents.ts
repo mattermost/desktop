@@ -170,7 +170,6 @@ const generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spe
                         nodeIntegration: process.env.NODE_ENV === 'test',
                         contextIsolation: process.env.NODE_ENV !== 'test',
                         spellcheck: (typeof spellcheck === 'undefined' ? true : spellcheck),
-                        enableRemoteModule: process.env.NODE_ENV === 'test',
                     },
                 });
                 popupWindow.webContents.on('new-window', denyNewWindow);

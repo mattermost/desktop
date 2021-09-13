@@ -45,10 +45,10 @@ export default class TeamDropdownView {
 
         const preload = getLocalPreload('dropdown.js');
         this.view = new BrowserView({webPreferences: {
+            nativeWindowOpen: true,
             contextIsolation: process.env.NODE_ENV !== 'test',
             preload,
             nodeIntegration: process.env.NODE_ENV === 'test',
-            enableRemoteModule: process.env.NODE_ENV === 'test',
         }});
 
         this.view.webContents.loadURL(getLocalURLString('dropdown.html'));
