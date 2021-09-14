@@ -2,159 +2,161 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import url from 'url';
+// TODO: Commented out for now since remote is removed, will be changed with the autoupdater changes anyway.
 
-import React from 'react';
-import ReactDOM from 'react-dom';
-import {remote} from 'electron';
+// import url from 'url';
 
-import UpdaterPage from './components/UpdaterPage';
+// import React from 'react';
+// import ReactDOM from 'react-dom';
+// //import {remote} from 'electron';
 
-const thisURL = url.parse(location.href, true);
-const notifyOnly = thisURL.query.notifyOnly === 'true';
+// import UpdaterPage from './components/UpdaterPage';
 
-type Props = {
-    notifyOnly: boolean;
-    initialState: State;
-};
+// const thisURL = url.parse(location.href, true);
+// const notifyOnly = thisURL.query.notifyOnly === 'true';
 
-type State = {
+// type Props = {
+//     notifyOnly: boolean;
+//     initialState: State;
+// };
 
-}
+// type State = {
 
-class UpdaterPageContainer extends React.PureComponent<Props, State> {
-    constructor(props: Props) {
-        super(props);
-        this.state = props.initialState;
-    }
+// }
 
-    getTabWebContents() {
-        return remote.webContents.getFocusedWebContents();
-    }
+// class UpdaterPageContainer extends React.PureComponent<Props, State> {
+//     constructor(props: Props) {
+//         super(props);
+//         this.state = props.initialState;
+//     }
 
-    componentDidMount() {
-        window.ipcRenderer.on('start-download', () => {
-            this.setState({
-                isDownloading: true,
-            });
-        });
-        window.ipcRenderer.on('progress', (event, progress) => {
-            this.setState({
-                progress,
-            });
-        });
-        window.ipcRenderer.on('zoom-in', () => {
-            const activeTabWebContents = this.getTabWebContents();
-            if (!activeTabWebContents) {
-                return;
-            }
-            if (activeTabWebContents.zoomLevel >= 9) {
-                return;
-            }
-            activeTabWebContents.zoomLevel += 1;
-        });
+//     getTabWebContents() {
+//         return null;//remote.webContents.getFocusedWebContents();
+//     }
 
-        window.ipcRenderer.on('zoom-out', () => {
-            const activeTabWebContents = this.getTabWebContents();
-            if (!activeTabWebContents) {
-                return;
-            }
-            if (activeTabWebContents.zoomLevel <= -8) {
-                return;
-            }
-            activeTabWebContents.zoomLevel -= 1;
-        });
+//     componentDidMount() {
+//         window.ipcRenderer.on('start-download', () => {
+//             this.setState({
+//                 isDownloading: true,
+//             });
+//         });
+//         window.ipcRenderer.on('progress', (event, progress) => {
+//             this.setState({
+//                 progress,
+//             });
+//         });
+//         window.ipcRenderer.on('zoom-in', () => {
+//             const activeTabWebContents = this.getTabWebContents();
+//             if (!activeTabWebContents) {
+//                 return;
+//             }
+//             if (activeTabWebContents.zoomLevel >= 9) {
+//                 return;
+//             }
+//             activeTabWebContents.zoomLevel += 1;
+//         });
 
-        window.ipcRenderer.on('zoom-reset', () => {
-            const activeTabWebContents = this.getTabWebContents();
-            if (!activeTabWebContents) {
-                return;
-            }
-            activeTabWebContents.zoomLevel = 0;
-        });
+//         window.ipcRenderer.on('zoom-out', () => {
+//             const activeTabWebContents = this.getTabWebContents();
+//             if (!activeTabWebContents) {
+//                 return;
+//             }
+//             if (activeTabWebContents.zoomLevel <= -8) {
+//                 return;
+//             }
+//             activeTabWebContents.zoomLevel -= 1;
+//         });
 
-        window.ipcRenderer.on('undo', () => {
-            const activeTabWebContents = this.getTabWebContents();
-            if (!activeTabWebContents) {
-                return;
-            }
-            activeTabWebContents.undo();
-        });
+//         window.ipcRenderer.on('zoom-reset', () => {
+//             const activeTabWebContents = this.getTabWebContents();
+//             if (!activeTabWebContents) {
+//                 return;
+//             }
+//             activeTabWebContents.zoomLevel = 0;
+//         });
 
-        window.ipcRenderer.on('redo', () => {
-            const activeTabWebContents = this.getTabWebContents();
-            if (!activeTabWebContents) {
-                return;
-            }
-            activeTabWebContents.redo();
-        });
+//         window.ipcRenderer.on('undo', () => {
+//             const activeTabWebContents = this.getTabWebContents();
+//             if (!activeTabWebContents) {
+//                 return;
+//             }
+//             activeTabWebContents.undo();
+//         });
 
-        window.ipcRenderer.on('cut', () => {
-            const activeTabWebContents = this.getTabWebContents();
-            if (!activeTabWebContents) {
-                return;
-            }
-            activeTabWebContents.cut();
-        });
+//         window.ipcRenderer.on('redo', () => {
+//             const activeTabWebContents = this.getTabWebContents();
+//             if (!activeTabWebContents) {
+//                 return;
+//             }
+//             activeTabWebContents.redo();
+//         });
 
-        window.ipcRenderer.on('copy', () => {
-            const activeTabWebContents = this.getTabWebContents();
-            if (!activeTabWebContents) {
-                return;
-            }
-            activeTabWebContents.copy();
-        });
+//         window.ipcRenderer.on('cut', () => {
+//             const activeTabWebContents = this.getTabWebContents();
+//             if (!activeTabWebContents) {
+//                 return;
+//             }
+//             activeTabWebContents.cut();
+//         });
 
-        window.ipcRenderer.on('paste', () => {
-            const activeTabWebContents = this.getTabWebContents();
-            if (!activeTabWebContents) {
-                return;
-            }
-            activeTabWebContents.paste();
-        });
+//         window.ipcRenderer.on('copy', () => {
+//             const activeTabWebContents = this.getTabWebContents();
+//             if (!activeTabWebContents) {
+//                 return;
+//             }
+//             activeTabWebContents.copy();
+//         });
 
-        window.ipcRenderer.on('paste-and-match', () => {
-            const activeTabWebContents = this.getTabWebContents();
-            if (!activeTabWebContents) {
-                return;
-            }
-            activeTabWebContents.pasteAndMatchStyle();
-        });
-    }
+//         window.ipcRenderer.on('paste', () => {
+//             const activeTabWebContents = this.getTabWebContents();
+//             if (!activeTabWebContents) {
+//                 return;
+//             }
+//             activeTabWebContents.paste();
+//         });
 
-    render() {
-        return (
-            <UpdaterPage
-                appName={`${remote.app.name} Desktop App`}
-                notifyOnly={this.props.notifyOnly}
-                {...this.state}
-                onClickReleaseNotes={() => {
-                    window.ipcRenderer.send('click-release-notes');
-                }}
-                onClickSkip={() => {
-                    window.ipcRenderer.send('click-skip');
-                }}
-                onClickRemind={() => {
-                    window.ipcRenderer.send('click-remind');
-                }}
-                onClickInstall={() => {
-                    window.ipcRenderer.send('click-install');
-                }}
-                onClickDownload={() => {
-                    window.ipcRenderer.send('click-download');
-                }}
-                onClickCancel={() => {
-                    window.ipcRenderer.send('click-cancel');
-                }}
-            />
-        );
-    }
-}
+//         window.ipcRenderer.on('paste-and-match', () => {
+//             const activeTabWebContents = this.getTabWebContents();
+//             if (!activeTabWebContents) {
+//                 return;
+//             }
+//             activeTabWebContents.pasteAndMatchStyle();
+//         });
+//     }
 
-ReactDOM.render(
-    <UpdaterPageContainer
-        notifyOnly={notifyOnly}
-        initialState={{isDownloading: false, progress: 0}}
-    />,
-    document.getElementById('content'),
-);
+//     render() {
+//         return (
+//             <UpdaterPage
+//                 appName={`${remote.app.name} Desktop App`}
+//                 notifyOnly={this.props.notifyOnly}
+//                 {...this.state}
+//                 onClickReleaseNotes={() => {
+//                     window.ipcRenderer.send('click-release-notes');
+//                 }}
+//                 onClickSkip={() => {
+//                     window.ipcRenderer.send('click-skip');
+//                 }}
+//                 onClickRemind={() => {
+//                     window.ipcRenderer.send('click-remind');
+//                 }}
+//                 onClickInstall={() => {
+//                     window.ipcRenderer.send('click-install');
+//                 }}
+//                 onClickDownload={() => {
+//                     window.ipcRenderer.send('click-download');
+//                 }}
+//                 onClickCancel={() => {
+//                     window.ipcRenderer.send('click-cancel');
+//                 }}
+//             />
+//         );
+//     }
+// }
+
+// ReactDOM.render(
+//     <UpdaterPageContainer
+//         notifyOnly={notifyOnly}
+//         initialState={{isDownloading: false, progress: 0}}
+//     />,
+//     document.getElementById('content'),
+// );

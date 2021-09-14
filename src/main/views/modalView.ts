@@ -31,10 +31,10 @@ export class ModalView<T, T2> {
         this.data = data;
         log.info(`preloading with ${preload}`);
         this.view = new BrowserView({webPreferences: {
+            nativeWindowOpen: true,
             contextIsolation: process.env.NODE_ENV !== 'test',
             preload,
             nodeIntegration: process.env.NODE_ENV === 'test',
-            enableRemoteModule: process.env.NODE_ENV === 'test',
         }});
         this.onReject = onReject;
         this.onResolve = onResolve;

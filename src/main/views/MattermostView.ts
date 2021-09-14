@@ -76,13 +76,13 @@ export class MattermostView extends EventEmitter {
         const preload = getLocalPreload('preload.js');
         this.options = Object.assign({}, options);
         this.options.webPreferences = {
+            nativeWindowOpen: true,
             contextIsolation: process.env.NODE_ENV !== 'test',
             preload,
             additionalArguments: [
                 `version=${app.getVersion()}`,
                 `appName=${app.name}`,
             ],
-            enableRemoteModule: process.env.NODE_ENV === 'test',
             nodeIntegration: process.env.NODE_ENV === 'test',
             ...options.webPreferences,
         };
