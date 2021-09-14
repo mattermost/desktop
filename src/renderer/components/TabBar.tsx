@@ -85,7 +85,7 @@ export default class TabBar extends React.PureComponent<Props> {
                     index={orderedIndex}
                 >
                     {(provided, snapshot) => {
-                        if (tab.isClosed) {
+                        if (!tab.isOpen) {
                             return (
                                 <div
                                     ref={provided.innerRef}

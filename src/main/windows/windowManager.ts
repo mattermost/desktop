@@ -363,7 +363,7 @@ export function switchServer(serverName: string) {
         return;
     }
     status.currentServerName = serverName;
-    const lastActiveTab = server.tabs.find((tab) => !tab.isClosed && tab.order === (server.lastActiveTab || 0)) || server.tabs[0];
+    const lastActiveTab = server.tabs.find((tab) => tab.isOpen && tab.order === (server.lastActiveTab || 0)) || server.tabs[0];
     const tabViewName = getTabViewName(serverName, lastActiveTab.name);
     status.viewManager?.showByName(tabViewName);
     ipcMain.emit(UPDATE_SHORTCUT_MENU);
@@ -489,7 +489,7 @@ export function selectNextTab() {
     }
 
     const currentTeamTabs = status.config?.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
-    const filteredTabs = currentTeamTabs?.filter((tab) => !tab.isClosed);
+    const filteredTabs = currentTeamTabs?.filter((tab) => tab.isOpen);
     const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
     if (!currentTeamTabs || !currentTab || !filteredTabs) {
         return;
@@ -514,7 +514,7 @@ export function selectPreviousTab() {
     }
 
     const currentTeamTabs = status.config?.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
-    const filteredTabs = currentTeamTabs?.filter((tab) => !tab.isClosed);
+    const filteredTabs = currentTeamTabs?.filter((tab) => tab.isOpen);
     const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
     if (!currentTeamTabs || !currentTab || !filteredTabs) {
         return;

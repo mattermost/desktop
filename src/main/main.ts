@@ -505,12 +505,12 @@ function handleCloseTab(event: IpcMainEvent, serverName: string, tabName: string
         if (team.name === serverName) {
             team.tabs.forEach((tab) => {
                 if (tab.name === tabName) {
-                    tab.isClosed = true;
+                    tab.isOpen = false;
                 }
             });
         }
     });
-    const nextTab = teams.find((team) => team.name === serverName)!.tabs.filter((tab) => !tab.isClosed)[0].name;
+    const nextTab = teams.find((team) => team.name === serverName)!.tabs.filter((tab) => tab.isOpen)[0].name;
     WindowManager.switchTab(serverName, nextTab);
     config.set('teams', teams);
 }
@@ -521,7 +521,7 @@ function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: string)
         if (team.name === serverName) {
             team.tabs.forEach((tab) => {
                 if (tab.name === tabName) {
-                    tab.isClosed = false;
+                    tab.isOpen = true;
                 }
             });
         }
@@ -799,28 +799,26 @@ function updateServerInfos(teams: TeamWithTabs[]) {
     });
     Promise.all(serverInfos).then((data: Array<RemoteInfo | string | undefined>) => {
         const teams = config.teams;
-        teams.forEach((team) => closeUnneededTabs(data, team));
+        teams.forEach((team) => openExtraTabs(data, team));
         config.set('teams', teams);
     }).catch((reason: any) => {
         log.error('Error getting server infos', reason);
     });
 }
 
-function closeUnneededTabs(data: Array<RemoteInfo | string | undefined>, team: TeamWithTabs) {
+function openExtraTabs(data: Array<RemoteInfo | string | undefined>, team: TeamWithTabs) {
     const remoteInfo = data.find((info) => info && typeof info !== 'string' && info.name === team.name) as RemoteInfo;
     if (remoteInfo) {
         team.tabs.forEach((tab) => {
-            if (tab.name === TAB_PLAYBOOKS && !remoteInfo.hasPlaybooks) {
-                log.info(`closing ${team.name}___${tab.name} on !hasPlaybooks`);
-                tab.isClosed = true;
-            }
-            if (tab.name === TAB_FOCALBOARD && !remoteInfo.hasFocalboard) {
-                log.info(`closing ${team.name}___${tab.name} on !hasFocalboard`);
-                tab.isClosed = true;
-            }
-            if (tab.name !== TAB_MESSAGING && remoteInfo.serverVersion && !isServerVersionGreaterThanOrEqualTo(remoteInfo.serverVersion, '6.0.0')) {
-                log.info(`closing ${team.name}___${tab.name} on !serverVersion`);
-                tab.isClosed = true;
+            if (tab.name !== TAB_MESSAGING && remoteInfo.serverVersion && isServerVersionGreaterThanOrEqualTo(remoteInfo.serverVersion, '6.0.0')) {
+                if (tab.name === TAB_PLAYBOOKS && remoteInfo.hasPlaybooks && tab.isOpen !== false) {
+                    log.info(`opening ${team.name}___${tab.name} on hasPlaybooks`);
+                    tab.isOpen = true;
+                }
+                if (tab.name === TAB_FOCALBOARD && remoteInfo.hasFocalboard && tab.isOpen !== false) {
+                    log.info(`opening ${team.name}___${tab.name} on hasFocalboard`);
+                    tab.isOpen = true;
+                }
             }
         });
     }

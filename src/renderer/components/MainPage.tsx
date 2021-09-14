@@ -104,8 +104,8 @@ export default class MainPage extends React.PureComponent<Props, State> {
 
         const firstServer = this.props.teams.find((team) => team.order === this.props.lastActiveTeam || 0);
         let firstTab = firstServer?.tabs.find((tab) => tab.order === firstServer.lastActiveTab || 0);
-        if (firstTab?.isClosed) {
-            const openTabs = firstServer?.tabs.filter((tab) => !tab.isClosed) || [];
+        if (!firstTab?.isOpen) {
+            const openTabs = firstServer?.tabs.filter((tab) => tab.isOpen) || [];
             firstTab = openTabs?.find((e) => e.order === 0) || openTabs[0];
         }
 

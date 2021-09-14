@@ -103,7 +103,7 @@ const configDataSchemaV3 = Joi.object<ConfigV3>({
         tabs: Joi.array().items(Joi.object({
             name: Joi.string().required(),
             order: Joi.number().integer().min(0),
-            isClosed: Joi.boolean().default(false),
+            isOpen: Joi.boolean(),
         })).default([]),
     })).default([]),
     showTrayIcon: Joi.boolean().default(false),
