@@ -120,6 +120,7 @@ export class ViewManager {
         });
         if (this.currentView && (oldviews.has(this.currentView) || this.closedViews.has(this.currentView))) {
             if (configServers.length) {
+                delete this.currentView;
                 this.showInitial();
             } else {
                 this.mainWindow.webContents.send(SET_ACTIVE_VIEW);

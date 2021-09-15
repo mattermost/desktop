@@ -363,8 +363,12 @@ export function switchServer(serverName: string) {
         return;
     }
     status.currentServerName = serverName;
-    const lastActiveTab = server.tabs.find((tab) => tab.isOpen && tab.order === (server.lastActiveTab || 0)) || server.tabs[0];
-    const tabViewName = getTabViewName(serverName, lastActiveTab.name);
+    let nextTab = server.tabs.find((tab) => tab.isOpen && tab.order === (server.lastActiveTab || 0));
+    if (!nextTab) {
+        const openTabs = server.tabs.filter((tab) => tab.isOpen);
+        nextTab = openTabs.find((e) => e.order === 0) || openTabs[0];
+    }
+    const tabViewName = getTabViewName(serverName, nextTab.name);
     status.viewManager?.showByName(tabViewName);
     ipcMain.emit(UPDATE_SHORTCUT_MENU);
 }
