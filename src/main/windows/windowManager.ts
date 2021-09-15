@@ -20,7 +20,6 @@ import {
     APP_LOGGED_IN,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
-import Utils from 'common/utils/util';
 
 import {getTabViewName} from 'common/tabs/TabView';
 
