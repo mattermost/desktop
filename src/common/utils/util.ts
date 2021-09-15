@@ -37,7 +37,17 @@ function shorten(string: string, max?: number) {
     return string;
 }
 
-export function isServerVersionGreaterThanOrEqualTo(currentVersion: string, compareVersion: string): boolean {
+// eslint-disable-next-line @typescript-eslint/ban-types
+function debounce<T extends Function>(cb: T, wait: number) {
+    let h: NodeJS.Timeout;
+    const callable = (...args: any) => {
+        clearTimeout(h);
+        h = setTimeout(() => cb(...args), wait);
+    };
+    return callable;
+}
+
+function isServerVersionGreaterThanOrEqualTo(currentVersion: string, compareVersion: string): boolean {
     if (currentVersion === compareVersion) {
         return true;
     }
@@ -63,6 +73,7 @@ export function isServerVersionGreaterThanOrEqualTo(currentVersion: string, comp
 }
 
 export default {
+    debounce,
     getDisplayBoundaries,
     runMode,
     shorten,

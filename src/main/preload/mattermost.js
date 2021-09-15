@@ -22,6 +22,7 @@ import {
     USER_ACTIVITY_UPDATE,
     CLOSE_TEAMS_DROPDOWN,
     BROWSER_HISTORY_PUSH,
+    APP_LOGGED_IN,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -240,6 +241,12 @@ ipcRenderer.on(BROWSER_HISTORY_PUSH, (event, pathName) => {
         },
         window.location.origin,
     );
+});
+
+window.addEventListener('storage', (e) => {
+    if (e.key === '__login__' && e.storageArea === localStorage && e.newValue) {
+        ipcRenderer.send(APP_LOGGED_IN, viewName);
+    }
 });
 
 /* eslint-enable no-magic-numbers */

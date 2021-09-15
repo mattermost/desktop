@@ -20,7 +20,7 @@ import {
     UPDATE_LAST_ACTIVE,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
-import {isServerVersionGreaterThanOrEqualTo} from 'common/utils/util';
+import Utils from 'common/utils/util';
 
 import {getServerView, getTabViewName} from 'common/tabs/TabView';
 
@@ -87,6 +87,13 @@ export class ViewManager {
         view.on(UPDATE_TARGET_URL, this.showURLView);
         view.on(LOADSCREEN_END, this.finishLoading);
         view.once(LOAD_FAILED, this.failLoading);
+    }
+
+    reloadViewIfNeeded = (viewName: string) => {
+        const view = this.views.get(viewName);
+        if (!view?.getWebContents()?.getURL().startsWith(view.tab.url.toString())) {
+            view?.load(view.tab.url);
+        }
     }
 
     load = () => {
@@ -416,7 +423,7 @@ export class ViewManager {
                         return;
                     }
 
-                    if (view.status === Status.READY && view.serverInfo.remoteInfo.serverVersion && isServerVersionGreaterThanOrEqualTo(view.serverInfo.remoteInfo.serverVersion, '6.0.0')) {
+                    if (view.status === Status.READY && view.serverInfo.remoteInfo.serverVersion && Utils.isServerVersionGreaterThanOrEqualTo(view.serverInfo.remoteInfo.serverVersion, '6.0.0')) {
                         const pathName = `/${urlWithSchema.replace(view.tab.server.url.toString(), '')}`;
                         view.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
                         this.deeplinkSuccess(view.name);

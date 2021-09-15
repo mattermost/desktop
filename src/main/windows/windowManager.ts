@@ -17,8 +17,10 @@ import {
     GET_DARK_MODE,
     UPDATE_SHORTCUT_MENU,
     BROWSER_HISTORY_PUSH,
+    APP_LOGGED_IN,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
+import Utils from 'common/utils/util';
 
 import {getTabViewName} from 'common/tabs/TabView';
 
@@ -52,6 +54,7 @@ ipcMain.handle(GET_DARK_MODE, handleGetDarkMode);
 ipcMain.on(REACT_APP_INITIALIZED, handleReactAppInitialized);
 ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, handleLoadingScreenAnimationFinished);
 ipcMain.on(BROWSER_HISTORY_PUSH, handleBrowserHistoryPush);
+ipcMain.on(APP_LOGGED_IN, handleAppLoggedIn);
 
 export function setConfig(data: CombinedConfig) {
     if (data) {
@@ -557,4 +560,8 @@ function handleBrowserHistoryPush(e: IpcMainEvent, viewName: string, pathName: s
 
 export function getCurrentTeamName() {
     return status.currentServerName;
+}
+
+function handleAppLoggedIn(event: IpcMainEvent, viewName: string) {
+    status.viewManager?.reloadViewIfNeeded(viewName);
 }

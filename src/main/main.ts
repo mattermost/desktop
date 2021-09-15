@@ -47,7 +47,7 @@ import {
 import Config from 'common/config';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {getDefaultTeamWithTabsFromTeam, TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS} from 'common/tabs/TabView';
-import Utils, {isServerVersionGreaterThanOrEqualTo} from 'common/utils/util';
+import Utils from 'common/utils/util';
 
 import urlUtils from 'common/utils/url';
 
@@ -826,7 +826,7 @@ function openExtraTabs(data: Array<RemoteInfo | string | undefined>, team: TeamW
     const remoteInfo = data.find((info) => info && typeof info !== 'string' && info.name === team.name) as RemoteInfo;
     if (remoteInfo) {
         team.tabs.forEach((tab) => {
-            if (tab.name !== TAB_MESSAGING && remoteInfo.serverVersion && isServerVersionGreaterThanOrEqualTo(remoteInfo.serverVersion, '6.0.0')) {
+            if (tab.name !== TAB_MESSAGING && remoteInfo.serverVersion && Utils.isServerVersionGreaterThanOrEqualTo(remoteInfo.serverVersion, '6.0.0')) {
                 if (tab.name === TAB_PLAYBOOKS && remoteInfo.hasPlaybooks && tab.isOpen !== false) {
                     log.info(`opening ${team.name}___${tab.name} on hasPlaybooks`);
                     tab.isOpen = true;
