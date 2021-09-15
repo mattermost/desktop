@@ -396,7 +396,11 @@ function handleAppCertificateError(event: electron.Event, webContents: electron.
         return;
     }
     const origin = parsedURL.origin;
-    if (certificateStore.isTrusted(origin, certificate)) {
+    if (certificateStore.isExplicitlyUntrusted(origin)) {
+        event.preventDefault();
+        log.warn(`Ignoring previously untrusted certificate for ${origin}`);
+        callback(false);
+    } else if (certificateStore.isTrusted(origin, certificate)) {
         event.preventDefault();
         callback(true);
     } else {
@@ -436,11 +440,13 @@ function handleAppCertificateError(event: electron.Event, webContents: electron.
                         type: 'error',
                         buttons: ['Trust Insecure Certificate', 'Cancel Connection'],
                         cancelId: 1,
+                        checkboxChecked: false,
+                        checkboxLabel: "Don't ask again",
                     });
                 }
-                return {response};
+                return {response, checkboxChecked: false};
             }).then(
-            ({response: responseTwo}) => {
+            ({response: responseTwo, checkboxChecked}) => {
                 if (responseTwo === 0) {
                     certificateStore.add(origin, certificate);
                     certificateStore.save();
@@ -448,6 +454,10 @@ function handleAppCertificateError(event: electron.Event, webContents: electron.
                     certificateErrorCallbacks.delete(errorID);
                     webContents.loadURL(url);
                 } else {
+                    if (checkboxChecked) {
+                        certificateStore.add(origin, certificate, true);
+                        certificateStore.save();
+                    }
                     certificateErrorCallbacks.get(errorID)(false);
                     certificateErrorCallbacks.delete(errorID);
                 }
@@ -781,6 +791,12 @@ function initializeAfterAppReady() {
     globalShortcut.register(`${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`, () => {
         ipcMain.emit(OPEN_TEAMS_DROPDOWN);
     });
+
+    if (process.platform === 'linux') {
+        globalShortcut.registerAll(['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'], () => {
+            // do nothing because we want to supress the menu popping up
+        });
+    }
 }
 
 //
@@ -844,7 +860,6 @@ function handleCloseAppMenu() {
 function handleUpdateMenuEvent(event: IpcMainEvent, menuConfig: Config) {
     const aMenu = appMenu.createMenu(menuConfig);
     Menu.setApplicationMenu(aMenu);
-    WindowManager.removeWindowMenu();
     aMenu.addListener('menu-will-close', handleCloseAppMenu);
 
     // set up context menu for tray icon

@@ -16,11 +16,9 @@ export function createSettingsWindow(mainWindow: BrowserWindow, config: Combined
         title: 'Desktop App Settings',
         fullscreen: false,
         webPreferences: {
-            nodeIntegration: false,
-            contextIsolation: true,
+            nativeWindowOpen: true,
             preload,
             spellcheck,
-            enableRemoteModule: process.env.NODE_ENV === 'test',
         }});
 
     const contextMenu = new ContextMenu({}, settingsWindow);

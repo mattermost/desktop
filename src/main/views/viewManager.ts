@@ -284,9 +284,9 @@ export class ViewManager {
             const urlString = typeof url === 'string' ? url : url.toString();
             const urlView = new BrowserView({
                 webPreferences: {
+                    nativeWindowOpen: true,
                     contextIsolation: process.env.NODE_ENV !== 'test',
                     nodeIntegration: process.env.NODE_ENV === 'test',
-                    enableRemoteModule: process.env.NODE_ENV === 'test',
                 }});
             const query = new Map([['url', urlString]]);
             const localURL = getLocalURLString('urlView.html', query);
@@ -330,7 +330,7 @@ export class ViewManager {
     createLoadingScreen = () => {
         const preload = getLocalPreload('loadingScreenPreload.js');
         this.loadingScreen = new BrowserView({webPreferences: {
-            contextIsolation: true,
+            nativeWindowOpen: true,
             preload,
         }});
         const localURL = getLocalURLString('loadingScreen.html');
