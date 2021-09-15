@@ -11,8 +11,8 @@ import {AppState} from 'types/appState';
 import {ComparableCertificate} from 'types/certificate';
 import {PermissionType, TrustedOrigin} from 'types/trustedOrigin';
 
+import {TAB_MESSAGING} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
-import { TAB_MESSAGING } from 'common/tabs/TabView';
 
 const defaultOptions = {
     stripUnknown: true,
@@ -227,6 +227,7 @@ export function validateV3ConfigData(data: ConfigV3) {
             return {
                 ...team,
                 url: cleanURL(team.url),
+
                 // Force messaging to stay open regardless of user config
                 tabs: team.tabs.map((tab) => {
                     return {
