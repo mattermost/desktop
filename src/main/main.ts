@@ -558,6 +558,7 @@ function handleNewServerModal() {
             teams.push(newTeam);
             config.set('teams', teams);
             updateServerInfos([newTeam]);
+            WindowManager.switchServer(newTeam.name, true);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {

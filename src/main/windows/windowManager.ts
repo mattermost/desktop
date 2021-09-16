@@ -357,7 +357,7 @@ function initializeViewManager() {
     }
 }
 
-export function switchServer(serverName: string) {
+export function switchServer(serverName: string, waitForViewToExist = false) {
     showMainWindow();
     const server = status.config?.teams.find((team) => team.name === serverName);
     if (!server) {
@@ -371,7 +371,16 @@ export function switchServer(serverName: string) {
         nextTab = openTabs.find((e) => e.order === 0) || openTabs[0];
     }
     const tabViewName = getTabViewName(serverName, nextTab.name);
-    status.viewManager?.showByName(tabViewName);
+    if (waitForViewToExist) {
+        const timeout = setInterval(() => {
+            if (status.viewManager?.views.has(tabViewName)) {
+                status.viewManager?.showByName(tabViewName);
+                clearTimeout(timeout);
+            }
+        }, 100);
+    } else {
+        status.viewManager?.showByName(tabViewName);
+    }
     ipcMain.emit(UPDATE_SHORTCUT_MENU);
 }
 
