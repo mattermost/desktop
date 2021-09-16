@@ -11,6 +11,7 @@ import {AppState} from 'types/appState';
 import {ComparableCertificate} from 'types/certificate';
 import {PermissionType, TrustedOrigin} from 'types/trustedOrigin';
 
+import {TAB_MESSAGING} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
 
 const defaultOptions = {
@@ -103,7 +104,7 @@ const configDataSchemaV3 = Joi.object<ConfigV3>({
         tabs: Joi.array().items(Joi.object({
             name: Joi.string().required(),
             order: Joi.number().integer().min(0),
-            isClosed: Joi.boolean().default(false),
+            isOpen: Joi.boolean(),
         })).default([]),
     })).default([]),
     showTrayIcon: Joi.boolean().default(false),
@@ -226,6 +227,14 @@ export function validateV3ConfigData(data: ConfigV3) {
             return {
                 ...team,
                 url: cleanURL(team.url),
+
+                // Force messaging to stay open regardless of user config
+                tabs: team.tabs.map((tab) => {
+                    return {
+                        ...tab,
+                        isOpen: tab.name === TAB_MESSAGING ? true : tab.isOpen,
+                    };
+                }),
             };
         });
 

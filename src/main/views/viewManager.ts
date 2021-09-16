@@ -20,7 +20,7 @@ import {
     UPDATE_LAST_ACTIVE,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
-import {isServerVersionGreaterThanOrEqualTo} from 'common/utils/util';
+import Utils from 'common/utils/util';
 
 import {getServerView, getTabViewName} from 'common/tabs/TabView';
 
@@ -72,12 +72,13 @@ export class ViewManager {
 
     loadView = (srv: MattermostServer, serverInfo: ServerInfo, tab: Tab, url?: string) => {
         const tabView = getServerView(srv, tab);
-        if (tab.isClosed) {
+        if (!tab.isOpen) {
             this.closedViews.set(tabView.name, {srv, tab});
             return;
         }
         const view = new MattermostView(tabView, serverInfo, this.mainWindow, this.viewOptions);
         this.views.set(tabView.name, view);
+        this.showByName(tabView.name);
         if (!this.loadingScreen) {
             this.createLoadingScreen();
         }
@@ -86,6 +87,13 @@ export class ViewManager {
         view.on(UPDATE_TARGET_URL, this.showURLView);
         view.on(LOADSCREEN_END, this.finishLoading);
         view.once(LOAD_FAILED, this.failLoading);
+    }
+
+    reloadViewIfNeeded = (viewName: string) => {
+        const view = this.views.get(viewName);
+        if (!view?.getWebContents()?.getURL().startsWith(view.tab.url.toString())) {
+            view?.load(view.tab.url);
+        }
     }
 
     load = () => {
@@ -107,7 +115,7 @@ export class ViewManager {
                 if (recycle && recycle.isVisible) {
                     setFocus = recycle.name;
                 }
-                if (tab.isClosed) {
+                if (!tab.isOpen) {
                     this.closedViews.set(tabView.name, {srv, tab});
                 } else if (recycle && recycle.tab.name === tabView.name && recycle.tab.url.toString() === urlUtils.parseURL(tabView.url)!.toString()) {
                     oldviews.delete(recycle.name);
@@ -117,6 +125,14 @@ export class ViewManager {
                 }
             });
         });
+        if (this.currentView && (oldviews.has(this.currentView) || this.closedViews.has(this.currentView))) {
+            if (configServers.length) {
+                delete this.currentView;
+                this.showInitial();
+            } else {
+                this.mainWindow.webContents.send(SET_ACTIVE_VIEW);
+            }
+        }
         oldviews.forEach((unused) => {
             unused.destroy();
         });
@@ -132,8 +148,8 @@ export class ViewManager {
             const element = this.configServers.find((e) => e.order === this.lastActiveServer || 0);
             if (element && element.tabs.length) {
                 let tab = element.tabs.find((tab) => tab.order === element.lastActiveTab || 0);
-                if (tab?.isClosed) {
-                    const openTabs = element.tabs.filter((tab) => !tab.isClosed);
+                if (!tab?.isOpen) {
+                    const openTabs = element.tabs.filter((tab) => tab.isOpen);
                     tab = openTabs.find((e) => e.order === 0) || openTabs[0];
                 }
                 if (tab) {
@@ -220,7 +236,7 @@ export class ViewManager {
             return;
         }
         const {srv, tab} = this.closedViews.get(name)!;
-        tab.isClosed = false;
+        tab.isOpen = true;
         this.closedViews.delete(name);
         this.loadView(srv, new ServerInfo(srv), tab, url);
         this.showByName(name);
@@ -407,7 +423,7 @@ export class ViewManager {
                         return;
                     }
 
-                    if (view.status === Status.READY && view.serverInfo.remoteInfo.serverVersion && isServerVersionGreaterThanOrEqualTo(view.serverInfo.remoteInfo.serverVersion, '6.0.0')) {
+                    if (view.status === Status.READY && view.serverInfo.remoteInfo.serverVersion && Utils.isServerVersionGreaterThanOrEqualTo(view.serverInfo.remoteInfo.serverVersion, '6.0.0')) {
                         const pathName = `/${urlWithSchema.replace(view.tab.server.url.toString(), '')}`;
                         view.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
                         this.deeplinkSuccess(view.name);

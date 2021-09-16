@@ -17,6 +17,7 @@ import {
     GET_DARK_MODE,
     UPDATE_SHORTCUT_MENU,
     BROWSER_HISTORY_PUSH,
+    APP_LOGGED_IN,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 
@@ -52,6 +53,7 @@ ipcMain.handle(GET_DARK_MODE, handleGetDarkMode);
 ipcMain.on(REACT_APP_INITIALIZED, handleReactAppInitialized);
 ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, handleLoadingScreenAnimationFinished);
 ipcMain.on(BROWSER_HISTORY_PUSH, handleBrowserHistoryPush);
+ipcMain.on(APP_LOGGED_IN, handleAppLoggedIn);
 
 export function setConfig(data: CombinedConfig) {
     if (data) {
@@ -363,8 +365,12 @@ export function switchServer(serverName: string) {
         return;
     }
     status.currentServerName = serverName;
-    const lastActiveTab = server.tabs.find((tab) => !tab.isClosed && tab.order === (server.lastActiveTab || 0)) || server.tabs[0];
-    const tabViewName = getTabViewName(serverName, lastActiveTab.name);
+    let nextTab = server.tabs.find((tab) => tab.isOpen && tab.order === (server.lastActiveTab || 0));
+    if (!nextTab) {
+        const openTabs = server.tabs.filter((tab) => tab.isOpen);
+        nextTab = openTabs.find((e) => e.order === 0) || openTabs[0];
+    }
+    const tabViewName = getTabViewName(serverName, nextTab.name);
     status.viewManager?.showByName(tabViewName);
     ipcMain.emit(UPDATE_SHORTCUT_MENU);
 }
@@ -489,7 +495,7 @@ export function selectNextTab() {
     }
 
     const currentTeamTabs = status.config?.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
-    const filteredTabs = currentTeamTabs?.filter((tab) => !tab.isClosed);
+    const filteredTabs = currentTeamTabs?.filter((tab) => tab.isOpen);
     const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
     if (!currentTeamTabs || !currentTab || !filteredTabs) {
         return;
@@ -514,7 +520,7 @@ export function selectPreviousTab() {
     }
 
     const currentTeamTabs = status.config?.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
-    const filteredTabs = currentTeamTabs?.filter((tab) => !tab.isClosed);
+    const filteredTabs = currentTeamTabs?.filter((tab) => tab.isOpen);
     const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
     if (!currentTeamTabs || !currentTab || !filteredTabs) {
         return;
@@ -553,4 +559,8 @@ function handleBrowserHistoryPush(e: IpcMainEvent, viewName: string, pathName: s
 
 export function getCurrentTeamName() {
     return status.currentServerName;
+}
+
+function handleAppLoggedIn(event: IpcMainEvent, viewName: string) {
+    status.viewManager?.reloadViewIfNeeded(viewName);
 }

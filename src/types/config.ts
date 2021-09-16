@@ -4,7 +4,7 @@
 export type Tab = {
     name: string;
     order: number;
-    isClosed?: boolean;
+    isOpen?: boolean;
 }
 
 export type Team = {

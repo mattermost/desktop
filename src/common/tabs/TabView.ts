@@ -30,17 +30,15 @@ export function getDefaultTeamWithTabsFromTeam(team: Team) {
             {
                 name: TAB_MESSAGING,
                 order: 0,
-                isClosed: false,
+                isOpen: true,
             },
             {
                 name: TAB_FOCALBOARD,
                 order: 1,
-                isClosed: false,
             },
             {
                 name: TAB_PLAYBOOKS,
                 order: 2,
-                isClosed: false,
             },
         ],
     };
