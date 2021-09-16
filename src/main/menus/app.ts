@@ -220,7 +220,7 @@ function createTemplate(config: Config) {
                 },
             });
             if (WindowManager.getCurrentTeamName() === team.name) {
-                team.tabs.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).forEach((tab, i) => {
+                team.tabs.filter((tab) => tab.isOpen).slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).forEach((tab, i) => {
                     items.push({
                         label: `    ${getTabDisplayName(tab.name as TabType)}`,
                         accelerator: `CmdOrCtrl+${i + 1}`,

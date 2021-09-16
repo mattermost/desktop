@@ -353,7 +353,7 @@ function initializeViewManager() {
         status.viewManager = new ViewManager(status.config, status.mainWindow);
         status.viewManager.load();
         status.viewManager.showInitial();
-        status.currentServerName = status.config.teams.find((team) => team.order === 0)?.name;
+        status.currentServerName = (status.config.teams.find((team) => team.order === status.config?.lastActiveTeam) || status.config.teams.find((team) => team.order === 0))?.name;
     }
 }
 
