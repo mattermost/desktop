@@ -12,9 +12,10 @@ import ReactSelect, {ActionMeta, OptionsType} from 'react-select';
 
 import {debounce} from 'underscore';
 
-import {localeTranslations} from 'common/utils/constants';
 import {CombinedConfig, LocalConfiguration} from 'types/config';
 import {DeepPartial} from 'types/utils';
+
+import {localeTranslations} from 'common/utils/constants';
 
 import {
     GET_LOCAL_CONFIGURATION,
