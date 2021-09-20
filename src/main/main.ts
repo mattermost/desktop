@@ -43,6 +43,7 @@ import {
     UPDATE_SHORTCUT_MENU,
     OPEN_TEAMS_DROPDOWN,
     UPDATE_LAST_ACTIVE,
+    GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
 } from 'common/communication';
 import Config from 'common/config';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -265,6 +266,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(WINDOW_MINIMIZE, WindowManager.minimize);
     ipcMain.on(WINDOW_RESTORE, WindowManager.restore);
     ipcMain.on(SHOW_SETTINGS_WINDOW, WindowManager.showSettingsWindow);
+    ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, handleGetAvailableSpellCheckerLanguages);
     ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
 }
 
@@ -289,6 +291,7 @@ function handleConfigUpdate(newConfig: CombinedConfig) {
             authManager.handleConfigUpdate(newConfig);
         }
         setUnreadBadgeSetting(newConfig && newConfig.showUnreadBadge);
+        updateSpellCheckerLocales();
     }
 
     ipcMain.emit('update-menu', true, config);
@@ -639,6 +642,12 @@ function handleRemoveServerModal(e: IpcMainEvent, name: string) {
     }
 }
 
+function updateSpellCheckerLocales() {
+    if (config.data?.spellCheckerLocales.length && app.isReady()) {
+        session.defaultSession.setSpellCheckerLanguages(config.data?.spellCheckerLocales);
+    }
+}
+
 function initializeAfterAppReady() {
     updateServerInfos(config.teams);
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
@@ -662,6 +671,7 @@ function initializeAfterAppReady() {
                 log.info(`Dictionary definitions downloaded successfully for ${lang}`);
             });
         }
+        updateSpellCheckerLocales();
     }
 
     const appVersionJson = path.join(app.getPath('userData'), 'app-state.json');
@@ -975,3 +985,6 @@ function handleUpdateLastActive(event: IpcMainEvent, serverName: string, viewNam
     config.set('lastActiveTeam', teams.find((team) => team.name === serverName)?.order || 0);
 }
 
+function handleGetAvailableSpellCheckerLanguages() {
+    return session.defaultSession.availableSpellCheckerLanguages;
+}
