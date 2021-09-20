@@ -210,7 +210,7 @@ jobs:
           at: ./dist
       - run:
           name: Update node to v16
-          command: choco instal nodejs
+          command: choco install nodejs
       - win_make:
           operation: optimize
       - win_make:
