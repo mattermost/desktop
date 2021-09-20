@@ -145,9 +145,9 @@ export class ViewManager {
 
     showInitial = () => {
         if (this.configServers.length) {
-            const element = this.configServers.find((e) => e.order === this.lastActiveServer || 0);
+            const element = this.configServers.find((e) => e.order === this.lastActiveServer) || this.configServers.find((e) => e.order === 0);
             if (element && element.tabs.length) {
-                let tab = element.tabs.find((tab) => tab.order === element.lastActiveTab || 0);
+                let tab = element.tabs.find((tab) => tab.order === element.lastActiveTab) || element.tabs.find((tab) => tab.order === 0);
                 if (!tab?.isOpen) {
                     const openTabs = element.tabs.filter((tab) => tab.isOpen);
                     tab = openTabs.find((e) => e.order === 0) || openTabs[0];
