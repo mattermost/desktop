@@ -436,7 +436,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     />
                     {'Check spelling'}
                     <FormText>
-                        {'Highlight misspelled words in your messages based on your system language configuration. '}
+                        {'Highlight misspelled words in your messages based on your system language or language preference. '}
                         {'Setting takes effect after restarting the app.'}
                     </FormText>
                 </FormCheck>
