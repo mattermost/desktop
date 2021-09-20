@@ -12,6 +12,7 @@ import ReactSelect, {ActionMeta, OptionsType} from 'react-select';
 
 import {debounce} from 'underscore';
 
+import {localeTranslations} from 'common/utils/constants';
 import {CombinedConfig, LocalConfiguration} from 'types/config';
 import {DeepPartial} from 'types/utils';
 
@@ -105,8 +106,10 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
             this.getConfig();
         });
 
-        window.ipcRenderer.invoke(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES).then((availableLanguages) => {
-            this.setState({availableLanguages: availableLanguages.map((language: string) => ({label: `${language}__label`, value: language}))});
+        window.ipcRenderer.invoke(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES).then((languages: string[]) => {
+            const availableLanguages = languages.filter((language) => localeTranslations[language]).map((language) => ({label: localeTranslations[language], value: language}));
+            availableLanguages.sort((a, b) => a.label.localeCompare(b.label));
+            this.setState({availableLanguages});
         });
     }
 
@@ -123,7 +126,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
             appOptions: SavingState.SAVING_STATE_DONE,
             servers: SavingState.SAVING_STATE_DONE,
         };
-        this.selectedSpellCheckerLocales = configData.spellCheckerLocales?.map((language: string) => ({label: `${language}__label`, value: language})) || [];
+        this.selectedSpellCheckerLocales = configData.spellCheckerLocales?.map((language: string) => ({label: localeTranslations[language] || language, value: language})) || [];
         return newState;
     }
 
@@ -438,11 +441,14 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 </FormCheck>
                 {this.state.useSpellChecker &&
                     <ReactSelect
+                        className='SettingsPage__spellCheckerLocalesDropdown'
+                        classNamePrefix='SettingsPage__spellCheckerLocalesDropdown'
                         options={this.state.availableLanguages}
                         isMulti={true}
                         isClearable={false}
                         onChange={this.handleChangeSpellCheckerLocales}
                         value={this.selectedSpellCheckerLocales}
+                        placeholder={'Select preferred language(s)'}
                     />
                 }
             </>,

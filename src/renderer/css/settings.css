@@ -35,3 +35,9 @@ body {
     background-color: #166de0;
     border-color: #166de0;
 }
+
+.SettingsPage__spellCheckerLocalesDropdown {
+    margin-top: 8px;
+    margin-left: 16px;
+    width: 50%;
+}

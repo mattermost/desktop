@@ -291,10 +291,7 @@ function handleConfigUpdate(newConfig: CombinedConfig) {
             authManager.handleConfigUpdate(newConfig);
         }
         setUnreadBadgeSetting(newConfig && newConfig.showUnreadBadge);
-    }
-
-    if (newConfig.spellCheckerLocales.length) {
-        session.defaultSession.setSpellCheckerLanguages(newConfig.spellCheckerLocales);
+        updateSpellCheckerLocales();
     }
 
     ipcMain.emit('update-menu', true, config);
@@ -644,6 +641,12 @@ function handleRemoveServerModal(e: IpcMainEvent, name: string) {
     }
 }
 
+function updateSpellCheckerLocales() {
+    if (config.data?.spellCheckerLocales.length && app.isReady()) {
+        session.defaultSession.setSpellCheckerLanguages(config.data?.spellCheckerLocales);
+    }
+}
+
 function initializeAfterAppReady() {
     updateServerInfos(config.teams);
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
@@ -667,6 +670,7 @@ function initializeAfterAppReady() {
                 log.info(`Dictionary definitions downloaded successfully for ${lang}`);
             });
         }
+        updateSpellCheckerLocales();
     }
 
     const appVersionJson = path.join(app.getPath('userData'), 'app-state.json');
