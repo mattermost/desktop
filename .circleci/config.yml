@@ -208,6 +208,9 @@ jobs:
       - run: mkdir -p ./dist/
       - attach_workspace:
           at: ./dist
+      - run:
+          name: Update node to v16
+          command: choco instal nodejs
       - win_make:
           operation: optimize
       - win_make:
