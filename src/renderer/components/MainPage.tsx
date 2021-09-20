@@ -330,6 +330,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
                 onCloseTab={this.handleCloseTab}
                 onDrop={this.handleDragAndDrop}
                 tabsDisabled={this.state.modalOpen}
+                isMenuOpen={this.state.isMenuOpen}
             />
         );
 

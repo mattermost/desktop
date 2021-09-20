@@ -24,6 +24,7 @@ type Props = {
     mentionCounts: Record<string, number>;
     onDrop: (result: DropResult) => void;
     tabsDisabled?: boolean;
+    isMenuOpen?: boolean;
 };
 
 function getStyle(style?: DraggingStyle | NotDraggingStyle) {
@@ -151,12 +152,15 @@ export default class TabBar extends React.PureComponent<Props> {
                     {(provided) => (
                         <Nav
                             ref={provided.innerRef}
-                            className={`TabBar${this.props.isDarkMode ? ' darkMode' : ''}`}
+                            className={classNames('TabBar', {
+                                darkMode: this.props.isDarkMode,
+                            })}
                             id={this.props.id}
                             variant='tabs'
                             {...provided.droppableProps}
                         >
                             {tabs}
+                            {this.props.isMenuOpen ? <span className='TabBar-nonDrag'/> : null}
                             {provided.placeholder}
                         </Nav>
                     )}
