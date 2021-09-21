@@ -60,12 +60,12 @@ export function displayMention(title: string, body: string, channel: {id: string
     mention.show();
 }
 
-export function displayDownloadCompleted(fileName: string, path: string, serverInfo: ServerFromURL) {
+export function displayDownloadCompleted(fileName: string, path: string, serverName: string) {
     if (!Notification.isSupported()) {
         log.error('notification not supported');
         return;
     }
-    const download = new DownloadNotification(fileName, serverInfo);
+    const download = new DownloadNotification(fileName, serverName);
 
     download.on('show', () => {
         windowManager.flashFrame(true);
