@@ -5,7 +5,6 @@ import {shell, Notification} from 'electron';
 import log from 'electron-log';
 
 import {MentionData} from 'types/notification';
-import {ServerFromURL} from 'types/utils';
 
 import {PLAY_SOUND} from 'common/communication';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
