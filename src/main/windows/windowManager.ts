@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
-import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, BrowserView} from 'electron';
+import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, BrowserView, WebContents} from 'electron';
 import log from 'electron-log';
 
 import {CombinedConfig} from 'types/config';
@@ -603,4 +603,17 @@ export function getCurrentTeamName() {
 
 function handleAppLoggedIn(event: IpcMainEvent, viewName: string) {
     status.viewManager?.reloadViewIfNeeded(viewName);
+}
+
+export function openAppWrapperDevTools(focusedWindow?: WebContents) {
+    if (focusedWindow) {
+        // toggledevtools opens it in the last known position, so sometimes it goes below the browserview
+        if (focusedWindow.isDevToolsOpened()) {
+            focusedWindow.closeDevTools();
+        } else if (focusedWindow.id === status.mainWindow?.webContents.id) {
+            status.mainView?.webContents.openDevTools({mode: 'detach'});
+        } else {
+            focusedWindow.openDevTools({mode: 'detach'});
+        }
+    }
 }
