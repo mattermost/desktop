@@ -466,6 +466,9 @@ export function restore() {
     if (focused) {
         focused.restore();
     }
+    if (focused?.isFullScreen()) {
+        focused.setFullScreen(false);
+    }
 }
 
 export function reload() {
