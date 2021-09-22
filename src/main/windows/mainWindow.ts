@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-import {app,  BrowserWindow, BrowserWindowConstructorOptions, ipcMain} from 'electron';
+import {app, BrowserWindow, BrowserWindowConstructorOptions, ipcMain} from 'electron';
 import log from 'electron-log';
 
 import {CombinedConfig} from 'types/config';
