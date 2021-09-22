@@ -23,7 +23,7 @@ import urlUtils from 'common/utils/url';
 
 import {getTabViewName} from 'common/tabs/TabView';
 
-import {getAdjustedWindowBoundaries, getLocalPreload, getLocalURLString, getTabViewBounds} from '../utils';
+import {getAdjustedWindowBoundaries, getLocalPreload, getLocalURLString, getMainViewBounds} from '../utils';
 
 import {ViewManager} from '../views/viewManager';
 import CriticalErrorHandler from '../CriticalErrorHandler';
@@ -122,7 +122,8 @@ export function showMainWindow(deeplinkingURL?: string | URL) {
                 log.error(`Main view failed to load: ${reason}`);
             });
         status.mainWindow.addBrowserView(status.mainView);
-        status.mainView.setBounds(getTabViewBounds(status.mainWindow.getContentBounds().width));
+        const windowBounds = status.mainWindow.getContentBounds();
+        status.mainView.setBounds(getMainViewBounds(windowBounds.width, windowBounds.height));
 
         status.mainView.webContents.once('did-finish-load', () => {
             if (status.mainView) {
@@ -203,7 +204,7 @@ function handleResizeMainWindow() {
         if (currentView) {
             currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, !(urlUtils.isTeamUrl(currentView.tab.url, currentView.view.webContents.getURL()) || urlUtils.isAdminUrl(currentView.tab.url, currentView.view.webContents.getURL()))));
         }
-        status.mainView?.setBounds(getTabViewBounds(bounds.width!));
+        status.mainView?.setBounds(getMainViewBounds(bounds.width!, bounds.height!));
         status.viewManager?.setLoadingScreenBounds();
         status.teamDropdown?.updateWindowBounds();
     };

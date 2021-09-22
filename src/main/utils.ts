@@ -22,12 +22,12 @@ export function shouldBeHiddenOnStartup(parsedArgv: Args) {
     return false;
 }
 
-export function getTabViewBounds(windowWidth: number) {
+export function getMainViewBounds(windowWidth: number, windowHeight: number) {
     return {
         x: 0,
         y: 0,
         width: windowWidth,
-        height: TAB_BAR_HEIGHT,
+        height: windowHeight,
     };
 }
 
