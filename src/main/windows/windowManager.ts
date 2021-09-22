@@ -203,6 +203,9 @@ function handleResizeMainWindow() {
         if (currentView) {
             currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, !(urlUtils.isTeamUrl(currentView.tab.url, currentView.view.webContents.getURL()) || urlUtils.isAdminUrl(currentView.tab.url, currentView.view.webContents.getURL()))));
         }
+        status.mainView?.setBounds(getTabViewBounds(bounds.width!));
+        status.viewManager?.setLoadingScreenBounds();
+        status.teamDropdown?.updateWindowBounds();
     };
 
     // Another workaround since the window doesn't update properly under Linux for some reason
@@ -212,9 +215,6 @@ function handleResizeMainWindow() {
     } else {
         setBoundsFunction();
     }
-    status.mainView?.setBounds(getTabViewBounds(bounds.width!));
-    status.viewManager.setLoadingScreenBounds();
-    status.teamDropdown?.updateWindowBounds();
 }
 
 export function sendToRenderer(channel: string, ...args: any[]) {
