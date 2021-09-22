@@ -346,7 +346,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
         }
 
         let maxButton;
-        if (this.state.maximized) {
+        if (this.state.maximized || this.state.fullScreen) {
             maxButton = (
                 <div
                     className='button restore-button'
