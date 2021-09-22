@@ -184,9 +184,11 @@ export class ViewManager {
             if (newView.isReady()) {
                 // if view is not ready, the renderer will have something to display instead.
                 newView.show();
+
                 // Need to call this function so that macOS has a draggable top bar
                 // https://github.com/electron/electron/issues/31068
                 this.mainView.setBounds(this.mainView.getBounds());
+
                 ipcMain.emit(UPDATE_LAST_ACTIVE, true, newView.tab.server.name, newView.tab.type);
                 if (newView.needsLoadingScreen()) {
                     this.showLoadingScreen();
