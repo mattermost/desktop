@@ -265,7 +265,7 @@ function createTemplate(config: Config) {
         // eslint-disable-next-line no-undef
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        label: `Version ${app.getVersion()} commit: ${__HASH_VERSION__}`,
+        label: `Version ${app.getVersion()}${__HASH_VERSION__ ? ` commit: ${__HASH_VERSION__}` : ''}`,
         enabled: false,
     });
 
