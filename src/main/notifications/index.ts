@@ -5,7 +5,6 @@ import {shell, Notification} from 'electron';
 import log from 'electron-log';
 
 import {MentionData} from 'types/notification';
-import {ServerFromURL} from 'types/utils';
 
 import {PLAY_SOUND} from 'common/communication';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
@@ -60,12 +59,12 @@ export function displayMention(title: string, body: string, channel: {id: string
     mention.show();
 }
 
-export function displayDownloadCompleted(fileName: string, path: string, serverInfo: ServerFromURL) {
+export function displayDownloadCompleted(fileName: string, path: string, serverName: string) {
     if (!Notification.isSupported()) {
         log.error('notification not supported');
         return;
     }
-    const download = new DownloadNotification(fileName, serverInfo);
+    const download = new DownloadNotification(fileName, serverName);
 
     download.on('show', () => {
         windowManager.flashFrame(true);
