@@ -52,10 +52,19 @@ if [[ -f "${SRC}/mattermost-desktop-${VERSION}-mac-arm64.zip" ]]; then
     fi
     SOMETHING_COPIED=$((SOMETHING_COPIED + 16))
 fi
+if [[ -f "${SRC}/mattermost-desktop-${VERSION}-mac-universal.zip" ]]; then
+    echo -e "Copying mac-universal\n"
+    cp "${SRC}/mattermost-desktop-${VERSION}-mac-universal.zip" "${DEST}/mattermost-desktop-${VERSION}-mac-universal.zip"
+    if [[ -f "${SRC}"/mattermost-desktop-${VERSION}-mac-universal.dmg ]]; then
+        cp "${SRC}/mattermost-desktop-${VERSION}-mac-universal.dmg.blockmap" "${DEST}/mattermost-desktop-${VERSION}-mac-universal.dmg.blockmap"
+        cp "${SRC}/mattermost-desktop-${VERSION}-mac-universal.dmg" "${DEST}/mattermost-desktop-${VERSION}-mac-universal.dmg"
+    fi
+    SOMETHING_COPIED=$((SOMETHING_COPIED + 32))
+fi
 if [[ -f "${SRC}"/mattermost-desktop-${VERSION}-linux-x64.tar.gz ]]; then
     echo -e "Copying linux\n"
     cp "${SRC}"/mattermost-desktop-*-linux-* "${DEST}/"
-    SOMETHING_COPIED=$((SOMETHING_COPIED + 32))
+    SOMETHING_COPIED=$((SOMETHING_COPIED + 64))
 fi
 
 if [[ $SOMETHING_COPIED -eq 0 ]]; then

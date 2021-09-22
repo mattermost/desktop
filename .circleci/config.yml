@@ -324,6 +324,10 @@ jobs:
           os: mac
           path: ./dist/macos-release
           subpath: ./macos-release/
+      - build:
+          os: mac-universal
+          path: ./dist/macos-release
+          subpath: ./macos-release/
       - run:
           name: Get rename without brew as it might fail
           command: curl -L https://github.com/ap/rename/archive/v1.601.tar.gz --output rename.tgz
@@ -557,7 +561,6 @@ workflows:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - pull/1680
 
       - store_artifacts:
           # for master/PR builds
