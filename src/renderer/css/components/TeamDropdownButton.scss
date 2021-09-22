@@ -8,6 +8,7 @@
     font-family: Open Sans;
     overflow: hidden;
     -webkit-font-smoothing: auto;
+    max-width: 400px;
 
     &.disabled {
         opacity: 0.5;
