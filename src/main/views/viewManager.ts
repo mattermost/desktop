@@ -430,7 +430,6 @@ export class ViewManager {
                     } else {
                         // attempting to change parsedURL protocol results in it not being modified.
                         view.resetLoadingStatus();
-                        log.info('viewManager.handleDeepLink', urlWithSchema);
                         view.load(urlWithSchema);
                         view.once(LOAD_SUCCESS, this.deeplinkSuccess);
                         view.once(LOAD_FAILED, this.deeplinkFailed);
