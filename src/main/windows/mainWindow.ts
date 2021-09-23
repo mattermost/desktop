@@ -6,13 +6,13 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-import {app, BrowserWindow, BrowserWindowConstructorOptions, ipcMain} from 'electron';
+import {app, BrowserWindow, BrowserWindowConstructorOptions, globalShortcut, ipcMain} from 'electron';
 import log from 'electron-log';
 
 import {CombinedConfig} from 'types/config';
 import {SavedWindowState} from 'types/mainWindow';
 
-import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS} from 'common/communication';
+import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, OPEN_TEAMS_DROPDOWN} from 'common/communication';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH} from 'common/utils/constants';
 
 import * as Validator from '../Validator';
@@ -172,6 +172,21 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
                 }
             }
         }
+    });
+
+    // Only add shortcuts when window is in focus
+    mainWindow.on('focus', () => {
+        if (process.platform === 'linux') {
+            globalShortcut.registerAll(['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'], () => {
+                // do nothing because we want to supress the menu popping up
+            });
+        }
+        globalShortcut.register(`${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`, () => {
+            ipcMain.emit(OPEN_TEAMS_DROPDOWN);
+        });
+    });
+    mainWindow.on('blur', () => {
+        globalShortcut.unregisterAll();
     });
 
     const contextMenu = new ContextMenu({}, mainWindow);
