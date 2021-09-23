@@ -102,8 +102,8 @@ export default class MainPage extends React.PureComponent<Props, State> {
         this.topBar = React.createRef();
         this.threeDotMenu = React.createRef();
 
-        const firstServer = this.props.teams.find((team) => team.order === this.props.lastActiveTeam || 0);
-        let firstTab = firstServer?.tabs.find((tab) => tab.order === firstServer.lastActiveTab || 0);
+        const firstServer = this.props.teams.find((team) => team.order === this.props.lastActiveTeam) || this.props.teams.find((team) => team.order === 0);
+        let firstTab = firstServer?.tabs.find((tab) => tab.order === firstServer.lastActiveTab) || firstServer?.tabs.find((tab) => tab.order === 0);
         if (!firstTab?.isOpen) {
             const openTabs = firstServer?.tabs.filter((tab) => tab.isOpen) || [];
             firstTab = openTabs?.find((e) => e.order === 0) || openTabs[0];
@@ -330,6 +330,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
                 onCloseTab={this.handleCloseTab}
                 onDrop={this.handleDragAndDrop}
                 tabsDisabled={this.state.modalOpen}
+                isMenuOpen={this.state.isMenuOpen}
             />
         );
 
@@ -345,7 +346,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
         }
 
         let maxButton;
-        if (this.state.maximized) {
+        if (this.state.maximized || this.state.fullScreen) {
             maxButton = (
                 <div
                     className='button restore-button'

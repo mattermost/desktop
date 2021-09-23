@@ -9,6 +9,11 @@
   padding: 6px 8px;
 }
 
+.TabBar-nonDrag {
+  flex-grow: 1;
+  -webkit-app-region: no-drag;
+}
+
 .TabBar .teamTabItem span {
   flex: 0 1 auto;
   overflow: hidden;

@@ -235,8 +235,8 @@ export default class Config extends EventEmitter {
         return this.combinedData?.spellCheckerURL;
     }
 
-    get spellCheckerLocale() {
-        return this.combinedData?.spellCheckerLocale ?? defaultPreferences.spellCheckerLocale;
+    get spellCheckerLocales() {
+        return this.combinedData?.spellCheckerLocales ?? defaultPreferences.spellCheckerLocales;
     }
     get showTrayIcon() {
         return this.combinedData?.showTrayIcon ?? defaultPreferences.showTrayIcon;

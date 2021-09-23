@@ -80,13 +80,13 @@ case "${1}" in
             if [[ "${pkg_version}" =~ "-rc" ]]; then
                 rc="${pkg_version#*-rc}"
             else
-                print_warning "No release candidate on the version, assuming 1"
-                rc=1
+                print_warning "No release candidate on the version, assuming 0"
+                rc=0
             fi
             case "${rc}" in
                 ''|*[!0-9]*) 
                     print_warning "Can't guess release candidate from version, assuming 1"
-                    rc=1
+                    rc=0
                 ;;
                 *)
                     rc=$(( rc + 1 ))

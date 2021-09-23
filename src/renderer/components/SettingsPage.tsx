@@ -8,13 +8,23 @@ import 'renderer/css/settings.css';
 
 import React from 'react';
 import {FormCheck, Col, FormGroup, FormText, Container, Row, Button} from 'react-bootstrap';
+import ReactSelect, {ActionMeta, OptionsType} from 'react-select';
 
 import {debounce} from 'underscore';
 
-import {CombinedConfig, LocalConfiguration, Team} from 'types/config';
+import {CombinedConfig, LocalConfiguration} from 'types/config';
 import {DeepPartial} from 'types/utils';
 
-import {GET_LOCAL_CONFIGURATION, UPDATE_CONFIGURATION, DOUBLE_CLICK_ON_WINDOW, GET_DOWNLOAD_LOCATION, ADD_SERVER, RELOAD_CONFIGURATION} from 'common/communication';
+import {localeTranslations} from 'common/utils/constants';
+
+import {
+    GET_LOCAL_CONFIGURATION,
+    UPDATE_CONFIGURATION,
+    DOUBLE_CLICK_ON_WINDOW,
+    GET_DOWNLOAD_LOCATION,
+    RELOAD_CONFIGURATION,
+    GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
+} from 'common/communication';
 
 import AutoSaveIndicator, {SavingState} from './AutoSaveIndicator';
 
@@ -26,13 +36,11 @@ type ConfigType = typeof CONFIG_TYPE_SERVERS | typeof CONFIG_TYPE_APP_OPTIONS;
 type State = DeepPartial<CombinedConfig> & {
     ready: boolean;
     maximized?: boolean;
-    teams?: Team[];
-    showAddTeamForm: boolean;
     trayWasVisible?: boolean;
-    firstRun?: boolean;
     savingState: SavingStateItems;
     userOpenedDownloadDialog: boolean;
     allowSaveSpellCheckerURL: boolean;
+    availableLanguages: Array<{label: string; value: string}>;
 }
 
 type SavingStateItems = {
@@ -61,18 +69,19 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
 
     saveQueue: SaveQueueItem[];
 
+    selectedSpellCheckerLocales: Array<{label: string; value: string}>;
+
     constructor(props: Record<string, never>) {
         super(props);
         this.state = {
             ready: false,
-            teams: [],
-            showAddTeamForm: false,
             savingState: {
                 appOptions: SavingState.SAVING_STATE_DONE,
                 servers: SavingState.SAVING_STATE_DONE,
             },
             userOpenedDownloadDialog: false,
             allowSaveSpellCheckerURL: false,
+            availableLanguages: [],
         };
 
         this.getConfig();
@@ -89,18 +98,19 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         this.spellCheckerURLRef = React.createRef();
 
         this.saveQueue = [];
+        this.selectedSpellCheckerLocales = [];
     }
 
     componentDidMount() {
-        window.ipcRenderer.on(ADD_SERVER, () => {
-            this.setState({
-                showAddTeamForm: true,
-            });
-        });
-
         window.ipcRenderer.on(RELOAD_CONFIGURATION, () => {
             this.updateSaveState();
             this.getConfig();
+        });
+
+        window.ipcRenderer.invoke(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES).then((languages: string[]) => {
+            const availableLanguages = languages.filter((language) => localeTranslations[language]).map((language) => ({label: localeTranslations[language], value: language}));
+            availableLanguages.sort((a, b) => a.label.localeCompare(b.label));
+            this.setState({availableLanguages});
         });
     }
 
@@ -112,16 +122,12 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
 
     convertConfigDataToState = (configData: Partial<LocalConfiguration>, currentState: Partial<State> = {}) => {
         const newState = Object.assign({} as State, configData);
-        newState.showAddTeamForm = currentState.showAddTeamForm || false;
         newState.trayWasVisible = currentState.trayWasVisible || false;
-        if (newState.teams?.length === 0 && currentState.firstRun !== false) {
-            newState.firstRun = false;
-            newState.showAddTeamForm = true;
-        }
         newState.savingState = currentState.savingState || {
             appOptions: SavingState.SAVING_STATE_DONE,
             servers: SavingState.SAVING_STATE_DONE,
         };
+        this.selectedSpellCheckerLocales = configData.spellCheckerLocales?.map((language: string) => ({label: localeTranslations[language] || language, value: language})) || [];
         return newState;
     }
 
@@ -172,17 +178,6 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         }
     }, 2000);
 
-    handleTeamsChange = (teams: Team[]) => {
-        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_SERVERS, {key: 'teams', data: teams});
-        this.setState({
-            showAddTeamForm: false,
-            teams,
-        });
-        if (teams.length === 0) {
-            this.setState({showAddTeamForm: true});
-        }
-    }
-
     handleChangeShowTrayIcon = () => {
         const shouldShowTrayIcon = this.showTrayIconRef.current?.checked;
         window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'showTrayIcon', data: shouldShowTrayIcon});
@@ -217,19 +212,6 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'minimizeToTray', data: shouldMinimizeToTray});
         this.setState({
             minimizeToTray: shouldMinimizeToTray,
-        });
-    }
-
-    toggleShowTeamForm = () => {
-        this.setState({
-            showAddTeamForm: !this.state.showAddTeamForm,
-        });
-        (document.activeElement as HTMLElement).blur();
-    }
-
-    setShowTeamFormVisibility = (val: boolean) => {
-        this.setState({
-            showAddTeamForm: val,
         });
     }
 
@@ -292,6 +274,22 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'useSpellChecker', data: this.useSpellCheckerRef.current?.checked});
         this.setState({
             useSpellChecker: this.useSpellCheckerRef.current?.checked,
+        });
+    }
+
+    handleChangeSpellCheckerLocales = (value: OptionsType<{label: string; value: string}>, actionMeta: ActionMeta<{label: string; value: string}>) => {
+        switch (actionMeta.action) {
+        case 'select-option':
+            this.selectedSpellCheckerLocales = [...value];
+            break;
+        case 'remove-value':
+            this.selectedSpellCheckerLocales = this.selectedSpellCheckerLocales.filter((language) => language.value !== actionMeta.removedValue.value);
+        }
+
+        const values = this.selectedSpellCheckerLocales.map((language) => language.value);
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'spellCheckerLocales', data: values});
+        this.setState({
+            spellCheckerLocales: values,
         });
     }
 
@@ -426,21 +424,36 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         }
 
         options.push(
-            <FormCheck>
-                <FormCheck.Input
-                    type='checkbox'
-                    key='inputSpellChecker'
-                    id='inputSpellChecker'
-                    ref={this.useSpellCheckerRef}
-                    checked={this.state.useSpellChecker}
-                    onChange={this.handleChangeUseSpellChecker}
-                />
-                {'Check spelling'}
-                <FormText>
-                    {'Highlight misspelled words in your messages based on your system language configuration. '}
-                    {'Setting takes effect after restarting the app.'}
-                </FormText>
-            </FormCheck>);
+            <>
+                <FormCheck>
+                    <FormCheck.Input
+                        type='checkbox'
+                        key='inputSpellChecker'
+                        id='inputSpellChecker'
+                        ref={this.useSpellCheckerRef}
+                        checked={this.state.useSpellChecker}
+                        onChange={this.handleChangeUseSpellChecker}
+                    />
+                    {'Check spelling'}
+                    <FormText>
+                        {'Highlight misspelled words in your messages based on your system language or language preference. '}
+                        {'Setting takes effect after restarting the app.'}
+                    </FormText>
+                </FormCheck>
+                {this.state.useSpellChecker &&
+                    <ReactSelect
+                        className='SettingsPage__spellCheckerLocalesDropdown'
+                        classNamePrefix='SettingsPage__spellCheckerLocalesDropdown'
+                        options={this.state.availableLanguages}
+                        isMulti={true}
+                        isClearable={false}
+                        onChange={this.handleChangeSpellCheckerLocales}
+                        value={this.selectedSpellCheckerLocales}
+                        placeholder={'Select preferred language(s)'}
+                    />
+                }
+            </>,
+        );
         if (process.platform !== 'darwin') {
             if (this.state.spellCheckerURL === null || typeof this.state.spellCheckerURL === 'undefined') {
                 options.push(
