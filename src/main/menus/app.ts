@@ -142,14 +142,7 @@ function createTemplate(config: Config) {
             return 'Ctrl+Shift+I';
         })(),
         click(item: Electron.MenuItem, focusedWindow?: WebContents) {
-            if (focusedWindow) {
-                // toggledevtools opens it in the last known position, so sometimes it goes below the browserview
-                if (focusedWindow.isDevToolsOpened()) {
-                    focusedWindow.closeDevTools();
-                } else {
-                    focusedWindow.openDevTools({mode: 'detach'});
-                }
-            }
+            WindowManager.openAppWrapperDevTools(focusedWindow);
         },
     }, {
         label: 'Developer Tools for Current Tab',

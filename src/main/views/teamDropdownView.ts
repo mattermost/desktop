@@ -128,8 +128,12 @@ export default class TeamDropdownView {
     }
 
     getBounds = (width: number, height: number) => {
+        let threeDotMenuWidth = THREE_DOT_MENU_WIDTH;
+        if (process.platform === 'darwin') {
+            threeDotMenuWidth = this.window.isFullScreen() ? 6 : THREE_DOT_MENU_WIDTH_MAC;
+        }
         return {
-            x: (process.platform === 'darwin' ? THREE_DOT_MENU_WIDTH_MAC : THREE_DOT_MENU_WIDTH) - MENU_SHADOW_WIDTH,
+            x: threeDotMenuWidth - MENU_SHADOW_WIDTH,
             y: TAB_BAR_HEIGHT - MENU_SHADOW_WIDTH,
             width,
             height,
