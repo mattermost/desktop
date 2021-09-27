@@ -47,7 +47,7 @@ export class ServerInfo {
 
     onGetPlugins = (data: Array<{id: string; version: string}>) => {
         this.remoteInfo.hasFocalboard = data.some((plugin) => plugin.id === 'focalboard');
-        this.remoteInfo.hasPlaybooks = data.some((plugin) => plugin.id === 'com.mattermost.plugin-incident-management');
+        this.remoteInfo.hasPlaybooks = data.some((plugin) => plugin.id === 'playbooks');
 
         this.trySendRemoteInfo();
     }
