@@ -45,14 +45,16 @@ export class ViewManager {
     urlView?: BrowserView;
     urlViewCancel?: () => void;
     mainWindow: BrowserWindow;
+    mainView: BrowserView;
     loadingScreen?: BrowserView;
 
-    constructor(config: CombinedConfig, mainWindow: BrowserWindow) {
+    constructor(config: CombinedConfig, mainWindow: BrowserWindow, mainView: BrowserView) {
         this.configServers = config.teams;
         this.lastActiveServer = config.lastActiveTeam;
         this.viewOptions = {webPreferences: {spellcheck: config.useSpellChecker}};
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
         this.mainWindow = mainWindow;
+        this.mainView = mainView;
         this.closedViews = new Map();
     }
 
@@ -130,7 +132,7 @@ export class ViewManager {
                 delete this.currentView;
                 this.showInitial();
             } else {
-                this.mainWindow.webContents.send(SET_ACTIVE_VIEW);
+                this.mainView.webContents.send(SET_ACTIVE_VIEW);
             }
         }
         oldviews.forEach((unused) => {
@@ -177,11 +179,16 @@ export class ViewManager {
             if (newView.needsLoadingScreen()) {
                 this.showLoadingScreen();
             }
-            newView.window.webContents.send(SET_ACTIVE_VIEW, newView.tab.server.name, newView.tab.type);
+            this.mainView.webContents.send(SET_ACTIVE_VIEW, newView.tab.server.name, newView.tab.type);
             ipcMain.emit(SET_ACTIVE_VIEW, true, newView.tab.server.name, newView.tab.type);
             if (newView.isReady()) {
                 // if view is not ready, the renderer will have something to display instead.
                 newView.show();
+
+                // Need to call this function so that macOS has a draggable top bar
+                // https://github.com/electron/electron/issues/31068
+                this.mainView.setBounds(this.mainView.getBounds());
+
                 ipcMain.emit(UPDATE_LAST_ACTIVE, true, newView.tab.server.name, newView.tab.type);
                 if (newView.needsLoadingScreen()) {
                     this.showLoadingScreen();
