@@ -653,7 +653,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     {'Leave app running in notification area when application window is closed'}
                     <FormText>
                         {'If enabled, the app stays running in the notification area after app window is closed.'}
-                        {!this.state.showTrayIcon ? '' : ' Setting takes effect after restarting the app.'}
+                        {this.state.showTrayIcon ? ' Setting takes effect after restarting the app.' : ''}
                     </FormText>
                 </FormCheck>);
         }
