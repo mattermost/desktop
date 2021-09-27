@@ -93,8 +93,8 @@ export class ViewManager {
 
     reloadViewIfNeeded = (viewName: string) => {
         const view = this.views.get(viewName);
-        if (!view?.getWebContents()?.getURL().startsWith(view.tab.url.toString())) {
-            view?.load(view.tab.url);
+        if (view && !view.view.webContents.getURL().startsWith(view.tab.url.toString())) {
+            view.load(view.tab.url);
         }
     }
 
