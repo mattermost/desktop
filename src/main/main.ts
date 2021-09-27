@@ -7,7 +7,7 @@ import fs from 'fs';
 
 import path from 'path';
 
-import electron, {BrowserWindow, globalShortcut, IpcMainEvent, IpcMainInvokeEvent, Rectangle} from 'electron';
+import electron, {BrowserWindow, IpcMainEvent, IpcMainInvokeEvent, Rectangle} from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import log from 'electron-log';
@@ -41,7 +41,6 @@ import {
     SHOW_EDIT_SERVER_MODAL,
     SHOW_REMOVE_SERVER_MODAL,
     UPDATE_SHORTCUT_MENU,
-    OPEN_TEAMS_DROPDOWN,
     UPDATE_LAST_ACTIVE,
     GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
 } from 'common/communication';
@@ -798,16 +797,6 @@ function initializeAfterAppReady() {
         // is the requesting url trusted?
         callback(urlUtils.isTrustedURL(requestingURL, config.teams));
     });
-
-    globalShortcut.register(`${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`, () => {
-        ipcMain.emit(OPEN_TEAMS_DROPDOWN);
-    });
-
-    if (process.platform === 'linux') {
-        globalShortcut.registerAll(['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'], () => {
-            // do nothing because we want to supress the menu popping up
-        });
-    }
 }
 
 //
