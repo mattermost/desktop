@@ -38,7 +38,7 @@ module.exports = merge(base, {
         net: 'require("net")',
         repl: 'require("repl")',
         tls: 'require("tls")',
-        spectron: 'require("spectron")',
+        playwright: 'require("playwright")',
     },
     node: {
         __filename: false,

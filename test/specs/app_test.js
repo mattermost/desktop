@@ -2,29 +2,38 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-// TODO: Commenting out until Spectron is upgraded for Electron v14
-
-// 'use strict';
+'use strict';
 
 // const fs = require('fs');
 
-// const env = require('../modules/environment');
+const env = require('../modules/environment');
 
-// describe('application', function desc() {
+describe('application', function desc() {
 //     this.timeout(30000);
 
-//     beforeEach(() => {
-//         env.createTestUserDataDir();
-//         env.cleanTestConfig();
-//         this.app = env.getSpectronApp();
-//         return this.app.start();
-//     });
+    beforeEach(async () => {
+        env.createTestUserDataDir();
+        env.cleanTestConfig();
+        this.app = await env.getApp();
+    });
 
-//     afterEach(async () => {
-//         if (this.app && this.app.isRunning()) {
-//             await this.app.stop();
-//         }
-//     });
+    afterEach(async () => {
+        if (this.app) {
+            await this.app.close();
+        }
+    });
+
+    it('should show a window', async () => {
+        const window = await this.app.firstWindow();
+        // Direct Electron console to Node terminal.
+        window.on('console', console.log);
+        const windows = this.app.windows();
+        console.log(windows);
+        // Print the title.
+        console.log(await window.title());
+        // Capture a screenshot.
+        await window.screenshot({ path: 'intro.png' });
+    });
 
 //     // it('should show two windows if there is no config file', async () => {
 //     //     await this.app.client.waitUntilWindowLoaded();
@@ -151,4 +160,4 @@
 //     //   }).then(() => {
 //     //     done(new Error('Second app instance exists'));
 //     //   });
-// });
+});

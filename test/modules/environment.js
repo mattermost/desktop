@@ -7,7 +7,7 @@ const fs = require('fs');
 
 const path = require('path');
 
-const Application = require('spectron').Application;
+const { _electron: electron } = require('playwright');
 const chai = require('chai');
 const {ipcRenderer} = require('electron');
 
@@ -53,21 +53,21 @@ module.exports = {
         }
     },
 
-    getSpectronApp() {
+    getApp() {
         const options = {
-            path: electronBinaryPath,
+            executablePath: electronBinaryPath,
             args: [`${path.join(sourceRootDir, 'dist')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode'],
-            chromeDriverArgs: [],
+            //chromeDriverArgs: [],
         };
-        if (process.env.MM_DEBUG_SETTINGS) {
-            options.chromeDriverLogPath = './chromedriverlog.txt';
-        }
-        if (process.platform === 'darwin' || process.platform === 'linux') {
-            // on a mac, debbuging port might conflict with other apps
-            // this changes the default debugging port so chromedriver can run without issues.
-            options.chromeDriverArgs.push('remote-debugging-port=9222');
-        }
-        return new Application(options);
+        // if (process.env.MM_DEBUG_SETTINGS) {
+        //     options.chromeDriverLogPath = './chromedriverlog.txt';
+        // }
+        // if (process.platform === 'darwin' || process.platform === 'linux') {
+        //     // on a mac, debbuging port might conflict with other apps
+        //     // this changes the default debugging port so chromedriver can run without issues.
+        //     options.chromeDriverArgs.push('remote-debugging-port=9222');
+        //}
+        return electron.launch(options);
     },
 
     addClientCommands(client) {
