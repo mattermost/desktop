@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-import {app, BrowserWindow, BrowserWindowConstructorOptions, globalShortcut, ipcMain} from 'electron';
+import {app, BrowserWindow, BrowserWindowConstructorOptions, globalShortcut, ipcMain, screen} from 'electron';
 import log from 'electron-log';
 
 import {CombinedConfig} from 'types/config';
@@ -32,6 +32,10 @@ function saveWindowState(file: string, window: BrowserWindow) {
     }
 }
 
+function isInsideRectangle(container: Electron.Rectangle, rect: Electron.Rectangle) {
+    return container.x <= rect.x && container.y <= rect.y && container.width >= rect.width && container.height >= rect.height;
+}
+
 function isFramelessWindow() {
     return os.platform() === 'darwin' || (os.platform() === 'win32' && os.release().startsWith('10'));
 }
@@ -45,6 +49,10 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
         savedWindowState = Validator.validateBoundsInfo(savedWindowState);
         if (!savedWindowState) {
             throw new Error('Provided bounds info file does not validate, using defaults instead.');
+        }
+        const matchingScreen = screen.getDisplayMatching(savedWindowState);
+        if (!(matchingScreen && (isInsideRectangle(matchingScreen.bounds, savedWindowState) || savedWindowState.maximized))) {
+            throw new Error('Provided bounds info are outside the bounds of your screen, using defaults instead.');
         }
     } catch (e) {
     // Follow Electron's defaults, except for window dimensions which targets 1024x768 screen resolution.
