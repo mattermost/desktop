@@ -119,7 +119,7 @@ const configDataSchemaV3 = Joi.object<ConfigV3>({
     useSpellChecker: Joi.boolean().default(true),
     enableHardwareAcceleration: Joi.boolean().default(true),
     autostart: Joi.boolean().default(true),
-    spellCheckerLocales: Joi.array().items(Joi.string().regex(/^[a-z]{2}-[A-Z]{2}$/)).default([]),
+    spellCheckerLocales: Joi.array().items(Joi.string()).default([]),
     spellCheckerURL: Joi.string().allow(null),
     darkMode: Joi.boolean().default(false),
     downloadLocation: Joi.string(),
