@@ -114,7 +114,7 @@ export class ViewManager {
             server.tabs.forEach((tab) => {
                 const tabView = getServerView(srv, tab);
                 const recycle = oldviews.get(tabView.name);
-                if (recycle && recycle.isVisible) {
+                if (recycle && recycle.name === this.currentView) {
                     setFocus = recycle.name;
                 }
                 if (!tab.isOpen) {
