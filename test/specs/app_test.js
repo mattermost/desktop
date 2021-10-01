@@ -4,7 +4,7 @@
 
 'use strict';
 
-// const fs = require('fs');
+const fs = require('fs');
 
 const env = require('../modules/environment');
 
@@ -23,28 +23,19 @@ describe('application', function desc() {
         }
     });
 
-    it('should show a window', async () => {
-        const window = await this.app.firstWindow();
-        // Direct Electron console to Node terminal.
-        window.on('console', console.log);
-        const windows = this.app.windows();
-        console.log(windows);
-        // Print the title.
-        console.log(await window.title());
-        // Capture a screenshot.
-        await window.screenshot({ path: 'intro.png' });
-    });
+    // it('should show the new server modal when no servers exist', async () => {
+    //     const newServerModal = await this.app.waitForEvent('window', {
+    //         predicate: (window) => window.url().includes('newServer'),
+    //     });
+    //     const modalTitle = await newServerModal.innerText('#newServerModal .modal-title');
+    //     modalTitle.should.equal('Add Server');
+    // });
 
-//     // it('should show two windows if there is no config file', async () => {
-//     //     await this.app.client.waitUntilWindowLoaded();
-//     //     const count = await this.app.client.getWindowCount();
-//     //     count.should.equal(2);
-//     //     const opened = await this.app.browserWindow.isDevToolsOpened();
-//     //     opened.should.be.false;
-
-//     //     const visible = await this.app.browserWindow.isVisible();
-//     //     visible.should.be.true;
-//     // });
+    // it('should show no servers configured in dropdown when no servers exist', async () => {
+    //     const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+    //     const dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+    //     dropdownButtonText.should.equal('No servers configured');
+    // });
 
 //     if (process.platform === 'darwin') {
 //         it.skip('should show closed window with cmd+tab', async () => {
@@ -55,21 +46,24 @@ describe('application', function desc() {
 //             visible.should.be.false;
 
 //             this.app.client.keys(['Meta', 'Tab']);
-//             visible = await this.app.browserWindow.isVisible();
+//             visible = await this.app.browserWindow.isVisible();s
 //             visible.should.be.true;
 //         });
 //     }
 
-//     it.skip('should restore window bounds', async () => {
-//         // bounds seems to be incorrectly calculated in some environments
-//         // - Windows 10: OK
-//         // - CircleCI: NG
-//         const expectedBounds = {x: 100, y: 200, width: 300, height: 400};
-//         fs.writeFileSync(env.boundsInfoPath, JSON.stringify(expectedBounds));
-//         await this.app.restart();
-//         const bounds = await this.app.browserWindow.getBounds();
-//         bounds.should.deep.equal(expectedBounds);
-//     });
+    it('should restore window bounds', async () => {
+        // bounds seems to be incorrectly calculated in some environments
+        // - Windows 10: OK
+        // - CircleCI: NG
+        const expectedBounds = {x: 100, y: 200, width: 300, height: 400};
+        fs.writeFileSync(env.boundsInfoPath, JSON.stringify(expectedBounds));
+        await this.app.close();
+        this.app = await env.getApp();
+        const mainWindow = await this.app.firstWindow();
+        const browserWindow = await this.app.browserWindow(mainWindow);
+        const bounds = await browserWindow.evaluate((window) => window.getContentBounds());
+        bounds.should.deep.equal(expectedBounds);
+    });
 
 //     it('should NOT restore window bounds if the origin is located on outside of viewarea', async () => {
 //     // bounds seems to be incorrectly calculated in some environments (e.g. CircleCI)
