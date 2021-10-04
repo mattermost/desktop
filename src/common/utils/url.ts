@@ -22,6 +22,7 @@ const customLoginRegexPaths = [
     /^\/signup\/[A-Za-z0-9]+\/complete$/i,
     /^\/login\/[A-Za-z0-9]+\/complete$/i,
     /^\/login\/sso\/saml$/i,
+    /^\/nidp\/saml2\/sso$/i,
 ];
 
 function getDomain(inputURL: URL | string) {
