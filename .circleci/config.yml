@@ -65,7 +65,7 @@ commands:
         default: ""
     steps:
       - run: wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | apt-key add -
-      - run: apt-get update && apt-get install ca-certificates && apt-get update && apt-get -y install << parameters.apt_opts >>
+      - run: apt-get update || true  && apt-get install ca-certificates && apt-get update && apt-get -y install << parameters.apt_opts >>
       - run: npm ci
 
   win_make:
