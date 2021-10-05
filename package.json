@@ -89,7 +89,7 @@
     "cross-env": "^5.2.0",
     "css-loader": "^1.0.1",
     "devtron": "^1.4.0",
-    "electron": "14.0.0",
+    "electron": "14.1.0",
     "electron-builder": "22.11.7",
     "electron-connect": "^0.6.3",
     "electron-mocha": "^10.1.0",

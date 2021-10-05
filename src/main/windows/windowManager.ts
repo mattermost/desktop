@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
-import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, BrowserView, WebContents} from 'electron';
+import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent} from 'electron';
 import log from 'electron-log';
 
 import {CombinedConfig} from 'types/config';
@@ -23,7 +23,7 @@ import urlUtils from 'common/utils/url';
 
 import {getTabViewName} from 'common/tabs/TabView';
 
-import {getAdjustedWindowBoundaries, getLocalPreload, getLocalURLString, getMainViewBounds} from '../utils';
+import {getAdjustedWindowBoundaries} from '../utils';
 
 import {ViewManager} from '../views/viewManager';
 import CriticalErrorHandler from '../CriticalErrorHandler';
@@ -37,7 +37,6 @@ import createMainWindow from './mainWindow';
 
 type WindowManagerStatus = {
     mainWindow?: BrowserWindow;
-    mainView?: BrowserView;
     settingsWindow?: BrowserWindow;
     config?: CombinedConfig;
     viewManager?: ViewManager;
@@ -105,33 +104,6 @@ export function showMainWindow(deeplinkingURL?: string | URL) {
             app.quit();
         }
 
-        const preload = getLocalPreload('mainWindow.js');
-        const spellcheck = (typeof status.config.useSpellChecker === 'undefined' ? true : status.config.useSpellChecker);
-        status.mainView = new BrowserView({
-            webPreferences: {
-                nodeIntegration: process.env.NODE_ENV === 'test',
-                contextIsolation: process.env.NODE_ENV !== 'test',
-                disableBlinkFeatures: 'Auxclick',
-                preload,
-                spellcheck,
-            },
-        });
-        const localURL = getLocalURLString('index.html');
-        status.mainView.webContents.loadURL(localURL).catch(
-            (reason) => {
-                log.error(`Main view failed to load: ${reason}`);
-            });
-        status.mainWindow.addBrowserView(status.mainView);
-        const windowBounds = status.mainWindow.getContentBounds();
-        status.mainView.setBounds(getMainViewBounds(windowBounds.width, windowBounds.height));
-
-        status.mainView.webContents.once('did-finish-load', () => {
-            if (status.mainView) {
-                status.mainView.webContents.zoomLevel = 0;
-            }
-            status.mainWindow?.show();
-        });
-
         // window handlers
         status.mainWindow.on('closed', () => {
             log.warn('main window closed');
@@ -150,7 +122,7 @@ export function showMainWindow(deeplinkingURL?: string | URL) {
         status.mainWindow.on('leave-full-screen', () => sendToRenderer('leave-full-screen'));
 
         if (process.env.MM_DEBUG_SETTINGS) {
-            status.mainView.webContents.openDevTools({mode: 'detach'});
+            status.mainWindow.webContents.openDevTools({mode: 'detach'});
         }
 
         if (status.viewManager) {
@@ -204,9 +176,6 @@ function handleResizeMainWindow() {
         if (currentView) {
             currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, !(urlUtils.isTeamUrl(currentView.tab.url, currentView.view.webContents.getURL()) || urlUtils.isAdminUrl(currentView.tab.url, currentView.view.webContents.getURL()))));
         }
-        status.mainView?.setBounds(getMainViewBounds(bounds.width!, bounds.height!));
-        status.viewManager?.setLoadingScreenBounds();
-        status.teamDropdown?.updateWindowBounds();
     };
 
     // Another workaround since the window doesn't update properly under Linux for some reason
@@ -216,13 +185,15 @@ function handleResizeMainWindow() {
     } else {
         setBoundsFunction();
     }
+    status.viewManager.setLoadingScreenBounds();
+    status.teamDropdown?.updateWindowBounds();
 }
 
 export function sendToRenderer(channel: string, ...args: any[]) {
     if (!status.mainWindow) {
         showMainWindow();
     }
-    status.mainView!.webContents.send(channel, ...args);
+    status.mainWindow!.webContents.send(channel, ...args);
     if (status.settingsWindow && status.settingsWindow.isVisible()) {
         status.settingsWindow.webContents.send(channel, ...args);
     }
@@ -378,8 +349,8 @@ export function handleDoubleClick(e: IpcMainEvent, windowType?: string) {
 }
 
 function initializeViewManager() {
-    if (!status.viewManager && status.config && status.mainWindow && status.mainView) {
-        status.viewManager = new ViewManager(status.config, status.mainWindow, status.mainView);
+    if (!status.viewManager && status.config && status.mainWindow) {
+        status.viewManager = new ViewManager(status.config, status.mainWindow);
         status.viewManager.load();
         status.viewManager.showInitial();
         status.currentServerName = (status.config.teams.find((team) => team.order === status.config?.lastActiveTeam) || status.config.teams.find((team) => team.order === 0))?.name;
@@ -434,9 +405,9 @@ export function openBrowserViewDevTools() {
 }
 
 export function focusThreeDotMenu() {
-    if (status.mainView) {
-        status.mainView.webContents.focus();
-        status.mainView.webContents.send(FOCUS_THREE_DOT_MENU);
+    if (status.mainWindow) {
+        status.mainWindow.webContents.focus();
+        status.mainWindow.webContents.send(FOCUS_THREE_DOT_MENU);
     }
 }
 
@@ -604,17 +575,4 @@ export function getCurrentTeamName() {
 
 function handleAppLoggedIn(event: IpcMainEvent, viewName: string) {
     status.viewManager?.reloadViewIfNeeded(viewName);
-}
-
-export function openAppWrapperDevTools(focusedWindow?: WebContents) {
-    if (focusedWindow) {
-        // toggledevtools opens it in the last known position, so sometimes it goes below the browserview
-        if (focusedWindow.isDevToolsOpened()) {
-            focusedWindow.closeDevTools();
-        } else if (focusedWindow.id === status.mainWindow?.webContents.id) {
-            status.mainView?.webContents.openDevTools({mode: 'detach'});
-        } else {
-            focusedWindow.openDevTools({mode: 'detach'});
-        }
-    }
 }
