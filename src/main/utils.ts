@@ -22,15 +22,6 @@ export function shouldBeHiddenOnStartup(parsedArgv: Args) {
     return false;
 }
 
-export function getMainViewBounds(windowWidth: number, windowHeight: number) {
-    return {
-        x: 0,
-        y: 0,
-        width: windowWidth,
-        height: windowHeight,
-    };
-}
-
 export function getWindowBoundaries(win: BrowserWindow, hasBackBar = false) {
     const {width, height} = win.getContentBounds();
     return getAdjustedWindowBoundaries(width, height, hasBackBar);
