@@ -217,6 +217,7 @@ export class MattermostView extends EventEmitter {
 
     destroy = () => {
         removeWebContentsListeners(this.view.webContents.id);
+        appState.updateMentions(this.tab.name, 0, false);
         if (this.window) {
             this.window.removeBrowserView(this.view);
         }
