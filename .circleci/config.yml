@@ -57,7 +57,7 @@ commands:
           command: |
             curl -i -H "Content-Type: application/json" -X POST -d @/tmp/webhook-data.json $MATTERMOST_RELEASE_WEBHOOK_URL_DESKTOP || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
 
-  update_image:
+  update_base_image:
     description: "Update base image"
     parameters:
       apt_opts:
@@ -65,7 +65,17 @@ commands:
         default: ""
     steps:
       - run: wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | apt-key add -
-      - run: apt-get update && apt-get -y install << parameters.apt_opts >>
+      - run: apt-get update || true && apt-get install ca-certificates && apt-get update && apt-get -y install << parameters.apt_opts >>
+
+  update_image:
+    description: "Update image"
+    parameters:
+      apt_opts:
+        type: string
+        default: ""
+    steps:
+      - update_base_image:
+          apt_opts: << parameters.apt_opts >>
       - run: npm ci
 
   win_make:
@@ -350,8 +360,8 @@ jobs:
       - store_artifacts:
           path: ./dist
           destination: packages
-      - run: wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | apt-key add -
-      - run: apt-get update && apt-get -y install jq
+      - update_base_image:
+          apt_opts: "jq"
       - run:
           name: "store url links"
           command: |
@@ -376,8 +386,8 @@ jobs:
     steps:
       - attach_workspace:
           at: ./dist
-      - run: wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | apt-key add -
-      - run: apt-get update && apt-get -y install jq
+      - update_base_image:
+          apt_opts: "jq"
       - run: mkdir -p ./links
       - run: echo "### Nightly builds:\n" > ./links/linklist.txt
       - run:
