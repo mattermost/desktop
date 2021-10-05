@@ -17,6 +17,7 @@ import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINI
 
 import * as Validator from '../Validator';
 import ContextMenu from '../contextMenu';
+import {getLocalPreload, getLocalURLString} from '../utils';
 
 function saveWindowState(file: string, window: BrowserWindow) {
     const windowState: SavedWindowState = {
@@ -42,6 +43,7 @@ function isFramelessWindow() {
 
 function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string}) {
     // Create the browser window.
+    const preload = getLocalPreload('mainWindow.js');
     const boundsInfoPath = path.join(app.getPath('userData'), 'bounds-info.json');
     let savedWindowState;
     try {
@@ -61,6 +63,8 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
 
     const {maximized: windowIsMaximized} = savedWindowState;
 
+    const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
+
     const windowOptions: BrowserWindowConstructorOptions = Object.assign({}, savedWindowState, {
         title: app.name,
         fullscreenable: true,
@@ -78,6 +82,8 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
             nodeIntegration: process.env.NODE_ENV === 'test',
             contextIsolation: process.env.NODE_ENV !== 'test',
             disableBlinkFeatures: 'Auxclick',
+            preload,
+            spellcheck,
         },
     });
 
@@ -94,11 +100,22 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
         log.error('Tried to register second handler, skipping');
     }
 
-    mainWindow.once('show', () => {
+    const localURL = getLocalURLString('index.html');
+    mainWindow.loadURL(localURL).catch(
+        (reason) => {
+            log.error(`Main window failed to load: ${reason}`);
+        });
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.webContents.zoomLevel = 0;
+
         mainWindow.show();
         if (windowIsMaximized) {
             mainWindow.maximize();
         }
+    });
+
+    mainWindow.once('show', () => {
+        mainWindow.show();
     });
 
     mainWindow.once('restore', () => {
