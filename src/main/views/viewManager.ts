@@ -309,7 +309,7 @@ export class ViewManager {
             urlView.setBounds({
                 x: 0,
                 y: boundaries.height - URL_VIEW_HEIGHT,
-                width: Math.floor(boundaries.width / 3),
+                width: boundaries.width,
                 height: URL_VIEW_HEIGHT,
             });
 
