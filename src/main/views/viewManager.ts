@@ -295,6 +295,11 @@ export class ViewManager {
                     nativeWindowOpen: true,
                     contextIsolation: process.env.NODE_ENV !== 'test',
                     nodeIntegration: process.env.NODE_ENV === 'test',
+
+                    // Workaround for this issue: https://github.com/electron/electron/issues/30993
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    // @ts-ignore
+                    transparent: true,
                 }});
             const query = new Map([['url', urlString]]);
             const localURL = getLocalURLString('urlView.html', query);

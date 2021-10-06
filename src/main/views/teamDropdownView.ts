@@ -49,6 +49,11 @@ export default class TeamDropdownView {
             contextIsolation: process.env.NODE_ENV !== 'test',
             preload,
             nodeIntegration: process.env.NODE_ENV === 'test',
+
+            // Workaround for this issue: https://github.com/electron/electron/issues/30993
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            transparent: true,
         }});
 
         this.view.webContents.loadURL(getLocalURLString('dropdown.html'));
