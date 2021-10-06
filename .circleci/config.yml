@@ -331,11 +331,11 @@ jobs:
           name: Installing npm dependencies
           command: npm ci
       - build:
-          os: mac
+          os: mac-universal
           path: ./dist/macos-release
           subpath: ./macos-release/
       - build:
-          os: mac-universal
+          os: mac
           path: ./dist/macos-release
           subpath: ./macos-release/
       - run:
