@@ -36,7 +36,6 @@ type ConfigType = typeof CONFIG_TYPE_SERVERS | typeof CONFIG_TYPE_APP_OPTIONS;
 type State = DeepPartial<CombinedConfig> & {
     ready: boolean;
     maximized?: boolean;
-    trayWasVisible?: boolean;
     savingState: SavingStateItems;
     userOpenedDownloadDialog: boolean;
     allowSaveSpellCheckerURL: boolean;
@@ -122,7 +121,6 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
 
     convertConfigDataToState = (configData: Partial<LocalConfiguration>, currentState: Partial<State> = {}) => {
         const newState = Object.assign({} as State, configData);
-        newState.trayWasVisible = currentState.trayWasVisible || false;
         newState.savingState = currentState.savingState || {
             appOptions: SavingState.SAVING_STATE_DONE,
             servers: SavingState.SAVING_STATE_DONE,
@@ -207,7 +205,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
     }
 
     handleChangeMinimizeToTray = () => {
-        const shouldMinimizeToTray = this.state.showTrayIcon && !this.minimizeToTrayRef.current?.checked;
+        const shouldMinimizeToTray = this.state.showTrayIcon && this.minimizeToTrayRef.current?.checked;
 
         window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'minimizeToTray', data: shouldMinimizeToTray});
         this.setState({
@@ -642,18 +640,20 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         if (window.process.platform === 'linux') {
             options.push(
                 <FormCheck
-                    type='radio'
                     key='inputMinimizeToTray'
-                    id='inputMinimizeToTray'
-                    ref={this.minimizeToTrayRef}
-                    disabled={!this.state.showTrayIcon || !this.state.trayWasVisible}
-                    checked={this.state.minimizeToTray}
-                    onChange={this.handleChangeMinimizeToTray}
                 >
+                    <FormCheck.Input
+                        type='checkbox'
+                        id='inputMinimizeToTray'
+                        ref={this.minimizeToTrayRef}
+                        disabled={!this.state.showTrayIcon}
+                        checked={this.state.minimizeToTray}
+                        onChange={this.handleChangeMinimizeToTray}
+                    />
                     {'Leave app running in notification area when application window is closed'}
                     <FormText>
                         {'If enabled, the app stays running in the notification area after app window is closed.'}
-                        {this.state.trayWasVisible || !this.state.showTrayIcon ? '' : ' Setting takes effect after restarting the app.'}
+                        {this.state.showTrayIcon ? ' Setting takes effect after restarting the app.' : ''}
                     </FormText>
                 </FormCheck>);
         }

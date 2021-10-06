@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-import {app, BrowserWindow, BrowserWindowConstructorOptions, globalShortcut, ipcMain} from 'electron';
+import {app, BrowserWindow, BrowserWindowConstructorOptions, globalShortcut, ipcMain, screen} from 'electron';
 import log from 'electron-log';
 
 import {CombinedConfig} from 'types/config';
@@ -17,6 +17,7 @@ import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINI
 
 import * as Validator from '../Validator';
 import ContextMenu from '../contextMenu';
+import {getLocalPreload, getLocalURLString} from '../utils';
 
 function saveWindowState(file: string, window: BrowserWindow) {
     const windowState: SavedWindowState = {
@@ -32,12 +33,17 @@ function saveWindowState(file: string, window: BrowserWindow) {
     }
 }
 
+function isInsideRectangle(container: Electron.Rectangle, rect: Electron.Rectangle) {
+    return container.x <= rect.x && container.y <= rect.y && container.width >= rect.width && container.height >= rect.height;
+}
+
 function isFramelessWindow() {
     return os.platform() === 'darwin' || (os.platform() === 'win32' && os.release().startsWith('10'));
 }
 
 function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string}) {
     // Create the browser window.
+    const preload = getLocalPreload('mainWindow.js');
     const boundsInfoPath = path.join(app.getPath('userData'), 'bounds-info.json');
     let savedWindowState;
     try {
@@ -46,12 +52,18 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
         if (!savedWindowState) {
             throw new Error('Provided bounds info file does not validate, using defaults instead.');
         }
+        const matchingScreen = screen.getDisplayMatching(savedWindowState);
+        if (!(matchingScreen && (isInsideRectangle(matchingScreen.bounds, savedWindowState) || savedWindowState.maximized))) {
+            throw new Error('Provided bounds info are outside the bounds of your screen, using defaults instead.');
+        }
     } catch (e) {
     // Follow Electron's defaults, except for window dimensions which targets 1024x768 screen resolution.
         savedWindowState = {width: DEFAULT_WINDOW_WIDTH, height: DEFAULT_WINDOW_HEIGHT};
     }
 
     const {maximized: windowIsMaximized} = savedWindowState;
+
+    const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
 
     const windowOptions: BrowserWindowConstructorOptions = Object.assign({}, savedWindowState, {
         title: app.name,
@@ -70,6 +82,8 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
             nodeIntegration: process.env.NODE_ENV === 'test',
             contextIsolation: process.env.NODE_ENV !== 'test',
             disableBlinkFeatures: 'Auxclick',
+            preload,
+            spellcheck,
         },
     });
 
@@ -86,11 +100,22 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
         log.error('Tried to register second handler, skipping');
     }
 
-    mainWindow.once('show', () => {
+    const localURL = getLocalURLString('index.html');
+    mainWindow.loadURL(localURL).catch(
+        (reason) => {
+            log.error(`Main window failed to load: ${reason}`);
+        });
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.webContents.zoomLevel = 0;
+
         mainWindow.show();
         if (windowIsMaximized) {
             mainWindow.maximize();
         }
+    });
+
+    mainWindow.once('show', () => {
+        mainWindow.show();
     });
 
     mainWindow.once('restore', () => {
