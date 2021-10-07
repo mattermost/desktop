@@ -80,7 +80,6 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
         webPreferences: {
             nativeWindowOpen: true,
             nodeIntegration: process.env.NODE_ENV === 'test',
-            contextIsolation: process.env.NODE_ENV !== 'test',
             disableBlinkFeatures: 'Auxclick',
             preload,
             spellcheck,
