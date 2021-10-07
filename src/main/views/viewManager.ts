@@ -76,6 +76,9 @@ export class ViewManager {
             this.closedViews.set(tabView.name, {srv, tab});
             return;
         }
+        if (this.closedViews.has(tabView.name)) {
+            this.closedViews.delete(tabView.name);
+        }
         const view = new MattermostView(tabView, serverInfo, this.mainWindow, this.viewOptions);
         this.views.set(tabView.name, view);
         this.showByName(tabView.name);
@@ -237,7 +240,6 @@ export class ViewManager {
         }
         const {srv, tab} = this.closedViews.get(name)!;
         tab.isOpen = true;
-        this.closedViews.delete(name);
         this.loadView(srv, new ServerInfo(srv), tab, url);
         this.showByName(name);
         const view = this.views.get(name)!;
@@ -295,6 +297,11 @@ export class ViewManager {
                     nativeWindowOpen: true,
                     contextIsolation: process.env.NODE_ENV !== 'test',
                     nodeIntegration: process.env.NODE_ENV === 'test',
+
+                    // Workaround for this issue: https://github.com/electron/electron/issues/30993
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    // @ts-ignore
+                    transparent: true,
                 }});
             const query = new Map([['url', urlString]]);
             const localURL = getLocalURLString('urlView.html', query);
@@ -304,7 +311,7 @@ export class ViewManager {
             urlView.setBounds({
                 x: 0,
                 y: boundaries.height - URL_VIEW_HEIGHT,
-                width: Math.floor(boundaries.width / 3),
+                width: boundaries.width,
                 height: URL_VIEW_HEIGHT,
             });
 
