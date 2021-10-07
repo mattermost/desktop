@@ -79,7 +79,6 @@ export function showSettingsWindow() {
         status.settingsWindow = createSettingsWindow(status.mainWindow!, status.config, withDevTools);
         status.settingsWindow.on('closed', () => {
             delete status.settingsWindow;
-            focusBrowserView();
         });
     }
 }
