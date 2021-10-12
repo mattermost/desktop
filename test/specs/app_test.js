@@ -9,12 +9,12 @@ const fs = require('fs');
 const env = require('../modules/environment');
 
 describe('application', function desc() {
-    this.timeout(30000);
+    //this.timeout(30000);
 
     beforeEach(async () => {
         env.createTestUserDataDir();
         env.cleanTestConfig();
-        this.app = await env.getApp();
+        //this.app = await env.getApp();
     });
 
     afterEach(async () => {
@@ -23,19 +23,19 @@ describe('application', function desc() {
         }
     });
 
-    it('should show the new server modal when no servers exist', async () => {
-        const newServerModal = await this.app.waitForEvent('window', {
-            predicate: (window) => window.url().includes('newServer'),
-        });
-        const modalTitle = await newServerModal.innerText('#newServerModal .modal-title');
-        modalTitle.should.equal('Add Server');
-    });
+    // it('should show the new server modal when no servers exist', async () => {
+    //     const newServerModal = await this.app.waitForEvent('window', {
+    //         predicate: (window) => window.url().includes('newServer'),
+    //     });
+    //     const modalTitle = await newServerModal.innerText('#newServerModal .modal-title');
+    //     modalTitle.should.equal('Add Server');
+    // });
 
-    it('should show no servers configured in dropdown when no servers exist', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        const dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
-        dropdownButtonText.should.equal('No servers configured');
-    });
+    // it('should show no servers configured in dropdown when no servers exist', async () => {
+    //     const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+    //     const dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+    //     dropdownButtonText.should.equal('No servers configured');
+    // });
 
 //     if (process.platform === 'darwin') {
 //         it.skip('should show closed window with cmd+tab', async () => {
@@ -57,9 +57,9 @@ describe('application', function desc() {
         // - CircleCI: NG
         const expectedBounds = {x: 100, y: 200, width: 500, height: 400};
         fs.writeFileSync(env.boundsInfoPath, JSON.stringify(expectedBounds));
-        // TODO: need a way to restart the app
-        const mainWindow = await this.app.firstWindow();
-        const browserWindow = await this.app.browserWindow(mainWindow);
+        const app = await env.getApp();
+        const mainWindow = await app.firstWindow();
+        const browserWindow = await app.browserWindow(mainWindow);
         const bounds = await browserWindow.evaluate((window) => window.getContentBounds());
         bounds.should.deep.equal(expectedBounds);
     });
