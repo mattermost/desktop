@@ -4,7 +4,7 @@
 export type Tab = {
     name: string;
     order: number;
-    isClosed?: boolean;
+    isOpen?: boolean;
 }
 
 export type Team = {
@@ -34,10 +34,11 @@ export type ConfigV3 = {
     useSpellChecker: boolean;
     enableHardwareAcceleration: boolean;
     autostart: boolean;
-    spellCheckerLocale: string;
+    spellCheckerLocales: string[];
     darkMode: boolean;
     downloadLocation: string;
     spellCheckerURL?: string;
+    lastActiveTeam?: number;
 }
 
 export type ConfigV2 = {

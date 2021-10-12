@@ -198,12 +198,16 @@ function createTemplate(config: Config) {
     const teams = config.data?.teams || [];
     const windowMenu = {
         label: '&Window',
+        role: isMac ? 'windowMenu' : null,
         submenu: [{
             role: 'minimize',
 
             // empty string removes shortcut on Windows; null will default by OS
             accelerator: process.platform === 'win32' ? '' : null,
-        }, {
+        }, ...(isMac ? [{
+            role: 'zoom',
+        }, separatorItem,
+        ] : []), {
             role: 'close',
             accelerator: 'CmdOrCtrl+W',
         }, separatorItem, ...teams.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).map((team, i) => {
@@ -216,7 +220,7 @@ function createTemplate(config: Config) {
                 },
             });
             if (WindowManager.getCurrentTeamName() === team.name) {
-                team.tabs.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).forEach((tab, i) => {
+                team.tabs.filter((tab) => tab.isOpen).slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).forEach((tab, i) => {
                     items.push({
                         label: `    ${getTabDisplayName(tab.name as TabType)}`,
                         accelerator: `CmdOrCtrl+${i + 1}`,
@@ -241,7 +245,10 @@ function createTemplate(config: Config) {
                 WindowManager.selectPreviousTab();
             },
             enabled: (teams.length > 1),
-        }],
+        }, ...(isMac ? [separatorItem, {
+            role: 'front',
+        }] : []),
+        ],
     };
     template.push(windowMenu);
     const submenu = [];
@@ -258,7 +265,7 @@ function createTemplate(config: Config) {
         // eslint-disable-next-line no-undef
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        label: `Version ${app.getVersion()} commit: ${__HASH_VERSION__}`,
+        label: `Version ${app.getVersion()}${__HASH_VERSION__ ? ` commit: ${__HASH_VERSION__}` : ''}`,
         enabled: false,
     });
 

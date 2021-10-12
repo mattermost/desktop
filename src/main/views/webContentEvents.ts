@@ -8,6 +8,8 @@ import {TeamWithTabs} from 'types/config';
 
 import urlUtils from 'common/utils/url';
 
+import ContextMenu from 'main/contextMenu';
+
 import * as WindowManager from '../windows/windowManager';
 
 import {protocols} from '../../../electron-builder.json';
@@ -170,7 +172,6 @@ const generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spe
                         nodeIntegration: process.env.NODE_ENV === 'test',
                         contextIsolation: process.env.NODE_ENV !== 'test',
                         spellcheck: (typeof spellcheck === 'undefined' ? true : spellcheck),
-                        enableRemoteModule: process.env.NODE_ENV === 'test',
                     },
                 });
                 popupWindow.webContents.on('new-window', denyNewWindow);
@@ -191,6 +192,9 @@ const generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spe
                     userAgent: composeUserAgent(),
                 });
             }
+
+            const contextMenu = new ContextMenu({}, popupWindow);
+            contextMenu.reload();
         }
 
         return {action: 'deny'};

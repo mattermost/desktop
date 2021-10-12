@@ -19,7 +19,7 @@ function createErrorReport(err: Error) {
     // eslint-disable-next-line no-undef
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    return `Application: ${app.name} ${app.getVersion()} [commit: ${__HASH_VERSION__}]\n` +
+    return `Application: ${app.name} ${app.getVersion()}${__HASH_VERSION__ ? ` [commit: ${__HASH_VERSION__}]` : ''}\n` +
          `Platform: ${os.type()} ${os.release()} ${os.arch()}\n` +
          `${err.stack}`;
 }

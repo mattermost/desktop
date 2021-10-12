@@ -13,10 +13,11 @@ import urlUtils from 'common/utils/url';
 
 import * as Validator from './Validator';
 
-function comparableCertificate(certificate: Certificate): ComparableCertificate {
+function comparableCertificate(certificate: Certificate, dontTrust = false): ComparableCertificate {
     return {
         data: certificate.data.toString(),
         issuerName: certificate.issuerName,
+        dontTrust,
     };
 }
 
@@ -53,8 +54,8 @@ export default class CertificateStore {
         fs.writeFileSync(this.storeFile, JSON.stringify(this.data, null, '  '));
     };
 
-    add = (targetURL: string, certificate: Certificate) => {
-        this.data[urlUtils.getHost(targetURL)] = comparableCertificate(certificate);
+    add = (targetURL: string, certificate: Certificate, dontTrust = false) => {
+        this.data[urlUtils.getHost(targetURL)] = comparableCertificate(certificate, dontTrust);
     };
 
     isExisting = (targetURL: string) => {
@@ -68,4 +69,12 @@ export default class CertificateStore {
         }
         return areEqual(this.data[host], comparableCertificate(certificate));
     };
+
+    isExplicitlyUntrusted = (targetURL: string) => {
+        // Whether or not the certificate was explicitly marked as untrusted by
+        // clicking "Don't ask again" checkbox before cancelling the connection.
+        const host = urlUtils.getHost(targetURL);
+        const dontTrust = this.data[host]?.dontTrust;
+        return dontTrust === undefined ? false : dontTrust;
+    }
 }

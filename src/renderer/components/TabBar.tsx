@@ -12,8 +12,8 @@ import {Tab} from 'types/config';
 import {getTabDisplayName, getTabViewName, TabType, canCloseTab} from 'common/tabs/TabView';
 
 type Props = {
-    activeTabName: string;
-    activeServerName: string;
+    activeTabName?: string;
+    activeServerName?: string;
     id: string;
     isDarkMode: boolean;
     onSelect: (name: string, index: number) => void;
@@ -24,6 +24,7 @@ type Props = {
     mentionCounts: Record<string, number>;
     onDrop: (result: DropResult) => void;
     tabsDisabled?: boolean;
+    isMenuOpen?: boolean;
 };
 
 function getStyle(style?: DraggingStyle | NotDraggingStyle) {
@@ -49,7 +50,7 @@ export default class TabBar extends React.PureComponent<Props> {
         const orderedTabs = this.props.tabs.concat().sort((a, b) => a.order - b.order);
         const tabs = orderedTabs.map((tab, orderedIndex) => {
             const index = this.props.tabs.indexOf(tab);
-            const tabName = getTabViewName(this.props.activeServerName, tab.name);
+            const tabName = getTabViewName(this.props.activeServerName!, tab.name);
 
             const sessionExpired = this.props.sessionsExpired[tabName];
             const hasUnreads = this.props.unreadCounts[tabName];
@@ -85,7 +86,7 @@ export default class TabBar extends React.PureComponent<Props> {
                     index={orderedIndex}
                 >
                     {(provided, snapshot) => {
-                        if (tab.isClosed) {
+                        if (!tab.isOpen) {
                             return (
                                 <div
                                     ref={provided.innerRef}
@@ -101,7 +102,7 @@ export default class TabBar extends React.PureComponent<Props> {
                                 as='li'
                                 id={`teamTabItem${index}`}
                                 draggable={false}
-                                title={tab.name}
+                                title={getTabDisplayName(tab.name as TabType)}
                                 className={classNames('teamTabItem', {
                                     active: this.props.activeTabName === tab.name,
                                     dragging: snapshot.isDragging,
@@ -151,12 +152,15 @@ export default class TabBar extends React.PureComponent<Props> {
                     {(provided) => (
                         <Nav
                             ref={provided.innerRef}
-                            className={`TabBar${this.props.isDarkMode ? ' darkMode' : ''}`}
+                            className={classNames('TabBar', {
+                                darkMode: this.props.isDarkMode,
+                            })}
                             id={this.props.id}
                             variant='tabs'
                             {...provided.droppableProps}
                         >
                             {tabs}
+                            {this.props.isMenuOpen ? <span className='TabBar-nonDrag'/> : null}
                             {provided.placeholder}
                         </Nav>
                     )}

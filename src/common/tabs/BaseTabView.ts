@@ -20,4 +20,7 @@ export default abstract class BaseTabView implements TabView {
     get type(): TabType {
         throw new Error('Not implemented');
     }
+    get shouldNotify(): boolean {
+        return false;
+    }
 }

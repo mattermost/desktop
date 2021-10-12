@@ -10,6 +10,7 @@ body {
 #app {
     padding: 24px;
     display: inline-block;
+    max-width: 600px;
 }
 
 .TeamDropdown {
@@ -21,11 +22,15 @@ body {
     border: 1px solid rgba(61, 60, 64, 0.16);
     box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
     border-radius: 4px;
-    min-width: 354px;
 }
 
 .TeamDropdown__droppable {
     width: 100%;
+    overflow-y: scroll;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
 
     > button {
         border: none;
@@ -59,6 +64,7 @@ body {
     width: 100%;
     align-items: center;
     font-family: Open Sans;
+    cursor: pointer;
 
     &:not(.anyDragging):hover {
         background-color: rgba(61, 60, 64, 0.08);
@@ -98,6 +104,10 @@ body {
         color: rgba(61, 60, 64, 0.56);
     }
 
+    i.icon-server-variant, i.icon-check {
+        margin-top: -1px;
+    }
+
     &.active i.icon-check {
         color: #166de0;
     }
@@ -113,8 +123,12 @@ body {
     &.addServer {
         padding-left: 24px;
 
-        > i.icon-plus::before {
-            margin: 0;
+        > i.icon-plus {
+            margin-top: -2px;
+    
+            &::before {
+                margin: 0;
+            }
         }
     }
 }
@@ -122,6 +136,8 @@ body {
 .TeamDropdown__draggable-handle {
     cursor: pointer !important;
     display: flex;
+    overflow: hidden;
+    margin-right: 36px;
     
     &.dragging {
         cursor: grabbing !important;
@@ -129,12 +145,18 @@ body {
 
     > i.icon-drag-vertical {
         opacity: 0;
+        margin-top: -2px;
 
         &::before {
             margin: 0;
             color: rgba(61, 60, 64, 0.32);
             font-size: 14px;
         }
+    }
+
+    > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
 
@@ -180,11 +202,12 @@ body {
     display: flex;
 
     > button {
-        margin-left: 18px;
+        margin-left: 14px;
         background-color: transparent;
         border: none;
         border-radius: 2px;
         padding: 0;
+        cursor: pointer;
 
         &:hover, &:focus {
             background: rgba(61, 60, 64, 0.08);
@@ -217,7 +240,7 @@ body {
     margin-right: 7px;
 
     + .TeamDropdown__badge {
-        margin-left: 7px;
+        margin-left: 3px;
     }
 
     i {

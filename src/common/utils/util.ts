@@ -37,7 +37,7 @@ function shorten(string: string, max?: number) {
     return string;
 }
 
-export function isServerVersionGreaterThanOrEqualTo(currentVersion: string, compareVersion: string): boolean {
+function isServerVersionGreaterThanOrEqualTo(currentVersion: string, compareVersion: string): boolean {
     if (currentVersion === compareVersion) {
         return true;
     }

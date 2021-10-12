@@ -11,6 +11,7 @@ import {AppState} from 'types/appState';
 import {ComparableCertificate} from 'types/certificate';
 import {PermissionType, TrustedOrigin} from 'types/trustedOrigin';
 
+import {TAB_MESSAGING} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
 
 const defaultOptions = {
@@ -87,7 +88,7 @@ const configDataSchemaV2 = Joi.object<ConfigV2>({
     useSpellChecker: Joi.boolean().default(true),
     enableHardwareAcceleration: Joi.boolean().default(true),
     autostart: Joi.boolean().default(true),
-    spellCheckerLocale: Joi.string().regex(/^[a-z]{2}-[A-Z]{2}$/).default('en-US'),
+    spellCheckerLocale: Joi.string().default('en-US'),
     spellCheckerURL: Joi.string().allow(null),
     darkMode: Joi.boolean().default(false),
     downloadLocation: Joi.string(),
@@ -103,7 +104,7 @@ const configDataSchemaV3 = Joi.object<ConfigV3>({
         tabs: Joi.array().items(Joi.object({
             name: Joi.string().required(),
             order: Joi.number().integer().min(0),
-            isClosed: Joi.boolean().default(false),
+            isOpen: Joi.boolean(),
         })).default([]),
     })).default([]),
     showTrayIcon: Joi.boolean().default(false),
@@ -118,10 +119,11 @@ const configDataSchemaV3 = Joi.object<ConfigV3>({
     useSpellChecker: Joi.boolean().default(true),
     enableHardwareAcceleration: Joi.boolean().default(true),
     autostart: Joi.boolean().default(true),
-    spellCheckerLocale: Joi.string().regex(/^[a-z]{2}-[A-Z]{2}$/).default('en-US'),
+    spellCheckerLocales: Joi.array().items(Joi.string()).default([]),
     spellCheckerURL: Joi.string().allow(null),
     darkMode: Joi.boolean().default(false),
     downloadLocation: Joi.string(),
+    lastActiveTeam: Joi.number().integer().min(0).default(0),
 });
 
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};
@@ -225,6 +227,14 @@ export function validateV3ConfigData(data: ConfigV3) {
             return {
                 ...team,
                 url: cleanURL(team.url),
+
+                // Force messaging to stay open regardless of user config
+                tabs: team.tabs.map((tab) => {
+                    return {
+                        ...tab,
+                        isOpen: tab.name === TAB_MESSAGING ? true : tab.isOpen,
+                    };
+                }),
             };
         });
 

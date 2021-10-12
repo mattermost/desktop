@@ -18,12 +18,13 @@ import {
     IS_UNREAD,
     UNREAD_RESULT,
     TOGGLE_BACK_BUTTON,
-    SET_VIEW_NAME,
+    SET_VIEW_OPTIONS,
     LOADSCREEN_END,
 } from 'common/communication';
 
 import {TabView} from 'common/tabs/TabView';
 
+import {ServerInfo} from 'main/server/serverInfo';
 import ContextMenu from '../contextMenu';
 import {getWindowBoundaries, getLocalPreload, composeUserAgent} from '../utils';
 import * as WindowManager from '../windows/windowManager';
@@ -31,7 +32,7 @@ import * as appState from '../appState';
 
 import {removeWebContentsListeners} from './webContentEvents';
 
-enum Status {
+export enum Status {
     LOADING,
     READY,
     WAITING_MM,
@@ -47,6 +48,7 @@ export class MattermostView extends EventEmitter {
     view: BrowserView;
     isVisible: boolean;
     options: BrowserViewConstructorOptions;
+    serverInfo: ServerInfo;
 
     removeLoading?: number;
 
@@ -65,21 +67,22 @@ export class MattermostView extends EventEmitter {
     retryLoad?: NodeJS.Timeout;
     maxRetries: number;
 
-    constructor(tab: TabView, win: BrowserWindow, options: BrowserViewConstructorOptions) {
+    constructor(tab: TabView, serverInfo: ServerInfo, win: BrowserWindow, options: BrowserViewConstructorOptions) {
         super();
         this.tab = tab;
         this.window = win;
+        this.serverInfo = serverInfo;
 
         const preload = getLocalPreload('preload.js');
         this.options = Object.assign({}, options);
         this.options.webPreferences = {
+            nativeWindowOpen: true,
             contextIsolation: process.env.NODE_ENV !== 'test',
             preload,
             additionalArguments: [
                 `version=${app.getVersion()}`,
                 `appName=${app.name}`,
             ],
-            enableRemoteModule: process.env.NODE_ENV === 'test',
             nodeIntegration: process.env.NODE_ENV === 'test',
             ...options.webPreferences,
         };
@@ -97,7 +100,7 @@ export class MattermostView extends EventEmitter {
         }
 
         this.view.webContents.on('did-finish-load', () => {
-            this.view.webContents.send(SET_VIEW_NAME, this.tab.name);
+            this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.name, this.tab.shouldNotify);
         });
 
         this.contextMenu = new ContextMenu({}, this.view);
@@ -214,6 +217,7 @@ export class MattermostView extends EventEmitter {
 
     destroy = () => {
         removeWebContentsListeners(this.view.webContents.id);
+        appState.updateMentions(this.tab.name, 0, false);
         if (this.window) {
             this.window.removeBrowserView(this.view);
         }

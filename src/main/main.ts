@@ -7,13 +7,13 @@ import fs from 'fs';
 
 import path from 'path';
 
-import electron, {BrowserWindow, globalShortcut, IpcMainEvent, IpcMainInvokeEvent, Rectangle} from 'electron';
+import electron, {BrowserWindow, IpcMainEvent, IpcMainInvokeEvent, Rectangle} from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
 
-import {Team, TeamWithTabs} from 'types/config';
+import {CombinedConfig, Team, TeamWithTabs} from 'types/config';
 import {MentionData} from 'types/notification';
 import {RemoteInfo} from 'types/server';
 import {Boundaries} from 'types/utils';
@@ -41,12 +41,13 @@ import {
     SHOW_EDIT_SERVER_MODAL,
     SHOW_REMOVE_SERVER_MODAL,
     UPDATE_SHORTCUT_MENU,
-    OPEN_TEAMS_DROPDOWN,
+    UPDATE_LAST_ACTIVE,
+    GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
 } from 'common/communication';
 import Config from 'common/config';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {getDefaultTeamWithTabsFromTeam, TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS} from 'common/tabs/TabView';
-import Utils, {isServerVersionGreaterThanOrEqualTo} from 'common/utils/util';
+import Utils from 'common/utils/util';
 
 import urlUtils from 'common/utils/url';
 
@@ -241,6 +242,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on('update-menu', handleUpdateMenuEvent);
     ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateShortcutMenuEvent);
     ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
+    ipcMain.on(UPDATE_LAST_ACTIVE, handleUpdateLastActive);
 
     if (process.platform !== 'darwin') {
         ipcMain.on('open-app-menu', handleOpenAppMenu);
@@ -263,6 +265,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(WINDOW_MINIMIZE, WindowManager.minimize);
     ipcMain.on(WINDOW_RESTORE, WindowManager.restore);
     ipcMain.on(SHOW_SETTINGS_WINDOW, WindowManager.showSettingsWindow);
+    ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, handleGetAvailableSpellCheckerLanguages);
     ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
 }
 
@@ -270,8 +273,8 @@ function initializeInterCommunicationEventListeners() {
 // config event handlers
 //
 
-function handleConfigUpdate(newConfig: Config) {
-    if (!newConfig.data) {
+function handleConfigUpdate(newConfig: CombinedConfig) {
+    if (!newConfig) {
         return;
     }
     if (process.platform === 'win32' || process.platform === 'linux') {
@@ -282,13 +285,16 @@ function handleConfigUpdate(newConfig: Config) {
         }).catch((err) => {
             log.error('error:', err);
         });
-        WindowManager.setConfig(newConfig.data);
-        authManager.handleConfigUpdate(newConfig.data);
-        setUnreadBadgeSetting(newConfig.data && newConfig.data.showUnreadBadge);
+        WindowManager.setConfig(newConfig);
+        if (authManager) {
+            authManager.handleConfigUpdate(newConfig);
+        }
+        setUnreadBadgeSetting(newConfig && newConfig.showUnreadBadge);
+        updateSpellCheckerLocales();
     }
 
     ipcMain.emit('update-menu', true, config);
-    ipcMain.emit(EMIT_CONFIGURATION, true, newConfig.data);
+    ipcMain.emit(EMIT_CONFIGURATION, true, newConfig);
 }
 
 function handleConfigSynchronize() {
@@ -316,9 +322,6 @@ function handleConfigSynchronize() {
             handleNewServerModal();
         }
     }
-
-    ipcMain.emit('update-menu', true, config);
-    ipcMain.emit(EMIT_CONFIGURATION, true, config.data);
 }
 
 function handleReloadConfig() {
@@ -395,7 +398,11 @@ function handleAppCertificateError(event: electron.Event, webContents: electron.
         return;
     }
     const origin = parsedURL.origin;
-    if (certificateStore.isTrusted(origin, certificate)) {
+    if (certificateStore.isExplicitlyUntrusted(origin)) {
+        event.preventDefault();
+        log.warn(`Ignoring previously untrusted certificate for ${origin}`);
+        callback(false);
+    } else if (certificateStore.isTrusted(origin, certificate)) {
         event.preventDefault();
         callback(true);
     } else {
@@ -435,11 +442,13 @@ function handleAppCertificateError(event: electron.Event, webContents: electron.
                         type: 'error',
                         buttons: ['Trust Insecure Certificate', 'Cancel Connection'],
                         cancelId: 1,
+                        checkboxChecked: false,
+                        checkboxLabel: "Don't ask again",
                     });
                 }
-                return {response};
+                return {response, checkboxChecked: false};
             }).then(
-            ({response: responseTwo}) => {
+            ({response: responseTwo, checkboxChecked}) => {
                 if (responseTwo === 0) {
                     certificateStore.add(origin, certificate);
                     certificateStore.save();
@@ -447,6 +456,10 @@ function handleAppCertificateError(event: electron.Event, webContents: electron.
                     certificateErrorCallbacks.delete(errorID);
                     webContents.loadURL(url);
                 } else {
+                    if (checkboxChecked) {
+                        certificateStore.add(origin, certificate, true);
+                        certificateStore.save();
+                    }
                     certificateErrorCallbacks.get(errorID)(false);
                     certificateErrorCallbacks.delete(errorID);
                 }
@@ -504,12 +517,12 @@ function handleCloseTab(event: IpcMainEvent, serverName: string, tabName: string
         if (team.name === serverName) {
             team.tabs.forEach((tab) => {
                 if (tab.name === tabName) {
-                    tab.isClosed = true;
+                    tab.isOpen = false;
                 }
             });
         }
     });
-    const nextTab = teams.find((team) => team.name === serverName)!.tabs.filter((tab) => !tab.isClosed)[0].name;
+    const nextTab = teams.find((team) => team.name === serverName)!.tabs.filter((tab) => tab.isOpen)[0].name;
     WindowManager.switchTab(serverName, nextTab);
     config.set('teams', teams);
 }
@@ -520,7 +533,7 @@ function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: string)
         if (team.name === serverName) {
             team.tabs.forEach((tab) => {
                 if (tab.name === tabName) {
-                    tab.isClosed = false;
+                    tab.isOpen = true;
                 }
             });
         }
@@ -547,6 +560,7 @@ function handleNewServerModal() {
             teams.push(newTeam);
             config.set('teams', teams);
             updateServerInfos([newTeam]);
+            WindowManager.switchServer(newTeam.name, true);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -627,6 +641,12 @@ function handleRemoveServerModal(e: IpcMainEvent, name: string) {
     }
 }
 
+function updateSpellCheckerLocales() {
+    if (config.data?.spellCheckerLocales.length && app.isReady()) {
+        session.defaultSession.setSpellCheckerLanguages(config.data?.spellCheckerLocales);
+    }
+}
+
 function initializeAfterAppReady() {
     updateServerInfos(config.teams);
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
@@ -650,6 +670,7 @@ function initializeAfterAppReady() {
                 log.info(`Dictionary definitions downloaded successfully for ${lang}`);
             });
         }
+        updateSpellCheckerLocales();
     }
 
     const appVersionJson = path.join(app.getPath('userData'), 'app-state.json');
@@ -737,7 +758,7 @@ function initializeAfterAppReady() {
 
         item.on('done', (doneEvent, state) => {
             if (state === 'completed') {
-                displayDownloadCompleted(filename, item.savePath, urlUtils.getView(webContents.getURL(), config.teams)!);
+                displayDownloadCompleted(filename, item.savePath, WindowManager.getServerNameByWebContentsId(webContents.id) || '');
             }
         });
     });
@@ -776,10 +797,6 @@ function initializeAfterAppReady() {
         // is the requesting url trusted?
         callback(urlUtils.isTrustedURL(requestingURL, config.teams));
     });
-
-    globalShortcut.register(`${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`, () => {
-        ipcMain.emit(OPEN_TEAMS_DROPDOWN);
-    });
 }
 
 //
@@ -798,28 +815,26 @@ function updateServerInfos(teams: TeamWithTabs[]) {
     });
     Promise.all(serverInfos).then((data: Array<RemoteInfo | string | undefined>) => {
         const teams = config.teams;
-        teams.forEach((team) => closeUnneededTabs(data, team));
+        teams.forEach((team) => openExtraTabs(data, team));
         config.set('teams', teams);
     }).catch((reason: any) => {
         log.error('Error getting server infos', reason);
     });
 }
 
-function closeUnneededTabs(data: Array<RemoteInfo | string | undefined>, team: TeamWithTabs) {
+function openExtraTabs(data: Array<RemoteInfo | string | undefined>, team: TeamWithTabs) {
     const remoteInfo = data.find((info) => info && typeof info !== 'string' && info.name === team.name) as RemoteInfo;
     if (remoteInfo) {
         team.tabs.forEach((tab) => {
-            if (tab.name === TAB_PLAYBOOKS && !remoteInfo.hasPlaybooks) {
-                log.info(`closing ${team.name}___${tab.name} on !hasPlaybooks`);
-                tab.isClosed = true;
-            }
-            if (tab.name === TAB_FOCALBOARD && !remoteInfo.hasFocalboard) {
-                log.info(`closing ${team.name}___${tab.name} on !hasFocalboard`);
-                tab.isClosed = true;
-            }
-            if (tab.name !== TAB_MESSAGING && remoteInfo.serverVersion && !isServerVersionGreaterThanOrEqualTo(remoteInfo.serverVersion, '6.0.0')) {
-                log.info(`closing ${team.name}___${tab.name} on !serverVersion`);
-                tab.isClosed = true;
+            if (tab.name !== TAB_MESSAGING && remoteInfo.serverVersion && Utils.isServerVersionGreaterThanOrEqualTo(remoteInfo.serverVersion, '6.0.0')) {
+                if (tab.name === TAB_PLAYBOOKS && remoteInfo.hasPlaybooks && tab.isOpen !== false) {
+                    log.info(`opening ${team.name}___${tab.name} on hasPlaybooks`);
+                    tab.isOpen = true;
+                }
+                if (tab.name === TAB_FOCALBOARD && remoteInfo.hasFocalboard && tab.isOpen !== false) {
+                    log.info(`opening ${team.name}___${tab.name} on hasFocalboard`);
+                    tab.isOpen = true;
+                }
             }
         });
     }
@@ -946,4 +961,19 @@ function resizeScreen(browserWindow: BrowserWindow) {
 
     browserWindow.on('restore', handle);
     handle();
+}
+function handleUpdateLastActive(event: IpcMainEvent, serverName: string, viewName: string) {
+    const teams = config.teams;
+    teams.forEach((team) => {
+        if (team.name === serverName) {
+            const viewOrder = team?.tabs.find((tab) => tab.name === viewName)?.order || 0;
+            team.lastActiveTab = viewOrder;
+        }
+    });
+    config.set('teams', teams);
+    config.set('lastActiveTeam', teams.find((team) => team.name === serverName)?.order || 0);
+}
+
+function handleGetAvailableSpellCheckerLanguages() {
+    return session.defaultSession.availableSpellCheckerLanguages;
 }

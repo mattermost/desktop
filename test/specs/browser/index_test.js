@@ -113,20 +113,20 @@ describe('renderer/index.html', function desc() {
     //     waitForVisible('#mattermostView0-fail', 20000);
     // });
 
-    it('shouldn\'t set window title by using webview\'s one', async () => {
-        fs.writeFileSync(env.configFilePath, JSON.stringify({
-            version: 2,
-            teams: [{
-                name: 'title_test',
-                url: `http://localhost:${serverPort}`,
-                order: 0,
-            }],
-        }));
-        await this.app.restart();
-        await this.app.client.pause(2000);
-        const windowTitle = await this.app.browserWindow.getTitle();
-        windowTitle.should.equal('Mattermost Desktop App');
-    });
+    // it('shouldn\'t set window title by using webview\'s one', async () => {
+    //     fs.writeFileSync(env.configFilePath, JSON.stringify({
+    //         version: 2,
+    //         teams: [{
+    //             name: 'title_test',
+    //             url: `http://localhost:${serverPort}`,
+    //             order: 0,
+    //         }],
+    //     }));
+    //     await this.app.restart();
+    //     await this.app.client.pause(2000);
+    //     const windowTitle = await this.app.browserWindow.getTitle();
+    //     windowTitle.should.equal('Mattermost Desktop App');
+    // });
 
     // Skip because it's very unstable in CI
     // it.skip('should update window title when the activated tab\'s title is updated', async () => {

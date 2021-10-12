@@ -9,12 +9,18 @@
   padding: 6px 8px;
 }
 
+.TabBar-nonDrag {
+  flex-grow: 1;
+  -webkit-app-region: no-drag;
+}
+
 .TabBar .teamTabItem span {
   flex: 0 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: center;
+  -webkit-font-smoothing: auto;
 }
 
 .TabBar>li {
@@ -44,12 +50,12 @@
 }
 
 .TabBar>li>a:hover {
-  background-color: rgba(255,255,255,0.32);
+  background-color: rgba(255,255,255,0.56);
   text-decoration: none;
 }
 
 .TabBar.darkMode>li>a:hover {
-  background-color: rgba(31, 31, 31, 0.32);
+  background-color: rgba(31, 31, 31, 0.56);
 }
 
 .TabBar>li>a:focus {
@@ -90,6 +96,7 @@
 .TabBar>li>a>div.TabBar-tabSeperator {
   display: flex;
   padding: 5px 12px;
+  align-items: center;
 }
 
 .TabBar>li.teamTabItem.active>a, .TabBar>li.teamTabItem.dragging>a {
@@ -130,14 +137,17 @@
 }
 
 .TabBar .TabBar-dot {
-  background: #196CAF;
+  background: #579eff;
   float: right;
   height: 8px;
   width: 8px;
-  margin-top: 4px;
   margin-left: 8px;
   border-radius: 4px;
   flex: 0 0 8px;
+}
+
+.TabBar.darkMode .TabBar-dot {
+  background: #196CAF;
 }
 
 .TabBar .TabBar-expired {
@@ -164,14 +174,14 @@
     justify-content: center;
     flex: 0 0 auto;
     color: white;
-    font-size: 10px;
+    font-size: 9px;
     padding: 0px 5px;
     font-family: "Open Sans", sans-serif;
     font-weight: bold;
     letter-spacing: normal;
-    -webkit-font-smoothing: antialiased;
+    -webkit-font-smoothing: auto;
+    
     margin-left: 6px;
-    margin-top: 2px;
     height: 12px;
 }
 

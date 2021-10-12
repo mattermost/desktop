@@ -17,6 +17,7 @@ import {
     GET_DARK_MODE,
     UPDATE_SHORTCUT_MENU,
     BROWSER_HISTORY_PUSH,
+    APP_LOGGED_IN,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 
@@ -52,6 +53,7 @@ ipcMain.handle(GET_DARK_MODE, handleGetDarkMode);
 ipcMain.on(REACT_APP_INITIALIZED, handleReactAppInitialized);
 ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, handleLoadingScreenAnimationFinished);
 ipcMain.on(BROWSER_HISTORY_PUSH, handleBrowserHistoryPush);
+ipcMain.on(APP_LOGGED_IN, handleAppLoggedIn);
 
 export function setConfig(data: CombinedConfig) {
     if (data) {
@@ -77,7 +79,6 @@ export function showSettingsWindow() {
         status.settingsWindow = createSettingsWindow(status.mainWindow!, status.config, withDevTools);
         status.settingsWindow.on('closed', () => {
             delete status.settingsWindow;
-            focusBrowserView();
         });
     }
 }
@@ -172,7 +173,7 @@ function handleResizeMainWindow() {
 
     const setBoundsFunction = () => {
         if (currentView) {
-            currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, !urlUtils.isTeamUrl(currentView.tab.url, currentView.view.webContents.getURL())));
+            currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, !(urlUtils.isTeamUrl(currentView.tab.url, currentView.view.webContents.getURL()) || urlUtils.isAdminUrl(currentView.tab.url, currentView.view.webContents.getURL()))));
         }
     };
 
@@ -184,6 +185,7 @@ function handleResizeMainWindow() {
         setBoundsFunction();
     }
     status.viewManager.setLoadingScreenBounds();
+    status.teamDropdown?.updateWindowBounds();
 }
 
 export function sendToRenderer(channel: string, ...args: any[]) {
@@ -350,11 +352,11 @@ function initializeViewManager() {
         status.viewManager = new ViewManager(status.config, status.mainWindow);
         status.viewManager.load();
         status.viewManager.showInitial();
-        status.currentServerName = status.config.teams.find((team) => team.order === 0)?.name;
+        status.currentServerName = (status.config.teams.find((team) => team.order === status.config?.lastActiveTeam) || status.config.teams.find((team) => team.order === 0))?.name;
     }
 }
 
-export function switchServer(serverName: string) {
+export function switchServer(serverName: string, waitForViewToExist = false) {
     showMainWindow();
     const server = status.config?.teams.find((team) => team.name === serverName);
     if (!server) {
@@ -362,9 +364,22 @@ export function switchServer(serverName: string) {
         return;
     }
     status.currentServerName = serverName;
-    const lastActiveTab = server.tabs[server.lastActiveTab || 0];
-    const tabViewName = getTabViewName(serverName, lastActiveTab.name);
-    status.viewManager?.showByName(tabViewName);
+    let nextTab = server.tabs.find((tab) => tab.isOpen && tab.order === (server.lastActiveTab || 0));
+    if (!nextTab) {
+        const openTabs = server.tabs.filter((tab) => tab.isOpen);
+        nextTab = openTabs.find((e) => e.order === 0) || openTabs[0];
+    }
+    const tabViewName = getTabViewName(serverName, nextTab.name);
+    if (waitForViewToExist) {
+        const timeout = setInterval(() => {
+            if (status.viewManager?.views.has(tabViewName)) {
+                status.viewManager?.showByName(tabViewName);
+                clearTimeout(timeout);
+            }
+        }, 100);
+    } else {
+        status.viewManager?.showByName(tabViewName);
+    }
     ipcMain.emit(UPDATE_SHORTCUT_MENU);
 }
 
@@ -419,8 +434,14 @@ export function updateLoadingScreenDarkMode(darkMode: boolean) {
     }
 }
 
+export function getViewNameByWebContentsId(webContentsId: number) {
+    const view = status.viewManager?.findViewByWebContent(webContentsId);
+    return view?.name;
+}
+
 export function getServerNameByWebContentsId(webContentsId: number) {
-    return status.viewManager?.findByWebContent(webContentsId);
+    const view = status.viewManager?.findViewByWebContent(webContentsId);
+    return view?.tab.server.name;
 }
 
 export function close() {
@@ -443,6 +464,9 @@ export function restore() {
     const focused = BrowserWindow.getFocusedWindow();
     if (focused) {
         focused.restore();
+    }
+    if (focused?.isFullScreen()) {
+        focused.setFullScreen(false);
     }
 }
 
@@ -482,7 +506,7 @@ export function selectNextTab() {
     }
 
     const currentTeamTabs = status.config?.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
-    const filteredTabs = currentTeamTabs?.filter((tab) => !tab.isClosed);
+    const filteredTabs = currentTeamTabs?.filter((tab) => tab.isOpen);
     const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
     if (!currentTeamTabs || !currentTab || !filteredTabs) {
         return;
@@ -507,7 +531,7 @@ export function selectPreviousTab() {
     }
 
     const currentTeamTabs = status.config?.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
-    const filteredTabs = currentTeamTabs?.filter((tab) => !tab.isClosed);
+    const filteredTabs = currentTeamTabs?.filter((tab) => tab.isOpen);
     const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
     if (!currentTeamTabs || !currentTab || !filteredTabs) {
         return;
@@ -537,7 +561,7 @@ function handleBrowserHistoryPush(e: IpcMainEvent, viewName: string, pathName: s
         status.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${pathName}`);
     }
     const redirectedView = status.viewManager?.views.get(redirectedViewName) || currentView;
-    if (redirectedView !== currentView) {
+    if (redirectedView !== currentView && redirectedView?.tab.server.name === status.currentServerName) {
         log.info('redirecting to a new view', redirectedView?.name || viewName);
         status.viewManager?.showByName(redirectedView?.name || viewName);
     }
@@ -546,4 +570,8 @@ function handleBrowserHistoryPush(e: IpcMainEvent, viewName: string, pathName: s
 
 export function getCurrentTeamName() {
     return status.currentServerName;
+}
+
+function handleAppLoggedIn(event: IpcMainEvent, viewName: string) {
+    status.viewManager?.reloadViewIfNeeded(viewName);
 }

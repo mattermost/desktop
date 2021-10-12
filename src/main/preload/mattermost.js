@@ -17,11 +17,12 @@ import {
     IS_UNREAD,
     UNREAD_RESULT,
     SESSION_EXPIRED,
-    SET_VIEW_NAME,
+    SET_VIEW_OPTIONS,
     REACT_APP_INITIALIZED,
     USER_ACTIVITY_UPDATE,
     CLOSE_TEAMS_DROPDOWN,
     BROWSER_HISTORY_PUSH,
+    APP_LOGGED_IN,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -31,6 +32,7 @@ let appVersion;
 let appName;
 let sessionExpired;
 let viewName;
+let shouldSendNotifications;
 
 console.log('Preload initialized');
 
@@ -120,8 +122,10 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
     // it will be captured by itself too
         break;
     case 'dispatch-notification': {
-        const {title, body, channel, teamId, url, silent, data: messageData} = message;
-        ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, url, silent, messageData);
+        if (shouldSendNotifications) {
+            const {title, body, channel, teamId, url, silent, data: messageData} = message;
+            ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, url, silent, messageData);
+        }
         break;
     }
     case 'browser-history-push': {
@@ -179,8 +183,9 @@ ipcRenderer.on(IS_UNREAD, (event, favicon, server) => {
     }
 });
 
-ipcRenderer.on(SET_VIEW_NAME, (_, name) => {
+ipcRenderer.on(SET_VIEW_OPTIONS, (_, name, shouldNotify) => {
     viewName = name;
+    shouldSendNotifications = shouldNotify;
 });
 
 function getUnreadCount() {
@@ -236,6 +241,12 @@ ipcRenderer.on(BROWSER_HISTORY_PUSH, (event, pathName) => {
         },
         window.location.origin,
     );
+});
+
+window.addEventListener('storage', (e) => {
+    if (e.key === '__login__' && e.storageArea === localStorage && e.newValue) {
+        ipcRenderer.send(APP_LOGGED_IN, viewName);
+    }
 });
 
 /* eslint-enable no-magic-numbers */
