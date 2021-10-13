@@ -1,7 +1,7 @@
 # Mattermost Desktop
 [Mattermost](https://mattermost.com) is an open source platform for secure collaboration across the entire software development lifecycle. This repo is for the native desktop application that's built on [Electron](http://electron.atom.io/); it runs on Windows, Mac, and Linux.
 
-Originally created as "electron-mattermost" by Yuya Ochiai.
+Originally contributed as "electron-mattermost" by Yuya Ochiai.
 
 ![screenshot_20](https://user-images.githubusercontent.com/7205829/136107976-7a894c9e-290a-490d-8501-e5fdbfc3785a.png)
 
