@@ -5,8 +5,8 @@
 
 const fs = require('fs');
 
-const http = require('http');
-const path = require('path');
+// const http = require('http');
+// const path = require('path');
 
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
@@ -15,15 +15,51 @@ describe('renderer/index.html', function desc() {
     this.timeout(30000);
 
     const config = {
-        version: 2,
+        version: 3,
         teams: [{
             name: 'example',
             url: env.mattermostURL,
             order: 0,
+            tabs: [
+                {
+                    name: 'TAB_MESSAGING',
+                    order: 0,
+                    isOpen: true,
+                },
+                {
+                    name: 'TAB_FOCALBOARD',
+                    order: 1,
+                    isOpen: true,
+                },
+                {
+                    name: 'TAB_PLAYBOOKS',
+                    order: 2,
+                    isOpen: true,
+                },
+            ],
+            lastActiveTab: 0,
         }, {
             name: 'github',
             url: 'https://github.com/',
             order: 1,
+            tabs: [
+                {
+                    name: 'TAB_MESSAGING',
+                    order: 0,
+                    isOpen: true,
+                },
+                {
+                    name: 'TAB_FOCALBOARD',
+                    order: 1,
+                    isOpen: true,
+                },
+                {
+                    name: 'TAB_PLAYBOOKS',
+                    order: 2,
+                    isOpen: true,
+                },
+            ],
+            lastActiveTab: 0,
         }],
         showTrayIcon: false,
         trayIconTheme: 'light',
@@ -38,47 +74,47 @@ describe('renderer/index.html', function desc() {
         enableHardwareAcceleration: true,
         autostart: true,
         darkMode: false,
+        lastActiveTeam: 0,
+        spellCheckerLocales: [],
     };
 
-    const serverPort = 8181;
+    // const serverPort = 8181;
 
-    before(() => {
-        function serverCallback(req, res) {
-            res.writeHead(200, {
-                'Content-Type': 'text/html',
-            });
-            res.end(fs.readFileSync(path.resolve(env.sourceRootDir, 'test/modules/test.html'), 'utf-8'));
-        }
-        this.server = http.createServer(serverCallback).listen(serverPort, '127.0.0.1');
-    });
+    // before(() => {
+    //     function serverCallback(req, res) {
+    //         res.writeHead(200, {
+    //             'Content-Type': 'text/html',
+    //         });
+    //         res.end(fs.readFileSync(path.resolve(env.sourceRootDir, 'test/modules/test.html'), 'utf-8'));
+    //     }
+    //     this.server = http.createServer(serverCallback).listen(serverPort, '127.0.0.1');
+    // });
 
     beforeEach(async () => {
+        env.createTestUserDataDir();
+        env.cleanTestConfig();
         fs.writeFileSync(env.configFilePath, JSON.stringify(config));
         await asyncSleep(1000);
-        this.app = env.getSpectronApp();
-        await this.app.start();
+        this.app = await env.getApp();
     });
 
     afterEach(async () => {
-        if (this.app && this.app.isRunning()) {
-            await this.app.stop();
+        if (this.app) {
+            await this.app.close();
         }
     });
 
-    after((done) => {
-        this.server.close(done);
-    });
-
-    // it('should set src of webview from config file', async () => {
-    //     const src0 = await this.app.client.getAttribute('#mattermostView0', 'src');
-    //     src0.should.equal(config.teams[0].url);
-
-    //     const src1 = await this.app.client.getAttribute('#mattermostView1', 'src');
-    //     src1.should.equal(config.teams[1].url);
-
-    //     const existing = await this.app.client.isExisting('#mattermostView2');
-    //     existing.should.be.false;
+    // after((done) => {
+    //     this.server.close(done);
     // });
+
+    it('should set src of browser view from config file', async () => {
+        const firstServer = this.app.windows().find((window) => window.url() === config.teams[0].url);
+        const secondServer = this.app.windows().find((window) => window.url() === config.teams[1].url);
+
+        firstServer.should.not.be.null;
+        secondServer.should.not.be.null;
+    });
 
     // it('should set name of tab from config file', async () => {
     //     const tabName0 = await this.app.client.getText('#teamTabItem0');
