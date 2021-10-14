@@ -15,12 +15,6 @@ describe('window', function desc() {
         env.cleanTestConfig();
     });
 
-    afterEach(async () => {
-        if (this.app) {
-            await this.app.close();
-        }
-    });
-
     it('should restore window bounds', async () => {
         // bounds seems to be incorrectly calculated in some environments
         // - Windows 10: OK
@@ -32,6 +26,7 @@ describe('window', function desc() {
         const browserWindow = await this.app.browserWindow(mainWindow);
         const bounds = await browserWindow.evaluate((window) => window.getContentBounds());
         bounds.should.deep.equal(expectedBounds);
+        await this.app.close();
     });
 
     it('should NOT restore window bounds if x is located on outside of viewarea', async () => {
@@ -44,6 +39,7 @@ describe('window', function desc() {
         const browserWindow = await this.app.browserWindow(mainWindow);
         const bounds = await browserWindow.evaluate((window) => window.getContentBounds());
         bounds.x.should.satisfy((x) => (x > -10000));
+        await this.app.close();
     });
 
     it('should NOT restore window bounds if y is located on outside of viewarea', async () => {
@@ -56,5 +52,6 @@ describe('window', function desc() {
         const browserWindow = await this.app.browserWindow(mainWindow);
         const bounds = await browserWindow.evaluate((window) => window.getContentBounds());
         bounds.y.should.satisfy((y) => (y < 10000));
+        await this.app.close();
     });
 });

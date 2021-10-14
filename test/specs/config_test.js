@@ -15,12 +15,6 @@ describe('config', function desc() {
         env.cleanTestConfig();
     });
 
-    afterEach(async () => {
-        if (this.app) {
-            await this.app.close();
-        }
-    });
-
     it('should show servers in dropdown when there is config file', async () => {
         const config = {
             version: 3,
@@ -90,6 +84,7 @@ describe('config', function desc() {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
         dropdownButtonText.should.equal('example');
+        await this.app.close();
     });
 
     it('should upgrade v0 config file', async () => {
@@ -107,5 +102,6 @@ describe('config', function desc() {
         const str = fs.readFileSync(env.configFilePath, 'utf8');
         const upgradedConfig = JSON.parse(str);
         upgradedConfig.version.should.equal(newConfig.defaultData.version);
+        await this.app.close();
     });
 });
