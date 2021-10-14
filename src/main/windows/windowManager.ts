@@ -21,7 +21,7 @@ import {
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 
-import {getTabViewName} from 'common/tabs/TabView';
+import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 
 import {getAdjustedWindowBoundaries} from '../utils';
 
@@ -565,7 +565,11 @@ function handleBrowserHistoryPush(e: IpcMainEvent, viewName: string, pathName: s
         log.info('redirecting to a new view', redirectedView?.name || viewName);
         status.viewManager?.showByName(redirectedView?.name || viewName);
     }
-    redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
+
+    // Special case check for Channels to not force a redirect to "/", causing a refresh
+    if (!(redirectedView !== currentView && redirectedView?.tab.type === TAB_MESSAGING && pathName === '/')) {
+        redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
+    }
 }
 
 export function getCurrentTeamName() {
