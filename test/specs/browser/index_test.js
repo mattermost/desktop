@@ -116,13 +116,32 @@ describe('renderer/index.html', function desc() {
         secondServer.should.not.be.null;
     });
 
-    // it('should set name of tab from config file', async () => {
-    //     const tabName0 = await this.app.client.getText('#teamTabItem0');
-    //     tabName0.should.equal(config.teams[0].name);
+    it('should set name of menu item from config file', async () => {
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+        await mainWindow.click('.TeamDropdownButton');
+        const firstMenuItem = await dropdownView.innerText('.TeamDropdown button.TeamDropdown__button:nth-child(1) span');
+        const secondMenuItem = await dropdownView.innerText('.TeamDropdown button.TeamDropdown__button:nth-child(2) span');
 
-    //     const tabName1 = await this.app.client.getText('#teamTabItem1');
-    //     tabName1.should.equal(config.teams[1].name);
-    // });
+        firstMenuItem.should.equal(config.teams[0].name);
+        secondMenuItem.should.equal(config.teams[1].name);
+    });
+
+    it('should only show dropdown when button is clicked', async () => {
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+
+        let dropdownHeight = await dropdownView.evaluate('window.innerHeight');
+        dropdownHeight.should.equal(0);
+
+        await mainWindow.click('.TeamDropdownButton');
+        dropdownHeight = await dropdownView.evaluate('window.innerHeight');
+        dropdownHeight.should.be.greaterThan(0);
+
+        await mainWindow.click('.TabBar');
+        dropdownHeight = await dropdownView.evaluate('window.innerHeight');
+        dropdownHeight.should.equal(0);
+    });
 
     // it('should show only the selected team', () => {
     //     return this.app.client.
