@@ -318,6 +318,8 @@ function handleConfigSynchronize() {
 
     if (process.platform === 'win32' && !didCheckForAddServerModal && typeof config.registryConfigData !== 'undefined') {
         didCheckForAddServerModal = true;
+        updateServerInfos(config.teams);
+        WindowManager.initializeCurrentServerName();
         if (config.teams.length === 0) {
             handleNewServerModal();
         }
