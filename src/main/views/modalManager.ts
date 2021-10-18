@@ -13,9 +13,9 @@ import * as WindowManager from '../windows/windowManager';
 import {ModalView} from './modalView';
 
 let modalQueue: Array<ModalView<any, any>> = [];
+const modalPromises: Map<string, Promise<any>> = new Map();
 
 // TODO: add a queue/add differentiation, in case we need to put a modal first in line
-// should we return the original promise if called multiple times with the same key?
 export function addModal<T, T2>(key: string, html: string, preload: string, data: T, win: BrowserWindow) {
     const foundModal = modalQueue.find((modal) => modal.key === key);
     if (!foundModal) {
@@ -28,9 +28,10 @@ export function addModal<T, T2>(key: string, html: string, preload: string, data
             showModal();
         }
 
+        modalPromises.set(key, modalPromise);
         return modalPromise;
     }
-    return null;
+    return modalPromises.get(key) as Promise<T2>;
 }
 
 ipcMain.handle(RETRIEVE_MODAL_INFO, handleInfoRequest);
@@ -72,6 +73,7 @@ function handleModalResult(event: IpcMainEvent, data: unknown) {
     const requestModal = findModalByCaller(event);
     if (requestModal) {
         requestModal.resolve(data);
+        modalPromises.delete(requestModal.key);
     }
     filterActive();
     if (modalQueue.length) {
@@ -86,6 +88,7 @@ function handleModalCancel(event: IpcMainEvent, data: unknown) {
     const requestModal = findModalByCaller(event);
     if (requestModal) {
         requestModal.reject(data);
+        modalPromises.delete(requestModal.key);
     }
     filterActive();
     if (modalQueue.length) {
