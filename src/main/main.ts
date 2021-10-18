@@ -718,13 +718,6 @@ function initializeAfterAppReady() {
 
     WindowManager.showMainWindow(deeplinkingURL);
 
-    // only check for non-Windows, as with Windows we have to wait for GPO teams
-    if (process.platform !== 'win32' || typeof config.registryConfigData !== 'undefined') {
-        if (config.teams.length === 0) {
-            handleNewServerModal();
-        }
-    }
-
     criticalErrorHandler.setMainWindow(WindowManager.getMainWindow()!);
 
     // listen for status updates and pass on to renderer
@@ -797,6 +790,15 @@ function initializeAfterAppReady() {
         // is the requesting url trusted?
         callback(urlUtils.isTrustedURL(requestingURL, config.teams));
     });
+
+    // only check for non-Windows, as with Windows we have to wait for GPO teams
+    if (process.platform !== 'win32' || typeof config.registryConfigData !== 'undefined') {
+        if (config.teams.length === 0) {
+            setTimeout(() => {
+                handleNewServerModal();
+            }, 200);
+        }
+    }
 }
 
 //
