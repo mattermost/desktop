@@ -26,7 +26,7 @@ To set up the Mattermost desktop application for Windows 7, 8 and 10:
 
 
 ### OS X
-For OS X 10.11 El Capitan. An older version of OS X has similar way.
+For OS X 10.11 El Capitan. For older versions of OS X the instruction are similar.
 
 1. Download [the latest release](https://github.com/mattermost/desktop/releases) of Mattermost Desktop
 
@@ -52,7 +52,7 @@ For Ubuntu 16.04.
 
    Find the file ending in `-linux-*.deb`.
 
-2. Open a terminal and execute a command
+2. Open a terminal and execute the command
 
    `sudo dpkg -i mattermost-desktop-<VERSION>-<ARCH>.deb`
 
@@ -65,17 +65,17 @@ For Ubuntu 16.04.
 
    Find the file ending in `-linux-*.tar.gz`
 
-2. Extract the archive, then execute `Mattermost` which is located at inside of the extracted directory
+2. Extract the archive, then execute `Mattermost` which is located inside the extracted directory
 
 3. If you need the Desktop Entry, please execute `create_desktop_file.sh`. It creates `Mattermost.desktop`.
 
-    Please refer https://wiki.archlinux.org/index.php/Desktop_entries
+    Please refer to https://wiki.archlinux.org/index.php/Desktop_entries
 
 ## Configuration
 You have to configure the application to interact with your teams.
 
 1. Open **Settings Page**. If you use the application for the first time, **Settings Page** should appear automatically.
-   You can also see **Settings Page** by following methods.
+   You can also access the **Settings Page** by the following methods:
 
    - Windows: Press `Alt` key to bring up the menu at the top of the window, then click `File -> Settings`.
    - OS X: Click `Mattermost` from the menu at the top of the screen, then click `Preferences...`.
@@ -121,7 +121,7 @@ The Settings Page is available from the **File** menu under **Settings** (Click 
    - **Hide Menu Bar** (Windows, Linux)
       - This option hides the menu bar. Press "Alt" to show it.
    - **Show Icon on Menu Bar** (OS X)
-      - The icon appears on menu bar to indicate whether there are new messages or mention.
+      - The icon appears on the menu bar to indicate whether there are new messages or mentions.
    - **Allow insecure contents**
       - If your team is hosted on `https://`, images with `http://` are not rendered by default.
         This option allows such images to be rendered, but please be careful for security.
@@ -139,20 +139,20 @@ The Settings Page is available from the **File** menu under **Settings** (Click 
 
 If **Hide Menu Bar** option is enabled, click the `Alt` key to toggle the menu on and off.
 
-Below lists menu options (shortcut keys are listed in brackets, `Ctrl` becomes `Command` on OS X):
+Menu options are listed below (shortcut keys are listed in brackets, `Ctrl` becomes `Command` on OS X):
 
 - **File**
-  - **About Mattermost** - Shows version information for Mattermost desktop application
-  - **Settings** (Ctrl+Comma) - Opens setting menu to add new team sites and configure shortcut key options
-  - **Quit** (Ctrl+Q) - Exits the application
+  - **About Mattermost** - Show version information for Mattermost desktop application
+  - **Settings** (Ctrl+Comma) - Open setting menu to add new team sites and configure shortcut key options
+  - **Quit** (Ctrl+Q) - Exit the application
 - **Edit**
-  - **Undo** (Ctrl+Z) - Reverses previous action
-  - **Redo** (Ctrl+Shift+Z, Ctrl+Y on Windows) - Replays most recent action
-  - **Cut** (Ctrl+X) - Cuts selected text
-  - **Copy** (Ctrl+C) - Copies selected text
-  - **Paste** (Ctrl+V) - Pastes text from clipboard
+  - **Undo** (Ctrl+Z) - Reverse previous action
+  - **Redo** (Ctrl+Shift+Z, Ctrl+Y on Windows) - Replay most recent action
+  - **Cut** (Ctrl+X) - Cut selected text
+  - **Copy** (Ctrl+C) - Copy selected text
+  - **Paste** (Ctrl+V) - Paste text from clipboard
   - **Select All** (Ctrl+A) - Select all text in input box
-  - **Search in Team** (Ctrl+S) - Puts cursor in search box to search in the current team
+  - **Search in Team** (Ctrl+S) - Put cursor in search box to search in the current team
 - **View**
   - **Find..** (Ctrl+F)- Find in page
   - **Reload** (Ctrl+R) - Reload page from the server
