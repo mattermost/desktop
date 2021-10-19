@@ -830,7 +830,7 @@ function openExtraTabs(data: Array<RemoteInfo | string | undefined>, team: TeamW
     const remoteInfo = data.find((info) => info && typeof info !== 'string' && info.name === team.name) as RemoteInfo;
     if (remoteInfo) {
         team.tabs.forEach((tab) => {
-            if (tab.name !== TAB_MESSAGING && remoteInfo.serverVersion && Utils.isServerVersionGreaterThanOrEqualTo(remoteInfo.serverVersion, '6.0.0')) {
+            if (tab.name !== TAB_MESSAGING && remoteInfo.serverVersion && Utils.isVersionGreaterThanOrEqualTo(remoteInfo.serverVersion, '6.0.0')) {
                 if (tab.name === TAB_PLAYBOOKS && remoteInfo.hasPlaybooks && tab.isOpen !== false) {
                     log.info(`opening ${team.name}___${tab.name} on hasPlaybooks`);
                     tab.isOpen = true;
