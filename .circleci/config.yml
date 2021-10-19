@@ -571,7 +571,6 @@ workflows:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - pull/1810
 
       - store_artifacts:
           # for master/PR builds
