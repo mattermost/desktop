@@ -46,10 +46,16 @@ export default class Config extends EventEmitter {
     localConfigData?: ConfigType;
     useNativeWindow: boolean;
 
+    predefinedTeams: TeamWithTabs[];
+
     constructor(configFilePath: string) {
         super();
         this.configFilePath = configFilePath;
         this.registryConfig = new RegistryConfig();
+        this.predefinedTeams = [];
+        if (buildConfig.defaultTeams) {
+            this.predefinedTeams.push(...buildConfig.defaultTeams.map((team) => getDefaultTeamWithTabsFromTeam(team)));
+        }
         try {
             this.useNativeWindow = os.platform() === 'win32' && (parseInt(os.release().split('.')[0], 10) < 10);
         } catch {
@@ -80,6 +86,9 @@ export default class Config extends EventEmitter {
 
     loadRegistry = (registryData: Partial<RegistryConfigType>): void => {
         this.registryConfigData = registryData;
+        if (this.registryConfigData.teams) {
+            this.predefinedTeams.push(...this.registryConfigData.teams.map((team) => getDefaultTeamWithTabsFromTeam(team)));
+        }
         this.reload();
     }
 
@@ -109,7 +118,12 @@ export default class Config extends EventEmitter {
      */
     set = (key: keyof ConfigType, data: ConfigType[keyof ConfigType]): void => {
         if (key && this.localConfigData) {
-            this.localConfigData = Object.assign({}, this.localConfigData, {[key]: data});
+            if (key === 'teams') {
+                this.localConfigData.teams = this.filterOutPredefinedTeams(data as TeamWithTabs[]);
+                this.predefinedTeams = this.filterInPredefinedTeams(data as TeamWithTabs[]);
+            } else {
+                this.localConfigData = Object.assign({}, this.localConfigData, {[key]: data});
+            }
             this.regenerateCombinedConfigData();
             this.saveLocalConfigData();
         }
@@ -205,9 +219,6 @@ export default class Config extends EventEmitter {
     }
     get localTeams() {
         return this.localConfigData?.teams ?? defaultPreferences.version;
-    }
-    get predefinedTeams() {
-        return [...this.buildConfigData?.defaultTeams ?? [], ...this.registryConfigData?.teams ?? []];
     }
     get enableHardwareAcceleration() {
         return this.combinedData?.enableHardwareAcceleration ?? defaultPreferences.enableHardwareAcceleration;
@@ -336,21 +347,14 @@ export default class Config extends EventEmitter {
         // IMPORTANT: properly combine teams from all sources
         let combinedTeams: TeamWithTabs[] = [];
 
-        // - start by adding default teams from buildConfig, if any
-        if (this.buildConfigData?.defaultTeams?.length) {
-            combinedTeams.push(...this.buildConfigData.defaultTeams.map((team) => getDefaultTeamWithTabsFromTeam(team)));
-        }
-
-        // - add registry defined teams, if any
-        if (this.registryConfigData?.teams?.length) {
-            combinedTeams.push(...this.registryConfigData.teams.map((team) => getDefaultTeamWithTabsFromTeam(team)));
-        }
+        combinedTeams.push(...this.predefinedTeams);
 
         // - add locally defined teams only if server management is enabled
         if (this.localConfigData && this.enableServerManagement) {
             combinedTeams.push(...this.localConfigData.teams || []);
         }
 
+        this.predefinedTeams = this.filterOutDuplicateTeams(this.predefinedTeams);
         combinedTeams = this.filterOutDuplicateTeams(combinedTeams);
         combinedTeams = this.sortUnorderedTeams(combinedTeams);
 
@@ -388,6 +392,21 @@ export default class Config extends EventEmitter {
         // filter out predefined teams
         newTeams = newTeams.filter((newTeam) => {
             return this.predefinedTeams.findIndex((existingTeam) => newTeam.url === existingTeam.url) === -1; // eslint-disable-line max-nested-callbacks
+        });
+
+        return newTeams;
+    }
+
+    /**
+     * Returns the provided array fo teams with existing teams includes
+     * @param {array} teams array of teams to check for already defined teams
+     */
+    filterInPredefinedTeams = (teams: TeamWithTabs[]) => {
+        let newTeams = teams;
+
+        // filter out predefined teams
+        newTeams = newTeams.filter((newTeam) => {
+            return this.predefinedTeams.findIndex((existingTeam) => newTeam.url === existingTeam.url) >= 0; // eslint-disable-line max-nested-callbacks
         });
 
         return newTeams;
