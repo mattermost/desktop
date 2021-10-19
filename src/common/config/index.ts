@@ -24,6 +24,7 @@ import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGU
 
 import * as Validator from 'main/Validator';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
+import Utils from 'common/utils/util';
 
 import defaultPreferences, {getDefaultDownloadLocation} from './defaultPreferences';
 import upgradeConfigData from './upgradePreferences';
@@ -57,7 +58,7 @@ export default class Config extends EventEmitter {
             this.predefinedTeams.push(...buildConfig.defaultTeams.map((team) => getDefaultTeamWithTabsFromTeam(team)));
         }
         try {
-            this.useNativeWindow = os.platform() === 'win32' && (parseInt(os.release().split('.')[0], 10) < 10);
+            this.useNativeWindow = os.platform() === 'win32' && !Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2');
         } catch {
             this.useNativeWindow = false;
         }

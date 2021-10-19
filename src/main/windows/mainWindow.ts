@@ -14,6 +14,7 @@ import {SavedWindowState} from 'types/mainWindow';
 
 import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, OPEN_TEAMS_DROPDOWN} from 'common/communication';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH} from 'common/utils/constants';
+import Utils from 'common/utils/util';
 
 import * as Validator from '../Validator';
 import ContextMenu from '../contextMenu';
@@ -38,7 +39,7 @@ function isInsideRectangle(container: Electron.Rectangle, rect: Electron.Rectang
 }
 
 function isFramelessWindow() {
-    return os.platform() === 'darwin' || (os.platform() === 'win32' && os.release().startsWith('10'));
+    return os.platform() === 'darwin' || (os.platform() === 'win32' && Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2'));
 }
 
 function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string}) {
