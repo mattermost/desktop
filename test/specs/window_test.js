@@ -15,11 +15,20 @@ describe('window', function desc() {
         env.cleanTestConfig();
     });
 
+    afterEach(async () => {
+        if (this.app) {
+            try {
+                await this.app.close();
+            // eslint-disable-next-line no-empty
+            } catch (err) {}
+        }
+    });
+
     it('should restore window bounds', async () => {
         // bounds seems to be incorrectly calculated in some environments
         // - Windows 10: OK
         // - CircleCI: NG
-        const expectedBounds = {x: 100, y: 200, width: 500, height: 400};
+        const expectedBounds = {x: 100, y: 200, width: 800, height: 400};
         fs.writeFileSync(env.boundsInfoPath, JSON.stringify(expectedBounds));
         this.app = await env.getApp();
         const mainWindow = await this.app.firstWindow();
@@ -33,12 +42,12 @@ describe('window', function desc() {
         // bounds seems to be incorrectly calculated in some environments (e.g. CircleCI)
         // - Windows 10: OK
         // - CircleCI: NG
-        fs.writeFileSync(env.boundsInfoPath, JSON.stringify({x: -100000, y: 200, width: 300, height: 400}));
+        fs.writeFileSync(env.boundsInfoPath, JSON.stringify({x: -100000, y: 200, width: 800, height: 400}));
         this.app = await env.getApp();
         const mainWindow = await this.app.firstWindow();
         const browserWindow = await this.app.browserWindow(mainWindow);
         const bounds = await browserWindow.evaluate((window) => window.getContentBounds());
-        bounds.x.should.satisfy((x) => (x > -10000));
+        bounds.x.should.satisfy((x) => (x > -100000));
         await this.app.close();
     });
 
@@ -46,12 +55,12 @@ describe('window', function desc() {
         // bounds seems to be incorrectly calculated in some environments (e.g. CircleCI)
         // - Windows 10: OK
         // - CircleCI: NG
-        fs.writeFileSync(env.boundsInfoPath, JSON.stringify({x: 100, y: 200000, width: 300, height: 400}));
+        fs.writeFileSync(env.boundsInfoPath, JSON.stringify({x: 100, y: 200000, width: 800, height: 400}));
         this.app = await env.getApp();
         const mainWindow = await this.app.firstWindow();
         const browserWindow = await this.app.browserWindow(mainWindow);
         const bounds = await browserWindow.evaluate((window) => window.getContentBounds());
-        bounds.y.should.satisfy((y) => (y < 10000));
+        bounds.y.should.satisfy((y) => (y < 200000));
         await this.app.close();
     });
 });

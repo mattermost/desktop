@@ -7,11 +7,13 @@ const fs = require('fs');
 
 const path = require('path');
 
-const { _electron: electron } = require('playwright');
+const {_electron: electron} = require('playwright');
 const chai = require('chai');
 const {ipcRenderer} = require('electron');
 
 const {SHOW_SETTINGS_WINDOW} = require('../../src/common/communication');
+
+const {asyncSleep} = require('./utils');
 chai.should();
 
 const sourceRootDir = path.join(__dirname, '../..');
@@ -53,12 +55,12 @@ module.exports = {
         }
     },
 
-    getApp() {
+    async getApp() {
         const options = {
             executablePath: electronBinaryPath,
             args: [`${path.join(sourceRootDir, 'dist')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode'],
-            //chromeDriverArgs: [],
         };
+
         // if (process.env.MM_DEBUG_SETTINGS) {
         //     options.chromeDriverLogPath = './chromedriverlog.txt';
         // }
@@ -67,7 +69,11 @@ module.exports = {
         //     // this changes the default debugging port so chromedriver can run without issues.
         //     options.chromeDriverArgs.push('remote-debugging-port=9222');
         //}
-        return electron.launch(options);
+        return electron.launch(options).then(async (app) => {
+            // Make sure the app has time to fully load
+            await asyncSleep(1000);
+            return app;
+        });
     },
 
     addClientCommands(client) {

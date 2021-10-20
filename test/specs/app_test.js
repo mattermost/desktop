@@ -24,9 +24,7 @@ describe('application', function desc() {
     });
 
     it('should show the new server modal when no servers exist', async () => {
-        const newServerModal = await this.app.waitForEvent('window', {
-            predicate: (window) => window.url().includes('newServer'),
-        });
+        const newServerModal = this.app.windows().find((window) => window.url().includes('newServer'));
         const modalTitle = await newServerModal.innerText('#newServerModal .modal-title');
         modalTitle.should.equal('Add Server');
     });

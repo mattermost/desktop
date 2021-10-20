@@ -15,6 +15,15 @@ describe('config', function desc() {
         env.cleanTestConfig();
     });
 
+    afterEach(async () => {
+        if (this.app) {
+            try {
+                await this.app.close();
+            // eslint-disable-next-line no-empty
+            } catch (err) {}
+        }
+    });
+
     it('should show servers in dropdown when there is config file', async () => {
         const config = {
             version: 3,
