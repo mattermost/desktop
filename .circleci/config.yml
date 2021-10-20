@@ -76,7 +76,7 @@ commands:
     steps:
       - update_base_image:
           apt_opts: << parameters.apt_opts >>
-      - run: npm ci
+      - run: PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci
 
   win_make:
     description: "Run mattermost's makefile.ps1 on ./scripts/"

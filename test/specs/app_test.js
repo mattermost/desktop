@@ -4,8 +4,6 @@
 
 'use strict';
 
-const fs = require('fs');
-
 const env = require('../modules/environment');
 
 describe('application', function desc() {
