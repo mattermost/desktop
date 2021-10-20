@@ -112,18 +112,19 @@ describe('renderer/index.html', function desc() {
     });
 
     it('should only show dropdown when button is clicked', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+        const mainWindow = await this.app.firstWindow();
+        const browserWindow = await this.app.browserWindow(mainWindow);
+        const mainView = this.app.windows().find((window) => window.url().includes('index'));
 
-        let dropdownHeight = await dropdownView.evaluate('window.innerHeight');
+        let dropdownHeight = await browserWindow.evaluate((window) => window.getBrowserViews().find((view) => view.webContents.getURL().includes('dropdown')).getBounds().height);
         dropdownHeight.should.equal(0);
 
-        await mainWindow.click('.TeamDropdownButton');
-        dropdownHeight = await dropdownView.evaluate('window.innerHeight');
+        await mainView.click('.TeamDropdownButton');
+        dropdownHeight = await browserWindow.evaluate((window) => window.getBrowserViews().find((view) => view.webContents.getURL().includes('dropdown')).getBounds().height);
         dropdownHeight.should.be.greaterThan(0);
 
-        await mainWindow.click('.TabBar');
-        dropdownHeight = await dropdownView.evaluate('window.innerHeight');
+        await mainView.click('.TabBar');
+        dropdownHeight = await browserWindow.evaluate((window) => window.getBrowserViews().find((view) => view.webContents.getURL().includes('dropdown')).getBounds().height);
         dropdownHeight.should.equal(0);
     });
 
