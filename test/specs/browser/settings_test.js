@@ -7,6 +7,7 @@
 'use strict';
 
 const fs = require('fs');
+const { SHOW_SETTINGS_WINDOW } = require('../../../src/common/communication');
 
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
@@ -96,65 +97,79 @@ describe('renderer/settings.html', function desc() {
         describe('Start app on login', () => {
             it('should appear on win32 or linux', async () => {
                 const expected = (process.platform === 'win32' || process.platform === 'linux');
-                env.addClientCommands(this.app.client);
-                await this.app.client.loadSettingsPage();
-                const existing = await this.app.client.isExisting('#inputAutoStart');
+                this.app.evaluate(({ipcMain}, showWindow) => {
+                    ipcMain.emit(showWindow);
+                }, SHOW_SETTINGS_WINDOW);
+                const settingsWindow = await this.app.waitForEvent('window', {
+                    predicate: (window) => window.url().includes('settings'),
+                });
+                await settingsWindow.waitForSelector('.settingsPage.container');
+                const existing = await settingsWindow.isVisible('#inputAutoStart');
                 existing.should.equal(expected);
             });
         });
 
-        // describe('Show icon in menu bar / notification area', () => {
-        //     it('should appear on darwin or linux', async () => {
-        //         const expected = (process.platform === 'darwin' || process.platform === 'linux');
-        //         env.addClientCommands(this.app.client);
-        //         await this.app.client.loadSettingsPage();
-        //         const existing = await this.app.client.isExisting('#inputShowTrayIcon');
-        //         existing.should.equal(expected);
-        //     });
+        describe('Show icon in menu bar / notification area', () => {
+            it('should appear on darwin or linux', async () => {
+                const expected = (process.platform === 'darwin' || process.platform === 'linux');
+                this.app.evaluate(({ipcMain}, showWindow) => {
+                    ipcMain.emit(showWindow);
+                }, SHOW_SETTINGS_WINDOW);
+                const settingsWindow = await this.app.waitForEvent('window', {
+                    predicate: (window) => window.url().includes('settings'),
+                });
+                await settingsWindow.waitForSelector('.settingsPage.container');
+                const existing = await settingsWindow.isVisible('#inputShowTrayIcon');
+                existing.should.equal(expected);
+            });
 
-        //     describe('Save tray icon setting on mac', () => {
-        //         env.shouldTest(it, env.isOneOf(['darwin', 'linux']))('should be saved when it\'s selected', async () => {
-        //             env.addClientCommands(this.app.client);
-        //             await this.app.browserWindow.setSize(1024, 768); // Resize the window to click the element
-        //             await this.app.client.
-        //                 loadSettingsPage().
-        //                 click('#inputShowTrayIcon').
-        //                 waitForAppOptionsAutoSaved();
+            describe('Save tray icon setting on mac', () => {
+                env.shouldTest(it, env.isOneOf(['darwin', 'linux']))('should be saved when it\'s selected', async () => {
+                    this.app.evaluate(({ipcMain}, showWindow) => {
+                        ipcMain.emit(showWindow);
+                    }, SHOW_SETTINGS_WINDOW);
+                    const settingsWindow = await this.app.waitForEvent('window', {
+                        predicate: (window) => window.url().includes('settings'),
+                    });
+                    await settingsWindow.waitForSelector('.settingsPage.container');
+                    await settingsWindow.click('#inputShowTrayIcon');
+                    await settingsWindow.waitForSelector('.IndicatorContainer :text("Saved")');
 
-        //             let config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-        //             config0.showTrayIcon.should.true;
+                    let config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+                    config0.showTrayIcon.should.true;
 
-        //             await this.app.client.
-        //                 click('#inputShowTrayIcon').
-        //                 waitForAppOptionsAutoSaved();
+                    await settingsWindow.click('#inputShowTrayIcon');
+                    await settingsWindow.waitForSelector('.IndicatorContainer :text("Saved")');
 
-        //             config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-        //             config0.showTrayIcon.should.false;
-        //         });
-        //     });
+                    config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+                    config0.showTrayIcon.should.false;
+                });
+            });
 
-        //     describe('Save tray icon theme on linux', () => {
-        //         env.shouldTest(it, process.platform === 'linux')('should be saved when it\'s selected', async () => {
-        //             env.addClientCommands(this.app.client);
-        //             await this.app.browserWindow.setSize(1024, 768); // Resize the window to click the element
-        //             await this.app.client.
-        //                 loadSettingsPage().
-        //                 click('#inputShowTrayIcon').
-        //                 click('input[value="dark"]').
-        //                 pause(700); // wait auto-save
+            describe('Save tray icon theme on linux', () => {
+                env.shouldTest(it, process.platform === 'linux')('should be saved when it\'s selected', async () => {
+                    this.app.evaluate(({ipcMain}, showWindow) => {
+                        ipcMain.emit(showWindow);
+                    }, SHOW_SETTINGS_WINDOW);
+                    const settingsWindow = await this.app.waitForEvent('window', {
+                        predicate: (window) => window.url().includes('settings'),
+                    });
+                    await settingsWindow.waitForSelector('.settingsPage.container');
+                    await settingsWindow.click('#inputShowTrayIcon');
+                    await settingsWindow.click('input[value="dark"]');
+                    await settingsWindow.waitForSelector('.IndicatorContainer :text("Saved")');
 
-        //             const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-        //             config0.trayIconTheme.should.equal('dark');
+                    const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+                    config0.trayIconTheme.should.equal('dark');
 
-        //             await this.app.client.
-        //                 click('input[value="light"]').
-        //                 pause(700); // wait auto-save
+                    await settingsWindow.click('input[value="light"]');
+                    await settingsWindow.waitForSelector('.IndicatorContainer :text("Saved")');
 
-        //             const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-        //             config1.trayIconTheme.should.equal('light');
-        //         });
-        //     });
-        // });
+                    const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+                    config1.trayIconTheme.should.equal('light');
+                });
+            });
+        });
 
         // describe('Leave app running in notification area when application window is closed', () => {
         //     it('should appear on linux', async () => {

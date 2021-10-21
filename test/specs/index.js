@@ -8,7 +8,7 @@ import './window_test.js';
 // import './security_test.js';
 // import './spellchecker_test.js';
 import './browser/index_test.js';
+import './browser/settings_test.js';
 
-// import './browser/settings_test.js';
 // import './main/user_activity_monitor_test.js';
 // import './utils/util_test.js';
