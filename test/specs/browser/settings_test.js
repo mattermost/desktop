@@ -7,7 +7,7 @@
 'use strict';
 
 const fs = require('fs');
-const { SHOW_SETTINGS_WINDOW } = require('../../../src/common/communication');
+const {SHOW_SETTINGS_WINDOW} = require('../../../src/common/communication');
 
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
@@ -171,93 +171,98 @@ describe('renderer/settings.html', function desc() {
             });
         });
 
-        // describe('Leave app running in notification area when application window is closed', () => {
-        //     it('should appear on linux', async () => {
-        //         const expected = (process.platform === 'linux');
-        //         env.addClientCommands(this.app.client);
-        //         await this.app.client.loadSettingsPage();
-        //         const existing = await this.app.client.isExisting('#inputMinimizeToTray');
-        //         existing.should.equal(expected);
-        //     });
-        // });
+        describe('Leave app running in notification area when application window is closed', () => {
+            it('should appear on linux', async () => {
+                const expected = (process.platform === 'linux');
+                this.app.evaluate(({ipcMain}, showWindow) => {
+                    ipcMain.emit(showWindow);
+                }, SHOW_SETTINGS_WINDOW);
+                const settingsWindow = await this.app.waitForEvent('window', {
+                    predicate: (window) => window.url().includes('settings'),
+                });
+                await settingsWindow.waitForSelector('.settingsPage.container');
+                const existing = await settingsWindow.isVisible('#inputMinimizeToTray');
+                existing.should.equal(expected);
+            });
+        });
 
-        // // describe.skip('Toggle window visibility when clicking on the tray icon', () => {
-        // //   it('should appear on win32', async () => {
-        // //     const expected = (process.platform === 'win32');
-        // //     env.addClientCommands(this.app.client);
-        // //     await this.app.client.loadSettingsPage();
-        // //     const existing = await this.app.client.isExisting('#inputToggleWindowOnTrayIconClick');
-        // //     existing.should.equal(expected);
-        // //   });
-        // // });
+        describe('Flash app window and taskbar icon when a new message is received', () => {
+            it('should appear on win32 and linux', async () => {
+                const expected = (process.platform === 'win32' || process.platform === 'linux');
+                this.app.evaluate(({ipcMain}, showWindow) => {
+                    ipcMain.emit(showWindow);
+                }, SHOW_SETTINGS_WINDOW);
+                const settingsWindow = await this.app.waitForEvent('window', {
+                    predicate: (window) => window.url().includes('settings'),
+                });
+                await settingsWindow.waitForSelector('.settingsPage.container');
+                const existing = await settingsWindow.isVisible('#inputflashWindow');
+                existing.should.equal(expected);
+            });
+        });
 
-        // describe('Flash app window and taskbar icon when a new message is received', () => {
-        //     it('should appear on win32 and linux', async () => {
-        //         const expected = (process.platform === 'win32' || process.platform === 'linux');
-        //         env.addClientCommands(this.app.client);
-        //         await this.app.client.loadSettingsPage();
-        //         const existing = await this.app.client.isExisting('#inputflashWindow');
-        //         existing.should.equal(expected);
-        //     });
-        // });
+        describe('Show red badge on taskbar icon to indicate unread messages', () => {
+            it('should appear on darwin or win32', async () => {
+                const expected = (process.platform === 'darwin' || process.platform === 'win32');
+                this.app.evaluate(({ipcMain}, showWindow) => {
+                    ipcMain.emit(showWindow);
+                }, SHOW_SETTINGS_WINDOW);
+                const settingsWindow = await this.app.waitForEvent('window', {
+                    predicate: (window) => window.url().includes('settings'),
+                });
+                await settingsWindow.waitForSelector('.settingsPage.container');
+                const existing = await settingsWindow.isVisible('#inputShowUnreadBadge');
+                existing.should.equal(expected);
+            });
+        });
 
-        // describe('Show red badge on taskbar icon to indicate unread messages', () => {
-        //     it('should appear on darwin or win32', async () => {
-        //         const expected = (process.platform === 'darwin' || process.platform === 'win32');
-        //         env.addClientCommands(this.app.client);
-        //         await this.app.client.loadSettingsPage();
-        //         const existing = await this.app.client.isExisting('#inputShowUnreadBadge');
-        //         existing.should.equal(expected);
-        //     });
-        // });
+        describe('Check spelling', () => {
+            it('should appear and be selectable', async () => {
+                this.app.evaluate(({ipcMain}, showWindow) => {
+                    ipcMain.emit(showWindow);
+                }, SHOW_SETTINGS_WINDOW);
+                const settingsWindow = await this.app.waitForEvent('window', {
+                    predicate: (window) => window.url().includes('settings'),
+                });
+                await settingsWindow.waitForSelector('.settingsPage.container');
+                const existing = await settingsWindow.isVisible('#inputSpellChecker');
+                existing.should.equal(true);
 
-        // describe('Check spelling', () => {
-        //     it('should appear and be selectable', async () => {
-        //         env.addClientCommands(this.app.client);
-        //         await this.app.client.loadSettingsPage();
-        //         const existing = await this.app.client.isExisting('#inputSpellChecker');
-        //         existing.should.equal(true);
+                const selected = await settingsWindow.isChecked('#inputSpellChecker');
+                selected.should.equal(true);
 
-        //         const selected = await this.app.client.isSelected('#inputSpellChecker');
-        //         selected.should.equal(true);
+                await settingsWindow.click('#inputSpellChecker');
+                await settingsWindow.waitForSelector('.IndicatorContainer :text("Saved")');
 
-        //         const windowBounds = await this.app.browserWindow.getBounds();
-        //         const inputLocation = await this.app.client.getLocation('#inputSpellChecker');
-        //         const offset = (inputLocation.y - windowBounds.height) + 100;
+                const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+                config1.useSpellChecker.should.equal(false);
+            });
+        });
 
-        //         await this.app.client.
-        //             scroll(0, offset).
-        //             click('#inputSpellChecker').
-        //             pause(5000);
-        //         const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-        //         config1.useSpellChecker.should.equal(false);
-        //     });
-        // });
+        describe('Enable GPU hardware acceleration', () => {
+            it('should save selected option', async () => {
+                const ID_INPUT_ENABLE_HARDWARE_ACCELERATION = '#inputEnableHardwareAcceleration';
+                this.app.evaluate(({ipcMain}, showWindow) => {
+                    ipcMain.emit(showWindow);
+                }, SHOW_SETTINGS_WINDOW);
+                const settingsWindow = await this.app.waitForEvent('window', {
+                    predicate: (window) => window.url().includes('settings'),
+                });
+                await settingsWindow.waitForSelector('.settingsPage.container');
+                const selected = await settingsWindow.isChecked(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
+                selected.should.equal(true); // default is true
 
-        // describe('Enable GPU hardware acceleration', () => {
-        //     it('should save selected option', async () => {
-        //         const ID_INPUT_ENABLE_HARDWARE_ACCELERATION = '#inputEnableHardwareAcceleration';
-        //         env.addClientCommands(this.app.client);
-        //         await this.app.client.
-        //             loadSettingsPage().
-        //             waitForExist(ID_INPUT_ENABLE_HARDWARE_ACCELERATION, 5000).
-        //             scroll(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
-        //         const selected = await this.app.client.isSelected(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
-        //         selected.should.equal(true); // default is true
+                await settingsWindow.click(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
+                await settingsWindow.waitForSelector('.IndicatorContainer :text("Saved")');
+                const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+                config0.enableHardwareAcceleration.should.equal(false);
 
-        //         await this.app.client.click(ID_INPUT_ENABLE_HARDWARE_ACCELERATION).
-        //             waitForVisible('#appOptionsSaveIndicator', 5000).
-        //             waitForVisible('#appOptionsSaveIndicator', 5000, true); // at least 2500 ms to disappear
-        //         const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-        //         config0.enableHardwareAcceleration.should.equal(false);
-
-        //         await this.app.client.click(ID_INPUT_ENABLE_HARDWARE_ACCELERATION).
-        //             waitForVisible('#appOptionsSaveIndicator', 5000).
-        //             waitForVisible('#appOptionsSaveIndicator', 5000, true); // at least 2500 ms to disappear
-        //         const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-        //         config1.enableHardwareAcceleration.should.equal(true);
-        //     });
-        // });
+                await settingsWindow.click(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
+                await settingsWindow.waitForSelector('.IndicatorContainer :text("Saved")');
+                const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+                config1.enableHardwareAcceleration.should.equal(true);
+            });
+        });
     });
 
     // describe('RemoveServerModal', () => {
