@@ -428,7 +428,7 @@ export class ViewManager {
                         return;
                     }
 
-                    if (view.status === Status.READY && view.serverInfo.remoteInfo.serverVersion && Utils.isServerVersionGreaterThanOrEqualTo(view.serverInfo.remoteInfo.serverVersion, '6.0.0')) {
+                    if (view.status === Status.READY && view.serverInfo.remoteInfo.serverVersion && Utils.isVersionGreaterThanOrEqualTo(view.serverInfo.remoteInfo.serverVersion, '6.0.0')) {
                         const pathName = `/${urlWithSchema.replace(view.tab.server.url.toString(), '')}`;
                         view.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
                         this.deeplinkSuccess(view.name);
