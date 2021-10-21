@@ -3,124 +3,143 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-// const fs = require('fs');
+const fs = require('fs');
 
-// const path = require('path');
-// const http = require('http');
+const env = require('../modules/environment');
+const {asyncSleep} = require('../modules/utils');
 
-// const env = require('../modules/environment');
+const {SHOW_SETTINGS_WINDOW} = require('../../src/common/communication');
 
-// describe.skip('security', function desc() {
-//   this.timeout(30000);
+describe.skip('security', function desc() {
+    this.timeout(30000);
 
-//   const serverPort = 8181;
-//   const testURL = `http://localhost:${serverPort}`;
+    const config = {
+        version: 3,
+        teams: [{
+            name: 'example',
+            url: env.mattermostURL,
+            order: 0,
+            tabs: [
+                {
+                    name: 'TAB_MESSAGING',
+                    order: 0,
+                    isOpen: true,
+                },
+                {
+                    name: 'TAB_FOCALBOARD',
+                    order: 1,
+                    isOpen: true,
+                },
+                {
+                    name: 'TAB_PLAYBOOKS',
+                    order: 2,
+                    isOpen: true,
+                },
+            ],
+            lastActiveTab: 0,
+        }, {
+            name: 'github',
+            url: 'https://github.com/',
+            order: 1,
+            tabs: [
+                {
+                    name: 'TAB_MESSAGING',
+                    order: 0,
+                    isOpen: true,
+                },
+                {
+                    name: 'TAB_FOCALBOARD',
+                    order: 1,
+                    isOpen: true,
+                },
+                {
+                    name: 'TAB_PLAYBOOKS',
+                    order: 2,
+                    isOpen: true,
+                },
+            ],
+            lastActiveTab: 0,
+        }],
+        showTrayIcon: false,
+        trayIconTheme: 'light',
+        minimizeToTray: false,
+        notifications: {
+            flashWindow: 0,
+            bounceIcon: false,
+            bounceIconType: 'informational',
+        },
+        showUnreadBadge: true,
+        useSpellChecker: true,
+        enableHardwareAcceleration: true,
+        autostart: true,
+        darkMode: false,
+        lastActiveTeam: 0,
+        spellCheckerLocales: [],
+    };
 
-//   const config = {
-//     version: 2,
-//     teams: [{
-//       name: 'example_1',
-//       url: testURL,
-//       order: 0,
-//     }, {
-//       name: 'example_2',
-//       url: testURL,
-//       order: 1,
-//     }],
-//   };
+    beforeEach(async () => {
+        env.createTestUserDataDir();
+        env.cleanTestConfig();
+        fs.writeFileSync(env.configFilePath, JSON.stringify(config));
+        await asyncSleep(1000);
+        this.app = await env.getApp();
+    });
 
-//   before(() => {
-//     this.server = http.createServer((req, res) => {
-//       res.writeHead(200, {
-//         'Content-Type': 'text/html',
-//       });
-//       res.end(fs.readFileSync(path.resolve(env.sourceRootDir, 'test/modules/test.html'), 'utf-8'));
-//     }).listen(serverPort, '127.0.0.1');
-//   });
+    afterEach(async () => {
+        if (this.app) {
+            await this.app.close();
+        }
+    });
 
-//   beforeEach(() => {
-//     fs.writeFileSync(env.configFilePath, JSON.stringify(config));
-//     this.app = env.getSpectronApp();
-//     return this.app.start();
-//   });
+    it('should NOT be able to call Node.js API in webview', async () => {
+        const firstView = this.app.windows().find((window) => window.url().includes(env.mattermostURL));
+        const isNodeEnabled = await firstView.evaluate(() => {
+            try {
+                if (require('child_process')) {
+                    return true;
+                }
+                return false;
+            } catch (e) {
+                return false;
+            }
+        });
+        isNodeEnabled.should.be.false;
+    });
 
-//   afterEach(() => {
-//     if (this.app && this.app.isRunning()) {
-//       return this.app.stop();
-//     }
-//     return true;
-//   });
+    it('should NOT be able to call eval() in any window', async () => {
+        const firstView = this.app.windows().find((window) => window.url().includes(env.mattermostURL));
+        let isEvalEnabled = await firstView.evaluate(() => {
+            try {
+                return eval('1 + 1');
+            } catch (e) {
+                return false;
+            }
+        });
+        isEvalEnabled.should.be.false;
 
-//   after((done) => {
-//     this.server.close(done);
-//   });
+        const mainView = this.app.windows().find((window) => window.url().includes('index'));
+        isEvalEnabled = await mainView.evaluate(() => {
+            try {
+                return eval('1 + 1');
+            } catch (e) {
+                return false;
+            }
+        });
+        isEvalEnabled.should.be.false;
 
-//   it('should NOT be able to call Node.js API in webview', () => {
-//     env.addClientCommands(this.app.client);
-
-//     // webview is handled as a window by chromedriver.
-//     return this.app.client.
-//       windowByIndex(1).isNodeEnabled().then((enabled) => {
-//         enabled.should.be.false;
-//       }).
-//       windowByIndex(2).isNodeEnabled().then((enabled) => {
-//         enabled.should.be.false;
-//       }).
-//       windowByIndex(0).
-//       getAttribute('webview', 'nodeintegration').then((nodeintegration) => {
-//         // nodeintegration is an array of string
-//         nodeintegration.forEach((n) => {
-//           n.should.equal('false');
-//         });
-//       });
-//   });
-
-//   it('should NOT be able to call Node.js API in a new window', () => {
-//     env.addClientCommands(this.app.client);
-//     const client = this.app.client;
-//     return this.app.client.
-//       windowByIndex(1). // in the first webview
-//       execute(() => {
-//         open_window();
-//       }).
-//       waitUntil(() => {
-//         return client.windowHandles().then((handles) => {
-//           return handles.value.length === 4;
-//         });
-//       }, 5000, 'expected a new window').
-//       windowByIndex(3).isNodeEnabled().then((enabled) => {
-//         enabled.should.be.false;
-//       });
-//   });
-
-//   it('should NOT be able to call eval() in any window', () => {
-//     env.addClientCommands(this.app.client);
-//     const tryEval = (index) => {
-//       return this.app.client.
-//         windowByIndex(index).
-//         execute(() => {
-//           return eval('1 + 1');
-//         }).then((result) => {
-//           throw new Error(`Promise was unexpectedly fulfilled (result: ${result})`);
-//         }, (error) => {
-//           (error !== null).should.be.true;
-//         });
-//     };
-//     const tryEvalInSettingsPage = () => {
-//       return this.app.client.
-//         windowByIndex(0).
-//         loadSettingsPage().
-//         execute(() => {
-//           return eval('1 + 1');
-//         }).then((result) => {
-//           throw new Error(`Promise was unexpectedly fulfilled (result: ${result})`);
-//         }, (error) => {
-//           (error !== null).should.be.true;
-//         });
-//     };
-//     return Promise.all([
-//       tryEval(0),
-//       tryEvalInSettingsPage(),
-//     ]);
-//   });
-// });
+        this.app.evaluate(({ipcMain}, showWindow) => {
+            ipcMain.emit(showWindow);
+        }, SHOW_SETTINGS_WINDOW);
+        const settingsWindow = await this.app.waitForEvent('window', {
+            predicate: (window) => window.url().includes('settings'),
+        });
+        isEvalEnabled = await settingsWindow.evaluate(() => {
+            try {
+                return eval('1 + 1');
+            } catch (e) {
+                return false;
+            }
+        });
+        isEvalEnabled.should.be.false;
+    });
+});
