@@ -79,7 +79,6 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
         backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
         webPreferences: {
             nativeWindowOpen: true,
-            nodeIntegration: process.env.NODE_ENV === 'test',
             disableBlinkFeatures: 'Auxclick',
             preload,
             spellcheck,

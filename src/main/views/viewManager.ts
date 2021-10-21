@@ -295,8 +295,6 @@ export class ViewManager {
             const urlView = new BrowserView({
                 webPreferences: {
                     nativeWindowOpen: true,
-                    contextIsolation: process.env.NODE_ENV !== 'test',
-                    nodeIntegration: process.env.NODE_ENV === 'test',
 
                     // Workaround for this issue: https://github.com/electron/electron/issues/30993
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment

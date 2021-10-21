@@ -169,8 +169,6 @@ const generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spe
                     center: true,
                     webPreferences: {
                         nativeWindowOpen: true,
-                        nodeIntegration: process.env.NODE_ENV === 'test',
-                        contextIsolation: process.env.NODE_ENV !== 'test',
                         spellcheck: (typeof spellcheck === 'undefined' ? true : spellcheck),
                     },
                 });
