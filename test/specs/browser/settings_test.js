@@ -7,6 +7,7 @@
 'use strict';
 
 const fs = require('fs');
+
 const {SHOW_SETTINGS_WINDOW} = require('../../../src/common/communication');
 
 const env = require('../../modules/environment');

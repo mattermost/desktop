@@ -5,7 +5,6 @@ import './app_test.js';
 import './config_test.js';
 import './window_test.js';
 
-import './security_test.js';
 import './browser/index_test.js';
 import './browser/modal_test.js';
 import './browser/settings_test.js';
