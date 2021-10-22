@@ -132,8 +132,6 @@ jobs:
       - checkout
       - update_image:
           apt_opts: "--no-install-recommends"
-      - restore_cache:
-          key: lint-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - run: npm run check-types
       - run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run npm run test
       - run: mkdir -p /tmp/test-results
@@ -152,8 +150,6 @@ jobs:
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - restore_cache:
-          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
       - build
@@ -171,8 +167,6 @@ jobs:
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - restore_cache:
-          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
       - build:
@@ -193,8 +187,6 @@ jobs:
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - restore_cache:
-          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
       - run: jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
@@ -244,8 +236,6 @@ jobs:
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - restore_cache:
-          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
       - build:
@@ -302,8 +292,6 @@ jobs:
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - restore_cache:
-          key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
       - build
