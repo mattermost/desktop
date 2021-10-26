@@ -49,6 +49,17 @@ module.exports = {
         });
     },
 
+    cleanDataDir() {
+        try {
+            fs.rmdirSync(userDataDir, {recursive: true});
+        } catch (err) {
+            if (err.code !== 'ENOENT') {
+                // eslint-disable-next-line no-console
+                console.error(err);
+            }
+        }
+    },
+
     createTestUserDataDir() {
         if (!fs.existsSync(userDataDir)) {
             fs.mkdirSync(userDataDir);
