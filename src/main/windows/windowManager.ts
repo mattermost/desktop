@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
-import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent} from 'electron';
+import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import log from 'electron-log';
 
 import {CombinedConfig} from 'types/config';
@@ -18,6 +18,7 @@ import {
     UPDATE_SHORTCUT_MENU,
     BROWSER_HISTORY_PUSH,
     APP_LOGGED_IN,
+    GET_VIEW_NAME,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 
@@ -54,6 +55,7 @@ ipcMain.on(REACT_APP_INITIALIZED, handleReactAppInitialized);
 ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, handleLoadingScreenAnimationFinished);
 ipcMain.on(BROWSER_HISTORY_PUSH, handleBrowserHistoryPush);
 ipcMain.on(APP_LOGGED_IN, handleAppLoggedIn);
+ipcMain.handle(GET_VIEW_NAME, handleGetViewName);
 
 export function setConfig(data: CombinedConfig) {
     if (data) {
@@ -584,4 +586,8 @@ export function getCurrentTeamName() {
 
 function handleAppLoggedIn(event: IpcMainEvent, viewName: string) {
     status.viewManager?.reloadViewIfNeeded(viewName);
+}
+
+function handleGetViewName(event: IpcMainInvokeEvent) {
+    return getViewNameByWebContentsId(event.sender.id);
 }

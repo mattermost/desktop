@@ -76,6 +76,24 @@ module.exports = {
         });
     },
 
+    async getServerMap(app) {
+        const map = {};
+        await Promise.all(app.windows().map(async (win) => {
+            return win.evaluate(async () => {
+                if (!window.testHelper) {
+                    return null;
+                }
+                const name = await window.testHelper.getViewName();
+                return name;
+            }).then((viewName) => {
+                if (viewName) {
+                    map[viewName] = win;
+                }
+            });
+        }));
+        return map;
+    },
+
     addClientCommands(client) {
         client.addCommand('loadSettingsPage', function async() {
             ipcRenderer.send(SHOW_SETTINGS_WINDOW);
