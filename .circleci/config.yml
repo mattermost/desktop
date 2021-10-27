@@ -65,7 +65,7 @@ commands:
         default: ""
     steps:
       - run: wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | apt-key add -
-      - run: apt-get update || true && apt-get install ca-certificates && apt-get update && apt-get -y install << parameters.apt_opts >>
+      - run: apt-get update || true && apt-get install ca-certificates libxtst-dev libpng++-dev && apt-get update && apt-get -y install << parameters.apt_opts >>
 
   update_image:
     description: "Update image"
@@ -130,10 +130,6 @@ jobs:
     executor: wine-chrome
     steps:
       - checkout
-      - run:
-          name: "install robotjs dependencies"
-          command: |
-            apt-get install libxtst-dev libpng++-dev
       - update_image:
           apt_opts: "--no-install-recommends"
       - run: npm run check-types
