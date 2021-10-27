@@ -133,7 +133,7 @@ jobs:
       - run:
           name: "install robotjs dependencies"
           command: |
-            sudo apt-get install libxtst-dev libpng++-dev
+            apt-get install libxtst-dev libpng++-dev
       - update_image:
           apt_opts: "--no-install-recommends"
       - run: npm run check-types
