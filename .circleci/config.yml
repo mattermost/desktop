@@ -133,6 +133,10 @@ jobs:
       - update_image:
           apt_opts: "--no-install-recommends"
       - run: npm run check-types
+      - run:
+          name: "install robotjs dependencies"
+          command: |
+            sudo apt-get install libxtst-dev libpng++-dev
       - run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run npm run test
       - run: mkdir -p /tmp/test-results
       - run: cp test-results.xml /tmp/test-results/
