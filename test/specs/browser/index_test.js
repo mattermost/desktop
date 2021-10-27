@@ -5,6 +5,8 @@
 
 const fs = require('fs');
 
+const robot = require('robotjs');
+
 // const http = require('http');
 // const path = require('path');
 
@@ -92,72 +94,87 @@ describe('renderer/index.html', function desc() {
         }
     });
 
-    it('should set src of browser view from config file', async () => {
-        const firstServer = this.app.windows().find((window) => window.url() === config.teams[0].url);
-        const secondServer = this.app.windows().find((window) => window.url() === config.teams[1].url);
+    // it('should set src of browser view from config file', async () => {
+    //     const firstServer = this.app.windows().find((window) => window.url() === config.teams[0].url);
+    //     const secondServer = this.app.windows().find((window) => window.url() === config.teams[1].url);
 
-        firstServer.should.not.be.null;
-        secondServer.should.not.be.null;
-    });
+    //     firstServer.should.not.be.null;
+    //     secondServer.should.not.be.null;
+    // });
 
-    it('should set name of menu item from config file', async () => {
+    // it('should set name of menu item from config file', async () => {
+    //     const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+    //     const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+    //     await mainWindow.click('.TeamDropdownButton');
+    //     const firstMenuItem = await dropdownView.innerText('.TeamDropdown button.TeamDropdown__button:nth-child(1) span');
+    //     const secondMenuItem = await dropdownView.innerText('.TeamDropdown button.TeamDropdown__button:nth-child(2) span');
+
+    //     firstMenuItem.should.equal(config.teams[0].name);
+    //     secondMenuItem.should.equal(config.teams[1].name);
+    // });
+
+    // it('should only show dropdown when button is clicked', async () => {
+    //     const mainWindow = await this.app.firstWindow();
+    //     const browserWindow = await this.app.browserWindow(mainWindow);
+    //     const mainView = this.app.windows().find((window) => window.url().includes('index'));
+
+    //     let dropdownHeight = await browserWindow.evaluate((window) => window.getBrowserViews().find((view) => view.webContents.getURL().includes('dropdown')).getBounds().height);
+    //     dropdownHeight.should.equal(0);
+
+    //     await mainView.click('.TeamDropdownButton');
+    //     dropdownHeight = await browserWindow.evaluate((window) => window.getBrowserViews().find((view) => view.webContents.getURL().includes('dropdown')).getBounds().height);
+    //     dropdownHeight.should.be.greaterThan(0);
+
+    //     await mainView.click('.TabBar');
+    //     dropdownHeight = await browserWindow.evaluate((window) => window.getBrowserViews().find((view) => view.webContents.getURL().includes('dropdown')).getBounds().height);
+    //     dropdownHeight.should.equal(0);
+    // });
+
+    // it('should show only the selected team', async () => {
+    //     const mainWindow = await this.app.firstWindow();
+    //     const browserWindow = await this.app.browserWindow(mainWindow);
+
+    //     let firstViewIsAttached = await browserWindow.evaluate((window, url) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === url)), env.mattermostURL);
+    //     firstViewIsAttached.should.be.true;
+    //     let secondViewIsAttached = await browserWindow.evaluate((window) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === 'https://github.com/')));
+    //     secondViewIsAttached.should.be.false;
+
+    //     const mainView = this.app.windows().find((window) => window.url().includes('index'));
+    //     const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+    //     await mainView.click('.TeamDropdownButton');
+    //     await dropdownView.click('.TeamDropdown button.TeamDropdown__button:nth-child(2)');
+
+    //     firstViewIsAttached = await browserWindow.evaluate((window, url) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === url)), env.mattermostURL);
+    //     firstViewIsAttached.should.be.false;
+    //     secondViewIsAttached = await browserWindow.evaluate((window) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === 'https://github.com/')));
+    //     secondViewIsAttached.should.be.true;
+    // });
+
+    // it('should open the new server prompt after clicking the add button', async () => {
+    //     const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+    //     const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+    //     await mainWindow.click('.TeamDropdownButton');
+    //     await dropdownView.click('.TeamDropdown__button.addServer');
+
+    //     const newServerModal = await this.app.waitForEvent('window', {
+    //         predicate: (window) => window.url().includes('newServer'),
+    //     });
+    //     const modalTitle = await newServerModal.innerText('#newServerModal .modal-title');
+    //     modalTitle.should.equal('Add Server');
+    // });
+
+    it('should switch to servers when keyboard shortcuts are pressed', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
-        await mainWindow.click('.TeamDropdownButton');
-        const firstMenuItem = await dropdownView.innerText('.TeamDropdown button.TeamDropdown__button:nth-child(1) span');
-        const secondMenuItem = await dropdownView.innerText('.TeamDropdown button.TeamDropdown__button:nth-child(2) span');
 
-        firstMenuItem.should.equal(config.teams[0].name);
-        secondMenuItem.should.equal(config.teams[1].name);
-    });
+        let dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+        dropdownButtonText.should.equal('example');
 
-    it('should only show dropdown when button is clicked', async () => {
-        const mainWindow = await this.app.firstWindow();
-        const browserWindow = await this.app.browserWindow(mainWindow);
-        const mainView = this.app.windows().find((window) => window.url().includes('index'));
+        robot.keyTap('2', ['control', 'shift']);
+        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+        dropdownButtonText.should.equal('github');
 
-        let dropdownHeight = await browserWindow.evaluate((window) => window.getBrowserViews().find((view) => view.webContents.getURL().includes('dropdown')).getBounds().height);
-        dropdownHeight.should.equal(0);
-
-        await mainView.click('.TeamDropdownButton');
-        dropdownHeight = await browserWindow.evaluate((window) => window.getBrowserViews().find((view) => view.webContents.getURL().includes('dropdown')).getBounds().height);
-        dropdownHeight.should.be.greaterThan(0);
-
-        await mainView.click('.TabBar');
-        dropdownHeight = await browserWindow.evaluate((window) => window.getBrowserViews().find((view) => view.webContents.getURL().includes('dropdown')).getBounds().height);
-        dropdownHeight.should.equal(0);
-    });
-
-    it('should show only the selected team', async () => {
-        const mainWindow = await this.app.firstWindow();
-        const browserWindow = await this.app.browserWindow(mainWindow);
-
-        let firstViewIsAttached = await browserWindow.evaluate((window, url) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === url)), env.mattermostURL);
-        firstViewIsAttached.should.be.true;
-        let secondViewIsAttached = await browserWindow.evaluate((window) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === 'https://github.com/')));
-        secondViewIsAttached.should.be.false;
-
-        const mainView = this.app.windows().find((window) => window.url().includes('index'));
-        const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
-        await mainView.click('.TeamDropdownButton');
-        await dropdownView.click('.TeamDropdown button.TeamDropdown__button:nth-child(2)');
-
-        firstViewIsAttached = await browserWindow.evaluate((window, url) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === url)), env.mattermostURL);
-        firstViewIsAttached.should.be.false;
-        secondViewIsAttached = await browserWindow.evaluate((window) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === 'https://github.com/')));
-        secondViewIsAttached.should.be.true;
-    });
-
-    it('should open the new server prompt after clicking the add button', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
-        await mainWindow.click('.TeamDropdownButton');
-        await dropdownView.click('.TeamDropdown__button.addServer');
-
-        const newServerModal = await this.app.waitForEvent('window', {
-            predicate: (window) => window.url().includes('newServer'),
-        });
-        const modalTitle = await newServerModal.innerText('#newServerModal .modal-title');
-        modalTitle.should.equal('Add Server');
+        robot.keyTap('1', ['control', 'shift']);
+        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+        dropdownButtonText.should.equal('example');
     });
 });
