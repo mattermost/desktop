@@ -177,4 +177,22 @@ describe('renderer/index.html', function desc() {
         dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
         dropdownButtonText.should.equal('example');
     });
+
+    if (process.platform !== 'darwin') {
+        it('should open the 3 dot menu with Alt', async () => {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            mainWindow.should.not.be.null;
+
+            // Settings window should open if Alt works
+            robot.keyTap('alt');
+            robot.keyTap('enter');
+            robot.keyTap('f');
+            robot.keyTap('s');
+            robot.keyTap('enter');
+            const settingsWindow = await this.app.waitForEvent('window', {
+                predicate: (window) => window.url().includes('settings'),
+            });
+            settingsWindow.should.not.be.null;
+        });
+    }
 });
