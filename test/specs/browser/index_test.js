@@ -169,7 +169,7 @@ describe('renderer/index.html', function desc() {
         let dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
         dropdownButtonText.should.equal('example');
 
-        robot.keyTap('2', ['control', 'shift']);
+        robot.keyTap('6', ['control', 'shift']);
         dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
         dropdownButtonText.should.equal('github');
 
