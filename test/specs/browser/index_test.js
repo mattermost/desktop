@@ -5,6 +5,8 @@
 
 const fs = require('fs');
 
+const robot = require('robotjs');
+
 // const http = require('http');
 // const path = require('path');
 
@@ -159,5 +161,20 @@ describe('renderer/index.html', function desc() {
         });
         const modalTitle = await newServerModal.innerText('#newServerModal .modal-title');
         modalTitle.should.equal('Add Server');
+    });
+
+    it('should switch to servers when keyboard shortcuts are pressed', async () => {
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+
+        let dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+        dropdownButtonText.should.equal('example');
+
+        robot.keyTap('2', ['control', 'shift']);
+        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+        dropdownButtonText.should.equal('github');
+
+        robot.keyTap('1', ['control', 'shift']);
+        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+        dropdownButtonText.should.equal('example');
     });
 });

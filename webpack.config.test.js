@@ -39,6 +39,7 @@ module.exports = merge(base, {
         repl: 'require("repl")',
         tls: 'require("tls")',
         playwright: 'require("playwright")',
+        robotjs: 'require("robotjs")',
     },
     node: {
         __filename: false,
