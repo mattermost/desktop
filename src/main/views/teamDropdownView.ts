@@ -46,9 +46,7 @@ export default class TeamDropdownView {
         const preload = getLocalPreload('dropdown.js');
         this.view = new BrowserView({webPreferences: {
             nativeWindowOpen: true,
-            contextIsolation: process.env.NODE_ENV !== 'test',
             preload,
-            nodeIntegration: process.env.NODE_ENV === 'test',
 
             // Workaround for this issue: https://github.com/electron/electron/issues/30993
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment

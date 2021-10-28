@@ -77,13 +77,11 @@ export class MattermostView extends EventEmitter {
         this.options = Object.assign({}, options);
         this.options.webPreferences = {
             nativeWindowOpen: true,
-            contextIsolation: process.env.NODE_ENV !== 'test',
             preload,
             additionalArguments: [
                 `version=${app.getVersion()}`,
                 `appName=${app.name}`,
             ],
-            nodeIntegration: process.env.NODE_ENV === 'test',
             ...options.webPreferences,
         };
         this.isVisible = false;
@@ -273,12 +271,7 @@ export class MattermostView extends EventEmitter {
     }
 
     getWebContents = () => {
-        if (this.status === Status.READY) {
-            return this.view.webContents;
-        } else if (this.window) {
-            return this.window.webContents; // if it's not ready you are looking at the renderer process
-        }
-        return WindowManager.getMainWindow()?.webContents;
+        return this.view.webContents;
     }
 
     handleInputEvents = (_: Event, input: Input) => {

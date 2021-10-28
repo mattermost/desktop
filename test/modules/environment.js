@@ -7,11 +7,13 @@ const fs = require('fs');
 
 const path = require('path');
 
-const Application = require('spectron').Application;
+const {_electron: electron} = require('playwright');
 const chai = require('chai');
 const {ipcRenderer} = require('electron');
 
 const {SHOW_SETTINGS_WINDOW} = require('../../src/common/communication');
+
+const {asyncSleep} = require('./utils');
 chai.should();
 
 const sourceRootDir = path.join(__dirname, '../..');
@@ -47,27 +49,61 @@ module.exports = {
         });
     },
 
+    cleanDataDir() {
+        try {
+            fs.rmdirSync(userDataDir, {recursive: true});
+        } catch (err) {
+            if (err.code !== 'ENOENT') {
+                // eslint-disable-next-line no-console
+                console.error(err);
+            }
+        }
+    },
+
     createTestUserDataDir() {
         if (!fs.existsSync(userDataDir)) {
             fs.mkdirSync(userDataDir);
         }
     },
 
-    getSpectronApp() {
+    async getApp() {
         const options = {
-            path: electronBinaryPath,
+            executablePath: electronBinaryPath,
             args: [`${path.join(sourceRootDir, 'dist')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode'],
-            chromeDriverArgs: [],
         };
-        if (process.env.MM_DEBUG_SETTINGS) {
-            options.chromeDriverLogPath = './chromedriverlog.txt';
-        }
-        if (process.platform === 'darwin' || process.platform === 'linux') {
-            // on a mac, debbuging port might conflict with other apps
-            // this changes the default debugging port so chromedriver can run without issues.
-            options.chromeDriverArgs.push('remote-debugging-port=9222');
-        }
-        return new Application(options);
+
+        // if (process.env.MM_DEBUG_SETTINGS) {
+        //     options.chromeDriverLogPath = './chromedriverlog.txt';
+        // }
+        // if (process.platform === 'darwin' || process.platform === 'linux') {
+        //     // on a mac, debbuging port might conflict with other apps
+        //     // this changes the default debugging port so chromedriver can run without issues.
+        //     options.chromeDriverArgs.push('remote-debugging-port=9222');
+        //}
+        return electron.launch(options).then(async (app) => {
+            // Make sure the app has time to fully load
+            await asyncSleep(1000);
+            return app;
+        });
+    },
+
+    async getServerMap(app) {
+        const map = {};
+        await Promise.all(app.windows().map(async (win) => {
+            return win.evaluate(async () => {
+                if (!window.testHelper) {
+                    return null;
+                }
+                const name = await window.testHelper.getViewName();
+                const webContentsId = await window.testHelper.getWebContentsId();
+                return {viewName: name, webContentsId};
+            }).then((result) => {
+                if (result) {
+                    map[result.viewName] = {win, webContentsId: result.webContentsId};
+                }
+            });
+        }));
+        return map;
     },
 
     addClientCommands(client) {

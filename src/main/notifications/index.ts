@@ -51,6 +51,7 @@ export function displayMention(title: string, body: string, channel: {id: string
     });
 
     mention.on('click', () => {
+        log.info('notification click', serverName, mention);
         if (serverName) {
             windowManager.switchTab(serverName, TAB_MESSAGING);
             webcontents.send('notification-clicked', {channel, teamId, url});

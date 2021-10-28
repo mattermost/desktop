@@ -100,3 +100,6 @@ export const BROWSER_HISTORY_PUSH = 'browser-history-push';
 export const APP_LOGGED_IN = 'app-logged-in';
 
 export const GET_AVAILABLE_SPELL_CHECKER_LANGUAGES = 'get-available-spell-checker-languages';
+
+export const GET_VIEW_NAME = 'get-view-name';
+export const GET_VIEW_WEBCONTENTS_ID = 'get-view-webcontents-id';
