@@ -10,6 +10,8 @@ const fs = require('fs');
 const env = require('../modules/environment');
 const {asyncSleep} = require('../modules/utils');
 
+const robot = require('robotjs');
+
 describe('mattermost', function desc() {
     this.timeout(30000);
 
@@ -97,7 +99,7 @@ describe('mattermost', function desc() {
     it.skip('Control+F should focus the search bar in Mattermost', async () => {
         const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
-        const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`];
+        const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
         await firstServer.waitForSelector('#searchBox');
         await firstServer.press('body', process.platform === 'darwin' ? 'Meta+F' : 'Control+F');
@@ -105,5 +107,28 @@ describe('mattermost', function desc() {
         isFocused.should.be.true;
         const text = await firstServer.inputValue('#searchBox');
         text.should.include('in:');
+    });
+
+    it('should reload page when pressing Ctrl+R', async () => {
+        const mainWindow = await this.app.firstWindow();
+        const browserWindow = await this.app.browserWindow(mainWindow);
+        const webContentsId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
+
+        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+        const check = browserWindow.evaluate(async (window, id) => {
+            const promise = new Promise((resolve) => {
+                const browserView = window.getBrowserViews().find((view) => view.webContents.id === id);
+                browserView.webContents.on('did-finish-load', () => {
+                    resolve();
+                });
+            });
+            await promise;
+            return true;
+        }, webContentsId);
+        await asyncSleep(500);
+        robot.keyTap('r', ['control']);
+        const result = await check;
+        result.should.be.true;
     });
 });

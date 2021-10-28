@@ -24,6 +24,7 @@ import {
     BROWSER_HISTORY_PUSH,
     APP_LOGGED_IN,
     GET_VIEW_NAME,
+    GET_VIEW_WEBCONTENTS_ID,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -40,6 +41,7 @@ console.log('Preload initialized');
 if (process.env.NODE_ENV === 'test') {
     contextBridge.exposeInMainWorld('testHelper', {
         getViewName: () => ipcRenderer.invoke(GET_VIEW_NAME),
+        getWebContentsId: () => ipcRenderer.invoke(GET_VIEW_WEBCONTENTS_ID),
     });
 }
 

@@ -19,6 +19,7 @@ import {
     BROWSER_HISTORY_PUSH,
     APP_LOGGED_IN,
     GET_VIEW_NAME,
+    GET_VIEW_WEBCONTENTS_ID,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 
@@ -56,6 +57,7 @@ ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, handleLoadingScreenAnimationFinish
 ipcMain.on(BROWSER_HISTORY_PUSH, handleBrowserHistoryPush);
 ipcMain.on(APP_LOGGED_IN, handleAppLoggedIn);
 ipcMain.handle(GET_VIEW_NAME, handleGetViewName);
+ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, handleGetWebContentsId);
 
 export function setConfig(data: CombinedConfig) {
     if (data) {
@@ -591,3 +593,7 @@ function handleAppLoggedIn(event: IpcMainEvent, viewName: string) {
 function handleGetViewName(event: IpcMainInvokeEvent) {
     return getViewNameByWebContentsId(event.sender.id);
 }
+function handleGetWebContentsId(event: IpcMainInvokeEvent) {
+    return event.sender.id;
+}
+

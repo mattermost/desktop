@@ -95,10 +95,11 @@ module.exports = {
                     return null;
                 }
                 const name = await window.testHelper.getViewName();
-                return name;
-            }).then((viewName) => {
-                if (viewName) {
-                    map[viewName] = win;
+                const webContentsId = await window.testHelper.getWebContentsId();
+                return {viewName: name, webContentsId};
+            }).then((result) => {
+                if (result) {
+                    map[result.viewName] = {win, webContentsId: result.webContentsId};
                 }
             });
         }));
