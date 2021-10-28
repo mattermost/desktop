@@ -140,4 +140,37 @@ describe('mattermost', function desc() {
         const result = await check;
         result.should.be.true;
     });
+
+    it('should switch to servers when keyboard shortcuts are pressed', async () => {
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+
+        let dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+        dropdownButtonText.should.equal('example');
+
+        robot.keyTap('2', ['control', 'shift']);
+        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+        dropdownButtonText.should.equal('github');
+
+        robot.keyTap('1', ['control', 'shift']);
+        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+        dropdownButtonText.should.equal('example');
+    });
+
+    if (process.platform !== 'darwin') {
+        it('should open the 3 dot menu with Alt', async () => {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            mainWindow.should.not.be.null;
+
+            // Settings window should open if Alt works
+            robot.keyTap('alt');
+            robot.keyTap('enter');
+            robot.keyTap('f');
+            robot.keyTap('s');
+            robot.keyTap('enter');
+            const settingsWindow = await this.app.waitForEvent('window', {
+                predicate: (window) => window.url().includes('settings'),
+            });
+            settingsWindow.should.not.be.null;
+        });
+    }
 });

@@ -263,4 +263,253 @@ describe('modals', function desc() {
             });
         });
     });
+
+    describe('EditServerModal', () => {
+        let editServerView;
+
+        beforeEach(async () => {
+            const mainView = this.app.windows().find((window) => window.url().includes('index'));
+            const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+            await mainView.click('.TeamDropdownButton');
+            await dropdownView.hover('.TeamDropdown .TeamDropdown__button:nth-child(1)');
+            await dropdownView.click('.TeamDropdown .TeamDropdown__button:nth-child(1) button.TeamDropdown__button-edit');
+
+            editServerView = await this.app.waitForEvent('window', {
+                predicate: (window) => window.url().includes('editServer'),
+            });
+        });
+
+        it('should not edit team when Cancel is pressed', async () => {
+            await editServerView.click('#cancelNewServerModal');
+            await asyncSleep(1000);
+            const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
+            existing.should.be.false;
+
+            const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+            savedConfig.teams.should.deep.contain({
+                name: 'example',
+                url: env.mattermostURL,
+                order: 0,
+                tabs: [
+                    {
+                        name: 'TAB_MESSAGING',
+                        order: 0,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_FOCALBOARD',
+                        order: 1,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_PLAYBOOKS',
+                        order: 2,
+                        isOpen: true,
+                    },
+                ],
+                lastActiveTab: 0,
+            });
+        });
+
+        it('should not edit team when Save is pressed but nothing edited', async () => {
+            await editServerView.click('#saveNewServerModal');
+            await asyncSleep(1000);
+            const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
+            existing.should.be.false;
+
+            const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+            savedConfig.teams.should.deep.contain({
+                name: 'example',
+                url: env.mattermostURL,
+                order: 0,
+                tabs: [
+                    {
+                        name: 'TAB_MESSAGING',
+                        order: 0,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_FOCALBOARD',
+                        order: 1,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_PLAYBOOKS',
+                        order: 2,
+                        isOpen: true,
+                    },
+                ],
+                lastActiveTab: 0,
+            });
+        });
+
+        it('should edit team when Save is pressed and name edited', async () => {
+            await editServerView.fill('#teamNameInput', 'NewTestTeam');
+            await editServerView.click('#saveNewServerModal');
+            await asyncSleep(1000);
+            const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
+            existing.should.be.false;
+
+            const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+            savedConfig.teams.should.not.deep.contain({
+                name: 'example',
+                url: env.mattermostURL,
+                order: 0,
+                tabs: [
+                    {
+                        name: 'TAB_MESSAGING',
+                        order: 0,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_FOCALBOARD',
+                        order: 1,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_PLAYBOOKS',
+                        order: 2,
+                        isOpen: true,
+                    },
+                ],
+                lastActiveTab: 0,
+            });
+            savedConfig.teams.should.deep.contain({
+                name: 'NewTestTeam',
+                url: env.mattermostURL,
+                order: 0,
+                tabs: [
+                    {
+                        name: 'TAB_MESSAGING',
+                        order: 0,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_FOCALBOARD',
+                        order: 1,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_PLAYBOOKS',
+                        order: 2,
+                        isOpen: true,
+                    },
+                ],
+                lastActiveTab: 0,
+            });
+        });
+
+        it('should edit team when Save is pressed and URL edited', async () => {
+            await editServerView.fill('#teamUrlInput', 'http://google.com');
+            await editServerView.click('#saveNewServerModal');
+            await asyncSleep(1000);
+            const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
+            existing.should.be.false;
+
+            const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+            savedConfig.teams.should.not.deep.contain({
+                name: 'example',
+                url: env.mattermostURL,
+                order: 0,
+                tabs: [
+                    {
+                        name: 'TAB_MESSAGING',
+                        order: 0,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_FOCALBOARD',
+                        order: 1,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_PLAYBOOKS',
+                        order: 2,
+                        isOpen: true,
+                    },
+                ],
+                lastActiveTab: 0,
+            });
+            savedConfig.teams.should.deep.contain({
+                name: 'example',
+                url: 'http://google.com',
+                order: 0,
+                tabs: [
+                    {
+                        name: 'TAB_MESSAGING',
+                        order: 0,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_FOCALBOARD',
+                        order: 1,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_PLAYBOOKS',
+                        order: 2,
+                        isOpen: true,
+                    },
+                ],
+                lastActiveTab: 0,
+            });
+        });
+
+        it('should edit team when Save is pressed and both edited', async () => {
+            await editServerView.fill('#teamNameInput', 'NewTestTeam');
+            await editServerView.fill('#teamUrlInput', 'http://google.com');
+            await editServerView.click('#saveNewServerModal');
+            await asyncSleep(1000);
+            const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
+            existing.should.be.false;
+
+            const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+            savedConfig.teams.should.not.deep.contain({
+                name: 'example',
+                url: env.mattermostURL,
+                order: 0,
+                tabs: [
+                    {
+                        name: 'TAB_MESSAGING',
+                        order: 0,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_FOCALBOARD',
+                        order: 1,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_PLAYBOOKS',
+                        order: 2,
+                        isOpen: true,
+                    },
+                ],
+                lastActiveTab: 0,
+            });
+            savedConfig.teams.should.deep.contain({
+                name: 'NewTestTeam',
+                url: 'http://google.com',
+                order: 0,
+                tabs: [
+                    {
+                        name: 'TAB_MESSAGING',
+                        order: 0,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_FOCALBOARD',
+                        order: 1,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_PLAYBOOKS',
+                        order: 2,
+                        isOpen: true,
+                    },
+                ],
+                lastActiveTab: 0,
+            });
+        });
+    });
 });
