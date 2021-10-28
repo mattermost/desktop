@@ -5,8 +5,6 @@
 
 const fs = require('fs');
 
-const robot = require('robotjs');
-
 // const http = require('http');
 // const path = require('path');
 
