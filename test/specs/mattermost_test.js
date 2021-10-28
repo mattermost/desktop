@@ -131,4 +131,50 @@ describe('mattermost', function desc() {
         const result = await check;
         result.should.be.true;
     });
+
+    it('should reload page when pressing Ctrl+R', async () => {
+        const mainWindow = await this.app.firstWindow();
+        const browserWindow = await this.app.browserWindow(mainWindow);
+        const webContentsId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
+
+        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+        const check = browserWindow.evaluate(async (window, id) => {
+            const promise = new Promise((resolve) => {
+                const browserView = window.getBrowserViews().find((view) => view.webContents.id === id);
+                browserView.webContents.on('did-finish-load', () => {
+                    resolve();
+                });
+            });
+            await promise;
+            return true;
+        }, webContentsId);
+        await asyncSleep(500);
+        robot.keyTap('r', ['control']);
+        const result = await check;
+        result.should.be.true;
+    });
+
+    it('should reload page when pressing Ctrl+Shift+R', async () => {
+        const mainWindow = await this.app.firstWindow();
+        const browserWindow = await this.app.browserWindow(mainWindow);
+        const webContentsId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
+
+        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+        const check = browserWindow.evaluate(async (window, id) => {
+            const promise = new Promise((resolve) => {
+                const browserView = window.getBrowserViews().find((view) => view.webContents.id === id);
+                browserView.webContents.on('did-finish-load', () => {
+                    resolve();
+                });
+            });
+            await promise;
+            return true;
+        }, webContentsId);
+        await asyncSleep(500);
+        robot.keyTap('r', ['control', 'shift']);
+        const result = await check;
+        result.should.be.true;
+    });
 });
