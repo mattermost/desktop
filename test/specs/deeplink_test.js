@@ -91,19 +91,21 @@ describe('application', function desc() {
         }
     });
 
-    it('should open the app on the requested deep link', async () => {
-        this.app = await env.getApp(['mattermost://github.com/test/url']);
-        this.serverMap = await env.getServerMap(this.app);
-        const mainWindow = await this.app.firstWindow();
-        const browserWindow = await this.app.browserWindow(mainWindow);
-        const webContentsId = this.serverMap[`${config.teams[1].name}___TAB_MESSAGING`].webContentsId;
-        const isActive = await browserWindow.evaluate((window, id) => {
-            return window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getURL();
-        }, webContentsId);
-        isActive.should.equal('https://github.com/test/url');
-        const mainView = this.app.windows().find((window) => window.url().includes('index'));
-        const dropdownButtonText = await mainView.innerText('.TeamDropdownButton');
-        dropdownButtonText.should.equal('github');
-        await this.app.close();
-    });
+    if (process.platform === 'win32') {
+        it('should open the app on the requested deep link', async () => {
+            this.app = await env.getApp(['mattermost://github.com/test/url']);
+            this.serverMap = await env.getServerMap(this.app);
+            const mainWindow = await this.app.firstWindow();
+            const browserWindow = await this.app.browserWindow(mainWindow);
+            const webContentsId = this.serverMap[`${config.teams[1].name}___TAB_MESSAGING`].webContentsId;
+            const isActive = await browserWindow.evaluate((window, id) => {
+                return window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getURL();
+            }, webContentsId);
+            isActive.should.equal('https://github.com/test/url');
+            const mainView = this.app.windows().find((window) => window.url().includes('index'));
+            const dropdownButtonText = await mainView.innerText('.TeamDropdownButton');
+            dropdownButtonText.should.equal('github');
+            await this.app.close();
+        });
+    }
 });
