@@ -227,7 +227,7 @@ function initializeBeforeAppReady() {
     authManager = new AuthManager(config.data, trustedOriginsStore);
     certificateManager = new CertificateManager();
 
-    if (isDev) {
+    if (isDev && process.env.NODE_ENV !== 'test') {
         log.info('In development mode, deeplinking is disabled');
     } else if (protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0]) {
         scheme = protocols[0].schemes[0];
