@@ -24,6 +24,11 @@ const customLoginRegexPaths = [
     /^\/login\/sso\/saml$/i,
 ];
 
+// ignore the following special case plugins that don't use the /plugins route
+const specialCasePlugins = [
+    'com.mattermost.calls',
+];
+
 function getDomain(inputURL: URL | string) {
     const parsedURL = parseURL(inputURL);
     return parsedURL?.origin;
@@ -102,7 +107,7 @@ function isAdminUrl(serverUrl: URL | string, inputUrl: URL | string) {
         return null;
     }
     return (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}/admin_console/`) ||
-    parsedURL.pathname.toLowerCase().startsWith('/admin_console/'));
+        parsedURL.pathname.toLowerCase().startsWith('/admin_console/'));
 }
 
 function isTeamUrl(serverUrl: URL | string, inputUrl: URL | string, withApi?: boolean) {
@@ -128,13 +133,16 @@ function isTeamUrl(serverUrl: URL | string, inputUrl: URL | string, withApi?: bo
     ];
     const managedResources = getManagedResources();
     nonTeamUrlPaths = nonTeamUrlPaths.concat(managedResources);
+    const isSpecialCase = specialCasePlugins.some((testPath) => (
+        parsedURL.pathname.toLowerCase().includes(`/${testPath}/`)));
 
     if (withApi) {
         nonTeamUrlPaths.push('api');
     }
     return !(nonTeamUrlPaths.some((testPath) => (
         parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}${testPath}/`) ||
-    parsedURL.pathname.toLowerCase().startsWith(`/${testPath}/`))));
+            parsedURL.pathname.toLowerCase().startsWith(`/${testPath}/`))) ||
+            isSpecialCase);
 }
 
 function isPluginUrl(serverUrl: URL | string, inputURL: URL | string) {
@@ -143,10 +151,14 @@ function isPluginUrl(serverUrl: URL | string, inputURL: URL | string) {
     if (!parsedURL || !server) {
         return false;
     }
+    const isSpecialCase = specialCasePlugins.some((testPath) => (
+        parsedURL.pathname.toLowerCase().includes(`/${testPath}/`)));
+
     return (
         equalUrlsIgnoringSubpath(server.url, parsedURL) &&
-    (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}plugins/`) ||
-      parsedURL.pathname.toLowerCase().startsWith('/plugins/')));
+        (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}plugins/`) ||
+            parsedURL.pathname.toLowerCase().startsWith('/plugins/') ||
+            isSpecialCase));
 }
 
 function isManagedResource(serverUrl: URL | string, inputURL: URL | string) {
@@ -160,7 +172,7 @@ function isManagedResource(serverUrl: URL | string, inputURL: URL | string) {
 
     return (
         equalUrlsIgnoringSubpath(server.url, parsedURL) && managedResources && managedResources.length &&
-    managedResources.some((managedResource) => (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}${managedResource}/`) || parsedURL.pathname.toLowerCase().startsWith(`/${managedResource}/`))));
+        managedResources.some((managedResource) => (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}${managedResource}/`) || parsedURL.pathname.toLowerCase().startsWith(`/${managedResource}/`))));
 }
 
 function getView(inputURL: URL | string, teams: TeamWithTabs[], ignoreScheme = false): ServerFromURL | undefined {

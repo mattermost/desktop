@@ -93,30 +93,39 @@ const denyNewWindow = (event: Event, url: string) => {
 };
 
 const generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spellcheck?: boolean) => {
+    console.log('<><> generateNewWindowListener');
+
     return (details: Electron.HandlerDetails): {action: 'deny' | 'allow'} => {
         const parsedURL = urlUtils.parseURL(details.url);
+
+        console.log('<><> generateNewWindowListener, received details:');
+        console.log(details);
+
         if (!parsedURL) {
             log.warn(`Ignoring non-url ${details.url}`);
             return {action: 'deny'};
         }
-
+        console.log('<><> 1');
         const configServers = getServersFunction();
 
         // Dev tools case
         if (parsedURL.protocol === 'devtools:') {
             return {action: 'allow'};
         }
+        console.log('<><> 2');
 
         // Check for valid URL
         if (!urlUtils.isValidURI(details.url)) {
             return {action: 'deny'};
         }
+        console.log('<><> 3');
 
         // Check for custom protocol
         if (parsedURL.protocol !== 'http:' && parsedURL.protocol !== 'https:' && parsedURL.protocol !== `${scheme}:`) {
             allowProtocolDialog.handleDialogEvent(parsedURL.protocol, details.url);
             return {action: 'deny'};
         }
+        console.log('<><> 4');
 
         const server = urlUtils.getView(parsedURL, configServers);
 
@@ -124,6 +133,7 @@ const generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spe
             shell.openExternal(details.url);
             return {action: 'deny'};
         }
+        console.log('<><> 5');
 
         // Public download links case
         // TODO: We might be handling different types differently in the future, for now
@@ -132,12 +142,14 @@ const generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spe
             shell.openExternal(details.url);
             return {action: 'deny'};
         }
+        console.log('<><> 6');
 
         // Image proxy case
         if (parsedURL.pathname.match(/^\/api\/v[3-4]\/image/)) {
             shell.openExternal(details.url);
             return {action: 'deny'};
         }
+        console.log('<><> 6.5');
 
         if (parsedURL.pathname.match(/^\/help\//)) {
             // Help links case
@@ -145,23 +157,32 @@ const generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spe
             shell.openExternal(details.url);
             return {action: 'deny'};
         }
+        console.log('<><> 7');
 
         if (urlUtils.isTeamUrl(server.url, parsedURL, true)) {
             WindowManager.showMainWindow(parsedURL);
             return {action: 'deny'};
         }
+        console.log('<><> 8');
+
         if (urlUtils.isAdminUrl(server.url, parsedURL)) {
             log.info(`${details.url} is an admin console page, preventing to open a new window`);
             return {action: 'deny'};
         }
+
+        console.log('<><> 9');
+
         if (popupWindow && popupWindow.webContents.getURL() === details.url) {
             log.info(`Popup window already open at provided url: ${details.url}`);
             return {action: 'deny'};
         }
+        console.log('<><> 10');
 
         // TODO: move popups to its own and have more than one.
         if (urlUtils.isPluginUrl(server.url, parsedURL) || urlUtils.isManagedResource(server.url, parsedURL)) {
             if (!popupWindow) {
+                console.log('<><> 11');
+
                 popupWindow = new BrowserWindow({
                     backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
                     //parent: WindowManager.getMainWindow(),
@@ -174,12 +195,16 @@ const generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spe
                 });
                 popupWindow.webContents.on('new-window', denyNewWindow);
                 popupWindow.once('ready-to-show', () => {
+                    console.log('<><> 11.1');
+
                     popupWindow!.show();
                 });
                 popupWindow.once('closed', () => {
+                    console.log('<><> 11.2');
                     popupWindow = undefined;
                 });
             }
+            console.log('<><> 12');
 
             if (urlUtils.isManagedResource(server.url, parsedURL)) {
                 popupWindow.loadURL(details.url);
@@ -190,10 +215,13 @@ const generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spe
                     userAgent: composeUserAgent(),
                 });
             }
+            console.log('<><> 13');
 
             const contextMenu = new ContextMenu({}, popupWindow);
             contextMenu.reload();
+            console.log('<><> 14');
         }
+        console.log('<><> 15');
 
         return {action: 'deny'};
     };
