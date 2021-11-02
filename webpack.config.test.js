@@ -17,7 +17,7 @@ const WEBSERVER_PORT = 9001;
 module.exports = merge(base, {
     entry: {
         test: glob.sync('./src/**/*.test.js'),
-        e2e: './test/specs/index.js',
+        e2e: './e2e/specs/index.js',
     },
     output: {
         path: path.resolve(__dirname, 'dist/tests'),
