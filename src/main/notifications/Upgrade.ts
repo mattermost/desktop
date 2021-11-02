@@ -9,10 +9,10 @@ const appIconURL = path.resolve(assetsDir, 'appicon_48.png');
 
 const defaultOptions = {
     title: 'New desktop version available',
+    body: 'A new version is available for you to download now.',
     silent: false,
     icon: appIconURL,
     urgency: 'normal' as Notification['urgency'],
-    body: '',
 };
 
 export class NewVersionNotification extends Notification {
@@ -32,8 +32,8 @@ export class NewVersionNotification extends Notification {
 export class UpgradeNotification extends Notification {
     constructor() {
         const options = {...defaultOptions};
-        options.title = 'New Desktop version downloaded';
-        options.body = 'Click the notification to upgrade';
+        options.title = 'Click to restart and install update';
+        options.body = 'A new desktop version is ready to install now.';
         if (process.platform === 'win32') {
             options.icon = appIconURL;
         } else if (process.platform === 'darwin') {

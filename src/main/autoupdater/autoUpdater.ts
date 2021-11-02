@@ -96,8 +96,9 @@ export default class UpdateManager {
         }
         dialog.showMessageBox({
             title: 'New desktop version available',
-            message: `A new version of the Mattermost Desktop App (version ${this.versionAvailable}) is available to download and install`,
-            buttons: ['Download new version', 'Remind me Later'],
+            message: 'New desktop version available',
+            detail: 'A new version of the Mattermost Desktop app is available for you to download and install now.',
+            buttons: ['Download', 'Remind me Later'],
             type: 'info',
             defaultId: 0,
             cancelId: 1,
@@ -122,10 +123,11 @@ export default class UpdateManager {
         const version = app.getVersion();
         dialog.showMessageBox({
             title: 'You\'re up to date',
+            message: 'You\'re up to date',
             type: 'info',
             buttons: ['OK'],
             icon: appIcon,
-            message: `You are using the latest version of the Mattermost Desktop App (version ${version}). You'll be notified when a new version is available to install`,
+            detail: `You are using the latest version of the Mattermost Desktop App (version ${version}). You'll be notified when a new version is available to install`,
         });
     }
 
