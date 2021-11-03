@@ -161,6 +161,11 @@ describe('modals', function desc() {
             existing.should.be.true;
         });
 
+        it('should focus the first text input', async () => {
+            const isFocused = await newServerView.$eval('#teamNameInput', (el) => el === document.activeElement);
+            isFocused.should.be.true;
+        });
+
         it('should close the window after clicking cancel', async () => {
             await newServerView.click('#cancelNewServerModal');
             await asyncSleep(1000);
