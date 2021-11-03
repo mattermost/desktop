@@ -4,9 +4,12 @@
 export type Tab = {
     name: string;
     order: number;
+    isOpen?: boolean;
 }
 
-export type Team = Tab & {
+export type Team = {
+    name: string;
+    order: number;
     url: string;
     lastActiveTab?: number;
 }
@@ -31,10 +34,11 @@ export type ConfigV3 = {
     useSpellChecker: boolean;
     enableHardwareAcceleration: boolean;
     autostart: boolean;
-    spellCheckerLocale: string;
+    spellCheckerLocales: string[];
     darkMode: boolean;
     downloadLocation: string;
     spellCheckerURL?: string;
+    lastActiveTeam?: number;
 }
 
 export type ConfigV2 = {

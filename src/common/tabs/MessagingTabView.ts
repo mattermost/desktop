@@ -12,4 +12,8 @@ export default class MessagingTabView extends BaseTabView {
     get type(): TabType {
         return TAB_MESSAGING;
     }
+
+    get shouldNotify(): boolean {
+        return true;
+    }
 }

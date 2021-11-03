@@ -8,6 +8,8 @@ import {TeamWithTabs} from 'types/config';
 
 import urlUtils from 'common/utils/url';
 
+import ContextMenu from 'main/contextMenu';
+
 import * as WindowManager from '../windows/windowManager';
 
 import {protocols} from '../../../electron-builder.json';
@@ -74,9 +76,11 @@ const generateDidStartNavigation = (getServersFunction: () => TeamWithTabs[]) =>
             return;
         }
 
+        const serverURL = urlUtils.parseURL(server?.url || '');
+
         if (server && urlUtils.isCustomLoginURL(parsedURL, server, serverList)) {
             customLogins[contentID].inProgress = true;
-        } else if (server && customLogins[contentID].inProgress && urlUtils.isInternalURL(server.url, parsedURL)) {
+        } else if (server && customLogins[contentID].inProgress && urlUtils.isInternalURL(serverURL || new URL(''), parsedURL)) {
             customLogins[contentID].inProgress = false;
         }
     };
@@ -165,10 +169,7 @@ const generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spe
                     center: true,
                     webPreferences: {
                         nativeWindowOpen: true,
-                        nodeIntegration: process.env.NODE_ENV === 'test',
-                        contextIsolation: process.env.NODE_ENV !== 'test',
                         spellcheck: (typeof spellcheck === 'undefined' ? true : spellcheck),
-                        enableRemoteModule: process.env.NODE_ENV === 'test',
                     },
                 });
                 popupWindow.webContents.on('new-window', denyNewWindow);
@@ -189,6 +190,9 @@ const generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spe
                     userAgent: composeUserAgent(),
                 });
             }
+
+            const contextMenu = new ContextMenu({}, popupWindow);
+            contextMenu.reload();
         }
 
         return {action: 'deny'};

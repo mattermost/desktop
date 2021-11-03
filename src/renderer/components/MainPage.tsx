@@ -39,6 +39,7 @@ import {
     SWITCH_TAB,
     UPDATE_AVAILABLE,
     START_UPGRADE,
+    CLOSE_TAB,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -64,6 +65,7 @@ enum Status {
 
 type Props = {
     teams: TeamWithTabs[];
+    lastActiveTeam?: number;
     moveTabs: (teamName: string, originalOrder: number, newOrder: number) => number | undefined;
     openMenu: () => void;
     darkMode: boolean;
@@ -105,8 +107,12 @@ export default class MainPage extends React.PureComponent<Props, State> {
         this.topBar = React.createRef();
         this.threeDotMenu = React.createRef();
 
-        const firstServer = this.props.teams.find((team) => team.order === 0);
-        const firstTab = firstServer?.tabs.find((tab) => tab.order === (firstServer.lastActiveTab || 0)) || firstServer?.tabs[0];
+        const firstServer = this.props.teams.find((team) => team.order === this.props.lastActiveTeam) || this.props.teams.find((team) => team.order === 0);
+        let firstTab = firstServer?.tabs.find((tab) => tab.order === firstServer.lastActiveTab) || firstServer?.tabs.find((tab) => tab.order === 0);
+        if (!firstTab?.isOpen) {
+            const openTabs = firstServer?.tabs.filter((tab) => tab.isOpen) || [];
+            firstTab = openTabs?.find((e) => e.order === 0) || openTabs[0];
+        }
 
         this.state = {
             activeServerName: firstServer?.name,
@@ -232,6 +238,16 @@ export default class MainPage extends React.PureComponent<Props, State> {
                 }
             });
         }
+
+        window.addEventListener('click', this.handleCloseTeamsDropdown);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('click', this.handleCloseTeamsDropdown);
+    }
+
+    handleCloseTeamsDropdown = () => {
+        window.ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
     }
 
     handleMaximizeState = (_: IpcRendererEvent, maximized: boolean) => {
@@ -244,6 +260,10 @@ export default class MainPage extends React.PureComponent<Props, State> {
 
     handleSelectTab = (name: string) => {
         window.ipcRenderer.send(SWITCH_TAB, this.state.activeServerName, name);
+    }
+
+    handleCloseTab = (name: string) => {
+        window.ipcRenderer.send(CLOSE_TAB, this.state.activeServerName, name);
     }
 
     handleDragAndDrop = async (dropResult: DropResult) => {
@@ -300,18 +320,11 @@ export default class MainPage extends React.PureComponent<Props, State> {
 
     focusOnWebView = () => {
         window.ipcRenderer.send(FOCUS_BROWSERVIEW);
-        window.ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
+        this.handleCloseTeamsDropdown();
     }
 
     render() {
-        if (!this.state.activeServerName || !this.state.activeTabName) {
-            return null;
-        }
-        const currentTabs = this.props.teams.find((team) => team.name === this.state.activeServerName)?.tabs;
-        if (!currentTabs) {
-            // TODO: figure out something here
-            return null;
-        }
+        const currentTabs = this.props.teams.find((team) => team.name === this.state.activeServerName)?.tabs || [];
 
         const tabsRow = (
             <TabBar
@@ -324,8 +337,10 @@ export default class MainPage extends React.PureComponent<Props, State> {
                 activeServerName={this.state.activeServerName}
                 activeTabName={this.state.activeTabName}
                 onSelect={this.handleSelectTab}
+                onCloseTab={this.handleCloseTab}
                 onDrop={this.handleDragAndDrop}
                 tabsDisabled={this.state.modalOpen}
+                isMenuOpen={this.state.isMenuOpen}
             />
         );
 
@@ -336,7 +351,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
         });
 
         let maxButton;
-        if (this.state.maximized) {
+        if (this.state.maximized || this.state.fullScreen) {
             maxButton = (
                 <div
                     className='button restore-button'
@@ -395,8 +410,20 @@ export default class MainPage extends React.PureComponent<Props, State> {
             );
         }
 
-        const totalMentionCount = Object.values(this.state.mentionCounts).reduce((sum, value) => sum + value, 0);
-        const totalUnreadCount = Object.values(this.state.unreadCounts).reduce((sum, value) => sum + value, 0);
+        const serverMatch = `${this.state.activeServerName}___TAB_[A-Z]+`;
+        const totalMentionCount = Object.keys(this.state.mentionCounts).reduce((sum, key) => {
+            // Strip out current server from unread and mention counts
+            if (this.state.activeServerName && key.match(serverMatch)) {
+                return sum;
+            }
+            return sum + this.state.mentionCounts[key];
+        }, 0);
+        const totalUnreadCount = Object.keys(this.state.unreadCounts).reduce((sum, key) => {
+            if (this.state.activeServerName && key.match(serverMatch)) {
+                return sum;
+            }
+            return sum + this.state.unreadCounts[key];
+        }, 0);
         const topRow = (
             <Row
                 className={topBarClassName}

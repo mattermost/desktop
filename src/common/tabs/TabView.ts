@@ -20,6 +20,7 @@ export interface TabView {
     get name(): string;
     get type(): TabType;
     get url(): URL;
+    get shouldNotify(): boolean;
 }
 
 export function getDefaultTeamWithTabsFromTeam(team: Team) {
@@ -29,6 +30,7 @@ export function getDefaultTeamWithTabsFromTeam(team: Team) {
             {
                 name: TAB_MESSAGING,
                 order: 0,
+                isOpen: true,
             },
             {
                 name: TAB_FOCALBOARD,
@@ -58,4 +60,22 @@ export function getServerView(srv: MattermostServer, tab: Tab) {
 
 export function getTabViewName(serverName: string, tabType: string) {
     return `${serverName}___${tabType}`;
+}
+
+export function getTabDisplayName(tabType: TabType) {
+    switch (tabType) {
+    case TAB_MESSAGING:
+        return 'Channels';
+    case TAB_FOCALBOARD:
+        return 'Boards';
+    case TAB_PLAYBOOKS:
+        return 'Playbooks';
+    default:
+        throw new Error('Not implemeneted');
+    }
+}
+
+export function canCloseTab(tabType: TabType) {
+    // TODO: maybe rework to make the property belong to the class somehow
+    return tabType !== TAB_MESSAGING;
 }

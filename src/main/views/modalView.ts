@@ -31,10 +31,13 @@ export class ModalView<T, T2> {
         this.data = data;
         log.info(`preloading with ${preload}`);
         this.view = new BrowserView({webPreferences: {
-            contextIsolation: process.env.NODE_ENV !== 'test',
+            nativeWindowOpen: true,
             preload,
-            nodeIntegration: process.env.NODE_ENV === 'test',
-            enableRemoteModule: process.env.NODE_ENV === 'test',
+
+            // Workaround for this issue: https://github.com/electron/electron/issues/30993
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            transparent: true,
         }});
         this.onReject = onReject;
         this.onResolve = onResolve;

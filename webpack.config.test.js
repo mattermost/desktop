@@ -38,7 +38,8 @@ module.exports = merge(base, {
         net: 'require("net")',
         repl: 'require("repl")',
         tls: 'require("tls")',
-        spectron: 'require("spectron")',
+        playwright: 'require("playwright")',
+        robotjs: 'require("robotjs")',
     },
     node: {
         __filename: false,

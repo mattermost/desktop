@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import classNames from 'classnames';
-import React from 'react';
+import React, {useEffect} from 'react';
 
 import {CLOSE_TEAMS_DROPDOWN, OPEN_TEAMS_DROPDOWN} from 'common/communication';
 
@@ -11,7 +11,7 @@ import '../css/compass-icons.css';
 
 type Props = {
     isDisabled?: boolean;
-    activeServerName: string;
+    activeServerName?: string;
     totalMentionCount: number;
     hasUnreads: boolean;
     isMenuOpen: boolean;
@@ -20,6 +20,13 @@ type Props = {
 
 const TeamDropdownButton: React.FC<Props> = (props: Props) => {
     const {isDisabled, activeServerName, totalMentionCount, hasUnreads, isMenuOpen, darkMode} = props;
+    const buttonRef: React.RefObject<HTMLButtonElement> = React.createRef();
+
+    useEffect(() => {
+        if (!isMenuOpen) {
+            buttonRef.current?.blur();
+        }
+    }, [isMenuOpen]);
 
     const handleToggleButton = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
@@ -42,6 +49,7 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
 
     return (
         <button
+            ref={buttonRef}
             disabled={isDisabled}
             className={classNames('TeamDropdownButton', {
                 disabled: isDisabled,
@@ -57,7 +65,7 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
                 <i className='icon-server-variant'/>
                 {badgeDiv}
             </div>
-            <span>{activeServerName}</span>
+            <span>{activeServerName || 'No servers configured'}</span>
             <i className='icon-chevron-down'/>
         </button>
     );

@@ -7,16 +7,15 @@ import fs from 'fs';
 
 import path from 'path';
 
-import electron, {BrowserWindow, globalShortcut, IpcMainEvent, IpcMainInvokeEvent, Rectangle} from 'electron';
+import electron, {BrowserWindow, IpcMainEvent, IpcMainInvokeEvent, Rectangle} from 'electron';
 import isDev from 'electron-is-dev';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import log from 'electron-log';
 import 'airbnb-js-shims/target/es2015';
 
-import {Team} from 'types/config';
-
+import {CombinedConfig, Team, TeamWithTabs} from 'types/config';
 import {MentionData} from 'types/notification';
-
+import {RemoteInfo} from 'types/server';
 import {Boundaries} from 'types/utils';
 
 import {
@@ -38,13 +37,17 @@ import {
     EMIT_CONFIGURATION,
     SWITCH_TAB,
     START_UPGRADE,
+    CLOSE_TAB,
+    OPEN_TAB,
     SHOW_EDIT_SERVER_MODAL,
     SHOW_REMOVE_SERVER_MODAL,
     UPDATE_SHORTCUT_MENU,
-    OPEN_TEAMS_DROPDOWN,
+    UPDATE_LAST_ACTIVE,
+    GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
 } from 'common/communication';
 import Config from 'common/config';
-import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
+import {MattermostServer} from 'common/servers/MattermostServer';
+import {getDefaultTeamWithTabsFromTeam, TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS} from 'common/tabs/TabView';
 import Utils from 'common/utils/util';
 
 import urlUtils from 'common/utils/url';
@@ -73,6 +76,7 @@ import {AuthManager} from './authManager';
 import {CertificateManager} from './certificateManager';
 import {setupBadge, setUnreadBadgeSetting} from './badge';
 import UpdateManager from './autoupdater/autoUpdater';
+import {ServerInfo} from './server/serverInfo';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
     module.hot.accept();
@@ -165,6 +169,9 @@ async function initializeConfig() {
             config.on('update', handleConfigUpdate);
             config.on('synchronize', handleConfigSynchronize);
             config.on('darkModeChange', handleDarkModeChange);
+            config.on('error', (error) => {
+                log.error(error);
+            });
             handleConfigUpdate(configData);
 
             // can only call this before the app is ready
@@ -226,7 +233,7 @@ function initializeBeforeAppReady() {
     authManager = new AuthManager(config.data, trustedOriginsStore);
     certificateManager = new CertificateManager();
 
-    if (isDev) {
+    if (isDev && process.env.NODE_ENV !== 'test') {
         log.info('In development mode, deeplinking is disabled');
     } else if (protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0]) {
         scheme = protocols[0].schemes[0];
@@ -241,6 +248,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on('update-menu', handleUpdateMenuEvent);
     ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateShortcutMenuEvent);
     ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
+    ipcMain.on(UPDATE_LAST_ACTIVE, handleUpdateLastActive);
 
     if (process.platform !== 'darwin') {
         ipcMain.on('open-app-menu', handleOpenAppMenu);
@@ -248,6 +256,8 @@ function initializeInterCommunicationEventListeners() {
 
     ipcMain.on(SWITCH_SERVER, handleSwitchServer);
     ipcMain.on(SWITCH_TAB, handleSwitchTab);
+    ipcMain.on(CLOSE_TAB, handleCloseTab);
+    ipcMain.on(OPEN_TAB, handleOpenTab);
 
     ipcMain.on(QUIT, handleQuit);
 
@@ -261,6 +271,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(WINDOW_MINIMIZE, WindowManager.minimize);
     ipcMain.on(WINDOW_RESTORE, WindowManager.restore);
     ipcMain.on(SHOW_SETTINGS_WINDOW, WindowManager.showSettingsWindow);
+    ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, handleGetAvailableSpellCheckerLanguages);
     ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
     ipcMain.on(START_UPGRADE, handleStartUpgrade);
 }
@@ -269,8 +280,8 @@ function initializeInterCommunicationEventListeners() {
 // config event handlers
 //
 
-function handleConfigUpdate(newConfig: Config) {
-    if (!newConfig.data) {
+function handleConfigUpdate(newConfig: CombinedConfig) {
+    if (!newConfig) {
         return;
     }
     if (process.platform === 'win32' || process.platform === 'linux') {
@@ -281,13 +292,16 @@ function handleConfigUpdate(newConfig: Config) {
         }).catch((err) => {
             log.error('error:', err);
         });
-        WindowManager.setConfig(newConfig.data);
-        authManager.handleConfigUpdate(newConfig.data);
-        setUnreadBadgeSetting(newConfig.data && newConfig.data.showUnreadBadge);
+        WindowManager.setConfig(newConfig);
+        if (authManager) {
+            authManager.handleConfigUpdate(newConfig);
+        }
+        setUnreadBadgeSetting(newConfig && newConfig.showUnreadBadge);
+        updateSpellCheckerLocales();
     }
 
     ipcMain.emit('update-menu', true, config);
-    ipcMain.emit(EMIT_CONFIGURATION, true, newConfig.data);
+    ipcMain.emit(EMIT_CONFIGURATION, true, newConfig);
 }
 
 function handleConfigSynchronize() {
@@ -311,13 +325,12 @@ function handleConfigSynchronize() {
 
     if (process.platform === 'win32' && !didCheckForAddServerModal && typeof config.registryConfigData !== 'undefined') {
         didCheckForAddServerModal = true;
+        updateServerInfos(config.teams);
+        WindowManager.initializeCurrentServerName();
         if (config.teams.length === 0) {
             handleNewServerModal();
         }
     }
-
-    ipcMain.emit('update-menu', true, config);
-    ipcMain.emit(EMIT_CONFIGURATION, true, config.data);
 }
 
 function handleReloadConfig() {
@@ -394,7 +407,11 @@ function handleAppCertificateError(event: electron.Event, webContents: electron.
         return;
     }
     const origin = parsedURL.origin;
-    if (certificateStore.isTrusted(origin, certificate)) {
+    if (certificateStore.isExplicitlyUntrusted(origin)) {
+        event.preventDefault();
+        log.warn(`Ignoring previously untrusted certificate for ${origin}`);
+        callback(false);
+    } else if (certificateStore.isTrusted(origin, certificate)) {
         event.preventDefault();
         callback(true);
     } else {
@@ -434,11 +451,13 @@ function handleAppCertificateError(event: electron.Event, webContents: electron.
                         type: 'error',
                         buttons: ['Trust Insecure Certificate', 'Cancel Connection'],
                         cancelId: 1,
+                        checkboxChecked: false,
+                        checkboxLabel: "Don't ask again",
                     });
                 }
-                return {response};
+                return {response, checkboxChecked: false};
             }).then(
-            ({response: responseTwo}) => {
+            ({response: responseTwo, checkboxChecked}) => {
                 if (responseTwo === 0) {
                     certificateStore.add(origin, certificate);
                     certificateStore.save();
@@ -446,6 +465,10 @@ function handleAppCertificateError(event: electron.Event, webContents: electron.
                     certificateErrorCallbacks.delete(errorID);
                     webContents.loadURL(url);
                 } else {
+                    if (checkboxChecked) {
+                        certificateStore.add(origin, certificate, true);
+                        certificateStore.save();
+                    }
                     certificateErrorCallbacks.get(errorID)(false);
                     certificateErrorCallbacks.delete(errorID);
                 }
@@ -497,6 +520,37 @@ function handleSwitchTab(event: IpcMainEvent, serverName: string, tabName: strin
     WindowManager.switchTab(serverName, tabName);
 }
 
+function handleCloseTab(event: IpcMainEvent, serverName: string, tabName: string) {
+    const teams = config.teams;
+    teams.forEach((team) => {
+        if (team.name === serverName) {
+            team.tabs.forEach((tab) => {
+                if (tab.name === tabName) {
+                    tab.isOpen = false;
+                }
+            });
+        }
+    });
+    const nextTab = teams.find((team) => team.name === serverName)!.tabs.filter((tab) => tab.isOpen)[0].name;
+    WindowManager.switchTab(serverName, nextTab);
+    config.set('teams', teams);
+}
+
+function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: string) {
+    const teams = config.teams;
+    teams.forEach((team) => {
+        if (team.name === serverName) {
+            team.tabs.forEach((tab) => {
+                if (tab.name === tabName) {
+                    tab.isOpen = true;
+                }
+            });
+        }
+    });
+    WindowManager.switchTab(serverName, tabName);
+    config.set('teams', teams);
+}
+
 function handleNewServerModal() {
     const html = getLocalURLString('newServer.html');
 
@@ -511,8 +565,11 @@ function handleNewServerModal() {
         modalPromise.then((data) => {
             const teams = config.teams;
             const order = teams.length;
-            teams.push(getDefaultTeamWithTabsFromTeam({...data, order}));
+            const newTeam = getDefaultTeamWithTabsFromTeam({...data, order});
+            teams.push(newTeam);
             config.set('teams', teams);
+            updateServerInfos([newTeam]);
+            WindowManager.switchServer(newTeam.name, true);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -593,7 +650,14 @@ function handleRemoveServerModal(e: IpcMainEvent, name: string) {
     }
 }
 
+function updateSpellCheckerLocales() {
+    if (config.data?.spellCheckerLocales.length && app.isReady()) {
+        session.defaultSession.setSpellCheckerLanguages(config.data?.spellCheckerLocales);
+    }
+}
+
 function initializeAfterAppReady() {
+    updateServerInfos(config.teams);
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
 
@@ -615,6 +679,7 @@ function initializeAfterAppReady() {
                 log.info(`Dictionary definitions downloaded successfully for ${lang}`);
             });
         }
+        updateSpellCheckerLocales();
     }
 
     const appVersionJson = path.join(app.getPath('userData'), 'app-state.json');
@@ -679,13 +744,6 @@ function initializeAfterAppReady() {
 
     WindowManager.showMainWindow(deeplinkingURL);
 
-    // only check for non-Windows, as with Windows we have to wait for GPO teams
-    if (process.platform !== 'win32' || typeof config.registryConfigData !== 'undefined') {
-        if (config.teams.length === 0) {
-            handleNewServerModal();
-        }
-    }
-
     criticalErrorHandler.setMainWindow(WindowManager.getMainWindow()!);
 
     // listen for status updates and pass on to renderer
@@ -719,7 +777,7 @@ function initializeAfterAppReady() {
 
         item.on('done', (doneEvent, state) => {
             if (state === 'completed') {
-                displayDownloadCompleted(filename, item.savePath, urlUtils.getView(webContents.getURL(), config.teams)!);
+                displayDownloadCompleted(filename, item.savePath, WindowManager.getServerNameByWebContentsId(webContents.id) || '');
             }
         });
     });
@@ -759,9 +817,14 @@ function initializeAfterAppReady() {
         callback(urlUtils.isTrustedURL(requestingURL, config.teams));
     });
 
-    globalShortcut.register(`${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`, () => {
-        ipcMain.emit(OPEN_TEAMS_DROPDOWN);
-    });
+    // only check for non-Windows, as with Windows we have to wait for GPO teams
+    if (process.platform !== 'win32' || typeof config.registryConfigData !== 'undefined') {
+        if (config.teams.length === 0) {
+            setTimeout(() => {
+                handleNewServerModal();
+            }, 200);
+        }
+    }
 }
 
 //
@@ -770,6 +833,39 @@ function initializeAfterAppReady() {
 
 function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, data: MentionData) {
     displayMention(title, body, channel, teamId, url, silent, event.sender, data);
+}
+
+function updateServerInfos(teams: TeamWithTabs[]) {
+    const serverInfos: Array<Promise<RemoteInfo | string | undefined>> = [];
+    teams.forEach((team) => {
+        const serverInfo = new ServerInfo(new MattermostServer(team.name, team.url));
+        serverInfos.push(serverInfo.promise);
+    });
+    Promise.all(serverInfos).then((data: Array<RemoteInfo | string | undefined>) => {
+        const teams = config.teams;
+        teams.forEach((team) => openExtraTabs(data, team));
+        config.set('teams', teams);
+    }).catch((reason: any) => {
+        log.error('Error getting server infos', reason);
+    });
+}
+
+function openExtraTabs(data: Array<RemoteInfo | string | undefined>, team: TeamWithTabs) {
+    const remoteInfo = data.find((info) => info && typeof info !== 'string' && info.name === team.name) as RemoteInfo;
+    if (remoteInfo) {
+        team.tabs.forEach((tab) => {
+            if (tab.name !== TAB_MESSAGING && remoteInfo.serverVersion && Utils.isVersionGreaterThanOrEqualTo(remoteInfo.serverVersion, '6.0.0')) {
+                if (tab.name === TAB_PLAYBOOKS && remoteInfo.hasPlaybooks && tab.isOpen !== false) {
+                    log.info(`opening ${team.name}___${tab.name} on hasPlaybooks`);
+                    tab.isOpen = true;
+                }
+                if (tab.name === TAB_FOCALBOARD && remoteInfo.hasFocalboard && tab.isOpen !== false) {
+                    log.info(`opening ${team.name}___${tab.name} on hasFocalboard`);
+                    tab.isOpen = true;
+                }
+            }
+        });
+    }
 }
 
 function handleOpenAppMenu() {
@@ -899,4 +995,19 @@ function resizeScreen(browserWindow: BrowserWindow) {
 
     browserWindow.on('restore', handle);
     handle();
+}
+function handleUpdateLastActive(event: IpcMainEvent, serverName: string, viewName: string) {
+    const teams = config.teams;
+    teams.forEach((team) => {
+        if (team.name === serverName) {
+            const viewOrder = team?.tabs.find((tab) => tab.name === viewName)?.order || 0;
+            team.lastActiveTab = viewOrder;
+        }
+    });
+    config.set('teams', teams);
+    config.set('lastActiveTeam', teams.find((team) => team.name === serverName)?.order || 0);
+}
+
+function handleGetAvailableSpellCheckerLanguages() {
+    return session.defaultSession.availableSpellCheckerLanguages;
 }

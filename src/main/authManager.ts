@@ -62,7 +62,7 @@ export class AuthManager {
         if (!mainWindow) {
             return;
         }
-        const modalPromise = addModal<LoginModalData, LoginModalResult>(`login-${request.url}`, loginModalHtml, modalPreload, {request, authInfo}, mainWindow);
+        const modalPromise = addModal<LoginModalData, LoginModalResult>(authInfo.isProxy ? `proxy-${authInfo.host}` : `login-${request.url}`, loginModalHtml, modalPreload, {request, authInfo}, mainWindow);
         if (modalPromise) {
             modalPromise.then((data) => {
                 const {username, password} = data;

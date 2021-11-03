@@ -6,13 +6,15 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-import {app, BrowserWindow, BrowserWindowConstructorOptions, ipcMain} from 'electron';
+import {app, BrowserWindow, BrowserWindowConstructorOptions, globalShortcut, ipcMain, screen} from 'electron';
 import log from 'electron-log';
 
 import {CombinedConfig} from 'types/config';
 import {SavedWindowState} from 'types/mainWindow';
 
-import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS} from 'common/communication';
+import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, OPEN_TEAMS_DROPDOWN} from 'common/communication';
+import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH} from 'common/utils/constants';
+import Utils from 'common/utils/util';
 
 import * as Validator from '../Validator';
 import ContextMenu from '../contextMenu';
@@ -32,16 +34,15 @@ function saveWindowState(file: string, window: BrowserWindow) {
     }
 }
 
+function isInsideRectangle(container: Electron.Rectangle, rect: Electron.Rectangle) {
+    return container.x <= rect.x && container.y <= rect.y && container.width >= rect.width && container.height >= rect.height;
+}
+
 function isFramelessWindow() {
-    return os.platform() === 'darwin' || (os.platform() === 'win32' && os.release().startsWith('10'));
+    return os.platform() === 'darwin' || (os.platform() === 'win32' && Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2'));
 }
 
 function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string}) {
-    const defaultWindowWidth = 1000;
-    const defaultWindowHeight = 700;
-    const minimumWindowWidth = 400;
-    const minimumWindowHeight = 240;
-
     // Create the browser window.
     const preload = getLocalPreload('mainWindow.js');
     const boundsInfoPath = path.join(app.getPath('userData'), 'bounds-info.json');
@@ -52,9 +53,13 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
         if (!savedWindowState) {
             throw new Error('Provided bounds info file does not validate, using defaults instead.');
         }
+        const matchingScreen = screen.getDisplayMatching(savedWindowState);
+        if (!(matchingScreen && (isInsideRectangle(matchingScreen.bounds, savedWindowState) || savedWindowState.maximized))) {
+            throw new Error('Provided bounds info are outside the bounds of your screen, using defaults instead.');
+        }
     } catch (e) {
     // Follow Electron's defaults, except for window dimensions which targets 1024x768 screen resolution.
-        savedWindowState = {width: defaultWindowWidth, height: defaultWindowHeight};
+        savedWindowState = {width: DEFAULT_WINDOW_WIDTH, height: DEFAULT_WINDOW_HEIGHT};
     }
 
     const {maximized: windowIsMaximized} = savedWindowState;
@@ -66,20 +71,18 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
         fullscreenable: true,
         show: false, // don't start the window until it is ready and only if it isn't hidden
         paintWhenInitiallyHidden: true, // we want it to start painting to get info from the webapp
-        minWidth: minimumWindowWidth,
-        minHeight: minimumWindowHeight,
+        minWidth: MINIMUM_WINDOW_WIDTH,
+        minHeight: MINIMUM_WINDOW_HEIGHT,
         frame: !isFramelessWindow(),
         fullscreen: savedWindowState.fullscreen,
         titleBarStyle: 'hidden' as const,
         trafficLightPosition: {x: 12, y: 12},
         backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
         webPreferences: {
-            nodeIntegration: process.env.NODE_ENV === 'test',
-            contextIsolation: process.env.NODE_ENV !== 'test',
+            nativeWindowOpen: true,
             disableBlinkFeatures: 'Auxclick',
             preload,
             spellcheck,
-            enableRemoteModule: process.env.NODE_ENV === 'test',
         },
     });
 
@@ -176,6 +179,21 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
                 }
             }
         }
+    });
+
+    // Only add shortcuts when window is in focus
+    mainWindow.on('focus', () => {
+        if (process.platform === 'linux') {
+            globalShortcut.registerAll(['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'], () => {
+                // do nothing because we want to supress the menu popping up
+            });
+        }
+        globalShortcut.register(`${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`, () => {
+            ipcMain.emit(OPEN_TEAMS_DROPDOWN);
+        });
+    });
+    mainWindow.on('blur', () => {
+        globalShortcut.unregisterAll();
     });
 
     const contextMenu = new ContextMenu({}, mainWindow);

@@ -3,7 +3,10 @@
 
 export const SWITCH_SERVER = 'switch-server';
 export const SWITCH_TAB = 'switch-tab';
+export const CLOSE_TAB = 'close-tab';
+export const OPEN_TAB = 'open-tab';
 export const SET_ACTIVE_VIEW = 'set-active-view';
+export const UPDATE_LAST_ACTIVE = 'update-last-active';
 export const MARK_READ = 'mark-read';
 export const FOCUS_BROWSERVIEW = 'focus-browserview';
 export const ZOOM = 'zoom';
@@ -66,7 +69,7 @@ export const SESSION_EXPIRED = 'session_expired';
 export const UPDATE_TRAY = 'update_tray';
 export const UPDATE_BADGE = 'update_badge';
 
-export const SET_VIEW_NAME = 'set-view-name';
+export const SET_VIEW_OPTIONS = 'set-view-name';
 export const REACT_APP_INITIALIZED = 'react-app-initialized';
 
 export const TOGGLE_BACK_BUTTON = 'toggle-back-button';
@@ -96,3 +99,10 @@ export const SEND_DROPDOWN_MENU_SIZE = 'send-dropdown-menu-size';
 export const UPDATE_AVAILABLE = 'update_available';
 export const CANCEL_UPGRADE = 'cancel_upgrade';
 export const START_UPGRADE = 'start_upgrade';
+export const BROWSER_HISTORY_PUSH = 'browser-history-push';
+export const APP_LOGGED_IN = 'app-logged-in';
+
+export const GET_AVAILABLE_SPELL_CHECKER_LANGUAGES = 'get-available-spell-checker-languages';
+
+export const GET_VIEW_NAME = 'get-view-name';
+export const GET_VIEW_WEBCONTENTS_ID = 'get-view-webcontents-id';

@@ -6,13 +6,26 @@
 
 /* eslint-disable no-magic-numbers */
 
-import {ipcRenderer, webFrame} from 'electron';
+import {contextBridge, ipcRenderer, webFrame} from 'electron';
 
 // I've filed an issue in electron-log https://github.com/megahertz/electron-log/issues/267
 // we'll be able to use it again if there is a workaround for the 'os' import
 //import log from 'electron-log';
 
-import {NOTIFY_MENTION, IS_UNREAD, UNREAD_RESULT, SESSION_EXPIRED, SET_VIEW_NAME, REACT_APP_INITIALIZED, USER_ACTIVITY_UPDATE, CLOSE_TEAMS_DROPDOWN} from 'common/communication';
+import {
+    NOTIFY_MENTION,
+    IS_UNREAD,
+    UNREAD_RESULT,
+    SESSION_EXPIRED,
+    SET_VIEW_OPTIONS,
+    REACT_APP_INITIALIZED,
+    USER_ACTIVITY_UPDATE,
+    CLOSE_TEAMS_DROPDOWN,
+    BROWSER_HISTORY_PUSH,
+    APP_LOGGED_IN,
+    GET_VIEW_NAME,
+    GET_VIEW_WEBCONTENTS_ID,
+} from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
 const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
@@ -21,8 +34,16 @@ let appVersion;
 let appName;
 let sessionExpired;
 let viewName;
+let shouldSendNotifications;
 
 console.log('Preload initialized');
+
+if (process.env.NODE_ENV === 'test') {
+    contextBridge.exposeInMainWorld('testHelper', {
+        getViewName: () => ipcRenderer.invoke(GET_VIEW_NAME),
+        getWebContentsId: () => ipcRenderer.invoke(GET_VIEW_WEBCONTENTS_ID),
+    });
+}
 
 ipcRenderer.invoke('get-app-version').then(({name, version}) => {
     appVersion = version;
@@ -110,8 +131,15 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
     // it will be captured by itself too
         break;
     case 'dispatch-notification': {
-        const {title, body, channel, teamId, url, silent, data: messageData} = message;
-        ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, url, silent, messageData);
+        if (shouldSendNotifications) {
+            const {title, body, channel, teamId, url, silent, data: messageData} = message;
+            ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, url, silent, messageData);
+        }
+        break;
+    }
+    case 'browser-history-push': {
+        const {path} = message;
+        ipcRenderer.send(BROWSER_HISTORY_PUSH, viewName, path);
         break;
     }
     default:
@@ -164,8 +192,9 @@ ipcRenderer.on(IS_UNREAD, (event, favicon, server) => {
     }
 });
 
-ipcRenderer.on(SET_VIEW_NAME, (_, name) => {
+ipcRenderer.on(SET_VIEW_OPTIONS, (_, name, shouldNotify) => {
     viewName = name;
+    shouldSendNotifications = shouldNotify;
 });
 
 function getUnreadCount() {
@@ -209,6 +238,24 @@ setInterval(() => {
 
 window.addEventListener('click', () => {
     ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
+});
+
+ipcRenderer.on(BROWSER_HISTORY_PUSH, (event, pathName) => {
+    window.postMessage(
+        {
+            type: 'browser-history-push-return',
+            message: {
+                pathName,
+            },
+        },
+        window.location.origin,
+    );
+});
+
+window.addEventListener('storage', (e) => {
+    if (e.key === '__login__' && e.storageArea === localStorage && e.newValue) {
+        ipcRenderer.send(APP_LOGGED_IN, viewName);
+    }
 });
 
 /* eslint-enable no-magic-numbers */

@@ -122,6 +122,7 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         return (
             <MainPage
                 teams={config.teams}
+                lastActiveTeam={config.lastActiveTeam}
                 moveTabs={this.moveTabs}
                 openMenu={this.openMenu}
                 darkMode={config.darkMode}
@@ -135,7 +136,7 @@ window.ipcRenderer.invoke('get-app-version').then(({name, version}) => {
     // eslint-disable-next-line no-undef
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    console.log(`Starting ${name} v${version} commit: ${__HASH_VERSION__}`);
+    console.log(`Starting ${name} v${version}${__HASH_VERSION__ ? ` commit: ${__HASH_VERSION__}` : ''}`);
 });
 
 ReactDOM.render(

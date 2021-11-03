@@ -31,22 +31,31 @@ export default class TeamDropdownView {
     mentions?: Map<string, number>;
     expired?: Map<string, boolean>;
     window: BrowserWindow;
+    windowBounds: Electron.Rectangle;
+    isOpen: boolean;
 
     constructor(window: BrowserWindow, teams: TeamWithTabs[], darkMode: boolean, enableServerManagement: boolean) {
         this.teams = teams;
         this.window = window;
         this.darkMode = darkMode;
         this.enableServerManagement = enableServerManagement;
+        this.isOpen = false;
+
+        this.windowBounds = this.window.getContentBounds();
 
         const preload = getLocalPreload('dropdown.js');
         this.view = new BrowserView({webPreferences: {
-            contextIsolation: process.env.NODE_ENV !== 'test',
+            nativeWindowOpen: true,
             preload,
-            nodeIntegration: process.env.NODE_ENV === 'test',
-            enableRemoteModule: process.env.NODE_ENV === 'test',
+
+            // Workaround for this issue: https://github.com/electron/electron/issues/30993
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            transparent: true,
         }});
 
         this.view.webContents.loadURL(getLocalURLString('dropdown.html'));
+        this.window.addBrowserView(this.view);
 
         ipcMain.on(OPEN_TEAMS_DROPDOWN, this.handleOpen);
         ipcMain.on(CLOSE_TEAMS_DROPDOWN, this.handleClose);
@@ -77,6 +86,11 @@ export default class TeamDropdownView {
         this.updateDropdown();
     }
 
+    updateWindowBounds = () => {
+        this.windowBounds = this.window.getContentBounds();
+        this.updateDropdown();
+    }
+
     updateDropdown = () => {
         this.view.webContents.send(
             UPDATE_TEAMS_DROPDOWN,
@@ -88,26 +102,32 @@ export default class TeamDropdownView {
             this.expired,
             this.mentions,
             this.unreads,
+            this.windowBounds,
         );
     }
 
     handleOpen = () => {
-        this.window.addBrowserView(this.view);
-        const bounds = this.view.getBounds();
-        this.view.setBounds(this.getBounds(bounds.width, bounds.height));
+        if (!this.bounds) {
+            return;
+        }
+        this.view.setBounds(this.bounds);
         this.window.setTopBrowserView(this.view);
         this.view.webContents.focus();
         WindowManager.sendToRenderer(OPEN_TEAMS_DROPDOWN);
+        this.isOpen = true;
     }
 
     handleClose = () => {
-        this.window.removeBrowserView(this.view);
+        this.view.setBounds(this.getBounds(0, 0));
         WindowManager.sendToRenderer(CLOSE_TEAMS_DROPDOWN);
+        this.isOpen = false;
     }
 
     handleReceivedMenuSize = (event: IpcMainEvent, width: number, height: number) => {
-        const bounds = this.getBounds(width, height);
-        this.view.setBounds(bounds);
+        this.bounds = this.getBounds(width, height);
+        if (this.isOpen) {
+            this.view.setBounds(this.bounds);
+        }
     }
 
     getBounds = (width: number, height: number) => {

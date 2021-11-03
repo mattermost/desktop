@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
-import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent} from 'electron';
+import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import log from 'electron-log';
 
 import {CombinedConfig} from 'types/config';
@@ -16,10 +16,14 @@ import {
     FOCUS_THREE_DOT_MENU,
     GET_DARK_MODE,
     UPDATE_SHORTCUT_MENU,
+    BROWSER_HISTORY_PUSH,
+    APP_LOGGED_IN,
+    GET_VIEW_NAME,
+    GET_VIEW_WEBCONTENTS_ID,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
-import {getTabViewName} from 'common/tabs/TabView';
+import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 
 import {getAdjustedWindowBoundaries} from '../utils';
 
@@ -51,6 +55,10 @@ ipcMain.handle(GET_LOADING_SCREEN_DATA, handleLoadingScreenDataRequest);
 ipcMain.handle(GET_DARK_MODE, handleGetDarkMode);
 ipcMain.on(REACT_APP_INITIALIZED, handleReactAppInitialized);
 ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, handleLoadingScreenAnimationFinished);
+ipcMain.on(BROWSER_HISTORY_PUSH, handleBrowserHistoryPush);
+ipcMain.on(APP_LOGGED_IN, handleAppLoggedIn);
+ipcMain.handle(GET_VIEW_NAME, handleGetViewName);
+ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, handleGetWebContentsId);
 
 export function setConfig(data: CombinedConfig) {
     if (data) {
@@ -76,7 +84,6 @@ export function showSettingsWindow() {
         status.settingsWindow = createSettingsWindow(status.mainWindow!, status.config, withDevTools);
         status.settingsWindow.on('closed', () => {
             delete status.settingsWindow;
-            focusBrowserView();
         });
     }
 }
@@ -176,7 +183,7 @@ function handleResizeMainWindow() {
 
     const setBoundsFunction = () => {
         if (currentView) {
-            currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, !urlUtils.isTeamUrl(currentView.tab.url, currentView.view.webContents.getURL())));
+            currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, !(urlUtils.isTeamUrl(currentView.tab.url, currentView.view.webContents.getURL()) || urlUtils.isAdminUrl(currentView.tab.url, currentView.view.webContents.getURL()))));
         }
     };
 
@@ -188,6 +195,7 @@ function handleResizeMainWindow() {
         setBoundsFunction();
     }
     status.viewManager.setLoadingScreenBounds();
+    status.teamDropdown?.updateWindowBounds();
 }
 
 // max retries allows the message to get to the renderer even if it is sent while the app is starting up.
@@ -372,11 +380,17 @@ function initializeViewManager() {
         status.viewManager = new ViewManager(status.config, status.mainWindow);
         status.viewManager.load();
         status.viewManager.showInitial();
-        status.currentServerName = status.config.teams.find((team) => team.order === 0)?.name;
+        initializeCurrentServerName();
     }
 }
 
-export function switchServer(serverName: string) {
+export function initializeCurrentServerName() {
+    if (status.config && !status.currentServerName) {
+        status.currentServerName = (status.config.teams.find((team) => team.order === status.config?.lastActiveTeam) || status.config.teams.find((team) => team.order === 0))?.name;
+    }
+}
+
+export function switchServer(serverName: string, waitForViewToExist = false) {
     showMainWindow();
     const server = status.config?.teams.find((team) => team.name === serverName);
     if (!server) {
@@ -384,9 +398,22 @@ export function switchServer(serverName: string) {
         return;
     }
     status.currentServerName = serverName;
-    const lastActiveTab = server.tabs[server.lastActiveTab || 0];
-    const tabViewName = getTabViewName(serverName, lastActiveTab.name);
-    status.viewManager?.showByName(tabViewName);
+    let nextTab = server.tabs.find((tab) => tab.isOpen && tab.order === (server.lastActiveTab || 0));
+    if (!nextTab) {
+        const openTabs = server.tabs.filter((tab) => tab.isOpen);
+        nextTab = openTabs.find((e) => e.order === 0) || openTabs[0];
+    }
+    const tabViewName = getTabViewName(serverName, nextTab.name);
+    if (waitForViewToExist) {
+        const timeout = setInterval(() => {
+            if (status.viewManager?.views.has(tabViewName)) {
+                status.viewManager?.showByName(tabViewName);
+                clearTimeout(timeout);
+            }
+        }, 100);
+    } else {
+        status.viewManager?.showByName(tabViewName);
+    }
     ipcMain.emit(UPDATE_SHORTCUT_MENU);
 }
 
@@ -441,8 +468,14 @@ export function updateLoadingScreenDarkMode(darkMode: boolean) {
     }
 }
 
+export function getViewNameByWebContentsId(webContentsId: number) {
+    const view = status.viewManager?.findViewByWebContent(webContentsId);
+    return view?.name;
+}
+
 export function getServerNameByWebContentsId(webContentsId: number) {
-    return status.viewManager?.findByWebContent(webContentsId);
+    const view = status.viewManager?.findViewByWebContent(webContentsId);
+    return view?.tab.server.name;
 }
 
 export function close() {
@@ -465,6 +498,9 @@ export function restore() {
     const focused = BrowserWindow.getFocusedWindow();
     if (focused) {
         focused.restore();
+    }
+    if (focused?.isFullScreen()) {
+        focused.setFullScreen(false);
     }
 }
 
@@ -504,15 +540,21 @@ export function selectNextTab() {
     }
 
     const currentTeamTabs = status.config?.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
+    const filteredTabs = currentTeamTabs?.filter((tab) => tab.isOpen);
     const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
-    if (!currentTeamTabs || !currentTab) {
+    if (!currentTeamTabs || !currentTab || !filteredTabs) {
         return;
     }
 
-    const currentOrder = currentTab.order;
-    const nextOrder = ((currentOrder + 1) % currentTeamTabs.length);
-    const nextIndex = currentTeamTabs.findIndex((tab) => tab.order === nextOrder);
-    const newTab = currentTeamTabs[nextIndex];
+    let currentOrder = currentTab.order;
+    let nextIndex = -1;
+    while (nextIndex === -1) {
+        const nextOrder = ((currentOrder + 1) % currentTeamTabs.length);
+        nextIndex = filteredTabs.findIndex((tab) => tab.order === nextOrder);
+        currentOrder = nextOrder;
+    }
+
+    const newTab = filteredTabs[nextIndex];
     switchTab(currentView.tab.server.name, newTab.name);
 }
 
@@ -523,17 +565,22 @@ export function selectPreviousTab() {
     }
 
     const currentTeamTabs = status.config?.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
+    const filteredTabs = currentTeamTabs?.filter((tab) => tab.isOpen);
     const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
-    if (!currentTeamTabs || !currentTab) {
+    if (!currentTeamTabs || !currentTab || !filteredTabs) {
         return;
     }
 
-    const currentOrder = currentTab.order;
-
     // js modulo operator returns a negative number if result is negative, so we have to ensure it's positive
-    const nextOrder = ((currentTeamTabs.length + (currentOrder - 1)) % currentTeamTabs.length);
-    const nextIndex = currentTeamTabs.findIndex((tab) => tab.order === nextOrder);
-    const newTab = currentTeamTabs[nextIndex];
+    let currentOrder = currentTab.order;
+    let nextIndex = -1;
+    while (nextIndex === -1) {
+        const nextOrder = ((currentTeamTabs.length + (currentOrder - 1)) % currentTeamTabs.length);
+        nextIndex = filteredTabs.findIndex((tab) => tab.order === nextOrder);
+        currentOrder = nextOrder;
+    }
+
+    const newTab = filteredTabs[nextIndex];
     switchTab(currentView.tab.server.name, newTab.name);
 }
 
@@ -541,6 +588,36 @@ function handleGetDarkMode() {
     return status.config?.darkMode;
 }
 
+function handleBrowserHistoryPush(e: IpcMainEvent, viewName: string, pathName: string) {
+    const currentView = status.viewManager?.views.get(viewName);
+    const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${pathName}`, status.config!.teams)?.name || viewName;
+    if (status.viewManager?.closedViews.has(redirectedViewName)) {
+        status.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${pathName}`);
+    }
+    const redirectedView = status.viewManager?.views.get(redirectedViewName) || currentView;
+    if (redirectedView !== currentView && redirectedView?.tab.server.name === status.currentServerName) {
+        log.info('redirecting to a new view', redirectedView?.name || viewName);
+        status.viewManager?.showByName(redirectedView?.name || viewName);
+    }
+
+    // Special case check for Channels to not force a redirect to "/", causing a refresh
+    if (!(redirectedView !== currentView && redirectedView?.tab.type === TAB_MESSAGING && pathName === '/')) {
+        redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
+    }
+}
+
 export function getCurrentTeamName() {
     return status.currentServerName;
 }
+
+function handleAppLoggedIn(event: IpcMainEvent, viewName: string) {
+    status.viewManager?.reloadViewIfNeeded(viewName);
+}
+
+function handleGetViewName(event: IpcMainInvokeEvent) {
+    return getViewNameByWebContentsId(event.sender.id);
+}
+function handleGetWebContentsId(event: IpcMainInvokeEvent) {
+    return event.sender.id;
+}
+
