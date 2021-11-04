@@ -84,7 +84,7 @@ export function isUrlType(urlType: string, serverUrl: URL | string, inputURL: UR
     const parsedURL = parseURL(inputURL);
     const server = getServerInfo(serverUrl);
     if (!parsedURL || !server || (!equalUrlsIgnoringSubpath(server.url, parsedURL))) {
-        return null;
+        return false;
     }
     return (getFormattedPathName(parsedURL.pathname).startsWith(`${server.subpath}${urlType}/`) ||
     getFormattedPathName(parsedURL.pathname).startsWith(`/${urlType}/`));
@@ -95,6 +95,12 @@ function isAdminUrl(serverUrl: URL | string, inputURL: URL | string) {
 }
 
 function isTeamUrl(serverUrl: URL | string, inputURL: URL | string, withApi?: boolean) {
+    const parsedURL = parseURL(inputURL);
+    const server = getServerInfo(serverUrl);
+    if (!parsedURL || !server || (!equalUrlsIgnoringSubpath(server.url, parsedURL))) {
+        return false;
+    }
+
     const paths = [...getManagedResources(), ...nonTeamUrlPaths];
 
     if (withApi) {
