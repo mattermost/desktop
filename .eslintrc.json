@@ -39,7 +39,8 @@
         },
         {
             "files": [
-                "test/**/*"
+                "e2e/**/*",
+                "src/**/*.test.js"
             ],
             "env": {
                 "jest": true
@@ -57,14 +58,14 @@
         {
             "files": [
                 "webpack.config.renderer.js",
-                "test/specs/spellchecker_test.js",
-                "test/specs/app_test.js",
-                "test/specs/security_test.js",
-                "test/specs/permisson_test.js",
-                "test/specs/browser/index_test.js",
-                "test/specs/browser/settings_test.js",
-                "test/modules/utils.js",
-                "test/modules/environment.js",
+                "e2e/specs/spellchecker_test.js",
+                "e2e/specs/app_test.js",
+                "e2e/specs/security_test.js",
+                "e2e/specs/permisson_test.js",
+                "e2e/specs/browser/index_test.js",
+                "e2e/specs/browser/settings_test.js",
+                "e2e/modules/utils.js",
+                "e2e/modules/environment.js",
                 "CHANGELOG.md",
                 "webpack.config.base.js",
                 "babel.config.js",

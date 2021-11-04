@@ -3,7 +3,6 @@
 'use strict';
 
 import assert from 'assert';
-import 'airbnb-js-shims/target/es2015';
 
 import TrustedOriginsStore from 'main/trustedOrigins.ts';
 import {BASIC_AUTH_PERMISSION} from 'common/permissions.ts';

@@ -98,7 +98,7 @@ Mattermost Desktop
 │   ├── common/ - Common JavaScript modules for both Electron's processes.
 │   └── main/ - Implementation of Electron's main process.
 │       └── menus/ - Application menu.
-└── test/ - Automated tests.
+└── e2e/ - Automated tests.
     ├── modules/ - Scripts which are commonly used in tests.
     └── specs/ - Test scripts.
 ```

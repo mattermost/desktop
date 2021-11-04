@@ -52,7 +52,7 @@
         "--timeout",
         "999999",
         "--colors",
-        "${workspaceRoot}/test/specs"
+        "${workspaceRoot}/e2e/specs"
       ],
       "internalConsoleOptions": "openOnSessionStart",
       "preLaunchTask": "Build sources"
