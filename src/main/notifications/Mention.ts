@@ -9,7 +9,6 @@ import {app, Notification} from 'electron';
 import {MentionOptions} from 'types/notification';
 
 import Utils from 'common/utils/util';
-import osVersion from 'common/osVersion';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const appIconURL = path.resolve(assetsDir, 'appicon_48.png');
