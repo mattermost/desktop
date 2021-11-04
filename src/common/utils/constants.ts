@@ -23,6 +23,31 @@ export const DEFAULT_WINDOW_HEIGHT = 700;
 export const MINIMUM_WINDOW_WIDTH = 700;
 export const MINIMUM_WINDOW_HEIGHT = 240;
 
+// supported custom login paths (oath, saml)
+export const customLoginRegexPaths = [
+    /^\/oauth\/authorize$/i,
+    /^\/oauth\/deauthorize$/i,
+    /^\/oauth\/access_token$/i,
+    /^\/oauth\/[A-Za-z0-9]+\/complete$/i,
+    /^\/oauth\/[A-Za-z0-9]+\/login$/i,
+    /^\/oauth\/[A-Za-z0-9]+\/signup$/i,
+    /^\/api\/v3\/oauth\/[A-Za-z0-9]+\/complete$/i,
+    /^\/signup\/[A-Za-z0-9]+\/complete$/i,
+    /^\/login\/[A-Za-z0-9]+\/complete$/i,
+    /^\/login\/sso\/saml$/i,
+];
+
+export const nonTeamUrlPaths = [
+    'plugins',
+    'signup',
+    'login',
+    'admin',
+    'channel',
+    'post',
+    'oauth',
+    'admin_console',
+];
+
 export const localeTranslations: Record<string, string> = {
     'af': 'Afrikaans',
     'af-ZA': 'Afrikaans (South Africa)',
