@@ -332,7 +332,6 @@ describe('common/utils/url', () => {
                 ])).toBe(false);
         });
         it('should not match with oauth subpath', () => {
-            console.log('me');
             expect(urlUtils.isCustomLoginURL(
                 'http://server.com/oauth/authorize',
                 {
