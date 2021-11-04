@@ -13,7 +13,7 @@ jest.mock('common/tabs/TabView', () => ({
     },
 }));
 
-describe('URL', () => {
+describe('common/utils/url', () => {
     describe('parseURL', () => {
         it('should return the URL if it is already a URL', () => {
             const url = new URL('http://mattermost.com');
