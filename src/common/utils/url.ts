@@ -35,12 +35,11 @@ function getHost(inputURL: URL | string) {
     if (parsedURL) {
         return parsedURL.origin;
     }
-    throw new Error(`Couldn't parse url: ${inputURL}`);
+    throw new SyntaxError(`Couldn't parse url: ${inputURL}`);
 }
 
 // isInternalURL determines if the target url is internal to the application.
 // - currentURL is the current url inside the webview
-// - basename is the global export from the Mattermost application defining the subpath, if any
 function isInternalURL(targetURL: URL, currentURL: URL) {
     if (targetURL.host !== currentURL.host) {
         return false;

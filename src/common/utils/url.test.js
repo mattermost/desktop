@@ -14,6 +14,69 @@ jest.mock('common/tabs/TabView', () => ({
 }));
 
 describe('common/utils/url', () => {
+    describe('isValidURL', () => {
+        it('should be true for a valid web url', () => {
+            const testURL = 'https://developers.mattermost.com/';
+            expect(urlUtils.isValidURL(testURL)).toBe(true);
+        });
+        it('should be true for a valid, non-https web url', () => {
+            const testURL = 'http://developers.mattermost.com/';
+            expect(urlUtils.isValidURL(testURL)).toBe(true);
+        });
+        it('should be true for an invalid, self-defined, top-level domain', () => {
+            const testURL = 'https://www.example.x';
+            expect(urlUtils.isValidURL(testURL)).toBe(true);
+        });
+        it('should be true for a file download url', () => {
+            const testURL = 'https://community.mattermost.com/api/v4/files/ka3xbfmb3ffnmgdmww8otkidfw?download=1';
+            expect(urlUtils.isValidURL(testURL)).toBe(true);
+        });
+        it('should be true for a permalink url', () => {
+            const testURL = 'https://community.mattermost.com/test-channel/pl/pdqowkij47rmbyk78m5hwc7r6r';
+            expect(urlUtils.isValidURL(testURL)).toBe(true);
+        });
+        it('should be true for a valid, internal domain', () => {
+            const testURL = 'https://mattermost.company-internal';
+            expect(urlUtils.isValidURL(testURL)).toBe(true);
+        });
+        it('should be true for a second, valid internal domain', () => {
+            const testURL = 'https://serverXY/mattermost';
+            expect(urlUtils.isValidURL(testURL)).toBe(true);
+        });
+        it('should be true for a valid, non-https internal domain', () => {
+            const testURL = 'http://mattermost.local';
+            expect(urlUtils.isValidURL(testURL)).toBe(true);
+        });
+        it('should be true for a valid, non-https, ip address with port number', () => {
+            const testURL = 'http://localhost:8065';
+            expect(urlUtils.isValidURL(testURL)).toBe(true);
+        });
+    });
+    describe('isValidURI', () => {
+        it('should be true for a deeplink url', () => {
+            const testURL = 'mattermost://community-release.mattermost.com/core/channels/developers';
+            expect(urlUtils.isValidURI(testURL)).toBe(true);
+        });
+        it('should be false for a malicious url', () => {
+            const testURL = String.raw`mattermost:///" --data-dir "\\deans-mbp\mattermost`;
+            expect(urlUtils.isValidURI(testURL)).toBe(false);
+        });
+    });
+
+    describe('getHost', () => {
+        it('should return the origin of a well formed url', () => {
+            const myurl = 'https://mattermost.com/download';
+            expect(urlUtils.getHost(myurl)).toBe('https://mattermost.com');
+        });
+
+        it('shoud raise an error on malformed urls', () => {
+            const myurl = 'http://example.com:-80/';
+            expect(() => {
+                urlUtils.getHost(myurl);
+            }).toThrow(SyntaxError);
+        });
+    });
+
     describe('parseURL', () => {
         it('should return the URL if it is already a URL', () => {
             const url = new URL('http://mattermost.com');
