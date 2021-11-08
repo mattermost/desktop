@@ -1,12 +1,14 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import os from 'os';
 import path from 'path';
+
 import {app, Notification} from 'electron';
 
 import {MentionOptions} from 'types/notification';
 
-import osVersion from 'common/osVersion';
+import Utils from 'common/utils/util';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const appIconURL = path.resolve(assetsDir, 'appicon_48.png');
@@ -30,7 +32,7 @@ export class Mention extends Notification {
             // Notification Center shows app's icon, so there were two icons on the notification.
             Reflect.deleteProperty(options, 'icon');
         }
-        const isWin7 = (process.platform === 'win32' && osVersion.isLowerThanOrEqualWindows8_1() && DEFAULT_WIN7);
+        const isWin7 = (process.platform === 'win32' && !Utils.isVersionGreaterThanOrEqualTo(os.version(), '6.3') && DEFAULT_WIN7);
         const customSound = String(!options.silent && ((options.data && options.data.soundName !== 'None' && options.data.soundName) || isWin7));
         if (customSound) {
             options.silent = true;

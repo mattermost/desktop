@@ -13,20 +13,4 @@ export class MattermostServer {
             throw new Error('Invalid url for creating a server');
         }
     }
-
-    getServerInfo = () => {
-        // does the server have a subpath?
-        const normalizedPath = this.url.pathname.toLowerCase();
-        const subpath = normalizedPath.endsWith('/') ? normalizedPath : `${normalizedPath}/`;
-        return {origin: this.url.origin, subpath, url: this.url.toString()};
-    }
-
-    sameOrigin = (otherURL: string) => {
-        const parsedUrl = urlUtils.parseURL(otherURL);
-        return parsedUrl && this.url.origin === parsedUrl.origin;
-    }
-
-    equals = (otherServer: MattermostServer) => {
-        return (this.name === otherServer.name) && (this.url.toString() === otherServer.url.toString());
-    }
 }

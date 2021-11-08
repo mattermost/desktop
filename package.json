@@ -43,7 +43,7 @@
     "test:e2e:nobuild": "cross-env NODE_ENV=test npm-run-all test:e2e:build test:e2e:run",
     "test:e2e:build": "webpack-cli --bail --config webpack.config.test.js",
     "test:e2e:run": "electron-mocha -r @babel/register --reporter mocha-circleci-reporter dist/tests/e2e_bundle.js",
-    "test:unit": "npm-run-all test:unit:build test:unit:run",
+    "test:unit": "jest",
     "test:unit:build": "cross-env NODE_ENV=test webpack-cli --bail --config webpack.config.test.js",
     "test:unit:run": "cross-env NODE_ENV=test mocha --reporter mocha-circleci-reporter dist/tests/test_bundle.js",
     "package:all": "cross-env NODE_ENV=production npm-run-all check-build-config package:windows package:mac package:mac-universal package:linux",
@@ -58,6 +58,20 @@
     "check-build-config:build": "babel ./src/common/config/buildConfig.ts -o ./dist/buildConfig.js",
     "check-build-config:run": "node -r @babel/register scripts/check_build_config.js",
     "check-types": "tsc"
+  },
+  "jest": {
+    "moduleDirectories": [
+      "",
+      "node_modules"
+    ],
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json"
+    ],
+    "testMatch": ["**/src/**/*.test.js"]
   },
   "devDependencies": {
     "@babel/cli": "^7.14.5",
@@ -108,6 +122,7 @@
     "eslint-plugin-react": "7.22.0",
     "file-loader": "^2.0.0",
     "image-webpack-loader": "5.0.0",
+    "jest": "^27.3.1",
     "mdi-react": "^6.2.0",
     "mini-css-extract-plugin": "1.6.0",
     "mocha": "^5.2.0",
