@@ -166,6 +166,9 @@ async function initializeConfig() {
             config.on('update', handleConfigUpdate);
             config.on('synchronize', handleConfigSynchronize);
             config.on('darkModeChange', handleDarkModeChange);
+            config.on('error', (error) => {
+                log.error(error);
+            });
             handleConfigUpdate(configData);
 
             // can only call this before the app is ready

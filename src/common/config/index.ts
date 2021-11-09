@@ -179,7 +179,11 @@ export default class Config extends EventEmitter {
         try {
             this.writeFile(this.configFilePath, this.localConfigData, (error: NodeJS.ErrnoException | null) => {
                 if (error) {
-                    throw new Error(error.message);
+                    if (error.code === 'EBUSY') {
+                        this.saveLocalConfigData();
+                    } else {
+                        this.emit('error', error);
+                    }
                 }
                 this.emit('update', this.combinedData);
                 this.emit('synchronize');
