@@ -504,6 +504,7 @@ workflows:
             branches:
               ignore:
                 - /^build-pr-.*/
+                - MM-35441
       - begin-notification:
           context: desktop-notify
           filters:
