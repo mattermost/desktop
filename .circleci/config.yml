@@ -542,7 +542,7 @@ workflows:
       - msi_installer:
           requires:
             - check
-          context: windows-codesign
+          context: windows-codesign-new
           filters:
             branches:
               only:
@@ -550,6 +550,7 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - MM-35441
 
       - mac_installer:
           requires:
