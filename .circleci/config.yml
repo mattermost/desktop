@@ -541,7 +541,7 @@ workflows:
                 - /^build-pr-.*/
 
       - msi_installer:
-          context: windows-codesign-new
+          context: windows-codesign
           filters:
             branches:
               only:
