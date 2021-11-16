@@ -520,7 +520,7 @@ function Run-BuildChangelog {
     foreach ($i in $changelogRaw) {
         $changelog += "* $i`n"
     }
-    $env:COM_MATTERMOST_MAKEFILE_BUILD_CHANGELOG = $changelog
+    $env:COM_MATTERMOST_MAKEFILE_BUILD_CHANGELOG = ""
 }
 
 function Run-BuildElectron {
