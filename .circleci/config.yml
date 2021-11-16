@@ -504,6 +504,7 @@ workflows:
             branches:
               ignore:
                 - /^build-pr-.*/
+                - MM-35441
       - begin-notification:
           context: desktop-notify
           filters:
@@ -540,8 +541,6 @@ workflows:
                 - /^build-pr-.*/
 
       - msi_installer:
-          requires:
-            - check
           context: windows-codesign
           filters:
             branches:
@@ -550,6 +549,7 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - MM-35441
 
       - mac_installer:
           requires:
