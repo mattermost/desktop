@@ -2,83 +2,19 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-// TODO: fix test with new settings window
-
 'use strict';
 
 const fs = require('fs');
 
-const {SHOW_SETTINGS_WINDOW} = require('../../../src/common/communication');
+const {SHOW_SETTINGS_WINDOW} = require('../../src/common/communication');
 
-const env = require('../../modules/environment');
-const {asyncSleep} = require('../../modules/utils');
+const env = require('../modules/environment');
+const {asyncSleep} = require('../modules/utils');
 
-describe('renderer/settings.html', function desc() {
+describe('Settings', function desc() {
     this.timeout(30000);
 
-    const config = {
-        version: 3,
-        teams: [{
-            name: 'example',
-            url: env.mattermostURL,
-            order: 0,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                    isOpen: true,
-                },
-            ],
-            lastActiveTab: 0,
-        }, {
-            name: 'github',
-            url: 'https://github.com/',
-            order: 1,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                    isOpen: true,
-                },
-            ],
-            lastActiveTab: 0,
-        }],
-        showTrayIcon: false,
-        trayIconTheme: 'light',
-        minimizeToTray: false,
-        notifications: {
-            flashWindow: 0,
-            bounceIcon: false,
-            bounceIconType: 'informational',
-        },
-        showUnreadBadge: true,
-        useSpellChecker: true,
-        enableHardwareAcceleration: true,
-        autostart: true,
-        darkMode: false,
-        lastActiveTeam: 0,
-        spellCheckerLocales: [],
-    };
+    const config = env.demoConfig;
 
     beforeEach(async () => {
         env.createTestUserDataDir();
@@ -96,7 +32,7 @@ describe('renderer/settings.html', function desc() {
 
     describe('Options', () => {
         describe('Start app on login', () => {
-            it('should appear on win32 or linux', async () => {
+            it('MM-T4392 should appear on win32 or linux', async () => {
                 const expected = (process.platform === 'win32' || process.platform === 'linux');
                 this.app.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
@@ -111,7 +47,7 @@ describe('renderer/settings.html', function desc() {
         });
 
         describe('Show icon in menu bar / notification area', () => {
-            it('should appear on darwin or linux', async () => {
+            it('MM-T4393_1 should appear on darwin or linux', async () => {
                 const expected = (process.platform === 'darwin' || process.platform === 'linux');
                 this.app.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
@@ -124,7 +60,7 @@ describe('renderer/settings.html', function desc() {
                 existing.should.equal(expected);
             });
 
-            describe('Save tray icon setting on mac', () => {
+            describe('MM-T4393_2 Save tray icon setting on mac', () => {
                 env.shouldTest(it, env.isOneOf(['darwin', 'linux']))('should be saved when it\'s selected', async () => {
                     this.app.evaluate(({ipcMain}, showWindow) => {
                         ipcMain.emit(showWindow);
@@ -147,7 +83,7 @@ describe('renderer/settings.html', function desc() {
                 });
             });
 
-            describe('Save tray icon theme on linux', () => {
+            describe('MM-T4393_3 Save tray icon theme on linux', () => {
                 env.shouldTest(it, process.platform === 'linux')('should be saved when it\'s selected', async () => {
                     this.app.evaluate(({ipcMain}, showWindow) => {
                         ipcMain.emit(showWindow);
@@ -173,7 +109,7 @@ describe('renderer/settings.html', function desc() {
         });
 
         describe('Leave app running in notification area when application window is closed', () => {
-            it('should appear on linux', async () => {
+            it('MM-T4394 should appear on linux', async () => {
                 const expected = (process.platform === 'linux');
                 this.app.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
@@ -188,7 +124,7 @@ describe('renderer/settings.html', function desc() {
         });
 
         describe('Flash app window and taskbar icon when a new message is received', () => {
-            it('should appear on win32 and linux', async () => {
+            it('MM-T4395 should appear on win32 and linux', async () => {
                 const expected = (process.platform === 'win32' || process.platform === 'linux');
                 this.app.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
@@ -203,7 +139,7 @@ describe('renderer/settings.html', function desc() {
         });
 
         describe('Show red badge on taskbar icon to indicate unread messages', () => {
-            it('should appear on darwin or win32', async () => {
+            it('MM-T4396 should appear on darwin or win32', async () => {
                 const expected = (process.platform === 'darwin' || process.platform === 'win32');
                 this.app.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
@@ -218,7 +154,7 @@ describe('renderer/settings.html', function desc() {
         });
 
         describe('Check spelling', () => {
-            it('should appear and be selectable', async () => {
+            it('MM-T4397 should appear and be selectable', async () => {
                 this.app.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
@@ -241,7 +177,7 @@ describe('renderer/settings.html', function desc() {
         });
 
         describe('Enable GPU hardware acceleration', () => {
-            it('should save selected option', async () => {
+            it('MM-T4398 should save selected option', async () => {
                 const ID_INPUT_ENABLE_HARDWARE_ACCELERATION = '#inputEnableHardwareAcceleration';
                 this.app.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);

@@ -1,82 +1,16 @@
-// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 'use strict';
 
 const fs = require('fs');
 
-// const http = require('http');
-// const path = require('path');
-
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
-describe('renderer/index.html', function desc() {
+describe('menu_bar/dropdown', function desc() {
     this.timeout(30000);
 
-    const config = {
-        version: 3,
-        teams: [{
-            name: 'example',
-            url: env.mattermostURL,
-            order: 0,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                    isOpen: true,
-                },
-            ],
-            lastActiveTab: 0,
-        }, {
-            name: 'github',
-            url: 'https://github.com/',
-            order: 1,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                    isOpen: true,
-                },
-            ],
-            lastActiveTab: 0,
-        }],
-        showTrayIcon: false,
-        trayIconTheme: 'light',
-        minimizeToTray: false,
-        notifications: {
-            flashWindow: 0,
-            bounceIcon: false,
-            bounceIconType: 'informational',
-        },
-        showUnreadBadge: true,
-        useSpellChecker: true,
-        enableHardwareAcceleration: true,
-        autostart: true,
-        darkMode: false,
-        lastActiveTeam: 0,
-        spellCheckerLocales: [],
-    };
+    const config = env.demoConfig;
 
     beforeEach(async () => {
         env.createTestUserDataDir();
@@ -92,15 +26,7 @@ describe('renderer/index.html', function desc() {
         }
     });
 
-    it('should set src of browser view from config file', async () => {
-        const firstServer = this.app.windows().find((window) => window.url() === config.teams[0].url);
-        const secondServer = this.app.windows().find((window) => window.url() === config.teams[1].url);
-
-        firstServer.should.not.be.null;
-        secondServer.should.not.be.null;
-    });
-
-    it('should set name of menu item from config file', async () => {
+    it('MM-T4405 should set name of menu item from config file', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
         await mainWindow.click('.TeamDropdownButton');
@@ -111,7 +37,7 @@ describe('renderer/index.html', function desc() {
         secondMenuItem.should.equal(config.teams[1].name);
     });
 
-    it('should only show dropdown when button is clicked', async () => {
+    it('MM-T4406 should only show dropdown when button is clicked', async () => {
         const mainWindow = await this.app.firstWindow();
         const browserWindow = await this.app.browserWindow(mainWindow);
         const mainView = this.app.windows().find((window) => window.url().includes('index'));
@@ -128,7 +54,20 @@ describe('renderer/index.html', function desc() {
         dropdownHeight.should.equal(0);
     });
 
-    it('should show only the selected team', async () => {
+    it('MM-T4407 should open the new server prompt after clicking the add button', async () => {
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+        await mainWindow.click('.TeamDropdownButton');
+        await dropdownView.click('.TeamDropdown__button.addServer');
+
+        const newServerModal = await this.app.waitForEvent('window', {
+            predicate: (window) => window.url().includes('newServer'),
+        });
+        const modalTitle = await newServerModal.innerText('#newServerModal .modal-title');
+        modalTitle.should.equal('Add Server');
+    });
+
+    it('MM-T4408 should show only the selected team', async () => {
         const mainWindow = await this.app.firstWindow();
         const browserWindow = await this.app.browserWindow(mainWindow);
 
@@ -146,18 +85,5 @@ describe('renderer/index.html', function desc() {
         firstViewIsAttached.should.be.false;
         secondViewIsAttached = await browserWindow.evaluate((window) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === 'https://github.com/')));
         secondViewIsAttached.should.be.true;
-    });
-
-    it('should open the new server prompt after clicking the add button', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
-        await mainWindow.click('.TeamDropdownButton');
-        await dropdownView.click('.TeamDropdown__button.addServer');
-
-        const newServerModal = await this.app.waitForEvent('window', {
-            predicate: (window) => window.url().includes('newServer'),
-        });
-        const modalTitle = await newServerModal.innerText('#newServerModal .modal-title');
-        modalTitle.should.equal('Add Server');
     });
 });

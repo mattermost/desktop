@@ -4,8 +4,10 @@
 
 const fs = require('fs');
 
-const env = require('../modules/environment');
-const {asyncSleep} = require('../modules/utils');
+const robot = require('robotjs');
+
+const env = require('../../modules/environment');
+const {asyncSleep} = require('../../modules/utils');
 
 describe('mattermost', function desc() {
     this.timeout(30000);
@@ -38,6 +40,28 @@ describe('mattermost', function desc() {
             name: 'github',
             url: 'https://github.com/',
             order: 1,
+            tabs: [
+                {
+                    name: 'TAB_MESSAGING',
+                    order: 0,
+                    isOpen: true,
+                },
+                {
+                    name: 'TAB_FOCALBOARD',
+                    order: 1,
+                    isOpen: false,
+                },
+                {
+                    name: 'TAB_PLAYBOOKS',
+                    order: 2,
+                    isOpen: false,
+                },
+            ],
+            lastActiveTab: 0,
+        }, {
+            name: 'google',
+            url: 'https://google.com/',
+            order: 2,
             tabs: [
                 {
                     name: 'TAB_MESSAGING',
@@ -90,17 +114,22 @@ describe('mattermost', function desc() {
         }
     });
 
-    // TODO: enable when we have a server to test against
-    it.skip('Control+F should focus the search bar in Mattermost', async () => {
-        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
-        const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
-        await env.loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#searchBox');
-        await firstServer.press('body', process.platform === 'darwin' ? 'Meta+F' : 'Control+F');
-        const isFocused = await firstServer.$eval('#searchBox', (el) => el === document.activeElement);
-        isFocused.should.be.true;
-        const text = await firstServer.inputValue('#searchBox');
-        text.should.include('in:');
+    it('MM-T826 should switch to servers when keyboard shortcuts are pressed', async () => {
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+
+        let dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+        dropdownButtonText.should.equal('example');
+
+        robot.keyTap('2', ['control', 'shift']);
+        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+        dropdownButtonText.should.equal('github');
+
+        robot.keyTap('3', ['control', 'shift']);
+        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+        dropdownButtonText.should.equal('github');
+
+        robot.keyTap('1', ['control', 'shift']);
+        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+        dropdownButtonText.should.equal('example');
     });
 });
