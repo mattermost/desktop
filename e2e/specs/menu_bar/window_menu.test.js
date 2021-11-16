@@ -13,89 +13,33 @@ describe('mattermost', function desc() {
     this.timeout(30000);
 
     const config = {
-        version: 3,
-        teams: [{
-            name: 'example',
-            url: env.mattermostURL,
-            order: 0,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                    isOpen: false,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                    isOpen: false,
-                },
-            ],
-            lastActiveTab: 0,
-        }, {
-            name: 'github',
-            url: 'https://github.com/',
-            order: 1,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                    isOpen: false,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                    isOpen: false,
-                },
-            ],
-            lastActiveTab: 0,
-        }, {
-            name: 'google',
-            url: 'https://google.com/',
-            order: 2,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                    isOpen: false,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                    isOpen: false,
-                },
-            ],
-            lastActiveTab: 0,
-        }],
-        showTrayIcon: false,
-        trayIconTheme: 'light',
-        minimizeToTray: false,
-        notifications: {
-            flashWindow: 0,
-            bounceIcon: false,
-            bounceIconType: 'informational',
-        },
-        showUnreadBadge: true,
-        useSpellChecker: true,
-        enableHardwareAcceleration: true,
-        autostart: true,
-        darkMode: false,
-        lastActiveTeam: 0,
-        spellCheckerLocales: [],
+        ...env.demoConfig,
+        teams: [
+            ...env.demoConfig.teams,
+            {
+                name: 'google',
+                url: 'https://google.com/',
+                order: 2,
+                tabs: [
+                    {
+                        name: 'TAB_MESSAGING',
+                        order: 0,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_FOCALBOARD',
+                        order: 1,
+                        isOpen: false,
+                    },
+                    {
+                        name: 'TAB_PLAYBOOKS',
+                        order: 2,
+                        isOpen: false,
+                    },
+                ],
+                lastActiveTab: 0,
+            },
+        ],
     };
 
     beforeEach(async () => {
@@ -126,7 +70,7 @@ describe('mattermost', function desc() {
 
         robot.keyTap('3', ['control', 'shift']);
         dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
-        dropdownButtonText.should.equal('github');
+        dropdownButtonText.should.equal('google');
 
         robot.keyTap('1', ['control', 'shift']);
         dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
