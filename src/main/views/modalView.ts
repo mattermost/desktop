@@ -62,13 +62,17 @@ export class ModalView<T, T2> {
         this.windowAttached = win || this.window;
 
         this.windowAttached.addBrowserView(this.view);
-        this.view.setBounds(getWindowBoundaries(this.windowAttached));
-        this.view.setAutoResize({
-            height: true,
-            width: true,
-            horizontal: true,
-            vertical: true,
-        });
+
+        // Linux sometimes doesn't have the bound initialized correctly initially, so we wait to set them
+        const setBoundsFunction = () => {
+            this.view.setBounds(getWindowBoundaries(this.windowAttached!));
+        };
+        if (process.platform === 'linux') {
+            setTimeout(setBoundsFunction, 10);
+        } else {
+            setBoundsFunction();
+        }
+        
         this.status = Status.SHOWING;
         if (this.view.webContents.isLoading()) {
             this.view.webContents.once('did-finish-load', () => {

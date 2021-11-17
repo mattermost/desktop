@@ -103,3 +103,5 @@ export const GET_AVAILABLE_SPELL_CHECKER_LANGUAGES = 'get-available-spell-checke
 
 export const GET_VIEW_NAME = 'get-view-name';
 export const GET_VIEW_WEBCONTENTS_ID = 'get-view-webcontents-id';
+
+export const RESIZE_MODAL = 'resize-modal';

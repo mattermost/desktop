@@ -20,6 +20,7 @@ import {
     APP_LOGGED_IN,
     GET_VIEW_NAME,
     GET_VIEW_WEBCONTENTS_ID,
+    RESIZE_MODAL,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 
@@ -179,6 +180,7 @@ function handleResizeMainWindow() {
         if (currentView) {
             currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, !(urlUtils.isTeamUrl(currentView.tab.url, currentView.view.webContents.getURL()) || urlUtils.isAdminUrl(currentView.tab.url, currentView.view.webContents.getURL()))));
         }
+        ipcMain.emit(RESIZE_MODAL, null, bounds);
     };
 
     // Another workaround since the window doesn't update properly under Linux for some reason
