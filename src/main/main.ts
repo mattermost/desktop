@@ -554,7 +554,7 @@ function handleNewServerModal() {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = addModal<unknown, Team>('newServer', html, modalPreload, {}, mainWindow);
+    const modalPromise = addModal<unknown, Team>('newServer', html, modalPreload, {}, mainWindow, true);
     if (modalPromise) {
         modalPromise.then((data) => {
             const teams = config.teams;

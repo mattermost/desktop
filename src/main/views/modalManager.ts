@@ -6,7 +6,16 @@ import {IpcMainEvent, IpcMainInvokeEvent} from 'electron/main';
 
 import {CombinedConfig} from 'types/config';
 
-import {RETRIEVE_MODAL_INFO, MODAL_CANCEL, MODAL_RESULT, MODAL_OPEN, MODAL_CLOSE, EMIT_CONFIGURATION, DARK_MODE_CHANGE} from 'common/communication';
+import {
+    RETRIEVE_MODAL_INFO,
+    MODAL_CANCEL,
+    MODAL_RESULT,
+    MODAL_OPEN,
+    MODAL_CLOSE,
+    EMIT_CONFIGURATION,
+    DARK_MODE_CHANGE,
+    GET_MODAL_UNCLOSEABLE,
+} from 'common/communication';
 
 import * as WindowManager from '../windows/windowManager';
 
@@ -16,11 +25,11 @@ let modalQueue: Array<ModalView<any, any>> = [];
 const modalPromises: Map<string, Promise<any>> = new Map();
 
 // TODO: add a queue/add differentiation, in case we need to put a modal first in line
-export function addModal<T, T2>(key: string, html: string, preload: string, data: T, win: BrowserWindow) {
+export function addModal<T, T2>(key: string, html: string, preload: string, data: T, win: BrowserWindow, uncloseable: boolean) {
     const foundModal = modalQueue.find((modal) => modal.key === key);
     if (!foundModal) {
         const modalPromise = new Promise((resolve: (value: T2) => void, reject) => {
-            const mv = new ModalView<T, T2>(key, html, preload, data, resolve, reject, win);
+            const mv = new ModalView<T, T2>(key, html, preload, data, resolve, reject, win, uncloseable);
             modalQueue.push(mv);
         });
 
@@ -34,6 +43,7 @@ export function addModal<T, T2>(key: string, html: string, preload: string, data
     return modalPromises.get(key) as Promise<T2>;
 }
 
+ipcMain.handle(GET_MODAL_UNCLOSEABLE, handleGetModalUncloseable);
 ipcMain.handle(RETRIEVE_MODAL_INFO, handleInfoRequest);
 ipcMain.on(MODAL_RESULT, handleModalResult);
 ipcMain.on(MODAL_CANCEL, handleModalCancel);
@@ -118,3 +128,9 @@ ipcMain.on(EMIT_CONFIGURATION, (event: IpcMainEvent, config: CombinedConfig) => 
         modal.view.webContents.send(DARK_MODE_CHANGE, config.darkMode);
     });
 });
+
+function handleGetModalUncloseable(event: IpcMainInvokeEvent) {
+    const modalView = modalQueue.find((modal) => modal.view.webContents.id === event.sender.id);
+    return modalView?.uncloseable;
+}
+
