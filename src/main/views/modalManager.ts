@@ -25,7 +25,7 @@ let modalQueue: Array<ModalView<any, any>> = [];
 const modalPromises: Map<string, Promise<any>> = new Map();
 
 // TODO: add a queue/add differentiation, in case we need to put a modal first in line
-export function addModal<T, T2>(key: string, html: string, preload: string, data: T, win: BrowserWindow, uncloseable: boolean) {
+export function addModal<T, T2>(key: string, html: string, preload: string, data: T, win: BrowserWindow, uncloseable = false) {
     const foundModal = modalQueue.find((modal) => modal.key === key);
     if (!foundModal) {
         const modalPromise = new Promise((resolve: (value: T2) => void, reject) => {
