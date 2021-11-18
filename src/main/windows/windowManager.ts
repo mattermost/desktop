@@ -20,6 +20,7 @@ import {
     APP_LOGGED_IN,
     GET_VIEW_NAME,
     GET_VIEW_WEBCONTENTS_ID,
+    APP_LOGGED_OUT,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 
@@ -56,6 +57,7 @@ ipcMain.on(REACT_APP_INITIALIZED, handleReactAppInitialized);
 ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, handleLoadingScreenAnimationFinished);
 ipcMain.on(BROWSER_HISTORY_PUSH, handleBrowserHistoryPush);
 ipcMain.on(APP_LOGGED_IN, handleAppLoggedIn);
+ipcMain.on(APP_LOGGED_OUT, handleAppLoggedOut);
 ipcMain.handle(GET_VIEW_NAME, handleGetViewName);
 ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, handleGetWebContentsId);
 
@@ -570,10 +572,12 @@ function handleBrowserHistoryPush(e: IpcMainEvent, viewName: string, pathName: s
     if (status.viewManager?.closedViews.has(redirectedViewName)) {
         status.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${pathName}`);
     }
-    const redirectedView = status.viewManager?.views.get(redirectedViewName) || currentView;
-    if (redirectedView !== currentView && redirectedView?.tab.server.name === status.currentServerName) {
+    let redirectedView = status.viewManager?.views.get(redirectedViewName) || currentView;
+    if (redirectedView !== currentView && redirectedView?.tab.server.name === status.currentServerName && redirectedView?.isLoggedIn) {
         log.info('redirecting to a new view', redirectedView?.name || viewName);
         status.viewManager?.showByName(redirectedView?.name || viewName);
+    } else {
+        redirectedView = currentView;
     }
 
     // Special case check for Channels to not force a redirect to "/", causing a refresh
@@ -587,7 +591,18 @@ export function getCurrentTeamName() {
 }
 
 function handleAppLoggedIn(event: IpcMainEvent, viewName: string) {
-    status.viewManager?.reloadViewIfNeeded(viewName);
+    const view = status.viewManager?.views.get(viewName);
+    if (view) {
+        view.isLoggedIn = true;
+        status.viewManager?.reloadViewIfNeeded(viewName);
+    }
+}
+
+function handleAppLoggedOut(event: IpcMainEvent, viewName: string) {
+    const view = status.viewManager?.views.get(viewName);
+    if (view) {
+        view.isLoggedIn = false;
+    }
 }
 
 function handleGetViewName(event: IpcMainInvokeEvent) {
