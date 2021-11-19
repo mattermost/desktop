@@ -70,5 +70,6 @@ export class CertificateManager {
                 log.error(`There was a problem using the selected certificate: ${e}`);
             }
         }
+        this.certificateRequestCallbackMap.delete(server);
     }
 }
