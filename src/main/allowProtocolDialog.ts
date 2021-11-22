@@ -16,76 +16,81 @@ import * as Validator from './Validator';
 import {getMainWindow} from './windows/windowManager';
 
 const allowedProtocolFile = path.resolve(app.getPath('userData'), 'allowedProtocols.json');
-let allowedProtocols: string[] = [];
 
-function addScheme(scheme: string) {
-    const proto = `${scheme}:`;
-    if (!allowedProtocols.includes(proto)) {
-        allowedProtocols.push(proto);
+export class AllowProtocolDialog {
+    allowedProtocols: string[];
+
+    constructor() {
+        this.allowedProtocols = [];
     }
-}
 
-function init() {
-    fs.readFile(allowedProtocolFile, 'utf-8', (err, data) => {
-        if (!err) {
-            allowedProtocols = JSON.parse(data);
-            allowedProtocols = Validator.validateAllowedProtocols(allowedProtocols) || [];
+    init = () => {
+        fs.readFile(allowedProtocolFile, 'utf-8', (err, data) => {
+            if (!err) {
+                this.allowedProtocols = JSON.parse(data);
+                this.allowedProtocols = Validator.validateAllowedProtocols(this.allowedProtocols) || [];
+            }
+            this.addScheme('http');
+            this.addScheme('https');
+            protocols.forEach((protocol) => {
+                if (protocol.schemes && protocol.schemes.length > 0) {
+                    protocol.schemes.forEach(this.addScheme);
+                }
+            });
+        });
+    }
+
+    addScheme = (scheme: string) => {
+        const proto = `${scheme}:`;
+        if (!this.allowedProtocols.includes(proto)) {
+            this.allowedProtocols.push(proto);
         }
-        addScheme('http');
-        addScheme('https');
-        protocols.forEach((protocol) => {
-            if (protocol.schemes && protocol.schemes.length > 0) {
-                protocol.schemes.forEach(addScheme);
+    }
+
+    handleDialogEvent = (protocol: string, URL: string) => {
+        if (this.allowedProtocols.indexOf(protocol) !== -1) {
+            shell.openExternal(URL);
+            return;
+        }
+        const mainWindow = getMainWindow();
+        if (!mainWindow) {
+            return;
+        }
+        dialog.showMessageBox(mainWindow, {
+            title: 'Non http(s) protocol',
+            message: `${protocol} link requires an external application.`,
+            detail: `The requested link is ${URL} . Do you want to continue?`,
+            defaultId: 2,
+            type: 'warning',
+            buttons: [
+                'Yes',
+                `Yes (Save ${protocol} as allowed)`,
+                'No',
+            ],
+            cancelId: 2,
+            noLink: true,
+        }).then(({response}) => {
+            switch (response) {
+            case 1: {
+                this.allowedProtocols.push(protocol);
+                function handleError(err: NodeJS.ErrnoException | null) {
+                    if (err) {
+                        log.error(err);
+                    }
+                }
+                fs.writeFile(allowedProtocolFile, JSON.stringify(this.allowedProtocols), handleError);
+                shell.openExternal(URL);
+                break;
+            }
+            case 0:
+                shell.openExternal(URL);
+                break;
+            default:
+                break;
             }
         });
-    });
+    }
 }
 
-function handleDialogEvent(protocol: string, URL: string) {
-    if (allowedProtocols.indexOf(protocol) !== -1) {
-        shell.openExternal(URL);
-        return;
-    }
-    const mainWindow = getMainWindow();
-    if (!mainWindow) {
-        return;
-    }
-    dialog.showMessageBox(mainWindow, {
-        title: 'Non http(s) protocol',
-        message: `${protocol} link requires an external application.`,
-        detail: `The requested link is ${URL} . Do you want to continue?`,
-        defaultId: 2,
-        type: 'warning',
-        buttons: [
-            'Yes',
-            `Yes (Save ${protocol} as allowed)`,
-            'No',
-        ],
-        cancelId: 2,
-        noLink: true,
-    }).then(({response}) => {
-        switch (response) {
-        case 1: {
-            allowedProtocols.push(protocol);
-            function handleError(err: NodeJS.ErrnoException | null) {
-                if (err) {
-                    log.error(err);
-                }
-            }
-            fs.writeFile(allowedProtocolFile, JSON.stringify(allowedProtocols), handleError);
-            shell.openExternal(URL);
-            break;
-        }
-        case 0:
-            shell.openExternal(URL);
-            break;
-        default:
-            break;
-        }
-    });
-}
-
-export default {
-    init,
-    handleDialogEvent,
-};
+const allowProtocolDialog = new AllowProtocolDialog();
+export default allowProtocolDialog;
