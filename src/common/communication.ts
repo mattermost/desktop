@@ -98,5 +98,6 @@ export const SEND_DROPDOWN_MENU_SIZE = 'send-dropdown-menu-size';
 
 export const BROWSER_HISTORY_PUSH = 'browser-history-push';
 export const APP_LOGGED_IN = 'app-logged-in';
+export const APP_LOGGED_OUT = 'app-logged-out';
 
 export const GET_AVAILABLE_SPELL_CHECKER_LANGUAGES = 'get-available-spell-checker-languages';

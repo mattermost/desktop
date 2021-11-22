@@ -23,6 +23,7 @@ import {
     CLOSE_TEAMS_DROPDOWN,
     BROWSER_HISTORY_PUSH,
     APP_LOGGED_IN,
+    APP_LOGGED_OUT,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -246,6 +247,9 @@ ipcRenderer.on(BROWSER_HISTORY_PUSH, (event, pathName) => {
 window.addEventListener('storage', (e) => {
     if (e.key === '__login__' && e.storageArea === localStorage && e.newValue) {
         ipcRenderer.send(APP_LOGGED_IN, viewName);
+    }
+    if (e.key === '__logout__' && e.storageArea === localStorage && e.newValue) {
+        ipcRenderer.send(APP_LOGGED_OUT, viewName);
     }
 });
 

@@ -47,6 +47,7 @@ export class MattermostView extends EventEmitter {
     window: BrowserWindow;
     view: BrowserView;
     isVisible: boolean;
+    isLoggedIn: boolean;
     options: BrowserViewConstructorOptions;
     serverInfo: ServerInfo;
 
@@ -87,6 +88,7 @@ export class MattermostView extends EventEmitter {
             ...options.webPreferences,
         };
         this.isVisible = false;
+        this.isLoggedIn = false;
         this.view = new BrowserView(this.options);
         this.resetLoadingStatus();
 
