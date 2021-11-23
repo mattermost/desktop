@@ -5,7 +5,7 @@
 
 const fs = require('fs');
 
-const env = require('../modules/environment');
+const env = require('../../modules/environment');
 
 describe('window', function desc() {
     this.timeout(30000);
@@ -24,7 +24,7 @@ describe('window', function desc() {
         }
     });
 
-    it.skip('should restore window bounds', async () => {
+    it.skip('MM-T4403_1 should restore window bounds', async () => {
         // TODO: Still fails in CircleCI
         // bounds seems to be incorrectly calculated in some environments
         // - Windows 10: OK
@@ -39,7 +39,7 @@ describe('window', function desc() {
         await this.app.close();
     });
 
-    it('should NOT restore window bounds if x is located on outside of viewarea', async () => {
+    it('MM-T4403_2 should NOT restore window bounds if x is located on outside of viewarea', async () => {
         // bounds seems to be incorrectly calculated in some environments (e.g. CircleCI)
         // - Windows 10: OK
         // - CircleCI: NG
@@ -52,7 +52,7 @@ describe('window', function desc() {
         await this.app.close();
     });
 
-    it('should NOT restore window bounds if y is located on outside of viewarea', async () => {
+    it('MM-T4403_3 should NOT restore window bounds if y is located on outside of viewarea', async () => {
         // bounds seems to be incorrectly calculated in some environments (e.g. CircleCI)
         // - Windows 10: OK
         // - CircleCI: NG

@@ -29,12 +29,77 @@ const configFilePath = path.join(userDataDir, 'config.json');
 const boundsInfoPath = path.join(userDataDir, 'bounds-info.json');
 const mattermostURL = 'http://example.com/';
 
+const demoConfig = {
+    version: 3,
+    teams: [{
+        name: 'example',
+        url: mattermostURL,
+        order: 0,
+        tabs: [
+            {
+                name: 'TAB_MESSAGING',
+                order: 0,
+                isOpen: true,
+            },
+            {
+                name: 'TAB_FOCALBOARD',
+                order: 1,
+                isOpen: true,
+            },
+            {
+                name: 'TAB_PLAYBOOKS',
+                order: 2,
+                isOpen: true,
+            },
+        ],
+        lastActiveTab: 0,
+    }, {
+        name: 'github',
+        url: 'https://github.com/',
+        order: 1,
+        tabs: [
+            {
+                name: 'TAB_MESSAGING',
+                order: 0,
+                isOpen: true,
+            },
+            {
+                name: 'TAB_FOCALBOARD',
+                order: 1,
+                isOpen: true,
+            },
+            {
+                name: 'TAB_PLAYBOOKS',
+                order: 2,
+                isOpen: true,
+            },
+        ],
+        lastActiveTab: 0,
+    }],
+    showTrayIcon: false,
+    trayIconTheme: 'light',
+    minimizeToTray: false,
+    notifications: {
+        flashWindow: 0,
+        bounceIcon: false,
+        bounceIconType: 'informational',
+    },
+    showUnreadBadge: true,
+    useSpellChecker: true,
+    enableHardwareAcceleration: true,
+    autostart: true,
+    darkMode: false,
+    lastActiveTeam: 0,
+    spellCheckerLocales: [],
+};
+
 module.exports = {
     sourceRootDir,
     configFilePath,
     userDataDir,
     boundsInfoPath,
     mattermostURL,
+    demoConfig,
 
     cleanTestConfig() {
         [configFilePath, boundsInfoPath].forEach((file) => {
