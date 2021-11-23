@@ -3,6 +3,7 @@
 'use strict';
 
 import {spawn} from 'child_process';
+
 import path from 'path';
 
 import {app, dialog} from 'electron';
@@ -70,7 +71,7 @@ describe('main/CriticalErrorHandler', () => {
         it('should throw error if app is not ready', () => {
             app.isReady.mockImplementation(() => false);
             expect(() => {
-                criticalErrorHandler.processUncaughtExceptionHandler(new Error('test'))
+                criticalErrorHandler.processUncaughtExceptionHandler(new Error('test'));
             }).toThrow(Error);
             expect(dialog.showMessageBox).not.toBeCalled();
         });
