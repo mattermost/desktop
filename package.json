@@ -70,7 +70,9 @@
       "jsx",
       "json"
     ],
-    "testMatch": ["**/src/**/*.test.js"]
+    "globals": {
+      "__HASH_VERSION__": "5.0.0"
+    }
   },
   "devDependencies": {
     "@babel/cli": "^7.14.5",
