@@ -59,6 +59,7 @@
     "check-types": "tsc"
   },
   "jest": {
+    "clearMocks": true,
     "moduleDirectories": [
       "",
       "node_modules"
@@ -70,6 +71,7 @@
       "jsx",
       "json"
     ],
+    "testMatch": ["**/src/**/*.test.js"],
     "globals": {
       "__HASH_VERSION__": "5.0.0"
     }
