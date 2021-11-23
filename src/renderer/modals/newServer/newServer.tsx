@@ -43,6 +43,10 @@ const NewServerModalWrapper: React.FC = () => {
     useEffect(() => {
         window.addEventListener('message', handleNewServerMessage);
         window.postMessage({type: GET_MODAL_UNCLOSEABLE}, window.location.href);
+
+        return () => {
+            window.removeEventListener('message', handleNewServerMessage);
+        };
     }, []);
 
     return (
