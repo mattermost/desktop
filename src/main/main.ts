@@ -58,7 +58,7 @@ import CriticalErrorHandler from './CriticalErrorHandler';
 import upgradeAutoLaunch from './autoLaunch';
 import CertificateStore from './certificateStore';
 import TrustedOriginsStore from './trustedOrigins';
-import appMenu from './menus/app';
+import {createMenu as createAppMenu} from './menus/app';
 import trayMenu from './menus/tray';
 import allowProtocolDialog from './allowProtocolDialog';
 import AppVersionManager from './AppVersionManager';
@@ -863,7 +863,7 @@ function handleCloseAppMenu() {
 }
 
 function handleUpdateMenuEvent(event: IpcMainEvent, menuConfig: Config) {
-    const aMenu = appMenu.createMenu(menuConfig);
+    const aMenu = createAppMenu(menuConfig);
     Menu.setApplicationMenu(aMenu);
     aMenu.addListener('menu-will-close', handleCloseAppMenu);
 
