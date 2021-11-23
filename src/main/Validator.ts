@@ -5,7 +5,7 @@ import log from 'electron-log';
 import Joi from '@hapi/joi';
 
 import {Args} from 'types/args';
-import {ConfigV0, ConfigV1, ConfigV2, ConfigV3} from 'types/config';
+import {ConfigV0, ConfigV1, ConfigV2, ConfigV3, Team, TeamWithTabs} from 'types/config';
 import {SavedWindowState} from 'types/mainWindow';
 import {AppState} from 'types/appState';
 import {ComparableCertificate} from 'types/certificate';
@@ -168,27 +168,6 @@ export function validateV0ConfigData(data: ConfigV0) {
     return validateAgainstSchema(data, configDataSchemaV0);
 }
 
-// validate v.1 config.json
-export function validateV1ConfigData(data: ConfigV1) {
-    if (Array.isArray(data.teams) && data.teams.length) {
-    // first replace possible backslashes with forward slashes
-        let teams = data.teams.map(({name, url}) => {
-            let updatedURL = url;
-            if (updatedURL.includes('\\')) {
-                updatedURL = updatedURL.toLowerCase().replace(/\\/gi, '/');
-            }
-            return {name, url: updatedURL};
-        });
-
-        // next filter out urls that are still invalid so all is not lost
-        teams = teams.filter(({url}) => urlUtils.isValidURL(url));
-
-        // replace original teams
-        data.teams = teams;
-    }
-    return validateAgainstSchema(data, configDataSchemaV1);
-}
-
 function cleanURL(url: string): string {
     let updatedURL = url;
     if (updatedURL.includes('\\')) {
@@ -197,22 +176,45 @@ function cleanURL(url: string): string {
     return updatedURL;
 }
 
-export function validateV2ConfigData(data: ConfigV2) {
-    if (Array.isArray(data.teams) && data.teams.length) {
-        // first replace possible backslashes with forward slashes
-        let teams = data.teams.map((team) => {
+function cleanTeam<T extends {name: string; url: string}>(team: T) {
+    return {
+        ...team,
+        url: cleanURL(team.url),
+    };
+}
+
+function cleanTeamWithTabs(team: TeamWithTabs) {
+    return {
+        ...cleanTeam(team),
+        tabs: team.tabs.map((tab) => {
             return {
-                ...team,
-                url: cleanURL(team.url),
+                ...tab,
+                isOpen: tab.name === TAB_MESSAGING ? true : tab.isOpen,
             };
-        });
+        }),
+    };
+}
+
+function cleanTeams<T extends {name: string; url: string}>(teams: T[], func: (team: T) => T) {
+    let newTeams = teams;
+    if (Array.isArray(newTeams) && newTeams.length) {
+        // first replace possible backslashes with forward slashes
+        newTeams = newTeams.map((team) => func(team));
 
         // next filter out urls that are still invalid so all is not lost
-        teams = teams.filter(({url}) => urlUtils.isValidURL(url));
-
-        // replace original teams
-        data.teams = teams;
+        newTeams = newTeams.filter(({url}) => urlUtils.isValidURL(url));
     }
+    return newTeams;
+}
+
+// validate v.1 config.json
+export function validateV1ConfigData(data: ConfigV1) {
+    data.teams = cleanTeams(data.teams, cleanTeam);
+    return validateAgainstSchema(data, configDataSchemaV1);
+}
+
+export function validateV2ConfigData(data: ConfigV2) {
+    data.teams = cleanTeams(data.teams, cleanTeam);
     if (data.spellCheckerURL && !urlUtils.isValidURL(data.spellCheckerURL)) {
         log.error('Invalid download location for spellchecker dictionary, removing from config');
         delete data.spellCheckerURL;
@@ -221,29 +223,7 @@ export function validateV2ConfigData(data: ConfigV2) {
 }
 
 export function validateV3ConfigData(data: ConfigV3) {
-    if (Array.isArray(data.teams) && data.teams.length) {
-    // first replace possible backslashes with forward slashes
-        let teams = data.teams.map((team) => {
-            return {
-                ...team,
-                url: cleanURL(team.url),
-
-                // Force messaging to stay open regardless of user config
-                tabs: team.tabs.map((tab) => {
-                    return {
-                        ...tab,
-                        isOpen: tab.name === TAB_MESSAGING ? true : tab.isOpen,
-                    };
-                }),
-            };
-        });
-
-        // next filter out urls that are still invalid so all is not lost
-        teams = teams.filter(({url}) => urlUtils.isValidURL(url));
-
-        // replace original teams
-        data.teams = teams;
-    }
+    data.teams = cleanTeams(data.teams, cleanTeamWithTabs);
     if (data.spellCheckerURL && !urlUtils.isValidURL(data.spellCheckerURL)) {
         log.error('Invalid download location for spellchecker dictionary, removing from config');
         delete data.spellCheckerURL;
