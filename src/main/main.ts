@@ -59,7 +59,7 @@ import upgradeAutoLaunch from './autoLaunch';
 import CertificateStore from './certificateStore';
 import TrustedOriginsStore from './trustedOrigins';
 import {createMenu as createAppMenu} from './menus/app';
-import trayMenu from './menus/tray';
+import {createMenu as createTrayMenu} from './menus/tray';
 import allowProtocolDialog from './allowProtocolDialog';
 import AppVersionManager from './AppVersionManager';
 import initCookieManager from './cookieManager';
@@ -869,7 +869,7 @@ function handleUpdateMenuEvent(event: IpcMainEvent, menuConfig: Config) {
 
     // set up context menu for tray icon
     if (shouldShowTrayIcon()) {
-        const tMenu = trayMenu.createMenu(menuConfig.data!);
+        const tMenu = createTrayMenu(menuConfig.data!);
         setTrayMenu(tMenu);
     }
 }
