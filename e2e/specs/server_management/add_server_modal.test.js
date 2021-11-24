@@ -39,11 +39,6 @@ describe('Add Server Modal', function desc() {
 
     let newServerView;
 
-    it('MM-T4387 should open the new server modal', async () => {
-        const existing = Boolean(await this.app.windows().find((window) => window.url().includes('newServer')));
-        existing.should.be.true;
-    });
-
     it('MM-T1312 should focus the first text input', async () => {
         const isFocused = await newServerView.$eval('#teamNameInput', (el) => el === document.activeElement);
         isFocused.should.be.true;
