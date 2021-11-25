@@ -4,6 +4,8 @@
 
 'use strict';
 
+const robot = require('robotjs');
+
 const env = require('../../modules/environment');
 
 describe('startup/app', function desc() {
@@ -25,6 +27,17 @@ describe('startup/app', function desc() {
         const newServerModal = this.app.windows().find((window) => window.url().includes('newServer'));
         const modalTitle = await newServerModal.innerText('#newServerModal .modal-title');
         modalTitle.should.equal('Add Server');
+    });
+
+    it('MM-T4419 should not allow the user to close the new server modal when no servers exist', async () => {
+        const newServerModal = this.app.windows().find((window) => window.url().includes('newServer'));
+
+        const existing = await newServerModal.isVisible('#cancelNewServerModal');
+        existing.should.be.false;
+
+        robot.keyTap('escape');
+        const existingModal = this.app.windows().find((window) => window.url().includes('newServer'));
+        existingModal.should.not.be.null;
     });
 
     it('MM-T4399_2 should show no servers configured in dropdown when no servers exist', async () => {
