@@ -58,8 +58,8 @@ import CriticalErrorHandler from './CriticalErrorHandler';
 import upgradeAutoLaunch from './autoLaunch';
 import CertificateStore from './certificateStore';
 import TrustedOriginsStore from './trustedOrigins';
-import appMenu from './menus/app';
-import trayMenu from './menus/tray';
+import {createMenu as createAppMenu} from './menus/app';
+import {createMenu as createTrayMenu} from './menus/tray';
 import allowProtocolDialog from './allowProtocolDialog';
 import AppVersionManager from './AppVersionManager';
 import initCookieManager from './cookieManager';
@@ -863,13 +863,13 @@ function handleCloseAppMenu() {
 }
 
 function handleUpdateMenuEvent(event: IpcMainEvent, menuConfig: Config) {
-    const aMenu = appMenu.createMenu(menuConfig);
+    const aMenu = createAppMenu(menuConfig);
     Menu.setApplicationMenu(aMenu);
     aMenu.addListener('menu-will-close', handleCloseAppMenu);
 
     // set up context menu for tray icon
     if (shouldShowTrayIcon()) {
-        const tMenu = trayMenu.createMenu(menuConfig.data!);
+        const tMenu = createTrayMenu(menuConfig.data!);
         setTrayMenu(tMenu);
     }
 }
