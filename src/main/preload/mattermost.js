@@ -6,7 +6,7 @@
 
 /* eslint-disable no-magic-numbers */
 
-import {contextBridge, ipcRenderer, webFrame} from 'electron';
+import {contextBridge, ipcRenderer, webFrame, desktopCapturer} from 'electron';
 
 // I've filed an issue in electron-log https://github.com/megahertz/electron-log/issues/267
 // we'll be able to use it again if there is a workaround for the 'os' import
@@ -263,3 +263,17 @@ window.addEventListener('storage', (e) => {
 });
 
 /* eslint-enable no-magic-numbers */
+
+contextBridge.exposeInMainWorld('desktopCapturer', {
+    getSources: async (options) => {
+        const sources = await desktopCapturer.getSources(options);
+        return sources.map((source) => {
+            return {
+                id: source.id,
+                name: source.name,
+                thumbnailURL: source.thumbnail.toDataURL(),
+            };
+        });
+    },
+});
+
