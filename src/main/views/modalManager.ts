@@ -21,116 +21,116 @@ import * as WindowManager from '../windows/windowManager';
 
 import {ModalView} from './modalView';
 
-let modalQueue: Array<ModalView<any, any>> = [];
-const modalPromises: Map<string, Promise<any>> = new Map();
+export class ModalManager {
+    modalQueue: Array<ModalView<any, any>>;
+    modalPromises: Map<string, Promise<any>>;
 
-// TODO: add a queue/add differentiation, in case we need to put a modal first in line
-export function addModal<T, T2>(key: string, html: string, preload: string, data: T, win: BrowserWindow, uncloseable = false) {
-    const foundModal = modalQueue.find((modal) => modal.key === key);
-    if (!foundModal) {
-        const modalPromise = new Promise((resolve: (value: T2) => void, reject) => {
-            const mv = new ModalView<T, T2>(key, html, preload, data, resolve, reject, win, uncloseable);
-            modalQueue.push(mv);
-        });
+    constructor() {
+        this.modalQueue = [];
+        this.modalPromises = new Map();
 
-        if (modalQueue.length === 1) {
-            showModal();
+        ipcMain.handle(GET_MODAL_UNCLOSEABLE, this.handleGetModalUncloseable);
+        ipcMain.handle(RETRIEVE_MODAL_INFO, this.handleInfoRequest);
+        ipcMain.on(MODAL_RESULT, this.handleModalResult);
+        ipcMain.on(MODAL_CANCEL, this.handleModalCancel);
+
+        ipcMain.on(EMIT_CONFIGURATION, this.handleEmitConfiguration);
+    }
+
+    // TODO: add a queue/add differentiation, in case we need to put a modal first in line
+    addModal = <T, T2>(key: string, html: string, preload: string, data: T, win: BrowserWindow, uncloseable = false) => {
+        const foundModal = this.modalQueue.find((modal) => modal.key === key);
+        if (!foundModal) {
+            const modalPromise = new Promise((resolve: (value: T2) => void, reject) => {
+                const mv = new ModalView<T, T2>(key, html, preload, data, resolve, reject, win, uncloseable);
+                this.modalQueue.push(mv);
+            });
+
+            if (this.modalQueue.length === 1) {
+                this.showModal();
+            }
+
+            this.modalPromises.set(key, modalPromise);
+            return modalPromise;
         }
-
-        modalPromises.set(key, modalPromise);
-        return modalPromise;
+        return this.modalPromises.get(key) as Promise<T2>;
     }
-    return modalPromises.get(key) as Promise<T2>;
-}
 
-ipcMain.handle(GET_MODAL_UNCLOSEABLE, handleGetModalUncloseable);
-ipcMain.handle(RETRIEVE_MODAL_INFO, handleInfoRequest);
-ipcMain.on(MODAL_RESULT, handleModalResult);
-ipcMain.on(MODAL_CANCEL, handleModalCancel);
+    findModalByCaller = (event: IpcMainInvokeEvent) => {
+        if (this.modalQueue.length) {
+            const requestModal = this.modalQueue.find((modal) => {
+                return (modal.view && modal.view.webContents && modal.view.webContents.id === event.sender.id);
+            });
+            return requestModal;
+        }
+        return null;
+    }
 
-function findModalByCaller(event: IpcMainInvokeEvent) {
-    if (modalQueue.length) {
-        const requestModal = modalQueue.find((modal) => {
-            return (modal.view && modal.view.webContents && modal.view.webContents.id === event.sender.id);
+    handleInfoRequest = (event: IpcMainInvokeEvent) => {
+        const requestModal = this.findModalByCaller(event);
+        if (requestModal) {
+            return requestModal.handleInfoRequest();
+        }
+        return null;
+    }
+
+    showModal = () => {
+        const withDevTools = process.env.MM_DEBUG_MODALS || false;
+        this.modalQueue.forEach((modal, index) => {
+            if (index === 0) {
+                WindowManager.sendToRenderer(MODAL_OPEN);
+                modal.show(undefined, Boolean(withDevTools));
+            } else {
+                WindowManager.sendToRenderer(MODAL_CLOSE);
+                modal.hide();
+            }
         });
-        return requestModal;
     }
-    return null;
-}
 
-function handleInfoRequest(event: IpcMainInvokeEvent) {
-    const requestModal = findModalByCaller(event);
-    if (requestModal) {
-        return requestModal.handleInfoRequest();
-    }
-    return null;
-}
-
-export function showModal() {
-    const withDevTools = process.env.MM_DEBUG_MODALS || false;
-    modalQueue.forEach((modal, index) => {
-        if (index === 0) {
-            WindowManager.sendToRenderer(MODAL_OPEN);
-            modal.show(undefined, Boolean(withDevTools));
+    handleModalFinished = (mode: 'resolve' | 'reject', event: IpcMainEvent, data: unknown) => {
+        const requestModal = this.findModalByCaller(event);
+        if (requestModal) {
+            mode === 'resolve' ? requestModal.resolve(data) : requestModal.reject(data);
+            this.modalPromises.delete(requestModal.key);
+        }
+        this.filterActive();
+        if (this.modalQueue.length) {
+            this.showModal();
         } else {
             WindowManager.sendToRenderer(MODAL_CLOSE);
-            modal.hide();
+            WindowManager.focusBrowserView();
         }
-    });
-}
-
-function handleModalResult(event: IpcMainEvent, data: unknown) {
-    const requestModal = findModalByCaller(event);
-    if (requestModal) {
-        requestModal.resolve(data);
-        modalPromises.delete(requestModal.key);
     }
-    filterActive();
-    if (modalQueue.length) {
-        showModal();
-    } else {
-        WindowManager.sendToRenderer(MODAL_CLOSE);
-        WindowManager.focusBrowserView();
+
+    handleModalResult = (event: IpcMainEvent, data: unknown) => this.handleModalFinished('resolve', event, data);
+
+    handleModalCancel = (event: IpcMainEvent, data: unknown) => this.handleModalFinished('reject', event, data);
+
+    filterActive = () => {
+        this.modalQueue = this.modalQueue.filter((modal) => modal.isActive());
     }
-}
 
-function handleModalCancel(event: IpcMainEvent, data: unknown) {
-    const requestModal = findModalByCaller(event);
-    if (requestModal) {
-        requestModal.reject(data);
-        modalPromises.delete(requestModal.key);
+    isModalDisplayed = () => {
+        return this.modalQueue.some((modal) => modal.isActive());
     }
-    filterActive();
-    if (modalQueue.length) {
-        showModal();
-    } else {
-        WindowManager.sendToRenderer(MODAL_CLOSE);
-        WindowManager.focusBrowserView();
+
+    focusCurrentModal = () => {
+        if (this.isModalDisplayed()) {
+            this.modalQueue[0].view.webContents.focus();
+        }
     }
-}
 
-function filterActive() {
-    modalQueue = modalQueue.filter((modal) => modal.isActive());
-}
+    handleEmitConfiguration = (event: IpcMainEvent, config: CombinedConfig) => {
+        this.modalQueue.forEach((modal) => {
+            modal.view.webContents.send(DARK_MODE_CHANGE, config.darkMode);
+        });
+    }
 
-export function isModalDisplayed() {
-    return modalQueue.some((modal) => modal.isActive());
-}
-
-export function focusCurrentModal() {
-    if (isModalDisplayed()) {
-        modalQueue[0].view.webContents.focus();
+    handleGetModalUncloseable = (event: IpcMainInvokeEvent) => {
+        const modalView = this.modalQueue.find((modal) => modal.view.webContents.id === event.sender.id);
+        return modalView?.uncloseable;
     }
 }
 
-ipcMain.on(EMIT_CONFIGURATION, (event: IpcMainEvent, config: CombinedConfig) => {
-    modalQueue.forEach((modal) => {
-        modal.view.webContents.send(DARK_MODE_CHANGE, config.darkMode);
-    });
-});
-
-function handleGetModalUncloseable(event: IpcMainInvokeEvent) {
-    const modalView = modalQueue.find((modal) => modal.view.webContents.id === event.sender.id);
-    return modalView?.uncloseable;
-}
-
+const modalManager = new ModalManager();
+export default modalManager;

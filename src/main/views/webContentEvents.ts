@@ -39,7 +39,7 @@ function isTrustedPopupWindow(webContents: WebContents) {
 
 const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];
 
-const generateWillNavigate = (getServersFunction: () => TeamWithTabs[]) => {
+export const generateWillNavigate = (getServersFunction: () => TeamWithTabs[]) => {
     return (event: Event & {sender: WebContents}, url: string) => {
         const contentID = event.sender.id;
         const parsedURL = urlUtils.parseURL(url)!;
@@ -56,7 +56,8 @@ const generateWillNavigate = (getServersFunction: () => TeamWithTabs[]) => {
         if (parsedURL.protocol === 'mailto:') {
             return;
         }
-        if (customLogins[contentID].inProgress) {
+        console.log(customLogins);
+        if (customLogins[contentID] && customLogins[contentID].inProgress) {
             return;
         }
 

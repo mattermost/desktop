@@ -29,7 +29,7 @@ import {MattermostServer} from '../../common/servers/MattermostServer';
 import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
 
 import {MattermostView, Status} from './MattermostView';
-import {showModal, isModalDisplayed, focusCurrentModal} from './modalManager';
+import modalManager from './modalManager';
 import {addWebContentsEventListeners} from './webContentEvents';
 
 const URL_VIEW_DURATION = 10 * SECOND;
@@ -200,12 +200,12 @@ export class ViewManager {
         } else {
             log.warn(`Couldn't find a view with name: ${name}`);
         }
-        showModal();
+        modalManager.showModal();
     }
 
     focus = () => {
-        if (isModalDisplayed()) {
-            focusCurrentModal();
+        if (modalManager.isModalDisplayed()) {
+            modalManager.focusCurrentModal();
             return;
         }
 
