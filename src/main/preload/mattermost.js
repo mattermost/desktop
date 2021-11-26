@@ -262,8 +262,6 @@ window.addEventListener('storage', (e) => {
     }
 });
 
-/* eslint-enable no-magic-numbers */
-
 contextBridge.exposeInMainWorld('desktopCapturer', {
     getSources: async (options) => {
         const sources = await desktopCapturer.getSources(options);
@@ -276,4 +274,6 @@ contextBridge.exposeInMainWorld('desktopCapturer', {
         });
     },
 });
+
+/* eslint-enable no-magic-numbers */
 
