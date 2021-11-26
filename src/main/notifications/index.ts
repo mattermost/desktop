@@ -14,7 +14,7 @@ import * as windowManager from '../windows/windowManager';
 import {Mention} from './Mention';
 import {DownloadNotification} from './Download';
 
-const currentNotifications = new Map();
+export const currentNotifications = new Map();
 
 export function displayMention(title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData) {
     if (!Notification.isSupported()) {
