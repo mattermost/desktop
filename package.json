@@ -59,6 +59,7 @@
     "check-types": "tsc"
   },
   "jest": {
+    "clearMocks": true,
     "moduleDirectories": [
       "",
       "node_modules"

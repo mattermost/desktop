@@ -8,13 +8,12 @@ import {PermissionType} from 'types/trustedOrigin';
 import {LoginModalData} from 'types/auth';
 
 import {BASIC_AUTH_PERMISSION} from 'common/permissions';
-
 import urlUtils from 'common/utils/url';
 
-import * as WindowManager from './windows/windowManager';
+import * as WindowManager from 'main/windows/windowManager';
+import {addModal} from 'main/views/modalManager';
+import {getLocalURLString, getLocalPreload} from 'main/utils';
 
-import {addModal} from './views/modalManager';
-import {getLocalURLString, getLocalPreload} from './utils';
 import TrustedOriginsStore from './trustedOrigins';
 
 const modalPreload = getLocalPreload('modalPreload.js');
@@ -43,7 +42,10 @@ export class AuthManager {
 
     handleAppLogin = (event: Event, webContents: WebContents, request: AuthenticationResponseDetails, authInfo: AuthInfo, callback?: (username?: string, password?: string) => void) => {
         event.preventDefault();
-        const parsedURL = new URL(request.url);
+        const parsedURL = urlUtils.parseURL(request.url);
+        if (!parsedURL) {
+            return;
+        }
         const server = urlUtils.getView(parsedURL, this.config.teams);
         if (!server) {
             return;
