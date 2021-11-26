@@ -13,7 +13,7 @@ const MAX_WIN_COUNT = 99;
 
 let showUnreadBadgeSetting: boolean;
 
-function showBadgeWindows(sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean) {
+export function showBadgeWindows(sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean) {
     let description = 'You have no unread messages';
     let text;
     if (sessionExpired) {
@@ -29,7 +29,7 @@ function showBadgeWindows(sessionExpired: boolean, mentionCount: number, showUnr
     WindowManager.setOverlayIcon(text, description, mentionCount > 99);
 }
 
-function showBadgeOSX(sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean) {
+export function showBadgeOSX(sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean) {
     let badge = '';
     if (sessionExpired) {
         badge = '•';

@@ -57,7 +57,8 @@ export default class CriticalErrorHandler {
             defaultId: 0,
         }).then(({response}) => {
             if (response === 0) {
-                throw new Error('BrowserWindow \'unresponsive\' event has been emitted');
+                log.error('BrowserWindow \'unresponsive\' event has been emitted');
+                app.relaunch();
             }
         });
     }

@@ -55,7 +55,6 @@ import {protocols} from '../../electron-builder.json';
 
 import AutoLauncher from './AutoLauncher';
 import CriticalErrorHandler from './CriticalErrorHandler';
-import upgradeAutoLaunch from './autoLaunch';
 import CertificateStore from './certificateStore';
 import TrustedOriginsStore from './trustedOrigins';
 import {createMenu as createAppMenu} from './menus/app';
@@ -91,6 +90,7 @@ const {
 } = electron;
 const criticalErrorHandler = new CriticalErrorHandler();
 const userActivityMonitor = new UserActivityMonitor();
+const autoLauncher = new AutoLauncher();
 const certificateErrorCallbacks = new Map();
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -281,8 +281,7 @@ function handleConfigUpdate(newConfig: CombinedConfig) {
         return;
     }
     if (process.platform === 'win32' || process.platform === 'linux') {
-        const appLauncher = new AutoLauncher();
-        const autoStartTask = config.autostart ? appLauncher.enable() : appLauncher.disable();
+        const autoStartTask = config.autostart ? autoLauncher.enable() : autoLauncher.disable();
         autoStartTask.then(() => {
             log.info('config.autostart has been configured:', newConfig.autostart);
         }).catch((err) => {
@@ -684,7 +683,7 @@ function initializeAfterAppReady() {
     appVersion.lastAppVersion = app.getVersion();
 
     if (!global.isDev) {
-        upgradeAutoLaunch();
+        autoLauncher.upgradeAutoLaunch();
     }
 
     if (global.isDev) {

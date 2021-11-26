@@ -2,7 +2,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, BrowserWindow, ContextMenuParams, Event, WebContents} from 'electron';
+import {BrowserView, BrowserWindow, ContextMenuParams, Event} from 'electron';
 import electronContextMenu, {Options} from 'electron-context-menu';
 
 import urlUtils from 'common/utils/url';
@@ -51,11 +51,7 @@ export default class ContextMenu {
     reload = () => {
         this.dispose();
 
-        /**
-         * Work-around issue with passing `WebContents` to `electron-context-menu` in Electron 11
-         * @see https://github.com/sindresorhus/electron-context-menu/issues/123
-         */
-        const options = {window: {webContents: this.view.webContents, inspectElement: this.view.webContents.inspectElement.bind(this.view.webContents), isDestroyed: this.view.webContents.isDestroyed.bind(this.view.webContents), off: this.view.webContents.off.bind(this.view.webContents)} as unknown as WebContents, ...this.menuOptions};
+        const options = {window: this.view, ...this.menuOptions};
         this.menuDispose = electronContextMenu(options);
     }
 }
