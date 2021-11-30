@@ -28,7 +28,7 @@ import {ServerInfo} from 'main/server/serverInfo';
 
 import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
 
-import {MattermostView, Status} from './MattermostView';
+import {MattermostView} from './MattermostView';
 import modalManager from './modalManager';
 import WebContentsEventManager from './webContentEvents';
 
@@ -196,6 +196,18 @@ export class ViewManager {
             log.warn(`Couldn't find a view with name: ${name}`);
         }
         modalManager.showModal();
+    }
+
+    focus = () => {
+        if (modalManager.isModalDisplayed()) {
+            modalManager.focusCurrentModal();
+            return;
+        }
+
+        const view = this.getCurrentView();
+        if (view) {
+            view.focus();
+        }
     }
 
     activateView = (viewName: string) => {
