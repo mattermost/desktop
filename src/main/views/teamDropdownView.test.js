@@ -9,7 +9,7 @@ import TeamDropdownView from './teamDropdownView';
 
 jest.mock('main/utils', () => ({
     getLocalPreload: (file) => file,
-    getLocalURLString: (file) => file, 
+    getLocalURLString: (file) => file,
 }));
 
 jest.mock('electron', () => ({

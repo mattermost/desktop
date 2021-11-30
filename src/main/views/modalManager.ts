@@ -90,7 +90,11 @@ export class ModalManager {
     handleModalFinished = (mode: 'resolve' | 'reject', event: IpcMainEvent, data: unknown) => {
         const requestModal = this.findModalByCaller(event);
         if (requestModal) {
-            mode === 'resolve' ? requestModal.resolve(data) : requestModal.reject(data);
+            if (mode === 'resolve') {
+                requestModal.resolve(data);
+            } else {
+                requestModal.reject(data);
+            }
             this.modalPromises.delete(requestModal.key);
         }
         this.filterActive();

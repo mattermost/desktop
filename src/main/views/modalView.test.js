@@ -53,7 +53,7 @@ describe('main/views/modalView', () => {
 
             modalView.view.webContents.isLoading = jest.fn().mockReturnValue(false);
         });
-        
+
         it('should add to window', () => {
             modalView.show();
             expect(window.addBrowserView).toBeCalledWith(modalView.view);

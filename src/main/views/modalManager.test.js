@@ -121,7 +121,7 @@ describe('main/views/modalManager', () => {
             modalManager.showModal = jest.fn();
             modalManager.filterActive = () => {
                 modalManager.modalQueue.pop();
-            }
+            };
             modalManager.findModalByCaller = (event) => {
                 switch (event.sender.id) {
                 case 1:

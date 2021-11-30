@@ -30,7 +30,7 @@ import {getWindowBoundaries, getLocalPreload, composeUserAgent} from '../utils';
 import * as WindowManager from '../windows/windowManager';
 import * as appState from '../appState';
 
-import {removeWebContentsListeners} from './webContentEvents';
+import WebContentsEventManager from './webContentEvents';
 
 export enum Status {
     LOADING,
@@ -216,7 +216,7 @@ export class MattermostView extends EventEmitter {
     }
 
     destroy = () => {
-        removeWebContentsListeners(this.view.webContents.id);
+        WebContentsEventManager.removeWebContentsListeners(this.view.webContents.id);
         appState.updateMentions(this.tab.name, 0, false);
         if (this.window) {
             this.window.removeBrowserView(this.view);
