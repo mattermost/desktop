@@ -36,7 +36,7 @@ const emitDropdown = (expired?: Map<string, boolean>, mentions?: Map<string, num
     status.emitter.emit(UPDATE_DROPDOWN_MENTIONS, expired, mentions, unreads);
 };
 
-export const emitStatus = () => {
+const emitStatus = () => {
     const expired = anyExpired();
     const mentions = totalMentions();
     const unreads = anyUnreads();
@@ -65,28 +65,19 @@ export const updateBadge = () => {
     emitBadge(expired, mentions, unreads);
 };
 
-export const getUnreads = (serverName: string) => {
+const getUnreads = (serverName: string) => {
     return status.unreads.get(serverName) || false;
 };
 
-export const getMentions = (serverName: string) => {
+const getMentions = (serverName: string) => {
     return status.mentions.get(serverName) || 0; // this might be undefined as a way to tell that we don't know as it might need to login still.
 };
 
-export const getIsExpired = (serverName: string) => {
+const getIsExpired = (serverName: string) => {
     return status.expired.get(serverName) || false;
 };
 
-export const anyMentions = () => {
-    for (const v of status.mentions.values()) {
-        if (v > 0) {
-            return v;
-        }
-    }
-    return false;
-};
-
-export const totalMentions = () => {
+const totalMentions = () => {
     let total = 0;
     for (const v of status.mentions.values()) {
         total += v;
@@ -94,7 +85,7 @@ export const totalMentions = () => {
     return total;
 };
 
-export const anyUnreads = () => {
+const anyUnreads = () => {
     for (const v of status.unreads.values()) {
         if (v) {
             return v;
@@ -103,7 +94,7 @@ export const anyUnreads = () => {
     return false;
 };
 
-export const anyExpired = () => {
+const anyExpired = () => {
     for (const v of status.expired.values()) {
         if (v) {
             return v;
@@ -113,11 +104,9 @@ export const anyExpired = () => {
 };
 
 // add any other event emitter methods if needed
-export const on = (event: string, listener: (...args: any[]) => void) => {
-    status.emitter.on(event, listener);
-};
+export const on = status.emitter.on;
 
-export const setSessionExpired = (serverName: string, expired: boolean) => {
+const setSessionExpired = (serverName: string, expired: boolean) => {
     const isExpired = Boolean(expired);
     const old = status.expired.get(serverName);
     status.expired.set(serverName, isExpired);

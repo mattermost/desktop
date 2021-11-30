@@ -56,7 +56,8 @@
     "check-build-config": "npm-run-all check-build-config:build check-build-config:run",
     "check-build-config:build": "babel ./src/common/config/buildConfig.ts -o ./dist/buildConfig.js",
     "check-build-config:run": "node -r @babel/register scripts/check_build_config.js",
-    "check-types": "tsc"
+    "check-types": "tsc",
+    "prune": "ts-prune"
   },
   "jest": {
     "clearMocks": true,
@@ -137,6 +138,7 @@
     "sass-loader": "^10.2.0",
     "shebang-loader": "^0.0.1",
     "style-loader": "^2.0.0",
+    "ts-prune": "^0.10.2",
     "typescript": "^4.3.4",
     "url-loader": "^1.1.2",
     "webpack": "^4.44.2",

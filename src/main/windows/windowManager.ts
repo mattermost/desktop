@@ -150,8 +150,6 @@ export function getMainWindow(ensureCreated?: boolean) {
     return status.mainWindow;
 }
 
-export const on = status.mainWindow?.on;
-
 function handleMaximizeMainWindow() {
     sendToRenderer(MAXIMIZE_CHANGE, true);
 }
@@ -202,15 +200,6 @@ export function sendToRenderer(channel: string, ...args: any[]) {
     if (status.settingsWindow && status.settingsWindow.isVisible()) {
         status.settingsWindow.webContents.send(channel, ...args);
     }
-}
-
-export function sendToAll(channel: string, ...args: any[]) {
-    sendToRenderer(channel, ...args);
-    if (status.settingsWindow) {
-        status.settingsWindow.webContents.send(channel, ...args);
-    }
-
-    // TODO: should we include popups?
 }
 
 export function sendToMattermostViews(channel: string, ...args: any[]) {
@@ -319,10 +308,6 @@ export async function setOverlayIcon(badgeText: string | undefined, description:
             status.mainWindow.setOverlayIcon(overlay, description);
         }
     }
-}
-
-export function isMainWindow(window: BrowserWindow) {
-    return status.mainWindow && status.mainWindow === window;
 }
 
 export function handleDoubleClick(e: IpcMainEvent, windowType?: string) {
@@ -446,11 +431,6 @@ export function updateLoadingScreenDarkMode(darkMode: boolean) {
     }
 }
 
-export function getViewNameByWebContentsId(webContentsId: number) {
-    const view = status.viewManager?.findViewByWebContent(webContentsId);
-    return view?.name;
-}
-
 export function getServerNameByWebContentsId(webContentsId: number) {
     const view = status.viewManager?.findViewByWebContent(webContentsId);
     return view?.tab.server.name;
@@ -497,7 +477,7 @@ export function sendToFind() {
     }
 }
 
-export function handleHistory(event: IpcMainEvent, offset: number) {
+function handleHistory(event: IpcMainEvent, offset: number) {
     if (status.viewManager) {
         const activeView = status.viewManager.getCurrentView();
         if (activeView && activeView.view.webContents.canGoToOffset(offset)) {
@@ -606,7 +586,8 @@ function handleAppLoggedOut(event: IpcMainEvent, viewName: string) {
 }
 
 function handleGetViewName(event: IpcMainInvokeEvent) {
-    return getViewNameByWebContentsId(event.sender.id);
+    const view = status.viewManager?.findViewByWebContent(event.sender.id);
+    return view?.name;
 }
 function handleGetWebContentsId(event: IpcMainInvokeEvent) {
     return event.sender.id;

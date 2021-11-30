@@ -126,7 +126,7 @@ const generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spe
         }
 
         // Public download links case
-        // TODO: We might be handling different types differently in the future, for now
+        // We might be handling different types differently in the future, for now
         // we are going to mimic the browser and just pop a new browser window for public links
         if (parsedURL.pathname.match(/^(\/api\/v[3-4]\/public)*\/files\//)) {
             shell.openExternal(details.url);
@@ -218,7 +218,7 @@ export const addWebContentsEventListeners = (mmview: MattermostView, getServersF
     }
 
     const willNavigate = generateWillNavigate(getServersFunction);
-    contents.on('will-navigate', willNavigate as (e: Event, u: string) => void); // TODO: Electron types don't include sender for some reason
+    contents.on('will-navigate', willNavigate as (e: Event, u: string) => void); // Electron types don't include sender for some reason
 
     // handle custom login requests (oath, saml):
     // 1. are we navigating to a supported local custom login path from the `/login` page?

@@ -446,7 +446,7 @@ export class ViewManager {
         }
     };
 
-    sendToAllViews = (channel: string, ...args: any[]) => {
+    sendToAllViews = (channel: string, ...args: unknown[]) => {
         this.views.forEach((view) => view.view.webContents.send(channel, ...args));
     }
 }
