@@ -6,7 +6,7 @@ import fs from 'fs';
 
 import {shell, dialog} from 'electron';
 
-import {getMainWindow} from './windows/windowManager';
+import WindowManager from './windows/windowManager';
 
 import {AllowProtocolDialog} from './allowProtocolDialog';
 
@@ -120,7 +120,7 @@ describe('main/allowProtocolDialog', () => {
         });
 
         it('should not open message box if main window is missing', () => {
-            getMainWindow.mockImplementation(() => null);
+            WindowManager.getMainWindow.mockImplementation(() => null);
             allowProtocolDialog.handleDialogEvent('mattermost:', 'mattermost://community.mattermost.com');
             expect(shell.openExternal).not.toBeCalled();
             expect(dialog.showMessageBox).not.toBeCalled();
@@ -128,7 +128,7 @@ describe('main/allowProtocolDialog', () => {
 
         describe('main window not null', () => {
             beforeEach(() => {
-                getMainWindow.mockImplementation(() => ({}));
+                WindowManager.getMainWindow.mockImplementation(() => ({}));
             });
 
             it('should open the window but not save when clicking Yes', async () => {

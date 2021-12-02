@@ -10,7 +10,7 @@ import {LoginModalData} from 'types/auth';
 import {BASIC_AUTH_PERMISSION} from 'common/permissions';
 import urlUtils from 'common/utils/url';
 
-import * as WindowManager from 'main/windows/windowManager';
+import WindowManager from 'main/windows/windowManager';
 import {addModal} from 'main/views/modalManager';
 import {getLocalURLString, getLocalPreload} from 'main/utils';
 

@@ -9,7 +9,7 @@ import {SHOW_NEW_SERVER_MODAL} from 'common/communication';
 import Config from 'common/config';
 import {TabType, getTabDisplayName} from 'common/tabs/TabView';
 
-import * as WindowManager from 'main/windows/windowManager';
+import WindowManager from 'main/windows/windowManager';
 
 export function createTemplate(config: Config) {
     const separatorItem: MenuItemConstructorOptions = {

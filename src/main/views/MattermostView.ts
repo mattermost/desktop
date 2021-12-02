@@ -27,7 +27,7 @@ import {TabView} from 'common/tabs/TabView';
 import {ServerInfo} from 'main/server/serverInfo';
 import ContextMenu from '../contextMenu';
 import {getWindowBoundaries, getLocalPreload, composeUserAgent} from '../utils';
-import * as WindowManager from '../windows/windowManager';
+import WindowManager from '../windows/windowManager';
 import * as appState from '../appState';
 
 import {removeWebContentsListeners} from './webContentEvents';

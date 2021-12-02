@@ -9,7 +9,7 @@ import {MentionData} from 'types/notification';
 import {PLAY_SOUND} from 'common/communication';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
 
-import * as windowManager from '../windows/windowManager';
+import WindowManager from '../windows/windowManager';
 
 import {Mention} from './Mention';
 import {DownloadNotification} from './Download';
@@ -21,7 +21,7 @@ export function displayMention(title: string, body: string, channel: {id: string
         log.error('notification not supported');
         return;
     }
-    const serverName = windowManager.getServerNameByWebContentsId(webcontents.id);
+    const serverName = WindowManager.getServerNameByWebContentsId(webcontents.id);
 
     const options = {
         title: `${serverName}: ${title}`,
@@ -45,15 +45,15 @@ export function displayMention(title: string, body: string, channel: {id: string
         }
         const notificationSound = mention.getNotificationSound();
         if (notificationSound) {
-            windowManager.sendToRenderer(PLAY_SOUND, notificationSound);
+            WindowManager.sendToRenderer(PLAY_SOUND, notificationSound);
         }
-        windowManager.flashFrame(true);
+        WindowManager.flashFrame(true);
     });
 
     mention.on('click', () => {
         log.info('notification click', serverName, mention);
         if (serverName) {
-            windowManager.switchTab(serverName, TAB_MESSAGING);
+            WindowManager.switchTab(serverName, TAB_MESSAGING);
             webcontents.send('notification-clicked', {channel, teamId, url});
         }
     });
@@ -68,7 +68,7 @@ export function displayDownloadCompleted(fileName: string, path: string, serverN
     const download = new DownloadNotification(fileName, serverName);
 
     download.on('show', () => {
-        windowManager.flashFrame(true);
+        WindowManager.flashFrame(true);
     });
 
     download.on('click', () => {

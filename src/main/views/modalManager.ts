@@ -17,7 +17,7 @@ import {
     GET_MODAL_UNCLOSEABLE,
 } from 'common/communication';
 
-import * as WindowManager from '../windows/windowManager';
+import WindowManager from '../windows/windowManager';
 
 import {ModalView} from './modalView';
 
