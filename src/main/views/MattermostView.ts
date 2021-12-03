@@ -165,7 +165,7 @@ export class MattermostView extends EventEmitter {
         };
     }
 
-    loadRetry = (loadURL: string, err: any) => {
+    loadRetry = (loadURL: string, err: Error) => {
         this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
         WindowManager.sendToRenderer(LOAD_RETRY, this.tab.name, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
         log.info(`[${Util.shorten(this.tab.name)}] failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
@@ -211,7 +211,6 @@ export class MattermostView extends EventEmitter {
     hide = () => this.show(false);
 
     setBounds = (boundaries: Electron.Rectangle) => {
-        // todo: review this, as it might not work properly with devtools/minimizing/resizing
         this.view.setBounds(boundaries);
     }
 

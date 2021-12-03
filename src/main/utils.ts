@@ -37,11 +37,6 @@ export function getAdjustedWindowBoundaries(width: number, height: number, hasBa
 }
 
 export function getLocalURLString(urlPath: string, query?: Map<string, string>, isMain?: boolean) {
-    const localURL = getLocalURL(urlPath, query, isMain);
-    return localURL.href;
-}
-
-export function getLocalURL(urlPath: string, query?: Map<string, string>, isMain?: boolean) {
     let pathname;
     const processPath = isMain ? '' : '/renderer';
     const mode = Utils.runMode();
@@ -61,7 +56,7 @@ export function getLocalURL(urlPath: string, query?: Map<string, string>, isMain
         });
     }
 
-    return localUrl;
+    return localUrl.href;
 }
 
 export function getLocalPreload(file: string) {

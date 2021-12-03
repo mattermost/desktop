@@ -25,7 +25,7 @@ function createErrorReport(err: Error) {
 }
 
 function openDetachedExternal(url: string) {
-    const spawnOption = {detached: true, stdio: 'ignore' as any};
+    const spawnOption = {detached: true, stdio: 'ignore' as const};
     switch (process.platform) {
     case 'win32':
         return spawn('cmd', ['/C', 'start', url], spawnOption);

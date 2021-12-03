@@ -255,6 +255,7 @@ export class WebContentsEventManager {
             }
         };
 
+
         this.listeners[contents.id] = removeListeners;
         contents.once('render-process-gone', (event, details) => {
             if (details.reason !== 'clean-exit') {
