@@ -10,11 +10,10 @@ import {LoginModalData} from 'types/auth';
 import {BASIC_AUTH_PERMISSION} from 'common/permissions';
 import urlUtils from 'common/utils/url';
 
-import WindowManager from 'main/windows/windowManager';
-import modalManager from './views/modalManager';
+import modalManager from 'main/views/modalManager';
+import TrustedOriginsStore from 'main/trustedOrigins';
 import {getLocalURLString, getLocalPreload} from 'main/utils';
-
-import TrustedOriginsStore from './trustedOrigins';
+import WindowManager from 'main/windows/windowManager';
 
 const modalPreload = getLocalPreload('modalPreload.js');
 const loginModalHtml = getLocalURLString('loginModal.html');
