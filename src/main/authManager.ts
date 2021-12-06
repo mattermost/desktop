@@ -11,8 +11,9 @@ import {BASIC_AUTH_PERMISSION} from 'common/permissions';
 import urlUtils from 'common/utils/url';
 
 import * as WindowManager from 'main/windows/windowManager';
-import {addModal} from 'main/views/modalManager';
-import {getLocalURLString, getLocalPreload} from 'main/utils';
+
+import modalManager from './views/modalManager';
+import {getLocalURLString, getLocalPreload} from './utils';
 
 import TrustedOriginsStore from './trustedOrigins';
 
@@ -64,7 +65,7 @@ export class AuthManager {
         if (!mainWindow) {
             return;
         }
-        const modalPromise = addModal<LoginModalData, LoginModalResult>(authInfo.isProxy ? `proxy-${authInfo.host}` : `login-${request.url}`, loginModalHtml, modalPreload, {request, authInfo}, mainWindow);
+        const modalPromise = modalManager.addModal<LoginModalData, LoginModalResult>(authInfo.isProxy ? `proxy-${authInfo.host}` : `login-${request.url}`, loginModalHtml, modalPreload, {request, authInfo}, mainWindow);
         if (modalPromise) {
             modalPromise.then((data) => {
                 const {username, password} = data;
@@ -83,7 +84,7 @@ export class AuthManager {
         if (!mainWindow) {
             return;
         }
-        const modalPromise = addModal(`permission-${request.url}`, permissionModalHtml, modalPreload, {url: request.url, permission}, mainWindow);
+        const modalPromise = modalManager.addModal(`permission-${request.url}`, permissionModalHtml, modalPreload, {url: request.url, permission}, mainWindow);
         if (modalPromise) {
             modalPromise.then(() => {
                 this.handlePermissionGranted(request.url, permission);

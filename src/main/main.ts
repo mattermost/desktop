@@ -67,7 +67,7 @@ import * as WindowManager from './windows/windowManager';
 import {displayMention, displayDownloadCompleted} from './notifications';
 
 import parseArgs from './ParseArgs';
-import {addModal} from './views/modalManager';
+import modalManager from './views/modalManager';
 import {getLocalURLString, getLocalPreload} from './utils';
 import {destroyTray, refreshTrayImages, setTrayMenu, setupTray} from './tray/tray';
 import {AuthManager} from './authManager';
@@ -553,7 +553,7 @@ function handleNewServerModal() {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = addModal<unknown, Team>('newServer', html, modalPreload, {}, mainWindow, config.teams.length === 0);
+    const modalPromise = modalManager.addModal<unknown, Team>('newServer', html, modalPreload, {}, mainWindow, config.teams.length === 0);
     if (modalPromise) {
         modalPromise.then((data) => {
             const teams = config.teams;
@@ -587,7 +587,7 @@ function handleEditServerModal(e: IpcMainEvent, name: string) {
     if (serverIndex < 0) {
         return;
     }
-    const modalPromise = addModal<Team, Team>('editServer', html, modalPreload, config.teams[serverIndex], mainWindow);
+    const modalPromise = modalManager.addModal<Team, Team>('editServer', html, modalPreload, config.teams[serverIndex], mainWindow);
     if (modalPromise) {
         modalPromise.then((data) => {
             const teams = config.teams;
@@ -614,7 +614,7 @@ function handleRemoveServerModal(e: IpcMainEvent, name: string) {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = addModal<string, boolean>('removeServer', html, modalPreload, name, mainWindow);
+    const modalPromise = modalManager.addModal<string, boolean>('removeServer', html, modalPreload, name, mainWindow);
     if (modalPromise) {
         modalPromise.then((remove) => {
             if (remove) {

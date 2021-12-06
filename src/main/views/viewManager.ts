@@ -21,16 +21,16 @@ import {
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
-
+import {MattermostServer} from 'common/servers/MattermostServer';
 import {getServerView, getTabViewName} from 'common/tabs/TabView';
 
 import {ServerInfo} from 'main/server/serverInfo';
-import {MattermostServer} from '../../common/servers/MattermostServer';
+
 import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
 
-import {MattermostView, Status} from './MattermostView';
-import {showModal, isModalDisplayed, focusCurrentModal} from './modalManager';
-import {addWebContentsEventListeners} from './webContentEvents';
+import {MattermostView} from './MattermostView';
+import modalManager from './modalManager';
+import WebContentsEventManager from './webContentEvents';
 
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 36;
@@ -94,7 +94,7 @@ export class ViewManager {
 
     reloadViewIfNeeded = (viewName: string) => {
         const view = this.views.get(viewName);
-        if (view && !view.view.webContents.getURL().startsWith(view.tab.url.toString())) {
+        if (view && view.view.webContents.getURL() !== view.tab.url.toString() && !view.view.webContents.getURL().startsWith(view.tab.url.toString())) {
             view.load(view.tab.url);
         }
     }
@@ -153,7 +153,7 @@ export class ViewManager {
                 let tab = element.tabs.find((tab) => tab.order === element.lastActiveTab) || element.tabs.find((tab) => tab.order === 0);
                 if (!tab?.isOpen) {
                     const openTabs = element.tabs.filter((tab) => tab.isOpen);
-                    tab = openTabs.find((e) => e.order === 0) || openTabs[0];
+                    tab = openTabs.find((e) => e.order === 0) || openTabs.concat().sort((a, b) => a.order - b.order)[0];
                 }
                 if (tab) {
                     const tabView = getTabViewName(element.name, tab.name);
@@ -186,26 +186,21 @@ export class ViewManager {
                 // if view is not ready, the renderer will have something to display instead.
                 newView.show();
                 ipcMain.emit(UPDATE_LAST_ACTIVE, true, newView.tab.server.name, newView.tab.type);
-                if (newView.needsLoadingScreen()) {
-                    this.showLoadingScreen();
-                } else {
+                if (!newView.needsLoadingScreen()) {
                     this.fadeLoadingScreen();
                 }
             } else {
                 log.warn(`couldn't show ${name}, not ready`);
-                if (newView.needsLoadingScreen()) {
-                    this.showLoadingScreen();
-                }
             }
         } else {
             log.warn(`Couldn't find a view with name: ${name}`);
         }
-        showModal();
+        modalManager.showModal();
     }
 
     focus = () => {
-        if (isModalDisplayed()) {
-            focusCurrentModal();
+        if (modalManager.isModalDisplayed()) {
+            modalManager.focusCurrentModal();
             return;
         }
 
@@ -214,6 +209,7 @@ export class ViewManager {
             view.focus();
         }
     }
+
     activateView = (viewName: string) => {
         if (this.currentView === viewName) {
             this.showByName(this.currentView);
@@ -223,7 +219,7 @@ export class ViewManager {
             log.error(`Couldn't find a view with the name ${viewName}`);
             return;
         }
-        addWebContentsEventListeners(view, this.getServers);
+        WebContentsEventManager.addWebContentsEventListeners(view, this.getServers);
     }
 
     finishLoading = (server: string) => {
@@ -428,7 +424,7 @@ export class ViewManager {
                         return;
                     }
 
-                    if (view.status === Status.READY && view.serverInfo.remoteInfo.serverVersion && Utils.isVersionGreaterThanOrEqualTo(view.serverInfo.remoteInfo.serverVersion, '6.0.0')) {
+                    if (view.isInitialized() && view.serverInfo.remoteInfo.serverVersion && Utils.isVersionGreaterThanOrEqualTo(view.serverInfo.remoteInfo.serverVersion, '6.0.0')) {
                         const pathName = `/${urlWithSchema.replace(view.tab.server.url.toString(), '')}`;
                         view.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
                         this.deeplinkSuccess(view.name);
