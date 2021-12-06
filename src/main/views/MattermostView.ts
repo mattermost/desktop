@@ -30,7 +30,7 @@ import {getWindowBoundaries, getLocalPreload, composeUserAgent} from '../utils';
 import WindowManager from '../windows/windowManager';
 import * as appState from '../appState';
 
-import {removeWebContentsListeners} from './webContentEvents';
+import WebContentsEventManager from './webContentEvents';
 
 export enum Status {
     LOADING,
@@ -165,7 +165,7 @@ export class MattermostView extends EventEmitter {
         };
     }
 
-    loadRetry = (loadURL: string, err: any) => {
+    loadRetry = (loadURL: string, err: Error) => {
         this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
         WindowManager.sendToRenderer(LOAD_RETRY, this.tab.name, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
         log.info(`[${Util.shorten(this.tab.name)}] failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
@@ -211,12 +211,11 @@ export class MattermostView extends EventEmitter {
     hide = () => this.show(false);
 
     setBounds = (boundaries: Electron.Rectangle) => {
-        // todo: review this, as it might not work properly with devtools/minimizing/resizing
         this.view.setBounds(boundaries);
     }
 
     destroy = () => {
-        removeWebContentsListeners(this.view.webContents.id);
+        WebContentsEventManager.removeWebContentsListeners(this.view.webContents.id);
         appState.updateMentions(this.tab.name, 0, false);
         if (this.window) {
             this.window.removeBrowserView(this.view);

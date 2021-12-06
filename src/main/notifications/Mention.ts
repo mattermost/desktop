@@ -19,7 +19,7 @@ const defaultOptions = {
     icon: appIconURL,
     urgency: 'normal' as Notification['urgency'],
 };
-export const DEFAULT_WIN7 = 'Ding';
+const DEFAULT_WIN7 = 'Ding';
 
 export class Mention extends Notification {
     customSound: string;

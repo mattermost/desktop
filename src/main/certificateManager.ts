@@ -7,7 +7,7 @@ import {CertificateModalData} from 'types/certificate';
 
 import WindowManager from './windows/windowManager';
 
-import {addModal} from './views/modalManager';
+import modalManager from './views/modalManager';
 import {getLocalURLString, getLocalPreload} from './utils';
 
 const modalPreload = getLocalPreload('modalPreload.js');
@@ -41,7 +41,7 @@ export class CertificateManager {
         if (!mainWindow) {
             return;
         }
-        const modalPromise = addModal<CertificateModalData, CertificateModalResult>(`certificate-${url}`, html, modalPreload, {url, list}, mainWindow);
+        const modalPromise = modalManager.addModal<CertificateModalData, CertificateModalResult>(`certificate-${url}`, html, modalPreload, {url, list}, mainWindow);
         if (modalPromise) {
             modalPromise.then((data) => {
                 const {cert} = data;

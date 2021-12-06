@@ -274,6 +274,6 @@ export function createTemplate(config: Config) {
 }
 
 export function createMenu(config: Config) {
-    // TODO: Electron is enforcing certain variables that it doesn't need
+    // Electron is enforcing certain variables that it doesn't need
     return Menu.buildFromTemplate(createTemplate(config) as Array<MenuItemConstructorOptions | MenuItem>);
 }

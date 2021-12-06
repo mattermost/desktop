@@ -11,7 +11,7 @@ import hello from 'static/sounds/hello.mp3';
 import ripple from 'static/sounds/ripple.mp3';
 import upstairs from 'static/sounds/upstairs.mp3';
 
-export const DEFAULT_WIN7 = 'Ding';
+const DEFAULT_WIN7 = 'Ding';
 const notificationSounds = new Map([
     [DEFAULT_WIN7, ding],
     ['Bing', bing],
