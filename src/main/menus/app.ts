@@ -6,7 +6,7 @@
 import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, webContents} from 'electron';
 
 import {SHOW_NEW_SERVER_MODAL} from 'common/communication';
-import Config from 'common/config';
+import {Config} from 'common/config';
 import {TabType, getTabDisplayName} from 'common/tabs/TabView';
 
 import WindowManager from 'main/windows/windowManager';

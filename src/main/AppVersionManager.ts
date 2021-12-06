@@ -2,13 +2,19 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
+import path from 'path';
+
+import {app} from 'electron';
+
 import {AppState} from 'types/appState';
 
 import JsonFileManager from '../common/JsonFileManager';
 
 import * as Validator from './Validator';
 
-export default class AppVersionManager extends JsonFileManager<AppState> {
+const appVersionJson = path.join(app.getPath('userData'), 'app-state.json');
+
+export class AppVersionManager extends JsonFileManager<AppState> {
     constructor(file: string) {
         super(file);
 
@@ -46,3 +52,6 @@ export default class AppVersionManager extends JsonFileManager<AppState> {
         return null;
     }
 }
+
+const appVersionManager = new AppVersionManager(appVersionJson);
+export default appVersionManager;

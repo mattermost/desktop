@@ -3,10 +3,10 @@
 import {AuthenticationResponseDetails, AuthInfo, WebContents} from 'electron';
 import log from 'electron-log';
 
-import {CombinedConfig} from 'types/config';
 import {PermissionType} from 'types/trustedOrigin';
 import {LoginModalData} from 'types/auth';
 
+import Config from 'common/config';
 import {BASIC_AUTH_PERMISSION} from 'common/permissions';
 import urlUtils from 'common/utils/url';
 
@@ -25,18 +25,10 @@ type LoginModalResult = {
 };
 
 export class AuthManager {
-    config: CombinedConfig;
-    trustedOriginsStore: TrustedOriginsStore;
     loginCallbackMap: Map<string, ((username?: string, password?: string) => void) | undefined>;
 
-    constructor(config: CombinedConfig, trustedOriginsStore: TrustedOriginsStore) {
-        this.config = config;
-        this.trustedOriginsStore = trustedOriginsStore;
+    constructor() {
         this.loginCallbackMap = new Map();
-    }
-
-    handleConfigUpdate = (newConfig: CombinedConfig) => {
-        this.config = newConfig;
     }
 
     handleAppLogin = (event: Event, webContents: WebContents, request: AuthenticationResponseDetails, authInfo: AuthInfo, callback?: (username?: string, password?: string) => void) => {
@@ -45,13 +37,13 @@ export class AuthManager {
         if (!parsedURL) {
             return;
         }
-        const server = urlUtils.getView(parsedURL, this.config.teams);
+        const server = urlUtils.getView(parsedURL, Config.teams);
         if (!server) {
             return;
         }
 
         this.loginCallbackMap.set(request.url, callback); // if callback is undefined set it to null instead so we know we have set it up with no value
-        if (urlUtils.isTrustedURL(request.url, this.config.teams) || urlUtils.isCustomLoginURL(parsedURL, server, this.config.teams) || this.trustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
+        if (urlUtils.isTrustedURL(request.url, Config.teams) || urlUtils.isCustomLoginURL(parsedURL, server, Config.teams) || TrustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
             this.popLoginModal(request, authInfo);
         } else {
             this.popPermissionModal(request, authInfo, BASIC_AUTH_PERMISSION);
@@ -114,7 +106,7 @@ export class AuthManager {
     }
 
     handlePermissionGranted(url: string, permission: PermissionType) {
-        this.trustedOriginsStore.addPermission(url, permission);
-        this.trustedOriginsStore.save();
+        TrustedOriginsStore.addPermission(url, permission);
+        TrustedOriginsStore.save();
     }
 }

@@ -71,7 +71,7 @@ import modalManager from './views/modalManager';
 import {getLocalURLString, getLocalPreload} from './utils';
 import {destroyTray, refreshTrayImages, setTrayMenu, setupTray} from './tray/tray';
 import {AuthManager} from './authManager';
-import {CertificateManager} from './certificateManager';
+import CertificateManager from './certificateManager';
 import {setupBadge, setUnreadBadgeSetting} from './badge';
 import {ServerInfo} from './server/serverInfo';
 
@@ -88,27 +88,19 @@ const {
     dialog,
     session,
 } = electron;
-const criticalErrorHandler = new CriticalErrorHandler();
-const userActivityMonitor = new UserActivityMonitor();
-const autoLauncher = new AutoLauncher();
 const certificateErrorCallbacks = new Map();
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-let certificateStore: CertificateStore;
-let trustedOriginsStore;
 let scheme: string;
-let appVersion = null;
-let config: Config;
 let authManager: AuthManager;
-let certificateManager: CertificateManager;
 let didCheckForAddServerModal = false;
 
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
  */
 async function initialize() {
-    process.on('uncaughtException', criticalErrorHandler.processUncaughtExceptionHandler.bind(criticalErrorHandler));
+    process.on('uncaughtException', CriticalErrorHandler.processUncaughtExceptionHandler.bind(CriticalErrorHandler));
     global.willAppQuit = false;
 
     // initialization that can run before the app is ready
@@ -161,24 +153,23 @@ function initializeArgs() {
 
 async function initializeConfig() {
     const loadConfig = new Promise<void>((resolve) => {
-        config = new Config(app.getPath('userData') + '/config.json');
-        config.once('update', (configData) => {
-            config.on('update', handleConfigUpdate);
-            config.on('synchronize', handleConfigSynchronize);
-            config.on('darkModeChange', handleDarkModeChange);
-            config.on('error', (error) => {
+        Config.once('update', (configData) => {
+            Config.on('update', handleConfigUpdate);
+            Config.on('synchronize', handleConfigSynchronize);
+            Config.on('darkModeChange', handleDarkModeChange);
+            Config.on('error', (error) => {
                 log.error(error);
             });
             handleConfigUpdate(configData);
 
             // can only call this before the app is ready
-            if (config.enableHardwareAcceleration === false) {
+            if (Config.enableHardwareAcceleration === false) {
                 app.disableHardwareAcceleration();
             }
 
             resolve();
         });
-        config.init();
+        Config.init();
     });
 
     return loadConfig;
@@ -198,16 +189,14 @@ function initializeAppEventListeners() {
 }
 
 function initializeBeforeAppReady() {
-    if (!config || !config.data) {
+    if (!Config.data) {
         log.error('No config loaded');
         return;
     }
     if (process.env.NODE_ENV !== 'test') {
         app.enableSandbox();
     }
-    certificateStore = new CertificateStore(path.resolve(app.getPath('userData'), 'certificate.json'));
-    trustedOriginsStore = new TrustedOriginsStore(path.resolve(app.getPath('userData'), 'trustedOrigins.json'));
-    trustedOriginsStore.load();
+    TrustedOriginsStore.load();
 
     // prevent using a different working directory, which happens on windows running after installation.
     const expectedPath = path.dirname(process.execPath);
@@ -216,7 +205,7 @@ function initializeBeforeAppReady() {
         process.chdir(expectedPath);
     }
 
-    refreshTrayImages(config.trayIconTheme);
+    refreshTrayImages(Config.trayIconTheme);
 
     // If there is already an instance, quit this one
     const gotTheLock = app.requestSingleInstanceLock();
@@ -227,8 +216,7 @@ function initializeBeforeAppReady() {
 
     allowProtocolDialog.init();
 
-    authManager = new AuthManager(config.data, trustedOriginsStore);
-    certificateManager = new CertificateManager();
+    authManager = new AuthManager();
 
     if (isDev && process.env.NODE_ENV !== 'test') {
         log.info('In development mode, deeplinking is disabled');
@@ -242,7 +230,6 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(RELOAD_CONFIGURATION, handleReloadConfig);
     ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
     ipcMain.handle('get-app-version', handleAppVersion);
-    ipcMain.on('update-menu', handleUpdateMenuEvent);
     ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateShortcutMenuEvent);
     ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
     ipcMain.on(UPDATE_LAST_ACTIVE, handleUpdateLastActive);
@@ -281,35 +268,32 @@ function handleConfigUpdate(newConfig: CombinedConfig) {
         return;
     }
     if (process.platform === 'win32' || process.platform === 'linux') {
-        const autoStartTask = config.autostart ? autoLauncher.enable() : autoLauncher.disable();
+        const autoStartTask = Config.autostart ? AutoLauncher.enable() : AutoLauncher.disable();
         autoStartTask.then(() => {
             log.info('config.autostart has been configured:', newConfig.autostart);
         }).catch((err) => {
             log.error('error:', err);
         });
         WindowManager.setConfig(newConfig);
-        if (authManager) {
-            authManager.handleConfigUpdate(newConfig);
-        }
         setUnreadBadgeSetting(newConfig && newConfig.showUnreadBadge);
         updateSpellCheckerLocales();
     }
 
-    ipcMain.emit('update-menu', true, config);
+    handleUpdateMenuEvent();
     ipcMain.emit(EMIT_CONFIGURATION, true, newConfig);
 }
 
 function handleConfigSynchronize() {
-    if (!config.data) {
+    if (!Config.data) {
         return;
     }
 
     // TODO: send this to server manager
-    WindowManager.setConfig(config.data);
-    setUnreadBadgeSetting(config.data.showUnreadBadge);
-    if (config.data.downloadLocation) {
+    WindowManager.setConfig(Config.data);
+    setUnreadBadgeSetting(Config.data.showUnreadBadge);
+    if (Config.data.downloadLocation) {
         try {
-            app.setPath('downloads', config.data.downloadLocation);
+            app.setPath('downloads', Config.data.downloadLocation);
         } catch (e) {
             log.error(`There was a problem trying to set the default download path: ${e}`);
         }
@@ -318,19 +302,19 @@ function handleConfigSynchronize() {
         WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
     }
 
-    if (process.platform === 'win32' && !didCheckForAddServerModal && typeof config.registryConfigData !== 'undefined') {
+    if (process.platform === 'win32' && !didCheckForAddServerModal && typeof Config.registryConfigData !== 'undefined') {
         didCheckForAddServerModal = true;
-        updateServerInfos(config.teams);
+        updateServerInfos(Config.teams);
         WindowManager.initializeCurrentServerName();
-        if (config.teams.length === 0) {
+        if (Config.teams.length === 0) {
             handleNewServerModal();
         }
     }
 }
 
 function handleReloadConfig() {
-    config.reload();
-    WindowManager.setConfig(config.data!);
+    Config.reload();
+    WindowManager.setConfig(Config.data!);
 }
 
 function handleAppVersion() {
@@ -341,11 +325,11 @@ function handleAppVersion() {
 }
 
 function handleDarkModeChange(darkMode: boolean) {
-    refreshTrayImages(config.trayIconTheme);
+    refreshTrayImages(Config.trayIconTheme);
     WindowManager.sendToRenderer(DARK_MODE_CHANGE, darkMode);
     WindowManager.updateLoadingScreenDarkMode(darkMode);
 
-    ipcMain.emit(EMIT_CONFIGURATION, true, config.data);
+    ipcMain.emit(EMIT_CONFIGURATION, true, Config.data);
 }
 
 //
@@ -391,20 +375,20 @@ function handleQuit(e: IpcMainEvent, reason: string, stack: string) {
 }
 
 function handleSelectCertificate(event: electron.Event, webContents: electron.WebContents, url: string, list: electron.Certificate[], callback: (certificate?: electron.Certificate | undefined) => void) {
-    certificateManager.handleSelectCertificate(event, webContents, url, list, callback);
+    CertificateManager.handleSelectCertificate(event, webContents, url, list, callback);
 }
 
 function handleAppCertificateError(event: electron.Event, webContents: electron.WebContents, url: string, error: string, certificate: electron.Certificate, callback: (isTrusted: boolean) => void) {
-    const parsedURL = new URL(url);
+    const parsedURL = urlUtils.parseURL(url);
     if (!parsedURL) {
         return;
     }
     const origin = parsedURL.origin;
-    if (certificateStore.isExplicitlyUntrusted(origin)) {
+    if (CertificateStore.isExplicitlyUntrusted(origin)) {
         event.preventDefault();
         log.warn(`Ignoring previously untrusted certificate for ${origin}`);
         callback(false);
-    } else if (certificateStore.isTrusted(origin, certificate)) {
+    } else if (CertificateStore.isTrusted(origin, certificate)) {
         event.preventDefault();
         callback(true);
     } else {
@@ -417,7 +401,7 @@ function handleAppCertificateError(event: electron.Event, webContents: electron.
             certificateErrorCallbacks.set(errorID, callback);
             return;
         }
-        const extraDetail = certificateStore.isExisting(origin) ? 'Certificate is different from previous one.\n\n' : '';
+        const extraDetail = CertificateStore.isExisting(origin) ? 'Certificate is different from previous one.\n\n' : '';
         const detail = `${extraDetail}origin: ${origin}\nError: ${error}`;
 
         certificateErrorCallbacks.set(errorID, callback);
@@ -452,15 +436,15 @@ function handleAppCertificateError(event: electron.Event, webContents: electron.
             }).then(
             ({response: responseTwo, checkboxChecked}) => {
                 if (responseTwo === 0) {
-                    certificateStore.add(origin, certificate);
-                    certificateStore.save();
+                    CertificateStore.add(origin, certificate);
+                    CertificateStore.save();
                     certificateErrorCallbacks.get(errorID)(true);
                     certificateErrorCallbacks.delete(errorID);
                     webContents.loadURL(url);
                 } else {
                     if (checkboxChecked) {
-                        certificateStore.add(origin, certificate, true);
-                        certificateStore.save();
+                        CertificateStore.add(origin, certificate, true);
+                        CertificateStore.save();
                     }
                     certificateErrorCallbacks.get(errorID)(false);
                     certificateErrorCallbacks.delete(errorID);
@@ -514,7 +498,7 @@ function handleSwitchTab(event: IpcMainEvent, serverName: string, tabName: strin
 }
 
 function handleCloseTab(event: IpcMainEvent, serverName: string, tabName: string) {
-    const teams = config.teams;
+    const teams = Config.teams;
     teams.forEach((team) => {
         if (team.name === serverName) {
             team.tabs.forEach((tab) => {
@@ -526,11 +510,11 @@ function handleCloseTab(event: IpcMainEvent, serverName: string, tabName: string
     });
     const nextTab = teams.find((team) => team.name === serverName)!.tabs.filter((tab) => tab.isOpen)[0].name;
     WindowManager.switchTab(serverName, nextTab);
-    config.set('teams', teams);
+    Config.set('teams', teams);
 }
 
 function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: string) {
-    const teams = config.teams;
+    const teams = Config.teams;
     teams.forEach((team) => {
         if (team.name === serverName) {
             team.tabs.forEach((tab) => {
@@ -541,7 +525,7 @@ function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: string)
         }
     });
     WindowManager.switchTab(serverName, tabName);
-    config.set('teams', teams);
+    Config.set('teams', teams);
 }
 
 function handleNewServerModal() {
@@ -553,14 +537,14 @@ function handleNewServerModal() {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = modalManager.addModal<unknown, Team>('newServer', html, modalPreload, {}, mainWindow, config.teams.length === 0);
+    const modalPromise = modalManager.addModal<unknown, Team>('newServer', html, modalPreload, {}, mainWindow, Config.teams.length === 0);
     if (modalPromise) {
         modalPromise.then((data) => {
-            const teams = config.teams;
+            const teams = Config.teams;
             const order = teams.length;
             const newTeam = getDefaultTeamWithTabsFromTeam({...data, order});
             teams.push(newTeam);
-            config.set('teams', teams);
+            Config.set('teams', teams);
             updateServerInfos([newTeam]);
             WindowManager.switchServer(newTeam.name, true);
         }).catch((e) => {
@@ -583,17 +567,17 @@ function handleEditServerModal(e: IpcMainEvent, name: string) {
     if (!mainWindow) {
         return;
     }
-    const serverIndex = config.teams.findIndex((team) => team.name === name);
+    const serverIndex = Config.teams.findIndex((team) => team.name === name);
     if (serverIndex < 0) {
         return;
     }
-    const modalPromise = modalManager.addModal<Team, Team>('editServer', html, modalPreload, config.teams[serverIndex], mainWindow);
+    const modalPromise = modalManager.addModal<Team, Team>('editServer', html, modalPreload, Config.teams[serverIndex], mainWindow);
     if (modalPromise) {
         modalPromise.then((data) => {
-            const teams = config.teams;
+            const teams = Config.teams;
             teams[serverIndex].name = data.name;
             teams[serverIndex].url = data.url;
-            config.set('teams', teams);
+            Config.set('teams', teams);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -618,7 +602,7 @@ function handleRemoveServerModal(e: IpcMainEvent, name: string) {
     if (modalPromise) {
         modalPromise.then((remove) => {
             if (remove) {
-                const teams = config.teams;
+                const teams = Config.teams;
                 const removedTeam = teams.findIndex((team) => team.name === name);
                 if (removedTeam < 0) {
                     return;
@@ -630,7 +614,7 @@ function handleRemoveServerModal(e: IpcMainEvent, name: string) {
                         value.order--;
                     }
                 });
-                config.set('teams', teams);
+                Config.set('teams', teams);
             }
         }).catch((e) => {
             // e is undefined for user cancellation
@@ -644,27 +628,27 @@ function handleRemoveServerModal(e: IpcMainEvent, name: string) {
 }
 
 function updateSpellCheckerLocales() {
-    if (config.data?.spellCheckerLocales.length && app.isReady()) {
-        session.defaultSession.setSpellCheckerLanguages(config.data?.spellCheckerLocales);
+    if (Config.data?.spellCheckerLocales.length && app.isReady()) {
+        session.defaultSession.setSpellCheckerLanguages(Config.data?.spellCheckerLocales);
     }
 }
 
 function initializeAfterAppReady() {
-    updateServerInfos(config.teams);
+    updateServerInfos(Config.teams);
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
 
     if (process.platform !== 'darwin') {
         defaultSession.on('spellcheck-dictionary-download-failure', (event, lang) => {
-            if (config.spellCheckerURL) {
-                log.error(`There was an error while trying to load the dictionary definitions for ${lang} fromfully the specified url. Please review you have access to the needed files. Url used was ${config.spellCheckerURL}`);
+            if (Config.spellCheckerURL) {
+                log.error(`There was an error while trying to load the dictionary definitions for ${lang} fromfully the specified url. Please review you have access to the needed files. Url used was ${Config.spellCheckerURL}`);
             } else {
                 log.warn(`There was an error while trying to download the dictionary definitions for ${lang}, spellchecking might not work properly.`);
             }
         });
 
-        if (config.spellCheckerURL) {
-            const spellCheckerURL = config.spellCheckerURL.endsWith('/') ? config.spellCheckerURL : `${config.spellCheckerURL}/`;
+        if (Config.spellCheckerURL) {
+            const spellCheckerURL = Config.spellCheckerURL.endsWith('/') ? Config.spellCheckerURL : `${Config.spellCheckerURL}/`;
             log.info(`Configuring spellchecker using download URL: ${spellCheckerURL}`);
             defaultSession.setSpellCheckerDictionaryDownloadURL(spellCheckerURL);
 
@@ -675,15 +659,13 @@ function initializeAfterAppReady() {
         updateSpellCheckerLocales();
     }
 
-    const appVersionJson = path.join(app.getPath('userData'), 'app-state.json');
-    appVersion = new AppVersionManager(appVersionJson);
-    if (wasUpdated(appVersion.lastAppVersion)) {
+    if (wasUpdated(AppVersionManager.lastAppVersion)) {
         clearAppCache();
     }
-    appVersion.lastAppVersion = app.getVersion();
+    AppVersionManager.lastAppVersion = app.getVersion();
 
     if (!global.isDev) {
-        autoLauncher.upgradeAutoLaunch();
+        AutoLauncher.upgradeAutoLaunch();
     }
 
     if (global.isDev) {
@@ -720,18 +702,18 @@ function initializeAfterAppReady() {
 
     WindowManager.showMainWindow(deeplinkingURL);
 
-    criticalErrorHandler.setMainWindow(WindowManager.getMainWindow()!);
+    CriticalErrorHandler.setMainWindow(WindowManager.getMainWindow()!);
 
     // listen for status updates and pass on to renderer
-    userActivityMonitor.on('status', (status) => {
+    UserActivityMonitor.on('status', (status) => {
         WindowManager.sendToMattermostViews(USER_ACTIVITY_UPDATE, status);
     });
 
     // start monitoring user activity (needs to be started after the app is ready)
-    userActivityMonitor.startMonitoring();
+    UserActivityMonitor.startMonitoring();
 
     if (shouldShowTrayIcon()) {
-        setupTray(config.trayIconTheme);
+        setupTray(Config.trayIconTheme);
     }
     setupBadge();
 
@@ -747,7 +729,7 @@ function initializeAfterAppReady() {
         }
         item.setSaveDialogOptions({
             title: filename,
-            defaultPath: path.resolve(config.downloadLocation, filename),
+            defaultPath: path.resolve(Config.downloadLocation, filename),
             filters,
         });
 
@@ -758,7 +740,7 @@ function initializeAfterAppReady() {
         });
     });
 
-    ipcMain.emit('update-menu', true, config);
+    handleUpdateMenuEvent();
 
     ipcMain.emit('update-dict');
 
@@ -790,12 +772,12 @@ function initializeAfterAppReady() {
         const requestingURL = webContents.getURL();
 
         // is the requesting url trusted?
-        callback(urlUtils.isTrustedURL(requestingURL, config.teams));
+        callback(urlUtils.isTrustedURL(requestingURL, Config.teams));
     });
 
     // only check for non-Windows, as with Windows we have to wait for GPO teams
-    if (process.platform !== 'win32' || typeof config.registryConfigData !== 'undefined') {
-        if (config.teams.length === 0) {
+    if (process.platform !== 'win32' || typeof Config.registryConfigData !== 'undefined') {
+        if (Config.teams.length === 0) {
             setTimeout(() => {
                 handleNewServerModal();
             }, 200);
@@ -818,9 +800,9 @@ function updateServerInfos(teams: TeamWithTabs[]) {
         serverInfos.push(serverInfo.promise);
     });
     Promise.all(serverInfos).then((data: Array<RemoteInfo | string | undefined>) => {
-        const teams = config.teams;
+        const teams = Config.teams;
         teams.forEach((team) => openExtraTabs(data, team));
-        config.set('teams', teams);
+        Config.set('teams', teams);
     }).catch((reason: any) => {
         log.error('Error getting server infos', reason);
     });
@@ -861,25 +843,25 @@ function handleCloseAppMenu() {
     WindowManager.focusBrowserView();
 }
 
-function handleUpdateMenuEvent(event: IpcMainEvent, menuConfig: Config) {
-    const aMenu = createAppMenu(menuConfig);
+function handleUpdateMenuEvent() {
+    const aMenu = createAppMenu(Config);
     Menu.setApplicationMenu(aMenu);
     aMenu.addListener('menu-will-close', handleCloseAppMenu);
 
     // set up context menu for tray icon
     if (shouldShowTrayIcon()) {
-        const tMenu = createTrayMenu(menuConfig.data!);
+        const tMenu = createTrayMenu(Config.data!);
         setTrayMenu(tMenu);
     }
 }
 
-function handleUpdateShortcutMenuEvent(event: IpcMainEvent) {
-    handleUpdateMenuEvent(event, config);
+function handleUpdateShortcutMenuEvent() {
+    handleUpdateMenuEvent();
 }
 
 async function handleSelectDownload(event: IpcMainInvokeEvent, startFrom: string) {
     const message = 'Specify the folder where files will download';
-    const result = await dialog.showOpenDialog({defaultPath: startFrom || config.downloadLocation,
+    const result = await dialog.showOpenDialog({defaultPath: startFrom || Config.downloadLocation,
         message,
         properties:
      ['openDirectory', 'createDirectory', 'dontAddToRecent', 'promptToCreate']});
@@ -902,7 +884,7 @@ function getDeeplinkingURL(args: string[]) {
 }
 
 function shouldShowTrayIcon() {
-    return config.showTrayIcon || process.platform === 'win32';
+    return Config.showTrayIcon || process.platform === 'win32';
 }
 
 function wasUpdated(lastAppVersion?: string) {
@@ -967,15 +949,15 @@ function resizeScreen(browserWindow: BrowserWindow) {
     handle();
 }
 function handleUpdateLastActive(event: IpcMainEvent, serverName: string, viewName: string) {
-    const teams = config.teams;
+    const teams = Config.teams;
     teams.forEach((team) => {
         if (team.name === serverName) {
             const viewOrder = team?.tabs.find((tab) => tab.name === viewName)?.order || 0;
             team.lastActiveTab = viewOrder;
         }
     });
-    config.set('teams', teams);
-    config.set('lastActiveTeam', teams.find((team) => team.name === serverName)?.order || 0);
+    Config.set('teams', teams);
+    Config.set('lastActiveTeam', teams.find((team) => team.name === serverName)?.order || 0);
 }
 
 function handleGetAvailableSpellCheckerLanguages() {

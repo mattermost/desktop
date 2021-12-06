@@ -11,7 +11,7 @@ const {app} = electron;
 /**
  * Monitors system idle time, listens for system events and fires status updates as needed
  */
-export default class UserActivityMonitor extends EventEmitter {
+export class UserActivityMonitor extends EventEmitter {
     isActive: boolean;
     idleTime: number;
     lastSetActive?: number;
@@ -138,3 +138,6 @@ export default class UserActivityMonitor extends EventEmitter {
         });
     }
 }
+
+const userActivityMonitor = new UserActivityMonitor();
+export default userActivityMonitor;

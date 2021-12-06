@@ -35,7 +35,9 @@ import RegistryConfig, {REGISTRY_READ_EVENT} from './RegistryConfig';
  * Handles loading and merging all sources of configuration as well as saving user provided config
  */
 
-export default class Config extends EventEmitter {
+const configPath = app.getPath('userData') + '/config.json';
+
+export class Config extends EventEmitter {
     configFilePath: string;
 
     registryConfig: RegistryConfig;
@@ -540,3 +542,6 @@ export default class Config extends EventEmitter {
         this.emit('darkModeChange', this.combinedData.darkMode);
     }
 }
+
+const config = new Config(configPath);
+export default config;

@@ -119,9 +119,8 @@ export class WindowManager {
                 delete this.mainWindow;
             });
             this.mainWindow.on('unresponsive', () => {
-                const criticalErrorHandler = new CriticalErrorHandler();
-                criticalErrorHandler.setMainWindow(this.mainWindow!);
-                criticalErrorHandler.windowUnresponsiveHandler();
+                CriticalErrorHandler.setMainWindow(this.mainWindow!);
+                CriticalErrorHandler.windowUnresponsiveHandler();
             });
             this.mainWindow.on('maximize', this.handleMaximizeMainWindow);
             this.mainWindow.on('unmaximize', this.handleUnmaximizeMainWindow);

@@ -8,7 +8,7 @@ import path from 'path';
 
 import {app, dialog} from 'electron';
 
-import CriticalErrorHandler from './CriticalErrorHandler';
+import {CriticalErrorHandler} from './CriticalErrorHandler';
 
 jest.mock('path', () => ({
     join: jest.fn().mockImplementation((...args) => args.join('/')),

@@ -7,7 +7,7 @@ import {app} from 'electron';
 import isDev from 'electron-is-dev';
 import log from 'electron-log';
 
-export default class AutoLauncher {
+export class AutoLauncher {
     appLauncher: AutoLaunch;
 
     constructor() {
@@ -58,3 +58,6 @@ export default class AutoLauncher {
         return Promise.resolve(null);
     }
 }
+
+const autoLauncher = new AutoLauncher();
+export default autoLauncher;

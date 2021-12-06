@@ -38,7 +38,7 @@ function openDetachedExternal(url: string) {
     }
 }
 
-export default class CriticalErrorHandler {
+export class CriticalErrorHandler {
     mainWindow?: BrowserWindow;
 
     setMainWindow(mainWindow: BrowserWindow) {
@@ -113,4 +113,7 @@ export default class CriticalErrorHandler {
         }
     }
 }
+
+const criticalErrorHandler = new CriticalErrorHandler();
+export default criticalErrorHandler;
 

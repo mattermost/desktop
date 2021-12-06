@@ -5,6 +5,10 @@
 
 import fs from 'fs';
 
+import path from 'path';
+
+import {app} from 'electron';
+
 import log from 'electron-log';
 
 import {TrustedOrigin, PermissionType} from 'types/trustedOrigin';
@@ -12,7 +16,10 @@ import {TrustedOrigin, PermissionType} from 'types/trustedOrigin';
 import urlUtils from 'common/utils/url';
 
 import * as Validator from './Validator';
-export default class TrustedOriginsStore {
+
+const trustedOriginsStoreFile = path.resolve(app.getPath('userData'), 'trustedOrigins.json');
+
+export class TrustedOriginsStore {
     storeFile: string;
     data?: Map<string, TrustedOrigin>;
 
@@ -108,3 +115,6 @@ export default class TrustedOriginsStore {
         return urlPermissions ? urlPermissions[permission] : undefined;
     }
 }
+
+const trustedOriginsStore = new TrustedOriginsStore(trustedOriginsStoreFile);
+export default trustedOriginsStore;

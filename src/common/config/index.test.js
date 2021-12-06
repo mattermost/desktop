@@ -1,13 +1,14 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import Config from 'common/config';
+import {Config} from 'common/config';
 
 const configPath = '/fake/config/path';
 
 jest.mock('electron', () => ({
     app: {
         name: 'Mattermost',
+        getPath: jest.fn(),
     },
     nativeTheme: {
         shouldUseDarkColors: false,

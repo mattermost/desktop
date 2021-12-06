@@ -73,3 +73,6 @@ export class CertificateManager {
         this.certificateRequestCallbackMap.delete(server);
     }
 }
+
+const certificateManager = new CertificateManager();
+export default certificateManager;
