@@ -13,7 +13,7 @@ import log from 'electron-log';
 import {protocols} from '../../electron-builder.json';
 
 import * as Validator from './Validator';
-import {getMainWindow} from './windows/windowManager';
+import WindowManager from './windows/windowManager';
 
 const allowedProtocolFile = path.resolve(app.getPath('userData'), 'allowedProtocols.json');
 
@@ -52,7 +52,7 @@ export class AllowProtocolDialog {
             shell.openExternal(URL);
             return;
         }
-        const mainWindow = getMainWindow();
+        const mainWindow = WindowManager.getMainWindow();
         if (!mainWindow) {
             return;
         }

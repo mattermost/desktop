@@ -8,7 +8,7 @@ import {Notification, shell} from 'electron';
 import {PLAY_SOUND} from 'common/communication';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
 
-import * as WindowManager from '../windows/windowManager';
+import WindowManager from '../windows/windowManager';
 
 import {displayMention, displayDownloadCompleted, currentNotifications} from './index';
 

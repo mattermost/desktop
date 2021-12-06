@@ -5,7 +5,7 @@ import {Certificate, WebContents} from 'electron';
 
 import {CertificateModalData} from 'types/certificate';
 
-import * as WindowManager from './windows/windowManager';
+import WindowManager from './windows/windowManager';
 
 import modalManager from './views/modalManager';
 import {getLocalURLString, getLocalPreload} from './utils';

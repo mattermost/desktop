@@ -63,7 +63,7 @@ import allowProtocolDialog from './allowProtocolDialog';
 import AppVersionManager from './AppVersionManager';
 import initCookieManager from './cookieManager';
 import UserActivityMonitor from './UserActivityMonitor';
-import * as WindowManager from './windows/windowManager';
+import WindowManager from './windows/windowManager';
 import {displayMention, displayDownloadCompleted} from './notifications';
 
 import parseArgs from './ParseArgs';

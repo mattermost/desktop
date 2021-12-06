@@ -3,7 +3,7 @@
 
 'use strict';
 
-import * as WindowManager from 'main/windows/windowManager';
+import WindowManager from 'main/windows/windowManager';
 
 import {createTemplate} from './app';
 

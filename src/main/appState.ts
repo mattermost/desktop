@@ -6,7 +6,7 @@ import {ipcMain} from 'electron';
 
 import {UPDATE_MENTIONS, UPDATE_TRAY, UPDATE_BADGE, SESSION_EXPIRED, UPDATE_DROPDOWN_MENTIONS} from 'common/communication';
 
-import * as WindowManager from './windows/windowManager';
+import WindowManager from './windows/windowManager';
 
 const status = {
     unreads: new Map<string, boolean>(),
