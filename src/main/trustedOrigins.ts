@@ -5,10 +5,6 @@
 
 import fs from 'fs';
 
-import path from 'path';
-
-import {app} from 'electron';
-
 import log from 'electron-log';
 
 import {TrustedOrigin, PermissionType} from 'types/trustedOrigin';
@@ -16,8 +12,7 @@ import {TrustedOrigin, PermissionType} from 'types/trustedOrigin';
 import urlUtils from 'common/utils/url';
 
 import * as Validator from './Validator';
-
-const trustedOriginsStoreFile = path.resolve(app.getPath('userData'), 'trustedOrigins.json');
+import {trustedOriginsStoreFile} from './constants';
 
 export class TrustedOriginsStore {
     storeFile: string;

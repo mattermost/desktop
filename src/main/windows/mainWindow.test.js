@@ -8,6 +8,7 @@ import path from 'path';
 import {BrowserWindow, screen, app, globalShortcut} from 'electron';
 
 import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB} from 'common/communication';
+import Config from 'common/config';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH} from 'common/utils/constants';
 
 import ContextMenu from '../contextMenu';
@@ -35,6 +36,11 @@ jest.mock('electron', () => ({
         register: jest.fn(),
         registerAll: jest.fn(),
     },
+}));
+
+jest.mock('common/config', () => ({}));
+jest.mock('common/utils/util', () => ({
+    isVersionGreaterThanOrEqualTo: jest.fn(),
 }));
 
 jest.mock('electron-log', () => ({}));
@@ -101,7 +107,7 @@ describe('main/windows/mainWindow', () => {
         });
 
         it('should set window size using bounds read from file', () => {
-            createMainWindow({}, {});
+            createMainWindow({});
             expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
                 x: 400,
                 y: 300,
@@ -114,7 +120,7 @@ describe('main/windows/mainWindow', () => {
 
         it('should set default window size when failing to read bounds from file', () => {
             fs.readFileSync.mockImplementation(() => 'just a bunch of garbage');
-            createMainWindow({}, {});
+            createMainWindow({});
             expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
                 width: DEFAULT_WINDOW_WIDTH,
                 height: DEFAULT_WINDOW_HEIGHT,
@@ -124,7 +130,7 @@ describe('main/windows/mainWindow', () => {
         it('should set default window size when bounds are outside the normal screen', () => {
             fs.readFileSync.mockImplementation(() => '{"x":-400,"y":-300,"width":1280,"height":700,"maximized":false,"fullscreen":false}');
             screen.getDisplayMatching.mockImplementation(() => ({bounds: {x: 0, y: 0, width: 1920, height: 1080}}));
-            createMainWindow({}, {});
+            createMainWindow({});
             expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
                 width: DEFAULT_WINDOW_WIDTH,
                 height: DEFAULT_WINDOW_HEIGHT,
@@ -136,7 +142,7 @@ describe('main/windows/mainWindow', () => {
             Object.defineProperty(process, 'platform', {
                 value: 'linux',
             });
-            createMainWindow({}, {linuxAppIcon: 'linux-icon.png'});
+            createMainWindow({linuxAppIcon: 'linux-icon.png'});
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
@@ -156,7 +162,7 @@ describe('main/windows/mainWindow', () => {
             };
             BrowserWindow.mockImplementation(() => window);
             fs.readFileSync.mockImplementation(() => '{"x":400,"y":300,"width":1280,"height":700,"maximized":true,"fullscreen":false}');
-            createMainWindow({}, {});
+            createMainWindow({});
             expect(window.webContents.zoomLevel).toStrictEqual(0);
             expect(window.maximize).toBeCalled();
         });
@@ -191,7 +197,7 @@ describe('main/windows/mainWindow', () => {
                 }),
             };
             BrowserWindow.mockImplementation(() => window);
-            createMainWindow({}, {});
+            createMainWindow({});
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
@@ -212,7 +218,9 @@ describe('main/windows/mainWindow', () => {
                 }),
             };
             BrowserWindow.mockImplementation(() => window);
-            createMainWindow({minimizeToTray: true}, {});
+            Config.minimizeToTray = true;
+            createMainWindow({});
+            Config.minimizeToTray = false;
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
@@ -233,7 +241,7 @@ describe('main/windows/mainWindow', () => {
                 }),
             };
             BrowserWindow.mockImplementation(() => window);
-            createMainWindow({}, {});
+            createMainWindow({});
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
@@ -254,7 +262,7 @@ describe('main/windows/mainWindow', () => {
                 }),
             };
             BrowserWindow.mockImplementation(() => window);
-            createMainWindow({}, {});
+            createMainWindow({});
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
@@ -282,7 +290,7 @@ describe('main/windows/mainWindow', () => {
                 }),
             };
             BrowserWindow.mockImplementation(() => window);
-            createMainWindow({}, {});
+            createMainWindow({});
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
@@ -309,7 +317,7 @@ describe('main/windows/mainWindow', () => {
                 },
             };
             BrowserWindow.mockImplementation(() => window);
-            createMainWindow({}, {});
+            createMainWindow({});
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
@@ -331,7 +339,7 @@ describe('main/windows/mainWindow', () => {
                 }),
             };
             BrowserWindow.mockImplementation(() => window);
-            createMainWindow({}, {});
+            createMainWindow({});
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });

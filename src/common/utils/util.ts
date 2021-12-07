@@ -2,13 +2,11 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
-import electron from 'electron';
+import {screen} from 'electron';
 
 import {DEVELOPMENT, PRODUCTION} from './constants';
 
 function getDisplayBoundaries() {
-    const {screen} = electron;
-
     const displays = screen.getAllDisplays();
 
     return displays.map((display) => {

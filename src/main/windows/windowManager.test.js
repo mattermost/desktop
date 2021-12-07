@@ -6,6 +6,7 @@
 
 import {app, systemPreferences} from 'electron';
 
+import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
 
@@ -44,6 +45,8 @@ jest.mock('electron-log', () => ({
     info: jest.fn(),
 }));
 
+jest.mock('common/config', () => ({}));
+
 jest.mock('common/utils/url', () => ({
     isTeamUrl: jest.fn(),
     isAdminUrl: jest.fn(),
@@ -67,7 +70,7 @@ jest.mock('./settingsWindow', () => ({
 jest.mock('./mainWindow', () => jest.fn());
 
 describe('main/windows/windowManager', () => {
-    describe('setConfig', () => {
+    describe('handleUpdateConfig', () => {
         const windowManager = new WindowManager();
 
         beforeEach(() => {
@@ -76,15 +79,14 @@ describe('main/windows/windowManager', () => {
             };
         });
 
-        it('should reload config on set', () => {
-            windowManager.setConfig({some: 'config item'});
+        it('should reload config', () => {
+            windowManager.handleUpdateConfig();
             expect(windowManager.viewManager.reloadConfiguration).toHaveBeenCalled();
         });
     });
 
     describe('showSettingsWindow', () => {
         const windowManager = new WindowManager();
-        windowManager.config = {};
         windowManager.showMainWindow = jest.fn();
 
         afterEach(() => {
@@ -119,7 +121,6 @@ describe('main/windows/windowManager', () => {
 
     describe('showMainWindow', () => {
         const windowManager = new WindowManager();
-        windowManager.config = {};
         windowManager.viewManager = {
             handleDeepLink: jest.fn(),
             updateMainWindow: jest.fn(),
@@ -327,9 +328,13 @@ describe('main/windows/windowManager', () => {
             flashFrame: jest.fn(),
         };
 
+        beforeEach(() => {
+            Config.notifications = {};
+        });
+
         afterEach(() => {
             jest.resetAllMocks();
-            delete windowManager.config;
+            Config.notifications = {};
         });
 
         it('linux/windows - should not flash frame when config item is not set', () => {
@@ -346,10 +351,8 @@ describe('main/windows/windowManager', () => {
         });
 
         it('linux/windows - should flash frame when config item is set', () => {
-            windowManager.config = {
-                notifications: {
-                    flashWindow: true,
-                },
+            Config.notifications = {
+                flashWindow: true,
             };
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
@@ -376,11 +379,9 @@ describe('main/windows/windowManager', () => {
         });
 
         it('mac - should bounce icon when config item is set', () => {
-            windowManager.config = {
-                notifications: {
-                    bounceIcon: true,
-                    bounceIconType: 'critical',
-                },
+            Config.notifications = {
+                bounceIcon: true,
+                bounceIconType: 'critical',
             };
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
@@ -469,8 +470,15 @@ describe('main/windows/windowManager', () => {
 
     describe('switchServer', () => {
         const windowManager = new WindowManager();
-        windowManager.config = {
-            teams: [
+        windowManager.viewManager = {
+            showByName: jest.fn(),
+        };
+
+        beforeEach(() => {
+            jest.useFakeTimers();
+            getTabViewName.mockImplementation((server, tab) => `${server}_${tab}`);
+
+            Config.teams = [
                 {
                     name: 'server-1',
                     order: 1,
@@ -513,26 +521,20 @@ describe('main/windows/windowManager', () => {
                     ],
                     lastActiveTab: 2,
                 },
-            ],
-        };
-        windowManager.viewManager = {
-            showByName: jest.fn(),
-        };
-        const map = windowManager.config.teams.reduce((arr, item) => {
-            item.tabs.forEach((tab) => {
-                arr.push([`${item.name}_${tab.name}`, {}]);
-            });
-            return arr;
-        }, []);
-        windowManager.viewManager.views = new Map(map);
+            ];
 
-        beforeEach(() => {
-            jest.useFakeTimers();
-            getTabViewName.mockImplementation((server, tab) => `${server}_${tab}`);
+            const map = Config.teams.reduce((arr, item) => {
+                item.tabs.forEach((tab) => {
+                    arr.push([`${item.name}_${tab.name}`, {}]);
+                });
+                return arr;
+            }, []);
+            windowManager.viewManager.views = new Map(map);
         });
 
         afterEach(() => {
             jest.resetAllMocks();
+            Config.teams = [];
         });
 
         it('should do nothing if cannot find the server', () => {
@@ -625,8 +627,13 @@ describe('main/windows/windowManager', () => {
 
     describe('selectTab', () => {
         const windowManager = new WindowManager();
-        windowManager.config = {
-            teams: [
+        windowManager.viewManager = {
+            getCurrentView: jest.fn(),
+        };
+        windowManager.switchTab = jest.fn();
+
+        beforeEach(() => {
+            Config.teams = [
                 {
                     name: 'server-1',
                     order: 1,
@@ -648,15 +655,12 @@ describe('main/windows/windowManager', () => {
                         },
                     ],
                 },
-            ],
-        };
-        windowManager.viewManager = {
-            getCurrentView: jest.fn(),
-        };
-        windowManager.switchTab = jest.fn();
+            ];
+        });
 
         afterEach(() => {
             jest.resetAllMocks();
+            Config.teams = [];
         });
 
         it('should select next server when open', () => {
@@ -696,7 +700,6 @@ describe('main/windows/windowManager', () => {
                     type: 'tab-2',
                 },
             });
-
             windowManager.selectTab((order) => order + 1);
             expect(windowManager.switchTab).toBeCalledWith('server-1', 'tab-3');
         });
@@ -704,32 +707,6 @@ describe('main/windows/windowManager', () => {
 
     describe('handleBrowserHistoryPush', () => {
         const windowManager = new WindowManager();
-        windowManager.config = {
-            teams: [
-                {
-                    name: 'server-1',
-                    url: 'http://server-1.com',
-                    order: 0,
-                    tabs: [
-                        {
-                            name: 'tab-messaging',
-                            order: 0,
-                            isOpen: true,
-                        },
-                        {
-                            name: 'other_type_1',
-                            order: 2,
-                            isOpen: true,
-                        },
-                        {
-                            name: 'other_type_2',
-                            order: 1,
-                            isOpen: false,
-                        },
-                    ],
-                },
-            ],
-        };
         const view1 = {
             name: 'server-1_tab-messaging',
             isLoggedIn: true,
@@ -783,8 +760,36 @@ describe('main/windows/windowManager', () => {
             showByName: jest.fn(),
         };
 
+        beforeEach(() => {
+            Config.teams = [
+                {
+                    name: 'server-1',
+                    url: 'http://server-1.com',
+                    order: 0,
+                    tabs: [
+                        {
+                            name: 'tab-messaging',
+                            order: 0,
+                            isOpen: true,
+                        },
+                        {
+                            name: 'other_type_1',
+                            order: 2,
+                            isOpen: true,
+                        },
+                        {
+                            name: 'other_type_2',
+                            order: 1,
+                            isOpen: false,
+                        },
+                    ],
+                },
+            ];
+        });
+
         afterEach(() => {
             jest.resetAllMocks();
+            Config.teams = [];
         });
 
         it('should open closed view if pushing to it', () => {

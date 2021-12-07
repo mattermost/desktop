@@ -5,17 +5,14 @@
 
 import fs from 'fs';
 
-import path from 'path';
-
-import {Certificate, app} from 'electron';
+import {Certificate} from 'electron';
 
 import {ComparableCertificate} from 'types/certificate';
 
 import urlUtils from 'common/utils/url';
 
 import * as Validator from './Validator';
-
-const certificateStorePath = path.resolve(app.getPath('userData'), 'certificate.json');
+import {certificateStorePath} from './constants';
 
 function comparableCertificate(certificate: Certificate, dontTrust = false): ComparableCertificate {
     return {

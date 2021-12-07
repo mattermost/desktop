@@ -6,7 +6,7 @@
 import {Menu, MenuItem, MenuItemConstructorOptions} from 'electron';
 import {CombinedConfig} from 'types/config';
 
-import WindowManager from '../windows/windowManager';
+import WindowManager from 'main/windows/windowManager';
 
 export function createTemplate(config: CombinedConfig) {
     const teams = config.teams;

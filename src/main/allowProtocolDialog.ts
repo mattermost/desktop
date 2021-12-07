@@ -5,17 +5,14 @@
 
 import fs from 'fs';
 
-import path from 'path';
-
-import {app, dialog, shell} from 'electron';
+import {dialog, shell} from 'electron';
 import log from 'electron-log';
 
 import {protocols} from '../../electron-builder.json';
 
 import * as Validator from './Validator';
 import WindowManager from './windows/windowManager';
-
-const allowedProtocolFile = path.resolve(app.getPath('userData'), 'allowedProtocols.json');
+import {allowedProtocolFile} from './constants';
 
 export class AllowProtocolDialog {
     allowedProtocols: string[];

@@ -3,10 +3,8 @@
 
 import {EventEmitter} from 'events';
 
-import electron from 'electron';
+import {app, powerMonitor} from 'electron';
 import log from 'electron-log';
-
-const {app} = electron;
 
 /**
  * Monitors system idle time, listens for system events and fires status updates as needed
@@ -70,7 +68,7 @@ export class UserActivityMonitor extends EventEmitter {
         // Node typings don't map Timeout to number, but then clearInterval requires a number?
         this.systemIdleTimeIntervalID = setInterval(() => {
             try {
-                this.updateIdleTime(electron.powerMonitor.getSystemIdleTime());
+                this.updateIdleTime(powerMonitor.getSystemIdleTime());
             } catch (err) {
                 log.error('Error getting system idle time:', err);
             }

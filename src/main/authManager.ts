@@ -110,3 +110,6 @@ export class AuthManager {
         TrustedOriginsStore.save();
     }
 }
+
+const authManager = new AuthManager();
+export default authManager;
