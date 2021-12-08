@@ -12,7 +12,7 @@ import WindowManager from 'main/windows/windowManager';
 
 import {getDeeplinkingURL, openDeepLink, resizeScreen} from './utils';
 
-const certificateErrorCallbacks = new Map();
+export const certificateErrorCallbacks = new Map();
 
 //
 // app event handlers
@@ -61,7 +61,7 @@ export function handleAppBeforeQuit() {
     global.willAppQuit = true;
 }
 
-export function handleAppCertificateError(event: Event, webContents: WebContents, url: string, error: string, certificate: Certificate, callback: (isTrusted: boolean) => void) {
+export async function handleAppCertificateError(event: Event, webContents: WebContents, url: string, error: string, certificate: Certificate, callback: (isTrusted: boolean) => void) {
     const parsedURL = urlUtils.parseURL(url);
     if (!parsedURL) {
         return;
@@ -94,49 +94,49 @@ export function handleAppCertificateError(event: Event, webContents: WebContents
         if (!mainWindow) {
             return;
         }
-        dialog.showMessageBox(mainWindow, {
-            title: 'Certificate Error',
-            message: 'There is a configuration issue with this Mattermost server, or someone is trying to intercept your connection. You also may need to sign into the Wi-Fi you are connected to using your web browser.',
-            type: 'error',
-            detail,
-            buttons: ['More Details', 'Cancel Connection'],
-            cancelId: 1,
-        }).then(
-            ({response}) => {
-                if (response === 0) {
-                    return dialog.showMessageBox(mainWindow, {
-                        title: 'Certificate Not Trusted',
-                        message: `Certificate from "${certificate.issuerName}" is not trusted.`,
-                        detail: extraDetail,
-                        type: 'error',
-                        buttons: ['Trust Insecure Certificate', 'Cancel Connection'],
-                        cancelId: 1,
-                        checkboxChecked: false,
-                        checkboxLabel: "Don't ask again",
-                    });
-                }
-                return {response, checkboxChecked: false};
-            }).then(
-            ({response: responseTwo, checkboxChecked}) => {
-                if (responseTwo === 0) {
-                    CertificateStore.add(origin, certificate);
-                    CertificateStore.save();
-                    certificateErrorCallbacks.get(errorID)(true);
-                    certificateErrorCallbacks.delete(errorID);
-                    webContents.loadURL(url);
-                } else {
-                    if (checkboxChecked) {
-                        CertificateStore.add(origin, certificate, true);
-                        CertificateStore.save();
-                    }
-                    certificateErrorCallbacks.get(errorID)(false);
-                    certificateErrorCallbacks.delete(errorID);
-                }
-            }).catch(
-            (dialogError) => {
-                log.error(`There was an error with the Certificate Error dialog: ${dialogError}`);
-                certificateErrorCallbacks.delete(errorID);
+
+        try {
+            let result = await dialog.showMessageBox(mainWindow, {
+                title: 'Certificate Error',
+                message: 'There is a configuration issue with this Mattermost server, or someone is trying to intercept your connection. You also may need to sign into the Wi-Fi you are connected to using your web browser.',
+                type: 'error',
+                detail,
+                buttons: ['More Details', 'Cancel Connection'],
+                cancelId: 1,
             });
+
+            if (result.response === 0) {
+                result = await dialog.showMessageBox(mainWindow, {
+                    title: 'Certificate Not Trusted',
+                    message: `Certificate from "${certificate.issuerName}" is not trusted.`,
+                    detail: extraDetail,
+                    type: 'error',
+                    buttons: ['Trust Insecure Certificate', 'Cancel Connection'],
+                    cancelId: 1,
+                    checkboxChecked: false,
+                    checkboxLabel: "Don't ask again",
+                });
+            } else {
+                result = {response: result.response, checkboxChecked: false};
+            }
+
+            if (result.response === 0) {
+                CertificateStore.add(origin, certificate);
+                CertificateStore.save();
+                certificateErrorCallbacks.get(errorID)(true);
+                webContents.loadURL(url);
+            } else {
+                if (result.checkboxChecked) {
+                    CertificateStore.add(origin, certificate, true);
+                    CertificateStore.save();
+                }
+                certificateErrorCallbacks.get(errorID)(false);
+            }
+        } catch (dialogError) {
+            log.error(`There was an error with the Certificate Error dialog: ${dialogError}`);
+        }
+
+        certificateErrorCallbacks.delete(errorID);
     }
 }
 
