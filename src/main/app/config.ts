@@ -27,49 +27,43 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
     if (!newConfig) {
         return;
     }
+
+    WindowManager.handleUpdateConfig();
+    if (app.isReady()) {
+        WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
+    }
+
+    setUnreadBadgeSetting(newConfig && newConfig.showUnreadBadge);
+    updateSpellCheckerLocales();
+
+    if (newConfig.downloadLocation) {
+        try {
+            app.setPath('downloads', newConfig.downloadLocation);
+        } catch (e) {
+            log.error(`There was a problem trying to set the default download path: ${e}`);
+        }
+    }
+
     if (process.platform === 'win32' || process.platform === 'linux') {
-        const autoStartTask = Config.autostart ? AutoLauncher.enable() : AutoLauncher.disable();
+        const autoStartTask = newConfig.autostart ? AutoLauncher.enable() : AutoLauncher.disable();
         autoStartTask.then(() => {
             log.info('config.autostart has been configured:', newConfig.autostart);
         }).catch((err) => {
             log.error('error:', err);
         });
-        WindowManager.handleUpdateConfig();
-        setUnreadBadgeSetting(newConfig && newConfig.showUnreadBadge);
-        updateSpellCheckerLocales();
-    }
-
-    handleUpdateMenuEvent();
-    ipcMain.emit(EMIT_CONFIGURATION, true, newConfig);
-}
-
-export function handleConfigSynchronize() {
-    if (!Config.data) {
-        return;
-    }
-
-    // TODO: send this to server manager
-    WindowManager.handleUpdateConfig();
-    setUnreadBadgeSetting(Config.data.showUnreadBadge);
-    if (Config.data.downloadLocation) {
-        try {
-            app.setPath('downloads', Config.data.downloadLocation);
-        } catch (e) {
-            log.error(`There was a problem trying to set the default download path: ${e}`);
-        }
-    }
-    if (app.isReady()) {
-        WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
     }
 
     if (process.platform === 'win32' && !didCheckForAddServerModal && typeof Config.registryConfigData !== 'undefined') {
         didCheckForAddServerModal = true;
-        updateServerInfos(Config.teams);
+        updateServerInfos(newConfig.teams);
         WindowManager.initializeCurrentServerName();
-        if (Config.teams.length === 0) {
+        if (newConfig.teams.length === 0) {
             handleNewServerModal();
         }
     }
+
+    handleUpdateMenuEvent();
+    ipcMain.emit(EMIT_CONFIGURATION, true, newConfig);
 }
 
 export function handleDarkModeChange(darkMode: boolean) {

@@ -109,7 +109,6 @@ export class Config extends EventEmitter {
         this.regenerateCombinedConfigData();
 
         this.emit('update', this.combinedData);
-        this.emit('synchronize');
     }
 
     /**
@@ -187,7 +186,6 @@ export class Config extends EventEmitter {
                     }
                 }
                 this.emit('update', this.combinedData);
-                this.emit('synchronize');
             });
         } catch (error) {
             this.emit('error', error);

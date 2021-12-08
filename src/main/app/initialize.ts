@@ -63,7 +63,7 @@ import {
     handleAppWillFinishLaunching,
     handleAppWindowAllClosed,
 } from './app';
-import {handleConfigSynchronize, handleConfigUpdate, handleDarkModeChange} from './config';
+import {handleConfigUpdate, handleDarkModeChange} from './config';
 import {
     handleAppVersion,
     handleCloseTab,
@@ -144,7 +144,6 @@ async function initializeConfig() {
     return new Promise<void>((resolve) => {
         Config.once('update', (configData) => {
             Config.on('update', handleConfigUpdate);
-            Config.on('synchronize', handleConfigSynchronize);
             Config.on('darkModeChange', handleDarkModeChange);
             Config.on('error', (error) => {
                 log.error(error);
