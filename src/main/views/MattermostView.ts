@@ -100,7 +100,13 @@ export class MattermostView extends EventEmitter {
         }
 
         this.view.webContents.on('did-finish-load', () => {
-            this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.name, this.tab.shouldNotify);
+            if (!this.view.webContents.isLoading()) {
+                try {
+                    this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.name, this.tab.shouldNotify);
+                } catch (e) {
+                    log.error('failed to send view options to view', this.tab.name);
+                }
+            }
         });
 
         this.contextMenu = new ContextMenu({}, this.view);
