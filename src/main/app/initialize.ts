@@ -41,6 +41,7 @@ import AuthManager from 'main/authManager';
 import AutoLauncher from 'main/AutoLauncher';
 import {setupBadge} from 'main/badge';
 import CertificateManager from 'main/certificateManager';
+import {updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import {displayDownloadCompleted} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
@@ -135,6 +136,7 @@ function initializeArgs() {
 
     if (global.args.dataDir) {
         app.setPath('userData', path.resolve(global.args.dataDir));
+        updatePaths(true);
     }
 }
 

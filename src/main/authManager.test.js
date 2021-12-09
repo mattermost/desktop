@@ -29,6 +29,9 @@ jest.mock('electron', () => ({
     app: {
         getPath: jest.fn(),
     },
+    ipcMain: {
+        on: jest.fn(),
+    },
 }));
 
 jest.mock('electron-log', () => ({

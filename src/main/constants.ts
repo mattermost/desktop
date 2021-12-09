@@ -5,13 +5,32 @@
 
 import path from 'path';
 
-import {app} from 'electron';
+import {app, ipcMain} from 'electron';
 
-const userDataPath = app.getPath('userData');
+import {UPDATE_PATHS} from 'common/communication';
 
-export const configPath = `${userDataPath}/config.json`;
-export const allowedProtocolFile = path.resolve(userDataPath, 'allowedProtocols.json');
-export const appVersionJson = path.join(userDataPath, 'app-state.json');
-export const certificateStorePath = path.resolve(userDataPath, 'certificate.json');
-export const trustedOriginsStoreFile = path.resolve(userDataPath, 'trustedOrigins.json');
-export const boundsInfoPath = path.join(userDataPath, 'bounds-info.json');
+let userDataPath;
+
+export let configPath = '';
+export let allowedProtocolFile = '';
+export let appVersionJson = '';
+export let certificateStorePath = '';
+export let trustedOriginsStoreFile = '';
+export let boundsInfoPath = '';
+
+export function updatePaths(emit = false) {
+    userDataPath = app.getPath('userData');
+
+    configPath = `${userDataPath}/config.json`;
+    allowedProtocolFile = path.resolve(userDataPath, 'allowedProtocols.json');
+    appVersionJson = path.join(userDataPath, 'app-state.json');
+    certificateStorePath = path.resolve(userDataPath, 'certificate.json');
+    trustedOriginsStoreFile = path.resolve(userDataPath, 'trustedOrigins.json');
+    boundsInfoPath = path.join(userDataPath, 'bounds-info.json');
+
+    if (emit) {
+        ipcMain.emit(UPDATE_PATHS);
+    }
+}
+
+updatePaths();

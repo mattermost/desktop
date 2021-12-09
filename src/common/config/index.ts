@@ -20,7 +20,7 @@ import {
     TeamWithTabs,
 } from 'types/config';
 
-import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION} from 'common/communication';
+import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION, UPDATE_PATHS} from 'common/communication';
 
 import {configPath} from 'main/constants';
 import * as Validator from 'main/Validator';
@@ -548,3 +548,10 @@ export class Config extends EventEmitter {
 
 const config = new Config(configPath);
 export default config;
+
+ipcMain.on(UPDATE_PATHS, () => {
+    config.configFilePath = configPath;
+    if (config.combinedData) {
+        config.reload();
+    }
+});

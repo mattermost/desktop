@@ -5,10 +5,12 @@
 
 import fs from 'fs';
 
+import {ipcMain} from 'electron';
 import log from 'electron-log';
 
 import {TrustedOrigin, PermissionType} from 'types/trustedOrigin';
 
+import {UPDATE_PATHS} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
 import * as Validator from './Validator';
@@ -113,3 +115,10 @@ export class TrustedOriginsStore {
 
 const trustedOriginsStore = new TrustedOriginsStore(trustedOriginsStoreFile);
 export default trustedOriginsStore;
+
+ipcMain.on(UPDATE_PATHS, () => {
+    trustedOriginsStore.storeFile = trustedOriginsStoreFile;
+    if (trustedOriginsStore.data) {
+        trustedOriginsStore.load();
+    }
+});

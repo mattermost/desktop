@@ -10,6 +10,9 @@ jest.mock('electron', () => ({
         name: 'Mattermost',
         getPath: jest.fn(),
     },
+    ipcMain: {
+        on: jest.fn(),
+    },
     nativeTheme: {
         shouldUseDarkColors: false,
     },

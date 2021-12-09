@@ -5,10 +5,11 @@
 
 import fs from 'fs';
 
-import {Certificate} from 'electron';
+import {Certificate, ipcMain} from 'electron';
 
 import {ComparableCertificate} from 'types/certificate';
 
+import {UPDATE_PATHS} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
 import * as Validator from './Validator';
@@ -80,5 +81,9 @@ export class CertificateStore {
     }
 }
 
-const certificateStore = new CertificateStore(certificateStorePath);
+let certificateStore = new CertificateStore(certificateStorePath);
 export default certificateStore;
+
+ipcMain.on(UPDATE_PATHS, () => {
+    certificateStore = new CertificateStore(certificateStorePath);
+});

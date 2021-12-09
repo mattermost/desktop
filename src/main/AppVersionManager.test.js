@@ -7,6 +7,12 @@ import * as Validator from 'main/Validator';
 
 import {AppVersionManager} from './AppVersionManager';
 
+jest.mock('electron', () => ({
+    ipcMain: {
+        on: jest.fn(),
+    },
+}));
+
 jest.mock('fs', () => ({
     readFileSync: jest.fn(),
     writeFile: jest.fn(),

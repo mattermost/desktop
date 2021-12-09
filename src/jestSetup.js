@@ -8,4 +8,6 @@ jest.mock('main/constants', () => ({
     certificateStorePath: 'certificateStorePath',
     trustedOriginsStoreFile: 'trustedOriginsStoreFile',
     boundsInfoPath: 'boundsInfoPath',
+
+    updatePaths: jest.fn(),
 }));
