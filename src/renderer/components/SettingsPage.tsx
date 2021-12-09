@@ -439,7 +439,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         checked={this.state.hideOnStart}
                         onChange={this.handleChangeHideOnStart}
                     />
-                    {'Hide window when launched on login'}
+                    {'Launch app minimized'}
                     <FormText>
                         {'If enabled, the app will start in system tray, and will not show the window on launch.'}
                     </FormText>
