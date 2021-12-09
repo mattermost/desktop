@@ -41,7 +41,6 @@ import AuthManager from 'main/authManager';
 import AutoLauncher from 'main/AutoLauncher';
 import {setupBadge} from 'main/badge';
 import CertificateManager from 'main/certificateManager';
-import initCookieManager from 'main/cookieManager';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import {displayDownloadCompleted} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
@@ -86,6 +85,7 @@ import {
     updateServerInfos,
     updateSpellCheckerLocales,
     wasUpdated,
+    initCookieManager,
 } from './utils';
 
 export const mainProtocol = protocols?.[0]?.schemes?.[0];

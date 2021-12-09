@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, BrowserWindow, Menu, Rectangle, session} from 'electron';
+import {app, BrowserWindow, Menu, Rectangle, Session, session} from 'electron';
 import log from 'electron-log';
 
 import {TeamWithTabs} from 'types/config';
@@ -156,4 +156,23 @@ export function resizeScreen(browserWindow: BrowserWindow) {
 
     browserWindow.on('restore', handle);
     handle();
+}
+
+function flushCookiesStore(session: Session) {
+    session.cookies.flushStore().catch((err) => {
+        log.error(`There was a problem flushing cookies:\n${err}`);
+    });
+}
+
+export function initCookieManager(session: Session) {
+    // Somehow cookies are not immediately saved to disk.
+    // So manually flush cookie store to disk on closing the app.
+    // https://github.com/electron/electron/issues/8416
+    app.on('before-quit', () => {
+        flushCookiesStore(session);
+    });
+
+    app.on('browser-window-blur', () => {
+        flushCookiesStore(session);
+    });
 }

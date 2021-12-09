@@ -104,6 +104,7 @@ jest.mock('main/app/utils', () => ({
     updateServerInfos: jest.fn(),
     updateSpellCheckerLocales: jest.fn(),
     wasUpdated: jest.fn(),
+    initCookieManager: jest.fn(),
 }));
 jest.mock('main/AppVersionManager', () => ({}));
 jest.mock('main/authManager', () => ({}));
@@ -114,7 +115,6 @@ jest.mock('main/badge', () => ({
     setupBadge: jest.fn(),
 }));
 jest.mock('main/certificateManager', () => ({}));
-jest.mock('main/cookieManager', () => jest.fn());
 jest.mock('main/CriticalErrorHandler', () => ({
     processUncaughtExceptionHandler: jest.fn(),
     setMainWindow: jest.fn(),

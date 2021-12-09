@@ -16,6 +16,7 @@ let trayIcon: Tray;
 let lastStatus = 'normal';
 let lastMessage = app.name;
 
+/* istanbul ignore next */
 export function refreshTrayImages(trayIconTheme: string) {
     const winTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
 

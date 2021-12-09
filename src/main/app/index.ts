@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+/* istanbul ignore file */
+
 import {initialize} from './initialize';
 
 if (process.env.NODE_ENV !== 'production' && module.hot) {
