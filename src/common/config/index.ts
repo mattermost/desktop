@@ -20,8 +20,9 @@ import {
     TeamWithTabs,
 } from 'types/config';
 
-import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION} from 'common/communication';
+import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION, UPDATE_PATHS} from 'common/communication';
 
+import {configPath} from 'main/constants';
 import * as Validator from 'main/Validator';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 import Utils from 'common/utils/util';
@@ -35,7 +36,7 @@ import RegistryConfig, {REGISTRY_READ_EVENT} from './RegistryConfig';
  * Handles loading and merging all sources of configuration as well as saving user provided config
  */
 
-export default class Config extends EventEmitter {
+export class Config extends EventEmitter {
     configFilePath: string;
 
     registryConfig: RegistryConfig;
@@ -108,7 +109,6 @@ export default class Config extends EventEmitter {
         this.regenerateCombinedConfigData();
 
         this.emit('update', this.combinedData);
-        this.emit('synchronize');
     }
 
     /**
@@ -186,7 +186,6 @@ export default class Config extends EventEmitter {
                     }
                 }
                 this.emit('update', this.combinedData);
-                this.emit('synchronize');
             });
         } catch (error) {
             this.emit('error', error);
@@ -265,6 +264,12 @@ export default class Config extends EventEmitter {
     }
     get helpLink() {
         return this.combinedData?.helpLink;
+    }
+    get minimizeToTray() {
+        return this.combinedData?.minimizeToTray;
+    }
+    get lastActiveTeam() {
+        return this.combinedData?.lastActiveTeam;
     }
 
     // initialization/processing methods
@@ -540,3 +545,13 @@ export default class Config extends EventEmitter {
         this.emit('darkModeChange', this.combinedData.darkMode);
     }
 }
+
+const config = new Config(configPath);
+export default config;
+
+ipcMain.on(UPDATE_PATHS, () => {
+    config.configFilePath = configPath;
+    if (config.combinedData) {
+        config.reload();
+    }
+});

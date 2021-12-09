@@ -57,7 +57,7 @@ describe('config', function desc() {
     });
 
     it('MM-T4402 should upgrade v0 config file', async () => {
-        const Config = require('../../../src/common/config').default;
+        const Config = require('../../../src/common/config').Config;
         const newConfig = new Config(env.configFilePath);
         const oldConfig = {
             url: env.mattermostURL,

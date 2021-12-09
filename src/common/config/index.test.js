@@ -1,13 +1,17 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import Config from 'common/config';
+import {Config} from 'common/config';
 
 const configPath = '/fake/config/path';
 
 jest.mock('electron', () => ({
     app: {
         name: 'Mattermost',
+        getPath: jest.fn(),
+    },
+    ipcMain: {
+        on: jest.fn(),
     },
     nativeTheme: {
         shouldUseDarkColors: false,
@@ -122,7 +126,7 @@ describe('common/config', () => {
     });
 
     describe('reload', () => {
-        it('should emit update and synchronize events', () => {
+        it('should emit update event', () => {
             const config = new Config(configPath);
             config.loadDefaultConfigData = jest.fn();
             config.loadBuildConfigData = jest.fn();
@@ -135,7 +139,6 @@ describe('common/config', () => {
 
             config.reload();
             expect(config.emit).toHaveBeenNthCalledWith(1, 'update', {test: 'test'});
-            expect(config.emit).toHaveBeenNthCalledWith(2, 'synchronize');
         });
     });
 
@@ -170,7 +173,7 @@ describe('common/config', () => {
     });
 
     describe('saveLocalConfigData', () => {
-        it('should emit update and synchronize events on save', () => {
+        it('should emit update event on save', () => {
             const config = new Config(configPath);
             config.localConfigData = {test: 'test'};
             config.combinedData = {...config.localConfigData};
@@ -181,7 +184,6 @@ describe('common/config', () => {
 
             config.saveLocalConfigData();
             expect(config.emit).toHaveBeenNthCalledWith(1, 'update', {test: 'test'});
-            expect(config.emit).toHaveBeenNthCalledWith(2, 'synchronize');
         });
 
         it('should emit error when fs.writeSync throws an error', () => {

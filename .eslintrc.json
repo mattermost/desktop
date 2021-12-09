@@ -72,7 +72,6 @@
                 "scripts/check_build_config.js",
                 "LICENSE.txt",
                 "src/utils/util.ts",
-                "src/main/main.ts",
                 "src/main/contextMenu.ts",
                 "src/renderer/updater.tsx",
                 "src/main/badge.ts",

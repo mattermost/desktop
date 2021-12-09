@@ -4,7 +4,7 @@ import log from 'electron-log';
 import {BrowserView, BrowserWindow, dialog, ipcMain} from 'electron';
 import {BrowserViewConstructorOptions} from 'electron/main';
 
-import {CombinedConfig, Tab, TeamWithTabs} from 'types/config';
+import {Tab, TeamWithTabs} from 'types/config';
 
 import {SECOND} from 'common/utils/constants';
 import {
@@ -19,6 +19,7 @@ import {
     BROWSER_HISTORY_PUSH,
     UPDATE_LAST_ACTIVE,
 } from 'common/communication';
+import Config from 'common/config';
 import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -47,10 +48,10 @@ export class ViewManager {
     mainWindow: BrowserWindow;
     loadingScreen?: BrowserView;
 
-    constructor(config: CombinedConfig, mainWindow: BrowserWindow) {
-        this.configServers = config.teams;
-        this.lastActiveServer = config.lastActiveTeam;
-        this.viewOptions = {webPreferences: {spellcheck: config.useSpellChecker}};
+    constructor(mainWindow: BrowserWindow) {
+        this.configServers = Config.teams.concat();
+        this.lastActiveServer = Config.lastActiveTeam;
+        this.viewOptions = {webPreferences: {spellcheck: Config.useSpellChecker}};
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
         this.mainWindow = mainWindow;
         this.closedViews = new Map();

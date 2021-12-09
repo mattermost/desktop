@@ -20,6 +20,7 @@ jest.mock('electron', () => ({
     },
     ipcMain: {
         emit: jest.fn(),
+        on: jest.fn(),
     },
 }));
 
@@ -63,7 +64,7 @@ jest.mock('./webContentEvents', () => ({}));
 
 describe('main/views/viewManager', () => {
     describe('loadView', () => {
-        const viewManager = new ViewManager({}, {});
+        const viewManager = new ViewManager({});
         const onceFn = jest.fn();
         const loadFn = jest.fn();
 
@@ -108,7 +109,7 @@ describe('main/views/viewManager', () => {
     });
 
     describe('reloadViewIfNeeded', () => {
-        const viewManager = new ViewManager({}, {});
+        const viewManager = new ViewManager({});
 
         afterEach(() => {
             jest.resetAllMocks();
@@ -168,7 +169,7 @@ describe('main/views/viewManager', () => {
     });
 
     describe('reloadConfiguration', () => {
-        const viewManager = new ViewManager({}, {});
+        const viewManager = new ViewManager({});
 
         beforeEach(() => {
             viewManager.loadView = jest.fn();
@@ -379,7 +380,8 @@ describe('main/views/viewManager', () => {
                 },
             ],
         }];
-        const viewManager = new ViewManager({teams}, {});
+        const viewManager = new ViewManager({});
+        viewManager.configServers = teams.concat();
 
         beforeEach(() => {
             viewManager.showByName = jest.fn();
@@ -499,7 +501,7 @@ describe('main/views/viewManager', () => {
     });
 
     describe('showByName', () => {
-        const viewManager = new ViewManager({}, {});
+        const viewManager = new ViewManager({});
         const baseView = {
             isReady: jest.fn(),
             show: jest.fn(),
@@ -591,7 +593,7 @@ describe('main/views/viewManager', () => {
             setTopBrowserView: jest.fn(),
             addBrowserView: jest.fn(),
         };
-        const viewManager = new ViewManager({}, window);
+        const viewManager = new ViewManager(window);
         const loadingScreen = {webContents: {send: jest.fn()}};
 
         beforeEach(() => {
@@ -623,7 +625,7 @@ describe('main/views/viewManager', () => {
     });
 
     describe('handleDeepLink', () => {
-        const viewManager = new ViewManager({}, {});
+        const viewManager = new ViewManager({});
         const baseView = {
             resetLoadingStatus: jest.fn(),
             load: jest.fn(),

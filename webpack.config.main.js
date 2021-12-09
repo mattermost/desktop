@@ -16,7 +16,7 @@ const base = require('./webpack.config.base');
 
 module.exports = merge(base, {
     entry: {
-        index: './src/main/main.ts',
+        index: './src/main/app/index.ts',
         mainWindow: './src/main/preload/mainWindow.js',
         dropdown: './src/main/preload/dropdown.js',
         preload: './src/main/preload/mattermost.js',

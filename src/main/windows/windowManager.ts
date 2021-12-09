@@ -6,8 +6,6 @@ import path from 'path';
 import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import log from 'electron-log';
 
-import {CombinedConfig} from 'types/config';
-
 import {
     MAXIMIZE_CHANGE,
     HISTORY,
@@ -24,7 +22,7 @@ import {
     APP_LOGGED_OUT,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
-
+import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 
 import {getAdjustedWindowBoundaries} from '../utils';
@@ -44,7 +42,6 @@ export class WindowManager {
 
     mainWindow?: BrowserWindow;
     settingsWindow?: BrowserWindow;
-    config?: CombinedConfig;
     viewManager?: ViewManager;
     teamDropdown?: TeamDropdownView;
     currentServerName?: string;
@@ -64,12 +61,9 @@ export class WindowManager {
         ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, this.handleGetWebContentsId);
     }
 
-    setConfig = (data: CombinedConfig) => {
-        if (data) {
-            this.config = data;
-        }
-        if (this.viewManager && this.config) {
-            this.viewManager.reloadConfiguration(this.config.teams || []);
+    handleUpdateConfig = () => {
+        if (this.viewManager) {
+            this.viewManager.reloadConfiguration(Config.teams || []);
         }
     }
 
@@ -82,10 +76,7 @@ export class WindowManager {
             }
             const withDevTools = Boolean(process.env.MM_DEBUG_SETTINGS) || false;
 
-            if (!this.config) {
-                return;
-            }
-            this.settingsWindow = createSettingsWindow(this.mainWindow!, this.config, withDevTools);
+            this.settingsWindow = createSettingsWindow(this.mainWindow!, withDevTools);
             this.settingsWindow.on('closed', () => {
                 delete this.settingsWindow;
             });
@@ -100,10 +91,7 @@ export class WindowManager {
                 this.mainWindow.show();
             }
         } else {
-            if (!this.config) {
-                return;
-            }
-            this.mainWindow = createMainWindow(this.config, {
+            this.mainWindow = createMainWindow({
                 linuxAppIcon: path.join(this.assetsDir, 'linux', 'app_icon.png'),
             });
 
@@ -119,9 +107,8 @@ export class WindowManager {
                 delete this.mainWindow;
             });
             this.mainWindow.on('unresponsive', () => {
-                const criticalErrorHandler = new CriticalErrorHandler();
-                criticalErrorHandler.setMainWindow(this.mainWindow!);
-                criticalErrorHandler.windowUnresponsiveHandler();
+                CriticalErrorHandler.setMainWindow(this.mainWindow!);
+                CriticalErrorHandler.windowUnresponsiveHandler();
             });
             this.mainWindow.on('maximize', this.handleMaximizeMainWindow);
             this.mainWindow.on('unmaximize', this.handleUnmaximizeMainWindow);
@@ -138,7 +125,7 @@ export class WindowManager {
                 this.viewManager.updateMainWindow(this.mainWindow);
             }
 
-            this.teamDropdown = new TeamDropdownView(this.mainWindow, this.config.teams, this.config.darkMode, this.config.enableServerManagement);
+            this.teamDropdown = new TeamDropdownView(this.mainWindow, Config.teams, Config.darkMode, Config.enableServerManagement);
         }
         this.initializeViewManager();
 
@@ -251,7 +238,7 @@ export class WindowManager {
 
     flashFrame = (flash: boolean) => {
         if (process.platform === 'linux' || process.platform === 'win32') {
-            if (this.config?.notifications.flashWindow) {
+            if (Config.notifications.flashWindow) {
                 this.mainWindow?.flashFrame(flash);
                 if (this.settingsWindow) {
                     // main might be hidden behind the settings
@@ -259,8 +246,8 @@ export class WindowManager {
                 }
             }
         }
-        if (process.platform === 'darwin' && this.config?.notifications.bounceIcon) {
-            app.dock.bounce(this.config?.notifications.bounceIconType);
+        if (process.platform === 'darwin' && Config.notifications.bounceIcon) {
+            app.dock.bounce(Config.notifications.bounceIconType);
         }
     }
 
@@ -358,8 +345,8 @@ export class WindowManager {
     }
 
     initializeViewManager = () => {
-        if (!this.viewManager && this.config && this.mainWindow) {
-            this.viewManager = new ViewManager(this.config, this.mainWindow);
+        if (!this.viewManager && Config && this.mainWindow) {
+            this.viewManager = new ViewManager(this.mainWindow);
             this.viewManager.load();
             this.viewManager.showInitial();
             this.initializeCurrentServerName();
@@ -367,14 +354,14 @@ export class WindowManager {
     }
 
     initializeCurrentServerName = () => {
-        if (this.config && !this.currentServerName) {
-            this.currentServerName = (this.config.teams.find((team) => team.order === this.config?.lastActiveTeam) || this.config.teams.find((team) => team.order === 0))?.name;
+        if (!this.currentServerName) {
+            this.currentServerName = (Config.teams.find((team) => team.order === Config.lastActiveTeam) || Config.teams.find((team) => team.order === 0))?.name;
         }
     }
 
     switchServer = (serverName: string, waitForViewToExist = false) => {
         this.showMainWindow();
-        const server = this.config?.teams.find((team) => team.name === serverName);
+        const server = Config.teams.find((team) => team.name === serverName);
         if (!server) {
             log.error('Cannot find server in config');
             return;
@@ -428,7 +415,7 @@ export class WindowManager {
 
     handleLoadingScreenDataRequest = () => {
         return {
-            darkMode: this.config?.darkMode || false,
+            darkMode: Config.darkMode || false,
         };
     }
 
@@ -529,7 +516,7 @@ export class WindowManager {
             return;
         }
 
-        const currentTeamTabs = this.config?.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
+        const currentTeamTabs = Config.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
         const filteredTabs = currentTeamTabs?.filter((tab) => tab.isOpen);
         const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
         if (!currentTeamTabs || !currentTab || !filteredTabs) {
@@ -549,12 +536,12 @@ export class WindowManager {
     }
 
     handleGetDarkMode = () => {
-        return this.config?.darkMode;
+        return Config.darkMode;
     }
 
     handleBrowserHistoryPush = (e: IpcMainEvent, viewName: string, pathName: string) => {
         const currentView = this.viewManager?.views.get(viewName);
-        const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${pathName}`, this.config!.teams)?.name || viewName;
+        const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${pathName}`, Config.teams)?.name || viewName;
         if (this.viewManager?.closedViews.has(redirectedViewName)) {
             this.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${pathName}`);
         }

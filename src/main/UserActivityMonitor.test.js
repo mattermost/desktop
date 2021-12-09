@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import UserActivityMonitor from './UserActivityMonitor';
+import {UserActivityMonitor} from './UserActivityMonitor';
 
 describe('UserActivityMonitor', () => {
     describe('updateIdleTime', () => {

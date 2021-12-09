@@ -6,13 +6,27 @@ import fs from 'fs';
 
 import {validateCertificateStore} from './Validator';
 
-import CertificateStore from './certificateStore';
+import {CertificateStore} from './certificateStore';
+
+jest.mock('path', () => ({
+    resolve: jest.fn(),
+}));
+
+jest.mock('electron', () => ({
+    app: {
+        getPath: jest.fn(),
+    },
+    ipcMain: {
+        on: jest.fn(),
+    },
+}));
 
 jest.mock('./Validator', () => ({
     validateCertificateStore: jest.fn(),
 }));
 
 jest.mock('fs', () => ({
+    existsSync: jest.fn(),
     readFileSync: jest.fn(),
 }));
 
