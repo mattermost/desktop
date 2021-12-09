@@ -58,6 +58,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
     downloadLocationRef: React.RefObject<HTMLInputElement>;
     showTrayIconRef: React.RefObject<HTMLInputElement>;
     autostartRef: React.RefObject<HTMLInputElement>;
+    hideOnStartRef: React.RefObject<HTMLInputElement>;
     minimizeToTrayRef: React.RefObject<HTMLInputElement>;
     flashWindowRef: React.RefObject<HTMLInputElement>;
     bounceIconRef: React.RefObject<HTMLInputElement>;
@@ -88,6 +89,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         this.downloadLocationRef = React.createRef();
         this.showTrayIconRef = React.createRef();
         this.autostartRef = React.createRef();
+        this.hideOnStartRef = React.createRef();
         this.minimizeToTrayRef = React.createRef();
         this.flashWindowRef = React.createRef();
         this.bounceIconRef = React.createRef();
@@ -201,6 +203,13 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'autostart', data: this.autostartRef.current?.checked});
         this.setState({
             autostart: this.autostartRef.current?.checked,
+        });
+    }
+
+    handleChangeHideOnStart = () => {
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'hideOnStart', data: this.hideOnStartRef.current?.checked});
+        this.setState({
+            hideOnStart: this.hideOnStartRef.current?.checked,
         });
     }
 
@@ -417,6 +426,22 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     {'Start app on login'}
                     <FormText>
                         {'If enabled, the app starts automatically when you log in to your machine.'}
+                    </FormText>
+                </FormCheck>);
+
+            options.push(
+                <FormCheck>
+                    <FormCheck.Input
+                        type='checkbox'
+                        key='inputHideOnStart'
+                        id='inputHideOnStart'
+                        ref={this.hideOnStartRef}
+                        checked={this.state.hideOnStart}
+                        onChange={this.handleChangeHideOnStart}
+                    />
+                    {'Hide window when launched on login'}
+                    <FormText>
+                        {'If enabled, the app will start in system tray, and will not show the window on launch.'}
                     </FormText>
                 </FormCheck>);
         }

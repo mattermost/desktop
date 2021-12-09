@@ -236,6 +236,9 @@ export class Config extends EventEmitter {
     get autostart() {
         return this.combinedData?.autostart ?? defaultPreferences.autostart;
     }
+    get hideOnStart() {
+        return this.combinedData?.hideOnStart ?? defaultPreferences.hideOnStart;
+    }
     get notifications() {
         return this.combinedData?.notifications ?? defaultPreferences.notifications;
     }

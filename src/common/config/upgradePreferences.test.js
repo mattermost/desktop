@@ -57,6 +57,7 @@ describe('common/config/upgradePreferences', () => {
                 useSpellChecker: false,
                 enableHardwareAcceleration: false,
                 autostart: false,
+                hideOnStart: false,
                 spellCheckerLocale: 'en-CA',
             };
             expect(upgradeV1toV2(config)).toStrictEqual({
@@ -100,6 +101,7 @@ describe('common/config/upgradePreferences', () => {
                 useSpellChecker: false,
                 enableHardwareAcceleration: false,
                 autostart: false,
+                hideOnStart: false,
                 spellCheckerLocale: 'en-CA',
                 darkMode: true,
                 downloadLocation: '/some/folder/name',

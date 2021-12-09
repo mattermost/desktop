@@ -30,6 +30,7 @@ describe('main/Validator', () => {
     describe('validateV1ConfigData', () => {
         const config = {
             autostart: true,
+            hideOnStart: false,
             enableHardwareAcceleration: true,
             minimizeToTray: false,
             showTrayIcon: false,
@@ -95,6 +96,7 @@ describe('main/Validator', () => {
     describe('validateV2ConfigData', () => {
         const config = {
             autostart: true,
+            hideOnStart: false,
             darkMode: false,
             enableHardwareAcceleration: true,
             minimizeToTray: false,
@@ -126,6 +128,7 @@ describe('main/Validator', () => {
     describe('validateV3ConfigData', () => {
         const config = {
             autostart: true,
+            hideOnStart: false,
             darkMode: false,
             enableHardwareAcceleration: true,
             lastActiveTeam: 0,

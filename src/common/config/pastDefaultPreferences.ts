@@ -24,6 +24,7 @@ const pastDefaultPreferences = {
         useSpellChecker: true,
         enableHardwareAcceleration: true,
         autostart: true,
+        hideOnStart: false,
         spellCheckerLocale: 'en-US',
     } as ConfigV1,
     2: {
@@ -41,6 +42,7 @@ const pastDefaultPreferences = {
         useSpellChecker: true,
         enableHardwareAcceleration: true,
         autostart: true,
+        hideOnStart: false,
         spellCheckerLocale: 'en-US',
         darkMode: false,
         downloadLocation: getDefaultDownloadLocation(),
