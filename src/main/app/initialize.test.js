@@ -149,6 +149,7 @@ describe('main/app/initialize', () => {
             }
         });
         Config.data = {};
+        Config.teams = [];
         app.whenReady.mockResolvedValue();
         app.requestSingleInstanceLock.mockReturnValue(true);
         app.getPath.mockImplementation((p) => `/basedir/${p}`);
