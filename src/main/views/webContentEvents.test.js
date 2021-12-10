@@ -185,12 +185,17 @@ describe('main/views/webContentsEvents', () => {
 
         it('should deny invalid URI', () => {
             urlUtils.isValidURI.mockReturnValue(false);
-            expect(newWindow({url: 'baduri::'})).toStrictEqual({action: 'deny'});
+            expect(newWindow({url: 'http::'})).toStrictEqual({action: 'deny'});
         });
 
         it('should divert to allowProtocolDialog for custom protocols that are not mattermost or http', () => {
             expect(newWindow({url: 'spotify:album:2OZbaW9tgO62ndm375lFZr'})).toStrictEqual({action: 'deny'});
             expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('spotify:', 'spotify:album:2OZbaW9tgO62ndm375lFZr');
+        });
+
+        it('should divert to allowProtocolDialog for invalid URIs with custom protocols', () => {
+            expect(newWindow({url: 'customproto:test\\data'})).toStrictEqual({action: 'deny'});
+            expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('customproto:', 'customproto:test\\data');
         });
 
         it('should open in the browser when there is no server matching', () => {

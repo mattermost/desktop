@@ -112,14 +112,14 @@ export class WebContentsEventManager {
                 return {action: 'allow'};
             }
 
-            // Check for valid URL
-            if (!urlUtils.isValidURI(details.url)) {
-                return {action: 'deny'};
-            }
-
             // Check for custom protocol
             if (parsedURL.protocol !== 'http:' && parsedURL.protocol !== 'https:' && parsedURL.protocol !== `${scheme}:`) {
                 allowProtocolDialog.handleDialogEvent(parsedURL.protocol, details.url);
+                return {action: 'deny'};
+            }
+
+            // Check for valid URL
+            if (!urlUtils.isValidURI(details.url)) {
                 return {action: 'deny'};
             }
 
