@@ -61,7 +61,6 @@ export type ConfigV2 = {
     useSpellChecker: boolean;
     enableHardwareAcceleration: boolean;
     autostart: boolean;
-    hideOnStart: boolean;
     spellCheckerLocale: string;
     spellCheckerURL?: string;
     darkMode: boolean;
@@ -87,7 +86,6 @@ export type ConfigV1 = {
     spellCheckerURL?: string;
     enableHardwareAcceleration: boolean;
     autostart: boolean;
-    hideOnStart: boolean;
     spellCheckerLocale: string;
 }
 

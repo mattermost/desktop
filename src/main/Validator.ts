@@ -66,7 +66,6 @@ const configDataSchemaV1 = Joi.object<ConfigV1>({
     useSpellChecker: Joi.boolean().default(true),
     enableHardwareAcceleration: Joi.boolean().default(true),
     autostart: Joi.boolean().default(true),
-    hideOnStart: Joi.boolean().default(false),
     spellCheckerLocale: Joi.string().regex(/^[a-z]{2}-[A-Z]{2}$/).default('en-US'),
 });
 
@@ -89,7 +88,6 @@ const configDataSchemaV2 = Joi.object<ConfigV2>({
     useSpellChecker: Joi.boolean().default(true),
     enableHardwareAcceleration: Joi.boolean().default(true),
     autostart: Joi.boolean().default(true),
-    hideOnStart: Joi.boolean().default(false),
     spellCheckerLocale: Joi.string().default('en-US'),
     spellCheckerURL: Joi.string().allow(null),
     darkMode: Joi.boolean().default(false),
