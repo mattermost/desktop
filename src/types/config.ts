@@ -34,6 +34,7 @@ export type ConfigV3 = {
     useSpellChecker: boolean;
     enableHardwareAcceleration: boolean;
     autostart: boolean;
+    hideOnStart: boolean;
     spellCheckerLocales: string[];
     darkMode: boolean;
     downloadLocation: string;

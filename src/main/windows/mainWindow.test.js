@@ -162,9 +162,26 @@ describe('main/windows/mainWindow', () => {
             };
             BrowserWindow.mockImplementation(() => window);
             fs.readFileSync.mockImplementation(() => '{"x":400,"y":300,"width":1280,"height":700,"maximized":true,"fullscreen":false}');
+            Config.hideOnStart = false;
             createMainWindow({});
             expect(window.webContents.zoomLevel).toStrictEqual(0);
             expect(window.maximize).toBeCalled();
+        });
+
+        it('should not show window on ready-to-show', () => {
+            const window = {
+                ...baseWindow,
+                once: jest.fn().mockImplementation((event, cb) => {
+                    if (event === 'ready-to-show') {
+                        cb();
+                    }
+                }),
+            };
+            BrowserWindow.mockImplementation(() => window);
+            fs.readFileSync.mockImplementation(() => '{"x":400,"y":300,"width":1280,"height":700,"maximized":true,"fullscreen":false}');
+            Config.hideOnStart = true;
+            createMainWindow({});
+            expect(window.show).not.toHaveBeenCalled();
         });
 
         it('should save window state on close if the app will quit', () => {

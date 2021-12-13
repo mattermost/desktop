@@ -107,9 +107,11 @@ function createMainWindow(options: {linuxAppIcon: string}) {
     mainWindow.once('ready-to-show', () => {
         mainWindow.webContents.zoomLevel = 0;
 
-        mainWindow.show();
-        if (windowIsMaximized) {
-            mainWindow.maximize();
+        if (Config.hideOnStart === false) {
+            mainWindow.show();
+            if (windowIsMaximized) {
+                mainWindow.maximize();
+            }
         }
     });
 

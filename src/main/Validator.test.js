@@ -126,6 +126,7 @@ describe('main/Validator', () => {
     describe('validateV3ConfigData', () => {
         const config = {
             autostart: true,
+            hideOnStart: false,
             darkMode: false,
             enableHardwareAcceleration: true,
             lastActiveTeam: 0,
