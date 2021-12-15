@@ -17,7 +17,7 @@ To contribute to the process of testing the Mattermost Desktop App:
  - Set your username to be the same as your GitHub username
 
 2. Install the latest Mattermost Desktop App
- - Download the latest pre-release Mattermost Desktop App from the [GitHub Releases page](https://github.com/mattermost/desktop/releases)
+ - Download the latest pre-release Mattermost Desktop App from the [GitHub Releases page](https://github.com/mattermost/desktop/releases).
  - Follow the [Desktop Application Install Guides](https://docs.mattermost.com/install/desktop-app-install.html) to install the app for your platform
  - Use the [Managing Servers Guide](https://docs.mattermost.com/messaging/managing-desktop-app-servers.html) to add https://community.mattermost.com/core as a new server.
  - Hit "Save" and log in
