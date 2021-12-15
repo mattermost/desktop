@@ -30,7 +30,7 @@ Detailed guides are available at [docs.mattermost.com](https://docs.mattermost.c
 
 1. Download a file from the [downloads page](https://mattermost.com/download).
 2. Launch `Mattermost` in the unarchived folder.
-3. On the first launch, please input name and URL for your Mattermost server. For example, `myserver : https://mattermost.example.com`.
+3. On the first launch, please input name and URL for your Mattermost server. For example, `https://mattermost.example.com`.
 
 ### Quit
 Ctrl or Command + Q to quit.
