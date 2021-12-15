@@ -13,7 +13,7 @@ New bug reports benefiting the next release will be documented in the release no
 
 To contribute to the process of testing the Mattermost Desktop App:
 
-1. If you haven't already, create an account on https://community.mattermost.com/
+1. If you haven't already, create an account on our [Community Server](https://community.mattermost.com/)
  - Set your username to be the same as your GitHub username
 
 2. Install the latest Mattermost Desktop App
