@@ -7,6 +7,7 @@
 
 const path = require('path');
 
+const glob = require('glob');
 const merge = require('webpack-merge');
 
 const base = require('./webpack.config.base');
@@ -15,8 +16,7 @@ const WEBSERVER_PORT = 9001;
 
 module.exports = merge(base, {
     entry: {
-        test: './test/unit/index.js',
-        e2e: './test/specs/index.js',
+        e2e: glob.sync('./e2e/specs/**/*.test.js'),
     },
     output: {
         path: path.resolve(__dirname, 'dist/tests'),
@@ -29,7 +29,6 @@ module.exports = merge(base, {
         }],
     },
     externals: {
-        puppeteer: 'require("puppeteer")',
         fs: 'require("fs")',
         ws: 'require("ws")',
         child_process: 'require("child_process")',
@@ -38,7 +37,8 @@ module.exports = merge(base, {
         net: 'require("net")',
         repl: 'require("repl")',
         tls: 'require("tls")',
-        spectron: 'require("spectron")',
+        playwright: 'require("playwright")',
+        robotjs: 'require("robotjs")',
     },
     node: {
         __filename: false,

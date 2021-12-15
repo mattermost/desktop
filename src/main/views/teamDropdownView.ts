@@ -17,7 +17,7 @@ import {
 import * as AppState from '../appState';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
-import * as WindowManager from '../windows/windowManager';
+import WindowManager from '../windows/windowManager';
 
 export default class TeamDropdownView {
     view: BrowserView;
@@ -46,9 +46,7 @@ export default class TeamDropdownView {
         const preload = getLocalPreload('dropdown.js');
         this.view = new BrowserView({webPreferences: {
             nativeWindowOpen: true,
-            contextIsolation: process.env.NODE_ENV !== 'test',
             preload,
-            nodeIntegration: process.env.NODE_ENV === 'test',
 
             // Workaround for this issue: https://github.com/electron/electron/issues/30993
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment

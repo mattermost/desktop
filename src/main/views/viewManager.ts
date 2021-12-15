@@ -4,7 +4,7 @@ import log from 'electron-log';
 import {BrowserView, BrowserWindow, dialog, ipcMain} from 'electron';
 import {BrowserViewConstructorOptions} from 'electron/main';
 
-import {CombinedConfig, Tab, TeamWithTabs} from 'types/config';
+import {Tab, TeamWithTabs} from 'types/config';
 
 import {SECOND} from 'common/utils/constants';
 import {
@@ -19,18 +19,19 @@ import {
     BROWSER_HISTORY_PUSH,
     UPDATE_LAST_ACTIVE,
 } from 'common/communication';
+import Config from 'common/config';
 import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
-
+import {MattermostServer} from 'common/servers/MattermostServer';
 import {getServerView, getTabViewName} from 'common/tabs/TabView';
 
 import {ServerInfo} from 'main/server/serverInfo';
-import {MattermostServer} from '../../common/servers/MattermostServer';
+
 import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
 
-import {MattermostView, Status} from './MattermostView';
-import {showModal, isModalDisplayed, focusCurrentModal} from './modalManager';
-import {addWebContentsEventListeners} from './webContentEvents';
+import {MattermostView} from './MattermostView';
+import modalManager from './modalManager';
+import WebContentsEventManager from './webContentEvents';
 
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 36;
@@ -47,10 +48,10 @@ export class ViewManager {
     mainWindow: BrowserWindow;
     loadingScreen?: BrowserView;
 
-    constructor(config: CombinedConfig, mainWindow: BrowserWindow) {
-        this.configServers = config.teams;
-        this.lastActiveServer = config.lastActiveTeam;
-        this.viewOptions = {webPreferences: {spellcheck: config.useSpellChecker}};
+    constructor(mainWindow: BrowserWindow) {
+        this.configServers = Config.teams.concat();
+        this.lastActiveServer = Config.lastActiveTeam;
+        this.viewOptions = {webPreferences: {spellcheck: Config.useSpellChecker}};
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
         this.mainWindow = mainWindow;
         this.closedViews = new Map();
@@ -94,7 +95,7 @@ export class ViewManager {
 
     reloadViewIfNeeded = (viewName: string) => {
         const view = this.views.get(viewName);
-        if (view && !view.view.webContents.getURL().startsWith(view.tab.url.toString())) {
+        if (view && view.view.webContents.getURL() !== view.tab.url.toString() && !view.view.webContents.getURL().startsWith(view.tab.url.toString())) {
             view.load(view.tab.url);
         }
     }
@@ -153,7 +154,7 @@ export class ViewManager {
                 let tab = element.tabs.find((tab) => tab.order === element.lastActiveTab) || element.tabs.find((tab) => tab.order === 0);
                 if (!tab?.isOpen) {
                     const openTabs = element.tabs.filter((tab) => tab.isOpen);
-                    tab = openTabs.find((e) => e.order === 0) || openTabs[0];
+                    tab = openTabs.find((e) => e.order === 0) || openTabs.concat().sort((a, b) => a.order - b.order)[0];
                 }
                 if (tab) {
                     const tabView = getTabViewName(element.name, tab.name);
@@ -186,26 +187,21 @@ export class ViewManager {
                 // if view is not ready, the renderer will have something to display instead.
                 newView.show();
                 ipcMain.emit(UPDATE_LAST_ACTIVE, true, newView.tab.server.name, newView.tab.type);
-                if (newView.needsLoadingScreen()) {
-                    this.showLoadingScreen();
-                } else {
+                if (!newView.needsLoadingScreen()) {
                     this.fadeLoadingScreen();
                 }
             } else {
                 log.warn(`couldn't show ${name}, not ready`);
-                if (newView.needsLoadingScreen()) {
-                    this.showLoadingScreen();
-                }
             }
         } else {
             log.warn(`Couldn't find a view with name: ${name}`);
         }
-        showModal();
+        modalManager.showModal();
     }
 
     focus = () => {
-        if (isModalDisplayed()) {
-            focusCurrentModal();
+        if (modalManager.isModalDisplayed()) {
+            modalManager.focusCurrentModal();
             return;
         }
 
@@ -214,6 +210,7 @@ export class ViewManager {
             view.focus();
         }
     }
+
     activateView = (viewName: string) => {
         if (this.currentView === viewName) {
             this.showByName(this.currentView);
@@ -223,7 +220,7 @@ export class ViewManager {
             log.error(`Couldn't find a view with the name ${viewName}`);
             return;
         }
-        addWebContentsEventListeners(view, this.getServers);
+        WebContentsEventManager.addWebContentsEventListeners(view, this.getServers);
     }
 
     finishLoading = (server: string) => {
@@ -295,8 +292,6 @@ export class ViewManager {
             const urlView = new BrowserView({
                 webPreferences: {
                     nativeWindowOpen: true,
-                    contextIsolation: process.env.NODE_ENV !== 'test',
-                    nodeIntegration: process.env.NODE_ENV === 'test',
 
                     // Workaround for this issue: https://github.com/electron/electron/issues/30993
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -430,7 +425,7 @@ export class ViewManager {
                         return;
                     }
 
-                    if (view.status === Status.READY && view.serverInfo.remoteInfo.serverVersion && Utils.isServerVersionGreaterThanOrEqualTo(view.serverInfo.remoteInfo.serverVersion, '6.0.0')) {
+                    if (view.isInitialized() && view.serverInfo.remoteInfo.serverVersion && Utils.isVersionGreaterThanOrEqualTo(view.serverInfo.remoteInfo.serverVersion, '6.0.0')) {
                         const pathName = `/${urlWithSchema.replace(view.tab.server.url.toString(), '')}`;
                         view.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
                         this.deeplinkSuccess(view.name);
@@ -448,7 +443,7 @@ export class ViewManager {
         }
     };
 
-    sendToAllViews = (channel: string, ...args: any[]) => {
+    sendToAllViews = (channel: string, ...args: unknown[]) => {
         this.views.forEach((view) => view.view.webContents.send(channel, ...args));
     }
 }

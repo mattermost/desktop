@@ -27,10 +27,10 @@ import {TabView} from 'common/tabs/TabView';
 import {ServerInfo} from 'main/server/serverInfo';
 import ContextMenu from '../contextMenu';
 import {getWindowBoundaries, getLocalPreload, composeUserAgent} from '../utils';
-import * as WindowManager from '../windows/windowManager';
+import WindowManager from '../windows/windowManager';
 import * as appState from '../appState';
 
-import {removeWebContentsListeners} from './webContentEvents';
+import WebContentsEventManager from './webContentEvents';
 
 export enum Status {
     LOADING,
@@ -47,6 +47,7 @@ export class MattermostView extends EventEmitter {
     window: BrowserWindow;
     view: BrowserView;
     isVisible: boolean;
+    isLoggedIn: boolean;
     options: BrowserViewConstructorOptions;
     serverInfo: ServerInfo;
 
@@ -77,16 +78,15 @@ export class MattermostView extends EventEmitter {
         this.options = Object.assign({}, options);
         this.options.webPreferences = {
             nativeWindowOpen: true,
-            contextIsolation: process.env.NODE_ENV !== 'test',
             preload,
             additionalArguments: [
                 `version=${app.getVersion()}`,
                 `appName=${app.name}`,
             ],
-            nodeIntegration: process.env.NODE_ENV === 'test',
             ...options.webPreferences,
         };
         this.isVisible = false;
+        this.isLoggedIn = false;
         this.view = new BrowserView(this.options);
         this.resetLoadingStatus();
 
@@ -100,7 +100,13 @@ export class MattermostView extends EventEmitter {
         }
 
         this.view.webContents.on('did-finish-load', () => {
-            this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.name, this.tab.shouldNotify);
+            if (!this.view.webContents.isLoading()) {
+                try {
+                    this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.name, this.tab.shouldNotify);
+                } catch (e) {
+                    log.error('failed to send view options to view', this.tab.name);
+                }
+            }
         });
 
         this.contextMenu = new ContextMenu({}, this.view);
@@ -165,7 +171,7 @@ export class MattermostView extends EventEmitter {
         };
     }
 
-    loadRetry = (loadURL: string, err: any) => {
+    loadRetry = (loadURL: string, err: Error) => {
         this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
         WindowManager.sendToRenderer(LOAD_RETRY, this.tab.name, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
         log.info(`[${Util.shorten(this.tab.name)}] failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
@@ -211,12 +217,11 @@ export class MattermostView extends EventEmitter {
     hide = () => this.show(false);
 
     setBounds = (boundaries: Electron.Rectangle) => {
-        // todo: review this, as it might not work properly with devtools/minimizing/resizing
         this.view.setBounds(boundaries);
     }
 
     destroy = () => {
-        removeWebContentsListeners(this.view.webContents.id);
+        WebContentsEventManager.removeWebContentsListeners(this.view.webContents.id);
         appState.updateMentions(this.tab.name, 0, false);
         if (this.window) {
             this.window.removeBrowserView(this.view);
@@ -273,12 +278,7 @@ export class MattermostView extends EventEmitter {
     }
 
     getWebContents = () => {
-        if (this.status === Status.READY) {
-            return this.view.webContents;
-        } else if (this.window) {
-            return this.window.webContents; // if it's not ready you are looking at the renderer process
-        }
-        return WindowManager.getMainWindow()?.webContents;
+        return this.view.webContents;
     }
 
     handleInputEvents = (_: Event, input: Input) => {
@@ -311,7 +311,7 @@ export class MattermostView extends EventEmitter {
     }
 
     handleUpdateTarget = (e: Event, url: string) => {
-        if (!url || !this.tab.server.sameOrigin(url)) {
+        if (!url || !urlUtils.isInternalURL(new URL(url), this.tab.server.url)) {
             this.emit(UPDATE_TARGET_URL, url);
         }
     }

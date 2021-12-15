@@ -7,11 +7,7 @@ export const CLOSE_TAB = 'close-tab';
 export const OPEN_TAB = 'open-tab';
 export const SET_ACTIVE_VIEW = 'set-active-view';
 export const UPDATE_LAST_ACTIVE = 'update-last-active';
-export const MARK_READ = 'mark-read';
 export const FOCUS_BROWSERVIEW = 'focus-browserview';
-export const ZOOM = 'zoom';
-export const UNDO = 'undo';
-export const REDO = 'redo';
 export const HISTORY = 'history';
 
 export const QUIT = 'quit';
@@ -33,8 +29,6 @@ export const LOAD_SUCCESS = 'load_success';
 export const LOAD_FAILED = 'load_fail';
 
 export const MAXIMIZE_CHANGE = 'maximized_change';
-
-export const OPEN_EXTERNAL = 'open_external';
 
 export const DOUBLE_CLICK_ON_WINDOW = 'double_click';
 
@@ -83,7 +77,6 @@ export const TOGGLE_LOADING_SCREEN_VISIBILITY = 'toggle-loading-screen-visibilit
 
 export const SELECT_NEXT_TAB = 'select-next-tab';
 export const SELECT_PREVIOUS_TAB = 'select-previous-tab';
-export const ADD_SERVER = 'add-server';
 export const FOCUS_THREE_DOT_MENU = 'focus-three-dot-menu';
 
 export const LOADSCREEN_END = 'loadscreen-end';
@@ -98,5 +91,14 @@ export const SEND_DROPDOWN_MENU_SIZE = 'send-dropdown-menu-size';
 
 export const BROWSER_HISTORY_PUSH = 'browser-history-push';
 export const APP_LOGGED_IN = 'app-logged-in';
+export const APP_LOGGED_OUT = 'app-logged-out';
 
 export const GET_AVAILABLE_SPELL_CHECKER_LANGUAGES = 'get-available-spell-checker-languages';
+
+export const GET_VIEW_NAME = 'get-view-name';
+export const GET_VIEW_WEBCONTENTS_ID = 'get-view-webcontents-id';
+
+export const GET_MODAL_UNCLOSEABLE = 'get-modal-uncloseable';
+export const MODAL_UNCLOSEABLE = 'modal-uncloseable';
+
+export const UPDATE_PATHS = 'update-paths';

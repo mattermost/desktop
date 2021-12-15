@@ -2,22 +2,31 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
+import {ipcMain} from 'electron';
+
 import {AppState} from 'types/appState';
 
-import JsonFileManager from '../common/JsonFileManager';
+import {UPDATE_PATHS} from 'common/communication';
+import JsonFileManager from 'common/JsonFileManager';
+
+import {appVersionJson} from 'main/constants';
 
 import * as Validator from './Validator';
 
-export default class AppVersionManager extends JsonFileManager<AppState> {
+export class AppVersionManager extends JsonFileManager<AppState> {
     constructor(file: string) {
         super(file);
 
+        this.init();
+    }
+    init = () => {
         // ensure data loaded from file is valid
         const validatedJSON = Validator.validateAppState(this.json);
         if (!validatedJSON) {
             this.setJson({});
         }
     }
+
     set lastAppVersion(version) {
         this.setValue('lastAppVersion', version);
     }
@@ -46,3 +55,10 @@ export default class AppVersionManager extends JsonFileManager<AppState> {
         return null;
     }
 }
+
+let appVersionManager = new AppVersionManager(appVersionJson);
+export default appVersionManager;
+
+ipcMain.on(UPDATE_PATHS, () => {
+    appVersionManager = new AppVersionManager(appVersionJson);
+});

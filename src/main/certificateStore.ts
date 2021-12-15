@@ -5,13 +5,15 @@
 
 import fs from 'fs';
 
-import {Certificate} from 'electron';
+import {Certificate, ipcMain} from 'electron';
 
 import {ComparableCertificate} from 'types/certificate';
 
+import {UPDATE_PATHS} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
 import * as Validator from './Validator';
+import {certificateStorePath} from './constants';
 
 function comparableCertificate(certificate: Certificate, dontTrust = false): ComparableCertificate {
     return {
@@ -31,7 +33,7 @@ function areEqual(certificate0: ComparableCertificate, certificate1: ComparableC
     return true;
 }
 
-export default class CertificateStore {
+export class CertificateStore {
     storeFile: string;
     data: Record<string, ComparableCertificate>;
 
@@ -78,3 +80,10 @@ export default class CertificateStore {
         return dontTrust === undefined ? false : dontTrust;
     }
 }
+
+let certificateStore = new CertificateStore(certificateStorePath);
+export default certificateStore;
+
+ipcMain.on(UPDATE_PATHS, () => {
+    certificateStore = new CertificateStore(certificateStorePath);
+});

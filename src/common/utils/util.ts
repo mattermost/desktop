@@ -2,13 +2,11 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
-import electron from 'electron';
+import {screen} from 'electron';
 
 import {DEVELOPMENT, PRODUCTION} from './constants';
 
 function getDisplayBoundaries() {
-    const {screen} = electron;
-
     const displays = screen.getAllDisplays();
 
     return displays.map((display) => {
@@ -37,7 +35,7 @@ function shorten(string: string, max?: number) {
     return string;
 }
 
-function isServerVersionGreaterThanOrEqualTo(currentVersion: string, compareVersion: string): boolean {
+function isVersionGreaterThanOrEqualTo(currentVersion: string, compareVersion: string): boolean {
     if (currentVersion === compareVersion) {
         return true;
     }
@@ -66,5 +64,5 @@ export default {
     getDisplayBoundaries,
     runMode,
     shorten,
-    isServerVersionGreaterThanOrEqualTo,
+    isVersionGreaterThanOrEqualTo,
 };

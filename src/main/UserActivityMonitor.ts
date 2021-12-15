@@ -3,15 +3,13 @@
 
 import {EventEmitter} from 'events';
 
-import electron from 'electron';
+import {app, powerMonitor} from 'electron';
 import log from 'electron-log';
-
-const {app} = electron;
 
 /**
  * Monitors system idle time, listens for system events and fires status updates as needed
  */
-export default class UserActivityMonitor extends EventEmitter {
+export class UserActivityMonitor extends EventEmitter {
     isActive: boolean;
     idleTime: number;
     lastSetActive?: number;
@@ -67,10 +65,10 @@ export default class UserActivityMonitor extends EventEmitter {
 
         this.config = Object.assign({}, this.config, config);
 
-        // TODO: Node typings don't map Timeout to number, but then clearInterval requires a number?
+        // Node typings don't map Timeout to number, but then clearInterval requires a number?
         this.systemIdleTimeIntervalID = setInterval(() => {
             try {
-                this.updateIdleTime(electron.powerMonitor.getSystemIdleTime());
+                this.updateIdleTime(powerMonitor.getSystemIdleTime());
             } catch (err) {
                 log.error('Error getting system idle time:', err);
             }
@@ -138,3 +136,6 @@ export default class UserActivityMonitor extends EventEmitter {
         });
     }
 }
+
+const userActivityMonitor = new UserActivityMonitor();
+export default userActivityMonitor;

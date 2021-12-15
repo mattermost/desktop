@@ -49,6 +49,7 @@ export async function getServerAPI<T>(url: URL, isAuthenticated: boolean, onSucc
             } else {
                 onError?.(new Error(`Bad status code requesting from ${url.toString()}`));
             }
+            response.on('error', onError || (() => {}));
         });
     }
     if (onAbort) {

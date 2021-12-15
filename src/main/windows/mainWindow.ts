@@ -3,17 +3,19 @@
 
 import fs from 'fs';
 
-import path from 'path';
 import os from 'os';
 
 import {app, BrowserWindow, BrowserWindowConstructorOptions, globalShortcut, ipcMain, screen} from 'electron';
 import log from 'electron-log';
 
-import {CombinedConfig} from 'types/config';
 import {SavedWindowState} from 'types/mainWindow';
 
 import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, OPEN_TEAMS_DROPDOWN} from 'common/communication';
+import Config from 'common/config';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH} from 'common/utils/constants';
+import Utils from 'common/utils/util';
+
+import {boundsInfoPath} from 'main/constants';
 
 import * as Validator from '../Validator';
 import ContextMenu from '../contextMenu';
@@ -38,13 +40,12 @@ function isInsideRectangle(container: Electron.Rectangle, rect: Electron.Rectang
 }
 
 function isFramelessWindow() {
-    return os.platform() === 'darwin' || (os.platform() === 'win32' && os.release().startsWith('10'));
+    return os.platform() === 'darwin' || (os.platform() === 'win32' && Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2'));
 }
 
-function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string}) {
+function createMainWindow(options: {linuxAppIcon: string}) {
     // Create the browser window.
     const preload = getLocalPreload('mainWindow.js');
-    const boundsInfoPath = path.join(app.getPath('userData'), 'bounds-info.json');
     let savedWindowState;
     try {
         savedWindowState = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));
@@ -63,7 +64,7 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
 
     const {maximized: windowIsMaximized} = savedWindowState;
 
-    const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
+    const spellcheck = (typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker);
 
     const windowOptions: BrowserWindowConstructorOptions = Object.assign({}, savedWindowState, {
         title: app.name,
@@ -79,8 +80,6 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
         backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
         webPreferences: {
             nativeWindowOpen: true,
-            nodeIntegration: process.env.NODE_ENV === 'test',
-            contextIsolation: process.env.NODE_ENV !== 'test',
             disableBlinkFeatures: 'Auxclick',
             preload,
             spellcheck,
@@ -108,9 +107,11 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
     mainWindow.once('ready-to-show', () => {
         mainWindow.webContents.zoomLevel = 0;
 
-        mainWindow.show();
-        if (windowIsMaximized) {
-            mainWindow.maximize();
+        if (Config.hideOnStart === false) {
+            mainWindow.show();
+            if (windowIsMaximized) {
+                mainWindow.maximize();
+            }
         }
     });
 
@@ -145,7 +146,7 @@ function createMainWindow(config: CombinedConfig, options: {linuxAppIcon: string
                 hideWindow(mainWindow);
                 break;
             case 'linux':
-                if (config.minimizeToTray) {
+                if (Config.minimizeToTray) {
                     hideWindow(mainWindow);
                 } else {
                     mainWindow.minimize();

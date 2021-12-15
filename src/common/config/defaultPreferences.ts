@@ -31,8 +31,10 @@ const defaultPreferences: ConfigV3 = {
     useSpellChecker: true,
     enableHardwareAcceleration: true,
     autostart: true,
+    hideOnStart: false,
     spellCheckerLocales: [],
     darkMode: false,
+    lastActiveTeam: 0,
     downloadLocation: getDefaultDownloadLocation(),
 };
 

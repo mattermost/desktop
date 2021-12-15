@@ -6,9 +6,28 @@
 
 import {ipcRenderer} from 'electron';
 
-import {MODAL_CANCEL, MODAL_RESULT, MODAL_INFO, RETRIEVE_MODAL_INFO, MODAL_SEND_IPC_MESSAGE, GET_DARK_MODE, DARK_MODE_CHANGE} from 'common/communication';
+import {
+    MODAL_CANCEL,
+    MODAL_RESULT,
+    MODAL_INFO,
+    RETRIEVE_MODAL_INFO,
+    MODAL_SEND_IPC_MESSAGE,
+    GET_DARK_MODE,
+    DARK_MODE_CHANGE,
+    GET_MODAL_UNCLOSEABLE,
+    MODAL_UNCLOSEABLE,
+} from 'common/communication';
 
 console.log('preloaded for the modal!');
+
+let uncloseable = false;
+const createKeyDownListener = () => {
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !uncloseable) {
+            ipcRenderer.send(MODAL_CANCEL);
+        }
+    });
+};
 
 window.addEventListener('message', async (event) => {
     switch (event.data.type) {
@@ -26,6 +45,12 @@ window.addEventListener('message', async (event) => {
         console.log('getting modal data');
         window.postMessage({type: MODAL_INFO, data: await ipcRenderer.invoke(RETRIEVE_MODAL_INFO)}, window.location.href);
         break;
+    case GET_MODAL_UNCLOSEABLE:
+        console.log('get modal uncloseable');
+        uncloseable = await ipcRenderer.invoke(GET_MODAL_UNCLOSEABLE);
+        createKeyDownListener();
+        window.postMessage({type: MODAL_UNCLOSEABLE, data: uncloseable}, window.location.href);
+        break;
     case MODAL_SEND_IPC_MESSAGE:
         console.log('sending custom ipc message');
         ipcRenderer.send(event.data.data.type, ...event.data.data.args);
@@ -40,11 +65,7 @@ window.addEventListener('message', async (event) => {
     }
 });
 
-window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        ipcRenderer.send(MODAL_CANCEL);
-    }
-});
+createKeyDownListener();
 
 ipcRenderer.on(DARK_MODE_CHANGE, (event, darkMode) => {
     window.postMessage({type: DARK_MODE_CHANGE, data: darkMode}, window.location.href);

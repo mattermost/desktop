@@ -10,7 +10,7 @@ import {TeamWithIndex} from 'types/config';
 import urlUtils from 'common/utils/url';
 
 type Props = {
-    onClose: () => void;
+    onClose?: () => void;
     onSave?: (team: TeamWithIndex) => void;
     team?: TeamWithIndex;
     editMode?: boolean;
@@ -175,7 +175,7 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
                         e.stopPropagation();
                         break;
                     case 'Escape':
-                        this.props.onClose();
+                        this.props.onClose?.();
                         break;
                     }
                 }}
@@ -237,17 +237,25 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
                         {this.getError()}
                     </div>
 
-                    <Button
-                        id='cancelNewServerModal'
-                        onClick={this.props.onClose}
-                        variant='link'
-                    >{'Cancel'}</Button>
-                    <Button
-                        id='saveNewServerModal'
-                        onClick={this.save}
-                        disabled={!this.validateForm()}
-                        variant='primary'
-                    >{this.getSaveButtonLabel()}</Button>
+                    {this.props.onClose &&
+                        <Button
+                            id='cancelNewServerModal'
+                            onClick={this.props.onClose}
+                            variant='link'
+                        >
+                            {'Cancel'}
+                        </Button>
+                    }
+                    {this.props.onSave &&
+                        <Button
+                            id='saveNewServerModal'
+                            onClick={this.save}
+                            disabled={!this.validateForm()}
+                            variant='primary'
+                        >
+                            {this.getSaveButtonLabel()}
+                        </Button>
+                    }
                 </Modal.Footer>
 
             </Modal>

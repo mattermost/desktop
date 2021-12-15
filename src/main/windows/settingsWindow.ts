@@ -3,14 +3,15 @@
 
 import {BrowserWindow} from 'electron';
 import log from 'electron-log';
-import {CombinedConfig} from 'types/config';
+
+import Config from 'common/config';
 
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
 
-export function createSettingsWindow(mainWindow: BrowserWindow, config: CombinedConfig, withDevTools: boolean) {
+export function createSettingsWindow(mainWindow: BrowserWindow, withDevTools: boolean) {
     const preload = getLocalPreload('mainWindow.js');
-    const spellcheck = (typeof config.useSpellChecker === 'undefined' ? true : config.useSpellChecker);
+    const spellcheck = (typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker);
     const settingsWindow = new BrowserWindow({
         parent: mainWindow,
         title: 'Desktop App Settings',
