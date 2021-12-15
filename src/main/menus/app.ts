@@ -5,7 +5,7 @@
 
 import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, webContents} from 'electron';
 
-import {SHOW_NEW_SERVER_MODAL} from 'common/communication';
+import {OPEN_TEAMS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
 import {Config} from 'common/config';
 import {TabType, getTabDisplayName} from 'common/tabs/TabView';
 
@@ -210,7 +210,13 @@ export function createTemplate(config: Config) {
         ] : []), {
             role: 'close',
             accelerator: 'CmdOrCtrl+W',
-        }, separatorItem, ...teams.sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).map((team, i) => {
+        }, separatorItem, {
+            label: 'Show Servers',
+            accelerator: 'CmdOrCtrl+Shift+S',
+            click() {
+                ipcMain.emit(OPEN_TEAMS_DROPDOWN);
+            },
+        }, ...teams.sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).map((team, i) => {
             const items = [];
             items.push({
                 label: team.name,

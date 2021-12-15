@@ -190,9 +190,6 @@ function createMainWindow(options: {linuxAppIcon: string}) {
                 // do nothing because we want to supress the menu popping up
             });
         }
-        globalShortcut.register(`${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`, () => {
-            ipcMain.emit(OPEN_TEAMS_DROPDOWN);
-        });
     });
     mainWindow.on('blur', () => {
         globalShortcut.unregisterAll();
