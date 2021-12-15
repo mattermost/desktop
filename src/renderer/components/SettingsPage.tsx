@@ -561,7 +561,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         {window.process.platform === 'linux' && (
                             <>
                                 <br/>
-                                <em><strong>{'NOTE: '}</strong>{'This functionality may not work on all Linux window managers.'}</em>
+                                <em><strong>{'NOTE: '}</strong>{'This functionality may not work with all Linux window managers.'}</em>
                             </>
                         )}
                     </FormText>
