@@ -14,7 +14,7 @@ If this is the case, please create an issue in the [mattermost-server](https://g
 
 ### Try "Clear Cache and Reload"
 Sometimes issues can be resolved simply by refreshing your Mattermost server within the app.  
-You can do this by pressing `Cmd/Ctrl+Shift+R` in the Mattermost Desktop App, or you can go to the menu > View > Clear Cache and Reload
+You can do this by pressing `CMD/CTRL+SHIFT+R` in the Mattermost Desktop App, or you can go to the menu and select **View > Clear Cache and Reload**.
 
 ### Write detailed information
 If the issue still persists, please provide detailed information to help us to understand the problem. Include information such as:
