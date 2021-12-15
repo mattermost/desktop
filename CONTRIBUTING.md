@@ -21,7 +21,7 @@ If the issue still persists, please provide detailed information to help us to u
 * How to reproduce, step-by-step
 * Expected behavior (or what is wrong)
 * Screenshots (for GUI issues)
-* Desktop App application version (can be viewed by going to 3-dot menu > Help, or Top Menu > Mattermost > About Mattermost on macOS)
+* Desktop App version (can be viewed by going to 3-dot menu > Help, or **Menu > Mattermost > About Mattermost** on macOS).
 * Operating System
 * Mattermost Server version
 
