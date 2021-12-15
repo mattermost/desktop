@@ -24,8 +24,9 @@ export class ModalView<T, T2> {
     windowAttached?: BrowserWindow;
     status: Status;
     contextMenu: ContextMenu;
+    uncloseable: boolean;
 
-    constructor(key: string, html: string, preload: string, data: T, onResolve: (value: T2) => void, onReject: (value: T2) => void, currentWindow: BrowserWindow) {
+    constructor(key: string, html: string, preload: string, data: T, onResolve: (value: T2) => void, onReject: (value: T2) => void, currentWindow: BrowserWindow, uncloseable: boolean) {
         this.key = key;
         this.html = html;
         this.data = data;
@@ -42,6 +43,7 @@ export class ModalView<T, T2> {
         this.onReject = onReject;
         this.onResolve = onResolve;
         this.window = currentWindow;
+        this.uncloseable = uncloseable;
 
         this.status = Status.ACTIVE;
         try {

@@ -100,6 +100,7 @@ describe('common/config/upgradePreferences', () => {
                 useSpellChecker: false,
                 enableHardwareAcceleration: false,
                 autostart: false,
+                hideOnStart: false,
                 spellCheckerLocale: 'en-CA',
                 darkMode: true,
                 downloadLocation: '/some/folder/name',

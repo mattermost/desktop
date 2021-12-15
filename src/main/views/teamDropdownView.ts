@@ -17,7 +17,7 @@ import {
 import * as AppState from '../appState';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
-import * as WindowManager from '../windows/windowManager';
+import WindowManager from '../windows/windowManager';
 
 export default class TeamDropdownView {
     view: BrowserView;

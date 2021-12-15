@@ -6,12 +6,12 @@
 import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, webContents} from 'electron';
 
 import {SHOW_NEW_SERVER_MODAL} from 'common/communication';
-import Config from 'common/config';
+import {Config} from 'common/config';
 import {TabType, getTabDisplayName} from 'common/tabs/TabView';
 
-import * as WindowManager from '../windows/windowManager';
+import WindowManager from 'main/windows/windowManager';
 
-function createTemplate(config: Config) {
+export function createTemplate(config: Config) {
     const separatorItem: MenuItemConstructorOptions = {
         type: 'separator',
     };
@@ -122,7 +122,7 @@ function createTemplate(config: Config) {
         },
     }, {
         role: 'togglefullscreen',
-        accelerator: process.platform === 'darwin' ? 'Ctrl+Cmd+F' : 'F11',
+        accelerator: isMac ? 'Ctrl+Cmd+F' : 'F11',
     }, separatorItem, {
         label: 'Actual Size',
         role: 'resetZoom',
@@ -210,7 +210,7 @@ function createTemplate(config: Config) {
         ] : []), {
             role: 'close',
             accelerator: 'CmdOrCtrl+W',
-        }, separatorItem, ...teams.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).map((team, i) => {
+        }, separatorItem, ...teams.sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).map((team, i) => {
             const items = [];
             items.push({
                 label: team.name,
@@ -220,7 +220,7 @@ function createTemplate(config: Config) {
                 },
             });
             if (WindowManager.getCurrentTeamName() === team.name) {
-                team.tabs.filter((tab) => tab.isOpen).slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).forEach((tab, i) => {
+                team.tabs.filter((tab) => tab.isOpen).sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).forEach((tab, i) => {
                     items.push({
                         label: `    ${getTabDisplayName(tab.name as TabType)}`,
                         accelerator: `CmdOrCtrl+${i + 1}`,
@@ -273,11 +273,7 @@ function createTemplate(config: Config) {
     return template;
 }
 
-function createMenu(config: Config) {
-    // TODO: Electron is enforcing certain variables that it doesn't need
+export function createMenu(config: Config) {
+    // Electron is enforcing certain variables that it doesn't need
     return Menu.buildFromTemplate(createTemplate(config) as Array<MenuItemConstructorOptions | MenuItem>);
 }
-
-export default {
-    createMenu,
-};

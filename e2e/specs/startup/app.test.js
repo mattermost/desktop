@@ -4,9 +4,11 @@
 
 'use strict';
 
-const env = require('../modules/environment');
+const robot = require('robotjs');
 
-describe('application', function desc() {
+const env = require('../../modules/environment');
+
+describe('startup/app', function desc() {
     this.timeout(30000);
 
     beforeEach(async () => {
@@ -21,19 +23,30 @@ describe('application', function desc() {
         }
     });
 
-    it('should show the new server modal when no servers exist', async () => {
+    it('MM-T4399_1 should show the new server modal when no servers exist', async () => {
         const newServerModal = this.app.windows().find((window) => window.url().includes('newServer'));
         const modalTitle = await newServerModal.innerText('#newServerModal .modal-title');
         modalTitle.should.equal('Add Server');
     });
 
-    it('should show no servers configured in dropdown when no servers exist', async () => {
+    it('MM-T4419 should not allow the user to close the new server modal when no servers exist', async () => {
+        const newServerModal = this.app.windows().find((window) => window.url().includes('newServer'));
+
+        const existing = await newServerModal.isVisible('#cancelNewServerModal');
+        existing.should.be.false;
+
+        robot.keyTap('escape');
+        const existingModal = this.app.windows().find((window) => window.url().includes('newServer'));
+        existingModal.should.not.be.null;
+    });
+
+    it('MM-T4399_2 should show no servers configured in dropdown when no servers exist', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
         dropdownButtonText.should.equal('No servers configured');
     });
 
-    it('should be stopped when the app instance already exists', (done) => {
+    it('MM-T4400 should be stopped when the app instance already exists', (done) => {
         const secondApp = env.getApp();
 
         // In the correct case, 'start().then' is not called.

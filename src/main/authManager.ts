@@ -3,19 +3,17 @@
 import {AuthenticationResponseDetails, AuthInfo, WebContents} from 'electron';
 import log from 'electron-log';
 
-import {CombinedConfig} from 'types/config';
 import {PermissionType} from 'types/trustedOrigin';
 import {LoginModalData} from 'types/auth';
 
+import Config from 'common/config';
 import {BASIC_AUTH_PERMISSION} from 'common/permissions';
-
 import urlUtils from 'common/utils/url';
 
-import * as WindowManager from './windows/windowManager';
-
-import {addModal} from './views/modalManager';
-import {getLocalURLString, getLocalPreload} from './utils';
-import TrustedOriginsStore from './trustedOrigins';
+import modalManager from 'main/views/modalManager';
+import TrustedOriginsStore from 'main/trustedOrigins';
+import {getLocalURLString, getLocalPreload} from 'main/utils';
+import WindowManager from 'main/windows/windowManager';
 
 const modalPreload = getLocalPreload('modalPreload.js');
 const loginModalHtml = getLocalURLString('loginModal.html');
@@ -27,30 +25,25 @@ type LoginModalResult = {
 };
 
 export class AuthManager {
-    config: CombinedConfig;
-    trustedOriginsStore: TrustedOriginsStore;
     loginCallbackMap: Map<string, ((username?: string, password?: string) => void) | undefined>;
 
-    constructor(config: CombinedConfig, trustedOriginsStore: TrustedOriginsStore) {
-        this.config = config;
-        this.trustedOriginsStore = trustedOriginsStore;
+    constructor() {
         this.loginCallbackMap = new Map();
-    }
-
-    handleConfigUpdate = (newConfig: CombinedConfig) => {
-        this.config = newConfig;
     }
 
     handleAppLogin = (event: Event, webContents: WebContents, request: AuthenticationResponseDetails, authInfo: AuthInfo, callback?: (username?: string, password?: string) => void) => {
         event.preventDefault();
-        const parsedURL = new URL(request.url);
-        const server = urlUtils.getView(parsedURL, this.config.teams);
+        const parsedURL = urlUtils.parseURL(request.url);
+        if (!parsedURL) {
+            return;
+        }
+        const server = urlUtils.getView(parsedURL, Config.teams);
         if (!server) {
             return;
         }
 
         this.loginCallbackMap.set(request.url, callback); // if callback is undefined set it to null instead so we know we have set it up with no value
-        if (urlUtils.isTrustedURL(request.url, this.config.teams) || urlUtils.isCustomLoginURL(parsedURL, server, this.config.teams) || this.trustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
+        if (urlUtils.isTrustedURL(request.url, Config.teams) || urlUtils.isCustomLoginURL(parsedURL, server, Config.teams) || TrustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
             this.popLoginModal(request, authInfo);
         } else {
             this.popPermissionModal(request, authInfo, BASIC_AUTH_PERMISSION);
@@ -62,7 +55,7 @@ export class AuthManager {
         if (!mainWindow) {
             return;
         }
-        const modalPromise = addModal<LoginModalData, LoginModalResult>(authInfo.isProxy ? `proxy-${authInfo.host}` : `login-${request.url}`, loginModalHtml, modalPreload, {request, authInfo}, mainWindow);
+        const modalPromise = modalManager.addModal<LoginModalData, LoginModalResult>(authInfo.isProxy ? `proxy-${authInfo.host}` : `login-${request.url}`, loginModalHtml, modalPreload, {request, authInfo}, mainWindow);
         if (modalPromise) {
             modalPromise.then((data) => {
                 const {username, password} = data;
@@ -81,7 +74,7 @@ export class AuthManager {
         if (!mainWindow) {
             return;
         }
-        const modalPromise = addModal(`permission-${request.url}`, permissionModalHtml, modalPreload, {url: request.url, permission}, mainWindow);
+        const modalPromise = modalManager.addModal(`permission-${request.url}`, permissionModalHtml, modalPreload, {url: request.url, permission}, mainWindow);
         if (modalPromise) {
             modalPromise.then(() => {
                 this.handlePermissionGranted(request.url, permission);
@@ -113,7 +106,10 @@ export class AuthManager {
     }
 
     handlePermissionGranted(url: string, permission: PermissionType) {
-        this.trustedOriginsStore.addPermission(url, permission);
-        this.trustedOriginsStore.save();
+        TrustedOriginsStore.addPermission(url, permission);
+        TrustedOriginsStore.save();
     }
 }
+
+const authManager = new AuthManager();
+export default authManager;

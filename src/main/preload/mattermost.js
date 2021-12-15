@@ -6,7 +6,7 @@
 
 /* eslint-disable no-magic-numbers */
 
-import {contextBridge, ipcRenderer, webFrame} from 'electron';
+import {contextBridge, ipcRenderer, webFrame, desktopCapturer} from 'electron';
 
 // I've filed an issue in electron-log https://github.com/megahertz/electron-log/issues/267
 // we'll be able to use it again if there is a workaround for the 'os' import
@@ -23,6 +23,7 @@ import {
     CLOSE_TEAMS_DROPDOWN,
     BROWSER_HISTORY_PUSH,
     APP_LOGGED_IN,
+    APP_LOGGED_OUT,
     GET_VIEW_NAME,
     GET_VIEW_WEBCONTENTS_ID,
 } from 'common/communication';
@@ -256,6 +257,23 @@ window.addEventListener('storage', (e) => {
     if (e.key === '__login__' && e.storageArea === localStorage && e.newValue) {
         ipcRenderer.send(APP_LOGGED_IN, viewName);
     }
+    if (e.key === '__logout__' && e.storageArea === localStorage && e.newValue) {
+        ipcRenderer.send(APP_LOGGED_OUT, viewName);
+    }
+});
+
+contextBridge.exposeInMainWorld('desktopCapturer', {
+    getSources: async (options) => {
+        const sources = await desktopCapturer.getSources(options);
+        return sources.map((source) => {
+            return {
+                id: source.id,
+                name: source.name,
+                thumbnailURL: source.thumbnail.toDataURL(),
+            };
+        });
+    },
 });
 
 /* eslint-enable no-magic-numbers */
+

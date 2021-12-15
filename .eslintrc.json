@@ -58,12 +58,8 @@
         {
             "files": [
                 "webpack.config.renderer.js",
-                "e2e/specs/spellchecker_test.js",
-                "e2e/specs/app_test.js",
-                "e2e/specs/security_test.js",
-                "e2e/specs/permisson_test.js",
-                "e2e/specs/browser/index_test.js",
-                "e2e/specs/browser/settings_test.js",
+                "e2e/specs/startup/app.test.js",
+                "e2e/specs/settings.test.js",
                 "e2e/modules/utils.js",
                 "e2e/modules/environment.js",
                 "CHANGELOG.md",
@@ -76,7 +72,6 @@
                 "scripts/check_build_config.js",
                 "LICENSE.txt",
                 "src/utils/util.ts",
-                "src/main/main.ts",
                 "src/main/contextMenu.ts",
                 "src/renderer/updater.tsx",
                 "src/main/badge.ts",

@@ -7,7 +7,7 @@ import {app} from 'electron';
 import isDev from 'electron-is-dev';
 import log from 'electron-log';
 
-export default class AutoLauncher {
+export class AutoLauncher {
     appLauncher: AutoLaunch;
 
     constructor() {
@@ -17,35 +17,47 @@ export default class AutoLauncher {
         });
     }
 
-    isEnabled() {
-        return this.appLauncher.isEnabled();
+    async upgradeAutoLaunch() {
+        if (process.platform === 'darwin') {
+            return;
+        }
+        const appLauncher = new AutoLaunch({
+            name: 'Mattermost',
+        });
+        const enabled = await appLauncher.isEnabled();
+        if (enabled) {
+            await appLauncher.enable();
+        }
     }
 
-    async blankPromise() {
-        return null;
+    isEnabled() {
+        return this.appLauncher.isEnabled();
     }
 
     async enable() {
         if (isDev) {
             log.warn('In development mode, autostart config never effects');
-            return this.blankPromise();
+            return Promise.resolve(null);
         }
         const enabled = await this.isEnabled();
         if (!enabled) {
             return this.appLauncher.enable();
         }
-        return this.blankPromise();
+        return Promise.resolve(null);
     }
 
     async disable() {
         if (isDev) {
             log.warn('In development mode, autostart config never effects');
-            return this.blankPromise();
+            return Promise.resolve(null);
         }
         const enabled = await this.isEnabled();
         if (enabled) {
             return this.appLauncher.disable();
         }
-        return this.blankPromise();
+        return Promise.resolve(null);
     }
 }
+
+const autoLauncher = new AutoLauncher();
+export default autoLauncher;

@@ -6,7 +6,7 @@ import {app, nativeImage, Tray, systemPreferences, nativeTheme} from 'electron';
 
 import {UPDATE_TRAY} from 'common/communication';
 
-import * as WindowManager from '../windows/windowManager';
+import WindowManager from '../windows/windowManager';
 import * as AppState from '../appState';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
@@ -16,6 +16,7 @@ let trayIcon: Tray;
 let lastStatus = 'normal';
 let lastMessage = app.name;
 
+/* istanbul ignore next */
 export function refreshTrayImages(trayIconTheme: string) {
     const winTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
 

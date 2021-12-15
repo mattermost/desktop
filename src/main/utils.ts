@@ -2,7 +2,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import electron, {app, BrowserWindow} from 'electron';
+import {app, BrowserWindow} from 'electron';
 import path from 'path';
 
 import {Args} from 'types/args';
@@ -37,11 +37,6 @@ export function getAdjustedWindowBoundaries(width: number, height: number, hasBa
 }
 
 export function getLocalURLString(urlPath: string, query?: Map<string, string>, isMain?: boolean) {
-    const localURL = getLocalURL(urlPath, query, isMain);
-    return localURL.href;
-}
-
-export function getLocalURL(urlPath: string, query?: Map<string, string>, isMain?: boolean) {
     let pathname;
     const processPath = isMain ? '' : '/renderer';
     const mode = Utils.runMode();
@@ -49,7 +44,7 @@ export function getLocalURL(urlPath: string, query?: Map<string, string>, isMain
     const hostname = '';
     const port = '';
     if (mode === PRODUCTION) {
-        pathname = path.join(electron.app.getAppPath(), `${processPath}/${urlPath}`);
+        pathname = path.join(app.getAppPath(), `${processPath}/${urlPath}`);
     } else {
         pathname = path.resolve(__dirname, `../../dist/${processPath}/${urlPath}`); // TODO: find a better way to work with webpack on this
     }
@@ -61,12 +56,12 @@ export function getLocalURL(urlPath: string, query?: Map<string, string>, isMain
         });
     }
 
-    return localUrl;
+    return localUrl.href;
 }
 
 export function getLocalPreload(file: string) {
     if (Utils.runMode() === PRODUCTION) {
-        return path.join(electron.app.getAppPath(), `${file}`);
+        return path.join(app.getAppPath(), `${file}`);
     }
     return path.resolve(__dirname, `../../dist/${file}`);
 }

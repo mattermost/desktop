@@ -27,10 +27,10 @@ import {TabView} from 'common/tabs/TabView';
 import {ServerInfo} from 'main/server/serverInfo';
 import ContextMenu from '../contextMenu';
 import {getWindowBoundaries, getLocalPreload, composeUserAgent} from '../utils';
-import * as WindowManager from '../windows/windowManager';
+import WindowManager from '../windows/windowManager';
 import * as appState from '../appState';
 
-import {removeWebContentsListeners} from './webContentEvents';
+import WebContentsEventManager from './webContentEvents';
 
 export enum Status {
     LOADING,
@@ -47,6 +47,7 @@ export class MattermostView extends EventEmitter {
     window: BrowserWindow;
     view: BrowserView;
     isVisible: boolean;
+    isLoggedIn: boolean;
     options: BrowserViewConstructorOptions;
     serverInfo: ServerInfo;
 
@@ -85,6 +86,7 @@ export class MattermostView extends EventEmitter {
             ...options.webPreferences,
         };
         this.isVisible = false;
+        this.isLoggedIn = false;
         this.view = new BrowserView(this.options);
         this.resetLoadingStatus();
 
@@ -98,7 +100,13 @@ export class MattermostView extends EventEmitter {
         }
 
         this.view.webContents.on('did-finish-load', () => {
-            this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.name, this.tab.shouldNotify);
+            if (!this.view.webContents.isLoading()) {
+                try {
+                    this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.name, this.tab.shouldNotify);
+                } catch (e) {
+                    log.error('failed to send view options to view', this.tab.name);
+                }
+            }
         });
 
         this.contextMenu = new ContextMenu({}, this.view);
@@ -163,7 +171,7 @@ export class MattermostView extends EventEmitter {
         };
     }
 
-    loadRetry = (loadURL: string, err: any) => {
+    loadRetry = (loadURL: string, err: Error) => {
         this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
         WindowManager.sendToRenderer(LOAD_RETRY, this.tab.name, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
         log.info(`[${Util.shorten(this.tab.name)}] failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
@@ -209,12 +217,11 @@ export class MattermostView extends EventEmitter {
     hide = () => this.show(false);
 
     setBounds = (boundaries: Electron.Rectangle) => {
-        // todo: review this, as it might not work properly with devtools/minimizing/resizing
         this.view.setBounds(boundaries);
     }
 
     destroy = () => {
-        removeWebContentsListeners(this.view.webContents.id);
+        WebContentsEventManager.removeWebContentsListeners(this.view.webContents.id);
         appState.updateMentions(this.tab.name, 0, false);
         if (this.window) {
             this.window.removeBrowserView(this.view);
