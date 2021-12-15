@@ -23,7 +23,7 @@ To contribute to the process of testing the Mattermost Desktop App:
  - Select "Save" and log in to Mattermost.
 
 3. Go to the [Public Test Channel](https://community.mattermost.com/core/channels/public-test-channel) and try the following:
- - Post a message with information on what you're testing, for example: `Testing Mattermost Desktop App 5.0.2 on Windows 10 64-bit`
+ - Post a message with information on what you're testing, for example: `Testing Mattermost Desktop App 5.0.2 on Windows 10 64-bit`.
     - Reply to the post by clicking on "..." then "Reply" with This is a comment including files and upload five (5) files including at least one image, one sound file and one video clip from your Desktop App.
     - Search for the word "Desktop" and click "Jump" on the search result of your own post in Step 3.1. Click into the preview of the files you uploaded and try to download each one.
  - Verify [Team Management works as documented](https://docs.mattermost.com/messaging/managing-desktop-app-servers.html).
