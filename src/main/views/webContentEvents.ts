@@ -119,7 +119,9 @@ export class WebContentsEventManager {
             }
 
             // Check for valid URL
+            // Let the browser handle invalid URIs
             if (!urlUtils.isValidURI(details.url)) {
+                shell.openExternal(details.url);
                 return {action: 'deny'};
             }
 
