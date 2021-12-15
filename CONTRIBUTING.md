@@ -1,7 +1,7 @@
 # Contributing Guidelines
 Thank you for your interest in contributing! Please see the guidelines below before contributing and [join our "Developers: Desktop App" community channel](https://community.mattermost.com/core/channels/desktop-app) to ask questions from community members and the Mattermost Desktop team.
 
-You can also visit our [developer guide](https://developers.mattermost.com/contribute/desktop/) to learn more information about how to setup your environment, develop and test changes to the Desktop App.
+You can also visit our [developer guide](https://developers.mattermost.com/contribute/desktop/) to learn more information about how to set up your environment, as well as develop and test changes to the Desktop App.
 
 ## Issue
 We really appreciate your feedback on the Desktop App. We'd ask that before you file an issue that you go through a few steps beforehand.
