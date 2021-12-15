@@ -95,7 +95,9 @@ jest.mock('main/app/app', () => ({}));
 jest.mock('main/app/config', () => ({
     handleConfigUpdate: jest.fn(),
 }));
-jest.mock('main/app/intercom', () => ({}));
+jest.mock('main/app/intercom', () => ({
+    addNewServerModalWhenMainWindowIsShown: jest.fn(),
+}));
 jest.mock('main/app/utils', () => ({
     clearAppCache: jest.fn(),
     getDeeplinkingURL: jest.fn(),

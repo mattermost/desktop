@@ -18,10 +18,10 @@ import {
     RESIZE_MODAL,
 } from 'common/communication';
 
-import WindowManager from '../windows/windowManager';
+import {getAdjustedWindowBoundaries} from 'main/utils';
+import WindowManager from 'main/windows/windowManager';
 
 import {ModalView} from './modalView';
-import {getAdjustedWindowBoundaries} from 'main/utils';
 
 export class ModalManager {
     modalQueue: Array<ModalView<any, any>>;
@@ -120,7 +120,7 @@ export class ModalManager {
     isModalDisplayed = () => {
         return this.modalQueue.some((modal) => modal.isActive());
     }
-    
+
     handleResizeModal = (event: IpcMainEvent, bounds: Electron.Rectangle) => {
         if (this.modalQueue.length) {
             const currentModal = this.modalQueue[0];

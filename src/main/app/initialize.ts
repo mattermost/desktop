@@ -63,6 +63,7 @@ import {
 } from './app';
 import {handleConfigUpdate, handleDarkModeChange} from './config';
 import {
+    addNewServerModalWhenMainWindowIsShown,
     handleAppVersion,
     handleCloseTab,
     handleEditServerModal,
@@ -373,9 +374,7 @@ function initializeAfterAppReady() {
     // only check for non-Windows, as with Windows we have to wait for GPO teams
     if (process.platform !== 'win32' || typeof Config.registryConfigData !== 'undefined') {
         if (Config.teams.length === 0) {
-            setTimeout(() => {
-                handleNewServerModal();
-            }, 200);
+            addNewServerModalWhenMainWindowIsShown();
         }
     }
 }

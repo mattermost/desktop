@@ -7,7 +7,7 @@ import {RELOAD_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
 
 import {handleConfigUpdate} from 'main/app/config';
-import {handleNewServerModal} from 'main/app/intercom';
+import {addNewServerModalWhenMainWindowIsShown} from 'main/app/intercom';
 import WindowManager from 'main/windows/windowManager';
 import AutoLauncher from 'main/AutoLauncher';
 
@@ -32,7 +32,7 @@ jest.mock('main/app/utils', () => ({
     updateServerInfos: jest.fn(),
 }));
 jest.mock('main/app/intercom', () => ({
-    handleNewServerModal: jest.fn(),
+    addNewServerModalWhenMainWindowIsShown: jest.fn(),
 }));
 jest.mock('main/AutoLauncher', () => ({
     enable: jest.fn(),
@@ -98,7 +98,7 @@ describe('main/app/config', () => {
             Config.registryConfigData = {};
 
             handleConfigUpdate({teams: []});
-            expect(handleNewServerModal).toHaveBeenCalled();
+            expect(addNewServerModalWhenMainWindowIsShown).toHaveBeenCalled();
 
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,

@@ -74,7 +74,7 @@ export class ModalView<T, T2> {
         } else {
             setBoundsFunction();
         }
-        
+
         this.status = Status.SHOWING;
         if (this.view.webContents.isLoading()) {
             this.view.webContents.once('did-finish-load', () => {
