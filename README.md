@@ -26,7 +26,7 @@ Detailed guides are available at [docs.mattermost.com](https://docs.mattermost.c
 1. Download a file from the [downloads page](https://mattermost.com/download/#mattermostApps) or from the [releases page](https://github.com/mattermost/desktop/releases).
 2. Run the installer or unzip the archive.
 3. Launch Mattermost from your Applications folder, menu, or the unarchived folder.
-3. On the first launch, please input a name and URL for your Mattermost server. For example, `myserver : https://mattermost.example.com`.
+3. On the first launch, please enter a name and URL for your Mattermost server. For example, `myserver : https://mattermost.example.com`.
 
 ### Configuration
 You can show the dialog from menu bar.
