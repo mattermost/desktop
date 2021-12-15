@@ -30,7 +30,7 @@ If you have an idea for a new feature, we'd love to hear about it!
 Please let us know in the Mattermost Community server by making a post in the [Feature Proposals](https://community-daily.mattermost.com/core/channels/feature-ideas) channel.
 
 ## Pull request
-If you are interesting on working on an issue, we would very much appreciate your help!
+If you are interested on working on an issue, we would very much appreciate your help!
 
 We have a list of issues marked as [Help Wanted](https://mattermost.com/pl/help-wanted-desktop) that are available to be worked on.  
 If you'd like to take on an issue, simply comment on the issue and one of the Core Contributors will assign it to you.
