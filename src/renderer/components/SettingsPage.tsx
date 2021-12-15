@@ -558,6 +558,12 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     {'Flash app window and taskbar icon when a new message is received'}
                     <FormText>
                         {'If enabled, app window and taskbar icon flash for a few seconds when a new message is received.'}
+                        {window.process.platform === 'linux' && (
+                            <>
+                                <br/>
+                                <em><strong>{'NOTE: '}</strong>{'This functionality may not work on all Linux window managers.'}</em>
+                            </>
+                        )}
                     </FormText>
                 </FormCheck>);
         }
