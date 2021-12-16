@@ -40,7 +40,11 @@ function getHost(inputURL: URL | string) {
 
 // isInternalURL determines if the target url is internal to the application.
 // - currentURL is the current url inside the webview
-function isInternalURL(targetURL: URL, currentURL: URL) {
+function isInternalURL(targetURL: URL | undefined, currentURL: URL) {
+    if (!targetURL) {
+        return false;
+    }
+
     if (targetURL.host !== currentURL.host) {
         return false;
     }

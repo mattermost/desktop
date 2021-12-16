@@ -311,7 +311,7 @@ export class MattermostView extends EventEmitter {
     }
 
     handleUpdateTarget = (e: Event, url: string) => {
-        if (!url || !urlUtils.isInternalURL(new URL(url), this.tab.server.url)) {
+        if (url && !urlUtils.isInternalURL(urlUtils.parseURL(url), this.tab.server.url)) {
             this.emit(UPDATE_TARGET_URL, url);
         }
     }

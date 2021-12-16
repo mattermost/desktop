@@ -297,6 +297,12 @@ describe('main/views/MattermostView', () => {
             expect(mattermostView.emit).toHaveBeenCalledWith(UPDATE_TARGET_URL, 'http://server-2.com/some/other/path');
         });
 
+        it('should not throw error if URL is invalid', () => {
+            expect(() => {
+                mattermostView.handleUpdateTarget(null, 'not<a-real;;url');
+            }).not.toThrow();
+        });
+
         it('should not emit tooltip URL if internal', () => {
             mattermostView.handleUpdateTarget(null, 'http://server-1.com/path/to/channels');
             expect(mattermostView.emit).not.toHaveBeenCalled();

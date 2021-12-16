@@ -183,9 +183,10 @@ describe('main/views/webContentsEvents', () => {
             expect(newWindow({url: 'devtools://aaaaaa.com'})).toStrictEqual({action: 'allow'});
         });
 
-        it('should deny invalid URI', () => {
+        it('should open invalid URIs in browser', () => {
             urlUtils.isValidURI.mockReturnValue(false);
-            expect(newWindow({url: 'http::'})).toStrictEqual({action: 'deny'});
+            expect(newWindow({url: 'https://google.com/?^'})).toStrictEqual({action: 'deny'});
+            expect(shell.openExternal).toBeCalledWith('https://google.com/?^');
         });
 
         it('should divert to allowProtocolDialog for custom protocols that are not mattermost or http', () => {
