@@ -316,13 +316,17 @@ export class MattermostView extends EventEmitter {
         }
     }
 
-    titleParser = /(\((\d+)\) )?(\*)?/g
+    titleParser = /(\((\d+)\) )?(\*\s)?/g
 
     handleTitleUpdate = (e: Event, title: string) => {
         this.updateMentionsFromTitle(title);
     }
 
     updateMentionsFromTitle = (title: string) => {
+        if (this.serverInfo.remoteInfo.serverVersion && Util.isVersionGreaterThanOrEqualTo(this.serverInfo.remoteInfo.serverVersion, '5.29.0')) {
+            return;
+        }
+
         //const title = this.view.webContents.getTitle();
         const resultsIterator = title.matchAll(this.titleParser);
         const results = resultsIterator.next(); // we are only interested in the first set
