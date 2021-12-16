@@ -61,6 +61,7 @@ export class MattermostView extends EventEmitter {
 
     currentFavicon?: string;
     hasBeenShown: boolean;
+    altTimeout?: number;
     altLastPressed?: boolean;
     contextMenu: ContextMenu;
 
@@ -285,6 +286,7 @@ export class MattermostView extends EventEmitter {
         // Handler for pressing the Alt key to focus the 3-dot menu
         if (input.key === 'Alt' && input.type === 'keyUp' && this.altLastPressed) {
             this.altLastPressed = false;
+            clearTimeout(this.altTimeout);
             WindowManager.focusThreeDotMenu();
             return;
         }
@@ -292,8 +294,12 @@ export class MattermostView extends EventEmitter {
         // Hack to detect keyPress so that alt+<key> combinations don't default back to the 3-dot menu
         if (input.key === 'Alt' && input.type === 'keyDown') {
             this.altLastPressed = true;
+            this.altTimeout = setTimeout(() => {
+                this.altLastPressed = false;
+            }, 500) as unknown as number;
         } else {
             this.altLastPressed = false;
+            clearTimeout(this.altTimeout);
         }
     }
 
