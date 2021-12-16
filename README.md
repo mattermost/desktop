@@ -1,8 +1,8 @@
 # Mattermost Desktop
 
-Native desktop application for [Mattermost](http://www.mattermost.org/) running on Windows, Mac, and Linux.
+[Mattermost](https://mattermost.com) is an open source platform for secure collaboration across the entire software development lifecycle. This repo is for the native desktop application that's built on [Electron](http://electron.atom.io/); it runs on Windows, Mac, and Linux.
 
-Originally created as "electron-mattermost" by Yuya Ochiai. Developed using [Electron](http://electron.atom.io/).
+Originally created as "electron-mattermost" by Yuya Ochiai.
 
 ![mm-desktop-screenshot](https://user-images.githubusercontent.com/52460000/146078917-e1ba8c1f-24e5-4613-8b4b-f3507422f4f2.png)
 
@@ -26,7 +26,7 @@ Detailed guides are available at [docs.mattermost.com](https://docs.mattermost.c
 1. Download a file from the [downloads page](https://mattermost.com/download/#mattermostApps) or from the [releases page](https://github.com/mattermost/desktop/releases).
 2. Run the installer or unzip the archive.
 3. Launch Mattermost from your Applications folder, menu, or the unarchived folder.
-3. On the first launch, please enter a name and URL for your Mattermost server. For example, `myserver : https://mattermost.example.com`.
+3. On the first launch, please enter a name and URL for your Mattermost server. For example, `https://mattermost.example.com`.
 
 ### Configuration
 You can show the dialog from menu bar.
