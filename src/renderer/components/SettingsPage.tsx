@@ -631,7 +631,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 </FormCheck>);
         }
 
-        if (window.process.platform === 'linux') {
+        if (window.process.platform === 'linux' || window.process.platform === 'win32') {
             options.push(
                 <FormGroup
                     key='trayIconTheme'
@@ -639,6 +639,20 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     style={{marginLeft: '20px'}}
                 >
                     {'Icon theme: '}
+                    {window.process.platform === 'win32' &&
+                        <>
+                            <FormCheck
+                                type='radio'
+                                inline={true}
+                                name='trayIconTheme'
+                                value='use_system'
+                                defaultChecked={this.state.trayIconTheme === 'use_system' || !this.state.trayIconTheme}
+                                onChange={() => this.handleChangeTrayIconTheme('use_system')}
+                                label={'Use system default'}
+                            />
+                            {' '}
+                        </>
+                    }
                     <FormCheck
                         type='radio'
                         inline={true}

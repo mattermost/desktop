@@ -20,7 +20,7 @@ const defaultPreferences: ConfigV3 = {
     version: 3,
     teams: [],
     showTrayIcon: true,
-    trayIconTheme: 'light',
+    trayIconTheme: 'use_system',
     minimizeToTray: true,
     notifications: {
         flashWindow: 2,
