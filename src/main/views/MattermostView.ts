@@ -316,7 +316,7 @@ export class MattermostView extends EventEmitter {
         }
     }
 
-    titleParser = /(\((\d+)\) )?(\*\s)?/g
+    titleParser = /(\((\d+)\) )?(\* )?/g
 
     handleTitleUpdate = (e: Event, title: string) => {
         this.updateMentionsFromTitle(title);
