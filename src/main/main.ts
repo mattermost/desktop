@@ -324,7 +324,7 @@ function handleConfigSynchronize() {
         updateServerInfos(config.teams);
         WindowManager.initializeCurrentServerName();
         if (config.teams.length === 0) {
-            handleNewServerModal();
+            addNewServerModalWhenMainWindowIsShown();
         }
     }
 }
@@ -798,7 +798,7 @@ function initializeAfterAppReady() {
     if (process.platform !== 'win32' || typeof config.registryConfigData !== 'undefined') {
         if (config.teams.length === 0) {
             setTimeout(() => {
-                handleNewServerModal();
+                addNewServerModalWhenMainWindowIsShown();
             }, 200);
         }
     }
@@ -981,4 +981,17 @@ function handleUpdateLastActive(event: IpcMainEvent, serverName: string, viewNam
 
 function handleGetAvailableSpellCheckerLanguages() {
     return session.defaultSession.availableSpellCheckerLanguages;
+}
+
+function addNewServerModalWhenMainWindowIsShown() {
+    const mainWindow = WindowManager.getMainWindow();
+    if (mainWindow) {
+        if (mainWindow.isVisible()) {
+            handleNewServerModal();
+        } else {
+            mainWindow.once('show', () => {
+                handleNewServerModal();
+            });
+        }
+    }
 }

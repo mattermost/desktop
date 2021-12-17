@@ -18,6 +18,7 @@ import {
     UPDATE_SHORTCUT_MENU,
     BROWSER_HISTORY_PUSH,
     APP_LOGGED_IN,
+    RESIZE_MODAL,
     APP_LOGGED_OUT,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
@@ -188,6 +189,7 @@ function handleResizeMainWindow() {
     }
     status.viewManager.setLoadingScreenBounds();
     status.teamDropdown?.updateWindowBounds();
+    ipcMain.emit(RESIZE_MODAL, null, bounds);
 }
 
 export function sendToRenderer(channel: string, ...args: any[]) {

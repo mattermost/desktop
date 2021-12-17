@@ -6,7 +6,18 @@ import {IpcMainEvent, IpcMainInvokeEvent} from 'electron/main';
 
 import {CombinedConfig} from 'types/config';
 
-import {RETRIEVE_MODAL_INFO, MODAL_CANCEL, MODAL_RESULT, MODAL_OPEN, MODAL_CLOSE, EMIT_CONFIGURATION, DARK_MODE_CHANGE} from 'common/communication';
+import {
+    RETRIEVE_MODAL_INFO,
+    MODAL_CANCEL,
+    MODAL_RESULT,
+    MODAL_OPEN,
+    MODAL_CLOSE,
+    EMIT_CONFIGURATION,
+    DARK_MODE_CHANGE,
+    RESIZE_MODAL,
+} from 'common/communication';
+
+import {getAdjustedWindowBoundaries} from 'main/utils';
 
 import * as WindowManager from '../windows/windowManager';
 
@@ -37,6 +48,7 @@ export function addModal<T, T2>(key: string, html: string, preload: string, data
 ipcMain.handle(RETRIEVE_MODAL_INFO, handleInfoRequest);
 ipcMain.on(MODAL_RESULT, handleModalResult);
 ipcMain.on(MODAL_CANCEL, handleModalCancel);
+ipcMain.on(RESIZE_MODAL, handleResizeModal);
 
 function findModalByCaller(event: IpcMainInvokeEvent) {
     if (modalQueue.length) {
@@ -96,6 +108,13 @@ function handleModalCancel(event: IpcMainEvent, data: unknown) {
     } else {
         WindowManager.sendToRenderer(MODAL_CLOSE);
         WindowManager.focusBrowserView();
+    }
+}
+
+function handleResizeModal(event: IpcMainEvent, bounds: Electron.Rectangle) {
+    if (modalQueue.length) {
+        const currentModal = modalQueue[0];
+        currentModal.view.setBounds(getAdjustedWindowBoundaries(bounds.width, bounds.height));
     }
 }
 

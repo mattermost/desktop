@@ -101,3 +101,5 @@ export const APP_LOGGED_IN = 'app-logged-in';
 export const APP_LOGGED_OUT = 'app-logged-out';
 
 export const GET_AVAILABLE_SPELL_CHECKER_LANGUAGES = 'get-available-spell-checker-languages';
+
+export const RESIZE_MODAL = 'resize-modal';
