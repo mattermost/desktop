@@ -21,10 +21,17 @@ describe('common/config/migrationPreferences', () => {
         });
 
         it('should migrate if items are not migrated', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'win32',
+            });
             JsonFileManager.mockImplementation(() => ({
                 getValue: () => false,
                 setValue: jest.fn(),
             }));
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
             expect(migrateConfigItems({})).toBe(true);
         });
     });
