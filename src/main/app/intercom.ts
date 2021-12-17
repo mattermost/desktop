@@ -76,6 +76,19 @@ export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: 
     Config.set('teams', teams);
 }
 
+export function addNewServerModalWhenMainWindowIsShown() {
+    const mainWindow = WindowManager.getMainWindow();
+    if (mainWindow) {
+        if (mainWindow.isVisible()) {
+            handleNewServerModal();
+        } else {
+            mainWindow.once('show', () => {
+                handleNewServerModal();
+            });
+        }
+    }
+}
+
 export function handleNewServerModal() {
     const html = getLocalURLString('newServer.html');
 
