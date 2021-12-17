@@ -104,7 +104,7 @@ const anyExpired = () => {
 };
 
 // add any other event emitter methods if needed
-export const on = status.emitter.on;
+export const on = status.emitter.on.bind(status.emitter);
 
 const setSessionExpired = (serverName: string, expired: boolean) => {
     const isExpired = Boolean(expired);
