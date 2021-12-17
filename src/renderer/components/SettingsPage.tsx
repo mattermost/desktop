@@ -676,7 +676,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
             );
         }
 
-        if (window.process.platform === 'linux') {
+        if (window.process.platform === 'linux' || window.process.platform === 'win32') {
             options.push(
                 <FormCheck
                     key='inputMinimizeToTray'
