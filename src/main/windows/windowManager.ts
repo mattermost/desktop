@@ -19,6 +19,7 @@ import {
     APP_LOGGED_IN,
     GET_VIEW_NAME,
     GET_VIEW_WEBCONTENTS_ID,
+    RESIZE_MODAL,
     APP_LOGGED_OUT,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
@@ -183,6 +184,7 @@ export class WindowManager {
         }
         this.viewManager.setLoadingScreenBounds();
         this.teamDropdown?.updateWindowBounds();
+        ipcMain.emit(RESIZE_MODAL, null, bounds);
     }
 
     sendToRenderer = (channel: string, ...args: any[]) => {

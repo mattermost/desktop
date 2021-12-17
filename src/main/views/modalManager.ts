@@ -15,9 +15,11 @@ import {
     EMIT_CONFIGURATION,
     DARK_MODE_CHANGE,
     GET_MODAL_UNCLOSEABLE,
+    RESIZE_MODAL,
 } from 'common/communication';
 
-import WindowManager from '../windows/windowManager';
+import {getAdjustedWindowBoundaries} from 'main/utils';
+import WindowManager from 'main/windows/windowManager';
 
 import {ModalView} from './modalView';
 
@@ -33,6 +35,7 @@ export class ModalManager {
         ipcMain.handle(RETRIEVE_MODAL_INFO, this.handleInfoRequest);
         ipcMain.on(MODAL_RESULT, this.handleModalResult);
         ipcMain.on(MODAL_CANCEL, this.handleModalCancel);
+        ipcMain.on(RESIZE_MODAL, this.handleResizeModal);
 
         ipcMain.on(EMIT_CONFIGURATION, this.handleEmitConfiguration);
     }
@@ -116,6 +119,13 @@ export class ModalManager {
 
     isModalDisplayed = () => {
         return this.modalQueue.some((modal) => modal.isActive());
+    }
+
+    handleResizeModal = (event: IpcMainEvent, bounds: Electron.Rectangle) => {
+        if (this.modalQueue.length) {
+            const currentModal = this.modalQueue[0];
+            currentModal.view.setBounds(getAdjustedWindowBoundaries(bounds.width, bounds.height));
+        }
     }
 
     focusCurrentModal = () => {
