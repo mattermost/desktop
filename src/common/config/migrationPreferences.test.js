@@ -29,10 +29,10 @@ describe('common/config/migrationPreferences', () => {
                 getValue: () => false,
                 setValue: jest.fn(),
             }));
+            expect(migrateConfigItems({})).toBe(true);
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
-            expect(migrateConfigItems({})).toBe(true);
         });
     });
 });
