@@ -103,13 +103,17 @@ export class MattermostView extends EventEmitter {
         }
 
         this.view.webContents.on('did-finish-load', () => {
-            if (!this.view.webContents.isLoading()) {
-                try {
-                    this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.name, this.tab.shouldNotify);
-                } catch (e) {
-                    log.error('failed to send view options to view', this.tab.name);
+            // wait for screen to truly finish loading before sending the message down
+            const timeout = setInterval(() => {
+                if (!this.view.webContents.isLoading()) {
+                    try {
+                        this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.name, this.tab.shouldNotify);
+                        clearTimeout(timeout);
+                    } catch (e) {
+                        log.error('failed to send view options to view', this.tab.name);
+                    }
                 }
-            }
+            }, 100);
         });
 
         this.contextMenu = new ContextMenu({}, this.view);
