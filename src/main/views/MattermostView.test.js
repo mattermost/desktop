@@ -310,7 +310,7 @@ describe('main/views/MattermostView', () => {
     });
 
     describe('updateMentionsFromTitle', () => {
-        const mattermostView = new MattermostView(tabView, {}, {}, {});
+        const mattermostView = new MattermostView(tabView, {remoteInfo: {serverVersion: '5.28.0'}}, {}, {});
 
         it('should parse mentions from title', () => {
             mattermostView.updateMentionsFromTitle('(7) Mattermost');
@@ -320,6 +320,11 @@ describe('main/views/MattermostView', () => {
         it('should parse unreads from title', () => {
             mattermostView.updateMentionsFromTitle('* Mattermost');
             expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.name, 0, true);
+        });
+
+        it('should not parse unreads when title is on a channel with an asterisk before it', () => {
+            mattermostView.updateMentionsFromTitle('*testChannel - Mattermost');
+            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.name, 0, false);
         });
     });
 });
