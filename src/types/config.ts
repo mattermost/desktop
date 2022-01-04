@@ -117,3 +117,7 @@ export type LocalConfiguration = Config & {
     appName: string;
     enableServerManagement: boolean;
 }
+
+export type MigrationInfo = {
+    updateTrayIconWin32: boolean;
+}

@@ -108,7 +108,7 @@ const configDataSchemaV3 = Joi.object<ConfigV3>({
         })).default([]),
     })).default([]),
     showTrayIcon: Joi.boolean().default(false),
-    trayIconTheme: Joi.any().allow('').valid('light', 'dark').default('light'),
+    trayIconTheme: Joi.any().allow('').valid('light', 'dark', 'use_system').default('use_system'),
     minimizeToTray: Joi.boolean().default(false),
     notifications: Joi.object({
         flashWindow: Joi.any().valid(0, 2).default(0),

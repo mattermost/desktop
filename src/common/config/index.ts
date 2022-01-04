@@ -30,6 +30,7 @@ import defaultPreferences, {getDefaultDownloadLocation} from './defaultPreferenc
 import upgradeConfigData from './upgradePreferences';
 import buildConfig from './buildConfig';
 import RegistryConfig, {REGISTRY_READ_EVENT} from './RegistryConfig';
+import migrateConfigItems from './migrationPreferences';
 
 /**
  * Handles loading and merging all sources of configuration as well as saving user provided config
@@ -330,6 +331,11 @@ export default class Config extends EventEmitter {
                     configData = upgradeConfigData(configData);
                     this.writeFileSync(this.configFilePath, configData);
                     log.info(`Configuration updated to version ${this.defaultConfigData.version} successfully.`);
+                }
+                const didMigrate = migrateConfigItems(configData);
+                if (didMigrate) {
+                    this.writeFileSync(this.configFilePath, configData);
+                    log.info('Migrating config items successfully.');
                 }
             } catch (error) {
                 log.error(`Failed to update configuration to version ${this.defaultConfigData.version}.`);

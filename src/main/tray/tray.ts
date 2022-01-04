@@ -17,7 +17,8 @@ let lastStatus = 'normal';
 let lastMessage = app.name;
 
 export function refreshTrayImages(trayIconTheme: string) {
-    const winTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+    const systemTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+    const winTheme = trayIconTheme === 'use_system' ? systemTheme : trayIconTheme;
 
     switch (process.platform) {
     case 'win32':
