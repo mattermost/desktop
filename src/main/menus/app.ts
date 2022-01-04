@@ -212,7 +212,7 @@ export function createTemplate(config: Config) {
             accelerator: 'CmdOrCtrl+W',
         }, separatorItem, {
             label: 'Show Servers',
-            accelerator: 'CmdOrCtrl+Shift+S',
+            accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`,
             click() {
                 ipcMain.emit(OPEN_TEAMS_DROPDOWN);
             },
