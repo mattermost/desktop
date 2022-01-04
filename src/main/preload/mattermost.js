@@ -21,6 +21,7 @@ import {
     REACT_APP_INITIALIZED,
     USER_ACTIVITY_UPDATE,
     CLOSE_TEAMS_DROPDOWN,
+    BROWSER_HISTORY_BUTTON,
     BROWSER_HISTORY_PUSH,
     APP_LOGGED_IN,
     APP_LOGGED_OUT,
@@ -82,6 +83,7 @@ window.addEventListener('load', () => {
     }
     watchReactAppUntilInitialized(() => {
         ipcRenderer.send(REACT_APP_INITIALIZED, viewName);
+        ipcRenderer.send(BROWSER_HISTORY_BUTTON, viewName);
     });
 });
 
@@ -141,6 +143,10 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
     case 'browser-history-push': {
         const {path} = message;
         ipcRenderer.send(BROWSER_HISTORY_PUSH, viewName, path);
+        break;
+    }
+    case 'history-button': {
+        ipcRenderer.send(BROWSER_HISTORY_BUTTON, viewName);
         break;
     }
     default:
@@ -247,6 +253,19 @@ ipcRenderer.on(BROWSER_HISTORY_PUSH, (event, pathName) => {
             type: 'browser-history-push-return',
             message: {
                 pathName,
+            },
+        },
+        window.location.origin,
+    );
+});
+
+ipcRenderer.on(BROWSER_HISTORY_BUTTON, (event, enableBack, enableForward) => {
+    window.postMessage(
+        {
+            type: 'history-button-return',
+            message: {
+                enableBack,
+                enableForward,
             },
         },
         window.location.origin,
