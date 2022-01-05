@@ -241,7 +241,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                 <div className='TeamDropdown__header'>
                     <span className='TeamDropdown__servers'>{'Servers'}</span>
                     <span className='TeamDropdown__keyboardShortcut'>
-                        {window.process.platform === 'darwin' ? '^⌘S' : 'Ctrl + Shift + S'}
+                        {window.process.platform === 'darwin' ? '⌃⌘S' : 'Ctrl + Shift + S'}
                     </span>
                 </div>
                 <hr className='TeamDropdown__divider'/>
