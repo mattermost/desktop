@@ -3,14 +3,14 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, webContents} from 'electron';
+import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, webContents, clipboard} from 'electron';
 
-import {SHOW_NEW_SERVER_MODAL} from 'common/communication';
-import Config from 'common/config';
+import {OPEN_TEAMS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
+import {Config} from 'common/config';
 import {TabType, getTabDisplayName} from 'common/tabs/TabView';
 
-import * as WindowManager from '../windows/windowManager';
-import UpdateManager from 'main/autoupdater/autoUpdater';
+import WindowManager from 'main/windows/windowManager';
+import {UpdateManager} from 'main/autoupdater/autoUpdater';
 
 function createTemplate(config: Config, updateManager: UpdateManager) {
     const separatorItem: MenuItemConstructorOptions = {
@@ -123,7 +123,7 @@ function createTemplate(config: Config, updateManager: UpdateManager) {
         },
     }, {
         role: 'togglefullscreen',
-        accelerator: process.platform === 'darwin' ? 'Ctrl+Cmd+F' : 'F11',
+        accelerator: isMac ? 'Ctrl+Cmd+F' : 'F11',
     }, separatorItem, {
         label: 'Actual Size',
         role: 'resetZoom',
@@ -211,7 +211,13 @@ function createTemplate(config: Config, updateManager: UpdateManager) {
         ] : []), {
             role: 'close',
             accelerator: 'CmdOrCtrl+W',
-        }, separatorItem, ...teams.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).map((team, i) => {
+        }, separatorItem, {
+            label: 'Show Servers',
+            accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`,
+            click() {
+                ipcMain.emit(OPEN_TEAMS_DROPDOWN);
+            },
+        }, ...teams.sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).map((team, i) => {
             const items = [];
             items.push({
                 label: team.name,
@@ -221,7 +227,7 @@ function createTemplate(config: Config, updateManager: UpdateManager) {
                 },
             });
             if (WindowManager.getCurrentTeamName() === team.name) {
-                team.tabs.filter((tab) => tab.isOpen).slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).forEach((tab, i) => {
+                team.tabs.filter((tab) => tab.isOpen).sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).forEach((tab, i) => {
                     items.push({
                         label: `    ${getTabDisplayName(tab.name as TabType)}`,
                         accelerator: `CmdOrCtrl+${i + 1}`,
@@ -270,23 +276,24 @@ function createTemplate(config: Config, updateManager: UpdateManager) {
         });
         submenu.push(separatorItem);
     }
+
+    // eslint-disable-next-line no-undef
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const version = `Version ${app.getVersion()}${__HASH_VERSION__ ? ` commit: ${__HASH_VERSION__}` : ''}`;
     submenu.push({
-        // eslint-disable-next-line no-undef
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        label: `Version ${app.getVersion()}${__HASH_VERSION__ ? ` commit: ${__HASH_VERSION__}` : ''}`,
-        enabled: false,
+        label: version,
+        enabled: true,
+        click() {
+            clipboard.writeText(version);
+        },
     });
 
     template.push({label: 'Hel&p', submenu});
     return template;
 }
 
-function createMenu(config: Config, updateManager: UpdateManager) {
+export function createMenu(config: Config, updateManager: UpdateManager) {
     // TODO: Electron is enforcing certain variables that it doesn't need
     return Menu.buildFromTemplate(createTemplate(config, updateManager) as Array<MenuItemConstructorOptions | MenuItem>);
 }
-
-export default {
-    createMenu,
-};

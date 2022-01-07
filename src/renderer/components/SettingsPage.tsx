@@ -58,6 +58,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
     downloadLocationRef: React.RefObject<HTMLInputElement>;
     showTrayIconRef: React.RefObject<HTMLInputElement>;
     autostartRef: React.RefObject<HTMLInputElement>;
+    hideOnStartRef: React.RefObject<HTMLInputElement>;
     minimizeToTrayRef: React.RefObject<HTMLInputElement>;
     flashWindowRef: React.RefObject<HTMLInputElement>;
     bounceIconRef: React.RefObject<HTMLInputElement>;
@@ -88,6 +89,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         this.downloadLocationRef = React.createRef();
         this.showTrayIconRef = React.createRef();
         this.autostartRef = React.createRef();
+        this.hideOnStartRef = React.createRef();
         this.minimizeToTrayRef = React.createRef();
         this.flashWindowRef = React.createRef();
         this.bounceIconRef = React.createRef();
@@ -201,6 +203,13 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'autostart', data: this.autostartRef.current?.checked});
         this.setState({
             autostart: this.autostartRef.current?.checked,
+        });
+    }
+
+    handleChangeHideOnStart = () => {
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'hideOnStart', data: this.hideOnStartRef.current?.checked});
+        this.setState({
+            hideOnStart: this.hideOnStartRef.current?.checked,
         });
     }
 
@@ -419,6 +428,22 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         {'If enabled, the app starts automatically when you log in to your machine.'}
                     </FormText>
                 </FormCheck>);
+
+            options.push(
+                <FormCheck>
+                    <FormCheck.Input
+                        type='checkbox'
+                        key='inputHideOnStart'
+                        id='inputHideOnStart'
+                        ref={this.hideOnStartRef}
+                        checked={this.state.hideOnStart}
+                        onChange={this.handleChangeHideOnStart}
+                    />
+                    {'Launch app minimized'}
+                    <FormText>
+                        {'If enabled, the app will start in system tray, and will not show the window on launch.'}
+                    </FormText>
+                </FormCheck>);
         }
 
         options.push(
@@ -533,6 +558,12 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     {'Flash app window and taskbar icon when a new message is received'}
                     <FormText>
                         {'If enabled, app window and taskbar icon flash for a few seconds when a new message is received.'}
+                        {window.process.platform === 'linux' && (
+                            <>
+                                <br/>
+                                <em><strong>{'NOTE: '}</strong>{'This functionality may not work with all Linux window managers.'}</em>
+                            </>
+                        )}
                     </FormText>
                 </FormCheck>);
         }
@@ -606,7 +637,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 </FormCheck>);
         }
 
-        if (window.process.platform === 'linux') {
+        if (window.process.platform === 'linux' || window.process.platform === 'win32') {
             options.push(
                 <FormGroup
                     key='trayIconTheme'
@@ -614,6 +645,20 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     style={{marginLeft: '20px'}}
                 >
                     {'Icon theme: '}
+                    {window.process.platform === 'win32' &&
+                        <>
+                            <FormCheck
+                                type='radio'
+                                inline={true}
+                                name='trayIconTheme'
+                                value='use_system'
+                                defaultChecked={this.state.trayIconTheme === 'use_system' || !this.state.trayIconTheme}
+                                onChange={() => this.handleChangeTrayIconTheme('use_system')}
+                                label={'Use system default'}
+                            />
+                            {' '}
+                        </>
+                    }
                     <FormCheck
                         type='radio'
                         inline={true}
@@ -637,7 +682,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
             );
         }
 
-        if (window.process.platform === 'linux') {
+        if (window.process.platform === 'linux' || window.process.platform === 'win32') {
             options.push(
                 <FormCheck
                     key='inputMinimizeToTray'

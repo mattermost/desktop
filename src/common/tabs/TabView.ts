@@ -44,7 +44,6 @@ export function getDefaultTeamWithTabsFromTeam(team: Team) {
     };
 }
 
-// TODO: Might need to move this out
 export function getServerView(srv: MattermostServer, tab: Tab) {
     switch (tab.name) {
     case TAB_MESSAGING:
@@ -76,6 +75,5 @@ export function getTabDisplayName(tabType: TabType) {
 }
 
 export function canCloseTab(tabType: TabType) {
-    // TODO: maybe rework to make the property belong to the class somehow
     return tabType !== TAB_MESSAGING;
 }

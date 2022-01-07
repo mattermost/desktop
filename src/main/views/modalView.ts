@@ -24,8 +24,9 @@ export class ModalView<T, T2> {
     windowAttached?: BrowserWindow;
     status: Status;
     contextMenu: ContextMenu;
+    uncloseable: boolean;
 
-    constructor(key: string, html: string, preload: string, data: T, onResolve: (value: T2) => void, onReject: (value: T2) => void, currentWindow: BrowserWindow) {
+    constructor(key: string, html: string, preload: string, data: T, onResolve: (value: T2) => void, onReject: (value: T2) => void, currentWindow: BrowserWindow, uncloseable: boolean) {
         this.key = key;
         this.html = html;
         this.data = data;
@@ -42,6 +43,7 @@ export class ModalView<T, T2> {
         this.onReject = onReject;
         this.onResolve = onResolve;
         this.window = currentWindow;
+        this.uncloseable = uncloseable;
 
         this.status = Status.ACTIVE;
         try {
@@ -62,13 +64,17 @@ export class ModalView<T, T2> {
         this.windowAttached = win || this.window;
 
         this.windowAttached.addBrowserView(this.view);
-        this.view.setBounds(getWindowBoundaries(this.windowAttached));
-        this.view.setAutoResize({
-            height: true,
-            width: true,
-            horizontal: true,
-            vertical: true,
-        });
+
+        // Linux sometimes doesn't have the bound initialized correctly initially, so we wait to set them
+        const setBoundsFunction = () => {
+            this.view.setBounds(getWindowBoundaries(this.windowAttached!));
+        };
+        if (process.platform === 'linux') {
+            setTimeout(setBoundsFunction, 10);
+        } else {
+            setBoundsFunction();
+        }
+
         this.status = Status.SHOWING;
         if (this.view.webContents.isLoading()) {
             this.view.webContents.once('did-finish-load', () => {

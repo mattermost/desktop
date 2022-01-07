@@ -5,14 +5,18 @@
 
 import fs from 'fs';
 
+import {ipcMain} from 'electron';
 import log from 'electron-log';
 
 import {TrustedOrigin, PermissionType} from 'types/trustedOrigin';
 
+import {UPDATE_PATHS} from 'common/communication';
 import urlUtils from 'common/utils/url';
 
 import * as Validator from './Validator';
-export default class TrustedOriginsStore {
+import {trustedOriginsStoreFile} from './constants';
+
+export class TrustedOriginsStore {
     storeFile: string;
     data?: Map<string, TrustedOrigin>;
 
@@ -108,3 +112,13 @@ export default class TrustedOriginsStore {
         return urlPermissions ? urlPermissions[permission] : undefined;
     }
 }
+
+const trustedOriginsStore = new TrustedOriginsStore(trustedOriginsStoreFile);
+export default trustedOriginsStore;
+
+ipcMain.on(UPDATE_PATHS, () => {
+    trustedOriginsStore.storeFile = trustedOriginsStoreFile;
+    if (trustedOriginsStore.data) {
+        trustedOriginsStore.load();
+    }
+});

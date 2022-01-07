@@ -6,12 +6,12 @@
 import {Menu, MenuItem, MenuItemConstructorOptions} from 'electron';
 import {CombinedConfig} from 'types/config';
 
-import * as WindowManager from '../windows/windowManager';
+import WindowManager from 'main/windows/windowManager';
 
-function createTemplate(config: CombinedConfig) {
+export function createTemplate(config: CombinedConfig) {
     const teams = config.teams;
     const template = [
-        ...teams.slice(0, 9).sort((teamA, teamB) => teamA.order - teamB.order).map((team) => {
+        ...teams.sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).map((team) => {
             return {
                 label: team.name,
                 click: () => {
@@ -34,11 +34,7 @@ function createTemplate(config: CombinedConfig) {
     return template;
 }
 
-function createMenu(config: CombinedConfig) {
-    // TODO: Electron is enforcing certain variables that it doesn't need
+export function createMenu(config: CombinedConfig) {
+    // Electron is enforcing certain variables that it doesn't need
     return Menu.buildFromTemplate(createTemplate(config) as Array<MenuItemConstructorOptions | MenuItem>);
 }
-
-export default {
-    createMenu,
-};

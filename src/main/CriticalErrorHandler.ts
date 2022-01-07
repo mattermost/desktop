@@ -25,7 +25,7 @@ function createErrorReport(err: Error) {
 }
 
 function openDetachedExternal(url: string) {
-    const spawnOption = {detached: true, stdio: 'ignore' as any};
+    const spawnOption = {detached: true, stdio: 'ignore' as const};
     switch (process.platform) {
     case 'win32':
         return spawn('cmd', ['/C', 'start', url], spawnOption);
@@ -38,7 +38,7 @@ function openDetachedExternal(url: string) {
     }
 }
 
-export default class CriticalErrorHandler {
+export class CriticalErrorHandler {
     mainWindow?: BrowserWindow;
 
     setMainWindow(mainWindow: BrowserWindow) {
@@ -57,7 +57,8 @@ export default class CriticalErrorHandler {
             defaultId: 0,
         }).then(({response}) => {
             if (response === 0) {
-                throw new Error('BrowserWindow \'unresponsive\' event has been emitted');
+                log.error('BrowserWindow \'unresponsive\' event has been emitted');
+                app.relaunch();
             }
         });
     }
@@ -112,4 +113,7 @@ export default class CriticalErrorHandler {
         }
     }
 }
+
+const criticalErrorHandler = new CriticalErrorHandler();
+export default criticalErrorHandler;
 

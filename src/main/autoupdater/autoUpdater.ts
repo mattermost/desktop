@@ -9,7 +9,7 @@ import {autoUpdater, UpdateInfo} from 'electron-updater';
 
 import {displayUpgrade, displayRestartToUpgrade} from 'main/notifications';
 
-import * as WindowManager from '../windows/windowManager';
+import WindowManager from '../windows/windowManager';
 
 import {CANCEL_UPGRADE, UPDATE_AVAILABLE} from 'common/communication';
 
@@ -41,7 +41,7 @@ const appIcon = nativeImage.createFromPath(appIconURL);
  * yeah, it is a time consuming process :( improve this doc if you find a way to go faster.
 **/
 
-export default class UpdateManager {
+export class UpdateManager {
     hooksSetup: boolean;
     lastNotification?: NodeJS.Timeout;
     lastCheck?: NodeJS.Timeout;
@@ -147,3 +147,6 @@ export default class UpdateManager {
         }
     }
 }
+
+const updateManager = new UpdateManager();
+export default updateManager;

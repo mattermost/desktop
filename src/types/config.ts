@@ -34,6 +34,7 @@ export type ConfigV3 = {
     useSpellChecker: boolean;
     enableHardwareAcceleration: boolean;
     autostart: boolean;
+    hideOnStart: boolean;
     spellCheckerLocales: string[];
     darkMode: boolean;
     downloadLocation: string;
@@ -116,4 +117,8 @@ export type CombinedConfig = ConfigV3 & BuildConfig & {
 export type LocalConfiguration = Config & {
     appName: string;
     enableServerManagement: boolean;
+}
+
+export type MigrationInfo = {
+    updateTrayIconWin32: boolean;
 }

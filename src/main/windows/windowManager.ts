@@ -1,11 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+/* eslint-disable max-lines */
 import path from 'path';
 import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import log from 'electron-log';
-
-import {CombinedConfig} from 'types/config';
 
 import {
     MAXIMIZE_CHANGE,
@@ -20,9 +19,12 @@ import {
     APP_LOGGED_IN,
     GET_VIEW_NAME,
     GET_VIEW_WEBCONTENTS_ID,
+    RESIZE_MODAL,
+    APP_LOGGED_OUT,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
+import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 
 import {getAdjustedWindowBoundaries} from '../utils';
@@ -37,587 +39,582 @@ import createMainWindow from './mainWindow';
 
 // singleton module to manage application's windows
 
-type WindowManagerStatus = {
+export class WindowManager {
+    assetsDir: string;
+
     mainWindow?: BrowserWindow;
     mainWindowReady: boolean;
     settingsWindow?: BrowserWindow;
-    config?: CombinedConfig;
     viewManager?: ViewManager;
     teamDropdown?: TeamDropdownView;
     currentServerName?: string;
-};
 
-const status: WindowManagerStatus = {mainWindowReady: false};
-const assetsDir = path.resolve(app.getAppPath(), 'assets');
+    constructor() {
+        this.mainWindowReady = false;
+        this.assetsDir = path.resolve(app.getAppPath(), 'assets');
 
-ipcMain.on(HISTORY, handleHistory);
-ipcMain.handle(GET_LOADING_SCREEN_DATA, handleLoadingScreenDataRequest);
-ipcMain.handle(GET_DARK_MODE, handleGetDarkMode);
-ipcMain.on(REACT_APP_INITIALIZED, handleReactAppInitialized);
-ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, handleLoadingScreenAnimationFinished);
-ipcMain.on(BROWSER_HISTORY_PUSH, handleBrowserHistoryPush);
-ipcMain.on(APP_LOGGED_IN, handleAppLoggedIn);
-ipcMain.handle(GET_VIEW_NAME, handleGetViewName);
-ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, handleGetWebContentsId);
-
-export function setConfig(data: CombinedConfig) {
-    if (data) {
-        status.config = data;
+        ipcMain.on(HISTORY, this.handleHistory);
+        ipcMain.handle(GET_LOADING_SCREEN_DATA, this.handleLoadingScreenDataRequest);
+        ipcMain.handle(GET_DARK_MODE, this.handleGetDarkMode);
+        ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
+        ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, this.handleLoadingScreenAnimationFinished);
+        ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
+        ipcMain.on(APP_LOGGED_IN, this.handleAppLoggedIn);
+        ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
+        ipcMain.handle(GET_VIEW_NAME, this.handleGetViewName);
+        ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, this.handleGetWebContentsId);
     }
-    if (status.viewManager && status.config) {
-        status.viewManager.reloadConfiguration(status.config.teams || []);
-    }
-}
 
-export function showSettingsWindow() {
-    if (status.settingsWindow) {
-        status.settingsWindow.show();
-    } else {
-        if (!status.mainWindow) {
-            showMainWindow();
+    handleUpdateConfig = () => {
+        if (this.viewManager) {
+            this.viewManager.reloadConfiguration(Config.teams || []);
         }
-        const withDevTools = Boolean(process.env.MM_DEBUG_SETTINGS) || false;
+    }
 
-        if (!status.config) {
+    showSettingsWindow = () => {
+        if (this.settingsWindow) {
+            this.settingsWindow.show();
+        } else {
+            if (!this.mainWindow) {
+                this.showMainWindow();
+            }
+            const withDevTools = Boolean(process.env.MM_DEBUG_SETTINGS) || false;
+
+            this.settingsWindow = createSettingsWindow(this.mainWindow!, withDevTools);
+            this.settingsWindow.on('closed', () => {
+                delete this.settingsWindow;
+            });
+        }
+    }
+
+    showMainWindow = (deeplinkingURL?: string | URL) => {
+        if (this.mainWindow) {
+            if (this.mainWindow.isVisible()) {
+                this.mainWindow.focus();
+            } else {
+                this.mainWindow.show();
+            }
+        } else {
+            this.mainWindowReady = false;
+            this.mainWindow = createMainWindow({
+                linuxAppIcon: path.join(this.assetsDir, 'linux', 'app_icon.png'),
+            });
+
+            if (!this.mainWindow) {
+                log.error('unable to create main window');
+                app.quit();
+                return;
+            }
+
+            this.mainWindow.once('ready-to-show', () => {
+                this.mainWindowReady = true;
+            });
+
+            // window handlers
+            this.mainWindow.on('closed', () => {
+                log.warn('main window closed');
+                delete this.mainWindow;
+                this.mainWindowReady = false;
+            });
+            this.mainWindow.on('unresponsive', () => {
+                CriticalErrorHandler.setMainWindow(this.mainWindow!);
+                CriticalErrorHandler.windowUnresponsiveHandler();
+            });
+            this.mainWindow.on('maximize', this.handleMaximizeMainWindow);
+            this.mainWindow.on('unmaximize', this.handleUnmaximizeMainWindow);
+            this.mainWindow.on('resize', this.handleResizeMainWindow);
+            this.mainWindow.on('focus', this.focusBrowserView);
+            this.mainWindow.on('enter-full-screen', () => this.sendToRenderer('enter-full-screen'));
+            this.mainWindow.on('leave-full-screen', () => this.sendToRenderer('leave-full-screen'));
+
+            if (process.env.MM_DEBUG_SETTINGS) {
+                this.mainWindow.webContents.openDevTools({mode: 'detach'});
+            }
+
+            if (this.viewManager) {
+                this.viewManager.updateMainWindow(this.mainWindow);
+            }
+
+            this.teamDropdown = new TeamDropdownView(this.mainWindow, Config.teams, Config.darkMode, Config.enableServerManagement);
+        }
+        this.initializeViewManager();
+
+        if (deeplinkingURL) {
+            this.viewManager!.handleDeepLink(deeplinkingURL);
+        }
+    }
+
+    getMainWindow = (ensureCreated?: boolean) => {
+        if (ensureCreated && !this.mainWindow) {
+            this.showMainWindow();
+        }
+        return this.mainWindow;
+    }
+
+    on = this.mainWindow?.on;
+
+    handleMaximizeMainWindow = () => {
+        this.sendToRenderer(MAXIMIZE_CHANGE, true);
+    }
+
+    handleUnmaximizeMainWindow = () => {
+        this.sendToRenderer(MAXIMIZE_CHANGE, false);
+    }
+
+    handleResizeMainWindow = () => {
+        if (!(this.viewManager && this.mainWindow)) {
             return;
         }
-        status.settingsWindow = createSettingsWindow(status.mainWindow!, status.config, withDevTools);
-        status.settingsWindow.on('closed', () => {
-            delete status.settingsWindow;
-        });
-    }
-}
+        const currentView = this.viewManager.getCurrentView();
+        let bounds: Partial<Electron.Rectangle>;
 
-export function showMainWindow(deeplinkingURL?: string | URL) {
-    if (status.mainWindow) {
-        if (status.mainWindow.isVisible()) {
-            status.mainWindow.focus();
+        // Workaround for linux maximizing/minimizing, which doesn't work properly because of these bugs:
+        // https://github.com/electron/electron/issues/28699
+        // https://github.com/electron/electron/issues/28106
+        if (process.platform === 'linux') {
+            const size = this.mainWindow.getSize();
+            bounds = {width: size[0], height: size[1]};
         } else {
-            status.mainWindow.show();
+            bounds = this.mainWindow.getContentBounds();
         }
-    } else {
-        if (!status.config) {
+
+        const setBoundsFunction = () => {
+            if (currentView) {
+                currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, !(urlUtils.isTeamUrl(currentView.tab.url, currentView.view.webContents.getURL()) || urlUtils.isAdminUrl(currentView.tab.url, currentView.view.webContents.getURL()))));
+            }
+        };
+
+        // Another workaround since the window doesn't update properly under Linux for some reason
+        // See above comment
+        if (process.platform === 'linux') {
+            setTimeout(setBoundsFunction, 10);
+        } else {
+            setBoundsFunction();
+        }
+        this.viewManager.setLoadingScreenBounds();
+        this.teamDropdown?.updateWindowBounds();
+        ipcMain.emit(RESIZE_MODAL, null, bounds);
+    }
+
+    // max retries allows the message to get to the renderer even if it is sent while the app is starting up.
+    sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: any[]) => {
+        if (!this.mainWindow || !this.mainWindowReady) {
+            this.showMainWindow();
+            if (maxRetries > 0) {
+                log.info(`Can't send ${channel}, will retry`);
+                setTimeout(() => {
+                    this.sendToRendererWithRetry(maxRetries - 1, channel, ...args);
+                }, SECOND);
+            } else {
+                log.error(`Unable to send the message to the main window for message type ${channel}`);
+            }
             return;
         }
-        status.mainWindowReady = false;
-        status.mainWindow = createMainWindow(status.config, {
-            linuxAppIcon: path.join(assetsDir, 'linux', 'app_icon.png'),
-        });
-        status.mainWindow.once('ready-to-show', () => {
-            status.mainWindowReady = true;
-        });
-
-        if (!status.mainWindow) {
-            log.error('unable to create main window');
-            app.quit();
-        }
-
-        // window handlers
-        status.mainWindow.on('closed', () => {
-            log.warn('main window closed');
-            delete status.mainWindow;
-            status.mainWindowReady = false;
-        });
-        status.mainWindow.on('unresponsive', () => {
-            const criticalErrorHandler = new CriticalErrorHandler();
-            criticalErrorHandler.setMainWindow(status.mainWindow!);
-            criticalErrorHandler.windowUnresponsiveHandler();
-        });
-        status.mainWindow.on('maximize', handleMaximizeMainWindow);
-        status.mainWindow.on('unmaximize', handleUnmaximizeMainWindow);
-        status.mainWindow.on('resize', handleResizeMainWindow);
-        status.mainWindow.on('focus', focusBrowserView);
-        status.mainWindow.on('enter-full-screen', () => sendToRenderer('enter-full-screen'));
-        status.mainWindow.on('leave-full-screen', () => sendToRenderer('leave-full-screen'));
-
-        if (process.env.MM_DEBUG_SETTINGS) {
-            status.mainWindow.webContents.openDevTools({mode: 'detach'});
-        }
-
-        if (status.viewManager) {
-            status.viewManager.updateMainWindow(status.mainWindow);
-        }
-
-        status.teamDropdown = new TeamDropdownView(status.mainWindow, status.config.teams, status.config.darkMode, status.config.enableServerManagement);
-    }
-    initializeViewManager();
-
-    if (deeplinkingURL) {
-        status.viewManager!.handleDeepLink(deeplinkingURL);
-    }
-}
-
-export function getMainWindow(ensureCreated?: boolean) {
-    if (ensureCreated && !status.mainWindow) {
-        showMainWindow();
-    }
-    return status.mainWindow;
-}
-
-export const on = status.mainWindow?.on;
-
-function handleMaximizeMainWindow() {
-    sendToRenderer(MAXIMIZE_CHANGE, true);
-}
-
-function handleUnmaximizeMainWindow() {
-    sendToRenderer(MAXIMIZE_CHANGE, false);
-}
-
-function handleResizeMainWindow() {
-    if (!(status.viewManager && status.mainWindow)) {
-        return;
-    }
-    const currentView = status.viewManager.getCurrentView();
-    let bounds: Partial<Electron.Rectangle>;
-
-    // Workaround for linux maximizing/minimizing, which doesn't work properly because of these bugs:
-    // https://github.com/electron/electron/issues/28699
-    // https://github.com/electron/electron/issues/28106
-    if (process.platform === 'linux') {
-        const size = status.mainWindow.getSize();
-        bounds = {width: size[0], height: size[1]};
-    } else {
-        bounds = status.mainWindow.getContentBounds();
-    }
-
-    const setBoundsFunction = () => {
-        if (currentView) {
-            currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, !(urlUtils.isTeamUrl(currentView.tab.url, currentView.view.webContents.getURL()) || urlUtils.isAdminUrl(currentView.tab.url, currentView.view.webContents.getURL()))));
-        }
-    };
-
-    // Another workaround since the window doesn't update properly under Linux for some reason
-    // See above comment
-    if (process.platform === 'linux') {
-        setTimeout(setBoundsFunction, 10);
-    } else {
-        setBoundsFunction();
-    }
-    status.viewManager.setLoadingScreenBounds();
-    status.teamDropdown?.updateWindowBounds();
-}
-
-// max retries allows the message to get to the renderer even if it is sent while the app is starting up.
-function sendToRendererWithRetry(maxRetries: number, channel: string, ...args: any[]) {
-    if (!status.mainWindow || !status.mainWindowReady) {
-        showMainWindow();
-        if (maxRetries > 0) {
-            log.info(`Can't send ${channel}, will retry`);
-            setTimeout(() => {
-                sendToRendererWithRetry(maxRetries - 1, channel, ...args);
-            }, SECOND);
-        } else {
-            log.error(`Unable to send the message to the main window for message type ${channel}`);
-        }
-        return;
-    }
-    status.mainWindow!.webContents.send(channel, ...args);
-    if (status.settingsWindow && status.settingsWindow.isVisible()) {
-        try {
-            status.settingsWindow.webContents.send(channel, ...args);
-        } catch (e) {
-            log.error(`There was an error while trying to communicate with the renderer: ${e}`);
-        }
-    }
-}
-
-export function sendToRenderer(channel: string, ...args: any[]): void {
-    sendToRendererWithRetry(3, channel, ...args);
-}
-
-export function sendToAll(channel: string, ...args: any[]) {
-    sendToRenderer(channel, ...args);
-    if (status.settingsWindow) {
-        status.settingsWindow.webContents.send(channel, ...args);
-    }
-
-    // TODO: should we include popups?
-}
-
-export function sendToMattermostViews(channel: string, ...args: any[]) {
-    if (status.viewManager) {
-        status.viewManager.sendToAllViews(channel, ...args);
-    }
-}
-
-export function restoreMain() {
-    log.info('restoreMain');
-    if (!status.mainWindow) {
-        showMainWindow();
-    }
-    if (!status.mainWindow!.isVisible() || status.mainWindow!.isMinimized()) {
-        if (status.mainWindow!.isMinimized()) {
-            status.mainWindow!.restore();
-        } else {
-            status.mainWindow!.show();
-        }
-        if (status.settingsWindow) {
-            status.settingsWindow.focus();
-        } else {
-            status.mainWindow!.focus();
-        }
-        if (process.platform === 'darwin') {
-            app.dock.show();
-        }
-    } else if (status.settingsWindow) {
-        status.settingsWindow.focus();
-    } else {
-        status.mainWindow!.focus();
-    }
-}
-
-export function flashFrame(flash: boolean) {
-    if (process.platform === 'linux' || process.platform === 'win32') {
-        if (status.config?.notifications.flashWindow) {
-            status.mainWindow?.flashFrame(flash);
-            if (status.settingsWindow) {
-                // main might be hidden behind the settings
-                status.settingsWindow.flashFrame(flash);
+        this.mainWindow!.webContents.send(channel, ...args);
+        if (this.settingsWindow && this.settingsWindow.isVisible()) {
+            try {
+                this.settingsWindow.webContents.send(channel, ...args);
+            } catch (e) {
+                log.error(`There was an error while trying to communicate with the renderer: ${e}`);
             }
         }
     }
-    if (process.platform === 'darwin' && status.config?.notifications.bounceIcon) {
-        app.dock.bounce(status.config?.notifications.bounceIconType);
-    }
-}
 
-function drawBadge(text: string, small: boolean) {
-    const scale = 2; // should rely display dpi
-    const size = (small ? 20 : 16) * scale;
-    const canvas = document.createElement('canvas');
-    canvas.setAttribute('width', `${size}`);
-    canvas.setAttribute('height', `${size}`);
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx) {
-        log.error('Could not create canvas context');
-        return null;
+    sendToRenderer = (channel: string, ...args: any[]) => {
+        this.sendToRendererWithRetry(3, channel, ...args);
     }
 
-    // circle
-    ctx.fillStyle = '#FF1744'; // Material Red A400
-    ctx.beginPath();
-    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-    ctx.fill();
+    sendToAll = (channel: string, ...args: any[]) => {
+        this.sendToRenderer(channel, ...args);
+        if (this.settingsWindow) {
+            this.settingsWindow.webContents.send(channel, ...args);
+        }
 
-    // text
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = (11 * scale) + 'px sans-serif';
-    ctx.fillText(text, size / 2, size / 2, size);
-
-    return canvas.toDataURL();
-}
-
-function createDataURL(text: string, small: boolean) {
-    const win = status.mainWindow;
-    if (!win) {
-        return null;
+        // TODO: should we include popups?
     }
 
-    // since we don't have a document/canvas object in the main process, we use the webcontents from the window to draw.
-    const safeSmall = Boolean(small);
-    const code = `
-    window.drawBadge = ${drawBadge};
-    window.drawBadge('${text || ''}', ${safeSmall});
-  `;
-    return win.webContents.executeJavaScript(code);
-}
+    sendToMattermostViews = (channel: string, ...args: any[]) => {
+        if (this.viewManager) {
+            this.viewManager.sendToAllViews(channel, ...args);
+        }
+    }
 
-export async function setOverlayIcon(badgeText: string | undefined, description: string, small: boolean) {
-    if (process.platform === 'win32') {
-        let overlay = null;
-        if (status.mainWindow) {
-            if (badgeText) {
-                try {
-                    const dataUrl = await createDataURL(badgeText, small);
-                    overlay = nativeImage.createFromDataURL(dataUrl);
-                } catch (err) {
-                    log.error(`Couldn't generate a badge: ${err}`);
+    restoreMain = () => {
+        log.info('restoreMain');
+        if (!this.mainWindow) {
+            this.showMainWindow();
+        }
+        if (!this.mainWindow!.isVisible() || this.mainWindow!.isMinimized()) {
+            if (this.mainWindow!.isMinimized()) {
+                this.mainWindow!.restore();
+            } else {
+                this.mainWindow!.show();
+            }
+            if (this.settingsWindow) {
+                this.settingsWindow.focus();
+            } else {
+                this.mainWindow!.focus();
+            }
+            if (process.platform === 'darwin') {
+                app.dock.show();
+            }
+        } else if (this.settingsWindow) {
+            this.settingsWindow.focus();
+        } else {
+            this.mainWindow!.focus();
+        }
+    }
+
+    flashFrame = (flash: boolean) => {
+        if (process.platform === 'linux' || process.platform === 'win32') {
+            if (Config.notifications.flashWindow) {
+                this.mainWindow?.flashFrame(flash);
+                if (this.settingsWindow) {
+                    // main might be hidden behind the settings
+                    this.settingsWindow.flashFrame(flash);
                 }
             }
-            status.mainWindow.setOverlayIcon(overlay, description);
+        }
+        if (process.platform === 'darwin' && Config.notifications.bounceIcon) {
+            app.dock.bounce(Config.notifications.bounceIconType);
         }
     }
-}
 
-export function isMainWindow(window: BrowserWindow) {
-    return status.mainWindow && status.mainWindow === window;
-}
+    drawBadge = (text: string, small: boolean) => {
+        const scale = 2; // should rely display dpi
+        const size = (small ? 20 : 16) * scale;
+        const canvas = document.createElement('canvas');
+        canvas.setAttribute('width', `${size}`);
+        canvas.setAttribute('height', `${size}`);
+        const ctx = canvas.getContext('2d');
 
-export function handleDoubleClick(e: IpcMainEvent, windowType?: string) {
-    let action = 'Maximize';
-    if (process.platform === 'darwin') {
-        action = systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
-    }
-    const win = (windowType === 'settings') ? status.settingsWindow : status.mainWindow;
-    if (!win) {
-        return;
-    }
-    switch (action) {
-    case 'Minimize':
-        if (win.isMinimized()) {
-            win.restore();
-        } else {
-            win.minimize();
+        if (!ctx) {
+            log.error('Could not create canvas context');
+            return null;
         }
-        break;
-    case 'Maximize':
-    default:
-        if (win.isMaximized()) {
-            win.unmaximize();
-        } else {
-            win.maximize();
+
+        // circle
+        ctx.fillStyle = '#FF1744'; // Material Red A400
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // text
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = (11 * scale) + 'px sans-serif';
+        ctx.fillText(text, size / 2, size / 2, size);
+
+        return canvas.toDataURL();
+    }
+
+    createDataURL = (text: string, small: boolean) => {
+        const win = this.mainWindow;
+        if (!win) {
+            return null;
         }
-        break;
-    }
-}
 
-function initializeViewManager() {
-    if (!status.viewManager && status.config && status.mainWindow) {
-        status.viewManager = new ViewManager(status.config, status.mainWindow);
-        status.viewManager.load();
-        status.viewManager.showInitial();
-        initializeCurrentServerName();
+        // since we don't have a document/canvas object in the main process, we use the webcontents from the window to draw.
+        const safeSmall = Boolean(small);
+        const code = `
+        window.drawBadge = ${this.drawBadge};
+        window.drawBadge('${text || ''}', ${safeSmall});
+      `;
+        return win.webContents.executeJavaScript(code);
     }
-}
 
-export function initializeCurrentServerName() {
-    if (status.config && !status.currentServerName) {
-        status.currentServerName = (status.config.teams.find((team) => team.order === status.config?.lastActiveTeam) || status.config.teams.find((team) => team.order === 0))?.name;
-    }
-}
-
-export function switchServer(serverName: string, waitForViewToExist = false) {
-    showMainWindow();
-    const server = status.config?.teams.find((team) => team.name === serverName);
-    if (!server) {
-        log.error('Cannot find server in config');
-        return;
-    }
-    status.currentServerName = serverName;
-    let nextTab = server.tabs.find((tab) => tab.isOpen && tab.order === (server.lastActiveTab || 0));
-    if (!nextTab) {
-        const openTabs = server.tabs.filter((tab) => tab.isOpen);
-        nextTab = openTabs.find((e) => e.order === 0) || openTabs[0];
-    }
-    const tabViewName = getTabViewName(serverName, nextTab.name);
-    if (waitForViewToExist) {
-        const timeout = setInterval(() => {
-            if (status.viewManager?.views.has(tabViewName)) {
-                status.viewManager?.showByName(tabViewName);
-                clearTimeout(timeout);
-            }
-        }, 100);
-    } else {
-        status.viewManager?.showByName(tabViewName);
-    }
-    ipcMain.emit(UPDATE_SHORTCUT_MENU);
-}
-
-export function switchTab(serverName: string, tabName: string) {
-    showMainWindow();
-    const tabViewName = getTabViewName(serverName, tabName);
-    status.viewManager?.showByName(tabViewName);
-}
-
-export function focusBrowserView() {
-    if (status.viewManager) {
-        status.viewManager.focus();
-    } else {
-        log.error('Trying to call focus when the viewmanager has not yet been initialized');
-    }
-}
-
-export function openBrowserViewDevTools() {
-    if (status.viewManager) {
-        status.viewManager.openViewDevTools();
-    }
-}
-
-export function focusThreeDotMenu() {
-    if (status.mainWindow) {
-        status.mainWindow.webContents.focus();
-        status.mainWindow.webContents.send(FOCUS_THREE_DOT_MENU);
-    }
-}
-
-function handleLoadingScreenDataRequest() {
-    return {
-        darkMode: status.config?.darkMode || false,
-    };
-}
-
-function handleReactAppInitialized(e: IpcMainEvent, view: string) {
-    if (status.viewManager) {
-        status.viewManager.setServerInitialized(view);
-    }
-}
-
-function handleLoadingScreenAnimationFinished() {
-    if (status.viewManager) {
-        status.viewManager.hideLoadingScreen();
-    }
-}
-
-export function updateLoadingScreenDarkMode(darkMode: boolean) {
-    if (status.viewManager) {
-        status.viewManager.updateLoadingScreenDarkMode(darkMode);
-    }
-}
-
-export function getViewNameByWebContentsId(webContentsId: number) {
-    const view = status.viewManager?.findViewByWebContent(webContentsId);
-    return view?.name;
-}
-
-export function getServerNameByWebContentsId(webContentsId: number) {
-    const view = status.viewManager?.findViewByWebContent(webContentsId);
-    return view?.tab.server.name;
-}
-
-export function close() {
-    const focused = BrowserWindow.getFocusedWindow();
-    focused?.close();
-}
-export function maximize() {
-    const focused = BrowserWindow.getFocusedWindow();
-    if (focused) {
-        focused.maximize();
-    }
-}
-export function minimize() {
-    const focused = BrowserWindow.getFocusedWindow();
-    if (focused) {
-        focused.minimize();
-    }
-}
-export function restore() {
-    const focused = BrowserWindow.getFocusedWindow();
-    if (focused) {
-        focused.restore();
-    }
-    if (focused?.isFullScreen()) {
-        focused.setFullScreen(false);
-    }
-}
-
-export function reload() {
-    const currentView = status.viewManager?.getCurrentView();
-    if (currentView) {
-        status.viewManager?.showLoadingScreen();
-        currentView.reload();
-    }
-}
-
-export function sendToFind() {
-    const currentView = status.viewManager?.getCurrentView();
-    if (currentView) {
-        currentView.view.webContents.sendInputEvent({type: 'keyDown', keyCode: 'F', modifiers: [process.platform === 'darwin' ? 'cmd' : 'ctrl', 'shift']});
-    }
-}
-
-export function handleHistory(event: IpcMainEvent, offset: number) {
-    if (status.viewManager) {
-        const activeView = status.viewManager.getCurrentView();
-        if (activeView && activeView.view.webContents.canGoToOffset(offset)) {
-            try {
-                activeView.view.webContents.goToOffset(offset);
-            } catch (error) {
-                log.error(error);
-                activeView.load(activeView.tab.url);
+    setOverlayIcon = async (badgeText: string | undefined, description: string, small: boolean) => {
+        if (process.platform === 'win32') {
+            let overlay = null;
+            if (this.mainWindow) {
+                if (badgeText) {
+                    try {
+                        const dataUrl = await this.createDataURL(badgeText, small);
+                        overlay = nativeImage.createFromDataURL(dataUrl);
+                    } catch (err) {
+                        log.error(`Couldn't generate a badge: ${err}`);
+                    }
+                }
+                this.mainWindow.setOverlayIcon(overlay, description);
             }
         }
     }
-}
 
-export function selectNextTab() {
-    const currentView = status.viewManager?.getCurrentView();
-    if (!currentView) {
-        return;
+    isMainWindow = (window: BrowserWindow) => {
+        return this.mainWindow && this.mainWindow === window;
     }
 
-    const currentTeamTabs = status.config?.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
-    const filteredTabs = currentTeamTabs?.filter((tab) => tab.isOpen);
-    const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
-    if (!currentTeamTabs || !currentTab || !filteredTabs) {
-        return;
+    handleDoubleClick = (e: IpcMainEvent, windowType?: string) => {
+        let action = 'Maximize';
+        if (process.platform === 'darwin') {
+            action = systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
+        }
+        const win = (windowType === 'settings') ? this.settingsWindow : this.mainWindow;
+        if (!win) {
+            return;
+        }
+        switch (action) {
+        case 'Minimize':
+            if (win.isMinimized()) {
+                win.restore();
+            } else {
+                win.minimize();
+            }
+            break;
+        case 'Maximize':
+        default:
+            if (win.isMaximized()) {
+                win.unmaximize();
+            } else {
+                win.maximize();
+            }
+            break;
+        }
     }
 
-    let currentOrder = currentTab.order;
-    let nextIndex = -1;
-    while (nextIndex === -1) {
-        const nextOrder = ((currentOrder + 1) % currentTeamTabs.length);
-        nextIndex = filteredTabs.findIndex((tab) => tab.order === nextOrder);
-        currentOrder = nextOrder;
+    initializeViewManager = () => {
+        if (!this.viewManager && Config && this.mainWindow) {
+            this.viewManager = new ViewManager(this.mainWindow);
+            this.viewManager.load();
+            this.viewManager.showInitial();
+            this.initializeCurrentServerName();
+        }
     }
 
-    const newTab = filteredTabs[nextIndex];
-    switchTab(currentView.tab.server.name, newTab.name);
-}
-
-export function selectPreviousTab() {
-    const currentView = status.viewManager?.getCurrentView();
-    if (!currentView) {
-        return;
+    initializeCurrentServerName = () => {
+        if (!this.currentServerName) {
+            this.currentServerName = (Config.teams.find((team) => team.order === Config.lastActiveTeam) || Config.teams.find((team) => team.order === 0))?.name;
+        }
     }
 
-    const currentTeamTabs = status.config?.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
-    const filteredTabs = currentTeamTabs?.filter((tab) => tab.isOpen);
-    const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
-    if (!currentTeamTabs || !currentTab || !filteredTabs) {
-        return;
+    switchServer = (serverName: string, waitForViewToExist = false) => {
+        this.showMainWindow();
+        const server = Config.teams.find((team) => team.name === serverName);
+        if (!server) {
+            log.error('Cannot find server in config');
+            return;
+        }
+        this.currentServerName = serverName;
+        let nextTab = server.tabs.find((tab) => tab.isOpen && tab.order === (server.lastActiveTab || 0));
+        if (!nextTab) {
+            const openTabs = server.tabs.filter((tab) => tab.isOpen);
+            nextTab = openTabs.find((e) => e.order === 0) || openTabs.concat().sort((a, b) => a.order - b.order)[0];
+        }
+        const tabViewName = getTabViewName(serverName, nextTab.name);
+        if (waitForViewToExist) {
+            const timeout = setInterval(() => {
+                if (this.viewManager?.views.has(tabViewName)) {
+                    this.viewManager?.showByName(tabViewName);
+                    clearTimeout(timeout);
+                }
+            }, 100);
+        } else {
+            this.viewManager?.showByName(tabViewName);
+        }
+        ipcMain.emit(UPDATE_SHORTCUT_MENU);
     }
 
-    // js modulo operator returns a negative number if result is negative, so we have to ensure it's positive
-    let currentOrder = currentTab.order;
-    let nextIndex = -1;
-    while (nextIndex === -1) {
-        const nextOrder = ((currentTeamTabs.length + (currentOrder - 1)) % currentTeamTabs.length);
-        nextIndex = filteredTabs.findIndex((tab) => tab.order === nextOrder);
-        currentOrder = nextOrder;
+    switchTab = (serverName: string, tabName: string) => {
+        this.showMainWindow();
+        const tabViewName = getTabViewName(serverName, tabName);
+        this.viewManager?.showByName(tabViewName);
     }
 
-    const newTab = filteredTabs[nextIndex];
-    switchTab(currentView.tab.server.name, newTab.name);
-}
-
-function handleGetDarkMode() {
-    return status.config?.darkMode;
-}
-
-function handleBrowserHistoryPush(e: IpcMainEvent, viewName: string, pathName: string) {
-    const currentView = status.viewManager?.views.get(viewName);
-    const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${pathName}`, status.config!.teams)?.name || viewName;
-    if (status.viewManager?.closedViews.has(redirectedViewName)) {
-        status.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${pathName}`);
-    }
-    const redirectedView = status.viewManager?.views.get(redirectedViewName) || currentView;
-    if (redirectedView !== currentView && redirectedView?.tab.server.name === status.currentServerName) {
-        log.info('redirecting to a new view', redirectedView?.name || viewName);
-        status.viewManager?.showByName(redirectedView?.name || viewName);
+    focusBrowserView = () => {
+        if (this.viewManager) {
+            this.viewManager.focus();
+        } else {
+            log.error('Trying to call focus when the viewmanager has not yet been initialized');
+        }
     }
 
-    // Special case check for Channels to not force a redirect to "/", causing a refresh
-    if (!(redirectedView !== currentView && redirectedView?.tab.type === TAB_MESSAGING && pathName === '/')) {
-        redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
+    openBrowserViewDevTools = () => {
+        if (this.viewManager) {
+            this.viewManager.openViewDevTools();
+        }
+    }
+
+    focusThreeDotMenu = () => {
+        if (this.mainWindow) {
+            this.mainWindow.webContents.focus();
+            this.mainWindow.webContents.send(FOCUS_THREE_DOT_MENU);
+        }
+    }
+
+    handleLoadingScreenDataRequest = () => {
+        return {
+            darkMode: Config.darkMode || false,
+        };
+    }
+
+    handleReactAppInitialized = (e: IpcMainEvent, view: string) => {
+        if (this.viewManager) {
+            this.viewManager.setServerInitialized(view);
+        }
+    }
+
+    handleLoadingScreenAnimationFinished = () => {
+        if (this.viewManager) {
+            this.viewManager.hideLoadingScreen();
+        }
+    }
+
+    updateLoadingScreenDarkMode = (darkMode: boolean) => {
+        if (this.viewManager) {
+            this.viewManager.updateLoadingScreenDarkMode(darkMode);
+        }
+    }
+
+    getViewNameByWebContentsId = (webContentsId: number) => {
+        const view = this.viewManager?.findViewByWebContent(webContentsId);
+        return view?.name;
+    }
+
+    getServerNameByWebContentsId = (webContentsId: number) => {
+        const view = this.viewManager?.findViewByWebContent(webContentsId);
+        return view?.tab.server.name;
+    }
+
+    close = () => {
+        const focused = BrowserWindow.getFocusedWindow();
+        focused?.close();
+    }
+    maximize = () => {
+        const focused = BrowserWindow.getFocusedWindow();
+        if (focused) {
+            focused.maximize();
+        }
+    }
+    minimize = () => {
+        const focused = BrowserWindow.getFocusedWindow();
+        if (focused) {
+            focused.minimize();
+        }
+    }
+    restore = () => {
+        const focused = BrowserWindow.getFocusedWindow();
+        if (focused) {
+            focused.restore();
+        }
+        if (focused?.isFullScreen()) {
+            focused.setFullScreen(false);
+        }
+    }
+
+    reload = () => {
+        const currentView = this.viewManager?.getCurrentView();
+        if (currentView) {
+            this.viewManager?.showLoadingScreen();
+            currentView.reload();
+        }
+    }
+
+    sendToFind = () => {
+        const currentView = this.viewManager?.getCurrentView();
+        if (currentView) {
+            currentView.view.webContents.sendInputEvent({type: 'keyDown', keyCode: 'F', modifiers: [process.platform === 'darwin' ? 'cmd' : 'ctrl', 'shift']});
+        }
+    }
+
+    handleHistory = (event: IpcMainEvent, offset: number) => {
+        if (this.viewManager) {
+            const activeView = this.viewManager.getCurrentView();
+            if (activeView && activeView.view.webContents.canGoToOffset(offset)) {
+                try {
+                    activeView.view.webContents.goToOffset(offset);
+                } catch (error) {
+                    log.error(error);
+                    activeView.load(activeView.tab.url);
+                }
+            }
+        }
+    }
+
+    selectNextTab = () => {
+        this.selectTab((order) => order + 1);
+    }
+
+    selectPreviousTab = () => {
+        this.selectTab((order, length) => (length + (order - 1)));
+    }
+
+    selectTab = (fn: (order: number, length: number) => number) => {
+        const currentView = this.viewManager?.getCurrentView();
+        if (!currentView) {
+            return;
+        }
+
+        const currentTeamTabs = Config.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
+        const filteredTabs = currentTeamTabs?.filter((tab) => tab.isOpen);
+        const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
+        if (!currentTeamTabs || !currentTab || !filteredTabs) {
+            return;
+        }
+
+        let currentOrder = currentTab.order;
+        let nextIndex = -1;
+        while (nextIndex === -1) {
+            const nextOrder = (fn(currentOrder, currentTeamTabs.length) % currentTeamTabs.length);
+            nextIndex = filteredTabs.findIndex((tab) => tab.order === nextOrder);
+            currentOrder = nextOrder;
+        }
+
+        const newTab = filteredTabs[nextIndex];
+        this.switchTab(currentView.tab.server.name, newTab.name);
+    }
+
+    handleGetDarkMode = () => {
+        return Config.darkMode;
+    }
+
+    handleBrowserHistoryPush = (e: IpcMainEvent, viewName: string, pathName: string) => {
+        const currentView = this.viewManager?.views.get(viewName);
+        const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${pathName}`, Config.teams)?.name || viewName;
+        if (this.viewManager?.closedViews.has(redirectedViewName)) {
+            this.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${pathName}`);
+        }
+        let redirectedView = this.viewManager?.views.get(redirectedViewName) || currentView;
+        if (redirectedView !== currentView && redirectedView?.tab.server.name === this.currentServerName && redirectedView?.isLoggedIn) {
+            log.info('redirecting to a new view', redirectedView?.name || viewName);
+            this.viewManager?.showByName(redirectedView?.name || viewName);
+        } else {
+            redirectedView = currentView;
+        }
+
+        // Special case check for Channels to not force a redirect to "/", causing a refresh
+        if (!(redirectedView !== currentView && redirectedView?.tab.type === TAB_MESSAGING && pathName === '/')) {
+            redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
+        }
+    }
+
+    getCurrentTeamName = () => {
+        return this.currentServerName;
+    }
+
+    handleAppLoggedIn = (event: IpcMainEvent, viewName: string) => {
+        const view = this.viewManager?.views.get(viewName);
+        if (view) {
+            view.isLoggedIn = true;
+            this.viewManager?.reloadViewIfNeeded(viewName);
+        }
+    }
+
+    handleAppLoggedOut = (event: IpcMainEvent, viewName: string) => {
+        const view = this.viewManager?.views.get(viewName);
+        if (view) {
+            view.isLoggedIn = false;
+        }
+    }
+
+    handleGetViewName = (event: IpcMainInvokeEvent) => {
+        return this.getViewNameByWebContentsId(event.sender.id);
+    }
+
+    handleGetWebContentsId = (event: IpcMainInvokeEvent) => {
+        return event.sender.id;
     }
 }
 
-export function getCurrentTeamName() {
-    return status.currentServerName;
-}
-
-function handleAppLoggedIn(event: IpcMainEvent, viewName: string) {
-    status.viewManager?.reloadViewIfNeeded(viewName);
-}
-
-function handleGetViewName(event: IpcMainInvokeEvent) {
-    return getViewNameByWebContentsId(event.sender.id);
-}
-function handleGetWebContentsId(event: IpcMainInvokeEvent) {
-    return event.sender.id;
-}
-
+const windowManager = new WindowManager();
+export default windowManager;
