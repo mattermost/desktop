@@ -9,6 +9,7 @@ jest.mock('electron', () => ({
     app: {
         name: 'Mattermost',
         getPath: jest.fn(),
+        getAppPath: () => '/path/to/app',
     },
     ipcMain: {
         on: jest.fn(),

@@ -12,7 +12,7 @@ import {TabType, getTabDisplayName} from 'common/tabs/TabView';
 import WindowManager from 'main/windows/windowManager';
 import {UpdateManager} from 'main/autoupdater/autoUpdater';
 
-function createTemplate(config: Config, updateManager: UpdateManager) {
+export function createTemplate(config: Config, updateManager: UpdateManager) {
     const separatorItem: MenuItemConstructorOptions = {
         type: 'separator',
     };

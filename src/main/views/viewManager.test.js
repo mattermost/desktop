@@ -15,6 +15,9 @@ import {MattermostView} from './MattermostView';
 import {ViewManager} from './viewManager';
 
 jest.mock('electron', () => ({
+    app: {
+        getAppPath: () => '/path/to/app',
+    },
     dialog: {
         showErrorBox: jest.fn(),
     },

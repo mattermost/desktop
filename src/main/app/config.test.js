@@ -13,6 +13,7 @@ import AutoLauncher from 'main/AutoLauncher';
 
 jest.mock('electron', () => ({
     app: {
+        getAppPath: () => '/path/to/app',
         isReady: jest.fn(),
         setPath: jest.fn(),
     },
