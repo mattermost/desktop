@@ -228,9 +228,6 @@ export class WindowManager {
             } else {
                 this.mainWindow!.focus();
             }
-            if (process.platform === 'darwin') {
-                app.dock.show();
-            }
         } else if (this.settingsWindow) {
             this.settingsWindow.focus();
         } else {
