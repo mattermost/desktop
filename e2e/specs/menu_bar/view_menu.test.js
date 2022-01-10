@@ -42,7 +42,7 @@ describe('mattermost', function desc() {
     });
 
     // TODO: enable when we have a server to test against
-    it.skip('MM-T813 Control+F should focus the search bar in Mattermost', async () => {
+    it('MM-T813 Control+F should focus the search bar in Mattermost', async () => {
         const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;

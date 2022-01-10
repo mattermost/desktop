@@ -27,7 +27,7 @@ const electronBinaryPath = (() => {
 const userDataDir = path.join(sourceRootDir, 'e2e/testUserData/');
 const configFilePath = path.join(userDataDir, 'config.json');
 const boundsInfoPath = path.join(userDataDir, 'bounds-info.json');
-const mattermostURL = 'http://example.com/';
+const mattermostURL = 'http://localhost:8065/';
 
 const demoConfig = {
     version: 3,
@@ -169,6 +169,15 @@ module.exports = {
             });
         }));
         return map;
+    },
+
+    async loginToMattermost(window) {
+        await window.waitForSelector('#loginId');
+        await window.waitForSelector('#loginPassword');
+        await window.waitForSelector('#loginButton');
+        await window.type('#loginId', 'sysadmin');
+        await window.type('#loginPassword', 'Sys@dmin-sample1');
+        await window.click('#loginButton');
     },
 
     addClientCommands(client) {

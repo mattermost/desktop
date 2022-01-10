@@ -133,9 +133,11 @@ jobs:
       - update_image:
           apt_opts: "--no-install-recommends"
       - run: npm run check-types
+      - run: npm run test:docker
       - run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run npm run test
       - run: mkdir -p /tmp/test-results
       - run: cp test-results.xml /tmp/test-results/
+      - run: npm run test:docker-stop
       - store_test_results:
           path: /tmp/test-results
       - save_cache:
