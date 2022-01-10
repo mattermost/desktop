@@ -3,9 +3,9 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents} from 'electron';
+import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, webContents, clipboard} from 'electron';
 
-import {BROWSER_HISTORY_BUTTON, SHOW_NEW_SERVER_MODAL} from 'common/communication';
+import {BROWSER_HISTORY_BUTTON, OPEN_TEAMS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
 import {Config} from 'common/config';
 import {TabType, getTabDisplayName} from 'common/tabs/TabView';
 
@@ -212,7 +212,13 @@ export function createTemplate(config: Config) {
         ] : []), {
             role: 'close',
             accelerator: 'CmdOrCtrl+W',
-        }, separatorItem, ...teams.sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).map((team, i) => {
+        }, separatorItem, {
+            label: 'Show Servers',
+            accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`,
+            click() {
+                ipcMain.emit(OPEN_TEAMS_DROPDOWN);
+            },
+        }, ...teams.sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).map((team, i) => {
             const items = [];
             items.push({
                 label: team.name,
@@ -263,12 +269,17 @@ export function createTemplate(config: Config) {
         });
         submenu.push(separatorItem);
     }
+
+    // eslint-disable-next-line no-undef
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const version = `Version ${app.getVersion()}${__HASH_VERSION__ ? ` commit: ${__HASH_VERSION__}` : ''}`;
     submenu.push({
-        // eslint-disable-next-line no-undef
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        label: `Version ${app.getVersion()}${__HASH_VERSION__ ? ` commit: ${__HASH_VERSION__}` : ''}`,
-        enabled: false,
+        label: version,
+        enabled: true,
+        click() {
+            clipboard.writeText(version);
+        },
     });
 
     template.push({label: 'Hel&p', submenu});

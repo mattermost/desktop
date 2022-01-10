@@ -149,7 +149,7 @@ describe('main/Validator', () => {
                     ],
                 },
             ],
-            trayIconTheme: 'light',
+            trayIconTheme: 'use_system',
             useSpellChecker: true,
             version: 3,
         };

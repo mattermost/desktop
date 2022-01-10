@@ -10,7 +10,7 @@ import log from 'electron-log';
 
 import {SavedWindowState} from 'types/mainWindow';
 
-import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, OPEN_TEAMS_DROPDOWN} from 'common/communication';
+import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS} from 'common/communication';
 import Config from 'common/config';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH} from 'common/utils/constants';
 import Utils from 'common/utils/util';
@@ -190,9 +190,6 @@ function createMainWindow(options: {linuxAppIcon: string}) {
                 // do nothing because we want to supress the menu popping up
             });
         }
-        globalShortcut.register(`${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`, () => {
-            ipcMain.emit(OPEN_TEAMS_DROPDOWN);
-        });
     });
     mainWindow.on('blur', () => {
         globalShortcut.unregisterAll();

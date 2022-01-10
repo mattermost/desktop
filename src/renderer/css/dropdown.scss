@@ -40,12 +40,24 @@ body {
 
 .TeamDropdown__header {
     padding: 6px 20px;
+    display: flex;
+    align-items: center;
+    width: -webkit-fill-available;
+    user-select: none;
 
-    > span {
+    .TeamDropdown__servers {
         font-weight: 600;
         font-size: 14px;
         line-height: 20px;
         color: #3D3C40;
+    }
+
+    .TeamDropdown__keyboardShortcut {
+        font-weight: 400;
+        font-size: 12px;
+        line-height: 16px;
+        color: rgba(61, 60, 64, 0.56);
+        margin-left: auto;
     }
 }
 
@@ -253,6 +265,10 @@ body {
 
     .TeamDropdown__header > span {
         color: #DDD;
+
+        &.TeamDropdown__keyboardShortcut {
+            color: rgba(221, 221, 221, 0.56);
+        }
     }
 
     .TeamDropdown__divider {

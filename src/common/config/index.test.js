@@ -89,6 +89,8 @@ jest.mock('common/config/upgradePreferences', () => {
     });
 });
 
+jest.mock('common/config/migrationPreferences', () => jest.fn());
+
 jest.mock('common/config/buildConfig', () => {
     return {
         defaultTeams: [buildTeam],

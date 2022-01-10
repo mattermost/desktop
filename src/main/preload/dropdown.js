@@ -3,7 +3,7 @@
 
 'use strict';
 
-import {ipcRenderer} from 'electron';
+import {ipcRenderer, contextBridge} from 'electron';
 
 import {
     UPDATE_TEAMS_DROPDOWN,
@@ -19,6 +19,10 @@ import {
 } from 'common/communication';
 
 console.log('preloaded for the dropdown!');
+
+contextBridge.exposeInMainWorld('process', {
+    platform: process.platform,
+});
 
 window.addEventListener('message', async (event) => {
     switch (event.data.type) {
