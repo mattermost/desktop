@@ -131,9 +131,12 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          version: 19.03.13
+          version: 20.10.11
       - update_image:
           apt_opts: "--no-install-recommends"
+      - run:
+          name: Install Docker client
+          command: apk add docker-cli
       - run: npm run check-types
       - run: npm run test:docker
       - run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run npm run test
