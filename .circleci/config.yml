@@ -130,6 +130,8 @@ jobs:
     executor: wine-chrome
     steps:
       - checkout
+      - setup_remote_docker:
+          version: 19.03.13
       - update_image:
           apt_opts: "--no-install-recommends"
       - run: npm run check-types
