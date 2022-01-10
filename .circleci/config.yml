@@ -133,11 +133,6 @@ jobs:
     executor: wine-chrome
     steps:
       - checkout
-      - setup_remote_docker:
-          version: 20.10.11
-      - run:
-          name: Install Docker client
-          command: apt install docker.io 
       - update_image:
           apt_opts: "--no-install-recommends"
       - run: npm run check-types
