@@ -15,6 +15,9 @@ executors:
       - image: electronuserland/builder:wine-chrome
         environment:
           TAR_OPTIONS: --no-same-owner
+      - image: mattermost/mattermost-preview
+        name: mattermost-preview
+        command: '-d --publish 8065:8065 mattermost/mattermost-preview'
   wine-mono:
     working_directory: ~/mattermost-desktop
     docker:
@@ -132,11 +135,11 @@ jobs:
       - checkout
       - setup_remote_docker:
           version: 20.10.11
-      - update_image:
-          apt_opts: "--no-install-recommends"
       - run:
           name: Install Docker client
-          command: apk add docker-cli
+          command: apt install docker.io 
+      - update_image:
+          apt_opts: "--no-install-recommends"
       - run: npm run check-types
       - run: npm run test:docker
       - run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run npm run test
