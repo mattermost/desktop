@@ -3,7 +3,8 @@
 ## Installation
 
 ### Windows
-To set up the Mattermost desktop application for Windows 7, 8 and 10:
+
+To set up the Mattermost desktop application for Windows 7, 8, and 10:
 
 1. Download [the latest release](https://github.com/mattermost/desktop/releases) of Mattermost Desktop
 
@@ -24,8 +25,8 @@ To set up the Mattermost desktop application for Windows 7, 8 and 10:
    - Right-click the file and select "Pin to Start Menu" to make the application available from your Windows Start menu.
    - Double-click the file to open the application.
 
+### macOS
 
-### OS X
 For OS X 10.11 El Capitan. For older versions of OS X the instruction are similar.
 
 1. Download [the latest release](https://github.com/mattermost/desktop/releases) of Mattermost Desktop
@@ -42,10 +43,10 @@ For OS X 10.11 El Capitan. For older versions of OS X the instruction are simila
 
    You should see a new application called **Mattermost Desktop** open.
 
-
 ### Linux
 
 #### Ubuntu
+
 For Ubuntu 16.04.
 
 1. Download [the latest release](https://github.com/mattermost/desktop/releases) of Mattermost Desktop
@@ -61,6 +62,7 @@ For Ubuntu 16.04.
    You should see a new application called **Mattermost Desktop** open.
 
 #### Other distributions
+
 1. Download [the latest release](https://github.com/mattermost/desktop/releases) of Mattermost Desktop
 
    Find the file ending in `-linux-*.tar.gz`
@@ -72,6 +74,7 @@ For Ubuntu 16.04.
     Please refer to https://wiki.archlinux.org/index.php/Desktop_entries
 
 ## Configuration
+
 You have to configure the application to interact with your teams.
 
 1. Open **Settings Page**. If you use the application for the first time, **Settings Page** should appear automatically.
@@ -90,11 +93,10 @@ You have to configure the application to interact with your teams.
 
 You're now ready to use **Mattermost Desktop** to interact with multiple teams from one desktop application.
 
-
 ## Quit
-- Windows, Linux: `Ctrl+Q`
-- OS X: `Command+Q`
 
+- Windows, Linux: `CTRL+Q`
+- macOS: `CMD+Q`
 
 ## Help
 
@@ -106,7 +108,6 @@ The Mattermost desktop application offers:
 - Desktop notifications
 
 See the Mattermost [help documentation](http://docs.mattermost.com/help/getting-started/signing-in.html) for how to use the Mattermost team site.
-
 
 ## Settings Page
 
@@ -120,68 +121,65 @@ The Settings Page is available from the **File** menu under **Settings** (Click 
 - **Options**
    - **Hide Menu Bar** (Windows, Linux)
       - This option hides the menu bar. Press "Alt" to show it.
-   - **Show Icon on Menu Bar** (OS X)
+   - **Show Icon on Menu Bar** (macOS)
       - The icon appears on the menu bar to indicate whether there are new messages or mentions.
    - **Allow insecure contents**
       - If your team is hosted on `https://`, images with `http://` are not rendered by default.
         This option allows such images to be rendered, but please be careful for security.
    - **Start app on login** (Windows, Linux)
       - This option starts the application when you login.
-   - **Leave app running in notification area when the window is closed** (OS X, Linux)
+   - **Leave app running in notification area when the window is closed** (macOS, Linux)
       - This option hides the window from the dock, if the window is closed
    - **Toggle window visibility when clicking on the tray icon** (Windows)
       - If checked, then a click on the system tray icon leads to a toggling of the minimized/maximized state of the window
-   - **Show the red badge for unread messages.** (Windows, OS X)
+   - **Show the red badge for unread messages.** (Windows, macOS)
       - If this is checked it will show the red dot on your task bar when you have unread messages.
-
 
 ## Menu Bar
 
-If **Hide Menu Bar** option is enabled, click the `Alt` key to toggle the menu on and off.
+If **Hide Menu Bar** option is enabled, use the `ALT` key to toggle the menu on and off.
 
-Menu options are listed below (shortcut keys are listed in brackets, `Ctrl` becomes `Command` on OS X):
+Menu options are listed below (shortcut keys are listed in brackets, `CTRL` becomes `CMD` on macOS):
 
 - **File**
   - **About Mattermost** - Show version information for Mattermost desktop application
-  - **Settings** (Ctrl+Comma) - Open setting menu to add new team sites and configure shortcut key options
-  - **Quit** (Ctrl+Q) - Exit the application
+  - **Settings** (CTRL+,) - Open setting menu to add new team sites and configure shortcut key options
+  - **Quit** (CTRL+Q) - Exit the application
 - **Edit**
-  - **Undo** (Ctrl+Z) - Reverse previous action
-  - **Redo** (Ctrl+Shift+Z, Ctrl+Y on Windows) - Replay most recent action
-  - **Cut** (Ctrl+X) - Cut selected text
-  - **Copy** (Ctrl+C) - Copy selected text
-  - **Paste** (Ctrl+V) - Paste text from clipboard
-  - **Select All** (Ctrl+A) - Select all text in input box
-  - **Search in Team** (Ctrl+S) - Put cursor in search box to search in the current team
+  - **Undo** (CTRL+Z) - Reverse previous action
+  - **Redo** (CTRL+SHIFT+Z, CTRL+Y on Windows) - Replay most recent action
+  - **Cut** (CTRL+X) - Cut selected text
+  - **Copy** (CTRL+C) - Copy selected text
+  - **Paste** (CTRL+V) - Paste text from clipboard
+  - **Select All** (CTRL+A) - Select all text in input box
+  - **Search in Team** (CTRL+S) - Put cursor in search box to search in the current team
 - **View**
-  - **Find..** (Ctrl+F)- Find in page
-  - **Reload** (Ctrl+R) - Reload page from the server
-  - **Clear Cache and Reload** (Ctrl+Shift+R) - Clear cached content in application and reload page
+  - **Find..** (CTRL+F)- Find in page
+  - **Reload** (CTRL+R) - Reload page from the server
+  - **Clear Cache and Reload** (CTRL+SHIFT+R) - Clear cached content in application and reload page
   - **Toggle Full Screen** (F11) - Toggle application from window to full screen and back
-  - **Toggle Developer Tools** (Ctrl+Shift+I) - Turn on and off sidebar showing developer tools
+  - **Toggle Developer Tools** (CTRL+SHIFT+I) - Turn on and off sidebar showing developer tools
   - **Actual Size** (Ctrl+0) - Reset zoom level
-  - **Zoom In** (Ctrl+Plus) - Enlarge the rendered contents size
-  - **Zoom In** (Ctrl+Minus) - Shrink the rendered contents size
+  - **Zoom In** (CTRL++) - Enlarge the rendered contents size
+  - **Zoom In** (CTRL+-) - Shrink the rendered contents size
 - **History**
-  - **Back** (Alt+Left, Command+[ on OS X) - Go back to previous web page in the current tab
-  - **Forward** (Alt+Right, Command+] on OS X) - Go forward to next web page in the current tab
+  - **Back** (ALT+LEFT, CMD+`[` on macOS) - Go back to previous web page in the current tab
+  - **Forward** (ALT+RIGHT, CMD+] on macOS) - Go forward to next web page in the current tab
 - **Window**
-  - **Close** (Ctrl+W) - Close the window (On Window and Linux, the main window is minimized)
-  - **Minimize** (Ctrl+M) - Minimize the window
-  - ***Team Name*** (Ctrl+{1-9}) - Open the *n*-th tab
-  - **Select Next Team** (Ctrl+Tab, Alt+Command+Right) - Open the right tab
-  - **Select Previous Team** (Ctrl+Shift+Tab, Alt+Command+Left) - Open the left tab
+  - **Close** (CTRL+W) - Close the window (On Window and Linux, the main window is minimized)
+  - **Minimize** (CTRL+M) - Minimize the window
+  - ***Team Name*** (CTRL+{1-9}) - Open the *n*-th tab
+  - **Select Next Team** (CTRL+TAB, ALT+CMD+RIGHT) - Open the right tab
+  - **Select Previous Team** (CTRL+SHIFT+TAB, ALT+CMD+LEFT) - Open the left tab
 - **Help**
   - ***Learn More*** Links to the official mattermost documentation
   - ***Version*** Indicate the application version
-
 
 ## Notifications
 
 Mattermost lets users configure [desktop notifications](http://docs.mattermost.com/help/getting-started/configuring-notifications.html#desktop-notifications) to alert users to new events in a team site.
 
 For the Mattermost Windows application, these appear as balloon notifications from the task bar on Windows 7 and Windows 8.1, and as a "toast" pop-up on Windows 10.
-
 
 ## Start Menu and Task Bar shortcuts (Windows)
 
