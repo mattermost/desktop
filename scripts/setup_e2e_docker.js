@@ -5,6 +5,7 @@ const {spawn, exec} = require('child_process');
 
 const axios = require('axios');
 
+console.log('path to mmctl', process.env.MMCTL_PATH);
 const mmctlPath = process.env.MMCTL_PATH | 'mmctl';
 
 const ping = setInterval(async () => {
