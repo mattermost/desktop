@@ -5,6 +5,8 @@ const {spawn, exec} = require('child_process');
 
 const axios = require('axios');
 
+const mmctlPath = process.env.MMCTL_PATH | 'mmctl';
+
 const ping = setInterval(async () => {
     try {
         const pingRequest = await axios.get('http://localhost:8065/api/v4/system/ping');
@@ -20,8 +22,8 @@ const ping = setInterval(async () => {
             if (addUserRequest.status === 201) {
                 clearInterval(ping);
 
-                exec('docker exec -i mattermost-preview bash -c "echo \'Sys@dmin123\' > passfile"', () => {
-                    const mmctlauth = spawn('docker', ['exec', '-i', 'mattermost-preview', 'mmctl', 'auth', 'login', 'http://localhost:8065', '--name', 'local-server', '--username', 'admin1', '--password-file', 'passfile']);
+                exec('echo "Sys@dmin123" > passfile', () => {
+                    const mmctlauth = spawn(mmctlPath, ['auth', 'login', 'http://localhost:8065', '--name', 'local-server', '--username', 'admin1', '--password-file', 'passfile']);
                     mmctlauth.stdout.on('data', (data) => {
                         console.log(`${data}`);
                     });
@@ -31,7 +33,7 @@ const ping = setInterval(async () => {
                     });
 
                     mmctlauth.on('close', () => {
-                        const sampledata = spawn('docker', ['exec', '-i', 'mattermost-preview', 'mmctl', 'sampledata']);
+                        const sampledata = spawn(mmctlPath, ['sampledata']);
                         sampledata.stdout.on('data', (data) => {
                             console.log(`${data}`);
                         });
@@ -41,10 +43,10 @@ const ping = setInterval(async () => {
                         });
 
                         sampledata.on('close', () => {
-                            exec('docker exec -i mattermost-preview mmctl config set AnnouncementSettings.AdminNoticesEnabled false', (err, stdout, stderr) => {
+                            exec(`${mmctlPath} config set AnnouncementSettings.AdminNoticesEnabled false`, (err, stdout, stderr) => {
                                 console.log(err, stdout, stderr);
                             });
-                            exec('docker exec -i mattermost-preview mmctl config set AnnouncementSettings.UserNoticesEnabled false', (err, stdout, stderr) => {
+                            exec(`${mmctlPath} config set AnnouncementSettings.UserNoticesEnabled false`, (err, stdout, stderr) => {
                                 console.log(err, stdout, stderr);
                             });
                         });
