@@ -16,8 +16,6 @@ executors:
         environment:
           TAR_OPTIONS: --no-same-owner
       - image: mattermost/mattermost-preview
-        name: mattermost-preview
-        command: '-d --port 8065 mattermost/mattermost-preview'
   wine-mono:
     working_directory: ~/mattermost-desktop
     docker:
