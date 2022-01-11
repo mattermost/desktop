@@ -27,7 +27,7 @@ To set up the Mattermost desktop application for Windows 7, 8, and 10:
 
 ### macOS
 
-For OS X 10.11 El Capitan. For older versions of OS X the instruction are similar.
+For macOS 10.11 El Capitan. For older versions of macOS the instruction are similar.
 
 1. Download [the latest release](https://github.com/mattermost/desktop/releases) of Mattermost Desktop
 
@@ -78,10 +78,10 @@ For Ubuntu 16.04.
 You have to configure the application to interact with your teams.
 
 1. Open **Settings Page**. If you use the application for the first time, **Settings Page** should appear automatically.
-   You can also access the **Settings Page** by the following methods:
+   You can also access the **Settings Page** using one of the following methods:
 
-   - Windows: Press `Alt` key to bring up the menu at the top of the window, then click `File -> Settings`.
-   - OS X: Click `Mattermost` from the menu at the top of the screen, then click `Preferences...`.
+   - Windows: Press the `ALT` key to bring up the menu at the top of the window, then select **File > Settings**.
+   - macOS: Select **Mattermost** from the menu at the top of the screen, then select **Preferences**.
    - Linux: Click `File -> Settings` on the menu.
    - All : right-click on tray icon and click `Settings` or `Preferences...`.
 
