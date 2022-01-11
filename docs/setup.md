@@ -164,11 +164,11 @@ Menu options are listed below (shortcut keys are listed in brackets, `CTRL` beco
   - **Zoom In** (CTRL+-) - Shrink the rendered contents size
 - **History**
   - **Back** (ALT+LEFT, CMD+`[` on macOS) - Go back to previous web page in the current tab
-  - **Forward** (ALT+RIGHT, CMD+] on macOS) - Go forward to next web page in the current tab
+  - **Forward** (ALT+RIGHT, CMD+`]` on macOS) - Go forward to next web page in the current tab
 - **Window**
   - **Close** (CTRL+W) - Close the window (On Window and Linux, the main window is minimized)
   - **Minimize** (CTRL+M) - Minimize the window
-  - ***Team Name*** (CTRL+{1-9}) - Open the *n*-th tab
+  - **Team Name** (CTRL+{1-9}) - Open the *n*-th tab
   - **Select Next Team** (CTRL+TAB, ALT+CMD+RIGHT) - Open the right tab
   - **Select Previous Team** (CTRL+SHIFT+TAB, ALT+CMD+LEFT) - Open the left tab
 - **Help**
