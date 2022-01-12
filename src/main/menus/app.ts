@@ -152,7 +152,7 @@ export function createTemplate(config: Config) {
             }
         },
     }, {
-        label: 'Developer Tools for Current Tab',
+        label: 'Developer Tools for Current Server',
         click() {
             WindowManager.openBrowserViewDevTools();
         },
