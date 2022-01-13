@@ -23,7 +23,7 @@ async function setupPromise(window, id) {
 describe('mattermost', function desc() {
     this.timeout(30000);
 
-    const config = env.demoConfig;
+    const config = env.demoMattermostConfig;
 
     beforeEach(async () => {
         env.cleanDataDir();
