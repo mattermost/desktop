@@ -110,6 +110,7 @@ module.exports = {
     configFilePath,
     userDataDir,
     boundsInfoPath,
+    exampleURL,
     mattermostURL,
     demoConfig,
     demoMattermostConfig,
