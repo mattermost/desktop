@@ -43,9 +43,6 @@ const ping = setInterval(async () => {
                         });
 
                         sampledata.on('close', () => {
-                            exec(`${mmctlPath} config set AnnouncementSettings.AdminNoticesEnabled false`, (err, stdout, stderr) => {
-                                console.log(err, stdout, stderr);
-                            });
                             exec(`${mmctlPath} config set AnnouncementSettings.UserNoticesEnabled false`, (err, stdout, stderr) => {
                                 console.log(err, stdout, stderr);
                             });

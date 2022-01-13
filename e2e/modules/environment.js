@@ -189,8 +189,8 @@ module.exports = {
         await window.waitForSelector('#loginId');
         await window.waitForSelector('#loginPassword');
         await window.waitForSelector('#loginButton');
-        await window.type('#loginId', 'sysadmin');
-        await window.type('#loginPassword', 'Sys@dmin-sample1');
+        await window.type('#loginId', 'user-1');
+        await window.type('#loginPassword', 'SampleUs@r-1');
         await window.click('#loginButton');
     },
 
