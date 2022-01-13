@@ -49,8 +49,6 @@ describe('mattermost', function desc() {
         await firstServer.waitForSelector('#searchBox');
         robot.keyTap('f', [process.platform === 'darwin' ? 'command' : 'control']);
         await asyncSleep(500);
-        const test = await firstServer.$eval('#searchBox', (el) => el);
-        console.log(test);
         const isFocused = await firstServer.$eval('#searchBox', (el) => el === document.activeElement);
         isFocused.should.be.true;
         const text = await firstServer.inputValue('#searchBox');
