@@ -47,8 +47,8 @@ describe('mattermost', function desc() {
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
         await firstServer.waitForSelector('#searchBox');
-        console.log('test', firstServer.url());
-        await firstServer.press('body', process.platform === 'darwin' ? 'Meta+F' : 'Control+F');
+        robot.keyTap('f', [process.platform === 'darwin' ? 'command' : 'control']);
+        await asyncSleep(500);
         const isFocused = await firstServer.$eval('#searchBox', (el) => el === document.activeElement);
         isFocused.should.be.true;
         const text = await firstServer.inputValue('#searchBox');
