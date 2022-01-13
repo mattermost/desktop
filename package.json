@@ -39,7 +39,6 @@
     "watch:renderer": "webpack-dev-server --config webpack.config.renderer.js",
     "test": "npm-run-all lint:js test:unit test:e2e",
     "test:docker": "node scripts/setup_e2e_docker.js",
-    "test:docker-stop": "docker stop mattermost-preview && docker rm mattermost-preview",
     "test:e2e": "cross-env NODE_ENV=test npm-run-all build build-robotjs test:e2e:build test:e2e:run",
     "test:e2e:nobuild": "cross-env NODE_ENV=test npm-run-all test:e2e:build test:e2e:run",
     "test:e2e:build": "webpack-cli --bail --config webpack.config.test.js",
