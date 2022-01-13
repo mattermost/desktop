@@ -73,7 +73,7 @@ describe('RemoveServerModal', function desc() {
         // ignore any target closed error
         try {
             await removeServerView.click('.modal', {position: {x: 20, y: 20}});
-        } catch {}
+        } catch {} // eslint-disable-line no-empty
         await asyncSleep(1000);
         const existing = Boolean(await this.app.windows().find((window) => window.url().includes('removeServer')));
         existing.should.be.false;
