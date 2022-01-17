@@ -8,7 +8,7 @@ const fs = require('fs');
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
-describe.only('LongServerName', function desc() {
+describe('LongServerName', function desc() {
     this.timeout(30000);
     const config = env.demoConfig;
     const longServerName = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus quis malesuada dolor, vel scelerisque sem';
@@ -79,7 +79,7 @@ describe.only('LongServerName', function desc() {
             isTruncated.should.be.true;
         });
 
-        it('MM-T4050_3 should display server tab with max width of 224px', async () => {
+        it('MM-T4050_3 should display server tab with max width of 400px', async () => {
             await asyncSleep(1000);
             const existing = Boolean(await this.app.windows().find((window) => window.url().includes('newServer')));
             existing.should.be.false;
@@ -90,7 +90,7 @@ describe.only('LongServerName', function desc() {
             const isWithinMaxWidth = await serverNameLocator.evaluate((element) => {
                 const width = parseFloat(window.getComputedStyle(element).getPropertyValue('width'));
 
-                return width <= 224;
+                return width <= 400;
             });
 
             isWithinMaxWidth.should.be.true;
