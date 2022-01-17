@@ -8,7 +8,7 @@ const fs = require('fs');
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
-describe('LongServerName', function desc() {
+describe.only('LongServerName', function desc() {
     this.timeout(30000);
     const config = env.demoConfig;
     const longServerName = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus quis malesuada dolor, vel scelerisque sem';
@@ -90,7 +90,7 @@ describe('LongServerName', function desc() {
             const isWithinMaxWidth = await serverNameLocator.evaluate((element) => {
                 const width = parseFloat(window.getComputedStyle(element).getPropertyValue('width'));
 
-                return width < 224;
+                return width <= 224;
             });
 
             isWithinMaxWidth.should.be.true;
