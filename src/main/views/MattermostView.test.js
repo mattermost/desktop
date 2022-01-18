@@ -310,7 +310,7 @@ describe('main/views/MattermostView', () => {
     });
 
     describe('updateMentionsFromTitle', () => {
-        const mattermostView = new MattermostView(tabView, {remoteInfo: {serverVersion: '5.28.0'}}, {}, {});
+        const mattermostView = new MattermostView(tabView, {}, {}, {});
 
         it('should parse mentions from title', () => {
             mattermostView.updateMentionsFromTitle('(7) Mattermost');
