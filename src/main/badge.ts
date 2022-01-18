@@ -16,26 +16,26 @@ let showUnreadBadgeSetting: boolean;
 export function showBadgeWindows(sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean) {
     let description = 'You have no unread messages';
     let text;
-    if (sessionExpired) {
-        text = '•';
-        description = 'Session Expired: Please sign in to continue receiving notifications.';
-    } else if (mentionCount > 0) {
+    if (mentionCount > 0) {
         text = (mentionCount > MAX_WIN_COUNT) ? `${MAX_WIN_COUNT}+` : mentionCount.toString();
         description = `You have unread mentions (${mentionCount})`;
     } else if (showUnreadBadge && showUnreadBadgeSetting) {
         text = '•';
         description = 'You have unread channels';
+    } else if (sessionExpired) {
+        text = '•';
+        description = 'Session Expired: Please sign in to continue receiving notifications.';
     }
     WindowManager.setOverlayIcon(text, description, mentionCount > 99);
 }
 
 export function showBadgeOSX(sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean) {
     let badge = '';
-    if (sessionExpired) {
-        badge = '•';
-    } else if (mentionCount > 0) {
+    if (mentionCount > 0) {
         badge = mentionCount.toString();
     } else if (showUnreadBadge && showUnreadBadgeSetting) {
+        badge = '•';
+    } else if (sessionExpired) {
         badge = '•';
     }
     app.dock.setBadge(badge);

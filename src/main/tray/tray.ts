@@ -93,12 +93,12 @@ export function setupTray(icontheme: string) {
     });
 
     AppState.on(UPDATE_TRAY, (anyExpired, anyMentions, anyUnreads) => {
-        if (anyExpired) {
-            setTray('mention', 'Session Expired: Please sign in to continue receiving notifications.');
-        } else if (anyMentions) {
+        if (anyMentions) {
             setTray('mention', 'You have been mentioned');
         } else if (anyUnreads) {
             setTray('unread', 'You have unread channels');
+        } else if (anyExpired) {
+            setTray('mention', 'Session Expired: Please sign in to continue receiving notifications.');
         } else {
             setTray('normal', app.name);
         }
