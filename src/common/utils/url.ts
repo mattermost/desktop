@@ -204,6 +204,43 @@ function isCustomLoginURL(url: URL | string, server: ServerFromURL, teams: TeamW
     return false;
 }
 
+function isTrustedPluginRoute(serverUrl: URL | string, inputUrl: URL | string): boolean {
+    if (!serverUrl || !inputUrl) {
+        return false;
+    }
+
+    const parsedURL = parseURL(inputUrl);
+    const server = getServerInfo(serverUrl);
+    if (!parsedURL || !server || (!equalUrlsIgnoringSubpath(server.url, parsedURL))) {
+        return false;
+    }
+
+    const formattedPathName = parsedURL.pathname.toLowerCase();
+
+    if (!formattedPathName.startsWith(`${server.subpath}plugins/`) || !formattedPathName.startsWith('/plugins/')) {
+        return false;
+    }
+
+    // Remove the subpath and plugin/ parts of the pathname,
+    // returning false early if the pathname is not from a plugin
+    let cleanPathname;
+    if (formattedPathName.startsWith(`${server.subpath}plugins/`)) {
+        cleanPathname = formattedPathName.replace(`${server.subpath}plugins/`, '');
+    } else if (formattedPathName.startsWith('/plugins/')) {
+        cleanPathname = formattedPathName.replace('/plugins/', '');
+    } else {
+        return false;
+    }
+
+    // Pathnames at this point are formed as ${pluginID}/${pluginSpecificRoute}
+    switch (cleanPathname) {
+    case 'com.mattermost.plugin-channel-export/api/v1/export':
+        return true;
+    default:
+        return false;
+    }
+}
+
 export default {
     isValidURL,
     isValidURI,
@@ -218,4 +255,5 @@ export default {
     getHost,
     isTrustedURL,
     isCustomLoginURL,
+    isTrustedPluginRoute,
 };
