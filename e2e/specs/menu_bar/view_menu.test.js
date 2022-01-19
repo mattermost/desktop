@@ -23,7 +23,7 @@ async function setupPromise(window, id) {
 describe('mattermost', function desc() {
     this.timeout(30000);
 
-    const config = env.demoConfig;
+    const config = env.demoMattermostConfig;
 
     beforeEach(async () => {
         env.cleanDataDir();
@@ -41,14 +41,14 @@ describe('mattermost', function desc() {
         }
     });
 
-    // TODO: enable when we have a server to test against
-    it.skip('MM-T813 Control+F should focus the search bar in Mattermost', async () => {
+    it('MM-T813 Control+F should focus the search bar in Mattermost', async () => {
         const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
         await firstServer.waitForSelector('#searchBox');
-        await firstServer.press('body', process.platform === 'darwin' ? 'Meta+F' : 'Control+F');
+        robot.keyTap('f', [process.platform === 'darwin' ? 'command' : 'control']);
+        await asyncSleep(500);
         const isFocused = await firstServer.$eval('#searchBox', (el) => el === document.activeElement);
         isFocused.should.be.true;
         const text = await firstServer.inputValue('#searchBox');

@@ -38,6 +38,7 @@
     "watch:main": "node scripts/watch_main_and_preload.js",
     "watch:renderer": "webpack-dev-server --config webpack.config.renderer.js",
     "test": "npm-run-all lint:js test:unit test:e2e",
+    "test:docker": "node scripts/setup_e2e_docker.js",
     "test:e2e": "cross-env NODE_ENV=test npm-run-all build build-robotjs test:e2e:build test:e2e:run",
     "test:e2e:nobuild": "cross-env NODE_ENV=test npm-run-all test:e2e:build test:e2e:run",
     "test:e2e:build": "webpack-cli --bail --config webpack.config.test.js",
@@ -75,11 +76,15 @@
       "src/common/**/*.ts",
       "src/main/**/*.ts"
     ],
-    "testMatch": ["**/src/**/*.test.js"],
+    "testMatch": [
+      "**/src/**/*.test.js"
+    ],
     "globals": {
       "__HASH_VERSION__": "5.0.0"
     },
-    "setupFiles": ["./src/jestSetup.js"]
+    "setupFiles": [
+      "./src/jestSetup.js"
+    ]
   },
   "devDependencies": {
     "@babel/cli": "^7.14.5",
@@ -106,6 +111,7 @@
     "@typescript-eslint/parser": "4.28.0",
     "7zip-bin": "^4.1.0",
     "awesome-node-loader": "^1.1.1",
+    "axios": "^0.24.0",
     "babel-eslint": "^10.0.3",
     "babel-loader": "^8.0.4",
     "chai": "^4.2.0",

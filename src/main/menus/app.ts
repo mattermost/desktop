@@ -3,9 +3,9 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, webContents, clipboard} from 'electron';
+import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, clipboard} from 'electron';
 
-import {OPEN_TEAMS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
+import {BROWSER_HISTORY_BUTTON, OPEN_TEAMS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
 import {Config} from 'common/config';
 import {TabType, getTabDisplayName} from 'common/tabs/TabView';
 
@@ -153,7 +153,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             }
         },
     }, {
-        label: 'Developer Tools for Current Tab',
+        label: 'Developer Tools for Current Server',
         click() {
             WindowManager.openBrowserViewDevTools();
         },
@@ -179,18 +179,20 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             label: 'Back',
             accelerator: process.platform === 'darwin' ? 'Cmd+[' : 'Alt+Left',
             click: () => {
-                const focused = webContents.getFocusedWebContents();
-                if (focused.canGoBack()) {
-                    focused.goBack();
+                const view = WindowManager.viewManager?.getCurrentView();
+                if (view && view.view.webContents.canGoBack() && !view.isAtRoot) {
+                    view.view.webContents.goBack();
+                    ipcMain.emit(BROWSER_HISTORY_BUTTON, null, view.name);
                 }
             },
         }, {
             label: 'Forward',
             accelerator: process.platform === 'darwin' ? 'Cmd+]' : 'Alt+Right',
             click: () => {
-                const focused = webContents.getFocusedWebContents();
-                if (focused.canGoForward()) {
-                    focused.goForward();
+                const view = WindowManager.viewManager?.getCurrentView();
+                if (view && view.view.webContents.canGoForward()) {
+                    view.view.webContents.goForward();
+                    ipcMain.emit(BROWSER_HISTORY_BUTTON, null, view.name);
                 }
             },
         }],

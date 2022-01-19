@@ -92,6 +92,8 @@ export const SEND_DROPDOWN_MENU_SIZE = 'send-dropdown-menu-size';
 export const UPDATE_AVAILABLE = 'update_available';
 export const CANCEL_UPGRADE = 'cancel_upgrade';
 export const START_UPGRADE = 'start_upgrade';
+
+export const BROWSER_HISTORY_BUTTON = 'browser-history-button';
 export const BROWSER_HISTORY_PUSH = 'browser-history-push';
 export const APP_LOGGED_IN = 'app-logged-in';
 export const APP_LOGGED_OUT = 'app-logged-out';
