@@ -304,19 +304,6 @@ describe('main/windows/windowManager', () => {
             expect(windowManager.settingsWindow.focus).toHaveBeenCalled();
             windowManager.settingsWindow.focus.mockClear();
         });
-
-        it('should call macOS show on macOS', () => {
-            windowManager.mainWindow.isVisible.mockReturnValue(false);
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {
-                value: 'darwin',
-            });
-            windowManager.restoreMain();
-            Object.defineProperty(process, 'platform', {
-                value: originalPlatform,
-            });
-            expect(app.dock.show).toHaveBeenCalled();
-        });
     });
 
     describe('flashFrame', () => {
