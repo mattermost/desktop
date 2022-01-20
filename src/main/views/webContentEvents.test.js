@@ -55,7 +55,7 @@ jest.mock('common/utils/url', () => ({
     isValidURI: jest.fn(),
     isPluginUrl: jest.fn(),
     isManagedResource: jest.fn(),
-    isTrustedPluginRoute: jest.fn(),
+    isChannelExportUrl: jest.fn(),
 }));
 
 jest.mock('../../../electron-builder.json', () => ({
@@ -125,8 +125,8 @@ describe('main/views/webContentsEvents', () => {
             expect(event.preventDefault).not.toBeCalled();
         });
 
-        it('should allow navigation when it isTrustedPluginRoute - Channel Export /api/v1/export', () => {
-            urlUtils.isTrustedPluginRoute.mockImplementation((serverURL, parsedURL) => parsedURL.toString().includes('/plugins/com.mattermost.plugin-channel-export/api/v1/export'));
+        it('should allow navigation when it isChannelExportUrl', () => {
+            urlUtils.isChannelExportUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().includes('/plugins/com.mattermost.plugin-channel-export/api/v1/export'));
             willNavigate(event, 'http://server-1.com/plugins/com.mattermost.plugin-channel-export/api/v1/export');
             expect(event.preventDefault).not.toBeCalled();
         });

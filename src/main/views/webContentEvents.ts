@@ -56,7 +56,7 @@ export class WebContentsEventManager {
                 return;
             }
 
-            if (server && urlUtils.isTrustedPluginRoute(server.url, parsedURL)) {
+            if (server && urlUtils.isChannelExportUrl(server.url, parsedURL)) {
                 return;
             }
 
