@@ -129,7 +129,7 @@ export function createTemplate(config: Config) {
         accelerator: 'CmdOrCtrl+0',
     }, {
         role: 'zoomIn',
-        accelerator: 'CmdOrCtrl+SHIFT+=',
+        accelerator: 'CmdOrCtrl+=',
     }, {
         role: 'zoomOut',
         accelerator: 'CmdOrCtrl+-',
