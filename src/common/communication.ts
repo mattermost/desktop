@@ -90,8 +90,10 @@ export const RECEIVE_DROPDOWN_MENU_SIZE = 'receive-dropdown-menu-size';
 export const SEND_DROPDOWN_MENU_SIZE = 'send-dropdown-menu-size';
 
 export const UPDATE_AVAILABLE = 'update_available';
+export const UPDATE_DOWNLOADED = 'update_downloaded';
 export const CANCEL_UPGRADE = 'cancel_upgrade';
 export const START_UPGRADE = 'start_upgrade';
+export const START_DOWNLOAD = 'start_download';
 
 export const BROWSER_HISTORY_BUTTON = 'browser-history-button';
 export const BROWSER_HISTORY_PUSH = 'browser-history-push';

@@ -38,7 +38,9 @@ import {
     OPEN_TEAMS_DROPDOWN,
     SWITCH_TAB,
     UPDATE_AVAILABLE,
+    UPDATE_DOWNLOADED,
     START_UPGRADE,
+    START_DOWNLOAD,
     CLOSE_TAB,
 } from 'common/communication';
 
@@ -87,6 +89,7 @@ type State = {
     showExtraBar?: boolean;
     isMenuOpen: boolean;
     upgradeAvailable: boolean;
+    upgradeDownloaded: boolean;
 };
 
 type TabViewStatus = {
@@ -125,6 +128,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
             darkMode: this.props.darkMode,
             isMenuOpen: false,
             upgradeAvailable: false,
+            upgradeDownloaded: false,
         };
     }
 
@@ -229,6 +233,10 @@ export default class MainPage extends React.PureComponent<Props, State> {
 
         window.ipcRenderer.on(UPDATE_AVAILABLE, () => {
             this.setState({upgradeAvailable: true});
+        });
+
+        window.ipcRenderer.on(UPDATE_DOWNLOADED, () => {
+            this.setState({upgradeDownloaded: true, upgradeAvailable: false});
         });
 
         if (window.process.platform !== 'darwin') {
@@ -372,13 +380,13 @@ export default class MainPage extends React.PureComponent<Props, State> {
         }
 
         let upgradeIcon;
-        if (this.state.upgradeAvailable) {
+        if (this.state.upgradeAvailable || this.state.upgradeDownloaded) {
             upgradeIcon = (
                 <span className={classNames('upgrade-btns', {darkMode: this.state.darkMode})}>
                     <div
                         className='button upgrade-button'
                         onClick={() => {
-                            window.ipcRenderer.send(START_UPGRADE);
+                            window.ipcRenderer.send(this.state.upgradeDownloaded ? START_UPGRADE : START_DOWNLOAD);
                         }}
                     >
                         <i

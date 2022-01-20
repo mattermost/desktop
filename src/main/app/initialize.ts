@@ -32,6 +32,7 @@ import {
     GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
     USER_ACTIVITY_UPDATE,
     START_UPGRADE,
+    START_DOWNLOAD,
 } from 'common/communication';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
@@ -40,7 +41,7 @@ import AllowProtocolDialog from 'main/allowProtocolDialog';
 import AppVersionManager from 'main/AppVersionManager';
 import AuthManager from 'main/authManager';
 import AutoLauncher from 'main/AutoLauncher';
-import updateManager from 'main/autoupdater/autoUpdater';
+import updateManager from 'main/autoUpdater';
 import {setupBadge} from 'main/badge';
 import CertificateManager from 'main/certificateManager';
 import {updatePaths} from 'main/constants';
@@ -243,6 +244,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(SHOW_SETTINGS_WINDOW, WindowManager.showSettingsWindow);
     ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, () => session.defaultSession.availableSpellCheckerLanguages);
     ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
+    ipcMain.on(START_DOWNLOAD, handleStartDownload);
     ipcMain.on(START_UPGRADE, handleStartUpgrade);
 }
 
@@ -281,13 +283,17 @@ function initializeAfterAppReady() {
         // windows might not be ready, so we have to wait until it is
         Config.once('update', () => {
             if (Config.canUpgrade) {
-                updateManager.checkForUpdates(false);
+                setTimeout(() => {
+                    updateManager.checkForUpdates(false);
+                }, 5000);
             } else {
                 log.info(`Autoupgrade disabled: ${Config.canUpgrade}`);
             }
         });
     } else if (Config.canUpgrade) {
-        updateManager.checkForUpdates(false);
+        setTimeout(() => {
+            updateManager.checkForUpdates(false);
+        }, 5000);
     } else {
         log.info(`Autoupgrade disabled: ${Config.canUpgrade}`);
     }
@@ -394,6 +400,12 @@ function initializeAfterAppReady() {
         if (Config.teams.length === 0) {
             addNewServerModalWhenMainWindowIsShown();
         }
+    }
+}
+
+function handleStartDownload() {
+    if (updateManager) {
+        updateManager.handleDownload();
     }
 }
 

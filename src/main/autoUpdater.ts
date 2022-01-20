@@ -9,9 +9,9 @@ import {autoUpdater, UpdateInfo} from 'electron-updater';
 
 import {displayUpgrade, displayRestartToUpgrade} from 'main/notifications';
 
-import WindowManager from '../windows/windowManager';
+import WindowManager from './windows/windowManager';
 
-import {CANCEL_UPGRADE, UPDATE_AVAILABLE} from 'common/communication';
+import {CANCEL_UPGRADE, UPDATE_AVAILABLE, UPDATE_DOWNLOADED} from 'common/communication';
 
 //const NEXT_NOTIFY = 86400000; // 24 hours
 //const NEXT_CHECK = 3600000;
@@ -42,19 +42,12 @@ const appIcon = nativeImage.createFromPath(appIconURL);
 **/
 
 export class UpdateManager {
-    hooksSetup: boolean;
     lastNotification?: NodeJS.Timeout;
     lastCheck?: NodeJS.Timeout;
     versionAvailable?: string;
+    versionDownloaded?: string;
 
     constructor() {
-        this.hooksSetup = false;
-    }
-
-    setupHooks = (): void => {
-        if (this.hooksSetup) {
-            return;
-        }
         autoUpdater.on('error', (err: Error) => {
             log.error(`[Mattermost] There was an error while trying to update: ${err}`);
         });
@@ -67,30 +60,41 @@ export class UpdateManager {
         });
 
         autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
-            this.versionAvailable = info.version;
+            this.versionDownloaded = info.version;
             log.info(`[Mattermost] downloaded version ${info.version}`);
-            this.handleUpgrade();
+            this.notifyDownloaded();
         });
 
         ipcMain.on(CANCEL_UPGRADE, () => {
             log.info('[Mattermost] User Canceled upgrade');
         });
-
-        // we only set this once.
-        this.hooksSetup = true;
     }
 
     notify = (): void => {
-        WindowManager.sendToRenderer(UPDATE_AVAILABLE, this.versionAvailable);
-
         if (this.lastNotification) {
             clearTimeout(this.lastNotification);
         }
         this.lastNotification = setTimeout(this.notify, NEXT_NOTIFY);
-        displayUpgrade(this.versionAvailable || 'unknown', this.handleUpdate);
+        if (this.versionDownloaded) {
+            this.notifyDownloaded();
+        } else if (this.versionAvailable) {
+            this.notifyUpgrade();
+        }
     }
 
-    handleUpdate = (): void => {
+    notifyUpgrade = (): void => {
+        WindowManager.sendToRenderer(UPDATE_AVAILABLE, this.versionAvailable);
+        displayUpgrade(this.versionAvailable || 'unknown', this.handleDownload);
+    }
+
+    notifyDownloaded = (): void => {
+        WindowManager.sendToRenderer(UPDATE_DOWNLOADED, this.versionDownloaded);
+        displayRestartToUpgrade(this.versionDownloaded || '', () => {
+            autoUpdater.quitAndInstall();
+        });
+    }
+
+    handleDownload = (): void => {
         if (this.lastCheck) {
             clearTimeout(this.lastCheck);
         }
@@ -110,12 +114,20 @@ export class UpdateManager {
         });
     }
 
-    handleUpgrade = (): void => {
-        if (this.lastNotification) {
-            clearTimeout(this.lastNotification);
-        }
-        displayRestartToUpgrade(this.versionAvailable || '', () => {
-            autoUpdater.quitAndInstall();
+    handleUpdate = (): void => {
+        dialog.showMessageBox({
+            title: 'A new version is ready to install',
+            message: 'A new version is ready to install',
+            detail: 'A new version of the Mattermost Desktop app is ready to install.',
+            buttons: ['Restart and Update', 'Remind me Later'],
+            type: 'info',
+            defaultId: 0,
+            cancelId: 1,
+            icon: appIcon,
+        }).then(({response}) => {
+            if (response === 0) {
+                autoUpdater.quitAndInstall();
+            }
         });
     }
 
@@ -127,12 +139,11 @@ export class UpdateManager {
             type: 'info',
             buttons: ['OK'],
             icon: appIcon,
-            detail: `You are using the latest version of the Mattermost Desktop App (version ${version}). You'll be notified when a new version is available to install`,
+            detail: `You are using the latest version of the Mattermost Desktop App (version ${version}). You'll be notified when a new version is available to install.`,
         });
     }
 
     checkForUpdates = (manually: boolean): void => {
-        this.setupHooks();
         if (this.lastCheck) {
             clearTimeout(this.lastCheck);
         }
