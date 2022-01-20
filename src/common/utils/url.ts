@@ -247,7 +247,15 @@ function isCustomLoginURL(url: URL | string, server: ServerFromURL, teams: TeamW
 }
 
 function isChannelExportUrl(serverUrl: URL | string, inputUrl: URL | string): boolean {
-    return isUrlType('plugins/com.mattermost.plugin-channel-export/api/v1/export', serverUrl, inputUrl);
+    const server = getServerInfo(serverUrl);
+    const parsedURL = parseURL(inputUrl);
+    if (!parsedURL || !server) {
+        return false;
+    }
+    return (
+        equalUrlsIgnoringSubpath(server.url, parsedURL) &&
+    (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}plugins/com.mattermost.plugin-channel-export/api/v1/export/`) ||
+      parsedURL.pathname.toLowerCase().startsWith('/plugins/com.mattermost.plugin-channel-export/api/v1/export/')));
 }
 
 export default {
