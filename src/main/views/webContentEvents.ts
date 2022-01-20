@@ -56,6 +56,10 @@ export class WebContentsEventManager {
                 return;
             }
 
+            if (server && urlUtils.isChannelExportUrl(server.url, parsedURL)) {
+                return;
+            }
+
             if (server && urlUtils.isCustomLoginURL(parsedURL, server, configServers)) {
                 return;
             }
