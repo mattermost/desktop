@@ -246,6 +246,10 @@ function isCustomLoginURL(url: URL | string, server: ServerFromURL, teams: TeamW
     return false;
 }
 
+function isChannelExportUrl(serverUrl: URL | string, inputUrl: URL | string): boolean {
+    return isUrlType('plugins/com.mattermost.plugin-channel-export/api/v1/export', serverUrl, inputUrl);
+}
+
 export default {
     getDomain,
     isValidURL,
@@ -261,4 +265,5 @@ export default {
     getHost,
     isTrustedURL,
     isCustomLoginURL,
+    isChannelExportUrl,
 };

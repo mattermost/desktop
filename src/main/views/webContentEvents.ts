@@ -49,6 +49,10 @@ const generateWillNavigate = (getServersFunction: () => TeamWithTabs[]) => {
         if (server && (urlUtils.isTeamUrl(server.url, parsedURL) || urlUtils.isAdminUrl(server.url, parsedURL) || isTrustedPopupWindow(event.sender))) {
             return;
         }
+        
+        if (server && urlUtils.isChannelExportUrl(server.url, parsedURL)) {
+            return;
+        }
 
         if (server && urlUtils.isCustomLoginURL(parsedURL, server, configServers)) {
             return;
