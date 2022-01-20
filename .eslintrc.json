@@ -98,7 +98,6 @@
                 "src/main/cookieManager.ts",
                 "src/main/utils.ts",
                 "src/main/downloadURL.ts",
-                "src/main/autoUpdater.ts",
                 "src/main/SpellChecker.ts",
                 "src/main/menus/app.ts",
                 "src/main/preload/mattermost.js",

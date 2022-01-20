@@ -282,7 +282,7 @@ function initializeAfterAppReady() {
     if (typeof Config.canUpgrade === 'undefined') {
         // windows might not be ready, so we have to wait until it is
         Config.once('update', () => {
-            if (Config.canUpgrade) {
+            if (Config.canUpgrade && Config.autoCheckForUpdates) {
                 setTimeout(() => {
                     updateManager.checkForUpdates(false);
                 }, 5000);
@@ -290,7 +290,7 @@ function initializeAfterAppReady() {
                 log.info(`Autoupgrade disabled: ${Config.canUpgrade}`);
             }
         });
-    } else if (Config.canUpgrade) {
+    } else if (Config.canUpgrade && Config.autoCheckForUpdates) {
         setTimeout(() => {
             updateManager.checkForUpdates(false);
         }, 5000);

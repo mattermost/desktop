@@ -291,6 +291,10 @@ export class Config extends EventEmitter {
         return this.canUpgradeValue;
     }
 
+    get autoCheckForUpdates() {
+        return this.combinedData?.autoCheckForUpdates;
+    }
+
     // initialization/processing methods
 
     /**
@@ -534,6 +538,7 @@ export class Config extends EventEmitter {
         const config: Partial<LocalConfiguration> = {...this.localConfigData};
         config.appName = app.name;
         config.enableServerManagement = this.combinedData?.enableServerManagement;
+        config.canUpgrade = this.canUpgradeValue;
         if (option) {
             return config[option];
         }

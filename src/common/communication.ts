@@ -94,6 +94,7 @@ export const UPDATE_DOWNLOADED = 'update_downloaded';
 export const CANCEL_UPGRADE = 'cancel_upgrade';
 export const START_UPGRADE = 'start_upgrade';
 export const START_DOWNLOAD = 'start_download';
+export const CHECK_FOR_UPDATES = 'check_for_updates';
 
 export const BROWSER_HISTORY_BUTTON = 'browser-history-button';
 export const BROWSER_HISTORY_PUSH = 'browser-history-push';

@@ -9,9 +9,9 @@ import {autoUpdater, UpdateInfo} from 'electron-updater';
 
 import {displayUpgrade, displayRestartToUpgrade} from 'main/notifications';
 
-import WindowManager from './windows/windowManager';
+import {CANCEL_UPGRADE, UPDATE_AVAILABLE, UPDATE_DOWNLOADED, CHECK_FOR_UPDATES} from 'common/communication';
 
-import {CANCEL_UPGRADE, UPDATE_AVAILABLE, UPDATE_DOWNLOADED} from 'common/communication';
+import WindowManager from './windows/windowManager';
 
 //const NEXT_NOTIFY = 86400000; // 24 hours
 //const NEXT_CHECK = 3600000;
@@ -68,6 +68,10 @@ export class UpdateManager {
         ipcMain.on(CANCEL_UPGRADE, () => {
             log.info('[Mattermost] User Canceled upgrade');
         });
+
+        ipcMain.on(CHECK_FOR_UPDATES, () => {
+            this.checkForUpdates(true);
+        });
     }
 
     notify = (): void => {
@@ -112,6 +116,12 @@ export class UpdateManager {
                 autoUpdater.downloadUpdate();
             }
         });
+    }
+
+    handleOnQuit = (): void => {
+        if (this.versionDownloaded) {
+            autoUpdater.quitAndInstall(true, false);
+        }
     }
 
     handleUpdate = (): void => {
