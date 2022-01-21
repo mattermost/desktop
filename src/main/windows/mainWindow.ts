@@ -74,7 +74,7 @@ function createMainWindow(options: {linuxAppIcon: string}) {
         minWidth: MINIMUM_WINDOW_WIDTH,
         minHeight: MINIMUM_WINDOW_HEIGHT,
         frame: !isFramelessWindow(),
-        fullscreen: savedWindowState.fullscreen,
+        fullscreen: (typeof Config.startInFullscreen === 'undefined' ? savedWindowState.fullscreen : Config.startInFullscreen),
         titleBarStyle: 'hidden' as const,
         trafficLightPosition: {x: 12, y: 12},
         backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do

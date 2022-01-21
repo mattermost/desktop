@@ -114,7 +114,7 @@ describe('main/windows/mainWindow', () => {
                 width: 1280,
                 height: 700,
                 maximized: false,
-                fullscreen: false,
+                fullscreen: Config.startInFullscreen,
             }));
         });
 

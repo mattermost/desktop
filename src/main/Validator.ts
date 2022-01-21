@@ -118,6 +118,7 @@ const configDataSchemaV3 = Joi.object<ConfigV3>({
     showUnreadBadge: Joi.boolean().default(true),
     useSpellChecker: Joi.boolean().default(true),
     enableHardwareAcceleration: Joi.boolean().default(true),
+    startInFullscreen: Joi.boolean().default(false),
     autostart: Joi.boolean().default(true),
     hideOnStart: Joi.boolean().default(false),
     spellCheckerLocales: Joi.array().items(Joi.string()).default([]),

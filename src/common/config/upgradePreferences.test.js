@@ -99,6 +99,7 @@ describe('common/config/upgradePreferences', () => {
                 showUnreadBadge: false,
                 useSpellChecker: false,
                 enableHardwareAcceleration: false,
+                startInFullscreen: false,
                 autostart: false,
                 hideOnStart: false,
                 spellCheckerLocale: 'en-CA',

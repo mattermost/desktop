@@ -129,6 +129,7 @@ describe('main/Validator', () => {
             hideOnStart: false,
             darkMode: false,
             enableHardwareAcceleration: true,
+            startInFullscreen: false,
             lastActiveTeam: 0,
             minimizeToTray: false,
             showTrayIcon: false,
