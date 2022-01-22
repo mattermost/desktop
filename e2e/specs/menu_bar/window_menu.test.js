@@ -9,7 +9,7 @@ const robot = require('robotjs');
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
-describe('mattermost', function desc() {
+describe('menu/window_menu', function desc() {
     this.timeout(30000);
 
     const config = {
@@ -80,20 +80,19 @@ describe('mattermost', function desc() {
     it('MM-T4385 select tab from menu', async () => {
         const mainView = this.app.windows().find((window) => window.url().includes('index'));
 
-        let tabViewButton = await mainView.innerText('.active')
-        tabViewButton.should.equal('Channels')
+        let tabViewButton = await mainView.innerText('.active');
+        tabViewButton.should.equal('Channels');
 
-        await mainView.click("#teamTabItem1")
-        tabViewButton = await mainView.innerText('.active')
-        tabViewButton.should.equal('Boards')
+        await mainView.click('#teamTabItem1');
+        tabViewButton = await mainView.innerText('.active');
+        tabViewButton.should.equal('Boards');
 
-        await mainView.click("#teamTabItem2")
-        tabViewButton = await mainView.innerText('.active')
-        tabViewButton.should.equal('Playbooks')
+        await mainView.click('#teamTabItem2');
+        tabViewButton = await mainView.innerText('.active');
+        tabViewButton.should.equal('Playbooks');
 
-        await mainView.click("#teamTabItem0")
-        tabViewButton = await mainView.innerText('.active')
-        tabViewButton.should.equal('Channels')
-
-    })
+        await mainView.click('#teamTabItem0');
+        tabViewButton = await mainView.innerText('.active');
+        tabViewButton.should.equal('Channels');
+    });
 });
