@@ -9,7 +9,7 @@ const robot = require('robotjs');
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
-describe('menu/window_menu', function desc() {
+describe('Menu/window_menu', function desc() {
     this.timeout(30000);
 
     const config = {
