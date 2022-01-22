@@ -29,12 +29,12 @@ describe('mattermost', function desc() {
                     {
                         name: 'TAB_FOCALBOARD',
                         order: 1,
-                        isOpen: false,
+                        isOpen: true,
                     },
                     {
                         name: 'TAB_PLAYBOOKS',
                         order: 2,
-                        isOpen: false,
+                        isOpen: true,
                     },
                 ],
                 lastActiveTab: 0,
@@ -76,4 +76,24 @@ describe('mattermost', function desc() {
         dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
         dropdownButtonText.should.equal('example');
     });
+
+    it('MM-T4385 select tab from menu', async () => {
+        const mainView = this.app.windows().find((window) => window.url().includes('index'));
+
+        let tabViewButton = await mainView.innerText('.active')
+        tabViewButton.should.equal('Channels')
+
+        await mainView.click("#teamTabItem1")
+        tabViewButton = await mainView.innerText('.active')
+        tabViewButton.should.equal('Boards')
+
+        await mainView.click("#teamTabItem2")
+        tabViewButton = await mainView.innerText('.active')
+        tabViewButton.should.equal('Playbooks')
+
+        await mainView.click("#teamTabItem0")
+        tabViewButton = await mainView.innerText('.active')
+        tabViewButton.should.equal('Channels')
+
+    })
 });
