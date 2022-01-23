@@ -36,8 +36,7 @@ describe('menu/menu', function desc() {
             mainWindow.should.not.be.null;
 
             await mainWindow.bringToFront();
-            mainWindow.click('#app');
-            await asyncSleep(1000);
+            await mainWindow.click('#app');
 
             // Settings window should open if Alt works
             robot.keyTap('alt');
