@@ -248,7 +248,7 @@ describe('main/views/MattermostView', () => {
         const mattermostView = new MattermostView(tabView, {}, {}, {});
 
         it('should open three dot menu on pressing Alt', () => {
-            mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyDown'});
+            mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyDown', alt: true, shift: false, control: false, meta: false});
             mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyUp'});
             expect(WindowManager.focusThreeDotMenu).toHaveBeenCalled();
         });
