@@ -35,6 +35,10 @@ describe('menu/menu', function desc() {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             mainWindow.should.not.be.null;
 
+            await mainWindow.bringToFront();
+            mainWindow.click('#app');
+            await asyncSleep(1000);
+
             // Settings window should open if Alt works
             robot.keyTap('alt');
             robot.keyTap('enter');
