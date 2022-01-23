@@ -62,8 +62,6 @@ export class MattermostView extends EventEmitter {
 
     currentFavicon?: string;
     hasBeenShown: boolean;
-    altTimeout?: number;
-    altLastPressed?: boolean;
     contextMenu: ContextMenu;
 
     status?: Status;
@@ -98,13 +96,8 @@ export class MattermostView extends EventEmitter {
         this.hasBeenShown = false;
 
         if (process.platform !== 'darwin') {
-            this.altLastPressed = false;
             this.view.webContents.on('before-input-event', this.handleInputEvents);
         }
-
-        this.registerKeyCombination('focusThreeDotMenu', ['Alt'], () => {
-            WindowManager.focusThreeDotMenu();
-        });
 
         this.view.webContents.on('did-finish-load', () => {
             // wait for screen to truly finish loading before sending the message down
@@ -292,89 +285,30 @@ export class MattermostView extends EventEmitter {
         return this.view.webContents;
     }
 
-    pressedKeys: Set<string> = new Set();
-    registeredKeysCombinations: Map<string, {
-        status: 'idle' | 'fail' | 'ready';
-        keys: Set<string>;
-        callback: () => void;
-    }> = new Map();
-    clearKeysTimeout: NodeJS.Timeout | null = null;
+    private altPressStatus = false;
 
-    clearKeys = () => {
-        this.pressedKeys.clear();
+    private registerAltKeyPressed = (input: Input) => {
+        const isAltPressed = input.key === 'Alt' && input.alt === true && input.control === false && input.shift === false && input.meta === false;
 
-        this.registeredKeysCombinations.forEach((combination) => {
-            combination.status = 'idle';
-        });
+        if (input.type === 'keyDown') {
+            this.altPressStatus = isAltPressed;
+        }
+
+        if (input.key !== 'Alt') {
+            this.altPressStatus = false;
+        }
     };
 
-    trackKey = (input: Input) => {
-        if (input.type === 'keyDown') {
-            if (this.pressedKeys.size === 0) {
-                this.registeredKeysCombinations.forEach((combination) => {
-                    combination.status = 'idle';
-                });
-            }
-
-            this.pressedKeys.add(input.key);
-
-            this.registeredKeysCombinations.forEach((combination) => {
-                if (combination.keys.has(input.key) === false) {
-                    combination.status = 'fail';
-                } else {
-                    this.pressedKeys.forEach((key) => {
-                        if (combination.keys.has(key) === false) {
-                            combination.status = 'fail';
-                        }
-                    });
-                }
-
-                if (combination.status !== 'fail') {
-                    const isSameSize = this.pressedKeys.size === combination.keys.size;
-                    const isSameKeys = Array.from(this.pressedKeys).every((key) => combination.keys.has(key));
-
-                    if (isSameSize === true && isSameKeys === true) {
-                        combination.status = 'ready';
-                    }
-                }
-            });
-        }
-    }
-
-    untrackKey = (input: Input) => {
-        if (input.type === 'keyUp') {
-            this.registeredKeysCombinations.forEach((combination) => {
-                if (combination.status === 'ready') {
-                    combination.callback();
-                    combination.status = 'idle';
-                    this.pressedKeys.clear();
-                }
-            });
-
-            this.pressedKeys.delete(input.key);
-        }
-    }
-
-    registerKeyCombination = (name: string, keys: string[], callback: () => void) => {
-        if (this.registeredKeysCombinations.has(name) === false) {
-            this.registeredKeysCombinations.set(name, {
-                status: 'idle',
-                keys: new Set(keys),
-                callback,
-            });
-        }
+    private isAltKeyResleased = (input: Input) => {
+        return input.type === 'keyUp' && this.altPressStatus === true;
     };
 
     handleInputEvents = (_: Event, input: Input) => {
-        if (this.clearKeysTimeout !== null) {
-            clearTimeout(this.clearKeysTimeout);
+        this.registerAltKeyPressed(input);
+
+        if (this.isAltKeyResleased(input)) {
+            WindowManager.focusThreeDotMenu();
         }
-
-        this.trackKey(input);
-
-        this.untrackKey(input);
-
-        this.clearKeysTimeout = setTimeout(this.clearKeys, 500);
     }
 
     handleDidNavigate = (event: Event, url: string) => {
