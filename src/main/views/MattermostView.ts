@@ -68,6 +68,8 @@ export class MattermostView extends EventEmitter {
     retryLoad?: NodeJS.Timeout;
     maxRetries: number;
 
+    private altPressStatus: boolean;
+
     constructor(tab: TabView, serverInfo: ServerInfo, win: BrowserWindow, options: BrowserViewConstructorOptions) {
         super();
         this.tab = tab;
@@ -115,6 +117,12 @@ export class MattermostView extends EventEmitter {
 
         this.contextMenu = new ContextMenu({}, this.view);
         this.maxRetries = MAX_SERVER_RETRIES;
+
+        this.altPressStatus = false;
+
+        this.window.on('blur', () => {
+            this.altPressStatus = false;
+        });
     }
 
     // use the same name as the server
@@ -285,8 +293,6 @@ export class MattermostView extends EventEmitter {
         return this.view.webContents;
     }
 
-    private altPressStatus = false;
-
     private registerAltKeyPressed = (input: Input) => {
         const isAltPressed = input.key === 'Alt' && input.alt === true && input.control === false && input.shift === false && input.meta === false;
 
@@ -299,14 +305,14 @@ export class MattermostView extends EventEmitter {
         }
     };
 
-    private isAltKeyResleased = (input: Input) => {
+    private isAltKeyReleased = (input: Input) => {
         return input.type === 'keyUp' && this.altPressStatus === true;
     };
 
     handleInputEvents = (_: Event, input: Input) => {
         this.registerAltKeyPressed(input);
 
-        if (this.isAltKeyResleased(input)) {
+        if (this.isAltKeyReleased(input)) {
             WindowManager.focusThreeDotMenu();
         }
     }
