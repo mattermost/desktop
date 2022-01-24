@@ -47,7 +47,7 @@ describe('EditServerModal', function desc() {
         const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
         savedConfig.teams.should.deep.contain({
             name: 'example',
-            url: env.mattermostURL,
+            url: env.exampleURL,
             order: 0,
             tabs: [
                 {
@@ -79,7 +79,7 @@ describe('EditServerModal', function desc() {
         const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
         savedConfig.teams.should.deep.contain({
             name: 'example',
-            url: env.mattermostURL,
+            url: env.exampleURL,
             order: 0,
             tabs: [
                 {
@@ -119,7 +119,7 @@ describe('EditServerModal', function desc() {
         const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
         savedConfig.teams.should.not.deep.contain({
             name: 'example',
-            url: env.mattermostURL,
+            url: env.exampleURL,
             order: 0,
             tabs: [
                 {
@@ -142,7 +142,7 @@ describe('EditServerModal', function desc() {
         });
         savedConfig.teams.should.deep.contain({
             name: 'NewTestTeam',
-            url: env.mattermostURL,
+            url: env.exampleURL,
             order: 0,
             tabs: [
                 {
@@ -175,7 +175,7 @@ describe('EditServerModal', function desc() {
         const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
         savedConfig.teams.should.not.deep.contain({
             name: 'example',
-            url: env.mattermostURL,
+            url: env.exampleURL,
             order: 0,
             tabs: [
                 {
@@ -233,7 +233,7 @@ describe('EditServerModal', function desc() {
         const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
         savedConfig.teams.should.not.deep.contain({
             name: 'example',
-            url: env.mattermostURL,
+            url: env.exampleURL,
             order: 0,
             tabs: [
                 {

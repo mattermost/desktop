@@ -60,7 +60,7 @@ describe('config', function desc() {
         const Config = require('../../../src/common/config').Config;
         const newConfig = new Config(env.configFilePath);
         const oldConfig = {
-            url: env.mattermostURL,
+            url: env.exampleURL,
         };
         fs.writeFileSync(env.configFilePath, JSON.stringify(oldConfig));
         this.app = await env.getApp();

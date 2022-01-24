@@ -27,55 +27,59 @@ const electronBinaryPath = (() => {
 const userDataDir = path.join(sourceRootDir, 'e2e/testUserData/');
 const configFilePath = path.join(userDataDir, 'config.json');
 const boundsInfoPath = path.join(userDataDir, 'bounds-info.json');
-const mattermostURL = 'http://example.com/';
+const exampleURL = 'http://example.com/';
+const mattermostURL = 'http://localhost:8065/';
+
+const exampleTeam = {
+    name: 'example',
+    url: exampleURL,
+    order: 0,
+    tabs: [
+        {
+            name: 'TAB_MESSAGING',
+            order: 0,
+            isOpen: true,
+        },
+        {
+            name: 'TAB_FOCALBOARD',
+            order: 1,
+            isOpen: true,
+        },
+        {
+            name: 'TAB_PLAYBOOKS',
+            order: 2,
+            isOpen: true,
+        },
+    ],
+    lastActiveTab: 0,
+};
+const githubTeam = {
+    name: 'github',
+    url: 'https://github.com/',
+    order: 1,
+    tabs: [
+        {
+            name: 'TAB_MESSAGING',
+            order: 0,
+            isOpen: true,
+        },
+        {
+            name: 'TAB_FOCALBOARD',
+            order: 1,
+            isOpen: true,
+        },
+        {
+            name: 'TAB_PLAYBOOKS',
+            order: 2,
+            isOpen: true,
+        },
+    ],
+    lastActiveTab: 0,
+};
 
 const demoConfig = {
     version: 3,
-    teams: [{
-        name: 'example',
-        url: mattermostURL,
-        order: 0,
-        tabs: [
-            {
-                name: 'TAB_MESSAGING',
-                order: 0,
-                isOpen: true,
-            },
-            {
-                name: 'TAB_FOCALBOARD',
-                order: 1,
-                isOpen: true,
-            },
-            {
-                name: 'TAB_PLAYBOOKS',
-                order: 2,
-                isOpen: true,
-            },
-        ],
-        lastActiveTab: 0,
-    }, {
-        name: 'github',
-        url: 'https://github.com/',
-        order: 1,
-        tabs: [
-            {
-                name: 'TAB_MESSAGING',
-                order: 0,
-                isOpen: true,
-            },
-            {
-                name: 'TAB_FOCALBOARD',
-                order: 1,
-                isOpen: true,
-            },
-            {
-                name: 'TAB_PLAYBOOKS',
-                order: 2,
-                isOpen: true,
-            },
-        ],
-        lastActiveTab: 0,
-    }],
+    teams: [exampleTeam, githubTeam],
     showTrayIcon: false,
     trayIconTheme: 'light',
     minimizeToTray: false,
@@ -93,13 +97,23 @@ const demoConfig = {
     spellCheckerLocales: [],
 };
 
+const demoMattermostConfig = {
+    ...demoConfig,
+    teams: [{
+        ...exampleTeam,
+        url: mattermostURL,
+    }, githubTeam],
+};
+
 module.exports = {
     sourceRootDir,
     configFilePath,
     userDataDir,
     boundsInfoPath,
+    exampleURL,
     mattermostURL,
     demoConfig,
+    demoMattermostConfig,
 
     cleanTestConfig() {
         [configFilePath, boundsInfoPath].forEach((file) => {
@@ -169,6 +183,15 @@ module.exports = {
             });
         }));
         return map;
+    },
+
+    async loginToMattermost(window) {
+        await window.waitForSelector('#loginId');
+        await window.waitForSelector('#loginPassword');
+        await window.waitForSelector('#loginButton');
+        await window.type('#loginId', 'user-1');
+        await window.type('#loginPassword', 'SampleUs@r-1');
+        await window.click('#loginButton');
     },
 
     addClientCommands(client) {

@@ -41,6 +41,7 @@ describe('Settings', function desc() {
                     predicate: (window) => window.url().includes('settings'),
                 });
                 await settingsWindow.waitForSelector('.settingsPage.container');
+                await settingsWindow.waitForSelector('#inputAutoStart');
                 const existing = await settingsWindow.isVisible('#inputAutoStart');
                 existing.should.equal(expected);
             });
@@ -56,6 +57,7 @@ describe('Settings', function desc() {
                     predicate: (window) => window.url().includes('settings'),
                 });
                 await settingsWindow.waitForSelector('.settingsPage.container');
+                await settingsWindow.waitForSelector('#inputShowTrayIcon');
                 const existing = await settingsWindow.isVisible('#inputShowTrayIcon');
                 existing.should.equal(expected);
             });

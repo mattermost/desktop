@@ -21,6 +21,7 @@ import {
     GET_VIEW_WEBCONTENTS_ID,
     RESIZE_MODAL,
     APP_LOGGED_OUT,
+    BROWSER_HISTORY_BUTTON,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import Config from 'common/config';
@@ -56,6 +57,7 @@ export class WindowManager {
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
         ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, this.handleLoadingScreenAnimationFinished);
         ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
+        ipcMain.on(BROWSER_HISTORY_BUTTON, this.handleBrowserHistoryButton);
         ipcMain.on(APP_LOGGED_IN, this.handleAppLoggedIn);
         ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
         ipcMain.handle(GET_VIEW_NAME, this.handleGetViewName);
@@ -227,9 +229,6 @@ export class WindowManager {
                 this.settingsWindow.focus();
             } else {
                 this.mainWindow!.focus();
-            }
-            if (process.platform === 'darwin') {
-                app.dock.show();
             }
         } else if (this.settingsWindow) {
             this.settingsWindow.focus();
@@ -558,6 +557,22 @@ export class WindowManager {
         // Special case check for Channels to not force a redirect to "/", causing a refresh
         if (!(redirectedView !== currentView && redirectedView?.tab.type === TAB_MESSAGING && pathName === '/')) {
             redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
+            if (redirectedView) {
+                this.handleBrowserHistoryButton(e, redirectedView.name);
+            }
+        }
+    }
+
+    handleBrowserHistoryButton = (e: IpcMainEvent, viewName: string) => {
+        const currentView = this.viewManager?.views.get(viewName);
+        if (currentView) {
+            if (currentView.view.webContents.getURL() === currentView.tab.url.toString()) {
+                currentView.view.webContents.clearHistory();
+                currentView.isAtRoot = true;
+            } else {
+                currentView.isAtRoot = false;
+            }
+            currentView?.view.webContents.send(BROWSER_HISTORY_BUTTON, currentView.view.webContents.canGoBack(), currentView.view.webContents.canGoForward());
         }
     }
 

@@ -71,7 +71,7 @@ describe('menu_bar/dropdown', function desc() {
         const mainWindow = await this.app.firstWindow();
         const browserWindow = await this.app.browserWindow(mainWindow);
 
-        let firstViewIsAttached = await browserWindow.evaluate((window, url) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === url)), env.mattermostURL);
+        let firstViewIsAttached = await browserWindow.evaluate((window, url) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === url)), env.exampleURL);
         firstViewIsAttached.should.be.true;
         let secondViewIsAttached = await browserWindow.evaluate((window) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === 'https://github.com/')));
         secondViewIsAttached.should.be.false;
@@ -81,7 +81,7 @@ describe('menu_bar/dropdown', function desc() {
         await mainView.click('.TeamDropdownButton');
         await dropdownView.click('.TeamDropdown button.TeamDropdown__button:nth-child(2)');
 
-        firstViewIsAttached = await browserWindow.evaluate((window, url) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === url)), env.mattermostURL);
+        firstViewIsAttached = await browserWindow.evaluate((window, url) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === url)), env.exampleURL);
         firstViewIsAttached.should.be.false;
         secondViewIsAttached = await browserWindow.evaluate((window) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === 'https://github.com/')));
         secondViewIsAttached.should.be.true;

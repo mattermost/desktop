@@ -304,19 +304,6 @@ describe('main/windows/windowManager', () => {
             expect(windowManager.settingsWindow.focus).toHaveBeenCalled();
             windowManager.settingsWindow.focus.mockClear();
         });
-
-        it('should call macOS show on macOS', () => {
-            windowManager.mainWindow.isVisible.mockReturnValue(false);
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {
-                value: 'darwin',
-            });
-            windowManager.restoreMain();
-            Object.defineProperty(process, 'platform', {
-                value: originalPlatform,
-            });
-            expect(app.dock.show).toHaveBeenCalled();
-        });
     });
 
     describe('flashFrame', () => {
@@ -759,6 +746,7 @@ describe('main/windows/windowManager', () => {
             openClosedTab: jest.fn(),
             showByName: jest.fn(),
         };
+        windowManager.handleBrowserHistoryButton = jest.fn();
 
         beforeEach(() => {
             Config.teams = [
@@ -815,6 +803,67 @@ describe('main/windows/windowManager', () => {
             urlUtils.getView.mockReturnValue({name: 'server-1_tab-messaging'});
             windowManager.handleBrowserHistoryPush(null, 'server-1_other_type_1', '/');
             expect(view1.view.webContents.send).not.toBeCalled();
+        });
+    });
+
+    describe('handleBrowserHistoryButton', () => {
+        const windowManager = new WindowManager();
+        const view1 = {
+            name: 'server-1_tab-messaging',
+            isLoggedIn: true,
+            isAtRoot: true,
+            tab: {
+                type: TAB_MESSAGING,
+                server: {
+                    url: 'http://server-1.com',
+                },
+                url: new URL('http://server-1.com'),
+            },
+            view: {
+                webContents: {
+                    canGoBack: jest.fn(),
+                    canGoForward: jest.fn(),
+                    clearHistory: jest.fn(),
+                    send: jest.fn(),
+                    getURL: jest.fn(),
+                },
+            },
+        };
+        windowManager.viewManager = {
+            views: new Map([
+                ['server-1_tab-messaging', view1],
+            ]),
+        };
+
+        beforeEach(() => {
+            Config.teams = [
+                {
+                    name: 'server-1',
+                    url: 'http://server-1.com',
+                    order: 0,
+                    tabs: [
+                        {
+                            name: 'tab-messaging',
+                            order: 0,
+                            isOpen: true,
+                        },
+                    ],
+                },
+            ];
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+            Config.teams = [];
+            view1.isAtRoot = true;
+        });
+
+        it('should erase history and set isAtRoot when navigating to root URL', () => {
+            view1.isAtRoot = false;
+            view1.view.webContents.getURL.mockReturnValue(view1.tab.url.toString());
+            windowManager.handleBrowserHistoryButton(null, 'server-1_tab-messaging');
+            expect(view1.view.webContents.clearHistory).toHaveBeenCalled();
+            expect(view1.isAtRoot).toBe(true);
         });
     });
 });
