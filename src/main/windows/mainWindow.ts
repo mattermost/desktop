@@ -70,7 +70,7 @@ function createMainWindow(options: {linuxAppIcon: string}) {
             return global.args.fullscreen;
         }
 
-        if (Config.startInFullscreen !== undefined) {
+        if (Config.startInFullscreen) {
             return Config.startInFullscreen;
         }
         return savedWindowStateFullscreen ?? false;
