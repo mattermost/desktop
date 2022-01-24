@@ -782,7 +782,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 <Row>
                     <Col md={12}>
                         <h2 style={settingsPage.sectionHeading}>{'App Options'}</h2>
-                        <div className='IndicatorContainer'>
+                        <div className='IndicatorContainer appOptionsSaveIndicator'>
                             <AutoSaveIndicator
                                 id='appOptionsSaveIndicator'
                                 savingState={this.state.savingState.appOptions}
@@ -802,39 +802,47 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         let updateRow = null;
         if (this.state.canUpgrade) {
             updateRow = (
-                <Row>
-                    <Col md={12}>
-                        <h2 style={settingsPage.sectionHeading}>{'Updates'}</h2>
-                        <div className='IndicatorContainer'>
-                            <AutoSaveIndicator
-                                id='updatesSaveIndicator'
-                                savingState={this.state.savingState.updates}
-                                errorMessage={'Can\'t save your changes. Please try again.'}
-                            />
-                        </div>
-                        <FormCheck>
-                            <FormCheck.Input
-                                type='checkbox'
+                <>
+                    <Row>
+                        <Col md={12}>
+                            <h2 style={settingsPage.sectionHeading}>{'Updates'}</h2>
+                            <div className='IndicatorContainer updatesSaveIndicator'>
+                                <AutoSaveIndicator
+                                    id='updatesSaveIndicator'
+                                    savingState={this.state.savingState.updates}
+                                    errorMessage={'Can\'t save your changes. Please try again.'}
+                                />
+                            </div>
+                            <FormGroup 
                                 key='inputAutoCheckForUpdates'
-                                id='inputAutoCheckForUpdates'
-                                ref={this.autoCheckForUpdatesRef}
-                                checked={this.state.autoCheckForUpdates}
-                                onChange={this.handleChangeAutoCheckForUpdates}
-                            />
-                            {'Automatically check for updates'}
-                            <FormText>
-                                {'If enabled, updates to the Desktop App will download automatically and you will be notified when ready to install.'}
-                            </FormText>
-                        </FormCheck>
-                        <Button
-                            style={settingsPage.checkForUpdatesButton}
-                            id='checkForUpdatesNow'
-                            onClick={this.checkForUpdates}
-                        >
-                            <span>{'Check for Updates Now'}</span>
-                        </Button>
-                    </Col>
-                </Row>
+                            >
+                                <FormCheck>
+                                    <FormCheck.Input
+                                        type='checkbox'
+                                        key='inputAutoCheckForUpdates'
+                                        id='inputAutoCheckForUpdates'
+                                        ref={this.autoCheckForUpdatesRef}
+                                        checked={this.state.autoCheckForUpdates}
+                                        onChange={this.handleChangeAutoCheckForUpdates}
+                                    />
+                                    {'Automatically check for updates'}
+                                    <FormText>
+                                        {'If enabled, updates to the Desktop App will download automatically and you will be notified when ready to install.'}
+                                    </FormText>
+                                </FormCheck>
+                                <Button
+                                    style={settingsPage.checkForUpdatesButton}
+                                    id='checkForUpdatesNow'
+                                    onClick={this.checkForUpdates}
+                                >
+                                    <span>{'Check for Updates Now'}</span>
+                                </Button>
+                            </FormGroup>
+                        </Col>
+                    </Row>
+                    <hr/>
+                </>
+                
             );
         }
 
