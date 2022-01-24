@@ -27,6 +27,7 @@ const argsSchema = Joi.object<Args>({
     disableDevMode: Joi.boolean(),
     dataDir: Joi.string(),
     version: Joi.boolean(),
+    fullscreen: Joi.boolean(),
 });
 
 const boundsInfoSchema = Joi.object<SavedWindowState>({

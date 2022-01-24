@@ -65,6 +65,16 @@ function createMainWindow(options: {linuxAppIcon: string}) {
     const {maximized: windowIsMaximized} = savedWindowState;
 
     const spellcheck = (typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker);
+    const isFullScreen = (savedWindowStateFullscreen: boolean | undefined) => {
+        if (global.args.fullscreen !== undefined) {
+            return global.args.fullscreen;
+        }
+
+        if (Config.startInFullscreen !== undefined) {
+            return Config.startInFullscreen;
+        }
+        return savedWindowStateFullscreen ?? false;
+    };
 
     const windowOptions: BrowserWindowConstructorOptions = Object.assign({}, savedWindowState, {
         title: app.name,
@@ -74,7 +84,7 @@ function createMainWindow(options: {linuxAppIcon: string}) {
         minWidth: MINIMUM_WINDOW_WIDTH,
         minHeight: MINIMUM_WINDOW_HEIGHT,
         frame: !isFramelessWindow(),
-        fullscreen: (typeof Config.startInFullscreen === 'undefined' ? savedWindowState.fullscreen : Config.startInFullscreen),
+        fullscreen: isFullScreen(savedWindowState?.fullscreen),
         titleBarStyle: 'hidden' as const,
         trafficLightPosition: {x: 12, y: 12},
         backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do

@@ -10,6 +10,7 @@ declare namespace NodeJS {
             disableDevMode?: boolean;
             dataDir?: string;
             version?: boolean;
+            fullscreen?: boolean;
         };
     }
 }
