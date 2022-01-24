@@ -813,7 +813,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                                     errorMessage={'Can\'t save your changes. Please try again.'}
                                 />
                             </div>
-                            <FormGroup 
+                            <FormGroup
                                 key='inputAutoCheckForUpdates'
                             >
                                 <FormCheck>
@@ -842,7 +842,6 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     </Row>
                     <hr/>
                 </>
-                
             );
         }
 
