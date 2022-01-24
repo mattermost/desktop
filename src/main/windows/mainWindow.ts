@@ -66,7 +66,7 @@ function createMainWindow(options: {linuxAppIcon: string}) {
 
     const spellcheck = (typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker);
     const isFullScreen = (savedWindowStateFullscreen: boolean | undefined) => {
-        if (global.args.fullscreen !== undefined) {
+        if (global?.args?.fullscreen !== undefined) {
             return global.args.fullscreen;
         }
 
