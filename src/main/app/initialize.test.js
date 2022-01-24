@@ -113,7 +113,7 @@ jest.mock('main/authManager', () => ({}));
 jest.mock('main/AutoLauncher', () => ({
     upgradeAutoLaunch: jest.fn(),
 }));
-jest.mock('main/autoupdater/autoUpdater', () => ({}));
+jest.mock('main/autoUpdater', () => ({}));
 jest.mock('main/badge', () => ({
     setupBadge: jest.fn(),
 }));

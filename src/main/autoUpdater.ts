@@ -5,6 +5,7 @@ import path from 'path';
 
 import {dialog, ipcMain, app, nativeImage} from 'electron';
 import log from 'electron-log';
+
 import {autoUpdater, UpdateInfo} from 'electron-updater';
 
 import {displayUpgrade, displayRestartToUpgrade} from 'main/notifications';
@@ -13,14 +14,15 @@ import {CANCEL_UPGRADE, UPDATE_AVAILABLE, UPDATE_DOWNLOADED, CHECK_FOR_UPDATES} 
 
 import WindowManager from './windows/windowManager';
 
-//const NEXT_NOTIFY = 86400000; // 24 hours
-//const NEXT_CHECK = 3600000;
-const NEXT_CHECK = 60000; // todo: remove me
-const NEXT_NOTIFY = 60000;
+const NEXT_NOTIFY = 86400000; // 24 hours
+const NEXT_CHECK = 3600000; // 1 hour
 
 log.transports.file.level = 'info';
 autoUpdater.logger = log;
 autoUpdater.autoDownload = false;
+
+// todo: enable when
+//autoUpdater.disableWebInstaller = true;
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const appIconURL = path.resolve(assetsDir, 'appicon_48.png');

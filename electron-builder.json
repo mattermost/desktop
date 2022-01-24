@@ -1,9 +1,5 @@
 {
   "publish": [{
-      "provider": "generic",
-      "url": "http://localhost:8000"
-    },
-    {
     "provider": "generic",
     "url": "https://releases.mattermost.com/desktop/"
   }],
@@ -133,7 +129,7 @@
         ]
       }
     ],
-    "publisherName": "Mattermost, Inc."
+    "publisherName": "CN=\"Mattermost, Inc.\", O=\"Mattermost, Inc.\", L=Palo Alto, S=California, C=US"
   },
   "nsis": {
     "artifactName": "${name}-setup-${version}-win.${ext}"

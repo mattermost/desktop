@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, BrowserWindow, Event, dialog, WebContents, Certificate, autoUpdater} from 'electron';
+import {app, BrowserWindow, Event, dialog, WebContents, Certificate} from 'electron';
 import log from 'electron-log';
 
 import urlUtils from 'common/utils/url';
