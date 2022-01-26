@@ -20,9 +20,7 @@ const NEXT_CHECK = 3600000; // 1 hour
 log.transports.file.level = 'info';
 autoUpdater.logger = log;
 autoUpdater.autoDownload = false;
-
-// todo: enable when
-//autoUpdater.disableWebInstaller = true;
+autoUpdater.disableWebInstaller = true;
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const appIconURL = path.resolve(assetsDir, 'appicon_48.png');
