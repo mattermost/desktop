@@ -203,11 +203,13 @@ describe('main/app/initialize', () => {
     });
 
     describe('initializeAfterAppReady', () => {
-        it('should set spell checker URL if applicable', async () => {
-            Config.spellCheckerURL = 'http://server-1.com';
-            await initialize();
-            expect(session.defaultSession.setSpellCheckerDictionaryDownloadURL).toHaveBeenCalledWith('http://server-1.com/');
-        });
+        if (process.platform !== 'darwin') {
+            it('should set spell checker URL if applicable', async () => {
+                Config.spellCheckerURL = 'http://server-1.com';
+                await initialize();
+                expect(session.defaultSession.setSpellCheckerDictionaryDownloadURL).toHaveBeenCalledWith('http://server-1.com/');
+            });
+        }
 
         it('should clear app cache if last version opened was older', async () => {
             wasUpdated.mockReturnValue(true);
