@@ -83,11 +83,11 @@ describe('mattermost', function desc() {
         let tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Channels');
 
-        await mainView.click('#teamTabItem1');
+        robot.keyTap('2', [process.platform === 'darwin' ? 'command' : 'control']);
         tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Boards');
 
-        await mainView.click('#teamTabItem0');
+        robot.keyTap('1', [process.platform === 'darwin' ? 'command' : 'control']);
         tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Channels');
     });
