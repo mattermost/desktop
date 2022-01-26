@@ -317,7 +317,7 @@ describe('main/views/MattermostView', () => {
 
     describe('updateMentionsFromTitle', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {remoteInfo: {serverVersion: '5.28.0'}}, window, {});
+        const mattermostView = new MattermostView(tabView, {}, window, {});
 
         it('should parse mentions from title', () => {
             mattermostView.updateMentionsFromTitle('(7) Mattermost');
