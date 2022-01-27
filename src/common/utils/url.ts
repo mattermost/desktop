@@ -254,8 +254,8 @@ function isChannelExportUrl(serverUrl: URL | string, inputUrl: URL | string): bo
     }
     return (
         equalUrlsIgnoringSubpath(server.url, parsedURL) &&
-    (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}plugins/com.mattermost.plugin-channel-export/api/v1/export/`) ||
-      parsedURL.pathname.toLowerCase().startsWith('/plugins/com.mattermost.plugin-channel-export/api/v1/export/')));
+    (parsedURL.pathname.toLowerCase().startsWith(`${server.subpath}plugins/com.mattermost.plugin-channel-export/api/v1/export`) ||
+      parsedURL.pathname.toLowerCase().startsWith('/plugins/com.mattermost.plugin-channel-export/api/v1/export')));
 }
 
 export default {
