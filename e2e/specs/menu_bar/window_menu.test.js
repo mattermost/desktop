@@ -76,4 +76,25 @@ describe('mattermost', function desc() {
         dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
         dropdownButtonText.should.equal('example');
     });
+
+    it('MM-T824 should be minimized when keyboard shortcuts are pressed', async () => {
+        const mainWindow = await this.app.firstWindow();
+        const browserWindow = await this.app.browserWindow(mainWindow);
+        robot.keyTap('m', [process.platform === 'darwin' ? 'command' : 'control']);
+        await asyncSleep(500);
+        const isMinimized = await browserWindow.evaluate((window) => window.isMinimized());
+        isMinimized.should.be.true;
+    });
+
+    it('MM-T825 should be hidden when keyboard shortcuts are pressed', async () => {
+        const mainWindow = await this.app.firstWindow();
+        const browserWindow = await this.app.browserWindow(mainWindow);
+        robot.keyTap('w', [process.platform === 'darwin' ? 'command' : 'control']);
+        await asyncSleep(500);
+        const isVisible = await browserWindow.evaluate((window) => window.isVisible());
+        isVisible.should.be.false;
+        const isDestroyed = await browserWindow.evaluate((window) => window.isDestroyed());
+        isDestroyed.should.be.false;
+    });
+
 });
