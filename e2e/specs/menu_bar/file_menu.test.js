@@ -44,8 +44,7 @@ describe('file_menu/dropdown', function desc() {
         if (process.platform === 'win32' || process.platform === 'linux') {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             mainWindow.should.not.be.null;
-            robot.keyTap('alt');
-            robot.keyTap('enter');
+            await mainWindow.click('button.three-dot-menu');
             robot.keyTap('f');
             robot.keyTap('s');
             robot.keyTap('s');
