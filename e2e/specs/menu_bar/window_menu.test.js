@@ -96,5 +96,4 @@ describe('mattermost', function desc() {
         const isDestroyed = await browserWindow.evaluate((window) => window.isDestroyed());
         isDestroyed.should.be.false;
     });
-
 });
