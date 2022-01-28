@@ -84,7 +84,7 @@ describe('mattermost', function desc() {
         robot.keyTap('w');
         robot.keyTap('m');
         robot.keyTap('enter');
-        await asyncSleep(500);
+        await asyncSleep(2000);
         const isMinimized = await browserWindow.evaluate((window) => window.isMinimized());
         isMinimized.should.be.true;
     });
@@ -96,6 +96,7 @@ describe('mattermost', function desc() {
         robot.keyTap('w');
         robot.keyTap('c');
         robot.keyTap('enter');
+        await asyncSleep(2000);
         const isVisible = await browserWindow.evaluate((window) => window.isVisible());
         isVisible.should.be.false;
         const isDestroyed = await browserWindow.evaluate((window) => window.isDestroyed());
