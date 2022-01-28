@@ -32,6 +32,7 @@ describe('edit_menu', function desc() {
 
     it('MM-T807 Undo in the Menu Bar', async () => {
         if (process.platform === 'win32' || process.platform === 'linux') {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
             await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
             const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
@@ -41,14 +42,12 @@ describe('edit_menu', function desc() {
             // click on sint channel
             await firstServer.click('#sidebarItem_suscipit-4');
             await firstServer.click('#post_textbox');
-            await firstServer.fill('#post_textbox', 'Mattermost');
+            await firstServer.type('#post_textbox', 'Mattermost');
             await firstServer.click('#post_textbox');
-            robot.keyTap('alt');
-            robot.keyTap('enter');
+            await mainWindow.click('button.three-dot-menu');
             robot.keyTap('e');
             robot.keyTap('u');
-            robot.keyTap('enter');
-            const content = await firstServer.locator('#post_textbox').textContent();
+            const content = await firstServer.inputValue('#post_textbox');
             content.should.be.equal('Mattermos');
         }
     });
