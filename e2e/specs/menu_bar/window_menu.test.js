@@ -80,7 +80,7 @@ describe('mattermost', function desc() {
     it('MM-T824 should be minimized when keyboard shortcuts are pressed', async () => {
         const mainWindow = await this.app.firstWindow();
         const browserWindow = await this.app.browserWindow(mainWindow);
-        robot.keyTap('m', [process.platform === 'darwin' ? 'command' : 'control']);
+        robot.keyTap('m', ['control']);
         await asyncSleep(500);
         const isMinimized = await browserWindow.evaluate((window) => window.isMinimized());
         isMinimized.should.be.true;
@@ -89,7 +89,7 @@ describe('mattermost', function desc() {
     it('MM-T825 should be hidden when keyboard shortcuts are pressed', async () => {
         const mainWindow = await this.app.firstWindow();
         const browserWindow = await this.app.browserWindow(mainWindow);
-        robot.keyTap('w', [process.platform === 'darwin' ? 'command' : 'control']);
+        robot.keyTap('w', ['control']);
         await asyncSleep(500);
         const isVisible = await browserWindow.evaluate((window) => window.isVisible());
         isVisible.should.be.false;
