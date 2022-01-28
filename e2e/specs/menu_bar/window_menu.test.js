@@ -77,7 +77,7 @@ describe('mattermost', function desc() {
         dropdownButtonText.should.equal('example');
     });
 
-    it('MM-T824 should be minimized when keyboard shortcuts are pressed', async () => {
+    it.skip('MM-T824 should be minimized when keyboard shortcuts are pressed', async () => {
         const browserWindow = await this.app.browserWindow(await this.app.firstWindow());
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         await mainWindow.click('button.three-dot-menu');
@@ -89,7 +89,7 @@ describe('mattermost', function desc() {
         isMinimized.should.be.true;
     });
 
-    it('MM-T825 should be hidden when keyboard shortcuts are pressed', async () => {
+    it.skip('MM-T825 should be hidden when keyboard shortcuts are pressed', async () => {
         const browserWindow = await this.app.browserWindow(await this.app.firstWindow());
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         await mainWindow.click('button.three-dot-menu');
