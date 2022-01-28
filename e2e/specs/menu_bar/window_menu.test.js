@@ -49,7 +49,6 @@ describe('mattermost', function desc() {
         fs.writeFileSync(env.configFilePath, JSON.stringify(config));
         await asyncSleep(1000);
         this.app = await env.getApp();
-        this.serverMap = await env.getServerMap(this.app);
     });
 
     afterEach(async () => {
@@ -59,6 +58,7 @@ describe('mattermost', function desc() {
     });
 
     it('MM-T826 should switch to servers when keyboard shortcuts are pressed', async () => {
+        await env.getServerMap(this.app);
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
 
         let dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
@@ -78,19 +78,24 @@ describe('mattermost', function desc() {
     });
 
     it('MM-T824 should be minimized when keyboard shortcuts are pressed', async () => {
-        const mainWindow = await this.app.firstWindow();
-        const browserWindow = await this.app.browserWindow(mainWindow);
-        robot.keyTap('m', 'control');
+        const browserWindow = await this.app.browserWindow(await this.app.firstWindow());
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        await mainWindow.click('button.three-dot-menu');
+        robot.keyTap('w');
+        robot.keyTap('m');
+        robot.keyTap('enter');
         await asyncSleep(500);
         const isMinimized = await browserWindow.evaluate((window) => window.isMinimized());
         isMinimized.should.be.true;
     });
 
     it('MM-T825 should be hidden when keyboard shortcuts are pressed', async () => {
-        const mainWindow = await this.app.firstWindow();
-        const browserWindow = await this.app.browserWindow(mainWindow);
-        robot.keyTap('w', 'control');
-        await asyncSleep(500);
+        const browserWindow = await this.app.browserWindow(await this.app.firstWindow());
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        await mainWindow.click('button.three-dot-menu');
+        robot.keyTap('w');
+        robot.keyTap('c');
+        robot.keyTap('enter');
         const isVisible = await browserWindow.evaluate((window) => window.isVisible());
         isVisible.should.be.false;
         const isDestroyed = await browserWindow.evaluate((window) => window.isDestroyed());
