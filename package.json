@@ -16,7 +16,7 @@
     "url": "git://github.com/mattermost/desktop.git"
   },
   "config": {
-    "target": "13.2.0",
+    "target": "14.1.0",
     "arch": "x64",
     "target_arch": "x64",
     "disturl": "https://electronjs.org/headers",
@@ -167,7 +167,7 @@
     "electron-devtools-installer": "^3.2.0",
     "electron-is-dev": "^2.0.0",
     "electron-log": "^4.4.1",
-    "electron-updater": "5.0.0-alpha.1",
+    "electron-updater": "5.0.0-alpha.2",
     "font-awesome": "^4.7.0",
     "prop-types": "^15.6.2",
     "react": "^16.14.0",
