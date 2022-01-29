@@ -51,4 +51,94 @@ describe('edit_menu', function desc() {
             content.should.be.equal('Mattermos');
         }
     });
+
+    it('MM-T809 Cut in the Menu Bar', async () => {
+        if (process.platform === 'win32' || process.platform === 'linux') {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+            const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+            await env.loginToMattermost(firstServer);
+            await firstServer.waitForSelector('#sidebarItem_suscipit-4');
+
+            // click on sint channel
+            await firstServer.click('#sidebarItem_suscipit-4');
+            await firstServer.click('#post_textbox');
+            await firstServer.type('#post_textbox', 'Mattermost');
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('e');
+            robot.keyTap('s');
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('e');
+            robot.keyTap('c');
+            robot.keyTap('enter');
+            const content = await firstServer.inputValue('#post_textbox');
+            content.should.be.equal('');
+        }
+    });
+
+    it('MM-T810 Copy in the Menu Bar', async () => {
+        if (process.platform === 'win32' || process.platform === 'linux') {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+            const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+            await env.loginToMattermost(firstServer);
+            await firstServer.waitForSelector('#sidebarItem_suscipit-4');
+
+            // click on sint channel
+            await firstServer.click('#sidebarItem_suscipit-4');
+            await firstServer.click('#post_textbox');
+            await firstServer.type('#post_textbox', 'Mattermost');
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('e');
+            robot.keyTap('s');
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('e');
+            robot.keyTap('c');
+            robot.keyTap('c');
+            robot.keyTap('enter');
+            await firstServer.click('#post_textbox');
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('e');
+            robot.keyTap('p');
+            robot.keyTap('enter');
+            const content = await firstServer.inputValue('#post_textbox');
+            content.should.be.equal('MattermostMattermost');
+        }
+    });
+
+    it('MM-T811 Paste in the Menu Bar', async () => {
+        if (process.platform === 'win32' || process.platform === 'linux') {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+            const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+            await env.loginToMattermost(firstServer);
+            await firstServer.waitForSelector('#sidebarItem_suscipit-4');
+
+            // click on sint channel
+            await firstServer.click('#sidebarItem_suscipit-4');
+            await firstServer.click('#post_textbox');
+            await firstServer.type('#post_textbox', 'Mattermost');
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('e');
+            robot.keyTap('s');
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('e');
+            robot.keyTap('c');
+            robot.keyTap('c');
+            robot.keyTap('enter');
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('e');
+            robot.keyTap('s');
+            robot.keyTap('backspace');
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('e');
+            robot.keyTap('p');
+            robot.keyTap('enter');
+            const content = await firstServer.inputValue('#post_textbox');
+            content.should.be.equal('Mattermost');
+        }
+    });
 });
