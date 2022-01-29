@@ -40,6 +40,23 @@ describe('file_menu/dropdown', function desc() {
         }
     });
 
+    it('MM-T805 Sign in to Another Server Window opens using menu item', async () => {
+        if (process.platform === 'win32' || process.platform === 'linux') {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            mainWindow.should.not.be.null;
+            robot.keyTap('alt');
+            robot.keyTap('enter');
+            robot.keyTap('f');
+            robot.keyTap('s');
+            robot.keyTap('s');
+            robot.keyTap('enter');
+            const signInToAnotherServerWindow = await this.app.waitForEvent('window', {
+                predicate: (window) => window.url().includes('newServer'),
+            });
+            signInToAnotherServerWindow.should.not.be.null;
+        }
+    });
+
     it('MM-T804 Preferences in Menu Bar open the Settings page', async () => {
         if (process.platform !== 'darwin') {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));

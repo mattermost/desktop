@@ -27,17 +27,17 @@ jest.mock('./windows/windowManager', () => ({
 describe('main/badge', () => {
     describe('showBadgeWindows', () => {
         it('should show dot when session expired', () => {
-            Badge.showBadgeWindows(true, 7, false);
+            Badge.showBadgeWindows(true, 0, false);
             expect(WindowManager.setOverlayIcon).toBeCalledWith('•', expect.any(String), expect.any(Boolean));
         });
 
         it('should show mention count when has mention count', () => {
-            Badge.showBadgeWindows(false, 50, false);
+            Badge.showBadgeWindows(true, 50, false);
             expect(WindowManager.setOverlayIcon).toBeCalledWith('50', expect.any(String), false);
         });
 
         it('should show 99+ when has mention count over 99', () => {
-            Badge.showBadgeWindows(false, 200, false);
+            Badge.showBadgeWindows(true, 200, false);
             expect(WindowManager.setOverlayIcon).toBeCalledWith('99+', expect.any(String), true);
         });
 
@@ -56,12 +56,12 @@ describe('main/badge', () => {
 
     describe('showBadgeOSX', () => {
         it('should show dot when session expired', () => {
-            Badge.showBadgeOSX(true, 7, false);
+            Badge.showBadgeOSX(true, 0, false);
             expect(app.dock.setBadge).toBeCalledWith('•');
         });
 
         it('should show mention count when has mention count', () => {
-            Badge.showBadgeOSX(false, 50, false);
+            Badge.showBadgeOSX(true, 50, false);
             expect(app.dock.setBadge).toBeCalledWith('50');
         });
 
