@@ -14,16 +14,20 @@ describe('file_menu/dropdown', function desc() {
 
     const config = env.demoConfig;
 
+    let skipAfterEach = false;
+
     beforeEach(async () => {
         env.createTestUserDataDir();
         env.cleanTestConfig();
         fs.writeFileSync(env.configFilePath, JSON.stringify(config));
         await asyncSleep(1000);
         this.app = await env.getApp();
+
+        skipAfterEach = false;
     });
 
     afterEach(async () => {
-        if (this.app) {
+        if (this.app && skipAfterEach === false) {
             await this.app.close();
         }
     });
@@ -70,5 +74,7 @@ describe('file_menu/dropdown', function desc() {
         }
 
         this.app.windows().find((window) => window.url().should.not.include('index'));
+
+        skipAfterEach = true; // Need to skip closing in aftereach as apps execution context is destroyed above
     });
 });
