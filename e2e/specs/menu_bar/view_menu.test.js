@@ -20,7 +20,7 @@ async function setupPromise(window, id) {
     return true;
 }
 
-describe('mattermost', function desc() {
+describe('menu/view', function desc() {
     this.timeout(30000);
 
     const config = env.demoMattermostConfig;
@@ -53,6 +53,18 @@ describe('mattermost', function desc() {
         isFocused.should.be.true;
         const text = await firstServer.inputValue('#searchBox');
         text.should.include('in:');
+    });
+
+    it('MM-T817 Actual Size Zoom in the menu bar', async () => {
+        if (process.platform === 'win32' || process.platform === 'linux') {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            mainWindow.should.not.be.null;
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('v');
+            robot.keyTap('a');
+            const zoomLevel = await mainWindow.evaluate('window.devicePixelRatio');
+            zoomLevel.should.be.equal(2);
+        }
     });
 
     describe('Reload', () => {
