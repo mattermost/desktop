@@ -57,14 +57,22 @@ describe('file_menu/dropdown', function desc() {
         }
     });
 
-    it.only('MM-T806 Exit in the Menu Bar', async () => {
+    it.only('MM-T806 Exit in the Menu Bar', () => {
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        mainWindow.should.not.be.null;
+
         if (process.platform === 'darwin') {
-            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-            mainWindow.should.not.be.null;
-
             robot.keyTap('q', ['command']);
-
-            await this.app.windows().find((window) => window.url().should.not.include('index'));
         }
+
+        if (process.platform === 'linux') {
+            robot.keyTap('q', ['control']);
+        }
+
+        if (process.platform === 'win32') {
+            robot.keyTap('q', ['alt']);
+        }
+
+        this.app.windows().find((window) => window.url().should.not.include('index'));
     });
 });
