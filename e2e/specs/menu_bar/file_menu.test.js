@@ -56,4 +56,15 @@ describe('file_menu/dropdown', function desc() {
             signInToAnotherServerWindow.should.not.be.null;
         }
     });
+
+    it.only('MM-T806 Exit in the Menu Bar', async () => {
+        if (process.platform === 'darwin') {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            mainWindow.should.not.be.null;
+
+            robot.keyTap('q', ['command']);
+
+            await this.app.windows().find((window) => window.url().should.not.include('index'));
+        }
+    });
 });
