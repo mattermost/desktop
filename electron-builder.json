@@ -1,7 +1,7 @@
 {
   "publish": [{
     "provider": "generic",
-    "url": "https://releases.mattermost.com/desktop/"
+    "url": "http://localhost:8000"
   }],
   "appId": "Mattermost.Desktop",
   "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
