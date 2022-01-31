@@ -9,7 +9,7 @@ const robot = require('robotjs');
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
-describe('mattermost', function desc() {
+describe('Menu/window_menu', function desc() {
     this.timeout(30000);
 
     const config = {
@@ -29,12 +29,12 @@ describe('mattermost', function desc() {
                     {
                         name: 'TAB_FOCALBOARD',
                         order: 1,
-                        isOpen: false,
+                        isOpen: true,
                     },
                     {
                         name: 'TAB_PLAYBOOKS',
                         order: 2,
-                        isOpen: false,
+                        isOpen: true,
                     },
                 ],
                 lastActiveTab: 0,
@@ -77,6 +77,25 @@ describe('mattermost', function desc() {
         dropdownButtonText.should.equal('example');
     });
 
+    it('MM-T4385 select tab from menu', async () => {
+        const mainView = this.app.windows().find((window) => window.url().includes('index'));
+
+        let tabViewButton = await mainView.innerText('.active');
+        tabViewButton.should.equal('Channels');
+
+        robot.keyTap('2', [process.platform === 'darwin' ? 'command' : 'control']);
+        tabViewButton = await mainView.innerText('.active');
+        tabViewButton.should.equal('Boards');
+
+        robot.keyTap('3', [process.platform === 'darwin' ? 'command' : 'control']);
+        tabViewButton = await mainView.innerText('.active');
+        tabViewButton.should.equal('Playbooks');
+
+        robot.keyTap('1', [process.platform === 'darwin' ? 'command' : 'control']);
+        tabViewButton = await mainView.innerText('.active');
+        tabViewButton.should.equal('Channels');
+    });
+  
     it.skip('MM-T824 should be minimized when keyboard shortcuts are pressed', async () => {
         const browserWindow = await this.app.browserWindow(await this.app.firstWindow());
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
