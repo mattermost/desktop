@@ -95,7 +95,7 @@ describe('Menu/window_menu', function desc() {
         tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Channels');
     });
-  
+
     it.skip('MM-T824 should be minimized when keyboard shortcuts are pressed', async () => {
         const browserWindow = await this.app.browserWindow(await this.app.firstWindow());
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
