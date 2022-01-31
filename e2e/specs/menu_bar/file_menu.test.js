@@ -61,6 +61,30 @@ describe('file_menu/dropdown', function desc() {
         }
     });
 
+    it('MM-T804 Preferences in Menu Bar open the Settings page', async () => {
+        if (process.platform !== 'darwin') {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            mainWindow.should.not.be.null;
+            robot.keyTap(',', ['control']);
+            const settingsWindow = await this.app.waitForEvent('window', {
+                predicate: (window) => window.url().includes('settings'),
+            });
+            settingsWindow.should.not.be.null;
+            robot.keyTap('w', ['control']);
+
+            //Opening the menu bar
+            robot.keyTap('alt');
+            robot.keyTap('enter');
+            robot.keyTap('f');
+            robot.keyTap('s');
+            robot.keyTap('enter');
+            const settingsWindowFromMenu = await this.app.waitForEvent('window', {
+                predicate: (window) => window.url().includes('settings'),
+            });
+            settingsWindowFromMenu.should.not.be.null;
+        }
+    });
+
     it('MM-T806 Exit in the Menu Bar', () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         mainWindow.should.not.be.null;
