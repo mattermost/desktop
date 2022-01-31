@@ -288,7 +288,7 @@ export class Config extends EventEmitter {
     }
 
     get canUpgrade() {
-        return this.canUpgradeValue;
+        return this.canUpgradeValue && this.buildConfigData?.enableAutoUpdater && !(process.platform === 'win32' && this.registryConfigData?.enableAutoUpdater === false);
     }
 
     get autoCheckForUpdates() {
@@ -538,7 +538,7 @@ export class Config extends EventEmitter {
         const config: Partial<LocalConfiguration> = {...this.localConfigData};
         config.appName = app.name;
         config.enableServerManagement = this.combinedData?.enableServerManagement;
-        config.canUpgrade = this.canUpgradeValue;
+        config.canUpgrade = this.canUpgrade;
         if (option) {
             return config[option];
         }

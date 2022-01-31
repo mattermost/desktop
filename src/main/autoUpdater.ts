@@ -11,6 +11,7 @@ import {autoUpdater, UpdateInfo} from 'electron-updater';
 import {displayUpgrade, displayRestartToUpgrade} from 'main/notifications';
 
 import {CANCEL_UPGRADE, UPDATE_AVAILABLE, UPDATE_DOWNLOADED, CHECK_FOR_UPDATES} from 'common/communication';
+import Config from 'common/config';
 
 import WindowManager from './windows/windowManager';
 
@@ -154,6 +155,10 @@ export class UpdateManager {
     }
 
     checkForUpdates = (manually: boolean): void => {
+        if (!Config.canUpgrade) {
+            log.info('auto updates are disabled');
+            return;
+        }
         if (this.lastCheck) {
             clearTimeout(this.lastCheck);
         }

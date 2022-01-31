@@ -41,6 +41,10 @@ jest.mock('electron-updater', () => ({
     },
 }));
 
+jest.mock('common/config', () => ({
+    canUpgrade: true,
+}));
+
 jest.mock('main/notifications', () => ({
     displayUpgrade: jest.fn(),
     displayRestartToUpgrade: jest.fn(),

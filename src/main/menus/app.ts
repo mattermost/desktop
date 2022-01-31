@@ -261,7 +261,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     };
     template.push(windowMenu);
     const submenu = [];
-    if (updateManager) {
+    if (updateManager && config.canUpgrade) {
         submenu.push({
             label: 'Check for Updates',
             click() {
