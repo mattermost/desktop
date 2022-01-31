@@ -13,8 +13,7 @@
 		<category displayName="$(string.mattermost)" name="mattermost"></category>
 	</categories>
 	<policies>
-		<!--
-    <policy name="EnableAutoUpdater" class="Machine" displayName="$(string.EnableAutoUpdater)" explainText="$(string.EnableAutoUpdaterDescription)" key="Software\Policies\Mattermost" valueName="EnableAutoUpdater">
+    	<policy name="EnableAutoUpdater" class="Machine" displayName="$(string.EnableAutoUpdater)" explainText="$(string.EnableAutoUpdaterDescription)" key="Software\Policies\Mattermost" valueName="EnableAutoUpdater">
 			<parentCategory ref="mattermost"/>
 			<supportedOn ref="RequiresMattermost43"/>
 			<enabledValue>
@@ -24,7 +23,6 @@
 				<decimal value="0"/>
 			</disabledValue>
 		</policy>
-    -->
 		<policy name="EnableServerManagement" class="Both" displayName="$(string.EnableServerManagement)" explainText="$(string.EnableServerManagementDescription)" key="Software\Policies\Mattermost" valueName="EnableServerManagement">
 			<parentCategory ref="mattermost"/>
 			<supportedOn ref="RequiresMattermost43"/>
