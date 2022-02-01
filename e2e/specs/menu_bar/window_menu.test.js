@@ -9,7 +9,7 @@ const robot = require('robotjs');
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
-describe('mattermost', function desc() {
+describe('Menu/window_menu', function desc() {
     this.timeout(30000);
 
     const config = {
@@ -29,12 +29,12 @@ describe('mattermost', function desc() {
                     {
                         name: 'TAB_FOCALBOARD',
                         order: 1,
-                        isOpen: false,
+                        isOpen: true,
                     },
                     {
                         name: 'TAB_PLAYBOOKS',
                         order: 2,
-                        isOpen: false,
+                        isOpen: true,
                     },
                 ],
                 lastActiveTab: 0,
@@ -49,7 +49,6 @@ describe('mattermost', function desc() {
         fs.writeFileSync(env.configFilePath, JSON.stringify(config));
         await asyncSleep(1000);
         this.app = await env.getApp();
-        this.serverMap = await env.getServerMap(this.app);
     });
 
     afterEach(async () => {
@@ -59,6 +58,7 @@ describe('mattermost', function desc() {
     });
 
     it('MM-T826 should switch to servers when keyboard shortcuts are pressed', async () => {
+        await env.getServerMap(this.app);
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
 
         let dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
@@ -75,5 +75,50 @@ describe('mattermost', function desc() {
         robot.keyTap('1', ['control', 'shift']);
         dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
         dropdownButtonText.should.equal('example');
+    });
+
+    it('MM-T4385 select tab from menu', async () => {
+        const mainView = this.app.windows().find((window) => window.url().includes('index'));
+
+        let tabViewButton = await mainView.innerText('.active');
+        tabViewButton.should.equal('Channels');
+
+        robot.keyTap('2', [process.platform === 'darwin' ? 'command' : 'control']);
+        tabViewButton = await mainView.innerText('.active');
+        tabViewButton.should.equal('Boards');
+
+        robot.keyTap('3', [process.platform === 'darwin' ? 'command' : 'control']);
+        tabViewButton = await mainView.innerText('.active');
+        tabViewButton.should.equal('Playbooks');
+
+        robot.keyTap('1', [process.platform === 'darwin' ? 'command' : 'control']);
+        tabViewButton = await mainView.innerText('.active');
+        tabViewButton.should.equal('Channels');
+    });
+
+    it.skip('MM-T824 should be minimized when keyboard shortcuts are pressed', async () => {
+        const browserWindow = await this.app.browserWindow(await this.app.firstWindow());
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        await mainWindow.click('button.three-dot-menu');
+        robot.keyTap('w');
+        robot.keyTap('m');
+        robot.keyTap('enter');
+        await asyncSleep(2000);
+        const isMinimized = await browserWindow.evaluate((window) => window.isMinimized());
+        isMinimized.should.be.true;
+    });
+
+    it.skip('MM-T825 should be hidden when keyboard shortcuts are pressed', async () => {
+        const browserWindow = await this.app.browserWindow(await this.app.firstWindow());
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        await mainWindow.click('button.three-dot-menu');
+        robot.keyTap('w');
+        robot.keyTap('c');
+        robot.keyTap('enter');
+        await asyncSleep(2000);
+        const isVisible = await browserWindow.evaluate((window) => window.isVisible());
+        isVisible.should.be.false;
+        const isDestroyed = await browserWindow.evaluate((window) => window.isDestroyed());
+        isDestroyed.should.be.false;
     });
 });
