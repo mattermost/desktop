@@ -1,7 +1,7 @@
 {
   "publish": [{
     "provider": "generic",
-    "url": "http://localhost:8000"
+    "url": "http://desktop-test-autoupdater.s3-website-us-east-1.amazonaws.com/"
   }],
   "appId": "Mattermost.Desktop",
   "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
