@@ -143,8 +143,6 @@ function createMainWindow(options: {linuxAppIcon: string}) {
             }
             switch (process.platform) {
             case 'win32':
-                hideWindow(mainWindow);
-                break;
             case 'linux':
                 if (Config.minimizeToTray) {
                     if (Config.alwaysMinimize) {
