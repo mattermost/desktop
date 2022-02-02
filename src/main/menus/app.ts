@@ -262,12 +262,28 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     template.push(windowMenu);
     const submenu = [];
     if (updateManager && config.canUpgrade) {
-        submenu.push({
-            label: 'Check for Updates',
-            click() {
-                updateManager.checkForUpdates(true);
-            },
-        });
+        if (updateManager.versionDownloaded) {
+            submenu.push({
+                label: 'Restart and Update',
+                click() {
+                    updateManager.handleUpdate();
+                },
+            });
+        } else if (updateManager.versionAvailable) {
+            submenu.push({
+                label: 'Download Update',
+                click() {
+                    updateManager.handleDownload();
+                },
+            });
+        } else {
+            submenu.push({
+                label: 'Check for Updates',
+                click() {
+                    updateManager.checkForUpdates(true);
+                },
+            });
+        }
     }
     if (config.data?.helpLink) {
         submenu.push({

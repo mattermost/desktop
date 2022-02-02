@@ -10,7 +10,7 @@ import {autoUpdater, UpdateInfo} from 'electron-updater';
 
 import {displayUpgrade, displayRestartToUpgrade} from 'main/notifications';
 
-import {CANCEL_UPGRADE, UPDATE_AVAILABLE, UPDATE_DOWNLOADED, CHECK_FOR_UPDATES} from 'common/communication';
+import {CANCEL_UPGRADE, UPDATE_AVAILABLE, UPDATE_DOWNLOADED, CHECK_FOR_UPDATES, UPDATE_SHORTCUT_MENU} from 'common/communication';
 import Config from 'common/config';
 
 import WindowManager from './windows/windowManager';
@@ -56,12 +56,14 @@ export class UpdateManager {
         autoUpdater.on('update-available', (info: UpdateInfo) => {
             autoUpdater.removeListener('update-not-available', this.displayNoUpgrade);
             this.versionAvailable = info.version;
+            ipcMain.emit(UPDATE_SHORTCUT_MENU);
             log.info(`[Mattermost] available version ${info.version}`);
             this.notify();
         });
 
         autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
             this.versionDownloaded = info.version;
+            ipcMain.emit(UPDATE_SHORTCUT_MENU);
             log.info(`[Mattermost] downloaded version ${info.version}`);
             this.notifyDownloaded();
         });
