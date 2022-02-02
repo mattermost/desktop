@@ -140,6 +140,9 @@ export class UpdateManager {
         }).then(({response}) => {
             if (response === 0) {
                 autoUpdater.quitAndInstall();
+                if (process.platform === 'darwin' && !global.willAppQuit) {
+                    app.quit();
+                }
             }
         });
     }
