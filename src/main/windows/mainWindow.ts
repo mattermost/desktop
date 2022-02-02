@@ -5,7 +5,7 @@ import fs from 'fs';
 
 import os from 'os';
 
-import {app, BrowserWindow, BrowserWindowConstructorOptions, globalShortcut, ipcMain, screen} from 'electron';
+import {app, BrowserWindow, BrowserWindowConstructorOptions, dialog, globalShortcut, ipcMain, screen} from 'electron';
 import log from 'electron-log';
 
 import {SavedWindowState} from 'types/mainWindow';
@@ -147,9 +147,37 @@ function createMainWindow(options: {linuxAppIcon: string}) {
                 break;
             case 'linux':
                 if (Config.minimizeToTray) {
-                    hideWindow(mainWindow);
+                    if (Config.alwaysMinimize) {
+                        hideWindow(mainWindow);
+                    } else {
+                        dialog.showMessageBox(mainWindow, {
+                            title: 'Minimize to Tray',
+                            message: 'Upon closing the Mattermost window, the application will continue to run in the system tray. You can disable this behaviour in the Settings window.',
+                            type: 'info',
+                            checkboxChecked: true,
+                            checkboxLabel: 'Don\'t show again',
+                        }).then((result: {response: number; checkboxChecked: boolean}) => {
+                            Config.set('alwaysMinimize', result.checkboxChecked);
+                            hideWindow(mainWindow);
+                        });
+                    }
+                } else if (Config.alwaysClose) {
+                    app.quit();
                 } else {
-                    mainWindow.minimize();
+                    dialog.showMessageBox(mainWindow, {
+                        title: 'Close Application',
+                        message: 'Upon closing the Mattermost window, the application will close and you will no longer receive notifications for messages. If you wish to minimize to the system tray, you can enable the behaviour in the Settings window.',
+                        detail: 'Are you sure you would like to close Mattermost?',
+                        type: 'question',
+                        buttons: ['Yes', 'No'],
+                        checkboxChecked: true,
+                        checkboxLabel: 'Don\'t ask again',
+                    }).then((result: {response: number; checkboxChecked: boolean}) => {
+                        Config.set('alwaysClose', result.checkboxChecked && result.response === 0);
+                        if (result.response === 0) {
+                            app.quit();
+                        }
+                    });
                 }
                 break;
             case 'darwin':
