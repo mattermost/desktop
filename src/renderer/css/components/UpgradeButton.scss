@@ -1,23 +1,48 @@
 .upgrade-btns {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   font-size: 18px;
-  padding-top: 5px;
+  line-height: 18px;
+  border-radius: 4px;
+  margin-top: 4px;
+  margin-right: 4px;
+  text-align: center;
+
+  &:hover {
+    background-color: rgba(63, 67, 80, 0.08);
+  }
 }
 
-.upgrade-btns.darkMode {
-  color: rgba(221, 221, 221, 0.56);
+.upgrade-button {
+  margin: 7px;
+  height: 18px;
+
+  > i::before {
+    margin: 0;
+  }
 }
 
 .circle {
   position: relative;
-  top: -9px;
-  left: -13px;
+  top: -27px;
+  left: 7px;
+  text-shadow: 2px 0 0 #efefef, -2px 0 0 #efefef, 0 2px 0 #efefef, 0 -2px 0 #efefef, 1px 1px #efefef, -1px -1px 0 #efefef, 1px -1px 0 #efefef, -1px 1px 0 #efefef;
 }
 
 .circle::before {
   content: ' \25CF';
-  font-size: 8px;
-  border: 2px;
+  font-size: 18px;
   color: #F74343;
+}
+
+.upgrade-btns.darkMode {
+  color: rgba(221, 221, 221, 0.56);
+
+  &:hover {
+    background-color: rgba(175, 188, 192, 0.08);
+  }
+
+  i.circle {
+    text-shadow: 2px 0 0 #2e2e2e, -2px 0 0 #2e2e2e, 0 2px 0 #2e2e2e, 0 -2px 0 #2e2e2e, 1px 1px #2e2e2e, -1px -1px 0 #2e2e2e, 1px -1px 0 #2e2e2e, -1px 1px 0 #2e2e2e;
+  }
 }

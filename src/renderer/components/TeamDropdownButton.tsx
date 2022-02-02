@@ -7,7 +7,6 @@ import React, {useEffect} from 'react';
 import {CLOSE_TEAMS_DROPDOWN, OPEN_TEAMS_DROPDOWN} from 'common/communication';
 
 import '../css/components/TeamDropdownButton.scss';
-import '../css/compass-icons.css';
 
 type Props = {
     isDisabled?: boolean;
