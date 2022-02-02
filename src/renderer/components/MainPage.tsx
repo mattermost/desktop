@@ -392,7 +392,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
                         <i
                             className={'icon-arrow-down-bold-circle-outline'}
                         />
-                        {this.state.upgradeAvailable && <i className={'circle'}/>}
+                        {this.state.upgradeAvailable && <div className={'circle'}/>}
                     </div>
                 </span>);
         }

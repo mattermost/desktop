@@ -23,16 +23,14 @@
 }
 
 .circle {
+  background: #F74343;
+  border-radius: 100px;
+  width: 12px;
+  height: 12px;
   position: relative;
-  top: -27px;
-  left: 7px;
-  text-shadow: 2px 0 0 #efefef, -2px 0 0 #efefef, 0 2px 0 #efefef, 0 -2px 0 #efefef, 1px 1px #efefef, -1px -1px 0 #efefef, 1px -1px 0 #efefef, -1px 1px 0 #efefef;
-}
-
-.circle::before {
-  content: ' \25CF';
-  font-size: 18px;
-  color: #F74343;
+  top: -22px;
+  right: -10px;
+  border: 2px solid #efefef;
 }
 
 .upgrade-btns.darkMode {
@@ -42,7 +40,7 @@
     background-color: rgba(175, 188, 192, 0.08);
   }
 
-  i.circle {
-    text-shadow: 2px 0 0 #2e2e2e, -2px 0 0 #2e2e2e, 0 2px 0 #2e2e2e, 0 -2px 0 #2e2e2e, 1px 1px #2e2e2e, -1px -1px 0 #2e2e2e, 1px -1px 0 #2e2e2e, -1px 1px 0 #2e2e2e;
+  .circle {
+    border-color: #2e2e2e;
   }
 }
