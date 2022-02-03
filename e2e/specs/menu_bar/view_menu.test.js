@@ -140,5 +140,28 @@ describe('mattermost', function desc() {
             const isWindowTitleDevTools = windowTitle === 'DevTools';
             isWindowTitleDevTools.should.be.true;
         });
+
+        it('MM-T821 should open dev tools for Current Server through menu, View > Developer Tools for Current Server', async () => {
+            const windowLoaded = windowEventPromise(this.app);
+            if (process.platform === 'darwin') {
+                robotKeyTaps(1, 'f2', ['control']);
+                robotKeyTaps(3, 'right');
+                robotKeyTaps(1, 'enter');
+                robotKeyTaps(1, 'up');
+                robotKeyTaps(1, 'enter');
+            } else {
+                await clickThreeDotMenu(this.app);
+                robotKeyTaps(3, 'down');
+                robotKeyTaps(1, 'right');
+                robotKeyTaps(1, 'up');
+                robotKeyTaps(1, 'enter');
+            }
+
+            const window = await windowLoaded;
+            const windowTitle = await window.title();
+
+            const isWindowTitleDevTools = windowTitle === 'DevTools';
+            isWindowTitleDevTools.should.be.true;
+        });
     });
 });
