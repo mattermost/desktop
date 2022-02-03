@@ -102,5 +102,19 @@ describe('mattermost', function desc() {
             const result = await check;
             result.should.be.true;
         });
+
+        it('MM-T820 should open dev tools for Application Wrapper when pressing keyboard shortcuts', async () => {
+            const macModifierKeys = ['command', 'alt'];
+            const winModifierKeys = ['shift', 'control'];
+
+            const windowLoaded = windowEventPromise(this.app);
+            robotKeyTaps(1, 'i', process.platform === 'darwin' ? macModifierKeys : winModifierKeys);
+
+            const window = await windowLoaded;
+            const windowTitle = await window.title();
+
+            const isWindowTitleDevTools = windowTitle === 'DevTools';
+            isWindowTitleDevTools.should.be.true;
+        });
     });
 });
