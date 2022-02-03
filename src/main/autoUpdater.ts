@@ -106,7 +106,7 @@ export class UpdateManager {
             clearTimeout(this.lastCheck);
         }
         dialog.showMessageBox({
-            title: 'New desktop version available',
+            title: 'Mattermost',
             message: 'New desktop version available',
             detail: 'A new version of the Mattermost Desktop app is available for you to download and install now.',
             buttons: ['Download', 'Remind me Later'],
@@ -129,7 +129,7 @@ export class UpdateManager {
 
     handleUpdate = (): void => {
         dialog.showMessageBox({
-            title: 'A new version is ready to install',
+            title: 'Mattermost',
             message: 'A new version is ready to install',
             detail: 'A new version of the Mattermost Desktop app is ready to install.',
             buttons: ['Restart and Update', 'Remind me Later'],
@@ -150,7 +150,7 @@ export class UpdateManager {
     displayNoUpgrade = (): void => {
         const version = app.getVersion();
         dialog.showMessageBox({
-            title: 'You\'re up to date',
+            title: 'Mattermost',
             message: 'You\'re up to date',
             type: 'info',
             buttons: ['OK'],
