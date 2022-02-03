@@ -52,6 +52,34 @@ describe('edit_menu', function desc() {
         }
     });
 
+    it('MM-T808 Redo in the Menu Bar', async () => {
+        if (process.platform === 'win32' || process.platform === 'linux') {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+            const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+            await env.loginToMattermost(firstServer);
+            await firstServer.waitForSelector('#sidebarItem_suscipit-4');
+
+            // click on sint channel
+            await firstServer.click('#sidebarItem_suscipit-4');
+            await firstServer.click('#post_textbox');
+            await firstServer.type('#post_textbox', 'Mattermost');
+            await firstServer.click('#post_textbox');
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('e');
+            robot.keyTap('u');
+            const textAfterUndo = await firstServer.inputValue('#post_textbox');
+            textAfterUndo.should.be.equal('Mattermos');
+            await firstServer.click('#post_textbox');
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('e');
+            robot.keyTap('r');
+            const content = await firstServer.inputValue('#post_textbox');
+            content.should.be.equal('Mattermost');
+        }
+    });
+
     it('MM-T809 Cut in the Menu Bar', async () => {
         if (process.platform === 'win32' || process.platform === 'linux') {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
@@ -140,5 +168,24 @@ describe('edit_menu', function desc() {
             const content = await firstServer.inputValue('#post_textbox');
             content.should.be.equal('Mattermost');
         }
+    });
+
+    it('MM-T812 Select All in the Menu Bar', async () => {
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+        const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+        await env.loginToMattermost(firstServer);
+        await firstServer.waitForSelector('#sidebarItem_suscipit-4');
+
+        // click on sint channel
+        await firstServer.click('#sidebarItem_suscipit-4');
+        await firstServer.click('#post_textbox');
+        await firstServer.fill('#post_textbox', 'Mattermost');
+        await mainWindow.click('button.three-dot-menu');
+        robot.keyTap('e');
+        robot.keyTap('s');
+        const channelHeaderText = await firstServer.evaluate('window.getSelection().toString()');
+        channelHeaderText.should.equal('Mattermost');
     });
 });
