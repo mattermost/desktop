@@ -20,7 +20,7 @@ async function setupPromise(window, id) {
     return true;
 }
 
-describe('mattermost', function desc() {
+describe('menu/view', function desc() {
     this.timeout(30000);
 
     const config = env.demoMattermostConfig;
@@ -83,6 +83,53 @@ describe('mattermost', function desc() {
             currentHeight = await firstServer.evaluate('window.outerHeight');
             currentWidth.should.be.lessThan(fullScreenWidth);
             currentHeight.should.be.lessThan(fullScreenHeight);
+        }
+    });
+
+    it('MM-T817 Actual Size Zoom in the menu bar', async () => {
+        if (process.platform === 'win32' || process.platform === 'linux') {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            mainWindow.should.not.be.null;
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('v');
+            robot.keyTap('a');
+            const zoomLevel = await mainWindow.evaluate('window.devicePixelRatio');
+            zoomLevel.should.be.equal(1);
+        }
+    });
+
+    it('MM-T818 Zoom in from the menu bar', async () => {
+        if (process.platform === 'win32' || process.platform === 'linux') {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+            const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+            await env.loginToMattermost(firstServer);
+            await firstServer.waitForSelector('#searchBox');
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('v');
+            robot.keyTap('z');
+            robot.keyTap('enter');
+            const zoomLevel = await firstServer.evaluate('window.devicePixelRatio');
+            zoomLevel.should.be.greaterThan(1);
+        }
+    });
+
+    it('MM-T819 Zoom out from the menu bar', async () => {
+        if (process.platform === 'win32' || process.platform === 'linux') {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+            const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+            await env.loginToMattermost(firstServer);
+            await firstServer.waitForSelector('#searchBox');
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('v');
+            robot.keyTap('z');
+            robot.keyTap('z');
+            robot.keyTap('enter');
+            const zoomLevel = await firstServer.evaluate('window.devicePixelRatio');
+            zoomLevel.should.be.lessThan(1);
         }
     });
 
