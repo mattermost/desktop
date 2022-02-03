@@ -20,6 +20,25 @@ async function setupPromise(window, id) {
     return true;
 }
 
+function robotKeyTaps(n, ...params) {
+    for (let i = 0; i < n; i++) {
+        robot.keyTap(...params);
+    }
+}
+
+async function clickThreeDotMenu(app) {
+    const mainWindow = app.windows().find((window) => window.url().includes('index'));
+    await mainWindow.click('button.three-dot-menu');
+}
+
+async function windowEventPromise(app) {
+    return new Promise((res) => {
+        app.on('window', (window) => {
+            res(window);
+        });
+    });
+}
+
 describe('mattermost', function desc() {
     this.timeout(30000);
 
