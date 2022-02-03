@@ -104,3 +104,5 @@ export const GET_MODAL_UNCLOSEABLE = 'get-modal-uncloseable';
 export const MODAL_UNCLOSEABLE = 'modal-uncloseable';
 
 export const UPDATE_PATHS = 'update-paths';
+
+export const UPDATE_URL_VIEW_WIDTH = 'update-url-view-width';
