@@ -616,7 +616,6 @@ workflows:
 
       - upload_to_s3_develop: 
           requires:
-            - msi_installer
             - mac_installer
             - build-linux
           context: desktop-test-autoupdater-deploy
