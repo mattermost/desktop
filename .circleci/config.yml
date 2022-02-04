@@ -332,10 +332,6 @@ jobs:
           name: Installing npm dependencies
           command: npm ci
       - build:
-          os: mac-universal
-          path: ./build/macos-release
-          subpath: ./macos-release/
-      - build:
           os: mac
           path: ./build/macos-release
           subpath: ./macos-release/
