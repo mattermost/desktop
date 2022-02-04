@@ -146,7 +146,7 @@ jobs:
           command: npm run test:docker
           environment:
             MMCTL_PATH: ./mmctl
-      - run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run npm run test
+      #- run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run npm run test
       - run: mkdir -p /tmp/test-results
       - run: cp test-results.xml /tmp/test-results/
       - store_test_results:
