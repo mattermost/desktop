@@ -22,6 +22,7 @@ module.exports = merge(base, {
         preload: './src/main/preload/mattermost.js',
         modalPreload: './src/main/preload/modalPreload.js',
         loadingScreenPreload: './src/main/preload/loadingScreenPreload.js',
+        urlView: './src/main/preload/urlView.js',
     },
     output: {
         path: path.join(__dirname, 'dist/'),
