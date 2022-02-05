@@ -180,6 +180,13 @@ describe('menu/view', function desc() {
             const result = await check;
             result.should.be.true;
         });
+    });
+
+    describe('Toggle DevTools', () => {
+        beforeEach(async () => {
+            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+        });
 
         it('MM-T820 should open dev tools for Application Wrapper when pressing keyboard shortcuts', async () => {
             const macModifierKeys = ['command', 'alt'];
