@@ -39,7 +39,7 @@ async function windowEventPromise(app) {
     });
 }
 
-describe('mattermost', function desc() {
+describe('menu/view', function desc() {
     this.timeout(30000);
 
     const config = env.demoMattermostConfig;
@@ -72,6 +72,84 @@ describe('mattermost', function desc() {
         isFocused.should.be.true;
         const text = await firstServer.inputValue('#searchBox');
         text.should.include('in:');
+    });
+
+    it.skip('MM-T816 Toggle Full Screen in the Menu Bar', async () => {
+        if (process.platform === 'win32' || process.platform === 'linux') {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+            const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+            await env.loginToMattermost(firstServer);
+            await firstServer.waitForSelector('#searchBox');
+            let currentWidth = await firstServer.evaluate('window.outerWidth');
+            let currentHeight = await firstServer.evaluate('window.outerHeight');
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('v');
+            robot.keyTap('t');
+            robot.keyTap('enter');
+            await asyncSleep(1000);
+            const fullScreenWidth = await firstServer.evaluate('window.outerWidth');
+            const fullScreenHeight = await firstServer.evaluate('window.outerHeight');
+            fullScreenWidth.should.be.greaterThan(currentWidth);
+            fullScreenHeight.should.be.greaterThan(currentHeight);
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('v');
+            robot.keyTap('t');
+            robot.keyTap('enter');
+            await asyncSleep(1000);
+            currentWidth = await firstServer.evaluate('window.outerWidth');
+            currentHeight = await firstServer.evaluate('window.outerHeight');
+            currentWidth.should.be.lessThan(fullScreenWidth);
+            currentHeight.should.be.lessThan(fullScreenHeight);
+        }
+    });
+
+    it('MM-T817 Actual Size Zoom in the menu bar', async () => {
+        if (process.platform === 'win32' || process.platform === 'linux') {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            mainWindow.should.not.be.null;
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('v');
+            robot.keyTap('a');
+            const zoomLevel = await mainWindow.evaluate('window.devicePixelRatio');
+            zoomLevel.should.be.equal(1);
+        }
+    });
+
+    it('MM-T818 Zoom in from the menu bar', async () => {
+        if (process.platform === 'win32' || process.platform === 'linux') {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+            const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+            await env.loginToMattermost(firstServer);
+            await firstServer.waitForSelector('#searchBox');
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('v');
+            robot.keyTap('z');
+            robot.keyTap('enter');
+            const zoomLevel = await firstServer.evaluate('window.devicePixelRatio');
+            zoomLevel.should.be.greaterThan(1);
+        }
+    });
+
+    it('MM-T819 Zoom out from the menu bar', async () => {
+        if (process.platform === 'win32' || process.platform === 'linux') {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+            const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+            await env.loginToMattermost(firstServer);
+            await firstServer.waitForSelector('#searchBox');
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('v');
+            robot.keyTap('z');
+            robot.keyTap('z');
+            robot.keyTap('enter');
+            const zoomLevel = await firstServer.evaluate('window.devicePixelRatio');
+            zoomLevel.should.be.lessThan(1);
+        }
     });
 
     describe('Reload', () => {
