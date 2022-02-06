@@ -312,6 +312,25 @@ describe('menu/view', function desc() {
 
             const isWindowTitleDevTools = windowTitle === 'DevTools';
             isWindowTitleDevTools.should.be.true;
+
+            // check the url
+            await asyncSleep(DevToolsLoadTimeBuffer);
+            await openDevToolsConsoleTab();
+
+            const allWindowsDialogEventListener = windowsDialogEventPromises(this.app, MaxDialogEventWaitTime);
+            await asyncSleep(DelayBetweenInputs);
+            robot.typeStringDelayed('alert ( window?.location?.href )', CharPerMin);
+            await asyncSleep(DelayBetweenInputs);
+            robotKeyTaps(1, 'enter');
+
+            const windowAlertDialog = await Promise.any(allWindowsDialogEventListener);
+
+            const alertMsg = windowAlertDialog?.message();
+            const devToolsPointsToIndexHtml = alertMsg.endsWith('index.html');
+            devToolsPointsToIndexHtml.should.be.false;
+
+            const devToolsPointsToCurrentServer = alertMsg.includes('localhost:8065');
+            devToolsPointsToCurrentServer.should.be.true;
         });
     });
 });
