@@ -235,6 +235,21 @@ describe('menu/view', function desc() {
 
             const isWindowTitleDevTools = windowTitle === 'DevTools';
             isWindowTitleDevTools.should.be.true;
+
+            // check the url
+            await asyncSleep(DevToolsLoadTime);
+            await openDevToolsConsoleTab();
+
+            const allWindowsDialogEventListener = windowsDialogEventPromises(this.app, MaxDialogEventWaitTime);
+            await asyncSleep(DelayBetweenInputs);
+            robot.typeStringDelayed('alert ( window?.location?.href )', CharPerMin);
+            await asyncSleep(DelayBetweenInputs);
+            robotKeyTaps(1, 'enter');
+
+            const windowAlertDialog = await Promise.any(allWindowsDialogEventListener);
+            const alertMsg = windowAlertDialog?.message();
+            const devToolsPointsToIndexHtml = alertMsg.endsWith('index.html');
+            devToolsPointsToIndexHtml.should.be.true;
         });
 
         it('MM-T820 should open dev tools for Application Wrapper through menu, View > Developer Tools for Application Wrapper', async () => {
