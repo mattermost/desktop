@@ -213,6 +213,11 @@ describe('menu/view', function desc() {
     });
 
     describe('Toggle DevTools', () => {
+        const CharPerMin = 600;
+        const DelayBetweenInputs = 500; // ms
+        const DevToolsLoadTime = 7000; // ms
+        const DevToolsLoadTimeBuffer = 10000; // ms
+        const MaxDialogEventWaitTime = 6000; // ms
         beforeEach(async () => {
             const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
             await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
