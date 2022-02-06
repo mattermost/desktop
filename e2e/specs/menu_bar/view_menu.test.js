@@ -20,10 +20,29 @@ async function setupPromise(window, id) {
     return true;
 }
 
+function robotTextInput(txt) {
+    for (let i = 0; i < txt.length; i++) {
+        robot.keyTap(txt[i]);
+    }
+}
+
 function robotKeyTaps(n, ...params) {
     for (let i = 0; i < n; i++) {
         robot.keyTap(...params);
     }
+}
+
+function openDevToolsCommandPalette() {
+    const modifierKeys = process.platform === 'darwin' ? ['command'] : ['control'];
+    robotKeyTaps(1, 'p', [...modifierKeys, 'shift']);
+}
+
+async function openDevToolsConsoleTab() {
+    openDevToolsCommandPalette();
+    await asyncSleep(1500);
+    robotTextInput('con', 1200); // search for console command
+    await asyncSleep(500);
+    robotKeyTaps(1, 'enter');
 }
 
 async function clickThreeDotMenu(app) {
@@ -35,6 +54,17 @@ async function windowEventPromise(app) {
     return new Promise((res) => {
         app.on('window', (window) => {
             res(window);
+        });
+    });
+}
+
+function windowsDialogEventPromises(app, limit) {
+    return app.windows().map((window) => {
+        return new Promise((res, rej) => {
+            window.on('dialog', (e) => {
+                res(e);
+            });
+            setTimeout(rej, limit);
         });
     });
 }
