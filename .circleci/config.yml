@@ -461,7 +461,7 @@ jobs:
           name: "Setup files for aws-s3"
           command: |
             mkdir -p ./aws-s3-dist
-            cp --backup=numbered ./build/{macos-release,linux}/* ./aws-s3-dist
+            cp -r --backup=numbered ./build/{macos-release,linux}/* ./aws-s3-dist
       - aws-s3/copy:
           from: ./aws-s3-dist/
           to: s3://desktop-test-autoupdater-deploy/
