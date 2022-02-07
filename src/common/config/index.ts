@@ -55,16 +55,20 @@ export class Config extends EventEmitter {
     constructor(configFilePath: string) {
         super();
         this.configFilePath = configFilePath;
-        fs.access(path.dirname(app.getAppPath()), fs.constants.W_OK, (error) => {
-            if (error) {
-                log.info(`${app.getAppPath()}: ${error}`);
-                log.warn('autoupgrade disabled');
-            }
-            // eslint-disable-next-line no-undef
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            this.canUpgradeValue = !error && __CAN_UPGRADE__; // prevent showing the option if the path is not writeable, like in a managed environment.
-        });
+        if (process.platform === 'win32' || process.platform === 'darwin') {
+            fs.access(path.dirname(app.getAppPath()), fs.constants.W_OK, (error) => {
+                if (error) {
+                    log.info(`${app.getAppPath()}: ${error}`);
+                    log.warn('autoupgrade disabled');
+                }
+                // eslint-disable-next-line no-undef
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                this.canUpgradeValue = !error && __CAN_UPGRADE__; // prevent showing the option if the path is not writeable, like in a managed environment.
+            });
+        } else {
+            this.canUpgradeValue = __CAN_UPGRADE__;
+        }
         this.registryConfig = new RegistryConfig();
         this.predefinedTeams = [];
         if (buildConfig.defaultTeams) {
