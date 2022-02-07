@@ -3,7 +3,7 @@ set -eu
 
 VERSION="$(jq -r '.version' <package.json)"
 SRC="${1}/${VERSION}"
-DEST="${2}"
+DEST="${2}/${VERSION}"
 SOMETHING_COPIED=0
 if [[ ! -d "${DEST}" ]]; then
     echo "Can't find destination. Creating \"${DEST}\""
@@ -73,7 +73,7 @@ if [[ $SOMETHING_COPIED -eq 0 ]]; then
     exit 1
 fi
 
-cp "${1}"/*.yml "${DEST}/"
+cp "${1}"/*.yml "${2}/"
 
 # exit $SOMETHING_COPIED
 exit 0
