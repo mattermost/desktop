@@ -464,7 +464,7 @@ jobs:
             cp --backup=numbered ./build/{macos-release,linux}/* ./aws-s3-dist
       - aws-s3/copy:
           from: ./aws-s3-dist/
-          to: s3://desktop-test-autoupdater-deploy/$(jq -r .version package.json)/
+          to: s3://desktop-test-autoupdater-deploy/
           arguments: --acl public-read --cache-control "no-cache" --recursive
 
   upload_to_github:

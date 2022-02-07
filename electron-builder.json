@@ -4,7 +4,7 @@
     "url": "http://desktop-test-autoupdater.s3-website-us-east-1.amazonaws.com/"
   }],
   "appId": "Mattermost.Desktop",
-  "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
+  "artifactName": "${version}/${name}-${version}-${os}-${arch}.${ext}",
   "directories": {
     "buildResources": "src/assets",
     "output": "release"
@@ -114,7 +114,7 @@
   },
   "squirrelWindows": {
     "iconUrl": "file://src/assets/icon.ico",
-    "artifactName": "${name}-setup-${version}-${arch}.${ext}"
+    "artifactName": "${version}/${name}-setup-${version}-${arch}.${ext}"
   },
   "win": {
     "target": [
@@ -132,6 +132,6 @@
     "publisherName": "CN=\"Mattermost, Inc.\", O=\"Mattermost, Inc.\", L=Palo Alto, S=California, C=US"
   },
   "nsis": {
-    "artifactName": "${name}-setup-${version}-win.${ext}"
+    "artifactName": "${version}/${name}-setup-${version}-win.${ext}"
   }
 }
