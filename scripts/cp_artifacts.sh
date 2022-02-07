@@ -2,7 +2,7 @@
 set -eu
 
 VERSION="$(jq -r '.version' <package.json)"
-SRC="${1}"
+SRC="${1}/${VERSION}"
 DEST="${2}"
 SOMETHING_COPIED=0
 if [[ ! -d "${DEST}" ]]; then
@@ -73,7 +73,7 @@ if [[ $SOMETHING_COPIED -eq 0 ]]; then
     exit 1
 fi
 
-cp "${SRC}"/*.yml "${DEST}/"
+cp "${1}"/*.yml "${DEST}/"
 
 # exit $SOMETHING_COPIED
 exit 0
