@@ -164,8 +164,14 @@ jobs:
       - attach_workspace:
           at: ./build
       - update_image:
-          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+          apt_opts: "--no-install-recommends jq yq icnsutils graphicsmagick tzdata"
       - build
+      - run:
+          name: Patch develop-linux.yml
+          command: ./scripts/patch_updater_yml.sh develop-linux
+      - run:
+          name: Patch develop-linux-ia32.yml
+          command: ./scripts/patch_updater_yml.sh develop-linux-ia32
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -226,12 +232,18 @@ jobs:
       - run:
           name: Update node to v16
           command: choco install nodejs --version 16.8.0
+      - runL
+          name: Install yq
+          command: choco install yq
       - win_make:
           operation: optimize
       - win_make:
           operation: "install-deps"
       - win_make:
           operation: "build"
+      - run:
+          name: Patch develop.yml
+          command: ./scripts/patch_updater_yml.sh develop
       - run: mkdir -p ./build/win-release
       - run: cp -r release/*.zip ./build/win-release
       - run: cp -r release/*.msi ./build/win-release
@@ -329,12 +341,18 @@ jobs:
           name: Update node to v16
           command: brew upgrade node || true
       - run:
+          name: Install yq
+          command: brew install yq
+      - run:
           name: Installing npm dependencies
           command: npm ci
       - build:
-          os: mac
+          os: mac-with-universal
           path: ./build/macos-release
           subpath: ./macos-release/
+      - run:
+          name: Patch develop-mac.yml
+          command: ./scripts/patch_updater_yml.sh develop-mac
       - run:
           name: Get rename without brew as it might fail
           command: curl -L https://github.com/ap/rename/archive/v1.601.tar.gz --output rename.tgz
