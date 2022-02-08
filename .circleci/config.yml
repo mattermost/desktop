@@ -73,7 +73,7 @@ commands:
     steps:
       - run: wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | apt-key add -
       - run: apt-get update || true && apt-get install -y ca-certificates libxtst-dev libpng++-dev && apt-get update && apt-get -y install << parameters.apt_opts >>
-
+      - run: wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
   update_image:
     description: "Update image"
     parameters:
@@ -164,7 +164,7 @@ jobs:
       - attach_workspace:
           at: ./build
       - update_image:
-          apt_opts: "--no-install-recommends jq yq icnsutils graphicsmagick tzdata"
+          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
       - build
       - run:
           name: Patch develop-linux.yml
