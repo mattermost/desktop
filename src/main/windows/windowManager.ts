@@ -542,7 +542,7 @@ export class WindowManager {
 
     handleBrowserHistoryPush = (e: IpcMainEvent, viewName: string, pathName: string) => {
         const currentView = this.viewManager?.views.get(viewName);
-        const cleanedPathName = pathName.replace(currentView?.tab.server.url.pathname || '', '');
+        const cleanedPathName = currentView?.tab.server.url.pathname === '/' ? pathName : pathName.replace(currentView?.tab.server.url.pathname || '', '');
         const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${cleanedPathName}`, Config.teams)?.name || viewName;
         if (this.viewManager?.closedViews.has(redirectedViewName)) {
             this.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${cleanedPathName}`);
