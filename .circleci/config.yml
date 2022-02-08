@@ -232,7 +232,7 @@ jobs:
       - run:
           name: Update node to v16
           command: choco install nodejs --version 16.8.0
-      - runL
+      - run:
           name: Install yq
           command: choco install yq
       - win_make:
