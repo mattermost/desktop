@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -e
 
-CHANNEL="${1}"
-temp_file="$(mktemp -t ${CHANNEL}XXX.yml)"
-VERSION="$(jq -r '.version' <package.json)" yq eval -i '.files[].url |= strenv(VERSION) + "/" + .' ./release/${CHANNEL}.yml
+ARCH="${1}"
+VERSION="$(jq -r '.version' <package.json)"
+STABLE_VERSION="$(./node_modules/.bin/semver $VERSION -c)"
+RELEASE_VERSION="${VERSION/$STABLE_VERSION/}"
+RELEASE_VERSION="${RELEASE_VERSION/-/}"
+RELEASE_VERSION="${RELEASE_VERSION%.*}"
+
+if ["$RELEASE_VERSION" == ""]; then
+    RELEASE_VERSION="latest"
+fi
+
+echo "${RELEASE_VERSION}"
+VERSION=$VERSION yq eval -i '.files[].url |= strenv(VERSION) + "/" + .' ./release/${RELEASE_VERSION}${1}.yml

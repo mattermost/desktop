@@ -167,11 +167,11 @@ jobs:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
       - build
       - run:
-          name: Patch develop-linux.yml
-          command: bash -x ./scripts/patch_updater_yml.sh develop-linux
+          name: Patch -linux.yml
+          command: bash -x ./scripts/patch_updater_yml.sh -linux
       - run:
-          name: Patch develop-linux-ia32.yml
-          command: bash -x ./scripts/patch_updater_yml.sh develop-linux-ia32
+          name: Patch -linux-ia32.yml
+          command: bash -x ./scripts/patch_updater_yml.sh -linux-ia32
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -242,8 +242,8 @@ jobs:
       - win_make:
           operation: "build"
       - run:
-          name: Patch develop.yml
-          command: bash -x ./scripts/patch_updater_yml.sh develop
+          name: Patch -.yml
+          command: bash -x ./scripts/patch_updater_yml.sh
       - run: mkdir -p ./build/win-release
       - run: cp -r release/*.zip ./build/win-release
       - run: cp -r release/*.msi ./build/win-release
@@ -351,8 +351,8 @@ jobs:
           path: ./build/macos-release
           subpath: ./macos-release/
       - run:
-          name: Patch develop-mac.yml
-          command: bash -x ./scripts/patch_updater_yml.sh develop-mac
+          name: Patch -mac.yml
+          command: bash -x ./scripts/patch_updater_yml.sh -mac
       - run:
           name: Get rename without brew as it might fail
           command: curl -L https://github.com/ap/rename/archive/v1.601.tar.gz --output rename.tgz
