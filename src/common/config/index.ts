@@ -67,6 +67,9 @@ export class Config extends EventEmitter {
                 this.canUpgradeValue = !error && __CAN_UPGRADE__; // prevent showing the option if the path is not writeable, like in a managed environment.
             });
         } else {
+            // eslint-disable-next-line no-undef
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
             this.canUpgradeValue = __CAN_UPGRADE__;
         }
         this.registryConfig = new RegistryConfig();
