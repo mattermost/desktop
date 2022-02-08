@@ -168,10 +168,10 @@ jobs:
       - build
       - run:
           name: Patch develop-linux.yml
-          command: ./scripts/patch_updater_yml.sh develop-linux
+          command: bash -x ./scripts/patch_updater_yml.sh develop-linux
       - run:
           name: Patch develop-linux-ia32.yml
-          command: ./scripts/patch_updater_yml.sh develop-linux-ia32
+          command: bash -x ./scripts/patch_updater_yml.sh develop-linux-ia32
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -243,7 +243,7 @@ jobs:
           operation: "build"
       - run:
           name: Patch develop.yml
-          command: ./scripts/patch_updater_yml.sh develop
+          command: bash -x ./scripts/patch_updater_yml.sh develop
       - run: mkdir -p ./build/win-release
       - run: cp -r release/*.zip ./build/win-release
       - run: cp -r release/*.msi ./build/win-release
@@ -352,7 +352,7 @@ jobs:
           subpath: ./macos-release/
       - run:
           name: Patch develop-mac.yml
-          command: ./scripts/patch_updater_yml.sh develop-mac
+          command: bash -x ./scripts/patch_updater_yml.sh develop-mac
       - run:
           name: Get rename without brew as it might fail
           command: curl -L https://github.com/ap/rename/archive/v1.601.tar.gz --output rename.tgz
