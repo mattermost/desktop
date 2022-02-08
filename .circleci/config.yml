@@ -147,11 +147,11 @@ jobs:
           command: npm run test:docker
           environment:
             MMCTL_PATH: ./mmctl
-      #- run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run npm run test
-      #- run: mkdir -p /tmp/test-results
-      #- run: cp test-results.xml /tmp/test-results/
-      #- store_test_results:
-      #    path: /tmp/test-results
+      - run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run npm run test
+      - run: mkdir -p /tmp/test-results
+      - run: cp test-results.xml /tmp/test-results/
+      - store_test_results:
+         path: /tmp/test-results
       - save_cache:
           key: lint-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -430,7 +430,7 @@ jobs:
             cp --backup=numbered ./build/{macos-release,win-release,linux}/* ./aws-s3-dist
       - aws-s3/copy:
           from: ./aws-s3-dist/
-          to: s3://releases.mattermost.com/desktop/$(jq -r .version package.json)/
+          to: s3://releases.mattermost.com/desktop/
           arguments: --acl public-read --cache-control "no-cache" --recursive
 
   upload_to_s3_daily:
@@ -456,22 +456,6 @@ jobs:
       - aws-s3/copy:
           from: ./build/
           to: s3://mattermost-desktop-daily-builds/
-          arguments: --acl public-read --cache-control "no-cache" --recursive
-
-  upload_to_s3_develop:
-    executor: aws
-    steps:
-      - checkout
-      - attach_workspace:
-          at: ./build
-      - run:
-          name: "Setup files for aws-s3"
-          command: |
-            mkdir -p ./aws-s3-dist
-            cp -r --backup=numbered ./build/{macos-release,linux}/* ./aws-s3-dist
-      - aws-s3/copy:
-          from: ./aws-s3-dist/
-          to: s3://desktop-test-autoupdater-deploy/
           arguments: --acl public-read --cache-control "no-cache" --recursive
 
   upload_to_github:
@@ -581,7 +565,7 @@ workflows:
                 # only for release and release candidates
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
-                # - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - mac_installer:
           requires:
@@ -590,7 +574,7 @@ workflows:
           filters:
             branches:
               only:
-                # - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - store_artifacts:
           # for master/PR builds
@@ -616,12 +600,6 @@ workflows:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-
-      - upload_to_s3_develop: 
-          requires:
-            - mac_installer
-            - build-linux
-          context: desktop-test-autoupdater-deploy
 
       - upload_to_github:
           requires:
