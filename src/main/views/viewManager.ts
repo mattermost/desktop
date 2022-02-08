@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import log from 'electron-log';
-import {BrowserView, BrowserWindow, dialog, ipcMain} from 'electron';
+import {BrowserView, BrowserWindow, dialog, ipcMain, IpcMainEvent} from 'electron';
 import {BrowserViewConstructorOptions} from 'electron/main';
 
 import {Tab, TeamWithTabs} from 'types/config';
@@ -18,6 +18,7 @@ import {
     OPEN_TAB,
     BROWSER_HISTORY_PUSH,
     UPDATE_LAST_ACTIVE,
+    UPDATE_URL_VIEW_WIDTH,
 } from 'common/communication';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
@@ -289,9 +290,11 @@ export class ViewManager {
         }
         if (url && url !== '') {
             const urlString = typeof url === 'string' ? url : url.toString();
+            const preload = getLocalPreload('urlView.js');
             const urlView = new BrowserView({
                 webPreferences: {
                     nativeWindowOpen: true,
+                    preload,
 
                     // Workaround for this issue: https://github.com/electron/electron/issues/30993
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -303,12 +306,6 @@ export class ViewManager {
             urlView.webContents.loadURL(localURL);
             this.mainWindow.addBrowserView(urlView);
             const boundaries = this.mainWindow.getBounds();
-            urlView.setBounds({
-                x: 0,
-                y: boundaries.height - URL_VIEW_HEIGHT,
-                width: boundaries.width,
-                height: URL_VIEW_HEIGHT,
-            });
 
             const hideView = () => {
                 delete this.urlViewCancel;
@@ -321,11 +318,23 @@ export class ViewManager {
                 urlView.webContents.destroy();
             };
 
+            const adjustWidth = (event: IpcMainEvent, width: number) => {
+                urlView.setBounds({
+                    x: 0,
+                    y: boundaries.height - URL_VIEW_HEIGHT,
+                    width: width + 5, // add some padding to ensure that we don't cut off the border
+                    height: URL_VIEW_HEIGHT,
+                });
+            };
+
+            ipcMain.on(UPDATE_URL_VIEW_WIDTH, adjustWidth);
+
             const timeout = setTimeout(hideView,
                 URL_VIEW_DURATION);
 
             this.urlViewCancel = () => {
                 clearTimeout(timeout);
+                ipcMain.removeListener(UPDATE_URL_VIEW_WIDTH, adjustWidth);
                 hideView();
             };
         }
