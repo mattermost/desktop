@@ -276,7 +276,7 @@ jobs:
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - run: brew install jq
+      - run: brew install yq
       - run:
           name: Update node to v16
           command: brew upgrade node || true
