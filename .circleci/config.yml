@@ -266,7 +266,7 @@ jobs:
             - "~/.cache/electron"
             - "~/.cache/electron-builder"
       - save:
-          filename: "*.exe"
+          filename: "$(jq -r .version package.json)/*.exe"
 
   build-mac-pr:
     executor: mac
@@ -276,6 +276,7 @@ jobs:
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
+      - run: brew install jq
       - run:
           name: Update node to v16
           command: brew upgrade node || true
@@ -300,7 +301,7 @@ jobs:
           paths:
             - "./macos-release/"
       - save:
-          filename: "*.dmg"
+          filename: "$(jq -r .version package.json)/*.dmg"
 
   build-linux-pr:
     executor: wine-mono
@@ -319,7 +320,7 @@ jobs:
             - "~/.cache/electron"
             - "~/.cache/electron-builder"
       - save:
-          filename: "*.tar.gz"
+          filename: "$(jq -r .version package.json)/*.tar.gz"
 
   mac_installer:
     executor: mac
