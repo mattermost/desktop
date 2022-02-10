@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -e
 
 # Variables
 REPO_DIR=$1
@@ -25,6 +25,16 @@ case $RELEASE_VERSION in
         REPO_VERSION="stable"
         ;;
 esac
+
+if [ -z "$REPO_VERSION" ]; then
+    echo "Incompatible version, exiting"
+    exit 0
+fi
+
+if [ -z "${!PGP_KEY}" ]; then
+    echo "Missing PGP key, exiting"
+    exit 0
+fi
 
 # Functions
 function do_hash {
