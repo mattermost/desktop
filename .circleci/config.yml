@@ -167,6 +167,9 @@ jobs:
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
       - build
+      - run:
+          name: Generate deb repo
+          command: ./scripts/generate_deb_repo.sh ./build/linux DEB_PRIVATE_KEY
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -532,6 +535,7 @@ workflows:
       - build-linux:
           requires:
             - check
+          context: linux-repo-generation
           filters:
             branches:
               ignore:
