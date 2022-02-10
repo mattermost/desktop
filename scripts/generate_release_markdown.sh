@@ -42,8 +42,8 @@ $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-ia32.tar.gz")
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-x64.tar.gz")
 
 #### Linux (Unofficial) - deb files
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-i386.deb")
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-amd64.deb")
+$(print_link "${BASE_URL}/mattermost-desktop_${VERSION}-1_i386.deb")
+$(print_link "${BASE_URL}/mattermost-desktop_${VERSION}-1_amd64.deb")
 
 #### Linux (Unofficial) - rpm files (beta)
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-i386.rpm")

@@ -64,6 +64,7 @@ fi
 if [[ -f "${SRC}"/mattermost-desktop-${VERSION}-linux-x64.tar.gz ]]; then
     echo -e "Copying linux\n"
     cp "${SRC}"/mattermost-desktop-*-linux-* "${DEST}/"
+    cp "${SRC}"/mattermost-desktop_"${VERSION}"-1_*.deb "${DEST}/"
     SOMETHING_COPIED=$((SOMETHING_COPIED + 64))
 fi
 
