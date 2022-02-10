@@ -170,6 +170,10 @@ jobs:
       - run:
           name: Generate deb repo
           command: ./scripts/generate_deb_repo.sh ./build/linux DEB_PRIVATE_KEY
+      - persist_to_workspace:
+          root: ./build/
+          paths:
+            - "./linux/"
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
