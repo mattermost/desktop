@@ -242,7 +242,7 @@ describe('menu/view', function desc() {
 
             const allWindowsDialogEventListener = windowsDialogEventPromises(this.app, MaxDialogEventWaitTime);
             await asyncSleep(DelayBetweenInputs);
-            robot.typeStringDelayed('alert ( window?.location?.href )', CharPerMin);
+            robot.typeStringDelayed('alert (window?.location?.href)', CharPerMin);
             await asyncSleep(DelayBetweenInputs);
             robotKeyTaps(1, 'enter');
 
@@ -281,7 +281,7 @@ describe('menu/view', function desc() {
 
             const allWindowsDialogEventListener = windowsDialogEventPromises(this.app, MaxDialogEventWaitTime);
             await asyncSleep(DelayBetweenInputs);
-            robot.typeStringDelayed('alert ( window?.location?.href )', CharPerMin);
+            robot.typeStringDelayed('alert (window?.location?.href)', CharPerMin);
             await asyncSleep(DelayBetweenInputs);
             robotKeyTaps(1, 'enter');
 
@@ -319,7 +319,7 @@ describe('menu/view', function desc() {
 
             const allWindowsDialogEventListener = windowsDialogEventPromises(this.app, MaxDialogEventWaitTime);
             await asyncSleep(DelayBetweenInputs);
-            robot.typeStringDelayed('alert ( window?.location?.href )', CharPerMin);
+            robot.typeStringDelayed('alert (window?.location?.href)', CharPerMin);
             await asyncSleep(DelayBetweenInputs);
             robotKeyTaps(1, 'enter');
 
