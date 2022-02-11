@@ -80,7 +80,8 @@
       "**/src/**/*.test.js"
     ],
     "globals": {
-      "__HASH_VERSION__": "5.0.0"
+      "__HASH_VERSION__": "5.0.0",
+      "__CAN_UPGRADE__": false
     },
     "setupFiles": [
       "./src/jestSetup.js"
