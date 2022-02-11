@@ -571,10 +571,10 @@ workflows:
           requires:
             - check
           context: codesign-certificates
-          filters:
-            branches:
-              only:
-                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+          # filters:
+          #   branches:
+          #     only:
+          #       - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - store_artifacts:
           # for master/PR builds
