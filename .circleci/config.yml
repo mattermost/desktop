@@ -167,6 +167,13 @@ jobs:
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
       - build
+      - run:
+          name: Generate deb repo
+          command: ./scripts/generate_deb_repo.sh ./build/linux DEB_PRIVATE_KEY
+      - persist_to_workspace:
+          root: ./build/
+          paths:
+            - "./linux/"
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -266,7 +273,7 @@ jobs:
             - "~/.cache/electron"
             - "~/.cache/electron-builder"
       - save:
-          filename: "*.exe"
+          filename: "$(jq -r .version package.json)/*.exe"
 
   build-mac-pr:
     executor: mac
@@ -276,6 +283,7 @@ jobs:
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
+      - run: brew install yq
       - run:
           name: Update node to v16
           command: brew upgrade node || true
@@ -300,7 +308,7 @@ jobs:
           paths:
             - "./macos-release/"
       - save:
-          filename: "*.dmg"
+          filename: "$(jq -r .version package.json)/*.dmg"
 
   build-linux-pr:
     executor: wine-mono
@@ -319,7 +327,7 @@ jobs:
             - "~/.cache/electron"
             - "~/.cache/electron-builder"
       - save:
-          filename: "*.tar.gz"
+          filename: "$(jq -r .version package.json)/*.tar.gz"
 
   mac_installer:
     executor: mac
@@ -532,6 +540,7 @@ workflows:
       - build-linux:
           requires:
             - check
+          context: linux-repo-generation
           filters:
             branches:
               ignore:
