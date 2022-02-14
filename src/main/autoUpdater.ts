@@ -96,9 +96,7 @@ export class UpdateManager {
 
     notifyDownloaded = (): void => {
         WindowManager.sendToRenderer(UPDATE_DOWNLOADED, this.versionDownloaded);
-        displayRestartToUpgrade(this.versionDownloaded || '', () => {
-            autoUpdater.quitAndInstall();
-        });
+        displayRestartToUpgrade(this.versionDownloaded || 'unknown', this.handleUpdate);
     }
 
     handleDownload = (): void => {
