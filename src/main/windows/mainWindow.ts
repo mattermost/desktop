@@ -43,7 +43,7 @@ function isFramelessWindow() {
     return os.platform() === 'darwin' || (os.platform() === 'win32' && Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2'));
 }
 
-function createMainWindow(options: {linuxAppIcon: string}) {
+function createMainWindow(options: {linuxAppIcon: string; fullscreen: boolean}) {
     // Create the browser window.
     const preload = getLocalPreload('mainWindow.js');
     let savedWindowState;
@@ -73,7 +73,7 @@ function createMainWindow(options: {linuxAppIcon: string}) {
         if (Config.startInFullscreen) {
             return Config.startInFullscreen;
         }
-        return savedWindowStateFullscreen ?? false;
+        return savedWindowStateFullscreen ?? undefined;
     };
 
     const windowOptions: BrowserWindowConstructorOptions = Object.assign({}, savedWindowState, {
@@ -84,7 +84,7 @@ function createMainWindow(options: {linuxAppIcon: string}) {
         minWidth: MINIMUM_WINDOW_WIDTH,
         minHeight: MINIMUM_WINDOW_HEIGHT,
         frame: !isFramelessWindow(),
-        fullscreen: isFullScreen(savedWindowState?.fullscreen),
+        fullscreen: isFullScreen(options.fullscreen ?? savedWindowState.fullscreen),
         titleBarStyle: 'hidden' as const,
         trafficLightPosition: {x: 12, y: 12},
         backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do

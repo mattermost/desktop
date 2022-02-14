@@ -114,7 +114,14 @@ describe('main/windows/mainWindow', () => {
                 width: 1280,
                 height: 700,
                 maximized: false,
-                fullscreen: Config.startInFullscreen,
+                fullscreen: false,
+            }));
+        });
+
+        it('should open in fullscreen if fullscreen set to true', () => {
+            createMainWindow({fullscreen: true});
+            expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
+                fullscreen: true,
             }));
         });
 
