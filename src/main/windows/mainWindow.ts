@@ -43,7 +43,7 @@ function isFramelessWindow() {
     return os.platform() === 'darwin' || (os.platform() === 'win32' && Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2'));
 }
 
-function createMainWindow(options: {linuxAppIcon: string; fullscreen: boolean}) {
+function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean}) {
     // Create the browser window.
     const preload = getLocalPreload('mainWindow.js');
     let savedWindowState;
