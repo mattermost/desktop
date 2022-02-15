@@ -189,7 +189,6 @@ function initializeBeforeAppReady() {
     TrustedOriginsStore.load();
 
     // prevent using a different working directory, which happens on windows running after installation.
-    log.info('debugging mac app path', process.execPath, app.getAppPath(), process.cwd());
     const expectedPath = path.dirname(process.execPath);
     if (process.cwd() !== expectedPath && !isDev) {
         log.warn(`Current working directory is ${process.cwd()}, changing into ${expectedPath}`);

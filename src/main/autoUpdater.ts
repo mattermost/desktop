@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import fs from 'fs';
+
 import path from 'path';
 
 import {dialog, ipcMain, app, nativeImage} from 'electron';
@@ -8,6 +10,7 @@ import log from 'electron-log';
 
 import {autoUpdater, UpdateInfo} from 'electron-updater';
 
+import {autoUpdateSettingsPath} from 'main/constants';
 import {displayUpgrade, displayRestartToUpgrade} from 'main/notifications';
 
 import {CANCEL_UPGRADE, UPDATE_AVAILABLE, UPDATE_DOWNLOADED, CHECK_FOR_UPDATES, UPDATE_SHORTCUT_MENU} from 'common/communication';
@@ -138,8 +141,12 @@ export class UpdateManager {
         }).then(({response}) => {
             if (response === 0) {
                 autoUpdater.quitAndInstall();
-                if (process.platform === 'darwin' && !global.willAppQuit) {
-                    app.quit();
+                if (process.platform === 'darwin') {
+                    // Save app path so the app knows what to try and un-quarantine
+                    fs.writeFileSync(autoUpdateSettingsPath, JSON.stringify({currentAppPath: path.join(app.getAppPath(), '../../../')}));
+                    if (!global.willAppQuit) {
+                        app.quit();
+                    }
                 }
             }
         });

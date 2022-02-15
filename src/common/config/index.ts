@@ -2,6 +2,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import fs from 'fs';
+import {exec} from 'child_process';
 
 import os from 'os';
 import path from 'path';
@@ -22,7 +23,7 @@ import {
 
 import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION, UPDATE_PATHS} from 'common/communication';
 
-import {configPath} from 'main/constants';
+import {configPath, autoUpdateSettingsPath} from 'main/constants';
 import * as Validator from 'main/Validator';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 import Utils from 'common/utils/util';
@@ -58,6 +59,29 @@ export class Config extends EventEmitter {
         if (process.platform === 'win32' || process.platform === 'darwin') {
             fs.access(path.dirname(app.getAppPath()), fs.constants.W_OK, (error) => {
                 if (error) {
+                    if (process.platform === 'darwin') {
+                        try {
+                            const autoUpdateSettings = JSON.parse(fs.readFileSync(autoUpdateSettingsPath, 'utf-8'));
+                            log.info('attempt to break quarantine in mac app after update', autoUpdateSettings.currentAppPath);
+
+                            if (Utils.getChecksumFromFile(`${autoUpdateSettings.currentAppPath}/Contents/MacOS/Mattermost`) !==
+                            Utils.getChecksumFromFile(path.join(path.dirname(app.getAppPath()), '../MacOS/Mattermost'))) {
+                                throw new Error('Bad checksum, attempting to load different program');
+                            }
+
+                            exec(`xattr -dr com.apple.quarantine ${autoUpdateSettings.currentAppPath}`, (error) => {
+                                fs.unlinkSync(autoUpdateSettingsPath);
+                                if (error) {
+                                    log.error('Error trying to break quarantine', error);
+                                } else {
+                                    app.relaunch({execPath: `${autoUpdateSettings.currentAppPath}/Contents/MacOS/Mattermost`});
+                                    app.quit();
+                                }
+                            });
+                        } catch (err) {
+                            log.error('Failed trying to break quarantine', err);
+                        }
+                    }
                     log.info(`${app.getAppPath()}: ${error}`);
                     log.warn('autoupgrade disabled');
                 }
