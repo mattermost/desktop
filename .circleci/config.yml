@@ -73,7 +73,7 @@ commands:
     steps:
       - run: wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | apt-key add -
       - run: apt-get update || true && apt-get install -y ca-certificates libxtst-dev libpng++-dev && apt-get update && apt-get -y install << parameters.apt_opts >>
-      - run: wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
+      - run: wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
   update_image:
     description: "Update image"
     parameters:
@@ -236,7 +236,7 @@ jobs:
           command: choco install nodejs --version 16.8.0
       - run:
           name: Install yq
-          command: choco install yq
+          command: choco install yq --version 4.15.1
       - win_make:
           operation: optimize
       - win_make:
@@ -283,7 +283,7 @@ jobs:
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - run: brew install yq
+      - run: brew install yq@4.19.1
       - run:
           name: Update node to v16
           command: brew upgrade node || true
@@ -342,7 +342,7 @@ jobs:
           command: brew upgrade node || true
       - run:
           name: Install yq
-          command: brew install yq
+          command: brew install yq@4.19.1
       - run:
           name: Installing npm dependencies
           command: npm ci
