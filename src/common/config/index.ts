@@ -69,7 +69,7 @@ export class Config extends EventEmitter {
                                 throw new Error('Bad checksum, attempting to load different program');
                             }
 
-                            exec(`xattr -dr com.apple.quarantine ${autoUpdateSettings.currentAppPath}`, (error) => {
+                            exec(`xattr -dr com.apple.quarantine "${autoUpdateSettings.currentAppPath}"`, (error) => {
                                 fs.unlinkSync(autoUpdateSettingsPath);
                                 if (error) {
                                     log.error('Error trying to break quarantine', error);
