@@ -341,8 +341,8 @@ jobs:
           name: Update node to v16
           command: brew upgrade node || true
       - run:
-          name: Install yq
-          command: brew install yq@4.19.1
+          name: Install yq v4.20.1
+          command: brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/152dd30e090fae93dbcfde0f716de04111202896/Formula/yq.rb
       - run:
           name: Installing npm dependencies
           command: npm ci
