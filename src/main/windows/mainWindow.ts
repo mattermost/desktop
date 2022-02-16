@@ -150,7 +150,7 @@ function createMainWindow(options: {linuxAppIcon: string}) {
                     } else {
                         dialog.showMessageBox(mainWindow, {
                             title: 'Minimize to Tray',
-                            message: 'Upon closing the Mattermost window, the application will continue to run in the system tray. You can disable this behaviour in the Settings window.',
+                            message: 'Upon closing the Mattermost window, it will continue to run in the system tray. This can be disabled in the Settings.',
                             type: 'info',
                             checkboxChecked: true,
                             checkboxLabel: 'Don\'t show again',
@@ -164,8 +164,8 @@ function createMainWindow(options: {linuxAppIcon: string}) {
                 } else {
                     dialog.showMessageBox(mainWindow, {
                         title: 'Close Application',
-                        message: 'Upon closing the Mattermost window, the application will close and you will no longer receive notifications for messages. If you wish to minimize to the system tray, you can enable the behaviour in the Settings window.',
-                        detail: 'Are you sure you would like to close Mattermost?',
+                        message: 'Are you sure you would like to close Mattermost?',
+                        detail: 'You will no longer receive notifications for messages. If you wish to minimize to the system tray instead, you can enable this in the Settings.',
                         type: 'question',
                         buttons: ['Yes', 'No'],
                         checkboxChecked: true,
