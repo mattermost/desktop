@@ -2,7 +2,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import fs from 'fs';
-import {exec} from 'child_process';
+import {spawn} from 'child_process';
 
 import os from 'os';
 import path from 'path';
@@ -69,9 +69,10 @@ export class Config extends EventEmitter {
                                 throw new Error('Bad checksum, attempting to load different program');
                             }
 
-                            exec(`xattr -dr com.apple.quarantine "${autoUpdateSettings.currentAppPath}"`, (error) => {
+                            const xattr = spawn('xattr', ['-dr', 'com.apple.quarantine', autoUpdateSettings.currentAppPath]);
+                            xattr.on('close', (code) => {
                                 fs.unlinkSync(autoUpdateSettingsPath);
-                                if (error) {
+                                if (code) {
                                     log.error('Error trying to break quarantine', error);
                                 } else {
                                     app.relaunch({execPath: `${autoUpdateSettings.currentAppPath}/Contents/MacOS/Mattermost`});
