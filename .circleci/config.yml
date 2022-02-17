@@ -283,7 +283,7 @@ jobs:
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - run: brew install yq@4.19.1
+      - run: brew install yq
       - run:
           name: Update node to v16
           command: brew upgrade node || true
