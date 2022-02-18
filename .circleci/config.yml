@@ -639,7 +639,7 @@ workflows:
   nightly_browser_view:
     when: << pipeline.parameters.run_nightly >>
     jobs:
-      - build-linux
+      - build-linux:
           context: linux-repo-generation
       - build-win-no-installer:
           context: electron-installer
