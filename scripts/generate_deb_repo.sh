@@ -18,7 +18,7 @@ case $RELEASE_VERSION in
     "rc")
         REPO_VERSION="testing"
         ;;
-    "develop")
+    "nightly")
         REPO_VERSION="unstable"
         ;;
     "")

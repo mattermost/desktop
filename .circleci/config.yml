@@ -448,21 +448,12 @@ jobs:
       - attach_workspace:
           at: ./build
       - run:
-          name: "install renaming utility"
+          name: "Setup files for aws-s3"
           command: |
-            sudo apt-get install rename
-      - run:
-          name: "Normalize folder names"
-          command: |
-            mv ./build/macos-release ./build/macos
-      - run:
-          name: "Rename to daily for consistency"
-          command: |
-            rename 's/\d+\.\d+\.\d+/daily/' ./build/macos/*
-            rename 's/\d+\.\d+\.\d+/daily/' ./build/linux/*
-            rename 's/\d+\.\d+\.\d+/daily/' ./build/win/*
+            mkdir -p ./aws-s3-dist
+            cp -r --backup=numbered ./build/{macos-release,win,linux}/* ./aws-s3-dist
       - aws-s3/copy:
-          from: ./build/
+          from: ./aws-s3-dist/
           to: s3://mattermost-desktop-daily-builds/
           arguments: --acl public-read --cache-control "no-cache" --recursive
 
@@ -648,7 +639,8 @@ workflows:
   nightly_browser_view:
     when: << pipeline.parameters.run_nightly >>
     jobs:
-      - build-linux
+      - build-linux:
+          context: linux-repo-generation
       - build-win-no-installer:
           context: electron-installer
       - mac_installer:
