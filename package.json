@@ -171,6 +171,7 @@
     "electron-log": "^4.4.1",
     "electron-updater": "5.0.0-alpha.2",
     "font-awesome": "^4.7.0",
+    "pretty-bytes": "^6.0.0",
     "prop-types": "^15.6.2",
     "react": "^16.14.0",
     "react-beautiful-dnd": "^13.1.0",

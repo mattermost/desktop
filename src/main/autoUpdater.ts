@@ -8,12 +8,12 @@ import path from 'path';
 import {dialog, ipcMain, app, nativeImage} from 'electron';
 import log from 'electron-log';
 
-import {autoUpdater, UpdateInfo} from 'electron-updater';
+import {autoUpdater, ProgressInfo, UpdateInfo} from 'electron-updater';
 
 import {autoUpdateSettingsPath} from 'main/constants';
 import {displayUpgrade, displayRestartToUpgrade} from 'main/notifications';
 
-import {CANCEL_UPGRADE, UPDATE_AVAILABLE, UPDATE_DOWNLOADED, CHECK_FOR_UPDATES, UPDATE_SHORTCUT_MENU} from 'common/communication';
+import {CANCEL_UPGRADE, UPDATE_AVAILABLE, UPDATE_DOWNLOADED, CHECK_FOR_UPDATES, UPDATE_SHORTCUT_MENU, UPDATE_PROGRESS} from 'common/communication';
 import Config from 'common/config';
 
 import WindowManager from './windows/windowManager';
@@ -69,6 +69,10 @@ export class UpdateManager {
             ipcMain.emit(UPDATE_SHORTCUT_MENU);
             log.info(`[Mattermost] downloaded version ${info.version}`);
             this.notifyDownloaded();
+        });
+
+        autoUpdater.on('download-progress', (progress: ProgressInfo) => {
+            WindowManager.sendToRenderer(UPDATE_PROGRESS, progress.total, progress.delta, progress.transferred, progress.percent, progress.bytesPerSecond);
         });
 
         ipcMain.on(CANCEL_UPGRADE, () => {

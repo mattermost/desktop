@@ -8,6 +8,7 @@ import {Container, Row} from 'react-bootstrap';
 import {DropResult} from 'react-beautiful-dnd';
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 import {IpcRendererEvent} from 'electron/renderer';
+import prettyBytes from 'pretty-bytes';
 
 import {TeamWithTabs} from 'types/config';
 
@@ -39,6 +40,7 @@ import {
     SWITCH_TAB,
     UPDATE_AVAILABLE,
     UPDATE_DOWNLOADED,
+    UPDATE_PROGRESS,
     START_UPGRADE,
     START_DOWNLOAD,
     CLOSE_TAB,
@@ -65,6 +67,13 @@ enum Status {
     NOSERVERS = -2,
 }
 
+enum UpgradeStatus {
+    NONE = 0,
+    AVAILABLE = 1,
+    DOWNLOADING = 2,
+    DOWNLOADED = 3,
+}
+
 type Props = {
     teams: TeamWithTabs[];
     lastActiveTeam?: number;
@@ -88,8 +97,14 @@ type State = {
     fullScreen?: boolean;
     showExtraBar?: boolean;
     isMenuOpen: boolean;
-    upgradeAvailable: boolean;
-    upgradeDownloaded: boolean;
+    upgradeStatus: UpgradeStatus;
+    upgradeProgress?: {
+        total: number;
+        delta: number;
+        transferred: number;
+        percent: number;
+        bytesPerSecond: number;
+    };
 };
 
 type TabViewStatus = {
@@ -127,8 +142,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
             tabViewStatus: new Map(this.props.teams.map((team) => team.tabs.map((tab) => getTabViewName(team.name, tab.name))).flat().map((tabViewName) => [tabViewName, {status: Status.LOADING}])),
             darkMode: this.props.darkMode,
             isMenuOpen: false,
-            upgradeAvailable: false,
-            upgradeDownloaded: false,
+            upgradeStatus: UpgradeStatus.NONE,
         };
     }
 
@@ -232,11 +246,24 @@ export default class MainPage extends React.PureComponent<Props, State> {
         });
 
         window.ipcRenderer.on(UPDATE_AVAILABLE, () => {
-            this.setState({upgradeAvailable: true});
+            this.setState({upgradeStatus: UpgradeStatus.AVAILABLE});
         });
 
         window.ipcRenderer.on(UPDATE_DOWNLOADED, () => {
-            this.setState({upgradeDownloaded: true, upgradeAvailable: false});
+            this.setState({upgradeStatus: UpgradeStatus.DOWNLOADED});
+        });
+
+        window.ipcRenderer.on(UPDATE_PROGRESS, (event, total, delta, transferred, percent, bytesPerSecond) => {
+            this.setState({
+                upgradeStatus: UpgradeStatus.DOWNLOADING,
+                upgradeProgress: {
+                    total,
+                    delta,
+                    transferred,
+                    percent,
+                    bytesPerSecond,
+                },
+            });
         });
 
         if (window.process.platform !== 'darwin') {
@@ -379,20 +406,44 @@ export default class MainPage extends React.PureComponent<Props, State> {
             );
         }
 
+        let upgradeTooltip;
+        switch (this.state.upgradeStatus) {
+        case UpgradeStatus.AVAILABLE:
+            upgradeTooltip = 'Update available';
+            break;
+        case UpgradeStatus.DOWNLOADED:
+            upgradeTooltip = 'Update ready to install';
+            break;
+        case UpgradeStatus.DOWNLOADING:
+            upgradeTooltip = `Downloading update. ${String(this.state.upgradeProgress?.percent).split('.')[0]}% of ${prettyBytes(this.state.upgradeProgress?.total || 0)} @ ${prettyBytes(this.state.upgradeProgress?.bytesPerSecond || 0)}/s`;
+            break;
+        }
+
         let upgradeIcon;
-        if (this.state.upgradeAvailable || this.state.upgradeDownloaded) {
+        if (this.state.upgradeStatus !== UpgradeStatus.NONE) {
             upgradeIcon = (
                 <span className={classNames('upgrade-btns', {darkMode: this.state.darkMode})}>
                     <div
-                        className='button upgrade-button'
+                        className={classNames('button upgrade-button', {
+                            rotate: this.state.upgradeStatus === UpgradeStatus.DOWNLOADING,
+                        })}
+                        title={upgradeTooltip}
                         onClick={() => {
-                            window.ipcRenderer.send(this.state.upgradeDownloaded ? START_UPGRADE : START_DOWNLOAD);
+                            if (this.state.upgradeStatus === UpgradeStatus.DOWNLOADING) {
+                                return;
+                            }
+
+                            window.ipcRenderer.send(this.state.upgradeStatus === UpgradeStatus.DOWNLOADED ? START_UPGRADE : START_DOWNLOAD);
                         }}
                     >
                         <i
-                            className={'icon-arrow-down-bold-circle-outline'}
+                            className={classNames({
+                                'icon-arrow-down-bold-circle-outline': this.state.upgradeStatus === UpgradeStatus.AVAILABLE,
+                                'icon-sync': this.state.upgradeStatus === UpgradeStatus.DOWNLOADING,
+                                'icon-arrow-up-bold-circle-outline': this.state.upgradeStatus === UpgradeStatus.DOWNLOADED,
+                            })}
                         />
-                        {this.state.upgradeAvailable && <div className={'circle'}/>}
+                        {(this.state.upgradeStatus !== UpgradeStatus.DOWNLOADING) && <div className={'circle'}/>}
                     </div>
                 </span>);
         }
