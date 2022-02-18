@@ -454,7 +454,7 @@ jobs:
             cp -r --backup=numbered ./build/{macos-release,win,linux}/* ./aws-s3-dist
       - aws-s3/copy:
           from: ./aws-s3-dist/
-          to: s3://desktop-test-autoupdater/
+          to: s3://mattermost-desktop-daily-builds/
           arguments: --acl public-read --cache-control "no-cache" --recursive
 
   upload_to_github:
@@ -653,7 +653,7 @@ workflows:
             - build-win-no-installer
             - mac_installer
       - upload_to_s3_daily:
-          context: desktop-test-autoupdater-deploy
+          context: mattermost-desktop-daily-s3
           requires:
             - build-linux
             - build-win-no-installer
