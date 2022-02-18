@@ -451,7 +451,7 @@ jobs:
           name: "Setup files for aws-s3"
           command: |
             mkdir -p ./aws-s3-dist
-            cp --backup=numbered ./build/{macos-release,win-release,linux}/* ./aws-s3-dist
+            cp -r --backup=numbered ./build/{macos-release,win,linux}/* ./aws-s3-dist
       - aws-s3/copy:
           from: ./aws-s3-dist/
           to: s3://desktop-test-autoupdater/
@@ -640,6 +640,7 @@ workflows:
     when: << pipeline.parameters.run_nightly >>
     jobs:
       - build-linux
+          context: linux-repo-generation
       - build-win-no-installer:
           context: electron-installer
       - mac_installer:
