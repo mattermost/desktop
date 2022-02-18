@@ -118,7 +118,6 @@ export class UpdateManager {
             type: 'info',
             defaultId: 0,
             cancelId: 1,
-            icon: appIcon,
         }).then(({response}) => {
             if (response === 0) {
                 autoUpdater.downloadUpdate();
@@ -141,7 +140,6 @@ export class UpdateManager {
             type: 'info',
             defaultId: 0,
             cancelId: 1,
-            icon: appIcon,
         }).then(({response}) => {
             if (response === 0) {
                 autoUpdater.quitAndInstall();
@@ -163,7 +161,6 @@ export class UpdateManager {
             message: 'You\'re up to date',
             type: 'info',
             buttons: ['OK'],
-            icon: appIcon,
             detail: `You are using the latest version of the Mattermost Desktop App (version ${version}). You'll be notified when a new version is available to install.`,
         });
     }

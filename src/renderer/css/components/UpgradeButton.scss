@@ -16,6 +16,7 @@
 .upgrade-button {
   margin: 7px;
   height: 18px;
+  cursor: pointer;
 
   > i::before {
     margin: 0;
@@ -24,6 +25,10 @@
 
 .rotate {
   animation: rotation 2s infinite linear;
+
+  > i::before {
+    transform: scaleX(-1);
+  }
 }
 
 @keyframes rotation {
