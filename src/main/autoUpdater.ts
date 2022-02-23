@@ -27,7 +27,7 @@ autoUpdater.autoDownload = false;
 autoUpdater.disableWebInstaller = true;
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
-const appIconURL = path.resolve(assetsDir, 'appicon_48.png');
+const appIconURL = path.resolve(assetsDir, 'appicon_large.png');
 const appIcon = nativeImage.createFromPath(appIconURL);
 
 /** to test this during development
@@ -114,6 +114,7 @@ export class UpdateManager {
             title: 'Mattermost',
             message: 'New desktop version available',
             detail: 'A new version of the Mattermost Desktop app is available for you to download and install now.',
+            icon: appIcon,
             buttons: ['Download', 'Remind me Later'],
             type: 'info',
             defaultId: 0,
@@ -136,6 +137,7 @@ export class UpdateManager {
             title: 'Mattermost',
             message: 'A new version is ready to install',
             detail: 'A new version of the Mattermost Desktop app is ready to install.',
+            icon: appIcon,
             buttons: ['Restart and Update', 'Remind me Later'],
             type: 'info',
             defaultId: 0,
@@ -158,6 +160,7 @@ export class UpdateManager {
         const version = app.getVersion();
         dialog.showMessageBox({
             title: 'Mattermost',
+            icon: appIcon,
             message: 'You\'re up to date',
             type: 'info',
             buttons: ['OK'],
