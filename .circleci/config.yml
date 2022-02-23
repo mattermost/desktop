@@ -556,16 +556,7 @@ workflows:
                 - /^build-pr-.*/
 
       - msi_installer:
-          requires:
-            - check
           context: windows-codesign
-          filters:
-            branches:
-              only:
-                # only for release and release candidates
-                # release-XX.YY.ZZ
-                # release-XX.YY.ZZ-rc-something
-                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - mac_installer:
           requires:
@@ -579,10 +570,7 @@ workflows:
       - store_artifacts:
           # for master/PR builds
           requires:
-            - build-linux
-            - build-win-no-installer
-            - build-mac-no-dmg
-            - mac_installer
+            - msi_installer
           filters:
             branches:
               ignore:
