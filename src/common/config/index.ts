@@ -2,7 +2,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import fs from 'fs';
-import {spawn} from 'child_process';
+import {spawnSync} from 'child_process';
 
 import os from 'os';
 import path from 'path';
@@ -38,6 +38,56 @@ import migrateConfigItems from './migrationPreferences';
  * Handles loading and merging all sources of configuration as well as saving user provided config
  */
 
+function checkWriteableApp() {
+    if (process.platform === 'win32' || process.platform === 'darwin') {
+        try {
+            fs.accessSync(path.join(path.dirname(app.getAppPath()), '../../'), fs.constants.W_OK);
+        } catch (error) {
+            if (process.platform === 'darwin') {
+                try {
+                    // Check for quarantine
+                    const quarantine = spawnSync('xattr', [path.join(path.dirname(app.getAppPath()), '../../')]);
+                    if (quarantine.error || `${quarantine.stdout}`.trim() !== 'com.apple.quarantine') {
+                        throw new Error('App not in quarantine, skipping quarantine check');
+                    }
+
+                    const autoUpdateSettings = JSON.parse(fs.readFileSync(autoUpdateSettingsPath, 'utf-8'));
+                    fs.unlinkSync(autoUpdateSettingsPath);
+                    log.info('attempt to break quarantine in mac app after update', autoUpdateSettings.currentAppPath);
+
+                    // Check to make sure binaries match
+                    if (Utils.getChecksumFromFile(`${autoUpdateSettings.currentAppPath}/Contents/MacOS/Mattermost`) !==
+                    Utils.getChecksumFromFile(path.join(path.dirname(app.getAppPath()), '../MacOS/Mattermost'))) {
+                        throw new Error('Bad checksum, attempting to load different program');
+                    }
+
+                    const xattr = spawnSync('xattr', ['-dr', 'com.apple.quarantine', autoUpdateSettings.currentAppPath]);
+                    if (xattr.error) {
+                        throw new Error(`Error trying to break quarantine: ${error}`);
+                    } else {
+                        app.relaunch({execPath: `${autoUpdateSettings.currentAppPath}/Contents/MacOS/Mattermost`});
+                        app.exit(0);
+                        return undefined;
+                    }
+                } catch (err) {
+                    log.error('Failed trying to break quarantine', err);
+                }
+            }
+            log.info(`${app.getAppPath()}: ${error}`);
+            log.warn('autoupgrade disabled');
+            return false;
+        }
+        // eslint-disable-next-line no-undef
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return __CAN_UPGRADE__; // prevent showing the option if the path is not writeable, like in a managed environment.
+    }
+
+    // eslint-disable-next-line no-undef
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return __CAN_UPGRADE__;
+}
 export class Config extends EventEmitter {
     configFilePath: string;
 
@@ -56,47 +106,7 @@ export class Config extends EventEmitter {
     constructor(configFilePath: string) {
         super();
         this.configFilePath = configFilePath;
-        if (process.platform === 'win32' || process.platform === 'darwin') {
-            fs.access(path.dirname(app.getAppPath()), fs.constants.W_OK, (error) => {
-                if (error) {
-                    if (process.platform === 'darwin') {
-                        try {
-                            const autoUpdateSettings = JSON.parse(fs.readFileSync(autoUpdateSettingsPath, 'utf-8'));
-                            log.info('attempt to break quarantine in mac app after update', autoUpdateSettings.currentAppPath);
-
-                            if (Utils.getChecksumFromFile(`${autoUpdateSettings.currentAppPath}/Contents/MacOS/Mattermost`) !==
-                            Utils.getChecksumFromFile(path.join(path.dirname(app.getAppPath()), '../MacOS/Mattermost'))) {
-                                throw new Error('Bad checksum, attempting to load different program');
-                            }
-
-                            const xattr = spawn('xattr', ['-dr', 'com.apple.quarantine', autoUpdateSettings.currentAppPath]);
-                            xattr.on('close', (code) => {
-                                fs.unlinkSync(autoUpdateSettingsPath);
-                                if (code) {
-                                    log.error('Error trying to break quarantine', error);
-                                } else {
-                                    app.relaunch({execPath: `${autoUpdateSettings.currentAppPath}/Contents/MacOS/Mattermost`});
-                                    app.quit();
-                                }
-                            });
-                        } catch (err) {
-                            log.error('Failed trying to break quarantine', err);
-                        }
-                    }
-                    log.info(`${app.getAppPath()}: ${error}`);
-                    log.warn('autoupgrade disabled');
-                }
-                // eslint-disable-next-line no-undef
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                this.canUpgradeValue = !error && __CAN_UPGRADE__; // prevent showing the option if the path is not writeable, like in a managed environment.
-            });
-        } else {
-            // eslint-disable-next-line no-undef
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            this.canUpgradeValue = __CAN_UPGRADE__;
-        }
+        this.canUpgradeValue = checkWriteableApp();
         this.registryConfig = new RegistryConfig();
         this.predefinedTeams = [];
         if (buildConfig.defaultTeams) {
