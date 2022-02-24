@@ -27,7 +27,7 @@ autoUpdater.autoDownload = false;
 autoUpdater.disableWebInstaller = true;
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
-const appIconURL = path.resolve(assetsDir, 'appicon_large.png');
+const appIconURL = path.resolve(assetsDir, 'appicon_with_spacing_32.png');
 const appIcon = nativeImage.createFromPath(appIconURL);
 
 /** to test this during development
