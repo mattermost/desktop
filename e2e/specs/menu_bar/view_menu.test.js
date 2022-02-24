@@ -235,6 +235,13 @@ describe('menu/view', function desc() {
 
             const isWindowTitleDevTools = windowTitle === 'DevTools';
             isWindowTitleDevTools.should.be.true;
+        });
+
+        it.skip('MM-T820 dev tools opened through keyboard shortcuts should point to index.html', async () => {
+            const macModifierKeys = ['command', 'alt'];
+            const winModifierKeys = ['shift', 'control'];
+
+            robotKeyTaps(1, 'i', process.platform === 'darwin' ? macModifierKeys : winModifierKeys);
 
             // check the url
             await asyncSleep(DevToolsLoadTime);
@@ -274,6 +281,22 @@ describe('menu/view', function desc() {
 
             const isWindowTitleDevTools = windowTitle === 'DevTools';
             isWindowTitleDevTools.should.be.true;
+        });
+
+        it.skip('MM-T820 dev tools opened through menu, should point to index.html', async () => {
+            if (process.platform === 'darwin') {
+                robotKeyTaps(1, 'f2', ['control']);
+                robotKeyTaps(3, 'right');
+                robotKeyTaps(1, 'enter');
+                robotKeyTaps(2, 'up');
+                robotKeyTaps(1, 'enter');
+            } else {
+                await clickThreeDotMenu(this.app);
+                robotKeyTaps(3, 'down');
+                robotKeyTaps(1, 'right');
+                robotKeyTaps(2, 'up');
+                robotKeyTaps(2, 'enter');
+            }
 
             // check the url
             await asyncSleep(DevToolsLoadTime);
@@ -312,7 +335,9 @@ describe('menu/view', function desc() {
 
             const isWindowTitleDevTools = windowTitle === 'DevTools';
             isWindowTitleDevTools.should.be.true;
+        });
 
+        it.skip('MM-T821 dev tools should point to localhost:8065 ', async () => {
             // check the url
             await asyncSleep(DevToolsLoadTimeBuffer);
             await openDevToolsConsoleTab();
