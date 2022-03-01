@@ -65,7 +65,7 @@ function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean})
     const {maximized: windowIsMaximized} = savedWindowState;
 
     const spellcheck = (typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker);
-    const isFullScreen = (savedWindowStateFullscreen: boolean | undefined) => {
+    const isFullScreen = () => {
         if (global?.args?.fullscreen !== undefined) {
             return global.args.fullscreen;
         }
@@ -73,7 +73,7 @@ function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean})
         if (Config.startInFullscreen) {
             return Config.startInFullscreen;
         }
-        return savedWindowStateFullscreen ?? undefined;
+        return options.fullscreen || savedWindowState.fullscreen || false
     };
 
     const windowOptions: BrowserWindowConstructorOptions = Object.assign({}, savedWindowState, {
