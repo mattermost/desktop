@@ -92,8 +92,7 @@
         "jest-junit",
         {
           "suiteName": "unit tests",
-          "outputDirectory": "reports/jest",
-          "outputName": "js-test-results.xml",
+          "outputName": "test-results.xml",
           "classNameTemplate": "{classname}-{title}",
           "titleTemplate": "{classname}-{title}",
           "ancestorSeparator": "> "

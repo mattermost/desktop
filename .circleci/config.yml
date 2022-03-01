@@ -145,6 +145,10 @@ jobs:
           environment:
             MMCTL_PATH: ./mmctl
       - run: ELECTRON_DISABLE_SANDBOX=1 npm run test:unit-ci
+      - run: mkdir -p /tmp/test-results
+      - run: cp test-results.xml /tmp/test-results/
+      - store_test_results:
+          path: /tmp/test-results
       - store_test_results:
           path: ./reports/jest
       - save_cache:
