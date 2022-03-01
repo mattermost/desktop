@@ -46,7 +46,7 @@ function isFramelessWindow() {
 function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean}) {
     // Create the browser window.
     const preload = getLocalPreload('mainWindow.js');
-    let savedWindowState;
+    let savedWindowState: any;
     try {
         savedWindowState = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));
         savedWindowState = Validator.validateBoundsInfo(savedWindowState);
@@ -73,7 +73,7 @@ function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean})
         if (Config.startInFullscreen) {
             return Config.startInFullscreen;
         }
-        return options.fullscreen || savedWindowState.fullscreen || false
+        return options.fullscreen || savedWindowState.fullscreen || false;
     };
 
     const windowOptions: BrowserWindowConstructorOptions = Object.assign({}, savedWindowState, {
