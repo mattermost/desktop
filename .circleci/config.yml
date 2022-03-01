@@ -139,11 +139,6 @@ jobs:
       - update_image:
           apt_opts: "--no-install-recommends"
       - run: npm run check-types
-      - run:
-          name: Setup MM Docker Image
-          command: npm run test:docker
-          environment:
-            MMCTL_PATH: ./mmctl
       - run: ELECTRON_DISABLE_SANDBOX=1 npm run test:unit-ci
       - run: mkdir -p /tmp/test-results
       - run: cp test-results.xml /tmp/test-results/
