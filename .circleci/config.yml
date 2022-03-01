@@ -149,8 +149,6 @@ jobs:
       - run: cp test-results.xml /tmp/test-results/
       - store_test_results:
           path: /tmp/test-results
-      - store_test_results:
-          path: ./reports/jest
       - save_cache:
           key: lint-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
