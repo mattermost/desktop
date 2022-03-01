@@ -149,13 +149,6 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
         ipcRenderer.send(BROWSER_HISTORY_BUTTON, viewName);
         break;
     }
-    default:
-        if (typeof type === 'undefined') {
-            console.log('ignoring message of undefined type:');
-            console.log(data);
-        } else {
-            console.log(`ignored message of type: ${type}`);
-        }
     }
 });
 

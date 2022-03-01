@@ -216,7 +216,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
     }
 
     handleChangeMinimizeToTray = () => {
-        const shouldMinimizeToTray = this.state.showTrayIcon && this.minimizeToTrayRef.current?.checked;
+        const shouldMinimizeToTray = (process.platform === 'win32' || this.state.showTrayIcon) && this.minimizeToTrayRef.current?.checked;
 
         window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'minimizeToTray', data: shouldMinimizeToTray});
         this.setState({
@@ -700,7 +700,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         type='checkbox'
                         id='inputMinimizeToTray'
                         ref={this.minimizeToTrayRef}
-                        disabled={!this.state.showTrayIcon}
+                        disabled={process.platform !== 'win32' && !this.state.showTrayIcon}
                         checked={this.state.minimizeToTray}
                         onChange={this.handleChangeMinimizeToTray}
                     />

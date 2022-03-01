@@ -62,13 +62,13 @@ export class MattermostView extends EventEmitter {
 
     currentFavicon?: string;
     hasBeenShown: boolean;
-    altTimeout?: number;
-    altLastPressed?: boolean;
     contextMenu: ContextMenu;
 
     status?: Status;
     retryLoad?: NodeJS.Timeout;
     maxRetries: number;
+
+    private altPressStatus: boolean;
 
     constructor(tab: TabView, serverInfo: ServerInfo, win: BrowserWindow, options: BrowserViewConstructorOptions) {
         super();
@@ -98,7 +98,6 @@ export class MattermostView extends EventEmitter {
         this.hasBeenShown = false;
 
         if (process.platform !== 'darwin') {
-            this.altLastPressed = false;
             this.view.webContents.on('before-input-event', this.handleInputEvents);
         }
 
@@ -118,6 +117,12 @@ export class MattermostView extends EventEmitter {
 
         this.contextMenu = new ContextMenu({}, this.view);
         this.maxRetries = MAX_SERVER_RETRIES;
+
+        this.altPressStatus = false;
+
+        this.window.on('blur', () => {
+            this.altPressStatus = false;
+        });
     }
 
     // use the same name as the server
@@ -288,24 +293,27 @@ export class MattermostView extends EventEmitter {
         return this.view.webContents;
     }
 
-    handleInputEvents = (_: Event, input: Input) => {
-        // Handler for pressing the Alt key to focus the 3-dot menu
-        if (input.key === 'Alt' && input.type === 'keyUp' && this.altLastPressed) {
-            this.altLastPressed = false;
-            clearTimeout(this.altTimeout);
-            WindowManager.focusThreeDotMenu();
-            return;
+    private registerAltKeyPressed = (input: Input) => {
+        const isAltPressed = input.key === 'Alt' && input.alt === true && input.control === false && input.shift === false && input.meta === false;
+
+        if (input.type === 'keyDown') {
+            this.altPressStatus = isAltPressed;
         }
 
-        // Hack to detect keyPress so that alt+<key> combinations don't default back to the 3-dot menu
-        if (input.key === 'Alt' && input.type === 'keyDown') {
-            this.altLastPressed = true;
-            this.altTimeout = setTimeout(() => {
-                this.altLastPressed = false;
-            }, 500) as unknown as number;
-        } else {
-            this.altLastPressed = false;
-            clearTimeout(this.altTimeout);
+        if (input.key !== 'Alt') {
+            this.altPressStatus = false;
+        }
+    };
+
+    private isAltKeyReleased = (input: Input) => {
+        return input.type === 'keyUp' && this.altPressStatus === true;
+    };
+
+    handleInputEvents = (_: Event, input: Input) => {
+        this.registerAltKeyPressed(input);
+
+        if (this.isAltKeyReleased(input)) {
+            WindowManager.focusThreeDotMenu();
         }
     }
 
@@ -335,10 +343,6 @@ export class MattermostView extends EventEmitter {
     }
 
     updateMentionsFromTitle = (title: string) => {
-        if (this.serverInfo.remoteInfo.serverVersion && Util.isVersionGreaterThanOrEqualTo(this.serverInfo.remoteInfo.serverVersion, '5.29.0')) {
-            return;
-        }
-
         //const title = this.view.webContents.getTitle();
         const resultsIterator = title.matchAll(this.titleParser);
         const results = resultsIterator.next(); // we are only interested in the first set

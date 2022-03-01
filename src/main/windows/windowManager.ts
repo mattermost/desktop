@@ -542,9 +542,10 @@ export class WindowManager {
 
     handleBrowserHistoryPush = (e: IpcMainEvent, viewName: string, pathName: string) => {
         const currentView = this.viewManager?.views.get(viewName);
-        const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${pathName}`, Config.teams)?.name || viewName;
+        const cleanedPathName = currentView?.tab.server.url.pathname === '/' ? pathName : pathName.replace(currentView?.tab.server.url.pathname || '', '');
+        const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${cleanedPathName}`, Config.teams)?.name || viewName;
         if (this.viewManager?.closedViews.has(redirectedViewName)) {
-            this.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${pathName}`);
+            this.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${cleanedPathName}`);
         }
         let redirectedView = this.viewManager?.views.get(redirectedViewName) || currentView;
         if (redirectedView !== currentView && redirectedView?.tab.server.name === this.currentServerName && redirectedView?.isLoggedIn) {
@@ -555,8 +556,8 @@ export class WindowManager {
         }
 
         // Special case check for Channels to not force a redirect to "/", causing a refresh
-        if (!(redirectedView !== currentView && redirectedView?.tab.type === TAB_MESSAGING && pathName === '/')) {
-            redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
+        if (!(redirectedView !== currentView && redirectedView?.tab.type === TAB_MESSAGING && cleanedPathName === '/')) {
+            redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, cleanedPathName);
             if (redirectedView) {
                 this.handleBrowserHistoryButton(e, redirectedView.name);
             }

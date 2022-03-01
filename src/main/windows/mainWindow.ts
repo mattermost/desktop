@@ -5,7 +5,7 @@ import fs from 'fs';
 
 import os from 'os';
 
-import {app, BrowserWindow, BrowserWindowConstructorOptions, globalShortcut, ipcMain, screen} from 'electron';
+import {app, BrowserWindow, BrowserWindowConstructorOptions, dialog, globalShortcut, ipcMain, screen} from 'electron';
 import log from 'electron-log';
 
 import {SavedWindowState} from 'types/mainWindow';
@@ -153,13 +153,39 @@ function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean})
             }
             switch (process.platform) {
             case 'win32':
-                hideWindow(mainWindow);
-                break;
             case 'linux':
                 if (Config.minimizeToTray) {
-                    hideWindow(mainWindow);
+                    if (Config.alwaysMinimize) {
+                        hideWindow(mainWindow);
+                    } else {
+                        dialog.showMessageBox(mainWindow, {
+                            title: 'Minimize to Tray',
+                            message: 'Mattermost will continue to run in the system tray. This can be disabled in Settings.',
+                            type: 'info',
+                            checkboxChecked: true,
+                            checkboxLabel: 'Don\'t show again',
+                        }).then((result: {response: number; checkboxChecked: boolean}) => {
+                            Config.set('alwaysMinimize', result.checkboxChecked);
+                            hideWindow(mainWindow);
+                        });
+                    }
+                } else if (Config.alwaysClose) {
+                    app.quit();
                 } else {
-                    mainWindow.minimize();
+                    dialog.showMessageBox(mainWindow, {
+                        title: 'Close Application',
+                        message: 'Are you sure you want to quit?',
+                        detail: 'You will no longer receive notifications for messages. If you want to leave Mattermost running in the system tray, you can enable this in Settings.',
+                        type: 'question',
+                        buttons: ['Yes', 'No'],
+                        checkboxChecked: true,
+                        checkboxLabel: 'Don\'t ask again',
+                    }).then((result: {response: number; checkboxChecked: boolean}) => {
+                        Config.set('alwaysClose', result.checkboxChecked && result.response === 0);
+                        if (result.response === 0) {
+                            app.quit();
+                        }
+                    });
                 }
                 break;
             case 'darwin':

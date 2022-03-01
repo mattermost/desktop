@@ -279,6 +279,12 @@ export class Config extends EventEmitter {
     get lastActiveTeam() {
         return this.combinedData?.lastActiveTeam;
     }
+    get alwaysClose() {
+        return this.combinedData?.alwaysClose;
+    }
+    get alwaysMinimize() {
+        return this.combinedData?.alwaysMinimize;
+    }
 
     // initialization/processing methods
 
