@@ -15,7 +15,6 @@ executors:
       - image: electronuserland/builder:wine-chrome
         environment:
           TAR_OPTIONS: --no-same-owner
-      - image: mattermost/mattermost-preview
   wine-chrome:
     working_directory: ~/mattermost-desktop
     docker:
@@ -139,7 +138,6 @@ jobs:
       - checkout
       - update_image:
           apt_opts: "--no-install-recommends"
-      - run: wget https://github.com/mattermost/mmctl/releases/download/v6.0.0/linux_amd64.tar && tar -xvf linux_amd64.tar
       - run: npm run check-types
       - run:
           name: Setup MM Docker Image
