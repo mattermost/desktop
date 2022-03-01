@@ -44,6 +44,7 @@
     "test:e2e:build": "webpack-cli --bail --config webpack.config.test.js",
     "test:e2e:run": "electron-mocha -r @babel/register --reporter mocha-circleci-reporter dist/tests/e2e_bundle.js",
     "test:unit": "jest",
+    "test:unit-ci": "jest --runInBand",
     "test:coverage": "jest --coverage",
     "package:all": "cross-env NODE_ENV=production npm-run-all check-build-config package:windows package:mac package:mac-universal package:linux",
     "package:windows": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --win --x64 --ia32 --publish=never",
@@ -84,6 +85,20 @@
     },
     "setupFiles": [
       "./src/jestSetup.js"
+    ],
+    "reporters": [
+      "default",
+      [
+        "jest-junit",
+        {
+          "suiteName": "unit tests",
+          "outputDirectory": "reports/jest",
+          "outputName": "js-test-results.xml",
+          "classNameTemplate": "{classname}-{title}",
+          "titleTemplate": "{classname}-{title}",
+          "ancestorSeparator": "> "
+        }
+      ]
     ]
   },
   "devDependencies": {
@@ -137,6 +152,7 @@
     "file-loader": "^2.0.0",
     "image-webpack-loader": "5.0.0",
     "jest": "^27.3.1",
+    "jest-junit": "^13.0.0",
     "mdi-react": "^6.2.0",
     "mini-css-extract-plugin": "1.6.0",
     "mocha": "^5.2.0",
