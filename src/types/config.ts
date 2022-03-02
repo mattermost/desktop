@@ -40,7 +40,10 @@ export type ConfigV3 = {
     downloadLocation: string;
     spellCheckerURL?: string;
     lastActiveTeam?: number;
+
     autoCheckForUpdates?: boolean;
+    alwaysMinimize?: boolean;
+    alwaysClose?: boolean;
 }
 
 export type ConfigV2 = {

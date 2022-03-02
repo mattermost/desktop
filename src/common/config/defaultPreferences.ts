@@ -21,7 +21,7 @@ const defaultPreferences: ConfigV3 = {
     teams: [],
     showTrayIcon: true,
     trayIconTheme: 'use_system',
-    minimizeToTray: true,
+    minimizeToTray: process.platform !== 'linux',
     notifications: {
         flashWindow: 2,
         bounceIcon: true,
