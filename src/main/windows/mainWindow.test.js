@@ -5,7 +5,7 @@ import fs from 'fs';
 
 import path from 'path';
 
-import {BrowserWindow, screen, app, globalShortcut} from 'electron';
+import {BrowserWindow, screen, app, globalShortcut, dialog} from 'electron';
 
 import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB} from 'common/communication';
 import Config from 'common/config';
@@ -24,6 +24,10 @@ jest.mock('electron', () => ({
     app: {
         getPath: jest.fn(),
         hide: jest.fn(),
+        quit: jest.fn(),
+    },
+    dialog: {
+        showMessageBox: jest.fn(),
     },
     BrowserWindow: jest.fn(),
     ipcMain: {
@@ -38,7 +42,9 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('common/config', () => ({}));
+jest.mock('common/config', () => ({
+    set: jest.fn(),
+}));
 jest.mock('common/utils/util', () => ({
     isVersionGreaterThanOrEqualTo: jest.fn(),
 }));
@@ -200,7 +206,7 @@ describe('main/windows/mainWindow', () => {
             expect(fs.writeFileSync).toHaveBeenCalled();
         });
 
-        it('should hide window on close for Windows if app wont quit', () => {
+        it('should hide window on close for Windows if app wont quit and config item is set', () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'win32',
@@ -214,11 +220,65 @@ describe('main/windows/mainWindow', () => {
                 }),
             };
             BrowserWindow.mockImplementation(() => window);
+            Config.minimizeToTray = true;
+            Config.alwaysMinimize = true;
             createMainWindow({});
+            Config.minimizeToTray = false;
+            Config.alwaysMinimize = false;
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
             expect(window.hide).toHaveBeenCalled();
+        });
+
+        it('should close app on close window for Windows if app wont quit and config item is not set', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'win32',
+            });
+            const window = {
+                ...baseWindow,
+                on: jest.fn().mockImplementation((event, cb) => {
+                    if (event === 'close') {
+                        cb({preventDefault: jest.fn()});
+                    }
+                }),
+            };
+            BrowserWindow.mockImplementation(() => window);
+            Config.alwaysClose = true;
+            createMainWindow({});
+            Config.alwaysClose = false;
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+            expect(app.quit).toHaveBeenCalled();
+        });
+
+        it('should close app on Windows if window closed depending on user input', async () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'win32',
+            });
+            const window = {
+                ...baseWindow,
+                on: jest.fn().mockImplementation((event, cb) => {
+                    if (event === 'close') {
+                        cb({preventDefault: jest.fn()});
+                    }
+                }),
+            };
+            BrowserWindow.mockImplementation(() => window);
+            dialog.showMessageBox.mockResolvedValue({response: 1});
+            createMainWindow({});
+            expect(app.quit).not.toHaveBeenCalled();
+            const promise = Promise.resolve({response: 0});
+            dialog.showMessageBox.mockImplementation(() => promise);
+            createMainWindow({});
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+            await promise;
+            expect(app.quit).toHaveBeenCalled();
         });
 
         it('should hide window on close for Linux if app wont quit and config item is set', () => {
@@ -236,15 +296,17 @@ describe('main/windows/mainWindow', () => {
             };
             BrowserWindow.mockImplementation(() => window);
             Config.minimizeToTray = true;
+            Config.alwaysMinimize = true;
             createMainWindow({});
             Config.minimizeToTray = false;
+            Config.alwaysMinimize = false;
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
             expect(window.hide).toHaveBeenCalled();
         });
 
-        it('should minimize window on close for Linux if app wont quit and config item is not set', () => {
+        it('should close app on close window for Linux if app wont quit and config item is not set', () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'linux',
@@ -258,11 +320,40 @@ describe('main/windows/mainWindow', () => {
                 }),
             };
             BrowserWindow.mockImplementation(() => window);
+            Config.alwaysClose = true;
+            createMainWindow({});
+            Config.alwaysClose = false;
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+            expect(app.quit).toHaveBeenCalled();
+        });
+
+        it('should close app on linux if window closed depending on user input', async () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'linux',
+            });
+            const window = {
+                ...baseWindow,
+                on: jest.fn().mockImplementation((event, cb) => {
+                    if (event === 'close') {
+                        cb({preventDefault: jest.fn()});
+                    }
+                }),
+            };
+            BrowserWindow.mockImplementation(() => window);
+            dialog.showMessageBox.mockResolvedValue({response: 1});
+            createMainWindow({});
+            expect(app.quit).not.toHaveBeenCalled();
+            const promise = Promise.resolve({response: 0});
+            dialog.showMessageBox.mockImplementation(() => promise);
             createMainWindow({});
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
-            expect(window.minimize).toHaveBeenCalled();
+            await promise;
+            expect(app.quit).toHaveBeenCalled();
         });
 
         it('should hide window on close for Mac if app wont quit and window is not full screen', () => {
