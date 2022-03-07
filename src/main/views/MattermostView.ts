@@ -79,7 +79,6 @@ export class MattermostView extends EventEmitter {
         const preload = getLocalPreload('preload.js');
         this.options = Object.assign({}, options);
         this.options.webPreferences = {
-            nativeWindowOpen: true,
             preload,
             additionalArguments: [
                 `version=${app.getVersion()}`,
