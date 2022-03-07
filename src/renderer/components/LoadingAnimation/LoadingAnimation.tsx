@@ -12,7 +12,6 @@ const LOADING_STATE = {
     INITIALIZING: 'initializing', // animation graphics are hidden
     LOADING: 'loading', // animation graphics fade in and animate
     LOADED: 'loaded', // animation graphics fade out
-    COMPLETE: 'complete', // animation graphics are removed from the DOM
 };
 
 const ANIMATION_COMPLETION_DELAY = 500;
@@ -71,7 +70,7 @@ function LoadingAnimation({
         if (onLoadAnimationComplete) {
             onLoadAnimationComplete();
         }
-        setAnimationState(LOADING_STATE.COMPLETE);
+        setAnimationState(LOADING_STATE.INITIALIZING);
     }, 'LoadingAnimation__shrink');
 
     return (
@@ -79,9 +78,9 @@ function LoadingAnimation({
             ref={loadingIconContainerRef}
             className={classNames('LoadingAnimation', {
                 'LoadingAnimation--darkMode': darkMode,
-                'LoadingAnimation--spinning': animationState !== LOADING_STATE.INITIALIZING && animationState !== LOADING_STATE.COMPLETE,
-                'LoadingAnimation--loading': animationState === LOADING_STATE.LOADING && animationState !== LOADING_STATE.COMPLETE,
-                'LoadingAnimation--loaded': animationState === LOADING_STATE.LOADED && animationState !== LOADING_STATE.COMPLETE,
+                'LoadingAnimation--spinning': animationState !== LOADING_STATE.INITIALIZING,
+                'LoadingAnimation--loading': animationState === LOADING_STATE.LOADING,
+                'LoadingAnimation--loaded': animationState === LOADING_STATE.LOADED,
             })}
         >
             <LoadingIcon/>
