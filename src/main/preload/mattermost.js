@@ -152,7 +152,7 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
         break;
     }
     case 'get-desktop-sources': {
-        ipcRenderer.send(DISPATCH_GET_DESKTOP_SOURCES, message);
+        ipcRenderer.send(DISPATCH_GET_DESKTOP_SOURCES, viewName, message);
         break;
     }
     }
