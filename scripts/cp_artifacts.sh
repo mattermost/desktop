@@ -2,8 +2,8 @@
 set -eu
 
 VERSION="$(jq -r '.version' <package.json)"
-SRC="${1}"
-DEST="${2}"
+SRC="${1}/${VERSION}"
+DEST="${2}/${VERSION}"
 SOMETHING_COPIED=0
 if [[ ! -d "${DEST}" ]]; then
     echo "Can't find destination. Creating \"${DEST}\""
@@ -64,6 +64,7 @@ fi
 if [[ -f "${SRC}"/mattermost-desktop-${VERSION}-linux-x64.tar.gz ]]; then
     echo -e "Copying linux\n"
     cp "${SRC}"/mattermost-desktop-*-linux-* "${DEST}/"
+    cp "${SRC}"/mattermost-desktop_"${VERSION}"-1_*.deb "${DEST}/"
     SOMETHING_COPIED=$((SOMETHING_COPIED + 64))
 fi
 
@@ -73,7 +74,7 @@ if [[ $SOMETHING_COPIED -eq 0 ]]; then
     exit 1
 fi
 
-cp "${SRC}"/*.yml "${DEST}/"
+cp "${1}"/*.yml "${2}/"
 
 # exit $SOMETHING_COPIED
 exit 0

@@ -156,6 +156,7 @@ describe('main/windows/windowManager', () => {
         it('should create the main window and add listeners', () => {
             const window = {
                 on: jest.fn(),
+                once: jest.fn(),
             };
             createMainWindow.mockReturnValue(window);
             windowManager.showMainWindow();
@@ -166,6 +167,7 @@ describe('main/windows/windowManager', () => {
         it('should open deep link when provided', () => {
             const window = {
                 on: jest.fn(),
+                once: jest.fn(),
             };
             createMainWindow.mockReturnValue(window);
             windowManager.showMainWindow('mattermost://server-1.com/subpath');

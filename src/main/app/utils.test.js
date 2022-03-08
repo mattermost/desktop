@@ -21,6 +21,7 @@ jest.mock('common/utils/util', () => ({
     getDisplayBoundaries: jest.fn(),
 }));
 
+jest.mock('main/autoUpdater', () => ({}));
 jest.mock('main/menus/app', () => ({}));
 jest.mock('main/menus/tray', () => ({}));
 jest.mock('main/server/serverInfo', () => ({

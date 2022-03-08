@@ -125,6 +125,7 @@ describe('main/Validator', () => {
 
     describe('validateV3ConfigData', () => {
         const config = {
+            autoCheckForUpdates: true,
             autostart: true,
             hideOnStart: false,
             darkMode: false,

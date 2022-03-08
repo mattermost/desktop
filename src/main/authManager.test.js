@@ -6,6 +6,54 @@ import {AuthManager} from 'main/authManager';
 import WindowManager from 'main/windows/windowManager';
 import ModalManager from 'main/views/modalManager';
 
+jest.mock('common/config', () => ({
+    teams: [{
+        name: 'example',
+        url: 'http://example.com',
+        order: 0,
+        tabs: [
+            {
+                name: 'TAB_MESSAGING',
+                order: 0,
+                isOpen: true,
+            },
+            {
+                name: 'TAB_FOCALBOARD',
+                order: 1,
+                isOpen: true,
+            },
+            {
+                name: 'TAB_PLAYBOOKS',
+                order: 2,
+                isOpen: true,
+            },
+        ],
+        lastActiveTab: 0,
+    }, {
+        name: 'github',
+        url: 'https://github.com/',
+        order: 1,
+        tabs: [
+            {
+                name: 'TAB_MESSAGING',
+                order: 0,
+                isOpen: true,
+            },
+            {
+                name: 'TAB_FOCALBOARD',
+                order: 1,
+                isOpen: true,
+            },
+            {
+                name: 'TAB_PLAYBOOKS',
+                order: 2,
+                isOpen: true,
+            },
+        ],
+        lastActiveTab: 0,
+    }],
+}));
+
 jest.mock('common/utils/url', () => {
     const actualUrl = jest.requireActual('common/utils/url');
     return {
@@ -59,57 +107,9 @@ jest.mock('main/utils', () => ({
     getLocalURLString: (file) => file,
 }));
 
-const config = {
-    teams: [{
-        name: 'example',
-        url: 'http://example.com',
-        order: 0,
-        tabs: [
-            {
-                name: 'TAB_MESSAGING',
-                order: 0,
-                isOpen: true,
-            },
-            {
-                name: 'TAB_FOCALBOARD',
-                order: 1,
-                isOpen: true,
-            },
-            {
-                name: 'TAB_PLAYBOOKS',
-                order: 2,
-                isOpen: true,
-            },
-        ],
-        lastActiveTab: 0,
-    }, {
-        name: 'github',
-        url: 'https://github.com/',
-        order: 1,
-        tabs: [
-            {
-                name: 'TAB_MESSAGING',
-                order: 0,
-                isOpen: true,
-            },
-            {
-                name: 'TAB_FOCALBOARD',
-                order: 1,
-                isOpen: true,
-            },
-            {
-                name: 'TAB_PLAYBOOKS',
-                order: 2,
-                isOpen: true,
-            },
-        ],
-        lastActiveTab: 0,
-    }],
-};
-
 describe('main/authManager', () => {
     describe('handleAppLogin', () => {
-        const authManager = new AuthManager(config);
+        const authManager = new AuthManager();
         authManager.popLoginModal = jest.fn();
         authManager.popPermissionModal = jest.fn();
 
@@ -157,7 +157,7 @@ describe('main/authManager', () => {
     });
 
     describe('popLoginModal', () => {
-        const authManager = new AuthManager(config);
+        const authManager = new AuthManager();
 
         it('should not pop modal when no main window exists', () => {
             WindowManager.getMainWindow.mockImplementationOnce(() => null);
@@ -225,7 +225,7 @@ describe('main/authManager', () => {
     });
 
     describe('popPermissionModal', () => {
-        const authManager = new AuthManager(config);
+        const authManager = new AuthManager();
 
         it('should not pop modal when no main window exists', () => {
             WindowManager.getMainWindow.mockImplementationOnce(() => null);
@@ -270,7 +270,7 @@ describe('main/authManager', () => {
     });
 
     describe('handleLoginCredentialsEvent', () => {
-        const authManager = new AuthManager(config);
+        const authManager = new AuthManager();
         const callback = jest.fn();
 
         beforeEach(() => {

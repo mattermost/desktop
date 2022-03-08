@@ -72,7 +72,7 @@ commands:
     steps:
       - run: wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | apt-key add -
       - run: apt-get update || true && apt-get install -y ca-certificates libxtst-dev libpng++-dev && apt-get update && apt-get -y install << parameters.apt_opts >>
-
+      - run: wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
   update_image:
     description: "Update image"
     parameters:
@@ -112,6 +112,7 @@ commands:
           name: npn run
           command: npm run package:<< parameters.os >>
           no_output_timeout: 30m
+      - run: bash -x ./scripts/patch_updater_yml.sh
       - run: mkdir -p << parameters.path >>
       - run: bash -x ./scripts/cp_artifacts.sh release << parameters.path >>
       - persist_to_workspace:
@@ -159,6 +160,10 @@ jobs:
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
       - build
+      - persist_to_workspace:
+          root: ./build/
+          paths:
+            - "./linux/"
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -219,6 +224,9 @@ jobs:
       - run:
           name: Update node to v16
           command: choco install nodejs --version 16.8.0
+      - run:
+          name: Install yq
+          command: choco install yq --version 4.15.1
       - win_make:
           operation: optimize
       - win_make:
@@ -255,7 +263,7 @@ jobs:
             - "~/.cache/electron"
             - "~/.cache/electron-builder"
       - save:
-          filename: "*.exe"
+          filename: "$(jq -r .version package.json)/*.exe"
 
   build-mac-pr:
     executor: mac
@@ -265,6 +273,7 @@ jobs:
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
+      - run: brew install yq
       - run:
           name: Update node to v16
           command: brew upgrade node || true
@@ -289,7 +298,7 @@ jobs:
           paths:
             - "./macos-release/"
       - save:
-          filename: "*.dmg"
+          filename: "$(jq -r .version package.json)/*.dmg"
 
   build-linux-pr:
     executor: wine-mono
@@ -308,7 +317,7 @@ jobs:
             - "~/.cache/electron"
             - "~/.cache/electron-builder"
       - save:
-          filename: "*.tar.gz"
+          filename: "$(jq -r .version package.json)/*.tar.gz"
 
   mac_installer:
     executor: mac
@@ -322,14 +331,13 @@ jobs:
           name: Update node to v16
           command: brew upgrade node || true
       - run:
+          name: Install yq
+          command: brew install yq
+      - run:
           name: Installing npm dependencies
           command: npm ci
       - build:
-          os: mac-universal
-          path: ./build/macos-release
-          subpath: ./macos-release/
-      - build:
-          os: mac
+          os: mac-with-universal
           path: ./build/macos-release
           subpath: ./macos-release/
       - run:
@@ -420,7 +428,7 @@ jobs:
             cp --backup=numbered ./build/{macos-release,win-release,linux}/* ./aws-s3-dist
       - aws-s3/copy:
           from: ./aws-s3-dist/
-          to: s3://releases.mattermost.com/desktop/$(jq -r .version package.json)/
+          to: s3://releases.mattermost.com/desktop/
           arguments: --acl public-read --cache-control "no-cache" --recursive
 
   upload_to_s3_daily:
@@ -430,21 +438,12 @@ jobs:
       - attach_workspace:
           at: ./build
       - run:
-          name: "install renaming utility"
+          name: "Setup files for aws-s3"
           command: |
-            sudo apt-get install rename
-      - run:
-          name: "Normalize folder names"
-          command: |
-            mv ./build/macos-release ./build/macos
-      - run:
-          name: "Rename to daily for consistency"
-          command: |
-            rename 's/\d+\.\d+\.\d+/daily/' ./build/macos/*
-            rename 's/\d+\.\d+\.\d+/daily/' ./build/linux/*
-            rename 's/\d+\.\d+\.\d+/daily/' ./build/win/*
+            mkdir -p ./aws-s3-dist
+            cp -r --backup=numbered ./build/{macos-release,win,linux}/* ./aws-s3-dist
       - aws-s3/copy:
-          from: ./build/
+          from: ./aws-s3-dist/
           to: s3://mattermost-desktop-daily-builds/
           arguments: --acl public-read --cache-control "no-cache" --recursive
 
@@ -561,10 +560,10 @@ workflows:
           requires:
             - check
           context: codesign-certificates
-          filters:
-            branches:
-              only:
-                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+          # filters:
+          #   branches:
+          #     only:
+          #       - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - store_artifacts:
           # for master/PR builds
@@ -641,8 +640,8 @@ workflows:
             - build-linux
             - build-win-no-installer
             - mac_installer
-      - upload_to_s3_daily:
-          context: mattermost-desktop-daily-s3
+      - upload_to_s3:
+          context: mattermost-release-s3
           requires:
             - build-linux
             - build-win-no-installer

@@ -22,7 +22,6 @@ import {getTabViewName} from 'common/tabs/TabView';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH_MAC} from 'common/utils/constants';
 
 import './css/dropdown.scss';
-import './css/compass-icons.css';
 
 type State = {
     teams?: TeamWithTabs[];
