@@ -98,13 +98,12 @@ describe('main/views/viewManager', () => {
             expect(viewManager.closedViews.has('server1-tab1')).toBe(false);
         });
 
-        it('should add view to views map, add listeners and show the view', () => {
+        it('should add view to views map and add listeners', () => {
             viewManager.loadView({name: 'server1'}, {}, {name: 'tab1', isOpen: true}, 'http://server-1.com/subpath');
             expect(viewManager.views.has('server1-tab1')).toBe(true);
             expect(viewManager.createLoadingScreen).toHaveBeenCalled();
             expect(onceFn).toHaveBeenCalledWith(LOAD_SUCCESS, viewManager.activateView);
             expect(loadFn).toHaveBeenCalledWith('http://server-1.com/subpath');
-            expect(viewManager.showByName).toHaveBeenCalledWith('server1-tab1');
         });
     });
 
@@ -504,6 +503,7 @@ describe('main/views/viewManager', () => {
         const viewManager = new ViewManager({});
         const baseView = {
             isReady: jest.fn(),
+            isErrored: jest.fn(),
             show: jest.fn(),
             hide: jest.fn(),
             needsLoadingScreen: jest.fn(),
@@ -567,23 +567,31 @@ describe('main/views/viewManager', () => {
             expect(oldView.hide).toHaveBeenCalled();
         });
 
+        it('should not show the view when it is in error state', () => {
+            const view = {...baseView};
+            view.isErrored.mockReturnValue(true);
+            viewManager.views.set('view1', view);
+            viewManager.showByName('view1');
+            expect(view.show).not.toHaveBeenCalled();
+        });
+
         it('should show loading screen when the view needs it', () => {
             const view = {...baseView};
+            view.isErrored.mockReturnValue(false);
             view.needsLoadingScreen.mockImplementation(() => true);
             viewManager.views.set('view1', view);
             viewManager.showByName('view1');
             expect(viewManager.showLoadingScreen).toHaveBeenCalled();
         });
 
-        it('should show the view when ready', () => {
+        it('should show the view when not errored', () => {
             const view = {...baseView};
             view.needsLoadingScreen.mockImplementation(() => false);
-            view.isReady.mockImplementation(() => true);
+            view.isErrored.mockReturnValue(false);
             viewManager.views.set('view1', view);
             viewManager.showByName('view1');
             expect(viewManager.currentView).toBe('view1');
             expect(view.show).toHaveBeenCalled();
-            expect(viewManager.fadeLoadingScreen).toHaveBeenCalled();
         });
     });
 
@@ -594,7 +602,7 @@ describe('main/views/viewManager', () => {
             addBrowserView: jest.fn(),
         };
         const viewManager = new ViewManager(window);
-        const loadingScreen = {webContents: {send: jest.fn()}};
+        const loadingScreen = {webContents: {send: jest.fn(), isLoading: () => false}};
 
         beforeEach(() => {
             viewManager.createLoadingScreen = jest.fn();
