@@ -160,6 +160,9 @@ jobs:
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
       - build
+      - run:
+          name: Generate deb repo
+          command: ./scripts/generate_deb_repo.sh ./build/linux DEB_PRIVATE_KEY
       - persist_to_workspace:
           root: ./build/
           paths:
@@ -521,6 +524,7 @@ workflows:
       - build-linux:
           requires:
             - check
+          context: linux-repo-generation
           filters:
             branches:
               ignore:
@@ -628,7 +632,8 @@ workflows:
   nightly_browser_view:
     when: << pipeline.parameters.run_nightly >>
     jobs:
-      - build-linux
+      - build-linux:
+          context: linux-repo-generation
       - build-win-no-installer:
           context: electron-installer
       - mac_installer:

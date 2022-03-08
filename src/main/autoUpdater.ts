@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import fs from 'fs';
+
 import path from 'path';
 
 import {dialog, ipcMain, app, nativeImage} from 'electron';
@@ -8,6 +10,7 @@ import log from 'electron-log';
 
 import {autoUpdater, ProgressInfo, UpdateInfo} from 'electron-updater';
 
+import {autoUpdateSettingsPath} from 'main/constants';
 import {displayUpgrade, displayRestartToUpgrade} from 'main/notifications';
 
 import {CANCEL_UPGRADE, UPDATE_AVAILABLE, UPDATE_DOWNLOADED, CHECK_FOR_UPDATES, UPDATE_SHORTCUT_MENU, UPDATE_PROGRESS} from 'common/communication';
@@ -24,7 +27,7 @@ autoUpdater.autoDownload = false;
 autoUpdater.disableWebInstaller = true;
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
-const appIconURL = path.resolve(assetsDir, 'appicon_with_spacing_32.png');
+const appIconURL = path.resolve(assetsDir, `appicon_with_spacing_${process.platform === 'darwin' ? '96' : '32'}.png`);
 const appIcon = nativeImage.createFromPath(appIconURL);
 
 /** to test this during development
@@ -142,6 +145,13 @@ export class UpdateManager {
         }).then(({response}) => {
             if (response === 0) {
                 autoUpdater.quitAndInstall();
+                if (process.platform === 'darwin') {
+                    // Save app path so the app knows what to try and un-quarantine
+                    fs.writeFileSync(autoUpdateSettingsPath, JSON.stringify({currentAppPath: path.join(app.getAppPath(), '../../../')}));
+                    if (!global.willAppQuit) {
+                        app.quit();
+                    }
+                }
             }
         });
     }

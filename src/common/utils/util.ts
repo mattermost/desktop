@@ -2,6 +2,10 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
+import fs from 'fs';
+
+import crypto from 'crypto';
+
 import {screen} from 'electron';
 
 import {DEVELOPMENT, PRODUCTION} from './constants';
@@ -19,6 +23,13 @@ function getDisplayBoundaries() {
             maxHeight: display.workArea.height,
         };
     });
+}
+
+function getChecksumFromFile(filePath: string) {
+    const fileBuffer = fs.readFileSync(filePath);
+    const hashSum = crypto.createHash('sha256');
+    hashSum.update(fileBuffer);
+    return hashSum.digest('hex');
 }
 
 function runMode() {
@@ -65,4 +76,5 @@ export default {
     runMode,
     shorten,
     isVersionGreaterThanOrEqualTo,
+    getChecksumFromFile,
 };
