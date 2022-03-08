@@ -263,7 +263,11 @@ export class MattermostView extends EventEmitter {
     }
 
     isReady = () => {
-        return this.status !== Status.LOADING;
+        return this.status === Status.READY;
+    }
+
+    isErrored = () => {
+        return this.status === Status.ERROR;
     }
 
     needsLoadingScreen = () => {
