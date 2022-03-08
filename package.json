@@ -1,7 +1,7 @@
 {
   "name": "mattermost-desktop",
   "productName": "Mattermost",
-  "version": "5.0.0-nightly.20220308",
+  "version": "5.1.0-develop.1",
   "description": "Mattermost",
   "main": "dist/index.js",
   "author": "Mattermost, Inc. <feedback@mattermost.com>",
@@ -16,7 +16,7 @@
     "url": "git://github.com/mattermost/desktop.git"
   },
   "config": {
-    "target": "13.2.0",
+    "target": "14.1.0",
     "arch": "x64",
     "target_arch": "x64",
     "disturl": "https://electronjs.org/headers",
@@ -49,7 +49,7 @@
     "package:all": "cross-env NODE_ENV=production npm-run-all check-build-config package:windows package:mac package:mac-universal package:linux",
     "package:windows": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --win --x64 --ia32 --publish=never",
     "package:mac": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --mac --x64 --arm64 --publish=never",
-    "package:mac-universal": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --mac --universal --publish=never",
+    "package:mac-with-universal": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --mac --x64 --arm64 --universal --publish=never",
     "package:linux": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --linux --x64 --ia32 --publish=never",
     "lint:js": "eslint --ignore-path .gitignore --ignore-pattern node_modules --ext .js --ext .jsx --ext .ts --ext .tsx .",
     "lint:js-quiet": "eslint --ignore-path .gitignore --ignore-pattern node_modules --ext .js --ext .jsx --ext .ts --ext .tsx . --quiet",
@@ -81,7 +81,8 @@
       "**/src/**/*.test.js"
     ],
     "globals": {
-      "__HASH_VERSION__": "5.0.0"
+      "__HASH_VERSION__": "5.0.0",
+      "__CAN_UPGRADE__": false
     },
     "setupFiles": [
       "./src/jestSetup.js"
@@ -134,7 +135,7 @@
     "css-loader": "^1.0.1",
     "devtron": "^1.4.0",
     "electron": "14.1.0",
-    "electron-builder": "22.11.7",
+    "electron-builder": "^22.14.5",
     "electron-connect": "^0.6.3",
     "electron-mocha": "^10.1.0",
     "electron-notarize": "^1.1.0",
@@ -173,6 +174,7 @@
   },
   "dependencies": {
     "@hapi/joi": "^16.1.8",
+    "@mattermost/compass-icons": "0.1.21",
     "auto-launch": "^5.0.5",
     "bootstrap": "^4.6.0",
     "bootstrap-dark": "^1.0.3",
@@ -182,8 +184,9 @@
     "electron-devtools-installer": "^3.2.0",
     "electron-is-dev": "^2.0.0",
     "electron-log": "^4.4.1",
-    "electron-updater": "4.3.9",
+    "electron-updater": "5.0.0",
     "font-awesome": "^4.7.0",
+    "pretty-bytes": "^6.0.0",
     "prop-types": "^15.6.2",
     "react": "^16.14.0",
     "react-beautiful-dnd": "^13.1.0",

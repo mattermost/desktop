@@ -24,6 +24,7 @@ import {
     BROWSER_HISTORY_BUTTON,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
+import {SECOND} from 'common/utils/constants';
 import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 
@@ -43,12 +44,14 @@ export class WindowManager {
     assetsDir: string;
 
     mainWindow?: BrowserWindow;
+    mainWindowReady: boolean;
     settingsWindow?: BrowserWindow;
     viewManager?: ViewManager;
     teamDropdown?: TeamDropdownView;
     currentServerName?: string;
 
     constructor() {
+        this.mainWindowReady = false;
         this.assetsDir = path.resolve(app.getAppPath(), 'assets');
 
         ipcMain.on(HISTORY, this.handleHistory);
@@ -94,6 +97,7 @@ export class WindowManager {
                 this.mainWindow.show();
             }
         } else {
+            this.mainWindowReady = false;
             this.mainWindow = createMainWindow({
                 linuxAppIcon: path.join(this.assetsDir, 'linux', 'app_icon.png'),
             });
@@ -104,10 +108,15 @@ export class WindowManager {
                 return;
             }
 
+            this.mainWindow.once('ready-to-show', () => {
+                this.mainWindowReady = true;
+            });
+
             // window handlers
             this.mainWindow.on('closed', () => {
                 log.warn('main window closed');
                 delete this.mainWindow;
+                this.mainWindowReady = false;
             });
             this.mainWindow.on('unresponsive', () => {
                 CriticalErrorHandler.setMainWindow(this.mainWindow!);
@@ -189,14 +198,32 @@ export class WindowManager {
         ipcMain.emit(RESIZE_MODAL, null, bounds);
     }
 
-    sendToRenderer = (channel: string, ...args: any[]) => {
-        if (!this.mainWindow) {
+    // max retries allows the message to get to the renderer even if it is sent while the app is starting up.
+    sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: any[]) => {
+        if (!this.mainWindow || !this.mainWindowReady) {
             this.showMainWindow();
+            if (maxRetries > 0) {
+                log.info(`Can't send ${channel}, will retry`);
+                setTimeout(() => {
+                    this.sendToRendererWithRetry(maxRetries - 1, channel, ...args);
+                }, SECOND);
+            } else {
+                log.error(`Unable to send the message to the main window for message type ${channel}`);
+            }
+            return;
         }
         this.mainWindow!.webContents.send(channel, ...args);
         if (this.settingsWindow && this.settingsWindow.isVisible()) {
-            this.settingsWindow.webContents.send(channel, ...args);
+            try {
+                this.settingsWindow.webContents.send(channel, ...args);
+            } catch (e) {
+                log.error(`There was an error while trying to communicate with the renderer: ${e}`);
+            }
         }
+    }
+
+    sendToRenderer = (channel: string, ...args: any[]) => {
+        this.sendToRendererWithRetry(3, channel, ...args);
     }
 
     sendToAll = (channel: string, ...args: any[]) => {
