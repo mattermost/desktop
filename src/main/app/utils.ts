@@ -14,6 +14,7 @@ import {TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS} from 'common/tabs/TabView'
 import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 
+import updateManager from 'main/autoUpdater';
 import {createMenu as createAppMenu} from 'main/menus/app';
 import {createMenu as createTrayMenu} from 'main/menus/tray';
 import {ServerInfo} from 'main/server/serverInfo';
@@ -70,7 +71,7 @@ function openExtraTabs(data: Array<RemoteInfo | string | undefined>, team: TeamW
 }
 
 export function handleUpdateMenuEvent() {
-    const aMenu = createAppMenu(Config);
+    const aMenu = createAppMenu(Config, updateManager);
     Menu.setApplicationMenu(aMenu);
     aMenu.addListener('menu-will-close', WindowManager.focusBrowserView);
 

@@ -37,6 +37,28 @@ import migrateConfigItems from './migrationPreferences';
  * Handles loading and merging all sources of configuration as well as saving user provided config
  */
 
+function checkWriteableApp() {
+    if (process.platform === 'win32') {
+        try {
+            fs.accessSync(path.join(path.dirname(app.getAppPath()), '../../'), fs.constants.W_OK);
+        } catch (error) {
+            log.info(`${app.getAppPath()}: ${error}`);
+            log.warn('autoupgrade disabled');
+            return false;
+        }
+
+        // eslint-disable-next-line no-undef
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return __CAN_UPGRADE__; // prevent showing the option if the path is not writeable, like in a managed environment.
+    }
+
+    // temporarily disabling auto updater for macOS due to security issues
+    // eslint-disable-next-line no-undef
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return process.platform !== 'darwin' && __CAN_UPGRADE__;
+}
 export class Config extends EventEmitter {
     configFilePath: string;
 
@@ -48,12 +70,14 @@ export class Config extends EventEmitter {
     buildConfigData?: BuildConfig;
     localConfigData?: ConfigType;
     useNativeWindow: boolean;
+    canUpgradeValue?: boolean
 
     predefinedTeams: TeamWithTabs[];
 
     constructor(configFilePath: string) {
         super();
         this.configFilePath = configFilePath;
+        this.canUpgradeValue = checkWriteableApp();
         this.registryConfig = new RegistryConfig();
         this.predefinedTeams = [];
         if (buildConfig.defaultTeams) {
@@ -280,6 +304,14 @@ export class Config extends EventEmitter {
     }
     get alwaysMinimize() {
         return this.combinedData?.alwaysMinimize;
+    }
+
+    get canUpgrade() {
+        return this.canUpgradeValue && this.buildConfigData?.enableAutoUpdater && !(process.platform === 'win32' && this.registryConfigData?.enableAutoUpdater === false);
+    }
+
+    get autoCheckForUpdates() {
+        return this.combinedData?.autoCheckForUpdates;
     }
 
     // initialization/processing methods
@@ -525,6 +557,7 @@ export class Config extends EventEmitter {
         const config: Partial<LocalConfiguration> = {...this.localConfigData};
         config.appName = app.name;
         config.enableServerManagement = this.combinedData?.enableServerManagement;
+        config.canUpgrade = this.canUpgrade;
         if (option) {
             return config[option];
         }

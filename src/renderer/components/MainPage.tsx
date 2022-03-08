@@ -2,11 +2,13 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import classNames from 'classnames';
 import React, {Fragment} from 'react';
 import {Container, Row} from 'react-bootstrap';
 import {DropResult} from 'react-beautiful-dnd';
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 import {IpcRendererEvent} from 'electron/renderer';
+import prettyBytes from 'pretty-bytes';
 
 import {TeamWithTabs} from 'types/config';
 
@@ -36,6 +38,11 @@ import {
     CLOSE_TEAMS_DROPDOWN,
     OPEN_TEAMS_DROPDOWN,
     SWITCH_TAB,
+    UPDATE_AVAILABLE,
+    UPDATE_DOWNLOADED,
+    UPDATE_PROGRESS,
+    START_UPGRADE,
+    START_DOWNLOAD,
     CLOSE_TAB,
 } from 'common/communication';
 
@@ -50,6 +57,7 @@ import TabBar from './TabBar';
 import ExtraBar from './ExtraBar';
 import ErrorView from './ErrorView';
 import TeamDropdownButton from './TeamDropdownButton';
+import '../css/components/UpgradeButton.scss';
 
 enum Status {
     LOADING = 1,
@@ -57,6 +65,13 @@ enum Status {
     RETRY = -1,
     FAILED = 0,
     NOSERVERS = -2,
+}
+
+enum UpgradeStatus {
+    NONE = 0,
+    AVAILABLE = 1,
+    DOWNLOADING = 2,
+    DOWNLOADED = 3,
 }
 
 type Props = {
@@ -82,6 +97,14 @@ type State = {
     fullScreen?: boolean;
     showExtraBar?: boolean;
     isMenuOpen: boolean;
+    upgradeStatus: UpgradeStatus;
+    upgradeProgress?: {
+        total: number;
+        delta: number;
+        transferred: number;
+        percent: number;
+        bytesPerSecond: number;
+    };
 };
 
 type TabViewStatus = {
@@ -119,6 +142,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
             tabViewStatus: new Map(this.props.teams.map((team) => team.tabs.map((tab) => getTabViewName(team.name, tab.name))).flat().map((tabViewName) => [tabViewName, {status: Status.LOADING}])),
             darkMode: this.props.darkMode,
             isMenuOpen: false,
+            upgradeStatus: UpgradeStatus.NONE,
         };
     }
 
@@ -219,6 +243,27 @@ export default class MainPage extends React.PureComponent<Props, State> {
 
         window.ipcRenderer.on(OPEN_TEAMS_DROPDOWN, () => {
             this.setState({isMenuOpen: true});
+        });
+
+        window.ipcRenderer.on(UPDATE_AVAILABLE, () => {
+            this.setState({upgradeStatus: UpgradeStatus.AVAILABLE});
+        });
+
+        window.ipcRenderer.on(UPDATE_DOWNLOADED, () => {
+            this.setState({upgradeStatus: UpgradeStatus.DOWNLOADED});
+        });
+
+        window.ipcRenderer.on(UPDATE_PROGRESS, (event, total, delta, transferred, percent, bytesPerSecond) => {
+            this.setState({
+                upgradeStatus: UpgradeStatus.DOWNLOADING,
+                upgradeProgress: {
+                    total,
+                    delta,
+                    transferred,
+                    percent,
+                    bytesPerSecond,
+                },
+            });
         });
 
         if (window.process.platform !== 'darwin') {
@@ -334,16 +379,11 @@ export default class MainPage extends React.PureComponent<Props, State> {
             />
         );
 
-        let topBarClassName = 'topBar';
-        if (window.process.platform === 'darwin') {
-            topBarClassName += ' macOS';
-        }
-        if (this.state.darkMode) {
-            topBarClassName += ' darkMode';
-        }
-        if (this.state.fullScreen) {
-            topBarClassName += ' fullScreen';
-        }
+        const topBarClassName = classNames('topBar', {
+            macOS: window.process.platform === 'darwin',
+            darkMode: this.state.darkMode,
+            fullScreen: this.state.fullScreen,
+        });
 
         let maxButton;
         if (this.state.maximized || this.state.fullScreen) {
@@ -366,11 +406,46 @@ export default class MainPage extends React.PureComponent<Props, State> {
             );
         }
 
-        let overlayGradient;
-        if (window.process.platform !== 'darwin') {
-            overlayGradient = (
-                <span className='overlay-gradient'/>
-            );
+        let upgradeTooltip;
+        switch (this.state.upgradeStatus) {
+        case UpgradeStatus.AVAILABLE:
+            upgradeTooltip = 'Update available';
+            break;
+        case UpgradeStatus.DOWNLOADED:
+            upgradeTooltip = 'Update ready to install';
+            break;
+        case UpgradeStatus.DOWNLOADING:
+            upgradeTooltip = `Downloading update. ${String(this.state.upgradeProgress?.percent).split('.')[0]}% of ${prettyBytes(this.state.upgradeProgress?.total || 0)} @ ${prettyBytes(this.state.upgradeProgress?.bytesPerSecond || 0)}/s`;
+            break;
+        }
+
+        let upgradeIcon;
+        if (this.state.upgradeStatus !== UpgradeStatus.NONE) {
+            upgradeIcon = (
+                <span className={classNames('upgrade-btns', {darkMode: this.state.darkMode})}>
+                    <div
+                        className={classNames('button upgrade-button', {
+                            rotate: this.state.upgradeStatus === UpgradeStatus.DOWNLOADING,
+                        })}
+                        title={upgradeTooltip}
+                        onClick={() => {
+                            if (this.state.upgradeStatus === UpgradeStatus.DOWNLOADING) {
+                                return;
+                            }
+
+                            window.ipcRenderer.send(this.state.upgradeStatus === UpgradeStatus.DOWNLOADED ? START_UPGRADE : START_DOWNLOAD);
+                        }}
+                    >
+                        <i
+                            className={classNames({
+                                'icon-arrow-down-bold-circle-outline': this.state.upgradeStatus === UpgradeStatus.AVAILABLE,
+                                'icon-sync': this.state.upgradeStatus === UpgradeStatus.DOWNLOADING,
+                                'icon-arrow-up-bold-circle-outline': this.state.upgradeStatus === UpgradeStatus.DOWNLOADED,
+                            })}
+                        />
+                        {(this.state.upgradeStatus !== UpgradeStatus.DOWNLOADING) && <div className={'circle'}/>}
+                    </div>
+                </span>);
         }
 
         let titleBarButtons;
@@ -435,7 +510,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
                         darkMode={this.state.darkMode}
                     />
                     {tabsRow}
-                    {overlayGradient}
+                    {upgradeIcon}
                     {titleBarButtons}
                 </div>
             </Row>
