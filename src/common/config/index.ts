@@ -47,17 +47,17 @@ function checkWriteableApp() {
             return false;
         }
 
-        // temporarily disabling auto updater for macOS due to security issues
         // eslint-disable-next-line no-undef
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        return process.platform !== 'darwin' && __CAN_UPGRADE__; // prevent showing the option if the path is not writeable, like in a managed environment.
+        return __CAN_UPGRADE__; // prevent showing the option if the path is not writeable, like in a managed environment.
     }
 
+    // temporarily disabling auto updater for macOS due to security issues
     // eslint-disable-next-line no-undef
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    return __CAN_UPGRADE__;
+    return process.platform !== 'darwin' && __CAN_UPGRADE__;
 }
 export class Config extends EventEmitter {
     configFilePath: string;
