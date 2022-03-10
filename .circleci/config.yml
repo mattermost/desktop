@@ -509,6 +509,7 @@ workflows:
             branches:
               ignore:
                 - /^build-pr-.*/
+                - nightly
       - begin-notification:
           context: desktop-notify
           filters:
@@ -525,6 +526,7 @@ workflows:
             branches:
               ignore:
                 - /^build-pr-.*/
+                - nightly
 
       - build-win-no-installer:
           requires:
@@ -534,6 +536,7 @@ workflows:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
                 - /^build-pr-.*/
+                - nightly
 
       - build-mac-no-dmg:
           requires:
@@ -543,6 +546,7 @@ workflows:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
                 - /^build-pr-.*/
+                - nightly
 
       - msi_installer:
           requires:
@@ -555,15 +559,17 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - nightly
 
       - mac_installer:
           requires:
             - check
           context: codesign-certificates
-          # filters:
-          #   branches:
-          #     only:
-          #       - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+          filters:
+            branches:
+              only:
+                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - nightly
 
       - store_artifacts:
           # for master/PR builds
@@ -577,6 +583,7 @@ workflows:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
                 - /^build-pr-.*/
+                - nightly
 
       - upload_to_s3:
           # for release builds
@@ -589,6 +596,7 @@ workflows:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - nightly
 
       - upload_to_github:
           requires:
