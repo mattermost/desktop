@@ -425,26 +425,10 @@ jobs:
           name: "Setup files for aws-s3"
           command: |
             mkdir -p ./aws-s3-dist
-            cp --backup=numbered ./build/{macos-release,win-release,linux}/* ./aws-s3-dist
+            cp -r --backup=numbered ./build/{macos-release,win-release,linux}/* ./aws-s3-dist
       - aws-s3/copy:
           from: ./aws-s3-dist/
           to: s3://releases.mattermost.com/desktop/
-          arguments: --acl public-read --cache-control "no-cache" --recursive
-
-  upload_to_s3_daily:
-    executor: aws
-    steps:
-      - checkout
-      - attach_workspace:
-          at: ./build
-      - run:
-          name: "Setup files for aws-s3"
-          command: |
-            mkdir -p ./aws-s3-dist
-            cp -r --backup=numbered ./build/{macos-release,win,linux}/* ./aws-s3-dist
-      - aws-s3/copy:
-          from: ./aws-s3-dist/
-          to: s3://mattermost-desktop-daily-builds/
           arguments: --acl public-read --cache-control "no-cache" --recursive
 
   upload_to_github:
@@ -629,8 +613,8 @@ workflows:
     when: << pipeline.parameters.run_nightly >>
     jobs:
       - build-linux
-      - build-win-no-installer:
-          context: electron-installer
+      - msi_installer:
+          context: windows-codesign
       - mac_installer:
           context: codesign-certificates
       - store_artifacts:
@@ -638,13 +622,13 @@ workflows:
           # for master/PR builds
           requires:
             - build-linux
-            - build-win-no-installer
+            - msi_installer
             - mac_installer
       - upload_to_s3:
           context: mattermost-release-s3
           requires:
             - build-linux
-            - build-win-no-installer
+            - msi_installer
             - mac_installer
       - share_to_channel:
           context: desktop_browserview
