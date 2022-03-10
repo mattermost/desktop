@@ -559,7 +559,6 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - nightly
 
       - mac_installer:
           requires:
@@ -569,7 +568,6 @@ workflows:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - nightly
 
       - store_artifacts:
           # for master/PR builds
@@ -596,7 +594,6 @@ workflows:
             branches:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-                - nightly
 
       - upload_to_github:
           requires:
