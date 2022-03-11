@@ -26,7 +26,7 @@ const buildConfig: BuildConfig = {
       url: 'https://example.com'
     }
   */],
-    helpLink: 'https://about.mattermost.com/default-desktop-app-documentation/',
+    helpLink: 'https://docs.mattermost.com/messaging/managing-desktop-app-servers.html',
     enableServerManagement: true,
     enableAutoUpdater: true,
     managedResources: ['trusted'],
