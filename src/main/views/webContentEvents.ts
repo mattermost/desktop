@@ -179,7 +179,6 @@ export class WebContentsEventManager {
                         show: false,
                         center: true,
                         webPreferences: {
-                            nativeWindowOpen: true,
                             spellcheck: (typeof spellcheck === 'undefined' ? true : spellcheck),
                         },
                     });

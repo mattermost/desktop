@@ -27,6 +27,8 @@ import {
     APP_LOGGED_OUT,
     GET_VIEW_NAME,
     GET_VIEW_WEBCONTENTS_ID,
+    DISPATCH_GET_DESKTOP_SOURCES,
+    DESKTOP_SOURCES_RESULT,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -147,6 +149,10 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
     }
     case 'history-button': {
         ipcRenderer.send(BROWSER_HISTORY_BUTTON, viewName);
+        break;
+    }
+    case 'get-desktop-sources': {
+        ipcRenderer.send(DISPATCH_GET_DESKTOP_SOURCES, viewName, message);
         break;
     }
     }
@@ -274,17 +280,14 @@ window.addEventListener('storage', (e) => {
     }
 });
 
-contextBridge.exposeInMainWorld('desktopCapturer', {
-    getSources: async (options) => {
-        const sources = await desktopCapturer.getSources(options);
-        return sources.map((source) => {
-            return {
-                id: source.id,
-                name: source.name,
-                thumbnailURL: source.thumbnail.toDataURL(),
-            };
-        });
-    },
+ipcRenderer.on(DESKTOP_SOURCES_RESULT, (event, sources) => {
+    window.postMessage(
+        {
+            type: 'desktop-sources-result',
+            message: sources,
+        },
+        window.location.origin,
+    );
 });
 
 /* eslint-enable no-magic-numbers */

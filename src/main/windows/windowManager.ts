@@ -3,7 +3,7 @@
 
 /* eslint-disable max-lines */
 import path from 'path';
-import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
+import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer} from 'electron';
 import log from 'electron-log';
 
 import {
@@ -22,6 +22,8 @@ import {
     RESIZE_MODAL,
     APP_LOGGED_OUT,
     BROWSER_HISTORY_BUTTON,
+    DISPATCH_GET_DESKTOP_SOURCES,
+    DESKTOP_SOURCES_RESULT,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
@@ -65,6 +67,7 @@ export class WindowManager {
         ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
         ipcMain.handle(GET_VIEW_NAME, this.handleGetViewName);
         ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, this.handleGetWebContentsId);
+        ipcMain.on(DISPATCH_GET_DESKTOP_SOURCES, this.handleGetDesktopSources);
     }
 
     handleUpdateConfig = () => {
@@ -629,6 +632,23 @@ export class WindowManager {
 
     handleGetWebContentsId = (event: IpcMainInvokeEvent) => {
         return event.sender.id;
+    }
+
+    handleGetDesktopSources = async (event: IpcMainEvent, viewName: string, opts: Electron.SourcesOptions) => {
+        const view = this.viewManager?.views.get(viewName);
+        if (!view) {
+            return;
+        }
+
+        desktopCapturer.getSources(opts).then((sources) => {
+            view.view.webContents.send(DESKTOP_SOURCES_RESULT, sources.map((source) => {
+                return {
+                    id: source.id,
+                    name: source.name,
+                    thumbnailURL: source.thumbnail.toDataURL(),
+                };
+            }));
+        });
     }
 }
 
