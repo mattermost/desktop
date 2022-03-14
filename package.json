@@ -7,7 +7,7 @@
   "author": "Mattermost, Inc. <feedback@mattermost.com>",
   "license": "Apache-2.0",
   "desktopName": "Mattermost.Desktop",
-  "homepage": "https://about.mattermost.com",
+  "homepage": "https://mattermost.com",
   "engines": {
     "node": ">=4.2.0"
   },
