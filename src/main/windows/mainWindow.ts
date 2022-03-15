@@ -79,7 +79,6 @@ function createMainWindow(options: {linuxAppIcon: string}) {
         trafficLightPosition: {x: 12, y: 12},
         backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
         webPreferences: {
-            nativeWindowOpen: true,
             disableBlinkFeatures: 'Auxclick',
             preload,
             spellcheck,
