@@ -1,7 +1,7 @@
 {
   "publish": [{
     "provider": "generic",
-    "url": "https://releases.mattermost.com/desktop"
+    "url": "http://desktop-test-autoupdater.s3-website-us-east-1.amazonaws.com/"
   }],
   "appId": "Mattermost.Desktop",
   "artifactName": "${version}/${name}-${version}-${os}-${arch}.${ext}",
