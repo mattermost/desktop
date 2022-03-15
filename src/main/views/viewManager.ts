@@ -301,7 +301,6 @@ export class ViewManager {
             const preload = getLocalPreload('urlView.js');
             const urlView = new BrowserView({
                 webPreferences: {
-                    nativeWindowOpen: true,
                     preload,
 
                     // Workaround for this issue: https://github.com/electron/electron/issues/30993
@@ -357,7 +356,6 @@ export class ViewManager {
     createLoadingScreen = () => {
         const preload = getLocalPreload('loadingScreenPreload.js');
         this.loadingScreen = new BrowserView({webPreferences: {
-            nativeWindowOpen: true,
             preload,
 
             // Workaround for this issue: https://github.com/electron/electron/issues/30993

@@ -49,7 +49,7 @@ commands:
         default: "MattermostRelease"
       icon:
         type: string
-        default: "https://www.mattermost.org/wp-content/uploads/2016/04/icon.png"
+        default: "https://mattermost.com/wp-content/uploads/2022/02/icon.png"
     steps:
       - run: 
           command: |
@@ -236,11 +236,9 @@ jobs:
           operation: "install-deps"
       - win_make:
           operation: "build"
+      - run: bash -x ./scripts/patch_updater_yml.sh
       - run: mkdir -p ./build/win-release
-      - run: cp -r release/*.zip ./build/win-release
-      - run: cp -r release/*.msi ./build/win-release
-      - run: cp -r release/*.exe ./build/win-release
-
+      - run: bash -x ./scripts/cp_artifacts.sh release ./build/win-release
       - persist_to_workspace:
           root: ./build/
           paths:
@@ -428,26 +426,10 @@ jobs:
           name: "Setup files for aws-s3"
           command: |
             mkdir -p ./aws-s3-dist
-            cp --backup=numbered ./build/{macos-release,win-release,linux}/* ./aws-s3-dist
+            cp -r --backup=numbered ./build/{macos-release,win-release,linux}/* ./aws-s3-dist
       - aws-s3/copy:
           from: ./aws-s3-dist/
           to: s3://releases.mattermost.com/desktop/
-          arguments: --acl public-read --cache-control "no-cache" --recursive
-
-  upload_to_s3_daily:
-    executor: aws
-    steps:
-      - checkout
-      - attach_workspace:
-          at: ./build
-      - run:
-          name: "Setup files for aws-s3"
-          command: |
-            mkdir -p ./aws-s3-dist
-            cp -r --backup=numbered ./build/{macos-release,win,linux}/* ./aws-s3-dist
-      - aws-s3/copy:
-          from: ./aws-s3-dist/
-          to: s3://mattermost-desktop-daily-builds/
           arguments: --acl public-read --cache-control "no-cache" --recursive
 
   upload_to_github:
@@ -512,6 +494,7 @@ workflows:
             branches:
               ignore:
                 - /^build-pr-.*/
+                - nightly
       - begin-notification:
           context: desktop-notify
           filters:
@@ -529,6 +512,7 @@ workflows:
             branches:
               ignore:
                 - /^build-pr-.*/
+                - nightly
 
       - build-win-no-installer:
           requires:
@@ -538,6 +522,7 @@ workflows:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
                 - /^build-pr-.*/
+                - nightly
 
       - build-mac-no-dmg:
           requires:
@@ -547,6 +532,7 @@ workflows:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
                 - /^build-pr-.*/
+                - nightly
 
       - msi_installer:
           requires:
@@ -564,10 +550,10 @@ workflows:
           requires:
             - check
           context: codesign-certificates
-          # filters:
-          #   branches:
-          #     only:
-          #       - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+          filters:
+            branches:
+              only:
+                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - store_artifacts:
           # for master/PR builds
@@ -581,6 +567,7 @@ workflows:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
                 - /^build-pr-.*/
+                - nightly
 
       - upload_to_s3:
           # for release builds
@@ -632,10 +619,9 @@ workflows:
   nightly_browser_view:
     when: << pipeline.parameters.run_nightly >>
     jobs:
-      - build-linux:
-          context: linux-repo-generation
-      - build-win-no-installer:
-          context: electron-installer
+      - build-linux
+      - msi_installer:
+          context: windows-codesign
       - mac_installer:
           context: codesign-certificates
       - store_artifacts:
@@ -643,13 +629,13 @@ workflows:
           # for master/PR builds
           requires:
             - build-linux
-            - build-win-no-installer
+            - msi_installer
             - mac_installer
       - upload_to_s3:
           context: mattermost-release-s3
           requires:
             - build-linux
-            - build-win-no-installer
+            - msi_installer
             - mac_installer
       - share_to_channel:
           context: desktop_browserview

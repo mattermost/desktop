@@ -17,7 +17,6 @@ export function createSettingsWindow(mainWindow: BrowserWindow, withDevTools: bo
         title: 'Desktop App Settings',
         fullscreen: false,
         webPreferences: {
-            nativeWindowOpen: true,
             preload,
             spellcheck,
         }});
