@@ -302,7 +302,10 @@ function initializeAfterAppReady() {
         AutoLauncher.upgradeAutoLaunch();
     }
 
-    if (global.isDev) {
+    // eslint-disable-next-line no-undef
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    if (global.isDev || __IS_NIGHTLY_BUILD__) {
         installExtension(REACT_DEVELOPER_TOOLS).
             then((name) => log.info(`Added Extension:  ${name}`)).
             catch((err) => log.error('An error occurred: ', err));
