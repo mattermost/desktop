@@ -9,7 +9,8 @@ const config = require('../electron-builder.json');
 
 exports.default = async function notarizing(context) {
     const {electronPlatformName, appOutDir} = context;
-    if (electronPlatformName !== 'darwin' || process.platform !== 'darwin') {
+
+    if (!(['darwin', 'mas'].includes(electronPlatformName) && process.platform === 'darwin')) {
         return;
     }
 

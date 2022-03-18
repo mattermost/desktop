@@ -198,10 +198,15 @@ function initializeBeforeAppReady() {
     refreshTrayImages(Config.trayIconTheme);
 
     // If there is already an instance, quit this one
-    const gotTheLock = app.requestSingleInstanceLock();
-    if (!gotTheLock) {
-        app.exit();
-        global.willAppQuit = true;
+    // eslint-disable-next-line no-undef
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    if (!__IS_MAC_APP_STORE__) {
+        const gotTheLock = app.requestSingleInstanceLock();
+        if (!gotTheLock) {
+            app.exit();
+            global.willAppQuit = true;
+        }
     }
 
     AllowProtocolDialog.init();
