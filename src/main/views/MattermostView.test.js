@@ -105,12 +105,15 @@ describe('main/views/MattermostView', () => {
     describe('retry', () => {
         const window = {on: jest.fn()};
         const mattermostView = new MattermostView(tabView, {}, window, {});
+        const retryInBackgroundFn = jest.fn();
 
         beforeEach(() => {
+            jest.useFakeTimers();
             mattermostView.view.webContents.loadURL.mockImplementation(() => Promise.resolve());
             mattermostView.loadSuccess = jest.fn();
             mattermostView.loadRetry = jest.fn();
             mattermostView.emit = jest.fn();
+            mattermostView.retryInBackground = () => retryInBackgroundFn;
         });
 
         it('should do nothing when webcontents are destroyed', () => {
@@ -140,7 +143,7 @@ describe('main/views/MattermostView', () => {
             expect(mattermostView.loadRetry).toBeCalledWith('http://server-1.com', error);
         });
 
-        it('should set to error status when max retries are reached', async () => {
+        it('should set to error status and retry in the background when max retries are reached', async () => {
             mattermostView.maxRetries = 0;
             const error = new Error('test');
             const promise = Promise.reject(error);
@@ -151,6 +154,8 @@ describe('main/views/MattermostView', () => {
             expect(mattermostView.loadRetry).not.toBeCalled();
             expect(WindowManager.sendToRenderer).toBeCalledWith(LOAD_FAILED, mattermostView.tab.name, expect.any(String), expect.any(String));
             expect(mattermostView.status).toBe(-1);
+            jest.runAllTimers();
+            expect(retryInBackgroundFn).toBeCalled();
         });
     });
 

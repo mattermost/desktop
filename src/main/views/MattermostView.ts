@@ -175,9 +175,23 @@ export class MattermostView extends EventEmitter {
                 } else {
                     WindowManager.sendToRenderer(LOAD_FAILED, this.tab.name, err.toString(), loadURL.toString());
                     this.emit(LOAD_FAILED, this.tab.name, err.toString(), loadURL.toString());
-                    log.info(`[${Util.shorten(this.tab.name)}] Couldn't stablish a connection with ${loadURL}: ${err}.`);
+                    log.info(`[${Util.shorten(this.tab.name)}] Couldn't stablish a connection with ${loadURL}: ${err}. Will continue to retry in the background.`);
                     this.status = Status.ERROR;
+                    this.retryLoad = setTimeout(this.retryInBackground(loadURL), RELOAD_INTERVAL);
                 }
+            });
+        };
+    }
+
+    retryInBackground = (loadURL: string) => {
+        return () => {
+            // window was closed while retrying
+            if (!this.view || !this.view.webContents) {
+                return;
+            }
+            const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
+            loading.then(this.loadSuccess(loadURL)).catch(() => {
+                this.retryLoad = setTimeout(this.retryInBackground(loadURL), RELOAD_INTERVAL);
             });
         };
     }

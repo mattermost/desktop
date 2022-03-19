@@ -44,6 +44,7 @@ import {
     START_UPGRADE,
     START_DOWNLOAD,
     CLOSE_TAB,
+    RELOAD_CURRENT_VIEW,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -358,6 +359,10 @@ export default class MainPage extends React.PureComponent<Props, State> {
         this.handleCloseTeamsDropdown();
     }
 
+    reloadCurrentView = () => {
+        window.ipcRenderer.send(RELOAD_CURRENT_VIEW);
+    }
+
     render() {
         const currentTabs = this.props.teams.find((team) => team.name === this.state.activeServerName)?.tabs || [];
 
@@ -528,16 +533,6 @@ export default class MainPage extends React.PureComponent<Props, State> {
                 return null;
             }
             switch (tabStatus.status) {
-            case Status.NOSERVERS: // TODO: substitute with https://mattermost.atlassian.net/browse/MM-25003
-                component = (
-                    <ErrorView
-                        id={'NoServers'}
-                        errorInfo={'No Servers configured'}
-                        url={tabStatus.extra ? tabStatus.extra.url : ''}
-                        active={true}
-                        appName={this.props.appName}
-                    />);
-                break;
             case Status.FAILED:
                 component = (
                     <ErrorView
@@ -546,6 +541,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
                         url={tabStatus.extra ? tabStatus.extra.url : ''}
                         active={true}
                         appName={this.props.appName}
+                        handleLink={this.reloadCurrentView}
                     />);
                 break;
             case Status.LOADING:
