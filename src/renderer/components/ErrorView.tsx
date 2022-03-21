@@ -13,6 +13,7 @@ type Props = {
     id?: string;
     active?: boolean;
     appName?: string;
+    handleLink: () => void;
 };
 
 export default function ErrorView(props: Props) {
@@ -42,27 +43,26 @@ export default function ErrorView(props: Props) {
                         >
                             <h2>{`Cannot connect to ${props.appName}`}</h2>
                             <hr/>
-                            <p>{`We're having trouble connecting to ${props.appName}. If refreshing this page (Ctrl+R or Command+R) does not work please verify that:`}</p>
-                            <br/>
+                            <p>
+                                {`We're having trouble connecting to ${props.appName}. We'll continue to try and establish a connection.`}
+                                <br/>
+                                {'If refreshing this page (Ctrl+R or Command+R) does not work please verify that:'}
+                            </p>
                             <ul className='ErrorView-bullets' >
                                 <li>{'Your computer is connected to the internet.'}</li>
                                 <li>{`The ${props.appName} URL `}
                                     <a
 
-                                        //onClick={handleClick}
-                                        href={props.url}
-                                        target='_blank'
-                                        rel='noreferrer'
+                                        onClick={props.handleLink}
+                                        href='#'
                                     >
                                         {props.url}
                                     </a>{' is correct.'}</li>
                                 <li>{'You can reach '}
                                     <a
 
-                                        // onClick={handleClick}
-                                        href={props.url}
-                                        target='_blank'
-                                        rel='noreferrer'
+                                        onClick={props.handleLink}
+                                        href='#'
                                     >
                                         {props.url}
                                     </a>{' from a browser window.'}</li>

@@ -24,6 +24,7 @@ import {
     BROWSER_HISTORY_BUTTON,
     DISPATCH_GET_DESKTOP_SOURCES,
     DESKTOP_SOURCES_RESULT,
+    RELOAD_CURRENT_VIEW,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
@@ -68,6 +69,7 @@ export class WindowManager {
         ipcMain.handle(GET_VIEW_NAME, this.handleGetViewName);
         ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, this.handleGetWebContentsId);
         ipcMain.on(DISPATCH_GET_DESKTOP_SOURCES, this.handleGetDesktopSources);
+        ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
     }
 
     handleUpdateConfig = () => {
@@ -649,6 +651,15 @@ export class WindowManager {
                 };
             }));
         });
+    }
+
+    handleReloadCurrentView = () => {
+        const view = this.viewManager?.getCurrentView();
+        if (!view) {
+            return;
+        }
+        view?.reload();
+        this.viewManager?.showByName(view?.name);
     }
 }
 
