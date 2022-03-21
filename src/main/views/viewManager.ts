@@ -98,7 +98,7 @@ export class ViewManager {
         view.load(url);
         view.on(UPDATE_TARGET_URL, this.showURLView);
         view.on(LOADSCREEN_END, this.finishLoading);
-        view.once(LOAD_FAILED, this.failLoading);
+        view.on(LOAD_FAILED, this.failLoading);
     }
 
     reloadViewIfNeeded = (viewName: string) => {

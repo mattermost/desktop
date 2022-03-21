@@ -118,3 +118,5 @@ export const UPDATE_URL_VIEW_WIDTH = 'update-url-view-width';
 export const DISPATCH_GET_DESKTOP_SOURCES = 'dispatch-get-desktop-sources';
 export const DESKTOP_SOURCES_RESULT = 'desktop-sources-result';
 
+export const RELOAD_CURRENT_VIEW = 'reload-current-view';
+
