@@ -177,7 +177,7 @@ ipcRenderer.on('notification-clicked', (event, data) => {
 });
 
 const findUnread = (favicon) => {
-    const classes = ['team-container unreads', 'SidebarChannel unread', 'sidebar-item unread-title'];
+    const classes = ['team-container unread', 'SidebarChannel unread', 'sidebar-item unread-title'];
     const isUnread = classes.some((classPair) => {
         const result = document.getElementsByClassName(classPair);
         return result && result.length > 0;
