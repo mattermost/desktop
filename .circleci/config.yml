@@ -28,7 +28,7 @@ executors:
   mac:
     working_directory: ~/mattermost-desktop
     macos:
-      xcode: "13.2.1"
+      xcode: "13.0.0"
   aws:
     working_directory: ~/mattermost-desktop
     docker:
@@ -624,6 +624,9 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+
+      - mac_app_store_testflight:
+          context: desktop-mac-app-store
   build-for-pr:
     jobs:
       - build-windows-pr:
