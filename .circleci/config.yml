@@ -564,6 +564,9 @@ workflows:
                 - /^build-pr-.*/
                 - nightly
 
+      - mac_app_store:
+          context: desktop-mac-app-store
+
       - msi_installer:
           requires:
             - check
