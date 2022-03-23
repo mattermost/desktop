@@ -375,10 +375,7 @@ jobs:
       - run:
           name: Patch version number for MAS
           command: ./scripts/patch_mas_version.sh
-      - build:
-          os: mas
-          path: ./build/mas
-          subpath: ./mas/
+      - run: npm run package:mas
       - run:
           name: 'Upload to App Store Connect'
           command: fastlane publish_test path:"$(find . -name \*.pkg -print -quit)"

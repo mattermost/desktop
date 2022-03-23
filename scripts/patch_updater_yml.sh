@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -e
-shopt -s nullglob
 
 VERSION="$(jq -r '.version' <package.json)"
 STABLE_VERSION="$(./node_modules/.bin/semver $VERSION -c)"
