@@ -28,7 +28,7 @@ executors:
   mac:
     working_directory: ~/mattermost-desktop
     macos:
-      xcode: "10.3.0"
+      xcode: "13.2.1"
   aws:
     working_directory: ~/mattermost-desktop
     docker:
