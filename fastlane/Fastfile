@@ -4,7 +4,7 @@ fastlane_require 'erb'
 fastlane_require 'json'
 fastlane_require 'pathname'
 
-lane :publish_test do
+lane :publish_test do |options|
   api_key = ''
   unless ENV['IOS_API_KEY_ID'].nil? || ENV['IOS_API_KEY_ID'].empty? ||
     ENV['IOS_API_ISSUER_ID'].nil? || ENV['IOS_API_ISSUER_ID'].empty? ||
@@ -29,7 +29,7 @@ lane :publish_test do
       File.delete("../#{api_key_path}")
     end
     pilot(
-      pkg: "./release/mas-universal/5.1.0/mattermost-desktop-5.1.0-mac-universal.pkg",
+      pkg: options[:path],
       api_key: api_key
     )
 end

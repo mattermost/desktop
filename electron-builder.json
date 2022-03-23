@@ -1,8 +1,10 @@
 {
-  "publish": [{
+  "publish": [
+    {
     "provider": "generic",
     "url": "https://releases.mattermost.com/desktop"
-  }],
+    }
+  ],
   "appId": "Mattermost.Desktop",
   "artifactName": "${version}/${name}-${version}-${os}-${arch}.${ext}",
   "directories": {
@@ -39,7 +41,13 @@
   "deb": {
     "artifactName": "${version}/${name}_${version}-1_${arch}.${ext}",
     "synopsis": "Mattermost Desktop App",
-    "depends": ["gconf2", "gconf-service", "libnotify4", "libxtst6", "libnss3"],
+    "depends": [
+      "gconf2",
+      "gconf-service",
+      "libnotify4",
+      "libxtst6",
+      "libnss3"
+    ],
     "category": "contrib/net",
     "priority": "optional"
   },

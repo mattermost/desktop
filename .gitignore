@@ -20,3 +20,5 @@ testUserData
 
 fastlane/README.md
 fastlane/report.xml
+
+*.provisionprofile
