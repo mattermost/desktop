@@ -352,7 +352,7 @@ jobs:
           paths:
             - "./macos-release/"
 
-  mac_app_store:
+  mac_app_store_testflight:
     executor: mac
 
     steps:
@@ -558,9 +558,6 @@ workflows:
                 - /^build-pr-.*/
                 - nightly
 
-      - mac_app_store:
-          context: desktop-mac-app-store
-
       - msi_installer:
           requires:
             - check
@@ -651,7 +648,7 @@ workflows:
           context: windows-codesign
       - mac_installer:
           context: codesign-certificates
-      - mac_app_store:
+      - mac_app_store_testflight:
           context: desktop-mac-app-store
       - store_artifacts:
           context: desktop_browserview
