@@ -367,9 +367,6 @@ jobs:
           name: Install yq
           command: brew install yq
       - run:
-          name: 'Install fastlane'
-          command: brew install fastlane
-      - run:
           name: Installing npm dependencies
           command: npm ci
       - run:
