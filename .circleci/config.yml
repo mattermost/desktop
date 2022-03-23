@@ -371,7 +371,7 @@ jobs:
           command: npm ci
       - run:
           name: Copy provisioning profile
-          command: echo $MAS_PROFILE | base64 -d > ./mas.provisionprofile
+          command: echo $MAS_PROFILE | base64 -D > ./mas.provisionprofile
       - run:
           name: Patch version number for MAS
           command: ./scripts/patch_mas_version.sh
