@@ -139,7 +139,7 @@
     "css-loader": "^1.0.1",
     "devtron": "^1.4.0",
     "electron": "17.1.0",
-    "electron-builder": "23.0.2",
+    "electron-builder": "22.14.13",
     "electron-connect": "0.6.3",
     "electron-mocha": "11.0.2",
     "electron-notarize": "1.1.1",
