@@ -68,6 +68,17 @@ EOF
 
 cd $REPO_DIR
 
+# Import key
+echo "${!PGP_KEY}" | sed 's/:/\n/g' > ~/pgp-key.private
+KEYID=$(gpg --list-packets < ~/pgp-key.private | awk '$1=="keyid:"{print$2}')
+GNUPGHOME=$GNUPGHOME cat ~/pgp-key.private | gpg --import
+
+# Sign package
+for file in ./${VERSION}/*.deb; do
+    dpkg-sig -k $KEYID --sign builder $file
+    dpkg-sig --verify $file
+done
+
 # Make the directories
 mkdir -p dists/$REPO_VERSION/main/binary-i386
 mkdir -p dists/$REPO_VERSION/main/binary-amd64
@@ -84,8 +95,6 @@ cat dists/$REPO_VERSION/main/binary-amd64/Packages | gzip -9 > dists/$REPO_VERSI
 generate_release >> dists/$REPO_VERSION/Release
 
 # Sign Release File
-echo "${!PGP_KEY}" | sed 's/:/\n/g' > ~/pgp-key.private
-GNUPGHOME=$GNUPGHOME cat ~/pgp-key.private | gpg --import
 GNUPGHOME=$GNUPGHOME cat dists/$REPO_VERSION/Release | gpg --default-key Mattermost -abs > dists/$REPO_VERSION/Release.gpg
 GNUPGHOME=$GNUPGHOME cat dists/$REPO_VERSION/Release | gpg --default-key Mattermost -abs --clearsign > dists/$REPO_VERSION/InRelease
 
