@@ -68,7 +68,9 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
     useSpellCheckerRef: React.RefObject<HTMLInputElement>;
     spellCheckerURLRef: React.RefObject<HTMLInputElement>;
     enableHardwareAccelerationRef: React.RefObject<HTMLInputElement>;
+    startInFullscreenRef: React.RefObject<HTMLInputElement>;
     autoCheckForUpdatesRef: React.RefObject<HTMLInputElement>;
+
 
     saveQueue: SaveQueueItem[];
 
@@ -99,6 +101,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         this.showUnreadBadgeRef = React.createRef();
         this.useSpellCheckerRef = React.createRef();
         this.enableHardwareAccelerationRef = React.createRef();
+        this.startInFullscreenRef = React.createRef();
         this.spellCheckerURLRef = React.createRef();
         this.autoCheckForUpdatesRef = React.createRef();
 
@@ -323,6 +326,13 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'enableHardwareAcceleration', data: this.enableHardwareAccelerationRef.current?.checked});
         this.setState({
             enableHardwareAcceleration: this.enableHardwareAccelerationRef.current?.checked,
+        });
+    }
+
+    handleChangeStartInFullscreen = () => {
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'startInFullscreen', data: this.startInFullscreenRef.current?.checked});
+        this.setState({
+            startInFullscreen: this.startInFullscreenRef.current?.checked,
         });
     }
 
@@ -743,6 +753,24 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 <FormText>
                     {'If enabled, Mattermost UI is rendered more efficiently but can lead to decreased stability for some systems.'}
                     {' Setting takes effect after restarting the app.'}
+                </FormText>
+            </FormCheck>,
+        );
+
+        options.push(
+            <FormCheck
+                key='inputStartInFullScreen'
+            >
+                <FormCheck.Input
+                    type='checkbox'
+                    id='inputStartInFullScreen'
+                    ref={this.startInFullscreenRef}
+                    checked={this.state.startInFullscreen}
+                    onChange={this.handleChangeStartInFullscreen}
+                />
+                {'Open app in fullscreen'}
+                <FormText>
+                    {'If enabled, the Mattermost application will always open in full screen'}
                 </FormText>
             </FormCheck>,
         );

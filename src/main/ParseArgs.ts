@@ -29,6 +29,7 @@ function parseArgs(args: string[]) {
         alias('dataDir', 'd').string('dataDir').describe('dataDir', 'Set the path to where user data is stored.').
         alias('disableDevMode', 'p').boolean('disableDevMode').describe('disableDevMode', 'Disable development mode. Allows for testing as if it was Production.').
         alias('version', 'v').boolean('version').describe('version', 'Prints the application version.').
+        alias('fullscreen', 'f').boolean('fullscreen').describe('fullscreen', 'Opens the application in fullscreen mode.').
         help('help').
         parse(args);
 }
