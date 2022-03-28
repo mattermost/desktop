@@ -76,6 +76,9 @@
       }
     ]
   },
+  "appimage": {
+    "icon": "src/assets/icon.icns"
+  },
   "mac": {
     "category": "public.app-category.productivity",
     "target": [
@@ -91,6 +94,7 @@
         ]
       }
     ],
+    "icon": "src/assets/osx/osx_icon.icns",
     "hardenedRuntime": true,
     "gatekeeperAssess": true,
     "entitlements": "./entitlements.mac.plist",
