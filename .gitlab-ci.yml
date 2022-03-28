@@ -1,8 +1,5 @@
 ---
-
 include:
   - project: mattermost/ci/desktop
     ref: chore/dops-794
     file: private.yml
-
-...
