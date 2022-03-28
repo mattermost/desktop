@@ -59,6 +59,7 @@
       "appimage",
       "rpm"
     ],
+    "icon": "src/assets/icon.icns",
     "extraFiles": [
       {
         "filter": [
@@ -75,9 +76,6 @@
         ]
       }
     ]
-  },
-  "appImage": {
-    "icon": "src/assets/icon.icns"
   },
   "mac": {
     "category": "public.app-category.productivity",
