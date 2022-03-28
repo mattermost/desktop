@@ -2,7 +2,7 @@
 
 include:
   - project: mattermost/ci/desktop
-    ref: main
+    ref: chore/dops-794
     file: private.yml
 
 ...
