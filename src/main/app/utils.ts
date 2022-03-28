@@ -1,26 +1,20 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import fs from 'fs';
-
-import path from 'path';
-
-import {app, BrowserWindow, Menu, Rectangle, Session, session, dialog, nativeImage} from 'electron';
+import {app, BrowserWindow, Menu, Rectangle, Session, session} from 'electron';
 import log from 'electron-log';
 
-import {MigrationInfo, TeamWithTabs} from 'types/config';
+import {TeamWithTabs} from 'types/config';
 import {RemoteInfo} from 'types/server';
 import {Boundaries} from 'types/utils';
 
 import Config from 'common/config';
-import JsonFileManager from 'common/JsonFileManager';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 
 import updateManager from 'main/autoUpdater';
-import {migrationInfoPath, updatePaths} from 'main/constants';
 import {createMenu as createAppMenu} from 'main/menus/app';
 import {createMenu as createTrayMenu} from 'main/menus/tray';
 import {ServerInfo} from 'main/server/serverInfo';
@@ -28,12 +22,6 @@ import {setTrayMenu} from 'main/tray/tray';
 import WindowManager from 'main/windows/windowManager';
 
 import {mainProtocol} from './initialize';
-
-const configFileNames = ['config', 'allowedProtocols', 'app-state', 'certificate', 'trustedOrigins', 'bounds-info', 'migration-info'];
-
-const assetsDir = path.resolve(app.getAppPath(), 'assets');
-const appIconURL = path.resolve(assetsDir, 'appicon_with_spacing_32.png');
-const appIcon = nativeImage.createFromPath(appIconURL);
 
 export function openDeepLink(deeplinkingUrl: string) {
     try {
@@ -188,63 +176,4 @@ export function initCookieManager(session: Session) {
     app.on('browser-window-blur', () => {
         flushCookiesStore(session);
     });
-}
-
-export function migrateMacAppStore() {
-    const migrationPrefs = new JsonFileManager<MigrationInfo>(migrationInfoPath);
-    const oldPath = path.join(app.getPath('userData'), '../../../../../../../Library/Application Support/Mattermost');
-
-    // Check if we've already migrated
-    if (migrationPrefs.getValue('masConfigs')) {
-        return;
-    }
-
-    // Check if the files are there to migrate
-    try {
-        const exists = fs.existsSync(oldPath);
-        if (!exists) {
-            log.info('MAS: No files to migrate, skipping');
-            return;
-        }
-    } catch (e) {
-        log.error('MAS: Failed to check for existing Mattermost Desktop install, skipping', e);
-        return;
-    }
-
-    const cancelImport = dialog.showMessageBoxSync({
-        title: 'Mattermost',
-        message: 'Import Existing Configuration',
-        detail: 'It appears that an existing Mattermost configuration exists, would you like to import it? You will be asked to pick the correct configuration directory.',
-        icon: appIcon,
-        buttons: ['Select Directory and Import', 'Don\'t Import'],
-        type: 'info',
-        defaultId: 0,
-        cancelId: 1,
-    });
-
-    if (cancelImport) {
-        migrationPrefs.setValue('masConfigs', true);
-        return;
-    }
-
-    const result = dialog.showOpenDialogSync({
-        defaultPath: oldPath,
-        properties: ['openDirectory'],
-    });
-    if (!(result && result[0])) {
-        return;
-    }
-
-    try {
-        for (const fileName of configFileNames) {
-            if (fs.existsSync(path.resolve(result[0], `${fileName}.json`))) {
-                const contents = fs.readFileSync(path.resolve(result[0], `${fileName}.json`));
-                fs.writeFileSync(path.resolve(app.getPath('userData'), `${fileName}.json`), contents);
-            }
-        }
-        updatePaths(true);
-        migrationPrefs.setValue('masConfigs', true);
-    } catch (e) {
-        log.error('MAS: An error occurred importing the existing configuration', e);
-    }
 }

@@ -28,7 +28,7 @@ executors:
   mac:
     working_directory: ~/mattermost-desktop
     macos:
-      xcode: "13.0.0"
+      xcode: "10.3.0"
   aws:
     working_directory: ~/mattermost-desktop
     docker:
@@ -352,34 +352,6 @@ jobs:
           paths:
             - "./macos-release/"
 
-  mac_app_store_testflight:
-    executor: mac
-
-    steps:
-      - checkout
-      - run: mkdir -p ./build
-      - attach_workspace:
-          at: ./build
-      - run:
-          name: Update node to v16
-          command: brew upgrade node || true
-      - run:
-          name: Install yq
-          command: brew install yq
-      - run:
-          name: Installing npm dependencies
-          command: npm ci
-      - run:
-          name: Copy provisioning profile
-          command: echo $MAS_PROFILE | base64 -D > ./mas.provisionprofile
-      - run:
-          name: Patch version number for MAS
-          command: ./scripts/patch_mas_version.sh
-      - run: npm run package:mas
-      - run:
-          name: 'Upload to App Store Connect'
-          command: fastlane publish_test path:"$(find . -name \*.pkg -print -quit)"
-
   store_artifacts:
     executor: wine-chrome
     steps:
@@ -624,7 +596,6 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-
   build-for-pr:
     jobs:
       - build-windows-pr:
@@ -649,8 +620,6 @@ workflows:
           context: windows-codesign
       - mac_installer:
           context: codesign-certificates
-      - mac_app_store_testflight:
-          context: desktop-mac-app-store
       - store_artifacts:
           context: desktop_browserview
           # for master/PR builds

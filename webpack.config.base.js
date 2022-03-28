@@ -20,7 +20,6 @@ const codeDefinitions = {
     __HASH_VERSION__: !isRelease && JSON.stringify(VERSION),
     __CAN_UPGRADE__: JSON.stringify(true), // we should set this to false when working on a store version. Hardcoding for now.
     __IS_NIGHTLY_BUILD__: JSON.stringify(process.env.CIRCLE_BRANCH === 'nightly'),
-    __IS_MAC_APP_STORE__: JSON.stringify(process.env.IS_MAC_APP_STORE === 'true'),
 };
 codeDefinitions['process.env.NODE_ENV'] = JSON.stringify(process.env.NODE_ENV);
 

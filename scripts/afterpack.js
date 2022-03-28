@@ -27,7 +27,6 @@ function getAppFileName(context) {
     case 'win32':
         return 'Mattermost.exe';
     case 'darwin':
-    case 'mas':
         return 'Mattermost.app';
     case 'linux':
         return context.packager.executableName;

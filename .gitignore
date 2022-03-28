@@ -17,8 +17,3 @@ test_config.json
 testUserData
 
 .gitattributes
-
-fastlane/README.md
-fastlane/report.xml
-
-*.provisionprofile
