@@ -50,6 +50,8 @@
     "package:windows": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --win --x64 --ia32 --publish=never",
     "package:mac": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --mac --x64 --arm64 --publish=never",
     "package:mac-with-universal": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --mac --x64 --arm64 --universal --publish=never",
+    "package:mas": "cross-env NODE_ENV=production IS_MAC_APP_STORE=true npm-run-all check-build-config build && electron-builder --mac mas --universal --publish=never",
+    "package:mas-dev": "cross-env NODE_ENV=production IS_MAC_APP_STORE=true npm-run-all check-build-config build && electron-builder --mac mas-dev --universal --publish=never",
     "package:linux": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --linux --x64 --ia32 --publish=never",
     "lint:js": "eslint --ignore-path .gitignore --ignore-pattern node_modules --ext .js --ext .jsx --ext .ts --ext .tsx .",
     "lint:js-quiet": "eslint --ignore-path .gitignore --ignore-pattern node_modules --ext .js --ext .jsx --ext .ts --ext .tsx . --quiet",
@@ -83,7 +85,8 @@
     "globals": {
       "__HASH_VERSION__": "5.0.0",
       "__CAN_UPGRADE__": false,
-      "__IS_NIGHTLY_BUILD__": false
+      "__IS_NIGHTLY_BUILD__": false,
+      "__IS_MAC_APP_STORE__": false
     },
     "setupFiles": [
       "./src/jestSetup.js"
