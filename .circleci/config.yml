@@ -159,6 +159,7 @@ jobs:
           at: ./build
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run: rm src/assets/icon.icns
       - build
       - persist_to_workspace:
           root: ./build/
