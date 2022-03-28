@@ -24,14 +24,15 @@ import {
     GET_DOWNLOAD_LOCATION,
     RELOAD_CONFIGURATION,
     GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
+    CHECK_FOR_UPDATES,
 } from 'common/communication';
 
 import AutoSaveIndicator, {SavingState} from './AutoSaveIndicator';
 
-const CONFIG_TYPE_SERVERS = 'servers';
+const CONFIG_TYPE_UPDATES = 'updates';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
-type ConfigType = typeof CONFIG_TYPE_SERVERS | typeof CONFIG_TYPE_APP_OPTIONS;
+type ConfigType = typeof CONFIG_TYPE_UPDATES | typeof CONFIG_TYPE_APP_OPTIONS;
 
 type State = DeepPartial<CombinedConfig> & {
     ready: boolean;
@@ -40,11 +41,12 @@ type State = DeepPartial<CombinedConfig> & {
     userOpenedDownloadDialog: boolean;
     allowSaveSpellCheckerURL: boolean;
     availableLanguages: Array<{label: string; value: string}>;
+    canUpgrade?: boolean;
 }
 
 type SavingStateItems = {
     appOptions: SavingState;
-    servers: SavingState;
+    updates: SavingState;
 };
 
 type SaveQueueItem = {
@@ -67,6 +69,8 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
     spellCheckerURLRef: React.RefObject<HTMLInputElement>;
     enableHardwareAccelerationRef: React.RefObject<HTMLInputElement>;
     startInFullscreenRef: React.RefObject<HTMLInputElement>;
+    autoCheckForUpdatesRef: React.RefObject<HTMLInputElement>;
+
 
     saveQueue: SaveQueueItem[];
 
@@ -78,7 +82,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
             ready: false,
             savingState: {
                 appOptions: SavingState.SAVING_STATE_DONE,
-                servers: SavingState.SAVING_STATE_DONE,
+                updates: SavingState.SAVING_STATE_DONE,
             },
             userOpenedDownloadDialog: false,
             allowSaveSpellCheckerURL: false,
@@ -99,6 +103,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         this.enableHardwareAccelerationRef = React.createRef();
         this.startInFullscreenRef = React.createRef();
         this.spellCheckerURLRef = React.createRef();
+        this.autoCheckForUpdatesRef = React.createRef();
 
         this.saveQueue = [];
         this.selectedSpellCheckerLocales = [];
@@ -127,7 +132,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         const newState = Object.assign({} as State, configData);
         newState.savingState = currentState.savingState || {
             appOptions: SavingState.SAVING_STATE_DONE,
-            servers: SavingState.SAVING_STATE_DONE,
+            updates: SavingState.SAVING_STATE_DONE,
         };
         this.selectedSpellCheckerLocales = configData.spellCheckerLocales?.map((language: string) => ({label: localeTranslations[language] || language, value: language})) || [];
         return newState;
@@ -149,7 +154,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
 
     updateSaveState = () => {
         let queuedUpdateCounts = {
-            [CONFIG_TYPE_SERVERS]: 0,
+            [CONFIG_TYPE_UPDATES]: 0,
             [CONFIG_TYPE_APP_OPTIONS]: 0,
         };
 
@@ -286,6 +291,21 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         });
     }
 
+    handleChangeAutoCheckForUpdates = () => {
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_UPDATES, {key: 'autoCheckForUpdates', data: this.autoCheckForUpdatesRef.current?.checked});
+        this.setState({
+            autoCheckForUpdates: this.autoCheckForUpdatesRef.current?.checked,
+        }, () => {
+            if (this.state.autoCheckForUpdates) {
+                this.checkForUpdates();
+            }
+        });
+    }
+
+    checkForUpdates = () => {
+        window.ipcRenderer.send(CHECK_FOR_UPDATES);
+    }
+
     handleChangeSpellCheckerLocales = (value: OptionsType<{label: string; value: string}>, actionMeta: ActionMeta<{label: string; value: string}>) => {
         switch (actionMeta.action) {
         case 'select-option':
@@ -415,6 +435,12 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
 
             container: {
                 paddingBottom: '40px',
+            },
+
+            checkForUpdatesButton: {
+                marginBottom: '4px',
+                marginLeft: '16px',
+                marginTop: '8px',
             },
         };
 
@@ -784,7 +810,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 <Row>
                     <Col md={12}>
                         <h2 style={settingsPage.sectionHeading}>{'App Options'}</h2>
-                        <div className='IndicatorContainer'>
+                        <div className='IndicatorContainer appOptionsSaveIndicator'>
                             <AutoSaveIndicator
                                 id='appOptionsSaveIndicator'
                                 savingState={this.state.savingState.appOptions}
@@ -801,9 +827,60 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
             );
         }
 
+        let updateRow = null;
+        if (this.state.canUpgrade) {
+            updateRow = (
+                <>
+                    <Row>
+                        <Col md={12}>
+                            <h2 style={settingsPage.sectionHeading}>{'Updates'}</h2>
+                            <div className='IndicatorContainer updatesSaveIndicator'>
+                                <AutoSaveIndicator
+                                    id='updatesSaveIndicator'
+                                    savingState={this.state.savingState.updates}
+                                    errorMessage={'Can\'t save your changes. Please try again.'}
+                                />
+                            </div>
+                            <FormGroup
+                                key='inputAutoCheckForUpdates'
+                            >
+                                <FormCheck>
+                                    <FormCheck.Input
+                                        type='checkbox'
+                                        key='inputAutoCheckForUpdates'
+                                        id='inputAutoCheckForUpdates'
+                                        ref={this.autoCheckForUpdatesRef}
+                                        checked={this.state.autoCheckForUpdates}
+                                        onChange={this.handleChangeAutoCheckForUpdates}
+                                    />
+                                    {'Automatically check for updates'}
+                                    <FormText>
+                                        {'If enabled, updates to the Desktop App will download automatically and you will be notified when ready to install.'}
+                                    </FormText>
+                                </FormCheck>
+                                <Button
+                                    style={settingsPage.checkForUpdatesButton}
+                                    id='checkForUpdatesNow'
+                                    onClick={this.checkForUpdates}
+                                >
+                                    <span>{'Check for Updates Now'}</span>
+                                </Button>
+                            </FormGroup>
+                        </Col>
+                    </Row>
+                    <hr/>
+                </>
+            );
+        }
+
         let waitForIpc;
         if (this.state.ready) {
-            waitForIpc = optionsRow;
+            waitForIpc = (
+                <>
+                    {updateRow}
+                    {optionsRow}
+                </>
+            );
         } else {
             waitForIpc = (<p>{'Loading configuration...'}</p>);
         }

@@ -15,7 +15,6 @@ executors:
       - image: electronuserland/builder:wine-chrome
         environment:
           TAR_OPTIONS: --no-same-owner
-      - image: mattermost/mattermost-preview
   wine-chrome:
     working_directory: ~/mattermost-desktop
     docker:
@@ -29,7 +28,7 @@ executors:
   mac:
     working_directory: ~/mattermost-desktop
     macos:
-      xcode: "10.3.0"
+      xcode: "13.0.0"
   aws:
     working_directory: ~/mattermost-desktop
     docker:
@@ -50,7 +49,7 @@ commands:
         default: "MattermostRelease"
       icon:
         type: string
-        default: "https://www.mattermost.org/wp-content/uploads/2016/04/icon.png"
+        default: "https://mattermost.com/wp-content/uploads/2022/02/icon.png"
     steps:
       - run: 
           command: |
@@ -73,7 +72,7 @@ commands:
     steps:
       - run: wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | apt-key add -
       - run: apt-get update || true && apt-get install -y ca-certificates libxtst-dev libpng++-dev && apt-get update && apt-get -y install << parameters.apt_opts >>
-
+      - run: wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
   update_image:
     description: "Update image"
     parameters:
@@ -113,6 +112,7 @@ commands:
           name: npn run
           command: npm run package:<< parameters.os >>
           no_output_timeout: 30m
+      - run: bash -x ./scripts/patch_updater_yml.sh
       - run: mkdir -p << parameters.path >>
       - run: bash -x ./scripts/cp_artifacts.sh release << parameters.path >>
       - persist_to_workspace:
@@ -139,14 +139,8 @@ jobs:
       - checkout
       - update_image:
           apt_opts: "--no-install-recommends"
-      - run: wget https://github.com/mattermost/mmctl/releases/download/v6.0.0/linux_amd64.tar && tar -xvf linux_amd64.tar
       - run: npm run check-types
-      - run:
-          name: Setup MM Docker Image
-          command: npm run test:docker
-          environment:
-            MMCTL_PATH: ./mmctl
-      - run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run npm run test
+      - run: ELECTRON_DISABLE_SANDBOX=1 npm run test:unit-ci
       - run: mkdir -p /tmp/test-results
       - run: cp test-results.xml /tmp/test-results/
       - store_test_results:
@@ -166,6 +160,10 @@ jobs:
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
       - build
+      - persist_to_workspace:
+          root: ./build/
+          paths:
+            - "./linux/"
       - save_cache:
           key: npm-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
@@ -226,17 +224,18 @@ jobs:
       - run:
           name: Update node to v16
           command: choco install nodejs --version 16.8.0
+      - run:
+          name: Install yq
+          command: choco install yq --version 4.15.1
       - win_make:
           operation: optimize
       - win_make:
           operation: "install-deps"
       - win_make:
           operation: "build"
+      - run: bash -x ./scripts/patch_updater_yml.sh
       - run: mkdir -p ./build/win-release
-      - run: cp -r release/*.zip ./build/win-release
-      - run: cp -r release/*.msi ./build/win-release
-      - run: cp -r release/*.exe ./build/win-release
-
+      - run: bash -x ./scripts/cp_artifacts.sh release ./build/win-release
       - persist_to_workspace:
           root: ./build/
           paths:
@@ -262,7 +261,7 @@ jobs:
             - "~/.cache/electron"
             - "~/.cache/electron-builder"
       - save:
-          filename: "*.exe"
+          filename: "$(jq -r .version package.json)/*.exe"
 
   build-mac-pr:
     executor: mac
@@ -272,6 +271,7 @@ jobs:
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
+      - run: brew install yq
       - run:
           name: Update node to v16
           command: brew upgrade node || true
@@ -296,7 +296,7 @@ jobs:
           paths:
             - "./macos-release/"
       - save:
-          filename: "*.dmg"
+          filename: "$(jq -r .version package.json)/*.dmg"
 
   build-linux-pr:
     executor: wine-mono
@@ -315,7 +315,7 @@ jobs:
             - "~/.cache/electron"
             - "~/.cache/electron-builder"
       - save:
-          filename: "*.tar.gz"
+          filename: "$(jq -r .version package.json)/*.tar.gz"
 
   mac_installer:
     executor: mac
@@ -329,14 +329,13 @@ jobs:
           name: Update node to v16
           command: brew upgrade node || true
       - run:
+          name: Install yq
+          command: brew install yq
+      - run:
           name: Installing npm dependencies
           command: npm ci
       - build:
-          os: mac-universal
-          path: ./build/macos-release
-          subpath: ./macos-release/
-      - build:
-          os: mac
+          os: mac-with-universal
           path: ./build/macos-release
           subpath: ./macos-release/
       - run:
@@ -352,6 +351,34 @@ jobs:
           root: ./build
           paths:
             - "./macos-release/"
+
+  mac_app_store_testflight:
+    executor: mac
+
+    steps:
+      - checkout
+      - run: mkdir -p ./build
+      - attach_workspace:
+          at: ./build
+      - run:
+          name: Update node to v16
+          command: brew upgrade node || true
+      - run:
+          name: Install yq
+          command: brew install yq
+      - run:
+          name: Installing npm dependencies
+          command: npm ci
+      - run:
+          name: Copy provisioning profile
+          command: echo $MAS_PROFILE | base64 -D > ./mas.provisionprofile
+      - run:
+          name: Patch version number for MAS
+          command: ./scripts/patch_mas_version.sh
+      - run: npm run package:mas
+      - run:
+          name: 'Upload to App Store Connect'
+          command: fastlane publish_test path:"$(find . -name \*.pkg -print -quit)"
 
   store_artifacts:
     executor: wine-chrome
@@ -424,35 +451,10 @@ jobs:
           name: "Setup files for aws-s3"
           command: |
             mkdir -p ./aws-s3-dist
-            cp --backup=numbered ./build/{macos-release,win-release,linux}/* ./aws-s3-dist
+            cp -r --backup=numbered ./build/{macos-release,win-release,linux}/* ./aws-s3-dist
       - aws-s3/copy:
           from: ./aws-s3-dist/
-          to: s3://releases.mattermost.com/desktop/$(jq -r .version package.json)/
-          arguments: --acl public-read --cache-control "no-cache" --recursive
-
-  upload_to_s3_daily:
-    executor: aws
-    steps:
-      - checkout
-      - attach_workspace:
-          at: ./build
-      - run:
-          name: "install renaming utility"
-          command: |
-            sudo apt-get install rename
-      - run:
-          name: "Normalize folder names"
-          command: |
-            mv ./build/macos-release ./build/macos
-      - run:
-          name: "Rename to daily for consistency"
-          command: |
-            rename 's/\d+\.\d+\.\d+/daily/' ./build/macos/*
-            rename 's/\d+\.\d+\.\d+/daily/' ./build/linux/*
-            rename 's/\d+\.\d+\.\d+/daily/' ./build/win/*
-      - aws-s3/copy:
-          from: ./build/
-          to: s3://mattermost-desktop-daily-builds/
+          to: s3://releases.mattermost.com/desktop/
           arguments: --acl public-read --cache-control "no-cache" --recursive
 
   upload_to_github:
@@ -517,6 +519,7 @@ workflows:
             branches:
               ignore:
                 - /^build-pr-.*/
+                - nightly
       - begin-notification:
           context: desktop-notify
           filters:
@@ -533,6 +536,7 @@ workflows:
             branches:
               ignore:
                 - /^build-pr-.*/
+                - nightly
 
       - build-win-no-installer:
           requires:
@@ -542,6 +546,7 @@ workflows:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
                 - /^build-pr-.*/
+                - nightly
 
       - build-mac-no-dmg:
           requires:
@@ -551,6 +556,7 @@ workflows:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
                 - /^build-pr-.*/
+                - nightly
 
       - msi_installer:
           requires:
@@ -585,6 +591,7 @@ workflows:
               ignore:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
                 - /^build-pr-.*/
+                - nightly
 
       - upload_to_s3:
           # for release builds
@@ -617,6 +624,7 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+
   build-for-pr:
     jobs:
       - build-windows-pr:
@@ -637,22 +645,24 @@ workflows:
     when: << pipeline.parameters.run_nightly >>
     jobs:
       - build-linux
-      - build-win-no-installer:
-          context: electron-installer
+      - msi_installer:
+          context: windows-codesign
       - mac_installer:
           context: codesign-certificates
+      - mac_app_store_testflight:
+          context: desktop-mac-app-store
       - store_artifacts:
           context: desktop_browserview
           # for master/PR builds
           requires:
             - build-linux
-            - build-win-no-installer
+            - msi_installer
             - mac_installer
-      - upload_to_s3_daily:
-          context: mattermost-desktop-daily-s3
+      - upload_to_s3:
+          context: mattermost-release-s3
           requires:
             - build-linux
-            - build-win-no-installer
+            - msi_installer
             - mac_installer
       - share_to_channel:
           context: desktop_browserview

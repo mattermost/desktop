@@ -1,13 +1,13 @@
 {
   "name": "mattermost-desktop",
   "productName": "Mattermost",
-  "version": "5.0.0-develop",
+  "version": "5.1.0-develop.1",
   "description": "Mattermost",
   "main": "dist/index.js",
   "author": "Mattermost, Inc. <feedback@mattermost.com>",
   "license": "Apache-2.0",
   "desktopName": "Mattermost.Desktop",
-  "homepage": "https://about.mattermost.com",
+  "homepage": "https://mattermost.com",
   "engines": {
     "node": ">=4.2.0"
   },
@@ -16,7 +16,7 @@
     "url": "git://github.com/mattermost/desktop.git"
   },
   "config": {
-    "target": "13.2.0",
+    "target": "14.1.0",
     "arch": "x64",
     "target_arch": "x64",
     "disturl": "https://electronjs.org/headers",
@@ -44,11 +44,14 @@
     "test:e2e:build": "webpack-cli --bail --config webpack.config.test.js",
     "test:e2e:run": "electron-mocha -r @babel/register --reporter mocha-circleci-reporter dist/tests/e2e_bundle.js",
     "test:unit": "jest",
+    "test:unit-ci": "jest --runInBand",
     "test:coverage": "jest --coverage",
     "package:all": "cross-env NODE_ENV=production npm-run-all check-build-config package:windows package:mac package:mac-universal package:linux",
     "package:windows": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --win --x64 --ia32 --publish=never",
     "package:mac": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --mac --x64 --arm64 --publish=never",
-    "package:mac-universal": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --mac --universal --publish=never",
+    "package:mac-with-universal": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --mac --x64 --arm64 --universal --publish=never",
+    "package:mas": "cross-env NODE_ENV=production IS_MAC_APP_STORE=true npm-run-all check-build-config build && electron-builder --mac mas --universal --publish=never",
+    "package:mas-dev": "cross-env NODE_ENV=production IS_MAC_APP_STORE=true npm-run-all check-build-config build && electron-builder --mac mas-dev --universal --publish=never",
     "package:linux": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --linux --x64 --ia32 --publish=never",
     "lint:js": "eslint --ignore-path .gitignore --ignore-pattern node_modules --ext .js --ext .jsx --ext .ts --ext .tsx .",
     "lint:js-quiet": "eslint --ignore-path .gitignore --ignore-pattern node_modules --ext .js --ext .jsx --ext .ts --ext .tsx . --quiet",
@@ -80,10 +83,26 @@
       "**/src/**/*.test.js"
     ],
     "globals": {
-      "__HASH_VERSION__": "5.0.0"
+      "__HASH_VERSION__": "5.0.0",
+      "__CAN_UPGRADE__": false,
+      "__IS_NIGHTLY_BUILD__": false,
+      "__IS_MAC_APP_STORE__": false
     },
     "setupFiles": [
       "./src/jestSetup.js"
+    ],
+    "reporters": [
+      "default",
+      [
+        "jest-junit",
+        {
+          "suiteName": "unit tests",
+          "outputName": "test-results.xml",
+          "classNameTemplate": "{classname}-{title}",
+          "titleTemplate": "{classname}-{title}",
+          "ancestorSeparator": "> "
+        }
+      ]
     ]
   },
   "devDependencies": {
@@ -119,11 +138,11 @@
     "cross-env": "^5.2.0",
     "css-loader": "^1.0.1",
     "devtron": "^1.4.0",
-    "electron": "14.1.0",
-    "electron-builder": "22.11.7",
-    "electron-connect": "^0.6.3",
-    "electron-mocha": "^10.1.0",
-    "electron-notarize": "^1.1.0",
+    "electron": "17.1.0",
+    "electron-builder": "22.14.13",
+    "electron-connect": "0.6.3",
+    "electron-mocha": "11.0.2",
+    "electron-notarize": "1.1.1",
     "eslint": "7.19.0",
     "eslint-import-resolver-webpack": "0.13.0",
     "eslint-plugin-babel": "5.3.1",
@@ -137,6 +156,7 @@
     "file-loader": "^2.0.0",
     "image-webpack-loader": "5.0.0",
     "jest": "^27.3.1",
+    "jest-junit": "^13.0.0",
     "mdi-react": "^6.2.0",
     "mini-css-extract-plugin": "1.6.0",
     "mocha": "^5.2.0",
@@ -158,17 +178,19 @@
   },
   "dependencies": {
     "@hapi/joi": "^16.1.8",
+    "@mattermost/compass-icons": "0.1.21",
     "auto-launch": "^5.0.5",
     "bootstrap": "^4.6.0",
     "bootstrap-dark": "^1.0.3",
     "brace-expansion": "^2.0.0",
     "classnames": "^2.3.1",
-    "electron-context-menu": "3.1.1",
-    "electron-devtools-installer": "^3.2.0",
-    "electron-is-dev": "^2.0.0",
-    "electron-log": "^4.4.1",
-    "electron-updater": "4.3.9",
+    "electron-context-menu": "3.1.2",
+    "electron-devtools-installer": "3.2.0",
+    "electron-is-dev": "2.0.0",
+    "electron-log": "4.4.6",
+    "electron-updater": "5.0.0",
     "font-awesome": "^4.7.0",
+    "pretty-bytes": "^6.0.0",
     "prop-types": "^15.6.2",
     "react": "^16.14.0",
     "react-beautiful-dnd": "^13.1.0",

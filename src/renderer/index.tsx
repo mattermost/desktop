@@ -98,7 +98,7 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         try {
             const configRequest = await window.ipcRenderer.invoke(GET_CONFIGURATION);
             return configRequest;
-        } catch (err) {
+        } catch (err: any) {
             console.log(`there was an error with the config: ${err}`);
             if (exitOnError) {
                 window.ipcRenderer.send(QUIT, `unable to load configuration: ${err}`, err.stack);

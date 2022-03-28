@@ -6,6 +6,7 @@ import log from 'electron-log';
 
 import urlUtils from 'common/utils/url';
 
+import updateManager from 'main/autoUpdater';
 import CertificateStore from 'main/certificateStore';
 import {destroyTray} from 'main/tray/tray';
 import WindowManager from 'main/windows/windowManager';
@@ -59,6 +60,7 @@ export function handleAppBeforeQuit() {
     // Make sure tray icon gets removed if the user exits via CTRL-Q
     destroyTray();
     global.willAppQuit = true;
+    updateManager.handleOnQuit();
 }
 
 export async function handleAppCertificateError(event: Event, webContents: WebContents, url: string, error: string, certificate: Certificate, callback: (isTrusted: boolean) => void) {

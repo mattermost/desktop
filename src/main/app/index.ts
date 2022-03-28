@@ -12,6 +12,6 @@ if (process.env.NODE_ENV !== 'production' && module.hot) {
 // attempt to initialize the application
 try {
     initialize();
-} catch (error) {
+} catch (error: any) {
     throw new Error(`App initialization failed: ${error.toString()}`);
 }

@@ -45,7 +45,6 @@ export default class TeamDropdownView {
 
         const preload = getLocalPreload('dropdown.js');
         this.view = new BrowserView({webPreferences: {
-            nativeWindowOpen: true,
             preload,
 
             // Workaround for this issue: https://github.com/electron/electron/issues/30993

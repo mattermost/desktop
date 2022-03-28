@@ -37,6 +37,12 @@ import WebContentsEventManager from './webContentEvents';
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 36;
 
+enum LoadingScreenState {
+    VISIBLE = 1,
+    FADING = 2,
+    HIDDEN = 3,
+}
+
 export class ViewManager {
     configServers: TeamWithTabs[];
     lastActiveServer?: number;
@@ -48,6 +54,7 @@ export class ViewManager {
     urlViewCancel?: () => void;
     mainWindow: BrowserWindow;
     loadingScreen?: BrowserView;
+    loadingScreenState: LoadingScreenState;
 
     constructor(mainWindow: BrowserWindow) {
         this.configServers = Config.teams.concat();
@@ -56,6 +63,7 @@ export class ViewManager {
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
         this.mainWindow = mainWindow;
         this.closedViews = new Map();
+        this.loadingScreenState = LoadingScreenState.HIDDEN;
     }
 
     updateMainWindow = (mainWindow: BrowserWindow) => {
@@ -83,7 +91,6 @@ export class ViewManager {
         }
         const view = new MattermostView(tabView, serverInfo, this.mainWindow, this.viewOptions);
         this.views.set(tabView.name, view);
-        this.showByName(tabView.name);
         if (!this.loadingScreen) {
             this.createLoadingScreen();
         }
@@ -91,7 +98,7 @@ export class ViewManager {
         view.load(url);
         view.on(UPDATE_TARGET_URL, this.showURLView);
         view.on(LOADSCREEN_END, this.finishLoading);
-        view.once(LOAD_FAILED, this.failLoading);
+        view.on(LOAD_FAILED, this.failLoading);
     }
 
     reloadViewIfNeeded = (viewName: string) => {
@@ -179,18 +186,16 @@ export class ViewManager {
             }
 
             this.currentView = name;
-            if (newView.needsLoadingScreen()) {
-                this.showLoadingScreen();
+            if (!newView.isErrored()) {
+                newView.show();
+                if (newView.needsLoadingScreen()) {
+                    this.showLoadingScreen();
+                }
             }
             newView.window.webContents.send(SET_ACTIVE_VIEW, newView.tab.server.name, newView.tab.type);
             ipcMain.emit(SET_ACTIVE_VIEW, true, newView.tab.server.name, newView.tab.type);
             if (newView.isReady()) {
-                // if view is not ready, the renderer will have something to display instead.
-                newView.show();
                 ipcMain.emit(UPDATE_LAST_ACTIVE, true, newView.tab.server.name, newView.tab.type);
-                if (!newView.needsLoadingScreen()) {
-                    this.fadeLoadingScreen();
-                }
             } else {
                 log.warn(`couldn't show ${name}, not ready`);
             }
@@ -249,8 +254,11 @@ export class ViewManager {
         ipcMain.emit(OPEN_TAB, null, srv.name, tab.name);
     }
 
-    failLoading = () => {
+    failLoading = (tabName: string) => {
         this.fadeLoadingScreen();
+        if (this.currentView === tabName) {
+            this.getCurrentView()?.hide();
+        }
     }
 
     getCurrentView() {
@@ -293,7 +301,6 @@ export class ViewManager {
             const preload = getLocalPreload('urlView.js');
             const urlView = new BrowserView({
                 webPreferences: {
-                    nativeWindowOpen: true,
                     preload,
 
                     // Workaround for this issue: https://github.com/electron/electron/issues/30993
@@ -349,8 +356,12 @@ export class ViewManager {
     createLoadingScreen = () => {
         const preload = getLocalPreload('loadingScreenPreload.js');
         this.loadingScreen = new BrowserView({webPreferences: {
-            nativeWindowOpen: true,
             preload,
+
+            // Workaround for this issue: https://github.com/electron/electron/issues/30993
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            transparent: true,
         }});
         const localURL = getLocalURLString('loadingScreen.html');
         this.loadingScreen.webContents.loadURL(localURL);
@@ -361,7 +372,15 @@ export class ViewManager {
             this.createLoadingScreen();
         }
 
-        this.loadingScreen!.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
+        this.loadingScreenState = LoadingScreenState.VISIBLE;
+
+        if (this.loadingScreen?.webContents.isLoading()) {
+            this.loadingScreen.webContents.once('did-finish-load', () => {
+                this.loadingScreen!.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
+            });
+        } else {
+            this.loadingScreen!.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
+        }
 
         if (this.mainWindow.getBrowserViews().includes(this.loadingScreen!)) {
             this.mainWindow.setTopBrowserView(this.loadingScreen!);
@@ -373,13 +392,15 @@ export class ViewManager {
     }
 
     fadeLoadingScreen = () => {
-        if (this.loadingScreen) {
+        if (this.loadingScreen && this.loadingScreenState === LoadingScreenState.VISIBLE) {
+            this.loadingScreenState = LoadingScreenState.FADING;
             this.loadingScreen.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, false);
         }
     }
 
     hideLoadingScreen = () => {
-        if (this.loadingScreen) {
+        if (this.loadingScreen && this.loadingScreenState !== LoadingScreenState.HIDDEN) {
+            this.loadingScreenState = LoadingScreenState.HIDDEN;
             this.mainWindow.removeBrowserView(this.loadingScreen);
         }
     }

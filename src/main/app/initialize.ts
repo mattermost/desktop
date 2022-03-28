@@ -31,6 +31,8 @@ import {
     UPDATE_LAST_ACTIVE,
     GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
     USER_ACTIVITY_UPDATE,
+    START_UPGRADE,
+    START_DOWNLOAD,
 } from 'common/communication';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
@@ -39,6 +41,7 @@ import AllowProtocolDialog from 'main/allowProtocolDialog';
 import AppVersionManager from 'main/AppVersionManager';
 import AuthManager from 'main/authManager';
 import AutoLauncher from 'main/AutoLauncher';
+import updateManager from 'main/autoUpdater';
 import {setupBadge} from 'main/badge';
 import CertificateManager from 'main/certificateManager';
 import {updatePaths} from 'main/constants';
@@ -88,6 +91,7 @@ import {
     updateSpellCheckerLocales,
     wasUpdated,
     initCookieManager,
+    migrateMacAppStore,
 } from './utils';
 
 export const mainProtocol = protocols?.[0]?.schemes?.[0];
@@ -113,6 +117,13 @@ export async function initialize() {
     // no need to continue initializing if app is quitting
     if (global.willAppQuit) {
         return;
+    }
+
+    // eslint-disable-next-line no-undef
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    if (__IS_MAC_APP_STORE__) {
+        migrateMacAppStore();
     }
 
     // initialization that should run once the app is ready
@@ -195,10 +206,15 @@ function initializeBeforeAppReady() {
     refreshTrayImages(Config.trayIconTheme);
 
     // If there is already an instance, quit this one
-    const gotTheLock = app.requestSingleInstanceLock();
-    if (!gotTheLock) {
-        app.exit();
-        global.willAppQuit = true;
+    // eslint-disable-next-line no-undef
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    if (!__IS_MAC_APP_STORE__) {
+        const gotTheLock = app.requestSingleInstanceLock();
+        if (!gotTheLock) {
+            app.exit();
+            global.willAppQuit = true;
+        }
     }
 
     AllowProtocolDialog.init();
@@ -241,6 +257,8 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(SHOW_SETTINGS_WINDOW, WindowManager.showSettingsWindow);
     ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, () => session.defaultSession.availableSpellCheckerLanguages);
     ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
+    ipcMain.on(START_DOWNLOAD, handleStartDownload);
+    ipcMain.on(START_UPGRADE, handleStartUpgrade);
 }
 
 function initializeAfterAppReady() {
@@ -274,11 +292,33 @@ function initializeAfterAppReady() {
     }
     AppVersionManager.lastAppVersion = app.getVersion();
 
+    if (typeof Config.canUpgrade === 'undefined') {
+        // windows might not be ready, so we have to wait until it is
+        Config.once('update', () => {
+            if (Config.canUpgrade && Config.autoCheckForUpdates) {
+                setTimeout(() => {
+                    updateManager.checkForUpdates(false);
+                }, 5000);
+            } else {
+                log.info(`Autoupgrade disabled: ${Config.canUpgrade}`);
+            }
+        });
+    } else if (Config.canUpgrade && Config.autoCheckForUpdates) {
+        setTimeout(() => {
+            updateManager.checkForUpdates(false);
+        }, 5000);
+    } else {
+        log.info(`Autoupgrade disabled: ${Config.canUpgrade}`);
+    }
+
     if (!global.isDev) {
         AutoLauncher.upgradeAutoLaunch();
     }
 
-    if (global.isDev) {
+    // eslint-disable-next-line no-undef
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    if (global.isDev || __IS_NIGHTLY_BUILD__) {
         installExtension(REACT_DEVELOPER_TOOLS).
             then((name) => log.info(`Added Extension:  ${name}`)).
             catch((err) => log.error('An error occurred: ', err));
@@ -376,5 +416,17 @@ function initializeAfterAppReady() {
         if (Config.teams.length === 0) {
             addNewServerModalWhenMainWindowIsShown();
         }
+    }
+}
+
+function handleStartDownload() {
+    if (updateManager) {
+        updateManager.handleDownload();
+    }
+}
+
+function handleStartUpgrade() {
+    if (updateManager) {
+        updateManager.handleUpdate();
     }
 }

@@ -3,7 +3,7 @@
 
 /* eslint-disable max-lines */
 import path from 'path';
-import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
+import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer} from 'electron';
 import log from 'electron-log';
 
 import {
@@ -22,8 +22,12 @@ import {
     RESIZE_MODAL,
     APP_LOGGED_OUT,
     BROWSER_HISTORY_BUTTON,
+    DISPATCH_GET_DESKTOP_SOURCES,
+    DESKTOP_SOURCES_RESULT,
+    RELOAD_CURRENT_VIEW,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
+import {SECOND} from 'common/utils/constants';
 import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 
@@ -43,12 +47,14 @@ export class WindowManager {
     assetsDir: string;
 
     mainWindow?: BrowserWindow;
+    mainWindowReady: boolean;
     settingsWindow?: BrowserWindow;
     viewManager?: ViewManager;
     teamDropdown?: TeamDropdownView;
     currentServerName?: string;
 
     constructor() {
+        this.mainWindowReady = false;
         this.assetsDir = path.resolve(app.getAppPath(), 'assets');
 
         ipcMain.on(HISTORY, this.handleHistory);
@@ -62,6 +68,8 @@ export class WindowManager {
         ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
         ipcMain.handle(GET_VIEW_NAME, this.handleGetViewName);
         ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, this.handleGetWebContentsId);
+        ipcMain.on(DISPATCH_GET_DESKTOP_SOURCES, this.handleGetDesktopSources);
+        ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
     }
 
     handleUpdateConfig = () => {
@@ -94,6 +102,7 @@ export class WindowManager {
                 this.mainWindow.show();
             }
         } else {
+            this.mainWindowReady = false;
             this.mainWindow = createMainWindow({
                 linuxAppIcon: path.join(this.assetsDir, 'linux', 'app_icon.png'),
             });
@@ -104,10 +113,15 @@ export class WindowManager {
                 return;
             }
 
+            this.mainWindow.once('ready-to-show', () => {
+                this.mainWindowReady = true;
+            });
+
             // window handlers
             this.mainWindow.on('closed', () => {
                 log.warn('main window closed');
                 delete this.mainWindow;
+                this.mainWindowReady = false;
             });
             this.mainWindow.on('unresponsive', () => {
                 CriticalErrorHandler.setMainWindow(this.mainWindow!);
@@ -189,14 +203,32 @@ export class WindowManager {
         ipcMain.emit(RESIZE_MODAL, null, bounds);
     }
 
-    sendToRenderer = (channel: string, ...args: any[]) => {
-        if (!this.mainWindow) {
+    // max retries allows the message to get to the renderer even if it is sent while the app is starting up.
+    sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: any[]) => {
+        if (!this.mainWindow || !this.mainWindowReady) {
             this.showMainWindow();
+            if (maxRetries > 0) {
+                log.info(`Can't send ${channel}, will retry`);
+                setTimeout(() => {
+                    this.sendToRendererWithRetry(maxRetries - 1, channel, ...args);
+                }, SECOND);
+            } else {
+                log.error(`Unable to send the message to the main window for message type ${channel}`);
+            }
+            return;
         }
         this.mainWindow!.webContents.send(channel, ...args);
         if (this.settingsWindow && this.settingsWindow.isVisible()) {
-            this.settingsWindow.webContents.send(channel, ...args);
+            try {
+                this.settingsWindow.webContents.send(channel, ...args);
+            } catch (e) {
+                log.error(`There was an error while trying to communicate with the renderer: ${e}`);
+            }
         }
+    }
+
+    sendToRenderer = (channel: string, ...args: any[]) => {
+        this.sendToRendererWithRetry(3, channel, ...args);
     }
 
     sendToAll = (channel: string, ...args: any[]) => {
@@ -602,6 +634,32 @@ export class WindowManager {
 
     handleGetWebContentsId = (event: IpcMainInvokeEvent) => {
         return event.sender.id;
+    }
+
+    handleGetDesktopSources = async (event: IpcMainEvent, viewName: string, opts: Electron.SourcesOptions) => {
+        const view = this.viewManager?.views.get(viewName);
+        if (!view) {
+            return;
+        }
+
+        desktopCapturer.getSources(opts).then((sources) => {
+            view.view.webContents.send(DESKTOP_SOURCES_RESULT, sources.map((source) => {
+                return {
+                    id: source.id,
+                    name: source.name,
+                    thumbnailURL: source.thumbnail.toDataURL(),
+                };
+            }));
+        });
+    }
+
+    handleReloadCurrentView = () => {
+        const view = this.viewManager?.getCurrentView();
+        if (!view) {
+            return;
+        }
+        view?.reload();
+        this.viewManager?.showByName(view?.name);
     }
 }
 

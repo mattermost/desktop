@@ -10,8 +10,9 @@ import {Config} from 'common/config';
 import {TabType, getTabDisplayName} from 'common/tabs/TabView';
 
 import WindowManager from 'main/windows/windowManager';
+import {UpdateManager} from 'main/autoUpdater';
 
-export function createTemplate(config: Config) {
+export function createTemplate(config: Config, updateManager: UpdateManager) {
     const separatorItem: MenuItemConstructorOptions = {
         type: 'separator',
     };
@@ -260,6 +261,30 @@ export function createTemplate(config: Config) {
     };
     template.push(windowMenu);
     const submenu = [];
+    if (updateManager && config.canUpgrade) {
+        if (updateManager.versionDownloaded) {
+            submenu.push({
+                label: 'Restart and Update',
+                click() {
+                    updateManager.handleUpdate();
+                },
+            });
+        } else if (updateManager.versionAvailable) {
+            submenu.push({
+                label: 'Download Update',
+                click() {
+                    updateManager.handleDownload();
+                },
+            });
+        } else {
+            submenu.push({
+                label: 'Check for Updates',
+                click() {
+                    updateManager.checkForUpdates(true);
+                },
+            });
+        }
+    }
     if (config.data?.helpLink) {
         submenu.push({
             label: 'Learn More...',
@@ -286,7 +311,7 @@ export function createTemplate(config: Config) {
     return template;
 }
 
-export function createMenu(config: Config) {
-    // Electron is enforcing certain variables that it doesn't need
-    return Menu.buildFromTemplate(createTemplate(config) as Array<MenuItemConstructorOptions | MenuItem>);
+export function createMenu(config: Config, updateManager: UpdateManager) {
+    // TODO: Electron is enforcing certain variables that it doesn't need
+    return Menu.buildFromTemplate(createTemplate(config, updateManager) as Array<MenuItemConstructorOptions | MenuItem>);
 }
