@@ -15,7 +15,7 @@ import {refreshTrayImages} from 'main/tray/tray';
 import WindowManager from 'main/windows/windowManager';
 
 import {addNewServerModalWhenMainWindowIsShown} from './intercom';
-import {handleUpdateMenuEvent, updateServerInfos, updateSpellCheckerLocales} from './utils';
+import {handleUpdateMenuEvent, setLoggingLevel, updateServerInfos, updateSpellCheckerLocales} from './utils';
 
 let didCheckForAddServerModal = false;
 
@@ -60,6 +60,13 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
         if (newConfig.teams.length === 0) {
             addNewServerModalWhenMainWindowIsShown();
         }
+    }
+
+    if (newConfig.enableDebugLogging) {
+        setLoggingLevel('debug');
+        log.info('Debug logging enabled');
+    } else {
+        setLoggingLevel('info');
     }
 
     handleUpdateMenuEvent();

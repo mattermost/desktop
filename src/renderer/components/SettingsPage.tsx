@@ -70,7 +70,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
     enableHardwareAccelerationRef: React.RefObject<HTMLInputElement>;
     startInFullscreenRef: React.RefObject<HTMLInputElement>;
     autoCheckForUpdatesRef: React.RefObject<HTMLInputElement>;
-
+    enableDebugLoggingRef: React.RefObject<HTMLInputElement>;
 
     saveQueue: SaveQueueItem[];
 
@@ -104,6 +104,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         this.startInFullscreenRef = React.createRef();
         this.spellCheckerURLRef = React.createRef();
         this.autoCheckForUpdatesRef = React.createRef();
+        this.enableDebugLoggingRef = React.createRef();
 
         this.saveQueue = [];
         this.selectedSpellCheckerLocales = [];
@@ -288,6 +289,13 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'useSpellChecker', data: this.useSpellCheckerRef.current?.checked});
         this.setState({
             useSpellChecker: this.useSpellCheckerRef.current?.checked,
+        });
+    }
+
+    handleChangeEnableDebugLogging = () => {
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'enableDebugLogging', data: this.enableDebugLoggingRef.current?.checked});
+        this.setState({
+            enableDebugLogging: this.enableDebugLoggingRef.current?.checked,
         });
     }
 
@@ -771,6 +779,24 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 {'Open app in fullscreen'}
                 <FormText>
                     {'If enabled, the Mattermost application will always open in full screen'}
+                </FormText>
+            </FormCheck>,
+        );
+
+        options.push(
+            <FormCheck
+                key='inputEnableDebugLogging'
+            >
+                <FormCheck.Input
+                    type='checkbox'
+                    id='inputEnableDebugLogging'
+                    ref={this.enableDebugLoggingRef}
+                    checked={this.state.enableDebugLogging}
+                    onChange={this.handleChangeEnableDebugLogging}
+                />
+                {'Enable debug logging'}
+                <FormText>
+                    {'If enabled, the application will output more verbose logging. Use if directed by a developer or a member of the Mattermost team.'}
                 </FormText>
             </FormCheck>,
         );

@@ -44,6 +44,7 @@ export type ConfigV3 = {
     autoCheckForUpdates?: boolean;
     alwaysMinimize?: boolean;
     alwaysClose?: boolean;
+    enableDebugLogging?: boolean;
 }
 
 export type ConfigV2 = {
