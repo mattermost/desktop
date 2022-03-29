@@ -2,8 +2,6 @@
 
 variables:
   MM_BUILDER_IMAGE: "electronuserland/builder:wine-mono"
-  MM_PACKAGE: "yes"  
-  MM_SIGN: "yes"
   
 include:
   - project: mattermost/ci/desktop
