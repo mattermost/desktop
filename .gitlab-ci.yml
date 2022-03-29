@@ -5,5 +5,5 @@ include:
     file: private.yml
 
 variables:
-  MM_BUILDER_IMAGE: electronuserland/builder:wine-mono
+  MM_BUILDER_IMAGE: 'electronuserland/builder:wine-mono'
   MM_PACKAGE_LINUX: true  
