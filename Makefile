@@ -19,6 +19,7 @@ ifeq ($(IS_CI),true)
 	ssh-add ~/.ssh/id_rsa
 else
 	@printf "Local Environment Setup"
+	
 endif
 
 npm-ci: setup-env ## Install all npm dependencies
