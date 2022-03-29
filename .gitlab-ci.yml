@@ -3,8 +3,7 @@
 variables:
   MM_BUILDER_IMAGE: "electronuserland/builder:wine-mono"
   MM_PACKAGE: "yes"  
-  MM_PACKAGE_CMD: "package-debian"
-  MM_BUILD_DIR: "/build/linux"
+  MM_ARTIFACT_DIR: "/build/linux"
 
 include:
   - project: mattermost/ci/desktop
