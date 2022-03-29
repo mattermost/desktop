@@ -29,11 +29,6 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('electron-log', () => ({
-    info: jest.fn(),
-    error: jest.fn(),
-}));
-
 jest.mock('../windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
     focusThreeDotMenu: jest.fn(),

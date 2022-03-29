@@ -6,11 +6,6 @@ import WindowManager from 'main/windows/windowManager';
 import ModalManager from 'main/views/modalManager';
 import {CertificateManager} from 'main/certificateManager';
 
-jest.mock('electron-log', () => ({
-    info: jest.fn(),
-    error: jest.fn(),
-}));
-
 jest.mock('main/windows/windowManager', () => ({
     getMainWindow: jest.fn().mockImplementation(() => ({})),
 }));

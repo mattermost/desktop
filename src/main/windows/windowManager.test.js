@@ -40,11 +40,6 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('electron-log', () => ({
-    error: jest.fn(),
-    info: jest.fn(),
-}));
-
 jest.mock('common/config', () => ({}));
 
 jest.mock('common/utils/url', () => ({

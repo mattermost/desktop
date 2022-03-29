@@ -5,10 +5,6 @@
 
 import * as Validator from './Validator';
 
-jest.mock('electron-log', () => ({
-    error: jest.fn(),
-}));
-
 describe('main/Validator', () => {
     describe('validateV0ConfigData', () => {
         const config = {url: 'http://server-1.com'};

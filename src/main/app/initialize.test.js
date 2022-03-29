@@ -63,12 +63,6 @@ jest.mock('electron-devtools-installer', () => {
 const isDev = false;
 jest.mock('electron-is-dev', () => isDev);
 
-jest.mock('electron-log', () => ({
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-}));
-
 jest.mock('../../../electron-builder.json', () => ([
     {
         name: 'Mattermost',

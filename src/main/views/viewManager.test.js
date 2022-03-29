@@ -27,11 +27,6 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('electron-log', () => ({
-    warn: jest.fn(),
-    error: jest.fn(),
-}));
-
 jest.mock('common/tabs/TabView', () => ({
     getServerView: jest.fn(),
     getTabViewName: jest.fn(),

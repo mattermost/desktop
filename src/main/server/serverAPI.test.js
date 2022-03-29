@@ -14,10 +14,6 @@ const testData = {
     value: 'some more data',
 };
 
-jest.mock('electron-log', () => ({
-    error: jest.fn(),
-}));
-
 jest.mock('electron', () => ({
     net: {
         request: jest.fn().mockImplementation(({url}) => ({
