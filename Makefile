@@ -37,7 +37,7 @@ ifeq ($(IS_CI),true)
 	mv build/linux/${VERSION}/*.rpm artifacts/ 
 endif
 
-package-linux: version ## Generates linux packages under build/linux folder
+package-linux: npm-ci version ## Generates linux packages under build/linux folder
 	scripts/patch_updater_yml.sh
 	scripts/cp_artifacts.sh release build/linux
 	ls -laR build
