@@ -9,8 +9,8 @@ endif
 IS_CI=${CI}
 VERSION:=$(shell jq -r '.version' <package.json)
 
-version: ##Gets version 
-	@jq -r .version ./package.json
+version: ##Dumps current version 
+	@printf "${VERSION}"
 
 setup-env: ##Configure running environment
 ifeq ($(IS_CI),true)
@@ -34,8 +34,8 @@ package-linux: npm-ci ## Generates linux packages under build/linux folder
 	ls -laR build/linux
 ifeq ($(IS_CI),true)
 	mkdir -p artifacts
-	mv build/linux/$VERSION/*.deb artifacts/
-	mv build/linux/$VERSION/*.rpm artifacts/ 
+	mv build/linux/${VERSION}/*.deb artifacts/
+	mv build/linux/${VERSION}/*.rpm artifacts/ 
 endif
 
 ## Help documentation à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
