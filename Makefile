@@ -7,6 +7,7 @@ else
 endif
 
 IS_CI=${CI}
+VERSION:=$(shell jq -r '.version' <package.json)
 
 version: ##Gets version 
 	@jq -r .version ./package.json
@@ -31,6 +32,11 @@ package-linux: npm-ci ## Generates linux packages under build/linux folder
 	scripts/patch_updater_yml.sh
 	scripts/cp_artifacts.sh release build/linux
 	ls -laR build/linux
+ifeq ($(IS_CI),true)
+	mkdir -p artifacts
+	mv build/linux/$VERSION/*.deb artifacts/
+	mv build/linux/$VERSION/*.rpm artifacts/ 
+endif
 
 ## Help documentation à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:

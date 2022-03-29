@@ -3,8 +3,8 @@
 variables:
   MM_BUILDER_IMAGE: "electronuserland/builder:wine-mono"
   MM_PACKAGE: "yes"  
-  MM_ARTIFACT_DIR: "/build/linux"
-
+  MM_SIGN: "yes"
+  
 include:
   - project: mattermost/ci/desktop
     ref: chore/dops-794
