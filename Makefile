@@ -24,10 +24,10 @@ endif
 npm-ci: setup-env ## Install all npm dependencies
 	PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci
 
-package: package-debian ## Generates packages for all environments
+package: package-linux ## Generates packages for all environments
 
-package-debian: npm-ci ## Generates linux packages under build/linux folder
-	npm run package:debian
+package-linux: npm-ci ## Generates linux packages under build/linux folder
+	npm run package:linux
 	scripts/patch_updater_yml.sh
 	scripts/cp_artifacts.sh release build/linux
 	ls -laR build/linux
