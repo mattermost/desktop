@@ -1,4 +1,4 @@
-.PHONY: npm-ci package package-linux setup-env
+.PHONY: npm-ci package package-linux setup-env version
 
 ifeq ($(OS),Windows_NT)
 	PLATFORM := Windows
@@ -7,6 +7,9 @@ else
 endif
 
 IS_CI=${CI}
+
+version: ##Gets version 
+	@jq -r .version ./package.json
 
 setup-env: ##Configure running environment
 ifeq ($(IS_CI),true)
@@ -20,11 +23,11 @@ endif
 
 npm-ci: setup-env ## Install all npm dependencies
 	PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci
-    
-package: package-linux ## Generates packages for all environments
 
-package-linux: npm-ci ## Generates linux packages under build/linux folder
-	npm run package:linux
+package: package-debian ## Generates packages for all environments
+
+package-debian: npm-ci ## Generates linux packages under build/linux folder
+	npm run package:debian
 	scripts/patch_updater_yml.sh
 	scripts/cp_artifacts.sh release build/linux
 	ls -laR build/linux

@@ -51,6 +51,7 @@
     "package:mac": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --mac --x64 --arm64 --publish=never",
     "package:mac-with-universal": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --mac --x64 --arm64 --universal --publish=never",
     "package:linux": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --linux --x64 --ia32 --publish=never",
+    "package:debian": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --linux deb --x64 --ia32 --publish=never",
     "lint:js": "eslint --ignore-path .gitignore --ignore-pattern node_modules --ext .js --ext .jsx --ext .ts --ext .tsx .",
     "lint:js-quiet": "eslint --ignore-path .gitignore --ignore-pattern node_modules --ext .js --ext .jsx --ext .ts --ext .tsx . --quiet",
     "fix:js": "eslint --ignore-path .gitignore --ignore-pattern node_modules --quiet --ext .js --ext .jsx --ext .ts --ext .tsx . --fix",
