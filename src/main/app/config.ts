@@ -24,6 +24,9 @@ let didCheckForAddServerModal = false;
 //
 
 export function handleConfigUpdate(newConfig: CombinedConfig) {
+    log.debug('App.Config.handleConfigUpdate');
+    log.silly('App.Config.handleConfigUpdate', newConfig);
+
     if (!newConfig) {
         return;
     }
@@ -74,6 +77,8 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
 }
 
 export function handleDarkModeChange(darkMode: boolean) {
+    log.debug('App.Config.handleDarkModeChange', darkMode);
+
     refreshTrayImages(Config.trayIconTheme);
     WindowManager.sendToRenderer(DARK_MODE_CHANGE, darkMode);
     WindowManager.updateLoadingScreenDarkMode(darkMode);

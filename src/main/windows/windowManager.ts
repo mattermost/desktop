@@ -79,6 +79,8 @@ export class WindowManager {
     }
 
     showSettingsWindow = () => {
+        log.debug('WindowManager.showSettingsWindow');
+
         if (this.settingsWindow) {
             this.settingsWindow.show();
         } else {
@@ -95,6 +97,8 @@ export class WindowManager {
     }
 
     showMainWindow = (deeplinkingURL?: string | URL) => {
+        log.debug('WindowManager.showMainWindow', deeplinkingURL);
+
         if (this.mainWindow) {
             if (this.mainWindow.isVisible()) {
                 this.mainWindow.focus();
@@ -169,6 +173,8 @@ export class WindowManager {
     }
 
     handleResizeMainWindow = () => {
+        log.debug('WindowManager.handleResizeMainWindow');
+
         if (!(this.viewManager && this.mainWindow)) {
             return;
         }
@@ -350,6 +356,8 @@ export class WindowManager {
     }
 
     handleDoubleClick = (e: IpcMainEvent, windowType?: string) => {
+        log.debug('WindowManager.handleDoubleClick', windowType);
+
         let action = 'Maximize';
         if (process.platform === 'darwin') {
             action = systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
@@ -426,6 +434,8 @@ export class WindowManager {
     }
 
     focusBrowserView = () => {
+        log.debug('WindowManager.focusBrowserView');
+
         if (this.viewManager) {
             this.viewManager.focus();
         } else {
@@ -453,12 +463,16 @@ export class WindowManager {
     }
 
     handleReactAppInitialized = (e: IpcMainEvent, view: string) => {
+        log.debug('WindowManager.handleReactAppInitialized', view);
+
         if (this.viewManager) {
             this.viewManager.setServerInitialized(view);
         }
     }
 
     handleLoadingScreenAnimationFinished = () => {
+        log.debug('WindowManager.handleLoadingScreenAnimationFinished');
+
         if (this.viewManager) {
             this.viewManager.hideLoadingScreen();
         }
@@ -522,6 +536,8 @@ export class WindowManager {
     }
 
     handleHistory = (event: IpcMainEvent, offset: number) => {
+        log.debug('WindowManager.handleHistory', offset);
+
         if (this.viewManager) {
             const activeView = this.viewManager.getCurrentView();
             if (activeView && activeView.view.webContents.canGoToOffset(offset)) {
@@ -573,6 +589,8 @@ export class WindowManager {
     }
 
     handleBrowserHistoryPush = (e: IpcMainEvent, viewName: string, pathName: string) => {
+        log.debug('WwindowManager.handleBrowserHistoryPush', {viewName, pathName});
+
         const currentView = this.viewManager?.views.get(viewName);
         const cleanedPathName = currentView?.tab.server.url.pathname === '/' ? pathName : pathName.replace(currentView?.tab.server.url.pathname || '', '');
         const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${cleanedPathName}`, Config.teams)?.name || viewName;
@@ -597,6 +615,8 @@ export class WindowManager {
     }
 
     handleBrowserHistoryButton = (e: IpcMainEvent, viewName: string) => {
+        log.debug('EindowManager.handleBrowserHistoryButton', viewName);
+
         const currentView = this.viewManager?.views.get(viewName);
         if (currentView) {
             if (currentView.view.webContents.getURL() === currentView.tab.url.toString()) {
@@ -614,6 +634,8 @@ export class WindowManager {
     }
 
     handleAppLoggedIn = (event: IpcMainEvent, viewName: string) => {
+        log.debug('WindowManager.handleAppLoggedIn', viewName);
+
         const view = this.viewManager?.views.get(viewName);
         if (view) {
             view.isLoggedIn = true;
@@ -622,6 +644,8 @@ export class WindowManager {
     }
 
     handleAppLoggedOut = (event: IpcMainEvent, viewName: string) => {
+        log.debug('WindowManager.handleAppLoggedOut', viewName);
+
         const view = this.viewManager?.views.get(viewName);
         if (view) {
             view.isLoggedIn = false;
@@ -637,6 +661,8 @@ export class WindowManager {
     }
 
     handleGetDesktopSources = async (event: IpcMainEvent, viewName: string, opts: Electron.SourcesOptions) => {
+        log.debug('WindowManager.handleGetDesktopSources', {viewName, opts});
+
         const view = this.viewManager?.views.get(viewName);
         if (!view) {
             return;
@@ -654,6 +680,8 @@ export class WindowManager {
     }
 
     handleReloadCurrentView = () => {
+        log.debug('WindowManager.handleReloadCurrentView');
+
         const view = this.viewManager?.getCurrentView();
         if (!view) {
             return;

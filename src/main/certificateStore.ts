@@ -6,6 +6,7 @@
 import fs from 'fs';
 
 import {Certificate, ipcMain} from 'electron';
+import log from 'electron-log';
 
 import {ComparableCertificate} from 'types/certificate';
 
@@ -85,5 +86,6 @@ let certificateStore = new CertificateStore(certificateStorePath);
 export default certificateStore;
 
 ipcMain.on(UPDATE_PATHS, () => {
+    log.debug('certificateStore.UPDATE_PATHS');
     certificateStore = new CertificateStore(certificateStorePath);
 });

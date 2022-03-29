@@ -83,6 +83,8 @@ function openExtraTabs(data: Array<RemoteInfo | string | undefined>, team: TeamW
 }
 
 export function handleUpdateMenuEvent() {
+    log.debug('Utils.handleUpdateMenuEvent');
+
     const aMenu = createAppMenu(Config, updateManager);
     Menu.setApplicationMenu(aMenu);
     aMenu.addListener('menu-will-close', WindowManager.focusBrowserView);
@@ -152,6 +154,7 @@ function getValidWindowPosition(state: Rectangle) {
 
 export function resizeScreen(browserWindow: BrowserWindow) {
     function handle() {
+        log.debug('Utils.resizeScreen.handle');
         const position = browserWindow.getPosition();
         const size = browserWindow.getSize();
         const validPosition = getValidWindowPosition({
@@ -172,6 +175,7 @@ export function resizeScreen(browserWindow: BrowserWindow) {
 }
 
 function flushCookiesStore(session: Session) {
+    log.debug('Utils.flushCookiesStore');
     session.cookies.flushStore().catch((err) => {
         log.error(`There was a problem flushing cookies:\n${err}`);
     });

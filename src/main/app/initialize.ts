@@ -295,6 +295,7 @@ function initializeAfterAppReady() {
     if (typeof Config.canUpgrade === 'undefined') {
         // windows might not be ready, so we have to wait until it is
         Config.once('update', () => {
+            log.debug('Initialize.checkForUpdates');
             if (Config.canUpgrade && Config.autoCheckForUpdates) {
                 setTimeout(() => {
                     updateManager.checkForUpdates(false);
@@ -342,6 +343,7 @@ function initializeAfterAppReady() {
 
     // listen for status updates and pass on to renderer
     UserActivityMonitor.on('status', (status) => {
+        log.debug('Initialize.UserActivityMonitor.on(status)', status);
         WindowManager.sendToMattermostViews(USER_ACTIVITY_UPDATE, status);
     });
 
@@ -354,6 +356,7 @@ function initializeAfterAppReady() {
     setupBadge();
 
     defaultSession.on('will-download', (event, item, webContents) => {
+        log.debug('Initialize.will-download', {item, sourceURL: webContents.getURL()});
         const filename = item.getFilename();
         const fileElements = filename.split('.');
         const filters = [];
