@@ -14,7 +14,7 @@ ifeq ($(IS_CI),true)
 	apt-get update || true && apt-get install -y ca-certificates libxtst-dev libpng++-dev && apt-get update && apt-get -y install --no-install-recommends jq icnsutils graphicsmagick tzdata
 	wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
 	mkdir -p ~/.ssh && ssh-keyscan -t rsa github.com > ~/.ssh/known_hosts
-	echo "${SSH_KEY}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
+	echo -e "${SSH_KEY}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
 	eval `ssh-agent -s`
 	ssh-add ~/.ssh/id_rsa
 else
