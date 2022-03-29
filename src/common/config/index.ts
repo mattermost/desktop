@@ -252,6 +252,10 @@ export class Config extends EventEmitter {
     get enableHardwareAcceleration() {
         return this.combinedData?.enableHardwareAcceleration ?? defaultPreferences.enableHardwareAcceleration;
     }
+
+    get startInFullscreen() {
+        return this.combinedData?.startInFullscreen ?? defaultPreferences.startInFullscreen;
+    }
     get enableServerManagement() {
         return this.combinedData?.enableServerManagement ?? buildConfig.enableServerManagement;
     }
