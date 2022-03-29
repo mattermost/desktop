@@ -10,7 +10,7 @@ IS_CI=${CI}
 VERSION:=$(shell jq -r '.version' <package.json)
 
 version: ##Dumps current version 
-	@printf "${VERSION}"
+	@echo ${VERSION}
 
 setup-env: ##Configure running environment
 ifeq ($(IS_CI),true)
@@ -27,11 +27,20 @@ npm-ci: setup-env ## Install all npm dependencies
 
 package: package-linux ## Generates packages for all environments
 
-package-linux: npm-ci ## Generates linux packages under build/linux folder
+package-linuxs: npm-ci ## Generates linux packages under build/linux folder
 	npm run package:linux
 	scripts/patch_updater_yml.sh
 	scripts/cp_artifacts.sh release build/linux
-	ls -laR build/linux
+ifeq ($(IS_CI),true)
+	mkdir -p artifacts
+	mv build/linux/${VERSION}/*.deb artifacts/
+	mv build/linux/${VERSION}/*.rpm artifacts/ 
+endif
+
+package-linux: version ## Generates linux packages under build/linux folder
+	scripts/patch_updater_yml.sh
+	scripts/cp_artifacts.sh release build/linux
+	ls -laR build
 ifeq ($(IS_CI),true)
 	mkdir -p artifacts
 	mv build/linux/${VERSION}/*.deb artifacts/
