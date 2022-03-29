@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {app, ipcMain} from 'electron';
-import log from 'electron-log';
+import log, {LogLevel} from 'electron-log';
 
 import {CombinedConfig} from 'types/config';
 
@@ -65,12 +65,8 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
         }
     }
 
-    if (newConfig.enableDebugLogging) {
-        setLoggingLevel('debug');
-        log.info('Debug logging enabled');
-    } else {
-        setLoggingLevel('info');
-    }
+    log.info('Log level set to:', newConfig.logLevel);
+    setLoggingLevel(newConfig.logLevel as LogLevel);
 
     handleUpdateMenuEvent();
     ipcMain.emit(EMIT_CONFIGURATION, true, newConfig);

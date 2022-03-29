@@ -106,9 +106,9 @@ describe('main/app/config', () => {
         });
 
         it('should set logging level correctly', () => {
-            handleConfigUpdate({enableDebugLogging: false});
+            handleConfigUpdate({logLevel: 'info'});
             expect(setLoggingLevel).toBeCalledWith('info');
-            handleConfigUpdate({enableDebugLogging: true});
+            handleConfigUpdate({logLevel: 'debug'});
             expect(setLoggingLevel).toBeCalledWith('debug');
         });
     });

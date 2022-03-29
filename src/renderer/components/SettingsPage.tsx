@@ -7,7 +7,7 @@
 import 'renderer/css/settings.css';
 
 import React from 'react';
-import {FormCheck, Col, FormGroup, FormText, Container, Row, Button} from 'react-bootstrap';
+import {FormCheck, Col, FormGroup, FormText, Container, Row, Button, FormControl} from 'react-bootstrap';
 import ReactSelect, {ActionMeta, OptionsType} from 'react-select';
 
 import {debounce} from 'underscore';
@@ -70,7 +70,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
     enableHardwareAccelerationRef: React.RefObject<HTMLInputElement>;
     startInFullscreenRef: React.RefObject<HTMLInputElement>;
     autoCheckForUpdatesRef: React.RefObject<HTMLInputElement>;
-    enableDebugLoggingRef: React.RefObject<HTMLInputElement>;
+    logLevelRef: React.RefObject<HTMLSelectElement>;
 
     saveQueue: SaveQueueItem[];
 
@@ -104,7 +104,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         this.startInFullscreenRef = React.createRef();
         this.spellCheckerURLRef = React.createRef();
         this.autoCheckForUpdatesRef = React.createRef();
-        this.enableDebugLoggingRef = React.createRef();
+        this.logLevelRef = React.createRef();
 
         this.saveQueue = [];
         this.selectedSpellCheckerLocales = [];
@@ -292,10 +292,10 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         });
     }
 
-    handleChangeEnableDebugLogging = () => {
-        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'enableDebugLogging', data: this.enableDebugLoggingRef.current?.checked});
+    handleChangeLogLevel = () => {
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'logLevel', data: this.logLevelRef.current?.value});
         this.setState({
-            enableDebugLogging: this.enableDebugLoggingRef.current?.checked,
+            logLevel: this.logLevelRef.current?.value,
         });
     }
 
@@ -439,6 +439,17 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
 
             downloadLocationButton: {
                 marginBottom: '4px',
+            },
+
+            logLevelInput: {
+                marginRight: '3px',
+                marginTop: '8px',
+                width: '320px',
+                height: '34px',
+                padding: '0 12px',
+                borderRadius: '4px',
+                border: '1px solid #ccc',
+                fontWeight: 500,
             },
 
             container: {
@@ -784,24 +795,6 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         );
 
         options.push(
-            <FormCheck
-                key='inputEnableDebugLogging'
-            >
-                <FormCheck.Input
-                    type='checkbox'
-                    id='inputEnableDebugLogging'
-                    ref={this.enableDebugLoggingRef}
-                    checked={this.state.enableDebugLogging}
-                    onChange={this.handleChangeEnableDebugLogging}
-                />
-                {'Enable debug logging'}
-                <FormText>
-                    {'If enabled, the application will output more verbose logging. Use if directed by a developer or a member of the Mattermost team.'}
-                </FormText>
-            </FormCheck>,
-        );
-
-        options.push(
             <div
                 style={settingsPage.container}
                 key='containerDownloadLocation'
@@ -826,6 +819,27 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 </Button>
                 <FormText>
                     {'Specify the folder where files will download.'}
+                </FormText>
+                <br/>
+                {'Logging level'}
+                <FormControl
+                    style={settingsPage.logLevelInput}
+                    as='select'
+                    id='inputLogLevel'
+                    ref={this.logLevelRef}
+                    value={this.state.logLevel}
+                    onChange={this.handleChangeLogLevel}
+                >
+                    <option value='error'>{'Errors only (error)'}</option>
+                    <option value='warn'>{'Errors and warnings (warn)'}</option>
+                    <option value='info'>{'Default (info)'}</option>
+                    <option value='verbose'>{'Extra verbosity (verbose)'}</option>
+                    <option value='debug'>{'Debug logging (debug)'}</option>
+                    <option value='silly'>{'Extra-verbose debug logging (silly)'}</option>
+                </FormControl>
+                <FormText>
+                    {'Change the number of log messages that are written to disk. Can be helpful for developers to debug issues.'}
+                    <br/>{'NOTE: Using a log level above "info" for long periods of time can result in excess use of disk space. Please exercise caution.'}
                 </FormText>
             </div>,
         );
