@@ -128,6 +128,7 @@ describe('main/Validator', () => {
             enableHardwareAcceleration: true,
             startInFullscreen: false,
             lastActiveTeam: 0,
+            logLevel: 'info',
             minimizeToTray: false,
             showTrayIcon: false,
             showUnreadBadge: true,

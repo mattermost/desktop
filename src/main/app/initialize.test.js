@@ -239,7 +239,7 @@ describe('main/app/initialize', () => {
             path.resolve.mockImplementation((base, p) => `${base}/${p}`);
             session.defaultSession.on.mockImplementation((event, cb) => {
                 if (event === 'will-download') {
-                    cb(null, item, {id: 0});
+                    cb(null, item, {id: 0, getURL: jest.fn()});
                 }
             });
 
