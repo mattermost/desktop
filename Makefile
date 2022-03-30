@@ -21,10 +21,6 @@ define sign_debian_package
 	dpkg-sig --verify $1	
 endef
 
-define publish_to_aptly
-	$(shell RELEASE=$1 REPO=$2 scripts/generate_apt_repo.sh) 
-endef
-
 .PHONY: setup-package
 setup-package: ##Configure running environment to generate package in CI
 ifeq ($(IS_CI),true)
@@ -102,7 +98,6 @@ endif
 
 .PHONY: publish-deb	
 publish-deb: check-publish-deb ## Publish packages to mattermost apt repository
-	curl -fsSL ${APT_REPO_URL}/pubkey.gpg | gpg --no-default-keyring --keyring trustedkeys.gpg --import
 	$(foreach release, $(DEBIAN_RELEASES), $(shell RELEASE=${release} REPO=${APTLY_REPO_NAME} scripts/generate_apt_repo.sh))
 
 
