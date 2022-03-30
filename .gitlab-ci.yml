@@ -1,8 +1,8 @@
 ---
 
 variables:
-  MM_NIGHTLY_BRANCH: "chore/dops-784"
-  
+  MM_NIGHTLY_BRANCH: "chore/dops-794"
+
 include:
   - project: mattermost/ci/desktop
     ref: chore/dops-794
