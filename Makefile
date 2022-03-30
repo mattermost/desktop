@@ -12,6 +12,11 @@ VAULT=$(shell command which vault || echo "N/A")
 GPG=$(shell command which gpg || echo "N/A")
 DPKG_SIG=$(shell command which dpkg-sig || echo "N/A")
 
+define sign_debian_package
+	dpkg-sig -k ${GPG_KEY_ID} --sign ${SIGNER} $1
+	dpkg-sig --verify $1	
+endef
+
 .PHONY: setup-package
 setup-package: ##Configure running environment to generate package in CI
 ifeq ($(IS_CI),true)
@@ -69,12 +74,9 @@ endif
 sign: sign-deb ## Sign packages in artifacts directory
 
 .PHONY: sign-deb
-sign-deb: check-sign-deb ## Sign debian packages
-	for file in ./artifacts/*.deb; do
-		dpkg-sig -k ${GPG_KEY_ID} --sign ${SIGNER} $file
-		dpkg-sig --verify $file
-	done
-
+sign-deb: ##check-sign-deb ## Sign debian packages
+	$(foreach file, $(wildcard artifacts/*.deb), $(call sign_debian_package,${file});)
+	
 
 ## Help documentation à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:
