@@ -70,8 +70,8 @@ sign: sign-deb ## Sign packages in artifacts directory
 .PHONY: sign-deb
 sign-deb: check-sign-deb ## Sign debian packages
 	for file in ./artifacts/*.deb; do
-    	dpkg-sig -k ${GPG_KEY_ID} --sign ${SIGNER} $file
-    	dpkg-sig --verify $file
+		dpkg-sig -k ${GPG_KEY_ID} --sign ${SIGNER} $file
+		dpkg-sig --verify $file
 	done
 
 ## Help documentation à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
