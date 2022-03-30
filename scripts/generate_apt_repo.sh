@@ -35,4 +35,4 @@ fi
 
 aptly snapshot create ${RELEASE}-snapshot from repo ${RELEASE}-repo
 
-# TODO: PUBLISH
+aptly publish snapshot -batch -force-overwrite -gpg-key="${GPG_KEY_ID}" ${RELEASE}-snapshot "s3:remote:"
