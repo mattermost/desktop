@@ -18,6 +18,8 @@ then
     exit 3
 fi
 
+cp scripts/aptly.conf $HOME/.aptly.conf
+
 curl -fsSL ${APT_REPO_URL}/pubkey.gpg | gpg1 --no-default-keyring --keyring trustedkeys.gpg --import
 
 aptly mirror create ${RELEASE}-mirror ${APT_REPO_URL} ${RELEASE}
