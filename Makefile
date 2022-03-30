@@ -42,16 +42,8 @@ package-linux: npm-ci ## Generates linux packages under build/linux folder
 	cp "release/${VERSION}/mattermost-desktop-*-linux-* artifacts/
 	cp "release/${VERSION}/mattermost-desktop_${VERSION}-1_*.deb" artifacts/
 
-.PHONY: setup-sign-deb
-setup-sign-deb: ##Configure running environment to sign packages in CI
-ifeq ($(IS_CI),true)
-ifeq ("$(VAULT)","N/A")
-	curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-	sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-	sudo apt-get update && sudo apt-get install vault
-endif
-	sudo apt-get update && sudo apt-get install gnupg dpkg-sig
-else
+.PHONY: check-sign-deb
+check-sign-deb: ##Configure running environment to sign packages in CI
 ifeq ("$(VAULT)","N/A")
 	@echo "Path does not contain vault executable. Consider install!" 
 	@exit 11
@@ -70,13 +62,12 @@ ifeq ("$(DPKG_SIG)","N/A")
 else
 	@echo "dpkg_sig Found in path!"
 endif
-endif
 
 .PHONY: sign
 sign: sign-deb ## Sign packages in artifacts directory
 
 .PHONY: sign-deb
-sign-deb: setup-sign-deb ## Sign debian packages
+sign-deb: check-sign-deb ## Sign debian packages
 	$(eval VERSION := $(shell jq -r '.version' <package.json))
 	vault kv get -field=signing_key secret/omnibus/production | gpg --batch --import
 	gpg --list-secret-keys --keyid-format LONG
