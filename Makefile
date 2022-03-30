@@ -17,6 +17,10 @@ define sign_debian_package
 	dpkg-sig --verify $1	
 endef
 
+define publish_to_aptly
+	$(shell RELEASE=$1 REPO=$2 ./generate_apt_repo.sh) 
+endef
+
 .PHONY: setup-package
 setup-package: ##Configure running environment to generate package in CI
 ifeq ($(IS_CI),true)
@@ -50,7 +54,7 @@ package-linux: npm-ci ## Generates linux packages under build/linux folder
 	cp release/${VERSION}/mattermost-desktop_"${VERSION}"-1_*.deb artifacts/
 
 .PHONY: check-sign-deb
-check-sign-deb: ##Check running environment to sign packages in CI
+check-sign-deb: ##Check running environment to sign packages
 ifeq ("$(GPG)","N/A")
 	@echo "Path does not contain gpg executable. Consider install!" 
 	@exit 11
@@ -74,9 +78,29 @@ endif
 sign: sign-deb ## Sign packages in artifacts directory
 
 .PHONY: sign-deb
-sign-deb: ##check-sign-deb ## Sign debian packages
+sign-deb: check-sign-deb ## Sign debian packages
 	$(foreach file, $(wildcard artifacts/*.deb), $(call sign_debian_package,${file});)
-	
+
+.PHONY: check-publish-deb
+check-publish-deb: ##Check running environment to publish packages
+ifndef GPG_KEY_ID
+	@echo "Please define GPG_KEY_ID environment variable!" 
+	@exit 20
+else
+	@echo "GPG_KEY_ID is defined" 
+endif
+ifndef APT_REPO_URL
+	@echo "Please define APT_REPO_URL environment variable!" 
+	@exit 21
+else
+	@echo "APT_REPO_URL is defined" 
+endif
+
+.PHONY: publish-deb	
+publish-deb: check-publish-deb ## Publish packages to mattermost apt repository
+	$(call publish_to_aptly,"focal","mattermost-desktop")
+	$(call publish_to_aptly,"bionic","mattermost-desktop")
+
 
 ## Help documentation à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:
