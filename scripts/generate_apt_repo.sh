@@ -18,7 +18,7 @@ then
     exit 3
 fi
 
-wget -O - ${APT_REPO_URL}/pubkey.gpg | gpg --no-default-keyring --keyring trustedkeys.gpg --import
+curl -fsSL ${APT_REPO_URL}/pubkey.gpg | gpg1 --no-default-keyring --keyring trustedkeys.gpg --import
 
 aptly mirror create ${RELEASE}-mirror ${APT_REPO_URL} ${RELEASE}
 aptly mirror update ${RELEASE}-mirror
