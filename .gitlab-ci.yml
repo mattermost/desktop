@@ -1,10 +1,11 @@
 ---
-
-package-linux:
+.rules:
+  only:
+    - nightly
   except:
     - merge_requests
     - tags   
-  
+
 include:
   - project: mattermost/ci/desktop
     ref: chore/dops-794
