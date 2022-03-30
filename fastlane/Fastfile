@@ -30,6 +30,7 @@ lane :publish_test do |options|
     end
     pilot(
       pkg: options[:path],
+      skip_waiting_for_build_processing: ENV['CI'] === 'true',
       api_key: api_key
     )
 end
