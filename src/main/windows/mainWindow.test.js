@@ -124,6 +124,13 @@ describe('main/windows/mainWindow', () => {
             }));
         });
 
+        it('should open in fullscreen if fullscreen set to true', () => {
+            createMainWindow({fullscreen: true});
+            expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
+                fullscreen: true,
+            }));
+        });
+
         it('should set default window size when failing to read bounds from file', () => {
             fs.readFileSync.mockImplementation(() => 'just a bunch of garbage');
             createMainWindow({});

@@ -1,8 +1,10 @@
 {
-  "publish": [{
+  "publish": [
+    {
     "provider": "generic",
     "url": "https://releases.mattermost.com/desktop"
-  }],
+    }
+  ],
   "appId": "Mattermost.Desktop",
   "artifactName": "${version}/${name}-${version}-${os}-${arch}.${ext}",
   "directories": {
@@ -39,7 +41,13 @@
   "deb": {
     "artifactName": "${version}/${name}_${version}-1_${arch}.${ext}",
     "synopsis": "Mattermost Desktop App",
-    "depends": ["gconf2", "gconf-service", "libnotify4", "libxtst6", "libnss3"],
+    "depends": [
+      "gconf2",
+      "gconf-service",
+      "libnotify4",
+      "libxtst6",
+      "libnss3"
+    ],
     "category": "contrib/net",
     "priority": "optional"
   },
@@ -51,6 +59,7 @@
       "appimage",
       "rpm"
     ],
+    "icon": "src/assets/icon.icns",
     "extraFiles": [
       {
         "filter": [
@@ -83,6 +92,7 @@
         ]
       }
     ],
+    "icon": "src/assets/osx/osx_icon.icns",
     "hardenedRuntime": true,
     "gatekeeperAssess": true,
     "entitlements": "./entitlements.mac.plist",
@@ -92,6 +102,19 @@
       "NSCameraUsageDescription": "Camera access may be used by Mattermost plugins, such as Jitsi video conferencing.",
       "LSFileQuarantineEnabled": true
   }
+  },
+  "mas": {
+    "hardenedRuntime": false,
+    "entitlements": "./entitlements.mas.plist",
+    "entitlementsInherit": "./entitlements.mas.inherit.plist",
+    "entitlementsLoginHelper": "./entitlements.mas.inherit.plist",
+    "provisioningProfile": "./mas.provisionprofile",
+    "extendInfo": {
+      "ITSAppUsesNonExemptEncryption": false
+    }
+  },
+  "masDev": {
+    "provisioningProfile": "./mas-dev.provisionprofile"
   },
   "dmg": {
     "background": "src/assets/osx/DMG_BG.png",

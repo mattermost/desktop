@@ -43,10 +43,10 @@ function isFramelessWindow() {
     return os.platform() === 'darwin' || (os.platform() === 'win32' && Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2'));
 }
 
-function createMainWindow(options: {linuxAppIcon: string}) {
+function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean}) {
     // Create the browser window.
     const preload = getLocalPreload('mainWindow.js');
-    let savedWindowState;
+    let savedWindowState: any;
     try {
         savedWindowState = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));
         savedWindowState = Validator.validateBoundsInfo(savedWindowState);
@@ -65,6 +65,16 @@ function createMainWindow(options: {linuxAppIcon: string}) {
     const {maximized: windowIsMaximized} = savedWindowState;
 
     const spellcheck = (typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker);
+    const isFullScreen = () => {
+        if (global?.args?.fullscreen !== undefined) {
+            return global.args.fullscreen;
+        }
+
+        if (Config.startInFullscreen) {
+            return Config.startInFullscreen;
+        }
+        return options.fullscreen || savedWindowState.fullscreen || false;
+    };
 
     const windowOptions: BrowserWindowConstructorOptions = Object.assign({}, savedWindowState, {
         title: app.name,
@@ -74,7 +84,7 @@ function createMainWindow(options: {linuxAppIcon: string}) {
         minWidth: MINIMUM_WINDOW_WIDTH,
         minHeight: MINIMUM_WINDOW_HEIGHT,
         frame: !isFramelessWindow(),
-        fullscreen: savedWindowState.fullscreen,
+        fullscreen: isFullScreen(),
         titleBarStyle: 'hidden' as const,
         trafficLightPosition: {x: 12, y: 12},
         backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do

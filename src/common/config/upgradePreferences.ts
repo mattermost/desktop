@@ -44,6 +44,7 @@ export function upgradeV2toV3(configV2: ConfigV2) {
     });
     config.lastActiveTeam = 0;
     config.spellCheckerLocales = [];
+    config.startInFullscreen = false;
     return config;
 }
 

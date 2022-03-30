@@ -91,6 +91,7 @@ import {
     updateSpellCheckerLocales,
     wasUpdated,
     initCookieManager,
+    migrateMacAppStore,
 } from './utils';
 
 export const mainProtocol = protocols?.[0]?.schemes?.[0];
@@ -116,6 +117,13 @@ export async function initialize() {
     // no need to continue initializing if app is quitting
     if (global.willAppQuit) {
         return;
+    }
+
+    // eslint-disable-next-line no-undef
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    if (__IS_MAC_APP_STORE__) {
+        migrateMacAppStore();
     }
 
     // initialization that should run once the app is ready
@@ -198,10 +206,15 @@ function initializeBeforeAppReady() {
     refreshTrayImages(Config.trayIconTheme);
 
     // If there is already an instance, quit this one
-    const gotTheLock = app.requestSingleInstanceLock();
-    if (!gotTheLock) {
-        app.exit();
-        global.willAppQuit = true;
+    // eslint-disable-next-line no-undef
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    if (!__IS_MAC_APP_STORE__) {
+        const gotTheLock = app.requestSingleInstanceLock();
+        if (!gotTheLock) {
+            app.exit();
+            global.willAppQuit = true;
+        }
     }
 
     AllowProtocolDialog.init();
