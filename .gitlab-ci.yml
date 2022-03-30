@@ -2,6 +2,19 @@
 
 variables:
   MM_BUILDER_IMAGE: "electronuserland/builder:wine-mono"
+  MM_PACKAGE_LINUX: "no"
+  MM_SIGN_DEB: "no"
+  MM_PUBLISH_DEB: "no"
+  MODE: "NIGHTLY"
+
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "nightly"'
+      variables:
+        MM_PACKAGE_LINUX: "yes"
+        MM_SIGN_DEB: "yes"
+        MM_PUBLISH_DEB: "yes"
+    
   
 include:
   - project: mattermost/ci/desktop
