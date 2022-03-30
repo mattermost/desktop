@@ -830,16 +830,16 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     value={this.state.logLevel}
                     onChange={this.handleChangeLogLevel}
                 >
-                    <option value='error'>{'Errors only (error)'}</option>
-                    <option value='warn'>{'Errors and warnings (warn)'}</option>
-                    <option value='info'>{'Default (info)'}</option>
-                    <option value='verbose'>{'Extra verbosity (verbose)'}</option>
-                    <option value='debug'>{'Debug logging (debug)'}</option>
-                    <option value='silly'>{'Extra-verbose debug logging (silly)'}</option>
+                    <option value='error'>{'Errors (error)'}</option>
+                    <option value='warn'>{'Errors and Warnings (warn)'}</option>
+                    <option value='info'>{'Info (info)'}</option>
+                    <option value='verbose'>{'Verbose (verbose)'}</option>
+                    <option value='debug'>{'Debug (debug)'}</option>
+                    <option value='silly'>{'Finest (silly)'}</option>
                 </FormControl>
                 <FormText>
-                    {'Change the number of log messages that are written to disk. Can be helpful for developers to debug issues.'}
-                    <br/>{'NOTE: Using a log level above "info" for long periods of time can result in excess use of disk space. Please exercise caution.'}
+                    {'Logging is helpful for developers and support to isolate issues you may be encountering with the desktop app.'}
+                    <br/>{'Increasing the log level increases disk space usage and can impact performance. We recommend only increasing the log level if you are having issues.'}
                 </FormText>
             </div>,
         );
