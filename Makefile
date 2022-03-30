@@ -102,6 +102,7 @@ endif
 
 .PHONY: publish-deb	
 publish-deb: check-publish-deb ## Publish packages to mattermost apt repository
+	curl -fsSL ${APT_REPO_URL}/pubkey.gpg | gpg --no-default-keyring --keyring trustedkeys.gpg --import
 	$(foreach release, $(DEBIAN_RELEASES), $(shell RELEASE=${release} REPO=${APTLY_REPO_NAME} scripts/generate_apt_repo.sh))
 
 
