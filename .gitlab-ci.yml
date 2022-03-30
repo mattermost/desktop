@@ -1,11 +1,8 @@
 ---
-.rules:
-  only:
-    - nightly
-  except:
-    - merge_requests
-    - tags   
 
+variables:
+  MM_NIGHTLY_BRANCH: "chore/dops-784"
+  
 include:
   - project: mattermost/ci/desktop
     ref: chore/dops-794
