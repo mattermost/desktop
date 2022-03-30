@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 set -xeuo pipefail
 
 if [[ "${RELEASE}" != "bionic" && "${RELEASE}" != "focal" ]]; then
@@ -20,8 +21,6 @@ fi
 
 cp scripts/aptly.conf $HOME/.aptly.conf
 
-curl -fsSL ${APT_REPO_URL}/pubkey.gpg | gpg1 --no-default-keyring --keyring trustedkeys.gpg --import
-
 aptly mirror create ${RELEASE}-mirror ${APT_REPO_URL} ${RELEASE}
 aptly mirror update ${RELEASE}-mirror
 aptly repo create -distribution=${RELEASE} ${RELEASE}-repo
@@ -34,6 +33,6 @@ else
     aptly repo add -force-replace ${RELEASE}-repo artifacts/*.deb
 fi
 
-aptly snapshot create ${RELEASE}-snapshot from repo ${release}-repo
+aptly snapshot create ${RELEASE}-snapshot from repo ${RELEASE}-repo
 
 # TODO: PUBLISH

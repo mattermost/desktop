@@ -1,10 +1,3 @@
-
-ifeq ($(OS),Windows_NT)
-	PLATFORM := Windows
-else
-	PLATFORM := $(shell uname)
-endif
-
 SIGNER?="origin"
 APTLY_REPO_NAME?="mattermost_desktop"
 DEBIAN_RELEASES=focal bionic
