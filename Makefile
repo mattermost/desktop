@@ -6,11 +6,15 @@ else
 endif
 
 SIGNER?="origin"
+APTLY_REPO_NAME?="mattermost_desktop"
+DEBIAN_RELEASES=focal bionic
+
 IS_CI=${CI}
 JQ=$(shell command which jq || echo "N/A")
 VAULT=$(shell command which vault || echo "N/A")
 GPG=$(shell command which gpg || echo "N/A")
 DPKG_SIG=$(shell command which dpkg-sig || echo "N/A")
+
 
 define sign_debian_package
 	dpkg-sig -k ${GPG_KEY_ID} --sign ${SIGNER} $1
@@ -18,7 +22,7 @@ define sign_debian_package
 endef
 
 define publish_to_aptly
-	$(shell RELEASE=$1 REPO=$2 ./generate_apt_repo.sh) 
+	$(shell RELEASE=$1 REPO=$2 scripts/generate_apt_repo.sh) 
 endef
 
 .PHONY: setup-package
@@ -98,8 +102,7 @@ endif
 
 .PHONY: publish-deb	
 publish-deb: check-publish-deb ## Publish packages to mattermost apt repository
-	$(call publish_to_aptly,"focal","mattermost-desktop")
-	$(call publish_to_aptly,"bionic","mattermost-desktop")
+	$(foreach release, $(DEBIAN_RELEASES), $(shell RELEASE=${release} REPO=${APTLY_REPO_NAME} scripts/generate_apt_repo.sh);)
 
 
 ## Help documentation à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html

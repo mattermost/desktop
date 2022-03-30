@@ -23,7 +23,7 @@ aptly mirror update ${RELEASE}-mirror
 aptly repo create -distribution=${RELEASE} ${RELEASE}-repo
 aptly repo import ${RELEASE}-mirror ${RELEASE}-repo ${REPO}
 
-if [[ "${MOD:-NIGHTLY}" == "NIGHTLY" ]]; then
+if [[ "${MODE:-NIGHTLY}" == "NIGHTLY" ]]; then
     aptly repo remove ${RELEASE}-repo ${REPO}-nightly
     aptly repo add ${RELEASE}-repo artifacts/*.deb
 else
