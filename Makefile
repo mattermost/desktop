@@ -102,7 +102,7 @@ endif
 
 .PHONY: publish-deb	
 publish-deb: check-publish-deb ## Publish packages to mattermost apt repository
-	$(foreach release, $(DEBIAN_RELEASES), $(shell RELEASE=${release} REPO=${APTLY_REPO_NAME} scripts/generate_apt_repo.sh);)
+	$(foreach release, $(DEBIAN_RELEASES), $(shell RELEASE=${release} REPO=${APTLY_REPO_NAME} scripts/generate_apt_repo.sh))
 
 
 ## Help documentation à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
