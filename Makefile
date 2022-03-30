@@ -43,7 +43,13 @@ package-linux: npm-ci ## Generates linux packages under build/linux folder
 	cp "release/${VERSION}/mattermost-desktop_${VERSION}-1_*.deb" artifacts/
 
 .PHONY: check-sign-deb
-check-sign-deb: ##Configure running environment to sign packages in CI
+check-sign-deb: ##Check running environment to sign packages in CI
+ifeq ("$(JQ)","N/A")
+	@echo "Path does not contain jq executable. Consider install!" 
+	@exit 10
+else
+	@echo "jq Found in path!"
+endif
 ifeq ("$(VAULT)","N/A")
 	@echo "Path does not contain vault executable. Consider install!" 
 	@exit 11
