@@ -1,6 +1,5 @@
 SIGNER?="origin"
 APTLY_REPO_NAME?="mattermost_desktop"
-DEBIAN_RELEASES=focal bionic
 
 IS_CI=${CI}
 JQ=$(shell command which jq || echo "N/A")
@@ -91,8 +90,8 @@ endif
 
 .PHONY: publish-deb	
 publish-deb: check-publish-deb ## Publish packages to mattermost apt repository
-	$(foreach release, $(DEBIAN_RELEASES), $(shell RELEASE=${release} REPO=${APTLY_REPO_NAME} scripts/generate_apt_repo.sh))
-
+	RELEASE=focal REPO=${APTLY_REPO_NAME} scripts/generate_apt_repo.sh
+	RELEASE=bionic REPO=${APTLY_REPO_NAME} scripts/generate_apt_repo.sh
 
 ## Help documentation à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:
