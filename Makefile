@@ -40,8 +40,9 @@ package-linux: npm-ci ## Generates linux packages under build/linux folder
 	npm run package:linux
 	
 	mkdir -p artifacts
-	cp "release/${VERSION}/mattermost-desktop-*-linux-* artifacts/
-	cp "release/${VERSION}/mattermost-desktop_${VERSION}-1_*.deb" artifacts/
+
+## We only need debian packages for now. 	
+	cp "release/${VERSION}/*.deb" artifacts/
 
 .PHONY: check-sign-deb
 check-sign-deb: ##Check running environment to sign packages in CI
