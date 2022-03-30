@@ -5,6 +5,7 @@ else
 	PLATFORM := $(shell uname)
 endif
 
+SIGNER?="origin"
 IS_CI=${CI}
 JQ=$(shell command which jq || echo "N/A")
 VAULT=$(shell command which vault || echo "N/A")
@@ -44,29 +45,23 @@ package-linux: npm-ci ## Generates linux packages under build/linux folder
 
 .PHONY: check-sign-deb
 check-sign-deb: ##Check running environment to sign packages in CI
-ifeq ("$(JQ)","N/A")
-	@echo "Path does not contain jq executable. Consider install!" 
-	@exit 10
-else
-	@echo "jq Found in path!"
-endif
-ifeq ("$(VAULT)","N/A")
-	@echo "Path does not contain vault executable. Consider install!" 
-	@exit 11
-else
-	@echo "vault Found in path!"
-endif
 ifeq ("$(GPG)","N/A")
 	@echo "Path does not contain gpg executable. Consider install!" 
-	@exit 12
+	@exit 11
 else
 	@echo "gpg Found in path!"
 endif
 ifeq ("$(DPKG_SIG)","N/A")
 	@echo "Path does not contain dpkg_sig executable. Consider install!" 
-	@exit 13
+	@exit 12
 else
 	@echo "dpkg_sig Found in path!"
+endif
+ifndef GPG_KEY_ID
+	@echo "Please define GPG_KEY_ID environment variable!" 
+	@exit 20
+else
+	@echo "GPG_KEY_ID is defined" 
 endif
 
 .PHONY: sign
@@ -74,9 +69,10 @@ sign: sign-deb ## Sign packages in artifacts directory
 
 .PHONY: sign-deb
 sign-deb: check-sign-deb ## Sign debian packages
-	$(eval VERSION := $(shell jq -r '.version' <package.json))
-	vault kv get -field=signing_key secret/omnibus/production | gpg --batch --import
-	gpg --list-secret-keys --keyid-format LONG
+	for file in ./artifacts/*.deb; do
+    	dpkg-sig -k ${GPG_KEY_ID} --sign ${SIGNER} $file
+    	dpkg-sig --verify $file
+	done
 
 ## Help documentation à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:
