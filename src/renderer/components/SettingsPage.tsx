@@ -71,7 +71,6 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
     startInFullscreenRef: React.RefObject<HTMLInputElement>;
     autoCheckForUpdatesRef: React.RefObject<HTMLInputElement>;
 
-
     saveQueue: SaveQueueItem[];
 
     selectedSpellCheckerLocales: Array<{label: string; value: string}>;
