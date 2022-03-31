@@ -112,6 +112,8 @@ export class Config extends EventEmitter {
      */
 
     loadRegistry = (registryData: Partial<RegistryConfigType>): void => {
+        log.verbose('Config.loadRegistry', {registryData});
+
         this.registryConfigData = registryData;
         if (this.registryConfigData.teams) {
             this.predefinedTeams.push(...this.registryConfigData.teams.map((team) => getDefaultTeamWithTabsFromTeam(team)));
@@ -161,6 +163,8 @@ export class Config extends EventEmitter {
      * @param {array} properties an array of config properties to save
      */
     setMultiple = (event: Electron.IpcMainEvent, properties: Array<{key: keyof ConfigType; data: ConfigType[keyof ConfigType]}> = []): Partial<ConfigType> | undefined => {
+        log.debug('Config.setMultiple', properties);
+
         if (properties.length) {
             this.localConfigData = Object.assign({}, this.localConfigData, ...properties.map(({key, data}) => ({[key]: data})));
             this.regenerateCombinedConfigData();
@@ -550,6 +554,8 @@ export class Config extends EventEmitter {
     }
 
     handleGetConfiguration = (event: Electron.IpcMainInvokeEvent, option: keyof CombinedConfig) => {
+        log.debug('Config.handleGetConfiguration', option);
+
         const config = {...this.combinedData};
         if (option) {
             return config[option];
@@ -558,6 +564,8 @@ export class Config extends EventEmitter {
     }
 
     handleGetLocalConfiguration = (event: Electron.IpcMainInvokeEvent, option: keyof ConfigType) => {
+        log.debug('Config.handleGetLocalConfiguration', option);
+
         const config: Partial<LocalConfiguration> = {...this.localConfigData};
         config.appName = app.name;
         config.enableServerManagement = this.combinedData?.enableServerManagement;
@@ -569,6 +577,9 @@ export class Config extends EventEmitter {
     }
 
     handleUpdateTeams = (event: Electron.IpcMainInvokeEvent, newTeams: TeamWithTabs[]) => {
+        log.debug('Config.handleUpdateTeams');
+        log.silly('Config.handleUpdateTeams', newTeams);
+
         this.set('teams', newTeams);
         return this.combinedData!.teams;
     }
@@ -578,6 +589,8 @@ export class Config extends EventEmitter {
      * @emits 'darkModeChange'
      */
     handleUpdateTheme = () => {
+        log.debug('Config.handleUpdateTheme');
+
         if (this.combinedData && this.combinedData.darkMode !== nativeTheme.shouldUseDarkColors) {
             this.combinedData.darkMode = nativeTheme.shouldUseDarkColors;
             this.emit('darkModeChange', this.combinedData.darkMode);
@@ -602,6 +615,8 @@ const config = new Config(configPath);
 export default config;
 
 ipcMain.on(UPDATE_PATHS, () => {
+    log.debug('Config.UPDATE_PATHS');
+
     config.configFilePath = configPath;
     if (config.combinedData) {
         config.reload();

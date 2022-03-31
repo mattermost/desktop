@@ -27,11 +27,6 @@ jest.mock('electron', () => ({
     })),
 }));
 
-jest.mock('electron-log', () => ({
-    info: jest.fn(),
-    warn: jest.fn(),
-}));
-
 jest.mock('../allowProtocolDialog', () => ({}));
 jest.mock('../windows/windowManager', () => ({
     showMainWindow: jest.fn(),

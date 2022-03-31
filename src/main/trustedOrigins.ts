@@ -117,6 +117,7 @@ const trustedOriginsStore = new TrustedOriginsStore(trustedOriginsStoreFile);
 export default trustedOriginsStore;
 
 ipcMain.on(UPDATE_PATHS, () => {
+    log.debug('trustedOriginsStore.UPDATE_PATHS');
     trustedOriginsStore.storeFile = trustedOriginsStoreFile;
     if (trustedOriginsStore.data) {
         trustedOriginsStore.load();

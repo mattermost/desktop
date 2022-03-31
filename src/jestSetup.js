@@ -11,3 +11,18 @@ jest.mock('main/constants', () => ({
 
     updatePaths: jest.fn(),
 }));
+
+jest.mock('electron-log', () => ({
+    error: jest.fn(),
+    warn: jest.fn(),
+    info: jest.fn(),
+    verbose: jest.fn(),
+    debug: jest.fn(),
+    silly: jest.fn(),
+    transports: {
+        file: {
+            level: '',
+        },
+    },
+}));
+

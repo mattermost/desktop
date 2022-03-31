@@ -49,8 +49,6 @@ jest.mock('common/utils/util', () => ({
     isVersionGreaterThanOrEqualTo: jest.fn(),
 }));
 
-jest.mock('electron-log', () => ({}));
-
 jest.mock('global', () => ({
     willAppQuit: false,
 }));

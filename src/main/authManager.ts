@@ -32,6 +32,8 @@ export class AuthManager {
     }
 
     handleAppLogin = (event: Event, webContents: WebContents, request: AuthenticationResponseDetails, authInfo: AuthInfo, callback?: (username?: string, password?: string) => void) => {
+        log.verbose('AuthManager.handleAppLogin', {request, authInfo});
+
         event.preventDefault();
         const parsedURL = urlUtils.parseURL(request.url);
         if (!parsedURL) {

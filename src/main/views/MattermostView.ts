@@ -101,6 +101,8 @@ export class MattermostView extends EventEmitter {
         }
 
         this.view.webContents.on('did-finish-load', () => {
+            log.debug('MattermostView.did-finish-load', this.tab.name);
+
             // wait for screen to truly finish loading before sending the message down
             const timeout = setInterval(() => {
                 if (!this.view.webContents.isLoading()) {
@@ -327,6 +329,8 @@ export class MattermostView extends EventEmitter {
     };
 
     handleInputEvents = (_: Event, input: Input) => {
+        log.silly('MattermostView.handleInputEvents', {tabName: this.tab.name, input});
+
         this.registerAltKeyPressed(input);
 
         if (this.isAltKeyReleased(input)) {
@@ -335,6 +339,8 @@ export class MattermostView extends EventEmitter {
     }
 
     handleDidNavigate = (event: Event, url: string) => {
+        log.debug('MattermostView.handleDidNavigate', {tabName: this.tab.name, url});
+
         const isUrlTeamUrl = urlUtils.isTeamUrl(this.tab.url || '', url) || urlUtils.isAdminUrl(this.tab.url || '', url);
         if (isUrlTeamUrl) {
             this.setBounds(getWindowBoundaries(this.window));
@@ -348,6 +354,7 @@ export class MattermostView extends EventEmitter {
     }
 
     handleUpdateTarget = (e: Event, url: string) => {
+        log.silly('MattermostView.handleUpdateTarget', {tabName: this.tab.name, url});
         if (url && !urlUtils.isInternalURL(urlUtils.parseURL(url), this.tab.server.url)) {
             this.emit(UPDATE_TARGET_URL, url);
         }
@@ -356,6 +363,8 @@ export class MattermostView extends EventEmitter {
     titleParser = /(\((\d+)\) )?(\* )?/g
 
     handleTitleUpdate = (e: Event, title: string) => {
+        log.debug('MattermostView.handleTitleUpdate', {tabName: this.tab.name, title});
+
         this.updateMentionsFromTitle(title);
     }
 
@@ -379,6 +388,8 @@ export class MattermostView extends EventEmitter {
     }
 
     handleFaviconUpdate = (e: Event, favicons: string[]) => {
+        log.silly('MattermostView.handleFaviconUpdate', {tabName: this.tab.name, favicons});
+
         if (!this.usesAsteriskForUnreads) {
             // if unread state is stored for that favicon, retrieve value.
             // if not, get related info from preload and store it for future changes
@@ -400,6 +411,8 @@ export class MattermostView extends EventEmitter {
     // if favicon is null, it means it is the initial load,
     // so don't memoize as we don't have the favicons and there is no rush to find out.
     handleFaviconIsUnread = (e: Event, favicon: string, viewName: string, result: boolean) => {
+        log.silly('MattermostView.handleFaviconIsUnread', {favicon, viewName, result});
+
         if (this.tab && viewName === this.tab.name) {
             appState.updateUnreads(viewName, result);
         }

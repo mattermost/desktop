@@ -51,11 +51,6 @@ jest.mock('electron', () => {
     };
 });
 
-jest.mock('electron-log', () => ({
-    info: jest.fn(),
-    error: jest.fn(),
-}));
-
 jest.mock('../windows/windowManager', () => ({
     getServerNameByWebContentsId: () => 'server_name',
     sendToRenderer: jest.fn(),

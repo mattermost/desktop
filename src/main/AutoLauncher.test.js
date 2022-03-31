@@ -13,7 +13,6 @@ jest.mock('electron', () => ({
 }));
 
 jest.mock('electron-is-dev', () => false);
-jest.mock('electron-log', () => ({}));
 
 describe('main/AutoLauncher', () => {
     let autoLauncher;
