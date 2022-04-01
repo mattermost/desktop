@@ -15,8 +15,6 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('electron-log', () => ({}));
-
 jest.mock('./modalView', () => ({
     ModalView: jest.fn(),
 }));

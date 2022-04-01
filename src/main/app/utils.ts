@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 
 import {app, BrowserWindow, Menu, Rectangle, Session, session, dialog, nativeImage} from 'electron';
-import log from 'electron-log';
+import log, {LevelOption} from 'electron-log';
 
 import {MigrationInfo, TeamWithTabs} from 'types/config';
 import {RemoteInfo} from 'types/server';
@@ -83,6 +83,8 @@ function openExtraTabs(data: Array<RemoteInfo | string | undefined>, team: TeamW
 }
 
 export function handleUpdateMenuEvent() {
+    log.debug('Utils.handleUpdateMenuEvent');
+
     const aMenu = createAppMenu(Config, updateManager);
     Menu.setApplicationMenu(aMenu);
     aMenu.addListener('menu-will-close', WindowManager.focusBrowserView);
@@ -152,6 +154,7 @@ function getValidWindowPosition(state: Rectangle) {
 
 export function resizeScreen(browserWindow: BrowserWindow) {
     function handle() {
+        log.debug('Utils.resizeScreen.handle');
         const position = browserWindow.getPosition();
         const size = browserWindow.getSize();
         const validPosition = getValidWindowPosition({
@@ -172,6 +175,7 @@ export function resizeScreen(browserWindow: BrowserWindow) {
 }
 
 function flushCookiesStore(session: Session) {
+    log.debug('Utils.flushCookiesStore');
     session.cookies.flushStore().catch((err) => {
         log.error(`There was a problem flushing cookies:\n${err}`);
     });
@@ -247,4 +251,9 @@ export function migrateMacAppStore() {
     } catch (e) {
         log.error('MAS: An error occurred importing the existing configuration', e);
     }
+}
+
+export function setLoggingLevel(level: LevelOption) {
+    log.transports.console.level = level;
+    log.transports.file.level = level;
 }

@@ -173,6 +173,8 @@ export class ViewManager {
     }
 
     showByName = (name: string) => {
+        log.debug('viewManager.showByName', name);
+
         const newView = this.views.get(name);
         if (newView) {
             if (newView.isVisible) {
@@ -218,6 +220,8 @@ export class ViewManager {
     }
 
     activateView = (viewName: string) => {
+        log.debug('viewManager.activateView', viewName);
+
         if (this.currentView === viewName) {
             this.showByName(this.currentView);
         }
@@ -230,6 +234,8 @@ export class ViewManager {
     }
 
     finishLoading = (server: string) => {
+        log.debug('viewManager.finishLoading', server);
+
         const view = this.views.get(server);
         if (view && this.getCurrentView() === view) {
             this.showByName(this.currentView!);
@@ -255,6 +261,8 @@ export class ViewManager {
     }
 
     failLoading = (tabName: string) => {
+        log.debug('viewManager.failLoading', tabName);
+
         this.fadeLoadingScreen();
         if (this.currentView === tabName) {
             this.getCurrentView()?.hide();
@@ -293,6 +301,8 @@ export class ViewManager {
     }
 
     showURLView = (url: URL | string) => {
+        log.silly('viewManager.showURLView', url);
+
         if (this.urlViewCancel) {
             this.urlViewCancel();
         }
@@ -326,6 +336,8 @@ export class ViewManager {
             };
 
             const adjustWidth = (event: IpcMainEvent, width: number) => {
+                log.silly('showURLView.adjustWidth', width);
+
                 urlView.setBounds({
                     x: 0,
                     y: boundaries.height - URL_VIEW_HEIGHT,
@@ -422,6 +434,8 @@ export class ViewManager {
     }
 
     deeplinkSuccess = (viewName: string) => {
+        log.debug('viewManager.deeplinkSuccess', viewName);
+
         const view = this.views.get(viewName);
         if (!view) {
             return;

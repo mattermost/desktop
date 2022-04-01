@@ -34,8 +34,10 @@ export async function getServerAPI<T>(url: URL, isAuthenticated: boolean, onSucc
 
     if (onSuccess) {
         req.on('response', (response: Electron.IncomingMessage) => {
+            log.silly('getServerAPI.response', response);
             if (response.statusCode === 200) {
                 response.on('data', (chunk: Buffer) => {
+                    log.silly('getServerAPI.response.data', `${chunk}`);
                     const raw = `${chunk}`;
                     try {
                         const data = JSON.parse(raw) as T;

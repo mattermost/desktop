@@ -21,6 +21,8 @@ export const certificateErrorCallbacks = new Map();
 
 // activate first app instance, subsequent instances will quit themselves
 export function handleAppSecondInstance(event: Event, argv: string[]) {
+    log.debug('App.handleAppSecondInstance', argv);
+
     // Protocol handler for win32
     // argv: An array of the second instance’s (command line / deep linked) arguments
     const deeplinkingUrl = getDeeplinkingURL(argv);
@@ -28,6 +30,8 @@ export function handleAppSecondInstance(event: Event, argv: string[]) {
 }
 
 export function handleAppWindowAllClosed() {
+    log.debug('App.handleAppWindowAllClosed');
+
     // On OS X it is common for applications and their menu bar
     // to stay active until the user quits explicitly with Cmd + Q
     if (process.platform !== 'darwin') {
@@ -36,6 +40,8 @@ export function handleAppWindowAllClosed() {
 }
 
 export function handleAppBrowserWindowCreated(event: Event, newWindow: BrowserWindow) {
+    log.debug('App.handleAppBrowserWindowCreated');
+
     // Screen cannot be required before app is ready
     resizeScreen(newWindow);
 }
@@ -57,6 +63,8 @@ export function handleAppWillFinishLaunching() {
 }
 
 export function handleAppBeforeQuit() {
+    log.debug('App.handleAppBeforeQuit');
+
     // Make sure tray icon gets removed if the user exits via CTRL-Q
     destroyTray();
     global.willAppQuit = true;
@@ -64,6 +72,8 @@ export function handleAppBeforeQuit() {
 }
 
 export async function handleAppCertificateError(event: Event, webContents: WebContents, url: string, error: string, certificate: Certificate, callback: (isTrusted: boolean) => void) {
+    log.verbose('App.handleAppCertificateError', {url, error, certificate});
+
     const parsedURL = urlUtils.parseURL(url);
     if (!parsedURL) {
         return;

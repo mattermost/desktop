@@ -25,6 +25,8 @@ export class CertificateManager {
     }
 
     handleSelectCertificate = (event: Event, webContents: WebContents, url: string, list: Certificate[], callback: (certificate?: Certificate | undefined) => void) => {
+        log.verbose('CertificateManager.handleSelectCertificate', url, list);
+
         if (list.length > 1) {
             event.preventDefault(); // prevent the app from getting the first certificate available
 

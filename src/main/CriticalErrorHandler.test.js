@@ -28,10 +28,6 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('electron-log', () => ({
-    error: jest.fn(),
-}));
-
 jest.mock('fs', () => ({
     writeFileSync: jest.fn(),
 }));

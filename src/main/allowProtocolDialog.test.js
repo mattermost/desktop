@@ -31,10 +31,6 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('electron-log', () => ({
-    error: jest.fn(),
-}));
-
 jest.mock('../../electron-builder.json', () => ({
     protocols: [{
         name: 'Mattermost',

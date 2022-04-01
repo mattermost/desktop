@@ -26,12 +26,6 @@ jest.mock('main/Validator', () => ({
     validateV3ConfigData: (configData) => (configData.version === 3 ? configData : null),
 }));
 
-jest.mock('electron-log', () => ({
-    error: jest.fn(),
-    warn: jest.fn(),
-    info: jest.fn(),
-}));
-
 jest.mock('common/tabs/TabView', () => ({
     getDefaultTeamWithTabsFromTeam: (value) => ({
         ...value,

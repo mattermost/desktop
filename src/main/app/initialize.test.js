@@ -63,12 +63,6 @@ jest.mock('electron-devtools-installer', () => {
 const isDev = false;
 jest.mock('electron-is-dev', () => isDev);
 
-jest.mock('electron-log', () => ({
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-}));
-
 jest.mock('../../../electron-builder.json', () => ([
     {
         name: 'Mattermost',
@@ -245,7 +239,7 @@ describe('main/app/initialize', () => {
             path.resolve.mockImplementation((base, p) => `${base}/${p}`);
             session.defaultSession.on.mockImplementation((event, cb) => {
                 if (event === 'will-download') {
-                    cb(null, item, {id: 0});
+                    cb(null, item, {id: 0, getURL: jest.fn()});
                 }
             });
 
