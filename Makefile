@@ -1,7 +1,6 @@
 SIGNER?="origin"
 APTLY_REPO_NAME?="mattermost_desktop"
 
-IS_CI=${CI}
 JQ=$(shell command which jq || echo "N/A")
 VAULT=$(shell command which vault || echo "N/A")
 GPG=$(shell command which gpg || echo "N/A")
@@ -15,10 +14,6 @@ endef
 
 .PHONY: setup-package
 setup-package: ##Configure running environment to generate package in CI
-ifeq ($(IS_CI),true)
-	wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | apt-key add -
-	apt-get update || true && apt-get install -y ca-certificates libxtst-dev libpng++-dev && apt-get update && apt-get -y install --no-install-recommends jq icnsutils graphicsmagick tzdata
-else 
 ifeq ("$(JQ)","N/A")
 	@echo "Path does not contain jq executable. Consider install!" 
 	@exit 10
@@ -49,19 +44,19 @@ package-linux: npm-ci ## Generates linux packages under build/linux folder
 check-sign-deb: ##Check running environment to sign packages
 ifeq ("$(GPG)","N/A")
 	@echo "Path does not contain gpg executable. Consider install!" 
-	@exit 11
+	@exit 128
 else
 	@echo "gpg Found in path!"
 endif
 ifeq ("$(DPKG_SIG)","N/A")
 	@echo "Path does not contain dpkg_sig executable. Consider install!" 
-	@exit 12
+	@exit 128
 else
 	@echo "dpkg_sig Found in path!"
 endif
 ifndef GPG_KEY_ID
 	@echo "Please define GPG_KEY_ID environment variable!" 
-	@exit 20
+	@exit 128
 else
 	@echo "GPG_KEY_ID is defined" 
 endif
@@ -77,13 +72,13 @@ sign-deb: check-sign-deb ## Sign debian packages
 check-publish-deb: ##Check running environment to publish packages
 ifndef GPG_KEY_ID
 	@echo "Please define GPG_KEY_ID environment variable!" 
-	@exit 20
+	@exit 128
 else
 	@echo "GPG_KEY_ID is defined" 
 endif
 ifndef APT_REPO_URL
 	@echo "Please define APT_REPO_URL environment variable!" 
-	@exit 21
+	@exit 128
 else
 	@echo "APT_REPO_URL is defined" 
 endif

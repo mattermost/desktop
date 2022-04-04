@@ -4,19 +4,19 @@ set -xeuo pipefail
 
 if [[ "${RELEASE}" != "bionic" && "${RELEASE}" != "focal" ]]; then
     printf "ERROR: unsupported release %q\n" "${RELEASE}" >&2
-    exit 1
+    exit 128
 fi
 
 if test -z "$REPO" 
 then
     printf "ERROR: Please define REPO variable" >&2
-    exit 2
+    exit 128
 fi
 
 if test -z "$APT_REPO_URL" 
 then
     printf "ERROR: Please define APT_REPO_URL variable" >&2
-    exit 3
+    exit 128
 fi
 
 cp scripts/aptly.conf $HOME/.aptly.conf
@@ -26,7 +26,7 @@ aptly mirror update ${RELEASE}-mirror
 aptly repo create -distribution=${RELEASE} ${RELEASE}-repo
 aptly repo import ${RELEASE}-mirror ${RELEASE}-repo ${REPO}
 
-if [[ "${MODE:-NIGHTLY}" == "NIGHTLY" ]]; then
+if [[ "${MM_BUILD_TYPE:-NIGHTLY}" == "NIGHTLY" ]]; then
     aptly repo remove ${RELEASE}-repo ${REPO}-nightly
     aptly repo add ${RELEASE}-repo artifacts/*.deb
 else
