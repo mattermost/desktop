@@ -18,6 +18,8 @@ import {NewVersionNotification, UpgradeNotification} from './Upgrade';
 export const currentNotifications = new Map();
 
 export function displayMention(title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData) {
+    log.debug('Notifications.displayMention', {title, body, channel, teamId, url, silent, data});
+
     if (!Notification.isSupported()) {
         log.error('notification not supported');
         return;
@@ -35,6 +37,8 @@ export function displayMention(title: string, body: string, channel: {id: string
     const mentionKey = `${mention.teamId}:${mention.channel.id}`;
 
     mention.on('show', () => {
+        log.debug('Notifications.displayMention.show');
+
         // On Windows, manually dismiss notifications from the same channel and only show the latest one
         if (process.platform === 'win32') {
             if (currentNotifications.has(mentionKey)) {
@@ -62,6 +66,8 @@ export function displayMention(title: string, body: string, channel: {id: string
 }
 
 export function displayDownloadCompleted(fileName: string, path: string, serverName: string) {
+    log.debug('Notifications.displayDownloadCompleted', {fileName, path, serverName});
+
     if (!Notification.isSupported()) {
         log.error('notification not supported');
         return;

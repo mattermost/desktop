@@ -142,6 +142,8 @@ function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean})
     });
 
     mainWindow.on('close', (event) => {
+        log.debug('MainWindow.on.close');
+
         if (global.willAppQuit) { // when [Ctrl|Cmd]+Q
             saveWindowState(boundsInfoPath, mainWindow);
         } else { // Minimize or hide the window for close button.

@@ -7,7 +7,7 @@
 import 'renderer/css/settings.css';
 
 import React from 'react';
-import {FormCheck, Col, FormGroup, FormText, Container, Row, Button} from 'react-bootstrap';
+import {FormCheck, Col, FormGroup, FormText, Container, Row, Button, FormControl} from 'react-bootstrap';
 import ReactSelect, {ActionMeta, OptionsType} from 'react-select';
 
 import {debounce} from 'underscore';
@@ -70,7 +70,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
     enableHardwareAccelerationRef: React.RefObject<HTMLInputElement>;
     startInFullscreenRef: React.RefObject<HTMLInputElement>;
     autoCheckForUpdatesRef: React.RefObject<HTMLInputElement>;
-
+    logLevelRef: React.RefObject<HTMLSelectElement>;
 
     saveQueue: SaveQueueItem[];
 
@@ -104,6 +104,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         this.startInFullscreenRef = React.createRef();
         this.spellCheckerURLRef = React.createRef();
         this.autoCheckForUpdatesRef = React.createRef();
+        this.logLevelRef = React.createRef();
 
         this.saveQueue = [];
         this.selectedSpellCheckerLocales = [];
@@ -291,6 +292,13 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         });
     }
 
+    handleChangeLogLevel = () => {
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'logLevel', data: this.logLevelRef.current?.value});
+        this.setState({
+            logLevel: this.logLevelRef.current?.value,
+        });
+    }
+
     handleChangeAutoCheckForUpdates = () => {
         window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_UPDATES, {key: 'autoCheckForUpdates', data: this.autoCheckForUpdatesRef.current?.checked});
         this.setState({
@@ -431,6 +439,17 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
 
             downloadLocationButton: {
                 marginBottom: '4px',
+            },
+
+            logLevelInput: {
+                marginRight: '3px',
+                marginTop: '8px',
+                width: '320px',
+                height: '34px',
+                padding: '0 12px',
+                borderRadius: '4px',
+                border: '1px solid #ccc',
+                fontWeight: 500,
             },
 
             container: {
@@ -800,6 +819,27 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 </Button>
                 <FormText>
                     {'Specify the folder where files will download.'}
+                </FormText>
+                <br/>
+                {'Logging level'}
+                <FormControl
+                    style={settingsPage.logLevelInput}
+                    as='select'
+                    id='inputLogLevel'
+                    ref={this.logLevelRef}
+                    value={this.state.logLevel}
+                    onChange={this.handleChangeLogLevel}
+                >
+                    <option value='error'>{'Errors (error)'}</option>
+                    <option value='warn'>{'Errors and Warnings (warn)'}</option>
+                    <option value='info'>{'Info (info)'}</option>
+                    <option value='verbose'>{'Verbose (verbose)'}</option>
+                    <option value='debug'>{'Debug (debug)'}</option>
+                    <option value='silly'>{'Finest (silly)'}</option>
+                </FormControl>
+                <FormText>
+                    {'Logging is helpful for developers and support to isolate issues you may be encountering with the desktop app.'}
+                    <br/>{'Increasing the log level increases disk space usage and can impact performance. We recommend only increasing the log level if you are having issues.'}
                 </FormText>
             </div>,
         );

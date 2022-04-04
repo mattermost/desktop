@@ -3,6 +3,7 @@
 // See LICENSE.txt for license information.
 
 import {app} from 'electron';
+import log from 'electron-log';
 
 import {UPDATE_BADGE} from 'common/communication';
 
@@ -49,6 +50,8 @@ function showBadgeLinux(sessionExpired: boolean, mentionCount: number) {
 }
 
 function showBadge(sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean) {
+    log.silly('Badge.showBadge', {sessionExpired, mentionCount, showUnreadBadge});
+
     switch (process.platform) {
     case 'win32':
         showBadgeWindows(sessionExpired, mentionCount, showUnreadBadge);

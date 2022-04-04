@@ -82,10 +82,6 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('electron-log', () => ({
-    error: jest.fn(),
-}));
-
 jest.mock('main/trustedOrigins', () => ({
     addPermission: jest.fn(),
     checkPermission: (url) => {

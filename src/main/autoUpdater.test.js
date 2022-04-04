@@ -22,15 +22,6 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('electron-log', () => ({
-    error: jest.fn(),
-    info: jest.fn(),
-    transports: {
-        file: {
-            level: '',
-        },
-    },
-}));
 jest.mock('electron-updater', () => ({
     autoUpdater: {
         on: jest.fn(),

@@ -18,10 +18,6 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('electron-log', () => ({
-    error: jest.fn(),
-}));
-
 function mockTOS(fileName, returnvalue) {
     const tos = new TrustedOriginsStore(fileName);
     tos.readFromFile = () => {

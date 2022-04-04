@@ -2,6 +2,9 @@
 // See LICENSE.txt for license information.
 
 import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent} from 'electron';
+
+import log from 'electron-log';
+
 import {CombinedConfig, TeamWithTabs} from 'types/config';
 
 import {
@@ -66,6 +69,8 @@ export default class TeamDropdownView {
     }
 
     updateConfig = (event: IpcMainEvent, config: CombinedConfig) => {
+        log.silly('TeamDropdownView.config', {config});
+
         this.teams = config.teams;
         this.darkMode = config.darkMode;
         this.enableServerManagement = config.enableServerManagement;
@@ -74,11 +79,15 @@ export default class TeamDropdownView {
     }
 
     updateActiveTeam = (event: IpcMainEvent, name: string) => {
+        log.silly('TeamDropdownView.updateActiveTeam', {name});
+
         this.activeTeam = name;
         this.updateDropdown();
     }
 
     updateMentions = (expired: Map<string, boolean>, mentions: Map<string, number>, unreads: Map<string, boolean>) => {
+        log.silly('TeamDropdownView.updateMentions', {expired, mentions, unreads});
+
         this.unreads = unreads;
         this.mentions = mentions;
         this.expired = expired;
@@ -91,6 +100,8 @@ export default class TeamDropdownView {
     }
 
     updateDropdown = () => {
+        log.silly('TeamDropdownView.updateDropdown');
+
         this.view.webContents.send(
             UPDATE_TEAMS_DROPDOWN,
             this.teams,
@@ -106,6 +117,8 @@ export default class TeamDropdownView {
     }
 
     handleOpen = () => {
+        log.debug('TeamDropdownView.handleOpen');
+
         if (!this.bounds) {
             return;
         }
@@ -117,12 +130,16 @@ export default class TeamDropdownView {
     }
 
     handleClose = () => {
+        log.debug('TeamDropdownView.handleClose');
+
         this.view.setBounds(this.getBounds(0, 0));
         WindowManager.sendToRenderer(CLOSE_TEAMS_DROPDOWN);
         this.isOpen = false;
     }
 
     handleReceivedMenuSize = (event: IpcMainEvent, width: number, height: number) => {
+        log.silly('TeamDropdownView.handleReceivedMenuSize', {width, height});
+
         this.bounds = this.getBounds(width, height);
         if (this.isOpen) {
             this.view.setBounds(this.bounds);
