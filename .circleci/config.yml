@@ -456,6 +456,31 @@ jobs:
           from: ./aws-s3-dist/
           to: s3://releases.mattermost.com/desktop/
           arguments: --acl public-read --cache-control "no-cache" --recursive
+  
+  upload_to_s3_daily:
+    executor: aws
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ./build
+      - run:
+          name: "install renaming utility"
+          command: |
+            sudo apt-get install rename
+      - run:
+          name: "Normalize folder names"
+          command: |
+            mv ./build/macos-release ./build/macos && mv ./build/win-release ./build/win
+      - run:
+          name: "Rename to daily for consistency"
+          command: |
+            rename 's/\d+\.\d+\.\d+\-nightly\.\d+\/mattermost(.+)\d+\.\d+\.\d+\-nightly\.\d+/mattermost$1daily-develop/' ./build/macos/$(jq -r .version package.json)/*
+            rename 's/\d+\.\d+\.\d+\-nightly\.\d+\/mattermost(.+)\d+\.\d+\.\d+\-nightly\.\d+/mattermost$1daily-develop/' ./build/linux/$(jq -r .version package.json)/*
+            rename 's/\d+\.\d+\.\d+\-nightly\.\d+\/mattermost(.+)\d+\.\d+\.\d+\-nightly\.\d+/mattermost$1daily-develop/' ./build/win/$(jq -r .version package.json)/*
+      - aws-s3/copy:
+          from: ./build/
+          to: s3://mattermost-desktop-daily-builds/
+          arguments: --acl public-read --cache-control "no-cache" --recursive
 
   upload_to_github:
     executor: github
@@ -663,6 +688,12 @@ workflows:
           requires:
             - build-linux
             - msi_installer
+            - mac_installer
+      - upload_to_s3_daily:
+          context: mattermost-desktop-daily-s3
+          requires:
+            - build-linux
+            - build-win-no-installer
             - mac_installer
       - share_to_channel:
           context: desktop_browserview
