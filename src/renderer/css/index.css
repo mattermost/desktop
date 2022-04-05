@@ -62,6 +62,7 @@ body {
   line-height: 20px;
   height: 36px;
   float: left;
+  margin-left: 4px;
   padding-top: 5px;
   border: none;
   flex: 0 0 40px;
@@ -71,9 +72,9 @@ body {
   background-color: transparent;
 }
 
-.topBar .three-dot-menu svg {
+.topBar .three-dot-menu i.icon-dots-vertical {
   border-radius: 100px;
-  padding: 4px;
+  padding: 2px;
   height: 28px;
   width: 28px;
 }
@@ -82,16 +83,16 @@ body {
   outline: none;
 }
 
-.topBar .three-dot-menu:hover svg, .topBar .three-dot-menu:focus svg, .topBar .three-dot-menu:active svg {
+.topBar .three-dot-menu:hover i.icon-dots-vertical, .topBar .three-dot-menu:focus i.icon-dots-vertical, .topBar .three-dot-menu:active i.icon-dots-vertical {
   outline: none;
   background-color: #c8c8c8;
 }
 
-.topBar.darkMode .three-dot-menu:hover svg, .topBar.darkMode .three-dot-menu:focus svg, .topBar.darkMode .three-dot-menu:active svg {
+.topBar.darkMode .three-dot-menu:hover i.icon-dots-vertical, .topBar.darkMode .three-dot-menu:focus i.icon-dots-vertical, .topBar.darkMode .three-dot-menu:active i.icon-dots-vertical {
   background-color: #383A3F;
 }
 
-.topBar.macOS .three-dot-menu:hover svg, .topBar.macOS .three-dot-menu:focus svg, .topBar.macOS .three-dot-menu:active svg {
+.topBar.macOS .three-dot-menu:hover i.icon-dots-vertical, .topBar.macOS .three-dot-menu:focus i.icon-dots-vertical, .topBar.macOS .three-dot-menu:active i.icon-dots-vertical {
   background: none !important;
 }
 
@@ -104,7 +105,7 @@ body {
   flex-basis: 0px;
 }
 
-.topBar.macOS .three-dot-menu>svg {
+.topBar.macOS .three-dot-menu>i.icon-dots-vertical {
   display: none;
 }
 

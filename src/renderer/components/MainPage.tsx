@@ -6,7 +6,6 @@ import classNames from 'classnames';
 import React, {Fragment} from 'react';
 import {Container, Row} from 'react-bootstrap';
 import {DropResult} from 'react-beautiful-dnd';
-import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
 import {IpcRendererEvent} from 'electron/renderer';
 import prettyBytes from 'pretty-bytes';
 
@@ -504,7 +503,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
                         ref={this.threeDotMenu}
                         aria-label='Context menu'
                     >
-                        <DotsVerticalIcon/>
+                        <i className='icon-dots-vertical'/>
                     </button>
                     <TeamDropdownButton
                         isDisabled={this.state.modalOpen}
