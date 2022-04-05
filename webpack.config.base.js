@@ -7,10 +7,9 @@
 'use strict';
 
 const childProcess = require('child_process');
+const path = require('path');
 
 const webpack = require('webpack');
-
-const path = require('path');
 
 const VERSION = childProcess.execSync('git rev-parse --short HEAD').toString();
 const isProduction = process.env.NODE_ENV === 'production';
