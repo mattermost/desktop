@@ -120,7 +120,6 @@
     "@storybook/react": "^6.2.9",
     "@types/auto-launch": "^5.0.1",
     "@types/electron-devtools-installer": "^2.2.0",
-    "@types/hapi__joi": "^17.1.6",
     "@types/react": "^17.0.11",
     "@types/react-beautiful-dnd": "^13.0.0",
     "@types/react-dom": "^17.0.8",
@@ -178,7 +177,6 @@
     "webpack-merge": "^4.1.4"
   },
   "dependencies": {
-    "@hapi/joi": "^16.1.8",
     "@mattermost/compass-icons": "0.1.21",
     "auto-launch": "^5.0.5",
     "bootstrap": "^4.6.0",
@@ -191,6 +189,7 @@
     "electron-log": "4.4.6",
     "electron-updater": "5.0.0",
     "font-awesome": "^4.7.0",
+    "joi": "17.6.0",
     "pretty-bytes": "^6.0.0",
     "prop-types": "^15.6.2",
     "react": "^16.14.0",
