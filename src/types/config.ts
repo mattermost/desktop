@@ -40,6 +40,11 @@ export type ConfigV3 = {
     downloadLocation: string;
     spellCheckerURL?: string;
     lastActiveTeam?: number;
+    startInFullscreen?: boolean;
+    autoCheckForUpdates?: boolean;
+    alwaysMinimize?: boolean;
+    alwaysClose?: boolean;
+    logLevel?: string;
 }
 
 export type ConfigV2 = {
@@ -117,8 +122,10 @@ export type CombinedConfig = ConfigV3 & BuildConfig & {
 export type LocalConfiguration = Config & {
     appName: string;
     enableServerManagement: boolean;
+    canUpgrade: boolean;
 }
 
 export type MigrationInfo = {
     updateTrayIconWin32: boolean;
+    masConfigs: boolean;
 }

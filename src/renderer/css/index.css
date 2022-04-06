@@ -1,7 +1,7 @@
 @import url("components/index.css");
 @import url("fonts.css");
 @import '~font-awesome/css/font-awesome.css';
-
+@import '~@mattermost/compass-icons/css/compass-icons.css';
 
 html {
   height: 100%;
@@ -119,8 +119,8 @@ body {
 
 .topBar .title-bar-btns {
   position: relative;
-  line-height: 36px;
-  height: 36px;
+  line-height: 40px;
+  height: 40px;
   z-index: 9;
   color: rgba(61,60,64,0.7);
   -webkit-app-region: no-drag;

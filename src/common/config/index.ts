@@ -37,6 +37,28 @@ import migrateConfigItems from './migrationPreferences';
  * Handles loading and merging all sources of configuration as well as saving user provided config
  */
 
+function checkWriteableApp() {
+    if (process.platform === 'win32') {
+        try {
+            fs.accessSync(path.join(path.dirname(app.getAppPath()), '../../'), fs.constants.W_OK);
+        } catch (error) {
+            log.info(`${app.getAppPath()}: ${error}`);
+            log.warn('autoupgrade disabled');
+            return false;
+        }
+
+        // eslint-disable-next-line no-undef
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return __CAN_UPGRADE__; // prevent showing the option if the path is not writeable, like in a managed environment.
+    }
+
+    // temporarily disabling auto updater for macOS due to security issues
+    // eslint-disable-next-line no-undef
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return process.platform !== 'darwin' && __CAN_UPGRADE__;
+}
 export class Config extends EventEmitter {
     configFilePath: string;
 
@@ -48,12 +70,14 @@ export class Config extends EventEmitter {
     buildConfigData?: BuildConfig;
     localConfigData?: ConfigType;
     useNativeWindow: boolean;
+    canUpgradeValue?: boolean
 
     predefinedTeams: TeamWithTabs[];
 
     constructor(configFilePath: string) {
         super();
         this.configFilePath = configFilePath;
+        this.canUpgradeValue = checkWriteableApp();
         this.registryConfig = new RegistryConfig();
         this.predefinedTeams = [];
         if (buildConfig.defaultTeams) {
@@ -88,6 +112,8 @@ export class Config extends EventEmitter {
      */
 
     loadRegistry = (registryData: Partial<RegistryConfigType>): void => {
+        log.verbose('Config.loadRegistry', {registryData});
+
         this.registryConfigData = registryData;
         if (this.registryConfigData.teams) {
             this.predefinedTeams.push(...this.registryConfigData.teams.map((team) => getDefaultTeamWithTabsFromTeam(team)));
@@ -137,6 +163,8 @@ export class Config extends EventEmitter {
      * @param {array} properties an array of config properties to save
      */
     setMultiple = (event: Electron.IpcMainEvent, properties: Array<{key: keyof ConfigType; data: ConfigType[keyof ConfigType]}> = []): Partial<ConfigType> | undefined => {
+        log.debug('Config.setMultiple', properties);
+
         if (properties.length) {
             this.localConfigData = Object.assign({}, this.localConfigData, ...properties.map(({key, data}) => ({[key]: data})));
             this.regenerateCombinedConfigData();
@@ -228,6 +256,10 @@ export class Config extends EventEmitter {
     get enableHardwareAcceleration() {
         return this.combinedData?.enableHardwareAcceleration ?? defaultPreferences.enableHardwareAcceleration;
     }
+
+    get startInFullscreen() {
+        return this.combinedData?.startInFullscreen ?? defaultPreferences.startInFullscreen;
+    }
     get enableServerManagement() {
         return this.combinedData?.enableServerManagement ?? buildConfig.enableServerManagement;
     }
@@ -274,6 +306,20 @@ export class Config extends EventEmitter {
     }
     get lastActiveTeam() {
         return this.combinedData?.lastActiveTeam;
+    }
+    get alwaysClose() {
+        return this.combinedData?.alwaysClose;
+    }
+    get alwaysMinimize() {
+        return this.combinedData?.alwaysMinimize;
+    }
+
+    get canUpgrade() {
+        return this.canUpgradeValue && this.buildConfigData?.enableAutoUpdater && !(process.platform === 'win32' && this.registryConfigData?.enableAutoUpdater === false);
+    }
+
+    get autoCheckForUpdates() {
+        return this.combinedData?.autoCheckForUpdates;
     }
 
     // initialization/processing methods
@@ -508,6 +554,8 @@ export class Config extends EventEmitter {
     }
 
     handleGetConfiguration = (event: Electron.IpcMainInvokeEvent, option: keyof CombinedConfig) => {
+        log.debug('Config.handleGetConfiguration', option);
+
         const config = {...this.combinedData};
         if (option) {
             return config[option];
@@ -516,9 +564,12 @@ export class Config extends EventEmitter {
     }
 
     handleGetLocalConfiguration = (event: Electron.IpcMainInvokeEvent, option: keyof ConfigType) => {
+        log.debug('Config.handleGetLocalConfiguration', option);
+
         const config: Partial<LocalConfiguration> = {...this.localConfigData};
         config.appName = app.name;
         config.enableServerManagement = this.combinedData?.enableServerManagement;
+        config.canUpgrade = this.canUpgrade;
         if (option) {
             return config[option];
         }
@@ -526,6 +577,9 @@ export class Config extends EventEmitter {
     }
 
     handleUpdateTeams = (event: Electron.IpcMainInvokeEvent, newTeams: TeamWithTabs[]) => {
+        log.debug('Config.handleUpdateTeams');
+        log.silly('Config.handleUpdateTeams', newTeams);
+
         this.set('teams', newTeams);
         return this.combinedData!.teams;
     }
@@ -535,6 +589,8 @@ export class Config extends EventEmitter {
      * @emits 'darkModeChange'
      */
     handleUpdateTheme = () => {
+        log.debug('Config.handleUpdateTheme');
+
         if (this.combinedData && this.combinedData.darkMode !== nativeTheme.shouldUseDarkColors) {
             this.combinedData.darkMode = nativeTheme.shouldUseDarkColors;
             this.emit('darkModeChange', this.combinedData.darkMode);
@@ -559,6 +615,8 @@ const config = new Config(configPath);
 export default config;
 
 ipcMain.on(UPDATE_PATHS, () => {
+    log.debug('Config.UPDATE_PATHS');
+
     config.configFilePath = configPath;
     if (config.combinedData) {
         config.reload();

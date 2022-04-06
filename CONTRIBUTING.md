@@ -43,4 +43,4 @@ npm run check-types
 npm run test
 ```
 2. If you are fixing a bug, consider writing a unit test for the change so that the issue does not resurface. If you are adding a new feature, consider additionally writing end-to-end (E2E) tests to thoroughly test the changes.
-3. Please complete the [Mattermost CLA](http://www.mattermost.org/mattermost-contributor-agreement/) prior to submitting a PR.
+3. Please complete the [Mattermost CLA](https://mattermost.com/contribute/) prior to submitting a PR.

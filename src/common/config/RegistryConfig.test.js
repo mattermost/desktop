@@ -49,10 +49,6 @@ jest.mock('winreg-utf8', () => {
     });
 });
 
-jest.mock('electron-log', () => ({
-    error: jest.fn(),
-}));
-
 describe('common/config/RegistryConfig', () => {
     it('should initialize correctly', async () => {
         const originalPlatform = process.platform;

@@ -22,10 +22,6 @@ jest.mock('electron', () => ({
     })),
 }));
 
-jest.mock('electron-log', () => ({
-    info: jest.fn(),
-}));
-
 jest.mock('../contextMenu', () => jest.fn());
 
 jest.mock('../utils', () => ({

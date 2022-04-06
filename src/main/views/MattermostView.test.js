@@ -29,11 +29,6 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('electron-log', () => ({
-    info: jest.fn(),
-    error: jest.fn(),
-}));
-
 jest.mock('../windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
     focusThreeDotMenu: jest.fn(),
@@ -56,7 +51,8 @@ const tabView = new MessagingTabView(server);
 
 describe('main/views/MattermostView', () => {
     describe('load', () => {
-        const mattermostView = new MattermostView(tabView, {}, {}, {});
+        const window = {on: jest.fn()};
+        const mattermostView = new MattermostView(tabView, {}, window, {});
 
         beforeEach(() => {
             mattermostView.loadSuccess = jest.fn();
@@ -102,13 +98,17 @@ describe('main/views/MattermostView', () => {
     });
 
     describe('retry', () => {
-        const mattermostView = new MattermostView(tabView, {}, {}, {});
+        const window = {on: jest.fn()};
+        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const retryInBackgroundFn = jest.fn();
 
         beforeEach(() => {
+            jest.useFakeTimers();
             mattermostView.view.webContents.loadURL.mockImplementation(() => Promise.resolve());
             mattermostView.loadSuccess = jest.fn();
             mattermostView.loadRetry = jest.fn();
             mattermostView.emit = jest.fn();
+            mattermostView.retryInBackground = () => retryInBackgroundFn;
         });
 
         it('should do nothing when webcontents are destroyed', () => {
@@ -138,7 +138,7 @@ describe('main/views/MattermostView', () => {
             expect(mattermostView.loadRetry).toBeCalledWith('http://server-1.com', error);
         });
 
-        it('should set to error status when max retries are reached', async () => {
+        it('should set to error status and retry in the background when max retries are reached', async () => {
             mattermostView.maxRetries = 0;
             const error = new Error('test');
             const promise = Promise.reject(error);
@@ -149,11 +149,14 @@ describe('main/views/MattermostView', () => {
             expect(mattermostView.loadRetry).not.toBeCalled();
             expect(WindowManager.sendToRenderer).toBeCalledWith(LOAD_FAILED, mattermostView.tab.name, expect.any(String), expect.any(String));
             expect(mattermostView.status).toBe(-1);
+            jest.runAllTimers();
+            expect(retryInBackgroundFn).toBeCalled();
         });
     });
 
     describe('loadSuccess', () => {
-        const mattermostView = new MattermostView(tabView, {}, {}, {});
+        const window = {on: jest.fn()};
+        const mattermostView = new MattermostView(tabView, {}, window, {});
 
         beforeEach(() => {
             jest.useFakeTimers();
@@ -173,7 +176,7 @@ describe('main/views/MattermostView', () => {
     });
 
     describe('show', () => {
-        const window = {addBrowserView: jest.fn(), removeBrowserView: jest.fn()};
+        const window = {addBrowserView: jest.fn(), removeBrowserView: jest.fn(), on: jest.fn()};
         const mattermostView = new MattermostView(tabView, {}, window, {});
 
         beforeEach(() => {
@@ -218,7 +221,7 @@ describe('main/views/MattermostView', () => {
     });
 
     describe('destroy', () => {
-        const window = {removeBrowserView: jest.fn()};
+        const window = {removeBrowserView: jest.fn(), on: jest.fn()};
         const mattermostView = new MattermostView(tabView, {}, window, {});
 
         beforeEach(() => {
@@ -245,10 +248,11 @@ describe('main/views/MattermostView', () => {
     });
 
     describe('handleInputEvents', () => {
-        const mattermostView = new MattermostView(tabView, {}, {}, {});
+        const window = {on: jest.fn()};
+        const mattermostView = new MattermostView(tabView, {}, window, {});
 
         it('should open three dot menu on pressing Alt', () => {
-            mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyDown'});
+            mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyDown', alt: true, shift: false, control: false, meta: false});
             mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyUp'});
             expect(WindowManager.focusThreeDotMenu).toHaveBeenCalled();
         });
@@ -268,7 +272,8 @@ describe('main/views/MattermostView', () => {
     });
 
     describe('handleDidNavigate', () => {
-        const mattermostView = new MattermostView(tabView, {}, {}, {});
+        const window = {on: jest.fn()};
+        const mattermostView = new MattermostView(tabView, {}, window, {});
 
         beforeEach(() => {
             mattermostView.setBounds = jest.fn();
@@ -286,7 +291,8 @@ describe('main/views/MattermostView', () => {
     });
 
     describe('handleUpdateTarget', () => {
-        const mattermostView = new MattermostView(tabView, {}, {}, {});
+        const window = {on: jest.fn()};
+        const mattermostView = new MattermostView(tabView, {}, window, {});
 
         beforeEach(() => {
             mattermostView.emit = jest.fn();
@@ -310,7 +316,8 @@ describe('main/views/MattermostView', () => {
     });
 
     describe('updateMentionsFromTitle', () => {
-        const mattermostView = new MattermostView(tabView, {remoteInfo: {serverVersion: '5.28.0'}}, {}, {});
+        const window = {on: jest.fn()};
+        const mattermostView = new MattermostView(tabView, {}, window, {});
 
         it('should parse mentions from title', () => {
             mattermostView.updateMentionsFromTitle('(7) Mattermost');

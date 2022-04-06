@@ -1,0 +1,36 @@
+fastlane_version '2.71.0'
+fastlane_require 'aws-sdk-s3'
+fastlane_require 'erb'
+fastlane_require 'json'
+fastlane_require 'pathname'
+
+lane :publish_test do |options|
+  api_key = ''
+  unless ENV['MACOS_API_KEY_ID'].nil? || ENV['MACOS_API_KEY_ID'].empty? ||
+    ENV['MACOS_API_ISSUER_ID'].nil? || ENV['MACOS_API_ISSUER_ID'].empty? ||
+    ENV['MACOS_API_KEY'].nil? || ENV['MACOS_API_KEY'].empty?
+      api_key_path = "#{ENV['MACOS_API_KEY_ID']}.p8"
+      File.open("../#{api_key_path}", 'w') do |f|
+        key_string = ENV['MACOS_API_KEY']
+        p8_array = key_string.split('\n')
+        p8_array.each_with_index do |value, index|
+          f.write(value)
+          f.write("\n") unless index == p8_array.length - 1
+        end
+      end
+    
+      api_key = app_store_connect_api_key(
+        key_id: ENV['MACOS_API_KEY_ID'],
+        issuer_id: ENV['MACOS_API_ISSUER_ID'],
+        key_filepath: "./#{api_key_path}",
+        in_house: ENV['MACOS_IN_HOUSE'] == 'true', # optional but may be required if using match/sigh
+      )
+    
+      File.delete("../#{api_key_path}")
+    end
+    pilot(
+      pkg: options[:path],
+      skip_waiting_for_build_processing: ENV['CI'] === 'true',
+      api_key: api_key
+    )
+end

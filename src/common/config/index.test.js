@@ -9,6 +9,7 @@ jest.mock('electron', () => ({
     app: {
         name: 'Mattermost',
         getPath: jest.fn(),
+        getAppPath: () => '/path/to/app',
     },
     ipcMain: {
         on: jest.fn(),
@@ -23,12 +24,6 @@ jest.mock('main/Validator', () => ({
     validateV1ConfigData: (configData) => (configData.version === 1 ? configData : null),
     validateV2ConfigData: (configData) => (configData.version === 2 ? configData : null),
     validateV3ConfigData: (configData) => (configData.version === 3 ? configData : null),
-}));
-
-jest.mock('electron-log', () => ({
-    error: jest.fn(),
-    warn: jest.fn(),
-    info: jest.fn(),
 }));
 
 jest.mock('common/tabs/TabView', () => ({

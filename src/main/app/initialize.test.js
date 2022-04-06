@@ -63,12 +63,6 @@ jest.mock('electron-devtools-installer', () => {
 const isDev = false;
 jest.mock('electron-is-dev', () => isDev);
 
-jest.mock('electron-log', () => ({
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-}));
-
 jest.mock('../../../electron-builder.json', () => ([
     {
         name: 'Mattermost',
@@ -113,6 +107,7 @@ jest.mock('main/authManager', () => ({}));
 jest.mock('main/AutoLauncher', () => ({
     upgradeAutoLaunch: jest.fn(),
 }));
+jest.mock('main/autoUpdater', () => ({}));
 jest.mock('main/badge', () => ({
     setupBadge: jest.fn(),
 }));
@@ -202,11 +197,13 @@ describe('main/app/initialize', () => {
     });
 
     describe('initializeAfterAppReady', () => {
-        it('should set spell checker URL if applicable', async () => {
-            Config.spellCheckerURL = 'http://server-1.com';
-            await initialize();
-            expect(session.defaultSession.setSpellCheckerDictionaryDownloadURL).toHaveBeenCalledWith('http://server-1.com/');
-        });
+        if (process.platform !== 'darwin') {
+            it('should set spell checker URL if applicable', async () => {
+                Config.spellCheckerURL = 'http://server-1.com';
+                await initialize();
+                expect(session.defaultSession.setSpellCheckerDictionaryDownloadURL).toHaveBeenCalledWith('http://server-1.com/');
+            });
+        }
 
         it('should clear app cache if last version opened was older', async () => {
             wasUpdated.mockReturnValue(true);
@@ -242,7 +239,7 @@ describe('main/app/initialize', () => {
             path.resolve.mockImplementation((base, p) => `${base}/${p}`);
             session.defaultSession.on.mockImplementation((event, cb) => {
                 if (event === 'will-download') {
-                    cb(null, item, {id: 0});
+                    cb(null, item, {id: 0, getURL: jest.fn()});
                 }
             });
 

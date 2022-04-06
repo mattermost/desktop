@@ -3,7 +3,7 @@
 
 /* eslint-disable max-lines */
 import path from 'path';
-import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
+import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer} from 'electron';
 import log from 'electron-log';
 
 import {
@@ -22,8 +22,12 @@ import {
     RESIZE_MODAL,
     APP_LOGGED_OUT,
     BROWSER_HISTORY_BUTTON,
+    DISPATCH_GET_DESKTOP_SOURCES,
+    DESKTOP_SOURCES_RESULT,
+    RELOAD_CURRENT_VIEW,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
+import {SECOND} from 'common/utils/constants';
 import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 
@@ -43,12 +47,14 @@ export class WindowManager {
     assetsDir: string;
 
     mainWindow?: BrowserWindow;
+    mainWindowReady: boolean;
     settingsWindow?: BrowserWindow;
     viewManager?: ViewManager;
     teamDropdown?: TeamDropdownView;
     currentServerName?: string;
 
     constructor() {
+        this.mainWindowReady = false;
         this.assetsDir = path.resolve(app.getAppPath(), 'assets');
 
         ipcMain.on(HISTORY, this.handleHistory);
@@ -62,6 +68,8 @@ export class WindowManager {
         ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
         ipcMain.handle(GET_VIEW_NAME, this.handleGetViewName);
         ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, this.handleGetWebContentsId);
+        ipcMain.on(DISPATCH_GET_DESKTOP_SOURCES, this.handleGetDesktopSources);
+        ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
     }
 
     handleUpdateConfig = () => {
@@ -71,6 +79,8 @@ export class WindowManager {
     }
 
     showSettingsWindow = () => {
+        log.debug('WindowManager.showSettingsWindow');
+
         if (this.settingsWindow) {
             this.settingsWindow.show();
         } else {
@@ -87,6 +97,8 @@ export class WindowManager {
     }
 
     showMainWindow = (deeplinkingURL?: string | URL) => {
+        log.debug('WindowManager.showMainWindow', deeplinkingURL);
+
         if (this.mainWindow) {
             if (this.mainWindow.isVisible()) {
                 this.mainWindow.focus();
@@ -94,6 +106,7 @@ export class WindowManager {
                 this.mainWindow.show();
             }
         } else {
+            this.mainWindowReady = false;
             this.mainWindow = createMainWindow({
                 linuxAppIcon: path.join(this.assetsDir, 'linux', 'app_icon.png'),
             });
@@ -104,10 +117,15 @@ export class WindowManager {
                 return;
             }
 
+            this.mainWindow.once('ready-to-show', () => {
+                this.mainWindowReady = true;
+            });
+
             // window handlers
             this.mainWindow.on('closed', () => {
                 log.warn('main window closed');
                 delete this.mainWindow;
+                this.mainWindowReady = false;
             });
             this.mainWindow.on('unresponsive', () => {
                 CriticalErrorHandler.setMainWindow(this.mainWindow!);
@@ -155,6 +173,8 @@ export class WindowManager {
     }
 
     handleResizeMainWindow = () => {
+        log.debug('WindowManager.handleResizeMainWindow');
+
         if (!(this.viewManager && this.mainWindow)) {
             return;
         }
@@ -189,14 +209,32 @@ export class WindowManager {
         ipcMain.emit(RESIZE_MODAL, null, bounds);
     }
 
-    sendToRenderer = (channel: string, ...args: any[]) => {
-        if (!this.mainWindow) {
+    // max retries allows the message to get to the renderer even if it is sent while the app is starting up.
+    sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: any[]) => {
+        if (!this.mainWindow || !this.mainWindowReady) {
             this.showMainWindow();
+            if (maxRetries > 0) {
+                log.info(`Can't send ${channel}, will retry`);
+                setTimeout(() => {
+                    this.sendToRendererWithRetry(maxRetries - 1, channel, ...args);
+                }, SECOND);
+            } else {
+                log.error(`Unable to send the message to the main window for message type ${channel}`);
+            }
+            return;
         }
         this.mainWindow!.webContents.send(channel, ...args);
         if (this.settingsWindow && this.settingsWindow.isVisible()) {
-            this.settingsWindow.webContents.send(channel, ...args);
+            try {
+                this.settingsWindow.webContents.send(channel, ...args);
+            } catch (e) {
+                log.error(`There was an error while trying to communicate with the renderer: ${e}`);
+            }
         }
+    }
+
+    sendToRenderer = (channel: string, ...args: any[]) => {
+        this.sendToRendererWithRetry(3, channel, ...args);
     }
 
     sendToAll = (channel: string, ...args: any[]) => {
@@ -318,6 +356,8 @@ export class WindowManager {
     }
 
     handleDoubleClick = (e: IpcMainEvent, windowType?: string) => {
+        log.debug('WindowManager.handleDoubleClick', windowType);
+
         let action = 'Maximize';
         if (process.platform === 'darwin') {
             action = systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
@@ -394,6 +434,8 @@ export class WindowManager {
     }
 
     focusBrowserView = () => {
+        log.debug('WindowManager.focusBrowserView');
+
         if (this.viewManager) {
             this.viewManager.focus();
         } else {
@@ -421,12 +463,16 @@ export class WindowManager {
     }
 
     handleReactAppInitialized = (e: IpcMainEvent, view: string) => {
+        log.debug('WindowManager.handleReactAppInitialized', view);
+
         if (this.viewManager) {
             this.viewManager.setServerInitialized(view);
         }
     }
 
     handleLoadingScreenAnimationFinished = () => {
+        log.debug('WindowManager.handleLoadingScreenAnimationFinished');
+
         if (this.viewManager) {
             this.viewManager.hideLoadingScreen();
         }
@@ -490,6 +536,8 @@ export class WindowManager {
     }
 
     handleHistory = (event: IpcMainEvent, offset: number) => {
+        log.debug('WindowManager.handleHistory', offset);
+
         if (this.viewManager) {
             const activeView = this.viewManager.getCurrentView();
             if (activeView && activeView.view.webContents.canGoToOffset(offset)) {
@@ -541,10 +589,13 @@ export class WindowManager {
     }
 
     handleBrowserHistoryPush = (e: IpcMainEvent, viewName: string, pathName: string) => {
+        log.debug('WwindowManager.handleBrowserHistoryPush', {viewName, pathName});
+
         const currentView = this.viewManager?.views.get(viewName);
-        const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${pathName}`, Config.teams)?.name || viewName;
+        const cleanedPathName = currentView?.tab.server.url.pathname === '/' ? pathName : pathName.replace(currentView?.tab.server.url.pathname || '', '');
+        const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${cleanedPathName}`, Config.teams)?.name || viewName;
         if (this.viewManager?.closedViews.has(redirectedViewName)) {
-            this.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${pathName}`);
+            this.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${cleanedPathName}`);
         }
         let redirectedView = this.viewManager?.views.get(redirectedViewName) || currentView;
         if (redirectedView !== currentView && redirectedView?.tab.server.name === this.currentServerName && redirectedView?.isLoggedIn) {
@@ -555,8 +606,8 @@ export class WindowManager {
         }
 
         // Special case check for Channels to not force a redirect to "/", causing a refresh
-        if (!(redirectedView !== currentView && redirectedView?.tab.type === TAB_MESSAGING && pathName === '/')) {
-            redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
+        if (!(redirectedView !== currentView && redirectedView?.tab.type === TAB_MESSAGING && cleanedPathName === '/')) {
+            redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, cleanedPathName);
             if (redirectedView) {
                 this.handleBrowserHistoryButton(e, redirectedView.name);
             }
@@ -564,6 +615,8 @@ export class WindowManager {
     }
 
     handleBrowserHistoryButton = (e: IpcMainEvent, viewName: string) => {
+        log.debug('EindowManager.handleBrowserHistoryButton', viewName);
+
         const currentView = this.viewManager?.views.get(viewName);
         if (currentView) {
             if (currentView.view.webContents.getURL() === currentView.tab.url.toString()) {
@@ -581,6 +634,8 @@ export class WindowManager {
     }
 
     handleAppLoggedIn = (event: IpcMainEvent, viewName: string) => {
+        log.debug('WindowManager.handleAppLoggedIn', viewName);
+
         const view = this.viewManager?.views.get(viewName);
         if (view) {
             view.isLoggedIn = true;
@@ -589,6 +644,8 @@ export class WindowManager {
     }
 
     handleAppLoggedOut = (event: IpcMainEvent, viewName: string) => {
+        log.debug('WindowManager.handleAppLoggedOut', viewName);
+
         const view = this.viewManager?.views.get(viewName);
         if (view) {
             view.isLoggedIn = false;
@@ -601,6 +658,36 @@ export class WindowManager {
 
     handleGetWebContentsId = (event: IpcMainInvokeEvent) => {
         return event.sender.id;
+    }
+
+    handleGetDesktopSources = async (event: IpcMainEvent, viewName: string, opts: Electron.SourcesOptions) => {
+        log.debug('WindowManager.handleGetDesktopSources', {viewName, opts});
+
+        const view = this.viewManager?.views.get(viewName);
+        if (!view) {
+            return;
+        }
+
+        desktopCapturer.getSources(opts).then((sources) => {
+            view.view.webContents.send(DESKTOP_SOURCES_RESULT, sources.map((source) => {
+                return {
+                    id: source.id,
+                    name: source.name,
+                    thumbnailURL: source.thumbnail.toDataURL(),
+                };
+            }));
+        });
+    }
+
+    handleReloadCurrentView = () => {
+        log.debug('WindowManager.handleReloadCurrentView');
+
+        const view = this.viewManager?.getCurrentView();
+        if (!view) {
+            return;
+        }
+        view?.reload();
+        this.viewManager?.showByName(view?.name);
     }
 }
 

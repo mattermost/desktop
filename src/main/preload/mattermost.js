@@ -6,7 +6,7 @@
 
 /* eslint-disable no-magic-numbers */
 
-import {contextBridge, ipcRenderer, webFrame, desktopCapturer} from 'electron';
+import {contextBridge, ipcRenderer, webFrame} from 'electron';
 
 // I've filed an issue in electron-log https://github.com/megahertz/electron-log/issues/267
 // we'll be able to use it again if there is a workaround for the 'os' import
@@ -27,6 +27,8 @@ import {
     APP_LOGGED_OUT,
     GET_VIEW_NAME,
     GET_VIEW_WEBCONTENTS_ID,
+    DISPATCH_GET_DESKTOP_SOURCES,
+    DESKTOP_SOURCES_RESULT,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -149,13 +151,10 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
         ipcRenderer.send(BROWSER_HISTORY_BUTTON, viewName);
         break;
     }
-    default:
-        if (typeof type === 'undefined') {
-            console.log('ignoring message of undefined type:');
-            console.log(data);
-        } else {
-            console.log(`ignored message of type: ${type}`);
-        }
+    case 'get-desktop-sources': {
+        ipcRenderer.send(DISPATCH_GET_DESKTOP_SOURCES, viewName, message);
+        break;
+    }
     }
 });
 
@@ -178,7 +177,7 @@ ipcRenderer.on('notification-clicked', (event, data) => {
 });
 
 const findUnread = (favicon) => {
-    const classes = ['team-container unreads', 'SidebarChannel unread', 'sidebar-item unread-title'];
+    const classes = ['team-container unread', 'SidebarChannel unread', 'sidebar-item unread-title'];
     const isUnread = classes.some((classPair) => {
         const result = document.getElementsByClassName(classPair);
         return result && result.length > 0;
@@ -281,17 +280,14 @@ window.addEventListener('storage', (e) => {
     }
 });
 
-contextBridge.exposeInMainWorld('desktopCapturer', {
-    getSources: async (options) => {
-        const sources = await desktopCapturer.getSources(options);
-        return sources.map((source) => {
-            return {
-                id: source.id,
-                name: source.name,
-                thumbnailURL: source.thumbnail.toDataURL(),
-            };
-        });
-    },
+ipcRenderer.on(DESKTOP_SOURCES_RESULT, (event, sources) => {
+    window.postMessage(
+        {
+            type: 'desktop-sources-result',
+            message: sources,
+        },
+        window.location.origin,
+    );
 });
 
 /* eslint-enable no-magic-numbers */

@@ -5,7 +5,7 @@ import fs from 'fs';
 
 import os from 'os';
 
-import {app, BrowserWindow, BrowserWindowConstructorOptions, globalShortcut, ipcMain, screen} from 'electron';
+import {app, BrowserWindow, BrowserWindowConstructorOptions, dialog, globalShortcut, ipcMain, screen} from 'electron';
 import log from 'electron-log';
 
 import {SavedWindowState} from 'types/mainWindow';
@@ -43,10 +43,10 @@ function isFramelessWindow() {
     return os.platform() === 'darwin' || (os.platform() === 'win32' && Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2'));
 }
 
-function createMainWindow(options: {linuxAppIcon: string}) {
+function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean}) {
     // Create the browser window.
     const preload = getLocalPreload('mainWindow.js');
-    let savedWindowState;
+    let savedWindowState: any;
     try {
         savedWindowState = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));
         savedWindowState = Validator.validateBoundsInfo(savedWindowState);
@@ -65,6 +65,16 @@ function createMainWindow(options: {linuxAppIcon: string}) {
     const {maximized: windowIsMaximized} = savedWindowState;
 
     const spellcheck = (typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker);
+    const isFullScreen = () => {
+        if (global?.args?.fullscreen !== undefined) {
+            return global.args.fullscreen;
+        }
+
+        if (Config.startInFullscreen) {
+            return Config.startInFullscreen;
+        }
+        return options.fullscreen || savedWindowState.fullscreen || false;
+    };
 
     const windowOptions: BrowserWindowConstructorOptions = Object.assign({}, savedWindowState, {
         title: app.name,
@@ -74,12 +84,11 @@ function createMainWindow(options: {linuxAppIcon: string}) {
         minWidth: MINIMUM_WINDOW_WIDTH,
         minHeight: MINIMUM_WINDOW_HEIGHT,
         frame: !isFramelessWindow(),
-        fullscreen: savedWindowState.fullscreen,
+        fullscreen: isFullScreen(),
         titleBarStyle: 'hidden' as const,
         trafficLightPosition: {x: 12, y: 12},
         backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
         webPreferences: {
-            nativeWindowOpen: true,
             disableBlinkFeatures: 'Auxclick',
             preload,
             spellcheck,
@@ -133,6 +142,8 @@ function createMainWindow(options: {linuxAppIcon: string}) {
     });
 
     mainWindow.on('close', (event) => {
+        log.debug('MainWindow.on.close');
+
         if (global.willAppQuit) { // when [Ctrl|Cmd]+Q
             saveWindowState(boundsInfoPath, mainWindow);
         } else { // Minimize or hide the window for close button.
@@ -143,13 +154,39 @@ function createMainWindow(options: {linuxAppIcon: string}) {
             }
             switch (process.platform) {
             case 'win32':
-                hideWindow(mainWindow);
-                break;
             case 'linux':
                 if (Config.minimizeToTray) {
-                    hideWindow(mainWindow);
+                    if (Config.alwaysMinimize) {
+                        hideWindow(mainWindow);
+                    } else {
+                        dialog.showMessageBox(mainWindow, {
+                            title: 'Minimize to Tray',
+                            message: 'Mattermost will continue to run in the system tray. This can be disabled in Settings.',
+                            type: 'info',
+                            checkboxChecked: true,
+                            checkboxLabel: 'Don\'t show again',
+                        }).then((result: {response: number; checkboxChecked: boolean}) => {
+                            Config.set('alwaysMinimize', result.checkboxChecked);
+                            hideWindow(mainWindow);
+                        });
+                    }
+                } else if (Config.alwaysClose) {
+                    app.quit();
                 } else {
-                    mainWindow.minimize();
+                    dialog.showMessageBox(mainWindow, {
+                        title: 'Close Application',
+                        message: 'Are you sure you want to quit?',
+                        detail: 'You will no longer receive notifications for messages. If you want to leave Mattermost running in the system tray, you can enable this in Settings.',
+                        type: 'question',
+                        buttons: ['Yes', 'No'],
+                        checkboxChecked: true,
+                        checkboxLabel: 'Don\'t ask again',
+                    }).then((result: {response: number; checkboxChecked: boolean}) => {
+                        Config.set('alwaysClose', result.checkboxChecked && result.response === 0);
+                        if (result.response === 0) {
+                            app.quit();
+                        }
+                    });
                 }
                 break;
             case 'darwin':

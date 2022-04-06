@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import log from 'electron-log';
+
 import {RemoteInfo} from 'types/server';
 
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -53,6 +55,8 @@ export class ServerInfo {
     }
 
     trySendRemoteInfo = () => {
+        log.debug('ServerInfo.trySendRemoteInfo', this.server.name, this.remoteInfo);
+
         if (this.isRemoteInfoRetrieved()) {
             this.onRetrievedRemoteInfo?.(this.remoteInfo);
         }

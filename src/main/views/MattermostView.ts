@@ -62,13 +62,13 @@ export class MattermostView extends EventEmitter {
 
     currentFavicon?: string;
     hasBeenShown: boolean;
-    altTimeout?: number;
-    altLastPressed?: boolean;
     contextMenu: ContextMenu;
 
     status?: Status;
     retryLoad?: NodeJS.Timeout;
     maxRetries: number;
+
+    private altPressStatus: boolean;
 
     constructor(tab: TabView, serverInfo: ServerInfo, win: BrowserWindow, options: BrowserViewConstructorOptions) {
         super();
@@ -79,7 +79,6 @@ export class MattermostView extends EventEmitter {
         const preload = getLocalPreload('preload.js');
         this.options = Object.assign({}, options);
         this.options.webPreferences = {
-            nativeWindowOpen: true,
             preload,
             additionalArguments: [
                 `version=${app.getVersion()}`,
@@ -98,11 +97,12 @@ export class MattermostView extends EventEmitter {
         this.hasBeenShown = false;
 
         if (process.platform !== 'darwin') {
-            this.altLastPressed = false;
             this.view.webContents.on('before-input-event', this.handleInputEvents);
         }
 
         this.view.webContents.on('did-finish-load', () => {
+            log.debug('MattermostView.did-finish-load', this.tab.name);
+
             // wait for screen to truly finish loading before sending the message down
             const timeout = setInterval(() => {
                 if (!this.view.webContents.isLoading()) {
@@ -118,6 +118,12 @@ export class MattermostView extends EventEmitter {
 
         this.contextMenu = new ContextMenu({}, this.view);
         this.maxRetries = MAX_SERVER_RETRIES;
+
+        this.altPressStatus = false;
+
+        this.window.on('blur', () => {
+            this.altPressStatus = false;
+        });
     }
 
     // use the same name as the server
@@ -171,9 +177,23 @@ export class MattermostView extends EventEmitter {
                 } else {
                     WindowManager.sendToRenderer(LOAD_FAILED, this.tab.name, err.toString(), loadURL.toString());
                     this.emit(LOAD_FAILED, this.tab.name, err.toString(), loadURL.toString());
-                    log.info(`[${Util.shorten(this.tab.name)}] Couldn't stablish a connection with ${loadURL}: ${err}.`);
+                    log.info(`[${Util.shorten(this.tab.name)}] Couldn't stablish a connection with ${loadURL}: ${err}. Will continue to retry in the background.`);
                     this.status = Status.ERROR;
+                    this.retryLoad = setTimeout(this.retryInBackground(loadURL), RELOAD_INTERVAL);
                 }
+            });
+        };
+    }
+
+    retryInBackground = (loadURL: string) => {
+        return () => {
+            // window was closed while retrying
+            if (!this.view || !this.view.webContents) {
+                return;
+            }
+            const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
+            loading.then(this.loadSuccess(loadURL)).catch(() => {
+                this.retryLoad = setTimeout(this.retryInBackground(loadURL), RELOAD_INTERVAL);
             });
         };
     }
@@ -258,7 +278,11 @@ export class MattermostView extends EventEmitter {
     }
 
     isReady = () => {
-        return this.status !== Status.LOADING;
+        return this.status === Status.READY;
+    }
+
+    isErrored = () => {
+        return this.status === Status.ERROR;
     }
 
     needsLoadingScreen = () => {
@@ -288,28 +312,35 @@ export class MattermostView extends EventEmitter {
         return this.view.webContents;
     }
 
-    handleInputEvents = (_: Event, input: Input) => {
-        // Handler for pressing the Alt key to focus the 3-dot menu
-        if (input.key === 'Alt' && input.type === 'keyUp' && this.altLastPressed) {
-            this.altLastPressed = false;
-            clearTimeout(this.altTimeout);
-            WindowManager.focusThreeDotMenu();
-            return;
+    private registerAltKeyPressed = (input: Input) => {
+        const isAltPressed = input.key === 'Alt' && input.alt === true && input.control === false && input.shift === false && input.meta === false;
+
+        if (input.type === 'keyDown') {
+            this.altPressStatus = isAltPressed;
         }
 
-        // Hack to detect keyPress so that alt+<key> combinations don't default back to the 3-dot menu
-        if (input.key === 'Alt' && input.type === 'keyDown') {
-            this.altLastPressed = true;
-            this.altTimeout = setTimeout(() => {
-                this.altLastPressed = false;
-            }, 500) as unknown as number;
-        } else {
-            this.altLastPressed = false;
-            clearTimeout(this.altTimeout);
+        if (input.key !== 'Alt') {
+            this.altPressStatus = false;
+        }
+    };
+
+    private isAltKeyReleased = (input: Input) => {
+        return input.type === 'keyUp' && this.altPressStatus === true;
+    };
+
+    handleInputEvents = (_: Event, input: Input) => {
+        log.silly('MattermostView.handleInputEvents', {tabName: this.tab.name, input});
+
+        this.registerAltKeyPressed(input);
+
+        if (this.isAltKeyReleased(input)) {
+            WindowManager.focusThreeDotMenu();
         }
     }
 
     handleDidNavigate = (event: Event, url: string) => {
+        log.debug('MattermostView.handleDidNavigate', {tabName: this.tab.name, url});
+
         const isUrlTeamUrl = urlUtils.isTeamUrl(this.tab.url || '', url) || urlUtils.isAdminUrl(this.tab.url || '', url);
         if (isUrlTeamUrl) {
             this.setBounds(getWindowBoundaries(this.window));
@@ -323,6 +354,7 @@ export class MattermostView extends EventEmitter {
     }
 
     handleUpdateTarget = (e: Event, url: string) => {
+        log.silly('MattermostView.handleUpdateTarget', {tabName: this.tab.name, url});
         if (url && !urlUtils.isInternalURL(urlUtils.parseURL(url), this.tab.server.url)) {
             this.emit(UPDATE_TARGET_URL, url);
         }
@@ -331,14 +363,12 @@ export class MattermostView extends EventEmitter {
     titleParser = /(\((\d+)\) )?(\* )?/g
 
     handleTitleUpdate = (e: Event, title: string) => {
+        log.debug('MattermostView.handleTitleUpdate', {tabName: this.tab.name, title});
+
         this.updateMentionsFromTitle(title);
     }
 
     updateMentionsFromTitle = (title: string) => {
-        if (this.serverInfo.remoteInfo.serverVersion && Util.isVersionGreaterThanOrEqualTo(this.serverInfo.remoteInfo.serverVersion, '5.29.0')) {
-            return;
-        }
-
         //const title = this.view.webContents.getTitle();
         const resultsIterator = title.matchAll(this.titleParser);
         const results = resultsIterator.next(); // we are only interested in the first set
@@ -358,6 +388,8 @@ export class MattermostView extends EventEmitter {
     }
 
     handleFaviconUpdate = (e: Event, favicons: string[]) => {
+        log.silly('MattermostView.handleFaviconUpdate', {tabName: this.tab.name, favicons});
+
         if (!this.usesAsteriskForUnreads) {
             // if unread state is stored for that favicon, retrieve value.
             // if not, get related info from preload and store it for future changes
@@ -370,7 +402,7 @@ export class MattermostView extends EventEmitter {
     findUnreadState = (favicon: string | null) => {
         try {
             this.view.webContents.send(IS_UNREAD, favicon, this.tab.name);
-        } catch (err) {
+        } catch (err: any) {
             log.error(`There was an error trying to request the unread state: ${err}`);
             log.error(err.stack);
         }
@@ -379,6 +411,8 @@ export class MattermostView extends EventEmitter {
     // if favicon is null, it means it is the initial load,
     // so don't memoize as we don't have the favicons and there is no rush to find out.
     handleFaviconIsUnread = (e: Event, favicon: string, viewName: string, result: boolean) => {
+        log.silly('MattermostView.handleFaviconIsUnread', {favicon, viewName, result});
+
         if (this.tab && viewName === this.tab.name) {
             appState.updateUnreads(viewName, result);
         }

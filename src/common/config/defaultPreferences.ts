@@ -21,7 +21,7 @@ const defaultPreferences: ConfigV3 = {
     teams: [],
     showTrayIcon: true,
     trayIconTheme: 'use_system',
-    minimizeToTray: true,
+    minimizeToTray: process.platform !== 'linux',
     notifications: {
         flashWindow: 2,
         bounceIcon: true,
@@ -36,6 +36,7 @@ const defaultPreferences: ConfigV3 = {
     darkMode: false,
     lastActiveTeam: 0,
     downloadLocation: getDefaultDownloadLocation(),
+    startInFullscreen: false,
 };
 
 export default defaultPreferences;

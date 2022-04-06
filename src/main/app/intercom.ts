@@ -19,6 +19,8 @@ import {handleAppBeforeQuit} from './app';
 import {updateServerInfos} from './utils';
 
 export function handleReloadConfig() {
+    log.debug('Intercom.handleReloadConfig');
+
     Config.reload();
     WindowManager.handleUpdateConfig();
 }
@@ -38,14 +40,18 @@ export function handleQuit(e: IpcMainEvent, reason: string, stack: string) {
 }
 
 export function handleSwitchServer(event: IpcMainEvent, serverName: string) {
+    log.silly('Intercom.handleSwitchServer', serverName);
     WindowManager.switchServer(serverName);
 }
 
 export function handleSwitchTab(event: IpcMainEvent, serverName: string, tabName: string) {
+    log.silly('Intercom.handleSwitchTab', {serverName, tabName});
     WindowManager.switchTab(serverName, tabName);
 }
 
 export function handleCloseTab(event: IpcMainEvent, serverName: string, tabName: string) {
+    log.debug('Intercom.handleCloseTab', {serverName, tabName});
+
     const teams = Config.teams;
     teams.forEach((team) => {
         if (team.name === serverName) {
@@ -62,6 +68,8 @@ export function handleCloseTab(event: IpcMainEvent, serverName: string, tabName:
 }
 
 export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: string) {
+    log.debug('Intercom.handleOpenTab', {serverName, tabName});
+
     const teams = Config.teams;
     teams.forEach((team) => {
         if (team.name === serverName) {
@@ -83,6 +91,7 @@ export function addNewServerModalWhenMainWindowIsShown() {
             handleNewServerModal();
         } else {
             mainWindow.once('show', () => {
+                log.debug('Intercom.addNewServerModalWhenMainWindowIsShown.show');
                 handleNewServerModal();
             });
         }
@@ -90,6 +99,8 @@ export function addNewServerModalWhenMainWindowIsShown() {
 }
 
 export function handleNewServerModal() {
+    log.debug('Intercom.handleNewServerModal');
+
     const html = getLocalURLString('newServer.html');
 
     const modalPreload = getLocalPreload('modalPreload.js');
@@ -120,6 +131,8 @@ export function handleNewServerModal() {
 }
 
 export function handleEditServerModal(e: IpcMainEvent, name: string) {
+    log.debug('Intercom.handleEditServerModal', name);
+
     const html = getLocalURLString('editServer.html');
 
     const modalPreload = getLocalPreload('modalPreload.js');
@@ -151,6 +164,8 @@ export function handleEditServerModal(e: IpcMainEvent, name: string) {
 }
 
 export function handleRemoveServerModal(e: IpcMainEvent, name: string) {
+    log.debug('Intercom.handleRemoveServerModal', name);
+
     const html = getLocalURLString('removeServer.html');
 
     const modalPreload = getLocalPreload('modalPreload.js');
@@ -189,10 +204,13 @@ export function handleRemoveServerModal(e: IpcMainEvent, name: string) {
 }
 
 export function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, data: MentionData) {
+    log.debug('Intercom.handleMentionNotification', {title, body, channel, teamId, url, silent, data});
     displayMention(title, body, channel, teamId, url, silent, event.sender, data);
 }
 
 export function handleOpenAppMenu() {
+    log.debug('Intercom.handleOpenAppMenu');
+
     const windowMenu = Menu.getApplicationMenu();
     if (!windowMenu) {
         log.error('No application menu found');
@@ -206,6 +224,8 @@ export function handleOpenAppMenu() {
 }
 
 export async function handleSelectDownload(event: IpcMainInvokeEvent, startFrom: string) {
+    log.debug('Intercom.handleSelectDownload', startFrom);
+
     const message = 'Specify the folder where files will download';
     const result = await dialog.showOpenDialog({defaultPath: startFrom || Config.downloadLocation,
         message,
@@ -215,6 +235,8 @@ export async function handleSelectDownload(event: IpcMainInvokeEvent, startFrom:
 }
 
 export function handleUpdateLastActive(event: IpcMainEvent, serverName: string, viewName: string) {
+    log.debug('Intercom.handleUpdateLastActive', {serverName, viewName});
+
     const teams = Config.teams;
     teams.forEach((team) => {
         if (team.name === serverName) {

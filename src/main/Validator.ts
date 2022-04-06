@@ -27,6 +27,7 @@ const argsSchema = Joi.object<Args>({
     disableDevMode: Joi.boolean(),
     dataDir: Joi.string(),
     version: Joi.boolean(),
+    fullscreen: Joi.boolean(),
 });
 
 const boundsInfoSchema = Joi.object<SavedWindowState>({
@@ -118,6 +119,7 @@ const configDataSchemaV3 = Joi.object<ConfigV3>({
     showUnreadBadge: Joi.boolean().default(true),
     useSpellChecker: Joi.boolean().default(true),
     enableHardwareAcceleration: Joi.boolean().default(true),
+    startInFullscreen: Joi.boolean().default(false),
     autostart: Joi.boolean().default(true),
     hideOnStart: Joi.boolean().default(false),
     spellCheckerLocales: Joi.array().items(Joi.string()).default([]),
@@ -125,6 +127,10 @@ const configDataSchemaV3 = Joi.object<ConfigV3>({
     darkMode: Joi.boolean().default(false),
     downloadLocation: Joi.string(),
     lastActiveTeam: Joi.number().integer().min(0).default(0),
+    autoCheckForUpdates: Joi.boolean().default(true),
+    alwaysMinimize: Joi.boolean(),
+    alwaysClose: Joi.boolean(),
+    logLevel: Joi.string().default('info'),
 });
 
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};

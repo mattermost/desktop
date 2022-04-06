@@ -89,6 +89,14 @@ export const REQUEST_TEAMS_DROPDOWN_INFO = 'request-teams-dropdown-info';
 export const RECEIVE_DROPDOWN_MENU_SIZE = 'receive-dropdown-menu-size';
 export const SEND_DROPDOWN_MENU_SIZE = 'send-dropdown-menu-size';
 
+export const UPDATE_AVAILABLE = 'update_available';
+export const UPDATE_DOWNLOADED = 'update_downloaded';
+export const CANCEL_UPGRADE = 'cancel_upgrade';
+export const START_UPGRADE = 'start_upgrade';
+export const START_DOWNLOAD = 'start_download';
+export const CHECK_FOR_UPDATES = 'check_for_updates';
+export const UPDATE_PROGRESS = 'update_progress';
+
 export const BROWSER_HISTORY_BUTTON = 'browser-history-button';
 export const BROWSER_HISTORY_PUSH = 'browser-history-push';
 export const APP_LOGGED_IN = 'app-logged-in';
@@ -104,3 +112,11 @@ export const GET_MODAL_UNCLOSEABLE = 'get-modal-uncloseable';
 export const MODAL_UNCLOSEABLE = 'modal-uncloseable';
 
 export const UPDATE_PATHS = 'update-paths';
+
+export const UPDATE_URL_VIEW_WIDTH = 'update-url-view-width';
+
+export const DISPATCH_GET_DESKTOP_SOURCES = 'dispatch-get-desktop-sources';
+export const DESKTOP_SOURCES_RESULT = 'desktop-sources-result';
+
+export const RELOAD_CURRENT_VIEW = 'reload-current-view';
+

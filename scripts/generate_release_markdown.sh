@@ -17,7 +17,7 @@ BASE_URL="https://releases.mattermost.com/desktop/${VERSION}"
 cat <<-MD
 ### Mattermost Desktop v${VERSION} has been cut!
 
-Release notes can be found here: https://docs.mattermost.com/help/apps/desktop-changelog.html
+Release notes can be found here: https://docs.mattermost.com/install/desktop-app-changelog.html
 
 The download links can be found below.
 
@@ -42,8 +42,8 @@ $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-ia32.tar.gz")
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-x64.tar.gz")
 
 #### Linux (Unofficial) - deb files
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-i386.deb")
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-amd64.deb")
+$(print_link "${BASE_URL}/mattermost-desktop_${VERSION}-1_i386.deb")
+$(print_link "${BASE_URL}/mattermost-desktop_${VERSION}-1_amd64.deb")
 
 #### Linux (Unofficial) - rpm files (beta)
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-i386.rpm")

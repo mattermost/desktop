@@ -6,60 +6,7 @@ import {AuthManager} from 'main/authManager';
 import WindowManager from 'main/windows/windowManager';
 import ModalManager from 'main/views/modalManager';
 
-jest.mock('common/utils/url', () => {
-    const actualUrl = jest.requireActual('common/utils/url');
-    return {
-        ...actualUrl.default,
-        getView: (url) => {
-            if (url.toString() === 'http://badurl.com/') {
-                return null;
-            }
-            return {name: 'test', url};
-        },
-        isTrustedURL: (url) => {
-            return url.toString() === 'http://trustedurl.com/';
-        },
-        isCustomLoginURL: (url) => {
-            return url.toString() === 'http://customloginurl.com/';
-        },
-    };
-});
-
-jest.mock('electron', () => ({
-    app: {
-        getPath: jest.fn(),
-    },
-    ipcMain: {
-        on: jest.fn(),
-    },
-}));
-
-jest.mock('electron-log', () => ({
-    error: jest.fn(),
-}));
-
-jest.mock('main/trustedOrigins', () => ({
-    addPermission: jest.fn(),
-    checkPermission: (url) => {
-        return url.toString() === 'http://haspermissionurl.com/';
-    },
-    save: jest.fn(),
-}));
-
-jest.mock('main/windows/windowManager', () => ({
-    getMainWindow: jest.fn().mockImplementation(() => ({})),
-}));
-
-jest.mock('main/views/modalManager', () => ({
-    addModal: jest.fn(),
-}));
-
-jest.mock('main/utils', () => ({
-    getLocalPreload: (file) => file,
-    getLocalURLString: (file) => file,
-}));
-
-const config = {
+jest.mock('common/config', () => ({
     teams: [{
         name: 'example',
         url: 'http://example.com',
@@ -105,11 +52,60 @@ const config = {
         ],
         lastActiveTab: 0,
     }],
-};
+}));
+
+jest.mock('common/utils/url', () => {
+    const actualUrl = jest.requireActual('common/utils/url');
+    return {
+        ...actualUrl.default,
+        getView: (url) => {
+            if (url.toString() === 'http://badurl.com/') {
+                return null;
+            }
+            return {name: 'test', url};
+        },
+        isTrustedURL: (url) => {
+            return url.toString() === 'http://trustedurl.com/';
+        },
+        isCustomLoginURL: (url) => {
+            return url.toString() === 'http://customloginurl.com/';
+        },
+    };
+});
+
+jest.mock('electron', () => ({
+    app: {
+        getPath: jest.fn(),
+    },
+    ipcMain: {
+        on: jest.fn(),
+    },
+}));
+
+jest.mock('main/trustedOrigins', () => ({
+    addPermission: jest.fn(),
+    checkPermission: (url) => {
+        return url.toString() === 'http://haspermissionurl.com/';
+    },
+    save: jest.fn(),
+}));
+
+jest.mock('main/windows/windowManager', () => ({
+    getMainWindow: jest.fn().mockImplementation(() => ({})),
+}));
+
+jest.mock('main/views/modalManager', () => ({
+    addModal: jest.fn(),
+}));
+
+jest.mock('main/utils', () => ({
+    getLocalPreload: (file) => file,
+    getLocalURLString: (file) => file,
+}));
 
 describe('main/authManager', () => {
     describe('handleAppLogin', () => {
-        const authManager = new AuthManager(config);
+        const authManager = new AuthManager();
         authManager.popLoginModal = jest.fn();
         authManager.popPermissionModal = jest.fn();
 
@@ -157,7 +153,7 @@ describe('main/authManager', () => {
     });
 
     describe('popLoginModal', () => {
-        const authManager = new AuthManager(config);
+        const authManager = new AuthManager();
 
         it('should not pop modal when no main window exists', () => {
             WindowManager.getMainWindow.mockImplementationOnce(() => null);
@@ -225,7 +221,7 @@ describe('main/authManager', () => {
     });
 
     describe('popPermissionModal', () => {
-        const authManager = new AuthManager(config);
+        const authManager = new AuthManager();
 
         it('should not pop modal when no main window exists', () => {
             WindowManager.getMainWindow.mockImplementationOnce(() => null);
@@ -270,7 +266,7 @@ describe('main/authManager', () => {
     });
 
     describe('handleLoginCredentialsEvent', () => {
-        const authManager = new AuthManager(config);
+        const authManager = new AuthManager();
         const callback = jest.fn();
 
         beforeEach(() => {
