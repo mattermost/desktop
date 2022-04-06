@@ -102,11 +102,11 @@ describe('Menu/window_menu', function desc() {
         let tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Channels');
 
-        robot.keyTap('2', [process.platform === 'darwin' ? 'command' : 'control']);
+        robot.keyTap('tab', ['control']);
         tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Boards');
 
-        robot.keyTap('1', [process.platform === 'darwin' ? 'command' : 'control']);
+        robot.keyTap('tab', ['shift', 'control']);
         tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Channels');
     });
