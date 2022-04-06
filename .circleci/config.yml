@@ -693,7 +693,7 @@ workflows:
           context: mattermost-desktop-daily-s3
           requires:
             - build-linux
-            - build-win-no-installer
+            - msi_installer
             - mac_installer
       - share_to_channel:
           context: desktop_browserview
