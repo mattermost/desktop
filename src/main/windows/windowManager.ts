@@ -32,7 +32,7 @@ import {SECOND} from 'common/utils/constants';
 import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 
-import {getAdjustedWindowBoundaries} from '../utils';
+import {getAdjustedWindowBoundaries, shouldHaveBackBar} from '../utils';
 
 import {ViewManager} from '../views/viewManager';
 import CriticalErrorHandler from '../CriticalErrorHandler';
@@ -194,7 +194,7 @@ export class WindowManager {
 
         const setBoundsFunction = () => {
             if (currentView) {
-                currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, !(urlUtils.isTeamUrl(currentView.tab.url, currentView.view.webContents.getURL()) || urlUtils.isAdminUrl(currentView.tab.url, currentView.view.webContents.getURL()))));
+                currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, shouldHaveBackBar(currentView.tab.url, currentView.view.webContents.getURL())));
             }
         };
 
