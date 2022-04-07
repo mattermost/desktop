@@ -587,22 +587,22 @@ workflows:
           requires:
             - check
           context: windows-codesign
-          # filters:
-          #   branches:
-          #     only:
-          #       # only for release and release candidates
-          #       # release-XX.YY.ZZ
-          #       # release-XX.YY.ZZ-rc-something
-          #       - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+          filters:
+            branches:
+              only:
+                # only for release and release candidates
+                # release-XX.YY.ZZ
+                # release-XX.YY.ZZ-rc-something
+                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - mac_installer:
           requires:
             - check
           context: codesign-certificates
-          # filters:
-          #   branches:
-          #     only:
-          #       - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+          filters:
+            branches:
+              only:
+                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - store_artifacts:
           # for master/PR builds
