@@ -97,4 +97,14 @@ describe('main/utils', () => {
             expect(Utils.getLocalURLString('index.html', null, true)).toStrictEqual('file:///path/to/app/dist/index.html');
         });
     });
+
+    describe('shouldHaveBackBar', () => {
+        it('should have back bar for custom logins', () => {
+            expect(Utils.shouldHaveBackBar('https://server-1.com', 'https://server-1.com/login/sso/saml')).toBe(true);
+        });
+
+        it('should not have back bar for regular login', () => {
+            expect(Utils.shouldHaveBackBar('https://server-1.com', 'https://server-1.com/login')).toBe(false);
+        });
+    });
 });
