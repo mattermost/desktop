@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 import log from 'electron-log';
 
-import Joi from '@hapi/joi';
+import Joi from 'joi';
 
 import {Args} from 'types/args';
 import {ConfigV0, ConfigV1, ConfigV2, ConfigV3, TeamWithTabs} from 'types/config';

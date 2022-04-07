@@ -37,7 +37,7 @@ export default class ExtraBar extends React.PureComponent<Props> {
                         variant={'link'}
                         size={'sm'}
                     >
-                        <span className={'backIcon fa fa-1x fa-angle-left'}/>
+                        <span className={'backIcon icon-arrow-left'}/>
                         <span className={'backLabel'}>
                             {'Back'}
                         </span>

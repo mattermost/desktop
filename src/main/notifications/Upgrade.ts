@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
+
 import {app, Notification} from 'electron';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');

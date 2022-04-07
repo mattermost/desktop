@@ -8,9 +8,7 @@ import 'renderer/css/settings.css';
 
 import React from 'react';
 import {FormCheck, Col, FormGroup, FormText, Container, Row, Button, FormControl} from 'react-bootstrap';
-import ReactSelect, {ActionMeta, OptionsType} from 'react-select';
-
-import {debounce} from 'underscore';
+import ReactSelect, {ActionMeta, MultiValue} from 'react-select';
 
 import {CombinedConfig, LocalConfiguration} from 'types/config';
 import {DeepPartial} from 'types/utils';
@@ -76,6 +74,9 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
 
     selectedSpellCheckerLocales: Array<{label: string; value: string}>;
 
+    savingIsDebounced: boolean;
+    resetSaveStateIsDebounced: boolean;
+
     constructor(props: Record<string, never>) {
         super(props);
         this.state = {
@@ -108,6 +109,9 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
 
         this.saveQueue = [];
         this.selectedSpellCheckerLocales = [];
+
+        this.savingIsDebounced = false;
+        this.resetSaveStateIsDebounced = false;
     }
 
     componentDidMount() {
@@ -149,9 +153,17 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         this.processSaveQueue();
     }
 
-    processSaveQueue = debounce(() => {
+    processSaveQueue = () => {
+        if (this.savingIsDebounced) {
+            return;
+        }
+
+        this.savingIsDebounced = true;
+        setTimeout(() => {
+            this.savingIsDebounced = false;
+        }, 500);
         window.ipcRenderer.send(UPDATE_CONFIGURATION, this.saveQueue.splice(0, this.saveQueue.length));
-    }, 500);
+    }
 
     updateSaveState = () => {
         let queuedUpdateCounts = {
@@ -178,13 +190,21 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         this.setState({savingState});
     }
 
-    resetSaveState = debounce((configType: keyof SavingStateItems) => {
+    resetSaveState = (configType: keyof SavingStateItems) => {
+        if (this.resetSaveStateIsDebounced) {
+            return;
+        }
+        this.resetSaveStateIsDebounced = true;
+        setTimeout(() => {
+            this.resetSaveStateIsDebounced = false;
+        }, 2000);
+
         if (this.state.savingState[configType] !== SavingState.SAVING_STATE_SAVING) {
             const savingState = Object.assign({}, this.state.savingState);
             savingState[configType] = SavingState.SAVING_STATE_DONE;
             this.setState({savingState});
         }
-    }, 2000);
+    }
 
     handleChangeShowTrayIcon = () => {
         const shouldShowTrayIcon = this.showTrayIconRef.current?.checked;
@@ -314,7 +334,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         window.ipcRenderer.send(CHECK_FOR_UPDATES);
     }
 
-    handleChangeSpellCheckerLocales = (value: OptionsType<{label: string; value: string}>, actionMeta: ActionMeta<{label: string; value: string}>) => {
+    handleChangeSpellCheckerLocales = (value: MultiValue<{label: string; value: string}>, actionMeta: ActionMeta<{label: string; value: string}>) => {
         switch (actionMeta.action) {
         case 'select-option':
             this.selectedSpellCheckerLocales = [...value];

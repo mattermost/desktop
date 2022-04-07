@@ -3,6 +3,7 @@
 
 /* eslint-disable max-lines */
 import path from 'path';
+
 import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer} from 'electron';
 import log from 'electron-log';
 

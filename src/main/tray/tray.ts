@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
+
 import {app, nativeImage, Tray, systemPreferences, nativeTheme} from 'electron';
 
 import {UPDATE_TRAY} from 'common/communication';
