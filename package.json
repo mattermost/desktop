@@ -116,6 +116,7 @@
     "@babel/preset-react": "7.16.7",
     "@babel/register": "7.17.7",
     "@electron/fuses": "1.5.0",
+    "@electron/universal": "1.2.1",
     "@storybook/addon-actions": "6.4.20",
     "@storybook/react": "6.4.20",
     "@types/auto-launch": "5.0.2",
@@ -137,7 +138,7 @@
     "cross-env": "7.0.3",
     "css-loader": "6.7.1",
     "electron": "18.0.1",
-    "electron-builder": "22.14.13",
+    "electron-builder": "23.0.3",
     "electron-connect": "0.6.3",
     "electron-mocha": "11.0.2",
     "electron-notarize": "1.2.1",
@@ -191,5 +192,8 @@
     "valid-url": "1.0.9",
     "winreg-utf8": "0.1.1",
     "yargs": "17.4.0"
+  },
+  "overrides": {
+    "@electron/universal": "1.2.1"
   }
 }
