@@ -58,7 +58,7 @@ describe('file_menu/dropdown', function desc() {
             signInToAnotherServerWindow.should.not.be.null;
         });
     }
-        
+
     it('MM-T804 Preferences in Menu Bar open the Settings page', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         mainWindow.should.not.be.null;
@@ -67,10 +67,10 @@ describe('file_menu/dropdown', function desc() {
             predicate: (window) => window.url().includes('settings'),
         });
         settingsWindow.should.not.be.null;
-        
+
         if (process.platform !== 'darwin') {
             robot.keyTap('w', [env.cmdOrCtrl]);
-            
+
             //Opening the menu bar
             robot.keyTap('alt');
             robot.keyTap('enter');
@@ -89,17 +89,17 @@ describe('file_menu/dropdown', function desc() {
         it('MM-T806 Exit in the Menu Bar', () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             mainWindow.should.not.be.null;
-    
+
             if (process.platform === 'darwin') {
                 robot.keyTap('q', ['command']);
             }
-    
+
             if (process.platform === 'linux' || process.platform === 'win32') {
                 robot.keyTap('q', ['control']);
             }
-    
+
             this.app.windows().find((window) => window.url().should.not.include('index'));
-    
+
             skipAfterEach = true; // Need to skip closing in aftereach as apps execution context is destroyed above
         });
     }

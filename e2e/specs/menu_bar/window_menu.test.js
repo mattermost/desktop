@@ -124,12 +124,12 @@ describe('Menu/window_menu', function desc() {
             robot.keyTap('m');
             robot.keyTap('enter');
         }
-        
+
         await asyncSleep(2000);
         const isMinimized = await browserWindow.evaluate((window) => window.isMinimized());
         isMinimized.should.be.true;
     });
-    
+
     it('MM-T825 should be hidden when keyboard shortcuts are pressed', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);

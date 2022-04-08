@@ -107,7 +107,7 @@ describe('menu/view', function desc() {
 
     // TODO: No keyboard shortcut for macOS
     if (process.platform !== 'darwin') {
-        it('MM-T816 Toggle Full Screen in the Menu Bar', async () => {  
+        it('MM-T816 Toggle Full Screen in the Menu Bar', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
             await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});

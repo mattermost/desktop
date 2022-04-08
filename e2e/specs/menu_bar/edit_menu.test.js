@@ -31,7 +31,6 @@ describe('edit_menu', function desc() {
     });
 
     it('MM-T807 Undo in the Menu Bar', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
@@ -50,7 +49,6 @@ describe('edit_menu', function desc() {
     });
 
     it('MM-T808 Redo in the Menu Bar', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
@@ -74,7 +72,6 @@ describe('edit_menu', function desc() {
     });
 
     it('MM-T809 Cut in the Menu Bar', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
@@ -94,7 +91,6 @@ describe('edit_menu', function desc() {
     });
 
     it('MM-T810 Copy in the Menu Bar', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
@@ -117,7 +113,6 @@ describe('edit_menu', function desc() {
     });
 
     it('MM-T811 Paste in the Menu Bar', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
@@ -141,7 +136,6 @@ describe('edit_menu', function desc() {
     });
 
     it('MM-T812 Select All in the Menu Bar', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;

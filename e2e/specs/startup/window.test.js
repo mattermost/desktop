@@ -32,7 +32,7 @@ describe('window', function desc() {
             this.app = await env.getApp();
             const mainWindow = await this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
-            const bounds = await browserWindow.evaluate((window) => window.getContentBounds()); 
+            const bounds = await browserWindow.evaluate((window) => window.getContentBounds());
             bounds.should.deep.equal(expectedBounds);
             await this.app.close();
         });

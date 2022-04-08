@@ -223,13 +223,13 @@ describe('Settings', function desc() {
                     await settingsWindow.waitForSelector('.settingsPage.container');
                     const selected = await settingsWindow.isChecked(ID_INPUT_ENABLE_AUTO_UPDATES);
                     selected.should.equal(true); // default is true
-    
+
                     await settingsWindow.click(ID_INPUT_ENABLE_AUTO_UPDATES);
                     await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saving...")');
                     await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saved")');
                     const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
                     config0.autoCheckForUpdates.should.equal(false);
-    
+
                     await settingsWindow.click(ID_INPUT_ENABLE_AUTO_UPDATES);
                     await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saving...")');
                     await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saved")');
