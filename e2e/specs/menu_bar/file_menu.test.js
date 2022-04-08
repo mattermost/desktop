@@ -35,17 +35,16 @@ describe('file_menu/dropdown', function desc() {
     it('MM-T1313 Open Settings modal using keyboard shortcuts', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         mainWindow.should.not.be.null;
-        if (process.platform === 'win32' || process.platform === 'linux') {
-            robot.keyTap(',', ['control']);
-            const settingsWindow = await this.app.waitForEvent('window', {
-                predicate: (window) => window.url().includes('settings'),
-            });
-            settingsWindow.should.not.be.null;
-        }
+        robot.keyTap(',', [env.cmdOrCtrl]);
+        const settingsWindow = await this.app.waitForEvent('window', {
+            predicate: (window) => window.url().includes('settings'),
+        });
+        settingsWindow.should.not.be.null;
     });
 
-    it('MM-T805 Sign in to Another Server Window opens using menu item', async () => {
-        if (process.platform === 'win32' || process.platform === 'linux') {
+    // TODO: No keyboard shortcut for macOS
+    if (process.platform !== 'darwin') {
+        it('MM-T805 Sign in to Another Server Window opens using menu item', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             mainWindow.should.not.be.null;
             await mainWindow.click('button.three-dot-menu');
@@ -57,20 +56,21 @@ describe('file_menu/dropdown', function desc() {
                 predicate: (window) => window.url().includes('newServer'),
             });
             signInToAnotherServerWindow.should.not.be.null;
-        }
-    });
-
+        });
+    }
+        
     it('MM-T804 Preferences in Menu Bar open the Settings page', async () => {
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        mainWindow.should.not.be.null;
+        robot.keyTap(',', [env.cmdOrCtrl]);
+        const settingsWindow = await this.app.waitForEvent('window', {
+            predicate: (window) => window.url().includes('settings'),
+        });
+        settingsWindow.should.not.be.null;
+        
         if (process.platform !== 'darwin') {
-            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-            mainWindow.should.not.be.null;
-            robot.keyTap(',', ['control']);
-            const settingsWindow = await this.app.waitForEvent('window', {
-                predicate: (window) => window.url().includes('settings'),
-            });
-            settingsWindow.should.not.be.null;
-            robot.keyTap('w', ['control']);
-
+            robot.keyTap('w', [env.cmdOrCtrl]);
+            
             //Opening the menu bar
             robot.keyTap('alt');
             robot.keyTap('enter');

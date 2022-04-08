@@ -67,15 +67,15 @@ describe('Menu/window_menu', function desc() {
         dropdownButtonText.should.equal('example');
 
         robot.keyTap('2', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
-        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton:has-text("github")');
         dropdownButtonText.should.equal('github');
 
         robot.keyTap('3', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
-        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton:has-text("google")');
         dropdownButtonText.should.equal('google');
 
         robot.keyTap('1', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
-        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton:has-text("example")');
         dropdownButtonText.should.equal('example');
     });
 
@@ -85,15 +85,15 @@ describe('Menu/window_menu', function desc() {
         let tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Channels');
 
-        robot.keyTap('2', [process.platform === 'darwin' ? 'command' : 'control']);
+        robot.keyTap('2', [env.cmdOrCtrl]);
         tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Boards');
 
-        robot.keyTap('3', [process.platform === 'darwin' ? 'command' : 'control']);
+        robot.keyTap('3', [env.cmdOrCtrl]);
         tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Playbooks');
 
-        robot.keyTap('1', [process.platform === 'darwin' ? 'command' : 'control']);
+        robot.keyTap('1', [env.cmdOrCtrl]);
         tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Channels');
     });
@@ -116,22 +116,24 @@ describe('Menu/window_menu', function desc() {
     it('MM-T824 should be minimized when keyboard shortcuts are pressed', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);
-        await mainWindow.click('button.three-dot-menu');
-        robot.keyTap('w');
-        robot.keyTap('m');
-        robot.keyTap('enter');
+        if (process.platform === 'darwin') {
+            robot.keyTap('m', [env.cmdOrCtrl]);
+        } else {
+            await mainWindow.click('button.three-dot-menu');
+            robot.keyTap('w');
+            robot.keyTap('m');
+            robot.keyTap('enter');
+        }
+        
         await asyncSleep(2000);
         const isMinimized = await browserWindow.evaluate((window) => window.isMinimized());
         isMinimized.should.be.true;
     });
-
+    
     it('MM-T825 should be hidden when keyboard shortcuts are pressed', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);
-        await mainWindow.click('button.three-dot-menu');
-        robot.keyTap('w');
-        robot.keyTap('c');
-        robot.keyTap('enter');
+        robot.keyTap('w', [env.cmdOrCtrl]);
         await asyncSleep(2000);
         const isVisible = await browserWindow.evaluate((window) => window.isVisible());
         isVisible.should.be.false;
