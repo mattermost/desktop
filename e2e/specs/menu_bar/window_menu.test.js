@@ -66,15 +66,15 @@ describe('Menu/window_menu', function desc() {
         let dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
         dropdownButtonText.should.equal('example');
 
-        robot.keyTap('2', ['control', 'shift']);
+        robot.keyTap('2', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
         dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
         dropdownButtonText.should.equal('github');
 
-        robot.keyTap('3', ['control', 'shift']);
+        robot.keyTap('3', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
         dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
         dropdownButtonText.should.equal('google');
 
-        robot.keyTap('1', ['control', 'shift']);
+        robot.keyTap('1', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
         dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
         dropdownButtonText.should.equal('example');
     });

@@ -41,7 +41,7 @@ describe('Settings', function desc() {
                     predicate: (window) => window.url().includes('settings'),
                 });
                 await settingsWindow.waitForSelector('.settingsPage.container');
-                await settingsWindow.waitForSelector('#inputAutoStart');
+                await settingsWindow.waitForSelector('#inputAutoStart', {state: expected ? 'attached': 'detached'});
                 const existing = await settingsWindow.isVisible('#inputAutoStart');
                 existing.should.equal(expected);
             });
@@ -210,31 +210,33 @@ describe('Settings', function desc() {
             });
         });
 
-        describe('Enable automatic check for updates', () => {
-            it('MM-T4549 should save selected option', async () => {
-                const ID_INPUT_ENABLE_AUTO_UPDATES = '#inputAutoCheckForUpdates';
-                this.app.evaluate(({ipcMain}, showWindow) => {
-                    ipcMain.emit(showWindow);
-                }, SHOW_SETTINGS_WINDOW);
-                const settingsWindow = await this.app.waitForEvent('window', {
-                    predicate: (window) => window.url().includes('settings'),
+        if (process.platform !== 'darwin') {
+            describe('Enable automatic check for updates', () => {
+                it('MM-T4549 should save selected option', async () => {
+                    const ID_INPUT_ENABLE_AUTO_UPDATES = '#inputAutoCheckForUpdates';
+                    this.app.evaluate(({ipcMain}, showWindow) => {
+                        ipcMain.emit(showWindow);
+                    }, SHOW_SETTINGS_WINDOW);
+                    const settingsWindow = await this.app.waitForEvent('window', {
+                        predicate: (window) => window.url().includes('settings'),
+                    });
+                    await settingsWindow.waitForSelector('.settingsPage.container');
+                    const selected = await settingsWindow.isChecked(ID_INPUT_ENABLE_AUTO_UPDATES);
+                    selected.should.equal(true); // default is true
+    
+                    await settingsWindow.click(ID_INPUT_ENABLE_AUTO_UPDATES);
+                    await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saving...")');
+                    await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saved")');
+                    const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+                    config0.autoCheckForUpdates.should.equal(false);
+    
+                    await settingsWindow.click(ID_INPUT_ENABLE_AUTO_UPDATES);
+                    await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saving...")');
+                    await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saved")');
+                    const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+                    config1.autoCheckForUpdates.should.equal(true);
                 });
-                await settingsWindow.waitForSelector('.settingsPage.container');
-                const selected = await settingsWindow.isChecked(ID_INPUT_ENABLE_AUTO_UPDATES);
-                selected.should.equal(true); // default is true
-
-                await settingsWindow.click(ID_INPUT_ENABLE_AUTO_UPDATES);
-                await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saving...")');
-                await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saved")');
-                const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-                config0.autoCheckForUpdates.should.equal(false);
-
-                await settingsWindow.click(ID_INPUT_ENABLE_AUTO_UPDATES);
-                await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saving...")');
-                await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saved")');
-                const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-                config1.autoCheckForUpdates.should.equal(true);
             });
-        });
+        }
     });
 });
