@@ -38,18 +38,17 @@ describe('menu_bar/dropdown', function desc() {
     });
 
     it('MM-T4406 should only show dropdown when button is clicked', async () => {
-        const mainWindow = await this.app.firstWindow();
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);
-        const mainView = this.app.windows().find((window) => window.url().includes('index'));
 
         let dropdownHeight = await browserWindow.evaluate((window) => window.getBrowserViews().find((view) => view.webContents.getURL().includes('dropdown')).getBounds().height);
         dropdownHeight.should.equal(0);
 
-        await mainView.click('.TeamDropdownButton');
+        await mainWindow.click('.TeamDropdownButton');
         dropdownHeight = await browserWindow.evaluate((window) => window.getBrowserViews().find((view) => view.webContents.getURL().includes('dropdown')).getBounds().height);
         dropdownHeight.should.be.greaterThan(0);
 
-        await mainView.click('.TabBar');
+        await mainWindow.click('.TabBar');
         dropdownHeight = await browserWindow.evaluate((window) => window.getBrowserViews().find((view) => view.webContents.getURL().includes('dropdown')).getBounds().height);
         dropdownHeight.should.equal(0);
     });
@@ -68,7 +67,7 @@ describe('menu_bar/dropdown', function desc() {
     });
 
     it('MM-T4408 should show only the selected team', async () => {
-        const mainWindow = await this.app.firstWindow();
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);
 
         let firstViewIsAttached = await browserWindow.evaluate((window, url) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === url)), env.exampleURL);
@@ -76,9 +75,8 @@ describe('menu_bar/dropdown', function desc() {
         let secondViewIsAttached = await browserWindow.evaluate((window) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === 'https://github.com/')));
         secondViewIsAttached.should.be.false;
 
-        const mainView = this.app.windows().find((window) => window.url().includes('index'));
         const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
-        await mainView.click('.TeamDropdownButton');
+        await mainWindow.click('.TeamDropdownButton');
         await dropdownView.click('.TeamDropdown button.TeamDropdown__button:nth-child(2)');
 
         firstViewIsAttached = await browserWindow.evaluate((window, url) => Boolean(window.getBrowserViews().find((view) => view.webContents.getURL() === url)), env.exampleURL);

@@ -129,7 +129,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
 
     getConfig = () => {
         window.ipcRenderer.invoke(GET_LOCAL_CONFIGURATION).then((config) => {
-            this.setState({ready: true, maximized: false, ...this.convertConfigDataToState(config) as Omit<State, 'ready'>});
+            this.setState({ready: true, maximized: false, ...this.convertConfigDataToState(config, this.state) as Omit<State, 'ready'>});
         });
     }
 
@@ -161,8 +161,8 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         this.savingIsDebounced = true;
         setTimeout(() => {
             this.savingIsDebounced = false;
+            window.ipcRenderer.send(UPDATE_CONFIGURATION, this.saveQueue.splice(0, this.saveQueue.length));
         }, 500);
-        window.ipcRenderer.send(UPDATE_CONFIGURATION, this.saveQueue.splice(0, this.saveQueue.length));
     }
 
     updateSaveState = () => {
@@ -197,13 +197,12 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         this.resetSaveStateIsDebounced = true;
         setTimeout(() => {
             this.resetSaveStateIsDebounced = false;
+            if (this.state.savingState[configType] !== SavingState.SAVING_STATE_SAVING) {
+                const savingState = Object.assign({}, this.state.savingState);
+                savingState[configType] = SavingState.SAVING_STATE_DONE;
+                this.setState({savingState});
+            }
         }, 2000);
-
-        if (this.state.savingState[configType] !== SavingState.SAVING_STATE_SAVING) {
-            const savingState = Object.assign({}, this.state.savingState);
-            savingState[configType] = SavingState.SAVING_STATE_DONE;
-            this.setState({savingState});
-        }
     }
 
     handleChangeShowTrayIcon = () => {

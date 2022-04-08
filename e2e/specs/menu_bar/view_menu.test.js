@@ -96,6 +96,7 @@ describe('menu/view', function desc() {
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
         await firstServer.waitForSelector('#searchBox');
+        await asyncSleep(1000);
         robot.keyTap('f', [process.platform === 'darwin' ? 'command' : 'control']);
         await asyncSleep(500);
         const isFocused = await firstServer.$eval('#searchBox', (el) => el === document.activeElement);
@@ -104,8 +105,8 @@ describe('menu/view', function desc() {
         text.should.include('in:');
     });
 
-    it('MM-T816 Toggle Full Screen in the Menu Bar', async () => {
-        if (process.platform === 'win32' || process.platform === 'linux') {
+    if (process.platform === 'win32' || process.platform === 'linux') {
+        it('MM-T816 Toggle Full Screen in the Menu Bar', async () => {  
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
             await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
@@ -132,8 +133,8 @@ describe('menu/view', function desc() {
             currentHeight = await firstServer.evaluate('window.outerHeight');
             currentWidth.should.be.lessThan(fullScreenWidth);
             currentHeight.should.be.lessThan(fullScreenHeight);
-        }
-    });
+        });
+    }
 
     it('MM-T817 Actual Size Zoom in the menu bar', async () => {
         if (process.platform === 'win32' || process.platform === 'linux') {
@@ -187,7 +188,7 @@ describe('menu/view', function desc() {
         let webContentsId;
 
         beforeEach(async () => {
-            const mainWindow = await this.app.firstWindow();
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             browserWindow = await this.app.browserWindow(mainWindow);
             webContentsId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
 

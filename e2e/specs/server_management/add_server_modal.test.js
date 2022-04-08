@@ -142,8 +142,7 @@ describe('Add Server Modal', function desc() {
                         name: 'TAB_PLAYBOOKS',
                         order: 2,
                     },
-                ],
-                lastActiveTab: 0,
+                ]
             });
         });
     });

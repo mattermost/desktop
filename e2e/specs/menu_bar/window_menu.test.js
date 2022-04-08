@@ -40,6 +40,8 @@ describe('Menu/window_menu', function desc() {
                 lastActiveTab: 0,
             },
         ],
+        minimizeToTray: true,
+        alwaysMinimize: true,
     };
 
     beforeEach(async () => {
@@ -112,8 +114,8 @@ describe('Menu/window_menu', function desc() {
     });
 
     it('MM-T824 should be minimized when keyboard shortcuts are pressed', async () => {
-        const browserWindow = await this.app.browserWindow(await this.app.firstWindow());
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        const browserWindow = await this.app.browserWindow(mainWindow);
         await mainWindow.click('button.three-dot-menu');
         robot.keyTap('w');
         robot.keyTap('m');
@@ -124,8 +126,8 @@ describe('Menu/window_menu', function desc() {
     });
 
     it('MM-T825 should be hidden when keyboard shortcuts are pressed', async () => {
-        const browserWindow = await this.app.browserWindow(await this.app.firstWindow());
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        const browserWindow = await this.app.browserWindow(mainWindow);
         await mainWindow.click('button.three-dot-menu');
         robot.keyTap('w');
         robot.keyTap('c');

@@ -25,27 +25,20 @@ describe('window', function desc() {
     });
 
     it('MM-T4403_1 should restore window bounds', async () => {
-        // TODO: Still fails in CircleCI
-        // bounds seems to be incorrectly calculated in some environments
-        // - Windows 10: OK
-        // - CircleCI: NG
         const expectedBounds = {x: 100, y: 200, width: 800, height: 400};
         fs.writeFileSync(env.boundsInfoPath, JSON.stringify(expectedBounds));
         this.app = await env.getApp();
-        const mainWindow = await this.app.firstWindow();
+        const mainWindow = await this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);
-        const bounds = await browserWindow.evaluate((window) => window.getContentBounds());
+        const bounds = await browserWindow.evaluate((window) => window.getContentBounds()); // TODO: this fails on Linux right now due to the window frame for some reason
         bounds.should.deep.equal(expectedBounds);
         await this.app.close();
     });
 
     it('MM-T4403_2 should NOT restore window bounds if x is located on outside of viewarea', async () => {
-        // bounds seems to be incorrectly calculated in some environments (e.g. CircleCI)
-        // - Windows 10: OK
-        // - CircleCI: NG
         fs.writeFileSync(env.boundsInfoPath, JSON.stringify({x: -100000, y: 200, width: 800, height: 400}));
         this.app = await env.getApp();
-        const mainWindow = await this.app.firstWindow();
+        const mainWindow = await this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);
         const bounds = await browserWindow.evaluate((window) => window.getContentBounds());
         bounds.x.should.satisfy((x) => (x > -100000));
@@ -53,12 +46,9 @@ describe('window', function desc() {
     });
 
     it('MM-T4403_3 should NOT restore window bounds if y is located on outside of viewarea', async () => {
-        // bounds seems to be incorrectly calculated in some environments (e.g. CircleCI)
-        // - Windows 10: OK
-        // - CircleCI: NG
         fs.writeFileSync(env.boundsInfoPath, JSON.stringify({x: 100, y: 200000, width: 800, height: 400}));
         this.app = await env.getApp();
-        const mainWindow = await this.app.firstWindow();
+        const mainWindow = await this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);
         const bounds = await browserWindow.evaluate((window) => window.getContentBounds());
         bounds.y.should.satisfy((y) => (y < 200000));
