@@ -30,7 +30,7 @@ describe('dark_mode', function desc() {
         }
     });
 
-    if (process.platform !== 'darwin') {
+    if (process.platform === 'linux') {
         it('MM-T2465 Linux Dark Mode Toggle', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             mainWindow.should.not.be.null;
