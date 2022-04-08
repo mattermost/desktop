@@ -8,7 +8,8 @@ import {app, BrowserWindow} from 'electron';
 
 import {Args} from 'types/args';
 
-import {BACK_BAR_HEIGHT, PRODUCTION, TAB_BAR_HEIGHT} from 'common/utils/constants';
+import {BACK_BAR_HEIGHT, customLoginRegexPaths, PRODUCTION, TAB_BAR_HEIGHT} from 'common/utils/constants';
+import UrlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 
 export function shouldBeHiddenOnStartup(parsedArgv: Args) {
@@ -35,6 +36,28 @@ export function getAdjustedWindowBoundaries(width: number, height: number, hasBa
         width,
         height: height - TAB_BAR_HEIGHT - (hasBackBar ? BACK_BAR_HEIGHT : 0),
     };
+}
+
+export function shouldHaveBackBar(serverUrl: URL | string, inputURL: URL | string) {
+    if (UrlUtils.isUrlType('login', serverUrl, inputURL)) {
+        const serverURL = UrlUtils.parseURL(serverUrl);
+        const subpath = serverURL ? serverURL.pathname : '';
+        const parsedURL = UrlUtils.parseURL(inputURL);
+        if (!parsedURL) {
+            return false;
+        }
+        const urlPath = parsedURL.pathname;
+        const replacement = subpath.endsWith('/') ? '/' : '';
+        const replacedPath = urlPath.replace(subpath, replacement);
+        for (const regexPath of customLoginRegexPaths) {
+            if (replacedPath.match(regexPath)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    return !UrlUtils.isTeamUrl(serverUrl, inputURL) && !UrlUtils.isAdminUrl(serverUrl, inputURL);
 }
 
 export function getLocalURLString(urlPath: string, query?: Map<string, string>, isMain?: boolean) {

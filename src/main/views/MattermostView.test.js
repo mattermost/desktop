@@ -9,6 +9,7 @@ import MessagingTabView from 'common/tabs/MessagingTabView';
 
 import * as WindowManager from '../windows/windowManager';
 import * as appState from '../appState';
+import Utils from '../utils';
 
 import {MattermostView} from './MattermostView';
 
@@ -44,6 +45,7 @@ jest.mock('../utils', () => ({
     getWindowBoundaries: jest.fn(),
     getLocalPreload: (file) => file,
     composeUserAgent: () => 'Mattermost/5.0.0',
+    shouldHaveBackBar: jest.fn(),
 }));
 
 const server = new MattermostServer('server_name', 'http://server-1.com');
@@ -280,11 +282,13 @@ describe('main/views/MattermostView', () => {
         });
 
         it('should hide back button on internal url', () => {
+            Utils.shouldHaveBackBar.mockReturnValue(false);
             mattermostView.handleDidNavigate(null, 'http://server-1.com/path/to/channels');
             expect(WindowManager.sendToRenderer).toHaveBeenCalledWith(TOGGLE_BACK_BUTTON, false);
         });
 
         it('should show back button on external url', () => {
+            Utils.shouldHaveBackBar.mockReturnValue(true);
             mattermostView.handleDidNavigate(null, 'http://server-2.com/some/other/path');
             expect(WindowManager.sendToRenderer).toHaveBeenCalledWith(TOGGLE_BACK_BUTTON, true);
         });
