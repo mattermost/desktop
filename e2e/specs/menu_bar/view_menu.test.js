@@ -70,7 +70,7 @@ function windowsDialogEventPromises(app, limit) {
 }
 
 describe('menu/view', function desc() {
-    this.timeout(60000);
+    this.timeout(30000);
 
     const config = env.demoMattermostConfig;
 

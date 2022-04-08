@@ -41,7 +41,7 @@ describe('Settings', function desc() {
                     predicate: (window) => window.url().includes('settings'),
                 });
                 await settingsWindow.waitForSelector('.settingsPage.container');
-                await settingsWindow.waitForSelector('#inputAutoStart', {state: expected ? 'attached': 'detached'});
+                await settingsWindow.waitForSelector('#inputAutoStart', {state: expected ? 'attached' : 'detached'});
                 const existing = await settingsWindow.isVisible('#inputAutoStart');
                 existing.should.equal(expected);
             });
@@ -57,7 +57,7 @@ describe('Settings', function desc() {
                     predicate: (window) => window.url().includes('settings'),
                 });
                 await settingsWindow.waitForSelector('.settingsPage.container');
-                await settingsWindow.waitForSelector('#inputShowTrayIcon');
+                await settingsWindow.waitForSelector('#inputShowTrayIcon', {state: expected ? 'attached' : 'detached'});
                 const existing = await settingsWindow.isVisible('#inputShowTrayIcon');
                 existing.should.equal(expected);
             });
@@ -115,8 +115,8 @@ describe('Settings', function desc() {
         });
 
         describe('Leave app running in notification area when application window is closed', () => {
-            it('MM-T4394 should appear on linux', async () => {
-                const expected = (process.platform === 'linux');
+            it('MM-T4394 should appear on linux and win32', async () => {
+                const expected = (process.platform === 'linux' || process.platform === 'win32');
                 this.app.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);

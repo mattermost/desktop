@@ -21,7 +21,6 @@ describe('menu/menu', function desc() {
         fs.writeFileSync(env.configFilePath, JSON.stringify(config));
         await asyncSleep(1000);
         this.app = await env.getApp();
-        this.serverMap = await env.getServerMap(this.app);
     });
 
     afterEach(async () => {

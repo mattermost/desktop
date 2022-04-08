@@ -84,20 +84,23 @@ describe('file_menu/dropdown', function desc() {
         }
     });
 
-    it('MM-T806 Exit in the Menu Bar', () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        mainWindow.should.not.be.null;
-
-        if (process.platform === 'darwin') {
-            robot.keyTap('q', ['command']);
-        }
-
-        if (process.platform === 'linux' || process.platform === 'win32') {
-            robot.keyTap('q', ['control']);
-        }
-
-        this.app.windows().find((window) => window.url().should.not.include('index'));
-
-        skipAfterEach = true; // Need to skip closing in aftereach as apps execution context is destroyed above
-    });
+    // TODO: Causes issues on Windows so skipping for Windows
+    if (process.platform !== 'win32') {
+        it('MM-T806 Exit in the Menu Bar', () => {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            mainWindow.should.not.be.null;
+    
+            if (process.platform === 'darwin') {
+                robot.keyTap('q', ['command']);
+            }
+    
+            if (process.platform === 'linux' || process.platform === 'win32') {
+                robot.keyTap('q', ['control']);
+            }
+    
+            this.app.windows().find((window) => window.url().should.not.include('index'));
+    
+            skipAfterEach = true; // Need to skip closing in aftereach as apps execution context is destroyed above
+        });
+    }
 });
