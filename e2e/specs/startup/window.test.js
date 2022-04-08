@@ -24,7 +24,7 @@ describe('window', function desc() {
         }
     });
 
-    it.skip('MM-T4403_1 should restore window bounds', async () => {
+    it('MM-T4403_1 should restore window bounds', async () => {
         // TODO: Still fails in CircleCI
         // bounds seems to be incorrectly calculated in some environments
         // - Windows 10: OK

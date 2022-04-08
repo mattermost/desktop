@@ -104,7 +104,7 @@ describe('menu/view', function desc() {
         text.should.include('in:');
     });
 
-    it.skip('MM-T816 Toggle Full Screen in the Menu Bar', async () => {
+    it('MM-T816 Toggle Full Screen in the Menu Bar', async () => {
         if (process.platform === 'win32' || process.platform === 'linux') {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
@@ -237,7 +237,7 @@ describe('menu/view', function desc() {
             isWindowTitleDevTools.should.be.true;
         });
 
-        it.skip('MM-T820 dev tools opened through keyboard shortcuts should point to index.html', async () => {
+        it('MM-T820 dev tools opened through keyboard shortcuts should point to index.html', async () => {
             const macModifierKeys = ['command', 'alt'];
             const winModifierKeys = ['shift', 'control'];
 
@@ -283,7 +283,7 @@ describe('menu/view', function desc() {
             isWindowTitleDevTools.should.be.true;
         });
 
-        it.skip('MM-T820 dev tools opened through menu, should point to index.html', async () => {
+        it('MM-T820 dev tools opened through menu, should point to index.html', async () => {
             if (process.platform === 'darwin') {
                 robotKeyTaps(1, 'f2', ['control']);
                 robotKeyTaps(3, 'right');
@@ -337,7 +337,7 @@ describe('menu/view', function desc() {
             isWindowTitleDevTools.should.be.true;
         });
 
-        it.skip('MM-T821 dev tools should point to localhost:8065 ', async () => {
+        it('MM-T821 dev tools should point to localhost:8065 ', async () => {
             // check the url
             await asyncSleep(DevToolsLoadTimeBuffer);
             await openDevToolsConsoleTab();

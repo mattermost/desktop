@@ -221,8 +221,7 @@ describe('EditServerModal', function desc() {
         });
     });
 
-    // TODO: disabling flaky test
-    it.skip('MM-T4391_4 should edit team when Save is pressed and both edited', async () => {
+    it('MM-T4391_4 should edit team when Save is pressed and both edited', async () => {
         await editServerView.fill('#teamNameInput', 'NewTestTeam');
         await editServerView.fill('#teamUrlInput', 'http://google.com');
         await editServerView.click('#saveNewServerModal');
