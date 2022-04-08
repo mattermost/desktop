@@ -67,7 +67,6 @@ describe('edit_menu', function desc() {
         const textAfterUndo = await firstServer.inputValue('#post_textbox');
         textAfterUndo.should.be.equal('Mattermos');
         await firstServer.click('#post_textbox');
-        await mainWindow.click('button.three-dot-menu');
         robot.keyTap('z', ['shift', env.cmdOrCtrl]);
         await asyncSleep(500);
         const content = await firstServer.inputValue('#post_textbox');
