@@ -538,6 +538,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 </FormCheck>
                 {this.state.useSpellChecker &&
                     <ReactSelect
+                        inputId='inputSpellCheckerLocalesDropdown'
                         className='SettingsPage__spellCheckerLocalesDropdown'
                         classNamePrefix='SettingsPage__spellCheckerLocalesDropdown'
                         options={this.state.availableLanguages}
