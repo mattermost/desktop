@@ -155,6 +155,7 @@
     "jest": "27.5.1",
     "jest-junit": "13.1.0",
     "mini-css-extract-plugin": "2.6.0",
+    "mocha-circleci-reporter": "0.0.3",
     "node-gyp": "9.0.0",
     "npm-run-all": "4.1.5",
     "playwright": "1.20.2",
