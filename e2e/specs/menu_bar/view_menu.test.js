@@ -183,7 +183,7 @@ describe('menu/view', function desc() {
         });
         isDevToolsOpen.should.be.false;
 
-        robot.keyTap('i', process.platform === 'darwin' ? ['command', 'option'] : ['control', 'shift']);
+        robot.keyTap('i', process.platform === 'darwin' ? ['command', 'alt'] : ['control', 'shift']);
         await asyncSleep(1000);
 
         isDevToolsOpen = await browserWindow.evaluate((window) => {
