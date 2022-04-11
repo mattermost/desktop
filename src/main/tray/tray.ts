@@ -107,6 +107,10 @@ export function setupTray(icontheme: string) {
 }
 
 function setTray(status: string, message: string) {
+    if (trayIcon.isDestroyed()) {
+        return;
+    }
+
     lastStatus = status;
     lastMessage = message;
     trayIcon.setImage(trayImages[status]);

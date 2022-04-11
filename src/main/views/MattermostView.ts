@@ -105,6 +105,10 @@ export class MattermostView extends EventEmitter {
 
             // wait for screen to truly finish loading before sending the message down
             const timeout = setInterval(() => {
+                if (!this.view.webContents) {
+                    return;
+                }
+
                 if (!this.view.webContents.isLoading()) {
                     try {
                         this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.name, this.tab.shouldNotify);
