@@ -30,7 +30,7 @@ describe('popup', function desc() {
         }
     });
 
-    // NOTE: This test requires that the test server have the GitHub plugin configured
+    // NOTE: These tests requires that the test server have the GitHub plugin configured
     describe('MM-T2827 Keyboard shortcuts in popup windows', () => {
         let popupWindow;
 
@@ -88,5 +88,39 @@ describe('popup', function desc() {
             const textValue = await textbox.inputValue();
             textValue.should.equal('other-textmattermost');
         });
+    });
+
+    it('MM-T1659 should not be able to go Back or Forward in the popup window', async () => {
+        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+        const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+        await env.loginToMattermost(firstServer);
+        await firstServer.waitForSelector('#sidebarItem_suscipit-4');
+        await firstServer.click('#sidebarItem_suscipit-4');
+        await firstServer.click('#post_textbox');
+        await firstServer.type('#post_textbox', '/github connect');
+        await firstServer.press('#post_textbox', 'Enter');
+
+        const githubLink = await firstServer.waitForSelector('a.theme.markdown__link:has-text("GitHub account")');
+        githubLink.click();
+        const popupWindow = await this.app.waitForEvent('window');
+        popupWindow.focus();
+        const currentURL = popupWindow.url();
+
+        // Try and go back
+        if (process.platform === 'darwin') {
+            robot.keyTap('[', ['command']);
+        } else {
+            robot.keyTap('left', ['alt']);
+        }
+        popupWindow.url().should.equal(currentURL);
+
+        // Try and go forward
+        if (process.platform === 'darwin') {
+            robot.keyTap(']', ['command']);
+        } else {
+            robot.keyTap('right', ['alt']);
+        }
+        popupWindow.url().should.equal(currentURL);
     });
 });
