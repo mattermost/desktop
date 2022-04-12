@@ -4,7 +4,7 @@
 import {app, dialog, IpcMainEvent, IpcMainInvokeEvent, Menu} from 'electron';
 import log from 'electron-log';
 
-import {Team} from 'types/config';
+import {Team, TeamWithIndex} from 'types/config';
 import {MentionData} from 'types/notification';
 
 import Config from 'common/config';
@@ -109,7 +109,7 @@ export function handleNewServerModal() {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal<unknown, Team>('newServer', html, modalPreload, {}, mainWindow, Config.teams.length === 0);
+    const modalPromise = ModalManager.addModal<TeamWithIndex[], Team>('newServer', html, modalPreload, Config.teams.map((team, index) => ({...team, index})), mainWindow, Config.teams.length === 0);
     if (modalPromise) {
         modalPromise.then((data) => {
             const teams = Config.teams;
@@ -145,7 +145,15 @@ export function handleEditServerModal(e: IpcMainEvent, name: string) {
     if (serverIndex < 0) {
         return;
     }
-    const modalPromise = ModalManager.addModal<Team, Team>('editServer', html, modalPreload, Config.teams[serverIndex], mainWindow);
+    const modalPromise = ModalManager.addModal<{currentTeams: TeamWithIndex[]; team: TeamWithIndex}, Team>(
+        'editServer',
+        html,
+        modalPreload,
+        {
+            currentTeams: Config.teams.map((team, index) => ({...team, index})),
+            team: {...Config.teams[serverIndex], index: serverIndex},
+        },
+        mainWindow);
     if (modalPromise) {
         modalPromise.then((data) => {
             const teams = Config.teams;

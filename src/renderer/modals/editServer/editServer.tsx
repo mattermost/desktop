@@ -28,11 +28,13 @@ const onSave = (data: TeamWithIndex) => {
 
 const EditServerModalWrapper: React.FC = () => {
     const [server, setServer] = useState<TeamWithIndex>();
+    const [currentTeams, setCurrentTeams] = useState<TeamWithIndex[]>();
 
-    const handleEditServerMessage = (event: {data: ModalMessage<TeamWithIndex>}) => {
+    const handleEditServerMessage = (event: {data: ModalMessage<{currentTeams: TeamWithIndex[]; team: TeamWithIndex}>}) => {
         switch (event.data.type) {
         case MODAL_INFO: {
-            setServer(event.data.data);
+            setServer(event.data.data.team);
+            setCurrentTeams(event.data.data.currentTeams);
             break;
         }
         default:
@@ -52,6 +54,7 @@ const EditServerModalWrapper: React.FC = () => {
             editMode={true}
             show={Boolean(server)}
             team={server}
+            currentTeams={currentTeams}
         />
     );
 };
