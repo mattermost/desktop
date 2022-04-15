@@ -58,7 +58,7 @@ describe('settings/keyboard_shortcuts', function desc() {
             selectedText.should.equal('mattermost');
         });
 
-        it('MM-T1288_1 should be able to cut and paste in the settings window', async () => {
+        it('MM-T1288_2 should be able to cut and paste in the settings window', async () => {
             const textbox = await settingsWindow.waitForSelector('#inputSpellCheckerLocalesDropdown');
 
             await textbox.selectText({force: true});
@@ -72,7 +72,7 @@ describe('settings/keyboard_shortcuts', function desc() {
             textValue.should.equal('mattermost');
         });
 
-        it('MM-T1288_1 should be able to copy and paste in the settings window', async () => {
+        it('MM-T1288_3 should be able to copy and paste in the settings window', async () => {
             const textbox = await settingsWindow.waitForSelector('#inputSpellCheckerLocalesDropdown');
 
             await textbox.selectText({force: true});

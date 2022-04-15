@@ -712,49 +712,51 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 </FormCheck>);
         }
 
-        if (window.process.platform === 'linux' || window.process.platform === 'win32') {
-            options.push(
-                <FormGroup
-                    key='trayIconTheme'
-                    ref={this.trayIconThemeRef}
-                    style={{marginLeft: '20px'}}
-                >
-                    {'Icon theme: '}
-                    {window.process.platform === 'win32' &&
-                        <>
-                            <FormCheck
-                                type='radio'
-                                inline={true}
-                                name='trayIconTheme'
-                                value='use_system'
-                                defaultChecked={this.state.trayIconTheme === 'use_system' || !this.state.trayIconTheme}
-                                onChange={() => this.handleChangeTrayIconTheme('use_system')}
-                                label={'Use system default'}
-                            />
-                            {' '}
-                        </>
-                    }
-                    <FormCheck
-                        type='radio'
-                        inline={true}
-                        name='trayIconTheme'
-                        value='light'
-                        defaultChecked={this.state.trayIconTheme === 'light' || !this.state.trayIconTheme}
-                        onChange={() => this.handleChangeTrayIconTheme('light')}
-                        label={'Light'}
-                    />
-                    {' '}
-                    <FormCheck
-                        type='radio'
-                        inline={true}
-                        name='trayIconTheme'
-                        value='dark'
-                        defaultChecked={this.state.trayIconTheme === 'dark'}
-                        onChange={() => this.handleChangeTrayIconTheme('dark')}
-                        label={'Dark'}
-                    />
-                </FormGroup>,
-            );
+        if (this.state.showTrayIcon) {
+            if (window.process.platform === 'linux' || window.process.platform === 'win32') {
+                options.push(
+                    <FormGroup
+                        key='trayIconTheme'
+                        ref={this.trayIconThemeRef}
+                        style={{marginLeft: '20px'}}
+                    >
+                        {'Icon theme: '}
+                        {window.process.platform === 'win32' &&
+                            <>
+                                <FormCheck
+                                    type='radio'
+                                    inline={true}
+                                    name='trayIconTheme'
+                                    value='use_system'
+                                    defaultChecked={this.state.trayIconTheme === 'use_system' || !this.state.trayIconTheme}
+                                    onChange={() => this.handleChangeTrayIconTheme('use_system')}
+                                    label={'Use system default'}
+                                />
+                                {' '}
+                            </>
+                        }
+                        <FormCheck
+                            type='radio'
+                            inline={true}
+                            name='trayIconTheme'
+                            value='light'
+                            defaultChecked={this.state.trayIconTheme === 'light' || !this.state.trayIconTheme}
+                            onChange={() => this.handleChangeTrayIconTheme('light')}
+                            label={'Light'}
+                        />
+                        {' '}
+                        <FormCheck
+                            type='radio'
+                            inline={true}
+                            name='trayIconTheme'
+                            value='dark'
+                            defaultChecked={this.state.trayIconTheme === 'dark'}
+                            onChange={() => this.handleChangeTrayIconTheme('dark')}
+                            label={'Dark'}
+                        />
+                    </FormGroup>,
+                );
+            }
         }
 
         if (window.process.platform === 'linux' || window.process.platform === 'win32') {
