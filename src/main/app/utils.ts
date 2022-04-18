@@ -1,9 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import fs from 'fs';
-
 import path from 'path';
+
+import fs from 'fs-extra';
 
 import {app, BrowserWindow, Menu, Rectangle, Session, session, dialog, nativeImage} from 'electron';
 import log, {LevelOption} from 'electron-log';
@@ -28,8 +28,6 @@ import {setTrayMenu} from 'main/tray/tray';
 import WindowManager from 'main/windows/windowManager';
 
 import {mainProtocol} from './initialize';
-
-const configFileNames = ['config', 'allowedProtocols', 'app-state', 'certificate', 'trustedOrigins', 'bounds-info', 'migration-info'];
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const appIconURL = path.resolve(assetsDir, 'appicon_with_spacing_32.png');
@@ -240,12 +238,7 @@ export function migrateMacAppStore() {
     }
 
     try {
-        for (const fileName of configFileNames) {
-            if (fs.existsSync(path.resolve(result[0], `${fileName}.json`))) {
-                const contents = fs.readFileSync(path.resolve(result[0], `${fileName}.json`));
-                fs.writeFileSync(path.resolve(app.getPath('userData'), `${fileName}.json`), contents);
-            }
-        }
+        fs.copySync(result[0], app.getPath('userData'));
         updatePaths(true);
         migrationPrefs.setValue('masConfigs', true);
     } catch (e) {
