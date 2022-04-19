@@ -604,6 +604,15 @@ workflows:
               only:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
+      - mac_app_store_testflight:
+          requires:
+            - check
+          context: desktop-mac-app-store
+          filters:
+            branches:
+              only:
+                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+
       - store_artifacts:
           # for master/PR builds
           requires:
