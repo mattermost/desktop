@@ -159,7 +159,6 @@ describe('Add Server Modal', function desc() {
                         order: 2,
                     },
                 ],
-                lastActiveTab: 0,
             });
         });
     });

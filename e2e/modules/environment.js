@@ -105,6 +105,8 @@ const demoMattermostConfig = {
     }, githubTeam],
 };
 
+const cmdOrCtrl = process.platform === 'darwin' ? 'command' : 'control';
+
 module.exports = {
     sourceRootDir,
     configFilePath,
@@ -114,6 +116,7 @@ module.exports = {
     mattermostURL,
     demoConfig,
     demoMattermostConfig,
+    cmdOrCtrl,
 
     cleanTestConfig() {
         [configFilePath, boundsInfoPath].forEach((file) => {

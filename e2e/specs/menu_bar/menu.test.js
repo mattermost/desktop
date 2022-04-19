@@ -21,7 +21,6 @@ describe('menu/menu', function desc() {
         fs.writeFileSync(env.configFilePath, JSON.stringify(config));
         await asyncSleep(1000);
         this.app = await env.getApp();
-        this.serverMap = await env.getServerMap(this.app);
     });
 
     afterEach(async () => {
@@ -31,7 +30,7 @@ describe('menu/menu', function desc() {
     });
 
     if (process.platform !== 'darwin') {
-        it.skip('MM-T4404 should open the 3 dot menu with Alt', async () => {
+        it('MM-T4404 should open the 3 dot menu with Alt', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             mainWindow.should.not.be.null;
 
