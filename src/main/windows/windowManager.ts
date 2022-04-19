@@ -596,7 +596,9 @@ export class WindowManager {
         const cleanedPathName = currentView?.tab.server.url.pathname === '/' ? pathName : pathName.replace(currentView?.tab.server.url.pathname || '', '');
         const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${cleanedPathName}`, Config.teams)?.name || viewName;
         if (this.viewManager?.closedViews.has(redirectedViewName)) {
+            // If it's a closed view, just open it and stop
             this.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${cleanedPathName}`);
+            return;
         }
         let redirectedView = this.viewManager?.views.get(redirectedViewName) || currentView;
         if (redirectedView !== currentView && redirectedView?.tab.server.name === this.currentServerName && redirectedView?.isLoggedIn) {
