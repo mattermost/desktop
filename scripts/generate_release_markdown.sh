@@ -33,9 +33,9 @@ $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win-ia32.zip")
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win-x64.zip")
 
 #### Mac
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-mac-universal.dmg") (beta)
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-mac-universal.dmg")
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-mac-x64.dmg")
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-mac-m1.dmg") (beta)
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-mac-m1.dmg")
 
 #### Linux
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-ia32.tar.gz")
