@@ -1,8 +1,5 @@
 ---
 
-variables:
-  MM_NIGHTLY_BRANCH: "nightly"
-
 include:
   - project: mattermost/ci/desktop
     ref: chore/dops-794
