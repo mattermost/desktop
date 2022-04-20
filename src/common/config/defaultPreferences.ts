@@ -13,7 +13,11 @@ import os from 'os';
 import {ConfigV3} from 'types/config';
 
 export const getDefaultDownloadLocation = (): string => {
-    return path.join(os.homedir(), 'Downloads');
+    // eslint-disable-next-line no-undef
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const homePath = __IS_MAC_APP_STORE__ ? path.join(os.homedir(), '../../../../') : os.homedir();
+    return path.join(homePath, 'Downloads');
 };
 
 const defaultPreferences: ConfigV3 = {
