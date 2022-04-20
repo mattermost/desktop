@@ -7,9 +7,10 @@
 'use strict';
 
 const path = require('path');
+
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const merge = require('webpack-merge');
+const {merge} = require('webpack-merge');
 
 const base = require('./webpack.config.base');
 
@@ -32,6 +33,7 @@ module.exports = merge(base, {
     output: {
         path: path.resolve(__dirname, 'dist/renderer'),
         filename: '[name]_bundle.js',
+        assetModuleFilename: '[name].[ext]',
     },
     plugins: [
         new HtmlWebpackPlugin({
@@ -139,30 +141,13 @@ module.exports = merge(base, {
             ],
         }, {
             test: /\.mp3$/,
-            use: {
-                loader: 'url-loader',
-            },
+            type: 'asset/inline',
         }, {
             test: /\.(svg|gif)$/,
-            use: [
-                {
-                    loader: 'file-loader',
-                    options: {
-                        name: '[name].[ext]',
-                        publicPath: './assets',
-                        outputPath: '/../assets',
-                    },
-                },
-                {loader: 'image-webpack-loader'},
-            ],
+            type: 'asset/resource',
         }, {
             test: /\.(eot|ttf|woff|woff2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-            loader: 'file-loader',
-            options: {
-                name: '[name].[ext]',
-                outputPath: '/../assets/fonts',
-                publicPath: './assets/fonts',
-            },
+            type: 'asset/resource',
         }],
     },
     node: {
@@ -171,10 +156,6 @@ module.exports = merge(base, {
     },
     target: 'electron-renderer',
     devServer: {
-        contentBase: 'src/assets',
-        contentBasePublicPath: '/assets',
-        inline: true,
-        publicPath: '/renderer/',
         port: WEBSERVER_PORT,
     },
 });

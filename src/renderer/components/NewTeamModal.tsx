@@ -13,6 +13,7 @@ type Props = {
     onClose?: () => void;
     onSave?: (team: TeamWithIndex) => void;
     team?: TeamWithIndex;
+    currentTeams?: TeamWithIndex[];
     editMode?: boolean;
     show?: boolean;
     restoreFocus?: boolean;
@@ -62,6 +63,15 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
         if (!this.state.saveStarted) {
             return null;
         }
+        if (this.props.currentTeams) {
+            const currentTeams = [...this.props.currentTeams];
+            if (this.props.editMode && this.props.team) {
+                currentTeams.splice(this.props.team.index, 1);
+            }
+            if (currentTeams.find((team) => team.name === this.state.teamName)) {
+                return 'A server with the same name already exists.';
+            }
+        }
         return this.state.teamName.length > 0 ? null : 'Name is required.';
     }
 
@@ -78,6 +88,15 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
     getTeamUrlValidationError() {
         if (!this.state.saveStarted) {
             return null;
+        }
+        if (this.props.currentTeams) {
+            const currentTeams = [...this.props.currentTeams];
+            if (this.props.editMode && this.props.team) {
+                currentTeams.splice(this.props.team.index, 1);
+            }
+            if (currentTeams.find((team) => team.url === this.state.teamUrl)) {
+                return 'A server with the same URL already exists.';
+            }
         }
         if (this.state.teamUrl.length === 0) {
             return 'URL is required.';

@@ -35,7 +35,7 @@ import modalManager from './modalManager';
 import WebContentsEventManager from './webContentEvents';
 
 const URL_VIEW_DURATION = 10 * SECOND;
-const URL_VIEW_HEIGHT = 36;
+const URL_VIEW_HEIGHT = 20;
 
 enum LoadingScreenState {
     VISIBLE = 1,

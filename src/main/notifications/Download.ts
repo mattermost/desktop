@@ -3,6 +3,7 @@
 
 import os from 'os';
 import path from 'path';
+
 import {app, Notification} from 'electron';
 
 import Utils from 'common/utils/util';

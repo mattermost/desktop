@@ -8,7 +8,7 @@
 
 const path = require('path');
 
-const merge = require('webpack-merge');
+const {merge} = require('webpack-merge');
 
 const CopyPlugin = require('copy-webpack-plugin');
 
@@ -24,10 +24,6 @@ module.exports = merge(base, {
         loadingScreenPreload: './src/main/preload/loadingScreenPreload.js',
         urlView: './src/main/preload/urlView.js',
     },
-    output: {
-        path: path.join(__dirname, 'dist/'),
-        filename: '[name].js',
-    },
     module: {
         rules: [{
             test: /\.(js|ts)?$/,
@@ -39,9 +35,7 @@ module.exports = merge(base, {
             },
         }, {
             test: /\.mp3$/,
-            use: {
-                loader: 'url-loader',
-            },
+            type: 'asset/inline',
         },
         {
             test: /\.node$/,

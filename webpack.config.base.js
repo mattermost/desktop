@@ -7,10 +7,9 @@
 'use strict';
 
 const childProcess = require('child_process');
+const path = require('path');
 
 const webpack = require('webpack');
-
-const path = require('path');
 
 const VERSION = childProcess.execSync('git rev-parse --short HEAD').toString();
 const isProduction = process.env.NODE_ENV === 'production';
@@ -29,10 +28,11 @@ module.exports = {
     // Some plugins cause errors on the app, so use few plugins.
     // https://webpack.js.org/concepts/mode/#mode-production
     mode: isProduction ? 'none' : 'development',
+    bail: true,
     plugins: [
         new webpack.DefinePlugin(codeDefinitions),
     ],
-    devtool: isProduction ? false : '#inline-source-map',
+    devtool: isProduction ? undefined : 'inline-source-map',
     resolve: {
         alias: {
             renderer: path.resolve(__dirname, 'src/renderer'),

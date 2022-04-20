@@ -223,4 +223,5 @@ export default {
     isTrustedURL,
     isCustomLoginURL,
     isChannelExportUrl,
+    isUrlType,
 };

@@ -29,7 +29,7 @@ describe('header', function desc() {
         const initialBounds = {x: 0, y: 0, width: 800, height: 400, maximized: false};
         fs.writeFileSync(env.boundsInfoPath, JSON.stringify(initialBounds));
         this.app = await env.getApp();
-        const mainWindow = await this.app.firstWindow();
+        const mainWindow = await this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);
         const header = await mainWindow.locator('div.topBar');
         const headerBounds = await header.boundingBox();

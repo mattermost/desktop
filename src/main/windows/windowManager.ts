@@ -3,6 +3,7 @@
 
 /* eslint-disable max-lines */
 import path from 'path';
+
 import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer} from 'electron';
 import log from 'electron-log';
 
@@ -31,7 +32,7 @@ import {SECOND} from 'common/utils/constants';
 import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 
-import {getAdjustedWindowBoundaries} from '../utils';
+import {getAdjustedWindowBoundaries, shouldHaveBackBar} from '../utils';
 
 import {ViewManager} from '../views/viewManager';
 import CriticalErrorHandler from '../CriticalErrorHandler';
@@ -193,7 +194,7 @@ export class WindowManager {
 
         const setBoundsFunction = () => {
             if (currentView) {
-                currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, !(urlUtils.isTeamUrl(currentView.tab.url, currentView.view.webContents.getURL()) || urlUtils.isAdminUrl(currentView.tab.url, currentView.view.webContents.getURL()))));
+                currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, shouldHaveBackBar(currentView.tab.url, currentView.view.webContents.getURL())));
             }
         };
 
@@ -595,7 +596,9 @@ export class WindowManager {
         const cleanedPathName = currentView?.tab.server.url.pathname === '/' ? pathName : pathName.replace(currentView?.tab.server.url.pathname || '', '');
         const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${cleanedPathName}`, Config.teams)?.name || viewName;
         if (this.viewManager?.closedViews.has(redirectedViewName)) {
+            // If it's a closed view, just open it and stop
             this.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${cleanedPathName}`);
+            return;
         }
         let redirectedView = this.viewManager?.views.get(redirectedViewName) || currentView;
         if (redirectedView !== currentView && redirectedView?.tab.server.name === this.currentServerName && redirectedView?.isLoggedIn) {

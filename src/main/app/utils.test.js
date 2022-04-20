@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import fs from 'fs';
+import fs from 'fs-extra';
 
 import {dialog} from 'electron';
 
@@ -15,10 +15,11 @@ import {ServerInfo} from 'main/server/serverInfo';
 
 import {getDeeplinkingURL, updateServerInfos, resizeScreen, migrateMacAppStore} from './utils';
 
-jest.mock('fs', () => ({
+jest.mock('fs-extra', () => ({
     readFileSync: jest.fn(),
     writeFileSync: jest.fn(),
     existsSync: jest.fn(),
+    copySync: jest.fn(),
 }));
 
 jest.mock('electron', () => ({
@@ -261,28 +262,23 @@ describe('main/app/utils', () => {
             expect(updatePaths).not.toHaveBeenCalled();
         });
 
-        it('should copy all of the configs when they exist to the new directory', () => {
-            const migrationPrefs = {
-                getValue: () => false,
-                setValue: jest.fn(),
-            };
-            JsonFileManager.mockImplementation(() => migrationPrefs);
-            fs.readFileSync.mockReturnValue('config-data');
-            fs.existsSync.mockImplementation((path) => {
-                if (path === '/Library/Application Support/Mattermost') {
-                    return true;
-                }
-                return ['config', 'app-state', 'bounds-info', 'migration-info'].some((filename) => path.endsWith(`${filename}.json`));
+        // this doesn't run on windows because of path resolution
+        if (process.platform !== 'win32') {
+            it('should copy all of the configs when they exist to the new directory', () => {
+                const migrationPrefs = {
+                    getValue: () => false,
+                    setValue: jest.fn(),
+                };
+                JsonFileManager.mockImplementation(() => migrationPrefs);
+                fs.readFileSync.mockReturnValue('config-data');
+                fs.existsSync.mockReturnValue(true);
+                dialog.showMessageBoxSync.mockReturnValue(0);
+                dialog.showOpenDialogSync.mockReturnValue(['/old/data/path']);
+                migrateMacAppStore();
+                expect(fs.copySync).toHaveBeenCalledWith('/old/data/path', '/path/to/data');
+                expect(updatePaths).toHaveBeenCalled();
+                expect(migrationPrefs.setValue).toHaveBeenCalledWith('masConfigs', true);
             });
-            dialog.showMessageBoxSync.mockReturnValue(0);
-            dialog.showOpenDialogSync.mockReturnValue(['/old/data/path']);
-            migrateMacAppStore();
-            expect(fs.readFileSync).toHaveBeenCalledWith('/old/data/path/config.json');
-            expect(fs.writeFileSync).toHaveBeenCalledWith('/path/to/data/config.json', 'config-data');
-            expect(fs.readFileSync).not.toHaveBeenCalledWith('/old/data/path/allowedProtocols.json');
-            expect(fs.writeFileSync).not.toHaveBeenCalledWith('/path/to/data/allowedProtocols.json', 'config-data');
-            expect(updatePaths).toHaveBeenCalled();
-            expect(migrationPrefs.setValue).toHaveBeenCalledWith('masConfigs', true);
-        });
+        }
     });
 });

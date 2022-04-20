@@ -53,6 +53,7 @@ jest.mock('common/tabs/TabView', () => ({
 }));
 jest.mock('../utils', () => ({
     getAdjustedWindowBoundaries: jest.fn(),
+    shouldHaveBackBar: jest.fn(),
 }));
 jest.mock('../views/viewManager', () => ({
     ViewManager: jest.fn(),
@@ -787,7 +788,6 @@ describe('main/windows/windowManager', () => {
 
             windowManager.handleBrowserHistoryPush(null, 'server-1_tab-messaging', '/other_type_2/subpath');
             expect(windowManager.viewManager.openClosedTab).toBeCalledWith('server-1_other_type_2', 'http://server-1.com/other_type_2/subpath');
-            expect(windowManager.viewManager.showByName).toBeCalledWith('server-1_other_type_2');
         });
 
         it('should open redirect view if different from current view', () => {

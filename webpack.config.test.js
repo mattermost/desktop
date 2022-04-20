@@ -8,7 +8,7 @@
 const path = require('path');
 
 const glob = require('glob');
-const merge = require('webpack-merge');
+const {merge} = require('webpack-merge');
 
 const base = require('./webpack.config.base');
 
@@ -45,10 +45,6 @@ module.exports = merge(base, {
         __dirname: false,
     },
     devServer: {
-        contentBase: 'src/assets',
-        contentBasePublicPath: '/assets',
-        inline: true,
-        publicPath: '/renderer/',
         port: WEBSERVER_PORT,
     },
     target: 'electron-main',

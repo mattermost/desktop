@@ -8,9 +8,7 @@ import 'renderer/css/settings.css';
 
 import React from 'react';
 import {FormCheck, Col, FormGroup, FormText, Container, Row, Button, FormControl} from 'react-bootstrap';
-import ReactSelect, {ActionMeta, OptionsType} from 'react-select';
-
-import {debounce} from 'underscore';
+import ReactSelect, {ActionMeta, MultiValue} from 'react-select';
 
 import {CombinedConfig, LocalConfiguration} from 'types/config';
 import {DeepPartial} from 'types/utils';
@@ -76,6 +74,9 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
 
     selectedSpellCheckerLocales: Array<{label: string; value: string}>;
 
+    savingIsDebounced: boolean;
+    resetSaveStateIsDebounced: boolean;
+
     constructor(props: Record<string, never>) {
         super(props);
         this.state = {
@@ -108,6 +109,9 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
 
         this.saveQueue = [];
         this.selectedSpellCheckerLocales = [];
+
+        this.savingIsDebounced = false;
+        this.resetSaveStateIsDebounced = false;
     }
 
     componentDidMount() {
@@ -125,7 +129,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
 
     getConfig = () => {
         window.ipcRenderer.invoke(GET_LOCAL_CONFIGURATION).then((config) => {
-            this.setState({ready: true, maximized: false, ...this.convertConfigDataToState(config) as Omit<State, 'ready'>});
+            this.setState({ready: true, maximized: false, ...this.convertConfigDataToState(config, this.state) as Omit<State, 'ready'>});
         });
     }
 
@@ -149,9 +153,17 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         this.processSaveQueue();
     }
 
-    processSaveQueue = debounce(() => {
-        window.ipcRenderer.send(UPDATE_CONFIGURATION, this.saveQueue.splice(0, this.saveQueue.length));
-    }, 500);
+    processSaveQueue = () => {
+        if (this.savingIsDebounced) {
+            return;
+        }
+
+        this.savingIsDebounced = true;
+        setTimeout(() => {
+            this.savingIsDebounced = false;
+            window.ipcRenderer.send(UPDATE_CONFIGURATION, this.saveQueue.splice(0, this.saveQueue.length));
+        }, 500);
+    }
 
     updateSaveState = () => {
         let queuedUpdateCounts = {
@@ -178,13 +190,20 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         this.setState({savingState});
     }
 
-    resetSaveState = debounce((configType: keyof SavingStateItems) => {
-        if (this.state.savingState[configType] !== SavingState.SAVING_STATE_SAVING) {
-            const savingState = Object.assign({}, this.state.savingState);
-            savingState[configType] = SavingState.SAVING_STATE_DONE;
-            this.setState({savingState});
+    resetSaveState = (configType: keyof SavingStateItems) => {
+        if (this.resetSaveStateIsDebounced) {
+            return;
         }
-    }, 2000);
+        this.resetSaveStateIsDebounced = true;
+        setTimeout(() => {
+            this.resetSaveStateIsDebounced = false;
+            if (this.state.savingState[configType] !== SavingState.SAVING_STATE_SAVING) {
+                const savingState = Object.assign({}, this.state.savingState);
+                savingState[configType] = SavingState.SAVING_STATE_DONE;
+                this.setState({savingState});
+            }
+        }, 2000);
+    }
 
     handleChangeShowTrayIcon = () => {
         const shouldShowTrayIcon = this.showTrayIconRef.current?.checked;
@@ -314,7 +333,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         window.ipcRenderer.send(CHECK_FOR_UPDATES);
     }
 
-    handleChangeSpellCheckerLocales = (value: OptionsType<{label: string; value: string}>, actionMeta: ActionMeta<{label: string; value: string}>) => {
+    handleChangeSpellCheckerLocales = (value: MultiValue<{label: string; value: string}>, actionMeta: ActionMeta<{label: string; value: string}>) => {
         switch (actionMeta.action) {
         case 'select-option':
             this.selectedSpellCheckerLocales = [...value];
@@ -519,6 +538,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 </FormCheck>
                 {this.state.useSpellChecker &&
                     <ReactSelect
+                        inputId='inputSpellCheckerLocalesDropdown'
                         className='SettingsPage__spellCheckerLocalesDropdown'
                         classNamePrefix='SettingsPage__spellCheckerLocalesDropdown'
                         options={this.state.availableLanguages}
@@ -691,49 +711,51 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 </FormCheck>);
         }
 
-        if (window.process.platform === 'linux' || window.process.platform === 'win32') {
-            options.push(
-                <FormGroup
-                    key='trayIconTheme'
-                    ref={this.trayIconThemeRef}
-                    style={{marginLeft: '20px'}}
-                >
-                    {'Icon theme: '}
-                    {window.process.platform === 'win32' &&
-                        <>
-                            <FormCheck
-                                type='radio'
-                                inline={true}
-                                name='trayIconTheme'
-                                value='use_system'
-                                defaultChecked={this.state.trayIconTheme === 'use_system' || !this.state.trayIconTheme}
-                                onChange={() => this.handleChangeTrayIconTheme('use_system')}
-                                label={'Use system default'}
-                            />
-                            {' '}
-                        </>
-                    }
-                    <FormCheck
-                        type='radio'
-                        inline={true}
-                        name='trayIconTheme'
-                        value='light'
-                        defaultChecked={this.state.trayIconTheme === 'light' || !this.state.trayIconTheme}
-                        onChange={() => this.handleChangeTrayIconTheme('light')}
-                        label={'Light'}
-                    />
-                    {' '}
-                    <FormCheck
-                        type='radio'
-                        inline={true}
-                        name='trayIconTheme'
-                        value='dark'
-                        defaultChecked={this.state.trayIconTheme === 'dark'}
-                        onChange={() => this.handleChangeTrayIconTheme('dark')}
-                        label={'Dark'}
-                    />
-                </FormGroup>,
-            );
+        if (this.state.showTrayIcon) {
+            if (window.process.platform === 'linux' || window.process.platform === 'win32') {
+                options.push(
+                    <FormGroup
+                        key='trayIconTheme'
+                        ref={this.trayIconThemeRef}
+                        style={{marginLeft: '20px'}}
+                    >
+                        {'Icon theme: '}
+                        {window.process.platform === 'win32' &&
+                            <>
+                                <FormCheck
+                                    type='radio'
+                                    inline={true}
+                                    name='trayIconTheme'
+                                    value='use_system'
+                                    defaultChecked={this.state.trayIconTheme === 'use_system' || !this.state.trayIconTheme}
+                                    onChange={() => this.handleChangeTrayIconTheme('use_system')}
+                                    label={'Use system default'}
+                                />
+                                {' '}
+                            </>
+                        }
+                        <FormCheck
+                            type='radio'
+                            inline={true}
+                            name='trayIconTheme'
+                            value='light'
+                            defaultChecked={this.state.trayIconTheme === 'light' || !this.state.trayIconTheme}
+                            onChange={() => this.handleChangeTrayIconTheme('light')}
+                            label={'Light'}
+                        />
+                        {' '}
+                        <FormCheck
+                            type='radio'
+                            inline={true}
+                            name='trayIconTheme'
+                            value='dark'
+                            defaultChecked={this.state.trayIconTheme === 'dark'}
+                            onChange={() => this.handleChangeTrayIconTheme('dark')}
+                            label={'Dark'}
+                        />
+                    </FormGroup>,
+                );
+            }
         }
 
         if (window.process.platform === 'linux' || window.process.platform === 'win32') {
