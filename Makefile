@@ -1,9 +1,7 @@
 SIGNER?="origin"
-APTLY_REPO_NAME?="mattermost_desktop"
 
 GPG=$(shell command which gpg || echo "N/A")
 DPKG_SIG=$(shell command which dpkg-sig || echo "N/A")
-
 
 define sign_debian_package
 	dpkg-sig -k ${GPG_KEY_ID} --sign ${SIGNER} $1
@@ -20,11 +18,9 @@ package: package-linux-deb ## Generates packages for all environments
 .PHONY: package-linux-deb
 package-linux-deb: npm-ci ## Generates linux packages under build/linux folder
 	npm run package:linux-deb
-	
 	mkdir -p artifacts
-
 	find ./release -name '*.deb' -exec cp "{}" artifacts/  \;
-## We only need debian packages for now. 	
+
 
 .PHONY: check-sign-deb
 check-sign-deb: ##Check running environment to sign packages
