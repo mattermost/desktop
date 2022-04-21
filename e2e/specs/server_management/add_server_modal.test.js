@@ -64,6 +64,22 @@ describe('Add Server Modal', function desc() {
             existing.should.be.true;
         });
 
+        it('should not be valid if a server with the same name exists', async () => {
+            await newServerView.type('#teamNameInput', config.teams[0].name);
+            await newServerView.type('#teamUrlInput', 'http://example.org');
+            await newServerView.click('#saveNewServerModal');
+            const existing = await newServerView.isVisible('#teamNameInput.is-invalid');
+            existing.should.be.true;
+        });
+
+        it('should not be valid if a server with the same URL exists', async () => {
+            await newServerView.type('#teamNameInput', 'some-new-server');
+            await newServerView.type('#teamUrlInput', config.teams[0].url);
+            await newServerView.click('#saveNewServerModal');
+            const existing = await newServerView.isVisible('#teamUrlInput.is-invalid');
+            existing.should.be.true;
+        });
+
         describe('Valid server name', async () => {
             beforeEach(async () => {
                 await newServerView.type('#teamNameInput', 'TestTeam');
@@ -143,7 +159,6 @@ describe('Add Server Modal', function desc() {
                         order: 2,
                     },
                 ],
-                lastActiveTab: 0,
             });
         });
     });

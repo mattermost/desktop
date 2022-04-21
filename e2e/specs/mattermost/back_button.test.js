@@ -7,7 +7,7 @@ const fs = require('fs');
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
-describe('Menu/window_menu', function desc() {
+describe('back_button', function desc() {
     this.timeout(30000);
 
     const config = {
