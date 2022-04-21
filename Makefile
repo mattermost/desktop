@@ -20,7 +20,6 @@ ifeq ("$(JQ)","N/A")
 else
 	@echo "jq Found in path!"
 endif
-endif	
 	
 .PHONY: npm-ci	
 npm-ci: setup-package ## Install all npm dependencies
