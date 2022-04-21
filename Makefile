@@ -1,7 +1,6 @@
 SIGNER?="origin"
 APTLY_REPO_NAME?="mattermost_desktop"
 
-JQ=$(shell command which jq || echo "N/A")
 GPG=$(shell command which gpg || echo "N/A")
 DPKG_SIG=$(shell command which dpkg-sig || echo "N/A")
 
@@ -11,17 +10,8 @@ define sign_debian_package
 	dpkg-sig --verify $1	
 endef
 
-.PHONY: setup-package
-setup-package: ##Configure running environment to generate package in CI
-ifeq ("$(JQ)","N/A")
-	@echo "Path does not contain jq executable. Consider install!" 
-	@exit 10
-else
-	@echo "jq Found in path!"
-endif
-	
 .PHONY: npm-ci	
-npm-ci: setup-package ## Install all npm dependencies
+npm-ci: ## Install all npm dependencies
 	PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci
 
 .PHONY: package
@@ -29,14 +19,12 @@ package: package-linux-deb ## Generates packages for all environments
 
 .PHONY: package-linux-deb
 package-linux-deb: npm-ci ## Generates linux packages under build/linux folder
-	$(eval VERSION := $(shell jq -r '.version' <package.json))
-
 	npm run package:linux-deb
 	
 	mkdir -p artifacts
 
+	find ./release -name '*.deb' -exec cp "{}" artifacts/  \;
 ## We only need debian packages for now. 	
-	cp release/${VERSION}/mattermost-desktop_"${VERSION}"-1_*.deb artifacts/
 
 .PHONY: check-sign-deb
 check-sign-deb: ##Check running environment to sign packages
