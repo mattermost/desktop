@@ -2,7 +2,6 @@ SIGNER?="origin"
 APTLY_REPO_NAME?="mattermost_desktop"
 
 JQ=$(shell command which jq || echo "N/A")
-VAULT=$(shell command which vault || echo "N/A")
 GPG=$(shell command which gpg || echo "N/A")
 DPKG_SIG=$(shell command which dpkg-sig || echo "N/A")
 
