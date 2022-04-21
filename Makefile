@@ -48,10 +48,10 @@ else
 endif
 
 .PHONY: sign
-sign: sign-deb ## Sign packages in artifacts directory
+sign: sign-linux-deb ## Sign packages in artifacts directory
 
-.PHONY: sign-deb
-sign-deb: check-sign-deb ## Sign debian packages
+.PHONY: sign-linux-deb
+sign-linux-deb: check-sign-deb ## Sign debian packages
 	$(foreach file, $(wildcard artifacts/*.deb), $(call sign_debian_package,${file});)
 
 ## Help documentation à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
