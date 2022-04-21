@@ -27,13 +27,13 @@ npm-ci: setup-package ## Install all npm dependencies
 	PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci
 
 .PHONY: package
-package: package-linux ## Generates packages for all environments
+package: package-linux-deb ## Generates packages for all environments
 
-.PHONY: package-linux
-package-linux: npm-ci ## Generates linux packages under build/linux folder
+.PHONY: package-linux-deb
+package-linux-deb: npm-ci ## Generates linux packages under build/linux folder
 	$(eval VERSION := $(shell jq -r '.version' <package.json))
 
-	npm run package:linux
+	npm run package:linux-deb
 	
 	mkdir -p artifacts
 
@@ -67,26 +67,6 @@ sign: sign-deb ## Sign packages in artifacts directory
 .PHONY: sign-deb
 sign-deb: check-sign-deb ## Sign debian packages
 	$(foreach file, $(wildcard artifacts/*.deb), $(call sign_debian_package,${file});)
-
-.PHONY: check-publish-deb
-check-publish-deb: ##Check running environment to publish packages
-ifndef GPG_KEY_ID
-	@echo "Please define GPG_KEY_ID environment variable!" 
-	@exit 128
-else
-	@echo "GPG_KEY_ID is defined" 
-endif
-ifndef APT_REPO_URL
-	@echo "Please define APT_REPO_URL environment variable!" 
-	@exit 128
-else
-	@echo "APT_REPO_URL is defined" 
-endif
-
-.PHONY: publish-deb	
-publish-deb: check-publish-deb ## Publish packages to mattermost apt repository
-	RELEASE=focal REPO=${APTLY_REPO_NAME} scripts/generate_apt_repo.sh
-	RELEASE=bionic REPO=${APTLY_REPO_NAME} scripts/generate_apt_repo.sh
 
 ## Help documentation à la https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:
