@@ -37,7 +37,7 @@ export type ConfigV3 = {
     hideOnStart: boolean;
     spellCheckerLocales: string[];
     darkMode: boolean;
-    downloadLocation: string;
+    downloadLocation?: string;
     spellCheckerURL?: string;
     lastActiveTeam?: number;
     startInFullscreen?: boolean;
@@ -69,7 +69,7 @@ export type ConfigV2 = {
     spellCheckerLocale: string;
     spellCheckerURL?: string;
     darkMode: boolean;
-    downloadLocation: string;
+    downloadLocation?: string;
 }
 
 export type ConfigV1 = {
