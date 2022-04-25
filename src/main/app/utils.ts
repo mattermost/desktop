@@ -172,7 +172,7 @@ export function resizeScreen(browserWindow: BrowserWindow) {
     handle();
 }
 
-function flushCookiesStore(session: Session) {
+export function flushCookiesStore(session: Session) {
     log.debug('Utils.flushCookiesStore');
     session.cookies.flushStore().catch((err) => {
         log.error(`There was a problem flushing cookies:\n${err}`);
