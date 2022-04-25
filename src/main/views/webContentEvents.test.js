@@ -25,6 +25,7 @@ jest.mock('electron', () => ({
             setWindowOpenHandler: jest.fn(),
         },
     })),
+    session: {},
 }));
 
 jest.mock('../allowProtocolDialog', () => ({}));
@@ -51,6 +52,10 @@ jest.mock('common/utils/url', () => ({
     isPluginUrl: jest.fn(),
     isManagedResource: jest.fn(),
     isChannelExportUrl: jest.fn(),
+}));
+
+jest.mock('main/app/utils', () => ({
+    flushCookiesStore: jest.fn(),
 }));
 
 jest.mock('../../../electron-builder.json', () => ({
