@@ -315,7 +315,13 @@ describe('main/views/MattermostView', () => {
 
         it('should not emit tooltip URL if internal', () => {
             mattermostView.handleUpdateTarget(null, 'http://server-1.com/path/to/channels');
-            expect(mattermostView.emit).not.toHaveBeenCalled();
+            expect(mattermostView.emit).toHaveBeenCalled();
+            expect(mattermostView.emit).not.toHaveBeenCalledWith(UPDATE_TARGET_URL, 'http://server-1.com/path/to/channels');
+        });
+
+        it('should still emit even if URL is blank', () => {
+            mattermostView.handleUpdateTarget(null, '');
+            expect(mattermostView.emit).toHaveBeenCalled();
         });
     });
 

@@ -360,6 +360,8 @@ export class MattermostView extends EventEmitter {
         log.silly('MattermostView.handleUpdateTarget', {tabName: this.tab.name, url});
         if (url && !urlUtils.isInternalURL(urlUtils.parseURL(url), this.tab.server.url)) {
             this.emit(UPDATE_TARGET_URL, url);
+        } else {
+            this.emit(UPDATE_TARGET_URL);
         }
     }
 
