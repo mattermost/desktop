@@ -290,11 +290,7 @@ jobs:
           command: tar -xzf rename.tgz
       - run:
           name: rename arm64 to m1
-          command: ./rename-1.601/rename 's/arm64/m1/' ./build/macos-release/*
-      - persist_to_workspace:
-          root: ./build
-          paths:
-            - "./macos-release/"
+          command: ./rename-1.601/rename 's/arm64/m1/' ./release/$(jq -r .version package.json)/*
       - save:
           filename: "$(jq -r .version package.json)/*.dmg"
 
@@ -346,7 +342,7 @@ jobs:
           command: tar -xzf rename.tgz
       - run:
           name: rename arm64 to m1
-          command: ./rename-1.601/rename 's/arm64/m1/' ./build/macos-release/*
+          command: ./rename-1.601/rename 's/arm64/m1/' ./build/macos-release/$(jq -r .version package.json)/*
       - persist_to_workspace:
           root: ./build
           paths:
