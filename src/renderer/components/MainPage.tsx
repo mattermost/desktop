@@ -426,19 +426,21 @@ export default class MainPage extends React.PureComponent<Props, State> {
         let upgradeIcon;
         if (this.state.upgradeStatus !== UpgradeStatus.NONE) {
             upgradeIcon = (
-                <span className={classNames('upgrade-btns', {darkMode: this.state.darkMode})}>
+                <button
+                    className={classNames('upgrade-btns', {darkMode: this.state.darkMode})}
+                    onClick={() => {
+                        if (this.state.upgradeStatus === UpgradeStatus.DOWNLOADING) {
+                            return;
+                        }
+
+                        window.ipcRenderer.send(this.state.upgradeStatus === UpgradeStatus.DOWNLOADED ? START_UPGRADE : START_DOWNLOAD);
+                    }}
+                >
                     <div
                         className={classNames('button upgrade-button', {
                             rotate: this.state.upgradeStatus === UpgradeStatus.DOWNLOADING,
                         })}
                         title={upgradeTooltip}
-                        onClick={() => {
-                            if (this.state.upgradeStatus === UpgradeStatus.DOWNLOADING) {
-                                return;
-                            }
-
-                            window.ipcRenderer.send(this.state.upgradeStatus === UpgradeStatus.DOWNLOADED ? START_UPGRADE : START_DOWNLOAD);
-                        }}
                     >
                         <i
                             className={classNames({
@@ -449,7 +451,8 @@ export default class MainPage extends React.PureComponent<Props, State> {
                         />
                         {(this.state.upgradeStatus !== UpgradeStatus.DOWNLOADING) && <div className={'circle'}/>}
                     </div>
-                </span>);
+                </button>
+            );
         }
 
         let titleBarButtons;
