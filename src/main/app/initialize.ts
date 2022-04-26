@@ -368,7 +368,7 @@ function initializeAfterAppReady() {
         }
         item.setSaveDialogOptions({
             title: filename,
-            defaultPath: path.resolve(Config.downloadLocation, filename),
+            defaultPath: Config.downloadLocation ? path.resolve(Config.downloadLocation, filename) : undefined,
             filters,
         });
 
