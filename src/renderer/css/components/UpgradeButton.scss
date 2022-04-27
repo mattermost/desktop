@@ -8,6 +8,8 @@
   margin-right: 4px;
   text-align: center;
   color: rgba(63, 67, 80, 0.56);
+  background: none;
+  border: none;
 
   &:hover {
     background-color: rgba(63, 67, 80, 0.08);
@@ -15,7 +17,6 @@
 }
 
 .upgrade-button {
-  margin: 7px;
   height: 18px;
   cursor: pointer;
 
