@@ -629,9 +629,9 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         checked={!this.state.notifications || this.state.notifications.flashWindow === 2}
                         onChange={this.handleFlashWindow}
                     />
-                    {'Flash app window and taskbar icon when a new message is received'}
+                    {'Flash taskbar icon when a new message is received'}
                     <FormText>
-                        {'If enabled, app window and taskbar icon flash for a few seconds when a new message is received.'}
+                        {'If enabled, the taskbar icon will flash for a few seconds when a new message is received.'}
                         {window.process.platform === 'linux' && (
                             <>
                                 <br/>
