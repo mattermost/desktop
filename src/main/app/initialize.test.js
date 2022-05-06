@@ -170,16 +170,6 @@ describe('main/app/initialize', () => {
             await initialize();
             expect(app.setPath).toHaveBeenCalledWith('userData', '/basedir/some/dir');
         });
-
-        it('should show version and exit when specified', async () => {
-            jest.spyOn(process.stdout, 'write').mockImplementation(() => {});
-            const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {});
-            parseArgs.mockReturnValue({
-                version: true,
-            });
-            await initialize();
-            expect(exitSpy).toHaveBeenCalledWith(0);
-        });
     });
 
     describe('initializeConfig', () => {
