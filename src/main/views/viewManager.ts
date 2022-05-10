@@ -3,10 +3,11 @@
 import log from 'electron-log';
 import {BrowserView, BrowserWindow, dialog, ipcMain, IpcMainEvent} from 'electron';
 import {BrowserViewConstructorOptions} from 'electron/main';
+import {Tuple as tuple} from '@bloomberg/record-tuple-polyfill';
 
 import {Tab, TeamWithTabs} from 'types/config';
 
-import {SECOND} from 'common/utils/constants';
+import {SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {
     UPDATE_TARGET_URL,
     LOAD_SUCCESS,
@@ -24,7 +25,9 @@ import Config from 'common/config';
 import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
-import {getServerView, getTabViewName} from 'common/tabs/TabView';
+import {getServerView, getTabViewName, TabTuple, TabView, TabType} from 'common/tabs/TabView';
+import {pipe} from 'common/utils/functions'
+import {map, bind, sort, by, partition, duad} from 'common/utils/data'
 
 import {ServerInfo} from 'main/server/serverInfo';
 
@@ -36,6 +39,10 @@ import WebContentsEventManager from './webContentEvents';
 
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 20;
+
+function mapFrom<K, V>(xs: Iterable<[K, V]>): Map<K, V> {
+    return new Map(xs) as Map<K, V>;
+}
 
 enum LoadingScreenState {
     VISIBLE = 1,
@@ -80,25 +87,33 @@ export class ViewManager {
         server.tabs.forEach((tab) => this.loadView(srv, serverInfo, tab));
     }
 
-    loadView = (srv: MattermostServer, serverInfo: ServerInfo, tab: Tab, url?: string) => {
+    makeView = (srv: MattermostServer, serverInfo: ServerInfo, tab: Tab, url?: string): MattermostView => {
         const tabView = getServerView(srv, tab);
-        if (!tab.isOpen) {
-            this.closedViews.set(tabView.name, {srv, tab});
-            return;
-        }
         if (this.closedViews.has(tabView.name)) {
             this.closedViews.delete(tabView.name);
         }
         const view = new MattermostView(tabView, serverInfo, this.mainWindow, this.viewOptions);
-        this.views.set(tabView.name, view);
-        if (!this.loadingScreen) {
-            this.createLoadingScreen();
-        }
         view.once(LOAD_SUCCESS, this.activateView);
         view.load(url);
         view.on(UPDATE_TARGET_URL, this.showURLView);
         view.on(LOADSCREEN_END, this.finishLoading);
         view.on(LOAD_FAILED, this.failLoading);
+        return view
+    }
+
+    addView = (view: MattermostView): void => {
+        this.views.set(view.name, view);
+        if (!this.loadingScreen) {
+            this.createLoadingScreen();
+        }
+    }
+
+    loadView = (srv: MattermostServer, serverInfo: ServerInfo, tab: Tab, url?: string) => {
+        if (!tab.isOpen) {
+            this.closedViews.set(getTabViewName(srv.name, tab.name), {srv, tab});
+            return;
+        }
+        this.addView(this.makeView(srv, serverInfo, tab, url));
     }
 
     reloadViewIfNeeded = (viewName: string) => {
@@ -112,32 +127,86 @@ export class ViewManager {
         this.configServers.forEach((server) => this.loadServer(server));
     }
 
+    /** Called when a new configuration is received
+     * Servers or tabs have been added or edited. We need to
+     * close, open, or reload tabs, taking care to reuse tabs and
+     * preserve focus on the currently selected tab. */
     reloadConfiguration = (configServers: TeamWithTabs[]) => {
-        this.configServers = configServers.concat();
-        const oldviews = this.views;
-        this.views = new Map();
-        const sorted = this.configServers.sort((a, b) => a.order - b.order);
-        let setFocus;
-        sorted.forEach((server) => {
+        type ExtraData = {
+            srv: MattermostServer,
+            info: ServerInfo,
+            tab: Tab,
+            view: TabView,
+            open: boolean,
+        };
+
+        // helper functions
+        const extraData = (server: TeamWithTabs, tab: Tab): ExtraData => {
             const srv = new MattermostServer(server.name, server.url);
-            const serverInfo = new ServerInfo(srv);
-            server.tabs.forEach((tab) => {
-                const tabView = getServerView(srv, tab);
-                const recycle = oldviews.get(tabView.name);
-                if (recycle && recycle.name === this.currentView) {
-                    setFocus = recycle.name;
-                }
-                if (!tab.isOpen) {
-                    this.closedViews.set(tabView.name, {srv, tab});
-                } else if (recycle && recycle.tab.name === tabView.name && recycle.tab.url.toString() === urlUtils.parseURL(tabView.url)!.toString()) {
-                    oldviews.delete(recycle.name);
-                    this.views.set(recycle.name, recycle);
-                } else {
-                    this.loadView(srv, serverInfo, tab);
-                }
-            });
-        });
-        if (this.currentView && (oldviews.has(this.currentView) || this.closedViews.has(this.currentView))) {
+            const info = new ServerInfo(srv);
+            const view = getServerView(srv, tab);
+            const open = Boolean(tab.isOpen);
+            return {srv, info, view, open, tab};
+        }
+
+        const newOrRecycledEntry = ([tuple, data]: [TabTuple, ExtraData]) => {
+            const recycle = current.get(tuple);
+            if (recycle) {
+                recycle.serverInfo = data.info;
+                recycle.tab.server = data.srv;
+                return duad(tuple, recycle);
+            } else {
+                return duad(
+                    tuple,
+                    this.makeView(data.srv, data.info, data.tab, tuple[0])
+                );
+            }
+        }
+
+        const focusedTuple = this.currentView && this.views.has(this.currentView)
+            ? this.views.get(this.currentView)!.tuple
+            : undefined;
+
+        const current: Map<TabTuple, MattermostView> = pipe(
+            this.views.values(),
+            map((x)=> duad(x.tuple, x)),
+            mapFrom)
+
+        const [views, closed] = pipe(
+            configServers,
+            bind((x: TeamWithTabs) => pipe(
+                x.tabs,
+                sort(by((x) => x.order)),
+                map((t): [TabTuple, ExtraData] => duad(
+                    tuple(new URL(x.url).href, t.name as TabType),
+                    extraData(x, t)
+                )))),
+            partition((x) => x[1].open),
+            (([open, closed]) => [
+                mapFrom(map(newOrRecycledEntry)(open)),
+                mapFrom(closed),
+            ]));
+
+        // now actually commit the data to our local state
+        // destroy everything that no longer exists
+        for (const [k, v] of current) {
+            if (!views.has(k)) {
+                v.destroy();
+            }
+        }
+
+        // commit views
+        this.views = pipe(
+            views.values(),
+            map((x) => duad(x.name, x)),
+            mapFrom)
+
+        // commit closed views
+        for (const x of closed.values()) {
+            this.closedViews.set(x.view.name, {srv: x.srv, tab: x.tab});
+        }
+
+        if (focusedTuple && (current.has(focusedTuple) || closed.has(focusedTuple))) {
             if (configServers.length) {
                 delete this.currentView;
                 this.showInitial();
@@ -145,11 +214,12 @@ export class ViewManager {
                 this.mainWindow.webContents.send(SET_ACTIVE_VIEW);
             }
         }
-        oldviews.forEach((unused) => {
-            unused.destroy();
-        });
-        if (setFocus) {
-            this.showByName(setFocus);
+
+        // show the focused tab (or initial)
+        if (focusedTuple && views.has(focusedTuple)) {
+            const view = views.get(focusedTuple);
+            this.currentView = view!.name;
+            this.showByName(view!.name);
         } else {
             this.showInitial();
         }
@@ -322,7 +392,7 @@ export class ViewManager {
             const localURL = getLocalURLString('urlView.html', query);
             urlView.webContents.loadURL(localURL);
             this.mainWindow.addBrowserView(urlView);
-            const boundaries = this.mainWindow.getBounds();
+            const boundaries = this.views.get(this.currentView || '')?.view.getBounds() ?? this.mainWindow.getBounds();
 
             const hideView = () => {
                 delete this.urlViewCancel;
@@ -338,12 +408,15 @@ export class ViewManager {
             const adjustWidth = (event: IpcMainEvent, width: number) => {
                 log.silly('showURLView.adjustWidth', width);
 
-                urlView.setBounds({
+                const bounds = {
                     x: 0,
-                    y: boundaries.height - URL_VIEW_HEIGHT,
+                    y: (boundaries.height + TAB_BAR_HEIGHT) - URL_VIEW_HEIGHT,
                     width: width + 5, // add some padding to ensure that we don't cut off the border
                     height: URL_VIEW_HEIGHT,
-                });
+                };
+
+                log.silly('showURLView setBounds', boundaries, bounds);
+                urlView.setBounds(bounds);
             };
 
             ipcMain.on(UPDATE_URL_VIEW_WIDTH, adjustWidth);

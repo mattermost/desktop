@@ -280,10 +280,6 @@ export class WindowManager {
         if (process.platform === 'linux' || process.platform === 'win32') {
             if (Config.notifications.flashWindow) {
                 this.mainWindow?.flashFrame(flash);
-                if (this.settingsWindow) {
-                    // main might be hidden behind the settings
-                    this.settingsWindow.flashFrame(flash);
-                }
             }
         }
         if (process.platform === 'darwin' && Config.notifications.bounceIcon) {
