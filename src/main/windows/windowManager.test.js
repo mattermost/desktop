@@ -348,7 +348,6 @@ describe('main/windows/windowManager', () => {
                 value: originalPlatform,
             });
             expect(windowManager.mainWindow.flashFrame).toBeCalledWith(true);
-            expect(windowManager.settingsWindow.flashFrame).toBeCalledWith(true);
         });
 
         it('mac - should not bounce icon when config item is not set', () => {
