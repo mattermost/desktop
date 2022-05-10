@@ -4,7 +4,7 @@
 
 import {isIterable, map, bind, sort, by, duad} from 'common/utils/data';
 
-const add = a => b => a + b;
+const add = (a) => (b) => a + b;
 
 describe('common/utils/data', () => {
     describe('isIterable', () => {
@@ -18,7 +18,7 @@ describe('common/utils/data', () => {
 
         it('should return true on sets', () => {
             expect(isIterable(new Set([]))).toBe(true);
-        })
+        });
 
         it('should return true on strings', () => {
             expect(isIterable('text')).toBe(true);
@@ -47,7 +47,7 @@ describe('common/utils/data', () => {
 
     describe('sort', () => {
         it('should sort arrays', () => {
-            const result = sort(by(x => x))([3,2,1]);
+            const result = sort(by((x) => x))([3, 2, 1]);
             expect(result).toHaveProperty('constructor', Array);
             expect(result).toHaveProperty('0', 1);
             expect(result).toHaveProperty('1', 2);
@@ -55,7 +55,7 @@ describe('common/utils/data', () => {
         });
 
         it('should sort arrays of objects', () => {
-            const result = sort(by(x => x.value))([{value: 3}, {value: 2}, {value: 1}]);
+            const result = sort(by((x) => x.value))([{value: 3}, {value: 2}, {value: 1}]);
             expect(result).toHaveProperty('constructor', Array);
             expect(result[0].value).toBe(1);
             expect(result[1].value).toBe(2);
@@ -63,7 +63,7 @@ describe('common/utils/data', () => {
         });
 
         it('should sort iterables', () => {
-            const result = sort(by(x => x))(new Set([3,2,1]));
+            const result = sort(by((x) => x))(new Set([3, 2, 1]));
             expect(result).toHaveProperty('constructor', Array);
             expect(result).toHaveProperty('0', 1);
             expect(result).toHaveProperty('1', 2);
@@ -73,7 +73,7 @@ describe('common/utils/data', () => {
 
     describe('map', () => {
         it('should map arrays', () => {
-            const result = map(add(1))([1,2,3])
+            const result = map(add(1))([1, 2, 3]);
             expect(result).toHaveProperty('constructor', Array);
             expect(result).toHaveProperty('0', 2);
             expect(result).toHaveProperty('1', 3);
@@ -81,15 +81,15 @@ describe('common/utils/data', () => {
         });
 
         it('should map objects', () => {
-            const result = map(add(1))({ 'Bob': 0, 'Alice': 1 })
+            const result = map(add(1))({Bob: 0, Alice: 1});
             expect(result).toHaveProperty('constructor', Object);
             expect(result).toHaveProperty('Bob', 1);
             expect(result).toHaveProperty('Alice', 2);
         });
 
         it('should map sets', () => {
-            const result = map(add(1))(new Set([1,2,3]))
-            expect(result).toHaveProperty('constructor', Set)
+            const result = map(add(1))(new Set([1, 2, 3]));
+            expect(result).toHaveProperty('constructor', Set);
             expect(result).toHaveProperty('size', 3);
             expect(result.has(2)).toBe(true);
             expect(result.has(3)).toBe(true);
@@ -112,23 +112,20 @@ describe('common/utils/data', () => {
             }());
             const results = map(add(1))(generator);
             expect(results).toHaveProperty('constructor.constructor.name', 'GeneratorFunction');
-            const arr_res = Array.from(results);
-            expect(arr_res).toHaveProperty('0', 2);
-            expect(arr_res).toHaveProperty('1', 3);
-            expect(arr_res).toHaveProperty('2', 4);
-
+            const arrRes = Array.from(results);
+            expect(arrRes).toHaveProperty('0', 2);
+            expect(arrRes).toHaveProperty('1', 3);
+            expect(arrRes).toHaveProperty('2', 4);
         });
 
         it('should map promises', async () => {
-            await expect(
-                map(add(1))(Promise.resolve(1))
-            ).resolves.toBe(2);
+            await expect(map(add(1))(Promise.resolve(1))).resolves.toBe(2);
         });
     });
 
     describe('bind', () => {
         it('should bind arrays', () => {
-            const results = bind(x => [x,x,x])([1])
+            const results = bind((x) => [x, x, x])([1]);
             expect(results).toHaveProperty('constructor', Array);
             expect(results).toHaveProperty('0', 1);
             expect(results).toHaveProperty('1', 1);
@@ -136,26 +133,24 @@ describe('common/utils/data', () => {
         });
 
         it('should bind promises', async () => {
-            await expect(
-                bind(x => x+1)(Promise.resolve(1))
-            ).resolves.toBe(2);
+            await expect(bind((x) => x + 1)(Promise.resolve(1))).resolves.toBe(2);
         });
 
         it('should bind iterables', () => {
             const gen = (function* () {
                 yield 1;
             }());
-            const result = bind(x => [x, x, x])(gen);
+            const result = bind((x) => [x, x, x])(gen);
             expect(result).toHaveProperty('constructor.constructor.name', 'GeneratorFunction');
-            const arr_res = Array.from(result);
-            expect(arr_res).toHaveProperty('0', 1);
-            expect(arr_res).toHaveProperty('1', 1);
-            expect(arr_res).toHaveProperty('2', 1);
+            const arrRes = Array.from(result);
+            expect(arrRes).toHaveProperty('0', 1);
+            expect(arrRes).toHaveProperty('1', 1);
+            expect(arrRes).toHaveProperty('2', 1);
         });
 
         it('should bind sets', () => {
-            const result = bind(x => [x, x+1, x])(new Set([1]));
-            expect(result).toHaveProperty('constructor', Set)
+            const result = bind((x) => [x, x + 1, x])(new Set([1]));
+            expect(result).toHaveProperty('constructor', Set);
             expect(result).toHaveProperty('size', 2);
             expect(result.has(1)).toBe(true);
             expect(result.has(2)).toBe(true);

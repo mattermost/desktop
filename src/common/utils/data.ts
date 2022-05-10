@@ -7,9 +7,8 @@
 export function isIterable(x: any): boolean {
     if (x == null) {
         return false;
-    } else {
-        return typeof x[Symbol.iterator] === 'function';
     }
+    return typeof x[Symbol.iterator] === 'function';
 }
 
 /** generic implementation of map
@@ -24,15 +23,15 @@ export function isIterable(x: any): boolean {
  * looping through them permanently consumes them.
  */
 export function map<A, B, K>(f: (x: A) => B): {
-    (xs: Array<A>): Array<B>,
-    (xs: Promise<A>): Promise<B>,
-    (xs: Set<A>): Set<B>,
-    (xs: Map<K, A>): Map<K, B>,
-    (xs: {[key: string]: A}): {[key: string]: B},
-    (xs: Iterable<A>): Iterable<B>,
+    (xs: A[]): B[];
+    (xs: Promise<A>): Promise<B>;
+    (xs: Set<A>): Set<B>;
+    (xs: Map<K, A>): Map<K, B>;
+    (xs: {[key: string]: A}): {[key: string]: B};
+    (xs: Iterable<A>): Iterable<B>;
 };
 export function map<A, B>(f: (x: A) => B): (xs: any) => any {
-    return function (xs) {
+    return (function map(xs) {
         if (!xs) {
             throw new TypeError('invalid collection type');
         } else if (Array.isArray(xs)) {
@@ -50,7 +49,7 @@ export function map<A, B>(f: (x: A) => B): (xs: any) => any {
         } else {
             throw new TypeError('invalid collection type');
         }
-    }
+    });
 }
 
 // helper functions for map
@@ -95,12 +94,12 @@ export function* mapIterable<A, B>(f: (x: A) => B, xs: Iterable<A>): Iterable<B>
  * Not that they are not monads, as looping through them
  * permanently consumes them.
  */
-export function bind<A, B>(f: (x: A) => Array<B>): (xs: Array<A>) => Array<B>;
+export function bind<A, B>(f: (x: A) => B[]): (xs: A[]) => B[];
 export function bind<A, B>(f: (x: A) => Promise<B>): (xs: Promise<A>) => Promise<B>;
 export function bind<A, B>(f: (x: A) => Set<B>): (xs: Set<A>) => Set<B>;
 export function bind<A, B>(f: (x: A) => Iterable<B>): (xs: Iterable<A>) => Iterable<B>;
-export function bind<A, B>(f: (x: A) => any): (xs: any) => any {
-    return function (xs) {
+export function bind<A>(f: (x: A) => any): (xs: any) => any {
+    return (function bind(xs) {
         if (!xs) {
             throw new TypeError('invalid collection type');
         } else if (Array.isArray(xs)) {
@@ -114,7 +113,7 @@ export function bind<A, B>(f: (x: A) => any): (xs: any) => any {
         } else {
             throw new TypeError('invalid collection type');
         }
-    }
+    });
 }
 
 // helper functions for bind
@@ -136,16 +135,15 @@ function* bindIterable<A, B>(f: (x: A) => Iterable<B>, xs: Iterable<A>): Iterabl
 }
 
 /** curried implementation of sort for any iterable */
-export function sort<T>(f: (a: T, b: T) => number): (xs: Array<T>|Iterable<T>) => Array<T> {
-    return function (xs) {
+export function sort<T>(f: (a: T, b: T) => number): (xs: Iterable<T>) => T[] {
+    return (function sort(xs) {
         if (Array.isArray(xs)) {
             return xs.sort(f);
         } else if (isIterable(xs)) {
             return Array.from(xs).sort(f);
-        } else {
-            throw new TypeError('invalid collection type');
         }
-    }
+        throw new TypeError('invalid collection type');
+    });
 }
 
 /** helper function for sorting, simulating python's "key" argument for its sort function.
@@ -153,26 +151,25 @@ export function sort<T>(f: (a: T, b: T) => number): (xs: Array<T>|Iterable<T>) =
  * that the iterable's contents should be sorted by.
  */
 export function by(f: (x: any) => number|string): (a: any, b: any) => number {
-    return function (a, b) {
+    return (function by(a, b) {
         const fa = f(a);
         const fb = f(b);
         if (fa < fb) {
             return -1;
         } else if (fa > fb) {
             return 1;
-        } else {
-            return 1;
         }
-    }
+        return 0;
+    });
 }
 
 /** splits any iterable into two arrays, depending on whether they pass a filter function
  * items that pass are on the left, and items that don't are on the right
  */
-export function partition<T>(f: (x: T) => boolean): (xs: Iterable<T>) => [Array<T>, Array<T>] {
-    return function (xs) {
-        const trues: Array<T> = [];
-        const falses: Array<T> = [];
+export function partition<T>(f: (x: T) => boolean): (xs: Iterable<T>) => [T[], T[]] {
+    return (function partition(xs) {
+        const trues: T[] = [];
+        const falses: T[] = [];
         for (const x of xs) {
             if (f(x)) {
                 trues.push(x);
@@ -181,7 +178,7 @@ export function partition<T>(f: (x: T) => boolean): (xs: Iterable<T>) => [Array<
             }
         }
         return [trues, falses];
-    };
+    });
 }
 
 /** Creates an array of exactly two elements.

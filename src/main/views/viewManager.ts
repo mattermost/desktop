@@ -26,8 +26,8 @@ import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {getServerView, getTabViewName, TabTuple, TabView, TabType} from 'common/tabs/TabView';
-import {pipe} from 'common/utils/functions'
-import {map, bind, sort, by, partition, duad} from 'common/utils/data'
+import {pipe} from 'common/utils/functions';
+import {map, bind, sort, by, partition, duad} from 'common/utils/data';
 
 import {ServerInfo} from 'main/server/serverInfo';
 
@@ -98,7 +98,7 @@ export class ViewManager {
         view.on(UPDATE_TARGET_URL, this.showURLView);
         view.on(LOADSCREEN_END, this.finishLoading);
         view.on(LOAD_FAILED, this.failLoading);
-        return view
+        return view;
     }
 
     addView = (view: MattermostView): void => {
@@ -133,11 +133,11 @@ export class ViewManager {
      * preserve focus on the currently selected tab. */
     reloadConfiguration = (configServers: TeamWithTabs[]) => {
         type ExtraData = {
-            srv: MattermostServer,
-            info: ServerInfo,
-            tab: Tab,
-            view: TabView,
-            open: boolean,
+            srv: MattermostServer;
+            info: ServerInfo;
+            tab: Tab;
+            view: TabView;
+            open: boolean;
         };
 
         // helper functions
@@ -147,7 +147,7 @@ export class ViewManager {
             const view = getServerView(srv, tab);
             const open = Boolean(tab.isOpen);
             return {srv, info, view, open, tab};
-        }
+        };
 
         const newOrRecycledEntry = ([tuple, data]: [TabTuple, ExtraData]) => {
             const recycle = current.get(tuple);
@@ -155,22 +155,21 @@ export class ViewManager {
                 recycle.serverInfo = data.info;
                 recycle.tab.server = data.srv;
                 return duad(tuple, recycle);
-            } else {
-                return duad(
-                    tuple,
-                    this.makeView(data.srv, data.info, data.tab, tuple[0])
-                );
             }
-        }
+            return duad(
+                tuple,
+                this.makeView(data.srv, data.info, data.tab, tuple[0]),
+            );
+        };
 
-        const focusedTuple = this.currentView && this.views.has(this.currentView)
-            ? this.views.get(this.currentView)!.tuple
-            : undefined;
+        const focusedTuple = this.currentView && this.views.has(this.currentView) ?
+            this.views.get(this.currentView)!.tuple :
+            undefined;
 
         const current: Map<TabTuple, MattermostView> = pipe(
             this.views.values(),
-            map((x)=> duad(x.tuple, x)),
-            mapFrom)
+            map((x) => duad(x.tuple, x)),
+            mapFrom);
 
         const [views, closed] = pipe(
             configServers,
@@ -179,8 +178,9 @@ export class ViewManager {
                 sort(by((x) => x.order)),
                 map((t): [TabTuple, ExtraData] => duad(
                     tuple(new URL(x.url).href, t.name as TabType),
-                    extraData(x, t)
-                )))),
+                    extraData(x, t),
+                )),
+            )),
             partition((x) => x[1].open),
             (([open, closed]) => [
                 mapFrom(map(newOrRecycledEntry)(open)),
@@ -199,7 +199,7 @@ export class ViewManager {
         this.views = pipe(
             views.values(),
             map((x) => duad(x.name, x)),
-            mapFrom)
+            mapFrom);
 
         // commit closed views
         for (const x of closed.values()) {

@@ -5,6 +5,7 @@
 'use strict';
 
 import {dialog} from 'electron';
+import {Tuple as tuple} from '@bloomberg/record-tuple-polyfill';
 
 import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -13,8 +14,6 @@ import urlUtils from 'common/utils/url';
 
 import {MattermostView} from './MattermostView';
 import {ViewManager} from './viewManager';
-
-import {Tuple as tuple} from '@bloomberg/record-tuple-polyfill';
 
 jest.mock('electron', () => ({
     app: {
@@ -200,7 +199,7 @@ describe('main/views/viewManager', () => {
                 destroy: destroyFn,
                 name: tab.name,
                 tuple: tab.tuple,
-                tab: tab,
+                tab,
             }));
         });
 
@@ -218,7 +217,7 @@ describe('main/views/viewManager', () => {
                 name: 'server1-tab1',
                 tuple: tuple(new URL('http://server1.com').href, 'tab1'),
                 server: 'server1',
-            })
+            });
             viewManager.views.set('server1-tab1', view);
             viewManager.reloadConfiguration([
                 {
@@ -280,7 +279,7 @@ describe('main/views/viewManager', () => {
                     name: 'tab1',
                     isOpen: true,
                 },
-                'http://server1.com/'
+                'http://server1.com/',
             );
             makeSpy.mockRestore();
         });

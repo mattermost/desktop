@@ -206,11 +206,11 @@ export function compose<A, B, C, D, E, F, G, H, I, J, K>(
 ): (x: A) => K;
 
 export function compose<A>(...fs: Array<(x: any) => any>): (x: A) => any {
-    return function (x) {
+    return (function compose(x) {
         let a = x;
         for (const f of fs) {
             a = f(a);
         }
         return a;
-    };
+    });
 }

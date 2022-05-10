@@ -2,9 +2,9 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {pipe, compose} from 'common/utils/functions'
+import {pipe, compose} from 'common/utils/functions';
 
-const inc = x => x + 1
+const inc = (x) => x + 1;
 
 describe('common/utils/functions', () => {
     describe('pipe', () => {
