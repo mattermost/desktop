@@ -13,7 +13,7 @@ export function createTemplate(config: CombinedConfig) {
     const template = [
         ...teams.sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).map((team) => {
             return {
-                label: team.name,
+                label: team.name.length > 50 ? `${team.name.slice(0, 50)}...` : team.name,
                 click: () => {
                     WindowManager.switchServer(team.name);
                 },
