@@ -1,6 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {app} from 'electron';
 import {Args} from 'types/args';
 import yargs from 'yargs';
 
@@ -24,12 +25,32 @@ function triageArgs(args: string[]) {
     return args;
 }
 
+// Note that yargs is able to exit the node process when handling
+// certain flags, like version or help.
+// https://github.com/yargs/yargs/blob/main/docs/api.md#exitprocessenable
 function parseArgs(args: string[]) {
     return yargs.
-        alias('dataDir', 'd').string('dataDir').describe('dataDir', 'Set the path to where user data is stored.').
-        alias('disableDevMode', 'p').boolean('disableDevMode').describe('disableDevMode', 'Disable development mode. Allows for testing as if it was Production.').
-        alias('version', 'v').boolean('version').describe('version', 'Prints the application version.').
-        alias('fullscreen', 'f').boolean('fullscreen').describe('fullscreen', 'Opens the application in fullscreen mode.').
+        alias('dataDir', 'd').
+        string('dataDir').
+        describe('dataDir', 'Set the path to where user data is stored.').
+
+        alias('disableDevMode', 'p').
+        boolean('disableDevMode').
+        describe('disableDevMode', 'Disable development mode. Allows for testing as if it was Production.').
+
+        alias('version', 'v').
+        boolean('version').
+        describe('version', 'Prints the application version.').
+
+        alias('fullscreen', 'f').
+        boolean('fullscreen').
+        describe('fullscreen', 'Opens the application in fullscreen mode.').
+
+        // Typically, yargs is capable of acquiring the app's version
+        // through package.json.  However, for us this is
+        // unsuccessful, perhaps due to a complication during the
+        // build.  As such, we provide the version manually.
+        version(app.getVersion()).
         help('help').
         parse(args);
 }
