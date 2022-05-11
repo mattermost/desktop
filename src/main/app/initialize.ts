@@ -138,12 +138,6 @@ export async function initialize() {
 function initializeArgs() {
     global.args = parseArgs(process.argv.slice(1));
 
-    // output the application version via cli when requested (-v or --version)
-    if (global.args.version) {
-        process.stdout.write(`v.${app.getVersion()}\n`);
-        process.exit(0); // eslint-disable-line no-process-exit
-    }
-
     global.isDev = isDev && !global.args.disableDevMode; // this doesn't seem to be right and isn't used as the single source of truth
 
     if (global.args.dataDir) {
