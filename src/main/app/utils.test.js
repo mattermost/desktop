@@ -176,7 +176,7 @@ describe('main/app/utils', () => {
                 getSize: () => [1280, 720],
                 setPosition: jest.fn(),
                 center: jest.fn(),
-                on: jest.fn(),
+                once: jest.fn(),
             };
             resizeScreen(browserWindow);
             expect(browserWindow.setPosition).toHaveBeenCalledWith(500, 400);
@@ -188,7 +188,7 @@ describe('main/app/utils', () => {
                 getSize: () => [1280, 720],
                 setPosition: jest.fn(),
                 center: jest.fn(),
-                on: jest.fn(),
+                once: jest.fn(),
             };
             resizeScreen(browserWindow);
             expect(browserWindow.setPosition).toHaveBeenCalledWith(1680, 400);
@@ -198,7 +198,7 @@ describe('main/app/utils', () => {
                 getSize: () => [1280, 720],
                 setPosition: jest.fn(),
                 center: jest.fn(),
-                on: jest.fn(),
+                once: jest.fn(),
             };
             resizeScreen(browserWindow);
             expect(browserWindow.setPosition).toHaveBeenCalledWith(500, 1020);
@@ -210,7 +210,7 @@ describe('main/app/utils', () => {
                 getSize: () => [1280, 720],
                 setPosition: jest.fn(),
                 center: jest.fn(),
-                on: jest.fn(),
+                once: jest.fn(),
             };
             resizeScreen(browserWindow);
             expect(browserWindow.setPosition).not.toHaveBeenCalled();
