@@ -168,11 +168,7 @@ export function resizeScreen(browserWindow: BrowserWindow) {
         }
     }
 
-    const handler = () => {
-        browserWindow.off('restore', handler);
-        handle();
-    };
-    browserWindow.on('restore', handler);
+    browserWindow.once('restore', handle);
     handle();
 }
 
