@@ -125,7 +125,13 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
         const urlError = this.getTeamUrlValidationError();
 
         if (nameError && urlError) {
-            return 'Name and URL are required.';
+            return (
+                <>
+                    {nameError}
+                    <br/>
+                    {urlError}
+                </>
+            );
         } else if (nameError) {
             return nameError;
         } else if (urlError) {
