@@ -9,6 +9,7 @@ import {MentionData} from 'types/notification';
 
 import Config from 'common/config';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
+import {ping} from 'common/utils/requests';
 
 import {displayMention} from 'main/notifications';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
@@ -256,3 +257,16 @@ export function handleUpdateLastActive(event: IpcMainEvent, serverName: string, 
     Config.set('lastActiveTeam', teams.find((team) => team.name === serverName)?.order || 0);
 }
 
+export function handlePingDomain(event: IpcMainInvokeEvent, url: string): Promise<string> {
+    return Promise.allSettled([
+        ping(new URL('https://' + url)),
+        ping(new URL('http://' + url)),
+    ]).then(([https, http]): string => {
+        if (https.status === 'fulfilled') {
+            return 'https';
+        } else if (http.status === 'fulfilled') {
+            return 'http';
+        }
+        throw new Error('Could not find server ' + url);
+    });
+}

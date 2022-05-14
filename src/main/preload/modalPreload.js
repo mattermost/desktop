@@ -4,7 +4,11 @@
 
 'use strict';
 
-import {ipcRenderer} from 'electron';
+import {ipcRenderer, contextBridge} from 'electron';
+
+contextBridge.exposeInMainWorld('ipcRenderer', {
+    invoke: ipcRenderer.invoke,
+});
 
 import {
     MODAL_CANCEL,

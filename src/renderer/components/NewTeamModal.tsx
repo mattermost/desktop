@@ -8,6 +8,8 @@ import {Modal, Button, FormGroup, FormControl, FormLabel, FormText} from 'react-
 import {TeamWithIndex} from 'types/config';
 
 import urlUtils from 'common/utils/url';
+import {throttle, debounce} from 'common/utils/timing';
+import {PING_DOMAIN} from 'common/communication';
 
 type Props = {
     onClose?: () => void;
@@ -27,11 +29,13 @@ type State = {
     teamIndex?: number;
     teamOrder: number;
     saveStarted: boolean;
+    errorMessage: string;
 }
 
 export default class NewTeamModal extends React.PureComponent<Props, State> {
     wasShown?: boolean;
     teamNameInputRef?: HTMLInputElement;
+    addProtocolToUrlThrottled: (x: any) => void;
 
     static defaultProps = {
         restoreFocus: true,
@@ -46,7 +50,11 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
             teamUrl: '',
             teamOrder: props.currentOrder || 0,
             saveStarted: false,
+            errorMessage: '',
         };
+
+        // user is able to type out the URL. It's excessive pinging on every keystroke.
+        this.addProtocolToUrlThrottled = debounce(throttle(this.addProtocolToUrl.bind(this), 3000), 500);
     }
 
     initializeOnShow() {
@@ -115,9 +123,17 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
     }
 
     handleTeamUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        this.setState({
-            teamUrl: e.target.value,
-        });
+        const teamUrl = e.target.value;
+        this.setState({teamUrl});
+        if (!teamUrl.startsWith('http') && teamUrl.length >= 4) {
+            this.addProtocolToUrlThrottled(teamUrl);
+        }
+    }
+
+    addProtocolToUrl = (teamUrl: string): void => {
+        window.ipcRenderer.invoke(PING_DOMAIN, teamUrl).
+            then((x: string) => this.setState({teamUrl: x + '://' + this.state.teamUrl, errorMessage: ''})).
+            catch((x: Error) => this.setState({errorMessage: x.message}));
     }
 
     getError() {

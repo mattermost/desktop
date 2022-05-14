@@ -33,6 +33,7 @@ import {
     USER_ACTIVITY_UPDATE,
     START_UPGRADE,
     START_DOWNLOAD,
+    PING_DOMAIN,
 } from 'common/communication';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
@@ -81,6 +82,7 @@ import {
     handleSwitchServer,
     handleSwitchTab,
     handleUpdateLastActive,
+    handlePingDomain,
 } from './intercom';
 import {
     clearAppCache,
@@ -259,6 +261,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
     ipcMain.on(START_DOWNLOAD, handleStartDownload);
     ipcMain.on(START_UPGRADE, handleStartUpgrade);
+    ipcMain.handle(PING_DOMAIN, handlePingDomain);
 }
 
 function initializeAfterAppReady() {
