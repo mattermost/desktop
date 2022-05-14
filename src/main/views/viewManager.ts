@@ -25,7 +25,7 @@ import Config from 'common/config';
 import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
-import {getServerView, getTabViewName, TabTuple, TabView, TabType} from 'common/tabs/TabView';
+import {getServerView, getTabViewName, TabTuple, TabType} from 'common/tabs/TabView';
 import {by, duad} from 'common/utils/data';
 
 import {ServerInfo} from 'main/server/serverInfo';
@@ -38,10 +38,6 @@ import WebContentsEventManager from './webContentEvents';
 
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 20;
-
-function mapFrom<K, V>(xs: Iterable<[K, V]>): Map<K, V> {
-    return new Map(xs) as Map<K, V>;
-}
 
 enum LoadingScreenState {
     VISIBLE = 1,
@@ -131,9 +127,7 @@ export class ViewManager {
      * close, open, or reload tabs, taking care to reuse tabs and
      * preserve focus on the currently selected tab. */
     reloadConfiguration = (configServers: TeamWithTabs[]) => {
-        const focusedTuple = this.currentView && this.views.has(this.currentView) ?
-            this.views.get(this.currentView)!.tuple :
-            undefined;
+        const focusedTuple: TabTuple | undefined = this.views.get(this.currentView as string)?.tuple;
 
         const current: Map<TabTuple, MattermostView> = new Map();
         for (const x of this.views.values()) {
@@ -141,25 +135,24 @@ export class ViewManager {
         }
 
         const views: Map<TabTuple, MattermostView> = new Map();
-        const closed: Map<TabTuple, {srv: MattermostServer, tab: Tab, name: string}> = new Map();
+        const closed: Map<TabTuple, {srv: MattermostServer; tab: Tab; name: string}> = new Map();
 
-        const sorted_tabs = configServers.flatMap((x) => x.tabs.sort(by((x) => x.order)).map(t => duad(x, t)));
+        const sortedTabs = configServers.flatMap((x) => x.tabs.sort(by((x) => x.order)).map((t) => duad(x, t)));
 
-        for (const [team, tab] of sorted_tabs) {
+        for (const [team, tab] of sortedTabs) {
             const srv = new MattermostServer(team.name, team.url);
             const info = new ServerInfo(srv);
             const view = getServerView(srv, tab);
-            const tab_tuple = tuple(new URL(team.url).href, tab.name as TabType);
-            const recycle = current.get(tab_tuple);
-
-            if (tab.isOpen) {
-                closed.set(tab_tuple, {srv, tab, name: view.name});
+            const tabTuple = tuple(new URL(team.url).href, tab.name as TabType);
+            const recycle = current.get(tabTuple);
+            if (!tab.isOpen) {
+                closed.set(tabTuple, {srv, tab, name: view.name});
             } else if (recycle) {
                 recycle.serverInfo = info;
                 recycle.tab.server = srv;
-                views.set(tab_tuple, recycle);
+                views.set(tabTuple, recycle);
             } else {
-                views.set(tab_tuple, this.makeView(srv, info, tab, tab_tuple[0]));
+                views.set(tabTuple, this.makeView(srv, info, tab, tabTuple[0]));
             }
         }
 
