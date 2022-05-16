@@ -259,8 +259,8 @@ export function handleUpdateLastActive(event: IpcMainEvent, serverName: string, 
 
 export function handlePingDomain(event: IpcMainInvokeEvent, url: string): Promise<string> {
     return Promise.allSettled([
-        ping(new URL('https://' + url)),
-        ping(new URL('http://' + url)),
+        ping(new URL(`https://${url}`)),
+        ping(new URL(`http://${url}`)),
     ]).then(([https, http]): string => {
         if (https.status === 'fulfilled') {
             return 'https';

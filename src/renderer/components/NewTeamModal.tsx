@@ -8,7 +8,7 @@ import {Modal, Button, FormGroup, FormControl, FormLabel, FormText} from 'react-
 import {TeamWithIndex} from 'types/config';
 
 import urlUtils from 'common/utils/url';
-import {PING_DOMAIN} from 'common/communication';
+import {PING_DOMAIN, PING_DOMAIN_RESPONSE} from 'common/communication';
 
 type Props = {
     onClose?: () => void;
@@ -28,7 +28,6 @@ type State = {
     teamIndex?: number;
     teamOrder: number;
     saveStarted: boolean;
-    errorMessage: string;
 }
 
 export default class NewTeamModal extends React.PureComponent<Props, State> {
@@ -48,7 +47,6 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
             teamUrl: '',
             teamOrder: props.currentOrder || 0,
             saveStarted: false,
-            errorMessage: '',
         };
     }
 
@@ -123,11 +121,25 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
     }
 
     addProtocolToUrl = (teamUrl: string): Promise<void> => {
-        if (teamUrl.startsWith('http://') || teamUrl.startsWith('https://'))
-            return Promise.resolve(undefined)
-        return window.ipcRenderer.invoke(PING_DOMAIN, teamUrl).
-            then((x: string) => this.setState({teamUrl: x + '://' + this.state.teamUrl, errorMessage: ''})).
-            catch((x: Error) => this.setState({errorMessage: x.message}));
+        if (teamUrl.startsWith('http://') || teamUrl.startsWith('https://')) {
+            return Promise.resolve(undefined);
+        }
+
+        return new Promise((resolve) => {
+            const handler = (event: {data: {type: string; data: string | Error}}) => {
+                if (event.data.type === PING_DOMAIN_RESPONSE) {
+                    if (event.data.data instanceof Error) {
+                        console.error(`Could not ping url: ${teamUrl}`);
+                    } else {
+                        this.setState({teamUrl: `${event.data.data}://${this.state.teamUrl}`});
+                    }
+                    window.removeEventListener('message', handler);
+                    resolve(undefined);
+                }
+            };
+            window.addEventListener('message', handler);
+            window.postMessage({type: PING_DOMAIN, data: teamUrl}, window.location.href);
+        });
     }
 
     getError() {
@@ -150,7 +162,7 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
     }
 
     save = async () => {
-        await this.addProtocolToUrl(this.state.teamUrl)
+        await this.addProtocolToUrl(this.state.teamUrl);
         this.setState({
             saveStarted: true,
         }, () => {
