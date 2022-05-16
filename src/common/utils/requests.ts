@@ -6,10 +6,10 @@ import * as https from 'https';
 
 type Method = 'GET' | 'POST' | 'DELETE' | 'PUT' | 'OPTIONS' | 'HEAD';
 
-export function ping(x: URL, method: Method = 'GET'): Promise<http.ServerResponse> {
-    const f = x.protocol === 'http:' ? http.request : https.request;
+export async function ping(url: URL, method: Method = 'GET'): Promise<http.ServerResponse> {
+    const f = url.protocol === 'http:' ? http.request : https.request;
     return new Promise((yes, no) => {
-        const req = f(x, {method});
+        const req = f(url, {method});
         req.on('error', no);
         req.on('response', yes);
         req.end();
