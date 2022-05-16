@@ -26,7 +26,6 @@ import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {getServerView, getTabViewName, TabTuple, TabType} from 'common/tabs/TabView';
-import {by, duad} from 'common/utils/data';
 
 import {ServerInfo} from 'main/server/serverInfo';
 
@@ -137,7 +136,10 @@ export class ViewManager {
         const views: Map<TabTuple, MattermostView> = new Map();
         const closed: Map<TabTuple, {srv: MattermostServer; tab: Tab; name: string}> = new Map();
 
-        const sortedTabs = configServers.flatMap((x) => x.tabs.sort(by((x) => x.order)).map((t) => duad(x, t)));
+        const sortedTabs = configServers.flatMap((x) =>
+            x.tabs.
+            sort((a, b) => a.order - b.order).
+            map((t): [TeamWithTabs, Tab] => [x, t]));
 
         for (const [team, tab] of sortedTabs) {
             const srv = new MattermostServer(team.name, team.url);
