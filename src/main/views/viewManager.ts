@@ -126,11 +126,11 @@ export class ViewManager {
      * close, open, or reload tabs, taking care to reuse tabs and
      * preserve focus on the currently selected tab. */
     reloadConfiguration = (configServers: TeamWithTabs[]) => {
-        const focusedTuple: TabTuple | undefined = this.views.get(this.currentView as string)?.tuple;
+        const focusedTuple: TabTuple | undefined = this.views.get(this.currentView as string)?.urlTypeTuple;
 
         const current: Map<TabTuple, MattermostView> = new Map();
         for (const x of this.views.values()) {
-            current.set(x.tuple, x);
+            current.set(x.urlTypeTuple, x);
         }
 
         const views: Map<TabTuple, MattermostView> = new Map();

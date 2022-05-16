@@ -136,8 +136,8 @@ export class MattermostView extends EventEmitter {
         return this.tab.name;
     }
 
-    get tuple(): TabTuple {
-        return this.tab.tuple;
+    get urlTypeTuple(): TabTuple {
+        return this.tab.urlTypeTuple;
     }
 
     resetLoadingStatus = () => {

@@ -16,7 +16,7 @@ export default abstract class BaseTabView implements TabView {
     get name(): string {
         return getTabViewName(this.server.name, this.type);
     }
-    get tuple(): TabTuple {
+    get urlTypeTuple(): TabTuple {
         return tuple(this.url.href, this.type) as TabTuple;
     }
     get url(): URL {

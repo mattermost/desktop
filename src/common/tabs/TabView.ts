@@ -22,7 +22,7 @@ export interface TabView {
     get type(): TabType;
     get url(): URL;
     get shouldNotify(): boolean;
-    get tuple(): TabTuple;
+    get urlTypeTuple(): TabTuple;
 }
 
 export function getDefaultTeamWithTabsFromTeam(team: Team) {

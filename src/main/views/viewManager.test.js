@@ -182,7 +182,7 @@ describe('main/views/viewManager', () => {
 
             getServerView.mockImplementation((srv, tab) => ({
                 name: `${srv.name}-${tab.name}`,
-                tuple: tuple(`http://${srv.name}.com/`, tab.name),
+                urlTypeTuple: tuple(`http://${srv.name}.com/`, tab.name),
                 url: new URL(`http://${srv.name}.com`),
             }));
             MattermostServer.mockImplementation((name, url) => ({
@@ -198,7 +198,7 @@ describe('main/views/viewManager', () => {
                 once: onceFn,
                 destroy: destroyFn,
                 name: tab.name,
-                tuple: tab.tuple,
+                urlTypeTuple: tab.urlTypeTuple,
                 tab,
             }));
         });
@@ -215,7 +215,7 @@ describe('main/views/viewManager', () => {
             const makeSpy = jest.spyOn(viewManager, 'makeView');
             const view = new MattermostView({
                 name: 'server1-tab1',
-                tuple: tuple(new URL('http://server1.com').href, 'tab1'),
+                urlTypeTuple: tuple(new URL('http://server1.com').href, 'tab1'),
                 server: 'server1',
             });
             viewManager.views.set('server1-tab1', view);
@@ -291,7 +291,7 @@ describe('main/views/viewManager', () => {
                     name: 'server1-tab1',
                     url: new URL('http://server1.com'),
                 },
-                tuple: tuple('http://server1.com/', 'tab1'),
+                urlTypeTuple: tuple('http://server1.com/', 'tab1'),
                 destroy: jest.fn(),
             };
             viewManager.currentView = 'server1-tab1';
@@ -320,7 +320,7 @@ describe('main/views/viewManager', () => {
                     name: 'server1-tab1',
                     url: new URL('http://server1.com'),
                 },
-                tuple: ['http://server.com/', 'tab1'],
+                urlTypeTuple: ['http://server.com/', 'tab1'],
                 destroy: jest.fn(),
             };
             viewManager.currentView = 'server1-tab1';
