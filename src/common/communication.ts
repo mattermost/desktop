@@ -120,3 +120,5 @@ export const DESKTOP_SOURCES_RESULT = 'desktop-sources-result';
 
 export const RELOAD_CURRENT_VIEW = 'reload-current-view';
 
+export const PING_DOMAIN = 'ping-domain';
+export const PING_DOMAIN_RESPONSE = 'ping-domain-response';

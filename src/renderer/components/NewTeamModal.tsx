@@ -8,6 +8,7 @@ import {Modal, Button, FormGroup, FormControl, FormLabel, FormText} from 'react-
 import {TeamWithIndex} from 'types/config';
 
 import urlUtils from 'common/utils/url';
+import {PING_DOMAIN, PING_DOMAIN_RESPONSE} from 'common/communication';
 
 type Props = {
     onClose?: () => void;
@@ -115,8 +116,29 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
     }
 
     handleTeamUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        this.setState({
-            teamUrl: e.target.value,
+        const teamUrl = e.target.value;
+        this.setState({teamUrl});
+    }
+
+    addProtocolToUrl = (teamUrl: string): Promise<void> => {
+        if (teamUrl.startsWith('http://') || teamUrl.startsWith('https://')) {
+            return Promise.resolve(undefined);
+        }
+
+        return new Promise((resolve) => {
+            const handler = (event: {data: {type: string; data: string | Error}}) => {
+                if (event.data.type === PING_DOMAIN_RESPONSE) {
+                    if (event.data.data instanceof Error) {
+                        console.error(`Could not ping url: ${teamUrl}`);
+                    } else {
+                        this.setState({teamUrl: `${event.data.data}://${this.state.teamUrl}`});
+                    }
+                    window.removeEventListener('message', handler);
+                    resolve(undefined);
+                }
+            };
+            window.addEventListener('message', handler);
+            window.postMessage({type: PING_DOMAIN, data: teamUrl}, window.location.href);
         });
     }
 
@@ -145,7 +167,8 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
             this.getTeamUrlValidationState() === null;
     }
 
-    save = () => {
+    save = async () => {
+        await this.addProtocolToUrl(this.state.teamUrl);
         this.setState({
             saveStarted: true,
         }, () => {
