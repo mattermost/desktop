@@ -83,9 +83,6 @@ export class ViewManager {
 
     makeView = (srv: MattermostServer, serverInfo: ServerInfo, tab: Tab, url?: string): MattermostView => {
         const tabView = getServerView(srv, tab);
-        if (this.closedViews.has(tabView.name)) {
-            this.closedViews.delete(tabView.name);
-        }
         const view = new MattermostView(tabView, serverInfo, this.mainWindow, this.viewOptions);
         view.once(LOAD_SUCCESS, this.activateView);
         view.load(url);
@@ -97,6 +94,9 @@ export class ViewManager {
 
     addView = (view: MattermostView): void => {
         this.views.set(view.name, view);
+        if (this.closedViews.has(view.name)) {
+            this.closedViews.delete(view.name);
+        }
         if (!this.loadingScreen) {
             this.createLoadingScreen();
         }
@@ -107,7 +107,8 @@ export class ViewManager {
             this.closedViews.set(getTabViewName(srv.name, tab.name), {srv, tab});
             return;
         }
-        this.addView(this.makeView(srv, serverInfo, tab, url));
+        const view = this.makeView(srv, serverInfo, tab, url)
+        this.addView(view);
     }
 
     reloadViewIfNeeded = (viewName: string) => {
@@ -129,15 +130,15 @@ export class ViewManager {
         const focusedTuple: TabTuple | undefined = this.views.get(this.currentView as string)?.urlTypeTuple;
 
         const current: Map<TabTuple, MattermostView> = new Map();
-        for (const x of this.views.values()) {
-            current.set(x.urlTypeTuple, x);
+        for (const view of this.views.values()) {
+            current.set(view.urlTypeTuple, view);
         }
 
         const views: Map<TabTuple, MattermostView> = new Map();
         const closed: Map<TabTuple, {srv: MattermostServer; tab: Tab; name: string}> = new Map();
 
         const sortedTabs = configServers.flatMap((x) =>
-            x.tabs.
+            [...x.tabs].
             sort((a, b) => a.order - b.order).
             map((t): [TeamWithTabs, Tab] => [x, t]));
 
