@@ -107,7 +107,7 @@ export class ViewManager {
             this.closedViews.set(getTabViewName(srv.name, tab.name), {srv, tab});
             return;
         }
-        const view = this.makeView(srv, serverInfo, tab, url)
+        const view = this.makeView(srv, serverInfo, tab, url);
         this.addView(view);
     }
 
@@ -137,8 +137,7 @@ export class ViewManager {
         const views: Map<TabTuple, MattermostView> = new Map();
         const closed: Map<TabTuple, {srv: MattermostServer; tab: Tab; name: string}> = new Map();
 
-        const sortedTabs = configServers.flatMap((x) =>
-            [...x.tabs].
+        const sortedTabs = configServers.flatMap((x) => [...x.tabs].
             sort((a, b) => a.order - b.order).
             map((t): [TeamWithTabs, Tab] => [x, t]));
 
