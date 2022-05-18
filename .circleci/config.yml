@@ -494,7 +494,7 @@ jobs:
           name: "Setup files for ghr"
           command: |
             mkdir -p ./ghr-dist
-            cp -r --backup=numbered ./build/{macos-release,win-release,linux}/* ./ghr-dist
+            find ./build/{macos-release,win-release,linux} -type f -exec cp --backup=numbered -t ./ghr-dist {} +
       - run:
           name: "Publish Release on GitHub"
           command: |
