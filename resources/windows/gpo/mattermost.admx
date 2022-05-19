@@ -7,6 +7,7 @@
 	<supportedOn>
 		<definitions>
 			<definition name="RequiresMattermost43" displayName="$(string.RequiresMattermost43)"/>
+            <definition name="RequiresMattermost51" displayName="$(string.RequiresMattermost51)"/>
 		</definitions>
 	</supportedOn>
 	<categories>
@@ -15,7 +16,7 @@
 	<policies>
     	<policy name="EnableAutoUpdater" class="Machine" displayName="$(string.EnableAutoUpdater)" explainText="$(string.EnableAutoUpdaterDescription)" key="Software\Policies\Mattermost" valueName="EnableAutoUpdater">
 			<parentCategory ref="mattermost"/>
-			<supportedOn ref="RequiresMattermost43"/>
+			<supportedOn ref="RequiresMattermost51"/>
 			<enabledValue>
 				<decimal value="1"/>
 			</enabledValue>
