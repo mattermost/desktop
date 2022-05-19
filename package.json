@@ -16,7 +16,7 @@
     "url": "git://github.com/mattermost/desktop.git"
   },
   "config": {
-    "target": "18.0.3",
+    "target": "18.2.4",
     "arch": "x64",
     "target_arch": "x64",
     "disturl": "https://electronjs.org/headers",
@@ -27,7 +27,7 @@
     "build": "npm-run-all build:*",
     "build:main": "webpack-cli --config webpack.config.main.js",
     "build:renderer": "webpack-cli --config webpack.config.renderer.js",
-    "build-robotjs": "npm rebuild --runtime=electron --target=18.0.3 --disturl=https://atom.io/download/atom-shell --abi=83",
+    "build-robotjs": "npm rebuild --runtime=electron --target=18.2.4 --disturl=https://atom.io/download/atom-shell --abi=93",
     "start": "electron dist/ --disable-dev-mode",
     "restart": "npm run build && npm run start",
     "storybook": "start-storybook -p 9001 -c src/.storybook",
@@ -137,7 +137,7 @@
     "copy-webpack-plugin": "10.2.4",
     "cross-env": "7.0.3",
     "css-loader": "6.7.1",
-    "electron": "18.0.3",
+    "electron": "18.2.4",
     "electron-builder": "23.0.8",
     "electron-connect": "0.6.3",
     "electron-mocha": "11.0.2",
