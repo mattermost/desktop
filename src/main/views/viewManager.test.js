@@ -5,6 +5,7 @@
 'use strict';
 
 import {dialog} from 'electron';
+import {Tuple as tuple} from '@bloomberg/record-tuple-polyfill';
 
 import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -29,7 +30,7 @@ jest.mock('electron', () => ({
 
 jest.mock('common/tabs/TabView', () => ({
     getServerView: jest.fn(),
-    getTabViewName: jest.fn(),
+    getTabViewName: jest.fn((a, b) => `${a}-${b}`),
 }));
 
 jest.mock('common/servers/MattermostServer', () => ({
@@ -65,15 +66,18 @@ describe('main/views/viewManager', () => {
         const viewManager = new ViewManager({});
         const onceFn = jest.fn();
         const loadFn = jest.fn();
+        const destroyFn = jest.fn();
 
         beforeEach(() => {
             viewManager.createLoadingScreen = jest.fn();
             viewManager.showByName = jest.fn();
             getServerView.mockImplementation((srv, tab) => ({name: `${srv.name}-${tab.name}`}));
-            MattermostView.mockImplementation(() => ({
+            MattermostView.mockImplementation((tab) => ({
                 on: jest.fn(),
                 load: loadFn,
                 once: onceFn,
+                destroy: destroyFn,
+                name: tab.name,
             }));
         });
 
@@ -172,10 +176,30 @@ describe('main/views/viewManager', () => {
             viewManager.loadView = jest.fn();
             viewManager.showByName = jest.fn();
             viewManager.showInitial = jest.fn();
-            getServerView.mockImplementation((srv, tab) => ({name: `${srv.name}-${tab.name}`, url: new URL(`http://${srv.name}.com`)}));
+            viewManager.mainWindow.webContents = {
+                send: jest.fn(),
+            };
+
+            getServerView.mockImplementation((srv, tab) => ({
+                name: `${srv.name}-${tab.name}`,
+                urlTypeTuple: tuple(`http://${srv.name}.com/`, tab.name),
+                url: new URL(`http://${srv.name}.com`),
+            }));
             MattermostServer.mockImplementation((name, url) => ({
                 name,
                 url: new URL(url),
+            }));
+            const onceFn = jest.fn();
+            const loadFn = jest.fn();
+            const destroyFn = jest.fn();
+            MattermostView.mockImplementation((tab) => ({
+                on: jest.fn(),
+                load: loadFn,
+                once: onceFn,
+                destroy: destroyFn,
+                name: tab.name,
+                urlTypeTuple: tab.urlTypeTuple,
+                tab,
             }));
         });
 
@@ -188,13 +212,12 @@ describe('main/views/viewManager', () => {
         });
 
         it('should recycle existing views', () => {
-            const view = {
+            const makeSpy = jest.spyOn(viewManager, 'makeView');
+            const view = new MattermostView({
                 name: 'server1-tab1',
-                tab: {
-                    name: 'server1-tab1',
-                    url: new URL('http://server1.com'),
-                },
-            };
+                urlTypeTuple: tuple(new URL('http://server1.com').href, 'tab1'),
+                server: 'server1',
+            });
             viewManager.views.set('server1-tab1', view);
             viewManager.reloadConfiguration([
                 {
@@ -210,7 +233,8 @@ describe('main/views/viewManager', () => {
                 },
             ]);
             expect(viewManager.views.get('server1-tab1')).toBe(view);
-            expect(viewManager.loadView).not.toHaveBeenCalled();
+            expect(makeSpy).not.toHaveBeenCalled();
+            makeSpy.mockRestore();
         });
 
         it('should close tabs that arent open', () => {
@@ -231,6 +255,7 @@ describe('main/views/viewManager', () => {
         });
 
         it('should create new views for new tabs', () => {
+            const makeSpy = jest.spyOn(viewManager, 'makeView');
             viewManager.reloadConfiguration([
                 {
                     name: 'server1',
@@ -244,13 +269,19 @@ describe('main/views/viewManager', () => {
                     ],
                 },
             ]);
-            expect(viewManager.loadView).toHaveBeenCalledWith({
-                name: 'server1',
-                url: new URL('http://server1.com'),
-            }, expect.any(Object), {
-                name: 'tab1',
-                isOpen: true,
-            });
+            expect(makeSpy).toHaveBeenCalledWith(
+                {
+                    name: 'server1',
+                    url: new URL('http://server1.com'),
+                },
+                expect.any(Object),
+                {
+                    name: 'tab1',
+                    isOpen: true,
+                },
+                'http://server1.com/',
+            );
+            makeSpy.mockRestore();
         });
 
         it('should set focus to current view on reload', () => {
@@ -260,6 +291,8 @@ describe('main/views/viewManager', () => {
                     name: 'server1-tab1',
                     url: new URL('http://server1.com'),
                 },
+                urlTypeTuple: tuple('http://server1.com/', 'tab1'),
+                destroy: jest.fn(),
             };
             viewManager.currentView = 'server1-tab1';
             viewManager.views.set('server1-tab1', view);
@@ -277,6 +310,7 @@ describe('main/views/viewManager', () => {
                 },
             ]);
             expect(viewManager.showByName).toHaveBeenCalledWith('server1-tab1');
+            expect(viewManager.mainWindow.webContents.send).not.toHaveBeenCalled();
         });
 
         it('should show initial if currentView has been removed', () => {
@@ -286,6 +320,7 @@ describe('main/views/viewManager', () => {
                     name: 'server1-tab1',
                     url: new URL('http://server1.com'),
                 },
+                urlTypeTuple: ['http://server.com/', 'tab1'],
                 destroy: jest.fn(),
             };
             viewManager.currentView = 'server1-tab1';
