@@ -127,7 +127,7 @@ export default class RegistryConfig extends EventEmitter {
    * @param {string} name Name of the specific entry to retrieve (optional)
    */
     getRegistryEntryValues(hive: string, key: string, name?: string) {
-        const registry = new WindowsRegistry({hive, key, utf8: true});
+        const registry = this.createRegistry(hive, key);
         return new Promise<string | WindowsRegistry.RegistryItem[] | undefined>((resolve, reject) => {
             try {
                 registry.values((error: Error, results: WindowsRegistry.RegistryItem[]) => {
@@ -147,5 +147,21 @@ export default class RegistryConfig extends EventEmitter {
                 reject(e);
             }
         });
+    }
+
+    createRegistry(hive: string, key: string, utf8 = true) {
+        try {
+            const registry = new WindowsRegistry({hive, key, utf8});
+            return registry;
+        } catch (err) {
+            if (utf8) {
+                log.warn('Couldnt use UTF-8 for registry, trying with UTF-8', err);
+                this.createRegistry(hive, key, false);
+            } else {
+                throw err;
+            }
+        }
+
+        throw new Error('Failed to create registry object');
     }
 }
