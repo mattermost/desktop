@@ -46,6 +46,7 @@ jest.mock('common/utils/url', () => ({
     isTeamUrl: jest.fn(),
     isAdminUrl: jest.fn(),
     getView: jest.fn(),
+    cleanPathName: jest.fn(),
 }));
 jest.mock('common/tabs/TabView', () => ({
     getTabViewName: jest.fn(),
@@ -770,6 +771,7 @@ describe('main/windows/windowManager', () => {
                     ],
                 },
             ];
+            urlUtils.cleanPathName.mockImplementation((base, path) => path);
         });
 
         afterEach(() => {
