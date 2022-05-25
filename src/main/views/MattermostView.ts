@@ -21,7 +21,7 @@ import {
     SET_VIEW_OPTIONS,
     LOADSCREEN_END,
 } from 'common/communication';
-
+import {MattermostServer} from 'common/servers/MattermostServer';
 import {TabView, TabTuple} from 'common/tabs/TabView';
 
 import {ServerInfo} from 'main/server/serverInfo';
@@ -138,6 +138,12 @@ export class MattermostView extends EventEmitter {
 
     get urlTypeTuple(): TabTuple {
         return this.tab.urlTypeTuple;
+    }
+
+    updateServerInfo = (srv: MattermostServer) => {
+        this.tab.server = srv;
+        this.serverInfo = new ServerInfo(srv);
+        this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.name, this.tab.shouldNotify);
     }
 
     resetLoadingStatus = () => {
