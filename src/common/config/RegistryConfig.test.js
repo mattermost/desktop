@@ -58,7 +58,7 @@ describe('common/config/RegistryConfig', () => {
 
         const registryConfig = new RegistryConfig();
         const originalFn = registryConfig.getRegistryEntryValues;
-        registryConfig.getRegistryEntryValues = (hive, key, name) => originalFn('mattermost-hive', key, name);
+        registryConfig.getRegistryEntryValues = (hive, key, name) => originalFn.apply(registryConfig, ['mattermost-hive', key, name]);
         await registryConfig.init();
 
         Object.defineProperty(process, 'platform', {
