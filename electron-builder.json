@@ -38,6 +38,7 @@
   ],
   "afterPack": "scripts/afterpack.js",
   "afterSign": "scripts/notarize.js",
+  "afterAllArtifactBuild": "scripts/afterbuild.js",
   "deb": {
     "artifactName": "${version}/${name}_${version}-1_${arch}.${ext}",
     "synopsis": "Mattermost Desktop App",

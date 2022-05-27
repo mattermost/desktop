@@ -28,6 +28,10 @@ $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-x86.msi")
 #### Windows - setup exe files
 $(print_link "${BASE_URL}/mattermost-desktop-setup-${VERSION}-win.exe")
 
+#### Windows - zip files
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win32.zip")
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win64.zip")
+
 #### Mac
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-mac-universal.dmg")
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-mac-x64.dmg")
