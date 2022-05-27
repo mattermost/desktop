@@ -588,7 +588,7 @@ export class WindowManager {
         log.debug('WwindowManager.handleBrowserHistoryPush', {viewName, pathName});
 
         const currentView = this.viewManager?.views.get(viewName);
-        const cleanedPathName = currentView?.tab.server.url.pathname === '/' ? pathName : pathName.replace(currentView?.tab.server.url.pathname || '', '');
+        const cleanedPathName = urlUtils.cleanPathName(currentView?.tab.server.url.pathname || '', pathName);
         const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${cleanedPathName}`, Config.teams)?.name || viewName;
         if (this.viewManager?.closedViews.has(redirectedViewName)) {
             // If it's a closed view, just open it and stop

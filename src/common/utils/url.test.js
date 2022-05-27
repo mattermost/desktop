@@ -303,6 +303,20 @@ describe('common/utils/url', () => {
         });
     });
 
+    describe('cleanPathName', () => {
+        it('should not clean path name if it occurs other than the beginning', () => {
+            expect(urlUtils.cleanPathName('/mattermost', '/home/channels/mattermost/test')).toBe('/home/channels/mattermost/test');
+        });
+
+        it('should clean path name if it occurs at the beginning', () => {
+            expect(urlUtils.cleanPathName('/mattermost', '/mattermost/channels/home/test')).toBe('/channels/home/test');
+        });
+
+        it('should do nothing if it doesnt occur', () => {
+            expect(urlUtils.cleanPathName('/mattermost', '/channels/home/test')).toBe('/channels/home/test');
+        });
+    });
+
     describe('isCustomLoginURL', () => {
         it('should match correct URL', () => {
             expect(urlUtils.isCustomLoginURL(
