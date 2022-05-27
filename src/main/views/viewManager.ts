@@ -150,8 +150,7 @@ export class ViewManager {
             if (!tab.isOpen) {
                 closed.set(tabTuple, {srv, tab, name: view.name});
             } else if (recycle) {
-                recycle.serverInfo = info;
-                recycle.tab.server = srv;
+                recycle.updateServerInfo(srv);
                 views.set(tabTuple, recycle);
             } else {
                 views.set(tabTuple, this.makeView(srv, info, tab, tabTuple[0]));
@@ -177,7 +176,7 @@ export class ViewManager {
             this.closedViews.set(x.name, {srv: x.srv, tab: x.tab});
         }
 
-        if (focusedTuple && (current.has(focusedTuple) || closed.has(focusedTuple))) {
+        if ((focusedTuple && closed.has(focusedTuple)) || (this.currentView && this.closedViews.has(this.currentView))) {
             if (configServers.length) {
                 delete this.currentView;
                 this.showInitial();
@@ -189,8 +188,11 @@ export class ViewManager {
         // show the focused tab (or initial)
         if (focusedTuple && views.has(focusedTuple)) {
             const view = views.get(focusedTuple);
-            this.currentView = view!.name;
-            this.showByName(view!.name);
+            if (view) {
+                this.currentView = view.name;
+                this.showByName(view.name);
+                this.mainWindow.webContents.send(SET_ACTIVE_VIEW, view.tab.server.name, view.tab.type);
+            }
         } else {
             this.showInitial();
         }
