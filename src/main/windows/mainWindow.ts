@@ -124,10 +124,6 @@ function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean})
         }
     });
 
-    mainWindow.once('show', () => {
-        mainWindow.show();
-    });
-
     mainWindow.once('restore', () => {
         mainWindow.restore();
     });

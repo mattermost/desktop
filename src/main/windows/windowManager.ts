@@ -213,7 +213,6 @@ export class WindowManager {
     // max retries allows the message to get to the renderer even if it is sent while the app is starting up.
     sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: any[]) => {
         if (!this.mainWindow || !this.mainWindowReady) {
-            this.showMainWindow();
             if (maxRetries > 0) {
                 log.info(`Can't send ${channel}, will retry`);
                 setTimeout(() => {
