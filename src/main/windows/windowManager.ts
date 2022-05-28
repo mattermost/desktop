@@ -213,7 +213,6 @@ export class WindowManager {
     // max retries allows the message to get to the renderer even if it is sent while the app is starting up.
     sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: any[]) => {
         if (!this.mainWindow || !this.mainWindowReady) {
-            this.showMainWindow();
             if (maxRetries > 0) {
                 log.info(`Can't send ${channel}, will retry`);
                 setTimeout(() => {
@@ -589,7 +588,7 @@ export class WindowManager {
         log.debug('WwindowManager.handleBrowserHistoryPush', {viewName, pathName});
 
         const currentView = this.viewManager?.views.get(viewName);
-        const cleanedPathName = currentView?.tab.server.url.pathname === '/' ? pathName : pathName.replace(currentView?.tab.server.url.pathname || '', '');
+        const cleanedPathName = urlUtils.cleanPathName(currentView?.tab.server.url.pathname || '', pathName);
         const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${cleanedPathName}`, Config.teams)?.name || viewName;
         if (this.viewManager?.closedViews.has(redirectedViewName)) {
             // If it's a closed view, just open it and stop
