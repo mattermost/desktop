@@ -4,6 +4,12 @@
 export type RemoteInfo = {
     name: string;
     serverVersion?: string;
+    siteURL?: string;
     hasFocalboard?: boolean;
     hasPlaybooks?: boolean;
 };
+
+export type ClientConfig = {
+    Version: string;
+    SiteURL: string;
+}

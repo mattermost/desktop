@@ -102,6 +102,7 @@ describe('main/app/utils', () => {
         it('should open all tabs', async () => {
             ServerInfo.mockReturnValue({promise: {
                 name: 'server-1',
+                siteURL: 'http://server-1.com',
                 serverVersion: '6.0.0',
                 hasPlaybooks: true,
                 hasFocalboard: true,
@@ -117,6 +118,7 @@ describe('main/app/utils', () => {
         it('should open only playbooks', async () => {
             ServerInfo.mockReturnValue({promise: {
                 name: 'server-1',
+                siteURL: 'http://server-1.com',
                 serverVersion: '6.0.0',
                 hasPlaybooks: true,
                 hasFocalboard: false,
@@ -132,6 +134,7 @@ describe('main/app/utils', () => {
         it('should open none when server version is too old', async () => {
             ServerInfo.mockReturnValue({promise: {
                 name: 'server-1',
+                siteURL: 'http://server-1.com',
                 serverVersion: '5.0.0',
                 hasPlaybooks: true,
                 hasFocalboard: true,
@@ -142,6 +145,21 @@ describe('main/app/utils', () => {
 
             expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_PLAYBOOKS).isOpen).toBeUndefined();
             expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_FOCALBOARD).isOpen).toBeUndefined();
+        });
+
+        it('should update server URL using site URL', async () => {
+            ServerInfo.mockReturnValue({promise: {
+                name: 'server-1',
+                siteURL: 'http://server-2.com',
+                serverVersion: '6.0.0',
+                hasPlaybooks: true,
+                hasFocalboard: true,
+            }});
+
+            updateServerInfos(Config.teams);
+            await new Promise(setImmediate); // workaround since Promise.all seems to not let me wait here
+
+            expect(Config.teams.find((team) => team.name === 'server-1').url).toBe('http://server-2.com');
         });
     });
 
