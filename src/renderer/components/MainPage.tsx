@@ -396,7 +396,10 @@ export default class MainPage extends React.PureComponent<Props, State> {
                     className='button restore-button'
                     onClick={this.handleRestore}
                 >
-                    <img src={restoreButton}/>
+                    <img
+                        src={restoreButton}
+                        draggable={false}
+                    />
                 </div>
             );
         } else {
@@ -405,7 +408,10 @@ export default class MainPage extends React.PureComponent<Props, State> {
                     className='button max-button'
                     onClick={this.handleMaximize}
                 >
-                    <img src={maximizeButton}/>
+                    <img
+                        src={maximizeButton}
+                        draggable={false}
+                    />
                 </div>
             );
         }
@@ -463,14 +469,20 @@ export default class MainPage extends React.PureComponent<Props, State> {
                         className='button min-button'
                         onClick={this.handleMinimize}
                     >
-                        <img src={minimizeButton}/>
+                        <img
+                            src={minimizeButton}
+                            draggable={false}
+                        />
                     </div>
                     {maxButton}
                     <div
                         className='button close-button'
                         onClick={this.handleClose}
                     >
-                        <img src={closeButton}/>
+                        <img
+                            src={closeButton}
+                            draggable={false}
+                        />
                     </div>
                 </span>
             );
