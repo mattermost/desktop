@@ -55,11 +55,21 @@ export function updateServerInfos(teams: TeamWithTabs[]) {
     });
     Promise.all(serverInfos).then((data: Array<RemoteInfo | string | undefined>) => {
         const teams = Config.teams;
-        teams.forEach((team) => openExtraTabs(data, team));
+        teams.forEach((team) => {
+            updateServerURL(data, team);
+            openExtraTabs(data, team);
+        });
         Config.set('teams', teams);
     }).catch((reason: any) => {
         log.error('Error getting server infos', reason);
     });
+}
+
+function updateServerURL(data: Array<RemoteInfo | string | undefined>, team: TeamWithTabs) {
+    const remoteInfo = data.find((info) => info && typeof info !== 'string' && info.name === team.name) as RemoteInfo;
+    if (remoteInfo && remoteInfo.siteURL) {
+        team.url = remoteInfo.siteURL;
+    }
 }
 
 function openExtraTabs(data: Array<RemoteInfo | string | undefined>, team: TeamWithTabs) {
