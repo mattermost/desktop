@@ -18,8 +18,8 @@ export const THREE_DOT_MENU_WIDTH = 40;
 export const THREE_DOT_MENU_WIDTH_MAC = 80;
 export const MENU_SHADOW_WIDTH = 24;
 
-export const DEFAULT_WINDOW_WIDTH = 1000;
-export const DEFAULT_WINDOW_HEIGHT = 700;
+export const DEFAULT_WINDOW_WIDTH = 1280;
+export const DEFAULT_WINDOW_HEIGHT = 800;
 export const MINIMUM_WINDOW_WIDTH = 700;
 export const MINIMUM_WINDOW_HEIGHT = 240;
 
