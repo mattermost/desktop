@@ -36,6 +36,10 @@ jest.mock('main/certificateStore', () => ({
 jest.mock('main/tray/tray', () => ({}));
 jest.mock('main/windows/windowManager', () => ({
     getMainWindow: jest.fn(),
+    getViewNameByWebContentsId: jest.fn(),
+    viewManager: {
+        views: new Map(),
+    },
 }));
 
 describe('main/app/app', () => {
@@ -53,6 +57,7 @@ describe('main/app/app', () => {
         });
 
         afterEach(() => {
+            WindowManager.viewManager.views.clear();
             jest.resetAllMocks();
         });
 
@@ -137,6 +142,16 @@ describe('main/app/app', () => {
             expect(certificateErrorCallbacks.has('http://server-1.com:error-1')).toBe(false);
             expect(CertificateStore.add).toHaveBeenCalledWith('http://server-1.com', certificate);
             expect(CertificateStore.save).toHaveBeenCalled();
+        });
+
+        it('should load URL using MattermostView when trusting certificate', async () => {
+            dialog.showMessageBox.mockResolvedValue({response: 0});
+            const load = jest.fn();
+            WindowManager.viewManager.views.set('view-name', {load});
+            WindowManager.getViewNameByWebContentsId.mockReturnValue('view-name');
+            await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
+            expect(callback).toHaveBeenCalledWith(true);
+            expect(load).toHaveBeenCalledWith(testURL);
         });
 
         it('should explicitly untrust if user selects More Details and then cancel with the checkbox checked', async () => {
