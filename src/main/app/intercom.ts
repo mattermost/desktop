@@ -161,6 +161,7 @@ export function handleEditServerModal(e: IpcMainEvent, name: string) {
             teams[serverIndex].name = data.name;
             teams[serverIndex].url = data.url;
             Config.set('teams', teams);
+            updateServerInfos([teams[serverIndex]]);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
