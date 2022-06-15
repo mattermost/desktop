@@ -97,6 +97,17 @@ describe('main/views/MattermostView', () => {
             expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
             expect(mattermostView.loadRetry).toBeCalledWith('http://server-1.com/', error);
         });
+
+        it('should not retry when failing to load due to cert error', async () => {
+            const error = new Error('test');
+            error.code = 'ERR_CERT_ERROR';
+            const promise = Promise.reject(error);
+            mattermostView.view.webContents.loadURL.mockImplementation(() => promise);
+            mattermostView.load('a-bad<url');
+            await expect(promise).rejects.toThrow(error);
+            expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
+            expect(mattermostView.loadRetry).not.toBeCalled();
+        });
     });
 
     describe('retry', () => {

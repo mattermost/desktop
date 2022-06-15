@@ -174,6 +174,13 @@ export class MattermostView extends EventEmitter {
         log.info(`[${Util.shorten(this.tab.name)}] Loading ${loadURL}`);
         const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
+            if (err.code && err.code.startsWith('ERR_CERT')) {
+                WindowManager.sendToRenderer(LOAD_FAILED, this.tab.name, err.toString(), loadURL.toString());
+                this.emit(LOAD_FAILED, this.tab.name, err.toString(), loadURL.toString());
+                log.info(`[${Util.shorten(this.tab.name)}] Invalid certificate, stop retrying until the user decides what to do: ${err}.`);
+                this.status = Status.ERROR;
+                return;
+            }
             this.loadRetry(loadURL, err);
         });
     }
