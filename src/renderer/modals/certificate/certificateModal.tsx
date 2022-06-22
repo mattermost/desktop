@@ -95,7 +95,7 @@ export default class SelectCertificateModal extends React.PureComponent<Props, S
     }
 
     getSelectedCert = () => {
-        if (this.state.list && this.state.selectedIndex) {
+        if (this.state.list && this.state.selectedIndex !== undefined) {
             return this.state.list[this.state.selectedIndex];
         }
         return undefined;
