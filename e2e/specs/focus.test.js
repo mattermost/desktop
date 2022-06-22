@@ -124,8 +124,8 @@ describe('focus', function desc() {
             await dropdownView.click('.TeamDropdown .TeamDropdown__button:has-text("community")');
             // eslint-disable-next-line dot-notation
             const secondServer = this.serverMap['community___TAB_MESSAGING'].win;
-            await secondServer.waitForSelector('#loginId');
-            await secondServer.focus('#loginId');
+            await secondServer.waitForSelector('#input_loginId');
+            await secondServer.focus('#input_loginId');
 
             await mainView.click('.TeamDropdownButton');
             await dropdownView.click(`.TeamDropdown .TeamDropdown__button:has-text("${config.teams[0].name}")`);
@@ -142,7 +142,7 @@ describe('focus', function desc() {
 
             await mainView.click('.TeamDropdownButton');
             await dropdownView.click('.TeamDropdown .TeamDropdown__button:has-text("community")');
-            const isLoginFocused = await secondServer.$eval('#loginId', (el) => el === document.activeElement);
+            const isLoginFocused = await secondServer.$eval('#input_loginId', (el) => el === document.activeElement);
             isLoginFocused.should.be.true;
 
             // Make sure you can just start typing and it'll go in the post textbox
@@ -150,7 +150,7 @@ describe('focus', function desc() {
             robot.typeString('username');
             await asyncSleep(500);
 
-            const loginString = await secondServer.inputValue('#loginId');
+            const loginString = await secondServer.inputValue('#input_loginId');
             loginString.should.equal('username');
         });
     });
