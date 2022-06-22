@@ -68,7 +68,7 @@ describe('back_button', function desc() {
         poweredByOneLogin.should.not.be.null;
 
         await backButton.click();
-        let loginPrompt = await firstServer.waitForSelector('#loginId');
+        let loginPrompt = await firstServer.waitForSelector('#input_loginId');
         loginPrompt.should.not.be.null;
         await mainWindow.waitForSelector('button:has-text("Back")', {state: 'hidden'});
 
@@ -88,7 +88,7 @@ describe('back_button', function desc() {
 
         await backButton.click();
         await backButton.click();
-        loginPrompt = await firstServer.waitForSelector('#loginId');
+        loginPrompt = await firstServer.waitForSelector('#input_loginId');
         loginPrompt.should.not.be.null;
     });
 });
