@@ -189,12 +189,12 @@ module.exports = {
     },
 
     async loginToMattermost(window) {
-        await window.waitForSelector('#loginId');
-        await window.waitForSelector('#loginPassword');
-        await window.waitForSelector('#loginButton');
-        await window.type('#loginId', 'user-1');
-        await window.type('#loginPassword', 'SampleUs@r-1');
-        await window.click('#loginButton');
+        await window.waitForSelector('#input_loginId');
+        await window.waitForSelector('#input_password-input');
+        await window.waitForSelector('#saveSetting');
+        await window.type('#input_loginId', 'user-1');
+        await window.type('#input_password-input', 'SampleUs@r-1');
+        await window.click('#saveSetting');
     },
 
     addClientCommands(client) {
