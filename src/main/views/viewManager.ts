@@ -20,6 +20,7 @@ import {
     BROWSER_HISTORY_PUSH,
     UPDATE_LAST_ACTIVE,
     UPDATE_URL_VIEW_WIDTH,
+    SHOW_NEW_SERVER_MODAL,
 } from 'common/communication';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
@@ -45,7 +46,6 @@ enum LoadingScreenState {
 }
 
 export class ViewManager {
-    configServers: TeamWithTabs[];
     lastActiveServer?: number;
     viewOptions: BrowserViewConstructorOptions;
     closedViews: Map<string, {srv: MattermostServer; tab: Tab}>;
@@ -58,7 +58,6 @@ export class ViewManager {
     loadingScreenState: LoadingScreenState;
 
     constructor(mainWindow: BrowserWindow) {
-        this.configServers = Config.teams.concat();
         this.lastActiveServer = Config.lastActiveTeam;
         this.viewOptions = {webPreferences: {spellcheck: Config.useSpellChecker}};
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
@@ -72,7 +71,7 @@ export class ViewManager {
     }
 
     getServers = () => {
-        return this.configServers;
+        return Config.teams.concat();
     }
 
     loadServer = (server: TeamWithTabs) => {
@@ -119,7 +118,7 @@ export class ViewManager {
     }
 
     load = () => {
-        this.configServers.forEach((server) => this.loadServer(server));
+        this.getServers().forEach((server) => this.loadServer(server));
     }
 
     /** Called when a new configuration is received
@@ -199,8 +198,9 @@ export class ViewManager {
     }
 
     showInitial = () => {
-        if (this.configServers.length) {
-            const element = this.configServers.find((e) => e.order === this.lastActiveServer) || this.configServers.find((e) => e.order === 0);
+        const servers = this.getServers();
+        if (servers.length) {
+            const element = servers.find((e) => e.order === this.lastActiveServer) || servers.find((e) => e.order === 0);
             if (element && element.tabs.length) {
                 let tab = element.tabs.find((tab) => tab.order === element.lastActiveTab) || element.tabs.find((tab) => tab.order === 0);
                 if (!tab?.isOpen) {
@@ -212,6 +212,9 @@ export class ViewManager {
                     this.showByName(tabView);
                 }
             }
+        } else {
+            this.mainWindow.webContents.send(SET_ACTIVE_VIEW, null, null);
+            ipcMain.emit(SHOW_NEW_SERVER_MODAL);
         }
     }
 
@@ -503,7 +506,7 @@ export class ViewManager {
         // TODO: fix for new tabs
         if (url) {
             const parsedURL = urlUtils.parseURL(url)!;
-            const tabView = urlUtils.getView(parsedURL, this.configServers, true);
+            const tabView = urlUtils.getView(parsedURL, this.getServers(), true);
             if (tabView) {
                 const urlWithSchema = `${urlUtils.parseURL(tabView.url)?.origin}${parsedURL.pathname}${parsedURL.search}`;
                 if (this.closedViews.has(tabView.name)) {

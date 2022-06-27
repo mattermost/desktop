@@ -4,10 +4,10 @@
 /* eslint-disable max-lines */
 'use strict';
 
-import {dialog} from 'electron';
+import {dialog, ipcMain} from 'electron';
 import {Tuple as tuple} from '@bloomberg/record-tuple-polyfill';
 
-import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS} from 'common/communication';
+import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, SHOW_NEW_SERVER_MODAL} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {getServerView, getTabViewName} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
@@ -417,7 +417,7 @@ describe('main/views/viewManager', () => {
             ],
         }];
         const viewManager = new ViewManager({});
-        viewManager.configServers = teams.concat();
+        viewManager.getServers = () => teams.concat();
 
         beforeEach(() => {
             viewManager.showByName = jest.fn();
@@ -426,7 +426,7 @@ describe('main/views/viewManager', () => {
 
         afterEach(() => {
             jest.resetAllMocks();
-            viewManager.configServers = teams;
+            viewManager.getServers = () => teams;
             delete viewManager.lastActiveServer;
         });
 
@@ -442,7 +442,7 @@ describe('main/views/viewManager', () => {
         });
 
         it('should show last active tab of first server', () => {
-            viewManager.configServers = [{
+            viewManager.getServers = () => [{
                 name: 'server-1',
                 order: 1,
                 tabs: [
@@ -489,7 +489,7 @@ describe('main/views/viewManager', () => {
         });
 
         it('should show next tab when last active tab is closed', () => {
-            viewManager.configServers = [{
+            viewManager.getServers = () => [{
                 name: 'server-1',
                 order: 1,
                 tabs: [
@@ -533,6 +533,17 @@ describe('main/views/viewManager', () => {
             }];
             viewManager.showInitial();
             expect(viewManager.showByName).toHaveBeenCalledWith('server-2_tab-1');
+        });
+
+        it('should open new server modal when no servers exist', () => {
+            viewManager.mainWindow = {
+                webContents: {
+                    send: jest.fn(),
+                },
+            };
+            viewManager.getServers = () => [];
+            viewManager.showInitial();
+            expect(ipcMain.emit).toHaveBeenCalledWith(SHOW_NEW_SERVER_MODAL);
         });
     });
 
