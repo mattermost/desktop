@@ -12,7 +12,7 @@ if [ "$RELEASE_VERSION" == "" ]; then
 fi
 
 echo "${RELEASE_VERSION}"
-if [[ -f ./release/${RELEASE_VERSION}*.yml ]] then
+if [[ -f ./release/${RELEASE_VERSION}*.yml ]]; then
     for i in ./release/${RELEASE_VERSION}*.yml; do
         VERSION=$VERSION yq eval -i '.files[].url |= strenv(VERSION) + "/" + .' $i
     done
