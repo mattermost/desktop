@@ -53,7 +53,7 @@
     "package:mac-with-universal": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --mac --x64 --arm64 --universal --publish=never",
     "package:mas": "cross-env NODE_ENV=production IS_MAC_APP_STORE=true npm-run-all check-build-config build && electron-builder --mac mas --universal --publish=never",
     "package:mas-dev": "cross-env NODE_ENV=production IS_MAC_APP_STORE=true npm-run-all check-build-config build && electron-builder --mac mas-dev --universal --publish=never",
-    "package:linux": "npm-run-all package:linux*",
+    "package:linux": "npm-run-all package:linux-*",
     "package:linux-appImage": "cross-env NODE_ENV=production CAN_UPGRADE=true npm-run-all check-build-config build && electron-builder --linux appimage --x64 --ia32 --publish=never",
     "package:linux-deb": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --linux deb --x64 --ia32 --publish=never",
     "package:linux-rpm": "cross-env NODE_ENV=production npm-run-all check-build-config build && electron-builder --linux rpm --x64 --ia32 --publish=never",
