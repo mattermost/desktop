@@ -20,6 +20,13 @@ async function setupPromise(window, id) {
     return true;
 }
 
+function getZoomFactorOfServer(browserWindow, serverId) {
+    return browserWindow.evaluate((window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getZoomFactor(), serverId);
+}
+function setZoomFactorOfServer(browserWindow, serverId, zoomFactor) {
+    return browserWindow.evaluate((window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.setZoomFactor(zoomFactor), serverId);
+}
+
 describe('menu/view', function desc() {
     this.timeout(30000);
 
@@ -126,6 +133,27 @@ describe('menu/view', function desc() {
         zoomLevel.should.be.greaterThan(1);
     });
 
+    it('MM-44931 Zoom in when CmdOrCtrl+Shift+Plus is pressed', async () => {
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        const browserWindow = await this.app.browserWindow(mainWindow);
+        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+        const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+        const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
+        await env.loginToMattermost(firstServer);
+        await firstServer.waitForSelector('#searchBox');
+
+        // reset zoom
+        await setZoomFactorOfServer(browserWindow, firstServerId, 1);
+        await asyncSleep(1000);
+        zoomLevel.should.be.equal(1);
+
+        robot.keyTap('=', [env.cmdOrCtrl, 'shift']);
+        await asyncSleep(1000);
+        const zoomLevel = getZoomFactorOfServer(browserWindow, firstServerId);
+        zoomLevel.should.be.greaterThan(1);
+    });
+
     it('MM-T819 Zoom out from the menu bar', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);
@@ -139,6 +167,27 @@ describe('menu/view', function desc() {
         robot.keyTap('-', [env.cmdOrCtrl]);
         await asyncSleep(1000);
         const zoomLevel = await browserWindow.evaluate((window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
+        zoomLevel.should.be.lessThan(1);
+    });
+
+    it('MM-T819 Zoom out from the menu bar', async () => {
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        const browserWindow = await this.app.browserWindow(mainWindow);
+        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+        const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+        const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
+        await env.loginToMattermost(firstServer);
+        await firstServer.waitForSelector('#searchBox');
+
+        // reset zoom
+        await setZoomFactorOfServer(browserWindow, firstServerId, 1.0);
+        await asyncSleep(1000);
+        zoomLevel.should.be.equal(1);
+
+        robot.keyTap('-', [env.cmdOrCtrl, 'shift']);
+        await asyncSleep(1000);
+        const zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId)
         zoomLevel.should.be.lessThan(1);
     });
 
