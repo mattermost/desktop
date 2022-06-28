@@ -16,7 +16,7 @@
     "url": "git://github.com/mattermost/desktop.git"
   },
   "config": {
-    "target": "18.3.0",
+    "target": "19.0.6",
     "arch": "x64",
     "target_arch": "x64",
     "disturl": "https://electronjs.org/headers",
@@ -27,7 +27,7 @@
     "build": "npm-run-all build:*",
     "build:main": "webpack-cli --config webpack.config.main.js",
     "build:renderer": "webpack-cli --config webpack.config.renderer.js",
-    "build-robotjs": "electron-rebuild -v 18.3.0 -m ./node_modules/robotjs",
+    "build-robotjs": "electron-rebuild -v 19.0.6 -m ./node_modules/robotjs",
     "start": "electron dist/ --disable-dev-mode",
     "restart": "npm run build && npm run start",
     "storybook": "start-storybook -p 9001 -c src/.storybook",
@@ -138,7 +138,7 @@
     "copy-webpack-plugin": "10.2.4",
     "cross-env": "7.0.3",
     "css-loader": "6.7.1",
-    "electron": "18.3.0",
+    "electron": "19.0.6",
     "electron-builder": "23.0.8",
     "electron-connect": "0.6.3",
     "electron-mocha": "11.0.2",
