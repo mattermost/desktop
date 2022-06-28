@@ -17,7 +17,7 @@ const isRelease = process.env.CIRCLE_BRANCH && process.env.CIRCLE_BRANCH.startsW
 
 const codeDefinitions = {
     __HASH_VERSION__: !isRelease && JSON.stringify(VERSION),
-    __CAN_UPGRADE__: JSON.stringify(true), // we should set this to false when working on a store version. Hardcoding for now.
+    __CAN_UPGRADE__: JSON.stringify(process.env.CAN_UPGRADE === 'true'),
     __IS_NIGHTLY_BUILD__: JSON.stringify(process.env.CIRCLE_BRANCH === 'nightly'),
     __IS_MAC_APP_STORE__: JSON.stringify(process.env.IS_MAC_APP_STORE === 'true'),
 };

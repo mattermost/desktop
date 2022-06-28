@@ -251,7 +251,7 @@ jobs:
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
       - build:
-          os: windows
+          os: windows-nsis
           path: ./build/win
           subpath: ./win/
       - save_cache:
