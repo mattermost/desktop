@@ -28,8 +28,8 @@ function getZoomFactorOfServer(browserWindow, serverId) {
 }
 function setZoomFactorOfServer(browserWindow, serverId, zoomFactor) {
     return browserWindow.evaluate(
-        (window, {serverId, zoomFactor}) => window.getBrowserViews().find((view) => view.webContents.id === serverId).webContents.setZoomFactor(zoomFactor),
-        {serverId, zoomFactor},
+        (window, {id, zoom}) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.setZoomFactor(zoom),
+        {id: serverId, zoom: zoomFactor},
     );
 }
 
@@ -189,12 +189,12 @@ describe('menu/view', function desc() {
         // reset zoom
         await setZoomFactorOfServer(browserWindow, firstServerId, 1.0);
         await asyncSleep(1000);
-        const initialZoom = await getZoomFactorOfServer(browserWindow, firstServerId)
+        const initialZoom = await getZoomFactorOfServer(browserWindow, firstServerId);
         initialZoom.should.be.equal(1);
 
         robot.keyTap('-', [env.cmdOrCtrl, 'shift']);
         await asyncSleep(1000);
-        const zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId)
+        const zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
         zoomLevel.should.be.lessThan(1);
     });
 
