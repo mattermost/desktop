@@ -21,10 +21,16 @@ async function setupPromise(window, id) {
 }
 
 function getZoomFactorOfServer(browserWindow, serverId) {
-    return browserWindow.evaluate((window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getZoomFactor(), serverId);
+    return browserWindow.evaluate(
+        (window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getZoomFactor(),
+        serverId,
+    );
 }
 function setZoomFactorOfServer(browserWindow, serverId, zoomFactor) {
-    return browserWindow.evaluate((window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.setZoomFactor(zoomFactor), serverId);
+    return browserWindow.evaluate(
+        (window, {serverId, zoomFactor}) => window.getBrowserViews().find((view) => view.webContents.id === serverId).webContents.setZoomFactor(zoomFactor),
+        {serverId, zoomFactor},
+    );
 }
 
 describe('menu/view', function desc() {
@@ -107,7 +113,6 @@ describe('menu/view', function desc() {
 
         robot.keyTap('=', [env.cmdOrCtrl]);
         await asyncSleep(1000);
-        console.log(firstServerId);
         let zoomLevel = await browserWindow.evaluate((window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
         zoomLevel.should.be.greaterThan(1);
 
@@ -146,7 +151,8 @@ describe('menu/view', function desc() {
         // reset zoom
         await setZoomFactorOfServer(browserWindow, firstServerId, 1);
         await asyncSleep(1000);
-        zoomLevel.should.be.equal(1);
+        const initialZoom = await getZoomFactorOfServer(browserWindow, firstServerId);
+        initialZoom.should.be.equal(1);
 
         robot.keyTap('=', [env.cmdOrCtrl, 'shift']);
         await asyncSleep(1000);
@@ -170,7 +176,7 @@ describe('menu/view', function desc() {
         zoomLevel.should.be.lessThan(1);
     });
 
-    it('MM-T819 Zoom out from the menu bar', async () => {
+    it('MM-44931 Zoom out when CmdOrCtrl+Shift+Minus is pressed', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);
         const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
@@ -183,7 +189,8 @@ describe('menu/view', function desc() {
         // reset zoom
         await setZoomFactorOfServer(browserWindow, firstServerId, 1.0);
         await asyncSleep(1000);
-        zoomLevel.should.be.equal(1);
+        const initialZoom = await getZoomFactorOfServer(browserWindow, firstServerId)
+        initialZoom.should.be.equal(1);
 
         robot.keyTap('-', [env.cmdOrCtrl, 'shift']);
         await asyncSleep(1000);
