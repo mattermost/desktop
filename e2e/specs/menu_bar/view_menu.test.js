@@ -156,7 +156,7 @@ describe('menu/view', function desc() {
 
         robot.keyTap('=', [env.cmdOrCtrl, 'shift']);
         await asyncSleep(1000);
-        const zoomLevel = getZoomFactorOfServer(browserWindow, firstServerId);
+        const zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
         zoomLevel.should.be.greaterThan(1);
     });
 
