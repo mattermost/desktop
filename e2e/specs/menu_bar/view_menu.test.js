@@ -179,7 +179,7 @@ describe('menu/view', function desc() {
             zoomLevel.should.be.lessThan(1);
         });
 
-        it('MM-44931 Zoom out when CmdOrCtrl+Shift+Minus is pressed', async () => {
+        it('MM-T819_1 Zoom out when CmdOrCtrl+Shift+Minus is pressed', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
             const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
