@@ -132,7 +132,7 @@ describe('menu/view', function desc() {
             const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
             await env.loginToMattermost(firstServer);
             await firstServer.waitForSelector('#searchBox');
-    
+
             robot.keyTap('=', [env.cmdOrCtrl]);
             await asyncSleep(1000);
             const zoomLevel = await browserWindow.evaluate((window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
@@ -160,7 +160,7 @@ describe('menu/view', function desc() {
             const zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
             zoomLevel.should.be.greaterThan(1);
         });
-    })
+    });
 
     describe('MM-T818 Zoom out from the menu bar', () => {
         it('MM-T819 Zoom out when CmdOrCtrl+Minus is pressed', async () => {
@@ -200,7 +200,7 @@ describe('menu/view', function desc() {
             const zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
             zoomLevel.should.be.lessThan(1);
         });
-    })
+    });
 
     describe('Reload', () => {
         let browserWindow;
