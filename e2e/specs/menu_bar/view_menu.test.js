@@ -139,7 +139,7 @@ describe('menu/view', function desc() {
             zoomLevel.should.be.greaterThan(1);
         });
 
-        it('MM-44931 Zoom in when CmdOrCtrl+Shift+Plus is pressed', async () => {
+        it('MM-T818_1 Zoom in when CmdOrCtrl+Shift+Plus is pressed', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
             const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
