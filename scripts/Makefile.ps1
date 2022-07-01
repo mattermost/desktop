@@ -531,6 +531,8 @@ function Run-BuildElectron {
     npm run build
     #npm run build --prefix="$(Get-RootDir)" "$(Get-RootDir)"
     Print-Info "Packaging nodejs/electron for Windows (running npm run package:windows)..."
+    # NSIS has the upgrade flag enabled, so it must be done first
+    npm run package:windows-nsis
     npm run package:windows
     #npm run package:windows --prefix="$(Get-RootDir)" "$(Get-RootDir)"
 }

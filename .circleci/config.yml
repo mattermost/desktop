@@ -261,7 +261,7 @@ jobs:
             - "~/.cache/electron"
             - "~/.cache/electron-builder"
       - save:
-          filename: "$(jq -r .version package.json)/*.exe"
+          filename: "$(jq -r .version package.json)/*.zip"
 
   build-mac-pr:
     executor: mac

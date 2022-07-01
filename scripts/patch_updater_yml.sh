@@ -12,7 +12,9 @@ if [ "$RELEASE_VERSION" == "" ]; then
 fi
 
 echo "${RELEASE_VERSION}"
-for i in ./release/${RELEASE_VERSION}*.yml; do
-    VERSION=$VERSION yq eval -i '.files[].url |= strenv(VERSION) + "/" + .' $i
-done
+if [[ -f ./release/${RELEASE_VERSION}*.yml ]]; then
+    for i in ./release/${RELEASE_VERSION}*.yml; do
+        VERSION=$VERSION yq eval -i '.files[].url |= strenv(VERSION) + "/" + .' $i
+    done
+fi
 

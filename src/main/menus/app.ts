@@ -132,8 +132,16 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         role: 'zoomIn',
         accelerator: 'CmdOrCtrl+=',
     }, {
+        role: 'zoomIn',
+        visible: false,
+        accelerator: 'CmdOrCtrl+Shift+=',
+    }, {
         role: 'zoomOut',
         accelerator: 'CmdOrCtrl+-',
+    }, {
+        role: 'zoomOut',
+        visible: false,
+        accelerator: 'CmdOrCtrl+Shift+-',
     }, separatorItem, {
         label: 'Developer Tools for Application Wrapper',
         accelerator: (() => {
