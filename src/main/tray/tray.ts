@@ -19,7 +19,7 @@ let lastMessage = app.name;
 
 /* istanbul ignore next */
 export function refreshTrayImages(trayIconTheme: string) {
-    const systemTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+    const systemTheme = nativeTheme.shouldUseDarkColors ? 'light' : 'dark';
     const winTheme = trayIconTheme === 'use_system' ? systemTheme : trayIconTheme;
 
     switch (process.platform) {
