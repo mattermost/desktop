@@ -57,6 +57,7 @@ export default class TeamDropdownView {
         }});
 
         this.view.webContents.loadURL(getLocalURLString('dropdown.html'));
+        this.view.webContents.openDevTools({mode: 'detach'});
         this.window.addBrowserView(this.view);
 
         ipcMain.on(OPEN_TEAMS_DROPDOWN, this.handleOpen);

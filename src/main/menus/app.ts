@@ -9,6 +9,7 @@ import {BROWSER_HISTORY_BUTTON, OPEN_TEAMS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from
 import {Config} from 'common/config';
 import {TabType, getTabDisplayName} from 'common/tabs/TabView';
 
+import {t} from 'main/i18nManager';
 import WindowManager from 'main/windows/windowManager';
 import {UpdateManager} from 'main/autoUpdater';
 
@@ -28,7 +29,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     if (isMac) {
         platformAppMenu.push(
             {
-                label: 'About ' + appName,
+                label: t('main.menus.app.about.label', 'About {appName}', {appName}),
                 role: 'about',
             },
         );
@@ -44,7 +45,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
 
     if (config.data?.enableServerManagement === true) {
         platformAppMenu.push({
-            label: 'Sign in to Another Server',
+            label: t('main.menus.app.signInToAnotherServer.label', 'Sign in to Another Server'),
             click() {
                 ipcMain.emit(SHOW_NEW_SERVER_MODAL);
             },

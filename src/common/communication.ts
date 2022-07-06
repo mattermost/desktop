@@ -122,3 +122,6 @@ export const RELOAD_CURRENT_VIEW = 'reload-current-view';
 
 export const PING_DOMAIN = 'ping-domain';
 export const PING_DOMAIN_RESPONSE = 'ping-domain-response';
+
+export const GET_LANGUAGE_INFORMATION = 'get-language-information';
+export const RETRIEVED_LANGUAGE_INFORMATION = 'retrieved-language-information';
