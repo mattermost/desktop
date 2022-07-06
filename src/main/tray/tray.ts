@@ -7,6 +7,8 @@ import {app, nativeImage, Tray, systemPreferences, nativeTheme} from 'electron';
 
 import {UPDATE_TRAY} from 'common/communication';
 
+import {t} from 'main/i18nManager';
+
 import WindowManager from '../windows/windowManager';
 import * as AppState from '../appState';
 
@@ -95,11 +97,11 @@ export function setupTray(icontheme: string) {
 
     AppState.on(UPDATE_TRAY, (anyExpired, anyMentions, anyUnreads) => {
         if (anyMentions) {
-            setTray('mention', 'You have been mentioned');
+            setTray('mention', t('main.tray.tray.mention', 'You have been mentioned'));
         } else if (anyUnreads) {
-            setTray('unread', 'You have unread channels');
+            setTray('unread', t('main.tray.tray.unread', 'You have unread channels'));
         } else if (anyExpired) {
-            setTray('mention', 'Session Expired: Please sign in to continue receiving notifications.');
+            setTray('mention', t('main.tray.tray.expired', 'Session Expired: Please sign in to continue receiving notifications.'));
         } else {
             setTray('normal', app.name);
         }

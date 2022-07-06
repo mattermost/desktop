@@ -7,7 +7,6 @@ import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell
 
 import {BROWSER_HISTORY_BUTTON, OPEN_TEAMS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
 import {Config} from 'common/config';
-import {TabType, getTabDisplayName} from 'common/tabs/TabView';
 
 import {t} from 'main/i18nManager';
 import WindowManager from 'main/windows/windowManager';
@@ -20,16 +19,16 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
 
     const isMac = process.platform === 'darwin';
     const appName = app.name;
-    const firstMenuName = isMac ? appName : 'File';
+    const firstMenuName = isMac ? '&' + appName : t('main.menus.app.file', '&File');
     const template = [];
 
-    const settingsLabel = isMac ? 'Preferences...' : 'Settings...';
+    const settingsLabel = isMac ? t('main.menus.app.file.preferences', 'Preferences...') : t('main.menus.app.file.settings', 'Settings...');
 
     let platformAppMenu = [];
     if (isMac) {
         platformAppMenu.push(
             {
-                label: t('main.menus.app.about.label', 'About {appName}', {appName}),
+                label: t('main.menus.app.file.about', 'About {appName}', {appName}),
                 role: 'about',
             },
         );
@@ -45,7 +44,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
 
     if (config.data?.enableServerManagement === true) {
         platformAppMenu.push({
-            label: t('main.menus.app.signInToAnotherServer.label', 'Sign in to Another Server'),
+            label: t('main.menus.app.file.signInToAnotherServer', 'Sign in to Another Server'),
             click() {
                 ipcMain.emit(SHOW_NEW_SERVER_MODAL);
             },
@@ -72,13 +71,13 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     }
 
     template.push({
-        label: '&' + firstMenuName,
+        label: firstMenuName,
         submenu: [
             ...platformAppMenu,
         ],
     });
     template.push({
-        label: '&Edit',
+        label: t('main.menus.app.edit', '&Edit'),
         submenu: [{
             role: 'undo',
             accelerator: 'CmdOrCtrl+Z',
@@ -104,19 +103,19 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     });
 
     const viewSubMenu = [{
-        label: 'Find..',
+        label: t('main.menus.app.view.find', 'Find..'),
         accelerator: 'CmdOrCtrl+F',
         click() {
             WindowManager.sendToFind();
         },
     }, {
-        label: 'Reload',
+        label: t('main.menus.app.view.reload', 'Reload'),
         accelerator: 'CmdOrCtrl+R',
         click() {
             WindowManager.reload();
         },
     }, {
-        label: 'Clear Cache and Reload',
+        label: t('main.menus.app.view.clearCacheAndReload', 'Clear Cache and Reload'),
         accelerator: 'Shift+CmdOrCtrl+R',
         click() {
             session.defaultSession.clearCache();
@@ -126,7 +125,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         role: 'togglefullscreen',
         accelerator: isMac ? 'Ctrl+Cmd+F' : 'F11',
     }, separatorItem, {
-        label: 'Actual Size',
+        label: t('main.menus.app.view.actualSize', 'Actual Size'),
         role: 'resetZoom',
         accelerator: 'CmdOrCtrl+0',
     }, {
@@ -144,7 +143,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         visible: false,
         accelerator: 'CmdOrCtrl+Shift+-',
     }, separatorItem, {
-        label: 'Developer Tools for Application Wrapper',
+        label: t('main.menus.app.view.devToolsAppWrapper', 'Developer Tools for Application Wrapper'),
         accelerator: (() => {
             if (process.platform === 'darwin') {
                 return 'Alt+Command+I';
@@ -162,7 +161,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             }
         },
     }, {
-        label: 'Developer Tools for Current Server',
+        label: t('main.menus.app.view.devToolsCurrentServer', 'Developer Tools for Current Server'),
         click() {
             WindowManager.openBrowserViewDevTools();
         },
@@ -171,7 +170,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     if (process.platform !== 'darwin' && process.platform !== 'win32') {
         viewSubMenu.push(separatorItem);
         viewSubMenu.push({
-            label: 'Toggle Dark Mode',
+            label: t('main.menus.app.view.toggleDarkMode', 'Toggle Dark Mode'),
             click() {
                 config.toggleDarkModeManually();
             },
@@ -179,13 +178,13 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     }
 
     template.push({
-        label: '&View',
+        label: t('main.menus.app.view', '&View'),
         submenu: viewSubMenu,
     });
     template.push({
-        label: '&History',
+        label: t('main.menus.app.history', '&History'),
         submenu: [{
-            label: 'Back',
+            label: t('main.menus.app.history.back', 'Back'),
             accelerator: process.platform === 'darwin' ? 'Cmd+[' : 'Alt+Left',
             click: () => {
                 const view = WindowManager.viewManager?.getCurrentView();
@@ -195,7 +194,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 }
             },
         }, {
-            label: 'Forward',
+            label: t('main.menus.app.history.forward', 'Forward'),
             accelerator: process.platform === 'darwin' ? 'Cmd+]' : 'Alt+Right',
             click: () => {
                 const view = WindowManager.viewManager?.getCurrentView();
@@ -209,7 +208,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
 
     const teams = config.data?.teams || [];
     const windowMenu = {
-        label: '&Window',
+        label: t('main.menus.app.window', '&Window'),
         role: isMac ? 'windowMenu' : null,
         submenu: [{
             role: 'minimize',
@@ -223,7 +222,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             role: 'close',
             accelerator: 'CmdOrCtrl+W',
         }, separatorItem, {
-            label: 'Show Servers',
+            label: t('main.menus.app.window.showServers', 'Show Servers'),
             accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`,
             click() {
                 ipcMain.emit(OPEN_TEAMS_DROPDOWN);
@@ -240,7 +239,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             if (WindowManager.getCurrentTeamName() === team.name) {
                 team.tabs.filter((tab) => tab.isOpen).sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).forEach((tab, i) => {
                     items.push({
-                        label: `    ${getTabDisplayName(tab.name as TabType)}`,
+                        label: `    ${t(`common.tabs.${tab.name}`)}`,
                         accelerator: `CmdOrCtrl+${i + 1}`,
                         click() {
                             WindowManager.switchTab(team.name, tab.name);
@@ -250,14 +249,14 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             }
             return items;
         }).flat(), separatorItem, {
-            label: 'Select Next Tab',
+            label: t('main.menus.app.window.selectNextTab', 'Select Next Tab'),
             accelerator: 'Ctrl+Tab',
             click() {
                 WindowManager.selectNextTab();
             },
             enabled: (teams.length > 1),
         }, {
-            label: 'Select Previous Tab',
+            label: t('main.menus.app.window.selectPreviousTab', 'Select Previous Tab'),
             accelerator: 'Ctrl+Shift+Tab',
             click() {
                 WindowManager.selectPreviousTab();
@@ -273,21 +272,21 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     if (updateManager && config.canUpgrade) {
         if (updateManager.versionDownloaded) {
             submenu.push({
-                label: 'Restart and Update',
+                label: t('main.menus.app.help.restartAndUpdate', 'Restart and Update'),
                 click() {
                     updateManager.handleUpdate();
                 },
             });
         } else if (updateManager.versionAvailable) {
             submenu.push({
-                label: 'Download Update',
+                label: t('main.menus.app.help.downloadUpdate', 'Download Update'),
                 click() {
                     updateManager.handleDownload();
                 },
             });
         } else {
             submenu.push({
-                label: 'Check for Updates',
+                label: t('main.menus.app.help.checkForUpdates', 'Check for Updates'),
                 click() {
                     updateManager.checkForUpdates(true);
                 },
@@ -296,7 +295,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     }
     if (config.data?.helpLink) {
         submenu.push({
-            label: 'Learn More...',
+            label: t('main.menus.app.help.learnMore', 'Learn More...'),
             click() {
                 shell.openExternal(config.data!.helpLink);
             },
@@ -304,10 +303,13 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         submenu.push(separatorItem);
     }
 
-    // eslint-disable-next-line no-undef
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const version = `Version ${app.getVersion()}${__HASH_VERSION__ ? ` commit: ${__HASH_VERSION__}` : ''}`;
+    const version = t('main.menus.app.help.versionString', 'Version {version}{commit}', {
+        version: app.getVersion(),
+        // eslint-disable-next-line no-undef
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        commit: __HASH_VERSION__ ? t('main.menus.app.help.commitString', ' commit: {hashVersion}', {hashVersion: __HASH_VERSION__}) : '',
+    });
     submenu.push({
         label: version,
         enabled: true,
@@ -324,3 +326,7 @@ export function createMenu(config: Config, updateManager: UpdateManager) {
     // TODO: Electron is enforcing certain variables that it doesn't need
     return Menu.buildFromTemplate(createTemplate(config, updateManager) as Array<MenuItemConstructorOptions | MenuItem>);
 }
+
+t('common.tabs.TAB_MESSAGING', 'Channels');
+t('common.tabs.TAB_FOCALBOARD', 'Boards');
+t('common.tabs.TAB_PLAYBOOKS', 'Playbooks');

@@ -8,6 +8,8 @@ import {Notification, shell} from 'electron';
 import {PLAY_SOUND} from 'common/communication';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
 
+import {t} from 'main/i18nManager';
+
 import WindowManager from '../windows/windowManager';
 
 import {displayMention, displayDownloadCompleted, currentNotifications} from './index';
@@ -56,6 +58,10 @@ jest.mock('../windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
     flashFrame: jest.fn(),
     switchTab: jest.fn(),
+}));
+
+jest.mock('main/i18nManager', () => ({
+    t: jest.fn(),
 }));
 
 describe('main/notifications', () => {
@@ -152,6 +158,7 @@ describe('main/notifications', () => {
 
     describe('displayDownloadCompleted', () => {
         it('should open file when clicked', () => {
+            t.mockReturnValue('test_filename');
             displayDownloadCompleted(
                 'test_filename',
                 '/path/to/file',

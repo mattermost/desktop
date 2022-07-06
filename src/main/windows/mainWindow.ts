@@ -16,6 +16,7 @@ import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINI
 import Utils from 'common/utils/util';
 
 import {boundsInfoPath} from 'main/constants';
+import {t} from 'main/i18nManager';
 
 import * as Validator from '../Validator';
 import ContextMenu from '../contextMenu';
@@ -156,11 +157,11 @@ function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean})
                         hideWindow(mainWindow);
                     } else {
                         dialog.showMessageBox(mainWindow, {
-                            title: 'Minimize to Tray',
-                            message: 'Mattermost will continue to run in the system tray. This can be disabled in Settings.',
+                            title: t('main.windows.mainWindow.minimizeToTray.dialog.title', 'Minimize to Tray'),
+                            message: t('main.windows.mainWindow.minimizeToTray.dialog.message', '{appName} will continue to run in the system tray. This can be disabled in Settings.', {appName: app.name}),
                             type: 'info',
                             checkboxChecked: true,
-                            checkboxLabel: 'Don\'t show again',
+                            checkboxLabel: t('main.windows.mainWindow.minimizeToTray.dialog.checkboxLabel', 'Don\'t show again'),
                         }).then((result: {response: number; checkboxChecked: boolean}) => {
                             Config.set('alwaysMinimize', result.checkboxChecked);
                             hideWindow(mainWindow);
@@ -170,13 +171,16 @@ function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean})
                     app.quit();
                 } else {
                     dialog.showMessageBox(mainWindow, {
-                        title: 'Close Application',
-                        message: 'Are you sure you want to quit?',
-                        detail: 'You will no longer receive notifications for messages. If you want to leave Mattermost running in the system tray, you can enable this in Settings.',
+                        title: t('main.windows.mainWindow.closeApp.dialog.title', 'Close Application'),
+                        message: t('main.windows.mainWindow.closeApp.dialog.message', 'Are you sure you want to quit?'),
+                        detail: t('main.windows.mainWindow.closeApp.dialog.detail', 'You will no longer receive notifications for messages. If you want to leave {appName} running in the system tray, you can enable this in Settings.', {appName: app.name}),
                         type: 'question',
-                        buttons: ['Yes', 'No'],
+                        buttons: [
+                            t('label.yes', 'Yes'),
+                            t('label.no', 'No'),
+                        ],
                         checkboxChecked: true,
-                        checkboxLabel: 'Don\'t ask again',
+                        checkboxLabel: t('main.windows.mainWindow.closeApp.dialog.checkboxLabel', 'Don\'t ask again'),
                     }).then((result: {response: number; checkboxChecked: boolean}) => {
                         Config.set('alwaysClose', result.checkboxChecked && result.response === 0);
                         if (result.response === 0) {

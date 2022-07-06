@@ -54,6 +54,10 @@ jest.mock('electron', () => ({
     },
 }));
 
+jest.mock('main/i18nManager', () => ({
+    t: jest.fn(),
+}));
+
 jest.mock('electron-devtools-installer', () => {
     return () => ({
         REACT_DEVELOPER_TOOLS: 'react-developer-tools',

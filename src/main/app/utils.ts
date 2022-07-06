@@ -21,6 +21,7 @@ import Utils from 'common/utils/util';
 
 import updateManager from 'main/autoUpdater';
 import {migrationInfoPath, updatePaths} from 'main/constants';
+import {t} from 'main/i18nManager';
 import {createMenu as createAppMenu} from 'main/menus/app';
 import {createMenu as createTrayMenu} from 'main/menus/tray';
 import {ServerInfo} from 'main/server/serverInfo';
@@ -224,11 +225,14 @@ export function migrateMacAppStore() {
     }
 
     const cancelImport = dialog.showMessageBoxSync({
-        title: 'Mattermost',
-        message: 'Import Existing Configuration',
-        detail: 'It appears that an existing Mattermost configuration exists, would you like to import it? You will be asked to pick the correct configuration directory.',
+        title: app.name,
+        message: t('main.app.utils.migrateMacAppStore.dialog.message', 'Import Existing Configuration'),
+        detail: t('main.app.utils.migrateMacAppStore.dialog.detail', 'It appears that an existing {appName} configuration exists, would you like to import it? You will be asked to pick the correct configuration directory.', {appName: app.name}),
         icon: appIcon,
-        buttons: ['Select Directory and Import', 'Don\'t Import'],
+        buttons: [
+            t('main.app.utils.migrateMacAppStore.button.selectAndImport', 'Select Directory and Import'),
+            t('main.app.utils.migrateMacAppStore.button.dontImport', 'Don\'t Import'),
+        ],
         type: 'info',
         defaultId: 0,
         cancelId: 1,

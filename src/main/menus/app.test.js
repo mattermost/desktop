@@ -3,6 +3,7 @@
 
 'use strict';
 
+import {t} from 'main/i18nManager';
 import WindowManager from 'main/windows/windowManager';
 
 import {createTemplate} from './app';
@@ -14,12 +15,12 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('main/windows/windowManager', () => ({
-    getCurrentTeamName: jest.fn(),
+jest.mock('main/i18nManager', () => ({
+    t: jest.fn(),
 }));
 
-jest.mock('common/tabs/TabView', () => ({
-    getTabDisplayName: (name) => name,
+jest.mock('main/windows/windowManager', () => ({
+    getCurrentTeamName: jest.fn(),
 }));
 
 describe('main/menus/app', () => {
@@ -97,6 +98,12 @@ describe('main/menus/app', () => {
         });
 
         it('should include About <appname> in menu on mac', () => {
+            t.mockImplementation((id) => {
+                if (id === 'main.menus.app.file.about') {
+                    return 'About AppName';
+                }
+                return id;
+            });
             const menu = createTemplate(config);
             const appNameMenu = menu.find((item) => item.label === '&AppName');
             const menuItem = appNameMenu.submenu.find((item) => item.label === 'About AppName');
@@ -113,6 +120,12 @@ describe('main/menus/app', () => {
         });
 
         it('should contain zoom and front options in Window', () => {
+            t.mockImplementation((id) => {
+                if (id === 'main.menus.app.window') {
+                    return '&Window';
+                }
+                return id;
+            });
             const menu = createTemplate(config);
             const windowMenu = menu.find((item) => item.label === '&Window');
             expect(windowMenu.role).toBe('windowMenu');
@@ -122,6 +135,16 @@ describe('main/menus/app', () => {
     });
 
     it('should show `Sign in to Another Server` if `enableServerManagement` is true', () => {
+        t.mockImplementation((id) => {
+            switch (id) {
+            case 'main.menus.app.file':
+                return '&File';
+            case 'main.menus.app.file.signInToAnotherServer':
+                return 'Sign in to Another Server';
+            default:
+                return id;
+            }
+        });
         const menu = createTemplate(config);
         const fileMenu = menu.find((item) => item.label === '&AppName' || item.label === '&File');
         const signInOption = fileMenu.submenu.find((item) => item.label === 'Sign in to Another Server');
@@ -129,6 +152,16 @@ describe('main/menus/app', () => {
     });
 
     it('should not show `Sign in to Another Server` if `enableServerManagement` is false', () => {
+        t.mockImplementation((id) => {
+            switch (id) {
+            case 'main.menus.app.file':
+                return '&File';
+            case 'main.menus.app.file.signInToAnotherServer':
+                return 'Sign in to Another Server';
+            default:
+                return '';
+            }
+        });
         const modifiedConfig = {
             ...config,
             enableServerManagement: false,
@@ -140,6 +173,12 @@ describe('main/menus/app', () => {
     });
 
     it('should show the first 9 servers (using order) in the Window menu', () => {
+        t.mockImplementation((id) => {
+            if (id === 'main.menus.app.window') {
+                return '&Window';
+            }
+            return id;
+        });
         const modifiedConfig = {
             data: {
                 ...config.data,
@@ -174,6 +213,15 @@ describe('main/menus/app', () => {
     });
 
     it('should show the first 9 tabs (using order) in the Window menu', () => {
+        t.mockImplementation((id) => {
+            if (id === 'main.menus.app.window') {
+                return '&Window';
+            }
+            if (id.startsWith('common.tabs')) {
+                return id.replace('common.tabs.', '');
+            }
+            return id;
+        });
         WindowManager.getCurrentTeamName.mockImplementation(() => config.data.teams[0].name);
 
         const modifiedConfig = {

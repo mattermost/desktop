@@ -49,6 +49,9 @@ jest.mock('main/autoUpdater', () => ({}));
 jest.mock('main/constants', () => ({
     updatePaths: jest.fn(),
 }));
+jest.mock('main/i18nManager', () => ({
+    t: jest.fn(),
+}));
 jest.mock('main/menus/app', () => ({}));
 jest.mock('main/menus/tray', () => ({}));
 jest.mock('main/server/serverInfo', () => ({

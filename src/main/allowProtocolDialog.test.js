@@ -49,6 +49,10 @@ jest.mock('./windows/windowManager', () => ({
     getMainWindow: jest.fn(),
 }));
 
+jest.mock('main/i18nManager', () => ({
+    t: jest.fn(),
+}));
+
 describe('main/allowProtocolDialog', () => {
     describe('init', () => {
         it('should copy data from file when no error', () => {
