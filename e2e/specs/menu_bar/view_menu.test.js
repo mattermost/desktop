@@ -20,6 +20,19 @@ async function setupPromise(window, id) {
     return true;
 }
 
+function getZoomFactorOfServer(browserWindow, serverId) {
+    return browserWindow.evaluate(
+        (window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getZoomFactor(),
+        serverId,
+    );
+}
+function setZoomFactorOfServer(browserWindow, serverId, zoomFactor) {
+    return browserWindow.evaluate(
+        (window, {id, zoom}) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.setZoomFactor(zoom),
+        {id: serverId, zoom: zoomFactor},
+    );
+}
+
 describe('menu/view', function desc() {
     this.timeout(30000);
 
@@ -100,7 +113,6 @@ describe('menu/view', function desc() {
 
         robot.keyTap('=', [env.cmdOrCtrl]);
         await asyncSleep(1000);
-        console.log(firstServerId);
         let zoomLevel = await browserWindow.evaluate((window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
         zoomLevel.should.be.greaterThan(1);
 
@@ -110,36 +122,84 @@ describe('menu/view', function desc() {
         zoomLevel.should.be.equal(1);
     });
 
-    it('MM-T818 Zoom in from the menu bar', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        const browserWindow = await this.app.browserWindow(mainWindow);
-        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
-        const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
-        const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
-        await env.loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#searchBox');
+    describe('MM-T818 Zoom in from the menu bar', () => {
+        it('MM-T818 Zoom in when CmdOrCtrl+Plus is pressed', async () => {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            const browserWindow = await this.app.browserWindow(mainWindow);
+            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+            const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+            const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
+            await env.loginToMattermost(firstServer);
+            await firstServer.waitForSelector('#searchBox');
 
-        robot.keyTap('=', [env.cmdOrCtrl]);
-        await asyncSleep(1000);
-        const zoomLevel = await browserWindow.evaluate((window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
-        zoomLevel.should.be.greaterThan(1);
+            robot.keyTap('=', [env.cmdOrCtrl]);
+            await asyncSleep(1000);
+            const zoomLevel = await browserWindow.evaluate((window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
+            zoomLevel.should.be.greaterThan(1);
+        });
+
+        it('MM-T818_1 Zoom in when CmdOrCtrl+Shift+Plus is pressed', async () => {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            const browserWindow = await this.app.browserWindow(mainWindow);
+            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+            const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+            const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
+            await env.loginToMattermost(firstServer);
+            await firstServer.waitForSelector('#searchBox');
+
+            // reset zoom
+            await setZoomFactorOfServer(browserWindow, firstServerId, 1);
+            await asyncSleep(1000);
+            const initialZoom = await getZoomFactorOfServer(browserWindow, firstServerId);
+            initialZoom.should.be.equal(1);
+
+            robot.keyTap('=', [env.cmdOrCtrl, 'shift']);
+            await asyncSleep(1000);
+            const zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
+            zoomLevel.should.be.greaterThan(1);
+        });
     });
 
-    it('MM-T819 Zoom out from the menu bar', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        const browserWindow = await this.app.browserWindow(mainWindow);
-        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
-        const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
-        const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
-        await env.loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#searchBox');
+    describe('MM-T818 Zoom out from the menu bar', () => {
+        it('MM-T819 Zoom out when CmdOrCtrl+Minus is pressed', async () => {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            const browserWindow = await this.app.browserWindow(mainWindow);
+            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+            const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+            const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
+            await env.loginToMattermost(firstServer);
+            await firstServer.waitForSelector('#searchBox');
 
-        robot.keyTap('-', [env.cmdOrCtrl]);
-        await asyncSleep(1000);
-        const zoomLevel = await browserWindow.evaluate((window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
-        zoomLevel.should.be.lessThan(1);
+            robot.keyTap('-', [env.cmdOrCtrl]);
+            await asyncSleep(1000);
+            const zoomLevel = await browserWindow.evaluate((window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
+            zoomLevel.should.be.lessThan(1);
+        });
+
+        it('MM-T819_1 Zoom out when CmdOrCtrl+Shift+Minus is pressed', async () => {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            const browserWindow = await this.app.browserWindow(mainWindow);
+            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+            const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+            const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
+            await env.loginToMattermost(firstServer);
+            await firstServer.waitForSelector('#searchBox');
+
+            // reset zoom
+            await setZoomFactorOfServer(browserWindow, firstServerId, 1.0);
+            await asyncSleep(1000);
+            const initialZoom = await getZoomFactorOfServer(browserWindow, firstServerId);
+            initialZoom.should.be.equal(1);
+
+            robot.keyTap('-', [env.cmdOrCtrl, 'shift']);
+            await asyncSleep(1000);
+            const zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
+            zoomLevel.should.be.lessThan(1);
+        });
     });
 
     describe('Reload', () => {
