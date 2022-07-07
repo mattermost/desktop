@@ -57,24 +57,3 @@ class I18nManager {
 
 const i18nManager = new I18nManager();
 export default i18nManager;
-
-// export function getLanguages() {
-//     const config = getConfig(store.getState());
-//     if (!config.AvailableLocales) {
-//         return getAllLanguages();
-//     }
-//     return config.AvailableLocales.split(',').reduce((result, l) => {
-//         if (languages[l]) {
-//             result[l] = languages[l];
-//         }
-//         return result;
-//     }, {});
-// }
-
-// export function getLanguageInfo(locale) {
-//     return getAllLanguages()[locale];
-// }
-
-// export function isLanguageAvailable(locale) {
-//     return Boolean(getLanguages()[locale]);
-// }

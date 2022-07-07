@@ -56,17 +56,22 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         platformAppMenu = platformAppMenu.concat([
             separatorItem, {
                 role: 'hide',
+                label: t('main.menus.app.file.hide', 'Hide {appName}', {appName}),
             }, {
                 role: 'hideOthers',
+                label: t('main.menus.app.file.hideOthers', 'Hide Others'),
             }, {
                 role: 'unhide',
+                label: t('main.menus.app.file.unhide', 'Show All'),
             }, separatorItem, {
                 role: 'quit',
+                label: t('main.menus.app.file.quit', 'Quit {appName}', {appName}),
             }]);
     } else {
         platformAppMenu = platformAppMenu.concat([
             separatorItem, {
                 role: 'quit',
+                label: t('main.menus.app.file.exit', 'Exit'),
                 accelerator: 'CmdOrCtrl+Q',
             }]);
     }
@@ -81,24 +86,31 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         label: t('main.menus.app.edit', '&Edit'),
         submenu: [{
             role: 'undo',
+            label: t('main.menus.app.edit.undo', 'Undo'),
             accelerator: 'CmdOrCtrl+Z',
         }, {
             role: 'Redo',
+            label: t('main.menus.app.edit.redo', 'Redo'),
             accelerator: 'CmdOrCtrl+SHIFT+Z',
         }, separatorItem, {
             role: 'cut',
+            label: t('main.menus.app.edit.cut', 'Cut'),
             accelerator: 'CmdOrCtrl+X',
         }, {
             role: 'copy',
+            label: t('main.menus.app.edit.copy', 'Copy'),
             accelerator: 'CmdOrCtrl+C',
         }, {
             role: 'paste',
+            label: t('main.menus.app.edit.paste', 'Paste'),
             accelerator: 'CmdOrCtrl+V',
         }, {
             role: 'pasteAndMatchStyle',
+            label: t('main.menus.app.edit.pasteAndMatchStyle', 'Paste and Match Style'),
             accelerator: 'CmdOrCtrl+SHIFT+V',
         }, {
             role: 'selectall',
+            label: t('main.menus.app.edit.selectAll', 'Select All'),
             accelerator: 'CmdOrCtrl+A',
         }],
     });
@@ -124,6 +136,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         },
     }, {
         role: 'togglefullscreen',
+        label: t('main.menus.app.view.fullscreen', 'Toggle Full Screen'),
         accelerator: isMac ? 'Ctrl+Cmd+F' : 'F11',
     }, separatorItem, {
         label: t('main.menus.app.view.actualSize', 'Actual Size'),
@@ -131,6 +144,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         accelerator: 'CmdOrCtrl+0',
     }, {
         role: 'zoomIn',
+        label: t('main.menus.app.view.zoomIn', 'Zoom In'),
         accelerator: 'CmdOrCtrl+=',
     }, {
         role: 'zoomIn',
@@ -138,6 +152,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         accelerator: 'CmdOrCtrl+Shift+=',
     }, {
         role: 'zoomOut',
+        label: t('main.menus.app.view.zoomOut', 'Zoom Out'),
         accelerator: 'CmdOrCtrl+-',
     }, {
         role: 'zoomOut',
@@ -213,14 +228,17 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         role: isMac ? 'windowMenu' : null,
         submenu: [{
             role: 'minimize',
+            label: t('main.menus.app.window.minimize', 'Minimize'),
 
             // empty string removes shortcut on Windows; null will default by OS
             accelerator: process.platform === 'win32' ? '' : null,
         }, ...(isMac ? [{
             role: 'zoom',
+            label: t('main.menus.app.window.zoom', 'Zoom'),
         }, separatorItem,
         ] : []), {
             role: 'close',
+            label: isMac ? t('main.menus.app.window.closeWindow', 'Close Window') : t('main.menus.app.window.close', 'Close'),
             accelerator: 'CmdOrCtrl+W',
         }, separatorItem, {
             label: t('main.menus.app.window.showServers', 'Show Servers'),
@@ -265,6 +283,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             enabled: (teams.length > 1),
         }, ...(isMac ? [separatorItem, {
             role: 'front',
+            label: t('main.menus.app.window.bringAllToFront', 'Bring All to Front'),
         }] : []),
         ],
     };
@@ -319,7 +338,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         },
     });
 
-    template.push({label: 'Hel&p', submenu});
+    template.push({label: t('main.menus.app.help', 'Hel&p'), submenu});
     return template;
 }
 

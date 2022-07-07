@@ -116,11 +116,17 @@ describe('main/menus/app', () => {
         });
 
         it('should contain hide options', () => {
+            t.mockImplementation((id) => {
+                if (id === 'main.menus.app.file') {
+                    return '&AppName';
+                }
+                return id;
+            });
             const menu = createTemplate(config);
             const appNameMenu = menu.find((item) => item.label === '&AppName');
-            expect(appNameMenu.submenu).toContainEqual({role: 'hide'});
-            expect(appNameMenu.submenu).toContainEqual({role: 'unhide'});
-            expect(appNameMenu.submenu).toContainEqual({role: 'hideOthers'});
+            expect(appNameMenu.submenu).toContainEqual(expect.objectContaining({role: 'hide'}));
+            expect(appNameMenu.submenu).toContainEqual(expect.objectContaining({role: 'unhide'}));
+            expect(appNameMenu.submenu).toContainEqual(expect.objectContaining({role: 'hideOthers'}));
         });
 
         it('should contain zoom and front options in Window', () => {
@@ -133,8 +139,8 @@ describe('main/menus/app', () => {
             const menu = createTemplate(config);
             const windowMenu = menu.find((item) => item.label === '&Window');
             expect(windowMenu.role).toBe('windowMenu');
-            expect(windowMenu.submenu).toContainEqual({role: 'zoom'});
-            expect(windowMenu.submenu).toContainEqual({role: 'front'});
+            expect(windowMenu.submenu).toContainEqual(expect.objectContaining({role: 'zoom'}));
+            expect(windowMenu.submenu).toContainEqual(expect.objectContaining({role: 'front'}));
         });
     });
 
