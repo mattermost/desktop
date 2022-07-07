@@ -8,7 +8,7 @@ import 'renderer/css/settings.css';
 
 import React from 'react';
 import {FormCheck, Col, FormGroup, FormText, Container, Row, Button, FormControl} from 'react-bootstrap';
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 import ReactSelect, {ActionMeta, MultiValue} from 'react-select';
 
 import {CombinedConfig, LocalConfiguration} from 'types/config';
@@ -26,14 +26,16 @@ import {
     CHECK_FOR_UPDATES,
 } from 'common/communication';
 
-import IntlProvider from 'renderer/intl_provider';
-
 import AutoSaveIndicator, {SavingState} from './AutoSaveIndicator';
 
 const CONFIG_TYPE_UPDATES = 'updates';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
 type ConfigType = typeof CONFIG_TYPE_UPDATES | typeof CONFIG_TYPE_APP_OPTIONS;
+
+type Props = {
+    intl: IntlShape;
+}
 
 type State = DeepPartial<CombinedConfig> & {
     ready: boolean;
@@ -48,7 +50,7 @@ type State = DeepPartial<CombinedConfig> & {
 type SavingStateItems = {
     appOptions: SavingState;
     updates: SavingState;
-};
+}
 
 type SaveQueueItem = {
     configType: ConfigType;
@@ -56,7 +58,7 @@ type SaveQueueItem = {
     data: CombinedConfig[keyof CombinedConfig];
 }
 
-export default class SettingsPage extends React.PureComponent<Record<string, never>, State> {
+class SettingsPage extends React.PureComponent<Props, State> {
     trayIconThemeRef: React.RefObject<HTMLDivElement>;
     downloadLocationRef: React.RefObject<HTMLInputElement>;
     showTrayIconRef: React.RefObject<HTMLInputElement>;
@@ -80,7 +82,7 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
     savingIsDebounced: boolean;
     resetSaveStateIsDebounced: boolean;
 
-    constructor(props: Record<string, never>) {
+    constructor(props: Props) {
         super(props);
         this.state = {
             ready: false,
@@ -418,6 +420,8 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
     }
 
     render() {
+        const {intl} = this.props;
+
         const settingsPage = {
             close: {
                 textDecoration: 'none',
@@ -900,15 +904,14 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                             id='renderer.components.settingsPage.minimizeToTray.description'
                             defaultMessage='If enabled, the app stays running in the notification area after app window is closed.'
                         />
-                        {this.state.showTrayIcon ?
-                            (
-                                ' ' +
-                                    <FormattedMessage
-                                        id='renderer.components.settingsPage.afterRestart'
-                                        defaultMessage='Setting takes effect after restarting the app.'
-                                    />
-                            ) :
-                            ''
+                        {this.state.showTrayIcon &&
+                            <>
+                                {' '}
+                                <FormattedMessage
+                                    id='renderer.components.settingsPage.afterRestart'
+                                    defaultMessage='Setting takes effect after restarting the app.'
+                                />
+                            </>
                         }
                     </FormText>
                 </FormCheck>);
@@ -1018,40 +1021,22 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     onChange={this.handleChangeLogLevel}
                 >
                     <option value='error'>
-                        <FormattedMessage
-                            id='renderer.components.settingsPage.loggingLevel.level.error'
-                            defaultMessage='Errors (error)'
-                        />
+                        {intl.formatMessage({id: 'renderer.components.settingsPage.loggingLevel.level.error', defaultMessage: 'Errors (error)'})}
                     </option>
                     <option value='warn'>
-                        <FormattedMessage
-                            id='renderer.components.settingsPage.loggingLevel.level.warn'
-                            defaultMessage='Errors and Warnings (warn)'
-                        />
+                        {intl.formatMessage({id: 'renderer.components.settingsPage.loggingLevel.level.warn', defaultMessage: 'Errors and Warnings (warn)'})}
                     </option>
                     <option value='info'>
-                        <FormattedMessage
-                            id='renderer.components.settingsPage.loggingLevel.level.info'
-                            defaultMessage='Info (info)'
-                        />
+                        {intl.formatMessage({id: 'renderer.components.settingsPage.loggingLevel.level.info', defaultMessage: 'Info (info)'})}
                     </option>
                     <option value='verbose'>
-                        <FormattedMessage
-                            id='renderer.components.settingsPage.loggingLevel.level.verbose'
-                            defaultMessage='Verbose (verbose)'
-                        />
+                        {intl.formatMessage({id: 'renderer.components.settingsPage.loggingLevel.level.verbose', defaultMessage: 'Verbose (verbose)'})}
                     </option>
                     <option value='debug'>
-                        <FormattedMessage
-                            id='renderer.components.settingsPage.loggingLevel.level.debug'
-                            defaultMessage='Debug (debug)'
-                        />
+                        {intl.formatMessage({id: 'renderer.components.settingsPage.loggingLevel.level.debug', defaultMessage: 'Debug (debug)'})}
                     </option>
                     <option value='silly'>
-                        <FormattedMessage
-                            id='renderer.components.settingsPage.loggingLevel.level.silly'
-                            defaultMessage='Finest (silly)'
-                        />
+                        {intl.formatMessage({id: 'renderer.components.settingsPage.loggingLevel.level.silly', defaultMessage: 'Finest (silly)'})}
                     </option>
                 </FormControl>
                 <FormText>
@@ -1186,37 +1171,37 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
         }
 
         return (
-            <IntlProvider>
+            <div
+                className='container-fluid'
+                style={{
+                    height: '100%',
+                }}
+            >
                 <div
-                    className='container-fluid'
                     style={{
+                        overflowY: 'auto',
                         height: '100%',
+                        margin: '0 -15px',
                     }}
                 >
-                    <div
-                        style={{
-                            overflowY: 'auto',
-                            height: '100%',
-                            margin: '0 -15px',
-                        }}
-                    >
-                        <div style={{position: 'relative'}}>
-                            <h1 style={settingsPage.heading}>
-                                <FormattedMessage
-                                    id='renderer.components.settingsPage.header'
-                                    defaultMessage='Settings'
-                                />
-                            </h1>
-                            <hr/>
-                        </div>
-                        <Container
-                            className='settingsPage'
-                        >
-                            {waitForIpc}
-                        </Container>
+                    <div style={{position: 'relative'}}>
+                        <h1 style={settingsPage.heading}>
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.header'
+                                defaultMessage='Settings'
+                            />
+                        </h1>
+                        <hr/>
                     </div>
+                    <Container
+                        className='settingsPage'
+                    >
+                        {waitForIpc}
+                    </Container>
                 </div>
-            </IntlProvider>
+            </div>
         );
     }
 }
+
+export default injectIntl(SettingsPage);

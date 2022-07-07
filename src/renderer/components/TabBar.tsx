@@ -10,7 +10,7 @@ import classNames from 'classnames';
 
 import {Tab} from 'types/config';
 
-import {getTabDisplayName, getTabViewName, TabType, canCloseTab} from 'common/tabs/TabView';
+import {getTabViewName, TabType, canCloseTab} from 'common/tabs/TabView';
 
 type Props = {
     activeTabName?: string;
@@ -126,9 +126,6 @@ class TabBar extends React.PureComponent<Props> {
                                         <FormattedMessage
                                             id={`common.tabs.${tab.name}`}
                                         />
-                                        <span>
-                                            {getTabDisplayName(tab.name as TabType)}
-                                        </span>
                                         { badgeDiv }
                                         {canCloseTab(tab.name as TabType) &&
                                             <button

@@ -63,19 +63,6 @@ export function getTabViewName(serverName: string, tabType: string) {
     return `${serverName}___${tabType}`;
 }
 
-export function getTabDisplayName(tabType: TabType) {
-    switch (tabType) {
-    case TAB_MESSAGING:
-        return 'Channels';
-    case TAB_FOCALBOARD:
-        return 'Boards';
-    case TAB_PLAYBOOKS:
-        return 'Playbooks';
-    default:
-        throw new Error('Not implemeneted');
-    }
-}
-
 export function canCloseTab(tabType: TabType) {
     return tabType !== TAB_MESSAGING;
 }
