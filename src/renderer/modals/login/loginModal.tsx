@@ -4,6 +4,7 @@
 
 import React from 'react';
 import {Button, Col, FormLabel, Form, FormGroup, FormControl, Modal} from 'react-bootstrap';
+import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 
 import {LoginModalData} from 'types/auth';
 import {ModalMessage} from 'types/modals';
@@ -12,10 +13,13 @@ import {AuthenticationResponseDetails, AuthInfo} from 'electron/renderer';
 import urlUtils from 'common/utils/url';
 import {MODAL_INFO} from 'common/communication';
 
+import IntlProvider from 'renderer/intl_provider';
+
 type Props = {
     onCancel: (request: AuthenticationResponseDetails) => void;
     onLogin: (request: AuthenticationResponseDetails, username: string, password: string) => void;
     getAuthInfo: () => void;
+    intl: IntlShape;
 };
 
 type State = {
@@ -25,7 +29,7 @@ type State = {
     authInfo?: AuthInfo;
 };
 
-export default class LoginModal extends React.PureComponent<Props, State> {
+class LoginModal extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props);
         this.state = {
@@ -87,82 +91,125 @@ export default class LoginModal extends React.PureComponent<Props, State> {
     }
 
     render() {
+        const {intl} = this.props;
+
         let theServer = '';
         if (!(this.state.request && this.state.authInfo)) {
             theServer = '';
         } else if (this.state.authInfo.isProxy) {
-            theServer = `The proxy ${this.state.authInfo.host}:${this.state.authInfo.port}`;
+            theServer = intl.formatMessage({
+                id: 'renderer.modals.login.loginModal.proxy',
+                defaultMessage: 'The proxy {host}:{port}',
+            },
+            {host: this.state.authInfo.host, port: this.state.authInfo.port});
         } else {
             const tmpURL = urlUtils.parseURL(this.state.request.url);
-            theServer = `The server ${tmpURL?.protocol}//${tmpURL?.host}`;
+            theServer = intl.formatMessage({
+                id: 'renderer.modals.login.loginModal.server',
+                defaultMessage: 'The server {url}',
+            },
+            {url: `${tmpURL?.protocol}//${tmpURL?.host}`});
         }
-        const message = `${theServer} requires a username and password.`;
+
         return (
-            <Modal
-                show={Boolean(this.state.request && this.state.authInfo)}
-            >
-                <Modal.Header>
-                    <Modal.Title>{'Authentication Required'}</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <p>
-                        { message }
-                    </p>
-                    <Form
-                        onSubmit={this.handleSubmit}
-                    >
-                        <FormGroup>
-                            <Col
-                                as={FormLabel}
-                                sm={2}
-                            >{'User Name'}</Col>
-                            <Col sm={10}>
-                                <FormControl
-                                    type='text'
-                                    placeholder='User Name'
-                                    onChange={this.setUsername}
-                                    value={this.state.username}
-                                    onClick={(e: React.MouseEvent<HTMLInputElement>) => {
-                                        e.stopPropagation();
-                                    }}
-                                />
-                            </Col>
-                        </FormGroup>
-                        <FormGroup>
-                            <Col
-                                as={FormLabel}
-                                sm={2}
-                            >{'Password'}</Col>
-                            <Col sm={10}>
-                                <FormControl
-                                    type='password'
-                                    placeholder='Password'
-                                    onChange={this.setPassword}
-                                    value={this.state.password}
-                                    onClick={(e: React.MouseEvent<HTMLInputElement>) => {
-                                        e.stopPropagation();
-                                    }}
-                                />
-                            </Col>
-                        </FormGroup>
-                        <FormGroup>
-                            <Col sm={12}>
-                                <div className='pull-right'>
-                                    <Button
-                                        type='submit'
-                                        variant='primary'
-                                    >{'Login'}</Button>
-                                    { ' ' }
-                                    <Button
-                                        variant='link'
-                                        onClick={this.handleCancel}
-                                    >{'Cancel'}</Button>
-                                </div>
-                            </Col>
-                        </FormGroup>
-                    </Form>
-                </Modal.Body>
-            </Modal>
+            <IntlProvider>
+                <Modal
+                    show={Boolean(this.state.request && this.state.authInfo)}
+                >
+                    <Modal.Header>
+                        <Modal.Title>
+                            <FormattedMessage
+                                id='renderer.modals.login.loginModal.title'
+                                defaultMessage='Authentication Required'
+                            />
+                        </Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <p>
+                            <FormattedMessage
+                                id='renderer.modals.login.loginModal.message'
+                                defaultMessage='{theServer} requires a username and password.'
+                                values={{theServer}}
+                            />
+                        </p>
+                        <Form
+                            onSubmit={this.handleSubmit}
+                        >
+                            <FormGroup>
+                                <Col
+                                    as={FormLabel}
+                                    sm={2}
+                                >
+                                    <FormattedMessage
+                                        id='renderer.modals.login.loginModal.username'
+                                        defaultMessage='User Name'
+                                    />
+                                </Col>
+                                <Col sm={10}>
+                                    <FormControl
+                                        type='text'
+                                        placeholder={intl.formatMessage({id: 'renderer.modals.login.loginModal.username', defaultMessage: 'User Name'})}
+                                        onChange={this.setUsername}
+                                        value={this.state.username}
+                                        onClick={(e: React.MouseEvent<HTMLInputElement>) => {
+                                            e.stopPropagation();
+                                        }}
+                                    />
+                                </Col>
+                            </FormGroup>
+                            <FormGroup>
+                                <Col
+                                    as={FormLabel}
+                                    sm={2}
+                                >
+                                    <FormattedMessage
+                                        id='renderer.modals.login.loginModal.password'
+                                        defaultMessage='Password'
+                                    />
+                                </Col>
+                                <Col sm={10}>
+                                    <FormControl
+                                        type='password'
+                                        placeholder={intl.formatMessage({id: 'renderer.modals.login.loginModal.password', defaultMessage: 'Password'})}
+                                        onChange={this.setPassword}
+                                        value={this.state.password}
+                                        onClick={(e: React.MouseEvent<HTMLInputElement>) => {
+                                            e.stopPropagation();
+                                        }}
+                                    />
+                                </Col>
+                            </FormGroup>
+                            <FormGroup>
+                                <Col sm={12}>
+                                    <div className='pull-right'>
+                                        <Button
+                                            type='submit'
+                                            variant='primary'
+                                        >
+                                            <FormattedMessage
+                                                id='label.login'
+                                                defaultMessage='Login'
+                                            />
+                                        </Button>
+                                        { ' ' }
+                                        <Button
+                                            variant='link'
+                                            onClick={this.handleCancel}
+                                        >
+                                            <FormattedMessage
+                                                id='label.cancel'
+                                                defaultMessage='Cancel'
+                                            />
+                                        </Button>
+                                    </div>
+                                </Col>
+                            </FormGroup>
+                        </Form>
+                    </Modal.Body>
+                </Modal>
+            </IntlProvider>
         );
     }
 }
+
+export default injectIntl(LoginModal);

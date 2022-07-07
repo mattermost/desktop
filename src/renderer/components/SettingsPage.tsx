@@ -8,6 +8,7 @@ import 'renderer/css/settings.css';
 
 import React from 'react';
 import {FormCheck, Col, FormGroup, FormText, Container, Row, Button, FormControl} from 'react-bootstrap';
+import {FormattedMessage} from 'react-intl';
 import ReactSelect, {ActionMeta, MultiValue} from 'react-select';
 
 import {CombinedConfig, LocalConfiguration} from 'types/config';
@@ -24,6 +25,8 @@ import {
     GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
     CHECK_FOR_UPDATES,
 } from 'common/communication';
+
+import IntlProvider from 'renderer/intl_provider';
 
 import AutoSaveIndicator, {SavingState} from './AutoSaveIndicator';
 
@@ -496,9 +499,15 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         checked={this.state.autostart}
                         onChange={this.handleChangeAutoStart}
                     />
-                    {'Start app on login'}
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.startAppOnLogin'
+                        defaultMessage='Start app on login'
+                    />
                     <FormText>
-                        {'If enabled, the app starts automatically when you log in to your machine.'}
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.startAppOnLogin.description'
+                            defaultMessage='If enabled, the app starts automatically when you log in to your machine.'
+                        />
                     </FormText>
                 </FormCheck>);
 
@@ -512,9 +521,15 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         checked={this.state.hideOnStart}
                         onChange={this.handleChangeHideOnStart}
                     />
-                    {'Launch app minimized'}
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.launchAppMinimized'
+                        defaultMessage='Launch app minimized'
+                    />
                     <FormText>
-                        {'If enabled, the app will start in system tray, and will not show the window on launch.'}
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.launchAppMinimized.description'
+                            defaultMessage='If enabled, the app will start in system tray, and will not show the window on launch.'
+                        />
                     </FormText>
                 </FormCheck>);
         }
@@ -530,10 +545,20 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         checked={this.state.useSpellChecker}
                         onChange={this.handleChangeUseSpellChecker}
                     />
-                    {'Check spelling'}
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.checkSpelling'
+                        defaultMessage='Check spelling'
+                    />
                     <FormText>
-                        {'Highlight misspelled words in your messages based on your system language or language preference. '}
-                        {'Setting takes effect after restarting the app.'}
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.checkSpelling.description'
+                            defaultMessage='Highlight misspelled words in your messages based on your system language or language preference.'
+                        />
+                        {' '}
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.afterRestart'
+                            defaultMessage='Setting takes effect after restarting the app.'
+                        />
                     </FormText>
                 </FormCheck>
                 {this.state.useSpellChecker &&
@@ -546,7 +571,12 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         isClearable={false}
                         onChange={this.handleChangeSpellCheckerLocales}
                         value={this.selectedSpellCheckerLocales}
-                        placeholder={'Select preferred language(s)'}
+                        placeholder={
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.checkSpelling.preferredLanguages'
+                                defaultMessage='Select preferred language(s)'
+                            />
+                        }
                     />
                 }
             </>,
@@ -559,7 +589,12 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         key='editSpellcheckerURL'
                         onClick={() => this.setState({spellCheckerURL: '', allowSaveSpellCheckerURL: false})}
                         variant='link'
-                    >{'Use an alternative dictionary URL'}</Button>,
+                    >
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.checkSpelling.editSpellcheckUrl'
+                            defaultMessage='Use an alternative dictionary URL'
+                        />
+                    </Button>,
                 );
             } else {
                 options.push(
@@ -583,22 +618,33 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                             id='saveSpellCheckerURL'
                             onClick={this.saveSpellCheckerURL}
                         >
-                            <span>{'Save'}</span>
+                            <FormattedMessage
+                                id='label.save'
+                                defaultMessage='Save'
+                            />
                         </Button>
                         <FormText>
-                            {'Specify the url where dictionary definitions can be retrieved'}
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.checkSpelling.specifyURL'
+                                defaultMessage='Specify the url where dictionary definitions can be retrieved'
+                            />
                         </FormText>
                         <Button
                             id='revertSpellcheckerURL'
                             key='revertSpellcheckerURL'
                             onClick={this.resetSpellCheckerURL}
                             variant='link'
-                        >{'Revert to default'}</Button>
+                        >
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.checkSpelling.revertToDefault'
+                                defaultMessage='Revert to default'
+                            />
+                        </Button>
                     </div>);
             }
         }
         if (window.process.platform === 'darwin' || window.process.platform === 'win32') {
-            const TASKBAR = window.process.platform === 'win32' ? 'taskbar' : 'Dock';
+            const taskbar = window.process.platform === 'win32' ? 'taskbar' : 'Dock';
             options.push(
                 <FormCheck
                     key='showunreadbadge'
@@ -611,9 +657,17 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         checked={this.state.showUnreadBadge}
                         onChange={this.handleShowUnreadBadge}
                     />
-                    {`Show red badge on ${TASKBAR} icon to indicate unread messages`}
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.showUnreadBadge'
+                        defaultMessage='Show red badge on {taskbar} icon to indicate unread messages'
+                        values={{taskbar}}
+                    />
                     <FormText>
-                        {`Regardless of this setting, mentions are always indicated with a red badge and item count on the ${TASKBAR} icon.`}
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.showUnreadBadge.description'
+                            defaultMessage='Regardless of this setting, mentions are always indicated with a red badge and item count on the {taskbar} icon.'
+                            values={{taskbar}}
+                        />
                     </FormText>
                 </FormCheck>);
         }
@@ -629,13 +683,30 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         checked={!this.state.notifications || this.state.notifications.flashWindow === 2}
                         onChange={this.handleFlashWindow}
                     />
-                    {'Flash taskbar icon when a new message is received'}
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.flashWindow'
+                        defaultMessage='Flash taskbar icon when a new message is received'
+                    />
                     <FormText>
-                        {'If enabled, the taskbar icon will flash for a few seconds when a new message is received.'}
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.flashWindow.description'
+                            defaultMessage='If enabled, the taskbar icon will flash for a few seconds when a new message is received.'
+                        />
                         {window.process.platform === 'linux' && (
                             <>
                                 <br/>
-                                <em><strong>{'NOTE: '}</strong>{'This functionality may not work with all Linux window managers.'}</em>
+                                <em>
+                                    <strong>
+                                        <FormattedMessage
+                                            id='renderer.components.settingsPage.flashWindow.description.note'
+                                            defaultMessage='NOTE: '
+                                        />
+                                    </strong>
+                                    <FormattedMessage
+                                        id='renderer.components.settingsPage.flashWindow.description.linuxFunctionality'
+                                        defaultMessage='This functionality may not work with all Linux window managers.'
+                                    />
+                                </em>
                             </>
                         )}
                     </FormText>
@@ -656,7 +727,12 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         checked={this.state.notifications ? this.state.notifications.bounceIcon : false}
                         onChange={this.handleBounceIcon}
                         style={{marginRight: '10px'}}
-                        label='Bounce the Dock icon'
+                        label={
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.bounceIcon'
+                                defaultMessage='Bounce the Dock icon'
+                            />
+                        }
                     />
                     <FormCheck
                         type='radio'
@@ -670,7 +746,12 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 this.state.notifications.bounceIconType === 'informational'
                         }
                         onChange={this.handleBounceIconType}
-                        label='once'
+                        label={
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.bounceIcon.once'
+                                defaultMessage='once'
+                            />
+                        }
                     />
                     {' '}
                     <FormCheck
@@ -681,12 +762,20 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         disabled={!this.state.notifications || !this.state.notifications.bounceIcon}
                         defaultChecked={this.state.notifications && this.state.notifications.bounceIconType === 'critical'}
                         onChange={this.handleBounceIconType}
-                        label={'until I open the app'}
+                        label={
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.bounceIcon.untilOpenApp'
+                                defaultMessage='until I open the app'
+                            />
+                        }
                     />
                     <FormText
                         style={{marginLeft: '20px'}}
                     >
-                        {'If enabled, the Dock icon bounces once or until the user opens the app when a new notification is received.'}
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.bounceIcon.description'
+                            defaultMessage='If enabled, the Dock icon bounces once or until the user opens the app when a new notification is received.'
+                        />
                     </FormText>
                 </FormGroup>,
             );
@@ -704,9 +793,22 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         checked={this.state.showTrayIcon}
                         onChange={this.handleChangeShowTrayIcon}
                     />
-                    {window.process.platform === 'darwin' ? `Show ${this.state.appName} icon in the menu bar` : 'Show icon in the notification area'}
+                    {window.process.platform === 'darwin' ?
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.trayIcon.show.darwin'
+                            defaultMessage='Show {appName} icon in the menu bar'
+                            values={{appName: this.state.appName}}
+                        /> :
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.trayIcon.show'
+                            defaultMessage='Show icon in the notification area'
+                        />
+                    }
                     <FormText>
-                        {'Setting takes effect after restarting the app.'}
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.afterRestart'
+                            defaultMessage='Setting takes effect after restarting the app.'
+                        />
                     </FormText>
                 </FormCheck>);
         }
@@ -719,7 +821,10 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         ref={this.trayIconThemeRef}
                         style={{marginLeft: '20px'}}
                     >
-                        {'Icon theme: '}
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.trayIcon.theme'
+                            defaultMessage='Icon theme: '
+                        />
                         {window.process.platform === 'win32' &&
                             <>
                                 <FormCheck
@@ -729,7 +834,12 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                                     value='use_system'
                                     defaultChecked={this.state.trayIconTheme === 'use_system' || !this.state.trayIconTheme}
                                     onChange={() => this.handleChangeTrayIconTheme('use_system')}
-                                    label={'Use system default'}
+                                    label={
+                                        <FormattedMessage
+                                            id='renderer.components.settingsPage.trayIcon.theme.systemDefault'
+                                            defaultMessage='Use system default'
+                                        />
+                                    }
                                 />
                                 {' '}
                             </>
@@ -741,7 +851,12 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                             value='light'
                             defaultChecked={this.state.trayIconTheme === 'light' || !this.state.trayIconTheme}
                             onChange={() => this.handleChangeTrayIconTheme('light')}
-                            label={'Light'}
+                            label={
+                                <FormattedMessage
+                                    id='renderer.components.settingsPage.trayIcon.theme.light'
+                                    defaultMessage='Light'
+                                />
+                            }
                         />
                         {' '}
                         <FormCheck
@@ -751,7 +866,12 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                             value='dark'
                             defaultChecked={this.state.trayIconTheme === 'dark'}
                             onChange={() => this.handleChangeTrayIconTheme('dark')}
-                            label={'Dark'}
+                            label={
+                                <FormattedMessage
+                                    id='renderer.components.settingsPage.trayIcon.theme.dark'
+                                    defaultMessage='Dark'
+                                />
+                            }
                         />
                     </FormGroup>,
                 );
@@ -771,10 +891,25 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                         checked={this.state.minimizeToTray}
                         onChange={this.handleChangeMinimizeToTray}
                     />
-                    {'Leave app running in notification area when application window is closed'}
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.minimizeToTray'
+                        defaultMessage='Leave app running in notification area when application window is closed'
+                    />
                     <FormText>
-                        {'If enabled, the app stays running in the notification area after app window is closed.'}
-                        {this.state.showTrayIcon ? ' Setting takes effect after restarting the app.' : ''}
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.minimizeToTray.description'
+                            defaultMessage='If enabled, the app stays running in the notification area after app window is closed.'
+                        />
+                        {this.state.showTrayIcon ?
+                            (
+                                ' ' +
+                                    <FormattedMessage
+                                        id='renderer.components.settingsPage.afterRestart'
+                                        defaultMessage='Setting takes effect after restarting the app.'
+                                    />
+                            ) :
+                            ''
+                        }
                     </FormText>
                 </FormCheck>);
         }
@@ -790,10 +925,20 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     checked={this.state.enableHardwareAcceleration}
                     onChange={this.handleChangeEnableHardwareAcceleration}
                 />
-                {'Use GPU hardware acceleration'}
+                <FormattedMessage
+                    id='renderer.components.settingsPage.enableHardwareAcceleration'
+                    defaultMessage='Use GPU hardware acceleration'
+                />
                 <FormText>
-                    {'If enabled, Mattermost UI is rendered more efficiently but can lead to decreased stability for some systems.'}
-                    {' Setting takes effect after restarting the app.'}
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.enableHardwareAcceleration.description'
+                        defaultMessage='If enabled, Mattermost UI is rendered more efficiently but can lead to decreased stability for some systems.'
+                    />
+                    {' '}
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.afterRestart'
+                        defaultMessage='Setting takes effect after restarting the app.'
+                    />
                 </FormText>
             </FormCheck>,
         );
@@ -809,9 +954,15 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     checked={this.state.startInFullscreen}
                     onChange={this.handleChangeStartInFullscreen}
                 />
-                {'Open app in fullscreen'}
+                <FormattedMessage
+                    id='renderer.components.settingsPage.fullscreen'
+                    defaultMessage='Open app in fullscreen'
+                />
                 <FormText>
-                    {'If enabled, the Mattermost application will always open in full screen'}
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.fullscreen.description'
+                        defaultMessage='If enabled, the Mattermost application will always open in full screen'
+                    />
                 </FormText>
             </FormCheck>,
         );
@@ -822,7 +973,12 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 key='containerDownloadLocation'
             >
                 <hr/>
-                <div>{'Download Location'}</div>
+                <div>
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.downloadLocation'
+                        defaultMessage='Download Location'
+                    />
+                </div>
                 <input
                     disabled={true}
                     style={settingsPage.downloadLocationInput}
@@ -837,13 +993,22 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     id='saveDownloadLocation'
                     onClick={this.selectDownloadLocation}
                 >
-                    <span>{'Change'}</span>
+                    <FormattedMessage
+                        id='label.change'
+                        defaultMessage='Change'
+                    />
                 </Button>
                 <FormText>
-                    {'Specify the folder where files will download.'}
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.downloadLocation.description'
+                        defaultMessage='Specify the folder where files will download.'
+                    />
                 </FormText>
                 <br/>
-                {'Logging level'}
+                <FormattedMessage
+                    id='renderer.components.settingsPage.loggingLevel'
+                    defaultMessage='Logging level'
+                />
                 <FormControl
                     style={settingsPage.logLevelInput}
                     as='select'
@@ -852,16 +1017,53 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                     value={this.state.logLevel}
                     onChange={this.handleChangeLogLevel}
                 >
-                    <option value='error'>{'Errors (error)'}</option>
-                    <option value='warn'>{'Errors and Warnings (warn)'}</option>
-                    <option value='info'>{'Info (info)'}</option>
-                    <option value='verbose'>{'Verbose (verbose)'}</option>
-                    <option value='debug'>{'Debug (debug)'}</option>
-                    <option value='silly'>{'Finest (silly)'}</option>
+                    <option value='error'>
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.loggingLevel.level.error'
+                            defaultMessage='Errors (error)'
+                        />
+                    </option>
+                    <option value='warn'>
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.loggingLevel.level.warn'
+                            defaultMessage='Errors and Warnings (warn)'
+                        />
+                    </option>
+                    <option value='info'>
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.loggingLevel.level.info'
+                            defaultMessage='Info (info)'
+                        />
+                    </option>
+                    <option value='verbose'>
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.loggingLevel.level.verbose'
+                            defaultMessage='Verbose (verbose)'
+                        />
+                    </option>
+                    <option value='debug'>
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.loggingLevel.level.debug'
+                            defaultMessage='Debug (debug)'
+                        />
+                    </option>
+                    <option value='silly'>
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.loggingLevel.level.silly'
+                            defaultMessage='Finest (silly)'
+                        />
+                    </option>
                 </FormControl>
                 <FormText>
-                    {'Logging is helpful for developers and support to isolate issues you may be encountering with the desktop app.'}
-                    <br/>{'Increasing the log level increases disk space usage and can impact performance. We recommend only increasing the log level if you are having issues.'}
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.loggingLevel.description'
+                        defaultMessage='Logging is helpful for developers and support to isolate issues you may be encountering with the desktop app.'
+                    />
+                    <br/>
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.loggingLevel.description.subtitle'
+                        defaultMessage='Increasing the log level increases disk space usage and can impact performance. We recommend only increasing the log level if you are having issues.'
+                    />
                 </FormText>
             </div>,
         );
@@ -871,12 +1073,22 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
             optionsRow = (
                 <Row>
                     <Col md={12}>
-                        <h2 style={settingsPage.sectionHeading}>{'App Options'}</h2>
+                        <h2 style={settingsPage.sectionHeading}>
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.appOptions'
+                                defaultMessage='App Options'
+                            />
+                        </h2>
                         <div className='IndicatorContainer appOptionsSaveIndicator'>
                             <AutoSaveIndicator
                                 id='appOptionsSaveIndicator'
                                 savingState={this.state.savingState.appOptions}
-                                errorMessage={'Can\'t save your changes. Please try again.'}
+                                errorMessage={
+                                    <FormattedMessage
+                                        id='renderer.components.settingsPage.saving.error'
+                                        defaultMessage={'Can\'t save your changes. Please try again.'}
+                                    />
+                                }
                             />
                         </div>
                         { options.map((opt) => (
@@ -895,12 +1107,22 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 <>
                     <Row>
                         <Col md={12}>
-                            <h2 style={settingsPage.sectionHeading}>{'Updates'}</h2>
+                            <h2 style={settingsPage.sectionHeading}>
+                                <FormattedMessage
+                                    id='renderer.components.settingsPage.updates'
+                                    defaultMessage='Updates'
+                                />
+                            </h2>
                             <div className='IndicatorContainer updatesSaveIndicator'>
                                 <AutoSaveIndicator
                                     id='updatesSaveIndicator'
                                     savingState={this.state.savingState.updates}
-                                    errorMessage={'Can\'t save your changes. Please try again.'}
+                                    errorMessage={
+                                        <FormattedMessage
+                                            id='renderer.components.settingsPage.saving.error'
+                                            defaultMessage={'Can\'t save your changes. Please try again.'}
+                                        />
+                                    }
                                 />
                             </div>
                             <FormGroup
@@ -915,9 +1137,15 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                                         checked={this.state.autoCheckForUpdates}
                                         onChange={this.handleChangeAutoCheckForUpdates}
                                     />
-                                    {'Automatically check for updates'}
+                                    <FormattedMessage
+                                        id='renderer.components.settingsPage.updates.automatic'
+                                        defaultMessage='Automatically check for updates'
+                                    />
                                     <FormText>
-                                        {'If enabled, updates to the Desktop App will download automatically and you will be notified when ready to install.'}
+                                        <FormattedMessage
+                                            id='renderer.components.settingsPage.updates.automatic.description'
+                                            defaultMessage='If enabled, updates to the Desktop App will download automatically and you will be notified when ready to install.'
+                                        />
                                     </FormText>
                                 </FormCheck>
                                 <Button
@@ -925,7 +1153,10 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                                     id='checkForUpdatesNow'
                                     onClick={this.checkForUpdates}
                                 >
-                                    <span>{'Check for Updates Now'}</span>
+                                    <FormattedMessage
+                                        id='renderer.components.settingsPage.updates.checkNow'
+                                        defaultMessage='Check for Updates Now'
+                                    />
                                 </Button>
                             </FormGroup>
                         </Col>
@@ -944,34 +1175,48 @@ export default class SettingsPage extends React.PureComponent<Record<string, nev
                 </>
             );
         } else {
-            waitForIpc = (<p>{'Loading configuration...'}</p>);
+            waitForIpc = (
+                <p>
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.loadingConfig'
+                        defaultMessage='Loading configuration...'
+                    />
+                </p>
+            );
         }
 
         return (
-            <div
-                className='container-fluid'
-                style={{
-                    height: '100%',
-                }}
-            >
+            <IntlProvider>
                 <div
+                    className='container-fluid'
                     style={{
-                        overflowY: 'auto',
                         height: '100%',
-                        margin: '0 -15px',
                     }}
                 >
-                    <div style={{position: 'relative'}}>
-                        <h1 style={settingsPage.heading}>{'Settings'}</h1>
-                        <hr/>
-                    </div>
-                    <Container
-                        className='settingsPage'
+                    <div
+                        style={{
+                            overflowY: 'auto',
+                            height: '100%',
+                            margin: '0 -15px',
+                        }}
                     >
-                        {waitForIpc}
-                    </Container>
+                        <div style={{position: 'relative'}}>
+                            <h1 style={settingsPage.heading}>
+                                <FormattedMessage
+                                    id='renderer.components.settingsPage.header'
+                                    defaultMessage='Settings'
+                                />
+                            </h1>
+                            <hr/>
+                        </div>
+                        <Container
+                            className='settingsPage'
+                        >
+                            {waitForIpc}
+                        </Container>
+                    </div>
                 </div>
-            </div>
+            </IntlProvider>
         );
     }
 }

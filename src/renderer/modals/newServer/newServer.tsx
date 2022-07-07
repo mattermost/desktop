@@ -12,6 +12,8 @@ import {ModalMessage} from 'types/modals';
 
 import {GET_MODAL_UNCLOSEABLE, MODAL_CANCEL, MODAL_INFO, MODAL_RESULT, MODAL_UNCLOSEABLE, RETRIEVE_MODAL_INFO} from 'common/communication';
 
+import IntlProvider from 'renderer/intl_provider';
+
 import NewTeamModal from '../../components/NewTeamModal'; //'./addServer.jsx';
 
 import setupDarkMode from '../darkMode';
@@ -55,13 +57,15 @@ const NewServerModalWrapper: React.FC = () => {
     }, []);
 
     return (
-        <NewTeamModal
-            onClose={unremoveable ? undefined : onClose}
-            onSave={onSave}
-            editMode={false}
-            show={true}
-            currentTeams={currentTeams}
-        />
+        <IntlProvider>
+            <NewTeamModal
+                onClose={unremoveable ? undefined : onClose}
+                onSave={onSave}
+                editMode={false}
+                show={true}
+                currentTeams={currentTeams}
+            />
+        </IntlProvider>
     );
 };
 

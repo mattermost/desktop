@@ -12,6 +12,10 @@ type State = {
     language?: Language;
 }
 
+export function t(id: string) {
+    return id;
+}
+
 export default class IntlProvider extends React.PureComponent<any, State> {
     constructor(props: any) {
         super(props);

@@ -363,7 +363,10 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                             onClick={this.addServer}
                         >
                             <i className='icon-plus'/>
-                            <span>{'Add a server'}</span>
+                            <FormattedMessage
+                                id='renderer.dropdown.addAServer'
+                                defaultMessage='Add a server'
+                            />
                         </button>
                     }
                 </div>
