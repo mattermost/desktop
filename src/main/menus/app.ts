@@ -6,6 +6,7 @@
 import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, clipboard} from 'electron';
 
 import {BROWSER_HISTORY_BUTTON, OPEN_TEAMS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
+import {getTabDisplayName, TabType} from 'common/tabs/TabView';
 import {Config} from 'common/config';
 
 import {t} from 'main/i18nManager';
@@ -239,7 +240,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             if (WindowManager.getCurrentTeamName() === team.name) {
                 team.tabs.filter((tab) => tab.isOpen).sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).forEach((tab, i) => {
                     items.push({
-                        label: `    ${t(`common.tabs.${tab.name}`)}`,
+                        label: `    ${t(`common.tabs.${tab.name}`, getTabDisplayName(tab.name as TabType))}`,
                         accelerator: `CmdOrCtrl+${i + 1}`,
                         click() {
                             WindowManager.switchTab(team.name, tab.name);

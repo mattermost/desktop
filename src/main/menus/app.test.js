@@ -23,6 +23,10 @@ jest.mock('main/windows/windowManager', () => ({
     getCurrentTeamName: jest.fn(),
 }));
 
+jest.mock('common/tabs/TabView', () => ({
+    getTabDisplayName: (name) => name,
+}));
+
 describe('main/menus/app', () => {
     const config = {
         data: {

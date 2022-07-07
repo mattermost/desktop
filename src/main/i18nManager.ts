@@ -22,7 +22,7 @@ class I18nManager {
     constructor() {
         this.currentLanguage = this.getLanguages().en;
 
-        if (this.setLocale(app.getLocale())) {
+        if (!this.setLocale(app.getLocale())) {
             this.setLocale(app.getLocaleCountryCode());
         }
 
@@ -30,6 +30,8 @@ class I18nManager {
     }
 
     setLocale = (locale: string) => {
+        log.debug('i18nManager.setLocale', locale);
+
         if (this.isLanguageAvailable(locale)) {
             this.currentLanguage = this.getLanguages()[locale];
             log.info('Set new language', locale);

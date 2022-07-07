@@ -10,7 +10,7 @@ import classNames from 'classnames';
 
 import {Tab} from 'types/config';
 
-import {getTabViewName, TabType, canCloseTab} from 'common/tabs/TabView';
+import {getTabViewName, TabType, canCloseTab, getTabDisplayName} from 'common/tabs/TabView';
 
 type Props = {
     activeTabName?: string;
@@ -104,7 +104,7 @@ class TabBar extends React.PureComponent<Props> {
                                 as='li'
                                 id={`teamTabItem${index}`}
                                 draggable={false}
-                                title={this.props.intl.formatMessage({id: `common.tabs.${tab.name}`})}
+                                title={this.props.intl.formatMessage({id: `common.tabs.${tab.name}`, defaultMessage: getTabDisplayName(tab.name as TabType)})}
                                 className={classNames('teamTabItem', {
                                     active: this.props.activeTabName === tab.name,
                                     dragging: snapshot.isDragging,
@@ -125,6 +125,7 @@ class TabBar extends React.PureComponent<Props> {
                                     <div className='TabBar-tabSeperator'>
                                         <FormattedMessage
                                             id={`common.tabs.${tab.name}`}
+                                            defaultMessage={getTabDisplayName(tab.name as TabType)}
                                         />
                                         { badgeDiv }
                                         {canCloseTab(tab.name as TabType) &&
