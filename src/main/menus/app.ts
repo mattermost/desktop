@@ -5,7 +5,7 @@
 
 import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, clipboard} from 'electron';
 
-import {BROWSER_HISTORY_BUTTON, OPEN_TEAMS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
+import {BROWSER_HISTORY_BUTTON, OPEN_DOWNLOADS_DROPDOWN, OPEN_TEAMS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
 import {Config} from 'common/config';
 import {TabType, getTabDisplayName} from 'common/tabs/TabView';
 
@@ -124,6 +124,12 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     }, {
         role: 'togglefullscreen',
         accelerator: isMac ? 'Ctrl+Cmd+F' : 'F11',
+    }, separatorItem, {
+        label: 'Downloads',
+        accelerator: 'CmdOrCtrl+D',
+        click() {
+            ipcMain.emit(OPEN_DOWNLOADS_DROPDOWN);
+        },
     }, separatorItem, {
         label: 'Actual Size',
         role: 'resetZoom',

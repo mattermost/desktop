@@ -354,6 +354,9 @@ export class Config extends EventEmitter {
 
             // validate based on config file version
             switch (configData.version) {
+            case 4:
+                configData = Validator.validateV4ConfigData(configData)!;
+                break;
             case 3:
                 configData = Validator.validateV3ConfigData(configData)!;
                 break;

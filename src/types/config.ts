@@ -17,7 +17,36 @@ export type Team = {
 export type TeamWithIndex = Team & {index: number};
 export type TeamWithTabs = Team & {tabs: Tab[]};
 
-export type Config = ConfigV3;
+export type Config = ConfigV4;
+
+export type ConfigV4 = {
+    version: 4;
+    teams: TeamWithTabs[];
+    showTrayIcon: boolean;
+    trayIconTheme: string;
+    minimizeToTray: boolean;
+    notifications: {
+        flashWindow: number;
+        bounceIcon: boolean;
+        bounceIconType: 'critical' | 'informational';
+    };
+    showUnreadBadge: boolean;
+    useSpellChecker: boolean;
+    enableHardwareAcceleration: boolean;
+    autostart: boolean;
+    hideOnStart: boolean;
+    spellCheckerLocales: string[];
+    darkMode: boolean;
+    downloadLocation?: string;
+    spellCheckerURL?: string;
+    lastActiveTeam?: number;
+    startInFullscreen?: boolean;
+    autoCheckForUpdates?: boolean;
+    alwaysMinimize?: boolean;
+    alwaysClose?: boolean;
+    logLevel?: string;
+    downloads: DownloadItems;
+}
 
 export type ConfigV3 = {
     version: 3;
@@ -96,7 +125,7 @@ export type ConfigV1 = {
 
 export type ConfigV0 = {version: 0; url: string};
 
-export type AnyConfig = ConfigV3 | ConfigV2 | ConfigV1 | ConfigV0;
+export type AnyConfig = ConfigV4 | ConfigV3 | ConfigV2 | ConfigV1 | ConfigV0;
 
 export type BuildConfig = {
     defaultTeams?: Team[];
@@ -112,11 +141,10 @@ export type RegistryConfig = {
     enableAutoUpdater: boolean;
 }
 
-export type CombinedConfig = ConfigV3 & BuildConfig & {
+export type CombinedConfig = ConfigV4 & BuildConfig & {
     registryTeams: Team[];
     appName: string;
     useNativeWindow: boolean;
-
 }
 
 export type LocalConfiguration = Config & {
@@ -129,3 +157,16 @@ export type MigrationInfo = {
     updateTrayIconWin32: boolean;
     masConfigs: boolean;
 }
+
+export type DownloadItem = {
+    type: 'file' | 'update';
+    filename: string;
+    cancelled: boolean;
+    progress: number;
+    finished: boolean;
+    location: string;
+    iconUrl: string;
+    addedAt: number;
+}
+
+export type DownloadItems = DownloadItem[]

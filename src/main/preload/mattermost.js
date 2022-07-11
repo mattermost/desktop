@@ -29,6 +29,7 @@ import {
     GET_VIEW_WEBCONTENTS_ID,
     DISPATCH_GET_DESKTOP_SOURCES,
     DESKTOP_SOURCES_RESULT,
+    CLOSE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -242,8 +243,10 @@ setInterval(() => {
     webFrame.clearCache();
 }, CLEAR_CACHE_INTERVAL);
 
+// Close Dropdown menus on click outside
 window.addEventListener('click', () => {
     ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
+    ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
 });
 
 ipcRenderer.on(BROWSER_HISTORY_PUSH, (event, pathName) => {

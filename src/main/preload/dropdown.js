@@ -16,6 +16,7 @@ import {
     SHOW_EDIT_SERVER_MODAL,
     SHOW_REMOVE_SERVER_MODAL,
     UPDATE_TEAMS,
+    CLOSE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
 
 console.log('preloaded for the dropdown!');
@@ -46,6 +47,9 @@ window.addEventListener('message', async (event) => {
         break;
     case CLOSE_TEAMS_DROPDOWN:
         ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
+        break;
+    case CLOSE_DOWNLOADS_DROPDOWN:
+        ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
         break;
     case UPDATE_TEAMS:
         ipcRenderer.invoke(UPDATE_TEAMS, event.data.data);
