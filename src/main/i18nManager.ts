@@ -1,10 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, ipcMain} from 'electron';
+import {ipcMain} from 'electron';
 import log from 'electron-log';
 
-import {GET_LANGUAGE_INFORMATION} from 'common/communication';
+import {GET_AVAILABLE_LANGUAGES, GET_LANGUAGE_INFORMATION} from 'common/communication';
 
 import {Language, languages} from '../../i18n/i18n';
 
@@ -22,11 +22,8 @@ class I18nManager {
     constructor() {
         this.currentLanguage = this.getLanguages().en;
 
-        if (!this.setLocale(app.getLocale())) {
-            this.setLocale(app.getLocaleCountryCode());
-        }
-
         ipcMain.handle(GET_LANGUAGE_INFORMATION, this.getCurrentLanguage);
+        ipcMain.handle(GET_AVAILABLE_LANGUAGES, this.getAvailableLanguages);
     }
 
     setLocale = (locale: string) => {
@@ -44,6 +41,10 @@ class I18nManager {
 
     getLanguages = () => {
         return languages;
+    }
+
+    getAvailableLanguages = () => {
+        return Object.keys(languages);
     }
 
     isLanguageAvailable = (locale: string) => {

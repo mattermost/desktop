@@ -420,10 +420,10 @@ function initializeAfterAppReady() {
     }
 
     // needs to be done after app ready
-    if (process.platform === 'win32') {
-        if (!i18nManager.setLocale(app.getLocale())) {
-            i18nManager.setLocale(app.getLocaleCountryCode());
-        }
+    if (Config.appLanguage) {
+        i18nManager.setLocale(Config.appLanguage);
+    } else if (!i18nManager.setLocale(app.getLocale())) {
+        i18nManager.setLocale(app.getLocaleCountryCode());
     }
 }
 

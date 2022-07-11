@@ -24,6 +24,7 @@ import {
     RELOAD_CONFIGURATION,
     GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
     CHECK_FOR_UPDATES,
+    GET_AVAILABLE_LANGUAGES,
 } from 'common/communication';
 
 import AutoSaveIndicator, {SavingState} from './AutoSaveIndicator';
@@ -44,6 +45,7 @@ type State = DeepPartial<CombinedConfig> & {
     userOpenedDownloadDialog: boolean;
     allowSaveSpellCheckerURL: boolean;
     availableLanguages: Array<{label: string; value: string}>;
+    availableSpellcheckerLanguages: Array<{label: string; value: string}>;
     canUpgrade?: boolean;
 }
 
@@ -74,6 +76,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
     startInFullscreenRef: React.RefObject<HTMLInputElement>;
     autoCheckForUpdatesRef: React.RefObject<HTMLInputElement>;
     logLevelRef: React.RefObject<HTMLSelectElement>;
+    appLanguageRef: React.RefObject<HTMLSelectElement>;
 
     saveQueue: SaveQueueItem[];
 
@@ -93,6 +96,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
             userOpenedDownloadDialog: false,
             allowSaveSpellCheckerURL: false,
             availableLanguages: [],
+            availableSpellcheckerLanguages: [],
         };
 
         this.getConfig();
@@ -111,6 +115,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
         this.spellCheckerURLRef = React.createRef();
         this.autoCheckForUpdatesRef = React.createRef();
         this.logLevelRef = React.createRef();
+        this.appLanguageRef = React.createRef();
 
         this.saveQueue = [];
         this.selectedSpellCheckerLocales = [];
@@ -126,6 +131,12 @@ class SettingsPage extends React.PureComponent<Props, State> {
         });
 
         window.ipcRenderer.invoke(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES).then((languages: string[]) => {
+            const availableSpellcheckerLanguages = languages.filter((language) => localeTranslations[language]).map((language) => ({label: localeTranslations[language], value: language}));
+            availableSpellcheckerLanguages.sort((a, b) => a.label.localeCompare(b.label));
+            this.setState({availableSpellcheckerLanguages});
+        });
+
+        window.ipcRenderer.invoke(GET_AVAILABLE_LANGUAGES).then((languages: string[]) => {
             const availableLanguages = languages.filter((language) => localeTranslations[language]).map((language) => ({label: localeTranslations[language], value: language}));
             availableLanguages.sort((a, b) => a.label.localeCompare(b.label));
             this.setState({availableLanguages});
@@ -323,6 +334,13 @@ class SettingsPage extends React.PureComponent<Props, State> {
         });
     }
 
+    handleChangeAppLanguage = () => {
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'appLanguage', data: this.appLanguageRef.current?.value});
+        this.setState({
+            appLanguage: this.appLanguageRef.current?.value,
+        });
+    }
+
     handleChangeAutoCheckForUpdates = () => {
         window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_UPDATES, {key: 'autoCheckForUpdates', data: this.autoCheckForUpdatesRef.current?.checked});
         this.setState({
@@ -478,6 +496,17 @@ class SettingsPage extends React.PureComponent<Props, State> {
                 fontWeight: 500,
             },
 
+            appLanguageInput: {
+                marginRight: '3px',
+                marginTop: '8px',
+                width: '320px',
+                height: '34px',
+                padding: '0 12px',
+                borderRadius: '4px',
+                border: '1px solid #ccc',
+                fontWeight: 500,
+            },
+
             container: {
                 paddingBottom: '40px',
             },
@@ -570,7 +599,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
                         inputId='inputSpellCheckerLocalesDropdown'
                         className='SettingsPage__spellCheckerLocalesDropdown'
                         classNamePrefix='SettingsPage__spellCheckerLocalesDropdown'
-                        options={this.state.availableLanguages}
+                        options={this.state.availableSpellcheckerLanguages}
                         isMulti={true}
                         isClearable={false}
                         onChange={this.handleChangeSpellCheckerLocales}
@@ -976,6 +1005,44 @@ class SettingsPage extends React.PureComponent<Props, State> {
                 key='containerDownloadLocation'
             >
                 <hr/>
+                <FormattedMessage
+                    id='renderer.components.settingsPage.appLanguage'
+                    defaultMessage='Set app language (beta)'
+                />
+                <FormControl
+                    style={settingsPage.appLanguageInput}
+                    as='select'
+                    id='inputAppLanguage'
+                    ref={this.appLanguageRef}
+                    value={this.state.appLanguage}
+                    onChange={this.handleChangeAppLanguage}
+                >
+                    <option value=''>
+                        {intl.formatMessage({id: 'renderer.components.settingsPage.appLanguage.useSystemDefault', defaultMessage: 'Use system default'})}
+                    </option>
+                    {this.state.availableLanguages.map((language) => {
+                        return (
+                            <option
+                                key={language.value}
+                                value={language.value}
+                            >
+                                {language.label}
+                            </option>
+                        );
+                    })}
+                </FormControl>
+                <FormText>
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.appLanguage.description'
+                        defaultMessage='Chooses the language that the Desktop App will use for menu items and popups. Still in beta, some languages will be missing translation strings.'
+                    />
+                    <br/>
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.afterRestart'
+                        defaultMessage='Setting takes effect after restarting the app.'
+                    />
+                </FormText>
+                <br/>
                 <div>
                     <FormattedMessage
                         id='renderer.components.settingsPage.downloadLocation'
