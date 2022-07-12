@@ -65,7 +65,8 @@
     "check-build-config:build": "babel ./src/common/config/buildConfig.ts -o ./dist/buildConfig.js",
     "check-build-config:run": "node -r @babel/register scripts/check_build_config.js",
     "check-types": "tsc",
-    "prune": "ts-prune"
+    "prune": "ts-prune",
+    "postinstall": "electron-rebuild install-app-deps"
   },
   "jest": {
     "clearMocks": true,
@@ -188,6 +189,7 @@
     "electron-updater": "5.0.0",
     "fs-extra": "10.0.1",
     "joi": "17.6.0",
+    "macos-notification-state": "2.0.1",
     "pretty-bytes": "6.0.0",
     "react": "16.14.0",
     "react-beautiful-dnd": "13.1.0",
@@ -197,6 +199,7 @@
     "sass": "1.49.11",
     "semver": "7.3.5",
     "valid-url": "1.0.9",
+    "windows-focus-assist": "1.3.0",
     "winreg-utf8": "0.1.1",
     "yargs": "17.4.0"
   },

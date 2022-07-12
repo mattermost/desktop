@@ -24,6 +24,10 @@ module.exports = merge(base, {
         loadingScreenPreload: './src/main/preload/loadingScreenPreload.js',
         urlView: './src/main/preload/urlView.js',
     },
+    externals: {
+        'macos-notification-state': 'require("macos-notification-state")',
+        'windows-focus-assist': 'require("windows-focus-assist")',
+    },
     module: {
         rules: [{
             test: /\.(js|ts)?$/,

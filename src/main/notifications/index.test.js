@@ -5,6 +5,9 @@
 
 import {Notification, shell} from 'electron';
 
+import {getFocusAssist} from 'windows-focus-assist';
+import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
+
 import {PLAY_SOUND} from 'common/communication';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
 
@@ -51,6 +54,14 @@ jest.mock('electron', () => {
     };
 });
 
+jest.mock('windows-focus-assist', () => ({
+    getFocusAssist: jest.fn(),
+}));
+
+jest.mock('macos-notification-state', () => ({
+    getDoNotDisturb: jest.fn(),
+}));
+
 jest.mock('../windows/windowManager', () => ({
     getServerNameByWebContentsId: () => 'server_name',
     sendToRenderer: jest.fn(),
@@ -62,6 +73,7 @@ describe('main/notifications', () => {
     describe('displayMention', () => {
         beforeEach(() => {
             Notification.isSupported.mockImplementation(() => true);
+            getFocusAssist.mockReturnValue({value: false});
         });
 
         it('should do nothing when Notification is not supported', () => {
@@ -77,6 +89,54 @@ describe('main/notifications', () => {
                 {},
             );
             expect(Notification.didConstruct).not.toBeCalled();
+        });
+
+        it('should do nothing when focus assist is enabled on windows', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'win32',
+            });
+
+            getFocusAssist.mockReturnValue({value: true});
+            displayMention(
+                'test',
+                'test body',
+                {id: 'channel_id'},
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+                false,
+                {id: 1},
+                {},
+            );
+            expect(Notification.didConstruct).not.toBeCalled();
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+        });
+
+        it('should do nothing when dnd is enabled on mac', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
+
+            getDarwinDoNotDisturb.mockReturnValue(true);
+            displayMention(
+                'test',
+                'test body',
+                {id: 'channel_id'},
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+                false,
+                {id: 1},
+                {},
+            );
+            expect(Notification.didConstruct).not.toBeCalled();
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
         });
 
         it('should play notification sound when custom sound is provided', () => {
