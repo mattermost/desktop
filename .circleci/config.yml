@@ -172,7 +172,7 @@ jobs:
             - "~/.cache/electron-builder"
 
   build-win-no-installer:
-    executor: wine-mono
+    executor: win/vs2019
     steps:
       - checkout
       - run: mkdir -p ./build
@@ -192,7 +192,7 @@ jobs:
             - "~/.cache/electron-builder"
 
   build-mac-no-dmg:
-    executor: wine-mono
+    executor: mac
     steps:
       - checkout
       - run: mkdir -p ./build
@@ -242,7 +242,7 @@ jobs:
             - "./win-release/"
 
   build-windows-pr:
-    executor: wine-mono
+    executor: win/vs2019
     steps:
       - checkout
       - run: mkdir -p ./build
