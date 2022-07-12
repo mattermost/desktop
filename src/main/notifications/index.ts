@@ -4,6 +4,9 @@
 import {shell, Notification} from 'electron';
 import log from 'electron-log';
 
+import {getFocusAssist} from 'windows-focus-assist';
+import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
+
 import {MentionData} from 'types/notification';
 
 import {PLAY_SOUND} from 'common/communication';
@@ -24,6 +27,11 @@ export function displayMention(title: string, body: string, channel: {id: string
         log.error('notification not supported');
         return;
     }
+
+    if (getDoNotDisturb()) {
+        return;
+    }
+
     const serverName = WindowManager.getServerNameByWebContentsId(webcontents.id);
 
     const options = {
@@ -106,4 +114,16 @@ export function displayRestartToUpgrade(version: string, handleUpgrade: () => vo
         handleUpgrade();
     });
     restartToUpgrade.show();
+}
+
+function getDoNotDisturb() {
+    if (process.platform === 'win32') {
+        return getFocusAssist().value;
+    }
+
+    if (process.platform === 'darwin') {
+        return getDarwinDoNotDisturb();
+    }
+
+    return false;
 }
