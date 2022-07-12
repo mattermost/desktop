@@ -172,14 +172,19 @@ jobs:
             - "~/.cache/electron-builder"
 
   build-win-no-installer:
-    executor: wine-mono
+    executor: win/vs2019
     steps:
       - checkout
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - update_image:
-          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run:
+          name: Update node to v16
+          command: choco install nodejs --version 16.8.0
+      - run:
+          name: Install yq
+          command: choco install yq --version 4.15.1
+      - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
       - build:
           os: windows
           path: ./build/win
@@ -192,16 +197,18 @@ jobs:
             - "~/.cache/electron-builder"
 
   build-mac-no-dmg:
-    executor: wine-mono
+    executor: mac
     steps:
       - checkout
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - update_image:
-          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run: brew install yq
+      - run:
+          name: Update node to v16
+          command: brew upgrade node || true
       - run: jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
-
+      - run: PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci
       - build:
           os: mac
           path: ./build/macos
@@ -242,14 +249,19 @@ jobs:
             - "./win-release/"
 
   build-windows-pr:
-    executor: wine-mono
+    executor: win/vs2019
     steps:
       - checkout
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - update_image:
-          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run:
+          name: Update node to v16
+          command: choco install nodejs --version 16.8.0
+      - run:
+          name: Install yq
+          command: choco install yq --version 4.15.1
+      - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
       - build:
           os: windows
           path: ./build/win
