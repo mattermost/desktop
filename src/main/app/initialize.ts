@@ -377,6 +377,14 @@ function initializeAfterAppReady() {
         });
     });
 
+    // needs to be done after app ready
+    // must be done before update menu
+    if (Config.appLanguage) {
+        i18nManager.setLocale(Config.appLanguage);
+    } else if (!i18nManager.setLocale(app.getLocale())) {
+        i18nManager.setLocale(app.getLocaleCountryCode());
+    }
+
     handleUpdateMenuEvent();
 
     ipcMain.emit('update-dict');
@@ -417,13 +425,6 @@ function initializeAfterAppReady() {
         if (Config.teams.length === 0) {
             addNewServerModalWhenMainWindowIsShown();
         }
-    }
-
-    // needs to be done after app ready
-    if (Config.appLanguage) {
-        i18nManager.setLocale(Config.appLanguage);
-    } else if (!i18nManager.setLocale(app.getLocale())) {
-        i18nManager.setLocale(app.getLocaleCountryCode());
     }
 }
 
