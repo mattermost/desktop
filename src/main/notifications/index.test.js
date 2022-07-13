@@ -91,13 +91,13 @@ describe('main/notifications', () => {
             expect(Notification.didConstruct).not.toBeCalled();
         });
 
-        it('should do nothing when focus assist is enabled on windows', () => {
+        it('should do nothing when alarms only is enabled on windows', () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'win32',
             });
 
-            getFocusAssist.mockReturnValue({value: true});
+            getFocusAssist.mockReturnValue({value: 2});
             displayMention(
                 'test',
                 'test body',
