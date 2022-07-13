@@ -4,7 +4,7 @@ parameters:
     default: false
     type: boolean
 orbs:
-  win: circleci/windows@1.0.0
+  win: circleci/windows@4.1.1
   aws-s3: circleci/aws-s3@2.0.0
   owasp: entur/owasp@0.0.10
 
@@ -172,14 +172,16 @@ jobs:
             - "~/.cache/electron-builder"
 
   build-win-no-installer:
-    executor: wine-mono
+    executor: win/server-2022
     steps:
       - checkout
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - update_image:
-          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run:
+          name: Install yq
+          command: choco install yq --version 4.15.1 -y
+      - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
       - build:
           os: windows
           path: ./build/win
@@ -192,16 +194,18 @@ jobs:
             - "~/.cache/electron-builder"
 
   build-mac-no-dmg:
-    executor: wine-mono
+    executor: mac
     steps:
       - checkout
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - update_image:
-          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run: brew install yq
+      - run:
+          name: Update node to v16
+          command: brew upgrade node || true
       - run: jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
-
+      - run: PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci
       - build:
           os: mac
           path: ./build/macos
@@ -214,7 +218,7 @@ jobs:
             - "~/.cache/electron-builder"
 
   msi_installer:
-    executor: win/vs2019
+    executor: win/server-2022
 
     steps:
       - checkout
@@ -222,11 +226,8 @@ jobs:
       - attach_workspace:
           at: ./build
       - run:
-          name: Update node to v16
-          command: choco install nodejs --version 16.8.0
-      - run:
           name: Install yq
-          command: choco install yq --version 4.15.1
+          command: choco install yq --version 4.15.1 -y
       - win_make:
           operation: optimize
       - win_make:
@@ -242,14 +243,16 @@ jobs:
             - "./win-release/"
 
   build-windows-pr:
-    executor: wine-mono
+    executor: win/server-2022
     steps:
       - checkout
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - update_image:
-          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run:
+          name: Install yq
+          command: choco install yq --version 4.15.1 -y
+      - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
       - build:
           os: windows
           path: ./build/win
