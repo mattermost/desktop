@@ -10,9 +10,10 @@ import {PermissionType} from 'types/trustedOrigin';
 import {ModalMessage} from 'types/modals';
 
 import urlUtil from 'common/utils/url';
+import {t} from 'common/utils/util';
 import {MODAL_INFO} from 'common/communication';
 import {PERMISSION_DESCRIPTION} from 'common/permissions';
-import IntlProvider, {t} from 'renderer/intl_provider';
+import IntlProvider from 'renderer/intl_provider';
 
 type Props = {
     handleDeny: React.MouseEventHandler<HTMLButtonElement>;

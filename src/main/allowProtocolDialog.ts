@@ -8,7 +8,7 @@ import fs from 'fs';
 import {dialog, shell} from 'electron';
 import log from 'electron-log';
 
-import {t} from 'main/i18nManager';
+import {localizeMessage} from 'main/i18nManager';
 
 import {protocols} from '../../electron-builder.json';
 
@@ -56,15 +56,15 @@ export class AllowProtocolDialog {
             return;
         }
         dialog.showMessageBox(mainWindow, {
-            title: t('main.allowProtocolDialog.title', 'Non http(s) protocol'),
-            message: t('main.allowProtocolDialog.message', '{protocol} link requires an external application.', {protocol}),
-            detail: t('main.allowProtocolDialog.detail', 'The requested link is {URL}. Do you want to continue?', {URL}),
+            title: localizeMessage('main.allowProtocolDialog.title', 'Non http(s) protocol'),
+            message: localizeMessage('main.allowProtocolDialog.message', '{protocol} link requires an external application.', {protocol}),
+            detail: localizeMessage('main.allowProtocolDialog.detail', 'The requested link is {URL}. Do you want to continue?', {URL}),
             defaultId: 2,
             type: 'warning',
             buttons: [
-                t('label.yes', 'Yes'),
-                t('main.allowProtocolDialog.button.saveProtocolAsAllowed', 'Yes (Save {protocol} as allowed)', {protocol}),
-                t('label.no', 'No'),
+                localizeMessage('label.yes', 'Yes'),
+                localizeMessage('main.allowProtocolDialog.button.saveProtocolAsAllowed', 'Yes (Save {protocol} as allowed)', {protocol}),
+                localizeMessage('label.no', 'No'),
             ],
             cancelId: 2,
             noLink: true,

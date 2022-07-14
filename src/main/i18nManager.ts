@@ -8,7 +8,7 @@ import {GET_AVAILABLE_LANGUAGES, GET_LANGUAGE_INFORMATION} from 'common/communic
 
 import {Language, languages} from '../../i18n/i18n';
 
-export function t(s: string, defaultString = '', values: any = {}) {
+export function localizeMessage(s: string, defaultString = '', values: any = {}) {
     let str = i18nManager.currentLanguage.url[s] || defaultString;
     for (const key of Object.keys(values)) {
         str = str.replace(new RegExp(`{${key}}`, 'g'), values[key]);

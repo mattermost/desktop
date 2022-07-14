@@ -4,7 +4,7 @@
 
 import React from 'react';
 import {Modal} from 'react-bootstrap';
-import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import DestructiveConfirmationModal from './DestructiveConfirmModal';
 
@@ -14,11 +14,11 @@ type Props = {
     onHide: () => void;
     onAccept: React.MouseEventHandler<HTMLButtonElement>;
     onCancel: React.MouseEventHandler<HTMLButtonElement>;
-    intl: IntlShape;
-}
+};
 
 function RemoveServerModal(props: Props) {
-    const {serverName, intl, ...rest} = props;
+    const intl = useIntl();
+    const {serverName, ...rest} = props;
     return (
         <DestructiveConfirmationModal
             {...rest}
@@ -46,4 +46,4 @@ function RemoveServerModal(props: Props) {
     );
 }
 
-export default injectIntl(RemoveServerModal);
+export default RemoveServerModal;

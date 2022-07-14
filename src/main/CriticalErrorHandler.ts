@@ -10,7 +10,7 @@ import path from 'path';
 import {app, BrowserWindow, dialog} from 'electron';
 import log from 'electron-log';
 
-import {t} from 'main/i18nManager';
+import {localizeMessage} from 'main/i18nManager';
 
 function createErrorReport(err: Error) {
     // eslint-disable-next-line no-undef
@@ -49,10 +49,10 @@ export class CriticalErrorHandler {
         dialog.showMessageBox(this.mainWindow, {
             type: 'warning',
             title: app.name,
-            message: t('main.CriticalErrorHandler.unresponsive.dialog.message', 'The window is no longer responsive.\nDo you wait until the window becomes responsive again?'),
+            message: localizeMessage('main.CriticalErrorHandler.unresponsive.dialog.message', 'The window is no longer responsive.\nDo you wait until the window becomes responsive again?'),
             buttons: [
-                t('label.no', 'No'),
-                t('label.yes', 'Yes'),
+                localizeMessage('label.no', 'No'),
+                localizeMessage('label.yes', 'Yes'),
             ],
             defaultId: 0,
         }).then(({response}) => {
@@ -70,9 +70,9 @@ export class CriticalErrorHandler {
 
         if (app.isReady()) {
             const buttons = [
-                t('main.CriticalErrorHandler.uncaughtException.button.showDetails', 'Show Details'),
-                t('label.ok', 'OK'),
-                t('main.CriticalErrorHandler.uncaughtException.button.reopen', 'Reopen'),
+                localizeMessage('main.CriticalErrorHandler.uncaughtException.button.showDetails', 'Show Details'),
+                localizeMessage('label.ok', 'OK'),
+                localizeMessage('main.CriticalErrorHandler.uncaughtException.button.reopen', 'Reopen'),
             ];
             let indexOfReopen = 2;
             let indexOfShowDetails = 0;
@@ -89,13 +89,13 @@ export class CriticalErrorHandler {
                 {
                     type: 'error',
                     title: app.name,
-                    message: t(
+                    message: localizeMessage(
                         'main.CriticalErrorHandler.uncaughtException.dialog.message',
                         'The {appName} app quit unexpectedly. Click "{showDetails}" to learn more or "{reopen}" to open the application again.\n\nInternal error: {err}',
                         {
                             appName: app.name,
-                            showDetails: t('main.CriticalErrorHandler.uncaughtException.button.showDetails', 'Show Details'),
-                            reopen: t('main.CriticalErrorHandler.uncaughtException.button.reopen', 'Reopen'),
+                            showDetails: localizeMessage('main.CriticalErrorHandler.uncaughtException.button.showDetails', 'Show Details'),
+                            reopen: localizeMessage('main.CriticalErrorHandler.uncaughtException.button.reopen', 'Reopen'),
                             err: err.message,
                         },
                     ),

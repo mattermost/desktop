@@ -70,7 +70,7 @@ jest.mock('../utils', () => ({
 }));
 
 jest.mock('main/i18nManager', () => ({
-    t: jest.fn(),
+    localizeMessage: jest.fn(),
 }));
 
 'use strict';

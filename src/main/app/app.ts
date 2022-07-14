@@ -8,7 +8,7 @@ import urlUtils from 'common/utils/url';
 
 import updateManager from 'main/autoUpdater';
 import CertificateStore from 'main/certificateStore';
-import {t} from 'main/i18nManager';
+import {localizeMessage} from 'main/i18nManager';
 import {destroyTray} from 'main/tray/tray';
 import WindowManager from 'main/windows/windowManager';
 
@@ -97,8 +97,8 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
             certificateErrorCallbacks.set(errorID, callback);
             return;
         }
-        const extraDetail = CertificateStore.isExisting(origin) ? t('main.app.app.handleAppCertificateError.dialog.extraDetail', 'Certificate is different from previous one.\n\n') : '';
-        const detail = t('main.app.app.handleAppCertificateError.certError.dialog.detail', '{extraDetail}origin: {origin}\nError: {error}', {extraDetail, origin, error});
+        const extraDetail = CertificateStore.isExisting(origin) ? localizeMessage('main.app.app.handleAppCertificateError.dialog.extraDetail', 'Certificate is different from previous one.\n\n') : '';
+        const detail = localizeMessage('main.app.app.handleAppCertificateError.certError.dialog.detail', '{extraDetail}origin: {origin}\nError: {error}', {extraDetail, origin, error});
 
         certificateErrorCallbacks.set(errorID, callback);
 
@@ -110,26 +110,26 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
 
         try {
             let result = await dialog.showMessageBox(mainWindow, {
-                title: t('main.app.app.handleAppCertificateError.certError.dialog.title', 'Certificate Error'),
-                message: t('main.app.app.handleAppCertificateError.certError.dialog.message', 'There is a configuration issue with this Mattermost server, or someone is trying to intercept your connection. You also may need to sign into the Wi-Fi you are connected to using your web browser.'),
+                title: localizeMessage('main.app.app.handleAppCertificateError.certError.dialog.title', 'Certificate Error'),
+                message: localizeMessage('main.app.app.handleAppCertificateError.certError.dialog.message', 'There is a configuration issue with this Mattermost server, or someone is trying to intercept your connection. You also may need to sign into the Wi-Fi you are connected to using your web browser.'),
                 type: 'error',
                 detail,
                 buttons: [
-                    t('main.app.app.handleAppCertificateError.certError.button.moreDetails', 'More Details'),
-                    t('main.app.app.handleAppCertificateError.certError.button.cancelConnection', 'Cancel Connection'),
+                    localizeMessage('main.app.app.handleAppCertificateError.certError.button.moreDetails', 'More Details'),
+                    localizeMessage('main.app.app.handleAppCertificateError.certError.button.cancelConnection', 'Cancel Connection'),
                 ],
                 cancelId: 1,
             });
 
             if (result.response === 0) {
                 result = await dialog.showMessageBox(mainWindow, {
-                    title: t('main.app.app.handleAppCertificateError.certNotTrusted.dialog.title', 'Certificate Not Trusted'),
-                    message: t('main.app.app.handleAppCertificateError.certNotTrusted.dialog.message', 'Certificate from "{issuerName}" is not trusted.', {issuerName: certificate.issuerName}),
+                    title: localizeMessage('main.app.app.handleAppCertificateError.certNotTrusted.dialog.title', 'Certificate Not Trusted'),
+                    message: localizeMessage('main.app.app.handleAppCertificateError.certNotTrusted.dialog.message', 'Certificate from "{issuerName}" is not trusted.', {issuerName: certificate.issuerName}),
                     detail: extraDetail,
                     type: 'error',
                     buttons: [
-                        t('main.app.app.handleAppCertificateError.certNotTrusted.button.trustInsecureCertificate', 'Trust Insecure Certificate'),
-                        t('main.app.app.handleAppCertificateError.certNotTrusted.button.cancelConnection', 'Cancel Connection'),
+                        localizeMessage('main.app.app.handleAppCertificateError.certNotTrusted.button.trustInsecureCertificate', 'Trust Insecure Certificate'),
+                        localizeMessage('main.app.app.handleAppCertificateError.certNotTrusted.button.cancelConnection', 'Cancel Connection'),
                     ],
                     cancelId: 1,
                     checkboxChecked: false,

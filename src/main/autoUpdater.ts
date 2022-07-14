@@ -8,7 +8,7 @@ import log from 'electron-log';
 
 import {autoUpdater, ProgressInfo, UpdateInfo} from 'electron-updater';
 
-import {t} from 'main/i18nManager';
+import {localizeMessage} from 'main/i18nManager';
 import {displayUpgrade, displayRestartToUpgrade} from 'main/notifications';
 
 import {CANCEL_UPGRADE, UPDATE_AVAILABLE, UPDATE_DOWNLOADED, CHECK_FOR_UPDATES, UPDATE_SHORTCUT_MENU, UPDATE_PROGRESS} from 'common/communication';
@@ -110,12 +110,12 @@ export class UpdateManager {
         }
         dialog.showMessageBox({
             title: app.name,
-            message: t('main.autoUpdater.download.dialog.message', 'New desktop version available'),
-            detail: t('main.autoUpdater.download.dialog.detail', 'A new version of the {appName} Desktop App is available for you to download and install now.', {appName: app.name}),
+            message: localizeMessage('main.autoUpdater.download.dialog.message', 'New desktop version available'),
+            detail: localizeMessage('main.autoUpdater.download.dialog.detail', 'A new version of the {appName} Desktop App is available for you to download and install now.', {appName: app.name}),
             icon: appIcon,
             buttons: [
-                t('main.autoUpdater.download.dialog.button.download', 'Download'),
-                t('main.autoUpdater.download.dialog.button.remindMeLater', 'Remind me Later'),
+                localizeMessage('main.autoUpdater.download.dialog.button.download', 'Download'),
+                localizeMessage('main.autoUpdater.download.dialog.button.remindMeLater', 'Remind me Later'),
             ],
             type: 'info',
             defaultId: 0,
@@ -136,12 +136,12 @@ export class UpdateManager {
     handleUpdate = (): void => {
         dialog.showMessageBox({
             title: app.name,
-            message: t('main.autoUpdater.update.dialog.message', 'A new version is ready to install'),
-            detail: t('main.autoUpdater.update.dialog.detail', 'A new version of the {appName} Desktop App is ready to install.', {appName: app.name}),
+            message: localizeMessage('main.autoUpdater.update.dialog.message', 'A new version is ready to install'),
+            detail: localizeMessage('main.autoUpdater.update.dialog.detail', 'A new version of the {appName} Desktop App is ready to install.', {appName: app.name}),
             icon: appIcon,
             buttons: [
-                t('main.autoUpdater.update.dialog.button.restartAndUpdate', 'Restart and Update'),
-                t('main.autoUpdater.update.dialog.button.remindMeLater', 'Remind me Later'),
+                localizeMessage('main.autoUpdater.update.dialog.button.restartAndUpdate', 'Restart and Update'),
+                localizeMessage('main.autoUpdater.update.dialog.button.remindMeLater', 'Remind me Later'),
             ],
             type: 'info',
             defaultId: 0,
@@ -158,10 +158,10 @@ export class UpdateManager {
         dialog.showMessageBox({
             title: app.name,
             icon: appIcon,
-            message: t('main.autoUpdater.noUpdate.message', 'You\'re up to date'),
+            message: localizeMessage('main.autoUpdater.noUpdate.message', 'You\'re up to date'),
             type: 'info',
-            buttons: [t('label.ok', 'OK')],
-            detail: t('main.autoUpdater.noUpdate.detail', 'You are using the latest version of the {appName} Desktop App (version {version}). You\'ll be notified when a new version is available to install.', {appName: app.name, version}),
+            buttons: [localizeMessage('label.ok', 'OK')],
+            detail: localizeMessage('main.autoUpdater.noUpdate.detail', 'You are using the latest version of the {appName} Desktop App (version {version}). You\'ll be notified when a new version is available to install.', {appName: app.name, version}),
         });
     }
 

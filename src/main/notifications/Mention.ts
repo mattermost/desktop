@@ -10,13 +10,13 @@ import {MentionOptions} from 'types/notification';
 
 import Utils from 'common/utils/util';
 
-import {t} from 'main/i18nManager';
+import {localizeMessage} from 'main/i18nManager';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const appIconURL = path.resolve(assetsDir, 'appicon_48.png');
 
 const defaultOptions = {
-    title: t('main.notifications.mention.title', 'Someone mentioned you'),
+    title: localizeMessage('main.notifications.mention.title', 'Someone mentioned you'),
     silent: false,
     icon: appIconURL,
     urgency: 'normal' as Notification['urgency'],

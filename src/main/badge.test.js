@@ -25,7 +25,7 @@ jest.mock('./windows/windowManager', () => ({
 }));
 
 jest.mock('main/i18nManager', () => ({
-    t: jest.fn().mockReturnValue(''),
+    localizeMessage: jest.fn().mockReturnValue(''),
 }));
 
 describe('main/badge', () => {

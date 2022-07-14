@@ -12,10 +12,6 @@ type State = {
     language?: Language;
 }
 
-export function t(id: string) {
-    return id;
-}
-
 export default class IntlProvider extends React.PureComponent<any, State> {
     constructor(props: any) {
         super(props);
@@ -25,6 +21,10 @@ export default class IntlProvider extends React.PureComponent<any, State> {
     componentDidMount() {
         window.addEventListener('message', this.handleMessageEvent);
         window.postMessage({type: GET_LANGUAGE_INFORMATION});
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('message', this.handleMessageEvent);
     }
 
     handleMessageEvent = (event: MessageEvent<{type: string; data: Language}>) => {

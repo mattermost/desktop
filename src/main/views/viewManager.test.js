@@ -49,7 +49,7 @@ jest.mock('common/utils/url', () => ({
 }));
 
 jest.mock('main/i18nManager', () => ({
-    t: jest.fn(),
+    localizeMessage: jest.fn(),
 }));
 
 jest.mock('main/server/serverInfo', () => ({

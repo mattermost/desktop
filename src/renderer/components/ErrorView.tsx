@@ -75,39 +75,39 @@ export default function ErrorView(props: Props) {
                                 </li>
                                 <li>
                                     <FormattedMessage
-                                        id='renderer.components.errorView.troubleshooting.urlIsCorrect.appName'
-                                        defaultMessage='The {appName} URL '
+                                        id='renderer.components.errorView.troubleshooting.urlIsCorrect.appNameIsCorrect'
+                                        defaultMessage='The {appName} URL <link>{url}</link> is correct'
                                         values={{
                                             appName: props.appName,
-                                        }}
-                                    />
-                                    <a
+                                            url: props.url,
+                                            link: (msg: React.ReactNode) => (
+                                                <a
 
-                                        onClick={props.handleLink}
-                                        href='#'
-                                    >
-                                        {props.url}
-                                    </a>
-                                    <FormattedMessage
-                                        id='renderer.components.errorView.troubleshooting.urlIsCorrect.isCorrect'
-                                        defaultMessage=' is correct'
+                                                    onClick={props.handleLink}
+                                                    href='#'
+                                                >
+                                                    {msg}
+                                                </a>
+                                            ),
+                                        }}
                                     />
                                 </li>
                                 <li>
                                     <FormattedMessage
-                                        id='renderer.components.errorView.troubleshooting.browserView.canRead'
-                                        defaultMessage='You can reach '
-                                    />
-                                    <a
+                                        id='renderer.components.errorView.troubleshooting.browserView.canReachFromBrowserWindow'
+                                        defaultMessage='You can reach <link>{url}</link> from a browser window.'
+                                        values={{
+                                            url: props.url,
+                                            link: (msg: React.ReactNode) => (
+                                                <a
 
-                                        onClick={props.handleLink}
-                                        href='#'
-                                    >
-                                        {props.url}
-                                    </a>
-                                    <FormattedMessage
-                                        id='renderer.components.errorView.troubleshooting.browserView.from'
-                                        defaultMessage=' from a browser window.'
+                                                    onClick={props.handleLink}
+                                                    href='#'
+                                                >
+                                                    {msg}
+                                                </a>
+                                            ),
+                                        }}
                                     />
                                 </li>
                             </ul>

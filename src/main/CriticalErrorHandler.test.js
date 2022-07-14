@@ -37,7 +37,7 @@ jest.mock('child_process', () => ({
 }));
 
 jest.mock('main/i18nManager', () => ({
-    t: jest.fn(),
+    localizeMessage: jest.fn(),
 }));
 
 describe('main/CriticalErrorHandler', () => {

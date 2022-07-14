@@ -4,7 +4,7 @@
 
 import React from 'react';
 import {Alert} from 'react-bootstrap';
-import {injectIntl, IntlShape} from 'react-intl';
+import {IntlShape, useIntl} from 'react-intl';
 
 const baseClassName = 'AutoSaveIndicator';
 const leaveClassName = `${baseClassName}-Leave`;
@@ -35,12 +35,12 @@ type Props = {
     id?: string;
     savingState: SavingState;
     errorMessage?: React.ReactNode;
-    intl: IntlShape;
 };
 
 const AutoSaveIndicator: React.FC<Props> = (props: Props) => {
+    const intl = useIntl();
     const {savingState, errorMessage, ...rest} = props;
-    const {className, message} = getClassNameAndMessage(props.intl, savingState, errorMessage);
+    const {className, message} = getClassNameAndMessage(intl, savingState, errorMessage);
     return (
         <Alert
             className={className}
@@ -52,4 +52,4 @@ const AutoSaveIndicator: React.FC<Props> = (props: Props) => {
     );
 };
 
-export default injectIntl(AutoSaveIndicator);
+export default AutoSaveIndicator;

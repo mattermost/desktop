@@ -7,7 +7,7 @@ import {Menu, MenuItem, MenuItemConstructorOptions} from 'electron';
 import {CombinedConfig} from 'types/config';
 
 import WindowManager from 'main/windows/windowManager';
-import {t} from 'main/i18nManager';
+import {localizeMessage} from 'main/i18nManager';
 
 export function createTemplate(config: CombinedConfig) {
     const teams = config.teams;
@@ -22,7 +22,7 @@ export function createTemplate(config: CombinedConfig) {
         }), {
             type: 'separator',
         }, {
-            label: process.platform === 'darwin' ? t('main.menus.tray.preferences', 'Preferences...') : t('main.menus.tray.settings', 'Settings'),
+            label: process.platform === 'darwin' ? localizeMessage('main.menus.tray.preferences', 'Preferences...') : localizeMessage('main.menus.tray.settings', 'Settings'),
             click: () => {
                 WindowManager.showSettingsWindow();
             },

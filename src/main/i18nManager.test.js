@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import i18nManager, {I18nManager, t} from 'main/i18nManager';
+import i18nManager, {I18nManager, localizeMessage} from 'main/i18nManager';
 
 jest.mock('electron', () => ({
     ipcMain: {
@@ -31,7 +31,7 @@ describe('main/i18nManager', () => {
     });
 });
 
-describe('main/i18nManager/t', () => {
+describe('main/i18nManager/localizeMessage', () => {
     i18nManager.currentLanguage = {
         url: {
             simple_key: 'simple_translation',
@@ -43,30 +43,30 @@ describe('main/i18nManager/t', () => {
     };
 
     it('should get a simple translation', () => {
-        expect(t('simple_key', 'different_translation')).toBe('simple_translation');
+        expect(localizeMessage('simple_key', 'different_translation')).toBe('simple_translation');
     });
 
     it('should default if does not exist', () => {
-        expect(t('unsimple_key', 'different_translation')).toBe('different_translation');
+        expect(localizeMessage('unsimple_key', 'different_translation')).toBe('different_translation');
     });
 
     it('should replace', () => {
-        expect(t('simple_replace_key', null, {key: 'replacement'})).toBe('simple_translation replacement');
+        expect(localizeMessage('simple_replace_key', null, {key: 'replacement'})).toBe('simple_translation replacement');
     });
 
     it('should not replace if key is missing', () => {
-        expect(t('simple_replace_key', null, {})).toBe('simple_translation {key}');
+        expect(localizeMessage('simple_replace_key', null, {})).toBe('simple_translation {key}');
     });
 
     it('should replace twice', () => {
-        expect(t('replace_two_key', null, {replace: 'replacement1', replace_again: 'replacement2'})).toBe('replacement1 replacement2');
+        expect(localizeMessage('replace_two_key', null, {replace: 'replacement1', replace_again: 'replacement2'})).toBe('replacement1 replacement2');
     });
 
     it('should ignore nested braces', () => {
-        expect(t('nested_braces', null, {replace: 'replacement'})).toBe('{replacement}');
+        expect(localizeMessage('nested_braces', null, {replace: 'replacement'})).toBe('{replacement}');
     });
 
     it('should replace multiple of the same', () => {
-        expect(t('multiple_same', null, {replace: 'replacement', key: 'key1'})).toBe('replacement replacement key1');
+        expect(localizeMessage('multiple_same', null, {replace: 'replacement', key: 'key1'})).toBe('replacement replacement key1');
     });
 });

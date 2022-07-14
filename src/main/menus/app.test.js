@@ -3,7 +3,7 @@
 
 'use strict';
 
-import {t} from 'main/i18nManager';
+import {localizeMessage} from 'main/i18nManager';
 import WindowManager from 'main/windows/windowManager';
 
 import {createTemplate} from './app';
@@ -16,7 +16,7 @@ jest.mock('electron', () => ({
 }));
 
 jest.mock('main/i18nManager', () => ({
-    t: jest.fn(),
+    localizeMessage: jest.fn(),
 }));
 
 jest.mock('main/windows/windowManager', () => ({
@@ -102,7 +102,7 @@ describe('main/menus/app', () => {
         });
 
         it('should include About <appname> in menu on mac', () => {
-            t.mockImplementation((id) => {
+            localizeMessage.mockImplementation((id) => {
                 if (id === 'main.menus.app.file.about') {
                     return 'About AppName';
                 }
@@ -116,7 +116,7 @@ describe('main/menus/app', () => {
         });
 
         it('should contain hide options', () => {
-            t.mockImplementation((id) => {
+            localizeMessage.mockImplementation((id) => {
                 if (id === 'main.menus.app.file') {
                     return '&AppName';
                 }
@@ -130,7 +130,7 @@ describe('main/menus/app', () => {
         });
 
         it('should contain zoom and front options in Window', () => {
-            t.mockImplementation((id) => {
+            localizeMessage.mockImplementation((id) => {
                 if (id === 'main.menus.app.window') {
                     return '&Window';
                 }
@@ -145,7 +145,7 @@ describe('main/menus/app', () => {
     });
 
     it('should show `Sign in to Another Server` if `enableServerManagement` is true', () => {
-        t.mockImplementation((id) => {
+        localizeMessage.mockImplementation((id) => {
             switch (id) {
             case 'main.menus.app.file':
                 return '&File';
@@ -162,7 +162,7 @@ describe('main/menus/app', () => {
     });
 
     it('should not show `Sign in to Another Server` if `enableServerManagement` is false', () => {
-        t.mockImplementation((id) => {
+        localizeMessage.mockImplementation((id) => {
             switch (id) {
             case 'main.menus.app.file':
                 return '&File';
@@ -183,7 +183,7 @@ describe('main/menus/app', () => {
     });
 
     it('should show the first 9 servers (using order) in the Window menu', () => {
-        t.mockImplementation((id) => {
+        localizeMessage.mockImplementation((id) => {
             if (id === 'main.menus.app.window') {
                 return '&Window';
             }
@@ -223,7 +223,7 @@ describe('main/menus/app', () => {
     });
 
     it('should show the first 9 tabs (using order) in the Window menu', () => {
-        t.mockImplementation((id) => {
+        localizeMessage.mockImplementation((id) => {
             if (id === 'main.menus.app.window') {
                 return '&Window';
             }

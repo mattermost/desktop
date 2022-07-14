@@ -57,7 +57,7 @@ jest.mock('electron', () => ({
 }));
 
 jest.mock('main/i18nManager', () => ({
-    t: jest.fn(),
+    localizeMessage: jest.fn(),
     setLocale: jest.fn(),
 }));
 

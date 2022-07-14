@@ -47,7 +47,7 @@ import {setupBadge} from 'main/badge';
 import CertificateManager from 'main/certificateManager';
 import {updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
-import i18nManager, {t} from 'main/i18nManager';
+import i18nManager, {localizeMessage} from 'main/i18nManager';
 import {displayDownloadCompleted} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
 import TrustedOriginsStore from 'main/trustedOrigins';
@@ -360,7 +360,7 @@ function initializeAfterAppReady() {
         const filters = [];
         if (fileElements.length > 1) {
             filters.push({
-                name: t('main.app.initialize.downloadBox.allFiles', 'All files'),
+                name: localizeMessage('main.app.initialize.downloadBox.allFiles', 'All files'),
                 extensions: ['*'],
             });
         }

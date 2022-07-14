@@ -15,7 +15,7 @@ jest.mock('electron', () => ({
 jest.mock('electron-is-dev', () => false);
 
 jest.mock('main/i18nManager', () => ({
-    t: jest.fn(),
+    localizeMessage: jest.fn(),
 }));
 
 describe('main/AutoLauncher', () => {

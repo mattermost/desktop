@@ -90,26 +90,30 @@ class LoginModal extends React.PureComponent<Props, State> {
         this.setState({password: e.target.value});
     }
 
+    renderLoginModalMessage = () => {
+        if (!(this.state.request && this.state.authInfo)) {
+            return null;
+        } else if (this.state.authInfo.isProxy) {
+            return (
+                <FormattedMessage
+                    id='renderer.modals.login.loginModal.message.proxy'
+                    defaultMessage='The proxy {host}:{port} requires a username and password.'
+                    values={{host: this.state.authInfo.host, port: this.state.authInfo.port}}
+                />
+            );
+        }
+        const tmpURL = urlUtils.parseURL(this.state.request.url);
+        return (
+            <FormattedMessage
+                id='renderer.modals.login.loginModal.message.server'
+                defaultMessage='The server {url} requires a username and password.'
+                values={{url: `${tmpURL?.protocol}//${tmpURL?.host}`}}
+            />
+        );
+    }
+
     render() {
         const {intl} = this.props;
-
-        let theServer = '';
-        if (!(this.state.request && this.state.authInfo)) {
-            theServer = '';
-        } else if (this.state.authInfo.isProxy) {
-            theServer = intl.formatMessage({
-                id: 'renderer.modals.login.loginModal.proxy',
-                defaultMessage: 'The proxy {host}:{port}',
-            },
-            {host: this.state.authInfo.host, port: this.state.authInfo.port});
-        } else {
-            const tmpURL = urlUtils.parseURL(this.state.request.url);
-            theServer = intl.formatMessage({
-                id: 'renderer.modals.login.loginModal.server',
-                defaultMessage: 'The server {url}',
-            },
-            {url: `${tmpURL?.protocol}//${tmpURL?.host}`});
-        }
 
         return (
             <IntlProvider>
@@ -126,11 +130,7 @@ class LoginModal extends React.PureComponent<Props, State> {
                     </Modal.Header>
                     <Modal.Body>
                         <p>
-                            <FormattedMessage
-                                id='renderer.modals.login.loginModal.message'
-                                defaultMessage='{theServer} requires a username and password.'
-                                values={{theServer}}
-                            />
+                            {this.renderLoginModalMessage()}
                         </p>
                         <Form
                             onSubmit={this.handleSubmit}
