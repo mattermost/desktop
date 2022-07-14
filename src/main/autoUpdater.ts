@@ -8,6 +8,7 @@ import log from 'electron-log';
 
 import {autoUpdater, ProgressInfo, UpdateInfo} from 'electron-updater';
 
+import {localizeMessage} from 'main/i18nManager';
 import {displayUpgrade, displayRestartToUpgrade} from 'main/notifications';
 
 import {CANCEL_UPGRADE, UPDATE_AVAILABLE, UPDATE_DOWNLOADED, CHECK_FOR_UPDATES, UPDATE_SHORTCUT_MENU, UPDATE_PROGRESS} from 'common/communication';
@@ -108,11 +109,14 @@ export class UpdateManager {
             clearTimeout(this.lastCheck);
         }
         dialog.showMessageBox({
-            title: 'Mattermost',
-            message: 'New desktop version available',
-            detail: 'A new version of the Mattermost Desktop app is available for you to download and install now.',
+            title: app.name,
+            message: localizeMessage('main.autoUpdater.download.dialog.message', 'New desktop version available'),
+            detail: localizeMessage('main.autoUpdater.download.dialog.detail', 'A new version of the {appName} Desktop App is available for you to download and install now.', {appName: app.name}),
             icon: appIcon,
-            buttons: ['Download', 'Remind me Later'],
+            buttons: [
+                localizeMessage('main.autoUpdater.download.dialog.button.download', 'Download'),
+                localizeMessage('main.autoUpdater.download.dialog.button.remindMeLater', 'Remind me Later'),
+            ],
             type: 'info',
             defaultId: 0,
             cancelId: 1,
@@ -131,11 +135,14 @@ export class UpdateManager {
 
     handleUpdate = (): void => {
         dialog.showMessageBox({
-            title: 'Mattermost',
-            message: 'A new version is ready to install',
-            detail: 'A new version of the Mattermost Desktop app is ready to install.',
+            title: app.name,
+            message: localizeMessage('main.autoUpdater.update.dialog.message', 'A new version is ready to install'),
+            detail: localizeMessage('main.autoUpdater.update.dialog.detail', 'A new version of the {appName} Desktop App is ready to install.', {appName: app.name}),
             icon: appIcon,
-            buttons: ['Restart and Update', 'Remind me Later'],
+            buttons: [
+                localizeMessage('main.autoUpdater.update.dialog.button.restartAndUpdate', 'Restart and Update'),
+                localizeMessage('main.autoUpdater.update.dialog.button.remindMeLater', 'Remind me Later'),
+            ],
             type: 'info',
             defaultId: 0,
             cancelId: 1,
@@ -149,12 +156,12 @@ export class UpdateManager {
     displayNoUpgrade = (): void => {
         const version = app.getVersion();
         dialog.showMessageBox({
-            title: 'Mattermost',
+            title: app.name,
             icon: appIcon,
-            message: 'You\'re up to date',
+            message: localizeMessage('main.autoUpdater.noUpdate.message', 'You\'re up to date'),
             type: 'info',
-            buttons: ['OK'],
-            detail: `You are using the latest version of the Mattermost Desktop App (version ${version}). You'll be notified when a new version is available to install.`,
+            buttons: [localizeMessage('label.ok', 'OK')],
+            detail: localizeMessage('main.autoUpdater.noUpdate.detail', 'You are using the latest version of the {appName} Desktop App (version {version}). You\'ll be notified when a new version is available to install.', {appName: app.name, version}),
         });
     }
 

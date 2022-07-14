@@ -45,6 +45,7 @@ export type ConfigV3 = {
     alwaysMinimize?: boolean;
     alwaysClose?: boolean;
     logLevel?: string;
+    appLanguage?: string;
 }
 
 export type ConfigV2 = {

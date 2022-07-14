@@ -45,6 +45,10 @@ jest.mock('main/windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
 }));
 
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
+}));
+
 describe('main/autoUpdater', () => {
     describe('constructor', () => {
         afterEach(() => {

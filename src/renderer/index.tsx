@@ -13,6 +13,7 @@ import {CombinedConfig, Team} from 'types/config';
 import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT, RELOAD_CONFIGURATION} from 'common/communication';
 
 import MainPage from './components/MainPage';
+import IntlProvider from './intl_provider';
 
 type State = {
     config?: CombinedConfig;
@@ -120,15 +121,17 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         }
 
         return (
-            <MainPage
-                teams={config.teams}
-                lastActiveTeam={config.lastActiveTeam}
-                moveTabs={this.moveTabs}
-                openMenu={this.openMenu}
-                darkMode={config.darkMode}
-                appName={config.appName}
-                useNativeWindow={config.useNativeWindow}
-            />
+            <IntlProvider>
+                <MainPage
+                    teams={config.teams}
+                    lastActiveTeam={config.lastActiveTeam}
+                    moveTabs={this.moveTabs}
+                    openMenu={this.openMenu}
+                    darkMode={config.darkMode}
+                    appName={config.appName}
+                    useNativeWindow={config.useNativeWindow}
+                />
+            </IntlProvider>
         );
     }
 }

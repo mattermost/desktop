@@ -65,7 +65,9 @@
     "check-build-config:build": "babel ./src/common/config/buildConfig.ts -o ./dist/buildConfig.js",
     "check-build-config:run": "node -r @babel/register scripts/check_build_config.js",
     "check-types": "tsc",
-    "prune": "ts-prune"
+    "prune": "ts-prune",
+    "mmjstool": "mmjstool",
+    "i18n-extract": "npm run mmjstool -- i18n extract-desktop"
   },
   "jest": {
     "clearMocks": true,
@@ -160,6 +162,7 @@
     "jest": "27.5.1",
     "jest-junit": "13.1.0",
     "mini-css-extract-plugin": "2.6.0",
+    "mmjstool": "github:mattermost/mattermost-utilities#d849d3819112bd828f08caf0155bd7ed62f18950",
     "mocha-circleci-reporter": "0.0.3",
     "node-gyp": "9.0.0",
     "npm-run-all": "4.1.5",
@@ -171,7 +174,7 @@
     "ts-prune": "0.10.3",
     "typescript": "4.6.3",
     "webpack": "5.71.0",
-    "webpack-cli": "4.9.2",
+    "webpack-cli": "4.10.0",
     "webpack-dev-server": "4.8.0",
     "webpack-merge": "5.8.0"
   },
@@ -193,6 +196,7 @@
     "react-beautiful-dnd": "13.1.0",
     "react-bootstrap": "1.6.4",
     "react-dom": "16.14.0",
+    "react-intl": "5.20.10",
     "react-select": "5.2.2",
     "sass": "1.49.11",
     "semver": "7.3.5",
