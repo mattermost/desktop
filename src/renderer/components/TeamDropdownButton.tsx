@@ -3,6 +3,7 @@
 
 import classNames from 'classnames';
 import React, {useEffect} from 'react';
+import {FormattedMessage} from 'react-intl';
 
 import {CLOSE_TEAMS_DROPDOWN, OPEN_TEAMS_DROPDOWN} from 'common/communication';
 
@@ -64,7 +65,13 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
                 <i className='icon-server-variant'/>
                 {badgeDiv}
             </div>
-            <span>{activeServerName || 'No servers configured'}</span>
+            {activeServerName && <span>{activeServerName}</span>}
+            {!activeServerName &&
+                <FormattedMessage
+                    id='renderer.components.teamDropdownButton.noServersConfigured'
+                    defaultMessage='No servers configured'
+                />
+            }
             <i className='icon-chevron-down'/>
         </button>
     );

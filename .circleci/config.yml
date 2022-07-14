@@ -12,19 +12,19 @@ executors:
   check-image:
     working_directory: ~/mattermost-desktop
     docker:
-      - image: electronuserland/builder:wine-chrome
+      - image: electronuserland/builder:16-wine-chrome
         environment:
           TAR_OPTIONS: --no-same-owner
   wine-chrome:
     working_directory: ~/mattermost-desktop
     docker:
-      - image: electronuserland/builder:wine-chrome
+      - image: electronuserland/builder:16-wine-chrome
         environment:
           TAR_OPTIONS: --no-same-owner
   wine-mono:
     working_directory: ~/mattermost-desktop
     docker:
-      - image: electronuserland/builder:wine-mono
+      - image: electronuserland/builder:16-wine-mono
   mac:
     working_directory: ~/mattermost-desktop
     macos:
@@ -140,6 +140,13 @@ jobs:
       - update_image:
           apt_opts: "--no-install-recommends"
       - run: npm run check-types
+      - run: 
+          name: i18n check
+          command: |
+            cp i18n/en.json /tmp/en.json
+            npm run mmjstool -- i18n extract-desktop --desktop-dir .
+            diff /tmp/en.json i18n/en.json
+            rm -rf tmp
       - run: ELECTRON_DISABLE_SANDBOX=1 npm run test:unit-ci
       - run: mkdir -p /tmp/test-results
       - run: cp test-results.xml /tmp/test-results/

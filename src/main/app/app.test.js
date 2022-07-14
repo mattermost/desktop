@@ -33,6 +33,9 @@ jest.mock('main/certificateStore', () => ({
     add: jest.fn(),
     save: jest.fn(),
 }));
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
+}));
 jest.mock('main/tray/tray', () => ({}));
 jest.mock('main/windows/windowManager', () => ({
     getMainWindow: jest.fn(),

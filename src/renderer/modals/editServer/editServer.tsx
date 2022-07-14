@@ -12,6 +12,8 @@ import {ModalMessage} from 'types/modals';
 
 import {MODAL_CANCEL, MODAL_INFO, MODAL_RESULT, RETRIEVE_MODAL_INFO} from 'common/communication';
 
+import IntlProvider from 'renderer/intl_provider';
+
 import NewTeamModal from '../../components/NewTeamModal'; //'./addServer.jsx';
 
 import setupDarkMode from '../darkMode';
@@ -48,14 +50,16 @@ const EditServerModalWrapper: React.FC = () => {
     }, []);
 
     return (
-        <NewTeamModal
-            onClose={onClose}
-            onSave={onSave}
-            editMode={true}
-            show={Boolean(server)}
-            team={server}
-            currentTeams={currentTeams}
-        />
+        <IntlProvider>
+            <NewTeamModal
+                onClose={onClose}
+                onSave={onSave}
+                editMode={true}
+                show={Boolean(server)}
+                team={server}
+                currentTeams={currentTeams}
+            />
+        </IntlProvider>
     );
 };
 

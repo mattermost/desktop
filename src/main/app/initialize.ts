@@ -47,6 +47,7 @@ import {setupBadge} from 'main/badge';
 import CertificateManager from 'main/certificateManager';
 import {updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
+import i18nManager, {localizeMessage} from 'main/i18nManager';
 import {displayDownloadCompleted} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
 import TrustedOriginsStore from 'main/trustedOrigins';
@@ -359,7 +360,7 @@ function initializeAfterAppReady() {
         const filters = [];
         if (fileElements.length > 1) {
             filters.push({
-                name: 'All files',
+                name: localizeMessage('main.app.initialize.downloadBox.allFiles', 'All files'),
                 extensions: ['*'],
             });
         }
@@ -375,6 +376,14 @@ function initializeAfterAppReady() {
             }
         });
     });
+
+    // needs to be done after app ready
+    // must be done before update menu
+    if (Config.appLanguage) {
+        i18nManager.setLocale(Config.appLanguage);
+    } else if (!i18nManager.setLocale(app.getLocale())) {
+        i18nManager.setLocale(app.getLocaleCountryCode());
+    }
 
     handleUpdateMenuEvent();
 

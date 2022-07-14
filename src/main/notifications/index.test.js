@@ -11,6 +11,8 @@ import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state
 import {PLAY_SOUND} from 'common/communication';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
 
+import {localizeMessage} from 'main/i18nManager';
+
 import WindowManager from '../windows/windowManager';
 
 import {displayMention, displayDownloadCompleted, currentNotifications} from './index';
@@ -67,6 +69,10 @@ jest.mock('../windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
     flashFrame: jest.fn(),
     switchTab: jest.fn(),
+}));
+
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
 }));
 
 describe('main/notifications', () => {
@@ -212,6 +218,7 @@ describe('main/notifications', () => {
 
     describe('displayDownloadCompleted', () => {
         it('should open file when clicked', () => {
+            localizeMessage.mockReturnValue('test_filename');
             displayDownloadCompleted(
                 'test_filename',
                 '/path/to/file',

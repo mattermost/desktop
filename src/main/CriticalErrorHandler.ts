@@ -8,12 +8,9 @@ import os from 'os';
 import path from 'path';
 
 import {app, BrowserWindow, dialog} from 'electron';
-
 import log from 'electron-log';
 
-const BUTTON_OK = 'OK';
-const BUTTON_SHOW_DETAILS = 'Show Details';
-const BUTTON_REOPEN = 'Reopen';
+import {localizeMessage} from 'main/i18nManager';
 
 function createErrorReport(err: Error) {
     // eslint-disable-next-line no-undef
@@ -52,8 +49,11 @@ export class CriticalErrorHandler {
         dialog.showMessageBox(this.mainWindow, {
             type: 'warning',
             title: app.name,
-            message: 'The window is no longer responsive.\nDo you wait until the window becomes responsive again?',
-            buttons: ['No', 'Yes'],
+            message: localizeMessage('main.CriticalErrorHandler.unresponsive.dialog.message', 'The window is no longer responsive.\nDo you wait until the window becomes responsive again?'),
+            buttons: [
+                localizeMessage('label.no', 'No'),
+                localizeMessage('label.yes', 'Yes'),
+            ],
             defaultId: 0,
         }).then(({response}) => {
             if (response === 0) {
@@ -69,9 +69,17 @@ export class CriticalErrorHandler {
         fs.writeFileSync(file, report.replace(new RegExp('\\n', 'g'), os.EOL));
 
         if (app.isReady()) {
-            const buttons = [BUTTON_SHOW_DETAILS, BUTTON_OK, BUTTON_REOPEN];
+            const buttons = [
+                localizeMessage('main.CriticalErrorHandler.uncaughtException.button.showDetails', 'Show Details'),
+                localizeMessage('label.ok', 'OK'),
+                localizeMessage('main.CriticalErrorHandler.uncaughtException.button.reopen', 'Reopen'),
+            ];
+            let indexOfReopen = 2;
+            let indexOfShowDetails = 0;
             if (process.platform === 'darwin') {
                 buttons.reverse();
+                indexOfReopen = 0;
+                indexOfShowDetails = 2;
             }
             if (!this.mainWindow?.isVisible) {
                 return;
@@ -81,15 +89,24 @@ export class CriticalErrorHandler {
                 {
                     type: 'error',
                     title: app.name,
-                    message: `The ${app.name} app quit unexpectedly. Click "Show Details" to learn more or "Reopen" to open the application again.\n\nInternal error: ${err.message}`,
+                    message: localizeMessage(
+                        'main.CriticalErrorHandler.uncaughtException.dialog.message',
+                        'The {appName} app quit unexpectedly. Click "{showDetails}" to learn more or "{reopen}" to open the application again.\n\nInternal error: {err}',
+                        {
+                            appName: app.name,
+                            showDetails: localizeMessage('main.CriticalErrorHandler.uncaughtException.button.showDetails', 'Show Details'),
+                            reopen: localizeMessage('main.CriticalErrorHandler.uncaughtException.button.reopen', 'Reopen'),
+                            err: err.message,
+                        },
+                    ),
                     buttons,
-                    defaultId: buttons.indexOf(BUTTON_REOPEN),
+                    defaultId: indexOfReopen,
                     noLink: true,
                 },
             ).then(({response}) => {
                 let child;
                 switch (response) {
-                case buttons.indexOf(BUTTON_SHOW_DETAILS):
+                case indexOfShowDetails:
                     child = openDetachedExternal(file);
                     if (child) {
                         child.on(
@@ -101,7 +118,7 @@ export class CriticalErrorHandler {
                         child.unref();
                     }
                     break;
-                case buttons.indexOf(BUTTON_REOPEN):
+                case indexOfReopen:
                     app.relaunch();
                     break;
                 }

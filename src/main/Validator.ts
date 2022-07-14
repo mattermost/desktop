@@ -131,6 +131,7 @@ const configDataSchemaV3 = Joi.object<ConfigV3>({
     alwaysMinimize: Joi.boolean(),
     alwaysClose: Joi.boolean(),
     logLevel: Joi.string().default('info'),
+    appLanguage: Joi.string().allow(''),
 });
 
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};

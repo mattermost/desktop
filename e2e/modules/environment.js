@@ -95,6 +95,7 @@ const demoConfig = {
     darkMode: false,
     lastActiveTeam: 0,
     spellCheckerLocales: [],
+    appLanguage: 'en',
 };
 
 const demoMattermostConfig = {

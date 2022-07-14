@@ -11,6 +11,8 @@ import {ModalMessage} from 'types/modals';
 
 import {MODAL_CANCEL, MODAL_INFO, MODAL_RESULT, RETRIEVE_MODAL_INFO} from 'common/communication';
 
+import IntlProvider from 'renderer/intl_provider';
+
 import RemoveServerModal from '../../components/RemoveServerModal';
 
 import setupDarkMode from '../darkMode';
@@ -45,19 +47,21 @@ const RemoveServerModalWrapper: React.FC = () => {
     }, []);
 
     return (
-        <RemoveServerModal
-            show={true}
-            serverName={serverName}
-            onHide={() => {
-                onClose();
-            }}
-            onCancel={() => {
-                onSave(false);
-            }}
-            onAccept={() => {
-                onSave(true);
-            }}
-        />
+        <IntlProvider>
+            <RemoveServerModal
+                show={true}
+                serverName={serverName}
+                onHide={() => {
+                    onClose();
+                }}
+                onCancel={() => {
+                    onSave(false);
+                }}
+                onAccept={() => {
+                    onSave(true);
+                }}
+            />
+        </IntlProvider>
     );
 };
 

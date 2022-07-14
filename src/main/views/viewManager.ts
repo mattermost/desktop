@@ -28,6 +28,7 @@ import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {getServerView, getTabViewName, TabTuple, TabType} from 'common/tabs/TabView';
 
+import {localizeMessage} from 'main/i18nManager';
 import {ServerInfo} from 'main/server/serverInfo';
 
 import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
@@ -531,7 +532,10 @@ export class ViewManager {
                     }
                 }
             } else {
-                dialog.showErrorBox('No matching server', `there is no configured server in the app that matches the requested url: ${parsedURL.toString()}`);
+                dialog.showErrorBox(
+                    localizeMessage('main.views.viewManager.handleDeepLink.error.title', 'No matching server'),
+                    localizeMessage('main.views.viewManager.handleDeepLink.error.body', 'There is no configured server in the app that matches the requested url: {url}', {url: parsedURL.toString()}),
+                );
             }
         }
     };

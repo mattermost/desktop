@@ -3,6 +3,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
+import {FormattedMessage} from 'react-intl';
 import classNames from 'classnames';
 import {DragDropContext, Draggable, DraggingStyle, Droppable, DropResult, NotDraggingStyle} from 'react-beautiful-dnd';
 
@@ -22,6 +23,8 @@ import {getTabViewName} from 'common/tabs/TabView';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH_MAC} from 'common/utils/constants';
 
 import './css/dropdown.scss';
+
+import IntlProvider from './intl_provider';
 
 type State = {
     teams?: TeamWithTabs[];
@@ -227,137 +230,147 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
 
     render() {
         return (
-            <div
-                onClick={this.preventPropogation}
-                className={classNames('TeamDropdown', {
-                    darkMode: this.state.darkMode,
-                })}
-                style={{
-                    maxHeight: this.state.windowBounds ? (this.state.windowBounds.height - TAB_BAR_HEIGHT - 16) : undefined,
-                    maxWidth: this.state.windowBounds ? (this.state.windowBounds.width - THREE_DOT_MENU_WIDTH_MAC) : undefined,
-                }}
-            >
-                <div className='TeamDropdown__header'>
-                    <span className='TeamDropdown__servers'>{'Servers'}</span>
-                    <span className='TeamDropdown__keyboardShortcut'>
-                        {window.process.platform === 'darwin' ? '⌃⌘S' : 'Ctrl + Shift + S'}
-                    </span>
-                </div>
-                <hr className='TeamDropdown__divider'/>
-                <DragDropContext
-                    onDragStart={this.onDragStart}
-                    onDragEnd={this.onDragEnd}
+            <IntlProvider>
+                <div
+                    onClick={this.preventPropogation}
+                    className={classNames('TeamDropdown', {
+                        darkMode: this.state.darkMode,
+                    })}
+                    style={{
+                        maxHeight: this.state.windowBounds ? (this.state.windowBounds.height - TAB_BAR_HEIGHT - 16) : undefined,
+                        maxWidth: this.state.windowBounds ? (this.state.windowBounds.width - THREE_DOT_MENU_WIDTH_MAC) : undefined,
+                    }}
                 >
-                    <Droppable
-                        isDropDisabled={this.state.hasGPOTeams}
-                        droppableId='TeamDropdown__droppable'
+                    <div className='TeamDropdown__header'>
+                        <span className='TeamDropdown__servers'>
+                            <FormattedMessage
+                                id='renderer.dropdown.servers'
+                                defaultMessage='Servers'
+                            />
+                        </span>
+                        <span className='TeamDropdown__keyboardShortcut'>
+                            {window.process.platform === 'darwin' ? '⌃⌘S' : 'Ctrl + Shift + S'}
+                        </span>
+                    </div>
+                    <hr className='TeamDropdown__divider'/>
+                    <DragDropContext
+                        onDragStart={this.onDragStart}
+                        onDragEnd={this.onDragEnd}
                     >
-                        {(provided) => (
-                            <div
-                                className='TeamDropdown__droppable'
-                                ref={provided.innerRef}
-                                {...provided.droppableProps}
-                            >
-                                {this.state.orderedTeams?.map((team, orderedIndex) => {
-                                    const index = this.state.teams?.indexOf(team);
-                                    const {sessionExpired, hasUnreads, mentionCount} = team.tabs.reduce((counts, tab) => {
-                                        const tabName = getTabViewName(team.name, tab.name);
-                                        counts.sessionExpired = this.state.expired?.get(tabName) || counts.sessionExpired;
-                                        counts.hasUnreads = this.state.unreads?.get(tabName) || counts.hasUnreads;
-                                        counts.mentionCount += this.state.mentions?.get(tabName) || 0;
-                                        return counts;
-                                    }, {sessionExpired: false, hasUnreads: false, mentionCount: 0});
+                        <Droppable
+                            isDropDisabled={this.state.hasGPOTeams}
+                            droppableId='TeamDropdown__droppable'
+                        >
+                            {(provided) => (
+                                <div
+                                    className='TeamDropdown__droppable'
+                                    ref={provided.innerRef}
+                                    {...provided.droppableProps}
+                                >
+                                    {this.state.orderedTeams?.map((team, orderedIndex) => {
+                                        const index = this.state.teams?.indexOf(team);
+                                        const {sessionExpired, hasUnreads, mentionCount} = team.tabs.reduce((counts, tab) => {
+                                            const tabName = getTabViewName(team.name, tab.name);
+                                            counts.sessionExpired = this.state.expired?.get(tabName) || counts.sessionExpired;
+                                            counts.hasUnreads = this.state.unreads?.get(tabName) || counts.hasUnreads;
+                                            counts.mentionCount += this.state.mentions?.get(tabName) || 0;
+                                            return counts;
+                                        }, {sessionExpired: false, hasUnreads: false, mentionCount: 0});
 
-                                    let badgeDiv: React.ReactNode;
-                                    if (sessionExpired) {
-                                        badgeDiv = (
-                                            <div className='TeamDropdown__badge-expired'>
-                                                <i className='icon-alert-circle-outline'/>
-                                            </div>
-                                        );
-                                    } else if (mentionCount && mentionCount > 0) {
-                                        badgeDiv = (
-                                            <div className='TeamDropdown__badge-count'>
-                                                <span>{mentionCount > 99 ? '99+' : mentionCount}</span>
-                                            </div>
-                                        );
-                                    } else if (hasUnreads) {
-                                        badgeDiv = (
-                                            <div className='TeamDropdown__badge-dot'/>
-                                        );
-                                    }
+                                        let badgeDiv: React.ReactNode;
+                                        if (sessionExpired) {
+                                            badgeDiv = (
+                                                <div className='TeamDropdown__badge-expired'>
+                                                    <i className='icon-alert-circle-outline'/>
+                                                </div>
+                                            );
+                                        } else if (mentionCount && mentionCount > 0) {
+                                            badgeDiv = (
+                                                <div className='TeamDropdown__badge-count'>
+                                                    <span>{mentionCount > 99 ? '99+' : mentionCount}</span>
+                                                </div>
+                                            );
+                                        } else if (hasUnreads) {
+                                            badgeDiv = (
+                                                <div className='TeamDropdown__badge-dot'/>
+                                            );
+                                        }
 
-                                    return (
-                                        <Draggable
-                                            key={index}
-                                            draggableId={`TeamDropdown__draggable-${index}`}
-                                            index={orderedIndex}
-                                            disableInteractiveElementBlocking={true}
-                                        >
-                                            {(provided, snapshot) => (
-                                                <button
-                                                    className={classNames('TeamDropdown__button', {
-                                                        dragging: snapshot.isDragging,
-                                                        anyDragging: this.state.isAnyDragging,
-                                                        active: this.isActiveTeam(team),
-                                                    })}
-                                                    ref={this.setButtonRef(orderedIndex, provided.innerRef)}
-                                                    {...provided.draggableProps}
-                                                    onClick={this.selectServer(team)}
-                                                    style={getStyle(provided.draggableProps.style)}
-                                                >
-                                                    <div
-                                                        className={classNames('TeamDropdown__draggable-handle', {
+                                        return (
+                                            <Draggable
+                                                key={index}
+                                                draggableId={`TeamDropdown__draggable-${index}`}
+                                                index={orderedIndex}
+                                                disableInteractiveElementBlocking={true}
+                                            >
+                                                {(provided, snapshot) => (
+                                                    <button
+                                                        className={classNames('TeamDropdown__button', {
                                                             dragging: snapshot.isDragging,
+                                                            anyDragging: this.state.isAnyDragging,
+                                                            active: this.isActiveTeam(team),
                                                         })}
-                                                        {...provided.dragHandleProps}
-                                                        onClick={this.handleClickOnDragHandle}
+                                                        ref={this.setButtonRef(orderedIndex, provided.innerRef)}
+                                                        {...provided.draggableProps}
+                                                        onClick={this.selectServer(team)}
+                                                        style={getStyle(provided.draggableProps.style)}
                                                     >
-                                                        <i className='icon-drag-vertical'/>
-                                                        {this.isActiveTeam(team) ? <i className='icon-check'/> : <i className='icon-server-variant'/>}
-                                                        <span>{team.name}</span>
-                                                    </div>
-                                                    <div className='TeamDropdown__indicators'>
-                                                        <button
-                                                            className='TeamDropdown__button-edit'
-                                                            onClick={this.editServer(team.name)}
+                                                        <div
+                                                            className={classNames('TeamDropdown__draggable-handle', {
+                                                                dragging: snapshot.isDragging,
+                                                            })}
+                                                            {...provided.dragHandleProps}
+                                                            onClick={this.handleClickOnDragHandle}
                                                         >
-                                                            <i className='icon-pencil-outline'/>
-                                                        </button>
-                                                        <button
-                                                            className='TeamDropdown__button-remove'
-                                                            onClick={this.removeServer(team.name)}
-                                                        >
-                                                            <i className='icon-trash-can-outline'/>
-                                                        </button>
-                                                        {badgeDiv && <div className='TeamDropdown__badge'>
-                                                            {badgeDiv}
-                                                        </div>}
-                                                    </div>
-                                                </button>
-                                            )}
-                                        </Draggable>
-                                    );
-                                })}
-                                {provided.placeholder}
-                            </div>
-                        )}
-                    </Droppable>
-                </DragDropContext>
-                <hr className='TeamDropdown__divider'/>
-                {this.state.enableServerManagement &&
-                    <button
-                        ref={(ref) => {
-                            this.addButtonRef(this.state.orderedTeams?.length || 0, ref);
-                        }}
-                        className='TeamDropdown__button addServer'
-                        onClick={this.addServer}
-                    >
-                        <i className='icon-plus'/>
-                        <span>{'Add a server'}</span>
-                    </button>
-                }
-            </div>
+                                                            <i className='icon-drag-vertical'/>
+                                                            {this.isActiveTeam(team) ? <i className='icon-check'/> : <i className='icon-server-variant'/>}
+                                                            <span>{team.name}</span>
+                                                        </div>
+                                                        <div className='TeamDropdown__indicators'>
+                                                            <button
+                                                                className='TeamDropdown__button-edit'
+                                                                onClick={this.editServer(team.name)}
+                                                            >
+                                                                <i className='icon-pencil-outline'/>
+                                                            </button>
+                                                            <button
+                                                                className='TeamDropdown__button-remove'
+                                                                onClick={this.removeServer(team.name)}
+                                                            >
+                                                                <i className='icon-trash-can-outline'/>
+                                                            </button>
+                                                            {badgeDiv && <div className='TeamDropdown__badge'>
+                                                                {badgeDiv}
+                                                            </div>}
+                                                        </div>
+                                                    </button>
+                                                )}
+                                            </Draggable>
+                                        );
+                                    })}
+                                    {provided.placeholder}
+                                </div>
+                            )}
+                        </Droppable>
+                    </DragDropContext>
+                    <hr className='TeamDropdown__divider'/>
+                    {this.state.enableServerManagement &&
+                        <button
+                            ref={(ref) => {
+                                this.addButtonRef(this.state.orderedTeams?.length || 0, ref);
+                            }}
+                            className='TeamDropdown__button addServer'
+                            onClick={this.addServer}
+                        >
+                            <i className='icon-plus'/>
+                            <FormattedMessage
+                                id='renderer.dropdown.addAServer'
+                                defaultMessage='Add a server'
+                            />
+                        </button>
+                    }
+                </div>
+            </IntlProvider>
         );
     }
 }

@@ -328,6 +328,10 @@ export class Config extends EventEmitter {
         return this.combinedData?.autoCheckForUpdates;
     }
 
+    get appLanguage() {
+        return this.combinedData?.appLanguage;
+    }
+
     // initialization/processing methods
 
     /**

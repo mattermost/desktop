@@ -28,6 +28,9 @@ function triageArgs(args: string[]) {
 // Note that yargs is able to exit the node process when handling
 // certain flags, like version or help.
 // https://github.com/yargs/yargs/blob/main/docs/api.md#exitprocessenable
+
+// TODO: Translations?
+
 function parseArgs(args: string[]) {
     return yargs.
         alias('dataDir', 'd').
