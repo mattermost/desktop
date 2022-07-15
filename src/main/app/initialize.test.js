@@ -39,6 +39,8 @@ jest.mock('electron', () => ({
         setAppUserModelId: jest.fn(),
         getVersion: jest.fn(),
         whenReady: jest.fn(),
+        getLocale: jest.fn(),
+        getLocaleCountryCode: jest.fn(),
     },
     ipcMain: {
         on: jest.fn(),
@@ -52,6 +54,11 @@ jest.mock('electron', () => ({
             on: jest.fn(),
         },
     },
+}));
+
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
+    setLocale: jest.fn(),
 }));
 
 jest.mock('electron-devtools-installer', () => {

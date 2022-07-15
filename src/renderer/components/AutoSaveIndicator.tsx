@@ -4,6 +4,7 @@
 
 import React from 'react';
 import {Alert} from 'react-bootstrap';
+import {IntlShape, useIntl} from 'react-intl';
 
 const baseClassName = 'AutoSaveIndicator';
 const leaveClassName = `${baseClassName}-Leave`;
@@ -15,16 +16,16 @@ export enum SavingState {
     SAVING_STATE_DONE = 'done',
 }
 
-function getClassNameAndMessage(savingState: SavingState, errorMessage?: string) {
+function getClassNameAndMessage(intl: IntlShape, savingState: SavingState, errorMessage?: React.ReactNode) {
     switch (savingState) {
     case SavingState.SAVING_STATE_SAVING:
-        return {className: baseClassName, message: 'Saving...'};
+        return {className: baseClassName, message: intl.formatMessage({id: 'renderer.components.autoSaveIndicator.saving', defaultMessage: 'Saving...'})};
     case SavingState.SAVING_STATE_SAVED:
-        return {className: baseClassName, message: 'Saved'};
+        return {className: baseClassName, message: intl.formatMessage({id: 'renderer.components.autoSaveIndicator.saved', defaultMessage: 'Saved'})};
     case SavingState.SAVING_STATE_ERROR:
         return {className: `${baseClassName}`, message: errorMessage};
     case SavingState.SAVING_STATE_DONE:
-        return {className: `${baseClassName} ${leaveClassName}`, message: 'Saved'};
+        return {className: `${baseClassName} ${leaveClassName}`, message: intl.formatMessage({id: 'renderer.components.autoSaveIndicator.saved', defaultMessage: 'Saved'})};
     default:
         return {className: `${baseClassName} ${leaveClassName}`, message: ''};
     }
@@ -33,12 +34,13 @@ function getClassNameAndMessage(savingState: SavingState, errorMessage?: string)
 type Props = {
     id?: string;
     savingState: SavingState;
-    errorMessage?: string;
+    errorMessage?: React.ReactNode;
 };
 
-export default function AutoSaveIndicator(props: Props) {
+const AutoSaveIndicator: React.FC<Props> = (props: Props) => {
+    const intl = useIntl();
     const {savingState, errorMessage, ...rest} = props;
-    const {className, message} = getClassNameAndMessage(savingState, errorMessage);
+    const {className, message} = getClassNameAndMessage(intl, savingState, errorMessage);
     return (
         <Alert
             className={className}
@@ -48,4 +50,6 @@ export default function AutoSaveIndicator(props: Props) {
             {message}
         </Alert>
     );
-}
+};
+
+export default AutoSaveIndicator;

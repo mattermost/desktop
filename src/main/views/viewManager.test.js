@@ -48,6 +48,10 @@ jest.mock('common/utils/url', () => ({
     getView: jest.fn(),
 }));
 
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
+}));
+
 jest.mock('main/server/serverInfo', () => ({
     ServerInfo: jest.fn(),
 }));

@@ -7,6 +7,8 @@ import log from 'electron-log';
 
 import {UPDATE_BADGE} from 'common/communication';
 
+import {localizeMessage} from 'main/i18nManager';
+
 import WindowManager from './windows/windowManager';
 import * as AppState from './appState';
 
@@ -15,17 +17,17 @@ const MAX_WIN_COUNT = 99;
 let showUnreadBadgeSetting: boolean;
 
 export function showBadgeWindows(sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean) {
-    let description = 'You have no unread messages';
+    let description = localizeMessage('main.badge.noUnreads', 'You have no unread messages');
     let text;
     if (mentionCount > 0) {
         text = (mentionCount > MAX_WIN_COUNT) ? `${MAX_WIN_COUNT}+` : mentionCount.toString();
-        description = `You have unread mentions (${mentionCount})`;
+        description = localizeMessage('main.badge.unreadMentions', 'You have unread mentions ({mentionCount})', {mentionCount});
     } else if (showUnreadBadge && showUnreadBadgeSetting) {
         text = '•';
-        description = 'You have unread channels';
+        description = localizeMessage('main.badge.unreadChannels', 'You have unread channels');
     } else if (sessionExpired) {
         text = '•';
-        description = 'Session Expired: Please sign in to continue receiving notifications.';
+        description = localizeMessage('main.badge.sessionExpired', 'Session Expired: Please sign in to continue receiving notifications.');
     }
     WindowManager.setOverlayIcon(text, description, mentionCount > 99);
 }

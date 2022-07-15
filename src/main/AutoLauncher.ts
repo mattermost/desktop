@@ -22,7 +22,7 @@ export class AutoLauncher {
             return;
         }
         const appLauncher = new AutoLaunch({
-            name: 'Mattermost',
+            name: app.name,
         });
         const enabled = await appLauncher.isEnabled();
         if (enabled) {

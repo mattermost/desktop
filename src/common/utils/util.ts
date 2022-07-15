@@ -60,6 +60,10 @@ function isVersionGreaterThanOrEqualTo(currentVersion: string, compareVersion: s
     return true;
 }
 
+export function t(s: string) {
+    return s;
+}
+
 export default {
     getDisplayBoundaries,
     runMode,

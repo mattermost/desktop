@@ -59,10 +59,6 @@ export function getServerView(srv: MattermostServer, tab: Tab) {
     }
 }
 
-export function getTabViewName(serverName: string, tabType: string) {
-    return `${serverName}___${tabType}`;
-}
-
 export function getTabDisplayName(tabType: TabType) {
     switch (tabType) {
     case TAB_MESSAGING:
@@ -74,6 +70,10 @@ export function getTabDisplayName(tabType: TabType) {
     default:
         throw new Error('Not implemeneted');
     }
+}
+
+export function getTabViewName(serverName: string, tabType: string) {
+    return `${serverName}___${tabType}`;
 }
 
 export function canCloseTab(tabType: TabType) {
