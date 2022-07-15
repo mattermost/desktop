@@ -230,5 +230,6 @@
     "common.tabs.TAB_PLAYBOOKS": "Senaryolar",
     "common.tabs.TAB_MESSAGING": "Kanallar",
     "common.tabs.TAB_FOCALBOARD": "Panolar",
-    "common.permissions.canBasicAuth": "Web kimlik doğrulaması"
+    "common.permissions.canBasicAuth": "Web kimlik doğrulaması",
+    "renderer.modals.permission.permissionModal.requestOriginatedFromOrigin": "Bu istek <link>{origin}</link> kaynağından geldi"
 }
