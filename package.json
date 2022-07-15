@@ -68,7 +68,7 @@
     "prune": "ts-prune",
     "mmjstool": "mmjstool",
     "i18n-extract": "npm run mmjstool -- i18n extract-desktop",
-    "postinstall": "electron-rebuild install-app-deps"
+    "postinstall": "electron-rebuild"
   },
   "jest": {
     "clearMocks": true,
@@ -136,7 +136,6 @@
     "@typescript-eslint/eslint-plugin": "5.18.0",
     "@typescript-eslint/parser": "5.18.0",
     "7zip-bin": "5.1.1",
-    "awesome-node-loader": "1.1.1",
     "axios": "0.26.1",
     "babel-eslint": "10.1.0",
     "babel-loader": "8.2.4",
@@ -149,7 +148,7 @@
     "electron-connect": "0.6.3",
     "electron-mocha": "11.0.2",
     "electron-notarize": "1.2.1",
-    "electron-rebuild": "3.2.7",
+    "electron-rebuild": "3.2.8",
     "eslint": "7.29.0",
     "eslint-import-resolver-webpack": "0.13.2",
     "eslint-plugin-babel": "5.3.1",
@@ -166,6 +165,7 @@
     "mmjstool": "github:mattermost/mattermost-utilities#3b4506b0f6b14fbb402f9f8ef932370e459e3773",
     "mocha-circleci-reporter": "0.0.3",
     "node-gyp": "9.0.0",
+    "node-loader": "2.0.0",
     "npm-run-all": "4.1.5",
     "playwright": "1.23.4",
     "ps-node": "^0.1.6",
