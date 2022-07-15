@@ -91,10 +91,21 @@ class PermissionModal extends React.PureComponent<Props, State> {
                 </p>
                 <p>
                     <FormattedMessage
-                        id='renderer.modals.permission.permissionModal.requestOriginatedFrom'
-                        defaultMessage='This request originated from '
+                        id='renderer.modals.permission.permissionModal.requestOriginatedFromOrigin'
+                        defaultMessage='This request originated from <link>{origin}</link>'
+                        values={{
+                            origin: originDisplay,
+                            link: (msg: React.ReactNode) => (
+                                <a
+
+                                    onClick={click}
+                                    href='#'
+                                >
+                                    {msg}
+                                </a>
+                            ),
+                        }}
                     />
-                    <a onClick={click}>{originDisplay}</a>
                 </p>
             </div>
         );
