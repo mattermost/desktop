@@ -281,7 +281,7 @@ jobs:
       - run: brew install yq
       - run:
           name: Update node to v16
-          command: brew upgrade node || true
+          command: nvm install --lts && nvm use --lts
       - run:
           name: Installing npm dependencies
           command: npm ci
@@ -330,7 +330,7 @@ jobs:
           at: ./build
       - run:
           name: Update node to v16
-          command: brew upgrade node || true
+          command: nvm install --lts && nvm use --lts
       - run:
           name: Install yq
           command: brew install yq
@@ -365,7 +365,7 @@ jobs:
           at: ./build
       - run:
           name: Update node to v16
-          command: brew upgrade node || true
+          command: nvm install --lts && nvm use --lts
       - run:
           name: Install yq
           command: brew install yq
