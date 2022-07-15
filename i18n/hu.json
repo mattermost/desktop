@@ -230,5 +230,6 @@
     "common.tabs.TAB_PLAYBOOKS": "Forgatókönyvek",
     "common.tabs.TAB_MESSAGING": "Csatornák",
     "common.tabs.TAB_FOCALBOARD": "Táblák",
-    "common.permissions.canBasicAuth": "Webes hitelesítés"
+    "common.permissions.canBasicAuth": "Webes hitelesítés",
+    "renderer.modals.permission.permissionModal.requestOriginatedFromOrigin": "A kérés a <link>{origin}</link> helyről lett indítva"
 }
