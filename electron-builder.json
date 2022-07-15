@@ -52,6 +52,10 @@
     "category": "contrib/net",
     "priority": "optional"
   },
+  "asarUnpack": [
+    "./node_modules/macos-notification-state/**/*",
+    "./node_modules/windows-focus-assist/**/*"
+  ],
   "linux": {
     "category": "Network;InstantMessaging",
     "target": [
