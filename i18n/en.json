@@ -228,7 +228,7 @@
   "renderer.modals.login.loginModal.title": "Authentication Required",
   "renderer.modals.login.loginModal.username": "User Name",
   "renderer.modals.permission.permissionModal.body": "A site that's not included in your Mattermost server configuration requires access for {permission}.",
-  "renderer.modals.permission.permissionModal.requestOriginatedFrom": "This request originated from ",
+  "renderer.modals.permission.permissionModal.requestOriginatedFromOrigin": "This request originated from <link>{origin}</link>",
   "renderer.modals.permission.permissionModal.title": "{permission} Required",
   "renderer.modals.permission.permissionModal.unknownOrigin": "unknown origin"
 }
