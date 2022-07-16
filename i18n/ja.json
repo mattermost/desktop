@@ -1,7 +1,7 @@
 {
-    "main.menus.app.window": "&ウィンドウ",
-    "main.menus.app.view": "&表示",
-    "main.menus.app.history": "&履歴",
+    "main.menus.app.window": "&Windows",
+    "main.menus.app.view": "&View",
+    "main.menus.app.history": "&History",
     "renderer.modals.permission.permissionModal.unknownOrigin": "不明な発信元",
     "renderer.modals.permission.permissionModal.title": "{permission} 要求",
     "renderer.modals.permission.permissionModal.requestOriginatedFromOrigin": "このリクエストは <link>{origin}</link> から発信されたものです",
@@ -229,5 +229,6 @@
     "common.tabs.TAB_PLAYBOOKS": "Playbooks",
     "common.tabs.TAB_MESSAGING": "Channels",
     "common.tabs.TAB_FOCALBOARD": "Boards",
-    "common.permissions.canBasicAuth": "Web認証"
+    "common.permissions.canBasicAuth": "Web認証",
+    "main.menus.app.help": "Hel&p"
 }
