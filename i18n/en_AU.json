@@ -226,5 +226,8 @@
     "main.badge.sessionExpired": "Session Expired: Please sign in to continue receiving notifications.",
     "main.badge.noUnreads": "You have no unread messages",
     "main.autoUpdater.update.dialog.message": "A new version is ready to install",
-    "main.autoUpdater.update.dialog.detail": "A new version of the {appName} Desktop App is ready to install."
+    "main.autoUpdater.update.dialog.detail": "A new version of the {appName} Desktop App is ready to install.",
+    "renderer.modals.permission.permissionModal.unknownOrigin": "unknown origin",
+    "renderer.modals.permission.permissionModal.title": "{permission} Required",
+    "renderer.modals.permission.permissionModal.requestOriginatedFromOrigin": "This request originated from <link>{origin}</link>"
 }
