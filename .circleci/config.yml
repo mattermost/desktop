@@ -179,7 +179,7 @@ jobs:
             - "~/.cache/electron-builder"
 
   build-win-no-installer:
-    executor: win/server-2022
+    executor: win/server-2019
     steps:
       - checkout
       - run: mkdir -p ./build
@@ -225,7 +225,7 @@ jobs:
             - "~/.cache/electron-builder"
 
   msi_installer:
-    executor: win/server-2022
+    executor: win/server-2019
 
     steps:
       - checkout
@@ -250,7 +250,7 @@ jobs:
             - "./win-release/"
 
   build-windows-pr:
-    executor: win/server-2022
+    executor: win/server-2019
     steps:
       - checkout
       - run: mkdir -p ./build
