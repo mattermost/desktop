@@ -4,7 +4,7 @@ parameters:
     default: false
     type: boolean
 orbs:
-  win: circleci/windows@4.1.1
+  win: circleci/windows@1.0.0
   aws-s3: circleci/aws-s3@2.0.0
   owasp: entur/owasp@0.0.10
 
@@ -179,7 +179,7 @@ jobs:
             - "~/.cache/electron-builder"
 
   build-win-no-installer:
-    executor: win/server-2019
+    executor: win/vs2019
     steps:
       - checkout
       - run: mkdir -p ./build
@@ -225,7 +225,7 @@ jobs:
             - "~/.cache/electron-builder"
 
   msi_installer:
-    executor: win/server-2019
+    executor: win/vs2019
 
     steps:
       - checkout
@@ -250,7 +250,7 @@ jobs:
             - "./win-release/"
 
   build-windows-pr:
-    executor: win/server-2019
+    executor: win/vs2019
     steps:
       - checkout
       - run: mkdir -p ./build
