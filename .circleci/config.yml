@@ -188,6 +188,9 @@ jobs:
       - run:
           name: Install yq
           command: choco install yq --version 4.15.1 -y
+      - run:
+          name: Update node
+          command: choco install nodejs-lts --yes
       - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
       - build:
           os: windows
@@ -235,6 +238,9 @@ jobs:
       - run:
           name: Install yq
           command: choco install yq --version 4.15.1 -y
+      - run:
+          name: Update node
+          command: choco install nodejs-lts --yes
       - win_make:
           operation: optimize
       - win_make:
@@ -259,6 +265,9 @@ jobs:
       - run:
           name: Install yq
           command: choco install yq --version 4.15.1 -y
+      - run:
+          name: Update node
+          command: choco install nodejs-lts --yes
       - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
       - build:
           os: windows
