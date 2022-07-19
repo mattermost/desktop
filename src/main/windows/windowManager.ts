@@ -191,7 +191,7 @@ export class WindowManager {
             return;
         }
 
-        if (this.isResizing && this.viewManager.loadingScreenState === LoadingScreenState.HIDDEN) {
+        if (this.isResizing && this.viewManager.loadingScreenState === LoadingScreenState.HIDDEN && this.viewManager.getCurrentView()) {
             log.silly('prevented resize');
             event.preventDefault();
             return;
