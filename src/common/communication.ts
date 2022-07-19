@@ -126,3 +126,5 @@ export const PING_DOMAIN_RESPONSE = 'ping-domain-response';
 export const GET_LANGUAGE_INFORMATION = 'get-language-information';
 export const RETRIEVED_LANGUAGE_INFORMATION = 'retrieved-language-information';
 export const GET_AVAILABLE_LANGUAGES = 'get-available-languages';
+
+export const VIEW_FINISHED_RESIZING = 'view-finished-resizing';

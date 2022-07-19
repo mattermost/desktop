@@ -29,6 +29,7 @@ import {
     GET_VIEW_WEBCONTENTS_ID,
     DISPATCH_GET_DESKTOP_SOURCES,
     DESKTOP_SOURCES_RESULT,
+    VIEW_FINISHED_RESIZING,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -292,3 +293,7 @@ ipcRenderer.on(DESKTOP_SOURCES_RESULT, (event, sources) => {
 
 /* eslint-enable no-magic-numbers */
 
+window.addEventListener('resize', () => {
+    console.log('resized window', window.innerHeight, window.innerWidth);
+    ipcRenderer.send(VIEW_FINISHED_RESIZING);
+});
