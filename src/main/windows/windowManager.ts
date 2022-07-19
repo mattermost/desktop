@@ -185,14 +185,14 @@ export class WindowManager {
     isResizing = false;
 
     handleWillResizeMainWindow = (event: Event, newBounds: Electron.Rectangle) => {
-        log.debug('WindowManager.handleWillResizeMainWindow');
+        log.silly('WindowManager.handleWillResizeMainWindow');
 
         if (!(this.viewManager && this.mainWindow)) {
             return;
         }
 
         if (this.isResizing && this.viewManager.loadingScreenState === LoadingScreenState.HIDDEN) {
-            log.debug('prevented resize');
+            log.silly('prevented resize');
             event.preventDefault();
             return;
         }
@@ -220,7 +220,7 @@ export class WindowManager {
     }
 
     handleResizeMainWindow = () => {
-        log.debug('WindowManager.handleResizeMainWindow');
+        log.silly('WindowManager.handleResizeMainWindow');
 
         if (!(this.viewManager && this.mainWindow)) {
             return;
