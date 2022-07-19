@@ -142,6 +142,7 @@ export class WindowManager {
                 this.mainWindow.on('resize', this.handleResizeMainWindow);
             } else {
                 this.mainWindow.on('will-resize', this.handleWillResizeMainWindow);
+                this.mainWindow.on('resized', this.handleResizedMainWindow);
             }
             this.mainWindow.on('focus', this.focusBrowserView);
             this.mainWindow.on('enter-full-screen', () => this.sendToRenderer('enter-full-screen'));
@@ -200,6 +201,13 @@ export class WindowManager {
         this.viewManager?.setLoadingScreenBounds();
         this.teamDropdown?.updateWindowBounds();
         ipcMain.emit(RESIZE_MODAL, null, newBounds);
+    }
+
+    handleResizedMainWindow = () => {
+        if (this.mainWindow) {
+            this.throttledWillResize(this.mainWindow?.getContentBounds());
+        }
+        this.isResizing = false;
     }
 
     handleViewFinishedResizing = () => {

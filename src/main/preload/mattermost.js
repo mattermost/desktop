@@ -294,6 +294,5 @@ ipcRenderer.on(DESKTOP_SOURCES_RESULT, (event, sources) => {
 /* eslint-enable no-magic-numbers */
 
 window.addEventListener('resize', () => {
-    console.log('resized window', window.innerHeight, window.innerWidth);
     ipcRenderer.send(VIEW_FINISHED_RESIZING);
 });
