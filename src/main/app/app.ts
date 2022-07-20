@@ -5,6 +5,7 @@ import {app, BrowserWindow, Event, dialog, WebContents, Certificate} from 'elect
 import log from 'electron-log';
 
 import urlUtils from 'common/utils/url';
+import Config from 'common/config';
 
 import updateManager from 'main/autoUpdater';
 import CertificateStore from 'main/certificateStore';
@@ -90,6 +91,17 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
     } else {
     // update the callback
         const errorID = `${origin}:${error}`;
+
+        const serverName = WindowManager.getServerNameByWebContentsId(webContents.id);
+        const server = Config.teams.find((team) => team.name === serverName);
+        if (server) {
+            const serverURL = urlUtils.parseURL(server.url);
+            if (serverURL && serverURL.origin !== origin) {
+                log.warn(`Ignoring certificate for unmatched origin ${origin}, will not trust`);
+                callback(false);
+                return;
+            }
+        }
 
         // if we are already showing that error, don't add more dialogs
         if (certificateErrorCallbacks.has(errorID)) {
