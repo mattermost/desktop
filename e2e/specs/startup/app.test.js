@@ -21,6 +21,7 @@ describe('startup/app', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     it('MM-T4399_1 should show the new server modal when no servers exist', async () => {

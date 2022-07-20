@@ -28,6 +28,7 @@ describe('dark_mode', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     if (process.platform === 'linux') {

@@ -27,6 +27,7 @@ describe('application', function desc() {
             // eslint-disable-next-line no-empty
             } catch (err) {}
         }
+        await env.clearElectronInstances();
     });
 
     if (process.platform === 'win32') {

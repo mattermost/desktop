@@ -24,6 +24,7 @@ describe('menu_bar/dropdown', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     it('MM-T4405 should set name of menu item from config file', async () => {

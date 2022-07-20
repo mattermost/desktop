@@ -52,6 +52,7 @@ describe('menu/view', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     it('MM-T813 Control+F should focus the search bar in Mattermost', async () => {
