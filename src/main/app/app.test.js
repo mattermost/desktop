@@ -20,6 +20,13 @@ jest.mock('electron', () => ({
     },
 }));
 
+jest.mock('common/config', () => ({
+    teams: [{
+        name: 'test-team',
+        url: 'http://server-1.com',
+    }],
+}));
+
 jest.mock('main/app/utils', () => ({
     getDeeplinkingURL: jest.fn(),
     openDeepLink: jest.fn(),
@@ -40,6 +47,7 @@ jest.mock('main/tray/tray', () => ({}));
 jest.mock('main/windows/windowManager', () => ({
     getMainWindow: jest.fn(),
     getViewNameByWebContentsId: jest.fn(),
+    getServerNameByWebContentsId: jest.fn(),
     viewManager: {
         views: new Map(),
     },
@@ -96,6 +104,7 @@ describe('main/app/app', () => {
 
         beforeEach(() => {
             WindowManager.getMainWindow.mockReturnValue(mainWindow);
+            WindowManager.getServerNameByWebContentsId.mockReturnValue('test-team');
         });
 
         afterEach(() => {
@@ -117,6 +126,11 @@ describe('main/app/app', () => {
             handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(event.preventDefault).toHaveBeenCalled();
             expect(callback).toHaveBeenCalledWith(true);
+        });
+
+        it('should ignore and untrust when the origin of the certificate does not match the server URL', () => {
+            handleAppCertificateError(event, webContents, 'http://a-different-url.com', 'error-1', certificate, callback);
+            expect(callback).toHaveBeenCalledWith(false);
         });
 
         it('should not show additional dialogs if certificate error has already been logged', () => {
