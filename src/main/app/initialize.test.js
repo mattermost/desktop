@@ -8,6 +8,7 @@ import {app, session} from 'electron';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
 
+import {displayDownloadCompleted} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
 import WindowManager from 'main/windows/windowManager';
 
@@ -142,6 +143,7 @@ jest.mock('main/windows/windowManager', () => ({
     getMainWindow: jest.fn(),
     showMainWindow: jest.fn(),
     sendToMattermostViews: jest.fn(),
+    getServerNameByWebContentsId: jest.fn(),
 }));
 
 describe('main/app/initialize', () => {
@@ -245,6 +247,31 @@ describe('main/app/initialize', () => {
                 title: 'filename.txt',
                 defaultPath: '/some/dir/filename.txt',
             }));
+        });
+
+        it('should use name of saved file instead of original file name', async () => {
+            const item = {
+                getFilename: () => 'filename.txt',
+                on: jest.fn(),
+                setSaveDialogOptions: jest.fn(),
+                savePath: '/some/dir/new_filename.txt',
+            };
+            Config.downloadLocation = '/some/dir';
+            path.resolve.mockImplementation((base, p) => `${base}/${p}`);
+            session.defaultSession.on.mockImplementation((event, cb) => {
+                if (event === 'will-download') {
+                    cb(null, item, {id: 0, getURL: jest.fn()});
+                }
+            });
+
+            item.on.mockImplementation((event, cb) => {
+                if (event === 'done') {
+                    cb(null, 'completed');
+                }
+            });
+
+            await initialize();
+            expect(displayDownloadCompleted).toHaveBeenCalledWith('new_filename.txt', '/some/dir/new_filename.txt', expect.anything());
         });
 
         it('should allow permission requests for supported types from trusted URLs', async () => {
