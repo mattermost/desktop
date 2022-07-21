@@ -372,7 +372,7 @@ function initializeAfterAppReady() {
 
         item.on('done', (doneEvent, state) => {
             if (state === 'completed') {
-                displayDownloadCompleted(filename, item.savePath, WindowManager.getServerNameByWebContentsId(webContents.id) || '');
+                displayDownloadCompleted(path.basename(item.savePath), item.savePath, WindowManager.getServerNameByWebContentsId(webContents.id) || '');
             }
         });
     });
