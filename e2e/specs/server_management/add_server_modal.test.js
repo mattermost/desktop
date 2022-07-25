@@ -35,6 +35,7 @@ describe('Add Server Modal', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     let newServerView;

@@ -58,6 +58,7 @@ describe('focus', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     describe('Focus textbox tests', () => {

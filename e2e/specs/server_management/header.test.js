@@ -23,6 +23,7 @@ describe('header', function desc() {
             // eslint-disable-next-line no-empty
             } catch (err) {}
         }
+        await env.clearElectronInstances();
     });
 
     it('MM-T2637 Double-Clicking on the header should minimize/maximize the app', async () => {

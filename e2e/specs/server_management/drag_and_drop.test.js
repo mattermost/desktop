@@ -52,6 +52,7 @@ describe('server_management/drag_and_drop', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     it('MM-T2634 should be able to drag and drop servers in the dropdown menu', async () => {

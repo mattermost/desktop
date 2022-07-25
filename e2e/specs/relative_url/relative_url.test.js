@@ -28,6 +28,7 @@ describe('copylink', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     it('MM-T1308 Check that external links dont open in the app', async () => {

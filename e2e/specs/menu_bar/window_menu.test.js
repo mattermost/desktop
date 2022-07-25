@@ -57,6 +57,7 @@ describe('Menu/window_menu', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     it('MM-T826 should switch to servers when keyboard shortcuts are pressed', async () => {

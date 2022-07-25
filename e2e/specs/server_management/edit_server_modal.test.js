@@ -34,6 +34,7 @@ describe('EditServerModal', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     let editServerView;

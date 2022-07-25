@@ -53,6 +53,7 @@ describe('back_button', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     it('MM-T2633 Back button should behave as expected', async () => {

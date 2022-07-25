@@ -26,6 +26,7 @@ describe('history_menu', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     it('Click back and forward from history', async () => {
