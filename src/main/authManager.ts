@@ -14,6 +14,7 @@ import modalManager from 'main/views/modalManager';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import {getLocalURLString, getLocalPreload} from 'main/utils';
 import WindowManager from 'main/windows/windowManager';
+import WebContentsEventManager from 'main/views/webContentEvents';
 
 const modalPreload = getLocalPreload('modalPreload.js');
 const loginModalHtml = getLocalURLString('loginModal.html');
@@ -40,12 +41,12 @@ export class AuthManager {
             return;
         }
         const server = urlUtils.getView(parsedURL, Config.teams);
-        if (!server) {
+        if (!server && !WebContentsEventManager.isInCustomLogin(webContents.id)) {
             return;
         }
 
         this.loginCallbackMap.set(request.url, callback); // if callback is undefined set it to null instead so we know we have set it up with no value
-        if (urlUtils.isTrustedURL(request.url, Config.teams) || urlUtils.isCustomLoginURL(parsedURL, server, Config.teams) || TrustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
+        if (urlUtils.isTrustedURL(request.url, Config.teams) || (server && urlUtils.isCustomLoginURL(parsedURL, server, Config.teams)) || TrustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
             this.popLoginModal(request, authInfo);
         } else {
             this.popPermissionModal(request, authInfo, BASIC_AUTH_PERMISSION);

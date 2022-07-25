@@ -35,6 +35,10 @@ export class WebContentsEventManager {
         this.listeners = {};
     }
 
+    isInCustomLogin = (contentID: number) => {
+        return Boolean(this.customLogins[contentID]);
+    }
+
     isTrustedPopupWindow = (webContents: WebContents) => {
         if (!webContents) {
             return false;
@@ -93,8 +97,10 @@ export class WebContentsEventManager {
             const serverURL = urlUtils.parseURL(server?.url || '');
 
             if (server && urlUtils.isCustomLoginURL(parsedURL, server, serverList)) {
+                log.debug('start custom login for', serverURL);
                 this.customLogins[contentID].inProgress = true;
             } else if (server && this.customLogins[contentID].inProgress && urlUtils.isInternalURL(serverURL || new URL(''), parsedURL)) {
+                log.debug('stop custom login for', serverURL);
                 this.customLogins[contentID].inProgress = false;
             }
         };
