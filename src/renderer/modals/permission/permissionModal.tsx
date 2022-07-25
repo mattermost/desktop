@@ -13,7 +13,6 @@ import urlUtil from 'common/utils/url';
 import {t} from 'common/utils/util';
 import {MODAL_INFO} from 'common/communication';
 import {PERMISSION_DESCRIPTION} from 'common/permissions';
-import IntlProvider from 'renderer/intl_provider';
 
 type Props = {
     handleDeny: React.MouseEventHandler<HTMLButtonElement>;
@@ -113,42 +112,40 @@ class PermissionModal extends React.PureComponent<Props, State> {
 
     render() {
         return (
-            <IntlProvider>
-                <Modal
-                    bsClass='modal'
-                    className='permission-modal'
-                    show={Boolean(this.state.url && this.state.permission)}
-                    id='requestPermissionModal'
-                    enforceFocus={true}
-                    onHide={() => {}}
-                >
-                    <Modal.Header>
-                        <Modal.Title>{this.getModalTitle()}</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        {this.getModalBody()}
-                    </Modal.Body>
-                    <Modal.Footer className={'remove-border'}>
-                        <div>
-                            <Button onClick={this.props.handleDeny}>
-                                <FormattedMessage
-                                    id='label.cancel'
-                                    defaultMessage='Cancel'
-                                />
-                            </Button>
-                            <Button
-                                variant='primary'
-                                onClick={this.props.handleGrant}
-                            >
-                                <FormattedMessage
-                                    id='label.accept'
-                                    defaultMessage='Accept'
-                                />
-                            </Button>
-                        </div>
-                    </Modal.Footer>
-                </Modal>
-            </IntlProvider>
+            <Modal
+                bsClass='modal'
+                className='permission-modal'
+                show={Boolean(this.state.url && this.state.permission)}
+                id='requestPermissionModal'
+                enforceFocus={true}
+                onHide={() => {}}
+            >
+                <Modal.Header>
+                    <Modal.Title>{this.getModalTitle()}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {this.getModalBody()}
+                </Modal.Body>
+                <Modal.Footer className={'remove-border'}>
+                    <div>
+                        <Button onClick={this.props.handleDeny}>
+                            <FormattedMessage
+                                id='label.cancel'
+                                defaultMessage='Cancel'
+                            />
+                        </Button>
+                        <Button
+                            variant='primary'
+                            onClick={this.props.handleGrant}
+                        >
+                            <FormattedMessage
+                                id='label.accept'
+                                defaultMessage='Accept'
+                            />
+                        </Button>
+                    </div>
+                </Modal.Footer>
+            </Modal>
         );
     }
 }

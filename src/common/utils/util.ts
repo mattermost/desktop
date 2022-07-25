@@ -2,24 +2,7 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
-import {screen} from 'electron';
-
 import {DEVELOPMENT, PRODUCTION} from './constants';
-
-function getDisplayBoundaries() {
-    const displays = screen.getAllDisplays();
-
-    return displays.map((display) => {
-        return {
-            maxX: display.workArea.x + display.workArea.width,
-            maxY: display.workArea.y + display.workArea.height,
-            minX: display.workArea.x,
-            minY: display.workArea.y,
-            maxWidth: display.workArea.width,
-            maxHeight: display.workArea.height,
-        };
-    });
-}
 
 function runMode() {
     return process.env.NODE_ENV === PRODUCTION ? PRODUCTION : DEVELOPMENT;
@@ -65,7 +48,6 @@ export function t(s: string) {
 }
 
 export default {
-    getDisplayBoundaries,
     runMode,
     shorten,
     isVersionGreaterThanOrEqualTo,
