@@ -56,11 +56,19 @@ class PermissionModal extends React.PureComponent<Props, State> {
     }
 
     getModalTitle() {
-        const permission = this.props.intl.formatMessage({id: `common.permissions.${PERMISSION_DESCRIPTION[this.state.permission!]}`});
+        if (!this.state.permission) {
+            return null;
+        }
+
+        const permission = this.props.intl.formatMessage({id: PERMISSION_DESCRIPTION[this.state.permission!]});
         return this.props.intl.formatMessage({id: 'renderer.modals.permission.permissionModal.title', defaultMessage: '{permission} Required'}, {permission});
     }
 
     getModalBody() {
+        if (!this.state.permission) {
+            return null;
+        }
+
         const {url, permission} = this.state;
         const originDisplay = url ? urlUtil.getHost(url) : this.props.intl.formatMessage({id: 'renderer.modals.permission.permissionModal.unknownOrigin', defaultMessage: 'unknown origin'});
         const originLink = url ? originDisplay : '';
@@ -83,7 +91,7 @@ class PermissionModal extends React.PureComponent<Props, State> {
                         id='renderer.modals.permission.permissionModal.body'
                         defaultMessage={'A site that\'s not included in your Mattermost server configuration requires access for {permission}.'}
                         values={{
-                            permission: this.props.intl.formatMessage({id: `common.permissions.${PERMISSION_DESCRIPTION[permission!]}`}),
+                            permission: this.props.intl.formatMessage({id: PERMISSION_DESCRIPTION[permission!]}),
                         }}
                     />
                     {}
