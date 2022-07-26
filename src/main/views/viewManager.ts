@@ -40,7 +40,7 @@ import WebContentsEventManager from './webContentEvents';
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 20;
 
-enum LoadingScreenState {
+export enum LoadingScreenState {
     VISIBLE = 1,
     FADING = 2,
     HIDDEN = 3,
