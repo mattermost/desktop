@@ -28,6 +28,7 @@ describe('popup', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     // NOTE: These tests requires that the test server have the GitHub plugin configured

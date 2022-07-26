@@ -22,6 +22,7 @@ describe('window', function desc() {
             // eslint-disable-next-line no-empty
             } catch (err) {}
         }
+        await env.clearElectronInstances();
     });
 
     // TODO: this fails on Linux right now due to the window frame for some reason

@@ -28,6 +28,7 @@ describe('edit_menu', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     it('MM-T807 Undo in the Menu Bar', async () => {

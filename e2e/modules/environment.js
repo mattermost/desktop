@@ -5,6 +5,8 @@
 
 const fs = require('fs');
 
+const ps = require('ps-node');
+
 const path = require('path');
 
 const {_electron: electron} = require('playwright');
@@ -118,6 +120,28 @@ module.exports = {
     demoConfig,
     demoMattermostConfig,
     cmdOrCtrl,
+
+    async clearElectronInstances() {
+        if (process.platform !== 'win32') {
+            return Promise.resolve();
+        }
+
+        return new Promise((resolve, reject) => {
+            ps.lookup({
+                command: 'electron',
+            }, (err, resultList) => {
+                if (err) {
+                    reject(err);
+                }
+                resultList.forEach((process) => {
+                    if (process && process.command === electronBinaryPath && !process.arguments.some((arg) => arg.includes('electron-mocha'))) {
+                        ps.kill(process.pid);
+                    }
+                });
+                resolve();
+            });
+        });
+    },
 
     cleanTestConfig() {
         [configFilePath, boundsInfoPath].forEach((file) => {

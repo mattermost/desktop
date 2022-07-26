@@ -22,6 +22,7 @@ describe('config', function desc() {
             // eslint-disable-next-line no-empty
             } catch (err) {}
         }
+        await env.clearElectronInstances();
     });
 
     describe('MM-T4401 should show servers in dropdown when there is config file', async () => {

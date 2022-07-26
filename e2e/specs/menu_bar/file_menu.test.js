@@ -30,6 +30,7 @@ describe('file_menu/dropdown', function desc() {
         if (this.app && skipAfterEach === false) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     it('MM-T1313 Open Settings modal using keyboard shortcuts', async () => {

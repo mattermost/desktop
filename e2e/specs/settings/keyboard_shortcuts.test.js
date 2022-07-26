@@ -28,6 +28,7 @@ describe('settings/keyboard_shortcuts', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     describe('MM-T1288 Manipulating Text', () => {
