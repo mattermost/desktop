@@ -13,7 +13,6 @@ import urlUtil from 'common/utils/url';
 import {t} from 'common/utils/util';
 import {MODAL_INFO} from 'common/communication';
 import {PERMISSION_DESCRIPTION} from 'common/permissions';
-import IntlProvider from 'renderer/intl_provider';
 
 type Props = {
     handleDeny: React.MouseEventHandler<HTMLButtonElement>;
@@ -57,11 +56,19 @@ class PermissionModal extends React.PureComponent<Props, State> {
     }
 
     getModalTitle() {
-        const permission = this.props.intl.formatMessage({id: `common.permissions.${PERMISSION_DESCRIPTION[this.state.permission!]}`});
+        if (!this.state.permission) {
+            return null;
+        }
+
+        const permission = this.props.intl.formatMessage({id: PERMISSION_DESCRIPTION[this.state.permission!]});
         return this.props.intl.formatMessage({id: 'renderer.modals.permission.permissionModal.title', defaultMessage: '{permission} Required'}, {permission});
     }
 
     getModalBody() {
+        if (!this.state.permission) {
+            return null;
+        }
+
         const {url, permission} = this.state;
         const originDisplay = url ? urlUtil.getHost(url) : this.props.intl.formatMessage({id: 'renderer.modals.permission.permissionModal.unknownOrigin', defaultMessage: 'unknown origin'});
         const originLink = url ? originDisplay : '';
@@ -84,7 +91,7 @@ class PermissionModal extends React.PureComponent<Props, State> {
                         id='renderer.modals.permission.permissionModal.body'
                         defaultMessage={'A site that\'s not included in your Mattermost server configuration requires access for {permission}.'}
                         values={{
-                            permission: this.props.intl.formatMessage({id: `common.permissions.${PERMISSION_DESCRIPTION[permission!]}`}),
+                            permission: this.props.intl.formatMessage({id: PERMISSION_DESCRIPTION[permission!]}),
                         }}
                     />
                     {}
@@ -113,42 +120,40 @@ class PermissionModal extends React.PureComponent<Props, State> {
 
     render() {
         return (
-            <IntlProvider>
-                <Modal
-                    bsClass='modal'
-                    className='permission-modal'
-                    show={Boolean(this.state.url && this.state.permission)}
-                    id='requestPermissionModal'
-                    enforceFocus={true}
-                    onHide={() => {}}
-                >
-                    <Modal.Header>
-                        <Modal.Title>{this.getModalTitle()}</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        {this.getModalBody()}
-                    </Modal.Body>
-                    <Modal.Footer className={'remove-border'}>
-                        <div>
-                            <Button onClick={this.props.handleDeny}>
-                                <FormattedMessage
-                                    id='label.cancel'
-                                    defaultMessage='Cancel'
-                                />
-                            </Button>
-                            <Button
-                                variant='primary'
-                                onClick={this.props.handleGrant}
-                            >
-                                <FormattedMessage
-                                    id='label.accept'
-                                    defaultMessage='Accept'
-                                />
-                            </Button>
-                        </div>
-                    </Modal.Footer>
-                </Modal>
-            </IntlProvider>
+            <Modal
+                bsClass='modal'
+                className='permission-modal'
+                show={Boolean(this.state.url && this.state.permission)}
+                id='requestPermissionModal'
+                enforceFocus={true}
+                onHide={() => {}}
+            >
+                <Modal.Header>
+                    <Modal.Title>{this.getModalTitle()}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {this.getModalBody()}
+                </Modal.Body>
+                <Modal.Footer className={'remove-border'}>
+                    <div>
+                        <Button onClick={this.props.handleDeny}>
+                            <FormattedMessage
+                                id='label.cancel'
+                                defaultMessage='Cancel'
+                            />
+                        </Button>
+                        <Button
+                            variant='primary'
+                            onClick={this.props.handleGrant}
+                        >
+                            <FormattedMessage
+                                id='label.accept'
+                                defaultMessage='Accept'
+                            />
+                        </Button>
+                    </div>
+                </Modal.Footer>
+            </Modal>
         );
     }
 }

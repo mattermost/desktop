@@ -5,9 +5,9 @@
 
 const fs = require('fs');
 
-const ps = require('ps-node');
-
 const path = require('path');
+
+const ps = require('ps-node');
 
 const {_electron: electron} = require('playwright');
 const chai = require('chai');
