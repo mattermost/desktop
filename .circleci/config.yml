@@ -4,7 +4,7 @@ parameters:
     default: false
     type: boolean
 orbs:
-  win: circleci/windows@4.1.1
+  win: circleci/windows@1.0.0
   aws-s3: circleci/aws-s3@2.0.0
   owasp: entur/owasp@0.0.10
 
@@ -179,12 +179,15 @@ jobs:
             - "~/.cache/electron-builder"
 
   build-win-no-installer:
-    executor: win/server-2022
+    executor: win/vs2019
     steps:
       - checkout
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
+      - run:
+          name: Install Node v16 LTS
+          command: choco install nodejs-lts -y
       - run:
           name: Install yq
           command: choco install yq --version 4.15.1 -y
@@ -225,7 +228,7 @@ jobs:
             - "~/.cache/electron-builder"
 
   msi_installer:
-    executor: win/server-2022
+    executor: win/vs2019
 
     steps:
       - checkout
@@ -250,7 +253,7 @@ jobs:
             - "./win-release/"
 
   build-windows-pr:
-    executor: win/server-2022
+    executor: win/vs2019
     steps:
       - checkout
       - run: mkdir -p ./build
@@ -259,6 +262,9 @@ jobs:
       - run:
           name: Install yq
           command: choco install yq --version 4.15.1 -y
+      - run:
+          name: Install Node v16 LTS
+          command: choco install nodejs-lts -y
       - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
       - build:
           os: windows
