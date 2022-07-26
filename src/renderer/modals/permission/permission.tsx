@@ -6,6 +6,8 @@ import ReactDOM from 'react-dom';
 
 import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO, MODAL_SEND_IPC_MESSAGE} from 'common/communication';
 
+import IntlProvider from 'renderer/intl_provider';
+
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'renderer/css/modals.css';
 
@@ -33,12 +35,14 @@ const openExternalLink = (protocol: string, url: string) => {
 
 const start = async () => {
     ReactDOM.render(
-        <PermissionModal
-            getPermissionInfo={getPermissionInfo}
-            handleDeny={handleDeny}
-            handleGrant={handleGrant}
-            openExternalLink={openExternalLink}
-        />,
+        <IntlProvider>
+            <PermissionModal
+                getPermissionInfo={getPermissionInfo}
+                handleDeny={handleDeny}
+                handleGrant={handleGrant}
+                openExternalLink={openExternalLink}
+            />
+        </IntlProvider>,
         document.getElementById('app'),
     );
 };

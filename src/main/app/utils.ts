@@ -5,7 +5,7 @@ import path from 'path';
 
 import fs from 'fs-extra';
 
-import {app, BrowserWindow, Menu, Rectangle, Session, session, dialog, nativeImage} from 'electron';
+import {app, BrowserWindow, Menu, Rectangle, Session, session, dialog, nativeImage, screen} from 'electron';
 import log, {LevelOption} from 'electron-log';
 
 import {MigrationInfo, TeamWithTabs} from 'types/config';
@@ -147,10 +147,25 @@ function isWithinDisplay(state: Rectangle, display: Boundaries) {
     return !(midX > display.maxX || midY > display.maxY);
 }
 
+function getDisplayBoundaries() {
+    const displays = screen.getAllDisplays();
+
+    return displays.map((display) => {
+        return {
+            maxX: display.workArea.x + display.workArea.width,
+            maxY: display.workArea.y + display.workArea.height,
+            minX: display.workArea.x,
+            minY: display.workArea.y,
+            maxWidth: display.workArea.width,
+            maxHeight: display.workArea.height,
+        };
+    });
+}
+
 function getValidWindowPosition(state: Rectangle) {
     // Check if the previous position is out of the viewable area
     // (e.g. because the screen has been plugged off)
-    const boundaries = Utils.getDisplayBoundaries();
+    const boundaries = getDisplayBoundaries();
     const display = boundaries.find((boundary) => {
         return isWithinDisplay(state, boundary);
     });
