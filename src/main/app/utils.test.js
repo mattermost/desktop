@@ -3,7 +3,7 @@
 
 import fs from 'fs-extra';
 
-import {dialog} from 'electron';
+import {dialog, screen} from 'electron';
 
 import Config from 'common/config';
 import JsonFileManager from 'common/JsonFileManager';
@@ -34,6 +34,9 @@ jest.mock('electron', () => ({
         showOpenDialogSync: jest.fn(),
         showMessageBoxSync: jest.fn(),
     },
+    screen: {
+        getAllDisplays: jest.fn(),
+    },
 }));
 
 jest.mock('common/config', () => ({
@@ -42,7 +45,6 @@ jest.mock('common/config', () => ({
 jest.mock('common/JsonFileManager');
 jest.mock('common/utils/util', () => ({
     isVersionGreaterThanOrEqualTo: jest.fn(),
-    getDisplayBoundaries: jest.fn(),
 }));
 
 jest.mock('main/autoUpdater', () => ({}));
@@ -182,13 +184,13 @@ describe('main/app/utils', () => {
 
     describe('resizeScreen', () => {
         beforeEach(() => {
-            Utils.getDisplayBoundaries.mockReturnValue([{
-                minX: 400,
-                minY: 300,
-                maxX: 2320,
-                maxY: 1380,
-                width: 1920,
-                height: 1080,
+            screen.getAllDisplays.mockReturnValue([{
+                workArea: {
+                    x: 400,
+                    y: 300,
+                    width: 1920,
+                    height: 1080,
+                },
             }]);
         });
         it('should keep the same position if it is within a display', () => {

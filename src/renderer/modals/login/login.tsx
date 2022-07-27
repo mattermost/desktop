@@ -7,6 +7,8 @@ import {AuthenticationResponseDetails} from 'electron/renderer';
 
 import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO} from 'common/communication';
 
+import IntlProvider from 'renderer/intl_provider';
+
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'renderer/css/modals.css';
 
@@ -30,11 +32,13 @@ const getAuthInfo = () => {
 
 const start = async () => {
     ReactDOM.render(
-        <LoginModal
-            onLogin={handleLogin}
-            onCancel={handleLoginCancel}
-            getAuthInfo={getAuthInfo}
-        />,
+        <IntlProvider>
+            <LoginModal
+                onLogin={handleLogin}
+                onCancel={handleLoginCancel}
+                getAuthInfo={getAuthInfo}
+            />
+        </IntlProvider>,
         document.getElementById('app'),
     );
 };

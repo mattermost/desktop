@@ -26,15 +26,18 @@ import {
     DISPATCH_GET_DESKTOP_SOURCES,
     DESKTOP_SOURCES_RESULT,
     RELOAD_CURRENT_VIEW,
+    VIEW_FINISHED_RESIZING,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
 import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 
+import {MattermostView} from 'main/views/MattermostView';
+
 import {getAdjustedWindowBoundaries, shouldHaveBackBar} from '../utils';
 
-import {ViewManager} from '../views/viewManager';
+import {ViewManager, LoadingScreenState} from '../views/viewManager';
 import CriticalErrorHandler from '../CriticalErrorHandler';
 
 import TeamDropdownView from '../views/teamDropdownView';
@@ -71,6 +74,7 @@ export class WindowManager {
         ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, this.handleGetWebContentsId);
         ipcMain.on(DISPATCH_GET_DESKTOP_SOURCES, this.handleGetDesktopSources);
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
+        ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
     }
 
     handleUpdateConfig = () => {
@@ -134,7 +138,12 @@ export class WindowManager {
             });
             this.mainWindow.on('maximize', this.handleMaximizeMainWindow);
             this.mainWindow.on('unmaximize', this.handleUnmaximizeMainWindow);
-            this.mainWindow.on('resize', this.handleResizeMainWindow);
+            if (process.platform === 'linux') {
+                this.mainWindow.on('resize', this.handleResizeMainWindow);
+            } else {
+                this.mainWindow.on('will-resize', this.handleWillResizeMainWindow);
+                this.mainWindow.on('resized', this.handleResizedMainWindow);
+            }
             this.mainWindow.on('focus', this.focusBrowserView);
             this.mainWindow.on('enter-full-screen', () => this.sendToRenderer('enter-full-screen'));
             this.mainWindow.on('leave-full-screen', () => this.sendToRenderer('leave-full-screen'));
@@ -173,42 +182,72 @@ export class WindowManager {
         this.sendToRenderer(MAXIMIZE_CHANGE, false);
     }
 
-    handleResizeMainWindow = () => {
-        log.debug('WindowManager.handleResizeMainWindow');
+    isResizing = false;
+
+    handleWillResizeMainWindow = (event: Event, newBounds: Electron.Rectangle) => {
+        log.silly('WindowManager.handleWillResizeMainWindow');
 
         if (!(this.viewManager && this.mainWindow)) {
             return;
         }
-        const currentView = this.viewManager.getCurrentView();
-        let bounds: Partial<Electron.Rectangle>;
 
-        // Workaround for linux maximizing/minimizing, which doesn't work properly because of these bugs:
-        // https://github.com/electron/electron/issues/28699
-        // https://github.com/electron/electron/issues/28106
-        if (process.platform === 'linux') {
-            const size = this.mainWindow.getSize();
-            bounds = {width: size[0], height: size[1]};
-        } else {
-            bounds = this.mainWindow.getContentBounds();
+        if (this.isResizing && this.viewManager.loadingScreenState === LoadingScreenState.HIDDEN && this.viewManager.getCurrentView()) {
+            log.silly('prevented resize');
+            event.preventDefault();
+            return;
         }
 
-        const setBoundsFunction = () => {
-            if (currentView) {
-                currentView.setBounds(getAdjustedWindowBoundaries(bounds.width!, bounds.height!, shouldHaveBackBar(currentView.tab.url, currentView.view.webContents.getURL())));
-            }
-        };
+        this.throttledWillResize(newBounds);
+        this.viewManager?.setLoadingScreenBounds();
+        this.teamDropdown?.updateWindowBounds();
+        ipcMain.emit(RESIZE_MODAL, null, newBounds);
+    }
 
-        // Another workaround since the window doesn't update properly under Linux for some reason
+    handleResizedMainWindow = () => {
+        if (this.mainWindow) {
+            this.throttledWillResize(this.mainWindow?.getContentBounds());
+        }
+        this.isResizing = false;
+    }
+
+    handleViewFinishedResizing = () => {
+        this.isResizing = false;
+    }
+
+    private throttledWillResize = (newBounds: Electron.Rectangle) => {
+        this.isResizing = true;
+        this.setCurrentViewBounds(newBounds);
+    }
+
+    handleResizeMainWindow = () => {
+        log.silly('WindowManager.handleResizeMainWindow');
+
+        if (!(this.viewManager && this.mainWindow)) {
+            return;
+        }
+        const size = this.mainWindow.getSize();
+        const bounds = {width: size[0], height: size[1]};
+
+        // Another workaround since the window doesn't update p roperly under Linux for some reason
         // See above comment
-        if (process.platform === 'linux') {
-            setTimeout(setBoundsFunction, 10);
-        } else {
-            setBoundsFunction();
-        }
+        setTimeout(this.setCurrentViewBounds, 10, bounds);
         this.viewManager.setLoadingScreenBounds();
         this.teamDropdown?.updateWindowBounds();
         ipcMain.emit(RESIZE_MODAL, null, bounds);
+    };
+
+    setCurrentViewBounds = (bounds: {width: number; height: number}) => {
+        const currentView = this.viewManager?.getCurrentView();
+        if (currentView) {
+            const adjustedBounds = getAdjustedWindowBoundaries(bounds.width, bounds.height, shouldHaveBackBar(currentView.tab.url, currentView.view.webContents.getURL()));
+            this.setBoundsFunction(currentView, adjustedBounds);
+        }
     }
+
+    private setBoundsFunction = (currentView: MattermostView, bounds: Electron.Rectangle) => {
+        log.silly('setBoundsFunction', bounds.width, bounds.height);
+        currentView.setBounds(bounds);
+    };
 
     // max retries allows the message to get to the renderer even if it is sent while the app is starting up.
     sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: any[]) => {
