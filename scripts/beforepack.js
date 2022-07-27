@@ -4,8 +4,16 @@
 const {exec} = require('child_process');
 
 exports.default = async function beforePack(context) {
-    const arch = getArch(context.arch);
-    exec(`npm run postinstall -- --arch ${arch}`);
+    return new Promise((resolve, reject) => {
+        const arch = getArch(context.arch);
+        exec(`npm run postinstall -- --arch ${arch}`, (error) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve();
+            }
+        });
+    });
 };
 
 function getArch(arch) {
