@@ -188,7 +188,7 @@ jobs:
       - run:
           name: Install yq
           command: choco install yq --version 4.15.1 -y
-      - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
+      - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm --verbose ci
       - build:
           os: windows
           path: ./build/win
