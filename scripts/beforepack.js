@@ -18,17 +18,17 @@ exports.default = async function beforePack(context) {
 
 function getArch(arch) {
     switch (arch) {
-        case 0:
-            return 'ia32';
-        case 1:
-            return 'x64';
-        case 2:
-            return 'armv7l';
-        case 3:
-            return 'arm64';
-        case 4:
-            return 'universal';
-        default:
-            return '';
+    case 0:
+        return 'ia32';
+    case 1:
+        return 'x64';
+    case 2:
+        return 'armv7l';
+    case 3:
+        return 'arm64';
+    case 4:
+        return 'universal';
+    default:
+        return '';
     }
 }

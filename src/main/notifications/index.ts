@@ -80,6 +80,11 @@ export function displayDownloadCompleted(fileName: string, path: string, serverN
         log.error('notification not supported');
         return;
     }
+
+    if (getDoNotDisturb()) {
+        return;
+    }
+
     const download = new DownloadNotification(fileName, serverName);
 
     download.on('show', () => {
@@ -95,6 +100,14 @@ export function displayDownloadCompleted(fileName: string, path: string, serverN
 let upgrade: NewVersionNotification;
 
 export function displayUpgrade(version: string, handleUpgrade: () => void): void {
+    if (!Notification.isSupported()) {
+        log.error('notification not supported');
+        return;
+    }
+    if (getDoNotDisturb()) {
+        return;
+    }
+
     if (upgrade) {
         upgrade.close();
     }
@@ -108,6 +121,14 @@ export function displayUpgrade(version: string, handleUpgrade: () => void): void
 
 let restartToUpgrade;
 export function displayRestartToUpgrade(version: string, handleUpgrade: () => void): void {
+    if (!Notification.isSupported()) {
+        log.error('notification not supported');
+        return;
+    }
+    if (getDoNotDisturb()) {
+        return;
+    }
+
     restartToUpgrade = new UpgradeNotification();
     restartToUpgrade.on('click', () => {
         log.info(`User requested perform the upgrade now to ${version}`);
