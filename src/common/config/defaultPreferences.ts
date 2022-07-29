@@ -43,6 +43,7 @@ const defaultPreferences: ConfigV3 = {
     lastActiveTeam: 0,
     downloadLocation: getDefaultDownloadLocation(),
     startInFullscreen: false,
+    welcomeScreenShown: false,
 };
 
 export default defaultPreferences;

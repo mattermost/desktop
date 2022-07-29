@@ -46,6 +46,7 @@ export type ConfigV3 = {
     alwaysClose?: boolean;
     logLevel?: string;
     appLanguage?: string;
+    welcomeScreenShown?: boolean;
 }
 
 export type ConfigV2 = {

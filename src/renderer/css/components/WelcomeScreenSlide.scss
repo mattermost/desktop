@@ -1,0 +1,59 @@
+@import url("../fonts.css");
+
+.WelcomeScreenSlide {
+    display: flex;
+    flex: 1;
+    max-width: 540px;
+    flex-flow: column;
+    justify-content: flex-end;
+
+    .WelcomeScreenSlide__image {
+        align-self: center;
+    }
+
+    .WelcomeScreenSlide__title {
+        color: #1e325c;
+        font-family: 'Metropolis';
+        font-size: 80px;
+        font-weight: 600;
+        letter-spacing: -0.05em;
+        line-height: 88px;
+        text-align: center;
+    }
+
+    .WelcomeScreenSlide__subtitle {
+        color: rgba(63, 67, 80, 0.72);
+        font-family: Open Sans;
+        font-size: 16px;
+        font-weight: 400;
+        line-height: 24px;
+        text-align: center;
+        margin-top: 16px;
+    }
+
+    &.WelcomeScreenSlide--main {
+        position: relative;
+        height: 100%;
+
+        .WelcomeScreenSlide__title {
+            font-size: 128px;
+            line-height: 128px;
+        }
+
+        .WelcomeScreenSlide__image {
+            position: absolute;
+            display: block;
+            bottom: 115px;
+        }
+    }
+
+    &.WelcomeScreenSlide--darkMode {
+        .WelcomeScreenSlide__title {
+            color: #fff;
+        }
+
+        .WelcomeScreenSlide__subtitle {
+            color: rgba(255, 255, 255, 0.72);
+        }
+    }
+}

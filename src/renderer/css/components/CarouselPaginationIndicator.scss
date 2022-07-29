@@ -1,0 +1,57 @@
+.CarouselPaginationIndicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 23px;
+
+    .indicatorDot {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: none;
+        box-shadow: 0 0 0 3px transparent;
+        cursor: pointer;
+
+        &:not(:first-child) {
+            margin-left: 4px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(28, 88, 217, 0.32);
+        }
+
+        &.active,
+        &.disabled {
+            cursor: default;
+            pointer-events: none;
+        }
+
+        &.active {
+            background: rgba(28, 88, 217, 0.16);
+
+            .dot {
+                background: #1c58d9;
+            }
+        }
+    }
+
+    .indicatorDot-inverted {
+        .dot {
+            background: rgba(255, 255, 255, 0.32);
+        }
+
+        &.active {
+            background: rgba(255, 255, 255, 0.16);
+
+            .dot {
+                background: #fff;
+            }
+        }
+    }
+}

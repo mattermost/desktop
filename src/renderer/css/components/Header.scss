@@ -1,0 +1,35 @@
+.Header {
+    position: relative;
+    display: flex;
+    width: 100%;
+    max-width: 1520px;
+    min-height: 100px;
+    padding: 0 40px;
+
+    .Header__main {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        flex-flow: wrap;
+        align-items: center;
+        justify-content: space-between;
+
+        .Header__logo {
+            width: 170px;
+
+            path {
+                fill: #3f4350;
+            }
+        }
+    }
+
+    &.Header--darkMode {
+        .Header__main {
+            .Header__logo {
+                path {
+                    fill: #fff;
+                }
+            }
+        }
+    }
+}
