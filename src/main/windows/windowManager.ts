@@ -138,12 +138,11 @@ export class WindowManager {
             });
             this.mainWindow.on('maximize', this.handleMaximizeMainWindow);
             this.mainWindow.on('unmaximize', this.handleUnmaximizeMainWindow);
-            if (process.platform === 'linux') {
+            if (process.platform !== 'darwin') {
                 this.mainWindow.on('resize', this.handleResizeMainWindow);
-            } else {
-                this.mainWindow.on('will-resize', this.handleWillResizeMainWindow);
-                this.mainWindow.on('resized', this.handleResizedMainWindow);
             }
+            this.mainWindow.on('will-resize', this.handleWillResizeMainWindow);
+            this.mainWindow.on('resized', this.handleResizedMainWindow);
             this.mainWindow.on('focus', this.focusBrowserView);
             this.mainWindow.on('enter-full-screen', () => this.sendToRenderer('enter-full-screen'));
             this.mainWindow.on('leave-full-screen', () => this.sendToRenderer('leave-full-screen'));
