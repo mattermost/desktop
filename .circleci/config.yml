@@ -188,6 +188,7 @@ jobs:
       - run:
           name: Install yq
           command: choco install yq --version 4.15.1 -y
+      # ignoring scripts for windows due to issues with node-gyp
       - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci --ignore-scripts
       - build:
           os: windows
