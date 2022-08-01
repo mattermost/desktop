@@ -7,7 +7,7 @@ import {RELOAD_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
 
 import {handleConfigUpdate} from 'main/app/config';
-import {addNewServerModalWhenMainWindowIsShown} from 'main/app/intercom';
+import {handleMainWindowIsShown} from 'main/app/intercom';
 import {setLoggingLevel} from 'main/app/utils';
 
 import WindowManager from 'main/windows/windowManager';
@@ -32,7 +32,7 @@ jest.mock('main/app/utils', () => ({
     setLoggingLevel: jest.fn(),
 }));
 jest.mock('main/app/intercom', () => ({
-    addNewServerModalWhenMainWindowIsShown: jest.fn(),
+    handleMainWindowIsShown: jest.fn(),
 }));
 jest.mock('main/AutoLauncher', () => ({
     enable: jest.fn(),
@@ -98,7 +98,7 @@ describe('main/app/config', () => {
             Config.registryConfigData = {};
 
             handleConfigUpdate({teams: []});
-            expect(addNewServerModalWhenMainWindowIsShown).toHaveBeenCalled();
+            expect(handleMainWindowIsShown).toHaveBeenCalled();
 
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,

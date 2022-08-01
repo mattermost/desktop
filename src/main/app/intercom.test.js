@@ -14,6 +14,7 @@ import {
     handleNewServerModal,
     handleEditServerModal,
     handleRemoveServerModal,
+    handleWelcomeScreenModal,
 } from './intercom';
 
 jest.mock('common/config', () => ({
@@ -233,6 +234,32 @@ describe('main/app/intercom', () => {
                 url: 'http://server-1.com',
                 tabs,
             }));
+        });
+    });
+
+    describe('handleWelcomeScreenModal', () => {
+        beforeEach(() => {
+            getLocalURLString.mockReturnValue('/some/index.html');
+            getLocalPreload.mockReturnValue('/some/preload.js');
+            WindowManager.getMainWindow.mockReturnValue({});
+
+            Config.set.mockImplementation((name, value) => {
+                Config[name] = value;
+            });
+            Config.welcomeScreenShown = false;
+        });
+
+        afterEach(() => {
+            delete Config.welcomeScreenShown;
+        });
+
+        it('should set welcomeScreenShown to the config', async () => {
+            const promise = Promise.resolve({});
+            ModalManager.addModal.mockReturnValue(promise);
+
+            handleWelcomeScreenModal();
+            await promise;
+            expect(Config.welcomeScreenShown).toEqual(true);
         });
     });
 });

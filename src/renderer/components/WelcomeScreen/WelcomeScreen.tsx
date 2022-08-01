@@ -50,10 +50,6 @@ function WelcomeScreen({
         {
             key: 'channels',
             title: formatMessage({id: 'renderer.components.welcomeScreen.slides.channels.title', defaultMessage: 'Channels'}),
-            /* subtitle: formatMessage({
-                id: 'renderer.components.welcomeScreen.slides.channels.subtitle',
-                defaultMessage: 'All of your team’s communication in one place.<br />Secure collaboration, built for developers.',
-            }), */
             subtitle: (
                 <FormattedMessage
                     id='renderer.components.welcomeScreen.slides.channels.subtitle'
@@ -133,6 +129,7 @@ function WelcomeScreen({
                         darkMode={darkMode}
                     />
                     <button
+                        id='getStartedWelcomeScreen'
                         className={classNames(
                             'WelcomeScreen__button',
                             'primary-button primary-medium-button',

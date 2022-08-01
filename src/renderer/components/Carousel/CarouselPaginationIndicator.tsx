@@ -33,6 +33,7 @@ function CarouselPaginationIndicator({
             indicators.push(
                 <div
                     key={pageIndex}
+                    id={`PaginationIndicator${pageIndex}`}
                     onClick={handleOnClick(pageIndex)}
                     className={classNames(
                         'indicatorDot',

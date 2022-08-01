@@ -222,6 +222,10 @@ function initializeBeforeAppReady() {
     } else if (mainProtocol) {
         app.setAsDefaultProtocolClient(mainProtocol);
     }
+
+    if (global.args.disableFirstTimeUserExperience) {
+        Config.set('welcomeScreenShown', true);
+    }
 }
 
 function initializeInterCommunicationEventListeners() {

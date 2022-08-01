@@ -31,6 +31,7 @@ function CarouselButton({
 
     return (
         <button
+            id={`${direction}CarouselButton`}
             className={classNames(
                 'CarouselButton',
                 'icon-button icon-button-small',

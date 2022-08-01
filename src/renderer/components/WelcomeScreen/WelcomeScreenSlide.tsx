@@ -8,7 +8,7 @@ import 'renderer/css/components/WelcomeScreenSlide.scss';
 
 type WelcomeScreenSlideProps = {
     title: string;
-    subtitle: string;
+    subtitle: string | React.ReactElement;
     image: React.ReactNode;
     isMain?: boolean;
     darkMode?: boolean;

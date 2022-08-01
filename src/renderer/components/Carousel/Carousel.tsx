@@ -81,6 +81,7 @@ function Carousel({
                     return (
                         <div
                             key={key}
+                            id={key}
                             className={classNames(
                                 'Carousel__slide',
                                 {
