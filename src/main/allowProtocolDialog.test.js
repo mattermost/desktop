@@ -31,14 +31,11 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('../../electron-builder.json', () => ({
-    protocols: [{
-        name: 'Mattermost',
-        schemes: [
-            'pone',
-            'ptwo',
-        ],
-    }],
+jest.mock('common/config/buildConfig', () => ({
+    allowedProtocols: [
+        'pone',
+        'ptwo',
+    ],
 }));
 
 jest.mock('./Validator', () => ({
