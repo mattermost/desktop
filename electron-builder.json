@@ -17,6 +17,7 @@
   "files": [
     "node_modules/bootstrap/dist/**",
     "node_modules/font-awesome/{css,fonts}/**",
+    "!**/node_modules/macos-notification-state/build/Release/.forge-meta",
     {
       "from": "dist",
       "to": ".",
