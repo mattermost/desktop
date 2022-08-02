@@ -676,7 +676,7 @@ function Run-Build {
     Prepare-Path
     Get-Cert
     Run-BuildId
-    #Run-BuildChangelog
+    Run-BuildChangelog
     Run-BuildElectron
     Run-BuildForceSignature
     Run-BuildLicense
