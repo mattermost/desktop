@@ -1,1 +1,4 @@
-{}
+{
+    "common.tabs.TAB_FOCALBOARD": "Tablice",
+    "common.permissions.canBasicAuth": "Uwierzytelnianie przez Internet"
+}
