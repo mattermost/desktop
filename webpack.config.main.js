@@ -6,8 +6,6 @@
 /* eslint-disable import/no-commonjs */
 'use strict';
 
-const path = require('path');
-
 const {merge} = require('webpack-merge');
 
 const CopyPlugin = require('copy-webpack-plugin');
@@ -24,6 +22,10 @@ module.exports = merge(base, {
         loadingScreenPreload: './src/main/preload/loadingScreenPreload.js',
         urlView: './src/main/preload/urlView.js',
     },
+    externals: {
+        'macos-notification-state': 'require("macos-notification-state")',
+        'windows-focus-assist': 'require("windows-focus-assist")',
+    },
     module: {
         rules: [{
             test: /\.(js|ts)?$/,
@@ -39,11 +41,7 @@ module.exports = merge(base, {
         },
         {
             test: /\.node$/,
-            loader: 'awesome-node-loader',
-            options: {
-                name: '[name].[ext]',
-                rewritePath: path.resolve(__dirname, 'dist'),
-            },
+            loader: 'node-loader',
         }],
     },
     plugins: [

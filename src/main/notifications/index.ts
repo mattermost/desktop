@@ -4,6 +4,9 @@
 import {shell, Notification} from 'electron';
 import log from 'electron-log';
 
+import {getFocusAssist, isPriority} from 'windows-focus-assist';
+import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
+
 import {MentionData} from 'types/notification';
 
 import {PLAY_SOUND} from 'common/communication';
@@ -24,6 +27,11 @@ export function displayMention(title: string, body: string, channel: {id: string
         log.error('notification not supported');
         return;
     }
+
+    if (getDoNotDisturb()) {
+        return;
+    }
+
     const serverName = WindowManager.getServerNameByWebContentsId(webcontents.id);
 
     const options = {
@@ -72,6 +80,11 @@ export function displayDownloadCompleted(fileName: string, path: string, serverN
         log.error('notification not supported');
         return;
     }
+
+    if (getDoNotDisturb()) {
+        return;
+    }
+
     const download = new DownloadNotification(fileName, serverName);
 
     download.on('show', () => {
@@ -87,6 +100,14 @@ export function displayDownloadCompleted(fileName: string, path: string, serverN
 let upgrade: NewVersionNotification;
 
 export function displayUpgrade(version: string, handleUpgrade: () => void): void {
+    if (!Notification.isSupported()) {
+        log.error('notification not supported');
+        return;
+    }
+    if (getDoNotDisturb()) {
+        return;
+    }
+
     if (upgrade) {
         upgrade.close();
     }
@@ -100,10 +121,36 @@ export function displayUpgrade(version: string, handleUpgrade: () => void): void
 
 let restartToUpgrade;
 export function displayRestartToUpgrade(version: string, handleUpgrade: () => void): void {
+    if (!Notification.isSupported()) {
+        log.error('notification not supported');
+        return;
+    }
+    if (getDoNotDisturb()) {
+        return;
+    }
+
     restartToUpgrade = new UpgradeNotification();
     restartToUpgrade.on('click', () => {
         log.info(`User requested perform the upgrade now to ${version}`);
         handleUpgrade();
     });
     restartToUpgrade.show();
+}
+
+function getDoNotDisturb() {
+    if (process.platform === 'win32') {
+        const focusAssistValue = getFocusAssist().value;
+        switch (focusAssistValue) {
+        case 1:
+            return !isPriority('Mattermost.Desktop');
+        default:
+            return focusAssistValue;
+        }
+    }
+
+    if (process.platform === 'darwin') {
+        return getDarwinDoNotDisturb();
+    }
+
+    return false;
 }
