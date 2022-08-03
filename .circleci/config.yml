@@ -179,14 +179,20 @@ jobs:
             - "~/.cache/electron-builder"
 
   build-win-no-installer:
-    executor: wine-mono
+    executor: win/vs2019
     steps:
       - checkout
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - update_image:
-          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run:
+          name: Install yq
+          command: choco install yq --version 4.15.1 -y
+      - run:
+          name: Install nodejs-lts
+          command: choco install nodejs-lts -y
+      # ignoring scripts for windows due to issues with node-gyp
+      - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci --ignore-scripts
       - build:
           os: windows
           path: ./build/win
@@ -199,16 +205,18 @@ jobs:
             - "~/.cache/electron-builder"
 
   build-mac-no-dmg:
-    executor: wine-mono
+    executor: mac
     steps:
       - checkout
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - update_image:
-          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run: brew install yq
+      - run:
+          name: Update node to v16
+          command: nvm install --lts && nvm use --lts
       - run: jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
-
+      - run: PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci
       - build:
           os: mac
           path: ./build/macos
@@ -229,11 +237,11 @@ jobs:
       - attach_workspace:
           at: ./build
       - run:
-          name: Update node to v16
-          command: choco install nodejs --version 16.8.0
-      - run:
           name: Install yq
-          command: choco install yq --version 4.15.1
+          command: choco install yq --version 4.15.1 -y
+      - run:
+          name: Install nodejs-lts
+          command: choco install nodejs-lts -y
       - win_make:
           operation: optimize
       - win_make:
@@ -249,14 +257,19 @@ jobs:
             - "./win-release/"
 
   build-windows-pr:
-    executor: wine-mono
+    executor: win/vs2019
     steps:
       - checkout
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - update_image:
-          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run:
+          name: Install yq
+          command: choco install yq --version 4.15.1 -y
+      - run:
+          name: Install nodejs-lts
+          command: choco install nodejs-lts -y
+      - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci --ignore-scripts
       - build:
           os: windows
           path: ./build/win
