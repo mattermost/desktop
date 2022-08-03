@@ -224,8 +224,21 @@ export class WindowManager {
         if (!(this.viewManager && this.mainWindow)) {
             return;
         }
-        const size = this.mainWindow.getSize();
-        const bounds = {width: size[0], height: size[1]};
+        if (this.isResizing) {
+            return;
+        }
+
+        let bounds;
+
+        // Workaround for linux maximizing/minimizing, which doesn't work properly because of these bugs:
+        // https://github.com/electron/electron/issues/28699
+        // https://github.com/electron/electron/issues/28106
+        if (process.platform === 'linux') {
+            const size = this.mainWindow.getSize();
+            bounds = {width: size[0], height: size[1]};
+        } else {
+            bounds = this.mainWindow.getContentBounds();
+        }
 
         // Another workaround since the window doesn't update p roperly under Linux for some reason
         // See above comment
