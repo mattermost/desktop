@@ -118,7 +118,8 @@
     "provisioningProfile": "./mas.provisionprofile",
     "extendInfo": {
       "ITSAppUsesNonExemptEncryption": false
-    }
+    },
+    "singleArchFiles": "*"
   },
   "masDev": {
     "provisioningProfile": "./mas-dev.provisionprofile"
