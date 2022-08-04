@@ -1,3 +1,4 @@
+@import url("../_css_variables.scss");
 @import url("../fonts.css");
 
 .WelcomeScreenSlide {
@@ -12,7 +13,7 @@
     }
 
     .WelcomeScreenSlide__title {
-        color: #1e325c;
+        color: var(--title-color-indigo-500);
         font-family: 'Metropolis';
         font-size: 80px;
         font-weight: 600;
@@ -22,7 +23,7 @@
     }
 
     .WelcomeScreenSlide__subtitle {
-        color: rgba(63, 67, 80, 0.72);
+        color: rgba(var(--center-channel-text-rgb), 0.72);
         font-family: Open Sans;
         font-size: 16px;
         font-weight: 400;
@@ -49,11 +50,11 @@
 
     &.WelcomeScreenSlide--darkMode {
         .WelcomeScreenSlide__title {
-            color: #fff;
+            color: var(--button-color);
         }
 
         .WelcomeScreenSlide__subtitle {
-            color: rgba(255, 255, 255, 0.72);
+            color: rgba(var(--button-color-rgb), 0.72);
         }
     }
 }

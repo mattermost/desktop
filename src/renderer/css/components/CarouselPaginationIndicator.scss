@@ -1,3 +1,5 @@
+@import url("../_css_variables.scss");
+
 .CarouselPaginationIndicator {
     display: flex;
     align-items: center;
@@ -23,7 +25,7 @@
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: rgba(28, 88, 217, 0.32);
+            background: rgba(var(--denim-button-bg-rgb), 0.32);
         }
 
         &.active,
@@ -33,25 +35,36 @@
         }
 
         &.active {
-            background: rgba(28, 88, 217, 0.16);
+            background: rgba(var(--denim-button-bg-rgb), 0.16);
 
             .dot {
-                background: #1c58d9;
+                background: var(--denim-button-bg);
             }
+        }
+
+        &:focus {
+            box-sizing: border-box;
+            border: 2px solid var(--sidebar-text-active-border);
+            outline: none;
         }
     }
 
     .indicatorDot-inverted {
         .dot {
-            background: rgba(255, 255, 255, 0.32);
+            background: rgba(var(--button-color-rgb), 0.32);
         }
 
         &.active {
-            background: rgba(255, 255, 255, 0.16);
+            background: rgba(var(--button-color-rgb), 0.16);
 
             .dot {
-                background: #fff;
+                background: var(--button-color);
             }
+        }
+
+        &:focus {
+            border: 2px solid var(--denim-sidebar-active-border);
+            color: var(--denim-button-bg);
         }
     }
 }

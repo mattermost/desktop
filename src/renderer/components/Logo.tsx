@@ -3,10 +3,18 @@
 
 import React from 'react';
 
-export default () => (
+type Props = {
+    width?: number;
+    height?: number;
+}
+
+export default ({
+    width = 170,
+    height = 28,
+}: Props) => (
     <svg
-        width='170'
-        height='28'
+        width={width}
+        height={height}
         viewBox='0 0 170 28'
         fill='none'
         xmlns='http://www.w3.org/2000/svg'

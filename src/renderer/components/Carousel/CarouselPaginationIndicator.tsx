@@ -26,6 +26,12 @@ function CarouselPaginationIndicator({
         onClick(pageIndex);
     }, [onClick]);
 
+    const handleOnKeyDown = useCallback((pageIndex: number) => (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') {
+            onClick(pageIndex);
+        }
+    }, [onClick]);
+
     const getIndicators = useCallback(() => {
         const indicators = [];
 
@@ -35,6 +41,7 @@ function CarouselPaginationIndicator({
                     key={pageIndex}
                     id={`PaginationIndicator${pageIndex}`}
                     onClick={handleOnClick(pageIndex)}
+                    onKeyDown={handleOnKeyDown(pageIndex)}
                     className={classNames(
                         'indicatorDot',
                         {
@@ -43,6 +50,8 @@ function CarouselPaginationIndicator({
                             disabled,
                         },
                     )}
+                    role='button'
+                    tabIndex={0}
                 >
                     <div className='dot'/>
                 </div>,
@@ -53,7 +62,10 @@ function CarouselPaginationIndicator({
     }, [pages, activePage, darkMode, handleOnClick]);
 
     return (
-        <div className='CarouselPaginationIndicator'>
+        <div
+            className='CarouselPaginationIndicator'
+            tabIndex={-1}
+        >
             {getIndicators()}
         </div>
     );

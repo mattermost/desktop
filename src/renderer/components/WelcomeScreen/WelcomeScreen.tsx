@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useMemo} from 'react';
 import {useIntl, FormattedMessage} from 'react-intl';
 import classNames from 'classnames';
 
@@ -31,7 +31,7 @@ function WelcomeScreen({
 }: WelcomeScreenProps) {
     const {formatMessage} = useIntl();
 
-    const slides = [
+    const slides = useMemo(() => [
         {
             key: 'welcome',
             title: formatMessage({id: 'renderer.components.welcomeScreen.slides.welcome.title', defaultMessage: 'Welcome'}),
@@ -94,7 +94,7 @@ function WelcomeScreen({
                 />
             ),
         },
-    ];
+    ], []);
 
     const handleOnGetStartedClick = () => {
         onGetStarted();

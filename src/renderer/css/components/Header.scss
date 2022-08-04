@@ -1,3 +1,5 @@
+@import url("../_css_variables.scss");
+
 .Header {
     position: relative;
     display: flex;
@@ -18,7 +20,7 @@
             width: 170px;
 
             path {
-                fill: #3f4350;
+                fill: var(--center-channel-text);
             }
         }
     }
@@ -27,7 +29,7 @@
         .Header__main {
             .Header__logo {
                 path {
-                    fill: #fff;
+                    fill: var(--button-color);
                 }
             }
         }

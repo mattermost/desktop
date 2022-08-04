@@ -203,8 +203,12 @@ export class WindowManager {
     }
 
     handleResizedMainWindow = () => {
+        log.silly('WindowManager.handleResizedMainWindow');
+
         if (this.mainWindow) {
-            this.throttledWillResize(this.mainWindow?.getContentBounds());
+            const bounds = this.mainWindow?.getContentBounds();
+            this.throttledWillResize(bounds);
+            ipcMain.emit(RESIZE_MODAL, null, bounds);
         }
         this.isResizing = false;
     }

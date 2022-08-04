@@ -281,6 +281,49 @@ describe('main/windows/windowManager', () => {
         });
     });
 
+    describe('handleResizedMainWindow', () => {
+        const windowManager = new WindowManager();
+        const view = {
+            setBounds: jest.fn(),
+            tab: {
+                url: 'http://server-1.com',
+            },
+            view: {
+                webContents: {
+                    getURL: jest.fn(),
+                },
+            },
+        };
+        windowManager.mainWindow = {
+            getContentBounds: () => ({width: 800, height: 600}),
+        };
+
+        beforeEach(() => {
+            getAdjustedWindowBoundaries.mockImplementation((width, height) => ({width, height}));
+        });
+
+        afterEach(() => {
+            windowManager.isResizing = true;
+            jest.resetAllMocks();
+        });
+
+        it('should not handle bounds if no window available', () => {
+            windowManager.handleResizedMainWindow();
+            expect(windowManager.isResizing).toBe(false);
+            expect(view.setBounds).not.toHaveBeenCalled();
+        });
+
+        it('should use current content bounds', () => {
+            windowManager.viewManager = {
+                getCurrentView: () => view,
+            };
+
+            windowManager.handleResizedMainWindow();
+            expect(windowManager.isResizing).toBe(false);
+            expect(view.setBounds).toHaveBeenCalledWith({width: 800, height: 600});
+        });
+    });
+
     describe('restoreMain', () => {
         const windowManager = new WindowManager();
         windowManager.mainWindow = {

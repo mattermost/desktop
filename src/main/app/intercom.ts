@@ -235,7 +235,7 @@ export function handleWelcomeScreenModal() {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal('welcomeScreen', html, modalPreload, {}, mainWindow);
+    const modalPromise = ModalManager.addModal('welcomeScreen', html, modalPreload, {}, mainWindow, true);
     if (modalPromise) {
         modalPromise.then(() => {
             Config.set('welcomeScreenShown', true);
