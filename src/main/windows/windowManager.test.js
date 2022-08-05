@@ -329,7 +329,17 @@ describe('main/windows/windowManager', () => {
                 getCurrentView: () => view,
             };
 
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'windows',
+            });
+
             windowManager.handleResizedMainWindow();
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+
             expect(windowManager.isResizing).toBe(false);
             expect(view.setBounds).toHaveBeenCalledWith({width: 800, height: 600});
         });
