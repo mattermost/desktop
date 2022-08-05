@@ -11,6 +11,7 @@ declare namespace NodeJS {
             dataDir?: string;
             version?: boolean;
             fullscreen?: boolean;
+            disableFirstTimeUserExperience?: boolean;
         };
     }
 }

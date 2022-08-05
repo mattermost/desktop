@@ -1,0 +1,10 @@
+@import '~@mattermost/compass-icons/css/compass-icons.css';
+
+.CarouselButton {
+    height: 32px;
+    padding: 8px;
+
+    &:focus {
+        padding: 6px;
+    }
+}

@@ -217,7 +217,17 @@ describe('main/windows/windowManager', () => {
         });
 
         it('should use getSize when the platform is linux', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'linux',
+            });
+
             windowManager.handleResizeMainWindow();
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+
             expect(view.setBounds).not.toHaveBeenCalled();
             jest.runAllTimers();
             expect(view.setBounds).toHaveBeenCalledWith({width: 1000, height: 900});
@@ -278,6 +288,66 @@ describe('main/windows/windowManager', () => {
             windowManager.handleWillResizeMainWindow(event, {width: 800, height: 600});
             expect(windowManager.isResizing).toBe(true);
             expect(view.setBounds).toHaveBeenCalledWith({width: 800, height: 600});
+        });
+    });
+
+    describe('handleResizedMainWindow', () => {
+        const windowManager = new WindowManager();
+        const view = {
+            setBounds: jest.fn(),
+            tab: {
+                url: 'http://server-1.com',
+            },
+            view: {
+                webContents: {
+                    getURL: jest.fn(),
+                },
+            },
+        };
+        windowManager.mainWindow = {
+            getContentBounds: () => ({width: 800, height: 600}),
+            getSize: () => [1000, 900],
+        };
+
+        beforeEach(() => {
+            getAdjustedWindowBoundaries.mockImplementation((width, height) => ({width, height}));
+        });
+
+        afterEach(() => {
+            windowManager.isResizing = true;
+            jest.resetAllMocks();
+        });
+
+        it('should not handle bounds if no window available', () => {
+            windowManager.handleResizedMainWindow();
+            expect(windowManager.isResizing).toBe(false);
+            expect(view.setBounds).not.toHaveBeenCalled();
+        });
+
+        it('should use getContentBounds when the platform is different to linux', () => {
+            windowManager.viewManager = {
+                getCurrentView: () => view,
+            };
+
+            windowManager.handleResizedMainWindow();
+            expect(windowManager.isResizing).toBe(false);
+            expect(view.setBounds).toHaveBeenCalledWith({width: 800, height: 600});
+        });
+
+        it('should use getSize when the platform is linux', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'linux',
+            });
+
+            windowManager.handleResizedMainWindow();
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+
+            expect(windowManager.isResizing).toBe(false);
+            expect(view.setBounds).toHaveBeenCalledWith({width: 1000, height: 900});
         });
     });
 

@@ -85,15 +85,26 @@ export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: 
     Config.set('teams', teams);
 }
 
-export function addNewServerModalWhenMainWindowIsShown() {
+export function handleMainWindowIsShown() {
+    const showWelcomeScreen = !Config.welcomeScreenShown;
     const mainWindow = WindowManager.getMainWindow();
+
     if (mainWindow) {
         if (mainWindow.isVisible()) {
-            handleNewServerModal();
+            if (showWelcomeScreen) {
+                handleWelcomeScreenModal();
+            } else {
+                handleNewServerModal();
+            }
         } else {
             mainWindow.once('show', () => {
-                log.debug('Intercom.addNewServerModalWhenMainWindowIsShown.show');
-                handleNewServerModal();
+                if (showWelcomeScreen) {
+                    log.debug('Intercom.handleMainWindowIsShown.show.welcomeScreenModal');
+                    handleWelcomeScreenModal();
+                } else {
+                    log.debug('Intercom.handleMainWindowIsShown.show.newServerModal');
+                    handleNewServerModal();
+                }
             });
         }
     }
@@ -210,6 +221,33 @@ export function handleRemoveServerModal(e: IpcMainEvent, name: string) {
         });
     } else {
         log.warn('There is already an edit server modal');
+    }
+}
+
+export function handleWelcomeScreenModal() {
+    log.debug('Intercom.handleWelcomeScreenModal');
+
+    const html = getLocalURLString('welcomeScreen.html');
+
+    const modalPreload = getLocalPreload('modalPreload.js');
+
+    const mainWindow = WindowManager.getMainWindow();
+    if (!mainWindow) {
+        return;
+    }
+    const modalPromise = ModalManager.addModal('welcomeScreen', html, modalPreload, {}, mainWindow, true);
+    if (modalPromise) {
+        modalPromise.then(() => {
+            Config.set('welcomeScreenShown', true);
+            handleNewServerModal();
+        }).catch((e) => {
+            // e is undefined for user cancellation
+            if (e) {
+                log.error(`there was an error in the welcome screen modal: ${e}`);
+            }
+        });
+    } else {
+        log.warn('There is already a welcome screen modal');
     }
 }
 

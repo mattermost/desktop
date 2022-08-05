@@ -28,6 +28,7 @@ const argsSchema = Joi.object<Args>({
     dataDir: Joi.string(),
     version: Joi.boolean(),
     fullscreen: Joi.boolean(),
+    disableFirstTimeUserExperience: Joi.boolean(),
 });
 
 const boundsInfoSchema = Joi.object<SavedWindowState>({
@@ -132,6 +133,7 @@ const configDataSchemaV3 = Joi.object<ConfigV3>({
     alwaysClose: Joi.boolean(),
     logLevel: Joi.string().default('info'),
     appLanguage: Joi.string().allow(''),
+    welcomeScreenShown: Joi.boolean().default(false),
 });
 
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};

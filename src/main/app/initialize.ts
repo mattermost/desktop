@@ -34,6 +34,7 @@ import {
     START_UPGRADE,
     START_DOWNLOAD,
     PING_DOMAIN,
+    MAIN_WINDOW_SHOWN,
 } from 'common/communication';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
@@ -68,7 +69,7 @@ import {
 } from './app';
 import {handleConfigUpdate, handleDarkModeChange} from './config';
 import {
-    addNewServerModalWhenMainWindowIsShown,
+    handleMainWindowIsShown,
     handleAppVersion,
     handleCloseTab,
     handleEditServerModal,
@@ -221,6 +222,10 @@ function initializeBeforeAppReady() {
     } else if (mainProtocol) {
         app.setAsDefaultProtocolClient(mainProtocol);
     }
+
+    if (global.args.disableFirstTimeUserExperience) {
+        Config.set('welcomeScreenShown', true);
+    }
 }
 
 function initializeInterCommunicationEventListeners() {
@@ -247,6 +252,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(SHOW_NEW_SERVER_MODAL, handleNewServerModal);
     ipcMain.on(SHOW_EDIT_SERVER_MODAL, handleEditServerModal);
     ipcMain.on(SHOW_REMOVE_SERVER_MODAL, handleRemoveServerModal);
+    ipcMain.on(MAIN_WINDOW_SHOWN, handleMainWindowIsShown);
     ipcMain.on(WINDOW_CLOSE, WindowManager.close);
     ipcMain.on(WINDOW_MAXIMIZE, WindowManager.maximize);
     ipcMain.on(WINDOW_MINIMIZE, WindowManager.minimize);
@@ -423,7 +429,7 @@ function initializeAfterAppReady() {
     // only check for non-Windows, as with Windows we have to wait for GPO teams
     if (process.platform !== 'win32' || typeof Config.registryConfigData !== 'undefined') {
         if (Config.teams.length === 0) {
-            addNewServerModalWhenMainWindowIsShown();
+            handleMainWindowIsShown();
         }
     }
 }

@@ -203,8 +203,12 @@ export class WindowManager {
     }
 
     handleResizedMainWindow = () => {
+        log.silly('WindowManager.handleResizedMainWindow');
+
         if (this.mainWindow) {
-            this.throttledWillResize(this.mainWindow?.getContentBounds());
+            const bounds = this.getBounds();
+            this.throttledWillResize(bounds);
+            ipcMain.emit(RESIZE_MODAL, null, bounds);
         }
         this.isResizing = false;
     }
@@ -228,17 +232,7 @@ export class WindowManager {
             return;
         }
 
-        let bounds;
-
-        // Workaround for linux maximizing/minimizing, which doesn't work properly because of these bugs:
-        // https://github.com/electron/electron/issues/28699
-        // https://github.com/electron/electron/issues/28106
-        if (process.platform === 'linux') {
-            const size = this.mainWindow.getSize();
-            bounds = {width: size[0], height: size[1]};
-        } else {
-            bounds = this.mainWindow.getContentBounds();
-        }
+        const bounds = this.getBounds();
 
         // Another workaround since the window doesn't update p roperly under Linux for some reason
         // See above comment
@@ -260,6 +254,24 @@ export class WindowManager {
         log.silly('setBoundsFunction', bounds.width, bounds.height);
         currentView.setBounds(bounds);
     };
+
+    private getBounds = () => {
+        let bounds;
+
+        if (this.mainWindow) {
+            // Workaround for linux maximizing/minimizing, which doesn't work properly because of these bugs:
+            // https://github.com/electron/electron/issues/28699
+            // https://github.com/electron/electron/issues/28106
+            if (process.platform === 'linux') {
+                const size = this.mainWindow.getSize();
+                bounds = {width: size[0], height: size[1]};
+            } else {
+                bounds = this.mainWindow.getContentBounds();
+            }
+        }
+
+        return bounds as Electron.Rectangle;
+    }
 
     // max retries allows the message to get to the renderer even if it is sent while the app is starting up.
     sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: any[]) => {

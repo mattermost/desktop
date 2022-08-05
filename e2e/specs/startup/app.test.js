@@ -7,6 +7,7 @@
 const robot = require('robotjs');
 
 const env = require('../../modules/environment');
+const {asyncSleep} = require('../../modules/utils');
 
 describe('startup/app', function desc() {
     this.timeout(30000);
@@ -61,5 +62,22 @@ describe('startup/app', function desc() {
         }).then(() => {
             done(new Error('Second app instance exists'));
         });
+    });
+
+    it('MM-25003 should show the welcome screen modal when first time user experience', async () => {
+        if (this.app) {
+            await this.app.close();
+        }
+        await env.clearElectronInstances();
+        env.createTestUserDataDir();
+        env.cleanTestConfig();
+        await asyncSleep(1000);
+
+        const enableFirstTimeUserExperience = true;
+        this.app = await env.getApp([], enableFirstTimeUserExperience);
+
+        const welcomeScreenModal = this.app.windows().find((window) => window.url().includes('welcomeScreen'));
+        const modalButton = await welcomeScreenModal.innerText('.WelcomeScreen .WelcomeScreen__button');
+        modalButton.should.equal('Get Started');
     });
 });
