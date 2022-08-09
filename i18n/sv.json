@@ -156,5 +156,19 @@
     "main.allowProtocolDialog.detail": "Den begärda länken är {URL}. Vill du fortsätta?",
     "main.allowProtocolDialog.button.saveProtocolAsAllowed": "Ja (Spara {protocol} som tillåtet)",
     "label.yes": "Ja",
-    "label.save": "Spara"
+    "label.save": "Spara",
+    "renderer.components.settingsPage.flashWindow.description.note": "OBS: ",
+    "renderer.components.settingsPage.flashWindow.description.linuxFunctionality": "Den här funktionen kanske inte fungerar med alla fönsterhanterare i Linux.",
+    "renderer.components.settingsPage.flashWindow.description": "Om aktiverad kommer ikonen blinka i aktivitetsfältet i några sekunder när ett nytt meddelande tas emot.",
+    "renderer.components.settingsPage.flashWindow": "Låt Mattermostikonen blinka i aktivitetsfältet när ett nytt meddelande tas emot",
+    "renderer.components.settingsPage.enableHardwareAcceleration.description": "Om aktiverad renderas Mattermosts användargränssnitt effektivare men det kan leda till försämrad stabilitet för vissa system.",
+    "renderer.components.settingsPage.enableHardwareAcceleration": "Använd GPU-hårdvaruacceleration",
+    "renderer.components.settingsPage.downloadLocation.description": "Ange mappen där hämtade filer ska sparas.",
+    "renderer.components.settingsPage.downloadLocation": "Mapp för nedladdningar",
+    "renderer.components.settingsPage.checkSpelling.specifyURL": "Ange webbadressen där ordboks-definitioner kan hämtas",
+    "renderer.components.settingsPage.checkSpelling.revertToDefault": "Återgå till standard",
+    "renderer.components.settingsPage.checkSpelling.preferredLanguages": "Välj önskat språk",
+    "renderer.components.settingsPage.checkSpelling.editSpellcheckUrl": "Ange alternativ URL till ordbok",
+    "renderer.components.settingsPage.checkSpelling.description": "Markera felstavade ord i dina meddelanden utifrån ditt systemspråk eller konfiguration av språk.",
+    "renderer.components.settingsPage.checkSpelling": "Stavningskontroll"
 }
