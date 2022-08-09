@@ -9,6 +9,8 @@ import CarouselPaginationIndicator from './CarouselPaginationIndicator';
 
 import 'renderer/css/components/Carousel.scss';
 
+const AUTO_CHANGE_TIME = 5000;
+
 type CarouselProps = {
     slides: Array<{key: string; content: React.ReactNode}>;
     startIndex?: number;
@@ -23,35 +25,44 @@ function Carousel({
     const [slideIn, setSlideIn] = useState(startIndex);
     const [slideOut, setSlideOut] = useState(NaN);
     const [direction, setDirection] = useState(ButtonDirection.NEXT);
+    const [autoChange, setAutoChange] = useState(true);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     const disableNavigation = slides.length <= 1;
 
     useEffect(() => {
-        timerRef.current = setTimeout(() => {
-            handleOnNextButtonClick();
-        }, 4000);
+        timerRef.current = autoChange ? (
+            setTimeout(() => {
+                handleOnNextButtonClick(true);
+            }, AUTO_CHANGE_TIME)
+        ) : null;
 
         return () => {
             if (timerRef.current) {
                 clearTimeout(timerRef.current);
             }
         };
-    }, [slideIn]);
+    }, [slideIn, autoChange]);
 
     const handleOnPrevButtonClick = () => {
         moveSlide(slideIn - 1);
         setDirection(ButtonDirection.PREV);
+        setAutoChange(false);
     };
 
-    const handleOnNextButtonClick = () => {
+    const handleOnNextButtonClick = (fromAuto?: boolean) => {
         moveSlide(slideIn + 1);
         setDirection(ButtonDirection.NEXT);
+
+        if (!fromAuto) {
+            setAutoChange(false);
+        }
     };
 
     const handleOnPaginationIndicatorClick = (indicatorIndex: number) => {
         moveSlide(indicatorIndex);
         setDirection(indicatorIndex > slideIn ? ButtonDirection.NEXT : ButtonDirection.PREV);
+        setAutoChange(false);
     };
 
     const moveSlide = (toIndex: number) => {

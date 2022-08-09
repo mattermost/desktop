@@ -6,7 +6,12 @@ import ReactDOM from 'react-dom';
 
 import {ModalMessage} from 'types/modals';
 
-import {MODAL_RESULT, RETRIEVE_MODAL_INFO, MODAL_INFO, GET_MODAL_UNCLOSEABLE} from 'common/communication';
+import {
+    MODAL_RESULT,
+    GET_MODAL_UNCLOSEABLE,
+    GET_DARK_MODE,
+    DARK_MODE_CHANGE,
+} from 'common/communication';
 import IntlProvider from 'renderer/intl_provider';
 import WelcomeScreen from '../../components/WelcomeScreen';
 
@@ -21,7 +26,7 @@ const WelcomeScreenModalWrapper = () => {
 
     useEffect(() => {
         window.postMessage({type: GET_MODAL_UNCLOSEABLE}, window.location.href);
-        window.postMessage({type: RETRIEVE_MODAL_INFO}, window.location.href);
+        window.postMessage({type: GET_DARK_MODE}, window.location.href);
         window.addEventListener('message', handleMessageEvent);
 
         return () => {
@@ -29,11 +34,9 @@ const WelcomeScreenModalWrapper = () => {
         };
     }, []);
 
-    const handleMessageEvent = (event: {data: ModalMessage<{darkMode: boolean}>}) => {
-        if (event.data.type === MODAL_INFO) {
-            setDarkMode(event.data.data.darkMode);
-        } else {
-            console.log(event.data.type);
+    const handleMessageEvent = (event: {data: ModalMessage<boolean>}) => {
+        if (event.data.type === DARK_MODE_CHANGE) {
+            setDarkMode(event.data.data);
         }
     };
 

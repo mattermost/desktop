@@ -42,7 +42,7 @@
             }
         }
 
-        &:focus {
+        &:focus-visible {
             box-sizing: border-box;
             border: 2px solid var(--sidebar-text-active-border);
             outline: none;
@@ -62,7 +62,7 @@
             }
         }
 
-        &:focus {
+        &:focus-visible {
             border: 2px solid var(--denim-sidebar-active-border);
             color: var(--denim-button-bg);
         }

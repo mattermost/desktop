@@ -5,10 +5,10 @@ import React, {useMemo} from 'react';
 import {useIntl, FormattedMessage} from 'react-intl';
 import classNames from 'classnames';
 
-import bullseye from '../../assets/svg/bullseye.svg';
-import channels from '../../assets/svg/channels.svg';
-import chat2 from '../../assets/svg/chat2.svg';
-import clipboard from '../../assets/svg/clipboard.svg';
+import bullseye from 'renderer/assets/svg/bullseye.svg';
+import channels from 'renderer/assets/svg/channels.svg';
+import chat2 from 'renderer/assets/svg/chat2.svg';
+import clipboard from 'renderer/assets/svg/clipboard.svg';
 
 import Carousel from 'renderer/components/Carousel';
 import Header from 'renderer/components/Header';
@@ -26,7 +26,7 @@ type WelcomeScreenProps = {
 };
 
 function WelcomeScreen({
-    darkMode = true,
+    darkMode = false,
     onGetStarted = () => null,
 }: WelcomeScreenProps) {
     const {formatMessage} = useIntl();

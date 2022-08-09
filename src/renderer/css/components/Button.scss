@@ -10,6 +10,7 @@
     border-radius: 4px;
     color: var(--button-color);
     font-weight: 600;
+    font-family: 'Open Sans';
 
     &:hover {
         background: linear-gradient(0deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.08)), var(--button-bg);
@@ -105,7 +106,7 @@
         color: var(--denim-button-bg);
     }
 
-    &:focus {
+    &:focus-visible {
         box-sizing: border-box;
         border-color: linear-gradient(0deg, rgba(var(--button-color-rgb), 0.32), rgba(var(--button-color-rgb), 0.32)), var(--denim-button-bg);
         outline: none;
@@ -138,7 +139,7 @@
         color: var(--button-color);
     }
 
-    &:focus {
+    &:focus-visible {
         box-sizing: border-box;
         border-color: linear-gradient(0deg, rgba(var(--button-color-rgb), 0.32), rgba(var(--button-color-rgb), 0.32)), var(--denim-button-bg);
     }
@@ -155,7 +156,12 @@
     font-size: 18px;
     line-height: 18px;
 
-    &:focus {
+    &:focus:not(:focus-visible) {
+        padding: 6px 8px;
+        border: 0;
+    }
+
+    &:focus-visible {
         padding: 4px;
         border: 2px solid;
     }
