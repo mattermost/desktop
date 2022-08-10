@@ -246,20 +246,14 @@ describe('main/app/intercom', () => {
             Config.set.mockImplementation((name, value) => {
                 Config[name] = value;
             });
-            Config.welcomeScreenShown = false;
         });
 
-        afterEach(() => {
-            delete Config.welcomeScreenShown;
-        });
-
-        it('should set welcomeScreenShown to the config', async () => {
+        it('should show welcomeScreen modal', async () => {
             const promise = Promise.resolve({});
             ModalManager.addModal.mockReturnValue(promise);
 
             handleWelcomeScreenModal();
-            await promise;
-            expect(Config.welcomeScreenShown).toEqual(true);
+            expect(ModalManager.addModal).toHaveBeenCalledWith('welcomeScreen', '/some/index.html', '/some/preload.js', {}, {}, true);
         });
     });
 });

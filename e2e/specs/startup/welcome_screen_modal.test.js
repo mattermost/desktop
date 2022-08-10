@@ -14,8 +14,7 @@ describe('Welcome Screen Modal', function desc() {
         env.cleanTestConfig();
         await asyncSleep(1000);
 
-        const enableFirstTimeUserExperience = true;
-        this.app = await env.getApp([], enableFirstTimeUserExperience);
+        this.app = await env.getApp();
 
         welcomeScreenModal = this.app.windows().find((window) => window.url().includes('welcomeScreen'));
     });

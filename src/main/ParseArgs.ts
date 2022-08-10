@@ -49,10 +49,6 @@ function parseArgs(args: string[]) {
         boolean('fullscreen').
         describe('fullscreen', 'Opens the application in fullscreen mode.').
 
-        alias('disableFirstTimeUserExperience', 't').
-        boolean('disableFirstTimeUserExperience').
-        describe('disableFirstTimeUserExperience', 'Disable First Time User Experience. Allows to execute e2e tests without FTUX').
-
         // Typically, yargs is capable of acquiring the app's version
         // through package.json.  However, for us this is
         // unsuccessful, perhaps due to a complication during the

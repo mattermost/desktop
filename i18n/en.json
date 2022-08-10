@@ -133,6 +133,7 @@
   "renderer.components.mainPage.downloadingUpdate": "Downloading update. {percentDone}% of {total} @ {speed}/s",
   "renderer.components.mainPage.updateAvailable": "Update available",
   "renderer.components.mainPage.updateReady": "Update ready to install",
+  "renderer.components.mainPage.titleBar": "Mattermost",
   "renderer.components.newTeamModal.error.nameRequired": "Name is required.",
   "renderer.components.newTeamModal.error.serverNameExists": "A server with the same name already exists.",
   "renderer.components.newTeamModal.error.serverUrlExists": "A server with the same URL already exists.",

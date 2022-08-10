@@ -332,10 +332,6 @@ export class Config extends EventEmitter {
         return this.combinedData?.appLanguage;
     }
 
-    get welcomeScreenShown() {
-        return this.combinedData?.welcomeScreenShown ?? defaultPreferences.welcomeScreenShown;
-    }
-
     // initialization/processing methods
 
     /**

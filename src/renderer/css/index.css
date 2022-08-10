@@ -117,6 +117,23 @@ body {
   color: rgba(243,243,243,0.7);
 }
 
+.topBar .app-title {
+  display: flex;
+  width: calc(100% - 160px);
+  justify-content: center;
+  align-items: center;
+  color: rgba(61,60,64,0.7);
+  font-family: "Open Sans", sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.2px;
+  -webkit-app-region: drag;
+}
+
+.topBar.darkMode .app-title {
+  color: rgba(221,221,221,0.64);
+}
+
 .topBar .title-bar-btns {
   position: relative;
   line-height: 40px;

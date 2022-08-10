@@ -86,7 +86,7 @@ export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: 
 }
 
 export function handleMainWindowIsShown() {
-    const showWelcomeScreen = !Config.welcomeScreenShown;
+    const showWelcomeScreen = !Config.teams.length;
     const mainWindow = WindowManager.getMainWindow();
 
     if (mainWindow) {
@@ -238,7 +238,6 @@ export function handleWelcomeScreenModal() {
     const modalPromise = ModalManager.addModal('welcomeScreen', html, modalPreload, {}, mainWindow, true);
     if (modalPromise) {
         modalPromise.then(() => {
-            Config.set('welcomeScreenShown', true);
             handleNewServerModal();
         }).catch((e) => {
             // e is undefined for user cancellation

@@ -173,16 +173,10 @@ module.exports = {
         }
     },
 
-    async getApp(args = [], enableFirstTimeUserExperience = false) {
+    async getApp(args = []) {
         const options = {
             executablePath: electronBinaryPath,
-            args: [
-                `${path.join(sourceRootDir, 'dist')}`,
-                `--data-dir=${userDataDir}`,
-                '--disable-dev-mode',
-                enableFirstTimeUserExperience ? '' : '--disable-first-time-user-experience',
-                ...args,
-            ],
+            args: [`${path.join(sourceRootDir, 'dist')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode', ...args],
         };
 
         // if (process.env.MM_DEBUG_SETTINGS) {

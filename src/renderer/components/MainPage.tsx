@@ -530,14 +530,20 @@ class MainPage extends React.PureComponent<Props, State> {
                     >
                         <i className='icon-dots-vertical'/>
                     </button>
-                    <TeamDropdownButton
-                        isDisabled={this.state.modalOpen}
-                        activeServerName={this.state.activeServerName}
-                        totalMentionCount={totalMentionCount}
-                        hasUnreads={totalUnreadCount > 0}
-                        isMenuOpen={this.state.isMenuOpen}
-                        darkMode={this.state.darkMode}
-                    />
+                    {this.props.teams.length ? (
+                        <TeamDropdownButton
+                            isDisabled={this.state.modalOpen}
+                            activeServerName={this.state.activeServerName}
+                            totalMentionCount={totalMentionCount}
+                            hasUnreads={totalUnreadCount > 0}
+                            isMenuOpen={this.state.isMenuOpen}
+                            darkMode={this.state.darkMode}
+                        />
+                    ) : (
+                        <div className='app-title'>
+                            {intl.formatMessage({id: 'renderer.components.mainPage.titleBar', defaultMessage: 'Mattermost'})}
+                        </div>
+                    )}
                     {tabsRow}
                     {upgradeIcon}
                     {titleBarButtons}
