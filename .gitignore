@@ -10,7 +10,6 @@ npm-debug.log*
 build/
 coverage/
 dist/
-mochawesome-report/
 
 test-results.xml
 test_config.json
