@@ -78,11 +78,11 @@ describe('Welcome Screen Modal', function desc() {
         playbooksSlideClass.should.contain('Carousel__slide-current');
     });
 
-    it('MM-25003 should be able to move forward through slides automatically every 4 seconds', async () => {
+    it('MM-25003 should be able to move forward through slides automatically every 5 seconds', async () => {
         const welcomeSlideClass = await welcomeScreenModal.getAttribute('#welcome', 'class');
         welcomeSlideClass.should.contain('Carousel__slide-current');
 
-        await asyncSleep(4500);
+        await asyncSleep(5500);
 
         const channelSlideClass = await welcomeScreenModal.getAttribute('#channels', 'class');
         channelSlideClass.should.contain('Carousel__slide-current');
