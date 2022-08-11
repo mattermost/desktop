@@ -118,8 +118,12 @@ body {
 }
 
 .topBar .app-title {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: flex;
-  width: calc(100% - 160px);
+  width: 100%;
+  height: 40px;
   justify-content: center;
   align-items: center;
   color: rgba(61,60,64,0.7);

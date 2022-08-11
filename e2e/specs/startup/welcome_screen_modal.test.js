@@ -28,7 +28,7 @@ describe('Welcome Screen Modal', function desc() {
 
     let welcomeScreenModal;
 
-    it('MM-25003 should show the slides in the expected order', async () => {
+    it('MM-T4975_1 should show the slides in the expected order', async () => {
         const welcomeSlideClass = await welcomeScreenModal.getAttribute('#welcome', 'class');
         welcomeSlideClass.should.contain('Carousel__slide-current');
 
@@ -48,7 +48,7 @@ describe('Welcome Screen Modal', function desc() {
         boardsSlideClass.should.contain('Carousel__slide-current');
     });
 
-    it('MM-25003 should be able to move through slides clicking the navigation buttons', async () => {
+    it('MM-T4975_2 should be able to move through slides clicking the navigation buttons', async () => {
         let welcomeSlideClass = await welcomeScreenModal.getAttribute('#welcome', 'class');
         welcomeSlideClass.should.contain('Carousel__slide-current');
 
@@ -63,7 +63,7 @@ describe('Welcome Screen Modal', function desc() {
         welcomeSlideClass.should.contain('Carousel__slide-current');
     });
 
-    it('MM-25003 should be able to move through slides clicking the pagination indicator', async () => {
+    it('MM-T4975_3 should be able to move through slides clicking the pagination indicator', async () => {
         const welcomeSlideClass = await welcomeScreenModal.getAttribute('#welcome', 'class');
         welcomeSlideClass.should.contain('Carousel__slide-current');
 
@@ -78,7 +78,7 @@ describe('Welcome Screen Modal', function desc() {
         playbooksSlideClass.should.contain('Carousel__slide-current');
     });
 
-    it('MM-25003 should be able to move forward through slides automatically every 5 seconds', async () => {
+    it('MM-T4975_4 should be able to move forward through slides automatically every 5 seconds', async () => {
         const welcomeSlideClass = await welcomeScreenModal.getAttribute('#welcome', 'class');
         welcomeSlideClass.should.contain('Carousel__slide-current');
 
@@ -88,7 +88,7 @@ describe('Welcome Screen Modal', function desc() {
         channelSlideClass.should.contain('Carousel__slide-current');
     });
 
-    it('MM-25003 should show the slides in the expected order', async () => {
+    it('MM-T4975_5 should show the slides in the expected order', async () => {
         const welcomeSlideClass = await welcomeScreenModal.getAttribute('#welcome', 'class');
         welcomeSlideClass.should.contain('Carousel__slide-current');
 
@@ -108,7 +108,7 @@ describe('Welcome Screen Modal', function desc() {
         boardsSlideClass.should.contain('Carousel__slide-current');
     });
 
-    it('MM-25003 should be able to move from last to first slide', async () => {
+    it('MM-T4975_6 should be able to move from last to first slide', async () => {
         await welcomeScreenModal.click('#PaginationIndicator3');
 
         const boardsSlideClass = await welcomeScreenModal.getAttribute('#boards', 'class');
@@ -120,7 +120,7 @@ describe('Welcome Screen Modal', function desc() {
         welcomeSlideClass.should.contain('Carousel__slide-current');
     });
 
-    it('MM-25003 should be able to move from first to last slide', async () => {
+    it('MM-T4975_7 should be able to move from first to last slide', async () => {
         const welcomeSlideClass = await welcomeScreenModal.getAttribute('#welcome', 'class');
         welcomeSlideClass.should.contain('Carousel__slide-current');
 
@@ -130,7 +130,7 @@ describe('Welcome Screen Modal', function desc() {
         boardsSlideClass.should.contain('Carousel__slide-current');
     });
 
-    it('MM-25003 should be able to click the get started button and be redirected to new server modal', async () => {
+    it('MM-T4975_8 should be able to click the get started button and be redirected to new server modal', async () => {
         await welcomeScreenModal.click('#getStartedWelcomeScreen');
 
         const newServerModal = await this.app.waitForEvent('window', {
