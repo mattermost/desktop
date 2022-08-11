@@ -215,6 +215,8 @@
   "renderer.components.teamDropdownButton.noServersConfigured": "No servers configured",
   "renderer.dropdown.addAServer": "Add a server",
   "renderer.dropdown.servers": "Servers",
+  "renderer.downloadsDropdown.Downloads": "Downloads",
+  "renderer.downloadsDropdown.ClearAll": "Clear All",
   "renderer.modals.certificate.certificateModal.certInfoButton": "Certificate Information",
   "renderer.modals.certificate.certificateModal.issuer": "Issuer",
   "renderer.modals.certificate.certificateModal.noCertsAvailable": "No certificates available",

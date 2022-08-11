@@ -128,3 +128,8 @@ export const RETRIEVED_LANGUAGE_INFORMATION = 'retrieved-language-information';
 export const GET_AVAILABLE_LANGUAGES = 'get-available-languages';
 
 export const VIEW_FINISHED_RESIZING = 'view-finished-resizing';
+
+export const OPEN_DOWNLOADS_DROPDOWN = 'open-downloads-dropdown';
+export const CLOSE_DOWNLOADS_DROPDOWN = 'close-downloads-dropdown';
+export const UPDATE_DOWNLOADS_DROPDOWN = 'update-downloads-dropdown';
+export const REQUEST_DOWNLOADS_DROPDOWN_INFO = 'request-downloads-dropdown-info';

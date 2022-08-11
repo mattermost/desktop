@@ -187,6 +187,44 @@ describe('main/Validator', () => {
         });
     });
 
+    describe('validateV4ConfigData', () => {
+        const config = {
+            autoCheckForUpdates: true,
+            autostart: true,
+            hideOnStart: false,
+            darkMode: false,
+            enableHardwareAcceleration: true,
+            startInFullscreen: false,
+            lastActiveTeam: 0,
+            logLevel: 'info',
+            minimizeToTray: false,
+            showTrayIcon: false,
+            showUnreadBadge: true,
+            spellCheckerLocales: ['en-US'],
+            spellCheckerURL: 'http://spellcheckerservice.com',
+            teams: [],
+            trayIconTheme: 'use_system',
+            useSpellChecker: true,
+            version: 4,
+            downloads: [],
+        };
+
+        it('should downloads start empty', () => {
+            const modifiedConfig = {
+                ...config,
+                downloads: [
+                    {
+                        type: 'update',
+                    },
+                ],
+            };
+            expect(Validator.validateV4ConfigData(modifiedConfig)).toStrictEqual({
+                ...config,
+                downloads: [],
+            });
+        });
+    });
+
     describe('validateAllowedProtocols', () => {
         const allowedProtocols = [
             'spotify:',

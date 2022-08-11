@@ -41,6 +41,7 @@ import {ViewManager, LoadingScreenState} from '../views/viewManager';
 import CriticalErrorHandler from '../CriticalErrorHandler';
 
 import TeamDropdownView from '../views/teamDropdownView';
+import DownloadsDropdownView from '../views/downloadsDropdownView';
 
 import {createSettingsWindow} from './settingsWindow';
 import createMainWindow from './mainWindow';
@@ -55,6 +56,7 @@ export class WindowManager {
     settingsWindow?: BrowserWindow;
     viewManager?: ViewManager;
     teamDropdown?: TeamDropdownView;
+    downloadsDropdown?: DownloadsDropdownView;
     currentServerName?: string;
 
     constructor() {
@@ -156,6 +158,7 @@ export class WindowManager {
             }
 
             this.teamDropdown = new TeamDropdownView(this.mainWindow, Config.teams, Config.darkMode, Config.enableServerManagement);
+            this.downloadsDropdown = new DownloadsDropdownView(this.mainWindow, [], Config.darkMode);
         }
         this.initializeViewManager();
 
@@ -199,6 +202,7 @@ export class WindowManager {
         this.throttledWillResize(newBounds);
         this.viewManager?.setLoadingScreenBounds();
         this.teamDropdown?.updateWindowBounds();
+        this.downloadsDropdown?.updateWindowBounds();
         ipcMain.emit(RESIZE_MODAL, null, newBounds);
     }
 
@@ -245,6 +249,7 @@ export class WindowManager {
         setTimeout(this.setCurrentViewBounds, 10, bounds);
         this.viewManager.setLoadingScreenBounds();
         this.teamDropdown?.updateWindowBounds();
+        this.downloadsDropdown?.updateWindowBounds();
         ipcMain.emit(RESIZE_MODAL, null, bounds);
     };
 

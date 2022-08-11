@@ -5,7 +5,7 @@ import log from 'electron-log';
 import Joi from 'joi';
 
 import {Args} from 'types/args';
-import {ConfigV0, ConfigV1, ConfigV2, ConfigV3, TeamWithTabs} from 'types/config';
+import {ConfigV0, ConfigV1, ConfigV2, ConfigV3, ConfigV4, TeamWithTabs} from 'types/config';
 import {SavedWindowState} from 'types/mainWindow';
 import {AppState} from 'types/appState';
 import {ComparableCertificate} from 'types/certificate';
@@ -96,7 +96,7 @@ const configDataSchemaV2 = Joi.object<ConfigV2>({
 });
 
 const configDataSchemaV3 = Joi.object<ConfigV3>({
-    version: Joi.number().min(2).default(2),
+    version: Joi.number().min(3).default(3),
     teams: Joi.array().items(Joi.object({
         name: Joi.string().required(),
         url: Joi.string().required(),
@@ -133,6 +133,47 @@ const configDataSchemaV3 = Joi.object<ConfigV3>({
     logLevel: Joi.string().default('info'),
     appLanguage: Joi.string().allow(''),
 });
+
+const configDataSchemaV4 = Joi.object<ConfigV4>({
+    version: Joi.number().min(4).default(4),
+    teams: Joi.array().items(Joi.object({
+        name: Joi.string().required(),
+        url: Joi.string().required(),
+        order: Joi.number().integer().min(0),
+        lastActiveTab: Joi.number().integer().min(0).default(0),
+        tabs: Joi.array().items(Joi.object({
+            name: Joi.string().required(),
+            order: Joi.number().integer().min(0),
+            isOpen: Joi.boolean(),
+        })).default([]),
+    })).default([]),
+    showTrayIcon: Joi.boolean().default(false),
+    trayIconTheme: Joi.any().allow('').valid('light', 'dark', 'use_system').default('use_system'),
+    minimizeToTray: Joi.boolean().default(false),
+    notifications: Joi.object({
+        flashWindow: Joi.any().valid(0, 2).default(0),
+        bounceIcon: Joi.boolean().default(false),
+        bounceIconType: Joi.any().allow('').valid('informational', 'critical').default('informational'),
+    }),
+    showUnreadBadge: Joi.boolean().default(true),
+    useSpellChecker: Joi.boolean().default(true),
+    enableHardwareAcceleration: Joi.boolean().default(true),
+    startInFullscreen: Joi.boolean().default(false),
+    autostart: Joi.boolean().default(true),
+    hideOnStart: Joi.boolean().default(false),
+    spellCheckerLocales: Joi.array().items(Joi.string()).default([]),
+    spellCheckerURL: Joi.string().allow(null),
+    darkMode: Joi.boolean().default(false),
+    downloadLocation: Joi.string(),
+    lastActiveTeam: Joi.number().integer().min(0).default(0),
+    autoCheckForUpdates: Joi.boolean().default(true),
+    alwaysMinimize: Joi.boolean(),
+    alwaysClose: Joi.boolean(),
+    logLevel: Joi.string().default('info'),
+    appLanguage: Joi.string().allow(''),
+    downloads: Joi.array().default([]),
+});
+
 
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};
 const certificateStoreSchema = Joi.object().pattern(
@@ -237,6 +278,16 @@ export function validateV3ConfigData(data: ConfigV3) {
         delete data.spellCheckerURL;
     }
     return validateAgainstSchema(data, configDataSchemaV3);
+}
+
+export function validateV4ConfigData(data: ConfigV4) {
+    data.downloads = [];
+    data.teams = cleanTeams(data.teams, cleanTeamWithTabs);
+    if (data.spellCheckerURL && !urlUtils.isValidURL(data.spellCheckerURL)) {
+        log.error('Invalid download location for spellchecker dictionary, removing from config');
+        delete data.spellCheckerURL;
+    }
+    return validateAgainstSchema(data, configDataSchemaV4);
 }
 
 // validate certificate.json

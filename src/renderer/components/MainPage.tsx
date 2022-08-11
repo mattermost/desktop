@@ -45,6 +45,8 @@ import {
     START_DOWNLOAD,
     CLOSE_TAB,
     RELOAD_CURRENT_VIEW,
+    CLOSE_DOWNLOADS_DROPDOWN,
+    OPEN_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -58,6 +60,8 @@ import TabBar from './TabBar';
 import ExtraBar from './ExtraBar';
 import ErrorView from './ErrorView';
 import TeamDropdownButton from './TeamDropdownButton';
+import DownloadsDropdownButton from './DownloadsDropdownButton';
+
 import '../css/components/UpgradeButton.scss';
 
 enum Status {
@@ -107,6 +111,8 @@ type State = {
         percent: number;
         bytesPerSecond: number;
     };
+    isDownloadsDropdownOpen: boolean;
+    showDownloadsBadge: boolean;
 };
 
 type TabViewStatus = {
@@ -145,6 +151,8 @@ class MainPage extends React.PureComponent<Props, State> {
             darkMode: this.props.darkMode,
             isMenuOpen: false,
             upgradeStatus: UpgradeStatus.NONE,
+            isDownloadsDropdownOpen: false,
+            showDownloadsBadge: false,
         };
     }
 
@@ -249,10 +257,12 @@ class MainPage extends React.PureComponent<Props, State> {
 
         window.ipcRenderer.on(UPDATE_AVAILABLE, () => {
             this.setState({upgradeStatus: UpgradeStatus.AVAILABLE});
+            this.showHideDownloadsBadge(true);
         });
 
         window.ipcRenderer.on(UPDATE_DOWNLOADED, () => {
             this.setState({upgradeStatus: UpgradeStatus.DOWNLOADED});
+            this.showHideDownloadsBadge(true);
         });
 
         window.ipcRenderer.on(UPDATE_PROGRESS, (event, total, delta, transferred, percent, bytesPerSecond) => {
@@ -268,6 +278,14 @@ class MainPage extends React.PureComponent<Props, State> {
             });
         });
 
+        window.ipcRenderer.on(CLOSE_DOWNLOADS_DROPDOWN, () => {
+            this.setState({isDownloadsDropdownOpen: false});
+        });
+
+        window.ipcRenderer.on(OPEN_DOWNLOADS_DROPDOWN, () => {
+            this.setState({isDownloadsDropdownOpen: true});
+        });
+
         if (window.process.platform !== 'darwin') {
             window.ipcRenderer.on(FOCUS_THREE_DOT_MENU, () => {
                 if (this.threeDotMenu.current) {
@@ -276,15 +294,16 @@ class MainPage extends React.PureComponent<Props, State> {
             });
         }
 
-        window.addEventListener('click', this.handleCloseTeamsDropdown);
+        window.addEventListener('click', this.handleCloseDropdowns);
     }
 
     componentWillUnmount() {
-        window.removeEventListener('click', this.handleCloseTeamsDropdown);
+        window.removeEventListener('click', this.handleCloseDropdowns);
     }
 
-    handleCloseTeamsDropdown = () => {
+    handleCloseDropdowns = () => {
         window.ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
+        window.ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
     }
 
     handleMaximizeState = (_: IpcRendererEvent, maximized: boolean) => {
@@ -357,11 +376,15 @@ class MainPage extends React.PureComponent<Props, State> {
 
     focusOnWebView = () => {
         window.ipcRenderer.send(FOCUS_BROWSERVIEW);
-        this.handleCloseTeamsDropdown();
+        this.handleCloseDropdowns();
     }
 
     reloadCurrentView = () => {
         window.ipcRenderer.send(RELOAD_CURRENT_VIEW);
+    }
+
+    showHideDownloadsBadge(value: boolean = false) {
+        this.setState({ showDownloadsBadge: value });
     }
 
     render() {
@@ -391,6 +414,15 @@ class MainPage extends React.PureComponent<Props, State> {
             darkMode: this.state.darkMode,
             fullScreen: this.state.fullScreen,
         });
+
+        const downloadsDropdown = (
+            <DownloadsDropdownButton
+                id='downloadsDropdownButton'
+                darkMode={this.state.darkMode}
+                isDownloadsDropdownOpen={this.state.isDownloadsDropdownOpen}
+                showDownloadsBadge={this.state.showDownloadsBadge}
+            />
+        );
 
         let maxButton;
         if (this.state.maximized || this.state.fullScreen) {
@@ -539,6 +571,7 @@ class MainPage extends React.PureComponent<Props, State> {
                         darkMode={this.state.darkMode}
                     />
                     {tabsRow}
+                    {downloadsDropdown}
                     {upgradeIcon}
                     {titleBarButtons}
                 </div>
