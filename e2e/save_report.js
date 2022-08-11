@@ -17,10 +17,10 @@
  *   For saving artifacts to AWS S3
  *      - AWS_S3_BUCKET, AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
  *   For saving test cases to Test Management
- *      - TM4J_ENABLE=true|false
- *      - TM4J_API_KEY=[api_key]
+ *      - ZEPHYR_ENABLE=true|false
+ *      - ZEPHYR_API_KEY=[api_key]
  *      - JIRA_PROJECT_KEY=[project_key], e.g. "MM",
- *      - TM4J_FOLDER_ID=[folder_id], e.g. 847997
+ *      - ZEPHYR_FOLDER_ID=[folder_id], e.g. 847997
  *   For sending hooks to Mattermost channels
  *      - FULL_REPORT, WEBHOOK_URL and DIAGNOSTIC_WEBHOOK_URL
  *   Test type
@@ -33,7 +33,6 @@ const chai = require('chai');
 const generator = require('mochawesome-report-generator');
 
 const {
-    //generateDiagnosticReport,
     generateShortSummary,
     generateTestReport,
     removeOldGeneratedReports,
@@ -52,12 +51,9 @@ const saveReport = async () => {
         BRANCH,
         BUILD_ID,
         BUILD_TAG,
-        // DIAGNOSTIC_WEBHOOK_URL,
-        // DIAGNOSTIC_USER_ID,
-        // DIAGNOSTIC_TEAM_ID,
         FAILURE_MESSAGE,
-        TM4J_ENABLE,
-        TM4J_CYCLE_KEY,
+        ZEPHYR_ENABLE,
+        ZEPHYR_CYCLE_KEY,
         TYPE,
         WEBHOOK_URL,
     } = process.env;
@@ -88,9 +84,9 @@ const saveReport = async () => {
 
     // Create or use an existing test cycle
     let testCycle = {};
-    if (TM4J_ENABLE === 'true') {
+    if (ZEPHYR_ENABLE === 'true') {
         const {start, end} = jsonReport.stats;
-        testCycle = TM4J_CYCLE_KEY ? {key: TM4J_CYCLE_KEY} : await createTestCycle(start, end);
+        testCycle = ZEPHYR_CYCLE_KEY ? {key: ZEPHYR_CYCLE_KEY} : await createTestCycle(start, end);
     }
 
     // Send test report to "QA: UI Test Automation" channel via webhook
@@ -99,15 +95,8 @@ const saveReport = async () => {
         await sendReport('summary report to Community channel', WEBHOOK_URL, data);
     }
 
-    // // Send diagnostic report via webhook
-    // // Send on "RELEASE" type only
-    // if (TYPE === 'RELEASE' && DIAGNOSTIC_WEBHOOK_URL && DIAGNOSTIC_USER_ID && DIAGNOSTIC_TEAM_ID) {
-    //     const data = generateDiagnosticReport(summary, {userId: DIAGNOSTIC_USER_ID, teamId: DIAGNOSTIC_TEAM_ID});
-    //     await sendReport('test info for diagnostic analysis', DIAGNOSTIC_WEBHOOK_URL, data);
-    // }
-
     // Save test cases to Test Management
-    if (TM4J_ENABLE === 'true') {
+    if (ZEPHYR_ENABLE === 'true') {
         await createTestExecutions(jsonReport, testCycle);
     }
 

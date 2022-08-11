@@ -41,7 +41,7 @@ function getStepStateSummary(steps = []) {
     return Object.entries(result).map(([key, value]) => `${value} ${key}`).join(',');
 }
 
-function getTM4JTestCases(report) {
+function getZEPHYRTestCases(report) {
     return getAllTests(report.results).
         filter((item) => /^(MM-T)\w+/g.test(item.title)). // eslint-disable-line wrap-regex
         map((item) => {
@@ -75,7 +75,7 @@ function saveToEndpoint(url, data) {
         url,
         headers: {
             'Content-Type': 'application/json; charset=utf-8',
-            Authorization: process.env.TM4J_API_KEY,
+            Authorization: process.env.ZEPHYR_API_KEY,
         },
         data,
     }).catch((error) => {
@@ -89,18 +89,18 @@ async function createTestCycle(startDate, endDate) {
         BRANCH,
         BUILD_ID,
         JIRA_PROJECT_KEY,
-        TM4J_CYCLE_NAME,
-        TM4J_FOLDER_ID,
+        ZEPHYR_CYCLE_NAME,
+        ZEPHYR_FOLDER_ID,
     } = process.env;
 
     const testCycle = {
         projectKey: JIRA_PROJECT_KEY,
-        name: TM4J_CYCLE_NAME ? `${TM4J_CYCLE_NAME} (${BUILD_ID}-${BRANCH})` : `${BUILD_ID}-${BRANCH}`,
+        name: ZEPHYR_CYCLE_NAME ? `${ZEPHYR_CYCLE_NAME} (${BUILD_ID}-${BRANCH})` : `${BUILD_ID}-${BRANCH}`,
         description: `Cypress automated test with ${BRANCH}`,
         plannedStartDate: startDate,
         plannedEndDate: endDate,
         statusName: 'Done',
-        folderId: TM4J_FOLDER_ID,
+        folderId: ZEPHYR_FOLDER_ID,
     };
 
     const response = await saveToEndpoint('https://api.zephyrscale.smartbear.com/v2/testcycles', testCycle);
@@ -111,10 +111,10 @@ async function createTestExecutions(report, testCycle) {
     const {
         BROWSER,
         JIRA_PROJECT_KEY,
-        TM4J_ENVIRONMENT_NAME,
+        ZEPHYR_ENVIRONMENT_NAME,
     } = process.env;
 
-    const testCases = getTM4JTestCases(report);
+    const testCases = getZEPHYRTestCases(report);
     const startDate = new Date(report.stats.start);
     const startTime = startDate.getTime();
 
@@ -138,7 +138,7 @@ async function createTestExecutions(report, testCycle) {
             testCycleKey: testCycle.key,
             statusName: stateResult.passed && stateResult.passed === steps.length ? 'Pass' : 'Fail',
             testScriptResults,
-            environmentName: TM4J_ENVIRONMENT_NAME || environment[BROWSER] || 'Chrome',
+            environmentName: ZEPHYR_ENVIRONMENT_NAME || environment[BROWSER] || 'Chrome',
             actualEndDate: testScriptResults[testScriptResults.length - 1].actualEndDate,
             executionTime: steps.reduce((acc, prev) => {
                 acc += prev.duration; // eslint-disable-line no-param-reassign
@@ -173,7 +173,7 @@ async function saveTestExecution(testExecution, index) {
         url: 'https://api.zephyrscale.smartbear.com/v2/testexecutions',
         headers: {
             'Content-Type': 'application/json; charset=utf-8',
-            Authorization: process.env.TM4J_API_KEY,
+            Authorization: process.env.ZEPHYR_API_KEY,
         },
         data: testExecution,
     }).then(() => {
