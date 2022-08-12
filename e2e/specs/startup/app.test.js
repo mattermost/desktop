@@ -69,7 +69,7 @@ describe('startup/app', function desc() {
         });
     });
 
-    it('MM-25003 should show the welcome screen modal when no servers exist', async () => {
+    it('MM-T4975 should show the welcome screen modal when no servers exist', async () => {
         if (this.app) {
             await this.app.close();
         }
