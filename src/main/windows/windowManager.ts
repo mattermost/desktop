@@ -103,6 +103,12 @@ export class WindowManager {
         }
     }
 
+    getMainWindowWidth = () => {
+        if (!this.mainWindow) return;
+        const size = this.mainWindow.getSize();
+        return size[0]
+    }
+
     showMainWindow = (deeplinkingURL?: string | URL) => {
         log.debug('WindowManager.showMainWindow', deeplinkingURL);
 
@@ -158,7 +164,11 @@ export class WindowManager {
             }
 
             this.teamDropdown = new TeamDropdownView(this.mainWindow, Config.teams, Config.darkMode, Config.enableServerManagement);
-            this.downloadsDropdown = new DownloadsDropdownView(this.mainWindow, [], Config.darkMode);
+
+            const mainWindowWidth = this.getMainWindowWidth();
+            if (typeof mainWindowWidth === 'number') {
+                this.downloadsDropdown = new DownloadsDropdownView(this.mainWindow, Config.downloads, Config.darkMode, mainWindowWidth);
+            }
         }
         this.initializeViewManager();
 

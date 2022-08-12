@@ -66,7 +66,7 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
     }
 
     log.info('Log level set to:', newConfig.logLevel);
-    setLoggingLevel('silly');
+    setLoggingLevel(newConfig.logLevel as LogLevel);
 
     handleUpdateMenuEvent();
     ipcMain.emit(EMIT_CONFIGURATION, true, newConfig);

@@ -13,15 +13,20 @@ export const MAX_SERVER_RETRIES = 3;
 export const MAX_LOADING_SCREEN_SECONDS = 4 * SECOND;
 
 export const TAB_BAR_HEIGHT = 40;
+export const TAB_BAR_PADDING = 4;
 export const BACK_BAR_HEIGHT = 36;
 export const THREE_DOT_MENU_WIDTH = 40;
 export const THREE_DOT_MENU_WIDTH_MAC = 80;
 export const MENU_SHADOW_WIDTH = 24;
 
+
 export const DEFAULT_WINDOW_WIDTH = 1280;
 export const DEFAULT_WINDOW_HEIGHT = 800;
 export const MINIMUM_WINDOW_WIDTH = 700;
 export const MINIMUM_WINDOW_HEIGHT = 240;
+
+export const DOWNLOADS_DROPDOWN_HEIGHT = 360;
+export const DOWNLOADS_DROPDOWN_WIDTH = 280;
 
 // supported custom login paths (oath, saml)
 export const customLoginRegexPaths = [

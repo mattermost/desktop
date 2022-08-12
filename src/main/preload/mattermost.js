@@ -30,6 +30,7 @@ import {
     DISPATCH_GET_DESKTOP_SOURCES,
     DESKTOP_SOURCES_RESULT,
     VIEW_FINISHED_RESIZING,
+    CLOSE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -245,6 +246,7 @@ setInterval(() => {
 
 window.addEventListener('click', () => {
     ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
+    ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
 });
 
 ipcRenderer.on(BROWSER_HISTORY_PUSH, (event, pathName) => {

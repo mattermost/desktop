@@ -13,7 +13,7 @@ import {
     OPEN_DOWNLOADS_DROPDOWN,
     UPDATE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
-import {TAB_BAR_HEIGHT, MENU_SHADOW_WIDTH} from 'common/utils/constants';
+import {TAB_BAR_HEIGHT, DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, TAB_BAR_PADDING} from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 
 import WindowManager from '../windows/windowManager';
@@ -26,13 +26,15 @@ export default class DownloadsDropdownView {
     window: BrowserWindow;
     windowBounds: Electron.Rectangle;
     isOpen: boolean;
+    mainWindowWidth: number;
 
-    constructor(window: BrowserWindow, downloads: DownloadItems, darkMode: boolean) {
+    constructor(window: BrowserWindow, downloads: DownloadItems, darkMode: boolean, mainWindowWidth: number) {
         this.downloads = downloads;
         this.window = window;
         this.darkMode = darkMode;
         this.isOpen = false;
-        this.bounds = { x: 10, y: 10, width: 280, height: 360 };
+        this.mainWindowWidth = mainWindowWidth;
+        this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT);
 
         this.windowBounds = this.window.getContentBounds();
 
@@ -104,11 +106,21 @@ export default class DownloadsDropdownView {
 
     getBounds = (width: number, height: number) => {
         return {
-            x: 300,
-            y: TAB_BAR_HEIGHT - MENU_SHADOW_WIDTH,
+            x: this.getX(this.mainWindowWidth),
+            y: this.getY(),
             width,
             height,
         };
+    }
+
+    getX = (mainWidth: number) => {
+        const result = mainWidth - DOWNLOADS_DROPDOWN_WIDTH - TAB_BAR_PADDING;
+        if (result <= DOWNLOADS_DROPDOWN_WIDTH) return 0;
+        return result;
+    }
+
+    getY = () => {
+        return TAB_BAR_HEIGHT;
     }
 
     destroy = () => {

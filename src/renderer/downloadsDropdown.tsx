@@ -73,17 +73,17 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
                     maxWidth: this.state.windowBounds ? (this.state.windowBounds.width) : undefined,
                 }}
             >
-                    <div className='DownloadsDropdown__header'>
-                        <span className='DownloadsDropdown__Downloads'>
-                            Downloads
-                        </span>
-                    </div>
-                    {/* <hr className='DownloadsDropdown__divider'/>
-                    {this.state.orderedDownloads?.map((downloadItem) => {
-                        return (
-                            <div>{JSON.stringify(downloadItem)}</div>
-                        )
-                    })} */}
+                <div className='DownloadsDropdown__header'>
+                    <span className='DownloadsDropdown__Downloads'>
+                        Downloads
+                    </span>
+                </div>
+                <hr className='DownloadsDropdown__divider'/>
+                {this.state.orderedDownloads?.map((downloadItem) => {
+                    return (
+                        <div>{JSON.stringify(downloadItem)}</div>
+                    )
+                })}
             </div>
         );
     }

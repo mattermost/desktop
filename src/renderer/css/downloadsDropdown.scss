@@ -9,21 +9,19 @@ body {
 }
 
 #app {
-    padding: 24px;
-    display: inline-block;
     max-width: 280px;
+    padding: 0 24px 24px;
 }
 
 .DownloadsDropdown {
     display: flex;
     flex-direction: column;
     padding: 8px 0px;
-    background: #ff0000;
+    background: #ffffff;
     border: 1px solid rgba(61, 60, 64, 0.16);
     box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
     border-radius: 4px;
-    height: 360px;
-    min-height: 360px;
+    max-height: 132px;
     max-height: 360px;
     width: 280px;
 }
