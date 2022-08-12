@@ -13,7 +13,7 @@ import {
     OPEN_DOWNLOADS_DROPDOWN,
     UPDATE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
-import {TAB_BAR_HEIGHT, DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, TAB_BAR_PADDING} from 'common/utils/constants';
+import {TAB_BAR_HEIGHT, DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, TAB_BAR_PADDING, DOWNLOADS_DROPDOWN_FULL_WIDTH} from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 
 import WindowManager from '../windows/windowManager';
@@ -26,17 +26,15 @@ export default class DownloadsDropdownView {
     window: BrowserWindow;
     windowBounds: Electron.Rectangle;
     isOpen: boolean;
-    mainWindowWidth: number;
 
-    constructor(window: BrowserWindow, downloads: DownloadItems, darkMode: boolean, mainWindowWidth: number) {
+    constructor(window: BrowserWindow, downloads: DownloadItems, darkMode: boolean) {
         this.downloads = downloads;
         this.window = window;
         this.darkMode = darkMode;
         this.isOpen = false;
-        this.mainWindowWidth = mainWindowWidth;
-        this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT);
 
         this.windowBounds = this.window.getContentBounds();
+        this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT);
 
         const preload = getLocalPreload('downloadsDropdown.js');
         this.view = new BrowserView({webPreferences: {
@@ -45,13 +43,11 @@ export default class DownloadsDropdownView {
             // Workaround for this issue: https://github.com/electron/electron/issues/30993
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
-            transparent: false,
+            transparent: true,
         }});
 
         this.view.webContents.loadURL(getLocalURLString('downloadsDropdown.html'));
         this.window.addBrowserView(this.view);
-
-        this.view.webContents.on('did-fail-load', (msg, ...rest) => log.error(msg, rest))
 
         ipcMain.on(OPEN_DOWNLOADS_DROPDOWN, this.handleOpen);
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN, this.handleClose);
@@ -66,9 +62,14 @@ export default class DownloadsDropdownView {
         this.updateDownloadsDropdown();
     }
 
+    /**
+     * This is called every time the "window" is resized so that we can position
+     * the downloads dropdown at the correct position
+     */
     updateWindowBounds = () => {
         this.windowBounds = this.window.getContentBounds();
         this.updateDownloadsDropdown();
+        this.repositionDownloadsDropdown();
     }
 
     updateDownloadsDropdown = () => {
@@ -106,21 +107,28 @@ export default class DownloadsDropdownView {
 
     getBounds = (width: number, height: number) => {
         return {
-            x: this.getX(this.mainWindowWidth),
+            x: this.getX(this.windowBounds.width),
             y: this.getY(),
             width,
             height,
         };
     }
 
-    getX = (mainWidth: number) => {
-        const result = mainWidth - DOWNLOADS_DROPDOWN_WIDTH - TAB_BAR_PADDING;
+    getX = (windowWidth: number) => {
+        const result = windowWidth - DOWNLOADS_DROPDOWN_FULL_WIDTH;
         if (result <= DOWNLOADS_DROPDOWN_WIDTH) return 0;
         return result;
     }
 
     getY = () => {
         return TAB_BAR_HEIGHT;
+    }
+
+    repositionDownloadsDropdown = () => {
+        this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT);
+        if (this.isOpen) {
+            this.view.setBounds(this.bounds);
+        }
     }
 
     destroy = () => {

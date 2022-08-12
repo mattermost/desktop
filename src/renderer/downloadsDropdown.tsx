@@ -13,7 +13,6 @@ import {
     REQUEST_DOWNLOADS_DROPDOWN_INFO,
     UPDATE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
-import {TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {DownloadItem, DownloadItems} from 'types/config';
 
 import './css/downloadsDropdown.scss';
@@ -68,10 +67,6 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
                 className={classNames('DownloadsDropdown', {
                     darkMode: this.state.darkMode,
                 })}
-                style={{
-                    maxHeight: this.state.windowBounds ? (this.state.windowBounds.height - TAB_BAR_HEIGHT - 16) : undefined,
-                    maxWidth: this.state.windowBounds ? (this.state.windowBounds.width) : undefined,
-                }}
             >
                 <div className='DownloadsDropdown__header'>
                     <span className='DownloadsDropdown__Downloads'>
