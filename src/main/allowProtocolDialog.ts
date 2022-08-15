@@ -10,7 +10,7 @@ import log from 'electron-log';
 
 import {localizeMessage} from 'main/i18nManager';
 
-import {protocols} from '../../electron-builder.json';
+import buildConfig from 'common/config/buildConfig';
 
 import * as Validator from './Validator';
 import WindowManager from './windows/windowManager';
@@ -31,11 +31,7 @@ export class AllowProtocolDialog {
             }
             this.addScheme('http');
             this.addScheme('https');
-            protocols.forEach((protocol) => {
-                if (protocol.schemes && protocol.schemes.length > 0) {
-                    protocol.schemes.forEach(this.addScheme);
-                }
-            });
+            buildConfig.allowedProtocols.forEach(this.addScheme);
         });
     }
 
