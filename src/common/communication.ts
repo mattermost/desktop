@@ -116,9 +116,6 @@ export const UPDATE_PATHS = 'update-paths';
 
 export const UPDATE_URL_VIEW_WIDTH = 'update-url-view-width';
 
-export const DISPATCH_GET_DESKTOP_SOURCES = 'dispatch-get-desktop-sources';
-export const DESKTOP_SOURCES_RESULT = 'desktop-sources-result';
-
 export const RELOAD_CURRENT_VIEW = 'reload-current-view';
 
 export const PING_DOMAIN = 'ping-domain';
@@ -129,3 +126,12 @@ export const RETRIEVED_LANGUAGE_INFORMATION = 'retrieved-language-information';
 export const GET_AVAILABLE_LANGUAGES = 'get-available-languages';
 
 export const VIEW_FINISHED_RESIZING = 'view-finished-resizing';
+
+// Calls
+export const DISPATCH_GET_DESKTOP_SOURCES = 'dispatch-get-desktop-sources';
+export const DESKTOP_SOURCES_RESULT = 'desktop-sources-result';
+
+export const CALLS_CLIENT_CONNECT = 'calls-client-connect';
+export const CALLS_JOIN_CALL = 'calls-join-call';
+export const CALLS_LEAVE_CALL = 'calls-leave-call';
+

@@ -7,6 +7,8 @@ import path from 'path';
 import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer} from 'electron';
 import log from 'electron-log';
 
+import {CallsJoinCallMessage} from 'types/calls';
+
 import {
     MAXIMIZE_CHANGE,
     HISTORY,
@@ -27,6 +29,9 @@ import {
     DESKTOP_SOURCES_RESULT,
     RELOAD_CURRENT_VIEW,
     VIEW_FINISHED_RESIZING,
+    CALLS_CLIENT_CONNECT,
+    CALLS_JOIN_CALL,
+    CALLS_LEAVE_CALL,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
@@ -45,6 +50,8 @@ import TeamDropdownView from '../views/teamDropdownView';
 import {createSettingsWindow} from './settingsWindow';
 import createMainWindow from './mainWindow';
 
+import createCallsWidgetWindow from './callsWidgetWindow';
+
 // singleton module to manage application's windows
 
 export class WindowManager {
@@ -53,6 +60,7 @@ export class WindowManager {
     mainWindow?: BrowserWindow;
     mainWindowReady: boolean;
     settingsWindow?: BrowserWindow;
+    callsWidgetWindow?: BrowserWindow;
     viewManager?: ViewManager;
     teamDropdown?: TeamDropdownView;
     currentServerName?: string;
@@ -75,11 +83,36 @@ export class WindowManager {
         ipcMain.on(DISPATCH_GET_DESKTOP_SOURCES, this.handleGetDesktopSources);
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
         ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
+        ipcMain.on(CALLS_JOIN_CALL, this.showCallsWidgetWindow);
+        ipcMain.on(CALLS_LEAVE_CALL, () => this.callsWidgetWindow?.close());
     }
 
     handleUpdateConfig = () => {
         if (this.viewManager) {
             this.viewManager.reloadConfiguration(Config.teams || []);
+        }
+    }
+
+    showCallsWidgetWindow = (event: IpcMainEvent, viewName: string, msg: CallsJoinCallMessage) => {
+        log.info('WindowManager.showCallsWidgetWindow');
+        if (this.callsWidgetWindow) {
+            this.callsWidgetWindow.show();
+        } else {
+            const currentView = this.viewManager?.views.get(viewName);
+            if (!currentView) {
+                log.error('unable to create calls widget window: currentView is missing');
+                return;
+            }
+
+            this.callsWidgetWindow = createCallsWidgetWindow(this.mainWindow!, {
+                siteURL: currentView.serverInfo.remoteInfo.siteURL!,
+                channelID: msg.channelID,
+                title: msg.title,
+            });
+            this.callsWidgetWindow.on('closed', () => {
+                delete this.callsWidgetWindow;
+            });
+            this.callsWidgetWindow.webContents.send(CALLS_CLIENT_CONNECT, msg);
         }
     }
 
