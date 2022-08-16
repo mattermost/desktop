@@ -521,6 +521,11 @@ class MainPage extends React.PureComponent<Props, State> {
                     ref={this.topBar}
                     className={'topBar-bg'}
                 >
+                    {window.process.platform !== 'linux' && this.props.teams.length === 0 && (
+                        <div className='app-title'>
+                            {intl.formatMessage({id: 'renderer.components.mainPage.titleBar', defaultMessage: 'Mattermost'})}
+                        </div>
+                    )}
                     <button
                         className='three-dot-menu'
                         onClick={this.openMenu}
@@ -530,7 +535,7 @@ class MainPage extends React.PureComponent<Props, State> {
                     >
                         <i className='icon-dots-vertical'/>
                     </button>
-                    {this.props.teams.length && (
+                    {this.props.teams.length !== 0 && (
                         <TeamDropdownButton
                             isDisabled={this.state.modalOpen}
                             activeServerName={this.state.activeServerName}
@@ -539,11 +544,6 @@ class MainPage extends React.PureComponent<Props, State> {
                             isMenuOpen={this.state.isMenuOpen}
                             darkMode={this.state.darkMode}
                         />
-                    )}
-                    {window.process.platform !== 'linux' && !this.props.teams.length && (
-                        <div className='app-title'>
-                            {intl.formatMessage({id: 'renderer.components.mainPage.titleBar', defaultMessage: 'Mattermost'})}
-                        </div>
                     )}
                     {tabsRow}
                     {upgradeIcon}
