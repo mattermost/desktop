@@ -28,12 +28,7 @@
     {
       "name": "Mattermost",
       "schemes": [
-        "mattermost",
-        "http",
-        "https",
-        "ftp",
-        "mailto",
-        "tel"
+        "mattermost"
       ]
     }
   ],
