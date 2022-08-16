@@ -130,7 +130,7 @@
     "renderer.components.newTeamModal.error.nameRequired": "Naam is verplicht.",
     "renderer.components.mainPage.updateReady": "Update klaar om geïnstalleerd te worden",
     "renderer.components.mainPage.updateAvailable": "Update beschikbaar",
-    "renderer.components.mainPage.downloadingUpdate": "Update wordt gedownload. {percentDone}% van {total} @ {speed}/s",
+    "renderer.components.mainPage.downloadingUpdate": "Update wordt gedownload. {percentDone}% van {totaal} @ {speed}/s",
     "renderer.components.mainPage.contextMenu.ariaLabel": "Context menu",
     "renderer.components.extraBar.back": "Terug",
     "renderer.components.errorView.troubleshooting.urlIsCorrect.appNameIsCorrect": "De {appName} URL <link>{url}</link> correct is",

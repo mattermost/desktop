@@ -1,0 +1,17 @@
+{
+    "renderer.modals.certificate.certificateModal.subject": "Assumpte",
+    "renderer.modals.login.loginModal.password": "Contrasenya",
+    "label.yes": "Sí",
+    "label.save": "Desa",
+    "label.remove": "Elimina",
+    "label.ok": "D'acord",
+    "label.no": "No",
+    "label.login": "Inicia sessió",
+    "label.close": "Tanca",
+    "label.change": "Canvia",
+    "label.cancel": "Cancel·la",
+    "label.add": "Afegeix",
+    "label.accept": "Accepta",
+    "common.tabs.TAB_MESSAGING": "Canals",
+    "common.permissions.canBasicAuth": "Autenticació web"
+}
