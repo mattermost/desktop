@@ -149,5 +149,9 @@
     "main.menus.app.help.restartAndUpdate": "Uruchom ponownie i Zaktualizuj",
     "main.menus.app.help.learnMore": "Dowiedz się Więcej...",
     "main.menus.app.help.downloadUpdate": "Pobierz Aktualizację",
-    "main.menus.app.help.commitString": " commit: {hashVersion}"
+    "main.menus.app.help.commitString": " commit: {hashVersion}",
+    "renderer.components.settingsPage.bounceIcon": "Odbijanie ikony Docka",
+    "renderer.components.settingsPage.appOptions": "Opcje Aplikacji",
+    "renderer.components.settingsPage.appLanguage.useSystemDefault": "Użyj domyślnych ustawień systemu",
+    "renderer.components.settingsPage.appLanguage.description": "Wybiera język, którego Aplikacja Desktopowa będzie używać dla elementów menu i wyskakujących okienek. Nadal w fazie beta, w niektórych językach może brakować ciągów tłumaczeniowych."
 }
