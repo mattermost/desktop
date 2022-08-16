@@ -7,6 +7,7 @@
 const robot = require('robotjs');
 
 const env = require('../../modules/environment');
+const {asyncSleep} = require('../../modules/utils');
 
 describe('startup/app', function desc() {
     this.timeout(30000);
@@ -15,6 +16,11 @@ describe('startup/app', function desc() {
         env.createTestUserDataDir();
         env.cleanTestConfig();
         this.app = await env.getApp();
+
+        // Skip welcome screen modal
+        const welcomeScreenModal = this.app.windows().find((window) => window.url().includes('welcomeScreen'));
+        welcomeScreenModal.click('.WelcomeScreen .WelcomeScreen__button');
+        await asyncSleep(500);
     });
 
     afterEach(async () => {
@@ -41,10 +47,10 @@ describe('startup/app', function desc() {
         existingModal.should.not.be.null;
     });
 
-    it('MM-T4399_2 should show no servers configured in dropdown when no servers exist', async () => {
+    it('MM-T4985 should show app name in title bar when no servers exist', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        const dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
-        dropdownButtonText.should.equal('No servers configured');
+        const titleBarText = await mainWindow.innerText('.app-title');
+        titleBarText.should.equal('Mattermost');
     });
 
     it('MM-T4400 should be stopped when the app instance already exists', (done) => {
@@ -61,5 +67,21 @@ describe('startup/app', function desc() {
         }).then(() => {
             done(new Error('Second app instance exists'));
         });
+    });
+
+    it('MM-T4975 should show the welcome screen modal when no servers exist', async () => {
+        if (this.app) {
+            await this.app.close();
+        }
+        await env.clearElectronInstances();
+        env.createTestUserDataDir();
+        env.cleanTestConfig();
+        this.app = await env.getApp();
+
+        await asyncSleep(500);
+
+        const welcomeScreenModal = this.app.windows().find((window) => window.url().includes('welcomeScreen'));
+        const modalButton = await welcomeScreenModal.innerText('.WelcomeScreen .WelcomeScreen__button');
+        modalButton.should.equal('Get Started');
     });
 });
