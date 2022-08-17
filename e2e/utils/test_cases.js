@@ -1,7 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-
 /* eslint-disable no-console */
 
 // See reference: https://support.smartbear.com/tm4j-cloud/api-docs/

@@ -20,7 +20,7 @@ import {
     BROWSER_HISTORY_PUSH,
     UPDATE_LAST_ACTIVE,
     UPDATE_URL_VIEW_WIDTH,
-    SHOW_NEW_SERVER_MODAL,
+    MAIN_WINDOW_SHOWN,
 } from 'common/communication';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
@@ -215,7 +215,7 @@ export class ViewManager {
             }
         } else {
             this.mainWindow.webContents.send(SET_ACTIVE_VIEW, null, null);
-            ipcMain.emit(SHOW_NEW_SERVER_MODAL);
+            ipcMain.emit(MAIN_WINDOW_SHOWN);
         }
     }
 
