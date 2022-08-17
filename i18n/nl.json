@@ -230,5 +230,9 @@
     "main.autoUpdater.download.dialog.button.download": "Downloaden",
     "main.app.utils.migrateMacAppStore.dialog.message": "Bestaande configuratie importeren",
     "main.app.utils.migrateMacAppStore.button.selectAndImport": "Selecteer Map en Importeren",
-    "main.app.utils.migrateMacAppStore.dialog.detail": "Het lijkt erop dat er een bestaande {appName} configuratie bestaat, wil je deze importeren? Je wordt gevraagd om de juiste configuratiemap te kiezen."
+    "main.app.utils.migrateMacAppStore.dialog.detail": "Het lijkt erop dat er een bestaande {appName} configuratie bestaat, wil je deze importeren? Je wordt gevraagd om de juiste configuratiemap te kiezen.",
+    "renderer.components.welcomeScreen.slides.boards.title": "Boards",
+    "renderer.components.welcomeScreen.slides.boards.subtitle": "Telkens tijdig opleveren, elke keer weer, met een project- en taakbeheeroplossing die is gebouwd voor digitale diensten.",
+    "renderer.components.welcomeScreen.button.getStarted": "Aan de slag",
+    "renderer.components.mainPage.titleBar": "Mattermost"
 }
