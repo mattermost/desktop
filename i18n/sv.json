@@ -230,5 +230,15 @@
     "renderer.components.settingsPage.launchAppMinimized": "Starta appen minimerad",
     "renderer.components.settingsPage.header": "Inställningar",
     "renderer.components.settingsPage.fullscreen.description": "Om aktiverad så öppnas Mattermost-appen alltid i helskärm",
-    "renderer.components.settingsPage.fullscreen": "Öppna appen i helskärmsläge"
+    "renderer.components.settingsPage.fullscreen": "Öppna appen i helskärmsläge",
+    "renderer.components.welcomeScreen.slides.welcome.title": "Välkommen",
+    "renderer.components.welcomeScreen.slides.welcome.subtitle": "Mattermost är en plattform byggd på öppen källkod för samarbete mellan utvecklare. Säker, flexibel och integrerad med de verktyg du älskar.",
+    "renderer.components.welcomeScreen.slides.playbooks.title": "Playbooks",
+    "renderer.components.welcomeScreen.slides.palybooks.subtitle": "Gå snabbare fram och gör färre misstag med checklistor, automatiseringar och verktygsintegreringar som ger kraft åt teamets arbetsflöden.",
+    "renderer.components.welcomeScreen.slides.channels.title": "Channels",
+    "renderer.components.welcomeScreen.slides.channels.subtitle": "All kommunikation i teamet på ett ställe.<br></br>Säkert samarbete, byggt för utvecklare.",
+    "renderer.components.welcomeScreen.slides.boards.title": "Boards",
+    "renderer.components.welcomeScreen.slides.boards.subtitle": "Leverera i tid, varje gång, med en lösning för projekt och uppgifter som är designad för digital verksamhet.",
+    "renderer.components.welcomeScreen.button.getStarted": "Kom igång",
+    "renderer.components.mainPage.titleBar": "Mattermost"
 }
