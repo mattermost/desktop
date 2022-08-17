@@ -4,31 +4,30 @@
 import classNames from 'classnames';
 import React, {useEffect} from 'react';
 
-import { CLOSE_DOWNLOADS_DROPDOWN, OPEN_DOWNLOADS_DROPDOWN } from 'common/communication';
+import {CLOSE_DOWNLOADS_DROPDOWN, OPEN_DOWNLOADS_DROPDOWN} from 'common/communication';
 
-import '../css/components/DownloadsDropdownButton.scss';
+import '../../css/components/DownloadsDropdown/DownloadsDropdownButton.scss';
 
 type Props = {
-    id: string;
     isDownloadsDropdownOpen: boolean;
     darkMode: boolean;
     showDownloadsBadge: boolean;
 }
 
-const DownloadsDropDownButtonBadge = ({ show }: { show: boolean }) => (
+const DownloadsDropDownButtonBadge = ({show}: { show: boolean }) => (
     show ? <div className='DownloadsDropdownButton__badgeContainer'>
-        <span className='DownloadsDropdownButton__badge'></span>
+        <span className='DownloadsDropdownButton__badge'/>
     </div> : null
-)
+);
 
-const DownloadsDropdownButton: React.FC<Props> = ({ darkMode, isDownloadsDropdownOpen, showDownloadsBadge }: Props) => {
+const DownloadsDropdownButton: React.FC<Props> = ({darkMode, isDownloadsDropdownOpen, showDownloadsBadge}: Props) => {
     const buttonRef: React.RefObject<HTMLButtonElement> = React.createRef();
 
     useEffect(() => {
         if (!isDownloadsDropdownOpen) {
             buttonRef.current?.blur();
         }
-    }, [isDownloadsDropdownOpen]);
+    }, [isDownloadsDropdownOpen, buttonRef]);
 
     const handleToggleButton = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();

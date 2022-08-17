@@ -19,6 +19,7 @@ export enum DownloadItemStatusEnum {
     COMPLETED = 'completed',
     CANCELLED = 'cancelled',
     INTERRUPTED = 'interrupted',
+    DOWNLOADING = 'downloading',
 }
 export enum DownloadItemTypeEnum {
     FILE = 'file',

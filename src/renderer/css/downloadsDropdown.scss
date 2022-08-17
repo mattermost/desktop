@@ -67,6 +67,29 @@ body {
                 margin: 8px 0;                
             }
 
+            .DownloadsDropdown__list {
+                .DownloadsDropdown__Item__File {
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: flex-start;
+                    align-items: center;
+                    height: 100%;
+                    padding: 6px;
+                    
+                    .DownloadsDropdown__Item__File__Body {
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+                        justify-content: space-between;
+                        width: 100%;
+                    }
+
+                    .DownloadsDropdown__Item__File__ProgressBar {
+                        width: 100%;
+                    }
+                }
+            }
+
             &.darkMode {
                 background: #1f1f1f;
 
@@ -80,7 +103,7 @@ body {
 
                 .DownloadsDropdown__list {
                     color: #DDD;
-                }    
+                }
             }
         }
     }

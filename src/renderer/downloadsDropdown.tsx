@@ -18,6 +18,7 @@ import {
 import IntlProvider from './intl_provider';
 
 import './css/downloadsDropdown.scss';
+import DownloadsDropdownItemFile from './components/DownloadsDropdown/DownloadItemFile';
 
 type State = {
     downloads?: DownloadItems;
@@ -100,7 +101,10 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
                     <div className='DownloadsDropdown__list'>
                         {this.state.orderedDownloads?.map((downloadItem: ConfigDownloadItem) => {
                             return (
-                                <div key={downloadItem.addedAt}>{JSON.stringify(downloadItem)}</div>
+                                <DownloadsDropdownItemFile
+                                    item={downloadItem}
+                                    key={downloadItem.addedAt}
+                                />
                             );
                         })}
                     </div>

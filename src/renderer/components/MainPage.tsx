@@ -60,7 +60,7 @@ import TabBar from './TabBar';
 import ExtraBar from './ExtraBar';
 import ErrorView from './ErrorView';
 import TeamDropdownButton from './TeamDropdownButton';
-import DownloadsDropdownButton from './DownloadsDropdownButton';
+import DownloadsDropdownButton from './DownloadsDropdown/DownloadsDropdownButton';
 
 import '../css/components/UpgradeButton.scss';
 
@@ -383,8 +383,8 @@ class MainPage extends React.PureComponent<Props, State> {
         window.ipcRenderer.send(RELOAD_CURRENT_VIEW);
     }
 
-    showHideDownloadsBadge(value: boolean = false) {
-        this.setState({ showDownloadsBadge: value });
+    showHideDownloadsBadge(value = false) {
+        this.setState({showDownloadsBadge: value});
     }
 
     render() {
@@ -417,7 +417,6 @@ class MainPage extends React.PureComponent<Props, State> {
 
         const downloadsDropdown = (
             <DownloadsDropdownButton
-                id='downloadsDropdownButton'
                 darkMode={this.state.darkMode}
                 isDownloadsDropdownOpen={this.state.isDownloadsDropdownOpen}
                 showDownloadsBadge={this.state.showDownloadsBadge}
