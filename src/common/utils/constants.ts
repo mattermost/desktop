@@ -19,7 +19,6 @@ export const THREE_DOT_MENU_WIDTH = 40;
 export const THREE_DOT_MENU_WIDTH_MAC = 80;
 export const MENU_SHADOW_WIDTH = 24;
 
-
 export const DEFAULT_WINDOW_WIDTH = 1280;
 export const DEFAULT_WINDOW_HEIGHT = 800;
 export const MINIMUM_WINDOW_WIDTH = 700;
@@ -28,6 +27,7 @@ export const MINIMUM_WINDOW_HEIGHT = 240;
 export const DOWNLOADS_DROPDOWN_HEIGHT = 360;
 export const DOWNLOADS_DROPDOWN_WIDTH = 280;
 export const DOWNLOADS_DROPDOWN_PADDING = 24;
+
 // In  order to display the box-shadow & radius on the left + right, use this WIDTH in the browserView for downloadsDropdown
 export const DOWNLOADS_DROPDOWN_FULL_WIDTH = DOWNLOADS_DROPDOWN_PADDING + DOWNLOADS_DROPDOWN_WIDTH + TAB_BAR_PADDING;
 

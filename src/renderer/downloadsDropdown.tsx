@@ -4,16 +4,18 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import classNames from 'classnames';
-import { FormattedMessage } from 'react-intl';
+import {FormattedMessage} from 'react-intl';
 
-import IntlProvider from './intl_provider';
+import {ConfigDownloadItem, DownloadItems} from 'types/config';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN,
+    REQUEST_CLEAR_DOWNLOADS_DROPDOWN,
     REQUEST_DOWNLOADS_DROPDOWN_INFO,
     UPDATE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
-import {DownloadItem, DownloadItems} from 'types/config';
+
+import IntlProvider from './intl_provider';
 
 import './css/downloadsDropdown.scss';
 
@@ -27,7 +29,7 @@ type State = {
 class DownloadsDropdown extends React.PureComponent<Record<string, never>, State> {
     constructor(props: Record<string, never>) {
         super(props);
-        
+
         this.state = {
             downloads: [],
             orderedDownloads: [],
@@ -36,12 +38,16 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
         window.addEventListener('message', this.handleMessageEvent);
     }
 
+    componentDidMount() {
+        window.postMessage({type: REQUEST_DOWNLOADS_DROPDOWN_INFO}, window.location.href);
+    }
+
     handleMessageEvent = (event: MessageEvent) => {
         if (event.data.type === UPDATE_DOWNLOADS_DROPDOWN) {
             const {downloads, darkMode, windowBounds} = event.data.data;
             this.setState({
                 downloads,
-                orderedDownloads: downloads.concat().sort((a: DownloadItem, b: DownloadItem) => a.addedAt - b.addedAt),
+                orderedDownloads: downloads.concat().sort((a: ConfigDownloadItem, b: ConfigDownloadItem) => a.addedAt - b.addedAt),
                 darkMode,
                 windowBounds,
             });
@@ -56,35 +62,55 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
         event.stopPropagation();
     }
 
-    componentDidMount() {
-        window.postMessage({type: REQUEST_DOWNLOADS_DROPDOWN_INFO}, window.location.href);
+    clearAll = () => {
+        this.setState({
+            downloads: [],
+            orderedDownloads: [],
+        });
+        window.postMessage({type: REQUEST_CLEAR_DOWNLOADS_DROPDOWN}, window.location.href);
     }
 
     render() {
         return (
-            <div
-                onClick={this.preventPropagation}
-                className={classNames('DownloadsDropdown', {
-                    darkMode: this.state.darkMode,
-                })}
-            >
-                <div className='DownloadsDropdown__header'>
-                    <span className='DownloadsDropdown__Downloads'>
-                        Downloads
-                    </span>
+            <IntlProvider>
+                <div
+                    onClick={this.preventPropagation}
+                    className={classNames('DownloadsDropdown', {
+                        darkMode: this.state.darkMode,
+                    })}
+                >
+                    <div className='DownloadsDropdown__header'>
+                        <div className='DownloadsDropdown__Downloads'>
+                            <FormattedMessage
+                                id='renderer.downloadsDropdown.Downloads'
+                                defaultMessage='Downloads'
+                            />
+                        </div>
+                        <div
+                            className={'DownloadsDropdown__clearAllButton'}
+                            onClick={this.clearAll}
+                        >
+                            <FormattedMessage
+                                id='renderer.downloadsDropdown.ClearAll'
+                                defaultMessage='Clear All'
+                            />
+                        </div>
+                    </div>
+                    <hr className='DownloadsDropdown__divider'/>
+                    <div className='DownloadsDropdown__list'>
+                        {this.state.orderedDownloads?.map((downloadItem: ConfigDownloadItem) => {
+                            return (
+                                <div key={downloadItem.addedAt}>{JSON.stringify(downloadItem)}</div>
+                            );
+                        })}
+                    </div>
                 </div>
-                <hr className='DownloadsDropdown__divider'/>
-                {this.state.orderedDownloads?.map((downloadItem) => {
-                    return (
-                        <div>{JSON.stringify(downloadItem)}</div>
-                    )
-                })}
-            </div>
+            </IntlProvider>
         );
     }
 }
 
 ReactDOM.render(
-    <DownloadsDropdown />,
+    <DownloadsDropdown/>,
     document.getElementById('app'),
 );

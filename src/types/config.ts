@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {DownloadItemStatusEnum, DownloadItemTypeEnum} from 'main/downloadsManager';
+
 export type Tab = {
     name: string;
     order: number;
@@ -161,16 +163,16 @@ export type MigrationInfo = {
     masConfigs: boolean;
 }
 
-export type DownloadItemStatus = 'DOWNLOADING' | 'COMPLETED' | 'CANCELLED'
+export type DownloadItemState = 'completed' | 'cancelled' | 'interrupted';
 
-export type DownloadItem = {
-    type: 'file' | 'update';
+export type ConfigDownloadItem = {
+    type: DownloadItemTypeEnum;
     filename: string;
-    status: DownloadItemStatus;
+    status: DownloadItemStatusEnum;
     progress: number;
     location: string;
     iconUrl: string | null;
     addedAt: number;
 }
 
-export type DownloadItems = DownloadItem[]
+export type DownloadItems = ConfigDownloadItem[]

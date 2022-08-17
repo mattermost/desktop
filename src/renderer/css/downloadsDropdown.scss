@@ -6,58 +6,82 @@ body {
     background-color: transparent;
     font-family: Open Sans;
     overflow: hidden;
-}
 
-#app {
-    width: 328px; // 280px + 24px*2
-    padding: 0 24px 24px;
-}
+    #app {
+        width: 328px; // 280px + 24px*2
+        padding: 0 24px 24px;
 
-.DownloadsDropdown {
-    display: flex;
-    flex-direction: column;
-    padding: 8px 0px;
-    background: #ffffff;
-    border: 1px solid rgba(61, 60, 64, 0.16);
-    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
-    border-radius: 4px;
-    max-height: 132px;
-    max-height: 360px;
-    width: 280px;
-    max-width: 280px;
-}
+        .DownloadsDropdown {
+            display: flex;
+            flex-direction: column;
+            padding: 8px 0px;
+            background: #ffffff;
+            border: 1px solid rgba(61, 60, 64, 0.16);
+            box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
+            border-radius: 4px;
+            min-height: 132px;
+            max-height: 360px;
+            width: 280px;
+            max-width: 280px;
 
-.DownloadsDropdown__header {
-    padding: 6px 20px;
-    display: flex;
-    flex-direction: row;
-    align-items: space-between;
-    width: 100%;
+            .DownloadsDropdown__header {
+                padding: 6px 20px;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
 
-    .DownloadsDropdown__Downloads {
-        font-weight: 600;
-        font-size: 14px;
-        line-height: 20px;
-        color: #3D3C40;
-    }
+                .DownloadsDropdown__Downloads {
+                    font-weight: 600;
+                    font-size: 14px;
+                    line-height: 20px;
+                    color: #3D3C40;
+                }
 
-    .DownloadsDropdown__clearAllButton {
-        font-weight: 400;
-        font-size: 12px;
-        line-height: 16px;
-        color: rgba(61, 60, 64, 0.56);
-        margin-left: auto;
-    }
-}
+                .DownloadsDropdown__clearAllButton {
+                    background-color: transparent;
+                    color: #1C58D9;
+                    cursor: pointer;
+                    font-size: 11px;
+                    font-style: normal;
+                    font-weight: 600;
+                    letter-spacing: 0.02em;
+                    line-height: 20px;
+                    padding: 6px;
 
-.DownloadsDropdown.darkMode {
-    background: #1f1f1f;
+                    &:hover {
+                        background-color: rgba(28, 88, 217, 0.08);
+                    }
 
-    .DownloadsDropdown__header > span {
-        color: #DDD;
-    }
+                    &.disabled {
+                        cursor: default;
+                        color: rgba(63, 67, 80, 0.32);
+                    }
+                }
+            }
 
-    .DownloadsDropdown__divider {
-        border-color: rgba(221, 221, 221, 0.08);
+            .DownloadsDropdown__divider {
+                border-top: 1px solid rgba(61, 60, 64, 0.08);
+                border-bottom: 0;
+                width: 100%;
+                margin: 8px 0;                
+            }
+
+            &.darkMode {
+                background: #1f1f1f;
+
+                .DownloadsDropdown__header .DownloadsDropdown__Downloads {
+                    color: #DDD;
+                }
+
+                .DownloadsDropdown__divider {
+                    border-color: rgba(221, 221, 221, 0.08);
+                }
+
+                .DownloadsDropdown__list {
+                    color: #DDD;
+                }    
+            }
+        }
     }
 }

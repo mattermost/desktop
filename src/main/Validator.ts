@@ -174,7 +174,6 @@ const configDataSchemaV4 = Joi.object<ConfigV4>({
     downloads: Joi.array().default([]),
 });
 
-
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};
 const certificateStoreSchema = Joi.object().pattern(
     Joi.string().uri(),
@@ -281,7 +280,9 @@ export function validateV3ConfigData(data: ConfigV3) {
 }
 
 export function validateV4ConfigData(data: ConfigV4) {
-    data.downloads = [];
+    if (!Array.isArray(data.downloads)) {
+        data.downloads = [];
+    }
     data.teams = cleanTeams(data.teams, cleanTeamWithTabs);
     if (data.spellCheckerURL && !urlUtils.isValidURL(data.spellCheckerURL)) {
         log.error('Invalid download location for spellchecker dictionary, removing from config');

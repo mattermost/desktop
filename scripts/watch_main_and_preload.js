@@ -11,6 +11,9 @@ let started = false;
 
 const mainCompiler = webpack(mainConfig);
 mainCompiler.watch({}, (err, stats) => {
+    if (err) {
+        console.error(err);
+    }
     process.stdout.write(stats.toString({colors: true}));
     process.stdout.write('\n');
     if (!stats.hasErrors()) {

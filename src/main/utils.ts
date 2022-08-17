@@ -98,3 +98,7 @@ export function composeUserAgent() {
 
     return `${filteredUserAgent.join(' ')} Mattermost/${app.getVersion()}`;
 }
+
+export function isStringWithLength(string: unknown) {
+    return string && typeof string === 'string' && string.length > 0;
+}

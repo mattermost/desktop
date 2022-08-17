@@ -11,9 +11,10 @@ import {
     CLOSE_DOWNLOADS_DROPDOWN,
     EMIT_CONFIGURATION,
     OPEN_DOWNLOADS_DROPDOWN,
+    REQUEST_DOWNLOADS_DROPDOWN_INFO,
     UPDATE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
-import {TAB_BAR_HEIGHT, DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, TAB_BAR_PADDING, DOWNLOADS_DROPDOWN_FULL_WIDTH} from 'common/utils/constants';
+import {TAB_BAR_HEIGHT, DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, DOWNLOADS_DROPDOWN_FULL_WIDTH} from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 
 import WindowManager from '../windows/windowManager';
@@ -46,16 +47,18 @@ export default class DownloadsDropdownView {
             transparent: true,
         }});
 
+        this.view.webContents.openDevTools();
         this.view.webContents.loadURL(getLocalURLString('downloadsDropdown.html'));
         this.window.addBrowserView(this.view);
 
         ipcMain.on(OPEN_DOWNLOADS_DROPDOWN, this.handleOpen);
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN, this.handleClose);
         ipcMain.on(EMIT_CONFIGURATION, this.updateConfig);
+        ipcMain.on(REQUEST_DOWNLOADS_DROPDOWN_INFO, this.updateDownloadsDropdown);
     }
 
     updateConfig = (event: IpcMainEvent, config: CombinedConfig) => {
-        log.silly('DownloadsDropdownView.config', {config});
+        log.debug('DownloadsDropdownView.updateConfig');
 
         this.downloads = config.downloads;
         this.darkMode = config.darkMode;
@@ -67,13 +70,15 @@ export default class DownloadsDropdownView {
      * the downloads dropdown at the correct position
      */
     updateWindowBounds = () => {
+        log.debug('DownloadsDropdownView.updateWindowBounds');
+
         this.windowBounds = this.window.getContentBounds();
         this.updateDownloadsDropdown();
         this.repositionDownloadsDropdown();
     }
 
     updateDownloadsDropdown = () => {
-        log.silly('DownloadsDropdownView.updateDownloadsDropdown');
+        log.debug('DownloadsDropdownView.updateDownloadsDropdown');
 
         this.view.webContents.send(
             UPDATE_DOWNLOADS_DROPDOWN,
@@ -85,24 +90,24 @@ export default class DownloadsDropdownView {
 
     handleOpen = () => {
         log.debug('DownloadsDropdownView.handleOpen');
-        
+
         if (!this.bounds) {
             return;
         }
-        
+
         this.view.setBounds(this.bounds);
         this.window.setTopBrowserView(this.view);
         this.view.webContents.focus();
-        WindowManager.sendToRenderer(OPEN_DOWNLOADS_DROPDOWN);
         this.isOpen = true;
+        WindowManager.sendToRenderer(OPEN_DOWNLOADS_DROPDOWN);
     }
 
     handleClose = () => {
         log.debug('DownloadsDropdownView.handleClose');
 
         this.view.setBounds(this.getBounds(0, 0));
-        WindowManager.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN);
         this.isOpen = false;
+        WindowManager.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN);
     }
 
     getBounds = (width: number, height: number) => {
@@ -116,7 +121,9 @@ export default class DownloadsDropdownView {
 
     getX = (windowWidth: number) => {
         const result = windowWidth - DOWNLOADS_DROPDOWN_FULL_WIDTH;
-        if (result <= DOWNLOADS_DROPDOWN_WIDTH) return 0;
+        if (result <= DOWNLOADS_DROPDOWN_WIDTH) {
+            return 0;
+        }
         return result;
     }
 

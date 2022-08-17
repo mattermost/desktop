@@ -7,8 +7,10 @@ import {ipcRenderer, contextBridge} from 'electron';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN,
+    GET_LANGUAGE_INFORMATION,
     OPEN_DOWNLOADS_DROPDOWN,
     REQUEST_DOWNLOADS_DROPDOWN_INFO,
+    RETRIEVED_LANGUAGE_INFORMATION,
     UPDATE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
 
@@ -32,9 +34,11 @@ window.addEventListener('message', async (event) => {
     case UPDATE_DOWNLOADS_DROPDOWN:
         ipcRenderer.send(UPDATE_DOWNLOADS_DROPDOWN, event.data.downloads);
         break;
+    case GET_LANGUAGE_INFORMATION:
+        window.postMessage({type: RETRIEVED_LANGUAGE_INFORMATION, data: await ipcRenderer.invoke(GET_LANGUAGE_INFORMATION)});
+        break;
     default:
-        console.log(`got a message: ${event}`);
-        console.log(event);
+        console.log('Got an unknown message. Unknown messages are ignored');
     }
 });
 
