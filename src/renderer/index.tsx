@@ -119,7 +119,7 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         if (!config) {
             return null;
         }
-
+        const downloadsCount = config.downloads.length;
         return (
             <IntlProvider>
                 <MainPage
@@ -130,6 +130,7 @@ class Root extends React.PureComponent<Record<string, never>, State> {
                     darkMode={config.darkMode}
                     appName={config.appName}
                     useNativeWindow={config.useNativeWindow}
+                    downloadsCount={downloadsCount}
                 />
             </IntlProvider>
         );

@@ -88,6 +88,7 @@ type Props = {
     appName: string;
     useNativeWindow: boolean;
     intl: IntlShape;
+    downloadsCount: number;
 };
 
 type State = {
@@ -415,13 +416,13 @@ class MainPage extends React.PureComponent<Props, State> {
             fullScreen: this.state.fullScreen,
         });
 
-        const downloadsDropdown = (
+        const downloadsDropdownButton = this.props.downloadsCount > 0 ? (
             <DownloadsDropdownButton
                 darkMode={this.state.darkMode}
                 isDownloadsDropdownOpen={this.state.isDownloadsDropdownOpen}
                 showDownloadsBadge={this.state.showDownloadsBadge}
             />
-        );
+        ) : null;
 
         let maxButton;
         if (this.state.maximized || this.state.fullScreen) {
@@ -570,7 +571,7 @@ class MainPage extends React.PureComponent<Props, State> {
                         darkMode={this.state.darkMode}
                     />
                     {tabsRow}
-                    {downloadsDropdown}
+                    {downloadsDropdownButton}
                     {upgradeIcon}
                     {titleBarButtons}
                 </div>

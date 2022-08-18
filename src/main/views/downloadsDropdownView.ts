@@ -11,6 +11,7 @@ import {
     CLOSE_DOWNLOADS_DROPDOWN,
     EMIT_CONFIGURATION,
     OPEN_DOWNLOADS_DROPDOWN,
+    REQUEST_CLEAR_DOWNLOADS_DROPDOWN,
     REQUEST_DOWNLOADS_DROPDOWN_INFO,
     UPDATE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
@@ -18,6 +19,7 @@ import {TAB_BAR_HEIGHT, DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, DOW
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 
 import WindowManager from '../windows/windowManager';
+import downloadsManager from 'main/downloadsManager';
 
 export default class DownloadsDropdownView {
     view: BrowserView;
@@ -55,6 +57,7 @@ export default class DownloadsDropdownView {
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN, this.handleClose);
         ipcMain.on(EMIT_CONFIGURATION, this.updateConfig);
         ipcMain.on(REQUEST_DOWNLOADS_DROPDOWN_INFO, this.updateDownloadsDropdown);
+        ipcMain.on(REQUEST_CLEAR_DOWNLOADS_DROPDOWN, this.clearDownloads);
     }
 
     updateConfig = (event: IpcMainEvent, config: CombinedConfig) => {
@@ -108,6 +111,11 @@ export default class DownloadsDropdownView {
         this.view.setBounds(this.getBounds(0, 0));
         this.isOpen = false;
         WindowManager.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN);
+    }
+
+    clearDownloads = () => {
+        downloadsManager.clearDownloads();
+        this.handleClose();
     }
 
     getBounds = (width: number, height: number) => {

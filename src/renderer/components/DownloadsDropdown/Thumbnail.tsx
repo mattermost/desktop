@@ -8,7 +8,7 @@ type OwnProps = {
     item: ConfigDownloadItem;
 }
 
-const FilePreview = ({item}: OwnProps) => {
+const Thumbnail = ({item}: OwnProps) => {
     console.log({item});
     return (
         <div className='DownloadsDropdown__File_Preview'>
@@ -29,4 +29,4 @@ const FilePreview = ({item}: OwnProps) => {
     );
 };
 
-export default FilePreview;
+export default Thumbnail;

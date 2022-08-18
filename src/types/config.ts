@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {DownloadItem} from 'electron';
+
 import {DownloadItemStatusEnum, DownloadItemTypeEnum} from 'main/downloadsManager';
 
 export type Tab = {
@@ -163,7 +165,9 @@ export type MigrationInfo = {
     masConfigs: boolean;
 }
 
-export type DownloadItemState = 'completed' | 'cancelled' | 'interrupted';
+export type DownloadItemUpdatedEventState = 'interrupted' | 'progressing';
+export type DownloadItemDoneEventState = 'completed' | 'cancelled' | 'interrupted';
+export type DownloadItemState = DownloadItemUpdatedEventState | DownloadItemDoneEventState;
 
 export type ConfigDownloadItem = {
     type: DownloadItemTypeEnum;
@@ -173,6 +177,9 @@ export type ConfigDownloadItem = {
     location: string;
     iconUrl: string | null;
     addedAt: number;
+    receivedBytes: number;
+    totalBytes: number;
+    item: DownloadItem;
 }
 
 export type DownloadItems = ConfigDownloadItem[]

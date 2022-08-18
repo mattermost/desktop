@@ -8,7 +8,7 @@ import {ConfigDownloadItem, DownloadItemState} from 'types/config';
 import {DownloadItem, Event, WebContents, FileFilter, ipcMain} from 'electron';
 import log from 'electron-log';
 
-import {UPDATE_DOWNLOADS_DROPDOWN} from 'common/communication';
+import {OPEN_DOWNLOADS_DROPDOWN, UPDATE_DOWNLOADS_DROPDOWN} from 'common/communication';
 import Config from 'common/config';
 import {localizeMessage} from 'main/i18nManager';
 import {displayDownloadCompleted} from 'main/notifications';
@@ -19,7 +19,7 @@ export enum DownloadItemStatusEnum {
     COMPLETED = 'completed',
     CANCELLED = 'cancelled',
     INTERRUPTED = 'interrupted',
-    DOWNLOADING = 'downloading',
+    PROGRESSING = 'progressing',
 }
 export enum DownloadItemTypeEnum {
     FILE = 'file',
@@ -34,9 +34,13 @@ class DownloadsManager {
         const filters = this.getFileFilters(fileElements);
         this.shouldShowSaveDialog(item, filename, filters, Config.downloadLocation);
         this.handleDownloadItemEvents(item, webContents);
+        this.showDownloadsDropdown();
     };
 
     handleDownloadItemEvents = (item: DownloadItem, webContents: WebContents) => {
+        item.on('updated', (updateEvent, state) => {
+            this.updatedEventController(updateEvent, state, item, webContents);
+        });
         item.on('done', (doneEvent, state) => {
             this.doneEventController(doneEvent, state, item, webContents);
         });
@@ -94,6 +98,9 @@ class DownloadsManager {
             location: item.getSavePath(),
             iconUrl: item.getMimeType(),
             addedAt: item.getStartTime(),
+            totalBytes: item.getTotalBytes(),
+            receivedBytes: item.getReceivedBytes(),
+            item,
         };
         const updatedDownloads = [...Config.downloads];
         updatedDownloads.push(formattedItem);
@@ -101,9 +108,21 @@ class DownloadsManager {
         ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, {downloads: Config.downloads});
     };
 
+    clearDownloads = () => {
+        Config.set('downloads', []);
+        ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, {downloads: Config.downloads});
+    }
+
+    showDownloadsDropdown = () => {
+        ipcMain.emit(OPEN_DOWNLOADS_DROPDOWN);
+    }
+
     /**
      *  DownloadItem event handlers
      */
+    updatedEventController = (updatedEvent: Event, state: DownloadItemState, item: DownloadItem, webContents: WebContents) => {
+        log.debug('DownloadsManager.updatedEventController', {state, updatedEvent, item, webContents});
+    }
     doneEventController = (doneEvent: Event, state: DownloadItemState, item: DownloadItem, webContents: WebContents) => {
         log.debug('DownloadsManager.doneEventController', {state});
 

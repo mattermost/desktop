@@ -4,7 +4,7 @@
 import React from 'react';
 import {ConfigDownloadItem} from 'types/config';
 
-import FilePreview from './FilePreview';
+import Thumbnail from './Thumbnail';
 import ThreeDotButton from './ThreeDotButton';
 
 type OwnProps = {
@@ -15,13 +15,13 @@ const DownloadsDropdownItemFile = ({item}: OwnProps) => {
     return (
         <div className='DownloadsDropdown__Item__File'>
             <div className='DownloadsDropdown__Item__File__Body'>
-                <FilePreview item={item}/>
+                <Thumbnail item={item}/>
                 <div className='DownloadsDropdown__Item__File__Body_Details'>
                     {item.filename}
                 </div>
                 <ThreeDotButton item={item}/>
             </div>
-            {item.status === 'downloading' && <div className='DownloadsDropdown__Item__File__ProgressBar'>
+            {item.status === 'progressing' && <div className='DownloadsDropdown__Item__File__ProgressBar'>
                 {item.progress}
             </div>}
         </div>

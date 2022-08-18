@@ -9,6 +9,7 @@ import {
     CLOSE_DOWNLOADS_DROPDOWN,
     GET_LANGUAGE_INFORMATION,
     OPEN_DOWNLOADS_DROPDOWN,
+    REQUEST_CLEAR_DOWNLOADS_DROPDOWN,
     REQUEST_DOWNLOADS_DROPDOWN_INFO,
     RETRIEVED_LANGUAGE_INFORMATION,
     UPDATE_DOWNLOADS_DROPDOWN,
@@ -33,6 +34,9 @@ window.addEventListener('message', async (event) => {
         break;
     case UPDATE_DOWNLOADS_DROPDOWN:
         ipcRenderer.send(UPDATE_DOWNLOADS_DROPDOWN, event.data.downloads);
+        break;
+    case REQUEST_CLEAR_DOWNLOADS_DROPDOWN:
+        ipcRenderer.send(REQUEST_CLEAR_DOWNLOADS_DROPDOWN);
         break;
     case GET_LANGUAGE_INFORMATION:
         window.postMessage({type: RETRIEVED_LANGUAGE_INFORMATION, data: await ipcRenderer.invoke(GET_LANGUAGE_INFORMATION)});
