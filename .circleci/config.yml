@@ -108,6 +108,13 @@ commands:
         type: string
         default: "./linux/"
     steps:
+      - when:
+          condition: << pipeline.parameters.run_nightly >>
+          steps:
+            - run:
+                name: Patch buildConfig file for run nightly
+                command: |
+                  sed -i "" "s/skipOnboardingScreens:[[:blank:]]*false/skipOnboardingScreens: true/" ./src/common/config/buildConfig.ts;
       - run: 
           name: npn run
           command: npm run package:<< parameters.os >>
