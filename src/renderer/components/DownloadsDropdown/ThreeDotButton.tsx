@@ -9,7 +9,6 @@ type OwnProps = {
 }
 
 const ThreeDotButton = ({item}: OwnProps) => {
-    console.log({item});
     return (
         <button className='DownloadsDropdown__File_ThreeDotButton'>
             <i className='icon-dots-vertical'/>

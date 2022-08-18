@@ -1,9 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {DownloadItem} from 'electron';
-
-import {DownloadItemStatusEnum, DownloadItemTypeEnum} from 'main/downloadsManager';
+import {DownloadItemTypeEnum} from 'main/downloadsManager';
 
 export type Tab = {
     name: string;
@@ -172,14 +170,13 @@ export type DownloadItemState = DownloadItemUpdatedEventState | DownloadItemDone
 export type ConfigDownloadItem = {
     type: DownloadItemTypeEnum;
     filename: string;
-    status: DownloadItemStatusEnum;
+    state: DownloadItemState;
     progress: number;
     location: string;
     iconUrl: string | null;
     addedAt: number;
     receivedBytes: number;
     totalBytes: number;
-    item: DownloadItem;
 }
 
-export type DownloadItems = ConfigDownloadItem[]
+export type DownloadItems = Record<string, ConfigDownloadItem>;

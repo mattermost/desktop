@@ -119,7 +119,7 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         if (!config) {
             return null;
         }
-        const downloadsCount = config.downloads.length;
+        const downloadsCount = Object.values(config.downloads).length;
         return (
             <IntlProvider>
                 <MainPage

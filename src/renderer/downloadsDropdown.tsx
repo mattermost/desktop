@@ -6,7 +6,7 @@ import ReactDOM from 'react-dom';
 import classNames from 'classnames';
 import {FormattedMessage} from 'react-intl';
 
-import {ConfigDownloadItem, DownloadItems} from 'types/config';
+import {ConfigDownloadItem} from 'types/config';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN,
@@ -21,8 +21,7 @@ import './css/downloadsDropdown.scss';
 import DownloadsDropdownItemFile from './components/DownloadsDropdown/DownloadItemFile';
 
 type State = {
-    downloads?: DownloadItems;
-    orderedDownloads?: DownloadItems;
+    downloads: ConfigDownloadItem[];
     darkMode?: boolean;
     windowBounds?: Electron.Rectangle;
 }
@@ -33,7 +32,6 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
 
         this.state = {
             downloads: [],
-            orderedDownloads: [],
         };
 
         window.addEventListener('message', this.handleMessageEvent);
@@ -46,9 +44,10 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
     handleMessageEvent = (event: MessageEvent) => {
         if (event.data.type === UPDATE_DOWNLOADS_DROPDOWN) {
             const {downloads, darkMode, windowBounds} = event.data.data;
+            const newDownloads = Object.values<ConfigDownloadItem>(downloads);
+            newDownloads.sort((a, b) => b.addedAt - a.addedAt);
             this.setState({
-                downloads,
-                orderedDownloads: downloads.concat().sort((a: ConfigDownloadItem, b: ConfigDownloadItem) => a.addedAt - b.addedAt),
+                downloads: newDownloads,
                 darkMode,
                 windowBounds,
             });
@@ -64,10 +63,6 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
     }
 
     clearAll = () => {
-        this.setState({
-            downloads: [],
-            orderedDownloads: [],
-        });
         window.postMessage({type: REQUEST_CLEAR_DOWNLOADS_DROPDOWN}, window.location.href);
     }
 
@@ -99,11 +94,11 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
                     </div>
                     <hr className='DownloadsDropdown__divider'/>
                     <div className='DownloadsDropdown__list'>
-                        {this.state.orderedDownloads?.map((downloadItem: ConfigDownloadItem) => {
+                        {(this.state.downloads || []).map((downloadItem: ConfigDownloadItem) => {
                             return (
                                 <DownloadsDropdownItemFile
                                     item={downloadItem}
-                                    key={downloadItem.addedAt}
+                                    key={downloadItem.filename}
                                 />
                             );
                         })}

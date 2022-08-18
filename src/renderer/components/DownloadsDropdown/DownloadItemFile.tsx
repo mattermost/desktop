@@ -21,7 +21,7 @@ const DownloadsDropdownItemFile = ({item}: OwnProps) => {
                 </div>
                 <ThreeDotButton item={item}/>
             </div>
-            {item.status === 'progressing' && <div className='DownloadsDropdown__Item__File__ProgressBar'>
+            {item.state === 'progressing' && <div className='DownloadsDropdown__Item__File__ProgressBar'>
                 {item.progress}
             </div>}
         </div>

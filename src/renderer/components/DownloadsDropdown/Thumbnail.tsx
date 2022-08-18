@@ -9,7 +9,6 @@ type OwnProps = {
 }
 
 const Thumbnail = ({item}: OwnProps) => {
-    console.log({item});
     return (
         <div className='DownloadsDropdown__File_Preview'>
             <svg

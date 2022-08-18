@@ -3,24 +3,18 @@
 import path from 'path';
 import fs from 'fs';
 
-import {ConfigDownloadItem, DownloadItemState} from 'types/config';
+import {ConfigDownloadItem, DownloadItemDoneEventState, DownloadItemState, DownloadItemUpdatedEventState} from 'types/config';
 
 import {DownloadItem, Event, WebContents, FileFilter, ipcMain} from 'electron';
 import log from 'electron-log';
 
-import {OPEN_DOWNLOADS_DROPDOWN, UPDATE_DOWNLOADS_DROPDOWN} from 'common/communication';
+import {CLOSE_DOWNLOADS_DROPDOWN, OPEN_DOWNLOADS_DROPDOWN, UPDATE_DOWNLOADS_DROPDOWN} from 'common/communication';
 import Config from 'common/config';
 import {localizeMessage} from 'main/i18nManager';
 import {displayDownloadCompleted} from 'main/notifications';
 import WindowManager from 'main/windows/windowManager';
-import {isStringWithLength} from 'main/utils';
+import {getPercentage, isStringWithLength} from 'main/utils';
 
-export enum DownloadItemStatusEnum {
-    COMPLETED = 'completed',
-    CANCELLED = 'cancelled',
-    INTERRUPTED = 'interrupted',
-    PROGRESSING = 'progressing',
-}
 export enum DownloadItemTypeEnum {
     FILE = 'file',
     UPDATE = 'update',
@@ -33,8 +27,9 @@ class DownloadsManager {
         const fileElements = filename.split('.');
         const filters = this.getFileFilters(fileElements);
         this.shouldShowSaveDialog(item, filename, filters, Config.downloadLocation);
+        this.upsertFileToDownloads(item, 'progressing');
         this.handleDownloadItemEvents(item, webContents);
-        this.showDownloadsDropdown();
+        this.openDownloadsDropdown();
     };
 
     handleDownloadItemEvents = (item: DownloadItem, webContents: WebContents) => {
@@ -58,7 +53,7 @@ class DownloadsManager {
     }
 
     /**
-     *  This function displayes the save dialog if one of the following is true:
+     *  This function displays the save dialog if one of the following is true:
      *      - downloadLocation is undefined
      *      - filename is not a valid string (length > 0)
      *      - File already exists
@@ -89,49 +84,66 @@ class DownloadsManager {
         return `${downloadLocation}/${name}`;
     };
 
-    addItemToDownloads = (item: DownloadItem) => {
-        const formattedItem: ConfigDownloadItem = {
-            type: DownloadItemTypeEnum.FILE,
-            filename: item.getFilename(),
-            status: DownloadItemStatusEnum.COMPLETED,
-            progress: 100,
-            location: item.getSavePath(),
-            iconUrl: item.getMimeType(),
-            addedAt: item.getStartTime(),
-            totalBytes: item.getTotalBytes(),
-            receivedBytes: item.getReceivedBytes(),
-            item,
-        };
-        const updatedDownloads = [...Config.downloads];
-        updatedDownloads.push(formattedItem);
-        Config.set('downloads', updatedDownloads);
+    clearDownloadsDropDown = () => {
+        log.debug('DownloadsManager.clearDownloadsDropDown');
+        Config.set('downloads', {});
         ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, {downloads: Config.downloads});
-    };
-
-    clearDownloads = () => {
-        Config.set('downloads', []);
-        ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, {downloads: Config.downloads});
+        this.closeDownloadsDropdown();
     }
 
-    showDownloadsDropdown = () => {
+    openDownloadsDropdown = () => {
+        log.debug('DownloadsManager.openDownloadsDropdown');
         ipcMain.emit(OPEN_DOWNLOADS_DROPDOWN);
+    }
+    closeDownloadsDropdown = () => {
+        log.debug('DownloadsManager.closeDownloadsDropdown');
+        ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
+    }
+
+    formatDownloadItem = (item: DownloadItem, state: DownloadItemState): ConfigDownloadItem => {
+        const totalBytes = item.getTotalBytes();
+        const receivedBytes = item.getReceivedBytes();
+        const progress = getPercentage(receivedBytes, totalBytes);
+        return {
+            addedAt: item.getStartTime(),
+            filename: item.getFilename(),
+            iconUrl: item.getMimeType(),
+            location: item.getSavePath(),
+            progress,
+            receivedBytes,
+            state,
+            totalBytes,
+            type: DownloadItemTypeEnum.FILE,
+        };
     }
 
     /**
      *  DownloadItem event handlers
      */
-    updatedEventController = (updatedEvent: Event, state: DownloadItemState, item: DownloadItem, webContents: WebContents) => {
+    updatedEventController = (updatedEvent: Event, state: DownloadItemUpdatedEventState, item: DownloadItem, webContents: WebContents) => {
         log.debug('DownloadsManager.updatedEventController', {state, updatedEvent, item, webContents});
+
+        this.upsertFileToDownloads(item, state);
     }
-    doneEventController = (doneEvent: Event, state: DownloadItemState, item: DownloadItem, webContents: WebContents) => {
+    doneEventController = (doneEvent: Event, state: DownloadItemDoneEventState, item: DownloadItem, webContents: WebContents) => {
         log.debug('DownloadsManager.doneEventController', {state});
 
         if (state === 'completed') {
             displayDownloadCompleted(path.basename(item.savePath), item.savePath, WindowManager.getServerNameByWebContentsId(webContents.id) || '');
         }
 
-        this.addItemToDownloads(item);
+        this.upsertFileToDownloads(item, state);
     }
+
+    upsertFileToDownloads = (item: DownloadItem, state: DownloadItemState) => {
+        const fileId = item.getFilename();
+        const downloadsCopy = Config.downloads;
+        log.debug('DownloadsManager.upsertFileToDownloads', {fileId, downloadsCopy});
+        const formattedItem = this.formatDownloadItem(item, state);
+        downloadsCopy[fileId] = formattedItem;
+        Config.set('downloads', downloadsCopy);
+        ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, {downloads: Config.downloads});
+    };
 }
 
 const downloadsManager = new DownloadsManager();

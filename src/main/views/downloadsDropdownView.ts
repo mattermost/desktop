@@ -114,7 +114,7 @@ export default class DownloadsDropdownView {
     }
 
     clearDownloads = () => {
-        downloadsManager.clearDownloads();
+        downloadsManager.clearDownloadsDropDown();
         this.handleClose();
     }
 

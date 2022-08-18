@@ -51,7 +51,7 @@ export function upgradeV2toV3(configV2: ConfigV2) {
 export function upgradeV3toV4(configV3: ConfigV3) {
     const config: ConfigV4 = Object.assign({}, deepCopy<ConfigV4>(pastDefaultPreferences[4]), configV3);
     config.version = 4;
-    config.downloads = [];
+    config.downloads = {};
     return config;
 }
 

@@ -335,7 +335,7 @@ export class Config extends EventEmitter {
     }
 
     get downloads() {
-        return this.combinedData?.downloads ?? [];
+        return this.combinedData?.downloads ?? {};
     }
 
     // initialization/processing methods

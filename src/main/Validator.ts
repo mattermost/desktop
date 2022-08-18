@@ -171,7 +171,7 @@ const configDataSchemaV4 = Joi.object<ConfigV4>({
     alwaysClose: Joi.boolean(),
     logLevel: Joi.string().default('info'),
     appLanguage: Joi.string().allow(''),
-    downloads: Joi.array().default([]),
+    downloads: Joi.object().default({}),
 });
 
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};
@@ -280,8 +280,8 @@ export function validateV3ConfigData(data: ConfigV3) {
 }
 
 export function validateV4ConfigData(data: ConfigV4) {
-    if (!Array.isArray(data.downloads)) {
-        data.downloads = [];
+    if (typeof data.downloads !== 'object') {
+        data.downloads = {};
     }
     data.teams = cleanTeams(data.teams, cleanTeamWithTabs);
     if (data.spellCheckerURL && !urlUtils.isValidURL(data.spellCheckerURL)) {
