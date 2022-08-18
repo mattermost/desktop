@@ -2,21 +2,18 @@
   "root": true,
   "extends": [
     "plugin:mattermost/react",
-    "plugin:cypress/recommended",
     "plugin:react-hooks/recommended"
   ],
   "plugins": [
     "babel",
     "mattermost",
     "import",
-    "cypress",
     "no-only-tests",
     "@typescript-eslint"
   ],
   "parser": "@typescript-eslint/parser",
   "env": {
-    "jest": true,
-    "cypress/globals": true
+    "jest": true
   },
   "settings": {
     "import/resolver": "webpack",
