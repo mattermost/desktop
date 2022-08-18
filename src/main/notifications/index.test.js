@@ -80,6 +80,7 @@ describe('main/notifications', () => {
         beforeEach(() => {
             Notification.isSupported.mockImplementation(() => true);
             getFocusAssist.mockReturnValue({value: false});
+            getDarwinDoNotDisturb.mockReturnValue(false);
         });
 
         it('should do nothing when Notification is not supported', () => {
@@ -218,6 +219,7 @@ describe('main/notifications', () => {
 
     describe('displayDownloadCompleted', () => {
         it('should open file when clicked', () => {
+            getDarwinDoNotDisturb.mockReturnValue(false);
             localizeMessage.mockReturnValue('test_filename');
             displayDownloadCompleted(
                 'test_filename',
