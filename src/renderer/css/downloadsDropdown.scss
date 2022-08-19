@@ -133,9 +133,12 @@ body {
                         width: 100%;
 
                         .DownloadsDropdown__File__Body__Thumbnail {
+                            align-items: center;
                             background-color: rgba(63, 67, 80, 0.08);
                             border-radius: 4px;
+                            display: flex;
                             height: 32px;
+                            justify-content: center;
                             margin-right: 8px;
                             width: 32px;
 

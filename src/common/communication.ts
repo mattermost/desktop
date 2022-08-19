@@ -134,3 +134,4 @@ export const CLOSE_DOWNLOADS_DROPDOWN = 'close-downloads-dropdown';
 export const OPEN_DOWNLOADS_DROPDOWN = 'open-downloads-dropdown';
 export const REQUEST_DOWNLOADS_DROPDOWN_INFO = 'request-downloads-dropdown-info';
 export const UPDATE_DOWNLOADS_DROPDOWN = 'update-downloads-dropdown';
+export const DOWNLOADS_DROPDOWN_OPEN_FILE = 'downloads-dropdown-open-file';

@@ -7,6 +7,7 @@ import {ipcRenderer, contextBridge} from 'electron';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN,
+    DOWNLOADS_DROPDOWN_OPEN_FILE,
     GET_LANGUAGE_INFORMATION,
     OPEN_DOWNLOADS_DROPDOWN,
     REQUEST_CLEAR_DOWNLOADS_DROPDOWN,
@@ -37,6 +38,9 @@ window.addEventListener('message', async (event) => {
         break;
     case REQUEST_CLEAR_DOWNLOADS_DROPDOWN:
         ipcRenderer.send(REQUEST_CLEAR_DOWNLOADS_DROPDOWN);
+        break;
+    case DOWNLOADS_DROPDOWN_OPEN_FILE:
+        ipcRenderer.send(DOWNLOADS_DROPDOWN_OPEN_FILE, event.data.payload.item);
         break;
     case GET_LANGUAGE_INFORMATION:
         window.postMessage({type: RETRIEVED_LANGUAGE_INFORMATION, data: await ipcRenderer.invoke(GET_LANGUAGE_INFORMATION)});

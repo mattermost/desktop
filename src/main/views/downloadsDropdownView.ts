@@ -1,14 +1,16 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+import fs from 'fs';
 
-import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent} from 'electron';
+import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent, shell} from 'electron';
 
 import log from 'electron-log';
 
-import {CombinedConfig, DownloadItems} from 'types/config';
+import {CombinedConfig, ConfigDownloadItem, DownloadItems} from 'types/config';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN,
+    DOWNLOADS_DROPDOWN_OPEN_FILE,
     EMIT_CONFIGURATION,
     OPEN_DOWNLOADS_DROPDOWN,
     REQUEST_CLEAR_DOWNLOADS_DROPDOWN,
@@ -20,6 +22,7 @@ import {getLocalPreload, getLocalURLString} from 'main/utils';
 
 import WindowManager from '../windows/windowManager';
 import downloadsManager from 'main/downloadsManager';
+import config from 'common/config';
 
 export default class DownloadsDropdownView {
     view: BrowserView;
@@ -58,6 +61,7 @@ export default class DownloadsDropdownView {
         ipcMain.on(EMIT_CONFIGURATION, this.updateConfig);
         ipcMain.on(REQUEST_DOWNLOADS_DROPDOWN_INFO, this.updateDownloadsDropdown);
         ipcMain.on(REQUEST_CLEAR_DOWNLOADS_DROPDOWN, this.clearDownloads);
+        ipcMain.on(DOWNLOADS_DROPDOWN_OPEN_FILE, this.openFile);
     }
 
     updateConfig = (event: IpcMainEvent, config: CombinedConfig) => {
@@ -116,6 +120,22 @@ export default class DownloadsDropdownView {
     clearDownloads = () => {
         downloadsManager.clearDownloadsDropDown();
         this.handleClose();
+    }
+
+    openFile = (e: IpcMainEvent, item: ConfigDownloadItem) => {
+        log.debug('DownloadsDropdownView.openFile', {item});
+
+        if (fs.existsSync(item.location)) {
+            shell.showItemInFolder(item.location);
+            return;
+        }
+
+        if (config.downloadLocation) {
+            shell.openPath(config.downloadLocation);
+            return;
+        }
+
+        log.debug('DownloadsDropdownView.openFile', 'NO_DOWNLOAD_LOCATION');
     }
 
     getBounds = (width: number, height: number) => {
