@@ -16,9 +16,9 @@ import {
 } from 'common/communication';
 
 import IntlProvider from './intl_provider';
+import DownloadsDropdownFile from './components/DownloadsDropdown/DownloadsDropdownFile';
 
 import './css/downloadsDropdown.scss';
-import DownloadsDropdownItemFile from './components/DownloadsDropdown/DownloadItemFile';
 
 type State = {
     downloads: ConfigDownloadItem[];
@@ -96,7 +96,7 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
                     <div className='DownloadsDropdown__list'>
                         {(this.state.downloads || []).map((downloadItem: ConfigDownloadItem) => {
                             return (
-                                <DownloadsDropdownItemFile
+                                <DownloadsDropdownFile
                                     item={downloadItem}
                                     key={downloadItem.filename}
                                 />

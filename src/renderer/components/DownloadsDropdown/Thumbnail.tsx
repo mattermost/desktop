@@ -10,7 +10,7 @@ type OwnProps = {
 
 const Thumbnail = ({item}: OwnProps) => {
     return (
-        <div className='DownloadsDropdown__File_Preview'>
+        <div className='DownloadsDropdown__File__Body__Thumbnail'>
             <svg
                 width='32'
                 height='42'
@@ -23,7 +23,6 @@ const Thumbnail = ({item}: OwnProps) => {
                     fill='#999999'
                 />
             </svg>
-
         </div>
     );
 };

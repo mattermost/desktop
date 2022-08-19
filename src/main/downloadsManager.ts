@@ -55,7 +55,7 @@ class DownloadsManager {
     /**
      *  This function displays the save dialog if one of the following is true:
      *      - downloadLocation is undefined
-     *      - filename is not a valid string (length > 0)
+     *      - filename is not a valid string
      *      - File already exists
      *
      *  Otherwise, it saves the file in the "Config.downloadLocation"
@@ -117,6 +117,16 @@ class DownloadsManager {
         };
     }
 
+    upsertFileToDownloads = (item: DownloadItem, state: DownloadItemState) => {
+        const fileId = item.getFilename();
+        const downloadsCopy = Config.downloads;
+        log.debug('DownloadsManager.upsertFileToDownloads', {fileId, downloadsCopy});
+        const formattedItem = this.formatDownloadItem(item, state);
+        downloadsCopy[fileId] = formattedItem;
+        Config.set('downloads', downloadsCopy);
+        ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, {downloads: Config.downloads});
+    };
+
     /**
      *  DownloadItem event handlers
      */
@@ -134,16 +144,6 @@ class DownloadsManager {
 
         this.upsertFileToDownloads(item, state);
     }
-
-    upsertFileToDownloads = (item: DownloadItem, state: DownloadItemState) => {
-        const fileId = item.getFilename();
-        const downloadsCopy = Config.downloads;
-        log.debug('DownloadsManager.upsertFileToDownloads', {fileId, downloadsCopy});
-        const formattedItem = this.formatDownloadItem(item, state);
-        downloadsCopy[fileId] = formattedItem;
-        Config.set('downloads', downloadsCopy);
-        ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, {downloads: Config.downloads});
-    };
 }
 
 const downloadsManager = new DownloadsManager();

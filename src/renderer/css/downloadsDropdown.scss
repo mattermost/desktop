@@ -1,6 +1,35 @@
 @import url("fonts.css");
 @import '~@mattermost/compass-icons/css/compass-icons.css';
-  
+
+/* with this, padding doesn't change an element's width & height */
+* {
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+     box-sizing: border-box;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+
+    &:hover {
+        width: 16px;
+    }
+}
+::-webkit-scrollbar-track {
+    display: none;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(63, 67, 80, 0.24);
+    border-radius: 4px;
+    width: 8px;
+
+    &:hover {
+        background: rgba(63, 67, 80, 0.6);
+        width: 16px;
+    }
+}
+
 body {
     margin: 0;
     background-color: transparent;
@@ -12,17 +41,17 @@ body {
         padding: 0 24px 24px;
 
         .DownloadsDropdown {
-            display: flex;
-            flex-direction: column;
-            padding: 8px 0px;
             background: #ffffff;
+            border-radius: 4px;
             border: 1px solid rgba(61, 60, 64, 0.16);
             box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
-            border-radius: 4px;
-            min-height: 132px;
+            display: flex;
+            flex-direction: column;
             max-height: 360px;
-            width: 280px;
             max-width: 280px;
+            min-height: 132px;
+            padding: 8px 0px;
+            width: 280px;
 
             .DownloadsDropdown__header {
                 padding: 6px 20px;
@@ -64,27 +93,105 @@ body {
                 border-top: 1px solid rgba(61, 60, 64, 0.08);
                 border-bottom: 0;
                 width: 100%;
-                margin: 8px 0;                
+                margin: 8px 0;
             }
 
             .DownloadsDropdown__list {
-                .DownloadsDropdown__Item__File {
+                align-items: flex-start;
+                display: flex;
+                flex-direction: column;
+                font-size: 12px;
+                justify-content: flex-start;
+                overflow-x: hidden;
+                overflow-y: auto;
+                width: 100%;
+
+                .DownloadsDropdown__File {
+                    align-items: center;
+                    cursor: pointer;
                     display: flex;
                     flex-direction: column;
-                    justify-content: flex-start;
-                    align-items: center;
                     height: 100%;
-                    padding: 6px;
-                    
-                    .DownloadsDropdown__Item__File__Body {
-                        display: flex;
-                        flex-direction: row;
-                        align-items: center;
-                        justify-content: space-between;
-                        width: 100%;
+                    justify-content: flex-start;
+                    height: 56px;
+                    padding: 12px 12px 12px 20px;
+                    width: 100%;
+
+                    &.progressing {
+                        height: 68px;
                     }
 
-                    .DownloadsDropdown__Item__File__ProgressBar {
+                    &:hover {
+                        background-color: rgba(63, 67, 80, 0.08);
+                    }
+
+                    .DownloadsDropdown__File__Body {
+                        align-items: center;
+                        display: flex;
+                        flex-direction: row;
+                        justify-content: space-between;
+                        width: 100%;
+
+                        .DownloadsDropdown__File__Body__Thumbnail {
+                            background-color: rgba(63, 67, 80, 0.08);
+                            border-radius: 4px;
+                            height: 32px;
+                            margin-right: 8px;
+                            width: 32px;
+
+                            > svg {
+                                height: 24px;
+                                margin: auto;
+                                width: 24px;
+                            }
+                        }
+
+                        .DownloadsDropdown__File__Body__Details {
+                            margin-right: 8px;
+                            /* 100% - thumbnail width - three dot button width - margins of first 2 elements */
+                            width: calc(100% - 32px - 28px - 16px);
+
+                            > * {
+                                overflow: hidden;
+                                text-align: left;
+                                text-overflow: ellipsis;
+                                white-space: nowrap;
+                                width: 100%;
+
+                                &.DownloadsDropdown__File__Body__Details__Filename {
+                                    color: #3F4350;
+                                    font-size: 12px;
+                                    font-weight: 600;
+                                }
+                                &.DownloadsDropdown__File__Body__Details__FileSizeAndStatus {
+                                    color: rgba(63, 67, 80, 0.64);
+                                    font-size: 10px;
+                                    font-weight: 400;
+
+                                    &.cancelled {
+                                        color: #D24B4E;
+                                    }
+                                }
+                            }
+                        }
+
+                        .DownloadsDropdown__File__Body__ThreeDotButton {
+                            background-color: transparent;
+                            border: none;
+                            border-radius: 4px;
+                            color: rgba(63, 67, 80, 0.56);
+                            cursor: pointer;
+                            height: 28px;
+                            width: 28px;
+
+                            &:hover {
+                                background-color: rgba(28, 88, 217, 0.08);
+                                color: rgba(28, 88, 217, 1);
+                            }
+                        }
+                    }
+
+                    .DownloadsDropdown__File__ProgressBar {
                         width: 100%;
                     }
                 }
