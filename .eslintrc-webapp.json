@@ -9,6 +9,7 @@
     "babel",
     "mattermost",
     "import",
+    "cypress",
     "no-only-tests",
     "@typescript-eslint"
   ],
