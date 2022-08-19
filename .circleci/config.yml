@@ -191,7 +191,7 @@ jobs:
       - run:
           name: Install nodejs-lts
           command: choco install nodejs-lts -y
-      - run: npm i -g node-gyp install; node-gyp-install
+      - run: npm i -g node-gyp-install; node-gyp-install
       - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
       - build:
           os: windows
