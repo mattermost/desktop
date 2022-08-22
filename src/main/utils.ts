@@ -103,9 +103,9 @@ export function isStringWithLength(string: unknown) {
     return string && typeof string === 'string' && string.length > 0;
 }
 
-export function getPercentage(amount: number, total: number) {
+export function getPercentage(received: number, total: number) {
     if (total === 0) {
         return 0;
     }
-    return ((amount / total) * 100);
+    return Math.round((received / total) * 100);
 }

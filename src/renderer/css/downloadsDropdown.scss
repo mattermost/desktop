@@ -185,8 +185,23 @@ body {
                         }
                     }
 
-                    .DownloadsDropdown__File__ProgressBar {
+                    .DownloadsDropdown__File__ProgressBarContainer {
                         width: 100%;
+                        height: 4px;
+                        background-color: rgba(63, 67, 80, 0.16);
+                        border-radius: 4px;
+                        position: relative;
+                        overflow: hidden;
+
+                        .DownloadsDropdown__File__ProgressBar {
+                            background-color: #1c58d9;
+                            height: 100%;
+                            left: 0;
+                            position: absolute;
+                            top: 0;
+                            transition: all 0.2s;
+                            width: 0%;
+                        }
                     }
                 }
             }

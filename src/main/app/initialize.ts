@@ -353,7 +353,7 @@ function initializeAfterAppReady() {
     }
     setupBadge();
 
-    defaultSession.on('will-download', downloadsManager.newDownloadController);
+    defaultSession.on('will-download', downloadsManager.handleNewDownload);
 
     // needs to be done after app ready
     // must be done before update menu

@@ -3,10 +3,12 @@
 
 import React from 'react';
 import {ConfigDownloadItem} from 'types/config';
+import classNames from 'classnames';
 
 import {DOWNLOADS_DROPDOWN_OPEN_FILE} from 'common/communication';
 
 import FileSizeAndStatus from './FileSizeAndStatus';
+import ProgressBar from './ProgressBar';
 import ThreeDotButton from './ThreeDotButton';
 import Thumbnail from './Thumbnail';
 
@@ -23,7 +25,9 @@ const DownloadsDropdownFile = ({item}: OwnProps) => {
 
     return (
         <div
-            className='DownloadsDropdown__File'
+            className={classNames('DownloadsDropdown__File', {
+                progressing: item.state === 'progressing',
+            })}
             onClick={onFileClick}
         >
             <div className='DownloadsDropdown__File__Body'>
@@ -38,9 +42,7 @@ const DownloadsDropdownFile = ({item}: OwnProps) => {
                 </div>
                 <ThreeDotButton item={item}/>
             </div>
-            {item.state === 'progressing' && <div className='DownloadsDropdown__File__ProgressBar'>
-                {item.progress}
-            </div>}
+            <ProgressBar item={item}/>
         </div>
     );
 };

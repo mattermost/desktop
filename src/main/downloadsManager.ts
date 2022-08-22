@@ -21,8 +21,8 @@ export enum DownloadItemTypeEnum {
 }
 
 class DownloadsManager {
-    newDownloadController = (event: Event, item: DownloadItem, webContents: WebContents) => {
-        log.debug('DownloadsManager.newDownloadController', {item, sourceURL: webContents.getURL()});
+    handleNewDownload = (event: Event, item: DownloadItem, webContents: WebContents) => {
+        log.debug('DownloadsManager.handleNewDownload', {item, sourceURL: webContents.getURL()});
         const filename = item.getFilename();
         const fileElements = filename.split('.');
         const filters = this.getFileFilters(fileElements);
@@ -34,7 +34,7 @@ class DownloadsManager {
 
     handleDownloadItemEvents = (item: DownloadItem, webContents: WebContents) => {
         item.on('updated', (updateEvent, state) => {
-            this.updatedEventController(updateEvent, state, item, webContents);
+            this.updatedEventController(updateEvent, state, item);
         });
         item.on('done', (doneEvent, state) => {
             this.doneEventController(doneEvent, state, item, webContents);
@@ -104,6 +104,7 @@ class DownloadsManager {
         const totalBytes = item.getTotalBytes();
         const receivedBytes = item.getReceivedBytes();
         const progress = getPercentage(receivedBytes, totalBytes);
+
         return {
             addedAt: item.getStartTime(),
             filename: item.getFilename(),
@@ -157,8 +158,8 @@ class DownloadsManager {
     /**
      *  DownloadItem event handlers
      */
-    updatedEventController = (updatedEvent: Event, state: DownloadItemUpdatedEventState, item: DownloadItem, webContents: WebContents) => {
-        log.debug('DownloadsManager.updatedEventController', {state, updatedEvent, item, webContents});
+    updatedEventController = (updatedEvent: Event, state: DownloadItemUpdatedEventState, item: DownloadItem) => {
+        log.debug('DownloadsManager.updatedEventController', {state, updatedEvent});
 
         this.upsertFileToDownloads(item, state);
     }

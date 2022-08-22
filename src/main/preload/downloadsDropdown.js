@@ -22,6 +22,9 @@ contextBridge.exposeInMainWorld('process', {
     platform: process.platform,
 });
 
+/**
+ * renderer => main
+ */
 window.addEventListener('message', async (event) => {
     switch (event.data.type) {
     case CLOSE_DOWNLOADS_DROPDOWN:
@@ -50,6 +53,9 @@ window.addEventListener('message', async (event) => {
     }
 });
 
+/**
+ * main => renderer
+ */
 ipcRenderer.on(UPDATE_DOWNLOADS_DROPDOWN, (event, downloads, darkMode, windowBounds) => {
     window.postMessage({type: UPDATE_DOWNLOADS_DROPDOWN, data: {downloads, darkMode, windowBounds}}, window.location.href);
 });
