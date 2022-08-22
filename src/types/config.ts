@@ -165,7 +165,7 @@ export type MigrationInfo = {
 
 export type DownloadItemUpdatedEventState = 'interrupted' | 'progressing';
 export type DownloadItemDoneEventState = 'completed' | 'cancelled' | 'interrupted';
-export type DownloadItemState = DownloadItemUpdatedEventState | DownloadItemDoneEventState;
+export type DownloadItemState = DownloadItemUpdatedEventState | DownloadItemDoneEventState | 'deleted';
 
 export type ConfigDownloadItem = {
     type: DownloadItemTypeEnum;

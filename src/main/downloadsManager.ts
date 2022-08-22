@@ -3,7 +3,7 @@
 import path from 'path';
 import fs from 'fs';
 
-import {ConfigDownloadItem, DownloadItemDoneEventState, DownloadItemState, DownloadItemUpdatedEventState} from 'types/config';
+import {ConfigDownloadItem, DownloadItemDoneEventState, DownloadItems, DownloadItemState, DownloadItemUpdatedEventState} from 'types/config';
 
 import {DownloadItem, Event, WebContents, FileFilter, ipcMain} from 'electron';
 import log from 'electron-log';
@@ -123,9 +123,32 @@ class DownloadsManager {
         log.debug('DownloadsManager.upsertFileToDownloads', {fileId, downloadsCopy});
         const formattedItem = this.formatDownloadItem(item, state);
         downloadsCopy[fileId] = formattedItem;
-        Config.set('downloads', downloadsCopy);
-        ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, {downloads: Config.downloads});
+        this.saveUpdatedDownloads(downloadsCopy);
     };
+
+    saveUpdatedDownloads = (updatedDownloads: DownloadItems) => {
+        Config.set('downloads', updatedDownloads);
+        ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, {downloads: Config.downloads});
+    }
+
+    checkForDeletedFiles = (downloads: DownloadItems) => {
+        const downloadsCopy = {...downloads};
+        let modified = false;
+        for (const fileId in downloads) {
+            if (Object.prototype.hasOwnProperty.call(downloads, fileId)) {
+                const file = downloads[fileId];
+                if ((/completed|progressing/).test(file.state)) {
+                    if (!file.location || !fs.existsSync(file.location)) {
+                        downloadsCopy[fileId].state = 'deleted';
+                        modified = true;
+                    }
+                }
+            }
+        }
+        if (modified) {
+            this.saveUpdatedDownloads(downloadsCopy);
+        }
+    }
 
     /**
      *  DownloadItem event handlers
