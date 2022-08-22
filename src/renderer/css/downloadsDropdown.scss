@@ -11,23 +11,14 @@
 /* Custom scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
-
-    &:hover {
-        width: 16px;
-    }
 }
 ::-webkit-scrollbar-track {
     display: none;
 }
 ::-webkit-scrollbar-thumb {
-    background: rgba(63, 67, 80, 0.24);
+    background: rgba(63, 67, 80, 0.6);
     border-radius: 4px;
     width: 8px;
-
-    &:hover {
-        background: rgba(63, 67, 80, 0.6);
-        width: 16px;
-    }
 }
 
 body {
