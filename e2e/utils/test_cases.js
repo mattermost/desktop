@@ -95,7 +95,7 @@ async function createTestCycle(startDate, endDate) {
     const testCycle = {
         projectKey: JIRA_PROJECT_KEY,
         name: ZEPHYR_CYCLE_NAME ? `${ZEPHYR_CYCLE_NAME} (${BUILD_ID}-${BRANCH})` : `${BUILD_ID}-${BRANCH}`,
-        description: `Cypress automated test with ${BRANCH}`,
+        description: `Playwright automated test with ${BRANCH}`,
         plannedStartDate: startDate,
         plannedEndDate: endDate,
         statusName: 'Done',
@@ -125,7 +125,7 @@ async function createTestExecutions(report, testCycle) {
                 return {
                     statusName: status[item.state],
                     actualEndDate: new Date(startTime + item.incrementalDuration).toISOString(),
-                    actualResult: 'Cypress automated test completed',
+                    actualResult: 'Playwright automated test completed',
                 };
             });
 
@@ -143,7 +143,7 @@ async function createTestExecutions(report, testCycle) {
                 acc += prev.duration; // eslint-disable-line no-param-reassign
                 return acc;
             }, 0),
-            comment: `Cypress automated test - ${getStepStateSummary(steps)}`,
+            comment: `Playwright automated test - ${getStepStateSummary(steps)}`,
         };
 
         // Temporarily log to verify cases that were being saved.

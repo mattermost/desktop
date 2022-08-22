@@ -91,6 +91,11 @@
     "testMatch": [
       "**/src/**/*.test.js"
     ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/e2e/",
+      "/webpack.config.test.js"
+    ],
     "globals": {
       "__HASH_VERSION__": "5.0.0",
       "__CAN_UPGRADE__": false,
