@@ -34,7 +34,7 @@ export default class DownloadsDropdownView {
     isOpen: boolean;
 
     constructor(window: BrowserWindow, downloads: DownloadItems, darkMode: boolean) {
-        this.downloads = downloads;
+        this.downloads = downloadsManager.checkForDeletedFilesAndUpdateTheirState(downloads);
         this.window = window;
         this.darkMode = darkMode;
         this.isOpen = false;

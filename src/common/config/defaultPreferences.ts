@@ -43,7 +43,7 @@ const defaultPreferences: ConfigV4 = {
     lastActiveTeam: 0,
     downloadLocation: getDefaultDownloadLocation(),
     startInFullscreen: false,
-    downloads: [],
+    downloads: {},
 };
 
 export default defaultPreferences;

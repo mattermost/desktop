@@ -131,23 +131,27 @@ class DownloadsManager {
         ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, {downloads: Config.downloads});
     }
 
-    checkForDeletedFiles = (downloads: DownloadItems) => {
+    checkForDeletedFilesAndUpdateTheirState = (downloads: DownloadItems) => {
         const downloadsCopy = {...downloads};
         let modified = false;
         for (const fileId in downloads) {
             if (Object.prototype.hasOwnProperty.call(downloads, fileId)) {
                 const file = downloads[fileId];
-                if ((/completed|progressing/).test(file.state)) {
+                if ((file.state === 'completed')) {
                     if (!file.location || !fs.existsSync(file.location)) {
                         downloadsCopy[fileId].state = 'deleted';
                         modified = true;
                     }
+                } else if (file.state === 'progressing') {
+                    downloadsCopy[fileId].state = 'interrupted';
+                    modified = true;
                 }
             }
         }
         if (modified) {
             this.saveUpdatedDownloads(downloadsCopy);
         }
+        return downloadsCopy;
     }
 
     /**
