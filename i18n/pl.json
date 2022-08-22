@@ -176,5 +176,8 @@
     "renderer.components.settingsPage.bounceIcon.untilOpenApp": "dopóki nie otworzę aplikacji",
     "renderer.components.settingsPage.bounceIcon.once": "jednorazowo",
     "renderer.components.settingsPage.bounceIcon.description": "Jeśli jest włączona, ikona Docka odbija się raz lub do momentu, gdy użytkownik otworzy aplikację po otrzymaniu nowego powiadomienia.",
-    "renderer.components.mainPage.titleBar": "Mattermost"
+    "renderer.components.mainPage.titleBar": "Mattermost",
+    "renderer.components.settingsPage.loggingLevel.description": "Rejestrowanie jest przydatne dla programistów i pomocy technicznej w celu wyodrębnienia problemów, które mogą wystąpić w aplikacji desktopowej.",
+    "renderer.components.settingsPage.loggingLevel": "Poziom rejestrowania",
+    "renderer.components.settingsPage.loadingConfig": "Ładowanie konfiguracji..."
 }
