@@ -1,25 +1,28 @@
 .DownloadsDropdownButton {
+    align-items: center;
     background: transparent;
+    border-radius: 4px;
     border: none;
     cursor: pointer;
     display: flex;
-    align-items: center;
-    font-family: Open Sans;
-    min-width: 32px;
-    max-width: 96px;
+    flex-direction: column;
+    justify-content: center;
+    margin: 4px;
+    width: 32px;
+
+    i {
+        color: rgba(63, 67, 80, 0.56);
+        cursor: pointer;
+        font-size: 21px;
+        line-height: 21px;
+    }
+
     &:hover {
         background-color: rgba(28, 88, 217, 0.08);
         i {
             cursor: pointer;
             color: #386FE5;
         }
-        
-    }
-    i {
-        color: rgba(63, 67, 80, 0.56);
-        cursor: pointer;
-        font-size: 18px;
-        line-height: 21px;
     }
     &:focus, &.isDownloadsDropdownOpen {
         background-color: rgba(28, 88, 217, 0.08);
