@@ -179,5 +179,16 @@
     "renderer.components.mainPage.titleBar": "Mattermost",
     "renderer.components.settingsPage.loggingLevel.description": "Rejestrowanie jest przydatne dla programistów i pomocy technicznej w celu wyodrębnienia problemów, które mogą wystąpić w aplikacji desktopowej.",
     "renderer.components.settingsPage.loggingLevel": "Poziom rejestrowania",
-    "renderer.components.settingsPage.loadingConfig": "Ładowanie konfiguracji..."
+    "renderer.components.settingsPage.loadingConfig": "Ładowanie konfiguracji...",
+    "renderer.components.settingsPage.showUnreadBadge": "Pokaż czerwoną plakietkę na ikonie paska zadań, aby wskazać nieprzeczytane wiadomości",
+    "renderer.components.settingsPage.saving.error": "Nie można zapisać zmian. Proszę spróbować ponownie.",
+    "renderer.components.settingsPage.minimizeToTray.description": "Jeśli jest włączone, aplikacja pozostaje uruchomiona w obszarze powiadomień po zamknięciu okna aplikacji.",
+    "renderer.components.settingsPage.minimizeToTray": "Pozostawienie uruchomionej aplikacji w obszarze powiadomień po zamknięciu okna aplikacji",
+    "renderer.components.settingsPage.loggingLevel.level.warn": "Błędy i ostrzeżenia (warn)",
+    "renderer.components.settingsPage.loggingLevel.level.verbose": "Dosłownie (verbose)",
+    "renderer.components.settingsPage.loggingLevel.level.silly": "Najlepszy (silly)",
+    "renderer.components.settingsPage.loggingLevel.level.info": "Info (info)",
+    "renderer.components.settingsPage.loggingLevel.level.error": "Błędy (error)",
+    "renderer.components.settingsPage.loggingLevel.level.debug": "Debuguj (debug)",
+    "renderer.components.settingsPage.loggingLevel.description.subtitle": "Zwiększenie poziomu dziennika zwiększa zużycie miejsca na dysku i może wpłynąć na wydajność. Zalecamy zwiększenie poziomu dziennika tylko w przypadku wystąpienia problemów."
 }
