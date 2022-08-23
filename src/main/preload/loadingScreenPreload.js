@@ -41,5 +41,4 @@ ipcRenderer.on(TOGGLE_LOADING_SCREEN_VISIBILITY, (_, toggle) => {
 
 window.addEventListener('click', () => {
     ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
-    ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
 });

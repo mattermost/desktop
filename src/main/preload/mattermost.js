@@ -246,7 +246,6 @@ setInterval(() => {
 
 window.addEventListener('click', () => {
     ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
-    ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
 });
 
 ipcRenderer.on(BROWSER_HISTORY_PUSH, (event, pathName) => {
