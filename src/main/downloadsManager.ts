@@ -5,7 +5,7 @@ import fs from 'fs';
 
 import {ConfigDownloadItem, DownloadItemDoneEventState, DownloadItems, DownloadItemState, DownloadItemUpdatedEventState} from 'types/config';
 
-import {DownloadItem, Event, WebContents, FileFilter, ipcMain} from 'electron';
+import {DownloadItem, Event, WebContents, FileFilter, ipcMain, dialog, shell} from 'electron';
 import log from 'electron-log';
 
 import {CLOSE_DOWNLOADS_DROPDOWN, OPEN_DOWNLOADS_DROPDOWN, UPDATE_DOWNLOADS_DROPDOWN} from 'common/communication';
@@ -13,7 +13,7 @@ import Config from 'common/config';
 import {localizeMessage} from 'main/i18nManager';
 import {displayDownloadCompleted} from 'main/notifications';
 import WindowManager from 'main/windows/windowManager';
-import {getPercentage, isStringWithLength} from 'main/utils';
+import {getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader} from 'main/utils';
 
 export enum DownloadItemTypeEnum {
     FILE = 'file',
@@ -21,120 +21,53 @@ export enum DownloadItemTypeEnum {
 }
 
 class DownloadsManager {
+    fileSizes = new Map();
+
     handleNewDownload = (event: Event, item: DownloadItem, webContents: WebContents) => {
         log.debug('DownloadsManager.handleNewDownload', {item, sourceURL: webContents.getURL()});
+
         const filename = item.getFilename();
-        const fileElements = filename.split('.');
-        const filters = this.getFileFilters(fileElements);
-        this.shouldShowSaveDialog(item, filename, filters, Config.downloadLocation);
+        const shouldShowSaveDialog = this.shouldShowSaveDialog(filename, Config.downloadLocation);
+        if (shouldShowSaveDialog) {
+            const saveDialogSuccess = this.showSaveDialog(item);
+            if (!saveDialogSuccess) {
+                return;
+            }
+        } else {
+            /* ts-ignore */
+            const savePath = this.getSavePath(Config.downloadLocation, filename);
+            item.setSavePath(savePath);
+        }
         this.upsertFileToDownloads(item, 'progressing');
         this.handleDownloadItemEvents(item, webContents);
         this.openDownloadsDropdown();
     };
 
-    handleDownloadItemEvents = (item: DownloadItem, webContents: WebContents) => {
-        item.on('updated', (updateEvent, state) => {
-            this.updatedEventController(updateEvent, state, item);
-        });
-        item.on('done', (doneEvent, state) => {
-            this.doneEventController(doneEvent, state, item, webContents);
-        });
-    }
-
-    getFileFilters = (fileElements: string[]) => {
-        const filters = [];
-        if (fileElements.length > 1) {
-            filters.push({
-                name: localizeMessage('main.app.initialize.downloadBox.allFiles', 'All files'),
-                extensions: ['*'],
-            });
-        }
-        return filters;
-    }
-
     /**
-     *  This function displays the save dialog if one of the following is true:
-     *      - downloadLocation is undefined
-     *      - filename is not a valid string
-     *      - File already exists
-     *
-     *  Otherwise, it saves the file in the "Config.downloadLocation"
+     * This function monitors webRequests and retrieves the total file size (of files being downloaded)
+     * from the custom HTTP header "x-uncompressed-content-length".
      */
-    shouldShowSaveDialog = (item: DownloadItem, filename: string, filters: FileFilter[], downloadLocation?: string) => {
-        log.debug('DownloadsManager.shouldShowSaveDialog', {downloadLocation, res: isStringWithLength(downloadLocation)});
+    webRequestOnHeadersReceivedHandler = (details: Electron.OnHeadersReceivedListenerDetails, cb: (headersReceivedResponse: Electron.HeadersReceivedResponse) => void) => {
+        const headers = details.responseHeaders ?? {};
 
-        if (downloadLocation && isStringWithLength(downloadLocation)) {
-            const savePath = this.getSavePathName(downloadLocation, filename);
-            const fileAlreadyExists = fs.existsSync(savePath);
-            if (savePath && !fileAlreadyExists) {
-                item.setSavePath(savePath);
-                return;
+        if (headers?.['content-encoding']?.includes('gzip') && headers?.['x-uncompressed-content-length'] && headers?.['content-disposition'].join(';')?.includes('filename=')) {
+            const filename = readFilenameFromContentDispositionHeader(headers['content-disposition']);
+            const fileSize = headers['x-uncompressed-content-length']?.[0] || 0;
+            if (filename && (!this.fileSizes.has(filename) || this.fileSizes.get(filename) !== fileSize)) {
+                this.fileSizes.set(filename, fileSize);
             }
         }
 
-        item.setSaveDialogOptions({
-            title: filename,
-            defaultPath: undefined,
-            filters,
-        });
+        // With no arguments it uses the same headers
+        cb({});
     };
-
-    getSavePathName = (downloadLocation: string, filename?: string) => {
-        const name = isStringWithLength(filename) ? filename : 'file';
-        return `${downloadLocation}/${name}`;
-    };
-
-    clearDownloadsDropDown = () => {
-        log.debug('DownloadsManager.clearDownloadsDropDown');
-        Config.set('downloads', {});
-        ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, {downloads: Config.downloads});
-        this.closeDownloadsDropdown();
-    }
-
-    openDownloadsDropdown = () => {
-        log.debug('DownloadsManager.openDownloadsDropdown');
-        ipcMain.emit(OPEN_DOWNLOADS_DROPDOWN);
-    }
-    closeDownloadsDropdown = () => {
-        log.debug('DownloadsManager.closeDownloadsDropdown');
-        ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
-    }
-
-    formatDownloadItem = (item: DownloadItem, state: DownloadItemState): ConfigDownloadItem => {
-        const totalBytes = item.getTotalBytes();
-        const receivedBytes = item.getReceivedBytes();
-        const progress = getPercentage(receivedBytes, totalBytes);
-
-        return {
-            addedAt: item.getStartTime(),
-            filename: item.getFilename(),
-            iconUrl: item.getMimeType(),
-            location: item.getSavePath(),
-            progress,
-            receivedBytes,
-            state,
-            totalBytes,
-            type: DownloadItemTypeEnum.FILE,
-        };
-    }
-
-    upsertFileToDownloads = (item: DownloadItem, state: DownloadItemState) => {
-        const fileId = item.getFilename();
-        const downloadsCopy = Config.downloads;
-        log.debug('DownloadsManager.upsertFileToDownloads', {fileId, downloadsCopy});
-        const formattedItem = this.formatDownloadItem(item, state);
-        downloadsCopy[fileId] = formattedItem;
-        this.saveUpdatedDownloads(downloadsCopy);
-    };
-
-    saveUpdatedDownloads = (updatedDownloads: DownloadItems) => {
-        Config.set('downloads', updatedDownloads);
-        ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, {downloads: Config.downloads});
-    }
 
     checkForDeletedFilesAndUpdateTheirState = (downloads: DownloadItems) => {
+        log.debug('DownloadsManager.handleNewDownload');
+
         const downloadsCopy = {...downloads};
         let modified = false;
+
         for (const fileId in downloads) {
             if (Object.prototype.hasOwnProperty.call(downloads, fileId)) {
                 const file = downloads[fileId];
@@ -149,21 +82,121 @@ class DownloadsManager {
                 }
             }
         }
+
         if (modified) {
             this.saveUpdatedDownloads(downloadsCopy);
         }
+
         return downloadsCopy;
+    }
+
+    clearDownloadsDropDown = () => {
+        log.debug('DownloadsManager.clearDownloadsDropDown');
+
+        Config.set('downloads', {});
+        ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, {downloads: Config.downloads});
+        this.closeDownloadsDropdown();
+    }
+
+    openFile = (item: ConfigDownloadItem) => {
+        if (fs.existsSync(item.location)) {
+            shell.showItemInFolder(item.location);
+            return;
+        }
+
+        if (Config.downloadLocation) {
+            shell.openPath(Config.downloadLocation);
+            return;
+        }
+
+        log.debug('DownloadsDropdownView.openFile', 'NO_DOWNLOAD_LOCATION');
+    }
+
+    private handleDownloadItemEvents = (item: DownloadItem, webContents: WebContents) => {
+        item.on('updated', (updateEvent, state) => {
+            this.updatedEventController(updateEvent, state, item);
+        });
+        item.on('done', (doneEvent, state) => {
+            this.doneEventController(doneEvent, state, item, webContents);
+        });
+    }
+
+    /**
+     *  This function return true if one of the following is true:
+     *      - downloadLocation is undefined
+     *      - filename is not a valid string
+     *      - File already exists
+     */
+    private shouldShowSaveDialog = (filename: string, downloadLocation?: string) => {
+        log.debug('DownloadsManager.shouldShowSaveDialog', {downloadLocation, res: isStringWithLength(downloadLocation)});
+
+        if (downloadLocation && isStringWithLength(downloadLocation)) {
+            const savePath = this.getSavePath(downloadLocation, filename);
+            const fileAlreadyExists = fs.existsSync(savePath);
+            if (savePath && !fileAlreadyExists) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    private showSaveDialog = (item: DownloadItem) => {
+        const filename = item.getFilename();
+        const fileElements = filename.split('.');
+        const filters = this.getFileFilters(fileElements);
+
+        const newPath = dialog.showSaveDialogSync({
+            title: filename,
+            defaultPath: filename,
+            filters,
+        });
+
+        if (newPath) {
+            item.setSavePath(newPath);
+            return true;
+        }
+        return false;
+    }
+
+    private openDownloadsDropdown = () => {
+        log.debug('DownloadsManager.openDownloadsDropdown');
+
+        ipcMain.emit(OPEN_DOWNLOADS_DROPDOWN);
+    }
+    private closeDownloadsDropdown = () => {
+        log.debug('DownloadsManager.closeDownloadsDropdown');
+
+        ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
+    }
+
+    private upsertFileToDownloads = (item: DownloadItem, state: DownloadItemState) => {
+        const fileId = this.getFileId(item);
+        const downloadsCopy = Config.downloads;
+        log.debug('DownloadsManager.upsertFileToDownloads', {fileId, downloadsCopy});
+        const formattedItem = this.formatDownloadItem(item, state);
+        downloadsCopy[fileId] = formattedItem;
+        this.saveUpdatedDownloads(downloadsCopy);
+    };
+
+    private saveUpdatedDownloads = (updatedDownloads: DownloadItems) => {
+        Config.set('downloads', updatedDownloads);
+        ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, {downloads: Config.downloads});
     }
 
     /**
      *  DownloadItem event handlers
      */
-    updatedEventController = (updatedEvent: Event, state: DownloadItemUpdatedEventState, item: DownloadItem) => {
+    private updatedEventController = (updatedEvent: Event, state: DownloadItemUpdatedEventState, item: DownloadItem) => {
         log.debug('DownloadsManager.updatedEventController', {state, updatedEvent});
 
         this.upsertFileToDownloads(item, state);
+
+        if (state === 'interrupted') {
+            this.fileSizes.delete(item.getFilename());
+        }
     }
-    doneEventController = (doneEvent: Event, state: DownloadItemDoneEventState, item: DownloadItem, webContents: WebContents) => {
+
+    private doneEventController = (doneEvent: Event, state: DownloadItemDoneEventState, item: DownloadItem, webContents: WebContents) => {
         log.debug('DownloadsManager.doneEventController', {state});
 
         if (state === 'completed') {
@@ -171,6 +204,58 @@ class DownloadsManager {
         }
 
         this.upsertFileToDownloads(item, state);
+
+        this.fileSizes.delete(item.getFilename());
+    }
+
+    /**
+     * Internal utils
+     */
+    private formatDownloadItem = (item: DownloadItem, state: DownloadItemState): ConfigDownloadItem => {
+        const totalBytes = item.getTotalBytes() || this.fileSizes.get(item.getFilename());
+        const receivedBytes = item.getReceivedBytes();
+        const progress = getPercentage(receivedBytes, totalBytes);
+
+        return {
+            addedAt: item.getStartTime(),
+            filename: this.getFileId(item),
+            iconUrl: item.getMimeType(),
+            location: item.getSavePath(),
+            progress,
+            receivedBytes,
+            state,
+            totalBytes,
+            type: DownloadItemTypeEnum.FILE,
+        };
+    }
+
+    private getSavePath = (downloadLocation?: string, filename?: string) => {
+        const name = isStringWithLength(filename) ? filename : 'file';
+
+        return `${downloadLocation}/${name}`;
+    };
+
+    private getFileFilters = (fileElements: string[]): FileFilter[] => {
+        const filters = [];
+
+        if (fileElements.length > 1) {
+            filters.push({
+                name: localizeMessage('main.app.initialize.downloadBox.allFiles', 'All files'),
+                extensions: ['*'],
+            });
+        }
+
+        return filters;
+    }
+
+    private readFilenameFromPath = (path: string) => {
+        return path.split('/').pop();
+    }
+
+    private getFileId = (item: DownloadItem) => {
+        const fileNameFromPath = this.readFilenameFromPath(item.savePath);
+        const itemFilename = item.getFilename();
+        return fileNameFromPath && fileNameFromPath !== itemFilename ? fileNameFromPath : itemFilename;
     }
 }
 

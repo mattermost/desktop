@@ -8,7 +8,7 @@ const bytesToMegabytes = (bytes: number): string => {
 };
 
 const getETA = (item: ConfigDownloadItem) => {
-    const elapsedTime = ((new Date().getTime()) - Math.floor(item.addedAt * 1000)) / (1000 * 3600);
+    const elapsedTime = Math.round((new Date().getTime() - Math.floor(item.addedAt * 1000)) / 3600);
     return elapsedTime;
 };
 
@@ -27,21 +27,21 @@ const bytesToMegabytesConverter = (value: number | string): string => {
 };
 
 const getFileSizeOrBytesProgress = (item: ConfigDownloadItem) => {
-    let result;
-    if (item.receivedBytes === item.totalBytes) {
-        result = bytesToMegabytesConverter(item.totalBytes);
-    } else {
-        result = `${bytesToMegabytesConverter(item.receivedBytes)}/${bytesToMegabytesConverter(item.totalBytes)}`;
+    const totalMegabytes = bytesToMegabytesConverter(item.totalBytes);
+    if (item.state === 'progressing') {
+        return `${bytesToMegabytesConverter(item.receivedBytes)}/${totalMegabytes} MB`;
     }
-    return `${result} MB`;
+    return `${totalMegabytes} MB`;
 };
 
 const getDownloadingFileStatus = (item: ConfigDownloadItem) => {
     switch (item.state) {
-    case 'completed':
-        return 'Downloaded';
     case 'progressing':
         return `${getETA(item)} elapsed`;
+    case 'completed':
+        return 'Downloaded';
+    case 'deleted':
+        return 'Deleted';
     default:
         return 'Cancelled';
     }

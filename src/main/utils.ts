@@ -109,3 +109,7 @@ export function getPercentage(received: number, total: number) {
     }
     return Math.round((received / total) * 100);
 }
+
+export function readFilenameFromContentDispositionHeader(header: string[]) {
+    return header?.join(';')?.match(/(?<=filename=")(.*)(?=")/g)?.[0];
+}

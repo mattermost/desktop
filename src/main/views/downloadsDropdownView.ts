@@ -1,8 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import fs from 'fs';
-
-import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent, shell} from 'electron';
+import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent} from 'electron';
 
 import log from 'electron-log';
 
@@ -22,7 +20,6 @@ import {getLocalPreload, getLocalURLString} from 'main/utils';
 
 import WindowManager from '../windows/windowManager';
 import downloadsManager from 'main/downloadsManager';
-import config from 'common/config';
 
 export default class DownloadsDropdownView {
     view: BrowserView;
@@ -55,6 +52,8 @@ export default class DownloadsDropdownView {
         this.view.webContents.openDevTools();
         this.view.webContents.loadURL(getLocalURLString('downloadsDropdown.html'));
         this.window.addBrowserView(this.view);
+
+        this.view.webContents.session.webRequest.onHeadersReceived(downloadsManager.webRequestOnHeadersReceivedHandler);
 
         ipcMain.on(OPEN_DOWNLOADS_DROPDOWN, this.handleOpen);
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN, this.handleClose);
@@ -125,17 +124,7 @@ export default class DownloadsDropdownView {
     openFile = (e: IpcMainEvent, item: ConfigDownloadItem) => {
         log.debug('DownloadsDropdownView.openFile', {item});
 
-        if (fs.existsSync(item.location)) {
-            shell.showItemInFolder(item.location);
-            return;
-        }
-
-        if (config.downloadLocation) {
-            shell.openPath(config.downloadLocation);
-            return;
-        }
-
-        log.debug('DownloadsDropdownView.openFile', 'NO_DOWNLOAD_LOCATION');
+        downloadsManager.openFile(item);
     }
 
     getBounds = (width: number, height: number) => {

@@ -123,7 +123,7 @@ body {
                         justify-content: space-between;
                         width: 100%;
 
-                        .DownloadsDropdown__File__Body__Thumbnail {
+                        .DownloadsDropdown__File__Body__Thumbnail__Container {
                             align-items: center;
                             background-color: rgba(63, 67, 80, 0.08);
                             border-radius: 4px;
@@ -131,9 +131,17 @@ body {
                             height: 32px;
                             justify-content: center;
                             margin-right: 8px;
+                            position: relative;
                             width: 32px;
 
                             > svg {
+                                position: absolute;
+                                top: 0;
+                                right: 0;
+                                transform: translate(50%, -50%);
+                            }
+
+                            .DownloadsDropdown__File__Body__Thumbnail > svg {
                                 height: 24px;
                                 margin: auto;
                                 width: 24px;
@@ -190,8 +198,9 @@ body {
                         height: 4px;
                         background-color: rgba(63, 67, 80, 0.16);
                         border-radius: 4px;
-                        position: relative;
+                        margin-top: 4px;
                         overflow: hidden;
+                        position: relative;
 
                         .DownloadsDropdown__File__ProgressBar {
                             background-color: #1c58d9;

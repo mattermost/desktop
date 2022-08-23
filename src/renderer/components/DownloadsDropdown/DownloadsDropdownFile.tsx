@@ -36,7 +36,11 @@ const DownloadsDropdownFile = ({item}: OwnProps) => {
                     <div className='DownloadsDropdown__File__Body__Details__Filename'>
                         {item.filename}
                     </div>
-                    <div className='DownloadsDropdown__File__Body__Details__FileSizeAndStatus'>
+                    <div
+                        className={classNames('DownloadsDropdown__File__Body__Details__FileSizeAndStatus', {
+                            cancelled: (/(cancelled|deleted|interrupted)/).test(item.state),
+                        })}
+                    >
                         <FileSizeAndStatus item={item}/>
                     </div>
                 </div>
