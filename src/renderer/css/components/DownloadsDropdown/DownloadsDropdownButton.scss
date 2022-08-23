@@ -15,17 +15,17 @@
         }
         
     }
+    i {
+        color: rgba(63, 67, 80, 0.56);
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 21px;
+    }
     &:focus, &.isDownloadsDropdownOpen {
         background-color: rgba(28, 88, 217, 0.08);
         i {
             color: #386FE5;
         }
-    }
-    i {
-        color: rgba(221, 223, 228, 0.56);
-        cursor: pointer;
-        font-size: 18px;
-        line-height: 21px;
     }
 
     .DownloadsDropdownButton__badgeContainer {
