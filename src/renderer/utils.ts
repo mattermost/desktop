@@ -4,7 +4,7 @@
 import {ConfigDownloadItem} from 'types/config';
 
 const bytesToMegabytes = (bytes: number): string => {
-    return (bytes / 1024 / 1024).toFixed(1);
+    return (bytes / 1024 / 1024).toFixed(1).replace('.0', '');
 };
 
 const getETA = (item: ConfigDownloadItem) => {
@@ -48,6 +48,7 @@ const getDownloadingFileStatus = (item: ConfigDownloadItem) => {
 };
 
 export {
+    bytesToMegabytes,
     bytesToMegabytesConverter,
     getDownloadingFileStatus,
     getFileSizeOrBytesProgress,

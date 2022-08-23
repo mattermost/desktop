@@ -27,9 +27,9 @@ export const MINIMUM_WINDOW_HEIGHT = 240;
 export const DOWNLOADS_DROPDOWN_HEIGHT = 360;
 export const DOWNLOADS_DROPDOWN_WIDTH = 280;
 export const DOWNLOADS_DROPDOWN_PADDING = 24;
-
 // In  order to display the box-shadow & radius on the left + right, use this WIDTH in the browserView for downloadsDropdown
 export const DOWNLOADS_DROPDOWN_FULL_WIDTH = DOWNLOADS_DROPDOWN_PADDING + DOWNLOADS_DROPDOWN_WIDTH + TAB_BAR_PADDING;
+export const DOWNLOADS_DROPDOWN_MAX_ITEMS = 50;
 
 // supported custom login paths (oath, saml)
 export const customLoginRegexPaths = [

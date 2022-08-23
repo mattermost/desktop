@@ -14,6 +14,7 @@ import {localizeMessage} from 'main/i18nManager';
 import {displayDownloadCompleted} from 'main/notifications';
 import WindowManager from 'main/windows/windowManager';
 import {getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader} from 'main/utils';
+import { DOWNLOADS_DROPDOWN_MAX_ITEMS } from 'common/utils/constants';
 
 export enum DownloadItemTypeEnum {
     FILE = 'file',
@@ -175,12 +176,23 @@ class DownloadsManager {
         log.debug('DownloadsManager.upsertFileToDownloads', {fileId, downloadsCopy});
         const formattedItem = this.formatDownloadItem(item, state);
         downloadsCopy[fileId] = formattedItem;
-        this.saveUpdatedDownloads(downloadsCopy);
+        const downloadsToSave = this.checkIfMaxFilesReached(downloadsCopy);
+        this.saveUpdatedDownloads(downloadsToSave);
     };
 
     private saveUpdatedDownloads = (updatedDownloads: DownloadItems) => {
         Config.set('downloads', updatedDownloads);
         ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, {downloads: Config.downloads});
+    }
+
+    private checkIfMaxFilesReached = (downloads: DownloadItems) => {
+        if (Object.keys(downloads).length > DOWNLOADS_DROPDOWN_MAX_ITEMS) {
+            const oldestFileId = Object.keys(downloads).reduce((prev, curr) => {
+                return downloads[prev].addedAt > downloads[curr].addedAt ? curr : prev;
+            });
+            delete downloads[oldestFileId];
+        }
+        return downloads;
     }
 
     /**
