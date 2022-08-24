@@ -150,6 +150,7 @@ describe('main/Validator', () => {
             ],
             trayIconTheme: 'use_system',
             useSpellChecker: true,
+            skipOnboardingScreens: false,
             version: 3,
         };
 

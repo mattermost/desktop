@@ -86,7 +86,7 @@ export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: 
 }
 
 export function handleMainWindowIsShown() {
-    const showWelcomeScreen = !Config.teams.length;
+    const showWelcomeScreen = !Config.skipOnboardingScreens && !Config.teams.length;
     const mainWindow = WindowManager.getMainWindow();
 
     if (mainWindow) {

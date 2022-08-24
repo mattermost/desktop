@@ -37,6 +37,7 @@ const buildConfig: BuildConfig = {
         'mailto',
         'tel',
     ],
+    skipOnboardingScreens: false,
 };
 
 export default buildConfig;
