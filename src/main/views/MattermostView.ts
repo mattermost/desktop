@@ -39,7 +39,6 @@ export enum Status {
     ERROR = -1,
 }
 
-const ASTERISK_GROUP = 3;
 const MENTIONS_GROUP = 2;
 
 export class MattermostView extends EventEmitter {
@@ -53,12 +52,6 @@ export class MattermostView extends EventEmitter {
     serverInfo: ServerInfo;
 
     removeLoading?: number;
-
-    /**
-     * for backward compatibility when reading the title.
-     * null means we have yet to figure out if it uses it or not but we consider it false until proven wrong
-     */
-    usesAsteriskForUnreads?: boolean;
 
     currentFavicon?: string;
     hasBeenShown: boolean;
@@ -391,33 +384,20 @@ export class MattermostView extends EventEmitter {
     }
 
     updateMentionsFromTitle = (title: string) => {
-        //const title = this.view.webContents.getTitle();
         const resultsIterator = title.matchAll(this.titleParser);
         const results = resultsIterator.next(); // we are only interested in the first set
-
-        // if not using asterisk (version > v5.28), it'll be marked as undefined and wont be used to check if there are unread channels
-        const hasAsterisk = results && results.value && results.value[ASTERISK_GROUP];
-        if (typeof hasAsterisk !== 'undefined') {
-            this.usesAsteriskForUnreads = true;
-        }
-        let unreads;
-        if (this.usesAsteriskForUnreads) {
-            unreads = Boolean(hasAsterisk);
-        }
         const mentions = (results && results.value && parseInt(results.value[MENTIONS_GROUP], 10)) || 0;
 
-        appState.updateMentions(this.tab.name, mentions, unreads);
+        appState.updateMentions(this.tab.name, mentions);
     }
 
     handleFaviconUpdate = (e: Event, favicons: string[]) => {
         log.silly('MattermostView.handleFaviconUpdate', {tabName: this.tab.name, favicons});
 
-        if (!this.usesAsteriskForUnreads) {
-            // if unread state is stored for that favicon, retrieve value.
-            // if not, get related info from preload and store it for future changes
-            this.currentFavicon = favicons[0];
-            this.findUnreadState(favicons[0]);
-        }
+        // if unread state is stored for that favicon, retrieve value.
+        // if not, get related info from preload and store it for future changes
+        this.currentFavicon = favicons[0];
+        this.findUnreadState(favicons[0]);
     }
 
     // if favicon is null, it will affect appState, but won't be memoized

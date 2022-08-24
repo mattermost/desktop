@@ -342,17 +342,12 @@ describe('main/views/MattermostView', () => {
 
         it('should parse mentions from title', () => {
             mattermostView.updateMentionsFromTitle('(7) Mattermost');
-            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.name, 7, undefined);
+            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.name, 7);
         });
 
         it('should parse unreads from title', () => {
             mattermostView.updateMentionsFromTitle('* Mattermost');
-            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.name, 0, true);
-        });
-
-        it('should not parse unreads when title is on a channel with an asterisk before it', () => {
-            mattermostView.updateMentionsFromTitle('*testChannel - Mattermost');
-            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.name, 0, false);
+            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.name, 0);
         });
     });
 });
