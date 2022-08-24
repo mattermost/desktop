@@ -722,14 +722,13 @@ workflows:
   nightly_rainforest:
     jobs:
       - msi_installer:
-          context: windows-codesign
-          pre-steps: 
-            - run: $env:MM_DESKTOP_BUILD_SKIPONBOARDINGSCREENS="true"
+          context: 
+            - windows-codesign
+            - desktop-rainforest-build
       - mac_installer:
-          context: codesign-certificates
-          pre-steps: 
-            - run: export MM_DESKTOP_BUILD_SKIPONBOARDINGSCREENS="true"
-            - run: export MM_DESKTOP_BUILD_DISABLEGPU="true"
+          context: 
+            - codesign-certificates
+            - desktop-rainforest-build
       - upload_to_s3_daily:
           context: mattermost-desktop-daily-s3
           requires:
