@@ -708,7 +708,7 @@ export class WindowManager {
         log.debug('WindowManager.handleAppLoggedOut', viewName);
 
         const view = this.viewManager?.views.get(viewName);
-        if (view && view) {
+        if (view && view.isLoggedIn) {
             view.isLoggedIn = false;
         }
     }
