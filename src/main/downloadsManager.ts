@@ -8,7 +8,7 @@ import {ConfigDownloadItem, DownloadItemDoneEventState, DownloadItems, DownloadI
 import {DownloadItem, Event, WebContents, FileFilter, ipcMain, dialog, shell} from 'electron';
 import log from 'electron-log';
 
-import {CLOSE_DOWNLOADS_DROPDOWN, OPEN_DOWNLOADS_DROPDOWN, UPDATE_DOWNLOADS_DROPDOWN} from 'common/communication';
+import {CLOSE_DOWNLOADS_DROPDOWN, HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE, OPEN_DOWNLOADS_DROPDOWN, SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE, UPDATE_DOWNLOADS_DROPDOWN} from 'common/communication';
 import Config from 'common/config';
 import {localizeMessage} from 'main/i18nManager';
 import {displayDownloadCompleted} from 'main/notifications';
@@ -22,8 +22,9 @@ export enum DownloadItemTypeEnum {
 }
 
 class DownloadsManager {
-    fileSizes = new Map<string, string>();
-    autoCloseTimeout: NodeJS.Timeout | null = null;
+    private isOpen = false;
+    private fileSizes = new Map<string, string>();
+    private autoCloseTimeout: NodeJS.Timeout | null = null;
 
     handleNewDownload = (event: Event, item: DownloadItem, webContents: WebContents) => {
         log.debug('DownloadsManager.handleNewDownload', {item, sourceURL: webContents.getURL()});
@@ -115,6 +116,17 @@ class DownloadsManager {
         log.debug('DownloadsDropdownView.openFile', 'NO_DOWNLOAD_LOCATION');
     }
 
+    setIsOpen = (val: boolean) => {
+        this.isOpen = val;
+        if (val === true) {
+            WindowManager.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
+        }
+    }
+
+    getIsOpen = () => {
+        return this.isOpen;
+    }
+
     private handleDownloadItemEvents = (item: DownloadItem, webContents: WebContents) => {
         item.on('updated', (updateEvent, state) => {
             this.updatedEventController(updateEvent, state, item);
@@ -164,11 +176,15 @@ class DownloadsManager {
     private openDownloadsDropdown = () => {
         log.debug('DownloadsManager.openDownloadsDropdown');
 
+        this.isOpen = true;
         ipcMain.emit(OPEN_DOWNLOADS_DROPDOWN);
+        WindowManager.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
     }
+
     private closeDownloadsDropdown = () => {
         log.debug('DownloadsManager.closeDownloadsDropdown');
 
+        this.isOpen = false;
         ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
 
         if (this.autoCloseTimeout) {
@@ -213,6 +229,15 @@ class DownloadsManager {
         }
     }
 
+    private shouldShowBadge = () => {
+        log.debug('DownloadsManager.shouldShowBadge', { isOpen: this.isOpen });
+        if (this.isOpen === true) {
+            WindowManager.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
+        } else {
+            WindowManager.sendToRenderer(SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
+        }
+    }
+
     /**
      *  DownloadItem event handlers
      */
@@ -224,6 +249,7 @@ class DownloadsManager {
         if (state === 'interrupted') {
             this.fileSizes.delete(item.getFilename());
         }
+        this.shouldShowBadge();
     }
 
     private doneEventController = (doneEvent: Event, state: DownloadItemDoneEventState, item: DownloadItem, webContents: WebContents) => {
@@ -237,6 +263,7 @@ class DownloadsManager {
 
         this.fileSizes.delete(item.getFilename());
         this.shouldAutoClose();
+        this.shouldShowBadge();
     }
 
     /**

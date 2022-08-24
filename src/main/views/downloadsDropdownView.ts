@@ -28,13 +28,11 @@ export default class DownloadsDropdownView {
     darkMode: boolean;
     window: BrowserWindow;
     windowBounds: Electron.Rectangle;
-    isOpen: boolean;
 
     constructor(window: BrowserWindow, downloads: DownloadItems, darkMode: boolean) {
         this.downloads = downloadsManager.checkForDeletedFilesAndUpdateTheirState(downloads);
         this.window = window;
         this.darkMode = darkMode;
-        this.isOpen = false;
 
         this.windowBounds = this.window.getContentBounds();
         this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT);
@@ -49,7 +47,6 @@ export default class DownloadsDropdownView {
             transparent: true,
         }});
 
-        this.view.webContents.openDevTools();
         this.view.webContents.loadURL(getLocalURLString('downloadsDropdown.html'));
         this.window.addBrowserView(this.view);
 
@@ -104,7 +101,7 @@ export default class DownloadsDropdownView {
         this.view.setBounds(this.bounds);
         this.window.setTopBrowserView(this.view);
         this.view.webContents.focus();
-        this.isOpen = true;
+        downloadsManager.setIsOpen(true);
         WindowManager.sendToRenderer(OPEN_DOWNLOADS_DROPDOWN);
     }
 
@@ -112,7 +109,7 @@ export default class DownloadsDropdownView {
         log.debug('DownloadsDropdownView.handleClose');
 
         this.view.setBounds(this.getBounds(0, 0));
-        this.isOpen = false;
+        downloadsManager.setIsOpen(false);
         WindowManager.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN);
     }
 
@@ -150,7 +147,7 @@ export default class DownloadsDropdownView {
 
     repositionDownloadsDropdown = () => {
         this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT);
-        if (this.isOpen) {
+        if (downloadsManager.getIsOpen()) {
             this.view.setBounds(this.bounds);
         }
     }

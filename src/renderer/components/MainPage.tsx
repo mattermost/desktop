@@ -47,6 +47,8 @@ import {
     RELOAD_CURRENT_VIEW,
     CLOSE_DOWNLOADS_DROPDOWN,
     OPEN_DOWNLOADS_DROPDOWN,
+    SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE,
+    HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -285,6 +287,14 @@ class MainPage extends React.PureComponent<Props, State> {
 
         window.ipcRenderer.on(OPEN_DOWNLOADS_DROPDOWN, () => {
             this.setState({isDownloadsDropdownOpen: true});
+        });
+
+        window.ipcRenderer.on(SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE, () => {
+            this.setState({showDownloadsBadge: true});
+        });
+
+        window.ipcRenderer.on(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE, () => {
+            this.setState({showDownloadsBadge: false});
         });
 
         if (window.process.platform !== 'darwin') {

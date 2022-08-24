@@ -12,7 +12,6 @@ import {
     LOADING_SCREEN_ANIMATION_FINISHED,
     TOGGLE_LOADING_SCREEN_VISIBILITY,
     CLOSE_TEAMS_DROPDOWN,
-    CLOSE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
 
 console.log('preloaded for the loading screen!');

@@ -15,9 +15,7 @@ type Props = {
 }
 
 const DownloadsDropDownButtonBadge = ({show}: { show: boolean }) => (
-    show ? <div className='DownloadsDropdownButton__badgeContainer'>
-        <span className='DownloadsDropdownButton__badge'/>
-    </div> : null
+    show ? <span className='DownloadsDropdownButton__badge'/> : null
 );
 
 const DownloadsDropdownButton: React.FC<Props> = ({darkMode, isDownloadsDropdownOpen, showDownloadsBadge}: Props) => {
