@@ -46,7 +46,6 @@ export type ConfigV3 = {
     alwaysClose?: boolean;
     logLevel?: string;
     appLanguage?: string;
-    skipOnboardingScreens: boolean;
 }
 
 export type ConfigV2 = {
@@ -107,7 +106,6 @@ export type BuildConfig = {
     enableAutoUpdater: boolean;
     managedResources: string[];
     allowedProtocols: string[];
-    skipOnboardingScreens: boolean;
 }
 
 export type RegistryConfig = {
