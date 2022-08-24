@@ -720,6 +720,7 @@ workflows:
           requires:
             - store_artifacts
   nightly_rainforest:
+    when: << pipeline.parameters.run_nightly >>
     jobs:
       - msi_installer:
           context: 
