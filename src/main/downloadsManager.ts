@@ -14,7 +14,7 @@ import {localizeMessage} from 'main/i18nManager';
 import {displayDownloadCompleted} from 'main/notifications';
 import WindowManager from 'main/windows/windowManager';
 import {getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader} from 'main/utils';
-import { DOWNLOADS_DROPDOWN_MAX_ITEMS } from 'common/utils/constants';
+import { DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT, DOWNLOADS_DROPDOWN_MAX_ITEMS } from 'common/utils/constants';
 
 export enum DownloadItemTypeEnum {
     FILE = 'file',
@@ -22,7 +22,8 @@ export enum DownloadItemTypeEnum {
 }
 
 class DownloadsManager {
-    fileSizes = new Map();
+    fileSizes = new Map<string, string>();
+    autoCloseTimeout: NodeJS.Timeout | null = null;
 
     handleNewDownload = (event: Event, item: DownloadItem, webContents: WebContents) => {
         log.debug('DownloadsManager.handleNewDownload', {item, sourceURL: webContents.getURL()});
@@ -53,8 +54,8 @@ class DownloadsManager {
 
         if (headers?.['content-encoding']?.includes('gzip') && headers?.['x-uncompressed-content-length'] && headers?.['content-disposition'].join(';')?.includes('filename=')) {
             const filename = readFilenameFromContentDispositionHeader(headers['content-disposition']);
-            const fileSize = headers['x-uncompressed-content-length']?.[0] || 0;
-            if (filename && (!this.fileSizes.has(filename) || this.fileSizes.get(filename) !== fileSize)) {
+            const fileSize = headers['x-uncompressed-content-length']?.[0] || '0';
+            if (filename && (!this.fileSizes.has(filename) || this.fileSizes.get(filename)?.toString() !== fileSize)) {
                 this.fileSizes.set(filename, fileSize);
             }
         }
@@ -168,6 +169,11 @@ class DownloadsManager {
         log.debug('DownloadsManager.closeDownloadsDropdown');
 
         ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
+
+        if (this.autoCloseTimeout) {
+            clearTimeout(this.autoCloseTimeout);
+            this.autoCloseTimeout = null;
+        }
     }
 
     private upsertFileToDownloads = (item: DownloadItem, state: DownloadItemState) => {
@@ -195,6 +201,17 @@ class DownloadsManager {
         return downloads;
     }
 
+    private shouldAutoClose = () => {
+        // if no other file is being downloaded
+        if (!Object.values(Config.downloads).some(item => item.state === 'progressing')) {
+            if (this.autoCloseTimeout) {
+                this.autoCloseTimeout.refresh();
+            } else {
+                this.autoCloseTimeout = setTimeout(() => this.closeDownloadsDropdown(), DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT);
+            }
+        }
+    }
+
     /**
      *  DownloadItem event handlers
      */
@@ -218,13 +235,14 @@ class DownloadsManager {
         this.upsertFileToDownloads(item, state);
 
         this.fileSizes.delete(item.getFilename());
+        this.shouldAutoClose();
     }
 
     /**
      * Internal utils
      */
     private formatDownloadItem = (item: DownloadItem, state: DownloadItemState): ConfigDownloadItem => {
-        const totalBytes = item.getTotalBytes() || this.fileSizes.get(item.getFilename());
+        const totalBytes = this.getFileSize(item);
         const receivedBytes = item.getReceivedBytes();
         const progress = getPercentage(receivedBytes, totalBytes);
 
@@ -239,6 +257,14 @@ class DownloadsManager {
             totalBytes,
             type: DownloadItemTypeEnum.FILE,
         };
+    }
+
+    private getFileSize = (item: DownloadItem) => {
+        const itemTotalBytes = item.getTotalBytes();
+        if (!itemTotalBytes) {
+            return parseInt(this.fileSizes.get(item.getFilename()) || '0', 10)
+        }
+        return itemTotalBytes;
     }
 
     private getSavePath = (downloadLocation?: string, filename?: string) => {

@@ -30,6 +30,7 @@ export const DOWNLOADS_DROPDOWN_PADDING = 24;
 // In  order to display the box-shadow & radius on the left + right, use this WIDTH in the browserView for downloadsDropdown
 export const DOWNLOADS_DROPDOWN_FULL_WIDTH = DOWNLOADS_DROPDOWN_PADDING + DOWNLOADS_DROPDOWN_WIDTH + TAB_BAR_PADDING;
 export const DOWNLOADS_DROPDOWN_MAX_ITEMS = 50;
+export const DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT = 4000; // 4 sec
 
 // supported custom login paths (oath, saml)
 export const customLoginRegexPaths = [
