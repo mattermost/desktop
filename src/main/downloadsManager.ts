@@ -33,6 +33,7 @@ class DownloadsManager {
         if (shouldShowSaveDialog) {
             const saveDialogSuccess = this.showSaveDialog(item);
             if (!saveDialogSuccess) {
+                item.cancel();
                 return;
             }
         } else {
