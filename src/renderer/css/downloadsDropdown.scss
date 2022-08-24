@@ -1,6 +1,13 @@
 @import url("fonts.css");
 @import '~@mattermost/compass-icons/css/compass-icons.css';
 
+@mixin file-icon($path) {
+    background-image: url($path);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 24px 24px;
+}
+
 /* with this, padding doesn't change an element's width & height */
 * {
     -moz-box-sizing: border-box;
@@ -141,10 +148,47 @@ body {
                                 transform: translate(50%, -50%);
                             }
 
-                            .DownloadsDropdown__File__Body__Thumbnail > svg {
-                                height: 24px;
-                                margin: auto;
-                                width: 24px;
+                            .DownloadsDropdown__File__Body__Thumbnail {
+                                width: 100%;
+                                height: 100%;
+
+                                &.text {
+                                    @include file-icon('./thumbnails/text.svg');
+                                }
+                                &.audio {
+                                    @include file-icon('./thumbnails/audio.svg');
+                                }
+                                &.video {
+                                    @include file-icon('./thumbnails/video.svg');
+                                }
+                                &.ppt {
+                                    @include file-icon('./thumbnails/ppt.svg');
+                                }
+                                &.generic,
+                                &.other {
+                                    @include file-icon('./thumbnails/generic.svg');
+                                }
+                                &.code {
+                                    @include file-icon('./thumbnails/code.svg');
+                                }
+                                &.excel {
+                                    @include file-icon('./thumbnails/excel.svg');
+                                }
+                                &.word {
+                                    @include file-icon('./thumbnails/word.svg');
+                                }
+                                &.pdf {
+                                    @include file-icon('./thumbnails/pdf.svg');
+                                }
+                                &.patch {
+                                    @include file-icon('./thumbnails/patch.svg');
+                                }
+                                &.image {
+                                    @include file-icon('./thumbnails/image.svg');
+                                }
+                                &.zip {
+                                    @include file-icon('./thumbnails/zip.svg');
+                                }
                             }
                         }
 

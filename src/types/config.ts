@@ -173,7 +173,7 @@ export type ConfigDownloadItem = {
     state: DownloadItemState;
     progress: number;
     location: string;
-    iconUrl: string | null;
+    mimeType: string | null;
     addedAt: number;
     receivedBytes: number;
     totalBytes: number;

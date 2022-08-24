@@ -249,7 +249,7 @@ class DownloadsManager {
         return {
             addedAt: item.getStartTime(),
             filename: this.getFileId(item),
-            iconUrl: item.getMimeType(),
+            mimeType: item.getMimeType(),
             location: item.getSavePath(),
             progress,
             receivedBytes,

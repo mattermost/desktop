@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {ConfigDownloadItem} from 'types/config';
+import { Constants } from './constants';
 
 const bytesToMegabytes = (bytes: number): string => {
     return (bytes / 1024 / 1024).toFixed(1).replace('.0', '');
@@ -47,9 +48,31 @@ const getDownloadingFileStatus = (item: ConfigDownloadItem) => {
     }
 };
 
+const getIconClassName = (file: ConfigDownloadItem) => {
+    if (!file.mimeType) {
+        return 'generic';
+    }
+
+    // Find thumbnail icon form MIME type
+    const fileType = file.mimeType.toLowerCase() as keyof typeof Constants.ICON_NAME_FROM_MIME_TYPE;
+    if (fileType in Constants.ICON_NAME_FROM_MIME_TYPE) {
+        return Constants.ICON_NAME_FROM_MIME_TYPE[fileType];
+    }
+
+    // Fallback to file extension
+    const extension = file.location.toLowerCase().split('.').pop() as keyof typeof Constants.ICON_NAME_FROM_EXTENSION;
+    if (extension && (extension in Constants.ICON_NAME_FROM_EXTENSION)) {
+        return Constants.ICON_NAME_FROM_EXTENSION[extension];
+    }
+
+    // use generic icon
+    return 'generic';
+}
+
 export {
     bytesToMegabytes,
     bytesToMegabytesConverter,
     getDownloadingFileStatus,
     getFileSizeOrBytesProgress,
+    getIconClassName,
 };
