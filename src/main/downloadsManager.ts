@@ -102,8 +102,8 @@ class DownloadsManager {
         this.closeDownloadsDropdown();
     }
 
-    openFile = (item: ConfigDownloadItem) => {
-        if (fs.existsSync(item.location)) {
+    openFile = (item?: ConfigDownloadItem) => {
+        if (item && fs.existsSync(item.location)) {
             shell.showItemInFolder(item.location);
             return;
         }
@@ -125,6 +125,10 @@ class DownloadsManager {
 
     getIsOpen = () => {
         return this.isOpen;
+    }
+
+    getHasDownloads = () => {
+        return Object.keys(Config.downloads)?.length || 0 > 0;
     }
 
     private handleDownloadItemEvents = (item: DownloadItem, webContents: WebContents) => {

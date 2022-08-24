@@ -13,6 +13,7 @@ import {Config} from 'common/config';
 import {localizeMessage} from 'main/i18nManager';
 import WindowManager from 'main/windows/windowManager';
 import {UpdateManager} from 'main/autoUpdater';
+import downloadsManager from 'main/downloadsManager';
 
 export function createTemplate(config: Config, updateManager: UpdateManager) {
     const separatorItem: MenuItemConstructorOptions = {
@@ -159,6 +160,14 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         role: 'zoomOut',
         visible: false,
         accelerator: 'CmdOrCtrl+Shift+-',
+    }, separatorItem, {
+        label: localizeMessage('main.menus.app.view.downloads', 'Downloads'),
+        enabled: (() => {
+            return downloadsManager.getHasDownloads();
+        })(),
+        click() {
+            return downloadsManager.openFile();
+        },
     }, separatorItem, {
         label: localizeMessage('main.menus.app.view.devToolsAppWrapper', 'Developer Tools for Application Wrapper'),
         accelerator: (() => {
