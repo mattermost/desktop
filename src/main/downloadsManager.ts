@@ -131,6 +131,14 @@ class DownloadsManager {
         return Object.keys(Config.downloads)?.length || 0 > 0;
     }
 
+    openDownloadsDropdown = () => {
+        log.debug('DownloadsManager.openDownloadsDropdown');
+
+        this.isOpen = true;
+        ipcMain.emit(OPEN_DOWNLOADS_DROPDOWN);
+        WindowManager.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
+    }
+
     private handleDownloadItemEvents = (item: DownloadItem, webContents: WebContents) => {
         item.on('updated', (updateEvent, state) => {
             this.updatedEventController(updateEvent, state, item);
@@ -175,14 +183,6 @@ class DownloadsManager {
             return true;
         }
         return false;
-    }
-
-    private openDownloadsDropdown = () => {
-        log.debug('DownloadsManager.openDownloadsDropdown');
-
-        this.isOpen = true;
-        ipcMain.emit(OPEN_DOWNLOADS_DROPDOWN);
-        WindowManager.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
     }
 
     private closeDownloadsDropdown = () => {

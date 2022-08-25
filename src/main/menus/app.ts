@@ -166,7 +166,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             return downloadsManager.getHasDownloads();
         })(),
         click() {
-            return downloadsManager.openFile();
+            return downloadsManager.openDownloadsDropdown();
         },
     }, separatorItem, {
         label: localizeMessage('main.menus.app.view.devToolsAppWrapper', 'Developer Tools for Application Wrapper'),
