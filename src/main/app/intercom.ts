@@ -86,7 +86,10 @@ export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: 
 }
 
 export function handleMainWindowIsShown() {
-    const showWelcomeScreen = !Config.skipOnboardingScreens && !Config.teams.length;
+    // eslint-disable-next-line no-undef
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const showWelcomeScreen = !(Boolean(__SKIP_ONBOARDING_SCREENS__) || Config.teams.length);
     const mainWindow = WindowManager.getMainWindow();
 
     if (mainWindow) {

@@ -332,10 +332,6 @@ export class Config extends EventEmitter {
         return this.combinedData?.appLanguage;
     }
 
-    get skipOnboardingScreens() {
-        return this.combinedData?.skipOnboardingScreens ?? defaultPreferences.skipOnboardingScreens;
-    }
-
     // initialization/processing methods
 
     /**
