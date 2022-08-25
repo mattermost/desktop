@@ -214,5 +214,7 @@
     "renderer.components.settingsPage.trayIcon.show": "Pokaż ikonę w obszarze powiadomień",
     "renderer.components.settingsPage.startAppOnLogin.description": "Jeśli jest włączona, aplikacja uruchamia się automatycznie po zalogowaniu się do urządzenia.",
     "renderer.components.settingsPage.startAppOnLogin": "Uruchomienie aplikacji po zalogowaniu",
-    "renderer.components.settingsPage.showUnreadBadge.description": "Niezależnie od tego ustawienia, wzmianki są zawsze oznaczone czerwoną plakietką i liczbą elementów na ikonie {taskbar}."
+    "renderer.components.settingsPage.showUnreadBadge.description": "Niezależnie od tego ustawienia, wzmianki są zawsze oznaczone czerwoną plakietką i liczbą elementów na ikonie {taskbar}.",
+    "renderer.components.welcomeScreen.slides.boards.title": "Tablice",
+    "renderer.components.welcomeScreen.slides.boards.subtitle": "Wysyłaj na czas, za każdym razem, dzięki rozwiązaniu do zarządzania projektami i zadaniami, stworzonemu dla operacji cyfrowych."
 }
