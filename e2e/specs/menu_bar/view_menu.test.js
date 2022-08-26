@@ -124,7 +124,7 @@ describe('menu/view', function desc() {
     });
 
     describe('MM-T818 Zoom in from the menu bar', () => {
-        it('MM-T818 Zoom in when CmdOrCtrl+Plus is pressed', async () => {
+        it('MM-T818_1 Zoom in when CmdOrCtrl+Plus is pressed', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
             const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
@@ -140,7 +140,7 @@ describe('menu/view', function desc() {
             zoomLevel.should.be.greaterThan(1);
         });
 
-        it('MM-T818_1 Zoom in when CmdOrCtrl+Shift+Plus is pressed', async () => {
+        it('MM-T818_2 Zoom in when CmdOrCtrl+Shift+Plus is pressed', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
             const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
@@ -163,8 +163,8 @@ describe('menu/view', function desc() {
         });
     });
 
-    describe('MM-T818 Zoom out from the menu bar', () => {
-        it('MM-T819 Zoom out when CmdOrCtrl+Minus is pressed', async () => {
+    describe('MM-T819 Zoom out from the menu bar', () => {
+        it('MM-T819_1 Zoom out when CmdOrCtrl+Minus is pressed', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
             const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
@@ -180,7 +180,7 @@ describe('menu/view', function desc() {
             zoomLevel.should.be.lessThan(1);
         });
 
-        it('MM-T819_1 Zoom out when CmdOrCtrl+Shift+Minus is pressed', async () => {
+        it('MM-T819_2 Zoom out when CmdOrCtrl+Shift+Minus is pressed', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
             const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));

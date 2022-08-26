@@ -230,5 +230,15 @@
     "main.windows.mainWindow.minimizeToTray.dialog.message": "{appName} wird weiter in der Systemablage laufen. Dies kann in den Einstellungen geändert werden.",
     "main.windows.mainWindow.minimizeToTray.dialog.checkboxLabel": "Nicht nochmal anzeigen",
     "main.windows.mainWindow.closeApp.dialog.title": "Anwendung schließen",
-    "main.windows.mainWindow.closeApp.dialog.message": "Bist du sicher, dass du beenden möchtest?"
+    "main.windows.mainWindow.closeApp.dialog.message": "Bist du sicher, dass du beenden möchtest?",
+    "renderer.components.welcomeScreen.slides.welcome.title": "Willkommen",
+    "renderer.components.welcomeScreen.slides.welcome.subtitle": "Mattermost ist eine Open Source Plattform für die Zusammenarbeit von Entwicklern. Sichere, flexibel und integriert in die Werkzeuge, die du schätzt.",
+    "renderer.components.welcomeScreen.slides.playbooks.title": "Playbooks",
+    "renderer.components.welcomeScreen.slides.palybooks.subtitle": "Komm schneller voran und mache weniger Fehler mit Checklisten, Automatisierungen und Integrationen, welche die Arbeitsabläufe deines Teams unterstützen.",
+    "renderer.components.welcomeScreen.slides.channels.title": "Kanäle",
+    "renderer.components.welcomeScreen.slides.channels.subtitle": "Die gesamte Kommunikation deines Teams an einer Stelle.<br></br>Sicher Zusammenarbeit, für Entwickler gemacht.",
+    "renderer.components.welcomeScreen.slides.boards.title": "Boards",
+    "renderer.components.welcomeScreen.slides.boards.subtitle": "Liefere jedesmal pünktlich mit einer Projekt- und Aufgabemanagementlösung, die für digitale Abläufe entwickelt wurde.",
+    "renderer.components.welcomeScreen.button.getStarted": "Loslegen",
+    "renderer.components.mainPage.titleBar": "Mattermost"
 }

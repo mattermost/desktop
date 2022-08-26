@@ -161,7 +161,10 @@ async function initializeConfig() {
             handleConfigUpdate(configData);
 
             // can only call this before the app is ready
-            if (Config.enableHardwareAcceleration === false) {
+            // eslint-disable-next-line no-undef
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            if (Config.enableHardwareAcceleration === false || __DISABLE_GPU__) {
                 app.disableHardwareAcceleration();
             }
 

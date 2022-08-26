@@ -715,14 +715,23 @@ workflows:
             - build-linux
             - msi_installer
             - mac_installer
-      - upload_to_s3_daily:
-          context: mattermost-desktop-daily-s3
-          requires:
-            - build-linux
-            - msi_installer
-            - mac_installer
       - share_to_channel:
           context: desktop_browserview
           requires:
             - store_artifacts
-
+  nightly_rainforest:
+    when: << pipeline.parameters.run_nightly >>
+    jobs:
+      - msi_installer:
+          context: 
+            - windows-codesign
+            - desktop-rainforest-build
+      - mac_installer:
+          context: 
+            - codesign-certificates
+            - desktop-rainforest-build
+      - upload_to_s3_daily:
+          context: mattermost-desktop-daily-s3
+          requires:
+            - msi_installer
+            - mac_installer

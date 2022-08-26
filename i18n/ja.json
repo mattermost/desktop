@@ -230,5 +230,15 @@
     "common.tabs.TAB_MESSAGING": "Channels",
     "common.tabs.TAB_FOCALBOARD": "Boards",
     "common.permissions.canBasicAuth": "Web認証",
-    "main.menus.app.help": "Hel&p"
+    "main.menus.app.help": "Hel&p",
+    "renderer.components.welcomeScreen.slides.welcome.title": "ようこそ",
+    "renderer.components.welcomeScreen.slides.welcome.subtitle": "Mattermost は、開発者同士のコラボレーションのためのオープンソースプラットフォームです。安全かつ柔軟で、あなたのよく利用するツールと連携することができます。",
+    "renderer.components.welcomeScreen.slides.playbooks.title": "Playbooks",
+    "renderer.components.welcomeScreen.slides.palybooks.subtitle": "チェックリスト、自動化、ツール統合によりチームのワークフローを強化し、迅速な作業遂行とミスの低減を実現します。",
+    "renderer.components.welcomeScreen.slides.channels.title": "Channels",
+    "renderer.components.welcomeScreen.slides.channels.subtitle": "チーム内のコミュニケーションの全てを一箇所で。<br></br>開発者のために構築されたセキュアなコラボレーション。",
+    "renderer.components.welcomeScreen.slides.boards.title": "Boards",
+    "renderer.components.welcomeScreen.slides.boards.subtitle": "デジタルオペレーション向けに構築されたプロジェクト/タスク管理ソリューションにより、いつも時間通りに作業を完了することができます。",
+    "renderer.components.welcomeScreen.button.getStarted": "はじめに",
+    "renderer.components.mainPage.titleBar": "Mattermost"
 }
