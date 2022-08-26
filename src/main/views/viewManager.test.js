@@ -4,7 +4,7 @@
 /* eslint-disable max-lines */
 'use strict';
 
-import {dialog, ipcMain} from 'electron';
+import {BrowserView, dialog, ipcMain} from 'electron';
 import {Tuple as tuple} from '@bloomberg/record-tuple-polyfill';
 
 import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, MAIN_WINDOW_SHOWN} from 'common/communication';
@@ -26,6 +26,13 @@ jest.mock('electron', () => ({
         emit: jest.fn(),
         on: jest.fn(),
     },
+    BrowserView: jest.fn().mockImplementation(() => ({
+        webContents: {
+            loadURL: jest.fn(),
+            isLoading: jest.fn(),
+            send: jest.fn(),
+        },
+    })),
 }));
 
 jest.mock('common/tabs/TabView', () => ({
@@ -426,6 +433,13 @@ describe('main/views/viewManager', () => {
         beforeEach(() => {
             viewManager.showByName = jest.fn();
             getTabViewName.mockImplementation((server, tab) => `${server}_${tab}`);
+            BrowserView.mockImplementation(() => ({
+                webContents: {
+                    loadURL: jest.fn(),
+                    isLoading: jest.fn(),
+                    send: jest.fn(),
+                },
+            }));
         });
 
         afterEach(() => {
@@ -544,7 +558,15 @@ describe('main/views/viewManager', () => {
                 webContents: {
                     send: jest.fn(),
                 },
+                getBrowserViews: jest.fn().mockImplementation(() => []),
+                addBrowserView: jest.fn(),
+                getContentBounds: () => ({width: 800, height: 600}),
             };
+            viewManager.loadingScreen = {
+                webContents: {send: jest.fn(), isLoading: () => false},
+                setBounds: jest.fn(),
+            };
+
             viewManager.getServers = () => [];
             viewManager.showInitial();
             expect(ipcMain.emit).toHaveBeenCalledWith(MAIN_WINDOW_SHOWN);

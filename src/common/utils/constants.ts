@@ -23,6 +23,10 @@ export const DEFAULT_WINDOW_HEIGHT = 800;
 export const MINIMUM_WINDOW_WIDTH = 700;
 export const MINIMUM_WINDOW_HEIGHT = 240;
 
+export const MM_LINKS = {
+    GET_STARTED: 'https://mattermost.com/get-started',
+};
+
 // supported custom login paths (oath, saml)
 export const customLoginRegexPaths = [
     /^\/oauth\/authorize$/i,

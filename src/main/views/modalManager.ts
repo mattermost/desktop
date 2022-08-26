@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserWindow, ipcMain} from 'electron';
+import {BrowserWindow, ipcMain, shell} from 'electron';
 import {IpcMainEvent, IpcMainInvokeEvent} from 'electron/main';
 
 import log from 'electron-log';
@@ -18,7 +18,9 @@ import {
     DARK_MODE_CHANGE,
     GET_MODAL_UNCLOSEABLE,
     RESIZE_MODAL,
+    URL_OPEN_EXTERNAL,
 } from 'common/communication';
+import {MM_LINKS} from 'common/utils/constants';
 
 import {getAdjustedWindowBoundaries} from 'main/utils';
 import WindowManager from 'main/windows/windowManager';
@@ -38,6 +40,7 @@ export class ModalManager {
         ipcMain.on(MODAL_RESULT, this.handleModalResult);
         ipcMain.on(MODAL_CANCEL, this.handleModalCancel);
         ipcMain.on(RESIZE_MODAL, this.handleResizeModal);
+        ipcMain.on(URL_OPEN_EXTERNAL, this.handleOpenExternalMMLink);
 
         ipcMain.on(EMIT_CONFIGURATION, this.handleEmitConfiguration);
     }
@@ -132,7 +135,10 @@ export class ModalManager {
 
         if (this.modalQueue.length) {
             const currentModal = this.modalQueue[0];
-            currentModal.view.setBounds(getAdjustedWindowBoundaries(bounds.width, bounds.height));
+            const {width, height} = bounds;
+
+            currentModal.view.setBounds(getAdjustedWindowBoundaries(width, height));
+            currentModal.view.webContents.send(RESIZE_MODAL, {width, height});
         }
     }
 
@@ -155,6 +161,14 @@ export class ModalManager {
     handleGetModalUncloseable = (event: IpcMainInvokeEvent) => {
         const modalView = this.modalQueue.find((modal) => modal.view.webContents.id === event.sender.id);
         return modalView?.uncloseable;
+    }
+
+    handleOpenExternalMMLink = (event: IpcMainEvent, url: string) => {
+        if (url in Object.values(MM_LINKS)) {
+            log.debug('ModalManager.handleOpenExternal', url);
+
+            shell.openExternal(url);
+        }
     }
 }
 

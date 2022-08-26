@@ -30,6 +30,7 @@ module.exports = merge(base, {
         certificateModal: './src/renderer/modals/certificate/certificate.tsx',
         loadingScreen: './src/renderer/modals/loadingScreen/index.tsx',
         welcomeScreen: './src/renderer/modals/welcomeScreen/welcomeScreen.tsx',
+        configureServer: './src/renderer/modals/configureServer/configureServer.tsx',
     },
     output: {
         path: path.resolve(__dirname, 'dist/renderer'),
@@ -108,6 +109,12 @@ module.exports = merge(base, {
             template: 'src/renderer/index.html',
             chunks: ['welcomeScreen'],
             filename: 'welcomeScreen.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['configureServer'],
+            filename: 'configureServer.html',
         }),
         new MiniCssExtractPlugin({
             filename: 'styles.[contenthash].css',

@@ -241,7 +241,7 @@ export function handleWelcomeScreenModal() {
     const modalPromise = ModalManager.addModal('welcomeScreen', html, modalPreload, {}, mainWindow, true);
     if (modalPromise) {
         modalPromise.then(() => {
-            handleNewServerModal();
+            handleConfigureServerModal();
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -250,6 +250,38 @@ export function handleWelcomeScreenModal() {
         });
     } else {
         log.warn('There is already a welcome screen modal');
+    }
+}
+
+export function handleConfigureServerModal() {
+    log.debug('Intercom.handleConfigureServerModal');
+
+    const html = getLocalURLString('configureServer.html');
+
+    const modalPreload = getLocalPreload('modalPreload.js');
+
+    const mainWindow = WindowManager.getMainWindow();
+    if (!mainWindow) {
+        return;
+    }
+    const modalPromise = ModalManager.addModal<TeamWithIndex[], Team>('configureServer', html, modalPreload, Config.teams.map((team, index) => ({...team, index})), mainWindow, Config.teams.length === 0);
+    if (modalPromise) {
+        modalPromise.then((data) => {
+            const teams = Config.teams;
+            const order = teams.length;
+            const newTeam = getDefaultTeamWithTabsFromTeam({...data, order});
+            teams.push(newTeam);
+            Config.set('teams', teams);
+            updateServerInfos([newTeam]);
+            WindowManager.switchServer(newTeam.name, true);
+        }).catch((e) => {
+            // e is undefined for user cancellation
+            if (e) {
+                log.error(`there was an error in the configure server modal: ${e}`);
+            }
+        });
+    } else {
+        log.warn('There is already a configure server modal');
     }
 }
 
