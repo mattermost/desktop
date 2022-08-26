@@ -24,6 +24,9 @@ export const GET_DARK_MODE = 'get-dark-mode';
 export const USER_ACTIVITY_UPDATE = 'user-activity-update';
 export const UPDATE_SHORTCUT_MENU = 'update-shortcut-menu';
 
+export const OPEN_APP_MENU = 'open-app-menu';
+export const APP_MENU_WILL_CLOSE = 'app-menu-will-close';
+
 export const LOAD_RETRY = 'load_retry';
 export const LOAD_SUCCESS = 'load_success';
 export const LOAD_FAILED = 'load_fail';
