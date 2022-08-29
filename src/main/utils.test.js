@@ -107,4 +107,40 @@ describe('main/utils', () => {
             expect(Utils.shouldHaveBackBar('https://server-1.com', 'https://server-1.com/login')).toBe(false);
         });
     });
+
+    describe('isStringWithLength', () => {
+        it('should return true for valid string', () => {
+            expect(Utils.isStringWithLength('string')).toBe(true);
+        });
+        it('should return false for empty string', () => {
+            expect(Utils.isStringWithLength('')).toBe(false);
+        });
+        it('should return false for invalid inputs', () => {
+            expect(
+                Utils.isStringWithLength(null) ||
+                Utils.isStringWithLength(undefined) ||
+                Utils.isStringWithLength(1) ||
+                Utils.isStringWithLength({}) ||
+                Utils.isStringWithLength(() => {}),
+            ).toBe(false);
+        });
+    });
+
+    describe('getPercentage', () => {
+        it('should return 0 if denominator is 0', () => {
+            expect(Utils.getPercentage(1, 0)).toBe(0);
+        });
+        it('should return the correct percentage', () => {
+            expect(Utils.getPercentage(2, 4)).toBe(50);
+        });
+        it('should return the correct percentage as integer', () => {
+            expect(Utils.getPercentage(1, 3)).toBe(33);
+        });
+    });
+
+    describe('readFilenameFromContentDispositionHeader', () => {
+        it('should read the filename from the HTTP Content-Disposition header\'s value', () => {
+            expect(Utils.readFilenameFromContentDispositionHeader('attachment; filename="filename.jpg"; foobar')).toBe('filename.jpg');
+        });
+    });
 });
