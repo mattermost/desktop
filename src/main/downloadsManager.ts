@@ -38,7 +38,6 @@ class DownloadsManager {
                 return;
             }
         } else {
-            /* ts-ignore */
             const savePath = this.getSavePath(Config.downloadLocation, filename);
             item.setSavePath(savePath);
         }
