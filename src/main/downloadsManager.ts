@@ -128,7 +128,7 @@ class DownloadsManager {
     }
 
     getHasDownloads = () => {
-        return (Object.keys(Config.downloads)?.length ?? 0) > 0;
+        return (Object.keys(Config.downloads)?.length || 0) > 0;
     }
 
     openDownloadsDropdown = () => {
