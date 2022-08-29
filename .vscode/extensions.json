@@ -5,6 +5,7 @@
 		"dbaeumer.vscode-eslint",
 		"msjsdiag.debugger-for-chrome",
 		"streetsidesoftware.code-spell-checker",
-		"lokalise.i18n-ally"
+		"lokalise.i18n-ally",
+		"EditorConfig.EditorConfig"
 	]
 }
