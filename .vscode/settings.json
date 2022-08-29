@@ -1,0 +1,17 @@
+{
+    "i18n-ally.localesPaths": [
+        "i18n"
+    ],
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true
+    },
+    "cSpell.words": [
+        "browserview",
+        "deauthorize",
+        "loadscreen",
+        "Ochiai",
+        "UNCLOSEABLE",
+        "webcontents",
+        "Yuya"
+    ]
+}
