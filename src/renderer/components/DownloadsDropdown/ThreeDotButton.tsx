@@ -9,8 +9,17 @@ type OwnProps = {
 }
 
 const ThreeDotButton = ({item}: OwnProps) => {
+    const onClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log({item});
+    };
+
     return (
-        <button className='DownloadsDropdown__File__Body__ThreeDotButton'>
+        <button
+            className='DownloadsDropdown__File__Body__ThreeDotButton'
+            onClick={onClick}
+        >
             <i className='icon-dots-vertical'/>
         </button>
     );

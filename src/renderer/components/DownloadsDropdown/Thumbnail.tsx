@@ -5,7 +5,8 @@ import React from 'react';
 import {ConfigDownloadItem} from 'types/config';
 
 import {CheckCircleIcon, CloseCircleIcon} from '@mattermost/compass-icons/components';
-import { getIconClassName } from 'renderer/utils';
+
+import {getIconClassName} from 'renderer/utils';
 
 type OwnProps = {
     item: ConfigDownloadItem;

@@ -14,7 +14,7 @@ import {localizeMessage} from 'main/i18nManager';
 import {displayDownloadCompleted} from 'main/notifications';
 import WindowManager from 'main/windows/windowManager';
 import {getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader} from 'main/utils';
-import { DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT, DOWNLOADS_DROPDOWN_MAX_ITEMS } from 'common/utils/constants';
+import {DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT, DOWNLOADS_DROPDOWN_MAX_ITEMS} from 'common/utils/constants';
 
 export enum DownloadItemTypeEnum {
     FILE = 'file',
@@ -128,7 +128,7 @@ class DownloadsManager {
     }
 
     getHasDownloads = () => {
-        return Object.keys(Config.downloads)?.length || 0 > 0;
+        return (Object.keys(Config.downloads)?.length ?? 0) > 0;
     }
 
     openDownloadsDropdown = () => {
@@ -224,7 +224,7 @@ class DownloadsManager {
 
     private shouldAutoClose = () => {
         // if no other file is being downloaded
-        if (!Object.values(Config.downloads).some(item => item.state === 'progressing')) {
+        if (!Object.values(Config.downloads).some((item) => item.state === 'progressing')) {
             if (this.autoCloseTimeout) {
                 this.autoCloseTimeout.refresh();
             } else {
@@ -234,7 +234,8 @@ class DownloadsManager {
     }
 
     private shouldShowBadge = () => {
-        log.debug('DownloadsManager.shouldShowBadge', { isOpen: this.isOpen });
+        log.debug('DownloadsManager.shouldShowBadge', {isOpen: this.isOpen});
+
         if (this.isOpen === true) {
             WindowManager.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
         } else {
@@ -294,7 +295,7 @@ class DownloadsManager {
     private getFileSize = (item: DownloadItem) => {
         const itemTotalBytes = item.getTotalBytes();
         if (!itemTotalBytes) {
-            return parseInt(this.fileSizes.get(item.getFilename()) || '0', 10)
+            return parseInt(this.fileSizes.get(item.getFilename()) || '0', 10);
         }
         return itemTotalBytes;
     }

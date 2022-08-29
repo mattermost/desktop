@@ -1,5 +1,15 @@
 {
   "i18n-ally.localesPaths": [
     "i18n"
+  ],
+  "cSpell.words": [
+    "diskimage",
+    "flac",
+    "ICONNAME",
+    "officedocument",
+    "openxmlformats",
+    "presentationml",
+    "spreadsheetml",
+    "wordprocessingml"
   ]
 }

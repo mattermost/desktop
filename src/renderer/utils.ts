@@ -2,7 +2,8 @@
 // See LICENSE.txt for license information.
 
 import {ConfigDownloadItem} from 'types/config';
-import { Constants } from './constants';
+
+import {Constants} from './constants';
 
 const bytesToMegabytes = (bytes: number): string => {
     return (bytes / 1024 / 1024).toFixed(1).replace('.0', '');
@@ -67,7 +68,7 @@ const getIconClassName = (file: ConfigDownloadItem) => {
 
     // use generic icon
     return 'generic';
-}
+};
 
 export {
     bytesToMegabytes,
