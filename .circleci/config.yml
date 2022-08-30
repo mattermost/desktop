@@ -191,8 +191,8 @@ jobs:
       - run:
           name: Install nodejs-lts
           command: choco install nodejs-lts -y
-      # ignoring scripts for windows due to issues with node-gyp
-      - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci --ignore-scripts
+      - run: npm i -g node-gyp; node-gyp install
+      - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
       - build:
           os: windows
           path: ./build/win
@@ -269,7 +269,8 @@ jobs:
       - run:
           name: Install nodejs-lts
           command: choco install nodejs-lts -y
-      - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci --ignore-scripts
+      - run: npm i -g node-gyp; node-gyp install
+      - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
       - build:
           os: windows
           path: ./build/win
@@ -714,14 +715,23 @@ workflows:
             - build-linux
             - msi_installer
             - mac_installer
-      - upload_to_s3_daily:
-          context: mattermost-desktop-daily-s3
-          requires:
-            - build-linux
-            - msi_installer
-            - mac_installer
       - share_to_channel:
           context: desktop_browserview
           requires:
             - store_artifacts
-
+  nightly_rainforest:
+    when: << pipeline.parameters.run_nightly >>
+    jobs:
+      - msi_installer:
+          context: 
+            - windows-codesign
+            - desktop-rainforest-build
+      - mac_installer:
+          context: 
+            - codesign-certificates
+            - desktop-rainforest-build
+      - upload_to_s3_daily:
+          context: mattermost-desktop-daily-s3
+          requires:
+            - msi_installer
+            - mac_installer

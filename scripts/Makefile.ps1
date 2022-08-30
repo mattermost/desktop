@@ -525,7 +525,9 @@ function Run-BuildChangelog {
 
 function Run-BuildElectron {
     Print-Info "Installing nodejs/electron dependencies (running npm ci)..."
-    npm ci --ignore-scripts
+    npm i -g node-gyp
+    node-gyp install
+    npm ci
     #npm install --prefix="$(Get-RootDir)" "$(Get-RootDir)"
     Print-Info "Building nodejs/electron code (running npm run build)..."
     npm run build

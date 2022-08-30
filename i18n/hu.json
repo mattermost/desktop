@@ -231,5 +231,15 @@
     "common.tabs.TAB_MESSAGING": "Csatornák",
     "common.tabs.TAB_FOCALBOARD": "Táblák",
     "common.permissions.canBasicAuth": "Webes hitelesítés",
-    "renderer.modals.permission.permissionModal.requestOriginatedFromOrigin": "A kérés a <link>{origin}</link> helyről lett indítva"
+    "renderer.modals.permission.permissionModal.requestOriginatedFromOrigin": "A kérés a <link>{origin}</link> helyről lett indítva",
+    "renderer.components.welcomeScreen.slides.boards.subtitle": "Szállítson mindig időben, egy digitális műveletekre kifejlesztett projekt- és feladatkezelési megoldással.",
+    "renderer.components.welcomeScreen.button.getStarted": "Kezdjük is el",
+    "renderer.components.welcomeScreen.slides.boards.title": "Táblák",
+    "renderer.components.welcomeScreen.slides.channels.subtitle": "A csapat összes kommunikációja egy helyen.<br></br>Biztonságos együttműködés, fejlesztők számára kifejlesztve.",
+    "renderer.components.welcomeScreen.slides.palybooks.subtitle": "Gyorsabban haladhat, és kevesebb hibát követhet el az ellenőrző listák, automatizálások és eszközintegrációk segítségével, amelyek a csapat munkafolyamatokat támogatják.",
+    "renderer.components.welcomeScreen.slides.channels.title": "Csatornák",
+    "renderer.components.welcomeScreen.slides.playbooks.title": "Forgatókönyvek",
+    "renderer.components.welcomeScreen.slides.welcome.subtitle": "A Mattermost egy nyílt forráskódú platform a fejlesztői együttműködéshez. Biztonságos, rugalmas és integrált az Ön által kedvelt eszközökkel.",
+    "renderer.components.welcomeScreen.slides.welcome.title": "Üdv",
+    "renderer.components.mainPage.titleBar": "Mattermost"
 }

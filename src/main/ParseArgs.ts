@@ -55,7 +55,7 @@ function parseArgs(args: string[]) {
         // build.  As such, we provide the version manually.
         version(app.getVersion()).
         help('help').
-        parse(args);
+        parse(args) as Args;
 }
 
 function validateArgs(args: Args) {

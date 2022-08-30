@@ -231,5 +231,15 @@
     "common.tabs.TAB_MESSAGING": "Kanallar",
     "common.tabs.TAB_FOCALBOARD": "Panolar",
     "common.permissions.canBasicAuth": "Web kimlik doğrulaması",
-    "renderer.modals.permission.permissionModal.requestOriginatedFromOrigin": "Bu istek <link>{origin}</link> kaynağından geldi"
+    "renderer.modals.permission.permissionModal.requestOriginatedFromOrigin": "Bu istek <link>{origin}</link> kaynağından geldi",
+    "renderer.components.welcomeScreen.slides.welcome.title": "Hoş geldiniz",
+    "renderer.components.welcomeScreen.slides.welcome.subtitle": "Mattermost, geliştiricilerin işbirliği yapmasını sağlayan açık kaynaklı bir platformdur. Güvenli, esnek ve sevdiğiniz araçlarla bütünleşik.",
+    "renderer.components.welcomeScreen.slides.playbooks.title": "Senaryolar",
+    "renderer.components.welcomeScreen.slides.palybooks.subtitle": "Ekibinizin iş akışlarını kolaylaştıran kontrol listeleri, otomasyonlar ve araç bütünleştirmeleri ile daha hızlı çalışın ve daha az hata yapın.",
+    "renderer.components.welcomeScreen.slides.channels.title": "Kanallar",
+    "renderer.components.welcomeScreen.slides.channels.subtitle": "Ekibinizin tüm iletişimi tek bir yerden sağlayın.<br></br>Güvenli işbirliği, geliştiriciler için hazırlandı.",
+    "renderer.components.welcomeScreen.slides.boards.title": "Panolar",
+    "renderer.components.mainPage.titleBar": "Mattermost",
+    "renderer.components.welcomeScreen.slides.boards.subtitle": "Dijital operasyonlar için oluşturulmuş bir proje ve görev yönetimi çözümü ile hep zamanında sonuç alın.",
+    "renderer.components.welcomeScreen.button.getStarted": "Başlayalım"
 }

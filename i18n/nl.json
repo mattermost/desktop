@@ -130,7 +130,7 @@
     "renderer.components.newTeamModal.error.nameRequired": "Naam is verplicht.",
     "renderer.components.mainPage.updateReady": "Update klaar om geïnstalleerd te worden",
     "renderer.components.mainPage.updateAvailable": "Update beschikbaar",
-    "renderer.components.mainPage.downloadingUpdate": "Update wordt gedownload. {percentDone}% van {totaal} @ {speed}/s",
+    "renderer.components.mainPage.downloadingUpdate": "Update wordt gedownload. {percentDone}% van {total} @ {speed}/s",
     "renderer.components.mainPage.contextMenu.ariaLabel": "Context menu",
     "renderer.components.extraBar.back": "Terug",
     "renderer.components.errorView.troubleshooting.urlIsCorrect.appNameIsCorrect": "De {appName} URL <link>{url}</link> correct is",
@@ -230,5 +230,15 @@
     "main.autoUpdater.download.dialog.button.download": "Downloaden",
     "main.app.utils.migrateMacAppStore.dialog.message": "Bestaande configuratie importeren",
     "main.app.utils.migrateMacAppStore.button.selectAndImport": "Selecteer Map en Importeren",
-    "main.app.utils.migrateMacAppStore.dialog.detail": "Het lijkt erop dat er een bestaande {appName} configuratie bestaat, wil je deze importeren? Je wordt gevraagd om de juiste configuratiemap te kiezen."
+    "main.app.utils.migrateMacAppStore.dialog.detail": "Het lijkt erop dat er een bestaande {appName} configuratie bestaat, wil je deze importeren? Je wordt gevraagd om de juiste configuratiemap te kiezen.",
+    "renderer.components.welcomeScreen.slides.boards.title": "Boards",
+    "renderer.components.welcomeScreen.slides.boards.subtitle": "Telkens tijdig opleveren, elke keer weer, met een project- en taakbeheeroplossing die is gebouwd voor digitale diensten.",
+    "renderer.components.welcomeScreen.button.getStarted": "Aan de slag",
+    "renderer.components.mainPage.titleBar": "Mattermost",
+    "renderer.components.welcomeScreen.slides.welcome.title": "Welkom",
+    "renderer.components.welcomeScreen.slides.welcome.subtitle": "Mattermost is een open source platform voor samenwerking tussen ontwikkelaars. Veilig, flexibel, en geïntegreerd met de tools waar je van houdt.",
+    "renderer.components.welcomeScreen.slides.playbooks.title": "Playbooks",
+    "renderer.components.welcomeScreen.slides.palybooks.subtitle": "Ga sneller te werk en maak minder fouten met checklists, automatiseringen en toolintegraties die de workflows van jouw team ondersteunen.",
+    "renderer.components.welcomeScreen.slides.channels.title": "Channels",
+    "renderer.components.welcomeScreen.slides.channels.subtitle": "Alle communicatie van jouw team op één plek. <br></br>Veilig samenwerken, gemaakt voor ontwikkelaars."
 }

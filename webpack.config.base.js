@@ -20,6 +20,8 @@ const codeDefinitions = {
     __CAN_UPGRADE__: JSON.stringify(process.env.CAN_UPGRADE === 'true'),
     __IS_NIGHTLY_BUILD__: JSON.stringify(process.env.CIRCLE_BRANCH === 'nightly'),
     __IS_MAC_APP_STORE__: JSON.stringify(process.env.IS_MAC_APP_STORE === 'true'),
+    __SKIP_ONBOARDING_SCREENS__: JSON.stringify(process.env.MM_DESKTOP_BUILD_SKIPONBOARDINGSCREENS === 'true'),
+    __DISABLE_GPU__: JSON.stringify(process.env.MM_DESKTOP_BUILD_DISABLEGPU === 'true'),
 };
 codeDefinitions['process.env.NODE_ENV'] = JSON.stringify(process.env.NODE_ENV);
 

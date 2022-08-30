@@ -137,6 +137,7 @@ export type BuildConfig = {
     enableServerManagement: boolean;
     enableAutoUpdater: boolean;
     managedResources: string[];
+    allowedProtocols: string[];
 }
 
 export type RegistryConfig = {

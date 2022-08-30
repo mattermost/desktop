@@ -14,7 +14,7 @@ import {setUnreadBadgeSetting} from 'main/badge';
 import {refreshTrayImages} from 'main/tray/tray';
 import WindowManager from 'main/windows/windowManager';
 
-import {addNewServerModalWhenMainWindowIsShown} from './intercom';
+import {handleMainWindowIsShown} from './intercom';
 import {handleUpdateMenuEvent, setLoggingLevel, updateServerInfos, updateSpellCheckerLocales} from './utils';
 
 let didCheckForAddServerModal = false;
@@ -61,7 +61,7 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
         updateServerInfos(newConfig.teams);
         WindowManager.initializeCurrentServerName();
         if (newConfig.teams.length === 0) {
-            addNewServerModalWhenMainWindowIsShown();
+            handleMainWindowIsShown();
         }
     }
 

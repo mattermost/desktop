@@ -1,15 +1,25 @@
 {
-  "i18n-ally.localesPaths": [
-    "i18n"
-  ],
-  "cSpell.words": [
-    "diskimage",
-    "flac",
-    "ICONNAME",
-    "officedocument",
-    "openxmlformats",
-    "presentationml",
-    "spreadsheetml",
-    "wordprocessingml"
-  ]
+    "i18n-ally.localesPaths": [
+        "i18n"
+    ],
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true
+    },
+    "cSpell.words": [
+        "browserview",
+        "deauthorize",
+        "diskimage",
+        "flac",
+        "ICONNAME",
+        "loadscreen",
+        "Ochiai",
+        "officedocument",
+        "openxmlformats",
+        "presentationml",
+        "spreadsheetml",
+        "UNCLOSEABLE",
+        "webcontents",
+        "wordprocessingml",
+        "Yuya"
+    ]
 }

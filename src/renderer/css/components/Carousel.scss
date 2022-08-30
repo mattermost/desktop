@@ -1,0 +1,94 @@
+.Carousel {
+    display: flex;
+    flex: 1;
+    flex-flow: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+
+    .Carousel__slides {
+        min-height: 380px;
+        width: 100%;
+        position: relative;
+        display: flex;
+        justify-content: center;
+
+        .Carousel__slide {
+            position: absolute;
+            bottom: 0;
+            opacity: 0;
+        }
+
+        .Carousel__slide-current {
+            opacity: 1;
+        }
+    }
+
+    .Carousel__pagination {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        justify-content: center;
+        margin-top: 22px;
+    }
+}
+
+.inFromRight {
+    animation: inFromRight 0.4s ease-in-out;
+}
+
+.inFromLeft {
+    animation: inFromLeft 0.4s ease-in-out;
+}
+
+.outToRight {
+    animation: outToRight 0.4s ease-in-out;
+}
+
+.outToLeft {
+    animation: outToLeft 0.4s ease-in-out;
+}
+
+@keyframes inFromRight {
+    0% {
+        transform: translateX(30%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0%);
+        opacity: 1;
+    }
+}
+
+@keyframes inFromLeft {
+    0% {
+        transform: translateX(-30%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0%);
+        opacity: 1;
+    }
+}
+
+@keyframes outToRight {
+    0% {
+        transform: translateX(0%);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(30%);
+        opacity: 0;
+    }
+}
+
+@keyframes outToLeft {
+    0% {
+        transform: translateX(0%);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(-30%);
+        opacity: 0;
+    }
+}

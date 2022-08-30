@@ -121,7 +121,7 @@
     "renderer.components.settingsPage.appLanguage.description": "Chooses the language that the Desktop App will use for menu items and popups. This feature is still in beta, and some languages will be missing translation strings.",
     "renderer.components.settingsPage.appLanguage": "Set app language (beta)",
     "renderer.components.settingsPage.afterRestart": "Setting takes effect after restarting the app.",
-    "renderer.components.removeServerModal.confirm": "",
+    "renderer.components.removeServerModal.confirm": "Confirm you wish to remove the {serverName} server?",
     "renderer.components.removeServerModal.title": "Remove Server",
     "renderer.components.removeServerModal.body": "This will remove the server from your Desktop App but will not delete any of its data - you can add the server back to the app at any time.",
     "renderer.components.newTeamModal.title.edit": "Edit Server",
@@ -229,5 +229,15 @@
     "main.autoUpdater.update.dialog.detail": "A new version of the {appName} Desktop App is ready to install.",
     "renderer.modals.permission.permissionModal.unknownOrigin": "unknown origin",
     "renderer.modals.permission.permissionModal.title": "{permission} Required",
-    "renderer.modals.permission.permissionModal.requestOriginatedFromOrigin": "This request originated from <link>{origin}</link>"
+    "renderer.modals.permission.permissionModal.requestOriginatedFromOrigin": "This request originated from <link>{origin}</link>",
+    "renderer.components.welcomeScreen.slides.welcome.title": "Welcome",
+    "renderer.components.welcomeScreen.slides.welcome.subtitle": "Mattermost is an open source platform for developer collaboration. Secure, flexible and integrated with the tools you love.",
+    "renderer.components.welcomeScreen.slides.playbooks.title": "Playbooks",
+    "renderer.components.welcomeScreen.slides.palybooks.subtitle": "Move faster and make fewer mistakes with checklists, automations and tool integrations that power your team’s workflows.",
+    "renderer.components.welcomeScreen.slides.channels.title": "Channels",
+    "renderer.components.welcomeScreen.slides.channels.subtitle": "All your team’s communication in one place.<br></br>Secure collaboration, built for developers.",
+    "renderer.components.welcomeScreen.slides.boards.title": "Boards",
+    "renderer.components.welcomeScreen.slides.boards.subtitle": "Ship your product on time, every time, with a project and task management solution built for digital operations.",
+    "renderer.components.welcomeScreen.button.getStarted": "Get started",
+    "renderer.components.mainPage.titleBar": "Mattermost"
 }

@@ -7,7 +7,7 @@
 import {dialog, ipcMain} from 'electron';
 import {Tuple as tuple} from '@bloomberg/record-tuple-polyfill';
 
-import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, SHOW_NEW_SERVER_MODAL} from 'common/communication';
+import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, MAIN_WINDOW_SHOWN} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {getServerView, getTabViewName} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
@@ -547,7 +547,7 @@ describe('main/views/viewManager', () => {
             };
             viewManager.getServers = () => [];
             viewManager.showInitial();
-            expect(ipcMain.emit).toHaveBeenCalledWith(SHOW_NEW_SERVER_MODAL);
+            expect(ipcMain.emit).toHaveBeenCalledWith(MAIN_WINDOW_SHOWN);
         });
     });
 

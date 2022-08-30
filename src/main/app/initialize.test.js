@@ -98,7 +98,7 @@ jest.mock('main/app/config', () => ({
     handleConfigUpdate: jest.fn(),
 }));
 jest.mock('main/app/intercom', () => ({
-    addNewServerModalWhenMainWindowIsShown: jest.fn(),
+    handleMainWindowIsShown: jest.fn(),
 }));
 jest.mock('main/app/utils', () => ({
     clearAppCache: jest.fn(),
