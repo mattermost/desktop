@@ -2,10 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {ConfigDownloadItem} from 'types/config';
+import {DownloadedItem} from 'types/config';
 
 type OwnProps = {
-    item: ConfigDownloadItem;
+    item: DownloadedItem;
 }
 
 const ThreeDotButton = ({item}: OwnProps) => {

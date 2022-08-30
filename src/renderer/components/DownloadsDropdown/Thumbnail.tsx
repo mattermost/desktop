@@ -2,14 +2,14 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {ConfigDownloadItem} from 'types/config';
+import {DownloadedItem} from 'types/config';
 
 import {CheckCircleIcon, CloseCircleIcon} from '@mattermost/compass-icons/components';
 
 import {getIconClassName} from 'renderer/utils';
 
 type OwnProps = {
-    item: ConfigDownloadItem;
+    item: DownloadedItem;
 }
 
 const iconSize = 12;
@@ -17,7 +17,7 @@ const colorGreen = '#3DB887';
 const colorRed = '#D24B4E';
 
 const Thumbnail = ({item}: OwnProps) => {
-    const showBadge = (state: ConfigDownloadItem['state']) => {
+    const showBadge = (state: DownloadedItem['state']) => {
         switch (state) {
         case 'completed':
             return (

@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ConfigDownloadItem} from 'types/config';
+import {DownloadedItem} from 'types/config';
 
 import {Constants} from './constants';
 
@@ -9,7 +9,7 @@ const bytesToMegabytes = (bytes: number): string => {
     return (bytes / 1024 / 1024).toFixed(1).replace('.0', '');
 };
 
-const getETA = (item: ConfigDownloadItem) => {
+const getETA = (item: DownloadedItem) => {
     const elapsedTime = Math.round((new Date().getTime() - Math.floor(item.addedAt * 1000)) / 3600);
     return elapsedTime;
 };
@@ -28,7 +28,7 @@ const bytesToMegabytesConverter = (value: number | string): string => {
     return 'N/A';
 };
 
-const getFileSizeOrBytesProgress = (item: ConfigDownloadItem) => {
+const getFileSizeOrBytesProgress = (item: DownloadedItem) => {
     const totalMegabytes = bytesToMegabytesConverter(item.totalBytes);
     if (item.state === 'progressing') {
         return `${bytesToMegabytesConverter(item.receivedBytes)}/${totalMegabytes} MB`;
@@ -36,7 +36,7 @@ const getFileSizeOrBytesProgress = (item: ConfigDownloadItem) => {
     return `${totalMegabytes} MB`;
 };
 
-const getDownloadingFileStatus = (item: ConfigDownloadItem) => {
+const getDownloadingFileStatus = (item: DownloadedItem) => {
     switch (item.state) {
     case 'progressing':
         return `${getETA(item)} elapsed`;
@@ -49,7 +49,7 @@ const getDownloadingFileStatus = (item: ConfigDownloadItem) => {
     }
 };
 
-const getIconClassName = (file: ConfigDownloadItem) => {
+const getIconClassName = (file: DownloadedItem) => {
     if (!file.mimeType) {
         return 'generic';
     }

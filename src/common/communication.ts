@@ -138,3 +138,5 @@ export const HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE = 'hide-downloads-dropdown-but
 export const REQUEST_DOWNLOADS_DROPDOWN_INFO = 'request-downloads-dropdown-info';
 export const UPDATE_DOWNLOADS_DROPDOWN = 'update-downloads-dropdown';
 export const DOWNLOADS_DROPDOWN_OPEN_FILE = 'downloads-dropdown-open-file';
+export const REQUEST_HAS_DOWNLOADS = 'request-has-downloads';
+export const DOWNLOADS_DROPDOWN_FOCUSED = 'downloads-dropdown-focused';

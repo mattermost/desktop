@@ -15,7 +15,7 @@ export const Constants = {
         'text/plain': 'text',
         'video/mp4': 'video',
     },
-    ICONNAME_FROM_EXTENSION: {
+    ICON_NAME_FROM_EXTENSION: {
         pdf: 'pdf',
         doc: 'word',
         docx: 'word',

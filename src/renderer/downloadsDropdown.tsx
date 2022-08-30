@@ -6,7 +6,7 @@ import ReactDOM from 'react-dom';
 import classNames from 'classnames';
 import {FormattedMessage} from 'react-intl';
 
-import {ConfigDownloadItem} from 'types/config';
+import {DownloadedItem} from 'types/config';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN,
@@ -21,7 +21,7 @@ import DownloadsDropdownFile from './components/DownloadsDropdown/DownloadsDropd
 import './css/downloadsDropdown.scss';
 
 type State = {
-    downloads: ConfigDownloadItem[];
+    downloads: DownloadedItem[];
     darkMode?: boolean;
     windowBounds?: Electron.Rectangle;
 }
@@ -44,7 +44,7 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
     handleMessageEvent = (event: MessageEvent) => {
         if (event.data.type === UPDATE_DOWNLOADS_DROPDOWN) {
             const {downloads, darkMode, windowBounds} = event.data.data;
-            const newDownloads = Object.values<ConfigDownloadItem>(downloads);
+            const newDownloads = Object.values<DownloadedItem>(downloads);
             newDownloads.sort((a, b) => b.addedAt - a.addedAt);
             this.setState({
                 downloads: newDownloads,
@@ -94,7 +94,7 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
                     </div>
                     <hr className='DownloadsDropdown__divider'/>
                     <div className='DownloadsDropdown__list'>
-                        {(this.state.downloads || []).map((downloadItem: ConfigDownloadItem) => {
+                        {(this.state.downloads || []).map((downloadItem: DownloadedItem) => {
                             return (
                                 <DownloadsDropdownFile
                                     item={downloadItem}

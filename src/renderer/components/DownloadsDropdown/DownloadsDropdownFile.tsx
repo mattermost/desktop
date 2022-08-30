@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {ConfigDownloadItem} from 'types/config';
+import {DownloadedItem} from 'types/config';
 import classNames from 'classnames';
 
 import {DOWNLOADS_DROPDOWN_OPEN_FILE} from 'common/communication';
@@ -13,7 +13,7 @@ import ThreeDotButton from './ThreeDotButton';
 import Thumbnail from './Thumbnail';
 
 type OwnProps = {
-    item: ConfigDownloadItem;
+    item: DownloadedItem;
 }
 
 const DownloadsDropdownFile = ({item}: OwnProps) => {

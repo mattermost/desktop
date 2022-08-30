@@ -15,13 +15,12 @@ import {
     BuildConfig,
     CombinedConfig,
     Config as ConfigType,
-    DownloadItems,
     LocalConfiguration,
     RegistryConfig as RegistryConfigType,
     TeamWithTabs,
 } from 'types/config';
 
-import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION, UPDATE_PATHS, UPDATE_DOWNLOADS_DROPDOWN} from 'common/communication';
+import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION, UPDATE_PATHS} from 'common/communication';
 
 import {configPath} from 'main/constants';
 import * as Validator from 'main/Validator';
@@ -103,7 +102,6 @@ export class Config extends EventEmitter {
         ipcMain.handle(GET_CONFIGURATION, this.handleGetConfiguration);
         ipcMain.handle(GET_LOCAL_CONFIGURATION, this.handleGetLocalConfiguration);
         ipcMain.handle(UPDATE_TEAMS, this.handleUpdateTeams);
-        ipcMain.handle(UPDATE_DOWNLOADS_DROPDOWN, this.handleUpdateDownloads);
         ipcMain.on(UPDATE_CONFIGURATION, this.setMultiple);
         if (process.platform === 'darwin' || process.platform === 'win32') {
             nativeTheme.on('updated', this.handleUpdateTheme);
@@ -334,10 +332,6 @@ export class Config extends EventEmitter {
         return this.combinedData?.appLanguage;
     }
 
-    get downloads() {
-        return this.combinedData?.downloads ?? {};
-    }
-
     // initialization/processing methods
 
     /**
@@ -364,9 +358,6 @@ export class Config extends EventEmitter {
 
             // validate based on config file version
             switch (configData.version) {
-            case 4:
-                configData = Validator.validateV4ConfigData(configData)!;
-                break;
             case 3:
                 configData = Validator.validateV3ConfigData(configData)!;
                 break;
@@ -601,14 +592,6 @@ export class Config extends EventEmitter {
 
         this.set('teams', newTeams);
         return this.combinedData!.teams;
-    }
-
-    handleUpdateDownloads = (event: Electron.IpcMainInvokeEvent, updatedDownloads: DownloadItems) => {
-        log.debug('Config.handleUpdateDownloads');
-        log.silly('Config.handleUpdateDownloads', updatedDownloads);
-
-        this.set('downloads', updatedDownloads);
-        return this.combinedData!.downloads;
     }
 
     /**

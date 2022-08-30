@@ -2,12 +2,12 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {ConfigDownloadItem} from 'types/config';
+import {DownloadedItem} from 'types/config';
 
 import {getDownloadingFileStatus, getFileSizeOrBytesProgress} from 'renderer/utils';
 
 type OwnProps = {
-    item: ConfigDownloadItem;
+    item: DownloadedItem;
 }
 
 const FileSizeAndStatus = ({item}: OwnProps) => {

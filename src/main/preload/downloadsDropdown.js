@@ -7,6 +7,7 @@ import {ipcRenderer, contextBridge} from 'electron';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN,
+    DOWNLOADS_DROPDOWN_FOCUSED,
     DOWNLOADS_DROPDOWN_OPEN_FILE,
     GET_LANGUAGE_INFORMATION,
     OPEN_DOWNLOADS_DROPDOWN,
@@ -22,6 +23,10 @@ contextBridge.exposeInMainWorld('process', {
     platform: process.platform,
 });
 
+window.addEventListener('mousemove', () => {
+    ipcRenderer.send(DOWNLOADS_DROPDOWN_FOCUSED);
+});
+
 /**
  * renderer => main
  */
@@ -35,9 +40,6 @@ window.addEventListener('message', async (event) => {
         break;
     case REQUEST_DOWNLOADS_DROPDOWN_INFO:
         ipcRenderer.send(REQUEST_DOWNLOADS_DROPDOWN_INFO);
-        break;
-    case UPDATE_DOWNLOADS_DROPDOWN:
-        ipcRenderer.send(UPDATE_DOWNLOADS_DROPDOWN, event.data.downloads);
         break;
     case REQUEST_CLEAR_DOWNLOADS_DROPDOWN:
         ipcRenderer.send(REQUEST_CLEAR_DOWNLOADS_DROPDOWN);

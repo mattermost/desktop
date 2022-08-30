@@ -161,10 +161,9 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         visible: false,
         accelerator: 'CmdOrCtrl+Shift+-',
     }, separatorItem, {
+        id: 'app-menu-downloads',
         label: localizeMessage('main.menus.app.view.downloads', 'Downloads'),
-        enabled: (() => {
-            return downloadsManager.getHasDownloads();
-        })(),
+        enabled: downloadsManager.hasDownloads(),
         click() {
             return downloadsManager.openDownloadsDropdown();
         },

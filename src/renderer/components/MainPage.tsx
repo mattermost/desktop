@@ -10,7 +10,7 @@ import {injectIntl, IntlShape} from 'react-intl';
 import {IpcRendererEvent} from 'electron/renderer';
 import prettyBytes from 'pretty-bytes';
 
-import {TeamWithTabs} from 'types/config';
+import {DownloadedItems, TeamWithTabs} from 'types/config';
 
 import {getTabViewName} from 'common/tabs/TabView';
 
@@ -49,6 +49,8 @@ import {
     OPEN_DOWNLOADS_DROPDOWN,
     SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE,
     HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE,
+    UPDATE_DOWNLOADS_DROPDOWN,
+    REQUEST_HAS_DOWNLOADS,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -90,7 +92,6 @@ type Props = {
     appName: string;
     useNativeWindow: boolean;
     intl: IntlShape;
-    downloadsCount: number;
 };
 
 type State = {
@@ -116,6 +117,7 @@ type State = {
     };
     isDownloadsDropdownOpen: boolean;
     showDownloadsBadge: boolean;
+    hasDownloads: boolean;
 };
 
 type TabViewStatus = {
@@ -156,6 +158,7 @@ class MainPage extends React.PureComponent<Props, State> {
             upgradeStatus: UpgradeStatus.NONE,
             isDownloadsDropdownOpen: false,
             showDownloadsBadge: false,
+            hasDownloads: false,
         };
     }
 
@@ -172,7 +175,21 @@ class MainPage extends React.PureComponent<Props, State> {
         this.setState({tabViewStatus: status});
     }
 
+    async requestDownloadsLength() {
+        try {
+            const count = await window.ipcRenderer.invoke(REQUEST_HAS_DOWNLOADS);
+            this.setState({
+                hasDownloads: count,
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
     componentDidMount() {
+        // request downloads
+        this.requestDownloadsLength();
+
         // set page on retry
         window.ipcRenderer.on(LOAD_RETRY, (_, viewName, retry, err, loadUrl) => {
             console.log(`${viewName}: failed to load ${err}, but retrying`);
@@ -295,6 +312,12 @@ class MainPage extends React.PureComponent<Props, State> {
 
         window.ipcRenderer.on(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE, () => {
             this.setState({showDownloadsBadge: false});
+        });
+
+        window.ipcRenderer.on(UPDATE_DOWNLOADS_DROPDOWN, (event, downloads: DownloadedItems) => {
+            this.setState({
+                hasDownloads: (Object.values(downloads)?.length || 0) > 0,
+            });
         });
 
         if (window.process.platform !== 'darwin') {
@@ -426,7 +449,7 @@ class MainPage extends React.PureComponent<Props, State> {
             fullScreen: this.state.fullScreen,
         });
 
-        const downloadsDropdownButton = this.props.downloadsCount > 0 ? (
+        const downloadsDropdownButton = this.state.hasDownloads ? (
             <DownloadsDropdownButton
                 darkMode={this.state.darkMode}
                 isDownloadsDropdownOpen={this.state.isDownloadsDropdownOpen}

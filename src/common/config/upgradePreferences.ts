@@ -2,7 +2,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ConfigV3, ConfigV2, ConfigV1, ConfigV0, AnyConfig, ConfigV4} from 'types/config';
+import {ConfigV3, ConfigV2, ConfigV1, ConfigV0, AnyConfig} from 'types/config';
 
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 
@@ -48,19 +48,10 @@ export function upgradeV2toV3(configV2: ConfigV2) {
     return config;
 }
 
-export function upgradeV3toV4(configV3: ConfigV3) {
-    const config: ConfigV4 = Object.assign({}, deepCopy<ConfigV4>(pastDefaultPreferences[4]), configV3);
-    config.version = 4;
-    config.downloads = {};
-    return config;
-}
-
-export default function upgradeToLatest(config: AnyConfig): ConfigV4 {
+export default function upgradeToLatest(config: AnyConfig): ConfigV3 {
     switch (config.version) {
-    case 4:
-        return config as ConfigV4;
     case 3:
-        return upgradeToLatest(upgradeV3toV4(config as ConfigV3));
+        return config as ConfigV3;
     case 2:
         return upgradeToLatest(upgradeV2toV3(config as ConfigV2));
     case 1:

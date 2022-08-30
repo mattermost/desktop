@@ -4,7 +4,7 @@ import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent} from 'electron';
 
 import log from 'electron-log';
 
-import {CombinedConfig, ConfigDownloadItem, DownloadItems} from 'types/config';
+import {CombinedConfig, DownloadedItem, DownloadedItems} from 'types/config';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN,
@@ -24,13 +24,13 @@ import downloadsManager from 'main/downloadsManager';
 export default class DownloadsDropdownView {
     view: BrowserView;
     bounds?: Electron.Rectangle;
-    downloads: DownloadItems;
+    downloads: DownloadedItems;
     darkMode: boolean;
     window: BrowserWindow;
     windowBounds: Electron.Rectangle;
 
-    constructor(window: BrowserWindow, downloads: DownloadItems, darkMode: boolean) {
-        this.downloads = downloadsManager.checkForDeletedFilesAndUpdateTheirState(downloads);
+    constructor(window: BrowserWindow, downloads: DownloadedItems, darkMode: boolean) {
+        this.downloads = downloads;
         this.window = window;
         this.darkMode = darkMode;
 
@@ -58,12 +58,20 @@ export default class DownloadsDropdownView {
         ipcMain.on(REQUEST_DOWNLOADS_DROPDOWN_INFO, this.updateDownloadsDropdown);
         ipcMain.on(REQUEST_CLEAR_DOWNLOADS_DROPDOWN, this.clearDownloads);
         ipcMain.on(DOWNLOADS_DROPDOWN_OPEN_FILE, this.openFile);
+        ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN, this.updateDownloads);
+    }
+
+    updateDownloads = (event: IpcMainEvent, downloads: DownloadedItems) => {
+        log.debug('DownloadsDropdownView.updateDownloads', {downloads});
+
+        this.downloads = downloads;
+
+        this.updateDownloadsDropdown();
     }
 
     updateConfig = (event: IpcMainEvent, config: CombinedConfig) => {
         log.debug('DownloadsDropdownView.updateConfig');
 
-        this.downloads = config.downloads;
         this.darkMode = config.darkMode;
         this.updateDownloadsDropdown();
     }
@@ -92,7 +100,7 @@ export default class DownloadsDropdownView {
     }
 
     handleOpen = () => {
-        log.debug('DownloadsDropdownView.handleOpen');
+        log.debug('DownloadsDropdownView.handleOpen', {bounds: this.bounds});
 
         if (!this.bounds) {
             return;
@@ -118,7 +126,7 @@ export default class DownloadsDropdownView {
         this.handleClose();
     }
 
-    openFile = (e: IpcMainEvent, item: ConfigDownloadItem) => {
+    openFile = (e: IpcMainEvent, item: DownloadedItem) => {
         log.debug('DownloadsDropdownView.openFile', {item});
 
         downloadsManager.openFile(item);

@@ -3,28 +3,62 @@
 import path from 'path';
 import fs from 'fs';
 
-import {ConfigDownloadItem, DownloadItemDoneEventState, DownloadItems, DownloadItemState, DownloadItemUpdatedEventState} from 'types/config';
+import {DownloadedItem, DownloadItemDoneEventState, DownloadedItems, DownloadItemState, DownloadItemUpdatedEventState} from 'types/config';
 
-import {DownloadItem, Event, WebContents, FileFilter, ipcMain, dialog, shell} from 'electron';
+import {DownloadItem, Event, WebContents, FileFilter, ipcMain, dialog, shell, Menu} from 'electron';
 import log from 'electron-log';
 
-import {CLOSE_DOWNLOADS_DROPDOWN, HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE, OPEN_DOWNLOADS_DROPDOWN, SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE, UPDATE_DOWNLOADS_DROPDOWN} from 'common/communication';
+import {CLOSE_DOWNLOADS_DROPDOWN, DOWNLOADS_DROPDOWN_FOCUSED, HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE, OPEN_DOWNLOADS_DROPDOWN, REQUEST_HAS_DOWNLOADS, SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE, UPDATE_DOWNLOADS_DROPDOWN, UPDATE_PATHS} from 'common/communication';
 import Config from 'common/config';
 import {localizeMessage} from 'main/i18nManager';
 import {displayDownloadCompleted} from 'main/notifications';
 import WindowManager from 'main/windows/windowManager';
 import {getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader} from 'main/utils';
 import {DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT, DOWNLOADS_DROPDOWN_MAX_ITEMS} from 'common/utils/constants';
+import JsonFileManager from 'common/JsonFileManager';
+
+import {downloadsJson} from './constants';
+import * as Validator from './Validator';
 
 export enum DownloadItemTypeEnum {
     FILE = 'file',
     UPDATE = 'update',
 }
 
-class DownloadsManager {
-    private isOpen = false;
-    private fileSizes = new Map<string, string>();
-    private autoCloseTimeout: NodeJS.Timeout | null = null;
+class DownloadsManager extends JsonFileManager<DownloadedItems> {
+    open: boolean;
+    fileSizes: Map<string, string>;
+    autoCloseTimeout: NodeJS.Timeout | null;
+    downloads: DownloadedItems;
+
+    constructor(file: string) {
+        super(file);
+
+        this.open = false;
+        this.fileSizes = new Map<string, string>();
+        this.autoCloseTimeout = null;
+        this.downloads = {};
+
+        this.init();
+    }
+
+    init = () => {
+        // ensure data loaded from file is valid
+        const validatedJSON = Validator.validateDownloads(this.json);
+        log.debug('DownloadsManager.init', {'this.json': this.json});
+        log.debug('DownloadsManager.init', {validatedJSON});
+        if (validatedJSON) {
+            this.saveAll(validatedJSON);
+        } else {
+            this.saveAll({});
+        }
+        this.checkForDeletedFiles();
+
+        ipcMain.handle(REQUEST_HAS_DOWNLOADS, () => {
+            return downloadsManager.hasDownloads();
+        });
+        ipcMain.on(DOWNLOADS_DROPDOWN_FOCUSED, this.clearAutoCloseTimeout);
+    }
 
     handleNewDownload = (event: Event, item: DownloadItem, webContents: WebContents) => {
         log.debug('DownloadsManager.handleNewDownload', {item, sourceURL: webContents.getURL()});
@@ -44,6 +78,7 @@ class DownloadsManager {
         this.upsertFileToDownloads(item, 'progressing');
         this.handleDownloadItemEvents(item, webContents);
         this.openDownloadsDropdown();
+        this.toggleAppMenuDownloadsEnabled(true);
     };
 
     /**
@@ -65,10 +100,10 @@ class DownloadsManager {
         cb({});
     };
 
-    checkForDeletedFilesAndUpdateTheirState = (downloads: DownloadItems) => {
-        log.debug('DownloadsManager.handleNewDownload');
+    checkForDeletedFiles = () => {
+        log.debug('DownloadsManager.checkForDeletedFiles');
 
-        const downloadsCopy = {...downloads};
+        const downloads = this.downloads;
         let modified = false;
 
         for (const fileId in downloads) {
@@ -76,32 +111,31 @@ class DownloadsManager {
                 const file = downloads[fileId];
                 if ((file.state === 'completed')) {
                     if (!file.location || !fs.existsSync(file.location)) {
-                        downloadsCopy[fileId].state = 'deleted';
+                        downloads[fileId].state = 'deleted';
                         modified = true;
                     }
                 } else if (file.state === 'progressing') {
-                    downloadsCopy[fileId].state = 'interrupted';
+                    downloads[fileId].state = 'interrupted';
                     modified = true;
                 }
             }
         }
 
         if (modified) {
-            this.saveUpdatedDownloads(downloadsCopy);
+            this.saveAll(downloads);
         }
-
-        return downloadsCopy;
     }
 
     clearDownloadsDropDown = () => {
         log.debug('DownloadsManager.clearDownloadsDropDown');
 
-        Config.set('downloads', {});
-        ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, {downloads: Config.downloads});
+        this.saveAll({});
+        this.fileSizes = new Map();
         this.closeDownloadsDropdown();
+        this.toggleAppMenuDownloadsEnabled(false);
     }
 
-    openFile = (item?: ConfigDownloadItem) => {
+    openFile = (item?: DownloadedItem) => {
         if (item && fs.existsSync(item.location)) {
             shell.showItemInFolder(item.location);
             return;
@@ -116,26 +150,54 @@ class DownloadsManager {
     }
 
     setIsOpen = (val: boolean) => {
-        this.isOpen = val;
+        this.open = val;
         if (val === true) {
             WindowManager.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
         }
     }
 
     getIsOpen = () => {
-        return this.isOpen;
+        return this.open;
     }
 
-    getHasDownloads = () => {
-        return (Object.keys(Config.downloads)?.length || 0) > 0;
+    hasDownloads = () => {
+        log.debug('DownloadsManager.hasDownloads', {'this.downloads': this.downloads});
+        return (Object.keys(this.downloads)?.length || 0) > 0;
+    }
+
+    getDownloads = () => {
+        return this.downloads;
     }
 
     openDownloadsDropdown = () => {
         log.debug('DownloadsManager.openDownloadsDropdown');
 
-        this.isOpen = true;
+        this.open = true;
         ipcMain.emit(OPEN_DOWNLOADS_DROPDOWN);
         WindowManager.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
+    }
+
+    private toggleAppMenuDownloadsEnabled = (value: boolean) => {
+        const appMenuDownloads = Menu.getApplicationMenu()?.getMenuItemById('app-menu-downloads');
+        if (appMenuDownloads) {
+            appMenuDownloads.enabled = value;
+        }
+    }
+
+    private saveAll = (downloads: DownloadedItems) => {
+        this.downloads = downloads;
+        this.setJson(downloads);
+        log.debug('DownloadsManager.saveAll', {downloads: this.downloads});
+        ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, true, this.downloads);
+        WindowManager?.sendToRenderer(UPDATE_DOWNLOADS_DROPDOWN, this.downloads);
+    }
+
+    private save = (key: string, item: DownloadedItem) => {
+        this.downloads[key] = item;
+        this.setValue(key, item);
+        log.debug('DownloadsManager.save', {downloads: this.downloads});
+        ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, true, this.downloads);
+        WindowManager?.sendToRenderer(UPDATE_DOWNLOADS_DROPDOWN, this.downloads);
     }
 
     private handleDownloadItemEvents = (item: DownloadItem, webContents: WebContents) => {
@@ -187,9 +249,13 @@ class DownloadsManager {
     private closeDownloadsDropdown = () => {
         log.debug('DownloadsManager.closeDownloadsDropdown');
 
-        this.isOpen = false;
+        this.open = false;
         ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
 
+        this.clearAutoCloseTimeout();
+    }
+
+    private clearAutoCloseTimeout = () => {
         if (this.autoCloseTimeout) {
             clearTimeout(this.autoCloseTimeout);
             this.autoCloseTimeout = null;
@@ -198,44 +264,40 @@ class DownloadsManager {
 
     private upsertFileToDownloads = (item: DownloadItem, state: DownloadItemState) => {
         const fileId = this.getFileId(item);
-        const downloadsCopy = Config.downloads;
-        log.debug('DownloadsManager.upsertFileToDownloads', {fileId, downloadsCopy});
+        log.debug('DownloadsManager.upsertFileToDownloads', {fileId});
+
         const formattedItem = this.formatDownloadItem(item, state);
-        downloadsCopy[fileId] = formattedItem;
-        const downloadsToSave = this.checkIfMaxFilesReached(downloadsCopy);
-        this.saveUpdatedDownloads(downloadsToSave);
+        this.save(fileId, formattedItem);
+        this.checkIfMaxFilesReached();
     };
 
-    private saveUpdatedDownloads = (updatedDownloads: DownloadItems) => {
-        Config.set('downloads', updatedDownloads);
-        ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, {downloads: Config.downloads});
-    }
-
-    private checkIfMaxFilesReached = (downloads: DownloadItems) => {
+    private checkIfMaxFilesReached = () => {
+        const downloads = this.downloads;
         if (Object.keys(downloads).length > DOWNLOADS_DROPDOWN_MAX_ITEMS) {
             const oldestFileId = Object.keys(downloads).reduce((prev, curr) => {
                 return downloads[prev].addedAt > downloads[curr].addedAt ? curr : prev;
             });
             delete downloads[oldestFileId];
+            this.saveAll(downloads);
         }
-        return downloads;
     }
 
     private shouldAutoClose = () => {
-        // if no other file is being downloaded
-        if (!Object.values(Config.downloads).some((item) => item.state === 'progressing')) {
-            if (this.autoCloseTimeout) {
-                this.autoCloseTimeout.refresh();
-            } else {
-                this.autoCloseTimeout = setTimeout(() => this.closeDownloadsDropdown(), DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT);
-            }
+        // if some other file is being downloaded
+        if (Object.values(this.downloads).some((item) => item.state === 'progressing')) {
+            return;
+        }
+        if (this.autoCloseTimeout) {
+            this.autoCloseTimeout.refresh();
+        } else {
+            this.autoCloseTimeout = setTimeout(() => this.closeDownloadsDropdown(), DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT);
         }
     }
 
     private shouldShowBadge = () => {
-        log.debug('DownloadsManager.shouldShowBadge', {isOpen: this.isOpen});
+        log.debug('DownloadsManager.shouldShowBadge', {isOpen: this.open});
 
-        if (this.isOpen === true) {
+        if (this.open === true) {
             WindowManager.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
         } else {
             WindowManager.sendToRenderer(SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
@@ -273,7 +335,7 @@ class DownloadsManager {
     /**
      * Internal utils
      */
-    private formatDownloadItem = (item: DownloadItem, state: DownloadItemState): ConfigDownloadItem => {
+    private formatDownloadItem = (item: DownloadItem, state: DownloadItemState): DownloadedItem => {
         const totalBytes = this.getFileSize(item);
         const receivedBytes = item.getReceivedBytes();
         const progress = getPercentage(receivedBytes, totalBytes);
@@ -329,5 +391,10 @@ class DownloadsManager {
     }
 }
 
-const downloadsManager = new DownloadsManager();
+let downloadsManager = new DownloadsManager(downloadsJson);
+
+ipcMain.on(UPDATE_PATHS, () => {
+    downloadsManager = new DownloadsManager(downloadsJson);
+});
+
 export default downloadsManager;
