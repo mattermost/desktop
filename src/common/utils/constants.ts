@@ -7,6 +7,7 @@ export const DEVELOPMENT = 'development';
 
 export const SECOND = 1000;
 export const RELOAD_INTERVAL = 5 * SECOND;
+export const MODAL_TRANSITION_TIMEOUT = 400;
 
 export const MAX_SERVER_RETRIES = 3;
 
@@ -24,7 +25,7 @@ export const MINIMUM_WINDOW_WIDTH = 700;
 export const MINIMUM_WINDOW_HEIGHT = 240;
 
 export const MM_LINKS = {
-    GET_STARTED: 'https://mattermost.com/get-started',
+    GET_STARTED: 'https://mattermost.com/get-started/',
 };
 
 // supported custom login paths (oath, saml)

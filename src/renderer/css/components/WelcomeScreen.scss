@@ -1,3 +1,5 @@
+@import '../_mixins.scss';
+
 .WelcomeScreen {
     flex-direction: column;
     z-index: 20;
@@ -24,6 +26,13 @@
             .WelcomeScreen__button {
                 margin-top: 22px;
             }
+        }
+
+        &.outToLeft {
+            @include outToLeft(40);
+    
+            animation: outToLeft40 0.4s ease-in-out;
+            opacity: 0;
         }
     }
 

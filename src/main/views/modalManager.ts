@@ -164,7 +164,7 @@ export class ModalManager {
     }
 
     handleOpenExternalMMLink = (event: IpcMainEvent, url: string) => {
-        if (url in Object.values(MM_LINKS)) {
+        if (Object.values(MM_LINKS).includes(url)) {
             log.debug('ModalManager.handleOpenExternal', url);
 
             shell.openExternal(url);

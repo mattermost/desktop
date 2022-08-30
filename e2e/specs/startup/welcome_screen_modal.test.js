@@ -134,9 +134,9 @@ describe('Welcome Screen Modal', function desc() {
         await welcomeScreenModal.click('#getStartedWelcomeScreen');
 
         const newServerModal = await this.app.waitForEvent('window', {
-            predicate: (window) => window.url().includes('newServer'),
+            predicate: (window) => window.url().includes('configureServer'),
         });
-        const modalTitle = await newServerModal.innerText('#newServerModal .modal-title');
-        modalTitle.should.equal('Add Server');
+        const modalCardTitle = await newServerModal.innerText('.ConfigureServer .ConfigureServer__card-title');
+        modalCardTitle.should.equal('Enter your server details');
     });
 });

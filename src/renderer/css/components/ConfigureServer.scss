@@ -1,35 +1,6 @@
 @import url("../_css_variables.scss");
 @import url("../fonts.css");
-
-@mixin shake-horizontally {
-    animation: shake-horizontally 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-    backface-visibility: hidden;
-    perspective: 1000px;
-    transform: translate3d(0, 0, 0);
-}
-
-@keyframes shake-horizontally {
-    10%,
-    90% {
-        transform: translate3d(-1px, 0, 0);
-    }
-
-    20%,
-    80% {
-        transform: translate3d(2px, 0, 0);
-    }
-
-    30%,
-    50%,
-    70% {
-        transform: translate3d(-4px, 0, 0);
-    }
-
-    40%,
-    60% {
-        transform: translate3d(4px, 0, 0);
-    }
-}
+@import '../_mixins.scss';
 
 .alternate-link {
     margin-left: auto;
@@ -45,6 +16,19 @@
 
     .alternate-link__link {
         padding-left: 4px;
+    }
+
+    &.inFromRight {
+        @include inFromRight(40);
+
+        animation: inFromRight40 0.5s ease-in-out;
+    }
+
+    &.outToLeft {
+        @include outToLeft(40);
+
+        animation: outToLeft40 0.4s ease-in-out;
+        opacity: 0;
     }
 }
 
@@ -111,6 +95,38 @@
                         display: block;
                     }
                 }
+
+                &.inFromRight {
+                    .ConfigureServer__message-title,
+                    .ConfigureServer__message-subtitle {
+                        @include inFromRight(30);
+
+                        animation: inFromRight30 0.5s ease-in-out;
+                    }
+
+                    .ConfigureServer__message-img img {
+                        @include inFromRight(70);
+
+                        animation: inFromRight70 0.5s ease-in-out;
+                    }
+                }
+
+                &.outToLeft {
+                    .ConfigureServer__message-title,
+                    .ConfigureServer__message-subtitle {
+                        @include outToLeft(30);
+
+                        animation: outToLeft30 0.4s ease-in-out;
+                        opacity: 0;
+                    }
+
+                    .ConfigureServer__message-img img {
+                        @include outToLeft(70);
+
+                        animation: outToLeft70 0.4s ease-in-out;
+                        opacity: 0;
+                    }
+                }
             }
 
             .ConfigureServer__card {
@@ -121,10 +137,6 @@
                 background-color: var(--center-channel-bg);
                 border-radius: 8px;
                 box-shadow: var(--elevation-5);
-
-                &.with-error {
-                    @include shake-horizontally;
-                }
 
                 .ConfigureServer__card-content {
                     display: flex;
@@ -158,6 +170,23 @@
                             margin-top: 30px;
                         }
                     }
+                }
+
+                &.inFromRight {
+                    @include inFromRight(40);
+
+                    animation: inFromRight40 0.5s ease-in-out;
+                }
+
+                &.outToLeft {
+                    @include outToLeft(40);
+
+                    animation: outToLeft40 0.4s ease-in-out;
+                    opacity: 0;
+                }
+
+                &.with-error {
+                    @include shake-horizontally;
                 }
             }
         }
