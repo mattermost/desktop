@@ -50,7 +50,7 @@ export function displayMention(title: string, body: string, channel: {id: string
         // On Windows, manually dismiss notifications from the same channel and only show the latest one
         if (process.platform === 'win32') {
             if (currentNotifications.has(mentionKey)) {
-                log.info(`close ${mentionKey}`);
+                log.debug(`close ${mentionKey}`);
                 currentNotifications.get(mentionKey).close();
                 currentNotifications.delete(mentionKey);
             }
@@ -64,7 +64,7 @@ export function displayMention(title: string, body: string, channel: {id: string
     });
 
     mention.on('click', () => {
-        log.info('notification click', serverName, mention);
+        log.debug('notification click', serverName, mention);
         if (serverName) {
             WindowManager.switchTab(serverName, TAB_MESSAGING);
             webcontents.send('notification-clicked', {channel, teamId, url});
