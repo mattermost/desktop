@@ -214,8 +214,6 @@ export class ViewManager {
                 }
             }
         } else {
-            this.showLoadingScreen();
-
             this.mainWindow.webContents.send(SET_ACTIVE_VIEW, null, null);
             ipcMain.emit(MAIN_WINDOW_SHOWN);
         }
