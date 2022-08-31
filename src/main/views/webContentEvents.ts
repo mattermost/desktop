@@ -6,6 +6,7 @@ import log from 'electron-log';
 
 import {TeamWithTabs} from 'types/config';
 
+import Config from 'common/config';
 import urlUtils from 'common/utils/url';
 
 import ContextMenu from 'main/contextMenu';
@@ -221,9 +222,31 @@ export class WebContentsEventManager {
         }
     };
 
-    addWebContentsEventListeners = (mmview: MattermostView, getServersFunction: () => TeamWithTabs[]) => {
-        const contents = mmview.view.webContents;
+    addMattermostViewEventListeners = (mmview: MattermostView, getServersFunction: () => TeamWithTabs[]) => {
+        this.addWebContentsEventListeners(
+            mmview.view.webContents,
+            getServersFunction,
+            (contents: WebContents) => {
+                contents.on('page-title-updated', mmview.handleTitleUpdate);
+                contents.on('page-favicon-updated', mmview.handleFaviconUpdate);
+                contents.on('update-target-url', mmview.handleUpdateTarget);
+                contents.on('did-navigate', mmview.handleDidNavigate);
+            },
+            (contents: WebContents) => {
+                contents.removeListener('page-title-updated', mmview.handleTitleUpdate);
+                contents.removeListener('page-favicon-updated', mmview.handleFaviconUpdate);
+                contents.removeListener('update-target-url', mmview.handleUpdateTarget);
+                contents.removeListener('did-navigate', mmview.handleDidNavigate);
+            },
+        );
+    };
 
+    addWebContentsEventListeners = (
+        contents: WebContents,
+        getServersFunction: () => TeamWithTabs[],
+        addListeners?: (contents: WebContents) => void,
+        removeListeners?: (contents: WebContents) => void,
+    ) => {
         // initialize custom login tracking
         this.customLogins[contents.id] = {
             inProgress: false,
@@ -244,34 +267,28 @@ export class WebContentsEventManager {
         const didStartNavigation = this.generateDidStartNavigation(getServersFunction);
         contents.on('did-start-navigation', didStartNavigation as (e: Event, u: string) => void);
 
-        const spellcheck = mmview.options.webPreferences?.spellcheck;
+        const spellcheck = Config.useSpellChecker;
         const newWindow = this.generateNewWindowListener(getServersFunction, spellcheck);
         contents.setWindowOpenHandler(newWindow);
 
-        contents.on('page-title-updated', mmview.handleTitleUpdate);
-        contents.on('page-favicon-updated', mmview.handleFaviconUpdate);
-        contents.on('update-target-url', mmview.handleUpdateTarget);
-        contents.on('did-navigate', mmview.handleDidNavigate);
+        addListeners?.(contents);
 
-        const removeListeners = () => {
+        const removeWebContentsListeners = () => {
             try {
                 contents.removeListener('will-navigate', willNavigate as (e: Event, u: string) => void);
                 contents.removeListener('did-start-navigation', didStartNavigation as (e: Event, u: string) => void);
-                contents.removeListener('page-title-updated', mmview.handleTitleUpdate);
-                contents.removeListener('page-favicon-updated', mmview.handleFaviconUpdate);
-                contents.removeListener('update-target-url', mmview.handleUpdateTarget);
-                contents.removeListener('did-navigate', mmview.handleDidNavigate);
+                removeListeners?.(contents);
             } catch (e) {
                 log.error(`Error while trying to detach listeners, this might be ok if the process crashed: ${e}`);
             }
         };
 
-        this.listeners[contents.id] = removeListeners;
+        this.listeners[contents.id] = removeWebContentsListeners;
         contents.once('render-process-gone', (event, details) => {
             if (details.reason !== 'clean-exit') {
                 log.error('Renderer process for a webcontent is no longer available:', details.reason);
             }
-            removeListeners();
+            removeWebContentsListeners();
         });
     };
 }
