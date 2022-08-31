@@ -30,7 +30,7 @@ const userDataDir = path.join(sourceRootDir, 'e2e/testUserData/');
 const configFilePath = path.join(userDataDir, 'config.json');
 const boundsInfoPath = path.join(userDataDir, 'bounds-info.json');
 const exampleURL = 'http://example.com/';
-const mattermostURL = 'http://localhost:8065/';
+const mattermostURL = process.env.MM_TEST_SERVER_URL || 'http://localhost:8065/';
 
 const exampleTeam = {
     name: 'example',
