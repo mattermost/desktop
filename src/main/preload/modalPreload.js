@@ -21,7 +21,6 @@ import {
     GET_LANGUAGE_INFORMATION,
     RETRIEVED_LANGUAGE_INFORMATION,
     RESIZE_MODAL,
-    URL_OPEN_EXTERNAL,
 } from 'common/communication';
 
 console.log('preloaded for the modal!');
@@ -76,9 +75,6 @@ window.addEventListener('message', async (event) => {
         break;
     case GET_LANGUAGE_INFORMATION:
         window.postMessage({type: RETRIEVED_LANGUAGE_INFORMATION, data: await ipcRenderer.invoke(GET_LANGUAGE_INFORMATION)});
-        break;
-    case URL_OPEN_EXTERNAL:
-        ipcRenderer.send(URL_OPEN_EXTERNAL, event.data.data);
         break;
     default:
         console.log(`got a message: ${event}`);

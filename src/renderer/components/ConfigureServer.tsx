@@ -12,7 +12,7 @@ import womanLaptop from 'renderer/assets/svg/womanLaptop.svg';
 import Header from 'renderer/components/Header';
 import Input, {STATUS, SIZE} from 'renderer/components/Input';
 import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
-import SaveButton from 'renderer/components/SaveButton';
+import SaveButton from 'renderer/components/SaveButton/SaveButton';
 
 import {PING_DOMAIN, PING_DOMAIN_RESPONSE} from 'common/communication';
 import {MM_LINKS, MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
@@ -34,7 +34,6 @@ type ConfigureServerProps = {
     alternateLinkText?: string;
     alternateLinkURL?: string;
     onConnect: (data: TeamWithIndex) => void;
-    onOpenExternalLink: (url: string) => void;
 };
 
 function ConfigureServer({
@@ -49,7 +48,6 @@ function ConfigureServer({
     alternateLinkText,
     alternateLinkURL,
     onConnect,
-    onOpenExternalLink,
 }: ConfigureServerProps) {
     const {formatMessage} = useIntl();
 
@@ -81,10 +79,12 @@ function ConfigureServer({
         }
 
         return new Promise((resolve) => {
-            const handler = (event: {data: {type: string; data: string | Error}}) => {
-                if (event.data.type === PING_DOMAIN_RESPONSE) {
-                    let newURL = checkURL;
+            let eventCount = 0;
 
+            const handler = (event: {data: {type: string; data: string | Error}}) => {
+                let newURL = checkURL;
+
+                if (event.data.type === PING_DOMAIN_RESPONSE) {
                     if (event.data.data instanceof Error) {
                         console.error(`Could not ping url: ${checkURL}`);
                     } else {
@@ -93,9 +93,13 @@ function ConfigureServer({
                     }
 
                     window.removeEventListener('message', handler);
-                    console.log(`newURL: ${newURL}`);
+                    resolve(newURL);
+                } else if (eventCount >= 3) {
+                    window.removeEventListener('message', handler);
                     resolve(newURL);
                 }
+
+                eventCount++;
             };
 
             window.addEventListener('message', handler);
@@ -221,10 +225,6 @@ function ConfigureServer({
         }, MODAL_TRANSITION_TIMEOUT);
     };
 
-    const handleAlternateLinkOnClick = () => {
-        onOpenExternalLink(alternateLinkURL || MM_LINKS.GET_STARTED);
-    };
-
     const getAlternateLink = useCallback(() => (
         <div className={classNames('alternate-link', transition, {'alternate-link-inverted': darkMode})}>
             <span className='alternate-link__message'>
@@ -235,8 +235,9 @@ function ConfigureServer({
                     'link-button link-small-button alternate-link__link',
                     {'link-button-inverted': darkMode},
                 )}
-                href='#'
-                onClick={handleAlternateLinkOnClick}
+                href={alternateLinkURL || MM_LINKS.GET_STARTED}
+                target='_blank'
+                rel='noopener noreferrer'
             >
                 {alternateLinkText || formatMessage({id: 'renderer.components.configureServer.create', defaultMessage: 'Learn how to create a server'})}
             </a>

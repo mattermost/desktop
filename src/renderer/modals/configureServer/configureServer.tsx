@@ -14,7 +14,6 @@ import {
     DARK_MODE_CHANGE,
     RESIZE_MODAL,
     MODAL_INFO,
-    URL_OPEN_EXTERNAL,
 } from 'common/communication';
 import IntlProvider from 'renderer/intl_provider';
 import ConfigureServer from '../../components/ConfigureServer';
@@ -25,10 +24,6 @@ const MOBILE_SCREEN_WIDTH = 1200;
 
 const onConnect = (data: TeamWithIndex) => {
     window.postMessage({type: MODAL_RESULT, data}, window.location.href);
-};
-
-const onOpenExternalLink = (url: string) => {
-    window.postMessage({type: URL_OPEN_EXTERNAL, data: url}, window.location.href);
 };
 
 const ConfigureServerModalWrapper = () => {
@@ -73,7 +68,6 @@ const ConfigureServerModalWrapper = () => {
                 darkMode={darkMode}
                 currentTeams={currentTeams}
                 onConnect={onConnect}
-                onOpenExternalLink={onOpenExternalLink}
             />
         </IntlProvider>
     );
