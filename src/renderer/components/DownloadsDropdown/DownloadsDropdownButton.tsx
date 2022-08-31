@@ -4,7 +4,7 @@
 import classNames from 'classnames';
 import React, {useEffect} from 'react';
 
-import {CLOSE_DOWNLOADS_DROPDOWN, OPEN_DOWNLOADS_DROPDOWN} from 'common/communication';
+import {CLOSE_DOWNLOADS_DROPDOWN, CLOSE_DOWNLOADS_DROPDOWN_MENU, OPEN_DOWNLOADS_DROPDOWN} from 'common/communication';
 
 import '../../css/components/DownloadsDropdown/DownloadsDropdownButton.scss';
 
@@ -30,7 +30,12 @@ const DownloadsDropdownButton: React.FC<Props> = ({darkMode, isDownloadsDropdown
     const handleToggleButton = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
         event.stopPropagation();
-        window.ipcRenderer.send(isDownloadsDropdownOpen ? CLOSE_DOWNLOADS_DROPDOWN : OPEN_DOWNLOADS_DROPDOWN);
+        if (isDownloadsDropdownOpen) {
+            window.ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
+            window.ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN_MENU);
+        } else {
+            window.ipcRenderer.send(OPEN_DOWNLOADS_DROPDOWN);
+        }
     };
 
     return (

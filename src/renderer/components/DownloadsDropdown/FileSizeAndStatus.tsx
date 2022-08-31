@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {DownloadedItem} from 'types/config';
+import {DownloadedItem} from 'types/downloads';
 
 import {getDownloadingFileStatus, getFileSizeOrBytesProgress} from 'renderer/utils';
 

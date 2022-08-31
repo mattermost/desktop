@@ -20,6 +20,7 @@ module.exports = merge(base, {
         mainWindow: './src/main/preload/mainWindow.js',
         dropdown: './src/main/preload/dropdown.js',
         downloadsDropdown: './src/main/preload/downloadsDropdown.js',
+        downloadsDropdownMenu: './src/main/preload/downloadsDropdownMenu.js',
         preload: './src/main/preload/mattermost.js',
         modalPreload: './src/main/preload/modalPreload.js',
         loadingScreenPreload: './src/main/preload/loadingScreenPreload.js',

@@ -10,7 +10,8 @@ import {injectIntl, IntlShape} from 'react-intl';
 import {IpcRendererEvent} from 'electron/renderer';
 import prettyBytes from 'pretty-bytes';
 
-import {DownloadedItems, TeamWithTabs} from 'types/config';
+import {TeamWithTabs} from 'types/config';
+import {DownloadedItems} from 'types/downloads';
 
 import {getTabViewName} from 'common/tabs/TabView';
 
@@ -51,6 +52,7 @@ import {
     HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE,
     UPDATE_DOWNLOADS_DROPDOWN,
     REQUEST_HAS_DOWNLOADS,
+    CLOSE_DOWNLOADS_DROPDOWN_MENU,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -338,6 +340,7 @@ class MainPage extends React.PureComponent<Props, State> {
     handleCloseDropdowns = () => {
         window.ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
         window.ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
+        window.ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN_MENU);
     }
 
     handleMaximizeState = (_: IpcRendererEvent, maximized: boolean) => {

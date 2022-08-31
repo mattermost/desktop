@@ -6,7 +6,7 @@ import ReactDOM from 'react-dom';
 import classNames from 'classnames';
 import {FormattedMessage} from 'react-intl';
 
-import {DownloadedItem} from 'types/config';
+import {DownloadedItem} from 'types/downloads';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN,

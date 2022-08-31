@@ -3,12 +3,12 @@
 import path from 'path';
 import fs from 'fs';
 
-import {DownloadedItem, DownloadItemDoneEventState, DownloadedItems, DownloadItemState, DownloadItemUpdatedEventState} from 'types/config';
+import {DownloadedItem, DownloadItemDoneEventState, DownloadedItems, DownloadItemState, DownloadItemUpdatedEventState} from 'types/downloads';
 
 import {DownloadItem, Event, WebContents, FileFilter, ipcMain, dialog, shell, Menu} from 'electron';
 import log from 'electron-log';
 
-import {CLOSE_DOWNLOADS_DROPDOWN, DOWNLOADS_DROPDOWN_FOCUSED, HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE, OPEN_DOWNLOADS_DROPDOWN, REQUEST_HAS_DOWNLOADS, SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE, UPDATE_DOWNLOADS_DROPDOWN, UPDATE_PATHS} from 'common/communication';
+import {CLOSE_DOWNLOADS_DROPDOWN, CLOSE_DOWNLOADS_DROPDOWN_MENU, DOWNLOADS_DROPDOWN_FOCUSED, HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE, OPEN_DOWNLOADS_DROPDOWN, REQUEST_HAS_DOWNLOADS, SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE, UPDATE_DOWNLOADS_DROPDOWN, UPDATE_PATHS} from 'common/communication';
 import Config from 'common/config';
 import {localizeMessage} from 'main/i18nManager';
 import {displayDownloadCompleted} from 'main/notifications';
@@ -135,7 +135,7 @@ class DownloadsManager extends JsonFileManager<DownloadedItems> {
         this.toggleAppMenuDownloadsEnabled(false);
     }
 
-    openFile = (item?: DownloadedItem) => {
+    showFileInFolder = (item?: DownloadedItem) => {
         if (item && fs.existsSync(item.location)) {
             shell.showItemInFolder(item.location);
             return;
@@ -146,7 +146,33 @@ class DownloadsManager extends JsonFileManager<DownloadedItems> {
             return;
         }
 
-        log.debug('DownloadsDropdownView.openFile', 'NO_DOWNLOAD_LOCATION');
+        log.debug('DownloadsDropdownView.showFileInFolder', 'NO_DOWNLOAD_LOCATION');
+    }
+
+    openFile = (item?: DownloadedItem) => {
+        log.debug('DownloadsDropdownView.openFile', {item});
+        if (item && fs.existsSync(item.location)) {
+            shell.openPath(item.location).catch((err) => {
+                log.debug('DownloadsDropdownView.openFileError', {err});
+                this.showFileInFolder(item);
+            });
+        } else {
+            log.debug('DownloadsDropdownView.openFile', 'COULD_NOT_OPEN_FILE');
+            this.showFileInFolder(item);
+        }
+    }
+
+    clearFile = (item?: DownloadedItem) => {
+        if (!item) {
+            return;
+        }
+        const fileId = this.getDownloadedFileId(item);
+        const downloads = this.downloads;
+        delete downloads[fileId];
+        this.saveAll(downloads);
+        if (!this.hasDownloads()) {
+            this.closeDownloadsDropdown();
+        }
     }
 
     setIsOpen = (val: boolean) => {
@@ -204,7 +230,7 @@ class DownloadsManager extends JsonFileManager<DownloadedItems> {
         item.on('updated', (updateEvent, state) => {
             this.updatedEventController(updateEvent, state, item);
         });
-        item.on('done', (doneEvent, state) => {
+        item.once('done', (doneEvent, state) => {
             this.doneEventController(doneEvent, state, item, webContents);
         });
     }
@@ -251,6 +277,7 @@ class DownloadsManager extends JsonFileManager<DownloadedItems> {
 
         this.open = false;
         ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
+        ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN_MENU);
 
         this.clearAutoCloseTimeout();
     }
@@ -387,6 +414,12 @@ class DownloadsManager extends JsonFileManager<DownloadedItems> {
     private getFileId = (item: DownloadItem) => {
         const fileNameFromPath = this.readFilenameFromPath(item.savePath);
         const itemFilename = item.getFilename();
+        return fileNameFromPath && fileNameFromPath !== itemFilename ? fileNameFromPath : itemFilename;
+    }
+
+    private getDownloadedFileId = (item: DownloadedItem) => {
+        const fileNameFromPath = this.readFilenameFromPath(item.location);
+        const itemFilename = item.filename;
         return fileNameFromPath && fileNameFromPath !== itemFilename ? fileNameFromPath : itemFilename;
     }
 }

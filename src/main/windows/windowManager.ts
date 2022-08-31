@@ -42,6 +42,7 @@ import CriticalErrorHandler from '../CriticalErrorHandler';
 
 import TeamDropdownView from '../views/teamDropdownView';
 import DownloadsDropdownView from '../views/downloadsDropdownView';
+import DownloadsDropdownMenuView from '../views/downloadsDropdownMenuView';
 
 import downloadsManager from 'main/downloadsManager';
 
@@ -59,6 +60,7 @@ export class WindowManager {
     viewManager?: ViewManager;
     teamDropdown?: TeamDropdownView;
     downloadsDropdown?: DownloadsDropdownView;
+    downloadsDropdownMenu?: DownloadsDropdownMenuView;
     currentServerName?: string;
 
     constructor() {
@@ -161,6 +163,7 @@ export class WindowManager {
 
             this.teamDropdown = new TeamDropdownView(this.mainWindow, Config.teams, Config.darkMode, Config.enableServerManagement);
             this.downloadsDropdown = new DownloadsDropdownView(this.mainWindow, downloadsManager.getDownloads(), Config.darkMode);
+            this.downloadsDropdownMenu = new DownloadsDropdownMenuView(this.mainWindow, Config.darkMode);
         }
         this.initializeViewManager();
 
@@ -205,6 +208,7 @@ export class WindowManager {
         this.viewManager?.setLoadingScreenBounds();
         this.teamDropdown?.updateWindowBounds();
         this.downloadsDropdown?.updateWindowBounds();
+        this.downloadsDropdownMenu?.updateWindowBounds();
         ipcMain.emit(RESIZE_MODAL, null, newBounds);
     }
 

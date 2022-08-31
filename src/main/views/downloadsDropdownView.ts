@@ -4,11 +4,12 @@ import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent} from 'electron';
 
 import log from 'electron-log';
 
-import {CombinedConfig, DownloadedItem, DownloadedItems} from 'types/config';
+import {CombinedConfig} from 'types/config';
+import {DownloadedItem, DownloadedItems} from 'types/downloads';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN,
-    DOWNLOADS_DROPDOWN_OPEN_FILE,
+    DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER,
     EMIT_CONFIGURATION,
     OPEN_DOWNLOADS_DROPDOWN,
     REQUEST_CLEAR_DOWNLOADS_DROPDOWN,
@@ -57,7 +58,7 @@ export default class DownloadsDropdownView {
         ipcMain.on(EMIT_CONFIGURATION, this.updateConfig);
         ipcMain.on(REQUEST_DOWNLOADS_DROPDOWN_INFO, this.updateDownloadsDropdown);
         ipcMain.on(REQUEST_CLEAR_DOWNLOADS_DROPDOWN, this.clearDownloads);
-        ipcMain.on(DOWNLOADS_DROPDOWN_OPEN_FILE, this.openFile);
+        ipcMain.on(DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER, this.showFileInFolder);
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN, this.updateDownloads);
     }
 
@@ -126,10 +127,10 @@ export default class DownloadsDropdownView {
         this.handleClose();
     }
 
-    openFile = (e: IpcMainEvent, item: DownloadedItem) => {
-        log.debug('DownloadsDropdownView.openFile', {item});
+    showFileInFolder = (e: IpcMainEvent, item: DownloadedItem) => {
+        log.debug('DownloadsDropdownView.showFileInFolder', {item});
 
-        downloadsManager.openFile(item);
+        downloadsManager.showFileInFolder(item);
     }
 
     getBounds = (width: number, height: number) => {

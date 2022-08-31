@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {DownloadedItem} from 'types/config';
+import {DownloadedItem} from 'types/downloads';
 
 import {Constants} from './constants';
 

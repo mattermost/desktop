@@ -6,26 +6,21 @@
 import {ipcRenderer, contextBridge} from 'electron';
 
 import {
-    CLOSE_DOWNLOADS_DROPDOWN,
     CLOSE_DOWNLOADS_DROPDOWN_MENU,
-    DOWNLOADS_DROPDOWN_FOCUSED,
-    DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER,
     GET_LANGUAGE_INFORMATION,
-    OPEN_DOWNLOADS_DROPDOWN_MENU,
-    REQUEST_CLEAR_DOWNLOADS_DROPDOWN,
-    REQUEST_DOWNLOADS_DROPDOWN_INFO,
+    DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE,
     RETRIEVED_LANGUAGE_INFORMATION,
-    UPDATE_DOWNLOADS_DROPDOWN,
+    DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER,
+    DOWNLOADS_DROPDOWN_MENU_CANCEL_FILE,
+    DOWNLOADS_DROPDOWN_MENU_OPEN_FILE,
+    UPDATE_DOWNLOADS_DROPDOWN_MENU,
+    REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO,
 } from 'common/communication';
 
-console.log('preloaded for the downloadsDropdown!');
+console.log('preloaded for the downloadsDropdownMenu!');
 
 contextBridge.exposeInMainWorld('process', {
     platform: process.platform,
-});
-
-window.addEventListener('mousemove', () => {
-    ipcRenderer.send(DOWNLOADS_DROPDOWN_FOCUSED);
 });
 
 /**
@@ -33,23 +28,23 @@ window.addEventListener('mousemove', () => {
  */
 window.addEventListener('message', async (event) => {
     switch (event.data.type) {
-    case CLOSE_DOWNLOADS_DROPDOWN:
-        ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
-        break;
-    case OPEN_DOWNLOADS_DROPDOWN_MENU:
-        ipcRenderer.send(OPEN_DOWNLOADS_DROPDOWN_MENU, event.data.payload);
-        break;
     case CLOSE_DOWNLOADS_DROPDOWN_MENU:
         ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN_MENU);
         break;
-    case REQUEST_DOWNLOADS_DROPDOWN_INFO:
-        ipcRenderer.send(REQUEST_DOWNLOADS_DROPDOWN_INFO);
-        break;
-    case REQUEST_CLEAR_DOWNLOADS_DROPDOWN:
-        ipcRenderer.send(REQUEST_CLEAR_DOWNLOADS_DROPDOWN);
+    case REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO:
+        ipcRenderer.send(REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO);
         break;
     case DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER:
         ipcRenderer.send(DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER, event.data.payload.item);
+        break;
+    case DOWNLOADS_DROPDOWN_MENU_CANCEL_FILE:
+        ipcRenderer.send(DOWNLOADS_DROPDOWN_MENU_CANCEL_FILE, event.data.payload.item);
+        break;
+    case DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE:
+        ipcRenderer.send(DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE, event.data.payload.item);
+        break;
+    case DOWNLOADS_DROPDOWN_MENU_OPEN_FILE:
+        ipcRenderer.send(DOWNLOADS_DROPDOWN_MENU_OPEN_FILE, event.data.payload.item);
         break;
     case GET_LANGUAGE_INFORMATION:
         window.postMessage({type: RETRIEVED_LANGUAGE_INFORMATION, data: await ipcRenderer.invoke(GET_LANGUAGE_INFORMATION)});
@@ -62,6 +57,6 @@ window.addEventListener('message', async (event) => {
 /**
  * main => renderer
  */
-ipcRenderer.on(UPDATE_DOWNLOADS_DROPDOWN, (event, downloads, darkMode, windowBounds) => {
-    window.postMessage({type: UPDATE_DOWNLOADS_DROPDOWN, data: {downloads, darkMode, windowBounds}}, window.location.href);
+ipcRenderer.on(UPDATE_DOWNLOADS_DROPDOWN_MENU, (event, item, darkMode) => {
+    window.postMessage({type: UPDATE_DOWNLOADS_DROPDOWN_MENU, data: {item, darkMode}}, window.location.href);
 });

@@ -2,10 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {DownloadedItem} from 'types/config';
+import {DownloadedItem} from 'types/downloads';
 import classNames from 'classnames';
 
-import {DOWNLOADS_DROPDOWN_OPEN_FILE} from 'common/communication';
+import {DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER} from 'common/communication';
 
 import FileSizeAndStatus from './FileSizeAndStatus';
 import ProgressBar from './ProgressBar';
@@ -20,7 +20,7 @@ const DownloadsDropdownFile = ({item}: OwnProps) => {
     const onFileClick = (e: React.MouseEvent<HTMLDivElement>) => {
         e.preventDefault();
 
-        window.postMessage({type: DOWNLOADS_DROPDOWN_OPEN_FILE, payload: {item}}, window.location.href);
+        window.postMessage({type: DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER, payload: {item}}, window.location.href);
     };
 
     return (
