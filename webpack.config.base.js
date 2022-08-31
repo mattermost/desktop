@@ -13,17 +13,21 @@ const webpack = require('webpack');
 
 const VERSION = childProcess.execSync('git rev-parse --short HEAD').toString();
 const isProduction = process.env.NODE_ENV === 'production';
+const isTest = process.env.NODE_ENV === 'test';
 const isRelease = process.env.CIRCLE_BRANCH && process.env.CIRCLE_BRANCH.startsWith('release-');
 
 const codeDefinitions = {
     __HASH_VERSION__: !isRelease && JSON.stringify(VERSION),
-    __CAN_UPGRADE__: JSON.stringify(process.env.CAN_UPGRADE === 'true'),
+    __CAN_UPGRADE__: isTest || JSON.stringify(process.env.CAN_UPGRADE === 'true'),
     __IS_NIGHTLY_BUILD__: JSON.stringify(process.env.CIRCLE_BRANCH === 'nightly'),
     __IS_MAC_APP_STORE__: JSON.stringify(process.env.IS_MAC_APP_STORE === 'true'),
     __SKIP_ONBOARDING_SCREENS__: JSON.stringify(process.env.MM_DESKTOP_BUILD_SKIPONBOARDINGSCREENS === 'true'),
     __DISABLE_GPU__: JSON.stringify(process.env.MM_DESKTOP_BUILD_DISABLEGPU === 'true'),
 };
 codeDefinitions['process.env.NODE_ENV'] = JSON.stringify(process.env.NODE_ENV);
+if (isTest) {
+    codeDefinitions['process.resourcesPath'] = 'process.env.RESOURCES_PATH';
+}
 
 module.exports = {
 

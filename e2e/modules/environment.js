@@ -29,6 +29,7 @@ const electronBinaryPath = (() => {
 const userDataDir = path.join(sourceRootDir, 'e2e/testUserData/');
 const configFilePath = path.join(userDataDir, 'config.json');
 const boundsInfoPath = path.join(userDataDir, 'bounds-info.json');
+const appUpdatePath = path.join(userDataDir, 'app-update.yml');
 const exampleURL = 'http://example.com/';
 const mattermostURL = process.env.MM_TEST_SERVER_URL || 'http://localhost:8065/';
 
@@ -115,6 +116,7 @@ module.exports = {
     configFilePath,
     userDataDir,
     boundsInfoPath,
+    appUpdatePath,
     exampleURL,
     mattermostURL,
     demoConfig,
@@ -175,6 +177,10 @@ module.exports = {
 
     async getApp(args = []) {
         const options = {
+            env: {
+                ...process.env,
+                RESOURCES_PATH: userDataDir,
+            },
             executablePath: electronBinaryPath,
             args: [`${path.join(sourceRootDir, 'dist')}`, `--data-dir=${userDataDir}`, '--disable-dev-mode', ...args],
         };
