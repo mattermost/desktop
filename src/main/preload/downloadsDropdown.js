@@ -7,14 +7,13 @@ import {ipcRenderer, contextBridge} from 'electron';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN,
-    CLOSE_DOWNLOADS_DROPDOWN_MENU,
     DOWNLOADS_DROPDOWN_FOCUSED,
     DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER,
     GET_LANGUAGE_INFORMATION,
-    OPEN_DOWNLOADS_DROPDOWN_MENU,
     REQUEST_CLEAR_DOWNLOADS_DROPDOWN,
     REQUEST_DOWNLOADS_DROPDOWN_INFO,
     RETRIEVED_LANGUAGE_INFORMATION,
+    TOGGLE_DOWNLOADS_DROPDOWN_MENU,
     UPDATE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
 
@@ -36,11 +35,8 @@ window.addEventListener('message', async (event) => {
     case CLOSE_DOWNLOADS_DROPDOWN:
         ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
         break;
-    case OPEN_DOWNLOADS_DROPDOWN_MENU:
-        ipcRenderer.send(OPEN_DOWNLOADS_DROPDOWN_MENU, event.data.payload);
-        break;
-    case CLOSE_DOWNLOADS_DROPDOWN_MENU:
-        ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN_MENU);
+    case TOGGLE_DOWNLOADS_DROPDOWN_MENU:
+        ipcRenderer.send(TOGGLE_DOWNLOADS_DROPDOWN_MENU, event.data.payload);
         break;
     case REQUEST_DOWNLOADS_DROPDOWN_INFO:
         ipcRenderer.send(REQUEST_DOWNLOADS_DROPDOWN_INFO);

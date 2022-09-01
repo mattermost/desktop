@@ -16,6 +16,7 @@ import {
     EMIT_CONFIGURATION,
     OPEN_DOWNLOADS_DROPDOWN_MENU,
     REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO,
+    TOGGLE_DOWNLOADS_DROPDOWN_MENU,
     UPDATE_DOWNLOADS_DROPDOWN_MENU,
 } from 'common/communication';
 import {
@@ -30,6 +31,7 @@ import WindowManager from '../windows/windowManager';
 import downloadsManager from 'main/downloadsManager';
 
 export default class DownloadsDropdownMenuView {
+    open: boolean;
     view: BrowserView;
     bounds?: Electron.Rectangle;
     item?: DownloadedItem;
@@ -39,6 +41,7 @@ export default class DownloadsDropdownMenuView {
     windowBounds: Electron.Rectangle;
 
     constructor(window: BrowserWindow, darkMode: boolean) {
+        this.open = false;
         this.item = undefined;
         this.coordinates = undefined;
         this.window = window;
@@ -62,6 +65,7 @@ export default class DownloadsDropdownMenuView {
 
         ipcMain.on(OPEN_DOWNLOADS_DROPDOWN_MENU, this.handleOpen);
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN_MENU, this.handleClose);
+        ipcMain.on(TOGGLE_DOWNLOADS_DROPDOWN_MENU, this.handleToggle);
         ipcMain.on(EMIT_CONFIGURATION, this.updateConfig);
         ipcMain.on(REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO, this.updateDownloadsDropdownMenu);
         ipcMain.on(DOWNLOADS_DROPDOWN_MENU_OPEN_FILE, this.openFile);
@@ -120,6 +124,7 @@ export default class DownloadsDropdownMenuView {
 
         log.debug('DownloadsDropdownMenuView.handleOpen', {item, coordinates});
 
+        this.open = true;
         this.coordinates = coordinates;
         this.item = item;
         this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
@@ -132,8 +137,17 @@ export default class DownloadsDropdownMenuView {
     handleClose = () => {
         log.debug('DownloadsDropdownMenuView.handleClose');
 
+        this.open = false;
         this.view.setBounds(this.getBounds(0, 0));
         WindowManager.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN_MENU);
+    }
+
+    handleToggle = (event: IpcMainEvent, payload: DownloadsMenuOpenEventPayload) => {
+        if (this.open) {
+            this.handleClose();
+        } else {
+            this.handleOpen(event, payload);
+        }
     }
 
     openFile = () => {

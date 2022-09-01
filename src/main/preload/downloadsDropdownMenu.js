@@ -6,7 +6,6 @@
 import {ipcRenderer, contextBridge} from 'electron';
 
 import {
-    CLOSE_DOWNLOADS_DROPDOWN_MENU,
     GET_LANGUAGE_INFORMATION,
     DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE,
     RETRIEVED_LANGUAGE_INFORMATION,
@@ -28,9 +27,6 @@ contextBridge.exposeInMainWorld('process', {
  */
 window.addEventListener('message', async (event) => {
     switch (event.data.type) {
-    case CLOSE_DOWNLOADS_DROPDOWN_MENU:
-        ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN_MENU);
-        break;
     case REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO:
         ipcRenderer.send(REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO);
         break;
