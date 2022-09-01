@@ -32,6 +32,10 @@ jest.mock('../windows/windowManager', () => ({
     showMainWindow: jest.fn(),
 }));
 
+jest.mock('common/config', () => ({
+    spellcheck: true,
+}));
+
 jest.mock('common/utils/url', () => ({
     parseURL: (url) => {
         try {

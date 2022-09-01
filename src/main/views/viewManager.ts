@@ -277,7 +277,7 @@ export class ViewManager {
             log.error(`Couldn't find a view with the name ${viewName}`);
             return;
         }
-        WebContentsEventManager.addWebContentsEventListeners(view, this.getServers);
+        WebContentsEventManager.addMattermostViewEventListeners(view, this.getServers);
     }
 
     finishLoading = (server: string) => {
