@@ -147,6 +147,7 @@ export default class DownloadsDropdownMenuView {
     }
 
     cancelDownload = () => {
+        downloadsManager.cancelDownload(this.item);
         this.handleClose();
     }
 
@@ -154,6 +155,7 @@ export default class DownloadsDropdownMenuView {
         log.debug('DownloadsDropdownMenuView.showFileInFolder', {item});
 
         downloadsManager.showFileInFolder(item);
+        this.handleClose();
     }
 
     getBounds = (width: number, height: number) => {
