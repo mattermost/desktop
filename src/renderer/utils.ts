@@ -70,10 +70,15 @@ const getIconClassName = (file: DownloadedItem) => {
     return 'generic';
 };
 
+const isImageFile = (file: DownloadedItem): boolean => {
+    return file.mimeType?.toLowerCase().includes('image') ?? false;
+};
+
 export {
     bytesToMegabytes,
     bytesToMegabytesConverter,
     getDownloadingFileStatus,
     getFileSizeOrBytesProgress,
     getIconClassName,
+    isImageFile,
 };

@@ -48,7 +48,6 @@ export default class DownloadsDropdownView {
             transparent: true,
         }});
 
-        this.view.webContents.openDevTools();
         this.view.webContents.loadURL(getLocalURLString('downloadsDropdown.html'));
         this.window.addBrowserView(this.view);
 

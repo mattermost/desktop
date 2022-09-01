@@ -6,7 +6,7 @@ import {DownloadedItem} from 'types/downloads';
 
 import {CheckCircleIcon, CloseCircleIcon} from '@mattermost/compass-icons/components';
 
-import {getIconClassName} from 'renderer/utils';
+import {getIconClassName, isImageFile} from 'renderer/utils';
 
 type OwnProps = {
     item: DownloadedItem;
@@ -38,9 +38,19 @@ const Thumbnail = ({item}: OwnProps) => {
         }
     };
 
+    const showImagePreview = isImageFile(item) && item.state === 'completed';
+
     return (
         <div className='DownloadsDropdown__File__Body__Thumbnail__Container'>
-            <div className={`DownloadsDropdown__File__Body__Thumbnail ${getIconClassName(item)}`}/>
+            {showImagePreview ?
+                <div
+                    className='DownloadsDropdown__File__Body__Thumbnail preview'
+                    style={{
+                        backgroundImage: `url(${item.location})`,
+                        backgroundSize: 'cover',
+                    }}
+                /> :
+                <div className={`DownloadsDropdown__File__Body__Thumbnail ${getIconClassName(item)}`}/>}
             {showBadge(item.state)}
         </div>
     );
