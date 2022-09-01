@@ -261,6 +261,7 @@ body {
 
             &.darkMode {
                 background: #1f1f1f;
+                border: 1px solid rgba(221, 223, 228, 0.16);
 
                 .DownloadsDropdown__header .DownloadsDropdown__Downloads {
                     color: #DDD;
@@ -272,6 +273,26 @@ body {
 
                 .DownloadsDropdown__list {
                     color: #DDD;
+
+                    .DownloadsDropdown__File .DownloadsDropdown__File__Body {
+                        .DownloadsDropdown__File__Body__Thumbnail__Container {
+                            background-color: rgba(221, 223, 228, 0.08);
+                        }
+
+                        .DownloadsDropdown__File__Body__Details {
+                            .DownloadsDropdown__File__Body__Details__Filename {
+                                color: rgba(221, 223, 228, 1);
+                            }
+
+                            .DownloadsDropdown__File__Body__Details__FileSizeAndStatus {
+                                color: rgba(221, 223, 228, 0.64);
+                            }
+                        }
+
+                        .DownloadsDropdown__File__Body__ThreeDotButton {
+                            color: rgba(221, 223, 228, 0.56);
+                        }
+                    }
                 }
             }
         }

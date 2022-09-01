@@ -38,7 +38,7 @@ body {
             flex-direction: column;
             height: 100%;
             overflow: hidden;
-            padding: 0px;
+            padding: 8px 0px;
             width: 100%;
 
             .DownloadsDropdownMenu__MenuItem {
@@ -66,7 +66,16 @@ body {
 
             &.darkMode {
                 background: #1f1f1f;
-                color: #DDD;
+                border: 1px solid rgba(221, 223, 228, 0.16);
+                color: rgba(221, 223, 228, 1);
+
+                .DownloadsDropdownMenu__MenuItem {
+                    color: rgba(221, 223, 228, 1);
+
+                    &.disabled {
+                        color: rgba(221, 223, 228, 0.32);
+                    }
+                }
             }
         }
     }
