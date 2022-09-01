@@ -18,14 +18,7 @@
         line-height: 21px;
     }
 
-    &:hover {
-        background-color: rgba(28, 88, 217, 0.08);
-        i {
-            cursor: pointer;
-            color: rgba(56, 111, 229, 1);
-        }
-    }
-    &:focus, &.isDownloadsDropdownOpen {
+    &:hover, &:focus, &.isDownloadsDropdownOpen {
         background-color: rgba(28, 88, 217, 0.08);
         i {
             color: rgba(56, 111, 229, 1);
@@ -45,6 +38,13 @@
     &.darkMode {
         i {
             color: rgba(221, 223, 228, 0.56);
+        }
+
+        &:hover, &:focus, &.isDownloadsDropdownOpen {
+            background-color: rgba(56, 111, 229, 0.08);
+            i {
+                color: rgba(56, 111, 229, 1);
+            }
         }
     }
 }
