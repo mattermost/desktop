@@ -99,8 +99,8 @@ export function composeUserAgent() {
     return `${filteredUserAgent.join(' ')} Mattermost/${app.getVersion()}`;
 }
 
-export function isStringWithLength(string: unknown) {
-    return string && typeof string === 'string' && string.length > 0;
+export function isStringWithLength(string: unknown): boolean {
+    return typeof string === 'string' && string.length > 0;
 }
 
 export function getPercentage(received: number, total: number) {

@@ -16,6 +16,8 @@ const iconSize = 12;
 const colorGreen = '#3DB887';
 const colorRed = '#D24B4E';
 
+const isWin = window.process.platform === 'win32';
+
 const Thumbnail = ({item}: OwnProps) => {
     const showBadge = (state: DownloadedItem['state']) => {
         switch (state) {
@@ -46,7 +48,7 @@ const Thumbnail = ({item}: OwnProps) => {
                 <div
                     className='DownloadsDropdown__File__Body__Thumbnail preview'
                     style={{
-                        backgroundImage: `url(${item.location})`,
+                        backgroundImage: `url("${isWin ? `file:///${item.location.replaceAll('\\', '/')}` : item.location}")`,
                         backgroundSize: 'cover',
                     }}
                 /> :

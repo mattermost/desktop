@@ -75,7 +75,7 @@ class DownloadsManager extends JsonFileManager<DownloadedItems> {
                 return;
             }
         } else {
-            const savePath = this.getSavePath(Config.downloadLocation, filename);
+            const savePath = this.getSavePath(`${Config.downloadLocation}`, filename);
             item.setSavePath(savePath);
         }
         this.upsertFileToDownloads(item, 'progressing');
@@ -418,10 +418,10 @@ class DownloadsManager extends JsonFileManager<DownloadedItems> {
         return itemTotalBytes;
     }
 
-    private getSavePath = (downloadLocation?: string, filename?: string) => {
-        const name = isStringWithLength(filename) ? filename : 'file';
+    private getSavePath = (downloadLocation: string, filename?: string) => {
+        const name = isStringWithLength(filename) ? `${filename}` : 'file';
 
-        return `${downloadLocation}/${name}`;
+        return path.join(downloadLocation, name);
     };
 
     private getFileFilters = (fileElements: string[]): FileFilter[] => {
@@ -437,8 +437,9 @@ class DownloadsManager extends JsonFileManager<DownloadedItems> {
         return filters;
     }
 
-    private readFilenameFromPath = (path: string) => {
-        return path.split('/').pop();
+    private readFilenameFromPath = (savePath: string) => {
+        const pathObj = path.parse(savePath);
+        return pathObj.base;
     }
 
     private getFileId = (item: DownloadItem) => {
