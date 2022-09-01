@@ -12,8 +12,6 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 const base = require('./webpack.config.base');
 
-const isProduction = process.env.NODE_ENV === 'production';
-
 module.exports = merge(base, {
     entry: {
         index: './src/main/app/index.ts',
@@ -61,7 +59,6 @@ module.exports = merge(base, {
         __dirname: true,
     },
     target: 'electron-main',
-    devtool: isProduction ? 'none' : 'source-map',
 });
 
 /* eslint-enable import/no-commonjs */
