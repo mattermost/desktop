@@ -13,7 +13,7 @@ import Config from 'common/config';
 import {localizeMessage} from 'main/i18nManager';
 import {displayDownloadCompleted} from 'main/notifications';
 import WindowManager from 'main/windows/windowManager';
-import {getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader} from 'main/utils';
+import {doubleSecToMs, getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader} from 'main/utils';
 import {DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT, DOWNLOADS_DROPDOWN_MAX_ITEMS} from 'common/utils/constants';
 import JsonFileManager from 'common/JsonFileManager';
 
@@ -398,7 +398,7 @@ class DownloadsManager extends JsonFileManager<DownloadedItems> {
         const progress = getPercentage(receivedBytes, totalBytes);
 
         return {
-            addedAt: item.getStartTime(),
+            addedAt: doubleSecToMs(item.getStartTime()),
             filename: this.getFileId(item),
             mimeType: item.getMimeType(),
             location: item.getSavePath(),

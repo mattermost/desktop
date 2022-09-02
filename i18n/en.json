@@ -226,8 +226,9 @@
   "renderer.components.welcomeScreen.slides.welcome.title": "Welcome",
   "renderer.dropdown.addAServer": "Add a server",
   "renderer.dropdown.servers": "Servers",
-  "renderer.downloadsDropdown.Downloads": "Downloads",
   "renderer.downloadsDropdown.ClearAll": "Clear All",
+  "renderer.downloadsDropdown.Downloads": "Downloads",
+  "renderer.downloadsDropdown.remaining": "remaining",
   "renderer.modals.certificate.certificateModal.certInfoButton": "Certificate Information",
   "renderer.modals.certificate.certificateModal.issuer": "Issuer",
   "renderer.modals.certificate.certificateModal.noCertsAvailable": "No certificates available",
@@ -243,5 +244,8 @@
   "renderer.modals.permission.permissionModal.body": "A site that's not included in your Mattermost server configuration requires access for {permission}.",
   "renderer.modals.permission.permissionModal.requestOriginatedFromOrigin": "This request originated from <link>{origin}</link>",
   "renderer.modals.permission.permissionModal.title": "{permission} Required",
-  "renderer.modals.permission.permissionModal.unknownOrigin": "unknown origin"
+  "renderer.modals.permission.permissionModal.unknownOrigin": "unknown origin",
+  "renderer.time.sec": "sec",
+  "renderer.time.mins": "mins",
+  "renderer.time.hours": "hours"
 }

@@ -2,14 +2,10 @@
 // See LICENSE.txt for license information.
 
 import prettyBytes from 'pretty-bytes';
+import {IntlShape} from 'react-intl';
 import {DownloadedItem} from 'types/downloads';
 
 import {Constants} from './constants';
-
-const getETA = (item: DownloadedItem) => {
-    const elapsedTime = Math.round((new Date().getTime() - Math.floor(item.addedAt * 1000)) / 3600);
-    return elapsedTime;
-};
 
 const prettyBytesConverter = (value: number | string, excludeUnits?: boolean): string => {
     let returnValue = 'N/A';
@@ -38,8 +34,6 @@ const getFileSizeOrBytesProgress = (item: DownloadedItem) => {
 
 const getDownloadingFileStatus = (item: DownloadedItem) => {
     switch (item.state) {
-    case 'progressing':
-        return `${getETA(item)} elapsed`;
     case 'completed':
         return 'Downloaded';
     case 'deleted':
@@ -74,9 +68,23 @@ const isImageFile = (file: DownloadedItem): boolean => {
     return file.mimeType?.toLowerCase().startsWith('image/') ?? false;
 };
 
+const prettyETA = (ms = 0, intl: IntlShape) => {
+    let eta;
+
+    if (ms < Constants.MINUTE_MS) {
+        eta = `${Math.round(ms / Constants.SECOND_MS)} ${intl.formatMessage({id: 'renderer.time.sec', defaultMessage: 'sec'})}`;
+    } else if (ms < Constants.HOUR_MS) {
+        eta = `${Math.round(ms / Constants.MINUTE_MS)} ${intl.formatMessage({id: 'renderer.time.mins', defaultMessage: 'mins'})}`;
+    } else {
+        eta = `${Math.round(ms / Constants.HOUR_MS)} ${intl.formatMessage({id: 'renderer.time.hours', defaultMessage: 'hours'})}`;
+    }
+    return `${eta} ${intl.formatMessage({id: 'renderer.dowloadsDropdown.remaining', defaultMessage: 'remaining'})}`;
+};
+
 export {
     getDownloadingFileStatus,
     getFileSizeOrBytesProgress,
     getIconClassName,
     isImageFile,
+    prettyETA,
 };

@@ -2,6 +2,9 @@
 // See LICENSE.txt for license information.
 
 export const Constants = {
+    SECOND_MS: 1000,
+    MINUTE_MS: 60 * 1000,
+    HOUR_MS: 60 * 60 * 1000,
     ICON_NAME_FROM_MIME_TYPE: {
         'application/pdf': 'pdf',
         'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'ppt',
