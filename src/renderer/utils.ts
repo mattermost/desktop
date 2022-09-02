@@ -1,39 +1,39 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import prettyBytes from 'pretty-bytes';
 import {DownloadedItem} from 'types/downloads';
 
 import {Constants} from './constants';
-
-const bytesToMegabytes = (bytes: number): string => {
-    return (bytes / 1024 / 1024).toFixed(1).replace('.0', '');
-};
 
 const getETA = (item: DownloadedItem) => {
     const elapsedTime = Math.round((new Date().getTime() - Math.floor(item.addedAt * 1000)) / 3600);
     return elapsedTime;
 };
 
-const bytesToMegabytesConverter = (value: number | string): string => {
+const prettyBytesConverter = (value: number | string, excludeUnits?: boolean): string => {
+    let returnValue = 'N/A';
     if (typeof value === 'number') {
-        return bytesToMegabytes(value);
-    }
-    if (typeof value === 'string') {
+        returnValue = prettyBytes(value);
+    } else if (typeof value === 'string') {
         const parsed = parseInt(value, 10);
 
         if (typeof parsed === 'number') {
-            return bytesToMegabytes(parsed);
+            returnValue = prettyBytes(parsed);
         }
     }
-    return 'N/A';
+    if (excludeUnits) {
+        return returnValue.split(' ')[0];
+    }
+    return returnValue;
 };
 
 const getFileSizeOrBytesProgress = (item: DownloadedItem) => {
-    const totalMegabytes = bytesToMegabytesConverter(item.totalBytes);
+    const totalMegabytes = prettyBytesConverter(item.totalBytes);
     if (item.state === 'progressing') {
-        return `${bytesToMegabytesConverter(item.receivedBytes)}/${totalMegabytes} MB`;
+        return `${prettyBytesConverter(item.receivedBytes, true)}/${totalMegabytes}`;
     }
-    return `${totalMegabytes} MB`;
+    return `${totalMegabytes}`;
 };
 
 const getDownloadingFileStatus = (item: DownloadedItem) => {
@@ -71,12 +71,10 @@ const getIconClassName = (file: DownloadedItem) => {
 };
 
 const isImageFile = (file: DownloadedItem): boolean => {
-    return file.mimeType?.toLowerCase().includes('image') ?? false;
+    return file.mimeType?.toLowerCase().startsWith('image/') ?? false;
 };
 
 export {
-    bytesToMegabytes,
-    bytesToMegabytesConverter,
     getDownloadingFileStatus,
     getFileSizeOrBytesProgress,
     getIconClassName,
