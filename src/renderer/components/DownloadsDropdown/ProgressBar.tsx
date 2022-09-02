@@ -17,7 +17,7 @@ const ProgressBar = ({item}: OwnProps) => {
         <div className='DownloadsDropdown__File__ProgressBarContainer'>
             <div
                 className='DownloadsDropdown__File__ProgressBar'
-                style={{width: `${item.progress}%`}}
+                style={{width: `${Math.max(1, item.progress)}%`}}
             />
         </div>
     );

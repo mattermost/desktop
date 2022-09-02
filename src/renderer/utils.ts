@@ -7,7 +7,7 @@ import {DownloadedItem} from 'types/downloads';
 
 import {Constants} from './constants';
 
-const prettyBytesConverter = (value: number | string, excludeUnits?: boolean): string => {
+const prettyBytesConverter = (value: number | string, excludeUnits?: boolean, totalUnits?: string): string => {
     let returnValue = 'N/A';
     if (typeof value === 'number') {
         returnValue = prettyBytes(value);
@@ -18,7 +18,7 @@ const prettyBytesConverter = (value: number | string, excludeUnits?: boolean): s
             returnValue = prettyBytes(parsed);
         }
     }
-    if (excludeUnits) {
+    if (excludeUnits && totalUnits === returnValue.split(' ')[1]) {
         return returnValue.split(' ')[0];
     }
     return returnValue;
@@ -27,7 +27,7 @@ const prettyBytesConverter = (value: number | string, excludeUnits?: boolean): s
 const getFileSizeOrBytesProgress = (item: DownloadedItem) => {
     const totalMegabytes = prettyBytesConverter(item.totalBytes);
     if (item.state === 'progressing') {
-        return `${prettyBytesConverter(item.receivedBytes, true)}/${totalMegabytes}`;
+        return `${prettyBytesConverter(item.receivedBytes, true, totalMegabytes.split(' ')[1])}/${totalMegabytes}`;
     }
     return `${totalMegabytes}`;
 };
