@@ -201,11 +201,15 @@ class DownloadsManager extends JsonFileManager<DownloadedItems> {
         }
     }
 
-    setIsOpen = (val: boolean) => {
-        this.open = val;
-        if (val) {
-            WindowManager.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
-        }
+    onOpen = () => {
+        this.open = true;
+        WindowManager.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
+    }
+
+    onClose = () => {
+        this.open = false;
+        ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN_MENU);
+        this.clearAutoCloseTimeout();
     }
 
     getIsOpen = () => {

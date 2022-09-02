@@ -111,7 +111,7 @@ export default class DownloadsDropdownView {
         this.view.setBounds(this.bounds);
         this.window.setTopBrowserView(this.view);
         this.view.webContents.focus();
-        downloadsManager.setIsOpen(true);
+        downloadsManager.onOpen();
         WindowManager.sendToRenderer(OPEN_DOWNLOADS_DROPDOWN);
     }
 
@@ -119,7 +119,7 @@ export default class DownloadsDropdownView {
         log.debug('DownloadsDropdownView.handleClose');
 
         this.view.setBounds(this.getBounds(0, 0));
-        downloadsManager.setIsOpen(false);
+        downloadsManager.onClose();
         WindowManager.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN);
     }
 
