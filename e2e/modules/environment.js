@@ -124,10 +124,6 @@ module.exports = {
     cmdOrCtrl,
 
     async clearElectronInstances() {
-        if (process.platform !== 'win32' && process.platform !== 'darwin') {
-            return Promise.resolve();
-        }
-
         return new Promise((resolve, reject) => {
             ps.lookup({
                 command: process.platform === 'darwin' ? 'Electron' : 'electron',
