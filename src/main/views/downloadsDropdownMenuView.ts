@@ -113,7 +113,7 @@ export default class DownloadsDropdownMenuView {
         this.repositionDownloadsDropdownMenu();
     }
 
-    handleOpen = (event: IpcMainEvent, payload: DownloadsMenuOpenEventPayload) => {
+    handleOpen = (event: IpcMainEvent, payload: DownloadsMenuOpenEventPayload = {} as DownloadsMenuOpenEventPayload) => {
         log.debug('DownloadsDropdownMenuView.handleOpen', {bounds: this.bounds, payload});
 
         if (!this.bounds) {
@@ -183,12 +183,6 @@ export default class DownloadsDropdownMenuView {
 
     getX = () => {
         const result = (this.windowBounds.width - DOWNLOADS_DROPDOWN_FULL_WIDTH - DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH) + (this.coordinates?.x || 0) + (this.coordinates?.width || 0);
-        log.debug('DownloadsDropdownMenuView.getX', {
-            'this.windowBounds.width': this.windowBounds.width,
-            DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH,
-            'this.coordinates': this.coordinates,
-            result,
-        });
         if (result <= DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH) {
             return 0;
         }

@@ -64,10 +64,15 @@ jest.mock('../views/viewManager', () => ({
 }));
 jest.mock('../CriticalErrorHandler', () => jest.fn());
 jest.mock('../views/teamDropdownView', () => jest.fn());
+jest.mock('../views/downloadsDropdownView', () => jest.fn());
+jest.mock('../views/downloadsDropdownMenuView', () => jest.fn());
 jest.mock('./settingsWindow', () => ({
     createSettingsWindow: jest.fn(),
 }));
 jest.mock('./mainWindow', () => jest.fn());
+jest.mock('../downloadsManager', () => ({
+    getDownloads: () => {},
+}));
 
 describe('main/windows/windowManager', () => {
     describe('handleUpdateConfig', () => {

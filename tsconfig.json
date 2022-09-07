@@ -21,6 +21,11 @@
       "jsx": "react",
       "baseUrl": "./src",
     },
+    "typeAcquisition": {
+        "include": [
+            "jest"
+        ]
+    },
     "include": [
       "./src/**/*"
     ],
@@ -31,5 +36,4 @@
       "storybook-static",
       "coverage"
     ]
-  }
-  
+}

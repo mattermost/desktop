@@ -8,7 +8,6 @@ import {app, session} from 'electron';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
 
-import {displayDownloadCompleted} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
 import WindowManager from 'main/windows/windowManager';
 
@@ -16,6 +15,7 @@ import {initialize} from './initialize';
 import {clearAppCache, getDeeplinkingURL, wasUpdated} from './utils';
 
 jest.mock('fs', () => ({
+    existsSync: jest.fn(),
     unlinkSync: jest.fn(),
 }));
 
@@ -143,9 +143,34 @@ jest.mock('main/windows/windowManager', () => ({
     getMainWindow: jest.fn(),
     showMainWindow: jest.fn(),
     sendToMattermostViews: jest.fn(),
+    sendToRenderer: jest.fn(),
     getServerNameByWebContentsId: jest.fn(),
 }));
-
+jest.mock('common/JsonFileManager', () => {
+    class JsonFileManagerMock {
+        jsonFile;
+        json;
+        constructor(file) {
+            this.jsonFile = file;
+            this.json = {};
+        }
+        writeToFile = jest.fn().mockImplementation(() => {
+            this.jsonFile = this.json;
+        });
+        setJson = jest.fn().mockImplementation((json) => {
+            this.json = json;
+            this.writeToFile();
+        })
+        setValue = jest.fn().mockImplementation((key, value) => {
+            this.json[key] = value;
+            this.writeToFile();
+        });
+        getValue = jest.fn().mockImplementation((key) => {
+            return this.json[key];
+        });
+    }
+    return JsonFileManagerMock;
+});
 describe('main/app/initialize', () => {
     beforeEach(() => {
         parseArgs.mockReturnValue({});
@@ -226,52 +251,6 @@ describe('main/app/initialize', () => {
             });
 
             expect(WindowManager.showMainWindow).toHaveBeenCalledWith('mattermost://server-1.com');
-        });
-
-        it('should setup save dialog correctly', async () => {
-            const item = {
-                getFilename: () => 'filename.txt',
-                on: jest.fn(),
-                setSaveDialogOptions: jest.fn(),
-            };
-            Config.downloadLocation = '/some/dir';
-            path.resolve.mockImplementation((base, p) => `${base}/${p}`);
-            session.defaultSession.on.mockImplementation((event, cb) => {
-                if (event === 'will-download') {
-                    cb(null, item, {id: 0, getURL: jest.fn()});
-                }
-            });
-
-            await initialize();
-            expect(item.setSaveDialogOptions).toHaveBeenCalledWith(expect.objectContaining({
-                title: 'filename.txt',
-                defaultPath: '/some/dir/filename.txt',
-            }));
-        });
-
-        it('should use name of saved file instead of original file name', async () => {
-            const item = {
-                getFilename: () => 'filename.txt',
-                on: jest.fn(),
-                setSaveDialogOptions: jest.fn(),
-                savePath: '/some/dir/new_filename.txt',
-            };
-            Config.downloadLocation = '/some/dir';
-            path.resolve.mockImplementation((base, p) => `${base}/${p}`);
-            session.defaultSession.on.mockImplementation((event, cb) => {
-                if (event === 'will-download') {
-                    cb(null, item, {id: 0, getURL: jest.fn()});
-                }
-            });
-
-            item.on.mockImplementation((event, cb) => {
-                if (event === 'done') {
-                    cb(null, 'completed');
-                }
-            });
-
-            await initialize();
-            expect(displayDownloadCompleted).toHaveBeenCalledWith('new_filename.txt', '/some/dir/new_filename.txt', expect.anything());
         });
 
         it('should allow permission requests for supported types from trusted URLs', async () => {

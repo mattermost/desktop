@@ -140,7 +140,13 @@ describe('main/utils', () => {
 
     describe('readFilenameFromContentDispositionHeader', () => {
         it('should read the filename from the HTTP Content-Disposition header\'s value', () => {
-            expect(Utils.readFilenameFromContentDispositionHeader('attachment; filename="filename.jpg"; foobar')).toBe('filename.jpg');
+            expect(Utils.readFilenameFromContentDispositionHeader(['attachment; filename="filename.jpg"; foobar'])).toBe('filename.jpg');
+        });
+    });
+
+    describe('doubleSecToMs', () => {
+        it('should convert a double number of seconds to integer milliseconds', () => {
+            expect(Utils.doubleSecToMs(1662561807.067542)).toBe(1662561807068);
         });
     });
 });
