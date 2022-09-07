@@ -130,7 +130,7 @@ module.exports = {
 
         return new Promise((resolve, reject) => {
             ps.lookup({
-                command: process.platform === 'darwin' ? 'Electron.app' : 'electron',
+                command: process.platform === 'darwin' ? 'Electron' : 'electron',
             }, (err, resultList) => {
                 if (err) {
                     reject(err);
