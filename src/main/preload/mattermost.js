@@ -249,10 +249,10 @@ function isDownloadLink(el) {
         return false;
     }
     const parentEl = el.parentElement;
-    if (typeof el !== 'object') {
+    if (typeof parentEl !== 'object') {
         return el.className?.includes?.('download') || el.tagName?.toLowerCase?.() === 'svg';
     }
-    return parentEl.tagName?.toLowerCase?.() === 'a' && typeof parentEl.download === 'string' && parentEl.download.length > 0;
+    return el.closest('a[download]') !== null;
 }
 
 window.addEventListener('click', (e) => {
