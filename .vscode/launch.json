@@ -1,5 +1,5 @@
 {
-    "version": "0.2.0",
+    "version": "0.2.1",
     "configurations": [
         {
             "type": "node",
@@ -52,10 +52,10 @@
                 "--timeout",
                 "999999",
                 "--colors",
-                "${workspaceRoot}/e2e/specs"
+                "${workspaceRoot}/dist/tests/e2e_bundle.js"
             ],
             "internalConsoleOptions": "openOnSessionStart",
-            "preLaunchTask": "Build sources"
+            "preLaunchTask": "prepare-e2e"
         }
     ]
 }
