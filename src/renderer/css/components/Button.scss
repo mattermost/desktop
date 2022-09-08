@@ -59,7 +59,7 @@
 
     &:disabled {
         background: rgba(var(--button-color-rgb), 0.08);
-        color: rgba(var(--denim-button-bg-rgb), 0.32);
+        color: rgba(var(--button-color-rgb), 0.32);
     }
 }
 

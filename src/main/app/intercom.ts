@@ -238,33 +238,7 @@ export function handleWelcomeScreenModal() {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal('welcomeScreen', html, modalPreload, {}, mainWindow, true);
-    if (modalPromise) {
-        modalPromise.then(() => {
-            handleConfigureServerModal();
-        }).catch((e) => {
-            // e is undefined for user cancellation
-            if (e) {
-                log.error(`there was an error in the welcome screen modal: ${e}`);
-            }
-        });
-    } else {
-        log.warn('There is already a welcome screen modal');
-    }
-}
-
-export function handleConfigureServerModal() {
-    log.debug('Intercom.handleConfigureServerModal');
-
-    const html = getLocalURLString('configureServer.html');
-
-    const modalPreload = getLocalPreload('modalPreload.js');
-
-    const mainWindow = WindowManager.getMainWindow();
-    if (!mainWindow) {
-        return;
-    }
-    const modalPromise = ModalManager.addModal<TeamWithIndex[], Team>('configureServer', html, modalPreload, Config.teams.map((team, index) => ({...team, index})), mainWindow, Config.teams.length === 0);
+    const modalPromise = ModalManager.addModal<TeamWithIndex[], Team>('welcomeScreen', html, modalPreload, Config.teams.map((team, index) => ({...team, index})), mainWindow, Config.teams.length === 0);
     if (modalPromise) {
         modalPromise.then((data) => {
             const teams = Config.teams;
@@ -277,11 +251,11 @@ export function handleConfigureServerModal() {
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
-                log.error(`there was an error in the configure server modal: ${e}`);
+                log.error(`there was an error in the welcome screen modal: ${e}`);
             }
         });
     } else {
-        log.warn('There is already a configure server modal');
+        log.warn('There is already a welcome screen modal');
     }
 }
 

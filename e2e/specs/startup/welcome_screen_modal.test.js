@@ -133,10 +133,9 @@ describe('Welcome Screen Modal', function desc() {
     it('MM-T4983 should be able to click the get started button and be redirected to new server modal', async () => {
         await welcomeScreenModal.click('#getStartedWelcomeScreen');
 
-        const newServerModal = await this.app.waitForEvent('window', {
-            predicate: (window) => window.url().includes('configureServer'),
-        });
-        const modalCardTitle = await newServerModal.innerText('.ConfigureServer .ConfigureServer__card-title');
+        await asyncSleep(1000);
+
+        const modalCardTitle = await welcomeScreenModal.innerText('.ConfigureServer .ConfigureServer__card-title');
         modalCardTitle.should.equal('Enter your server details');
     });
 });

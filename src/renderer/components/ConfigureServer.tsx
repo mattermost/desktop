@@ -15,7 +15,7 @@ import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackgrou
 import SaveButton from 'renderer/components/SaveButton/SaveButton';
 
 import {PING_DOMAIN, PING_DOMAIN_RESPONSE} from 'common/communication';
-import {MM_LINKS, MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
+import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
 
 import 'renderer/css/components/Button.scss';
@@ -143,7 +143,7 @@ function ConfigureServer({
         }
 
         if (!urlUtils.isValidURL(fullURL)) {
-            formatMessage({
+            return formatMessage({
                 id: 'renderer.components.newTeamModal.error.urlIncorrectFormatting',
                 defaultMessage: 'URL is not formatted correctly.',
             });
@@ -225,24 +225,30 @@ function ConfigureServer({
         }, MODAL_TRANSITION_TIMEOUT);
     };
 
-    const getAlternateLink = useCallback(() => (
-        <div className={classNames('alternate-link', transition, {'alternate-link-inverted': darkMode})}>
-            <span className='alternate-link__message'>
-                {alternateLinkMessage || formatMessage({id: 'renderer.components.configureServer.noURL', defaultMessage: 'Don\'t have a URL?'})}
-            </span>
-            <a
-                className={classNames(
-                    'link-button link-small-button alternate-link__link',
-                    {'link-button-inverted': darkMode},
-                )}
-                href={alternateLinkURL || MM_LINKS.GET_STARTED}
-                target='_blank'
-                rel='noopener noreferrer'
-            >
-                {alternateLinkText || formatMessage({id: 'renderer.components.configureServer.create', defaultMessage: 'Learn how to create a server'})}
-            </a>
-        </div>
-    ), [transition, darkMode, alternateLinkMessage, alternateLinkText]);
+    const getAlternateLink = useCallback(() => {
+        if (!alternateLinkURL || !alternateLinkMessage || !alternateLinkText) {
+            return undefined;
+        }
+
+        return (
+            <div className={classNames('alternate-link', transition, {'alternate-link-inverted': darkMode})}>
+                <span className='alternate-link__message'>
+                    {alternateLinkMessage}
+                </span>
+                <a
+                    className={classNames(
+                        'link-button link-small-button alternate-link__link',
+                        {'link-button-inverted': darkMode},
+                    )}
+                    href={alternateLinkURL}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                >
+                    {alternateLinkText}
+                </a>
+            </div>
+        );
+    }, [transition, darkMode, alternateLinkURL, alternateLinkMessage, alternateLinkText]);
 
     return (
         <div

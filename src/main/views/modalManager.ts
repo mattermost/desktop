@@ -135,10 +135,7 @@ export class ModalManager {
 
         if (this.modalQueue.length) {
             const currentModal = this.modalQueue[0];
-            const {width, height} = bounds;
-
-            currentModal.view.setBounds(getAdjustedWindowBoundaries(width, height));
-            currentModal.view.webContents.send(RESIZE_MODAL, {width, height});
+            currentModal.view.setBounds(getAdjustedWindowBoundaries(bounds.width, bounds.height));
         }
     }
 

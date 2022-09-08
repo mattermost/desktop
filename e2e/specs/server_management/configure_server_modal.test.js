@@ -18,12 +18,8 @@ describe('Configure Server Modal', function desc() {
 
         this.app = await env.getApp();
 
-        const welcomeScreenModal = this.app.windows().find((window) => window.url().includes('welcomeScreen'));
-        await welcomeScreenModal.click('#getStartedWelcomeScreen');
-
-        configureServerModal = await this.app.waitForEvent('window', {
-            predicate: (window) => window.url().includes('configureServer'),
-        });
+        configureServerModal = this.app.windows().find((window) => window.url().includes('welcomeScreen'));
+        await configureServerModal.click('#getStartedWelcomeScreen');
 
         await asyncSleep(1000);
     });
@@ -82,7 +78,7 @@ describe('Configure Server Modal', function desc() {
 
         await asyncSleep(1000);
 
-        const existing = Boolean(await this.app.windows().find((window) => window.url().includes('configureServer')));
+        const existing = Boolean(await this.app.windows().find((window) => window.url().includes('welcomeScreen')));
         existing.should.be.false;
 
         const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));

@@ -246,6 +246,7 @@ describe('main/app/intercom', () => {
             Config.set.mockImplementation((name, value) => {
                 Config[name] = value;
             });
+            Config.teams = JSON.parse(JSON.stringify([]));
         });
 
         it('should show welcomeScreen modal', async () => {
@@ -253,7 +254,7 @@ describe('main/app/intercom', () => {
             ModalManager.addModal.mockReturnValue(promise);
 
             handleWelcomeScreenModal();
-            expect(ModalManager.addModal).toHaveBeenCalledWith('welcomeScreen', '/some/index.html', '/some/preload.js', {}, {}, true);
+            expect(ModalManager.addModal).toHaveBeenCalledWith('welcomeScreen', '/some/index.html', '/some/preload.js', [], {}, true);
         });
     });
 });

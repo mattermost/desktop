@@ -20,7 +20,6 @@ import {
     PING_DOMAIN_RESPONSE,
     GET_LANGUAGE_INFORMATION,
     RETRIEVED_LANGUAGE_INFORMATION,
-    RESIZE_MODAL,
 } from 'common/communication';
 
 console.log('preloaded for the modal!');
@@ -86,8 +85,4 @@ createKeyDownListener();
 
 ipcRenderer.on(DARK_MODE_CHANGE, (event, darkMode) => {
     window.postMessage({type: DARK_MODE_CHANGE, data: darkMode}, window.location.href);
-});
-
-ipcRenderer.on(RESIZE_MODAL, (event, data) => {
-    window.postMessage({type: RESIZE_MODAL, data}, window.location.href);
 });

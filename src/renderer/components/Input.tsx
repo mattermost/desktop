@@ -179,8 +179,10 @@ const Input = React.forwardRef((
                         className={classNames(`icon ${customInputLabel.type}`, {
                             'icon-alert-outline': customInputLabel.type === STATUS.WARNING,
                             'icon-alert-circle-outline': customInputLabel.type === STATUS.ERROR,
-                            'icon-information-outline': customInputLabel.type === STATUS.INFO,
                             'icon-check': customInputLabel.type === STATUS.SUCCESS,
+
+                            // No icon wanted for info. Kept for further reference with Input component in webapp
+                            // 'icon-information-outline': customInputLabel.type === STATUS.INFO,
                         })}
                     />
                     <span>{customInputLabel.value}</span>
