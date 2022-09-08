@@ -1,7 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import downloadsManager from 'main/downloadsManager';
+import path from 'path';
+
+import {DownloadsManager} from 'main/downloadsManager';
 
 jest.mock('electron', () => {
     class NotificationMock {
@@ -17,7 +19,7 @@ jest.mock('electron', () => {
     }
     return {
         app: {
-            getAppPath: () => '',
+            getAppPath: jest.fn(),
         },
         BrowserView: jest.fn().mockImplementation(() => ({
             webContents: {
@@ -32,7 +34,25 @@ jest.mock('electron', () => {
             handle: jest.fn(),
             on: jest.fn(),
         },
+        Menu: {
+            getApplicationMenu: () => ({
+                getMenuItemById: jest.fn(),
+            }),
+        },
         Notification: NotificationMock,
+        session: {
+            defaultSession: {
+                on: jest.fn(),
+            },
+        },
+    };
+});
+jest.mock('path', () => {
+    const original = jest.requireActual('path');
+    return {
+        ...original,
+        resolve: jest.fn(),
+        parse: jest.fn(),
     };
 });
 jest.mock('main/windows/windowManager', () => ({
@@ -44,7 +64,7 @@ jest.mock('common/JsonFileManager', () => {
         json;
         constructor(file) {
             this.jsonFile = file;
-            this.json = {};
+            this.json = file;
         }
         writeToFile = jest.fn().mockImplementation(() => {
             this.jsonFile = this.json;
@@ -64,56 +84,78 @@ jest.mock('common/JsonFileManager', () => {
     return JsonFileManagerMock;
 });
 
+const downloadsJson = {
+    'file1.txt': {
+        addedAt: 1662545584346,
+        filename: 'file1.txt',
+        mimeType: 'text/plain',
+        location: '/downloads/file1.txt',
+        progress: 100,
+        receivedBytes: 5425,
+        state: 'completed',
+        totalBytes: 5425,
+        type: 'file',
+    },
+    'file2.txt': {
+        addedAt: 1662545588346,
+        filename: 'file2.txt',
+        mimeType: 'text/plain',
+        location: '/downloads/file2.txt',
+        progress: 100,
+        receivedBytes: 5425,
+        state: 'cancelled',
+        totalBytes: 5425,
+        type: 'file',
+    },
+};
 describe('main/downloadsManager', () => {
     it('should be initialized', () => {
-        expect(downloadsManager).toHaveProperty('downloads', {});
+        expect(new DownloadsManager({})).toHaveProperty('downloads', {});
+    });
+    it('should mark "completed" files that were deleted as "deleted"', () => {
+        expect(new DownloadsManager(downloadsJson)).toHaveProperty('downloads', {...downloadsJson, 'file1.txt': {...downloadsJson['file1.txt'], state: 'deleted'}});
+    });
+    it('should handle a new download', () => {
+        const dl = new DownloadsManager({});
+        const nowSeconds = Date.now() / 1000;
+        const item = {
+            getFilename: () => 'file.txt',
+            getMimeType: () => 'text/plain',
+            getReceivedBytes: () => 2121,
+            getStartTime: () => nowSeconds,
+            getTotalBytes: () => 4242,
+            getSavePath: () => '/some/dir/file.txt',
+            setSavePath: () => '/some/dir',
+            on: jest.fn(),
+            setSaveDialogOptions: jest.fn(),
+            once: jest.fn(),
+        };
+        path.parse.mockImplementation(() => ({base: 'file.txt'}));
+        dl.handleNewDownload({}, item, {id: 0, getURL: jest.fn()});
+        expect(dl).toHaveProperty('downloads', {'file.txt': {
+            addedAt: nowSeconds * 1000,
+            filename: 'file.txt',
+            mimeType: 'text/plain',
+            location: '/some/dir/file.txt',
+            progress: 50,
+            receivedBytes: 2121,
+            state: 'progressing',
+            totalBytes: 4242,
+            type: 'file',
+        }});
     });
 
-    // it('should setup save dialog correctly', async () => {
-    //     const item = {
-    //         getFilename: () => 'filename.txt',
-    //         setSavePath: () => '/path/to/file',
-    //         on: jest.fn(),
-    //         setSaveDialogOptions: jest.fn(),
-    //     };
-    //     Config.downloadLocation = '/some/dir';
-    //     path.resolve.mockImplementation((base, p) => `${base}/${p}`);
-    //     session.defaultSession.on.mockImplementation((event, cb) => {
-    //         if (event === 'will-download') {
-    //             cb(null, item, {id: 0, getURL: jest.fn()});
-    //         }
-    //     });
-
-    //     await initialize();
-    //     expect(item.setSaveDialogOptions).toHaveBeenCalledWith(expect.objectContaining({
-    //         title: 'filename.txt',
-    //         defaultPath: '/some/dir/filename.txt',
-    //     }));
-    // });
-
-    // it('should use name of saved file instead of original file name', async () => {
-    //     const item = {
-    //         getFilename: () => 'filename.txt',
-    //         on: jest.fn(),
-    //         setSaveDialogOptions: jest.fn(),
-    //         savePath: '/some/dir/new_filename.txt',
-    //     };
-    //     Config.downloadLocation = '/some/dir';
-    //     path.resolve.mockImplementation((base, p) => `${base}/${p}`);
-    //     session.defaultSession.on.mockImplementation((event, cb) => {
-    //         if (event === 'will-download') {
-    //             cb(null, item, {id: 0, getURL: jest.fn()});
-    //         }
-    //     });
-
-    //     item.on.mockImplementation((event, cb) => {
-    //         if (event === 'done') {
-    //             cb(null, 'completed');
-    //         }
-    //     });
-
-    //     await initialize();
-    //     expect(displayDownloadCompleted).toHaveBeenCalledWith('new_filename.txt', '/some/dir/new_filename.txt', expect.anything());
-    // });
+    it('should monitor network to retrieve the file size of downloading items', () => {
+        const dl = new DownloadsManager({});
+        const details = {
+            responseHeaders: {
+                'content-encoding': ['gzip'],
+                'x-uncompressed-content-length': ['4242'],
+                'content-disposition': ['attachment; filename="file.txt"; foobar'],
+            },
+        };
+        dl.webRequestOnHeadersReceivedHandler(details, jest.fn());
+        expect(dl.fileSizes.get('file.txt')).toBe('4242');
+    });
 });
 

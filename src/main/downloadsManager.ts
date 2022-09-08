@@ -25,7 +25,7 @@ export enum DownloadItemTypeEnum {
     UPDATE = 'update',
 }
 
-class DownloadsManager extends JsonFileManager<DownloadedItems> {
+export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     autoCloseTimeout: NodeJS.Timeout | null;
     open: boolean;
 

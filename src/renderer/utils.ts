@@ -78,7 +78,7 @@ const prettyETA = (ms = 0, intl: IntlShape) => {
     } else {
         eta = `${Math.round(ms / Constants.HOUR_MS)} ${intl.formatMessage({id: 'renderer.time.hours', defaultMessage: 'hours'})}`;
     }
-    return `${eta} ${intl.formatMessage({id: 'renderer.dowloadsDropdown.remaining', defaultMessage: 'remaining'})}`;
+    return `${eta} ${intl.formatMessage({id: 'renderer.downloadsDropdown.remaining', defaultMessage: 'remaining'})}`;
 };
 
 export {
