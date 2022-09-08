@@ -28,6 +28,7 @@ const electronBinaryPath = (() => {
 })();
 const userDataDir = path.join(sourceRootDir, 'e2e/testUserData/');
 const configFilePath = path.join(userDataDir, 'config.json');
+const downloadsFilePath = path.join(userDataDir, 'downloads.json');
 const boundsInfoPath = path.join(userDataDir, 'bounds-info.json');
 const exampleURL = 'http://example.com/';
 const mattermostURL = 'http://localhost:8065/';
@@ -113,6 +114,7 @@ const cmdOrCtrl = process.platform === 'darwin' ? 'command' : 'control';
 module.exports = {
     sourceRootDir,
     configFilePath,
+    downloadsFilePath,
     userDataDir,
     boundsInfoPath,
     exampleURL,
