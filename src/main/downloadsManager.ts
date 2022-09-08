@@ -58,7 +58,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         this.checkForDeletedFiles();
 
         ipcMain.handle(REQUEST_HAS_DOWNLOADS, () => {
-            return downloadsManager.hasDownloads();
+            return this.hasDownloads();
         });
         ipcMain.on(DOWNLOADS_DROPDOWN_FOCUSED, this.clearAutoCloseTimeout);
     }
