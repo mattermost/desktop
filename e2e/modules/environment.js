@@ -33,6 +33,11 @@ const appUpdatePath = path.join(userDataDir, 'app-update.yml');
 const exampleURL = 'http://example.com/';
 const mattermostURL = process.env.MM_TEST_SERVER_URL || 'http://localhost:8065/';
 
+if (process.platform === 'windows') {
+    const robot = require('robotjs');
+    robot.mouseClick();
+}
+
 const exampleTeam = {
     name: 'example',
     url: exampleURL,
