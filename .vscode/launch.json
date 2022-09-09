@@ -43,8 +43,8 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Mocha Tests",
-            "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+            "name": "E2E Tests",
+            "program": "${workspaceRoot}/node_modules/electron-mocha/bin/electron-mocha",
             "args": [
                 "-r",
                 "@babel/register",
