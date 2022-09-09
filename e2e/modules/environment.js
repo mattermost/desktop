@@ -190,8 +190,15 @@ module.exports = {
         //     options.chromeDriverArgs.push('remote-debugging-port=9222');
         //}
         return electron.launch(options).then(async (app) => {
-            // Make sure the app has time to fully load
+            // Make sure the app has time to fully load and that the window is focused
             await asyncSleep(1000);
+            const mainWindow = app.windows().find((window) => window.url().includes('index'));
+            await mainWindow.bringToFront();
+            const browserWindow = await app.browserWindow(mainWindow);
+            await browserWindow.evaluate((win) => {
+                win.focus();
+                return true;
+            });
             return app;
         });
     },
