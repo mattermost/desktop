@@ -175,16 +175,18 @@ const Input = React.forwardRef((
                     id={`customMessage_${name || ''}`}
                     className={`Input___customMessage Input___${customInputLabel.type}`}
                 >
-                    <i
-                        className={classNames(`icon ${customInputLabel.type}`, {
-                            'icon-alert-outline': customInputLabel.type === STATUS.WARNING,
-                            'icon-alert-circle-outline': customInputLabel.type === STATUS.ERROR,
-                            'icon-check': customInputLabel.type === STATUS.SUCCESS,
+                    {customInputLabel.type !== STATUS.INFO && (
+                        <i
+                            className={classNames(`icon ${customInputLabel.type}`, {
+                                'icon-alert-outline': customInputLabel.type === STATUS.WARNING,
+                                'icon-alert-circle-outline': customInputLabel.type === STATUS.ERROR,
+                                'icon-check': customInputLabel.type === STATUS.SUCCESS,
 
-                            // No icon wanted for info. Kept for further reference with Input component in webapp
-                            // 'icon-information-outline': customInputLabel.type === STATUS.INFO,
-                        })}
-                    />
+                                // No icon wanted for info in desktop. Kept for further reference with Input component in webapp
+                                // 'icon-information-outline': customInputLabel.type === STATUS.INFO,
+                            })}
+                        />
+                    )}
                     <span>{customInputLabel.value}</span>
                 </div>
             )}
