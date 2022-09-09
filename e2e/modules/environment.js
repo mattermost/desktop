@@ -193,10 +193,9 @@ module.exports = {
             // Make sure the app has time to fully load and that the window is focused
             await asyncSleep(1000);
             const mainWindow = app.windows().find((window) => window.url().includes('index'));
-            await mainWindow.bringToFront();
             const browserWindow = await app.browserWindow(mainWindow);
             await browserWindow.evaluate((win) => {
-                win.focus();
+                win.show();
                 return true;
             });
             return app;

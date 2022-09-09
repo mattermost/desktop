@@ -105,7 +105,7 @@ describe('popup', function desc() {
         const githubLink = await firstServer.waitForSelector('a.theme.markdown__link:has-text("GitHub account")');
         githubLink.click();
         const popupWindow = await this.app.waitForEvent('window');
-        popupWindow.focus();
+        await popupWindow.bringToFront();
         const currentURL = popupWindow.url();
 
         // Try and go back
