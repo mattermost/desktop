@@ -34,14 +34,16 @@ describe('downloads/downloads_menubar', function desc() {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const dlButton = mainWindow.locator('.DownloadsDropdownButton');
 
-        dlButton.should.be.null;
+        (await dlButton.isVisible()).should.be.false;
 
-        await this.app.evaluate(async ({app}) => {
-            const viewMenuItem = app.applicationMenu.getMenuItemById('view');
-            const saveMenuItem = viewMenuItem.submenu.getMenuItemById('app-menu-downloads');
+        const saveMenuItem = await this.app.evaluate(async ({app}) => {
+            const viewMenu = app.applicationMenu.getMenuItemById('view');
+            const saveItem = viewMenu.submenu.getMenuItemById('app-menu-downloads');
 
-            saveMenuItem.should.haveOwnProperty('enabled', false);
+            return saveItem;
         });
+
+        saveMenuItem.should.haveOwnProperty('enabled', false);
 
         await afterFunc();
     });
