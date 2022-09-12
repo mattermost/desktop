@@ -16,13 +16,18 @@ export default class JsonFileManager<T> {
         }
     }
 
-    writeToFile(): void {
-        fs.writeFile(this.jsonFile, JSON.stringify(this.json, undefined, 2), (err) => {
-            if (err) {
-                // No real point in bringing electron-log into this otherwise electron-free file
-                // eslint-disable-next-line no-console
-                console.error(err);
-            }
+    writeToFile(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            fs.writeFile(this.jsonFile, JSON.stringify(this.json, undefined, 2), (err) => {
+                if (err) {
+                    // No real point in bringing electron-log into this otherwise electron-free file
+                    // eslint-disable-next-line no-console
+                    console.error(err);
+                    reject(err);
+                    return;
+                }
+                resolve();
+            });
         });
     }
 
