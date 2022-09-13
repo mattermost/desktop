@@ -31,8 +31,14 @@ const configFilePath = path.join(userDataDir, 'config.json');
 const downloadsFilePath = path.join(userDataDir, 'downloads.json');
 const downloadsLocation = path.join(userDataDir, 'Downloads');
 const boundsInfoPath = path.join(userDataDir, 'bounds-info.json');
+const appUpdatePath = path.join(userDataDir, 'app-update.yml');
 const exampleURL = 'http://example.com/';
-const mattermostURL = 'http://localhost:8065/';
+const mattermostURL = process.env.MM_TEST_SERVER_URL || 'http://localhost:8065/';
+
+if (process.platform === 'win32') {
+    const robot = require('robotjs');
+    robot.mouseClick();
+}
 
 const exampleTeam = {
     name: 'example',
@@ -119,6 +125,7 @@ module.exports = {
     downloadsLocation,
     userDataDir,
     boundsInfoPath,
+    appUpdatePath,
     exampleURL,
     mattermostURL,
     demoConfig,
@@ -126,13 +133,9 @@ module.exports = {
     cmdOrCtrl,
 
     async clearElectronInstances() {
-        if (process.platform !== 'win32') {
-            return Promise.resolve();
-        }
-
         return new Promise((resolve, reject) => {
             ps.lookup({
-                command: 'electron',
+                command: process.platform === 'darwin' ? 'Electron' : 'electron',
             }, (err, resultList) => {
                 if (err) {
                     reject(err);
@@ -180,6 +183,10 @@ module.exports = {
     async getApp(args = []) {
         const options = {
             downloadsPath: downloadsLocation,
+            env: {
+                ...process.env,
+                RESOURCES_PATH: userDataDir,
+            },
             executablePath: electronBinaryPath,
             args: [`${path.join(sourceRootDir, 'dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-mode', ...args],
         };
@@ -193,8 +200,14 @@ module.exports = {
         //     options.chromeDriverArgs.push('remote-debugging-port=9222');
         //}
         return electron.launch(options).then(async (app) => {
-            // Make sure the app has time to fully load
+            // Make sure the app has time to fully load and that the window is focused
             await asyncSleep(1000);
+            const mainWindow = app.windows().find((window) => window.url().includes('index'));
+            const browserWindow = await app.browserWindow(mainWindow);
+            await browserWindow.evaluate((win) => {
+                win.show();
+                return true;
+            });
             return app;
         });
     },
