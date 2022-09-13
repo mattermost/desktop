@@ -5,6 +5,7 @@
 'use strict';
 
 const fs = require('fs');
+const path = require('path');
 
 const {SHOW_SETTINGS_WINDOW} = require('../../src/common/communication');
 
@@ -20,6 +21,7 @@ describe('Settings', function desc() {
         env.createTestUserDataDir();
         env.cleanTestConfig();
         fs.writeFileSync(env.configFilePath, JSON.stringify(config));
+        fs.writeFileSync(env.appUpdatePath, '');
         await asyncSleep(1000);
         this.app = await env.getApp();
     });
