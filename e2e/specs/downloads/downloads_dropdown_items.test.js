@@ -20,8 +20,19 @@ const file1 = {
     totalBytes: 3917388,
     type: 'file',
 };
+const file2 = {
+    addedAt: Date.UTC(2022, 8, 8, 11), // Aug 08, 2022 11:00AM UTC
+    filename: 'file2.txt',
+    mimeType: 'plain/text',
+    location: path.join(env.downloadsLocation, 'file2.txt'),
+    progress: 100,
+    receivedBytes: 7917388,
+    state: 'completed',
+    totalBytes: 7917388,
+    type: 'file',
+};
 
-describe('downloads/downloads_dropdown', function desc() {
+describe('downloads/downloads_dropdown_items', function desc() {
     this.timeout(30000);
 
     describe('The list has one downloaded file', () => {
@@ -30,15 +41,15 @@ describe('downloads/downloads_dropdown', function desc() {
         };
 
         beforeEach(async () => {
-            env.createTestUserDataDir();
-            env.cleanTestConfig();
+            await env.createTestUserDataDirAsync();
+            await env.cleanTestConfigAsync();
             await writeFileAsync(env.configFilePath, JSON.stringify(config));
             await writeFileAsync(env.downloadsFilePath, JSON.stringify(downloads));
             await mkDirAsync(env.downloadsLocation);
             await writeFileAsync(path.join(env.downloadsLocation, 'file1.txt'), 'file1 content');
             await asyncSleep(1000);
             this.app = await env.getApp();
-            this.serverMap = await env.getServerMap(this.app);
+            this.downloadsWindow = await env.openDownloadsDropdown(this.app);
         });
 
         afterEach(async () => {
@@ -48,27 +59,15 @@ describe('downloads/downloads_dropdown', function desc() {
         });
 
         it('MM-22239 should display the file correctly (downloaded)', async () => {
-            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-            await mainWindow.waitForLoadState();
-            await mainWindow.bringToFront();
-
-            const dlButtonLocator = await mainWindow.waitForSelector('.DownloadsDropdownButton');
-            await dlButtonLocator.click();
-
-            await asyncSleep(500);
-            const downloadsWindow = this.app.windows().find((window) => window.url().includes('downloadsDropdown'));
-            await downloadsWindow.waitForLoadState();
-            await downloadsWindow.bringToFront();
-
-            const filenameTextLocator = await downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Details__Filename');
+            const filenameTextLocator = await this.downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Details__Filename');
             const filenameInnerText = await filenameTextLocator.innerText();
             filenameInnerText.should.equal(downloads['file1.txt'].filename);
 
-            const fileStateLocator = await downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Details__FileSizeAndStatus');
+            const fileStateLocator = await this.downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Details__FileSizeAndStatus');
             const fileStateInnerText = await fileStateLocator.innerText();
             fileStateInnerText.should.equal('3.92 MB • Downloaded');
 
-            const fileThumbnailLocator = await downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Thumbnail');
+            const fileThumbnailLocator = await this.downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Thumbnail');
             const thumbnailBackgroundImage = await fileThumbnailLocator.evaluate((node) => window.getComputedStyle(node).getPropertyValue('background-image'));
             thumbnailBackgroundImage.should.include('text..svg');
         });
@@ -80,14 +79,14 @@ describe('downloads/downloads_dropdown', function desc() {
         };
 
         beforeEach(async () => {
-            env.createTestUserDataDir();
-            env.cleanTestConfig();
+            await env.createTestUserDataDirAsync();
+            await env.cleanTestConfigAsync();
             await writeFileAsync(env.configFilePath, JSON.stringify(config));
             await writeFileAsync(env.downloadsFilePath, JSON.stringify(downloads));
             await mkDirAsync(env.downloadsLocation);
             await asyncSleep(1000);
             this.app = await env.getApp();
-            this.serverMap = await env.getServerMap(this.app);
+            this.downloadsWindow = await env.openDownloadsDropdown(this.app);
         });
 
         afterEach(async () => {
@@ -97,27 +96,15 @@ describe('downloads/downloads_dropdown', function desc() {
         });
 
         it('MM-22239 should display the file correctly (deleted)', async () => {
-            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-            await mainWindow.waitForLoadState();
-            await mainWindow.bringToFront();
-
-            const dlButtonLocator = await mainWindow.waitForSelector('.DownloadsDropdownButton');
-            await dlButtonLocator.click();
-            await asyncSleep(500);
-
-            const downloadsWindow = this.app.windows().find((window) => window.url().includes('downloadsDropdown'));
-            await downloadsWindow.waitForLoadState();
-            await downloadsWindow.bringToFront();
-
-            const filenameTextLocator = await downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Details__Filename');
+            const filenameTextLocator = await this.downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Details__Filename');
             const filenameInnerText = await filenameTextLocator.innerText();
             filenameInnerText.should.equal(downloads['file1.txt'].filename);
 
-            const fileStateLocator = await downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Details__FileSizeAndStatus');
+            const fileStateLocator = await this.downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Details__FileSizeAndStatus');
             const fileStateInnerText = await fileStateLocator.innerText();
             fileStateInnerText.should.equal('3.92 MB • Deleted');
 
-            const fileThumbnailLocator = await downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Thumbnail');
+            const fileThumbnailLocator = await this.downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Thumbnail');
             const thumbnailBackgroundImage = await fileThumbnailLocator.evaluate((node) => window.getComputedStyle(node).getPropertyValue('background-image'));
             thumbnailBackgroundImage.should.include('text..svg');
         });
@@ -143,6 +130,7 @@ describe('downloads/downloads_dropdown', function desc() {
             await writeFileAsync(path.join(env.downloadsLocation, 'file1.txt'), 'file1 content');
             await asyncSleep(1000);
             this.app = await env.getApp();
+            this.downloadsWindow = await env.openDownloadsDropdown(this.app);
         });
 
         afterEach(async () => {
@@ -152,34 +140,54 @@ describe('downloads/downloads_dropdown', function desc() {
         });
 
         it('MM-22239 should display the file correctly (cancelled)', async () => {
-            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-            await mainWindow.waitForLoadState();
-            await mainWindow.bringToFront();
-
-            const dlButtonLocator = await mainWindow.waitForSelector('.DownloadsDropdownButton');
-            await dlButtonLocator.click();
-            await asyncSleep(500);
-
-            const downloadsWindow = this.app.windows().find((window) => window.url().includes('downloadsDropdown'));
-            downloadsWindow.evaluate(() => {
-                Date.now = () => {
-                    return Date.UTC(2022, 8, 8, 10, 0, 10); // 10seconds after the "addedAt" date
-                };
-            });
-            await downloadsWindow.waitForLoadState();
-            await downloadsWindow.bringToFront();
-
-            const filenameTextLocator = await downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Details__Filename');
+            const filenameTextLocator = await this.downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Details__Filename');
             const filenameInnerText = await filenameTextLocator.innerText();
             filenameInnerText.should.equal(downloads['file1.txt'].filename);
 
-            const fileStateLocator = await downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Details__FileSizeAndStatus');
+            const fileStateLocator = await this.downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Details__FileSizeAndStatus');
             const fileStateInnerText = await fileStateLocator.innerText();
             fileStateInnerText.should.equal('3.92 MB • Cancelled');
 
-            const fileThumbnailLocator = await downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Thumbnail');
+            const fileThumbnailLocator = await this.downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Thumbnail');
             const thumbnailBackgroundImage = await fileThumbnailLocator.evaluate((node) => window.getComputedStyle(node).getPropertyValue('background-image'));
             thumbnailBackgroundImage.should.include('text..svg');
+        });
+    });
+
+    describe('The list has two downloaded files', () => {
+        const downloads = {
+            'file1.txt': file1,
+            'file2.txt': file2,
+        };
+
+        beforeEach(async () => {
+            await env.createTestUserDataDirAsync();
+            await env.cleanTestConfigAsync();
+            await writeFileAsync(env.configFilePath, JSON.stringify(config));
+            await writeFileAsync(env.downloadsFilePath, JSON.stringify(downloads));
+            await mkDirAsync(env.downloadsLocation);
+            await writeFileAsync(path.join(env.downloadsLocation, 'file1.txt'), 'file1 content');
+            await writeFileAsync(path.join(env.downloadsLocation, 'file2.txt'), 'file2 content');
+            await asyncSleep(1000);
+            this.app = await env.getApp();
+            this.downloadsWindow = await env.openDownloadsDropdown(this.app);
+        });
+
+        afterEach(async () => {
+            await rmDirAsync(env.downloadsLocation);
+            await this.app?.close?.();
+            await env.clearElectronInstances();
+        });
+
+        it('MM-22239 should display the files in correct order', async () => {
+            const filenameTextLocators = this.downloadsWindow.locator('.DownloadsDropdown__File__Body__Details__Filename');
+            (await filenameTextLocators.count()).should.equal(2);
+            const firstItemLocator = filenameTextLocators.first();
+            const file1InnerText = await firstItemLocator.innerText();
+            file1InnerText.should.equal(downloads['file2.txt'].filename); // newest first
+            const secondItemLocator = filenameTextLocators.nth(1);
+            const file2InnerText = await secondItemLocator.innerText();
+            file2InnerText.should.equal(downloads['file1.txt'].filename);
         });
     });
 });

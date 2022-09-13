@@ -51,8 +51,10 @@ function rmDirAsync(path) {
             if (exists) {
                 fs.rm(path, {recursive: true, force: true}, (error) => {
                     if (error) {
+                        if (error.code === 'ENOENT') {
+                            resolve();
+                        }
                         reject(error);
-                        return;
                     }
                     resolve();
                 });
@@ -60,6 +62,20 @@ function rmDirAsync(path) {
             resolve();
         }).catch((err) => {
             reject(err);
+        });
+    });
+}
+
+function unlinkAsync(path) {
+    return new Promise((resolve, reject) => {
+        fs.unlink(path, (error) => {
+            if (error) {
+                if (error.code === 'ENOENT') {
+                    resolve();
+                }
+                reject(error);
+            }
+            resolve();
         });
     });
 }
@@ -81,5 +97,6 @@ module.exports = {
     dirExistsAsync,
     mkDirAsync,
     rmDirAsync,
+    unlinkAsync,
     writeFileAsync,
 };

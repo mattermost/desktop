@@ -48,7 +48,7 @@ describe('downloads/downloads_menubar', function desc() {
 
             const dlButton = mainWindow.locator('.DownloadsDropdownButton');
 
-            (await dlButton.isVisible()).should.be.false;
+            (await dlButton.isVisible()).should.equal(false);
 
             const saveMenuItem = await this.app.evaluate(async ({app}) => {
                 const viewMenu = app.applicationMenu.getMenuItemById('view');
@@ -76,13 +76,13 @@ describe('downloads/downloads_menubar', function desc() {
             await env.clearElectronInstances();
         });
 
-        it('MM-22239 should show the downloads dropdown and the menu item should be enabled', async () => {
+        it('MM-22239 should show the downloads dropdown button and the menu item should be enabled', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             await mainWindow.waitForLoadState();
             await mainWindow.bringToFront();
-            const dlButton = await mainWindow.waitForSelector('.DownloadsDropdownButton', {state: 'attached'});
 
-            (await dlButton.isVisible()).should.be.true;
+            const dlButton = await mainWindow.waitForSelector('.DownloadsDropdownButton', {state: 'attached'});
+            (await dlButton.isVisible()).should.equal(true);
 
             const saveMenuItem = await this.app.evaluate(async ({app}) => {
                 const viewMenu = app.applicationMenu.getMenuItemById('view');
@@ -92,6 +92,35 @@ describe('downloads/downloads_menubar', function desc() {
             });
 
             saveMenuItem.should.haveOwnProperty('enabled', true);
+        });
+
+        it('MM-22239 should open the downloads dropdown when clicking the download button in the menubar', async () => {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            await mainWindow.waitForLoadState();
+            await mainWindow.bringToFront();
+
+            const dlButton = await mainWindow.waitForSelector('.DownloadsDropdownButton', {state: 'attached'});
+            (await dlButton.isVisible()).should.equal(true);
+            await dlButton.click();
+
+            await asyncSleep(500);
+            (await env.downloadsDropdownIsOpen(this.app)).should.equal(true);
+        });
+
+        it('MM-22239 should open the downloads dropdown from the app menu', async () => {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            await mainWindow.waitForLoadState();
+            await mainWindow.bringToFront();
+
+            await this.app.evaluate(async ({app}) => {
+                const viewMenu = app.applicationMenu.getMenuItemById('view');
+                const downloadsItem = viewMenu.submenu.getMenuItemById('app-menu-downloads');
+
+                downloadsItem.click();
+            });
+
+            await asyncSleep(500);
+            (await env.downloadsDropdownIsOpen(this.app)).should.equal(true);
         });
     });
 });

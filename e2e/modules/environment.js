@@ -15,7 +15,7 @@ const {ipcRenderer} = require('electron');
 
 const {SHOW_SETTINGS_WINDOW} = require('../../src/common/communication');
 
-const {asyncSleep, dirExistsAsync, mkDirAsync} = require('./utils');
+const {asyncSleep, mkDirAsync, rmDirAsync, unlinkAsync} = require('./utils');
 chai.should();
 
 const sourceRootDir = path.join(__dirname, '../..');
@@ -53,12 +53,10 @@ const exampleTeam = {
         {
             name: 'TAB_FOCALBOARD',
             order: 1,
-            isOpen: true,
         },
         {
             name: 'TAB_PLAYBOOKS',
             order: 2,
-            isOpen: true,
         },
     ],
     lastActiveTab: 0,
@@ -102,10 +100,14 @@ const demoConfig = {
     useSpellChecker: true,
     enableHardwareAcceleration: true,
     autostart: true,
+    hideOnStart: false,
+    spellCheckerLocales: [],
     darkMode: false,
     lastActiveTeam: 0,
-    spellCheckerLocales: [],
+    startInFullscreen: false,
+    autoCheckForUpdates: false,
     appLanguage: 'en',
+    logLevel: 'silly',
 };
 
 const demoMattermostConfig = {
@@ -165,17 +167,7 @@ module.exports = {
     async cleanTestConfigAsync() {
         await Promise.all(
             [configFilePath, downloadsFilePath, boundsInfoPath].map((file) => {
-                return new Promise((resolve, reject) => {
-                    fs.unlink(file, (err) => {
-                        if (err) {
-                            if (err.code === 'ENOENT') {
-                                resolve();
-                            }
-                            reject(err);
-                        }
-                        resolve();
-                    });
-                });
+                return unlinkAsync(file);
             }),
         );
     },
@@ -190,6 +182,9 @@ module.exports = {
             }
         }
     },
+    cleanDataDirAsync() {
+        return rmDirAsync(userDataDir);
+    },
 
     createTestUserDataDir() {
         if (!fs.existsSync(userDataDir)) {
@@ -197,9 +192,7 @@ module.exports = {
         }
     },
     async createTestUserDataDirAsync() {
-        if (!await dirExistsAsync(userDataDir)) {
-            await mkDirAsync(userDataDir);
-        }
+        await mkDirAsync(userDataDir);
     },
 
     async getApp(args = []) {
@@ -267,6 +260,27 @@ module.exports = {
         await window.type('#input_loginId', 'user-1');
         await window.type('#input_password-input', 'SampleUs@r-1');
         await window.click('#saveSetting');
+    },
+
+    async openDownloadsDropdown(app) {
+        const mainWindow = app.windows().find((window) => window.url().includes('index'));
+        await mainWindow.waitForLoadState();
+        await mainWindow.bringToFront();
+
+        const dlButtonLocator = await mainWindow.waitForSelector('.DownloadsDropdownButton');
+        await dlButtonLocator.click();
+        await asyncSleep(500);
+
+        const downloadsWindow = app.windows().find((window) => window.url().includes('downloadsDropdown'));
+        await downloadsWindow.waitForLoadState();
+        await downloadsWindow.bringToFront();
+        return downloadsWindow;
+    },
+
+    async downloadsDropdownIsOpen(app) {
+        const downloadsWindow = app.windows().find((window) => window.url().includes('downloadsDropdown'));
+        const result = await downloadsWindow.isVisible('.DownloadsDropdown');
+        return result;
     },
 
     addClientCommands(client) {
