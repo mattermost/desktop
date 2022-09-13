@@ -75,6 +75,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
     enableHardwareAccelerationRef: React.RefObject<HTMLInputElement>;
     startInFullscreenRef: React.RefObject<HTMLInputElement>;
     autoCheckForUpdatesRef: React.RefObject<HTMLInputElement>;
+    optInForBetaUpdatesRef: React.RefObject<HTMLInputElement>;
     logLevelRef: React.RefObject<HTMLSelectElement>;
     appLanguageRef: React.RefObject<HTMLSelectElement>;
 
@@ -114,6 +115,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
         this.startInFullscreenRef = React.createRef();
         this.spellCheckerURLRef = React.createRef();
         this.autoCheckForUpdatesRef = React.createRef();
+        this.optInForBetaUpdatesRef = React.createRef();
         this.logLevelRef = React.createRef();
         this.appLanguageRef = React.createRef();
 
@@ -352,6 +354,13 @@ class SettingsPage extends React.PureComponent<Props, State> {
         });
     }
 
+    handleChangeOptInForBetaUpdates = () => {
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_UPDATES, {key: 'optInForBetaUpdates', data: this.optInForBetaUpdatesRef.current?.checked});
+        this.setState({
+            optInForBetaUpdates: this.optInForBetaUpdatesRef.current?.checked,
+        });
+    }
+
     checkForUpdates = () => {
         window.ipcRenderer.send(CHECK_FOR_UPDATES);
     }
@@ -512,7 +521,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
             },
 
             checkForUpdatesButton: {
-                marginBottom: '4px',
+                marginBottom: '16px',
                 marginLeft: '16px',
                 marginTop: '8px',
             },
@@ -826,16 +835,14 @@ class SettingsPage extends React.PureComponent<Props, State> {
                         checked={this.state.showTrayIcon}
                         onChange={this.handleChangeShowTrayIcon}
                     />
-                    {window.process.platform === 'darwin' ?
-                        <FormattedMessage
-                            id='renderer.components.settingsPage.trayIcon.show.darwin'
-                            defaultMessage='Show {appName} icon in the menu bar'
-                            values={{appName: this.state.appName}}
-                        /> :
-                        <FormattedMessage
-                            id='renderer.components.settingsPage.trayIcon.show'
-                            defaultMessage='Show icon in the notification area'
-                        />
+                    {window.process.platform === 'darwin' ? <FormattedMessage
+                        id='renderer.components.settingsPage.trayIcon.show.darwin'
+                        defaultMessage='Show {appName} icon in the menu bar'
+                        values={{appName: this.state.appName}}
+                                                            /> : <FormattedMessage
+                        id='renderer.components.settingsPage.trayIcon.show'
+                        defaultMessage='Show icon in the notification area'
+                         />
                     }
                     <FormText>
                         <FormattedMessage
@@ -1210,6 +1217,29 @@ class SettingsPage extends React.PureComponent<Props, State> {
                                         defaultMessage='Check for Updates Now'
                                     />
                                 </Button>
+                                <FormCheck>
+                                    <FormCheck.Input
+                                        type='checkbox'
+                                        key='inputOptInForBetaUpdates'
+                                        id='inputOptInForBetaUpdates'
+                                        ref={this.optInForBetaUpdatesRef}
+                                        checked={this.state.optInForBetaUpdates}
+                                        onChange={this.handleChangeOptInForBetaUpdates}
+                                    />
+                                    <FormattedMessage
+                                        id='renderer.components.settingsPage.updates.beta'
+                                        defaultMessage='Opt-in to receive beta updates and get early access to the latest features'
+                                    />
+                                    <FormText>
+                                        <FormattedMessage
+                                            id='renderer.components.settingsPage.updates.beta.reportIssues'
+                                            defaultMessage='Please share feedback and report issues here: {url}'
+                                            values={{
+                                                url: 'https://github.com/mattermost/desktop/issues',
+                                            }}
+                                        />
+                                    </FormText>
+                                </FormCheck>
                             </FormGroup>
                         </Col>
                     </Row>

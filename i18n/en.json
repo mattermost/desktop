@@ -203,6 +203,8 @@
   "renderer.components.settingsPage.updates": "Updates",
   "renderer.components.settingsPage.updates.automatic": "Automatically check for updates",
   "renderer.components.settingsPage.updates.automatic.description": "If enabled, updates to the Desktop App will download automatically and you will be notified when ready to install.",
+  "renderer.components.settingsPage.updates.beta": "Opt-in to receive beta updates and get early access to the latest features",
+  "renderer.components.settingsPage.updates.beta.reportIssues": "Please share feedback and report issues here: {url}",
   "renderer.components.settingsPage.updates.checkNow": "Check for Updates Now",
   "renderer.components.showCertificateModal.algorithm": "Algorithm",
   "renderer.components.showCertificateModal.commonName": "Common Name",
