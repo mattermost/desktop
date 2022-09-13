@@ -47,7 +47,7 @@ describe('downloads/downloads_menubar', function desc() {
         await beforeFunc();
 
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        const dlButton = mainWindow.locator('.DownloadsDropdownButton');
+        const dlButton = await mainWindow.waitForSelector('.DownloadsDropdownButton', {state: 'visible'});
 
         (await dlButton.isVisible()).should.be.false;
 
@@ -67,7 +67,7 @@ describe('downloads/downloads_menubar', function desc() {
         await beforeFunc(downloads);
 
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        const dlButton = mainWindow.locator('.DownloadsDropdownButton');
+        const dlButton = await mainWindow.waitForSelector('.DownloadsDropdownButton', {state: 'visible'});
 
         (await dlButton.isVisible()).should.be.true;
 
