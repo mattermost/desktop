@@ -78,6 +78,7 @@ function writeFileAsync(path, data) {
 
 module.exports = {
     asyncSleep,
+    dirExistsAsync,
     mkDirAsync,
     rmDirAsync,
     writeFileAsync,

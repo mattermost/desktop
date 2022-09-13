@@ -15,7 +15,7 @@ const {ipcRenderer} = require('electron');
 
 const {SHOW_SETTINGS_WINDOW} = require('../../src/common/communication');
 
-const {asyncSleep} = require('./utils');
+const {asyncSleep, dirExistsAsync, mkDirAsync} = require('./utils');
 chai.should();
 
 const sourceRootDir = path.join(__dirname, '../..');
@@ -159,6 +159,23 @@ module.exports = {
             }
         });
     },
+    async cleanTestConfigAsync() {
+        await Promise.all(
+            [configFilePath, downloadsFilePath, boundsInfoPath].map((file) => {
+                return new Promise((resolve, reject) => {
+                    fs.unlink(file, (err) => {
+                        if (err) {
+                            if (err.code === 'ENOENT') {
+                                resolve();
+                            }
+                            reject(err);
+                        }
+                        resolve();
+                    });
+                });
+            }),
+        );
+    },
 
     cleanDataDir() {
         try {
@@ -174,6 +191,11 @@ module.exports = {
     createTestUserDataDir() {
         if (!fs.existsSync(userDataDir)) {
             fs.mkdirSync(userDataDir);
+        }
+    },
+    async createTestUserDataDirAsync() {
+        if (!await dirExistsAsync(userDataDir)) {
+            await mkDirAsync(userDataDir);
         }
     },
 

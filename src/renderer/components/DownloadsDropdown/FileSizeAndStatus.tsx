@@ -19,8 +19,8 @@ const FileSizeAndStatus = ({item}: OwnProps) => {
 
     const getRemainingTime = useCallback(() => {
         const elapsedMs = Date.now() - addedAt;
-        const bandwith = receivedBytes / elapsedMs;
-        const etaMS = Math.round((totalBytes - receivedBytes) / bandwith);
+        const bandwidth = receivedBytes / elapsedMs;
+        const etaMS = Math.round((totalBytes - receivedBytes) / bandwidth);
         return prettyETA(etaMS, translate);
     }, [receivedBytes, addedAt, totalBytes, translate]);
 
