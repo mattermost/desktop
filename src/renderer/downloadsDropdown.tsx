@@ -17,7 +17,7 @@ import {
 } from 'common/communication';
 
 import IntlProvider from './intl_provider';
-import DownloadsDropdownFile from './components/DownloadsDropdown/DownloadsDropdownFile';
+import DownloadsDropdownItem from './components/DownloadsDropdown/DownloadsDropdownItem';
 
 import './css/downloadsDropdown.scss';
 
@@ -51,7 +51,15 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
         if (event.data.type === UPDATE_DOWNLOADS_DROPDOWN) {
             const {downloads, darkMode, windowBounds, item} = event.data.data;
             const newDownloads = Object.values<DownloadedItem>(downloads);
-            newDownloads.sort((a, b) => b.addedAt - a.addedAt);
+            newDownloads.sort((a, b) => {
+                // Show App update first
+                if (a.type === 'update') {
+                    return -1;
+                } else if (b.type === 'update') {
+                    return 1;
+                }
+                return b.addedAt - a.addedAt;
+            });
             this.setState({
                 downloads: newDownloads,
                 darkMode,
@@ -98,7 +106,7 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
                     <div className='DownloadsDropdown__list'>
                         {(this.state.downloads || []).map((downloadItem: DownloadedItem) => {
                             return (
-                                <DownloadsDropdownFile
+                                <DownloadsDropdownItem
                                     item={downloadItem}
                                     key={downloadItem.filename}
                                     activeItem={this.state.item}

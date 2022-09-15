@@ -8,7 +8,6 @@ import {Container, Row} from 'react-bootstrap';
 import {DropResult} from 'react-beautiful-dnd';
 import {injectIntl, IntlShape} from 'react-intl';
 import {IpcRendererEvent} from 'electron/renderer';
-import prettyBytes from 'pretty-bytes';
 
 import {TeamWithTabs} from 'types/config';
 import {DownloadedItems} from 'types/downloads';
@@ -39,11 +38,6 @@ import {
     CLOSE_TEAMS_DROPDOWN,
     OPEN_TEAMS_DROPDOWN,
     SWITCH_TAB,
-    UPDATE_AVAILABLE,
-    UPDATE_DOWNLOADED,
-    UPDATE_PROGRESS,
-    START_UPGRADE,
-    START_DOWNLOAD,
     CLOSE_TAB,
     RELOAD_CURRENT_VIEW,
     CLOSE_DOWNLOADS_DROPDOWN,
@@ -78,13 +72,6 @@ enum Status {
     NOSERVERS = -2,
 }
 
-enum UpgradeStatus {
-    NONE = 0,
-    AVAILABLE = 1,
-    DOWNLOADING = 2,
-    DOWNLOADED = 3,
-}
-
 type Props = {
     teams: TeamWithTabs[];
     lastActiveTeam?: number;
@@ -109,14 +96,6 @@ type State = {
     fullScreen?: boolean;
     showExtraBar?: boolean;
     isMenuOpen: boolean;
-    upgradeStatus: UpgradeStatus;
-    upgradeProgress?: {
-        total: number;
-        delta: number;
-        transferred: number;
-        percent: number;
-        bytesPerSecond: number;
-    };
     isDownloadsDropdownOpen: boolean;
     showDownloadsBadge: boolean;
     hasDownloads: boolean;
@@ -157,7 +136,6 @@ class MainPage extends React.PureComponent<Props, State> {
             tabViewStatus: new Map(this.props.teams.map((team) => team.tabs.map((tab) => getTabViewName(team.name, tab.name))).flat().map((tabViewName) => [tabViewName, {status: Status.LOADING}])),
             darkMode: this.props.darkMode,
             isMenuOpen: false,
-            upgradeStatus: UpgradeStatus.NONE,
             isDownloadsDropdownOpen: false,
             showDownloadsBadge: false,
             hasDownloads: false,
@@ -275,29 +253,6 @@ class MainPage extends React.PureComponent<Props, State> {
 
         window.ipcRenderer.on(OPEN_TEAMS_DROPDOWN, () => {
             this.setState({isMenuOpen: true});
-        });
-
-        window.ipcRenderer.on(UPDATE_AVAILABLE, () => {
-            this.setState({upgradeStatus: UpgradeStatus.AVAILABLE});
-            this.showHideDownloadsBadge(true);
-        });
-
-        window.ipcRenderer.on(UPDATE_DOWNLOADED, () => {
-            this.setState({upgradeStatus: UpgradeStatus.DOWNLOADED});
-            this.showHideDownloadsBadge(true);
-        });
-
-        window.ipcRenderer.on(UPDATE_PROGRESS, (event, total, delta, transferred, percent, bytesPerSecond) => {
-            this.setState({
-                upgradeStatus: UpgradeStatus.DOWNLOADING,
-                upgradeProgress: {
-                    total,
-                    delta,
-                    transferred,
-                    percent,
-                    bytesPerSecond,
-                },
-            });
         });
 
         window.ipcRenderer.on(CLOSE_DOWNLOADS_DROPDOWN, () => {
@@ -498,58 +453,6 @@ class MainPage extends React.PureComponent<Props, State> {
             );
         }
 
-        let upgradeTooltip;
-        switch (this.state.upgradeStatus) {
-        case UpgradeStatus.AVAILABLE:
-            upgradeTooltip = intl.formatMessage({id: 'renderer.components.mainPage.updateAvailable', defaultMessage: 'Update available'});
-            break;
-        case UpgradeStatus.DOWNLOADED:
-            upgradeTooltip = intl.formatMessage({id: 'renderer.components.mainPage.updateReady', defaultMessage: 'Update ready to install'});
-            break;
-        case UpgradeStatus.DOWNLOADING:
-            upgradeTooltip = intl.formatMessage({
-                id: 'renderer.components.mainPage.downloadingUpdate',
-                defaultMessage: 'Downloading update. {percentDone}% of {total} @ {speed}/s',
-            }, {
-                percentDone: String(this.state.upgradeProgress?.percent).split('.')[0],
-                total: prettyBytes(this.state.upgradeProgress?.total || 0),
-                speed: prettyBytes(this.state.upgradeProgress?.bytesPerSecond || 0),
-            });
-            break;
-        }
-
-        let upgradeIcon;
-        if (this.state.upgradeStatus !== UpgradeStatus.NONE) {
-            upgradeIcon = (
-                <button
-                    className={classNames('upgrade-btns', {darkMode: this.state.darkMode})}
-                    onClick={() => {
-                        if (this.state.upgradeStatus === UpgradeStatus.DOWNLOADING) {
-                            return;
-                        }
-
-                        window.ipcRenderer.send(this.state.upgradeStatus === UpgradeStatus.DOWNLOADED ? START_UPGRADE : START_DOWNLOAD);
-                    }}
-                >
-                    <div
-                        className={classNames('button upgrade-button', {
-                            rotate: this.state.upgradeStatus === UpgradeStatus.DOWNLOADING,
-                        })}
-                        title={upgradeTooltip}
-                    >
-                        <i
-                            className={classNames({
-                                'icon-arrow-down-bold-circle-outline': this.state.upgradeStatus === UpgradeStatus.AVAILABLE,
-                                'icon-sync': this.state.upgradeStatus === UpgradeStatus.DOWNLOADING,
-                                'icon-arrow-up-bold-circle-outline': this.state.upgradeStatus === UpgradeStatus.DOWNLOADED,
-                            })}
-                        />
-                        {(this.state.upgradeStatus !== UpgradeStatus.DOWNLOADING) && <div className={'circle'}/>}
-                    </div>
-                </button>
-            );
-        }
-
         let titleBarButtons;
         if (window.process.platform === 'win32' && !this.props.useNativeWindow) {
             titleBarButtons = (
@@ -626,7 +529,7 @@ class MainPage extends React.PureComponent<Props, State> {
                     )}
                     {tabsRow}
                     {downloadsDropdownButton}
-                    {upgradeIcon}
+                    {/* {upgradeIcon} */}
                     {titleBarButtons}
                 </div>
             </Row>

@@ -90,13 +90,16 @@ export const REQUEST_TEAMS_DROPDOWN_INFO = 'request-teams-dropdown-info';
 export const RECEIVE_DROPDOWN_MENU_SIZE = 'receive-dropdown-menu-size';
 export const SEND_DROPDOWN_MENU_SIZE = 'send-dropdown-menu-size';
 
-export const UPDATE_AVAILABLE = 'update_available';
-export const UPDATE_DOWNLOADED = 'update_downloaded';
-export const CANCEL_UPGRADE = 'cancel_upgrade';
-export const START_UPGRADE = 'start_upgrade';
-export const START_DOWNLOAD = 'start_download';
-export const CHECK_FOR_UPDATES = 'check_for_updates';
-export const UPDATE_PROGRESS = 'update_progress';
+export const UPDATE_AVAILABLE = 'update-available';
+export const UPDATE_DOWNLOADED = 'update-downloaded';
+export const UPDATE_PROGRESS = 'update-progress';
+export const UPDATE_REMIND_LATER = 'update-remind-later';
+export const CANCEL_UPDATE_DOWNLOAD = 'cancel-update-download';
+export const CANCEL_UPGRADE = 'cancel-upgrade';
+export const START_UPDATE_DOWNLOAD = 'start-update-download';
+export const START_UPGRADE = 'start-upgrade';
+export const CHECK_FOR_UPDATES = 'check-for-updates';
+export const NO_UPDATE_AVAILABLE = 'no-update-available';
 
 export const BROWSER_HISTORY_BUTTON = 'browser-history-button';
 export const BROWSER_HISTORY_PUSH = 'browser-history-push';
