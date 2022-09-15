@@ -381,7 +381,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     private doneEventController = (doneEvent: Event, state: DownloadItemDoneEventState, item: DownloadItem, webContents: WebContents) => {
         log.debug('DownloadsManager.doneEventController', {state});
 
-        if (state === 'completed') {
+        if (state === 'completed' && !this.open) {
             displayDownloadCompleted(path.basename(item.savePath), item.savePath, WindowManager.getServerNameByWebContentsId(webContents.id) || '');
         }
 
