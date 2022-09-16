@@ -8,6 +8,12 @@
             "type": "npm",
             "script": "build",
             "problemMatcher": []
+        },
+        {
+            "label": "prepare-e2e",
+            "type": "shell",
+            "command": "npm run build; npm run build-robotjs; npm run test:e2e:build",
+            "problemMatcher": []
         }
     ]
 }
