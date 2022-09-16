@@ -12,7 +12,8 @@ import PlaybooksTabView from './PlaybooksTabView';
 export const TAB_MESSAGING = 'TAB_MESSAGING';
 export const TAB_FOCALBOARD = 'TAB_FOCALBOARD';
 export const TAB_PLAYBOOKS = 'TAB_PLAYBOOKS';
-export type TabType = typeof TAB_MESSAGING | typeof TAB_FOCALBOARD | typeof TAB_PLAYBOOKS;
+export const TAB_PEOPLE = 'TAB_PEOPLE';
+export type TabType = typeof TAB_MESSAGING | typeof TAB_FOCALBOARD | typeof TAB_PLAYBOOKS | typeof TAB_PEOPLE;
 export type TabTuple = [string, TabType];
 
 export interface TabView {
@@ -42,6 +43,10 @@ export function getDefaultTeamWithTabsFromTeam(team: Team) {
                 name: TAB_PLAYBOOKS,
                 order: 2,
             },
+            {
+                name: TAB_PEOPLE,
+                order: 3,
+            },
         ],
     };
 }
@@ -54,8 +59,10 @@ export function getServerView(srv: MattermostServer, tab: Tab) {
         return new FocalboardTabView(srv);
     case TAB_PLAYBOOKS:
         return new PlaybooksTabView(srv);
+    case TAB_PEOPLE:
+        return new PlaybooksTabView(srv);
     default:
-        throw new Error('Not implemeneted');
+        throw new Error('Not implemented');
     }
 }
 
@@ -67,8 +74,10 @@ export function getTabDisplayName(tabType: TabType) {
         return 'Boards';
     case TAB_PLAYBOOKS:
         return 'Playbooks';
+    case TAB_PEOPLE:
+        return 'People';
     default:
-        throw new Error('Not implemeneted');
+        throw new Error('Not implemented');
     }
 }
 
