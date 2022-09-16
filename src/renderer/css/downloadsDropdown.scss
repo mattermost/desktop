@@ -149,11 +149,13 @@ body {
                             > svg {
                                 background: #ffffff;
                                 border-radius: 50%;
-                                border: 2px solid #ffffff;
+                                border: 1px solid #ffffff;
+                                height: 16px;
                                 position: absolute;
                                 right: 0;
                                 top: 0;
                                 transform: translate(50%, -50%);
+                                width: 16px;
                             }
 
                             .DownloadsDropdown__File__Body__Thumbnail {
@@ -291,7 +293,7 @@ body {
 
                             > svg {
                                 background: #1f1f1f;
-                                border: 2px solid #1f1f1f;
+                                border-color: #1f1f1f;
                             }
                         }
 
