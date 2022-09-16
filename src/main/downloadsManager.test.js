@@ -83,6 +83,13 @@ jest.mock('common/JsonFileManager', () => {
     }
     return JsonFileManagerMock;
 });
+jest.mock('common/config', () => {
+    const original = jest.requireActual('common/config');
+    return {
+        ...original,
+        downloadLocation: '/path/to/downloads',
+    };
+});
 
 const downloadsJson = {
     'file1.txt': {

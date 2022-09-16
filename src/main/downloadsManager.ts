@@ -273,7 +273,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     private shouldShowSaveDialog = (downloadLocation?: string) => {
         log.debug('DownloadsManager.shouldShowSaveDialog', {downloadLocation});
 
-        return !downloadLocation || !fs.existsSync(downloadLocation);
+        return !downloadLocation;
     };
 
     private showSaveDialog = (item: DownloadItem) => {
