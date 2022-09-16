@@ -31,7 +31,6 @@ import {
     DESKTOP_SOURCES_RESULT,
     VIEW_FINISHED_RESIZING,
     CALLS_JOIN_CALL,
-    CALLS_LEAVE_CALL,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -158,12 +157,8 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
         ipcRenderer.send(DISPATCH_GET_DESKTOP_SOURCES, viewName, message);
         break;
     }
-    case 'calls-join-call': {
+    case CALLS_JOIN_CALL: {
         ipcRenderer.send(CALLS_JOIN_CALL, viewName, message);
-        break;
-    }
-    case 'calls-client-close': {
-        ipcRenderer.send(CALLS_LEAVE_CALL, viewName, message);
         break;
     }
     }

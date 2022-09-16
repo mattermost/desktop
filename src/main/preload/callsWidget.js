@@ -3,18 +3,12 @@
 
 'use strict';
 
-import {ipcRenderer, contextBridge} from 'electron';
+import {ipcRenderer} from 'electron';
 
 import {
-    CALLS_CLIENT_CONNECT,
     CALLS_LEAVE_CALL,
+    CALLS_WIDGET_RESIZE,
 } from 'common/communication';
-
-contextBridge.exposeInMainWorld('ipcRenderer', {
-    send: ipcRenderer.send,
-    on: (channel, listener) => ipcRenderer.on(channel, (_, ...args) => listener(null, ...args)),
-    invoke: ipcRenderer.invoke,
-});
 
 window.addEventListener('message', ({origin, data = {}} = {}) => {
     const {type, message = {}} = data;
@@ -24,11 +18,10 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
     }
 
     switch (type) {
-    case CALLS_CLIENT_CONNECT:
+    case CALLS_WIDGET_RESIZE:
     case CALLS_LEAVE_CALL: {
         ipcRenderer.send(type, message);
         break;
     }
     }
 });
-

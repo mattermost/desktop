@@ -2,11 +2,17 @@
 // See LICENSE.txt for license information.
 export type CallsWidgetWindowConfig = {
     siteURL: string;
-    channelID: string;
+    callID: string;
     title: string;
 }
 
 export type CallsJoinCallMessage = {
-    channelID: string;
+    callID: string;
     title: string;
+}
+
+export type CallsWidgetResizeMessage = {
+    element: string;
+    width: number;
+    height: number;
 }

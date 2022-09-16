@@ -29,7 +29,6 @@ import {
     DESKTOP_SOURCES_RESULT,
     RELOAD_CURRENT_VIEW,
     VIEW_FINISHED_RESIZING,
-    CALLS_CLIENT_CONNECT,
     CALLS_JOIN_CALL,
     CALLS_LEAVE_CALL,
 } from 'common/communication';
@@ -50,7 +49,7 @@ import TeamDropdownView from '../views/teamDropdownView';
 import {createSettingsWindow} from './settingsWindow';
 import createMainWindow from './mainWindow';
 
-import createCallsWidgetWindow from './callsWidgetWindow';
+import CallsWidgetWindow from './callsWidgetWindow';
 
 // singleton module to manage application's windows
 
@@ -60,7 +59,7 @@ export class WindowManager {
     mainWindow?: BrowserWindow;
     mainWindowReady: boolean;
     settingsWindow?: BrowserWindow;
-    callsWidgetWindow?: BrowserWindow;
+    callsWidgetWindow?: CallsWidgetWindow;
     viewManager?: ViewManager;
     teamDropdown?: TeamDropdownView;
     currentServerName?: string;
@@ -83,7 +82,7 @@ export class WindowManager {
         ipcMain.on(DISPATCH_GET_DESKTOP_SOURCES, this.handleGetDesktopSources);
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
         ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
-        ipcMain.on(CALLS_JOIN_CALL, this.showCallsWidgetWindow);
+        ipcMain.on(CALLS_JOIN_CALL, this.createCallsWidgetWindow);
         ipcMain.on(CALLS_LEAVE_CALL, () => this.callsWidgetWindow?.close());
     }
 
@@ -93,27 +92,24 @@ export class WindowManager {
         }
     }
 
-    showCallsWidgetWindow = (event: IpcMainEvent, viewName: string, msg: CallsJoinCallMessage) => {
-        log.info('WindowManager.showCallsWidgetWindow');
+    createCallsWidgetWindow = (event: IpcMainEvent, viewName: string, msg: CallsJoinCallMessage) => {
+        log.debug('WindowManager.createCallsWidgetWindow');
         if (this.callsWidgetWindow) {
-            this.callsWidgetWindow.show();
-        } else {
-            const currentView = this.viewManager?.views.get(viewName);
-            if (!currentView) {
-                log.error('unable to create calls widget window: currentView is missing');
-                return;
-            }
-
-            this.callsWidgetWindow = createCallsWidgetWindow(this.mainWindow!, {
-                siteURL: currentView.serverInfo.remoteInfo.siteURL!,
-                channelID: msg.channelID,
-                title: msg.title,
-            });
-            this.callsWidgetWindow.on('closed', () => {
-                delete this.callsWidgetWindow;
-            });
-            this.callsWidgetWindow.webContents.send(CALLS_CLIENT_CONNECT, msg);
+            return;
         }
+        const currentView = this.viewManager?.views.get(viewName);
+        if (!currentView) {
+            log.error('unable to create calls widget window: currentView is missing');
+            return;
+        }
+
+        this.callsWidgetWindow = new CallsWidgetWindow(this.mainWindow!, {
+            siteURL: currentView.serverInfo.remoteInfo.siteURL!,
+            callID: msg.callID,
+            title: msg.title,
+        });
+
+        this.callsWidgetWindow.on('closed', () => delete this.callsWidgetWindow);
     }
 
     showSettingsWindow = () => {

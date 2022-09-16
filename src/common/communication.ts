@@ -131,7 +131,7 @@ export const VIEW_FINISHED_RESIZING = 'view-finished-resizing';
 export const DISPATCH_GET_DESKTOP_SOURCES = 'dispatch-get-desktop-sources';
 export const DESKTOP_SOURCES_RESULT = 'desktop-sources-result';
 
-export const CALLS_CLIENT_CONNECT = 'calls-client-connect';
 export const CALLS_JOIN_CALL = 'calls-join-call';
 export const CALLS_LEAVE_CALL = 'calls-leave-call';
+export const CALLS_WIDGET_RESIZE = 'calls-widget-resize';
 
