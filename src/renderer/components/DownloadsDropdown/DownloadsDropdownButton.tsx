@@ -4,13 +4,13 @@
 import classNames from 'classnames';
 import React, {useEffect} from 'react';
 
-import {CLOSE_DOWNLOADS_DROPDOWN, CLOSE_DOWNLOADS_DROPDOWN_MENU, OPEN_DOWNLOADS_DROPDOWN} from 'common/communication';
-
 import '../../css/components/DownloadsDropdown/DownloadsDropdownButton.scss';
 
 type Props = {
-    isDownloadsDropdownOpen: boolean;
+    closeDownloadsDropdown: () => void;
     darkMode: boolean;
+    isDownloadsDropdownOpen: boolean;
+    openDownloadsDropdown: () => void;
     showDownloadsBadge: boolean;
 }
 
@@ -18,7 +18,7 @@ const DownloadsDropDownButtonBadge = ({show}: { show: boolean }) => (
     show ? <span className='DownloadsDropdownButton__badge'/> : null
 );
 
-const DownloadsDropdownButton: React.FC<Props> = ({darkMode, isDownloadsDropdownOpen, showDownloadsBadge}: Props) => {
+const DownloadsDropdownButton: React.FC<Props> = ({darkMode, isDownloadsDropdownOpen, showDownloadsBadge, closeDownloadsDropdown, openDownloadsDropdown}: Props) => {
     const buttonRef: React.RefObject<HTMLButtonElement> = React.createRef();
 
     useEffect(() => {
@@ -31,10 +31,9 @@ const DownloadsDropdownButton: React.FC<Props> = ({darkMode, isDownloadsDropdown
         event.preventDefault();
         event.stopPropagation();
         if (isDownloadsDropdownOpen) {
-            window.ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
-            window.ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN_MENU);
+            closeDownloadsDropdown();
         } else {
-            window.ipcRenderer.send(OPEN_DOWNLOADS_DROPDOWN);
+            openDownloadsDropdown();
         }
     };
 

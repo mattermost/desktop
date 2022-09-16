@@ -27,17 +27,13 @@ jest.mock('path', () => {
         resolve: (basePath, ...restOfPath) => original.join('/path/to/app/src/main', ...restOfPath),
     };
 });
-jest.mock('fs', () => {
-    const original = jest.requireActual('fs');
-    return {
-        ...original,
-        accessSync: jest.fn().mockImplementation(() => {
-            throw new Error('file missing');
-        }).mockImplementationOnce(() => {
-            return '';
-        }),
-    };
-});
+jest.mock('fs', () => ({
+    accessSync: jest.fn().mockImplementation(() => {
+        throw new Error('file missing');
+    }).mockImplementationOnce(() => {
+        return '';
+    }),
+}));
 
 describe('main/utils', () => {
     describe('shouldBeHiddenOnStartup', () => {

@@ -424,6 +424,15 @@ class MainPage extends React.PureComponent<Props, State> {
         this.setState({showDownloadsBadge: value});
     }
 
+    closeDownloadsDropdown() {
+        window.ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
+        window.ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN_MENU);
+    }
+
+    openDownloadsDropdown() {
+        window.ipcRenderer.send(OPEN_DOWNLOADS_DROPDOWN);
+    }
+
     render() {
         const {intl} = this.props;
         const currentTabs = this.props.teams.find((team) => team.name === this.state.activeServerName)?.tabs || [];
@@ -457,6 +466,8 @@ class MainPage extends React.PureComponent<Props, State> {
                 darkMode={this.state.darkMode}
                 isDownloadsDropdownOpen={this.state.isDownloadsDropdownOpen}
                 showDownloadsBadge={this.state.showDownloadsBadge}
+                closeDownloadsDropdown={this.closeDownloadsDropdown}
+                openDownloadsDropdown={this.openDownloadsDropdown}
             />
         ) : null;
 
