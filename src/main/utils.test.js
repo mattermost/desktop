@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 'use strict';
-
 import {BACK_BAR_HEIGHT, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {runMode} from 'common/utils/util';
 
@@ -26,6 +25,17 @@ jest.mock('path', () => {
     return {
         ...original,
         resolve: (basePath, ...restOfPath) => original.join('/path/to/app/src/main', ...restOfPath),
+    };
+});
+jest.mock('fs', () => {
+    const original = jest.requireActual('fs');
+    return {
+        ...original,
+        accessSync: jest.fn().mockImplementation(() => {
+            throw new Error('file missing');
+        }).mockImplementationOnce(() => {
+            return '';
+        }),
     };
 });
 
@@ -147,6 +157,12 @@ describe('main/utils', () => {
     describe('doubleSecToMs', () => {
         it('should convert a double number of seconds to integer milliseconds', () => {
             expect(Utils.doubleSecToMs(1662561807.067542)).toBe(1662561807068);
+        });
+    });
+
+    describe('shouldIncrementFilename', () => {
+        it('should increment filename if file already exists', () => {
+            expect(Utils.shouldIncrementFilename('filename.txt')).toBe('filename (1).txt');
         });
     });
 });

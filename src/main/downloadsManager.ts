@@ -13,7 +13,7 @@ import Config from 'common/config';
 import {localizeMessage} from 'main/i18nManager';
 import {displayDownloadCompleted} from 'main/notifications';
 import WindowManager from 'main/windows/windowManager';
-import {doubleSecToMs, getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader} from 'main/utils';
+import {doubleSecToMs, getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader, shouldIncrementFilename} from 'main/utils';
 import {DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT, DOWNLOADS_DROPDOWN_MAX_ITEMS} from 'common/utils/constants';
 import JsonFileManager from 'common/JsonFileManager';
 
@@ -66,8 +66,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     handleNewDownload = (event: Event, item: DownloadItem, webContents: WebContents) => {
         log.debug('DownloadsManager.handleNewDownload', {item, sourceURL: webContents.getURL()});
 
-        const filename = item.getFilename();
-        const shouldShowSaveDialog = this.shouldShowSaveDialog(filename, Config.downloadLocation);
+        const shouldShowSaveDialog = this.shouldShowSaveDialog(Config.downloadLocation);
         if (shouldShowSaveDialog) {
             const saveDialogSuccess = this.showSaveDialog(item);
             if (!saveDialogSuccess) {
@@ -75,6 +74,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
                 return;
             }
         } else {
+            const filename = this.createFilename(item);
             const savePath = this.getSavePath(`${Config.downloadLocation}`, filename);
             item.setSavePath(savePath);
         }
@@ -268,22 +268,12 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     }
 
     /**
-     *  This function return true if one of the following is true:
-     *      - downloadLocation is undefined
-     *      - filename is not a valid string
-     *      - File already exists
+     *  This function return true if "downloadLocation" is undefined
      */
-    private shouldShowSaveDialog = (filename: string, downloadLocation?: string) => {
+    private shouldShowSaveDialog = (downloadLocation?: string) => {
         log.debug('DownloadsManager.shouldShowSaveDialog', {downloadLocation});
 
-        if (downloadLocation && isStringWithLength(downloadLocation)) {
-            const savePath = this.getSavePath(downloadLocation, filename);
-            const fileAlreadyExists = fs.existsSync(savePath);
-            if (savePath && !fileAlreadyExists) {
-                return false;
-            }
-        }
-        return true;
+        return !downloadLocation || !fs.existsSync(downloadLocation);
     };
 
     private showSaveDialog = (item: DownloadItem) => {
@@ -424,7 +414,6 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
 
     private getSavePath = (downloadLocation: string, filename?: string) => {
         const name = isStringWithLength(filename) ? `${filename}` : 'file';
-
         return path.join(downloadLocation, name);
     };
 
@@ -439,6 +428,12 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         }
 
         return filters;
+    }
+
+    private createFilename = (item: DownloadItem): string => {
+        const defaultFilename = item.getFilename();
+        const incrementedFilenameIfExists = shouldIncrementFilename(path.join(`${Config.downloadLocation}`, defaultFilename));
+        return incrementedFilenameIfExists;
     }
 
     private readFilenameFromPath = (savePath: string) => {
