@@ -1,14 +1,27 @@
 :root {
+    --away-indicator-dark: #c79e3f;
     --button-bg: #166de0;
     --button-color: #fff;
+    --center-channel-bg: #fff;
+    --center-channel-color: #3d3c40;
     --center-channel-text: #3f4350;
+    --error-text: #d24b4e;
+    --link-color: #2389d7;
+    --online-indicator: #06d6a0;
     --sidebar-text-active-border: #579eff;
     --denim-button-bg: #1c58d9;
     --denim-sidebar-active-border: #5d89ea;
+    --denim-sidebar-header-bg: #192A4D;
     --title-color-indigo-500: #1e325c;
 
     --button-color-rgb: 255, 255, 255;
     --center-channel-color-rgb: 61, 60, 64;
     --center-channel-text-rgb: 63, 67, 80;
+    --link-color-inverted-rgb: 129, 163, 239;
     --denim-button-bg-rgb: 28, 88, 217;
+    --denim-sidebar-header-bg-rgb: 25, 42, 77;
+    --secondary-blue-rgb: 34, 64, 109;
+    --onyx-center-channel-text-rgb: 221, 223, 228;
+
+    --elevation-5: 0 12px 32px 0 rgba(0, 0, 0, 0.12);
 }

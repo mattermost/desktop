@@ -1,3 +1,5 @@
+@import '../_mixins.scss';
+
 .Carousel {
     display: flex;
     flex: 1;
@@ -34,61 +36,25 @@
 }
 
 .inFromRight {
-    animation: inFromRight 0.4s ease-in-out;
+    @include inFromRight(30);
+
+    animation: inFromRight30 0.4s ease-in-out;
 }
 
 .inFromLeft {
-    animation: inFromLeft 0.4s ease-in-out;
+    @include inFromLeft(30);
+
+    animation: inFromLeft30 0.4s ease-in-out;
 }
 
 .outToRight {
-    animation: outToRight 0.4s ease-in-out;
+    @include outToRight(30);
+
+    animation: outToRight30 0.4s ease-in-out;
 }
 
 .outToLeft {
-    animation: outToLeft 0.4s ease-in-out;
-}
+    @include outToLeft(30);
 
-@keyframes inFromRight {
-    0% {
-        transform: translateX(30%);
-        opacity: 0;
-    }
-    100% {
-        transform: translateX(0%);
-        opacity: 1;
-    }
-}
-
-@keyframes inFromLeft {
-    0% {
-        transform: translateX(-30%);
-        opacity: 0;
-    }
-    100% {
-        transform: translateX(0%);
-        opacity: 1;
-    }
-}
-
-@keyframes outToRight {
-    0% {
-        transform: translateX(0%);
-        opacity: 1;
-    }
-    100% {
-        transform: translateX(30%);
-        opacity: 0;
-    }
-}
-
-@keyframes outToLeft {
-    0% {
-        transform: translateX(0%);
-        opacity: 1;
-    }
-    100% {
-        transform: translateX(-30%);
-        opacity: 0;
-    }
+    animation: outToLeft30 0.4s ease-in-out;
 }

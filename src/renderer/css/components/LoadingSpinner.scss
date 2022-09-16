@@ -1,0 +1,36 @@
+@import url("../fonts.css");
+
+@keyframes spin-fw {
+    0% {
+       transform: rotate(0deg);
+    }
+    100% {
+       transform: rotate(359deg);
+    }
+}
+
+.LoadingSpinner {
+    .spinner {
+        margin-right: 3px;
+        animation: spin-fw 1s infinite steps(8);
+        width: 1.28571429em;
+        text-align: center;
+        display: inline-block;
+        font-family: 'FontAwesome';
+        font-size: inherit;
+        text-rendering: auto;
+        -webkit-font-smoothing: antialiased;
+
+        &::before {
+            content: '\f110';
+            display: inline-block;
+            box-sizing: border-box;
+        }
+    }
+
+    &.with-text {
+        .spinner {
+            margin-right: 5px;
+        }
+    }
+}
