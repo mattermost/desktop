@@ -204,6 +204,7 @@ body {
                         }
 
                         .DownloadsDropdown__File__Body__Details {
+                            margin-top: 2px;
                             margin-right: 8px;
                             /* 100% - thumbnail width - three dot button width - margins of first 2 elements */
                             width: calc(100% - 32px - 28px - 16px);
@@ -238,12 +239,17 @@ body {
                             border-radius: 4px;
                             color: rgba(63, 67, 80, 0.56);
                             cursor: pointer;
+                            font-size: 18px;
                             height: 28px;
                             outline: none;
-                            padding: 0;
+                            padding: 5px 0;
                             width: 28px;
 
                             &:hover {
+                                background-color: rgba(63, 67, 80, 0.08);
+                                color: rgba(63, 67, 80, 0.72)
+                            }
+                            &:active {
                                 background: rgba(28, 88, 217, 0.08);
                                 color: rgba(28, 88, 217, 1);
                             }
@@ -316,7 +322,11 @@ body {
 
                             &:hover {
                                 background: rgba(56, 111, 229, 0.08);
-                                color: rgba(28, 88, 217, 1)
+                                color: rgba(28, 88, 217, 0.72);
+                            }
+                            &:active {
+                                background: rgba(56, 111, 229, 0.08);
+                                color: rgba(28, 88, 217, 1);
                             }
                         }
                     }

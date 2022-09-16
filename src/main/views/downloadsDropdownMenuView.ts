@@ -173,11 +173,12 @@ export default class DownloadsDropdownMenuView {
     }
 
     getBounds = (width: number, height: number) => {
+        // MUST return integers
         return {
             x: this.getX(),
             y: this.getY(),
-            width,
-            height,
+            width: Math.round(width),
+            height: Math.round(height),
         };
     }
 
@@ -186,15 +187,12 @@ export default class DownloadsDropdownMenuView {
         if (result <= DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH) {
             return 0;
         }
-        return result;
+        return Math.round(result);
     }
 
     getY = () => {
         const result = TAB_BAR_HEIGHT + (this.coordinates?.y || 0) + (this.coordinates?.height || 0);
-        log.debug('DownloadsDropdownMenuView.getY', {
-            result,
-        });
-        return result;
+        return Math.round(result);
     }
 
     repositionDownloadsDropdownMenu = () => {
