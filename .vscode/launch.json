@@ -1,5 +1,5 @@
 {
-    "version": "0.2.1",
+    "version": "0.2.0",
     "configurations": [
         {
             "type": "node",
@@ -43,8 +43,8 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "E2E Tests",
-            "program": "${workspaceRoot}/node_modules/electron-mocha/bin/electron-mocha",
+            "name": "Mocha Tests",
+            "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
             "args": [
                 "-r",
                 "@babel/register",
@@ -52,10 +52,10 @@
                 "--timeout",
                 "999999",
                 "--colors",
-                "${workspaceRoot}/dist/tests/e2e_bundle.js"
+                "${workspaceRoot}/e2e/specs"
             ],
             "internalConsoleOptions": "openOnSessionStart",
-            "preLaunchTask": "prepare-e2e"
+            "preLaunchTask": "Build sources"
         }
     ]
 }
