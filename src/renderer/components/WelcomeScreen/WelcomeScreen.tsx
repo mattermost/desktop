@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useMemo} from 'react';
+import React, {useState, useEffect, useMemo} from 'react';
 import {useIntl, FormattedMessage} from 'react-intl';
 import classNames from 'classnames';
 
@@ -13,6 +13,8 @@ import clipboard from 'renderer/assets/svg/clipboard.svg';
 import Carousel from 'renderer/components/Carousel';
 import Header from 'renderer/components/Header';
 import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
+
+import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
 
 import WelcomeScreenSlide from './WelcomeScreenSlide';
 
@@ -30,6 +32,13 @@ function WelcomeScreen({
     onGetStarted = () => null,
 }: WelcomeScreenProps) {
     const {formatMessage} = useIntl();
+
+    const [transition, setTransition] = useState<'outToLeft'>();
+    const [showContent, setShowContent] = useState(false);
+
+    useEffect(() => {
+        setShowContent(true);
+    }, []);
 
     const slides = useMemo(() => [
         {
@@ -97,7 +106,11 @@ function WelcomeScreen({
     ], []);
 
     const handleOnGetStartedClick = () => {
-        onGetStarted();
+        setTransition('outToLeft');
+
+        setTimeout(() => {
+            onGetStarted();
+        }, MODAL_TRANSITION_TIMEOUT);
     };
 
     return (
@@ -110,37 +123,39 @@ function WelcomeScreen({
         >
             <LoadingBackground/>
             <Header darkMode={darkMode}/>
-            <div className='WelcomeScreen__body'>
-                <div className='WelcomeScreen__content'>
-                    <Carousel
-                        slides={slides.map(({key, title, subtitle, image, main}) => ({
-                            key,
-                            content: (
-                                <WelcomeScreenSlide
-                                    key={key}
-                                    title={title}
-                                    subtitle={subtitle}
-                                    image={image}
-                                    isMain={main}
-                                    darkMode={darkMode}
-                                />
-                            ),
-                        }))}
-                        darkMode={darkMode}
-                    />
-                    <button
-                        id='getStartedWelcomeScreen'
-                        className={classNames(
-                            'WelcomeScreen__button',
-                            'primary-button primary-medium-button',
-                            {'primary-button-inverted': darkMode},
-                        )}
-                        onClick={handleOnGetStartedClick}
-                    >
-                        {formatMessage({id: 'renderer.components.welcomeScreen.button.getStarted', defaultMessage: 'Get Started'})}
-                    </button>
+            {showContent && (
+                <div className={classNames('WelcomeScreen__body', transition)}>
+                    <div className='WelcomeScreen__content'>
+                        <Carousel
+                            slides={slides.map(({key, title, subtitle, image, main}) => ({
+                                key,
+                                content: (
+                                    <WelcomeScreenSlide
+                                        key={key}
+                                        title={title}
+                                        subtitle={subtitle}
+                                        image={image}
+                                        isMain={main}
+                                        darkMode={darkMode}
+                                    />
+                                ),
+                            }))}
+                            darkMode={darkMode}
+                        />
+                        <button
+                            id='getStartedWelcomeScreen'
+                            className={classNames(
+                                'WelcomeScreen__button',
+                                'primary-button primary-medium-button',
+                                {'primary-button-inverted': darkMode},
+                            )}
+                            onClick={handleOnGetStartedClick}
+                        >
+                            {formatMessage({id: 'renderer.components.welcomeScreen.button.getStarted', defaultMessage: 'Get Started'})}
+                        </button>
+                    </div>
                 </div>
-            </div>
+            )}
             <div className='WelcomeScreen__footer'/>
         </div>
     );

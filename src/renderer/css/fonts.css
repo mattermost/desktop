@@ -81,3 +81,10 @@
     font-weight: 300;
     src: url('../../assets/fonts/Metropolis-LightItalic.woff') format('woff');
 }
+
+@font-face {
+  font-family: 'FontAwesome';
+  font-style: normal;
+  font-weight: 300;
+  src: url('../../assets/fonts/fontawesome-webfont.woff') format('woff');
+}

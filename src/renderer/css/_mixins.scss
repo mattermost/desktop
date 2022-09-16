@@ -1,0 +1,81 @@
+@mixin inFromRight($start) {
+    @keyframes inFromRight#{$start} {
+        0% {
+            transform: translateX(#{$start + '%'});
+            opacity: 0;
+        }
+        100% {
+            transform: translateX(0%);
+            opacity: 1;
+        }
+    }
+}
+
+@mixin inFromLeft($start) {
+    @keyframes inFromLeft#{$start} {
+        0% {
+            transform: translateX(#{'-' + $start + '%'});
+            opacity: 0;
+        }
+        100% {
+            transform: translateX(0%);
+            opacity: 1;
+        }
+    }
+}
+
+@mixin outToLeft($end) {
+    @keyframes outToLeft#{$end} {
+        0% {
+            transform: translateX(0%);
+            opacity: 1;
+        }
+        100% {
+            transform: translateX(#{'-' + $end + '%'});
+            opacity: 0;
+        }
+    }
+}
+
+@mixin outToRight($end) {
+    @keyframes outToRight#{$end} {
+        0% {
+            transform: translateX(0%);
+            opacity: 1;
+        }
+        100% {
+            transform: translateX(#{$end + '%'});
+            opacity: 0;
+        }
+    }
+}
+
+@mixin shake-horizontally {
+    animation: shake-horizontally 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    backface-visibility: hidden;
+    perspective: 1000px;
+    transform: translate3d(0, 0, 0);
+}
+
+@keyframes shake-horizontally {
+    10%,
+    90% {
+        transform: translate3d(-1px, 0, 0);
+    }
+
+    20%,
+    80% {
+        transform: translate3d(2px, 0, 0);
+    }
+
+    30%,
+    50%,
+    70% {
+        transform: translate3d(-4px, 0, 0);
+    }
+
+    40%,
+    60% {
+        transform: translate3d(4px, 0, 0);
+    }
+}
