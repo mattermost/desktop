@@ -145,6 +145,7 @@ export const OPEN_DOWNLOADS_DROPDOWN_MENU = 'open-downloads-dropdown-menu';
 export const CLOSE_DOWNLOADS_DROPDOWN_MENU = 'close-downloads-dropdown-menu';
 export const TOGGLE_DOWNLOADS_DROPDOWN_MENU = 'toggle-downloads-dropdown-menu';
 export const UPDATE_DOWNLOADS_DROPDOWN_MENU = 'update-downloads-dropdown-menu';
+export const UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM = 'update-downloads-dropdown-menu-item';
 export const REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO = 'request-downloads-dropdown-menu-info';
 export const DOWNLOADS_DROPDOWN_MENU_CANCEL_DOWNLOAD = 'downloads-dropdown-menu-cancel-download';
 export const DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE = 'downloads-dropdown-menu-clear-file';

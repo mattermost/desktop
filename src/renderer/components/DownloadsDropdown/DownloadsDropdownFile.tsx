@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import {DownloadedItem} from 'types/downloads';
 import classNames from 'classnames';
 
@@ -13,10 +13,13 @@ import ThreeDotButton from './ThreeDotButton';
 import Thumbnail from './Thumbnail';
 
 type OwnProps = {
+    activeItem?: DownloadedItem;
     item: DownloadedItem;
 }
 
-const DownloadsDropdownFile = ({item}: OwnProps) => {
+const DownloadsDropdownFile = ({item, activeItem}: OwnProps) => {
+    const [threeDotButtonVisible, setThreeDotButtonVisible] = useState(false);
+
     const onFileClick = (e: React.MouseEvent<HTMLDivElement>) => {
         e.preventDefault();
 
@@ -29,6 +32,8 @@ const DownloadsDropdownFile = ({item}: OwnProps) => {
                 progressing: item.state === 'progressing',
             })}
             onClick={onFileClick}
+            onMouseEnter={() => setThreeDotButtonVisible(true)}
+            onMouseLeave={() => setThreeDotButtonVisible(false)}
         >
             <div className='DownloadsDropdown__File__Body'>
                 <Thumbnail item={item}/>
@@ -44,7 +49,11 @@ const DownloadsDropdownFile = ({item}: OwnProps) => {
                         <FileSizeAndStatus item={item}/>
                     </div>
                 </div>
-                <ThreeDotButton item={item}/>
+                <ThreeDotButton
+                    item={item}
+                    activeItem={activeItem}
+                    visible={threeDotButtonVisible}
+                />
             </div>
             <ProgressBar item={item}/>
         </div>

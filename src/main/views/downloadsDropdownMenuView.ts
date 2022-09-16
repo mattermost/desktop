@@ -18,6 +18,7 @@ import {
     REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO,
     TOGGLE_DOWNLOADS_DROPDOWN_MENU,
     UPDATE_DOWNLOADS_DROPDOWN_MENU,
+    UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM,
 } from 'common/communication';
 import {
     DOWNLOADS_DROPDOWN_FULL_WIDTH,
@@ -110,6 +111,7 @@ export default class DownloadsDropdownMenuView {
             this.item,
             this.darkMode,
         );
+        ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM, true, this.item);
         this.repositionDownloadsDropdownMenu();
     }
 
@@ -138,6 +140,8 @@ export default class DownloadsDropdownMenuView {
         log.debug('DownloadsDropdownMenuView.handleClose');
 
         this.open = false;
+        this.item = undefined;
+        ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM);
         this.view.setBounds(this.getBounds(0, 0));
         WindowManager.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN_MENU);
     }

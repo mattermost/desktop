@@ -15,6 +15,7 @@ import {
     REQUEST_CLEAR_DOWNLOADS_DROPDOWN,
     REQUEST_DOWNLOADS_DROPDOWN_INFO,
     UPDATE_DOWNLOADS_DROPDOWN,
+    UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM,
 } from 'common/communication';
 import {TAB_BAR_HEIGHT, DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, DOWNLOADS_DROPDOWN_FULL_WIDTH} from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
@@ -23,10 +24,11 @@ import WindowManager from '../windows/windowManager';
 import downloadsManager from 'main/downloadsManager';
 
 export default class DownloadsDropdownView {
-    view: BrowserView;
     bounds?: Electron.Rectangle;
-    downloads: DownloadedItems;
     darkMode: boolean;
+    downloads: DownloadedItems;
+    item: DownloadedItem | undefined;
+    view: BrowserView;
     window: BrowserWindow;
     windowBounds: Electron.Rectangle;
 
@@ -34,6 +36,7 @@ export default class DownloadsDropdownView {
         this.downloads = downloads;
         this.window = window;
         this.darkMode = darkMode;
+        this.item = undefined;
 
         this.windowBounds = this.window.getContentBounds();
         this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT);
@@ -60,6 +63,7 @@ export default class DownloadsDropdownView {
         ipcMain.on(REQUEST_CLEAR_DOWNLOADS_DROPDOWN, this.clearDownloads);
         ipcMain.on(DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER, this.showFileInFolder);
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN, this.updateDownloads);
+        ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM, this.updateDownloadsDropdownMenuItem);
     }
 
     updateDownloads = (event: IpcMainEvent, downloads: DownloadedItems) => {
@@ -67,6 +71,12 @@ export default class DownloadsDropdownView {
 
         this.downloads = downloads;
 
+        this.updateDownloadsDropdown();
+    }
+
+    updateDownloadsDropdownMenuItem = (event: IpcMainEvent, item?: DownloadedItem) => {
+        log.debug('DownloadsDropdownView.updateDownloadsDropdownMenuItem', {item});
+        this.item = item;
         this.updateDownloadsDropdown();
     }
 
@@ -97,6 +107,7 @@ export default class DownloadsDropdownView {
             this.downloads,
             this.darkMode,
             this.windowBounds,
+            this.item,
         );
     }
 
@@ -134,11 +145,12 @@ export default class DownloadsDropdownView {
     }
 
     getBounds = (width: number, height: number) => {
+        // Must always use integers
         return {
             x: this.getX(this.windowBounds.width),
             y: this.getY(),
-            width,
-            height,
+            width: Math.round(width),
+            height: Math.round(height),
         };
     }
 
@@ -147,11 +159,11 @@ export default class DownloadsDropdownView {
         if (result <= DOWNLOADS_DROPDOWN_WIDTH) {
             return 0;
         }
-        return result;
+        return Math.round(result);
     }
 
     getY = () => {
-        return TAB_BAR_HEIGHT;
+        return Math.round(TAB_BAR_HEIGHT);
     }
 
     repositionDownloadsDropdown = () => {

@@ -4,13 +4,17 @@
 import React, {useRef} from 'react';
 import {DownloadedItem} from 'types/downloads';
 
+import classNames from 'classnames';
+
 import {TOGGLE_DOWNLOADS_DROPDOWN_MENU} from 'common/communication';
 
 type OwnProps = {
+    activeItem?: DownloadedItem;
     item: DownloadedItem;
+    visible: boolean;
 }
 
-const ThreeDotButton = ({item}: OwnProps) => {
+const ThreeDotButton = ({item, activeItem, visible}: OwnProps) => {
     const buttonElement = useRef<HTMLButtonElement>(null);
 
     const onClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -29,7 +33,10 @@ const ThreeDotButton = ({item}: OwnProps) => {
 
     return (
         <button
-            className='DownloadsDropdown__File__Body__ThreeDotButton'
+            className={classNames('DownloadsDropdown__File__Body__ThreeDotButton', {
+                active: item.location && (item.location === activeItem?.location),
+                visible,
+            })}
             onClick={onClick}
             ref={buttonElement}
         >

@@ -204,7 +204,6 @@ body {
                         }
 
                         .DownloadsDropdown__File__Body__Details {
-                            margin-top: 2px;
                             margin-right: 8px;
                             /* 100% - thumbnail width - three dot button width - margins of first 2 elements */
                             width: calc(100% - 32px - 28px - 16px);
@@ -222,6 +221,7 @@ body {
                                     font-weight: 600;
                                 }
                                 &.DownloadsDropdown__File__Body__Details__FileSizeAndStatus {
+                                    margin-top: 2px;
                                     color: rgba(63, 67, 80, 0.64);
                                     font-size: 10px;
                                     font-weight: 400;
@@ -239,12 +239,21 @@ body {
                             border-radius: 4px;
                             color: rgba(63, 67, 80, 0.56);
                             cursor: pointer;
+                            visibility: hidden;
                             font-size: 18px;
                             height: 28px;
                             outline: none;
                             padding: 5px 0;
                             width: 28px;
 
+                            &.visible {
+                                visibility: visible;
+                            }
+                            &.active {
+                                visibility: visible;
+                                background: rgba(28, 88, 217, 0.08);
+                                color: rgba(28, 88, 217, 1);
+                            }
                             &:hover {
                                 background-color: rgba(63, 67, 80, 0.08);
                                 color: rgba(63, 67, 80, 0.72)
@@ -326,6 +335,9 @@ body {
                             }
                             &:active {
                                 background: rgba(56, 111, 229, 0.08);
+                                color: rgba(28, 88, 217, 1);
+                            }
+                            &.active {
                                 color: rgba(28, 88, 217, 1);
                             }
                         }

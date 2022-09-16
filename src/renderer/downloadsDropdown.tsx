@@ -24,6 +24,7 @@ type State = {
     downloads: DownloadedItem[];
     darkMode?: boolean;
     windowBounds?: Electron.Rectangle;
+    item?: DownloadedItem;
 }
 
 class DownloadsDropdown extends React.PureComponent<Record<string, never>, State> {
@@ -43,13 +44,14 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
 
     handleMessageEvent = (event: MessageEvent) => {
         if (event.data.type === UPDATE_DOWNLOADS_DROPDOWN) {
-            const {downloads, darkMode, windowBounds} = event.data.data;
+            const {downloads, darkMode, windowBounds, item} = event.data.data;
             const newDownloads = Object.values<DownloadedItem>(downloads);
             newDownloads.sort((a, b) => b.addedAt - a.addedAt);
             this.setState({
                 downloads: newDownloads,
                 darkMode,
                 windowBounds,
+                item,
             });
         }
     }
@@ -99,6 +101,7 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
                                 <DownloadsDropdownFile
                                     item={downloadItem}
                                     key={downloadItem.filename}
+                                    activeItem={this.state.item}
                                 />
                             );
                         })}

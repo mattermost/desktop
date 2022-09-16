@@ -58,6 +58,6 @@ window.addEventListener('message', async (event) => {
 /**
  * main => renderer
  */
-ipcRenderer.on(UPDATE_DOWNLOADS_DROPDOWN, (event, downloads, darkMode, windowBounds) => {
-    window.postMessage({type: UPDATE_DOWNLOADS_DROPDOWN, data: {downloads, darkMode, windowBounds}}, window.location.href);
+ipcRenderer.on(UPDATE_DOWNLOADS_DROPDOWN, (event, downloads, darkMode, windowBounds, item) => {
+    window.postMessage({type: UPDATE_DOWNLOADS_DROPDOWN, data: {downloads, darkMode, windowBounds, item}}, window.location.href);
 });
