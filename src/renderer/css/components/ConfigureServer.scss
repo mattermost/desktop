@@ -1,0 +1,341 @@
+@import url("../_css_variables.scss");
+@import url("../fonts.css");
+@import '../_mixins.scss';
+
+.alternate-link {
+    margin-left: auto;
+    margin-bottom: 18px;
+    font-family: 'Open Sans';
+
+    .alternate-link__message {
+        color: var(--center-channel-text);
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 16px;
+    }
+
+    .alternate-link__link {
+        padding-left: 4px;
+    }
+
+    &.inFromRight {
+        @include inFromRight(40);
+
+        animation: inFromRight40 0.5s ease-in-out;
+    }
+
+    &.outToLeft {
+        @include outToLeft(40);
+
+        animation: outToLeft40 0.4s ease-in-out;
+        opacity: 0;
+    }
+}
+
+.alternate-link-inverted {
+    .alternate-link__message {
+        color: var(--button-color);
+    }
+}
+
+.ConfigureServer {
+    flex-direction: column;
+    z-index: 20;
+    
+    * {
+        z-index: 21;
+    }
+
+    .ConfigureServer__body {
+        display: flex;
+        flex-direction: column;
+        margin: auto;
+        font-family: 'Open Sans';
+
+        .ConfigureServer__content {
+            display: flex;
+            height: fit-content;
+            flex: 1;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 42px;
+
+            .ConfigureServer__message {
+                display: flex;
+                width: 540px;
+                flex-flow: column;
+                align-self: flex-start;
+                z-index: 22;
+                -webkit-font-smoothing: antialiased;
+
+                .ConfigureServer__message-title {
+                    padding-right: 60px;
+                    color: var(--title-color-indigo-500);
+                    font-family: 'Metropolis';
+                    font-size: 80px;
+                    font-weight: 600;
+                    letter-spacing: -0.05em;
+                    line-height: 88px;
+                }
+
+                .ConfigureServer__message-subtitle {
+                    color: rgba(var(--center-channel-text-rgb), 0.72);
+                    font-size: 18px;
+                    font-weight: 400;
+                    line-height: 28px;
+                }
+
+                .ConfigureServer__message-img {
+                    position: relative;
+                    align-self: flex-end;
+
+                    img {
+                        position: absolute;
+                        bottom: -230px;
+                        left: -225px;
+                        display: block;
+                    }
+                }
+
+                &.inFromRight {
+                    .ConfigureServer__message-title,
+                    .ConfigureServer__message-subtitle {
+                        @include inFromRight(30);
+
+                        animation: inFromRight30 0.5s ease-in-out;
+                    }
+
+                    .ConfigureServer__message-img img {
+                        @include inFromRight(70);
+
+                        animation: inFromRight70 0.5s ease-in-out;
+                    }
+                }
+
+                &.outToLeft {
+                    .ConfigureServer__message-title,
+                    .ConfigureServer__message-subtitle {
+                        @include outToLeft(30);
+
+                        animation: outToLeft30 0.4s ease-in-out;
+                        opacity: 0;
+                    }
+
+                    .ConfigureServer__message-img img {
+                        @include outToLeft(70);
+
+                        animation: outToLeft70 0.4s ease-in-out;
+                        opacity: 0;
+                    }
+                }
+            }
+
+            .ConfigureServer__card {
+                width: 540px;
+                box-sizing: border-box;
+                border: 1px solid rgba(var(--center-channel-text-rgb), 0.08);
+                margin-left: 60px;
+                background-color: var(--center-channel-bg);
+                border-radius: 8px;
+                box-shadow: var(--elevation-5);
+
+                .ConfigureServer__card-content {
+                    display: flex;
+                    flex: 1;
+                    flex-flow: column;
+                    padding: 48px 56px;
+                    border: none;
+                    box-shadow: none;
+
+                    &:focus-visible {
+                        outline: 0;
+                    }
+
+                    .ConfigureServer__card-title {
+                        color: var(--center-channel-text);
+                        font-family: 'Metropolis';
+                        font-size: 22px;
+                        font-style: normal;
+                        font-weight: 600;
+                        line-height: 28px;
+                        margin-bottom: 32px;
+                    }
+
+                    .ConfigureServer__card-form {
+                        .ConfigureServer__card-form-input-container {
+                            margin-top: 22px;
+                        }
+
+                        .ConfigureServer__card-form-button {
+                            width: 100%;
+                            margin-top: 30px;
+                        }
+                    }
+                }
+
+                &.inFromRight {
+                    @include inFromRight(40);
+
+                    animation: inFromRight40 0.5s ease-in-out;
+                }
+
+                &.outToLeft {
+                    @include outToLeft(40);
+
+                    animation: outToLeft40 0.4s ease-in-out;
+                    opacity: 0;
+                }
+
+                &.with-error {
+                    @include shake-horizontally;
+                }
+            }
+        }
+    }
+
+    .ConfigureServer__footer {
+        display: block;
+        width: 100%;
+        height: 100px;
+    }
+}
+
+.ConfigureServer-inverted {
+    .ConfigureServer__body .ConfigureServer__content {
+        .ConfigureServer__message {
+            .ConfigureServer__message-title {
+                color: var(--button-color);
+            }
+
+            .ConfigureServer__message-subtitle {
+                color: rgba(var(--button-color-rgb), 0.72);
+            }
+        }
+
+        .ConfigureServer__card {
+            border: 1px solid rgba(var(--button-color-rgb), 0.08);
+            background-color: var(--denim-sidebar-header-bg);
+
+            .ConfigureServer__card-content .ConfigureServer__card-title {
+                color: var(--button-color);
+            }
+        }
+    }
+}
+
+@media screen and (min-width: 1680px) {
+    .ConfigureServer {
+        .ConfigureServer__body .ConfigureServer__content {
+            .ConfigureServer__message,
+            .ConfigureServer__card {
+                width: 610px;
+            }
+
+            .ConfigureServer__message .ConfigureServer__message-title {
+                padding-right: 130px;
+                margin-top: 48px;
+            }
+        }
+    }
+}
+
+@media screen and (max-width: 1199px) {
+    .alternate-link {
+        margin-bottom: 0;
+    }
+
+    .ConfigureServer {
+        .ConfigureServer__body .ConfigureServer__content {
+            flex-direction: column;
+
+            .ConfigureServer__message,
+            .ConfigureServer__card {
+                width: 640px;
+            }
+
+            .ConfigureServer__message {
+                align-self: center;
+                padding: 24px;
+
+                .ConfigureServer__message-title {
+                    padding-right: 210px;
+                    font-size: 64px;
+                    line-height: 76px;
+                }
+
+                .ConfigureServer__message-subtitle {
+                    margin: 0;
+                }
+
+                .ConfigureServer__message-img {
+                    display: none;
+                }
+            }
+
+            .ConfigureServer__card {
+                border: none;
+                margin: 0;
+                background-color: unset;
+                box-shadow: none;
+
+                .ConfigureServer__card-content {
+                    padding: 16px 24px;
+
+                    .ConfigureServer__card-title {
+                        display: none;
+                    }
+
+                    .ConfigureServer__card-form {
+                        .ConfigureServer__card-form-input {
+                            margin-top: 0;
+                            background-color: var(--center-channel-bg);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    .ConfigureServer-inverted {
+        .ConfigureServer__body .ConfigureServer__content .ConfigureServer__card {
+            .ConfigureServer__card-content .ConfigureServer__card-form {
+                .ConfigureServer__card-form-input {
+                    background-color: var(--denim-sidebar-header-bg);
+                }
+
+                .disabled .ConfigureServer__card-form-input {
+                    background-color: rgba(var(--denim-sidebar-header-bg-rgb), 0.54);
+                }
+            }
+        }
+    }
+}
+
+@media screen and (max-width: 699px) {
+    .ConfigureServer {
+        .ConfigureServer__body {
+            margin: auto 0;
+
+            .ConfigureServer__content {
+                min-width: 375px;
+
+                .ConfigureServer__card {
+                    width: 100%;
+                }
+
+                .ConfigureServer__message {
+                    width: auto;
+                    align-self: flex-start;
+                    padding: 24px;
+
+                    .ConfigureServer__message-title {
+                        max-width: 271px;
+                        padding-right: 0;
+                        font-size: 45px;
+                        line-height: 56px;
+                    }
+                }
+            }
+        }
+    }
+}

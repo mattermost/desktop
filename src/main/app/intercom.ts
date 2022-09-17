@@ -238,10 +238,16 @@ export function handleWelcomeScreenModal() {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal('welcomeScreen', html, modalPreload, {}, mainWindow, true);
+    const modalPromise = ModalManager.addModal<TeamWithIndex[], Team>('welcomeScreen', html, modalPreload, Config.teams.map((team, index) => ({...team, index})), mainWindow, Config.teams.length === 0);
     if (modalPromise) {
-        modalPromise.then(() => {
-            handleNewServerModal();
+        modalPromise.then((data) => {
+            const teams = Config.teams;
+            const order = teams.length;
+            const newTeam = getDefaultTeamWithTabsFromTeam({...data, order});
+            teams.push(newTeam);
+            Config.set('teams', teams);
+            updateServerInfos([newTeam]);
+            WindowManager.switchServer(newTeam.name, true);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
