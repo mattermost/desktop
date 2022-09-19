@@ -2,6 +2,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+/* eslint-disable max-lines */
+
 import classNames from 'classnames';
 import React, {Fragment} from 'react';
 import {Container, Row} from 'react-bootstrap';
@@ -553,13 +555,14 @@ class MainPage extends React.PureComponent<Props, State> {
         );
 
         const views = () => {
+            if (!this.props.teams.length) {
+                return null;
+            }
             let component;
             const tabStatus = this.getTabViewStatus();
             if (!tabStatus) {
-                if (this.state.activeTabName) {
+                if (this.state.activeTabName || this.state.activeServerName) {
                     console.error(`Not tabStatus for ${this.state.activeTabName}`);
-                } else {
-                    console.error('No tab status, tab doesn\'t exist anymore');
                 }
                 return null;
             }
