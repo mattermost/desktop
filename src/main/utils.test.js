@@ -30,9 +30,10 @@ jest.mock('path', () => {
 jest.mock('fs', () => ({
     accessSync: jest.fn().mockImplementation(() => {
         throw new Error('file missing');
-    }).mockImplementationOnce(() => {
-        return '';
-    }),
+    }).mockImplementationOnce(() => {}),
+    constants: {
+        F_OK: 0,
+    },
 }));
 
 describe('main/utils', () => {
