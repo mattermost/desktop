@@ -3,6 +3,8 @@
 
 'use strict';
 
+import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
+
 import {DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT, DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, TAB_BAR_HEIGHT} from 'common/utils/constants';
 
 import DownloadsDropdownMenuView from './downloadsDropdownMenuView';
@@ -43,6 +45,9 @@ jest.mock('electron', () => {
         Notification: NotificationMock,
     };
 });
+jest.mock('macos-notification-state', () => ({
+    getDoNotDisturb: jest.fn(),
+}));
 jest.mock('main/windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
 }));
@@ -59,6 +64,11 @@ describe('main/views/DownloadsDropdownMenuView', () => {
         setTopBrowserView: jest.fn(),
     };
     const downloadsDropdownMenuView = new DownloadsDropdownMenuView(window, {}, false);
+
+    beforeEach(() => {
+        getDarwinDoNotDisturb.mockReturnValue(false);
+    });
+
     describe('getBounds', () => {
         it('should be placed top-left inside the downloads dropdown if coordinates not used', () => {
             expect(downloadsDropdownMenuView.getBounds(DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT)).toStrictEqual({x: 800 - DOWNLOADS_DROPDOWN_FULL_WIDTH - DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, y: TAB_BAR_HEIGHT, width: DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, height: DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT});

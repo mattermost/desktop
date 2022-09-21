@@ -3,6 +3,8 @@
 
 'use strict';
 
+import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
+
 import {localizeMessage} from 'main/i18nManager';
 import WindowManager from 'main/windows/windowManager';
 
@@ -38,6 +40,9 @@ jest.mock('fs', () => ({
     existsSync: jest.fn().mockReturnValue(false),
     readFileSync: jest.fn().mockImplementation((text) => text),
     writeFile: jest.fn(),
+}));
+jest.mock('macos-notification-state', () => ({
+    getDoNotDisturb: jest.fn(),
 }));
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
@@ -102,6 +107,9 @@ describe('main/menus/app', () => {
             helpLink: 'http://link-to-help.site.com',
         },
     };
+    beforeEach(() => {
+        getDarwinDoNotDisturb.mockReturnValue(false);
+    });
 
     describe('mac only', () => {
         let originalPlatform;

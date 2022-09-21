@@ -3,6 +3,8 @@
 
 'use strict';
 
+import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
+
 import {DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, TAB_BAR_HEIGHT} from 'common/utils/constants';
 
 import DownloadsDropdownView from './downloadsDropdownView';
@@ -15,6 +17,9 @@ jest.mock('fs', () => ({
     existsSync: jest.fn().mockReturnValue(false),
     readFileSync: jest.fn().mockImplementation((text) => text),
     writeFile: jest.fn(),
+}));
+jest.mock('macos-notification-state', () => ({
+    getDoNotDisturb: jest.fn(),
 }));
 jest.mock('electron', () => {
     class NotificationMock {
@@ -57,6 +62,9 @@ jest.mock('main/windows/windowManager', () => ({
 }));
 
 describe('main/views/DownloadsDropdownView', () => {
+    beforeEach(() => {
+        getDarwinDoNotDisturb.mockReturnValue(false);
+    });
     describe('getBounds', () => {
         it('should be placed far right when window is large enough', () => {
             const window = {
