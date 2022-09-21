@@ -3,6 +3,8 @@
 
 import path from 'path';
 
+import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
+
 import {DownloadsManager} from 'main/downloadsManager';
 
 jest.mock('electron', () => {
@@ -55,34 +57,17 @@ jest.mock('path', () => {
         parse: jest.fn(),
     };
 });
+jest.mock('fs', () => ({
+    existsSync: jest.fn().mockReturnValue(false),
+    readFileSync: jest.fn().mockImplementation((text) => text),
+    writeFile: jest.fn(),
+}));
+jest.mock('macos-notification-state', () => ({
+    getDoNotDisturb: jest.fn(),
+}));
 jest.mock('main/windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
 }));
-jest.mock('common/JsonFileManager', () => {
-    class JsonFileManagerMock {
-        jsonFile;
-        json;
-        constructor(file) {
-            this.jsonFile = file;
-            this.json = file;
-        }
-        writeToFile = jest.fn().mockImplementation(() => {
-            this.jsonFile = this.json;
-        });
-        setJson = jest.fn().mockImplementation((json) => {
-            this.json = json;
-            this.writeToFile();
-        })
-        setValue = jest.fn().mockImplementation((key, value) => {
-            this.json[key] = value;
-            this.writeToFile();
-        });
-        getValue = jest.fn().mockImplementation((key) => {
-            return this.json[key];
-        });
-    }
-    return JsonFileManagerMock;
-});
 jest.mock('common/config', () => {
     const original = jest.requireActual('common/config');
     return {
@@ -116,11 +101,15 @@ const downloadsJson = {
     },
 };
 describe('main/downloadsManager', () => {
+    beforeEach(() => {
+        getDarwinDoNotDisturb.mockReturnValue(false);
+    });
+
     it('should be initialized', () => {
         expect(new DownloadsManager({})).toHaveProperty('downloads', {});
     });
     it('should mark "completed" files that were deleted as "deleted"', () => {
-        expect(new DownloadsManager(downloadsJson)).toHaveProperty('downloads', {...downloadsJson, 'file1.txt': {...downloadsJson['file1.txt'], state: 'deleted'}});
+        expect(new DownloadsManager(JSON.stringify(downloadsJson))).toHaveProperty('downloads', {...downloadsJson, 'file1.txt': {...downloadsJson['file1.txt'], state: 'deleted'}});
     });
     it('should handle a new download', () => {
         const dl = new DownloadsManager({});
