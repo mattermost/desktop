@@ -15,8 +15,11 @@ import {initialize} from './initialize';
 import {clearAppCache, getDeeplinkingURL, wasUpdated} from './utils';
 
 jest.mock('fs', () => ({
-    existsSync: jest.fn(),
     unlinkSync: jest.fn(),
+    existsSync: jest.fn().mockReturnValue(false),
+    readFileSync: jest.fn().mockImplementation((text) => text),
+    writeFile: jest.fn(),
+
 }));
 
 jest.mock('path', () => {
@@ -146,31 +149,6 @@ jest.mock('main/windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
     getServerNameByWebContentsId: jest.fn(),
 }));
-jest.mock('common/JsonFileManager', () => {
-    class JsonFileManagerMock {
-        jsonFile;
-        json;
-        constructor(file) {
-            this.jsonFile = file;
-            this.json = {};
-        }
-        writeToFile = jest.fn().mockImplementation(() => {
-            this.jsonFile = this.json;
-        });
-        setJson = jest.fn().mockImplementation((json) => {
-            this.json = json;
-            this.writeToFile();
-        })
-        setValue = jest.fn().mockImplementation((key, value) => {
-            this.json[key] = value;
-            this.writeToFile();
-        });
-        getValue = jest.fn().mockImplementation((key) => {
-            return this.json[key];
-        });
-    }
-    return JsonFileManagerMock;
-});
 describe('main/app/initialize', () => {
     beforeEach(() => {
         parseArgs.mockReturnValue({});

@@ -34,44 +34,21 @@ jest.mock('electron', () => {
         Notification: NotificationMock,
     };
 });
+jest.mock('fs', () => ({
+    existsSync: jest.fn().mockReturnValue(false),
+    readFileSync: jest.fn().mockImplementation((text) => text),
+    writeFile: jest.fn(),
+}));
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
-
 jest.mock('main/windows/windowManager', () => ({
     getCurrentTeamName: jest.fn(),
     sendToRenderer: jest.fn(),
 }));
-
 jest.mock('common/tabs/TabView', () => ({
     getTabDisplayName: (name) => name,
 }));
-
-jest.mock('common/JsonFileManager', () => {
-    class JsonFileManagerMock {
-        jsonFile;
-        json;
-        constructor(file) {
-            this.jsonFile = file;
-            this.json = {};
-        }
-        writeToFile = jest.fn().mockImplementation(() => {
-            this.jsonFile = this.json;
-        });
-        setJson = jest.fn().mockImplementation((json) => {
-            this.json = json;
-            this.writeToFile();
-        })
-        setValue = jest.fn().mockImplementation((key, value) => {
-            this.json[key] = value;
-            this.writeToFile();
-        });
-        getValue = jest.fn().mockImplementation((key) => {
-            return this.json[key];
-        });
-    }
-    return JsonFileManagerMock;
-});
 
 describe('main/menus/app', () => {
     const config = {
