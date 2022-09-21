@@ -142,10 +142,16 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     showFileInFolder = (item?: DownloadedItem) => {
         log.debug('DownloadsDropdownView.showFileInFolder', {item});
 
-        if (item && fs.existsSync(item.location)) {
+        if (!item) {
+            log.debug('DownloadsDropdownView.showFileInFolder', 'ITEM_UNDEFINED');
+            return;
+        }
+
+        if (fs.existsSync(item.location)) {
             shell.showItemInFolder(item.location);
             return;
         }
+        this.markFileAsDeleted(item);
 
         if (Config.downloadLocation) {
             shell.openPath(Config.downloadLocation);
@@ -158,13 +164,19 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     openFile = (item?: DownloadedItem) => {
         log.debug('DownloadsDropdownView.openFile', {item});
 
-        if (item && fs.existsSync(item.location)) {
+        if (!item) {
+            log.debug('DownloadsDropdownView.openFile', 'FILE_UNDEFINED');
+            return;
+        }
+
+        if (fs.existsSync(item.location)) {
             shell.openPath(item.location).catch((err) => {
                 log.debug('DownloadsDropdownView.openFileError', {err});
                 this.showFileInFolder(item);
             });
         } else {
             log.debug('DownloadsDropdownView.openFile', 'COULD_NOT_OPEN_FILE');
+            this.markFileAsDeleted(item);
             this.showFileInFolder(item);
         }
     }
@@ -231,6 +243,13 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         this.open = true;
         ipcMain.emit(OPEN_DOWNLOADS_DROPDOWN);
         WindowManager.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
+    }
+
+    private markFileAsDeleted = (item: DownloadedItem) => {
+        const fileId = this.getDownloadedFileId(item);
+        const file = this.downloads[fileId];
+        file.state = 'deleted';
+        this.save(fileId, file);
     }
 
     private toggleAppMenuDownloadsEnabled = (value: boolean) => {
