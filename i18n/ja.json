@@ -251,5 +251,6 @@
     "renderer.components.configureServer.name.info": "サーバーリストに表示される名前",
     "renderer.components.configureServer.connect.saving": "接続しています…",
     "renderer.components.configureServer.connect.default": "接続する",
-    "renderer.components.configureServer.cardtitle": "サーバーの詳細を入力してください"
+    "renderer.components.configureServer.cardtitle": "サーバーの詳細を入力してください",
+    "renderer.components.configureServer.subtitle": "あなたの最初のサーバーをセットアップし<br></br>チームのコミュニケーションHubへ接続しましょう"
 }
