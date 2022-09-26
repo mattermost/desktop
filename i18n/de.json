@@ -240,5 +240,17 @@
     "renderer.components.welcomeScreen.slides.boards.title": "Boards",
     "renderer.components.welcomeScreen.slides.boards.subtitle": "Liefere jedesmal pünktlich mit einer Projekt- und Aufgabemanagementlösung, die für digitale Abläufe entwickelt wurde.",
     "renderer.components.welcomeScreen.button.getStarted": "Loslegen",
-    "renderer.components.mainPage.titleBar": "Mattermost"
+    "renderer.components.mainPage.titleBar": "Mattermost",
+    "renderer.components.saveButton.saving": "Wird gespeichert",
+    "renderer.components.saveButton.save": "Speichern",
+    "renderer.components.input.required": "Dieses Feld ist erforderlich",
+    "renderer.components.configureServer.url.placeholder": "Server URL",
+    "renderer.components.configureServer.url.info": "Die URL deines Mattermost-Servers",
+    "renderer.components.configureServer.title": "Lass uns mit einem Server verbinden",
+    "renderer.components.configureServer.subtitle": "Richte deine ersten Server ein, um eine Verbindung mit dem Kommunikationszentrum deines<br></br>Teams herzustellen",
+    "renderer.components.configureServer.name.placeholder": "Anzeigename des Servers",
+    "renderer.components.configureServer.name.info": "Der Name, der in deiner Serverliste angezeigt wird",
+    "renderer.components.configureServer.connect.saving": "Verbinde…",
+    "renderer.components.configureServer.connect.default": "Verbinden",
+    "renderer.components.configureServer.cardtitle": "Gib deine Serverdaten ein"
 }
