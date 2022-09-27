@@ -4,6 +4,8 @@
 import {EventEmitter} from 'events';
 import {BrowserWindow} from 'electron';
 
+import {CALLS_WIDGET_SHARE_SCREEN} from 'common/communication';
+
 import CallsWidgetWindow from './callsWidgetWindow';
 
 jest.mock('electron', () => ({
@@ -20,6 +22,7 @@ describe('main/windows/callsWidgetWindow', () => {
             callID: 'test',
             siteURL: 'http://localhost:8065',
             title: '',
+            serverName: 'test',
         };
 
         const mainWindow = {
@@ -209,6 +212,25 @@ describe('main/windows/callsWidgetWindow', () => {
                 width: 280,
                 height: 86,
             });
+        });
+
+        it('getServerName', () => {
+            const widgetWindow = new CallsWidgetWindow(mainWindow, widgetConfig);
+            expect(widgetWindow.getServerName()).toBe('test');
+        });
+
+        it('onShareScreen', () => {
+            baseWindow.webContents = {
+                send: jest.fn(),
+            };
+
+            const widgetWindow = new CallsWidgetWindow(mainWindow, widgetConfig);
+            const message = {
+                sourceID: 'test',
+                withAudio: false,
+            };
+            widgetWindow.onShareScreen(null, '', message);
+            expect(widgetWindow.win.webContents.send).toHaveBeenCalledWith(CALLS_WIDGET_SHARE_SCREEN, message);
         });
     });
 });

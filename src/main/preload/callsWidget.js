@@ -8,6 +8,10 @@ import {ipcRenderer} from 'electron';
 import {
     CALLS_LEAVE_CALL,
     CALLS_WIDGET_RESIZE,
+    CALLS_WIDGET_SHARE_SCREEN,
+    DESKTOP_SOURCES_RESULT,
+    DESKTOP_SOURCES_MODAL_REQUEST,
+    DISPATCH_GET_DESKTOP_SOURCES,
 } from 'common/communication';
 
 window.addEventListener('message', ({origin, data = {}} = {}) => {
@@ -18,10 +22,50 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
     }
 
     switch (type) {
+    case 'get-app-version': {
+        ipcRenderer.invoke('get-app-version').then(({name, version}) => {
+            window.postMessage(
+                {
+                    type: 'register-desktop',
+                    message: {
+                        name,
+                        version,
+                    },
+                },
+                window.location.origin,
+            );
+        });
+        break;
+    }
+    case 'get-desktop-sources': {
+        ipcRenderer.send(DISPATCH_GET_DESKTOP_SOURCES, 'widget', message);
+        break;
+    }
+    case DESKTOP_SOURCES_MODAL_REQUEST:
     case CALLS_WIDGET_RESIZE:
     case CALLS_LEAVE_CALL: {
         ipcRenderer.send(type, message);
         break;
     }
     }
+});
+
+ipcRenderer.on(DESKTOP_SOURCES_RESULT, (event, sources) => {
+    window.postMessage(
+        {
+            type: DESKTOP_SOURCES_RESULT,
+            message: sources,
+        },
+        window.location.origin,
+    );
+});
+
+ipcRenderer.on(CALLS_WIDGET_SHARE_SCREEN, (event, message) => {
+    window.postMessage(
+        {
+            type: CALLS_WIDGET_SHARE_SCREEN,
+            message,
+        },
+        window.location.origin,
+    );
 });

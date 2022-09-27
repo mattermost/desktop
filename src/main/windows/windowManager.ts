@@ -31,6 +31,7 @@ import {
     VIEW_FINISHED_RESIZING,
     CALLS_JOIN_CALL,
     CALLS_LEAVE_CALL,
+    DESKTOP_SOURCES_MODAL_REQUEST,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
@@ -84,6 +85,7 @@ export class WindowManager {
         ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
         ipcMain.on(CALLS_JOIN_CALL, this.createCallsWidgetWindow);
         ipcMain.on(CALLS_LEAVE_CALL, () => this.callsWidgetWindow?.close());
+        ipcMain.on(DESKTOP_SOURCES_MODAL_REQUEST, this.handleDesktopSourcesModalRequest);
     }
 
     handleUpdateConfig = () => {
@@ -107,9 +109,21 @@ export class WindowManager {
             siteURL: currentView.serverInfo.remoteInfo.siteURL!,
             callID: msg.callID,
             title: msg.title,
+            serverName: this.currentServerName!,
         });
 
         this.callsWidgetWindow.on('closed', () => delete this.callsWidgetWindow);
+    }
+
+    handleDesktopSourcesModalRequest = () => {
+        log.debug('WindowManager.handleDesktopSourcesModalRequest');
+
+        if (this.callsWidgetWindow) {
+            this.switchServer(this.callsWidgetWindow?.getServerName());
+            this.mainWindow?.focus();
+            const currentView = this.viewManager?.getCurrentView();
+            currentView?.view.webContents.send(DESKTOP_SOURCES_MODAL_REQUEST);
+        }
     }
 
     showSettingsWindow = () => {
@@ -753,19 +767,26 @@ export class WindowManager {
     handleGetDesktopSources = async (event: IpcMainEvent, viewName: string, opts: Electron.SourcesOptions) => {
         log.debug('WindowManager.handleGetDesktopSources', {viewName, opts});
 
+        const globalWidget = viewName === 'widget' && this.callsWidgetWindow;
         const view = this.viewManager?.views.get(viewName);
-        if (!view) {
+        if (!view && !globalWidget) {
             return;
         }
 
         desktopCapturer.getSources(opts).then((sources) => {
-            view.view.webContents.send(DESKTOP_SOURCES_RESULT, sources.map((source) => {
+            const message = sources.map((source) => {
                 return {
                     id: source.id,
                     name: source.name,
                     thumbnailURL: source.thumbnail.toDataURL(),
                 };
-            }));
+            });
+
+            if (view) {
+                view.view.webContents.send(DESKTOP_SOURCES_RESULT, message);
+            } else {
+                this.callsWidgetWindow?.win.webContents.send(DESKTOP_SOURCES_RESULT, message);
+            }
         });
     }
 

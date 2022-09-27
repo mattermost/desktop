@@ -4,6 +4,7 @@ export type CallsWidgetWindowConfig = {
     siteURL: string;
     callID: string;
     title: string;
+    serverName: string;
 }
 
 export type CallsJoinCallMessage = {
@@ -15,4 +16,9 @@ export type CallsWidgetResizeMessage = {
     element: string;
     width: number;
     height: number;
+}
+
+export type CallsWidgetShareScreenMessage = {
+    sourceID: string;
+    withAudio: boolean;
 }

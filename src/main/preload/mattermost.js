@@ -31,6 +31,8 @@ import {
     DESKTOP_SOURCES_RESULT,
     VIEW_FINISHED_RESIZING,
     CALLS_JOIN_CALL,
+    DESKTOP_SOURCES_MODAL_REQUEST,
+    CALLS_WIDGET_SHARE_SCREEN,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -159,6 +161,10 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
     }
     case CALLS_JOIN_CALL: {
         ipcRenderer.send(CALLS_JOIN_CALL, viewName, message);
+        break;
+    }
+    case CALLS_WIDGET_SHARE_SCREEN: {
+        ipcRenderer.send(CALLS_WIDGET_SHARE_SCREEN, viewName, message);
         break;
     }
     }
@@ -291,6 +297,15 @@ ipcRenderer.on(DESKTOP_SOURCES_RESULT, (event, sources) => {
         {
             type: 'desktop-sources-result',
             message: sources,
+        },
+        window.location.origin,
+    );
+});
+
+ipcRenderer.on(DESKTOP_SOURCES_MODAL_REQUEST, () => {
+    window.postMessage(
+        {
+            type: DESKTOP_SOURCES_MODAL_REQUEST,
         },
         window.location.origin,
     );

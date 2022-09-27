@@ -5,7 +5,11 @@ import {EventEmitter} from 'events';
 import {BrowserWindow, Rectangle, ipcMain, IpcMainEvent} from 'electron';
 import log from 'electron-log';
 
-import {CallsWidgetWindowConfig, CallsWidgetResizeMessage} from 'types/calls';
+import {
+    CallsWidgetWindowConfig,
+    CallsWidgetResizeMessage,
+    CallsWidgetShareScreenMessage,
+} from 'types/calls';
 
 import {getLocalPreload} from 'main/utils';
 
@@ -13,6 +17,7 @@ import {PRODUCTION} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 import {
     CALLS_WIDGET_RESIZE,
+    CALLS_WIDGET_SHARE_SCREEN,
 } from 'common/communication';
 
 type LoadURLOpts = {
@@ -29,7 +34,7 @@ function boundsDiff(base: Rectangle, actual: Rectangle) {
 }
 
 export default class CallsWidgetWindow extends EventEmitter {
-    private win: BrowserWindow;
+    public win: BrowserWindow;
     private main: BrowserWindow;
     private config: CallsWidgetWindowConfig;
     private minWidth = 280;
@@ -73,6 +78,7 @@ export default class CallsWidgetWindow extends EventEmitter {
         this.win.once('show', this.onShow);
         this.win.on('closed', this.onClosed);
         ipcMain.on(CALLS_WIDGET_RESIZE, this.onResize);
+        ipcMain.on(CALLS_WIDGET_SHARE_SCREEN, this.onShareScreen);
 
         this.load();
     }
@@ -80,6 +86,10 @@ export default class CallsWidgetWindow extends EventEmitter {
     public close() {
         log.debug('CallsWidgetWindow.close');
         this.win.close();
+    }
+
+    public getServerName() {
+        return this.config.serverName;
     }
 
     private load() {
@@ -97,6 +107,7 @@ export default class CallsWidgetWindow extends EventEmitter {
         this.emit('closed');
         this.removeAllListeners('closed');
         ipcMain.off(CALLS_WIDGET_RESIZE, this.onResize);
+        ipcMain.off(CALLS_WIDGET_SHARE_SCREEN, this.onShareScreen);
     }
 
     private getWidgetURL() {
@@ -138,6 +149,10 @@ export default class CallsWidgetWindow extends EventEmitter {
             break;
         }
         }
+    }
+
+    private onShareScreen = (ev: IpcMainEvent, viewName: string, message: CallsWidgetShareScreenMessage) => {
+        this.win.webContents.send(CALLS_WIDGET_SHARE_SCREEN, message);
     }
 
     private setBounds(bounds: Rectangle) {
