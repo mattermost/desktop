@@ -7,7 +7,10 @@ import path from 'path';
 import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer} from 'electron';
 import log from 'electron-log';
 
-import {CallsJoinCallMessage} from 'types/calls';
+import {
+    CallsJoinCallMessage,
+    CallsWidgetChannelLinkClickMessage,
+} from 'types/calls';
 
 import {
     MAXIMIZE_CHANGE,
@@ -32,6 +35,7 @@ import {
     CALLS_JOIN_CALL,
     CALLS_LEAVE_CALL,
     DESKTOP_SOURCES_MODAL_REQUEST,
+    CALLS_WIDGET_CHANNEL_LINK_CLICK,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
@@ -86,6 +90,7 @@ export class WindowManager {
         ipcMain.on(CALLS_JOIN_CALL, this.createCallsWidgetWindow);
         ipcMain.on(CALLS_LEAVE_CALL, () => this.callsWidgetWindow?.close());
         ipcMain.on(DESKTOP_SOURCES_MODAL_REQUEST, this.handleDesktopSourcesModalRequest);
+        ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.handleCallsWidgetChannelLinkClick);
     }
 
     handleUpdateConfig = () => {
@@ -123,6 +128,16 @@ export class WindowManager {
             this.mainWindow?.focus();
             const currentView = this.viewManager?.getCurrentView();
             currentView?.view.webContents.send(DESKTOP_SOURCES_MODAL_REQUEST);
+        }
+    }
+
+    handleCallsWidgetChannelLinkClick = (ev: IpcMainEvent, msg: CallsWidgetChannelLinkClickMessage) => {
+        log.debug('WindowManager.handleCallsWidgetChannelLinkClick');
+        if (this.callsWidgetWindow) {
+            this.switchServer(this.callsWidgetWindow?.getServerName());
+            this.mainWindow?.focus();
+            const currentView = this.viewManager?.getCurrentView();
+            currentView?.view.webContents.send(BROWSER_HISTORY_PUSH, msg.pathName);
         }
     }
 

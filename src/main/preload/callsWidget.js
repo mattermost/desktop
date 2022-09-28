@@ -9,6 +9,7 @@ import {
     CALLS_LEAVE_CALL,
     CALLS_WIDGET_RESIZE,
     CALLS_WIDGET_SHARE_SCREEN,
+    CALLS_WIDGET_CHANNEL_LINK_CLICK,
     DESKTOP_SOURCES_RESULT,
     DESKTOP_SOURCES_MODAL_REQUEST,
     DISPATCH_GET_DESKTOP_SOURCES,
@@ -42,6 +43,7 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
         break;
     }
     case DESKTOP_SOURCES_MODAL_REQUEST:
+    case CALLS_WIDGET_CHANNEL_LINK_CLICK:
     case CALLS_WIDGET_RESIZE:
     case CALLS_LEAVE_CALL: {
         ipcRenderer.send(type, message);

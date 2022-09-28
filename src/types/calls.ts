@@ -22,3 +22,7 @@ export type CallsWidgetShareScreenMessage = {
     sourceID: string;
     withAudio: boolean;
 }
+
+export type CallsWidgetChannelLinkClickMessage = {
+    pathName: string;
+}

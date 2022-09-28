@@ -136,4 +136,5 @@ export const CALLS_JOIN_CALL = 'calls-join-call';
 export const CALLS_LEAVE_CALL = 'calls-leave-call';
 export const CALLS_WIDGET_RESIZE = 'calls-widget-resize';
 export const CALLS_WIDGET_SHARE_SCREEN = 'calls-widget-share-screen';
+export const CALLS_WIDGET_CHANNEL_LINK_CLICK = 'calls-widget-channel-link-click';
 
