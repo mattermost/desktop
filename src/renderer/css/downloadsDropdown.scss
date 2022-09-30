@@ -50,7 +50,7 @@ body {
             flex-direction: column;
             max-height: 360px;
             max-width: 280px;
-            min-height: 132px;
+            min-height: 120px;
             padding: 0 0 8px;
             width: 280px;
 
@@ -243,7 +243,7 @@ body {
                             font-size: 18px;
                             height: 28px;
                             outline: none;
-                            padding: 5px 0;
+                            position: relative;
                             width: 28px;
 
                             &.visible {
@@ -261,6 +261,12 @@ body {
                             &:active {
                                 background: rgba(28, 88, 217, 0.08);
                                 color: rgba(28, 88, 217, 1);
+                            }
+                            > .icon-dots-vertical {
+                                position: absolute;
+                                top: 50%;
+                                left: 50%;
+                                transform: translate(-50%, -50%);
                             }
                         }
                     }
