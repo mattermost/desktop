@@ -1,12 +1,17 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-
 import path from 'path';
+import fs from 'fs';
+
+import {shell} from 'electron';
 
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import {DownloadsManager} from 'main/downloadsManager';
 
+const downloadLocationMock = '/path/to/downloads';
+const locationMock = '/some/dir/file.txt';
+const locationMock1 = '/downloads/file1.txt';
 jest.mock('electron', () => {
     class NotificationMock {
         static isSupported = jest.fn();
@@ -47,6 +52,10 @@ jest.mock('electron', () => {
                 on: jest.fn(),
             },
         },
+        shell: {
+            showItemInFolder: jest.fn(),
+            openPath: jest.fn(),
+        },
     };
 });
 jest.mock('path', () => {
@@ -72,7 +81,7 @@ jest.mock('common/config', () => {
     const original = jest.requireActual('common/config');
     return {
         ...original,
-        downloadLocation: '/path/to/downloads',
+        downloadLocation: downloadLocationMock,
     };
 });
 
@@ -100,6 +109,26 @@ const downloadsJson = {
         type: 'file',
     },
 };
+const nowSeconds = Date.now() / 1000;
+const item = {
+    getFilename: () => 'file.txt',
+    getMimeType: () => 'text/plain',
+    getReceivedBytes: () => 2121,
+    getStartTime: () => nowSeconds,
+    getTotalBytes: () => 4242,
+    getSavePath: () => locationMock,
+    setSavePath: jest.fn(),
+    on: jest.fn(),
+    setSaveDialogOptions: jest.fn(),
+    once: jest.fn(),
+    location: locationMock,
+};
+const item1 = {
+    ...item,
+    getFilename: () => 'file1.txt',
+    getSavePath: () => locationMock1,
+    location: locationMock1,
+};
 describe('main/downloadsManager', () => {
     beforeEach(() => {
         getDarwinDoNotDisturb.mockReturnValue(false);
@@ -113,19 +142,6 @@ describe('main/downloadsManager', () => {
     });
     it('should handle a new download', () => {
         const dl = new DownloadsManager({});
-        const nowSeconds = Date.now() / 1000;
-        const item = {
-            getFilename: () => 'file.txt',
-            getMimeType: () => 'text/plain',
-            getReceivedBytes: () => 2121,
-            getStartTime: () => nowSeconds,
-            getTotalBytes: () => 4242,
-            getSavePath: () => '/some/dir/file.txt',
-            setSavePath: () => '/some/dir',
-            on: jest.fn(),
-            setSaveDialogOptions: jest.fn(),
-            once: jest.fn(),
-        };
         path.parse.mockImplementation(() => ({base: 'file.txt'}));
         dl.handleNewDownload({}, item, {id: 0, getURL: jest.fn()});
         expect(dl).toHaveProperty('downloads', {'file.txt': {
@@ -152,6 +168,27 @@ describe('main/downloadsManager', () => {
         };
         dl.webRequestOnHeadersReceivedHandler(details, jest.fn());
         expect(dl.fileSizes.get('file.txt')).toBe('4242');
+    });
+
+    it('should clear the downloads list', () => {
+        const dl = new DownloadsManager(JSON.stringify(downloadsJson));
+        dl.clearDownloadsDropDown();
+        expect(dl).toHaveProperty('downloads', {});
+    });
+
+    it('should open downloads folder if file deleted', () => {
+        const dl = new DownloadsManager(JSON.stringify(downloadsJson));
+        path.parse.mockImplementation(() => ({base: 'file1.txt'}));
+        dl.showFileInFolder(item1);
+        expect(shell.openPath).toHaveBeenCalledWith(downloadLocationMock);
+    });
+
+    it('should show the file in the downloads folder', () => {
+        const dl = new DownloadsManager(JSON.stringify(downloadsJson));
+        fs.existsSync.mockReturnValueOnce(true);
+        path.parse.mockImplementation(() => ({base: 'file1.txt'}));
+        dl.showFileInFolder(item1);
+        expect(shell.showItemInFolder).toHaveBeenCalledWith(locationMock1);
     });
 });
 
