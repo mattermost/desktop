@@ -12,6 +12,7 @@ import {
     DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER,
     EMIT_CONFIGURATION,
     OPEN_DOWNLOADS_DROPDOWN,
+    RECEIVE_DOWNLOADS_DROPDOWN_SIZE,
     REQUEST_CLEAR_DOWNLOADS_DROPDOWN,
     REQUEST_DOWNLOADS_DROPDOWN_INFO,
     UPDATE_DOWNLOADS_DROPDOWN,
@@ -61,6 +62,7 @@ export default class DownloadsDropdownView {
         ipcMain.on(EMIT_CONFIGURATION, this.updateConfig);
         ipcMain.on(REQUEST_DOWNLOADS_DROPDOWN_INFO, this.updateDownloadsDropdown);
         ipcMain.on(REQUEST_CLEAR_DOWNLOADS_DROPDOWN, this.clearDownloads);
+        ipcMain.on(RECEIVE_DOWNLOADS_DROPDOWN_SIZE, this.handleReceivedDownloadsDropdownSize);
         ipcMain.on(DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER, this.showFileInFolder);
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN, this.updateDownloads);
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM, this.updateDownloadsDropdownMenuItem);
@@ -167,7 +169,23 @@ export default class DownloadsDropdownView {
     }
 
     repositionDownloadsDropdown = () => {
-        this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT);
+        if (!this.bounds) {
+            return;
+        }
+        this.bounds = {
+            ...this.bounds,
+            x: this.getX(this.windowBounds.width),
+            y: this.getY(),
+        };
+        if (downloadsManager.getIsOpen()) {
+            this.view.setBounds(this.bounds);
+        }
+    }
+
+    handleReceivedDownloadsDropdownSize = (event: IpcMainEvent, width: number, height: number) => {
+        log.silly('DownloadsDropdownView.handleReceivedDownloadsDropdownSize', {width, height});
+
+        this.bounds = this.getBounds(width, height);
         if (downloadsManager.getIsOpen()) {
             this.view.setBounds(this.bounds);
         }

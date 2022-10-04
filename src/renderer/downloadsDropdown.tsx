@@ -12,6 +12,7 @@ import {
     CLOSE_DOWNLOADS_DROPDOWN,
     REQUEST_CLEAR_DOWNLOADS_DROPDOWN,
     REQUEST_DOWNLOADS_DROPDOWN_INFO,
+    SEND_DOWNLOADS_DROPDOWN_SIZE,
     UPDATE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
 
@@ -40,6 +41,10 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
 
     componentDidMount() {
         window.postMessage({type: REQUEST_DOWNLOADS_DROPDOWN_INFO}, window.location.href);
+    }
+
+    componentDidUpdate() {
+        window.postMessage({type: SEND_DOWNLOADS_DROPDOWN_SIZE, data: {width: document.body.scrollWidth, height: document.body.scrollHeight}}, window.location.href);
     }
 
     handleMessageEvent = (event: MessageEvent) => {

@@ -140,6 +140,8 @@ export const UPDATE_DOWNLOADS_DROPDOWN = 'update-downloads-dropdown';
 export const DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER = 'downloads-dropdown-show-file-in-folder';
 export const REQUEST_HAS_DOWNLOADS = 'request-has-downloads';
 export const DOWNLOADS_DROPDOWN_FOCUSED = 'downloads-dropdown-focused';
+export const RECEIVE_DOWNLOADS_DROPDOWN_SIZE = 'receive-downloads-dropdown-size';
+export const SEND_DOWNLOADS_DROPDOWN_SIZE = 'send-downloads-dropdown-size';
 
 export const OPEN_DOWNLOADS_DROPDOWN_MENU = 'open-downloads-dropdown-menu';
 export const CLOSE_DOWNLOADS_DROPDOWN_MENU = 'close-downloads-dropdown-menu';
