@@ -48,8 +48,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     private init = () => {
         // ensure data loaded from file is valid
         const validatedJSON = Validator.validateDownloads(this.json);
-        log.debug('DownloadsManager.init', {'this.json': this.json});
-        log.debug('DownloadsManager.init', {validatedJSON});
+        log.debug('DownloadsManager.init', {'this.json': this.json, validatedJSON});
         if (validatedJSON) {
             this.saveAll(validatedJSON);
         } else {

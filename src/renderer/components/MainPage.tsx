@@ -179,9 +179,9 @@ class MainPage extends React.PureComponent<Props, State> {
 
     async requestDownloadsLength() {
         try {
-            const count = await window.ipcRenderer.invoke(REQUEST_HAS_DOWNLOADS);
+            const hasDownloads = await window.ipcRenderer.invoke(REQUEST_HAS_DOWNLOADS);
             this.setState({
-                hasDownloads: count,
+                hasDownloads,
             });
         } catch (error) {
             console.error(error);
