@@ -148,7 +148,14 @@ export default class DownloadsDropdownMenuView {
 
     handleToggle = (event: IpcMainEvent, payload: DownloadsMenuOpenEventPayload) => {
         if (this.open) {
-            this.handleClose();
+            if (this.item?.location === payload.item.location) {
+                // clicking 3-dot in the same item
+                this.handleClose();
+            } else {
+                // clicking 3-dot in a different item
+                this.handleClose();
+                this.handleOpen(event, payload);
+            }
         } else {
             this.handleOpen(event, payload);
         }

@@ -65,10 +65,6 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
         window.postMessage({type: CLOSE_DOWNLOADS_DROPDOWN}, window.location.href);
     }
 
-    preventPropagation = (event: React.MouseEvent<HTMLDivElement>) => {
-        event.stopPropagation();
-    }
-
     clearAll = () => {
         window.postMessage({type: REQUEST_CLEAR_DOWNLOADS_DROPDOWN}, window.location.href);
     }
@@ -77,7 +73,6 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
         return (
             <IntlProvider>
                 <div
-                    onClick={this.preventPropagation}
                     className={classNames('DownloadsDropdown', {
                         darkMode: this.state.darkMode,
                     })}

@@ -7,6 +7,7 @@ import {ipcRenderer, contextBridge} from 'electron';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN,
+    CLOSE_DOWNLOADS_DROPDOWN_MENU,
     DOWNLOADS_DROPDOWN_FOCUSED,
     DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER,
     GET_LANGUAGE_INFORMATION,
@@ -23,6 +24,10 @@ console.log('preloaded for the downloadsDropdown!');
 
 contextBridge.exposeInMainWorld('process', {
     platform: process.platform,
+});
+
+window.addEventListener('click', () => {
+    ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN_MENU);
 });
 
 window.addEventListener('mousemove', () => {
