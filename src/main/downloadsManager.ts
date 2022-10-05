@@ -453,6 +453,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
             receivedBytes: 0,
             totalBytes: 0,
         });
+        this.openDownloadsDropdown();
     }
     private onUpdateDownloaded = (event: Event, version = 'unknown') => {
         const update = this.downloads[APP_UPDATE_KEY];
@@ -460,6 +461,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         update.progress = 100;
         update.filename = version;
         this.save(APP_UPDATE_KEY, update);
+        this.openDownloadsDropdown();
     }
     private onUpdateProgress = (event: Event, total: number, delta: number, transferred: number, percent: number) => {
         const update = this.downloads[APP_UPDATE_KEY];
@@ -470,6 +472,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         update.totalBytes = total;
         update.receivedBytes = transferred;
         update.progress = Math.round(percent);
+        this.shouldShowBadge();
     }
     private noUpdateAvailable = () => {
         const downloads = this.downloads;
