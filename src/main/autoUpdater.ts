@@ -81,7 +81,7 @@ export class UpdateManager {
         });
 
         autoUpdater.on('download-progress', (progress: ProgressInfo) => {
-            ipcMain.emit(UPDATE_PROGRESS, progress.total, progress.delta, progress.transferred, progress.percent, progress.bytesPerSecond);
+            ipcMain.emit(UPDATE_PROGRESS, true, progress);
         });
 
         ipcMain.on(CANCEL_UPGRADE, () => {

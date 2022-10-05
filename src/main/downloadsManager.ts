@@ -3,10 +3,11 @@
 import path from 'path';
 import fs from 'fs';
 
-import {DownloadedItem, DownloadItemDoneEventState, DownloadedItems, DownloadItemState, DownloadItemUpdatedEventState} from 'types/downloads';
-
 import {DownloadItem, Event, WebContents, FileFilter, ipcMain, dialog, shell, Menu} from 'electron';
 import log from 'electron-log';
+import {ProgressInfo} from 'electron-updater';
+
+import {DownloadedItem, DownloadItemDoneEventState, DownloadedItems, DownloadItemState, DownloadItemUpdatedEventState} from 'types/downloads';
 
 import {
     CANCEL_UPDATE_DOWNLOAD,
@@ -463,7 +464,10 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         this.save(APP_UPDATE_KEY, update);
         this.openDownloadsDropdown();
     }
-    private onUpdateProgress = (event: Event, total: number, delta: number, transferred: number, percent: number) => {
+    private onUpdateProgress = (event: Event, progress: ProgressInfo) => {
+        log.debug('DownloadsManager.onUpdateProgress', {progress});
+        const {total, transferred, percent} = progress;
+
         const update = this.downloads[APP_UPDATE_KEY];
         if (typeof update.addedAt !== 'number' || update.addedAt === 0) {
             update.addedAt = Date.now();
