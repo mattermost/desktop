@@ -3,12 +3,28 @@
 import path from 'path';
 import fs from 'fs';
 
-import {DownloadedItem, DownloadItemDoneEventState, DownloadedItems, DownloadItemState, DownloadItemUpdatedEventState} from 'types/downloads';
-
 import {DownloadItem, Event, WebContents, FileFilter, ipcMain, dialog, shell, Menu} from 'electron';
 import log from 'electron-log';
+import {ProgressInfo} from 'electron-updater';
 
-import {CLOSE_DOWNLOADS_DROPDOWN, CLOSE_DOWNLOADS_DROPDOWN_MENU, DOWNLOADS_DROPDOWN_FOCUSED, HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE, OPEN_DOWNLOADS_DROPDOWN, REQUEST_HAS_DOWNLOADS, SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE, UPDATE_DOWNLOADS_DROPDOWN, UPDATE_PATHS} from 'common/communication';
+import {DownloadedItem, DownloadItemDoneEventState, DownloadedItems, DownloadItemState, DownloadItemUpdatedEventState} from 'types/downloads';
+
+import {
+    CANCEL_UPDATE_DOWNLOAD,
+    CLOSE_DOWNLOADS_DROPDOWN,
+    CLOSE_DOWNLOADS_DROPDOWN_MENU,
+    DOWNLOADS_DROPDOWN_FOCUSED,
+    HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE,
+    NO_UPDATE_AVAILABLE,
+    OPEN_DOWNLOADS_DROPDOWN,
+    REQUEST_HAS_DOWNLOADS,
+    SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE,
+    UPDATE_AVAILABLE,
+    UPDATE_DOWNLOADED,
+    UPDATE_DOWNLOADS_DROPDOWN,
+    UPDATE_PATHS,
+    UPDATE_PROGRESS,
+} from 'common/communication';
 import Config from 'common/config';
 import {localizeMessage} from 'main/i18nManager';
 import {displayDownloadCompleted} from 'main/notifications';
@@ -16,6 +32,8 @@ import WindowManager from 'main/windows/windowManager';
 import {doubleSecToMs, getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader, shouldIncrementFilename} from 'main/utils';
 import {DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT, DOWNLOADS_DROPDOWN_MAX_ITEMS} from 'common/utils/constants';
 import JsonFileManager from 'common/JsonFileManager';
+
+import {APP_UPDATE_KEY} from 'common/constants';
 
 import {downloadsJson} from './constants';
 import * as Validator from './Validator';
@@ -60,6 +78,10 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
             return this.hasDownloads();
         });
         ipcMain.on(DOWNLOADS_DROPDOWN_FOCUSED, this.clearAutoCloseTimeout);
+        ipcMain.on(UPDATE_AVAILABLE, this.onUpdateAvailable);
+        ipcMain.on(UPDATE_DOWNLOADED, this.onUpdateDownloaded);
+        ipcMain.on(UPDATE_PROGRESS, this.onUpdateProgress);
+        ipcMain.on(NO_UPDATE_AVAILABLE, this.noUpdateAvailable);
     }
 
     handleNewDownload = (event: Event, item: DownloadItem, webContents: WebContents) => {
@@ -110,6 +132,9 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         let modified = false;
 
         for (const fileId in downloads) {
+            if (fileId === APP_UPDATE_KEY) {
+                continue;
+            }
             if (Object.prototype.hasOwnProperty.call(downloads, fileId)) {
                 const file = downloads[fileId];
                 if ((file.state === 'completed')) {
@@ -146,6 +171,10 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
             return;
         }
 
+        if (item.type === DownloadItemTypeEnum.UPDATE) {
+            return;
+        }
+
         if (fs.existsSync(item.location)) {
             shell.showItemInFolder(item.location);
             return;
@@ -168,6 +197,10 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
             return;
         }
 
+        if (item.type === DownloadItemTypeEnum.UPDATE) {
+            return;
+        }
+
         if (fs.existsSync(item.location)) {
             shell.openPath(item.location).catch((err) => {
                 log.debug('DownloadsDropdownView.openFileError', {err});
@@ -183,7 +216,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     clearFile = (item?: DownloadedItem) => {
         log.debug('DownloadsDropdownView.clearFile', {item});
 
-        if (!item) {
+        if (!item || item.type === DownloadItemTypeEnum.UPDATE) {
             return;
         }
 
@@ -206,7 +239,12 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
 
         const fileId = this.getDownloadedFileId(item);
 
-        if (this.progressingItems.has(fileId)) {
+        if (this.isAppUpdate(item)) {
+            ipcMain.emit(CANCEL_UPDATE_DOWNLOAD);
+            const update = this.downloads[APP_UPDATE_KEY];
+            update.state = 'cancelled';
+            this.save(APP_UPDATE_KEY, update);
+        } else if (this.progressingItems.has(fileId)) {
             this.progressingItems.get(fileId)?.cancel?.();
             this.progressingItems.delete(fileId);
         }
@@ -402,6 +440,55 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     }
 
     /**
+     * Related to application updates
+     */
+    private onUpdateAvailable = (event: Event, version = 'unknown') => {
+        this.save(APP_UPDATE_KEY, {
+            type: DownloadItemTypeEnum.UPDATE,
+            filename: version,
+            state: 'available',
+            progress: 0,
+            location: '',
+            mimeType: null,
+            addedAt: 0,
+            receivedBytes: 0,
+            totalBytes: 0,
+        });
+        this.openDownloadsDropdown();
+    }
+    private onUpdateDownloaded = (event: Event, version = 'unknown') => {
+        const update = this.downloads[APP_UPDATE_KEY];
+        update.state = 'completed';
+        update.progress = 100;
+        update.filename = version;
+        this.save(APP_UPDATE_KEY, update);
+        this.openDownloadsDropdown();
+    }
+    private onUpdateProgress = (event: Event, progress: ProgressInfo) => {
+        log.debug('DownloadsManager.onUpdateProgress', {progress});
+        const {total, transferred, percent} = progress;
+
+        const update = this.downloads[APP_UPDATE_KEY];
+        if (typeof update.addedAt !== 'number' || update.addedAt === 0) {
+            update.addedAt = Date.now();
+        }
+        update.state = 'progressing';
+        update.totalBytes = total;
+        update.receivedBytes = transferred;
+        update.progress = Math.round(percent);
+        this.shouldShowBadge();
+    }
+    private noUpdateAvailable = () => {
+        const downloads = this.downloads;
+        delete downloads[APP_UPDATE_KEY];
+        this.saveAll(downloads);
+
+        if (!this.hasDownloads()) {
+            this.closeDownloadsDropdown();
+        }
+    }
+
+    /**
      * Internal utils
      */
     private formatDownloadItem = (item: DownloadItem, state: DownloadItemState): DownloadedItem => {
@@ -466,9 +553,16 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     }
 
     private getDownloadedFileId = (item: DownloadedItem) => {
+        if (item.type === DownloadItemTypeEnum.UPDATE) {
+            return APP_UPDATE_KEY;
+        }
         const fileNameFromPath = this.readFilenameFromPath(item.location);
         const itemFilename = item.filename;
         return fileNameFromPath && fileNameFromPath !== itemFilename ? fileNameFromPath : itemFilename;
+    }
+
+    private isAppUpdate = (item: DownloadedItem): boolean => {
+        return item.type === DownloadItemTypeEnum.UPDATE;
     }
 }
 

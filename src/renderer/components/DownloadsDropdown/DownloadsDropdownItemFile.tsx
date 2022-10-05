@@ -5,6 +5,8 @@ import React, {useState} from 'react';
 import {DownloadedItem} from 'types/downloads';
 import classNames from 'classnames';
 
+import {useIntl} from 'react-intl';
+
 import {DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER} from 'common/communication';
 
 import FileSizeAndStatus from './FileSizeAndStatus';
@@ -17,14 +19,19 @@ type OwnProps = {
     item: DownloadedItem;
 }
 
-const DownloadsDropdownFile = ({item, activeItem}: OwnProps) => {
+const DownloadsDropdownItemFile = ({item, activeItem}: OwnProps) => {
     const [threeDotButtonVisible, setThreeDotButtonVisible] = useState(false);
+    const translate = useIntl();
 
     const onFileClick = (e: React.MouseEvent<HTMLDivElement>) => {
         e.preventDefault();
 
         window.postMessage({type: DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER, payload: {item}}, window.location.href);
     };
+
+    const itemFilename = item.type === 'update' ?
+        translate.formatMessage({id: 'renderer.downloadsDropdown.Update.MattermostVersionX', defaultMessage: `Mattermost version ${item.filename}`}, {version: item.filename}) :
+        item.filename;
 
     return (
         <div
@@ -39,7 +46,7 @@ const DownloadsDropdownFile = ({item, activeItem}: OwnProps) => {
                 <Thumbnail item={item}/>
                 <div className='DownloadsDropdown__File__Body__Details'>
                     <div className='DownloadsDropdown__File__Body__Details__Filename'>
-                        {item.filename}
+                        {itemFilename}
                     </div>
                     <div
                         className={classNames('DownloadsDropdown__File__Body__Details__FileSizeAndStatus', {
@@ -60,4 +67,4 @@ const DownloadsDropdownFile = ({item, activeItem}: OwnProps) => {
     );
 };
 
-export default DownloadsDropdownFile;
+export default DownloadsDropdownItemFile;

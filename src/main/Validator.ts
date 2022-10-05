@@ -50,12 +50,12 @@ const downloadsSchema = Joi.object<DownloadedItems>().pattern(
     Joi.string(),
     {
         type: Joi.string().valid('file', 'update'),
-        filename: Joi.string(),
-        state: Joi.string().valid('interrupted', 'progressing', 'completed', 'cancelled', 'deleted'),
+        filename: Joi.string().allow(null),
+        state: Joi.string().valid('interrupted', 'progressing', 'completed', 'cancelled', 'deleted', 'available'),
         progress: Joi.number().min(0).max(100),
-        location: Joi.string(),
+        location: Joi.string().allow(''),
         mimeType: Joi.string().allow(null),
-        addedAt: Joi.number(),
+        addedAt: Joi.number().min(0),
         receivedBytes: Joi.number().min(0),
         totalBytes: Joi.number().min(0),
     });

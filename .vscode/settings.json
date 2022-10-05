@@ -6,10 +6,14 @@
         "source.fixAll.eslint": true
     },
     "cSpell.words": [
+        "automations",
+        "Autoupgrade",
         "browserview",
+        "btns",
         "chromedriver",
         "chromedriverlog",
         "deauthorize",
+        "deeplinking",
         "diskimage",
         "favicons",
         "filechooser",
@@ -18,6 +22,7 @@
         "ICONNAME",
         "loadscreen",
         "mmjstool",
+        "NOSERVERS",
         "Ochiai",
         "officedocument",
         "openxmlformats",
@@ -25,8 +30,10 @@
         "spreadsheetml",
         "textbox",
         "UNCLOSEABLE",
+        "Unreads",
         "webcontents",
         "wordprocessingml",
         "Yuya"
-    ]
+    ],
+    "i18n-ally.keystyle": "nested"
 }

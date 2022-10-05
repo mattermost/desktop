@@ -76,21 +76,31 @@ const DownloadsDropdownMenu = () => {
     };
 
     const openFile = useCallback(() => {
+        if (item?.type === 'update') {
+            return;
+        }
         window.postMessage({type: DOWNLOADS_DROPDOWN_MENU_OPEN_FILE, payload: {item}}, window.location.href);
     }, [item]);
 
     const showInFolder = useCallback(() => {
+        if (item?.type === 'update') {
+            return;
+        }
         window.postMessage({type: DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER, payload: {item}}, window.location.href);
     }, [item]);
 
     const clearFile = useCallback(() => {
+        if (item?.type === 'update') {
+            return;
+        }
         window.postMessage({type: DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE, payload: {item}}, window.location.href);
     }, [item]);
 
     const cancelDownload = useCallback(() => {
-        if (item?.state === 'progressing') {
-            window.postMessage({type: DOWNLOADS_DROPDOWN_MENU_CANCEL_DOWNLOAD, payload: {item}}, window.location.href);
+        if (item?.state !== 'progressing') {
+            return;
         }
+        window.postMessage({type: DOWNLOADS_DROPDOWN_MENU_CANCEL_DOWNLOAD, payload: {item}}, window.location.href);
     }, [item]);
 
     return (
@@ -102,7 +112,9 @@ const DownloadsDropdownMenu = () => {
                 })}
             >
                 <div
-                    className='DownloadsDropdownMenu__MenuItem'
+                    className={classNames('DownloadsDropdownMenu__MenuItem', {
+                        disabled: item?.type === 'update',
+                    })}
                     onClick={openFile}
                 >
                     <FormattedMessage
@@ -111,13 +123,17 @@ const DownloadsDropdownMenu = () => {
                     />
                 </div>
                 <div
-                    className='DownloadsDropdownMenu__MenuItem'
+                    className={classNames('DownloadsDropdownMenu__MenuItem', {
+                        disabled: item?.type === 'update',
+                    })}
                     onClick={showInFolder}
                 >
                     {getOSFileManager()}
                 </div>
                 <div
-                    className='DownloadsDropdownMenu__MenuItem'
+                    className={classNames('DownloadsDropdownMenu__MenuItem', {
+                        disabled: item?.type === 'update',
+                    })}
                     onClick={clearFile}
                 >
                     <FormattedMessage

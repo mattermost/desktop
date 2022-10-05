@@ -30,6 +30,8 @@ const Thumbnail = ({item}: OwnProps) => {
             );
         case 'progressing':
             return null;
+        case 'available':
+            return null;
         default:
             return (
                 <CloseCircleIcon
@@ -43,16 +45,16 @@ const Thumbnail = ({item}: OwnProps) => {
     const showImagePreview = isImageFile(item) && item.state === 'completed';
 
     return (
-        <div className='DownloadsDropdown__File__Body__Thumbnail__Container'>
+        <div className='DownloadsDropdown__Thumbnail__Container'>
             {showImagePreview ?
                 <div
-                    className='DownloadsDropdown__File__Body__Thumbnail preview'
+                    className='DownloadsDropdown__Thumbnail preview'
                     style={{
                         backgroundImage: `url("${isWin ? `file:///${item.location.replaceAll('\\', '/')}` : item.location}")`,
                         backgroundSize: 'cover',
                     }}
                 /> :
-                <div className={`DownloadsDropdown__File__Body__Thumbnail ${getIconClassName(item)}`}/>}
+                <div className={`DownloadsDropdown__Thumbnail ${getIconClassName(item)}`}/>}
             {showBadge(item.state)}
         </div>
     );

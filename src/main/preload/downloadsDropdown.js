@@ -16,6 +16,8 @@ import {
     REQUEST_DOWNLOADS_DROPDOWN_INFO,
     RETRIEVED_LANGUAGE_INFORMATION,
     SEND_DOWNLOADS_DROPDOWN_SIZE,
+    START_UPDATE_DOWNLOAD,
+    START_UPGRADE,
     TOGGLE_DOWNLOADS_DROPDOWN_MENU,
     UPDATE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
@@ -56,6 +58,12 @@ window.addEventListener('message', async (event) => {
         break;
     case DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER:
         ipcRenderer.send(DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER, event.data.payload.item);
+        break;
+    case START_UPDATE_DOWNLOAD:
+        ipcRenderer.send(START_UPDATE_DOWNLOAD);
+        break;
+    case START_UPGRADE:
+        ipcRenderer.send(START_UPGRADE);
         break;
     case GET_LANGUAGE_INFORMATION:
         window.postMessage({type: RETRIEVED_LANGUAGE_INFORMATION, data: await ipcRenderer.invoke(GET_LANGUAGE_INFORMATION)});

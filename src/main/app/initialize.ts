@@ -32,7 +32,7 @@ import {
     GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
     USER_ACTIVITY_UPDATE,
     START_UPGRADE,
-    START_DOWNLOAD,
+    START_UPDATE_DOWNLOAD,
     PING_DOMAIN,
     MAIN_WINDOW_SHOWN,
 } from 'common/communication';
@@ -259,7 +259,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(SHOW_SETTINGS_WINDOW, WindowManager.showSettingsWindow);
     ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, () => session.defaultSession.availableSpellCheckerLanguages);
     ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
-    ipcMain.on(START_DOWNLOAD, handleStartDownload);
+    ipcMain.on(START_UPDATE_DOWNLOAD, handleStartDownload);
     ipcMain.on(START_UPGRADE, handleStartUpgrade);
     ipcMain.handle(PING_DOMAIN, handlePingDomain);
 }
@@ -272,7 +272,7 @@ function initializeAfterAppReady() {
     if (process.platform !== 'darwin') {
         defaultSession.on('spellcheck-dictionary-download-failure', (event, lang) => {
             if (Config.spellCheckerURL) {
-                log.error(`There was an error while trying to load the dictionary definitions for ${lang} fromfully the specified url. Please review you have access to the needed files. Url used was ${Config.spellCheckerURL}`);
+                log.error(`There was an error while trying to load the dictionary definitions for ${lang} from fully the specified url. Please review you have access to the needed files. Url used was ${Config.spellCheckerURL}`);
             } else {
                 log.warn(`There was an error while trying to download the dictionary definitions for ${lang}, spellchecking might not work properly.`);
             }

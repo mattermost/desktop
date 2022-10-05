@@ -5,7 +5,7 @@ import {DownloadItemTypeEnum} from 'main/downloadsManager';
 
 export type DownloadItemUpdatedEventState = 'interrupted' | 'progressing';
 export type DownloadItemDoneEventState = 'completed' | 'cancelled' | 'interrupted';
-export type DownloadItemState = DownloadItemUpdatedEventState | DownloadItemDoneEventState | 'deleted';
+export type DownloadItemState = DownloadItemUpdatedEventState | DownloadItemDoneEventState | 'deleted' | 'available';
 
 export type DownloadedItem = {
     type: DownloadItemTypeEnum;
