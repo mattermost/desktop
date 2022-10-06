@@ -8,15 +8,21 @@ import DownloadsDropdownItemFile from './DownloadsDropdownItemFile';
 import UpdateWrapper from './Update/UpdateWrapper';
 
 type OwnProps = {
+    activeItem?: DownloadedItem;
     item: DownloadedItem;
 }
 
-const DownloadsDropdownItem = ({item}: OwnProps) => {
+const DownloadsDropdownItem = ({item, activeItem}: OwnProps) => {
     if (item.type === 'update' && item.state !== 'progressing') {
         return <UpdateWrapper item={item}/>;
     }
 
-    return <DownloadsDropdownItemFile item={item}/>;
+    return (
+        <DownloadsDropdownItemFile
+            item={item}
+            activeItem={activeItem}
+        />
+    );
 };
 
 export default DownloadsDropdownItem;
