@@ -529,7 +529,6 @@ class MainPage extends React.PureComponent<Props, State> {
                     )}
                     {tabsRow}
                     {downloadsDropdownButton}
-                    {/* {upgradeIcon} */}
                     {titleBarButtons}
                 </div>
             </Row>
