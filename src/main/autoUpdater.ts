@@ -81,7 +81,7 @@ export class UpdateManager {
         });
 
         autoUpdater.on('download-progress', (progress: ProgressInfo) => {
-            ipcMain.emit(UPDATE_PROGRESS, true, progress);
+            ipcMain.emit(UPDATE_PROGRESS, null, progress);
         });
 
         ipcMain.on(CANCEL_UPGRADE, () => {
@@ -109,12 +109,12 @@ export class UpdateManager {
     }
 
     notifyUpgrade = (): void => {
-        ipcMain.emit(UPDATE_AVAILABLE, this.versionAvailable);
+        ipcMain.emit(UPDATE_AVAILABLE, null, this.versionAvailable);
         displayUpgrade(this.versionAvailable || 'unknown', this.handleDownload);
     }
 
     notifyDownloaded = (): void => {
-        ipcMain.emit(UPDATE_DOWNLOADED, this.versionDownloaded);
+        ipcMain.emit(UPDATE_DOWNLOADED, null, this.versionDownloaded);
         displayRestartToUpgrade(this.versionDownloaded || 'unknown', this.handleUpdate);
     }
 
