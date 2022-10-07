@@ -251,5 +251,22 @@
     "renderer.components.configureServer.name.info": "The name that will be displayed in your server list",
     "renderer.components.configureServer.connect.saving": "Connecting…",
     "renderer.components.configureServer.connect.default": "Connect",
-    "renderer.components.configureServer.cardtitle": "Enter your server details"
+    "renderer.components.configureServer.cardtitle": "Enter your server details",
+    "renderer.time.hours": "hours",
+    "renderer.downloadsDropdownMenu.ShowInFolder": "Show in Folder",
+    "renderer.downloadsDropdownMenu.ShowInFinder": "Show in Finder",
+    "renderer.downloadsDropdownMenu.ShowInFileManager": "Show in File Manager",
+    "renderer.downloadsDropdownMenu.ShowInFileExplorer": "Show in File Explorer",
+    "renderer.downloadsDropdownMenu.Open": "Open",
+    "renderer.downloadsDropdownMenu.Clear": "Clear",
+    "renderer.downloadsDropdownMenu.CancelDownload": "Cancel Download",
+    "renderer.downloadsDropdown.Update.RestartAndUpdate": "Restart & update",
+    "renderer.downloadsDropdown.Update.NewDesktopVersionAvailable": "New Desktop version available",
+    "renderer.downloadsDropdown.Update.MattermostVersionX": "Mattermost version {version}",
+    "renderer.downloadsDropdown.Update.DownloadUpdate": "Download Update",
+    "renderer.downloadsDropdown.Update.ANewVersionIsAvailableToInstall": "A new version of the Mattermost Desktop App (version {version}) is available to install.",
+    "renderer.downloadsDropdown.remaining": "remaining",
+    "renderer.downloadsDropdown.Downloads": "Downloads",
+    "renderer.downloadsDropdown.ClearAll": "Clear All",
+    "main.menus.app.view.downloads": "Downloads"
 }
