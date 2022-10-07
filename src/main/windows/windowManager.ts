@@ -182,10 +182,14 @@ export class WindowManager {
     on = this.mainWindow?.on;
 
     handleMaximizeMainWindow = () => {
+        this.downloadsDropdown?.updateWindowBounds();
+        this.downloadsDropdownMenu?.updateWindowBounds();
         this.sendToRenderer(MAXIMIZE_CHANGE, true);
     }
 
     handleUnmaximizeMainWindow = () => {
+        this.downloadsDropdown?.updateWindowBounds();
+        this.downloadsDropdownMenu?.updateWindowBounds();
         this.sendToRenderer(MAXIMIZE_CHANGE, false);
     }
 
