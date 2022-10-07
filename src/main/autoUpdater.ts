@@ -6,15 +6,23 @@ import path from 'path';
 import {dialog, ipcMain, app, nativeImage} from 'electron';
 import log from 'electron-log';
 
-import {autoUpdater, ProgressInfo, UpdateInfo} from 'electron-updater';
+import {autoUpdater, CancellationToken, ProgressInfo, UpdateInfo} from 'electron-updater';
 
 import {localizeMessage} from 'main/i18nManager';
 import {displayUpgrade, displayRestartToUpgrade} from 'main/notifications';
 
-import {CANCEL_UPGRADE, UPDATE_AVAILABLE, UPDATE_DOWNLOADED, CHECK_FOR_UPDATES, UPDATE_SHORTCUT_MENU, UPDATE_PROGRESS} from 'common/communication';
+import {
+    CANCEL_UPGRADE,
+    UPDATE_AVAILABLE,
+    UPDATE_DOWNLOADED,
+    CHECK_FOR_UPDATES,
+    UPDATE_SHORTCUT_MENU,
+    UPDATE_PROGRESS,
+    NO_UPDATE_AVAILABLE,
+    CANCEL_UPDATE_DOWNLOAD,
+    UPDATE_REMIND_LATER,
+} from 'common/communication';
 import Config from 'common/config';
-
-import WindowManager from './windows/windowManager';
 
 const NEXT_NOTIFY = 86400000; // 24 hours
 const NEXT_CHECK = 3600000; // 1 hour
@@ -44,12 +52,15 @@ const appIcon = nativeImage.createFromPath(appIconURL);
 **/
 
 export class UpdateManager {
+    cancellationToken?: CancellationToken;
     lastNotification?: NodeJS.Timeout;
     lastCheck?: NodeJS.Timeout;
     versionAvailable?: string;
     versionDownloaded?: string;
 
     constructor() {
+        this.cancellationToken = new CancellationToken();
+
         autoUpdater.on('error', (err: Error) => {
             log.error(`[Mattermost] There was an error while trying to update: ${err}`);
         });
@@ -70,7 +81,7 @@ export class UpdateManager {
         });
 
         autoUpdater.on('download-progress', (progress: ProgressInfo) => {
-            WindowManager.sendToRenderer(UPDATE_PROGRESS, progress.total, progress.delta, progress.transferred, progress.percent, progress.bytesPerSecond);
+            ipcMain.emit(UPDATE_PROGRESS, null, progress);
         });
 
         ipcMain.on(CANCEL_UPGRADE, () => {
@@ -80,6 +91,9 @@ export class UpdateManager {
         ipcMain.on(CHECK_FOR_UPDATES, () => {
             this.checkForUpdates(true);
         });
+
+        ipcMain.on(CANCEL_UPDATE_DOWNLOAD, this.handleCancelDownload);
+        ipcMain.on(UPDATE_REMIND_LATER, this.handleRemindLater);
     }
 
     notify = (): void => {
@@ -95,12 +109,12 @@ export class UpdateManager {
     }
 
     notifyUpgrade = (): void => {
-        WindowManager.sendToRenderer(UPDATE_AVAILABLE, this.versionAvailable);
+        ipcMain.emit(UPDATE_AVAILABLE, null, this.versionAvailable);
         displayUpgrade(this.versionAvailable || 'unknown', this.handleDownload);
     }
 
     notifyDownloaded = (): void => {
-        WindowManager.sendToRenderer(UPDATE_DOWNLOADED, this.versionDownloaded);
+        ipcMain.emit(UPDATE_DOWNLOADED, null, this.versionDownloaded);
         displayRestartToUpgrade(this.versionDownloaded || 'unknown', this.handleUpdate);
     }
 
@@ -108,23 +122,16 @@ export class UpdateManager {
         if (this.lastCheck) {
             clearTimeout(this.lastCheck);
         }
-        dialog.showMessageBox({
-            title: app.name,
-            message: localizeMessage('main.autoUpdater.download.dialog.message', 'New desktop version available'),
-            detail: localizeMessage('main.autoUpdater.download.dialog.detail', 'A new version of the {appName} Desktop App is available for you to download and install now.', {appName: app.name}),
-            icon: appIcon,
-            buttons: [
-                localizeMessage('main.autoUpdater.download.dialog.button.download', 'Download'),
-                localizeMessage('main.autoUpdater.download.dialog.button.remindMeLater', 'Remind me Later'),
-            ],
-            type: 'info',
-            defaultId: 0,
-            cancelId: 1,
-        }).then(({response}) => {
-            if (response === 0) {
-                autoUpdater.downloadUpdate();
-            }
-        });
+        autoUpdater.downloadUpdate(this.cancellationToken);
+    }
+
+    handleCancelDownload = (): void => {
+        this.cancellationToken?.cancel();
+        this.cancellationToken = new CancellationToken();
+    }
+
+    handleRemindLater = (): void => {
+        // TODO
     }
 
     handleOnQuit = (): void => {
@@ -134,27 +141,12 @@ export class UpdateManager {
     }
 
     handleUpdate = (): void => {
-        dialog.showMessageBox({
-            title: app.name,
-            message: localizeMessage('main.autoUpdater.update.dialog.message', 'A new version is ready to install'),
-            detail: localizeMessage('main.autoUpdater.update.dialog.detail', 'A new version of the {appName} Desktop App is ready to install.', {appName: app.name}),
-            icon: appIcon,
-            buttons: [
-                localizeMessage('main.autoUpdater.update.dialog.button.restartAndUpdate', 'Restart and Update'),
-                localizeMessage('main.autoUpdater.update.dialog.button.remindMeLater', 'Remind me Later'),
-            ],
-            type: 'info',
-            defaultId: 0,
-            cancelId: 1,
-        }).then(({response}) => {
-            if (response === 0) {
-                autoUpdater.quitAndInstall();
-            }
-        });
+        autoUpdater.quitAndInstall();
     }
 
     displayNoUpgrade = (): void => {
         const version = app.getVersion();
+        ipcMain.emit(NO_UPDATE_AVAILABLE);
         dialog.showMessageBox({
             title: app.name,
             icon: appIcon,
@@ -177,7 +169,12 @@ export class UpdateManager {
             if (manually) {
                 autoUpdater.once('update-not-available', this.displayNoUpgrade);
             }
-            autoUpdater.checkForUpdates().catch((reason) => {
+            autoUpdater.checkForUpdates().then((result) => {
+                if (!result?.updateInfo) {
+                    ipcMain.emit(NO_UPDATE_AVAILABLE);
+                }
+            }).catch((reason) => {
+                ipcMain.emit(NO_UPDATE_AVAILABLE);
                 log.error(`[Mattermost] Failed to check for updates: ${reason}`);
             });
             this.lastCheck = setTimeout(() => this.checkForUpdates(false), NEXT_CHECK);

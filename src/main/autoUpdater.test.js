@@ -31,6 +31,9 @@ jest.mock('electron-updater', () => ({
         downloadUpdate: jest.fn(),
         checkForUpdates: jest.fn(),
     },
+    CancellationToken: jest.fn().mockImplementation(() => {
+        return {};
+    }),
 }));
 
 jest.mock('common/config', () => ({

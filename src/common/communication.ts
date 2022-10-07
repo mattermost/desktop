@@ -90,13 +90,16 @@ export const REQUEST_TEAMS_DROPDOWN_INFO = 'request-teams-dropdown-info';
 export const RECEIVE_DROPDOWN_MENU_SIZE = 'receive-dropdown-menu-size';
 export const SEND_DROPDOWN_MENU_SIZE = 'send-dropdown-menu-size';
 
-export const UPDATE_AVAILABLE = 'update_available';
-export const UPDATE_DOWNLOADED = 'update_downloaded';
-export const CANCEL_UPGRADE = 'cancel_upgrade';
-export const START_UPGRADE = 'start_upgrade';
-export const START_DOWNLOAD = 'start_download';
-export const CHECK_FOR_UPDATES = 'check_for_updates';
-export const UPDATE_PROGRESS = 'update_progress';
+export const UPDATE_AVAILABLE = 'update-available';
+export const UPDATE_DOWNLOADED = 'update-downloaded';
+export const UPDATE_PROGRESS = 'update-progress';
+export const UPDATE_REMIND_LATER = 'update-remind-later';
+export const CANCEL_UPDATE_DOWNLOAD = 'cancel-update-download';
+export const CANCEL_UPGRADE = 'cancel-upgrade';
+export const START_UPDATE_DOWNLOAD = 'start-update-download';
+export const START_UPGRADE = 'start-upgrade';
+export const CHECK_FOR_UPDATES = 'check-for-updates';
+export const NO_UPDATE_AVAILABLE = 'no-update-available';
 
 export const BROWSER_HISTORY_BUTTON = 'browser-history-button';
 export const BROWSER_HISTORY_PUSH = 'browser-history-push';
@@ -129,3 +132,26 @@ export const RETRIEVED_LANGUAGE_INFORMATION = 'retrieved-language-information';
 export const GET_AVAILABLE_LANGUAGES = 'get-available-languages';
 
 export const VIEW_FINISHED_RESIZING = 'view-finished-resizing';
+
+export const REQUEST_CLEAR_DOWNLOADS_DROPDOWN = 'request-clear-downloads-dropdown';
+export const CLOSE_DOWNLOADS_DROPDOWN = 'close-downloads-dropdown';
+export const OPEN_DOWNLOADS_DROPDOWN = 'open-downloads-dropdown';
+export const SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE = 'show-downloads-dropdown-button-badge';
+export const HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE = 'hide-downloads-dropdown-button-badge';
+export const REQUEST_DOWNLOADS_DROPDOWN_INFO = 'request-downloads-dropdown-info';
+export const UPDATE_DOWNLOADS_DROPDOWN = 'update-downloads-dropdown';
+export const DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER = 'downloads-dropdown-show-file-in-folder';
+export const REQUEST_HAS_DOWNLOADS = 'request-has-downloads';
+export const DOWNLOADS_DROPDOWN_FOCUSED = 'downloads-dropdown-focused';
+export const RECEIVE_DOWNLOADS_DROPDOWN_SIZE = 'receive-downloads-dropdown-size';
+export const SEND_DOWNLOADS_DROPDOWN_SIZE = 'send-downloads-dropdown-size';
+
+export const OPEN_DOWNLOADS_DROPDOWN_MENU = 'open-downloads-dropdown-menu';
+export const CLOSE_DOWNLOADS_DROPDOWN_MENU = 'close-downloads-dropdown-menu';
+export const TOGGLE_DOWNLOADS_DROPDOWN_MENU = 'toggle-downloads-dropdown-menu';
+export const UPDATE_DOWNLOADS_DROPDOWN_MENU = 'update-downloads-dropdown-menu';
+export const UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM = 'update-downloads-dropdown-menu-item';
+export const REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO = 'request-downloads-dropdown-menu-info';
+export const DOWNLOADS_DROPDOWN_MENU_CANCEL_DOWNLOAD = 'downloads-dropdown-menu-cancel-download';
+export const DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE = 'downloads-dropdown-menu-clear-file';
+export const DOWNLOADS_DROPDOWN_MENU_OPEN_FILE = 'downloads-dropdown-menu-open-file';

@@ -13,6 +13,7 @@ import {Config} from 'common/config';
 import {localizeMessage} from 'main/i18nManager';
 import WindowManager from 'main/windows/windowManager';
 import {UpdateManager} from 'main/autoUpdater';
+import downloadsManager from 'main/downloadsManager';
 
 export function createTemplate(config: Config, updateManager: UpdateManager) {
     const separatorItem: MenuItemConstructorOptions = {
@@ -78,12 +79,14 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     }
 
     template.push({
+        id: 'file',
         label: firstMenuName,
         submenu: [
             ...platformAppMenu,
         ],
     });
     template.push({
+        id: 'edit',
         label: localizeMessage('main.menus.app.edit', '&Edit'),
         submenu: [{
             role: 'undo',
@@ -160,6 +163,13 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         visible: false,
         accelerator: 'CmdOrCtrl+Shift+-',
     }, separatorItem, {
+        id: 'app-menu-downloads',
+        label: localizeMessage('main.menus.app.view.downloads', 'Downloads'),
+        enabled: downloadsManager.hasDownloads(),
+        click() {
+            return downloadsManager.openDownloadsDropdown();
+        },
+    }, separatorItem, {
         label: localizeMessage('main.menus.app.view.devToolsAppWrapper', 'Developer Tools for Application Wrapper'),
         accelerator: (() => {
             if (process.platform === 'darwin') {
@@ -195,10 +205,12 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     }
 
     template.push({
+        id: 'view',
         label: localizeMessage('main.menus.app.view', '&View'),
         submenu: viewSubMenu,
     });
     template.push({
+        id: 'history',
         label: localizeMessage('main.menus.app.history', '&History'),
         submenu: [{
             label: localizeMessage('main.menus.app.history.back', 'Back'),
@@ -225,6 +237,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
 
     const teams = config.data?.teams || [];
     const windowMenu = {
+        id: 'window',
         label: localizeMessage('main.menus.app.window', '&Window'),
         role: isMac ? 'windowMenu' : null,
         submenu: [{
@@ -339,7 +352,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         },
     });
 
-    template.push({label: localizeMessage('main.menus.app.help', 'Hel&p'), submenu});
+    template.push({id: 'help', label: localizeMessage('main.menus.app.help', 'Hel&p'), submenu});
     return template;
 }
 

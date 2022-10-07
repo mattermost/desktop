@@ -12,6 +12,7 @@ import {
     LOADING_SCREEN_ANIMATION_FINISHED,
     TOGGLE_LOADING_SCREEN_VISIBILITY,
     CLOSE_TEAMS_DROPDOWN,
+    CLOSE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
 
 console.log('preloaded for the loading screen!');
@@ -40,4 +41,5 @@ ipcRenderer.on(TOGGLE_LOADING_SCREEN_VISIBILITY, (_, toggle) => {
 
 window.addEventListener('click', () => {
     ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
+    ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
 });

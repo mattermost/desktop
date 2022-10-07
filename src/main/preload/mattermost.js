@@ -30,6 +30,7 @@ import {
     DISPATCH_GET_DESKTOP_SOURCES,
     DESKTOP_SOURCES_RESULT,
     VIEW_FINISHED_RESIZING,
+    CLOSE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -243,8 +244,23 @@ setInterval(() => {
     webFrame.clearCache();
 }, CLEAR_CACHE_INTERVAL);
 
-window.addEventListener('click', () => {
+function isDownloadLink(el) {
+    if (typeof el !== 'object') {
+        return false;
+    }
+    const parentEl = el.parentElement;
+    if (typeof parentEl !== 'object') {
+        return el.className?.includes?.('download') || el.tagName?.toLowerCase?.() === 'svg';
+    }
+    return el.closest('a[download]') !== null;
+}
+
+window.addEventListener('click', (e) => {
     ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
+    const el = e.target;
+    if (!isDownloadLink(el)) {
+        ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
+    }
 });
 
 ipcRenderer.on(BROWSER_HISTORY_PUSH, (event, pathName) => {
