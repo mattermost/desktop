@@ -268,5 +268,7 @@
     "renderer.downloadsDropdown.remaining": "remaining",
     "renderer.downloadsDropdown.Downloads": "Downloads",
     "renderer.downloadsDropdown.ClearAll": "Clear All",
-    "main.menus.app.view.downloads": "Downloads"
+    "main.menus.app.view.downloads": "Downloads",
+    "renderer.time.sec": "seconds",
+    "renderer.time.mins": "minutes"
 }
