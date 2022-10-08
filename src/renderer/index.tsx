@@ -119,7 +119,6 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         if (!config) {
             return null;
         }
-
         return (
             <IntlProvider>
                 <MainPage

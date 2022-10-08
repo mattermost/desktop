@@ -24,7 +24,9 @@
         "import/no-commonjs": 2,
         "no-process-env": 0,
         "no-var": 2,
-        "react/no-find-dom-node": 2
+        "react/no-find-dom-node": 2,
+        "multiline-ternary": 0,
+        "max-lines": ["warn", 650]
     },
     "overrides": [
         {

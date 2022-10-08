@@ -21,6 +21,8 @@ module.exports = merge(base, {
         index: './src/renderer/index.tsx',
         settings: './src/renderer/settings.tsx',
         dropdown: './src/renderer/dropdown.tsx',
+        downloadsDropdownMenu: './src/renderer/downloadsDropdownMenu.tsx',
+        downloadsDropdown: './src/renderer/downloadsDropdown.tsx',
         urlView: './src/renderer/modals/urlView/urlView.tsx',
         newServer: './src/renderer/modals/newServer/newServer.tsx',
         editServer: './src/renderer/modals/editServer/editServer.tsx',
@@ -54,6 +56,18 @@ module.exports = merge(base, {
             template: 'src/renderer/index.html',
             chunks: ['dropdown'],
             filename: 'dropdown.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Downloads',
+            template: 'src/renderer/index.html',
+            chunks: ['downloadsDropdown'],
+            filename: 'downloadsDropdown.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Downloads',
+            template: 'src/renderer/index.html',
+            chunks: ['downloadsDropdownMenu'],
+            filename: 'downloadsDropdownMenu.html',
         }),
         new HtmlWebpackPlugin({
             title: 'Mattermost Desktop Settings',

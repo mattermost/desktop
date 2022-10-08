@@ -3,6 +3,7 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
+import fs from 'fs';
 
 import {app, BrowserWindow} from 'electron';
 
@@ -97,4 +98,41 @@ export function composeUserAgent() {
     const filteredUserAgent = baseUserAgent.filter((ua) => !ua.startsWith('Mattermost'));
 
     return `${filteredUserAgent.join(' ')} Mattermost/${app.getVersion()}`;
+}
+
+export function isStringWithLength(string: unknown): boolean {
+    return typeof string === 'string' && string.length > 0;
+}
+
+export function getPercentage(received: number, total: number) {
+    if (total === 0) {
+        return 0;
+    }
+    return Math.round((received / total) * 100);
+}
+
+export function readFilenameFromContentDispositionHeader(header: string[]) {
+    return header?.join(';')?.match(/(?<=filename=")(.*)(?=")/g)?.[0];
+}
+
+export function doubleSecToMs(d: number): number {
+    return Math.round(d * 1000);
+}
+
+export function shouldIncrementFilename(filepath: string, increment = 0): string {
+    const {dir, name, ext} = path.parse(filepath);
+    const incrementString = increment ? ` (${increment})` : '';
+    const filename = `${name}${incrementString}${ext}`;
+
+    let fileExists = true;
+    try {
+        fs.accessSync(path.join(dir, filename), fs.constants.F_OK);
+    } catch (error) {
+        fileExists = false;
+    }
+
+    if (fileExists) {
+        return shouldIncrementFilename(filepath, increment + 1);
+    }
+    return filename;
 }

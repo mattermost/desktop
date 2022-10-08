@@ -6,6 +6,7 @@ import Joi from 'joi';
 
 import {Args} from 'types/args';
 import {ConfigV0, ConfigV1, ConfigV2, ConfigV3, TeamWithTabs} from 'types/config';
+import {DownloadedItems} from 'types/downloads';
 import {SavedWindowState} from 'types/mainWindow';
 import {AppState} from 'types/appState';
 import {ComparableCertificate} from 'types/certificate';
@@ -44,6 +45,20 @@ const appStateSchema = Joi.object<AppState>({
     skippedVersion: Joi.string(),
     updateCheckedDate: Joi.string(),
 });
+
+const downloadsSchema = Joi.object<DownloadedItems>().pattern(
+    Joi.string(),
+    {
+        type: Joi.string().valid('file', 'update'),
+        filename: Joi.string().allow(null),
+        state: Joi.string().valid('interrupted', 'progressing', 'completed', 'cancelled', 'deleted', 'available'),
+        progress: Joi.number().min(0).max(100),
+        location: Joi.string().allow(''),
+        mimeType: Joi.string().allow(null),
+        addedAt: Joi.number().min(0),
+        receivedBytes: Joi.number().min(0),
+        totalBytes: Joi.number().min(0),
+    });
 
 const configDataSchemaV0 = Joi.object<ConfigV0>({
     url: Joi.string().required(),
@@ -96,7 +111,7 @@ const configDataSchemaV2 = Joi.object<ConfigV2>({
 });
 
 const configDataSchemaV3 = Joi.object<ConfigV3>({
-    version: Joi.number().min(2).default(2),
+    version: Joi.number().min(3).default(3),
     teams: Joi.array().items(Joi.object({
         name: Joi.string().required(),
         url: Joi.string().required(),
@@ -169,6 +184,11 @@ export function validateBoundsInfo(data: SavedWindowState) {
 // validate app_state.json
 export function validateAppState(data: AppState) {
     return validateAgainstSchema(data, appStateSchema);
+}
+
+// validate downloads.json
+export function validateDownloads(data: DownloadedItems) {
+    return validateAgainstSchema(data, downloadsSchema);
 }
 
 // validate v.0 config.json

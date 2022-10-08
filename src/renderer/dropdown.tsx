@@ -99,7 +99,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
         }
     }
 
-    preventPropogation = (event: React.MouseEvent<HTMLDivElement>) => {
+    preventPropagation = (event: React.MouseEvent<HTMLDivElement>) => {
         event.stopPropagation();
     }
 
@@ -160,7 +160,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
         window.removeEventListener('keydown', this.handleKeyboardShortcuts);
     }
 
-    setButtonRef = (teamIndex: number, refMethod?: (element: HTMLButtonElement) => any) => {
+    setButtonRef = (teamIndex: number, refMethod?: (element: HTMLButtonElement) => unknown) => {
         return (ref: HTMLButtonElement) => {
             this.addButtonRef(teamIndex, ref);
             refMethod?.(ref);
@@ -232,7 +232,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
         return (
             <IntlProvider>
                 <div
-                    onClick={this.preventPropogation}
+                    onClick={this.preventPropagation}
                     className={classNames('TeamDropdown', {
                         darkMode: this.state.darkMode,
                     })}
