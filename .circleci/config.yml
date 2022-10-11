@@ -190,7 +190,7 @@ jobs:
           command: choco install yq --version 4.15.1 -y
       - run:
           name: Install nodejs-lts
-          command: choco install nodejs-lts -y
+          command: nvm off; choco install nodejs-lts -y
       - run: npm i -g node-gyp; node-gyp install
       - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
       - build:
@@ -241,7 +241,7 @@ jobs:
           command: choco install yq --version 4.15.1 -y
       - run:
           name: Install nodejs-lts
-          command: choco install nodejs-lts -y
+          command: nvm off; choco install nodejs-lts -y
       - win_make:
           operation: optimize
       - win_make:
@@ -268,7 +268,7 @@ jobs:
           command: choco install yq --version 4.15.1 -y
       - run:
           name: Install nodejs-lts
-          command: choco install nodejs-lts -y
+          command: nvm off; choco install nodejs-lts -y
       - run: npm i -g node-gyp; node-gyp install
       - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
       - build:
