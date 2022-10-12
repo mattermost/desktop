@@ -254,8 +254,8 @@ function Install-Wix {
     # choco install wixtoolset --yes
     $WebClient = New-Object System.Net.WebClient
     # if they ever fix the installer we can move to 3.11
-    #$WebClient.DownloadFile("https://github.com/wixtoolset/wix3/releases/download/wix3111rtm/wix311.exe",".\scripts\wix.exe")
-    $WebClient.DownloadFile("https://github.com/wixtoolset/wix3/releases/download/wix3104rtm/wix310.exe",".\scripts\wix.exe")
+    $WebClient.DownloadFile("https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311.exe",".\scripts\wix.exe")
+    #$WebClient.DownloadFile("https://github.com/wixtoolset/wix3/releases/download/wix3104rtm/wix310.exe",".\scripts\wix.exe")
     Print-Info "Installing wixtoolset..."
     # todo: check hash
     .\scripts\wix.exe -q
