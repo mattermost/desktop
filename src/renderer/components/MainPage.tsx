@@ -49,6 +49,7 @@ import {
     UPDATE_DOWNLOADS_DROPDOWN,
     REQUEST_HAS_DOWNLOADS,
     CLOSE_DOWNLOADS_DROPDOWN_MENU,
+    APP_MENU_WILL_CLOSE,
 } from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -101,6 +102,7 @@ type State = {
     isDownloadsDropdownOpen: boolean;
     showDownloadsBadge: boolean;
     hasDownloads: boolean;
+    threeDotsIsFocused: boolean;
 };
 
 type TabViewStatus = {
@@ -113,13 +115,11 @@ type TabViewStatus = {
 
 class MainPage extends React.PureComponent<Props, State> {
     topBar: React.RefObject<HTMLDivElement>;
-    threeDotMenu: React.RefObject<HTMLButtonElement>;
 
     constructor(props: Props) {
         super(props);
 
         this.topBar = React.createRef();
-        this.threeDotMenu = React.createRef();
 
         const firstServer = this.props.teams.find((team) => team.order === this.props.lastActiveTeam) || this.props.teams.find((team) => team.order === 0);
         let firstTab = firstServer?.tabs.find((tab) => tab.order === firstServer.lastActiveTab) || firstServer?.tabs.find((tab) => tab.order === 0);
@@ -141,6 +141,7 @@ class MainPage extends React.PureComponent<Props, State> {
             isDownloadsDropdownOpen: false,
             showDownloadsBadge: false,
             hasDownloads: false,
+            threeDotsIsFocused: false,
         };
     }
 
@@ -279,12 +280,10 @@ class MainPage extends React.PureComponent<Props, State> {
             });
         });
 
+        window.ipcRenderer.on(APP_MENU_WILL_CLOSE, this.unFocusThreeDotsButton);
+
         if (window.process.platform !== 'darwin') {
-            window.ipcRenderer.on(FOCUS_THREE_DOT_MENU, () => {
-                if (this.threeDotMenu.current) {
-                    this.threeDotMenu.current.focus();
-                }
-            });
+            window.ipcRenderer.on(FOCUS_THREE_DOT_MENU, this.focusThreeDotsButton);
         }
 
         window.addEventListener('click', this.handleCloseDropdowns);
@@ -357,9 +356,6 @@ class MainPage extends React.PureComponent<Props, State> {
     }
 
     openMenu = () => {
-        if (window.process.platform !== 'darwin') {
-            this.threeDotMenu.current?.blur();
-        }
         this.props.openMenu();
     }
 
@@ -387,6 +383,18 @@ class MainPage extends React.PureComponent<Props, State> {
 
     openDownloadsDropdown() {
         window.ipcRenderer.send(OPEN_DOWNLOADS_DROPDOWN);
+    }
+
+    focusThreeDotsButton = () => {
+        this.setState({
+            threeDotsIsFocused: true,
+        });
+    }
+
+    unFocusThreeDotsButton = () => {
+        this.setState({
+            threeDotsIsFocused: false,
+        });
     }
 
     render() {
@@ -512,11 +520,16 @@ class MainPage extends React.PureComponent<Props, State> {
                     <button
                         className='three-dot-menu'
                         onClick={this.openMenu}
+                        onMouseOver={this.focusThreeDotsButton}
+                        onMouseOut={this.unFocusThreeDotsButton}
                         tabIndex={0}
-                        ref={this.threeDotMenu}
                         aria-label={intl.formatMessage({id: 'renderer.components.mainPage.contextMenu.ariaLabel', defaultMessage: 'Context menu'})}
                     >
-                        <i className='icon-dots-vertical'/>
+                        <i
+                            className={classNames('icon-dots-vertical', {
+                                isFocused: this.state.threeDotsIsFocused,
+                            })}
+                        />
                     </button>
                     {this.props.teams.length !== 0 && (
                         <TeamDropdownButton
