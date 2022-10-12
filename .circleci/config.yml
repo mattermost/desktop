@@ -4,7 +4,7 @@ parameters:
     default: false
     type: boolean
 orbs:
-  win: circleci/windows@1.0.0
+  win: circleci/windows@5.0.0
   aws-s3: circleci/aws-s3@2.0.0
   owasp: entur/owasp@0.0.10
 
@@ -36,7 +36,7 @@ executors:
   github:
     working_directory: ~/mattermost-desktop
     docker:
-      - image: circleci/golang:1.12
+      - image: cimg/go:1.19.2
 commands:
   notify:
     description: "notify on release channel"
@@ -179,7 +179,7 @@ jobs:
             - "~/.cache/electron-builder"
 
   build-win-no-installer:
-    executor: win/vs2019
+    executor: win/server-2019
     steps:
       - checkout
       - run: mkdir -p ./build
@@ -190,7 +190,7 @@ jobs:
           command: choco install yq --version 4.15.1 -y
       - run:
           name: Install nodejs-lts
-          command: choco install nodejs-lts -y
+          command: nvm off; choco install nodejs-lts -y
       - run: npm i -g node-gyp; node-gyp install
       - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
       - build:
@@ -229,7 +229,7 @@ jobs:
             - "~/.cache/electron-builder"
 
   msi_installer:
-    executor: win/vs2019
+    executor: win/server-2019
 
     steps:
       - checkout
@@ -241,7 +241,7 @@ jobs:
           command: choco install yq --version 4.15.1 -y
       - run:
           name: Install nodejs-lts
-          command: choco install nodejs-lts -y
+          command: nvm off; choco install nodejs-lts -y
       - win_make:
           operation: optimize
       - win_make:
@@ -257,7 +257,7 @@ jobs:
             - "./win-release/"
 
   build-windows-pr:
-    executor: win/vs2019
+    executor: win/server-2019
     steps:
       - checkout
       - run: mkdir -p ./build
@@ -268,7 +268,7 @@ jobs:
           command: choco install yq --version 4.15.1 -y
       - run:
           name: Install nodejs-lts
-          command: choco install nodejs-lts -y
+          command: nvm off; choco install nodejs-lts -y
       - run: npm i -g node-gyp; node-gyp install
       - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
       - build:
@@ -519,7 +519,7 @@ jobs:
       - run:
           name: "Publish Release on GitHub"
           command: |
-            go get github.com/tcnksm/ghr
+            go install github.com/tcnksm/ghr@latest
             VERSION=$(jq -r .version package.json)
             RELEASE_TITLE="v${VERSION} ($(date -u "+%Y-%m-%d"))"
             ghr \
