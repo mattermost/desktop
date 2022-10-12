@@ -121,30 +121,9 @@ function LoadingAnimation() {
                         fill='black'
                     />
                 </mask>
-                <mask id='LoadingAnimation__spinner-wipe-mask'>
-                    <rect
-                        x='0'
-                        y='0'
-                        width='104'
-                        height='104'
-                        fill='white'
-                    />
-                    <g className='LoadingAnimation__spinner-mask-container'>
-                        <circle
-                            className='LoadingAnimation__spinner-mask'
-                            r='27'
-                            cx='52'
-                            cy='52'
-                            fill='black'
-                            stroke='white'
-                            strokeWidth='54'
-                        />
-                    </g>
-                </mask>
             </defs>
             <g
                 className='LoadingAnimation__spinner-container'
-                mask='url(#LoadingAnimation__spinner-wipe-mask)'
             >
                 <g className='LoadingAnimation__spinner'>
                     <circle

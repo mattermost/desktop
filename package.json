@@ -9,14 +9,14 @@
   "desktopName": "Mattermost.Desktop",
   "homepage": "https://mattermost.com",
   "engines": {
-    "node": ">=14.6.0"
+    "node": ">=16.16.0"
   },
   "repository": {
     "type": "git",
     "url": "git://github.com/mattermost/desktop.git"
   },
   "config": {
-    "target": "19.1.2",
+    "target": "21.1.0",
     "arch": "x64",
     "target_arch": "x64",
     "disturl": "https://electronjs.org/headers",
@@ -27,7 +27,7 @@
     "build": "npm-run-all build:*",
     "build:main": "webpack-cli --config webpack.config.main.js",
     "build:renderer": "webpack-cli --config webpack.config.renderer.js",
-    "build-robotjs": "electron-rebuild -v 19.1.2 -m ./node_modules/robotjs",
+    "build-robotjs": "cross-env CL='/std:c++17' electron-rebuild -v 21.1.0 -m ./node_modules/robotjs",
     "start": "electron dist/ --disable-dev-mode",
     "restart": "npm run build && npm run start",
     "storybook": "start-storybook -p 9001 -c src/.storybook",
@@ -152,7 +152,7 @@
     "copy-webpack-plugin": "10.2.4",
     "cross-env": "7.0.3",
     "css-loader": "6.7.1",
-    "electron": "19.1.1",
+    "electron": "21.1.0",
     "electron-builder": "23.3.3",
     "electron-connect": "0.6.3",
     "electron-mocha": "11.0.2",
@@ -174,6 +174,8 @@
     "mmjstool": "github:mattermost/mattermost-utilities#3b4506b0f6b14fbb402f9f8ef932370e459e3773",
     "mocha-circleci-reporter": "0.0.3",
     "mochawesome": "7.1.3",
+    "nan": "2.17.0",
+    "node-abi": "3.26.0",
     "node-loader": "2.0.0",
     "npm-run-all": "4.1.5",
     "playwright": "1.23.4",
