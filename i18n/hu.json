@@ -241,5 +241,17 @@
     "renderer.components.welcomeScreen.slides.playbooks.title": "Forgatókönyvek",
     "renderer.components.welcomeScreen.slides.welcome.subtitle": "A Mattermost egy nyílt forráskódú platform a fejlesztői együttműködéshez. Biztonságos, rugalmas és integrált az Ön által kedvelt eszközökkel.",
     "renderer.components.welcomeScreen.slides.welcome.title": "Üdv",
-    "renderer.components.mainPage.titleBar": "Mattermost"
+    "renderer.components.mainPage.titleBar": "Mattermost",
+    "renderer.components.configureServer.subtitle": "Állítsa be az első szervert, hogy csatlakozzon a csapat<br></br>kommunikációs központjához",
+    "renderer.components.configureServer.cardtitle": "Adja meg a szervere adatait",
+    "renderer.components.configureServer.name.info": "A név ami meg lesz jelenítve a szerverek listájában",
+    "renderer.components.configureServer.title": "Csatlakozzunk egy szerverhez",
+    "renderer.components.configureServer.url.info": "A Mattermost szerver URL-je",
+    "renderer.components.saveButton.saving": "Mentés folyamatban",
+    "renderer.components.saveButton.save": "Mentés",
+    "renderer.components.input.required": "Ez a mező kötelező",
+    "renderer.components.configureServer.url.placeholder": "Szerver URL",
+    "renderer.components.configureServer.name.placeholder": "Szerver megjelenítési neve",
+    "renderer.components.configureServer.connect.saving": "Csatlakozás…",
+    "renderer.components.configureServer.connect.default": "Csatlakozás"
 }

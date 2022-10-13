@@ -240,5 +240,17 @@
     "renderer.components.welcomeScreen.slides.boards.title": "Boards",
     "renderer.components.welcomeScreen.slides.boards.subtitle": "デジタルオペレーション向けに構築されたプロジェクト/タスク管理ソリューションにより、いつも時間通りに作業を完了することができます。",
     "renderer.components.welcomeScreen.button.getStarted": "はじめに",
-    "renderer.components.mainPage.titleBar": "Mattermost"
+    "renderer.components.mainPage.titleBar": "Mattermost",
+    "renderer.components.saveButton.saving": "保存中",
+    "renderer.components.saveButton.save": "保存",
+    "renderer.components.input.required": "この項目は必須です",
+    "renderer.components.configureServer.url.placeholder": "サーバーURL",
+    "renderer.components.configureServer.url.info": "Mattermost サーバーの URL",
+    "renderer.components.configureServer.title": "サーバーに接続してみましょう",
+    "renderer.components.configureServer.name.placeholder": "サーバー表示名",
+    "renderer.components.configureServer.name.info": "サーバーリストに表示される名前",
+    "renderer.components.configureServer.connect.saving": "接続しています…",
+    "renderer.components.configureServer.connect.default": "接続する",
+    "renderer.components.configureServer.cardtitle": "サーバーの詳細を入力してください",
+    "renderer.components.configureServer.subtitle": "あなたの最初のサーバーをセットアップし<br></br>チームのコミュニケーションHubへ接続しましょう"
 }
