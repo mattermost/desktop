@@ -35,6 +35,7 @@ import {
     START_UPDATE_DOWNLOAD,
     PING_DOMAIN,
     MAIN_WINDOW_SHOWN,
+    OPEN_APP_MENU,
 } from 'common/communication';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
@@ -236,7 +237,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(UPDATE_LAST_ACTIVE, handleUpdateLastActive);
 
     if (process.platform !== 'darwin') {
-        ipcMain.on('open-app-menu', handleOpenAppMenu);
+        ipcMain.on(OPEN_APP_MENU, handleOpenAppMenu);
     }
 
     ipcMain.on(SWITCH_SERVER, handleSwitchServer);

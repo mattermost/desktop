@@ -83,16 +83,16 @@ body {
   outline: none;
 }
 
-.topBar .three-dot-menu:hover i.icon-dots-vertical, .topBar .three-dot-menu:focus i.icon-dots-vertical, .topBar .three-dot-menu:active i.icon-dots-vertical {
+.topBar .three-dot-menu i.icon-dots-vertical.isFocused {
   outline: none;
   background-color: #c8c8c8;
 }
 
-.topBar.darkMode .three-dot-menu:hover i.icon-dots-vertical, .topBar.darkMode .three-dot-menu:focus i.icon-dots-vertical, .topBar.darkMode .three-dot-menu:active i.icon-dots-vertical {
+.topBar.darkMode .three-dot-menu i.icon-dots-vertical.isFocused {
   background-color: #383A3F;
 }
 
-.topBar.macOS .three-dot-menu:hover i.icon-dots-vertical, .topBar.macOS .three-dot-menu:focus i.icon-dots-vertical, .topBar.macOS .three-dot-menu:active i.icon-dots-vertical {
+.topBar.macOS .three-dot-menu i.icon-dots-vertical.isFocused {
   background: none !important;
 }
 
