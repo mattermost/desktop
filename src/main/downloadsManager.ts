@@ -476,6 +476,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         update.totalBytes = total;
         update.receivedBytes = transferred;
         update.progress = Math.round(percent);
+        this.save(APP_UPDATE_KEY, update);
         this.shouldShowBadge();
     }
     private noUpdateAvailable = () => {
