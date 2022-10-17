@@ -62,6 +62,7 @@ export default class CallsWidgetWindow extends EventEmitter {
             transparent: true,
             show: false,
             alwaysOnTop: true,
+            backgroundColor: '#00ffffff',
             webPreferences: {
                 preload: getLocalPreload('callsWidget.js'),
             },
@@ -175,7 +176,6 @@ export default class CallsWidgetWindow extends EventEmitter {
             width: MINIMUM_CALLS_WIDGET_WIDTH,
             height: MINIMUM_CALLS_WIDGET_HEIGHT,
         };
-        this.win.setBackgroundColor('#00ffffff');
         this.win.setMenuBarVisibility(false);
 
         if (process.env.MM_DEBUG_CALLS_WIDGET) {

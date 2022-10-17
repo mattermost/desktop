@@ -85,6 +85,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 transparent: true,
                 show: false,
                 alwaysOnTop: true,
+                backgroundColor: '#00ffffff',
             }));
         });
 
