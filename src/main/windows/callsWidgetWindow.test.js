@@ -73,6 +73,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         it('verify initial configuration', () => {
             const widgetWindow = new CallsWidgetWindow(mainWindow, widgetConfig);
+            expect(widgetWindow).toBeDefined();
             expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
                 width: MINIMUM_CALLS_WIDGET_WIDTH,
                 height: MINIMUM_CALLS_WIDGET_HEIGHT,

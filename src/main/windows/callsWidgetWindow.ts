@@ -29,15 +29,6 @@ type LoadURLOpts = {
     extraHeaders: string;
 }
 
-function boundsDiff(base: Rectangle, actual: Rectangle) {
-    return {
-        x: base.x - actual.x,
-        y: base.y - actual.y,
-        width: base.width - actual.width,
-        height: base.height - actual.height,
-    };
-}
-
 export default class CallsWidgetWindow extends EventEmitter {
     public win: BrowserWindow;
     private main: BrowserWindow;
@@ -166,7 +157,7 @@ export default class CallsWidgetWindow extends EventEmitter {
         bounds.width += this.boundsErr.width;
 
         this.win.setBounds(bounds);
-        this.boundsErr = boundsDiff(bounds, this.win.getBounds());
+        this.boundsErr = Utils.boundsDiff(bounds, this.win.getBounds());
     }
 
     private onShow = () => {
