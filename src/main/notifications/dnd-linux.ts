@@ -9,12 +9,12 @@ const GNOME_READ_DND = 'gsettings get org.gnome.desktop.notifications show-banne
 
 function getLinuxDoNotDisturb() {
     try {
-        const result = execSync(GNOME_READ_DND).toString().replace('\n', '');
-        log.debug('getLinuxDoNotDisturb', {result});
+        const showNotifications = execSync(GNOME_READ_DND).toString().replace('\n', '');
+        log.debug('getLinuxDoNotDisturb', {showNotifications});
 
-        return result === 'true';
+        return showNotifications !== 'true';
     } catch (error) {
-        log.error('getLinuxDoNotDisturb', {error});
+        log.error('getLinuxDoNotDisturb Error:', {error});
 
         return false;
     }

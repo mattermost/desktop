@@ -241,7 +241,7 @@ describe('main/notifications', () => {
 
     describe('getLinuxDoNotDisturb', () => {
         it('should return false', () => {
-            cp.execSync.mockReturnValue(false);
+            cp.execSync.mockReturnValue('true');
             expect(getLinuxDoNotDisturb()).toBe(false);
         });
 
@@ -253,7 +253,7 @@ describe('main/notifications', () => {
         });
 
         it('should return true', () => {
-            cp.execSync.mockReturnValue(true);
+            cp.execSync.mockReturnValue('false');
             expect(getLinuxDoNotDisturb()).toBe(true);
         });
     });
