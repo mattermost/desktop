@@ -5,6 +5,10 @@ import {EventEmitter} from 'events';
 import {BrowserWindow} from 'electron';
 
 import {CALLS_WIDGET_SHARE_SCREEN} from 'common/communication';
+import {
+    MINIMUM_CALLS_WIDGET_WIDTH,
+    MINIMUM_CALLS_WIDGET_HEIGHT,
+} from 'common/utils/constants';
 
 import CallsWidgetWindow from './callsWidgetWindow';
 
@@ -70,10 +74,10 @@ describe('main/windows/callsWidgetWindow', () => {
         it('verify initial configuration', () => {
             const widgetWindow = new CallsWidgetWindow(mainWindow, widgetConfig);
             expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
-                width: widgetWindow.minWidth,
-                height: widgetWindow.minHeight,
-                minWidth: widgetWindow.minWidth,
-                minHeight: widgetWindow.minHeight,
+                width: MINIMUM_CALLS_WIDGET_WIDTH,
+                height: MINIMUM_CALLS_WIDGET_HEIGHT,
+                minWidth: MINIMUM_CALLS_WIDGET_WIDTH,
+                minHeight: MINIMUM_CALLS_WIDGET_HEIGHT,
                 fullscreen: false,
                 resizable: false,
                 frame: false,

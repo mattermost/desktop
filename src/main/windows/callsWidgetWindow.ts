@@ -13,7 +13,12 @@ import {
 
 import {getLocalPreload} from 'main/utils';
 
-import {PRODUCTION} from 'common/utils/constants';
+import {
+    PRODUCTION,
+    MINIMUM_CALLS_WIDGET_WIDTH,
+    MINIMUM_CALLS_WIDGET_HEIGHT,
+    CALLS_PLUGIN_ID,
+} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 import {
     CALLS_WIDGET_RESIZE,
@@ -37,9 +42,6 @@ export default class CallsWidgetWindow extends EventEmitter {
     public win: BrowserWindow;
     private main: BrowserWindow;
     private config: CallsWidgetWindowConfig;
-    private minWidth = 280;
-    private minHeight = 86;
-    private pluginID = 'com.mattermost.calls';
     private boundsErr: Rectangle = {
         x: 0,
         y: 0,
@@ -58,10 +60,10 @@ export default class CallsWidgetWindow extends EventEmitter {
         this.config = config;
         this.main = mainWindow;
         this.win = new BrowserWindow({
-            width: this.minWidth,
-            height: this.minHeight,
-            minWidth: this.minWidth,
-            minHeight: this.minHeight,
+            width: MINIMUM_CALLS_WIDGET_WIDTH,
+            height: MINIMUM_CALLS_WIDGET_HEIGHT,
+            minWidth: MINIMUM_CALLS_WIDGET_WIDTH,
+            minHeight: MINIMUM_CALLS_WIDGET_HEIGHT,
             title: 'Calls Widget',
             fullscreen: false,
             resizable: false,
@@ -111,7 +113,7 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     private getWidgetURL() {
-        return `${this.config.siteURL}/static/plugins/${this.pluginID}/widget/widget.html?call_id=${this.config.callID}`;
+        return `${this.config.siteURL}/static/plugins/${CALLS_PLUGIN_ID}/widget/widget.html?call_id=${this.config.callID}`;
     }
 
     private onResize = (event: IpcMainEvent, msg: CallsWidgetResizeMessage) => {
@@ -124,7 +126,7 @@ export default class CallsWidgetWindow extends EventEmitter {
             const newBounds = {
                 x: currBounds.x,
                 y: currBounds.y,
-                width: msg.width > 0 ? currBounds.width + msg.width : this.minWidth,
+                width: msg.width > 0 ? currBounds.width + msg.width : MINIMUM_CALLS_WIDGET_WIDTH,
                 height: currBounds.height,
             };
 
@@ -138,8 +140,8 @@ export default class CallsWidgetWindow extends EventEmitter {
             const newBounds = {
                 x: currBounds.x,
                 y: msg.height === 0 ? currBounds.y + hOff : currBounds.y - (msg.height - hOff),
-                width: this.minWidth,
-                height: this.minHeight + msg.height,
+                width: MINIMUM_CALLS_WIDGET_WIDTH,
+                height: MINIMUM_CALLS_WIDGET_HEIGHT + msg.height,
             };
 
             this.setBounds(newBounds);
@@ -179,8 +181,8 @@ export default class CallsWidgetWindow extends EventEmitter {
         const initialBounds = {
             x: mainBounds.x + 12,
             y: (mainBounds.y + mainBounds.height) - bounds.height - 12,
-            width: this.minWidth,
-            height: this.minHeight,
+            width: MINIMUM_CALLS_WIDGET_WIDTH,
+            height: MINIMUM_CALLS_WIDGET_HEIGHT,
         };
         this.win.setBackgroundColor('#00ffffff');
         this.win.setMenuBarVisibility(false);

@@ -24,6 +24,10 @@ export const DEFAULT_WINDOW_HEIGHT = 800;
 export const MINIMUM_WINDOW_WIDTH = 700;
 export const MINIMUM_WINDOW_HEIGHT = 240;
 
+export const MINIMUM_CALLS_WIDGET_WIDTH = 280;
+export const MINIMUM_CALLS_WIDGET_HEIGHT = 86;
+export const CALLS_PLUGIN_ID = 'com.mattermost.calls';
+
 // supported custom login paths (oath, saml)
 export const customLoginRegexPaths = [
     /^\/oauth\/authorize$/i,
