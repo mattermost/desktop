@@ -1132,7 +1132,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
                 >
                     <FormattedMessage
                         id='label.sendNotification'
-                        defaultMessage='SendNotification'
+                        defaultMessage='Send Notification'
                     />
                 </Button>
             </div>,
