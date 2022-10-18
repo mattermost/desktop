@@ -59,9 +59,8 @@ jest.mock('electron', () => {
     };
 });
 jest.mock('path', () => {
-    const original = jest.requireActual('path');
     return {
-        ...original,
+        join: jest.fn(),
         resolve: jest.fn(),
         parse: jest.fn(),
     };
