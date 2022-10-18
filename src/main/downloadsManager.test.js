@@ -60,6 +60,7 @@ jest.mock('electron', () => {
 });
 jest.mock('path', () => {
     return {
+        dirname: jest.fn(),
         join: jest.fn(),
         resolve: jest.fn(),
         parse: jest.fn(),

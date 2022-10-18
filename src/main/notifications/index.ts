@@ -23,7 +23,7 @@ import getLinuxDoNotDisturb from './dnd-linux';
 import getWindowsDoNotDisturb from './dnd-windows';
 
 const logoPath = path.join(path.dirname(app.getAppPath()), 'src/assets/mattermost.svg');
-const defaultSoundPath = path.join(path.dirname(app.getAppPath()), 'src/assets/sounds/crackle.mp3');
+const defaultSoundPath = path.join(path.dirname(app.getAppPath()), 'src/assets/sounds/bing.mp3');
 
 export const currentNotifications = new Map();
 
