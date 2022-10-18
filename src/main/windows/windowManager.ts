@@ -9,7 +9,6 @@ import log from 'electron-log';
 
 import {
     CallsJoinCallMessage,
-    CallsWidgetChannelLinkClickMessage,
 } from 'types/calls';
 
 import {
@@ -115,6 +114,7 @@ export class WindowManager {
             callID: msg.callID,
             title: msg.title,
             serverName: this.currentServerName!,
+            channelURL: msg.channelURL,
         });
 
         this.callsWidgetWindow.on('closed', () => delete this.callsWidgetWindow);
@@ -131,13 +131,13 @@ export class WindowManager {
         }
     }
 
-    handleCallsWidgetChannelLinkClick = (ev: IpcMainEvent, msg: CallsWidgetChannelLinkClickMessage) => {
+    handleCallsWidgetChannelLinkClick = () => {
         log.debug('WindowManager.handleCallsWidgetChannelLinkClick');
         if (this.callsWidgetWindow) {
-            this.switchServer(this.callsWidgetWindow?.getServerName());
+            this.switchServer(this.callsWidgetWindow.getServerName());
             this.mainWindow?.focus();
             const currentView = this.viewManager?.getCurrentView();
-            currentView?.view.webContents.send(BROWSER_HISTORY_PUSH, msg.pathName);
+            currentView?.view.webContents.send(BROWSER_HISTORY_PUSH, this.callsWidgetWindow.getChannelURL());
         }
     }
 

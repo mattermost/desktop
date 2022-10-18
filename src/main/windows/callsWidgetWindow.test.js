@@ -27,6 +27,7 @@ describe('main/windows/callsWidgetWindow', () => {
             siteURL: 'http://localhost:8065',
             title: '',
             serverName: 'test',
+            channelURL: '/team/channel_id',
         };
 
         const mainWindow = {
@@ -223,6 +224,11 @@ describe('main/windows/callsWidgetWindow', () => {
         it('getServerName', () => {
             const widgetWindow = new CallsWidgetWindow(mainWindow, widgetConfig);
             expect(widgetWindow.getServerName()).toBe('test');
+        });
+
+        it('getChannelURL', () => {
+            const widgetWindow = new CallsWidgetWindow(mainWindow, widgetConfig);
+            expect(widgetWindow.getChannelURL()).toBe('/team/channel_id');
         });
 
         it('onShareScreen', () => {

@@ -5,11 +5,13 @@ export type CallsWidgetWindowConfig = {
     callID: string;
     title: string;
     serverName: string;
+    channelURL: string;
 }
 
 export type CallsJoinCallMessage = {
     callID: string;
     title: string;
+    channelURL: string;
 }
 
 export type CallsWidgetResizeMessage = {
@@ -21,8 +23,4 @@ export type CallsWidgetResizeMessage = {
 export type CallsWidgetShareScreenMessage = {
     sourceID: string;
     withAudio: boolean;
-}
-
-export type CallsWidgetChannelLinkClickMessage = {
-    pathName: string;
 }

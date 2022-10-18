@@ -86,6 +86,10 @@ export default class CallsWidgetWindow extends EventEmitter {
         return this.config.serverName;
     }
 
+    public getChannelURL() {
+        return this.config.channelURL;
+    }
+
     private load() {
         const opts = {} as LoadURLOpts;
         if (Utils.runMode() !== PRODUCTION) {
