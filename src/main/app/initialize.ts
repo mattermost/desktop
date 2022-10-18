@@ -36,6 +36,7 @@ import {
     PING_DOMAIN,
     MAIN_WINDOW_SHOWN,
     OPEN_APP_MENU,
+    SEND_TEST_NOTIFICATION,
 } from 'common/communication';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
@@ -56,6 +57,7 @@ import TrustedOriginsStore from 'main/trustedOrigins';
 import {refreshTrayImages, setupTray} from 'main/tray/tray';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 import WindowManager from 'main/windows/windowManager';
+import {sendTestNotification} from 'main/notifications';
 
 import {protocols} from '../../../electron-builder.json';
 
@@ -260,6 +262,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(SHOW_SETTINGS_WINDOW, WindowManager.showSettingsWindow);
     ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, () => session.defaultSession.availableSpellCheckerLanguages);
     ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
+    ipcMain.on(SEND_TEST_NOTIFICATION, sendTestNotification);
     ipcMain.on(START_UPDATE_DOWNLOAD, handleStartDownload);
     ipcMain.on(START_UPGRADE, handleStartUpgrade);
     ipcMain.handle(PING_DOMAIN, handlePingDomain);

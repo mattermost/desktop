@@ -1,8 +1,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import path from 'path';
+
 import {shell, Notification} from 'electron';
 import log from 'electron-log';
+import nodeNotifier from 'node-notifier';
 
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
@@ -18,6 +21,9 @@ import {DownloadNotification} from './Download';
 import {NewVersionNotification, UpgradeNotification} from './Upgrade';
 import getLinuxDoNotDisturb from './dnd-linux';
 import getWindowsDoNotDisturb from './dnd-windows';
+
+const logoPath = path.join(__dirname, '../../assets/mattermost.svg');
+const defaultSoundPath = path.join(__dirname, '../../assets/sounds/crackle.mp3');
 
 export const currentNotifications = new Map();
 
@@ -136,6 +142,22 @@ export function displayRestartToUpgrade(version: string, handleUpgrade: () => vo
         handleUpgrade();
     });
     restartToUpgrade.show();
+}
+
+export function sendTestNotification() {
+    log.debug('notifications.sendTestNotification');
+    nodeNotifier.notify({
+        title: 'Test notification',
+        message: 'This is a test notification',
+        icon: logoPath,
+        sound: defaultSoundPath,
+    }, (error, response, metadata) => {
+        if (error) {
+            log.error('notifications.sendTestNotification.Error', {error});
+        } else {
+            log.debug('notifications.sendTestNotification', {response, metadata});
+        }
+    });
 }
 
 function getDoNotDisturb() {

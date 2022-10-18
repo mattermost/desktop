@@ -17,6 +17,10 @@ import {DeepPartial} from 'types/utils';
 
 import {localeTranslations} from 'common/utils/constants';
 
+import {
+    SEND_TEST_NOTIFICATION,
+} from 'common/communication';
+
 import AutoSaveIndicator, {SavingState} from './AutoSaveIndicator';
 
 const CONFIG_TYPE_UPDATES = 'updates';
@@ -417,6 +421,11 @@ class SettingsPage extends React.PureComponent<Props, State> {
 
     handleDoubleClick = () => {
         window.desktop.doubleClickOnWindow('settings');
+    }
+
+    sendTestNotification = (): void => {
+        console.log('Sending test notification');
+        window.ipcRenderer.send(SEND_TEST_NOTIFICATION);
     }
 
     render() {
@@ -1099,6 +1108,33 @@ class SettingsPage extends React.PureComponent<Props, State> {
                         defaultMessage='Increasing the log level increases disk space usage and can impact performance. We recommend only increasing the log level if you are having issues.'
                     />
                 </FormText>
+            </div>,
+        );
+
+        options.push(
+            <div
+                style={settingsPage.container}
+                key='containerSendTestNotification'
+            >
+                <hr/>
+                <div>
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.SendTestNotification'
+                        defaultMessage='Send test notification'
+                    />
+                </div>
+                <br/>
+                <Button
+                    key='sendTestNotificationButton'
+                    style={settingsPage.downloadLocationButton}
+                    id='sendTestNotificationButton'
+                    onClick={this.sendTestNotification}
+                >
+                    <FormattedMessage
+                        id='label.sendNotification'
+                        defaultMessage='SendNotification'
+                    />
+                </Button>
             </div>,
         );
 
