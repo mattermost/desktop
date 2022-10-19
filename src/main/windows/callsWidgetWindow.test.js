@@ -231,6 +231,16 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(widgetWindow.getChannelURL()).toBe('/team/channel_id');
         });
 
+        it('getWidgetURL', () => {
+            const config = {
+                ...widgetConfig,
+                siteURL: 'http://localhost:8065/subpath',
+            };
+            const widgetWindow = new CallsWidgetWindow(mainWindow, config);
+            const expected = `${config.siteURL}/static/plugins/com.mattermost.calls/widget/widget.html?basename=%2Fsubpath&call_id=${config.callID}`;
+            expect(widgetWindow.getWidgetURL()).toBe(expected);
+        });
+
         it('onShareScreen', () => {
             baseWindow.webContents = {
                 send: jest.fn(),

@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import url from 'url';
+
 import {EventEmitter} from 'events';
 import {BrowserWindow, Rectangle, ipcMain, IpcMainEvent} from 'electron';
 import log from 'electron-log';
@@ -109,7 +111,16 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     private getWidgetURL() {
-        return `${this.config.siteURL}/static/plugins/${CALLS_PLUGIN_ID}/widget/widget.html?call_id=${this.config.callID}`;
+        const u = new url.URL(this.config.siteURL);
+
+        if (u.pathname && u.pathname !== '/') {
+            u.searchParams.append('basename', u.pathname);
+        }
+
+        u.pathname += `/static/plugins/${CALLS_PLUGIN_ID}/widget/widget.html`;
+        u.searchParams.append('call_id', this.config.callID);
+
+        return u.toString();
     }
 
     private onResize = (event: IpcMainEvent, msg: CallsWidgetResizeMessage) => {
