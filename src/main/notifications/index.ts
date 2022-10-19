@@ -1,120 +1,71 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import path from 'path';
-
-import {app, shell, Notification} from 'electron';
+import {shell} from 'electron';
 import log from 'electron-log';
-import nodeNotifier from 'node-notifier';
+import {DisplayMentionArguments, NotificationOptions} from 'types/notification';
 
-import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
-
-import {MentionData} from 'types/notification';
-
-import {PLAY_SOUND} from 'common/communication';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
 
 import WindowManager from '../windows/windowManager';
+import {localizeMessage} from 'main/i18nManager';
 
-import {Mention} from './Mention';
-import {DownloadNotification} from './Download';
 import {NewVersionNotification, UpgradeNotification} from './Upgrade';
-import getLinuxDoNotDisturb from './dnd-linux';
-import getWindowsDoNotDisturb from './dnd-windows';
 
-const logoPath = path.join(path.dirname(app.getAppPath()), 'src/assets/mattermost.svg');
-const defaultSoundPath = path.join(path.dirname(app.getAppPath()), 'src/assets/sounds/bing.mp3');
+import {sendNotification} from './notification';
 
 export const currentNotifications = new Map();
 
-export function displayMention(title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData) {
-    log.debug('Notifications.displayMention', {title, body, channel, teamId, url, silent, data});
-
-    if (!Notification.isSupported()) {
-        log.error('notification not supported');
-        return;
-    }
-
-    if (getDoNotDisturb()) {
-        return;
-    }
+export function displayMention({title, message, channel, teamId, url, silent, webcontents, soundName}: DisplayMentionArguments) {
+    log.debug('Notifications.displayMention', {title, message, channel, teamId, url, silent, soundName});
 
     const serverName = WindowManager.getServerNameByWebContentsId(webcontents.id);
 
-    const options = {
+    const options: NotificationOptions = {
         title: `${serverName}: ${title}`,
-        body,
-        silent,
-        data,
+        message,
     };
 
-    const mention = new Mention(options, channel, teamId);
-    const mentionKey = `${mention.teamId}:${mention.channel.id}`;
-
-    mention.on('show', () => {
-        log.debug('Notifications.displayMention.show');
-
-        // On Windows, manually dismiss notifications from the same channel and only show the latest one
-        if (process.platform === 'win32') {
-            if (currentNotifications.has(mentionKey)) {
-                log.debug(`close ${mentionKey}`);
-                currentNotifications.get(mentionKey).close();
-                currentNotifications.delete(mentionKey);
-            }
-            currentNotifications.set(mentionKey, mention);
-        }
-        const notificationSound = mention.getNotificationSound();
-        if (notificationSound) {
-            WindowManager.sendToRenderer(PLAY_SOUND, notificationSound);
-        }
-        WindowManager.flashFrame(true);
-    });
-
-    mention.on('click', () => {
-        log.debug('notification click', serverName, mention);
+    const tag = `${teamId}:${channel.id}`;
+    const onClick = () => {
+        log.debug('notification click', serverName);
         if (serverName) {
             WindowManager.switchTab(serverName, TAB_MESSAGING);
             webcontents.send('notification-clicked', {channel, teamId, url});
         }
+    };
+    sendNotification({
+        options,
+        tag,
+        soundName,
+        silent,
+        onClick,
     });
-    mention.show();
 }
 
 export function displayDownloadCompleted(fileName: string, path: string, serverName: string) {
     log.debug('Notifications.displayDownloadCompleted', {fileName, path, serverName});
 
-    if (!Notification.isSupported()) {
-        log.error('notification not supported');
-        return;
-    }
+    const options = {
+        title: process.platform === 'win32' ? serverName : localizeMessage('main.notifications.download.complete.title', 'Download Complete'),
+        message: process.platform === 'win32' ? localizeMessage('main.notifications.download.complete.body', 'Download Complete \n {fileName}', {fileName}) : fileName,
+    };
 
-    if (getDoNotDisturb()) {
-        return;
-    }
-
-    const download = new DownloadNotification(fileName, serverName);
-
-    download.on('show', () => {
-        WindowManager.flashFrame(true);
-    });
-
-    download.on('click', () => {
+    const onClick = () => {
         shell.showItemInFolder(path.normalize());
+    };
+
+    WindowManager.flashFrame(true);
+
+    sendNotification({
+        options,
+        onClick,
     });
-    download.show();
 }
 
 let upgrade: NewVersionNotification;
 
 export function displayUpgrade(version: string, handleUpgrade: () => void): void {
-    if (!Notification.isSupported()) {
-        log.error('notification not supported');
-        return;
-    }
-    if (getDoNotDisturb()) {
-        return;
-    }
-
     if (upgrade) {
         upgrade.close();
     }
@@ -128,14 +79,6 @@ export function displayUpgrade(version: string, handleUpgrade: () => void): void
 
 let restartToUpgrade;
 export function displayRestartToUpgrade(version: string, handleUpgrade: () => void): void {
-    if (!Notification.isSupported()) {
-        log.error('notification not supported');
-        return;
-    }
-    if (getDoNotDisturb()) {
-        return;
-    }
-
     restartToUpgrade = new UpgradeNotification();
     restartToUpgrade.on('click', () => {
         log.info(`User requested perform the upgrade now to ${version}`);
@@ -146,32 +89,13 @@ export function displayRestartToUpgrade(version: string, handleUpgrade: () => vo
 
 export function sendTestNotification() {
     log.debug('notifications.sendTestNotification');
-    nodeNotifier.notify({
-        title: 'Test notification',
-        message: 'This is a test notification',
-        icon: logoPath,
-        sound: defaultSoundPath,
-    }, (error, response, metadata) => {
-        if (error) {
-            log.error('notifications.sendTestNotification.Error', {error});
-        } else {
-            log.debug('notifications.sendTestNotification', {response, metadata});
-        }
+
+    sendNotification({
+        options: {
+            title: 'Test notification',
+            message: 'This is a test notification',
+            sound: 'Bing',
+        },
     });
 }
 
-function getDoNotDisturb() {
-    if (process.platform === 'win32') {
-        return getWindowsDoNotDisturb();
-    }
-
-    if (process.platform === 'darwin') {
-        return getDarwinDoNotDisturb();
-    }
-
-    if (process.platform === 'linux') {
-        return getLinuxDoNotDisturb();
-    }
-
-    return false;
-}

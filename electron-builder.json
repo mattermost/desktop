@@ -55,7 +55,8 @@
   },
   "asarUnpack": [
     "./node_modules/macos-notification-state/build/Release/**/*.node",
-    "./node_modules/windows-focus-assist/build/Release/**/*.node"
+    "./node_modules/windows-focus-assist/build/Release/**/*.node",
+    "./node_modules/node-notifier/**/*"
   ],
   "linux": {
     "category": "Network;InstantMessaging",
@@ -99,6 +100,11 @@
           "LICENSE.txt",
           "NOTICE.txt"
         ]
+      },
+      {
+        "from": "src/assets/Terminal.icns",
+        "to": "app.asar.unpacked/node_modules/node-notifier/vendor/mac.noindex/terminal-notifier.app/Contents/Resources",
+        "filter": ["*.icns"]
       }
     ],
     "icon": "src/assets/osx/osx_icon.icns",

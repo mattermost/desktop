@@ -5,7 +5,6 @@ import {app, dialog, IpcMainEvent, IpcMainInvokeEvent, Menu} from 'electron';
 import log from 'electron-log';
 
 import {Team, TeamWithIndex, RegistryConfig as RegistryConfigType} from 'types/config';
-import {MentionData} from 'types/notification';
 
 import Config from 'common/config';
 import {REGISTRY_READ_EVENT} from 'common/config/RegistryConfig';
@@ -280,9 +279,9 @@ export function handleWelcomeScreenModal() {
     }
 }
 
-export function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, data: MentionData) {
-    log.debug('Intercom.handleMentionNotification', {title, body, channel, teamId, url, silent, data});
-    displayMention(title, body, channel, teamId, url, silent, event.sender, data);
+export function handleMentionNotification(event: IpcMainEvent, title: string, message: string, channel: {id: string}, teamId: string, url: string, silent: boolean, soundName: string) {
+    log.debug('Intercom.handleMentionNotification', {title, message, channel, teamId, url, silent, soundName});
+    displayMention({title, message, channel, teamId, url, silent, webcontents: event.sender, soundName});
 }
 
 export function handleOpenAppMenu() {

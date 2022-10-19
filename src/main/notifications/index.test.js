@@ -16,7 +16,7 @@ import {localizeMessage} from 'main/i18nManager';
 
 import WindowManager from '../windows/windowManager';
 
-import getLinuxDoNotDisturb from './dnd-linux';
+import getLinuxDoNotDisturb from './dndLinux';
 
 import {displayMention, displayDownloadCompleted, currentNotifications} from './index';
 
@@ -92,16 +92,15 @@ describe('main/notifications', () => {
 
         it('should do nothing when Notification is not supported', () => {
             Notification.isSupported.mockImplementation(() => false);
-            displayMention(
-                'test',
-                'test body',
-                {id: 'channel_id'},
-                'team_id',
-                'http://server-1.com/team_id/channel_id',
-                false,
-                {id: 1},
-                {},
-            );
+            displayMention({
+                title: 'test',
+                message: 'test body',
+                channel: {id: 'channel_id'},
+                teamId: 'team_id',
+                url: 'http://server-1.com/team_id/channel_id',
+                silent: false,
+                webcontents: {id: 1},
+            });
             expect(Notification.didConstruct).not.toBeCalled();
         });
 
@@ -112,16 +111,15 @@ describe('main/notifications', () => {
             });
 
             getFocusAssist.mockReturnValue({value: 2});
-            displayMention(
-                'test',
-                'test body',
-                {id: 'channel_id'},
-                'team_id',
-                'http://server-1.com/team_id/channel_id',
-                false,
-                {id: 1},
-                {},
-            );
+            displayMention({
+                title: 'test',
+                message: 'test body',
+                channel: {id: 'channel_id'},
+                teamId: 'team_id',
+                url: 'http://server-1.com/team_id/channel_id',
+                silent: false,
+                webcontents: {id: 1},
+            });
             expect(Notification.didConstruct).not.toBeCalled();
 
             Object.defineProperty(process, 'platform', {
@@ -136,16 +134,15 @@ describe('main/notifications', () => {
             });
 
             getDarwinDoNotDisturb.mockReturnValue(true);
-            displayMention(
-                'test',
-                'test body',
-                {id: 'channel_id'},
-                'team_id',
-                'http://server-1.com/team_id/channel_id',
-                false,
-                {id: 1},
-                {},
-            );
+            displayMention({
+                title: 'test',
+                message: 'test body',
+                channel: {id: 'channel_id'},
+                teamId: 'team_id',
+                url: 'http://server-1.com/team_id/channel_id',
+                silent: false,
+                webcontents: {id: 1},
+            });
             expect(Notification.didConstruct).not.toBeCalled();
 
             Object.defineProperty(process, 'platform', {
@@ -154,16 +151,16 @@ describe('main/notifications', () => {
         });
 
         it('should play notification sound when custom sound is provided', () => {
-            displayMention(
-                'test',
-                'test body',
-                {id: 'channel_id'},
-                'team_id',
-                'http://server-1.com/team_id/channel_id',
-                false,
-                {id: 1},
-                {soundName: 'test_sound'},
-            );
+            displayMention({
+                title: 'test',
+                message: 'test body',
+                channel: {id: 'channel_id'},
+                teamId: 'team_id',
+                url: 'http://server-1.com/team_id/channel_id',
+                silent: false,
+                webcontents: {id: 1},
+                soundName: 'test_sound',
+            });
             expect(WindowManager.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'test_sound');
         });
 
@@ -173,31 +170,29 @@ describe('main/notifications', () => {
                 value: 'win32',
             });
 
-            displayMention(
-                'test',
-                'test body',
-                {id: 'channel_id'},
-                'team_id',
-                'http://server-1.com/team_id/channel_id',
-                false,
-                {id: 1},
-                {},
-            );
+            displayMention({
+                title: 'test',
+                message: 'test body',
+                channel: {id: 'channel_id'},
+                teamId: 'team_id',
+                url: 'http://server-1.com/team_id/channel_id',
+                silent: false,
+                webcontents: {id: 1},
+            });
 
             expect(currentNotifications.has('team_id:channel_id')).toBe(true);
 
             const existingMention = currentNotifications.get('team_id:channel_id');
             currentNotifications.delete = jest.fn();
-            displayMention(
-                'test',
-                'test body 2',
-                {id: 'channel_id'},
-                'team_id',
-                'http://server-1.com/team_id/channel_id',
-                false,
-                {id: 1},
-                {},
-            );
+            displayMention({
+                title: 'test',
+                message: 'test body 2',
+                channel: {id: 'channel_id'},
+                teamId: 'team_id',
+                url: 'http://server-1.com/team_id/channel_id',
+                silent: false,
+                webcontents: {id: 1},
+            });
 
             expect(currentNotifications.delete).toHaveBeenCalled();
             expect(existingMention.close).toHaveBeenCalled();
@@ -208,16 +203,15 @@ describe('main/notifications', () => {
         });
 
         it('should switch tab when clicking on notification', () => {
-            displayMention(
-                'click_test',
-                'mention_click_body',
-                {id: 'channel_id'},
-                'team_id',
-                'http://server-1.com/team_id/channel_id',
-                false,
-                {id: 1, send: jest.fn()},
-                {},
-            );
+            displayMention({
+                title: 'click_test',
+                message: 'mention_click_body',
+                channel: {id: 'channel_id'},
+                teamId: 'team_id',
+                url: 'http://server-1.com/team_id/channel_id',
+                silent: false,
+                webcontents: {id: 1, send: jest.fn()},
+            });
             const mention = mentions.find((m) => m.body === 'mention_click_body');
             mention.value.click();
             expect(WindowManager.switchTab).toHaveBeenCalledWith('server_name', TAB_MESSAGING);
