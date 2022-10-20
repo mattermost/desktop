@@ -74,7 +74,13 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
     }
 
     clearAll = () => {
-        window.postMessage({type: REQUEST_CLEAR_DOWNLOADS_DROPDOWN}, window.location.href);
+        if (!this.clearAllButtonDisabled()) {
+            window.postMessage({type: REQUEST_CLEAR_DOWNLOADS_DROPDOWN}, window.location.href);
+        }
+    }
+
+    clearAllButtonDisabled = () => {
+        return this.state.downloads?.length === 1 && this.state.downloads[0]?.type === 'update';
     }
 
     render() {
@@ -93,7 +99,9 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
                             />
                         </div>
                         <div
-                            className={'DownloadsDropdown__clearAllButton'}
+                            className={classNames('DownloadsDropdown__clearAllButton', {
+                                disabled: this.clearAllButtonDisabled(),
+                            })}
                             onClick={this.clearAll}
                         >
                             <FormattedMessage

@@ -158,6 +158,7 @@ body {
                     }
 
                     &.disabled {
+                        background: transparent;
                         cursor: default;
                         color: rgba(63, 67, 80, 0.32);
                     }
@@ -438,8 +439,15 @@ body {
                 background: #1f1f1f;
                 border: 1px solid rgba(221, 223, 228, 0.16);
 
-                .DownloadsDropdown__header .DownloadsDropdown__Downloads {
-                    color: #DDD;
+                .DownloadsDropdown__header {
+                    .DownloadsDropdown__Downloads {
+                        color: #DDD;
+                    }
+                    .DownloadsDropdown__clearAllButton {
+                        &.disabled {
+                            color: rgba(63, 67, 80, 0.52);
+                        }
+                    }
                 }
 
                 .DownloadsDropdown__divider {
