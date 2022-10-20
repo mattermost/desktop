@@ -70,7 +70,7 @@ body {
                 > svg {
                     background: #ffffff;
                     border-radius: 50%;
-                    border: 2px solid #ffffff;
+                    border: 1px solid #ffffff;
                     position: absolute;
                     right: 0;
                     top: 0;
@@ -351,6 +351,10 @@ body {
                                 background-color: rgba(63, 67, 80, 0.08);
                                 color: rgba(63, 67, 80, 0.72)
                             }
+                            *.active:hover {
+                                background: rgba(28, 88, 217, 0.16);
+                                color: rgba(28, 88, 217, 1);
+                            }
                             &:active {
                                 background: rgba(28, 88, 217, 0.08);
                                 color: rgba(28, 88, 217, 1);
@@ -443,7 +447,7 @@ body {
                     .DownloadsDropdown__clearAllButton {
                         color: rgb(56, 111, 229);
                         &:hover {
-                            background: rgba(221, 223, 228, 0.08);
+                            background: rgba(56, 111, 229, 0.08);
                         }
                         &.disabled {
                             background: transparent;
@@ -459,22 +463,21 @@ body {
                     border-color: rgba(221, 221, 221, 0.08);
                 }
 
-                .DownloadsDropdown__Thumbnail__Container {
-                    background: rgba(221, 223, 228, 0.08);
-
-                    > svg {
-                        background: #1f1f1f;
-                        border: 2px solid #1f1f1f;
-                    }
-                }
-
                 .DownloadsDropdown__list {
                     color: #DDD;
 
                     .DownloadsDropdown__File {
-
                         &:hover {
                             background: rgba(221, 223, 228, 0.08);
+                        }
+
+                        .DownloadsDropdown__Thumbnail__Container {
+                            background: rgba(221, 223, 228, 0.08);
+
+                            > svg {
+                                background: #1f1f1f;
+                                border: 1px solid transparent;
+                            }
                         }
 
                         .DownloadsDropdown__File__Body {
@@ -510,11 +513,16 @@ body {
                                     background: rgba(221, 223, 228, 0.08);
                                 }
                                 &:active {
-                                    background: rgba(221, 223, 228, 0.08);
+                                    background: rgba(56, 111, 229, 0.08);
                                     color: rgb(56, 111, 229);
                                 }
                                 &.active {
+                                    background: rgba(56, 111, 229, 0.08);
                                     color: rgb(56, 111, 229);
+                                }
+                                &.active:hover {
+                                    background: rgba(56, 111, 229, 0.16);
+                                    color: rgba(28, 88, 217, 1);
                                 }
                             }
                         }
