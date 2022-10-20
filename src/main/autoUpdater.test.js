@@ -17,7 +17,6 @@ jest.mock('electron', () => ({
         createFromPath: jest.fn(),
     },
     ipcMain: {
-        handle: jest.fn(),
         on: jest.fn(),
         emit: jest.fn(),
     },
@@ -53,6 +52,9 @@ jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
 
+jest.mock('main/downloadsManager', () => ({
+    removeUpdateBeforeRestart: jest.fn(),
+}));
 describe('main/autoUpdater', () => {
     describe('constructor', () => {
         afterEach(() => {
