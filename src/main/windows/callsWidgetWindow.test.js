@@ -235,9 +235,10 @@ describe('main/windows/callsWidgetWindow', () => {
             const config = {
                 ...widgetConfig,
                 siteURL: 'http://localhost:8065/subpath',
+                title: 'call test title #/&',
             };
             const widgetWindow = new CallsWidgetWindow(mainWindow, config);
-            const expected = `${config.siteURL}/static/plugins/com.mattermost.calls/widget/widget.html?basename=%2Fsubpath&call_id=${config.callID}`;
+            const expected = `${config.siteURL}/plugins/com.mattermost.calls/widget/widget.html?call_id=${config.callID}&title=call+test+title+%23%2F%26`;
             expect(widgetWindow.getWidgetURL()).toBe(expected);
         });
 

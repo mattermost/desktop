@@ -16,7 +16,6 @@ import {
 import {getLocalPreload} from 'main/utils';
 
 import {
-    PRODUCTION,
     MINIMUM_CALLS_WIDGET_WIDTH,
     MINIMUM_CALLS_WIDGET_HEIGHT,
     CALLS_PLUGIN_ID,
@@ -94,9 +93,6 @@ export default class CallsWidgetWindow extends EventEmitter {
 
     private load() {
         const opts = {} as LoadURLOpts;
-        if (Utils.runMode() !== PRODUCTION) {
-            opts.extraHeaders = 'pragma: no-cache\n';
-        }
         this.win.loadURL(this.getWidgetURL(), opts).catch((reason) => {
             log.error(`Calls widget window failed to load: ${reason}`);
         });
@@ -112,13 +108,11 @@ export default class CallsWidgetWindow extends EventEmitter {
 
     private getWidgetURL() {
         const u = new url.URL(this.config.siteURL);
-
-        if (u.pathname && u.pathname !== '/') {
-            u.searchParams.append('basename', u.pathname);
-        }
-
-        u.pathname += `/static/plugins/${CALLS_PLUGIN_ID}/widget/widget.html`;
+        u.pathname += `/plugins/${CALLS_PLUGIN_ID}/widget/widget.html`;
         u.searchParams.append('call_id', this.config.callID);
+        if (this.config.title) {
+            u.searchParams.append('title', this.config.title);
+        }
 
         return u.toString();
     }
