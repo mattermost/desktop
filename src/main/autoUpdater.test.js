@@ -17,6 +17,7 @@ jest.mock('electron', () => ({
         createFromPath: jest.fn(),
     },
     ipcMain: {
+        handle: jest.fn(),
         on: jest.fn(),
         emit: jest.fn(),
     },
