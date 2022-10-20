@@ -294,7 +294,6 @@ class MainPage extends React.PureComponent<Props, State> {
     }
 
     handleCloseDropdowns = () => {
-        log.debug('MainPage.handleCloseDropdowns');
         window.ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
         this.closeDownloadsDropdown();
     }
