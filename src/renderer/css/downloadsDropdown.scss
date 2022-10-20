@@ -440,20 +440,24 @@ body {
                 border: 1px solid rgba(221, 223, 228, 0.16);
 
                 .DownloadsDropdown__header {
-                    .DownloadsDropdown__Downloads {
-                        color: #DDD;
-                    }
                     .DownloadsDropdown__clearAllButton {
+                        color: rgb(56, 111, 229);
+                        &:hover {
+                            background: rgba(221, 223, 228, 0.08);
+                        }
                         &.disabled {
+                            background: transparent;
                             color: rgba(63, 67, 80, 0.52);
                         }
+                    }
+                    .DownloadsDropdown__Downloads {
+                        color: #DDD;
                     }
                 }
 
                 .DownloadsDropdown__divider {
                     border-color: rgba(221, 221, 221, 0.08);
                 }
-
 
                 .DownloadsDropdown__Thumbnail__Container {
                     background: rgba(221, 223, 228, 0.08);
@@ -467,45 +471,51 @@ body {
                 .DownloadsDropdown__list {
                     color: #DDD;
 
-                    .DownloadsDropdown__File .DownloadsDropdown__File__Body {
-                        align-items: flex-start;
+                    .DownloadsDropdown__File {
 
-                        .DownloadsDropdown__File__Body__Thumbnail__Container {
+                        &:hover {
                             background: rgba(221, 223, 228, 0.08);
-
-                            > svg {
-                                background: #1f1f1f;
-                                border-color: #1f1f1f;
-                            }
                         }
 
-                        .DownloadsDropdown__File__Body__Details {
-                            .DownloadsDropdown__File__Body__Details__Filename {
-                                color: rgba(221, 223, 228, 1);
-                            }
+                        .DownloadsDropdown__File__Body {
+                            align-items: flex-start;
 
-                            .DownloadsDropdown__File__Body__Details__FileSizeAndStatus {
-                                color: rgba(221, 223, 228, 0.64);
+                            .DownloadsDropdown__File__Body__Thumbnail__Container {
+                                background: rgba(221, 223, 228, 0.08);
 
-                                &.cancelled {
-                                    color: #D24B4E;
+                                > svg {
+                                    background: #1f1f1f;
+                                    border-color: #1f1f1f;
                                 }
                             }
-                        }
 
-                        .DownloadsDropdown__File__Body__ThreeDotButton {
-                            color: rgba(221, 223, 228, 0.56);
+                            .DownloadsDropdown__File__Body__Details {
+                                .DownloadsDropdown__File__Body__Details__Filename {
+                                    color: rgba(221, 223, 228, 1);
+                                }
 
-                            &:hover {
-                                background: rgba(56, 111, 229, 0.08);
-                                color: rgba(28, 88, 217, 0.72);
+                                .DownloadsDropdown__File__Body__Details__FileSizeAndStatus {
+                                    color: rgba(221, 223, 228, 0.64);
+
+                                    &.cancelled {
+                                        color: #D24B4E;
+                                    }
+                                }
                             }
-                            &:active {
-                                background: rgba(56, 111, 229, 0.08);
-                                color: rgba(28, 88, 217, 1);
-                            }
-                            &.active {
-                                color: rgba(28, 88, 217, 1);
+
+                            .DownloadsDropdown__File__Body__ThreeDotButton {
+                                color: rgba(221, 223, 228, 0.56);
+
+                                &:hover {
+                                    background: rgba(221, 223, 228, 0.08);
+                                }
+                                &:active {
+                                    background: rgba(221, 223, 228, 0.08);
+                                    color: rgb(56, 111, 229);
+                                }
+                                &.active {
+                                    color: rgb(56, 111, 229);
+                                }
                             }
                         }
                     }

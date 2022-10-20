@@ -40,8 +40,11 @@
             color: rgba(221, 223, 228, 0.56);
         }
 
-        &:hover, &:focus, &.isDownloadsDropdownOpen {
-            background-color: rgba(56, 111, 229, 0.08);
+        &:hover, &:focus {
+            background: rgba(221, 223, 228, 0.08);
+        }
+        &.isDownloadsDropdownOpen {
+            background: rgba(221, 223, 228, 0.08);
             i {
                 color: rgba(56, 111, 229, 1);
             }
