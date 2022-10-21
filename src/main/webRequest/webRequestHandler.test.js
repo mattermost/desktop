@@ -8,27 +8,6 @@ jest.mock('electron-log', () => ({
 }));
 
 describe('main/webRequest/webRequestHandler', () => {
-    it('should not iterate through listeners when size is < 1', () => {
-        const handler = new WebRequestHandler();
-        handler.listeners = {
-            size: 0,
-            keys: jest.fn(),
-        };
-
-        const callback = jest.fn();
-        handler.handle({}, callback);
-        expect(handler.listeners.keys).not.toBeCalled();
-        expect(callback).toBeCalledWith({});
-
-        handler.listeners = {
-            size: 1,
-            keys: jest.fn().mockReturnValue([]),
-        };
-
-        handler.handle();
-        expect(handler.listeners.keys).toBeCalled();
-    });
-
     it('should call each listener in the sequence they were added', () => {
         const modifyCallbackObject = jest.fn();
         const handler = new WebRequestHandler(modifyCallbackObject);
@@ -38,15 +17,15 @@ describe('main/webRequest/webRequestHandler', () => {
         const listener1 = jest.fn().mockImplementation(() => {
             result += 'listener1';
         });
-        handler.setListener('listener1', listener1);
+        handler.on('listener1', listener1);
         const listener2 = jest.fn().mockImplementation(() => {
             result += 'listener2';
         });
-        handler.setListener('listener2', listener2);
+        handler.on('listener2', listener2);
         const listener3 = jest.fn().mockImplementation(() => {
             result += 'listener3';
         });
-        handler.setListener('listener3', listener3);
+        handler.on('listener3', listener3);
 
         const details = {some: 'detail'};
         const callback = jest.fn();
@@ -66,11 +45,11 @@ describe('main/webRequest/webRequestHandler', () => {
         const handler = new WebRequestHandler(modifyCallbackObject);
 
         const listener1 = jest.fn().mockImplementation(() => ({listener1: true}));
-        handler.setListener('listener1', listener1);
+        handler.on('listener1', listener1);
         const listener2 = jest.fn().mockImplementation(() => ({listener2: true}));
-        handler.setListener('listener2', listener2);
+        handler.on('listener2', listener2);
         const listener3 = jest.fn().mockImplementation(() => ({listener3: false}));
-        handler.setListener('listener3', listener3);
+        handler.on('listener3', listener3);
 
         const details = {some: 'detail'};
         const callback = jest.fn();
