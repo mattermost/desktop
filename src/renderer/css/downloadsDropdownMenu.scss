@@ -75,7 +75,12 @@ body {
                 .DownloadsDropdownMenu__MenuItem {
                     color: rgba(221, 223, 228, 1);
 
+                    &:hover {
+                        background: rgba(221, 223, 228, 0.08);
+                    }
+
                     &.disabled {
+                        background: #1f1f1f;
                         color: rgba(221, 223, 228, 0.32);
                     }
                 }
