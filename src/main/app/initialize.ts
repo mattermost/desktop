@@ -56,6 +56,7 @@ import TrustedOriginsStore from 'main/trustedOrigins';
 import {refreshTrayImages, setupTray} from 'main/tray/tray';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 import WindowManager from 'main/windows/windowManager';
+import WebRequestManager from 'main/webRequest/webRequestManager';
 
 import {protocols} from '../../../electron-builder.json';
 
@@ -269,6 +270,8 @@ function initializeAfterAppReady() {
     updateServerInfos(Config.teams);
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
+
+    WebRequestManager.initialize();
 
     if (process.platform !== 'darwin') {
         defaultSession.on('spellcheck-dictionary-download-failure', (event, lang) => {

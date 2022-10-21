@@ -23,6 +23,7 @@ import {getLocalPreload, getLocalURLString} from 'main/utils';
 
 import WindowManager from '../windows/windowManager';
 import downloadsManager from 'main/downloadsManager';
+import WebRequestManager from 'main/webRequest/webRequestManager';
 
 export default class DownloadsDropdownView {
     bounds?: Electron.Rectangle;
@@ -55,7 +56,7 @@ export default class DownloadsDropdownView {
         this.view.webContents.loadURL(getLocalURLString('downloadsDropdown.html'));
         this.window.addBrowserView(this.view);
 
-        this.view.webContents.session.webRequest.onHeadersReceived(downloadsManager.webRequestOnHeadersReceivedHandler);
+        WebRequestManager.onHeadersReceived.setListener('downloadsDropdownView', downloadsManager.webRequestOnHeadersReceivedHandler);
 
         ipcMain.on(OPEN_DOWNLOADS_DROPDOWN, this.handleOpen);
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN, this.handleClose);
