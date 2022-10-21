@@ -20,7 +20,6 @@ type Props = {
     show?: boolean;
     restoreFocus?: boolean;
     currentOrder?: number;
-    setInputRef?: (inputRef: HTMLInputElement) => void;
     intl: IntlShape;
 };
 
@@ -34,7 +33,7 @@ type State = {
 
 class NewTeamModal extends React.PureComponent<Props, State> {
     wasShown?: boolean;
-    teamUrlInputRef?: HTMLInputElement;
+    teamNameInputRef?: HTMLInputElement;
 
     static defaultProps = {
         restoreFocus: true,
@@ -262,7 +261,7 @@ class NewTeamModal extends React.PureComponent<Props, State> {
                 show={this.props.show}
                 id='newServerModal'
                 enforceFocus={true}
-                onEntered={() => this.teamUrlInputRef?.focus()}
+                onEntered={() => this.teamNameInputRef?.focus()}
                 onHide={this.props.onClose}
                 restoreFocus={this.props.restoreFocus}
                 onKeyDown={(e: React.KeyboardEvent) => {
@@ -286,39 +285,6 @@ class NewTeamModal extends React.PureComponent<Props, State> {
 
                 <Modal.Body>
                     <form>
-                        <FormGroup>
-                            <FormLabel>
-                                <FormattedMessage
-                                    id='renderer.components.newTeamModal.serverURL'
-                                    defaultMessage='Server URL'
-                                />
-                            </FormLabel>
-                            <FormControl
-                                id='teamUrlInput'
-                                type='text'
-                                value={this.state.teamUrl}
-                                placeholder='https://example.com'
-                                onChange={this.handleTeamUrlChange}
-                                onClick={(e: React.MouseEvent<HTMLInputElement>) => {
-                                    e.stopPropagation();
-                                }}
-                                ref={(ref: HTMLInputElement) => {
-                                    this.teamUrlInputRef = ref;
-                                    if (this.props.setInputRef) {
-                                        this.props.setInputRef(ref);
-                                    }
-                                }}
-                                isInvalid={Boolean(this.getTeamUrlValidationState())}
-                                autoFocus={true}
-                            />
-                            <FormControl.Feedback/>
-                            <FormText>
-                                <FormattedMessage
-                                    id='renderer.components.newTeamModal.serverURL.description'
-                                    defaultMessage='The URL of your Mattermost server. Must start with http:// or https://.'
-                                />
-                            </FormText>
-                        </FormGroup>
                         <FormGroup className='NewTeamModal-noBottomSpace'>
                             <FormLabel>
                                 <FormattedMessage
@@ -335,13 +301,43 @@ class NewTeamModal extends React.PureComponent<Props, State> {
                                 onClick={(e: React.MouseEvent<HTMLInputElement>) => {
                                     e.stopPropagation();
                                 }}
+                                ref={(ref: HTMLInputElement) => {
+                                    this.teamNameInputRef = ref;
+                                }}
                                 isInvalid={Boolean(this.getTeamNameValidationState())}
+                                autoFocus={true}
                             />
                             <FormControl.Feedback/>
                             <FormText className='NewTeamModal-noBottomSpace'>
                                 <FormattedMessage
                                     id='renderer.components.newTeamModal.serverDisplayName.description'
                                     defaultMessage='The name of the server displayed on your desktop app tab bar.'
+                                />
+                            </FormText>
+                        </FormGroup>
+                        <FormGroup>
+                            <FormLabel>
+                                <FormattedMessage
+                                    id='renderer.components.newTeamModal.serverURL'
+                                    defaultMessage='Server URL'
+                                />
+                            </FormLabel>
+                            <FormControl
+                                id='teamUrlInput'
+                                type='text'
+                                value={this.state.teamUrl}
+                                placeholder='https://example.com'
+                                onChange={this.handleTeamUrlChange}
+                                onClick={(e: React.MouseEvent<HTMLInputElement>) => {
+                                    e.stopPropagation();
+                                }}
+                                isInvalid={Boolean(this.getTeamUrlValidationState())}
+                            />
+                            <FormControl.Feedback/>
+                            <FormText>
+                                <FormattedMessage
+                                    id='renderer.components.newTeamModal.serverURL.description'
+                                    defaultMessage='The URL of your Mattermost server. Must start with http:// or https://.'
                                 />
                             </FormText>
                         </FormGroup>
