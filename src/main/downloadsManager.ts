@@ -157,10 +157,16 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     clearDownloadsDropDown = () => {
         log.debug('DownloadsManager.clearDownloadsDropDown');
 
-        this.saveAll({});
-        this.fileSizes = new Map();
+        if (this.hasUpdate()) {
+            this.saveAll({
+                [APP_UPDATE_KEY]: this.downloads[APP_UPDATE_KEY],
+            });
+        } else {
+            this.saveAll({});
+            this.toggleAppMenuDownloadsEnabled(false);
+        }
         this.closeDownloadsDropdown();
-        this.toggleAppMenuDownloadsEnabled(false);
+        this.fileSizes = new Map();
     }
 
     showFileInFolder = (item?: DownloadedItem) => {
@@ -280,6 +286,10 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         this.open = true;
         ipcMain.emit(OPEN_DOWNLOADS_DROPDOWN);
         WindowManager.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
+    }
+
+    hasUpdate = () => {
+        return Boolean(this.downloads[APP_UPDATE_KEY]?.type === DownloadItemTypeEnum.UPDATE);
     }
 
     private markFileAsDeleted = (item: DownloadedItem) => {
