@@ -45,7 +45,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         },
     });
 
-    if (config.data?.enableServerManagement === true) {
+    if (config.data?.enableServerManagement === true && config.data?.teams.length > 0) {
         platformAppMenu.push({
             label: localizeMessage('main.menus.app.file.signInToAnotherServer', 'Sign in to Another Server'),
             click() {
