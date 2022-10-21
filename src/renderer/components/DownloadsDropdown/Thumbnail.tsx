@@ -12,7 +12,7 @@ type OwnProps = {
     item: DownloadedItem;
 }
 
-const iconSize = 12;
+const iconSize = 14;
 const colorGreen = '#3DB887';
 const colorRed = '#D24B4E';
 
