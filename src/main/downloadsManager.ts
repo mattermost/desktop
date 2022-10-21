@@ -292,6 +292,12 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         return Boolean(this.downloads[APP_UPDATE_KEY]?.type === DownloadItemTypeEnum.UPDATE);
     }
 
+    removeUpdateBeforeRestart = async () => {
+        const downloads = this.downloads;
+        delete downloads[APP_UPDATE_KEY];
+        await this.saveAll(downloads);
+    }
+
     private markFileAsDeleted = (item: DownloadedItem) => {
         const fileId = this.getDownloadedFileId(item);
         const file = this.downloads[fileId];
@@ -306,11 +312,11 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         }
     }
 
-    private saveAll = (downloads: DownloadedItems) => {
+    private saveAll = async (downloads: DownloadedItems) => {
         log.debug('DownloadsManager.saveAll');
 
         this.downloads = downloads;
-        this.setJson(downloads);
+        await this.setJson(downloads);
         ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, true, this.downloads);
         WindowManager?.sendToRenderer(UPDATE_DOWNLOADS_DROPDOWN, this.downloads);
     }

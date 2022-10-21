@@ -52,6 +52,9 @@ jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
 
+jest.mock('main/downloadsManager', () => ({
+    removeUpdateBeforeRestart: jest.fn(),
+}));
 describe('main/autoUpdater', () => {
     describe('constructor', () => {
         afterEach(() => {
