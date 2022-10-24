@@ -295,8 +295,7 @@ class MainPage extends React.PureComponent<Props, State> {
 
     handleCloseDropdowns = () => {
         window.ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
-        window.ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
-        window.ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN_MENU);
+        this.closeDownloadsDropdown();
     }
 
     handleMaximizeState = (_: IpcRendererEvent, maximized: boolean) => {
@@ -416,7 +415,7 @@ class MainPage extends React.PureComponent<Props, State> {
                 onCloseTab={this.handleCloseTab}
                 onDrop={this.handleDragAndDrop}
                 tabsDisabled={this.state.modalOpen}
-                isMenuOpen={this.state.isMenuOpen}
+                isMenuOpen={this.state.isMenuOpen || this.state.isDownloadsDropdownOpen}
             />
         );
 

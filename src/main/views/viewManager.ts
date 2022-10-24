@@ -373,7 +373,11 @@ export class ViewManager {
 
             const hideView = () => {
                 delete this.urlViewCancel;
-                this.mainWindow.removeBrowserView(urlView);
+                try {
+                    this.mainWindow.removeBrowserView(urlView);
+                } catch (e) {
+                    log.error('Failed to remove URL view', e);
+                }
 
                 // workaround to eliminate zombie processes
                 // https://github.com/mattermost/desktop/pull/1519

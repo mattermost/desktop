@@ -511,22 +511,11 @@ function Run-BuildId {
     Print-Info "Modified Wix XML"
 }
 
-function Run-BuildChangelog {
-    Print-Info "Getting list of commits for changelog..."
-    $previousTag = $(Invoke-Expression "git describe --abbrev=0 --tags $(git describe --abbrev=0)^")
-    $currentTag = [string]"HEAD"
-    $changelogRaw = "$(git log --oneline --since=""$(git log -1 ""$previousTag"" --pretty=%ad)"" --until=""$(git log -1 "$currentTag" --pretty=%ad)"")"
-    $changelog = "";
-    foreach ($i in $changelogRaw) {
-        $changelog += "* $i`n"
-    }
-    $env:COM_MATTERMOST_MAKEFILE_BUILD_CHANGELOG = $changelog
-}
-
 function Run-BuildElectron {
     Print-Info "Installing nodejs/electron dependencies (running npm ci)..."
     npm i -g node-gyp
     node-gyp install
+    node-gyp install --devdir="$env:USERPROFILE\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
     npm ci
     #npm install --prefix="$(Get-RootDir)" "$(Get-RootDir)"
     Print-Info "Building nodejs/electron code (running npm run build)..."
@@ -678,7 +667,6 @@ function Run-Build {
     Prepare-Path
     Get-Cert
     Run-BuildId
-    Run-BuildChangelog
     Run-BuildElectron
     Run-BuildForceSignature
     Run-BuildLicense

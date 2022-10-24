@@ -32,7 +32,6 @@
       ]
     }
   ],
-  "beforePack": "scripts/beforepack.js",
   "afterPack": "scripts/afterpack.js",
   "afterSign": "scripts/notarize.js",
   "afterAllArtifactBuild": "scripts/afterbuild.js",

@@ -199,7 +199,7 @@ export default class DownloadsDropdownMenuView {
 
     repositionDownloadsDropdownMenu = () => {
         this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
-        if (downloadsManager.getIsOpen()) {
+        if (this.open) {
             this.view.setBounds(this.bounds);
         }
     }

@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 'use strict';
+import cp from 'child_process';
 
 import {Notification, shell} from 'electron';
 
@@ -15,9 +16,15 @@ import {localizeMessage} from 'main/i18nManager';
 
 import WindowManager from '../windows/windowManager';
 
+import getLinuxDoNotDisturb from './dnd-linux';
+
 import {displayMention, displayDownloadCompleted, currentNotifications} from './index';
 
 const mentions = [];
+
+jest.mock('child_process', () => ({
+    execSync: jest.fn(),
+}));
 
 jest.mock('electron', () => {
     class NotificationMock {
@@ -229,6 +236,25 @@ describe('main/notifications', () => {
             const mention = mentions.find((m) => m.body.includes('test_filename'));
             mention.value.click();
             expect(shell.showItemInFolder).toHaveBeenCalledWith('/path/to/file');
+        });
+    });
+
+    describe('getLinuxDoNotDisturb', () => {
+        it('should return false', () => {
+            cp.execSync.mockReturnValue('true');
+            expect(getLinuxDoNotDisturb()).toBe(false);
+        });
+
+        it('should return false if error is thrown', () => {
+            cp.execSync.mockImplementation(() => {
+                throw Error('error');
+            });
+            expect(getLinuxDoNotDisturb()).toBe(false);
+        });
+
+        it('should return true', () => {
+            cp.execSync.mockReturnValue('false');
+            expect(getLinuxDoNotDisturb()).toBe(true);
         });
     });
 });

@@ -36,4 +36,3 @@ window.addEventListener('message', async (event) => {
         break;
     }
 });
-

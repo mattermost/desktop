@@ -117,6 +117,7 @@ const item = {
     getStartTime: () => nowSeconds,
     getTotalBytes: () => 4242,
     getSavePath: () => locationMock,
+    hasUserGesture: jest.fn().mockReturnValue(true),
     setSavePath: jest.fn(),
     on: jest.fn(),
     setSaveDialogOptions: jest.fn(),

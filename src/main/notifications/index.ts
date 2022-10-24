@@ -17,6 +17,7 @@ import WindowManager from '../windows/windowManager';
 import {Mention} from './Mention';
 import {DownloadNotification} from './Download';
 import {NewVersionNotification, UpgradeNotification} from './Upgrade';
+import getLinuxDoNotDisturb from './dnd-linux';
 
 export const currentNotifications = new Map();
 
@@ -150,6 +151,10 @@ function getDoNotDisturb() {
 
     if (process.platform === 'darwin') {
         return getDarwinDoNotDisturb();
+    }
+
+    if (process.platform === 'linux') {
+        return getLinuxDoNotDisturb();
     }
 
     return false;

@@ -8,6 +8,7 @@ import log from 'electron-log';
 
 import {autoUpdater, CancellationToken, ProgressInfo, UpdateInfo} from 'electron-updater';
 
+import downloadsManager from 'main/downloadsManager';
 import {localizeMessage} from 'main/i18nManager';
 import {displayUpgrade, displayRestartToUpgrade} from 'main/notifications';
 
@@ -140,7 +141,8 @@ export class UpdateManager {
         }
     }
 
-    handleUpdate = (): void => {
+    handleUpdate = async (): Promise<void> => {
+        await downloadsManager.removeUpdateBeforeRestart();
         autoUpdater.quitAndInstall();
     }
 
