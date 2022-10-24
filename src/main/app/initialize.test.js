@@ -142,6 +142,9 @@ jest.mock('main/UserActivityMonitor', () => ({
     on: jest.fn(),
     startMonitoring: jest.fn(),
 }));
+jest.mock('main/webRequest/webRequestManager', () => ({
+    initialize: jest.fn(),
+}));
 jest.mock('main/windows/windowManager', () => ({
     getMainWindow: jest.fn(),
     showMainWindow: jest.fn(),
