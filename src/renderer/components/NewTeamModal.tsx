@@ -20,6 +20,7 @@ type Props = {
     show?: boolean;
     restoreFocus?: boolean;
     currentOrder?: number;
+    setInputRef?: (inputRef: HTMLInputElement) => void;
     intl: IntlShape;
 };
 
@@ -33,7 +34,7 @@ type State = {
 
 class NewTeamModal extends React.PureComponent<Props, State> {
     wasShown?: boolean;
-    teamNameInputRef?: HTMLInputElement;
+    teamUrlInputRef?: HTMLInputElement;
 
     static defaultProps = {
         restoreFocus: true,
@@ -261,7 +262,7 @@ class NewTeamModal extends React.PureComponent<Props, State> {
                 show={this.props.show}
                 id='newServerModal'
                 enforceFocus={true}
-                onEntered={() => this.teamNameInputRef?.focus()}
+                onEntered={() => this.teamUrlInputRef?.focus()}
                 onHide={this.props.onClose}
                 restoreFocus={this.props.restoreFocus}
                 onKeyDown={(e: React.KeyboardEvent) => {
@@ -285,36 +286,6 @@ class NewTeamModal extends React.PureComponent<Props, State> {
 
                 <Modal.Body>
                     <form>
-                        <FormGroup className='NewTeamModal-noBottomSpace'>
-                            <FormLabel>
-                                <FormattedMessage
-                                    id='renderer.components.newTeamModal.serverDisplayName'
-                                    defaultMessage='Server Display Name'
-                                />
-                            </FormLabel>
-                            <FormControl
-                                id='teamNameInput'
-                                type='text'
-                                value={this.state.teamName}
-                                placeholder={this.props.intl.formatMessage({id: 'renderer.components.newTeamModal.serverDisplayName', defaultMessage: 'Server Display Name'})}
-                                onChange={this.handleTeamNameChange}
-                                onClick={(e: React.MouseEvent<HTMLInputElement>) => {
-                                    e.stopPropagation();
-                                }}
-                                ref={(ref: HTMLInputElement) => {
-                                    this.teamNameInputRef = ref;
-                                }}
-                                isInvalid={Boolean(this.getTeamNameValidationState())}
-                                autoFocus={true}
-                            />
-                            <FormControl.Feedback/>
-                            <FormText className='NewTeamModal-noBottomSpace'>
-                                <FormattedMessage
-                                    id='renderer.components.newTeamModal.serverDisplayName.description'
-                                    defaultMessage='The name of the server displayed on your desktop app tab bar.'
-                                />
-                            </FormText>
-                        </FormGroup>
                         <FormGroup>
                             <FormLabel>
                                 <FormattedMessage
@@ -331,13 +302,46 @@ class NewTeamModal extends React.PureComponent<Props, State> {
                                 onClick={(e: React.MouseEvent<HTMLInputElement>) => {
                                     e.stopPropagation();
                                 }}
+                                ref={(ref: HTMLInputElement) => {
+                                    this.teamUrlInputRef = ref;
+                                    if (this.props.setInputRef) {
+                                        this.props.setInputRef(ref);
+                                    }
+                                }}
                                 isInvalid={Boolean(this.getTeamUrlValidationState())}
+                                autoFocus={true}
                             />
                             <FormControl.Feedback/>
                             <FormText>
                                 <FormattedMessage
                                     id='renderer.components.newTeamModal.serverURL.description'
                                     defaultMessage='The URL of your Mattermost server. Must start with http:// or https://.'
+                                />
+                            </FormText>
+                        </FormGroup>
+                        <FormGroup className='NewTeamModal-noBottomSpace'>
+                            <FormLabel>
+                                <FormattedMessage
+                                    id='renderer.components.newTeamModal.serverDisplayName'
+                                    defaultMessage='Server Display Name'
+                                />
+                            </FormLabel>
+                            <FormControl
+                                id='teamNameInput'
+                                type='text'
+                                value={this.state.teamName}
+                                placeholder={this.props.intl.formatMessage({id: 'renderer.components.newTeamModal.serverDisplayName', defaultMessage: 'Server Display Name'})}
+                                onChange={this.handleTeamNameChange}
+                                onClick={(e: React.MouseEvent<HTMLInputElement>) => {
+                                    e.stopPropagation();
+                                }}
+                                isInvalid={Boolean(this.getTeamNameValidationState())}
+                            />
+                            <FormControl.Feedback/>
+                            <FormText className='NewTeamModal-noBottomSpace'>
+                                <FormattedMessage
+                                    id='renderer.components.newTeamModal.serverDisplayName.description'
+                                    defaultMessage='The name of the server displayed on your desktop app tab bar.'
                                 />
                             </FormText>
                         </FormGroup>
