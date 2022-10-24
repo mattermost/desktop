@@ -303,7 +303,6 @@ function ConfigureServer({
                                     <Input
                                         name='url'
                                         className='ConfigureServer__card-form-input'
-                                        containerClassName='ConfigureServer__card-form-input-container'
                                         type='text'
                                         inputSize={SIZE.LARGE}
                                         value={url}
@@ -322,6 +321,7 @@ function ConfigureServer({
                                     <Input
                                         name='name'
                                         className='ConfigureServer__card-form-input'
+                                        containerClassName='ConfigureServer__card-form-input-container'
                                         type='text'
                                         inputSize={SIZE.LARGE}
                                         value={name}
