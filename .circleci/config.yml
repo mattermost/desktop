@@ -191,7 +191,7 @@ jobs:
       - run:
           name: Install nodejs-lts
           command: nvm off; choco install nodejs-lts -y
-      - run: npm i -g node-gyp; node-gyp install
+      - run: npm i -g node-gyp; node-gyp install; node-gyp install --devdir="$env:USERPROFILE\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
       - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
       - build:
           os: windows
@@ -269,7 +269,7 @@ jobs:
       - run:
           name: Install nodejs-lts
           command: nvm off; choco install nodejs-lts -y
-      - run: npm i -g node-gyp; node-gyp install
+      - run: npm i -g node-gyp; node-gyp install; node-gyp install --devdir="$env:USERPROFILE\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
       - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
       - build:
           os: windows

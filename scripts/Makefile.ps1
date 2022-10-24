@@ -515,6 +515,7 @@ function Run-BuildElectron {
     Print-Info "Installing nodejs/electron dependencies (running npm ci)..."
     npm i -g node-gyp
     node-gyp install
+    node-gyp install --devdir="$env:USERPROFILE\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
     npm ci
     #npm install --prefix="$(Get-RootDir)" "$(Get-RootDir)"
     Print-Info "Building nodejs/electron code (running npm run build)..."

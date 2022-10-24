@@ -27,7 +27,7 @@
     "build": "npm-run-all build:*",
     "build:main": "webpack-cli --config webpack.config.main.js",
     "build:renderer": "webpack-cli --config webpack.config.renderer.js",
-    "build-robotjs": "cross-env CL='/std:c++17' electron-rebuild -v 21.1.0 -m ./node_modules/robotjs",
+    "build-robotjs": "cross-env CL='/std:c++17' electron-rebuild -m ./node_modules/robotjs",
     "start": "electron dist/ --disable-dev-mode",
     "restart": "npm run build && npm run start",
     "storybook": "start-storybook -p 9001 -c src/.storybook",
