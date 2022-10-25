@@ -1,8 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-const jq = require('node-jq');
 const fs = require('fs');
+
+const jq = require('node-jq');
 
 jq.run(
     '.scripts.install = "node-gyp rebuild"',
