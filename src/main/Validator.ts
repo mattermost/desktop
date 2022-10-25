@@ -58,6 +58,7 @@ const downloadsSchema = Joi.object<DownloadedItems>().pattern(
         addedAt: Joi.number().min(0),
         receivedBytes: Joi.number().min(0),
         totalBytes: Joi.number().min(0),
+        bookmark: Joi.string(),
     });
 
 const configDataSchemaV0 = Joi.object<ConfigV0>({
