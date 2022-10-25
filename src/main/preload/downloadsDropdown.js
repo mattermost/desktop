@@ -20,12 +20,17 @@ import {
     START_UPGRADE,
     TOGGLE_DOWNLOADS_DROPDOWN_MENU,
     UPDATE_DOWNLOADS_DROPDOWN,
+    GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION,
 } from 'common/communication';
 
 console.log('preloaded for the downloadsDropdown!');
 
 contextBridge.exposeInMainWorld('process', {
     platform: process.platform,
+});
+
+contextBridge.exposeInMainWorld('mas', {
+    getThumbnailLocation: (location) => ipcRenderer.invoke(GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION, location),
 });
 
 window.addEventListener('click', () => {

@@ -20,5 +20,8 @@ declare global {
         timers: {
             setImmediate: typeof setImmediate;
         };
+        mas: {
+            getThumbnailLocation: (location: string) => Promise<string>;
+        };
     }
 }
