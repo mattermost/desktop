@@ -37,7 +37,7 @@ function getDoNotDisturb() {
 const defaultOptions: NotificationOptions = {
     icon: logoPath,
     sound: false,
-    timeout: false,
+    timeout: 10,
 };
 
 export const sendNotification = ({options, tag, silent = false, soundName, onClick, onTimeout}: SendNotificationArguments): void => {
@@ -63,9 +63,11 @@ export const sendNotification = ({options, tag, silent = false, soundName, onCli
         if (err) {
             log.error('notifications.sendNotification.Error', {err});
         } else {
+            log.debug('notifications.sendNotification.Callback', {response, metadata});
             switch (response) {
             case 'activate':
                 onClick?.(metadata);
+                WindowManager.restoreMain();
                 break;
             case 'timeout':
                 onTimeout?.();
