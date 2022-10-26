@@ -56,7 +56,7 @@ export default class DownloadsDropdownView {
         this.view.webContents.loadURL(getLocalURLString('downloadsDropdown.html'));
         this.window.addBrowserView(this.view);
 
-        WebRequestManager.onHeadersReceived.on('downloadsDropdownView', downloadsManager.webRequestOnHeadersReceivedHandler);
+        WebRequestManager.onHeadersReceived.addWebRequestListener('downloadsDropdownView', downloadsManager.webRequestOnHeadersReceivedHandler);
 
         ipcMain.on(OPEN_DOWNLOADS_DROPDOWN, this.handleOpen);
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN, this.handleClose);

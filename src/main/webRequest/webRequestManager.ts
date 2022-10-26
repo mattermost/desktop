@@ -25,12 +25,12 @@ export class WebRequestManager {
     }
 
     initialize = () => {
-        session.defaultSession.webRequest.onBeforeRequest(this.onBeforeRequest.handle);
-        session.defaultSession.webRequest.onBeforeSendHeaders(this.onBeforeSendHeaders.handle);
-        session.defaultSession.webRequest.onHeadersReceived(this.onHeadersReceived.handle);
+        session.defaultSession.webRequest.onBeforeRequest(this.onBeforeRequest.handleWebRequest);
+        session.defaultSession.webRequest.onBeforeSendHeaders(this.onBeforeSendHeaders.handleWebRequest);
+        session.defaultSession.webRequest.onHeadersReceived(this.onHeadersReceived.handleWebRequest);
     }
 
-    onBeforeRequestCallback = (
+    private onBeforeRequestCallback = (
         details: OnBeforeRequestListenerDetails,
         callbackObject: CallbackResponse,
         result: CallbackResponse,
@@ -48,7 +48,7 @@ export class WebRequestManager {
         return modifiedCallbackObject;
     }
 
-    onBeforeSendHeadersCallback = (
+    private onBeforeSendHeadersCallback = (
         details: OnBeforeSendHeadersListenerDetails,
         callbackObject: BeforeSendResponse,
         result: BeforeSendResponse,
@@ -66,7 +66,7 @@ export class WebRequestManager {
         return modifiedCallbackObject;
     }
 
-    onHeadersReceivedCallback = (
+    private onHeadersReceivedCallback = (
         details: OnHeadersReceivedListenerDetails,
         callbackObject: HeadersReceivedResponse,
         result: HeadersReceivedResponse,
