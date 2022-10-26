@@ -17,6 +17,7 @@ export type DownloadedItem = {
     addedAt: number;
     receivedBytes: number;
     totalBytes: number;
+    bookmark?: string;
 }
 
 export type DownloadedItems = Record<string, DownloadedItem>;
