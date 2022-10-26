@@ -3,7 +3,7 @@
 import path from 'path';
 import fs from 'fs';
 
-import {DownloadItem, Event, WebContents, FileFilter, ipcMain, dialog, shell, Menu} from 'electron';
+import {DownloadItem, Event, WebContents, FileFilter, ipcMain, dialog, shell, Menu, app} from 'electron';
 import log from 'electron-log';
 import {ProgressInfo} from 'electron-updater';
 
@@ -51,12 +51,17 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     progressingItems: Map<string, DownloadItem>;
     downloads: DownloadedItems;
 
+    willDownloadURLs: Map<string, {filePath: string; bookmark?: string}>;
+    bookmarks: Map<string, {originalPath: string; bookmark: string}>;
+
     constructor(file: string) {
         super(file);
 
         this.open = false;
         this.fileSizes = new Map();
         this.progressingItems = new Map();
+        this.willDownloadURLs = new Map();
+        this.bookmarks = new Map();
         this.autoCloseTimeout = null;
         this.downloads = {};
 
@@ -73,6 +78,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
             this.saveAll({});
         }
         this.checkForDeletedFiles();
+        this.reloadFilesForMAS();
 
         ipcMain.handle(REQUEST_HAS_DOWNLOADS, () => {
             return this.hasDownloads();
@@ -84,26 +90,44 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         ipcMain.on(NO_UPDATE_AVAILABLE, this.noUpdateAvailable);
     };
 
-    handleNewDownload = (event: Event, item: DownloadItem, webContents: WebContents) => {
+    handleNewDownload = async (event: Event, item: DownloadItem, webContents: WebContents) => {
         log.debug('DownloadsManager.handleNewDownload', {item, sourceURL: webContents.getURL()});
 
-        const shouldShowSaveDialog = this.shouldShowSaveDialog(item, Config.downloadLocation);
-        if (shouldShowSaveDialog) {
-            const saveDialogSuccess = this.showSaveDialog(item);
-            if (!saveDialogSuccess) {
-                item.cancel();
-                return;
+        const url = item.getURL();
+
+        if (this.willDownloadURLs.has(url)) {
+            const info = this.willDownloadURLs.get(url)!;
+            this.willDownloadURLs.delete(url);
+
+            if (info.bookmark) {
+                item.setSavePath(path.resolve(app.getPath('temp'), path.basename(info.filePath)));
+                this.bookmarks.set(this.getFileId(item), {originalPath: info.filePath, bookmark: info.bookmark!});
+            } else {
+                item.setSavePath(info.filePath);
             }
+
+            this.upsertFileToDownloads(item, 'progressing');
+            this.progressingItems.set(this.getFileId(item), item);
+            this.handleDownloadItemEvents(item, webContents);
+            this.openDownloadsDropdown();
+            this.toggleAppMenuDownloadsEnabled(true);
         } else {
-            const filename = this.createFilename(item);
-            const savePath = this.getSavePath(`${Config.downloadLocation}`, filename);
-            item.setSavePath(savePath);
+            event.preventDefault();
+
+            if (this.shouldShowSaveDialog(item, Config.downloadLocation)) {
+                const saveDialogResult = await this.showSaveDialog(item);
+                if (saveDialogResult.canceled || !saveDialogResult.filePath) {
+                    return;
+                }
+                this.willDownloadURLs.set(url, {filePath: saveDialogResult.filePath, bookmark: saveDialogResult.bookmark});
+            } else {
+                const filename = this.createFilename(item);
+                const savePath = this.getSavePath(`${Config.downloadLocation}`, filename);
+                this.willDownloadURLs.set(url, {filePath: savePath});
+            }
+
+            webContents.downloadURL(url);
         }
-        this.upsertFileToDownloads(item, 'progressing');
-        this.progressingItems.set(this.getFileId(item), item);
-        this.handleDownloadItemEvents(item, webContents);
-        this.openDownloadsDropdown();
-        this.toggleAppMenuDownloadsEnabled(true);
     };
 
     /**
@@ -124,6 +148,27 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         // With no arguments it uses the same headers
         cb({});
     };
+
+    reloadFilesForMAS = () => {
+        // eslint-disable-next-line no-undef
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        if (!__IS_MAC_APP_STORE__) {
+            return;
+        }
+
+        for (const file of Object.values(this.downloads)) {
+            if (file.bookmark) {
+                this.bookmarks.set(this.getDownloadedFileId(file), {originalPath: file.location, bookmark: file.bookmark});
+
+                if (file.mimeType?.toLowerCase().startsWith('image/')) {
+                    const func = app.startAccessingSecurityScopedResource(file.bookmark);
+                    fs.copyFileSync(file.location, path.resolve(app.getPath('temp'), path.basename(file.location)));
+                    func();
+                }
+            }
+        }
+    }
 
     checkForDeletedFiles = () => {
         log.debug('DownloadsManager.checkForDeletedFiles');
@@ -208,10 +253,16 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         }
 
         if (fs.existsSync(item.location)) {
+            let func;
+            const bookmark = this.bookmarks.get(this.getDownloadedFileId(item));
+            if (bookmark) {
+                func = app.startAccessingSecurityScopedResource(bookmark.bookmark);
+            }
             shell.openPath(item.location).catch((err) => {
                 log.debug('DownloadsDropdownView.openFileError', {err});
                 this.showFileInFolder(item);
             });
+            func?.();
         } else {
             log.debug('DownloadsDropdownView.openFile', 'COULD_NOT_OPEN_FILE');
             this.markFileAsDeleted(item);
@@ -353,17 +404,12 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         const fileElements = filename.split('.');
         const filters = this.getFileFilters(fileElements);
 
-        const newPath = dialog.showSaveDialogSync({
+        return dialog.showSaveDialog({
             title: filename,
             defaultPath: filename,
             filters,
+            securityScopedBookmarks: true,
         });
-
-        if (newPath) {
-            item.setSavePath(newPath);
-            return true;
-        }
-        return false;
     };
 
     private closeDownloadsDropdown = () => {
@@ -383,11 +429,11 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         }
     };
 
-    private upsertFileToDownloads = (item: DownloadItem, state: DownloadItemState) => {
+    private upsertFileToDownloads = (item: DownloadItem, state: DownloadItemState, overridePath?: string) => {
         const fileId = this.getFileId(item);
         log.debug('DownloadsManager.upsertFileToDownloads', {fileId});
 
-        const formattedItem = this.formatDownloadItem(item, state);
+        const formattedItem = this.formatDownloadItem(item, state, overridePath);
         this.save(fileId, formattedItem);
         this.checkIfMaxFilesReached();
     };
@@ -447,7 +493,14 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
             displayDownloadCompleted(path.basename(item.savePath), item.savePath, WindowManager.getServerNameByWebContentsId(webContents.id) || '');
         }
 
-        this.upsertFileToDownloads(item, state);
+        const bookmark = this.bookmarks.get(this.getFileId(item));
+        if (bookmark) {
+            const func = app.startAccessingSecurityScopedResource(bookmark?.bookmark);
+            fs.copyFileSync(path.resolve(app.getPath('temp'), path.basename(bookmark.originalPath)), bookmark.originalPath);
+            func();
+        }
+
+        this.upsertFileToDownloads(item, state, bookmark?.originalPath);
 
         this.fileSizes.delete(item.getFilename());
         this.progressingItems.delete(this.getFileId(item));
@@ -508,7 +561,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     /**
      * Internal utils
      */
-    private formatDownloadItem = (item: DownloadItem, state: DownloadItemState): DownloadedItem => {
+    private formatDownloadItem = (item: DownloadItem, state: DownloadItemState, overridePath?: string): DownloadedItem => {
         const totalBytes = this.getFileSize(item);
         const receivedBytes = item.getReceivedBytes();
         const progress = getPercentage(receivedBytes, totalBytes);
@@ -517,14 +570,19 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
             addedAt: doubleSecToMs(item.getStartTime()),
             filename: this.getFileId(item),
             mimeType: item.getMimeType(),
-            location: item.getSavePath(),
+            location: overridePath ?? item.getSavePath(),
             progress,
             receivedBytes,
             state,
             totalBytes,
             type: DownloadItemTypeEnum.FILE,
+            bookmark: this.getBookmark(item),
         };
     };
+
+    private getBookmark = (item: DownloadItem) => {
+        return this.bookmarks.get(this.getFileId(item))?.bookmark;
+    }
 
     private getFileSize = (item: DownloadItem) => {
         const itemTotalBytes = item.getTotalBytes();

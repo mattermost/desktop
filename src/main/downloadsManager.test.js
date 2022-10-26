@@ -117,6 +117,7 @@ const item = {
     getStartTime: () => nowSeconds,
     getTotalBytes: () => 4242,
     getSavePath: () => locationMock,
+    getURL: () => 'http://some-url.com/some-text.txt',
     hasUserGesture: jest.fn().mockReturnValue(true),
     setSavePath: jest.fn(),
     on: jest.fn(),
@@ -144,7 +145,8 @@ describe('main/downloadsManager', () => {
     it('should handle a new download', () => {
         const dl = new DownloadsManager({});
         path.parse.mockImplementation(() => ({base: 'file.txt'}));
-        dl.handleNewDownload({}, item, {id: 0, getURL: jest.fn()});
+        dl.willDownloadURLs.set('http://some-url.com/some-text.txt', {filePath: locationMock});
+        dl.handleNewDownload({preventDefault: jest.fn()}, item, {id: 0, getURL: jest.fn(), downloadURL: jest.fn()});
         expect(dl).toHaveProperty('downloads', {'file.txt': {
             addedAt: nowSeconds * 1000,
             filename: 'file.txt',

@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent} from 'electron';
+import path from 'path';
+
+import {app, BrowserView, BrowserWindow, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 
 import log from 'electron-log';
 
@@ -17,6 +19,7 @@ import {
     REQUEST_DOWNLOADS_DROPDOWN_INFO,
     UPDATE_DOWNLOADS_DROPDOWN,
     UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM,
+    GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION,
 } from 'common/communication';
 import {TAB_BAR_HEIGHT, DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, DOWNLOADS_DROPDOWN_FULL_WIDTH} from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
@@ -66,6 +69,7 @@ export default class DownloadsDropdownView {
         ipcMain.on(DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER, this.showFileInFolder);
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN, this.updateDownloads);
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM, this.updateDownloadsDropdownMenuItem);
+        ipcMain.handle(GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION, this.getDownloadImageThumbnailLocation);
     }
 
     updateDownloads = (event: IpcMainEvent, downloads: DownloadedItems) => {
@@ -197,5 +201,16 @@ export default class DownloadsDropdownView {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         this.view.webContents.destroy();
+    }
+
+    getDownloadImageThumbnailLocation = (event: IpcMainInvokeEvent, location: string) => {
+        // eslint-disable-next-line no-undef
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        if (!__IS_MAC_APP_STORE__) {
+            return location;
+        }
+
+        return path.resolve(app.getPath('temp'), path.basename(location));
     }
 }
