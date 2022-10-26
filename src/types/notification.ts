@@ -8,7 +8,7 @@ import NotificationCenter from 'node-notifier/notifiers/notificationcenter';
 import NotifySend from 'node-notifier/notifiers/notifysend';
 import WindowsToaster from 'node-notifier/notifiers/toaster';
 
-export type NotificationOptions = NotificationCenter.Notification | WindowsToaster.Notification | WindowsBalloon.Notification | NotifySend.Notification | Growl.Notification | Notification;
+export type NotificationOptions = NotificationCenter.Notification & WindowsToaster.Notification & WindowsBalloon.Notification & NotifySend.Notification & Growl.Notification | Notification;
 
 type MentionPayload = {
     channel: {

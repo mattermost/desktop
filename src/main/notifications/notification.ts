@@ -38,6 +38,7 @@ const defaultOptions: NotificationOptions = {
     icon: logoPath,
     sound: false,
     timeout: 10,
+    appID: 'Mattermost.Desktop',
 };
 
 export const sendNotification = ({options, tag, silent = false, soundName, onClick, onTimeout}: SendNotificationArguments): void => {
@@ -48,8 +49,13 @@ export const sendNotification = ({options, tag, silent = false, soundName, onCli
     const notifyOptions = {
         ...defaultOptions,
         ...options,
-        remove: tag, // remove previous notifications for the same server/channel
     };
+
+    if (tag) {
+        const channelSpecificNumber = parseInt(tag, 10);
+        notifyOptions.id = channelSpecificNumber;
+        notifyOptions.remove = channelSpecificNumber;
+    }
 
     // Play notification sound on the renderer process
     if (!silent && soundName) {
