@@ -6,7 +6,7 @@ import {EventEmitter} from 'events';
 import log from 'electron-log';
 
 export class WebRequestHandler<T, T2> extends EventEmitter {
-    modifyCallbackObject: (details: T, callbackObject: T2, result: T2) => T2;
+    protected modifyCallbackObject: (details: T, callbackObject: T2, result: T2) => T2;
 
     constructor(modifyCallbackObject: (details: T, callbackObject: T2, result: T2) => T2) {
         super();

@@ -110,9 +110,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
      * This function monitors webRequests and retrieves the total file size (of files being downloaded)
      * from the custom HTTP header "x-uncompressed-content-length".
      */
-    webRequestOnHeadersReceivedHandler = (details: Electron.OnHeadersReceivedListenerDetails) => {
-        const headers = details.responseHeaders ?? {};
-
+    webRequestOnHeadersReceivedHandler = (headers: Record<string, string[]>) => {
         if (headers?.['content-encoding']?.includes('gzip') && headers?.['x-uncompressed-content-length'] && headers?.['content-disposition'].join(';')?.includes('filename=')) {
             const filename = readFilenameFromContentDispositionHeader(headers['content-disposition']);
             const fileSize = headers['x-uncompressed-content-length']?.[0] || '0';
