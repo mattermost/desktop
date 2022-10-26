@@ -4,11 +4,10 @@
 import {Notification, NotificationMetadata} from 'node-notifier';
 import WindowsBalloon from 'node-notifier/notifiers/balloon';
 import Growl from 'node-notifier/notifiers/growl';
-import NotificationCenter from 'node-notifier/notifiers/notificationcenter';
 import NotifySend from 'node-notifier/notifiers/notifysend';
 import WindowsToaster from 'node-notifier/notifiers/toaster';
 
-export type NotificationOptions = NotificationCenter.Notification & WindowsToaster.Notification & WindowsBalloon.Notification & NotifySend.Notification & Growl.Notification | Notification;
+export type NotificationOptions = WindowsToaster.Notification & WindowsBalloon.Notification & NotifySend.Notification & Growl.Notification & Notification;
 
 type MentionPayload = {
     channel: {
@@ -17,7 +16,7 @@ type MentionPayload = {
     teamId: string;
     url: string;
     silent: boolean;
-    webcontents: Electron.WebContents;
+    webContents: Electron.WebContents;
     soundName: string;
 }
 
@@ -32,6 +31,11 @@ type UpgradePayload = {
     handleUpgrade: () => void;
 }
 
+export type MentionOptions = {
+    title?: string;
+    body?: string;
+}
+
 export type NotificationPayload = MentionPayload | DownloadPayload | UpgradePayload;
 
 export type SendNotificationArguments = {
@@ -39,9 +43,13 @@ export type SendNotificationArguments = {
     silent?: boolean;
     tag?: string;
     soundName?: string;
+    channel?: MentionPayload['channel'];
+    teamId?: MentionPayload['teamId'];
     onClick?: (data?: NotificationMetadata) => void;
     onTimeout?: () => void;
 };
+
+export type SendNotificationArgumentsWinLinux = Omit<SendNotificationArguments, 'webContents' | 'serverName'>
 
 export type DisplayMentionArguments = {
     title: string;
@@ -50,6 +58,6 @@ export type DisplayMentionArguments = {
     teamId: string;
     url: string;
     silent: boolean;
-    webcontents: Electron.WebContents;
+    webContents: Electron.WebContents;
     soundName: string;
 }

@@ -281,7 +281,7 @@ export function handleWelcomeScreenModal() {
 
 export function handleMentionNotification(event: IpcMainEvent, title: string, message: string, channel: {id: string}, teamId: string, url: string, silent: boolean, soundName: string) {
     log.debug('Intercom.handleMentionNotification', {title, message, channel, teamId, url, silent, soundName});
-    displayMention({title, message, channel, teamId, url, silent, webcontents: event.sender, soundName});
+    displayMention({title, message, channel, teamId, url, silent, webContents: event.sender, soundName});
 }
 
 export function handleOpenAppMenu() {

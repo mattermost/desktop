@@ -99,7 +99,7 @@ describe('main/notifications', () => {
                 teamId: 'team_id',
                 url: 'http://server-1.com/team_id/channel_id',
                 silent: false,
-                webcontents: {id: 1},
+                webContents: {id: 1},
             });
             expect(Notification.didConstruct).not.toBeCalled();
         });
@@ -118,7 +118,7 @@ describe('main/notifications', () => {
                 teamId: 'team_id',
                 url: 'http://server-1.com/team_id/channel_id',
                 silent: false,
-                webcontents: {id: 1},
+                webContents: {id: 1},
             });
             expect(Notification.didConstruct).not.toBeCalled();
 
@@ -141,7 +141,7 @@ describe('main/notifications', () => {
                 teamId: 'team_id',
                 url: 'http://server-1.com/team_id/channel_id',
                 silent: false,
-                webcontents: {id: 1},
+                webContents: {id: 1},
             });
             expect(Notification.didConstruct).not.toBeCalled();
 
@@ -158,7 +158,7 @@ describe('main/notifications', () => {
                 teamId: 'team_id',
                 url: 'http://server-1.com/team_id/channel_id',
                 silent: false,
-                webcontents: {id: 1},
+                webContents: {id: 1},
                 soundName: 'test_sound',
             });
             expect(WindowManager.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'test_sound');
@@ -177,7 +177,7 @@ describe('main/notifications', () => {
                 teamId: 'team_id',
                 url: 'http://server-1.com/team_id/channel_id',
                 silent: false,
-                webcontents: {id: 1},
+                webContents: {id: 1},
             });
 
             expect(currentNotifications.has('team_id:channel_id')).toBe(true);
@@ -191,7 +191,7 @@ describe('main/notifications', () => {
                 teamId: 'team_id',
                 url: 'http://server-1.com/team_id/channel_id',
                 silent: false,
-                webcontents: {id: 1},
+                webContents: {id: 1},
             });
 
             expect(currentNotifications.delete).toHaveBeenCalled();
@@ -210,7 +210,7 @@ describe('main/notifications', () => {
                 teamId: 'team_id',
                 url: 'http://server-1.com/team_id/channel_id',
                 silent: false,
-                webcontents: {id: 1, send: jest.fn()},
+                webContents: {id: 1, send: jest.fn()},
             });
             const mention = mentions.find((m) => m.body === 'mention_click_body');
             mention.value.click();

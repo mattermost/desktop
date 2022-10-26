@@ -478,7 +478,7 @@ export class WindowManager {
             return null;
         }
 
-        // since we don't have a document/canvas object in the main process, we use the webcontents from the window to draw.
+        // since we don't have a document/canvas object in the main process, we use the webContents from the window to draw.
         const safeSmall = Boolean(small);
         const code = `
         window.drawBadge = ${this.drawBadge};

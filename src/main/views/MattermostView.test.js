@@ -124,7 +124,7 @@ describe('main/views/MattermostView', () => {
             mattermostView.retryInBackground = () => retryInBackgroundFn;
         });
 
-        it('should do nothing when webcontents are destroyed', () => {
+        it('should do nothing when webContents are destroyed', () => {
             const webContents = mattermostView.view.webContents;
             mattermostView.view.webContents = null;
             mattermostView.retry('http://server-1.com')();

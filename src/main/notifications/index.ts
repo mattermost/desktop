@@ -16,10 +16,10 @@ import {sendNotification} from './notification';
 
 export const currentNotifications = new Map();
 
-export function displayMention({title, message, channel, teamId, url, silent, webcontents, soundName}: DisplayMentionArguments) {
+export function displayMention({title, message, channel, teamId, url, silent, webContents, soundName}: DisplayMentionArguments) {
     log.debug('Notifications.displayMention', {title, message, channel, teamId, url, silent, soundName});
 
-    const serverName = WindowManager.getServerNameByWebContentsId(webcontents.id);
+    const serverName = WindowManager.getServerNameByWebContentsId(webContents.id);
 
     const options: NotificationOptions = {
         title: `${serverName}: ${title}`,
@@ -31,14 +31,16 @@ export function displayMention({title, message, channel, teamId, url, silent, we
         log.debug('notification click', serverName);
         if (serverName) {
             WindowManager.switchTab(serverName, TAB_MESSAGING);
-            webcontents.send('notification-clicked', {channel, teamId, url});
+            webContents.send('notification-clicked', {channel, teamId, url});
         }
     };
     sendNotification({
+        channel,
         options,
-        tag,
-        soundName,
         silent,
+        soundName,
+        tag,
+        teamId,
         onClick,
     });
 }
