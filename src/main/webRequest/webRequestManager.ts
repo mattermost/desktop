@@ -51,6 +51,7 @@ export class WebRequestManager {
                 return {};
             }
 
+            log.silly('WebRequestManager.rewriteURL success', webContentsId, details.url, details.url.replace(regex, replacement));
             return {redirectURL: details.url.replace(regex, replacement)};
         });
     }
@@ -67,7 +68,7 @@ export class WebRequestManager {
                 return {};
             }
 
-            return listener(details.requestHeaders);
+            return {requestHeaders: listener(details.requestHeaders)};
         });
     };
 
@@ -83,7 +84,7 @@ export class WebRequestManager {
                 return {};
             }
 
-            return listener(details.responseHeaders);
+            return {responseHeaders: listener(details.responseHeaders)};
         });
     };
 

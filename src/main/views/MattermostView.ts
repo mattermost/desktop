@@ -47,6 +47,26 @@ export class MattermostView extends EventEmitter {
 
         log.info(this.tab.server);
         ipcMain.handle(GET_CURRENT_SERVER_URL, () => `${this.tab.server.url}`);
+        WebRequestManager.rewriteURL(
+            /^file:\/\/\/(.*)\/static/g,
+            `${this.tab.server.url}/static`,
+            this.view.webContents.id,
+        );
+        WebRequestManager.rewriteURL(
+            /^file:\/\/\/(.*)\/api\/v4\/plugins\/(.+)/g,
+            `${this.tab.server.url}/api/v4/plugins/$2`,
+            this.view.webContents.id,
+        );
+        WebRequestManager.rewriteURL(
+            /^file:\/\/\/(.*)\/plugins\/(.+)/g,
+            `${this.tab.server.url}/plugins/$2`,
+            this.view.webContents.id,
+        );
+        WebRequestManager.rewriteURL(
+            /^file:\/\/\/(.*)\/api/g,
+            `${this.tab.server.url}/api`,
+            this.view.webContents.id,
+        );
     }
 
     load = (url?: string | URL) => {
