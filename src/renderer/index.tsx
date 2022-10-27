@@ -19,6 +19,14 @@ type State = {
     config?: CombinedConfig;
 }
 
+const LazyApp = React.lazy(() => import('mattermost_webapp/app'));
+const MattermostAppComponent = (props: any) => (
+    <React.Suspense fallback={<div>{'Loading...'}</div>}>
+        <LazyApp {...props}/>
+    </React.Suspense>
+);
+MattermostAppComponent.displayName = 'App';
+
 class Root extends React.PureComponent<Record<string, never>, State> {
     constructor(props: Record<string, never>) {
         super(props);
@@ -120,17 +128,20 @@ class Root extends React.PureComponent<Record<string, never>, State> {
             return null;
         }
         return (
-            <IntlProvider>
-                <MainPage
-                    teams={config.teams}
-                    lastActiveTeam={config.lastActiveTeam}
-                    moveTabs={this.moveTabs}
-                    openMenu={this.openMenu}
-                    darkMode={config.darkMode}
-                    appName={config.appName}
-                    useNativeWindow={config.useNativeWindow}
-                />
-            </IntlProvider>
+            <>
+                <IntlProvider>
+                    <MainPage
+                        teams={config.teams}
+                        lastActiveTeam={config.lastActiveTeam}
+                        moveTabs={this.moveTabs}
+                        openMenu={this.openMenu}
+                        darkMode={config.darkMode}
+                        appName={config.appName}
+                        useNativeWindow={config.useNativeWindow}
+                    />
+                </IntlProvider>
+                <MattermostAppComponent/>
+            </>
         );
     }
 }

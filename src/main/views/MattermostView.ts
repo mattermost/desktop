@@ -3,13 +3,16 @@
 
 import {EventEmitter} from 'events';
 
-import {BrowserView, BrowserViewConstructorOptions, BrowserWindow, Rectangle} from 'electron';
+import {BrowserView, BrowserViewConstructorOptions, BrowserWindow, ipcMain, Rectangle} from 'electron';
 import log from 'electron-log';
 
+import {GET_CURRENT_SERVER_URL} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {TabView} from 'common/tabs/TabView';
 
 import {ServerInfo} from 'main/server/serverInfo';
+import {getLocalPreload, getLocalURLString} from 'main/utils';
+import WebRequestManager from 'main/webRequest/webRequestManager';
 
 export class MattermostView extends EventEmitter {
     // TODO
@@ -30,18 +33,27 @@ export class MattermostView extends EventEmitter {
         this.tab = tab;
         this.serverInfo = serverInfo;
         this.window = window;
+
+        const preload = getLocalPreload('mainWindow.js');
         this.view = new BrowserView({
             ...options,
+            webPreferences: {
+                preload,
+            },
         });
         this.isVisible = false;
         this.isLoggedIn = false;
         this.isAtRoot = false;
+
+        log.info(this.tab.server);
+        ipcMain.handle(GET_CURRENT_SERVER_URL, () => `${this.tab.server.url}`);
     }
 
     load = (url?: string | URL) => {
         log.info('MattermostView.load', url);
         // TODO
-        this.view.webContents.loadURL(url);
+        const localURL = getLocalURLString('index.html');
+        this.view.webContents.loadURL(localURL);
         this.view.webContents.openDevTools({mode: 'detach'});
     };
 
