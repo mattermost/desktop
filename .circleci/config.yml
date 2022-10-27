@@ -394,6 +394,14 @@ jobs:
           command: ./scripts/patch_mas_version.sh
       - run: npm run package:mas
       - run:
+          name: Don't submit unless it's on a tag or it's the nightly build
+          command: |
+            if [ -z `git name-rev --name-only --tags --no-undefined HEAD 2>/dev/null` ]; then
+              if [ `git rev-parse --abbrev-ref HEAD` != "nightly" ]; then
+                circleci-agent step halt
+              fi
+            fi
+      - run:
           name: 'Upload to App Store Connect'
           command: fastlane publish_test path:"$(find . -name \*.pkg -print -quit)"
 
