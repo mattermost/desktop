@@ -1,7 +1,7 @@
 {
   "name": "mattermost-desktop",
   "productName": "Mattermost",
-  "version": "5.2.0-nightly.20221026",
+  "version": "5.2.0-nightly.20221027",
   "description": "Mattermost",
   "main": "dist/index.js",
   "author": "Mattermost, Inc. <feedback@mattermost.com>",
