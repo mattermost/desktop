@@ -94,9 +94,9 @@ export class WebRequestManager {
         result: CallbackResponse,
     ): CallbackResponse => {
         if (result.redirectURL && callbackObject.redirectURL) {
-            throw new Error(`Listeners produced more than one redirect URL: ${result.redirectURL} ${callbackObject.redirectURL}`);
+            throw new Error(`Listeners produced more than one redirect URL for ${details.url}: ${result.redirectURL} ${callbackObject.redirectURL}`);
         }
-        const modifiedCallbackObject: CallbackResponse = {};
+        const modifiedCallbackObject: CallbackResponse = {...callbackObject};
         if (result.cancel) {
             modifiedCallbackObject.cancel = result.cancel;
         }

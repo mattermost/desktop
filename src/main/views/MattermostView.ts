@@ -1,6 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import path from 'path';
 import {EventEmitter} from 'events';
 
 import {BrowserView, BrowserViewConstructorOptions, BrowserWindow, ipcMain, Rectangle} from 'electron';
@@ -45,26 +46,10 @@ export class MattermostView extends EventEmitter {
         this.isLoggedIn = false;
         this.isAtRoot = false;
 
-        log.info(this.tab.server);
         ipcMain.handle(GET_CURRENT_SERVER_URL, () => `${this.tab.server.url}`);
         WebRequestManager.rewriteURL(
-            /^file:\/\/\/(.*)\/static/g,
-            `${this.tab.server.url}/static`,
-            this.view.webContents.id,
-        );
-        WebRequestManager.rewriteURL(
-            /^file:\/\/\/(.*)\/api\/v4\/plugins\/(.+)/g,
-            `${this.tab.server.url}/api/v4/plugins/$2`,
-            this.view.webContents.id,
-        );
-        WebRequestManager.rewriteURL(
-            /^file:\/\/\/(.*)\/plugins\/(.+)/g,
-            `${this.tab.server.url}/plugins/$2`,
-            this.view.webContents.id,
-        );
-        WebRequestManager.rewriteURL(
-            /^file:\/\/\/(.*)\/api/g,
-            `${this.tab.server.url}/api`,
+            new RegExp(`file:///${path.resolve('/').replace('\\', '/').replace('/', '')}(${this.tab.server.url.pathname})?/(.*)`, 'g'),
+            `${this.tab.server.url}/$2`,
             this.view.webContents.id,
         );
     }
