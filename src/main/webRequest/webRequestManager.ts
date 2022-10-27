@@ -12,6 +12,8 @@ import {
 } from 'electron';
 import log from 'electron-log';
 
+import {RequestHeaders, ResponseHeaders} from 'types/webRequest';
+
 import {WebRequestHandler} from 'main/webRequest/webRequestHandler';
 
 export class WebRequestManager {
@@ -53,7 +55,7 @@ export class WebRequestManager {
         });
     }
 
-    onRequestHeaders = (listener: (headers: Record<string, string>) => Record<string, string>, webContentsId?: number) => {
+    onRequestHeaders = (listener: (headers: RequestHeaders) => RequestHeaders, webContentsId?: number) => {
         log.debug('WebRequestManager.onRequestHeaders', webContentsId);
 
         this.onBeforeSendHeaders.addWebRequestListener(`onRequestHeaders_${webContentsId ?? '*'}`, (details) => {
@@ -69,7 +71,7 @@ export class WebRequestManager {
         });
     };
 
-    onResponseHeaders = (listener: (headers: Record<string, string[]>) => Record<string, string[]>, webContentsId?: number) => {
+    onResponseHeaders = (listener: (headers: ResponseHeaders) => ResponseHeaders, webContentsId?: number) => {
         log.debug('WebRequestManager.onResponseHeaders', webContentsId);
 
         this.onHeadersReceived.addWebRequestListener(`onResponseHeaders_${webContentsId ?? '*'}`, (details) => {
