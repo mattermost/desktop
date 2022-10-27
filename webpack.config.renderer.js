@@ -62,34 +62,34 @@ module.exports = merge(base, {
                 mattermost_webapp: `promise new Promise(${getRemoteEntry.toString()})`,
             },
             shared: {
+                history: {
+                    singleton: true,
+                    eager: true,
+                    import: false,
+                },
                 react: {
                     singleton: true,
                     eager: true,
-                    requiredVersion: deps.react,
                     import: false,
                 },
                 'react-beautiful-dnd': {
                     singleton: true,
                     eager: true,
-                    requiredVersion: deps['react-beautiful-dnd'],
                     import: false,
                 },
                 'react-dom': {
                     singleton: true,
                     eager: true,
-                    requiredVersion: deps['react-dom'],
                     import: false,
                 },
                 'react-redux': {
                     singleton: true,
                     eager: true,
-                    requiredVersion: deps['react-redux'],
                     import: false,
                 },
                 'react-router-dom': {
                     singleton: true,
                     eager: true,
-                    requiredVersion: deps['react-router-dom'],
                     import: false,
                 },
             },

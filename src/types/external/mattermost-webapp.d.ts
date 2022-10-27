@@ -18,3 +18,4 @@ declare module 'mattermost_webapp/store' {
 }
 
 declare module 'mattermost_webapp/styles';
+declare module 'history';
