@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
+
 import {EventEmitter} from 'events';
 
 import {BrowserView, BrowserViewConstructorOptions, BrowserWindow, ipcMain, Rectangle} from 'electron';
@@ -55,7 +56,8 @@ export class MattermostView extends EventEmitter {
     }
 
     load = (url?: string | URL) => {
-        log.info('MattermostView.load', url);
+        log.debug('MattermostView.load', `${url}`);
+
         // TODO
         const localURL = getLocalURLString('index.html');
         this.view.webContents.loadURL(localURL);
@@ -63,34 +65,40 @@ export class MattermostView extends EventEmitter {
     };
 
     updateServerInfo = (srv: MattermostServer) => {
-        log.info('MattermostView.updateServerInfo', srv);
+        log.debug('MattermostView.updateServerInfo', srv);
+
         // TODO
     };
 
     destroy = () => {
-        log.info('MattermostView.destroy');
+        log.debug('MattermostView.destroy');
+
         // TODO
     };
 
     isErrored = () => {
-        log.info('MattermostView.isErrored');
+        log.debug('MattermostView.isErrored');
+
         // TODO
         return false;
     };
 
     isReady = () => {
-        log.info('MattermostView.isReady');
+        log.debug('MattermostView.isReady');
+
         // TODO
         return true;
     };
 
     reload = () => {
-        log.info('MattermostView.reload');
+        log.debug('MattermostView.reload');
+
         // TODO
     };
 
     show = () => {
-        log.info('MattermostView.show');
+        log.debug('MattermostView.show');
+
         // TODO
         this.window.addBrowserView(this.view);
         this.view.setBounds({
@@ -102,59 +110,70 @@ export class MattermostView extends EventEmitter {
     };
 
     hide = () => {
-        log.info('MattermostView.hide');
+        log.debug('MattermostView.hide');
+
         // TODO
     };
 
     focus = () => {
-        log.info('MattermostView.focus');
+        log.debug('MattermostView.focus');
+
         // TODO
     };
 
     setBounds = (bounds: Rectangle) => {
-        log.info('MattermostView.setBounds');
+        log.debug('MattermostView.setBounds', bounds);
+
         // TODO
     };
 
     needsLoadingScreen = () => {
-        log.info('MattermostView.needsLoadingScreen');
+        log.debug('MattermostView.needsLoadingScreen');
+
         // TODO
         return false;
     };
 
     resetLoadingStatus = () => {
-        log.info('MattermostView.resetLoadingStatus');
+        log.debug('MattermostView.resetLoadingStatus');
+
         // TODO
     };
 
     setInitialized = () => {
-        log.info('MattermostView.setInitialized');
+        log.debug('MattermostView.setInitialized');
+
         // TODO
     };
 
     isInitialized = () => {
-        log.info('MattermostView.isInitialized');
+        log.debug('MattermostView.isInitialized');
+
         // TODO
         return true;
     };
 
     handleTitleUpdate = () => {
-        log.info('MattermostView.handleTitleUpdate');
+        log.debug('MattermostView.handleTitleUpdate');
+
         // TODO
     };
 
     handleFaviconUpdate = () => {
-        log.info('MattermostView.handleFaviconUpdate');
+        log.debug('MattermostView.handleFaviconUpdate');
+
         // TODO
     };
 
     handleUpdateTarget = () => {
-        log.info('MattermostView.handleUpdateTarget');
+        log.debug('MattermostView.handleUpdateTarget');
+
         // TODO
     };
 
     handleDidNavigate = () => {
-        log.info('MattermostView.handleDidNavigate');
+        log.debug('MattermostView.handleDidNavigate');
+
         // TODO
     };
 }

@@ -34,6 +34,7 @@ const getRemoteEntry = (resolve) => {
                     } catch (e) {
                         // eslint-disable-next-line no-console
                         console.error('remote container already initialized');
+                        return null;
                     }
                 },
             };
