@@ -162,14 +162,12 @@ describe('main/downloadsManager', () => {
 
     it('should monitor network to retrieve the file size of downloading items', () => {
         const dl = new DownloadsManager({});
-        const details = {
-            responseHeaders: {
-                'content-encoding': ['gzip'],
-                'x-uncompressed-content-length': ['4242'],
-                'content-disposition': ['attachment; filename="file.txt"; foobar'],
-            },
+        const responseHeaders = {
+            'content-encoding': ['gzip'],
+            'x-uncompressed-content-length': ['4242'],
+            'content-disposition': ['attachment; filename="file.txt"; foobar'],
         };
-        dl.webRequestOnHeadersReceivedHandler(details, jest.fn());
+        dl.webRequestOnHeadersReceivedHandler(responseHeaders);
         expect(dl.fileSizes.get('file.txt')).toBe('4242');
     });
 

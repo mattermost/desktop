@@ -10,13 +10,16 @@ import {
     OnHeadersReceivedListenerDetails,
     session,
 } from 'electron';
+import log from 'electron-log';
+
+import {RequestHeaders, ResponseHeaders} from 'types/webRequest';
 
 import {WebRequestHandler} from 'main/webRequest/webRequestHandler';
 
 export class WebRequestManager {
-    onBeforeRequest: WebRequestHandler<OnBeforeRequestListenerDetails, CallbackResponse>;
-    onBeforeSendHeaders: WebRequestHandler<OnBeforeSendHeadersListenerDetails, BeforeSendResponse>;
-    onHeadersReceived: WebRequestHandler<OnHeadersReceivedListenerDetails, HeadersReceivedResponse>;
+    private onBeforeRequest: WebRequestHandler<OnBeforeRequestListenerDetails, CallbackResponse>;
+    private onBeforeSendHeaders: WebRequestHandler<OnBeforeSendHeadersListenerDetails, BeforeSendResponse>;
+    private onHeadersReceived: WebRequestHandler<OnHeadersReceivedListenerDetails, HeadersReceivedResponse>;
 
     constructor() {
         this.onBeforeRequest = new WebRequestHandler(this.onBeforeRequestCallback);
@@ -25,12 +28,66 @@ export class WebRequestManager {
     }
 
     initialize = () => {
-        session.defaultSession.webRequest.onBeforeRequest(this.onBeforeRequest.handle);
-        session.defaultSession.webRequest.onBeforeSendHeaders(this.onBeforeSendHeaders.handle);
-        session.defaultSession.webRequest.onHeadersReceived(this.onHeadersReceived.handle);
+        session.defaultSession.webRequest.onBeforeRequest(this.onBeforeRequest.handleWebRequest);
+        session.defaultSession.webRequest.onBeforeSendHeaders(this.onBeforeSendHeaders.handleWebRequest);
+        session.defaultSession.webRequest.onHeadersReceived(this.onHeadersReceived.handleWebRequest);
     }
 
-    onBeforeRequestCallback = (
+    rewriteURL = (regex: RegExp, replacement: string, webContentsId?: number) => {
+        log.debug('WebRequestManager.rewriteURL', regex, replacement, webContentsId);
+
+        // Purge old listeners since we shouldn't be rewriting the same regex from 2 listeners
+        const eventName = `rewriteURL_${regex}_${webContentsId ?? '*'}`;
+        if (this.onBeforeRequest.eventNames().includes(eventName)) {
+            this.onBeforeRequest.removeAllListeners(eventName);
+        }
+
+        this.onBeforeRequest.addWebRequestListener(eventName, (details) => {
+            if (webContentsId && details.webContentsId !== webContentsId) {
+                return {};
+            }
+
+            if (!details.url.match(regex)) {
+                return {};
+            }
+
+            return {redirectURL: details.url.replace(regex, replacement)};
+        });
+    }
+
+    onRequestHeaders = (listener: (headers: RequestHeaders) => RequestHeaders, webContentsId?: number) => {
+        log.debug('WebRequestManager.onRequestHeaders', webContentsId);
+
+        this.onBeforeSendHeaders.addWebRequestListener(`onRequestHeaders_${webContentsId ?? '*'}`, (details) => {
+            if (webContentsId && details.webContentsId !== webContentsId) {
+                return {};
+            }
+
+            if (!details.requestHeaders) {
+                return {};
+            }
+
+            return listener(details.requestHeaders);
+        });
+    };
+
+    onResponseHeaders = (listener: (headers: ResponseHeaders) => ResponseHeaders, webContentsId?: number) => {
+        log.debug('WebRequestManager.onResponseHeaders', webContentsId);
+
+        this.onHeadersReceived.addWebRequestListener(`onResponseHeaders_${webContentsId ?? '*'}`, (details) => {
+            if (webContentsId && details.webContentsId !== webContentsId) {
+                return {};
+            }
+
+            if (!details.responseHeaders) {
+                return {};
+            }
+
+            return listener(details.responseHeaders);
+        });
+    };
+
+    private onBeforeRequestCallback = (
         details: OnBeforeRequestListenerDetails,
         callbackObject: CallbackResponse,
         result: CallbackResponse,
@@ -48,7 +105,7 @@ export class WebRequestManager {
         return modifiedCallbackObject;
     }
 
-    onBeforeSendHeadersCallback = (
+    private onBeforeSendHeadersCallback = (
         details: OnBeforeSendHeadersListenerDetails,
         callbackObject: BeforeSendResponse,
         result: BeforeSendResponse,
@@ -66,7 +123,7 @@ export class WebRequestManager {
         return modifiedCallbackObject;
     }
 
-    onHeadersReceivedCallback = (
+    private onHeadersReceivedCallback = (
         details: OnHeadersReceivedListenerDetails,
         callbackObject: HeadersReceivedResponse,
         result: HeadersReceivedResponse,

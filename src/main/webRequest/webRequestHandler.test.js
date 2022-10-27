@@ -17,19 +17,19 @@ describe('main/webRequest/webRequestHandler', () => {
         const listener1 = jest.fn().mockImplementation(() => {
             result += 'listener1';
         });
-        handler.on('listener1', listener1);
+        handler.addWebRequestListener('listener1', listener1);
         const listener2 = jest.fn().mockImplementation(() => {
             result += 'listener2';
         });
-        handler.on('listener2', listener2);
+        handler.addWebRequestListener('listener2', listener2);
         const listener3 = jest.fn().mockImplementation(() => {
             result += 'listener3';
         });
-        handler.on('listener3', listener3);
+        handler.addWebRequestListener('listener3', listener3);
 
         const details = {some: 'detail'};
         const callback = jest.fn();
-        handler.handle(details, callback);
+        handler.handleWebRequest(details, callback);
 
         expect(listener1).toHaveBeenCalledWith(details);
         expect(listener2).toHaveBeenCalledWith(details);
@@ -45,15 +45,15 @@ describe('main/webRequest/webRequestHandler', () => {
         const handler = new WebRequestHandler(modifyCallbackObject);
 
         const listener1 = jest.fn().mockImplementation(() => ({listener1: true}));
-        handler.on('listener1', listener1);
+        handler.addWebRequestListener('listener1', listener1);
         const listener2 = jest.fn().mockImplementation(() => ({listener2: true}));
-        handler.on('listener2', listener2);
+        handler.addWebRequestListener('listener2', listener2);
         const listener3 = jest.fn().mockImplementation(() => ({listener3: false}));
-        handler.on('listener3', listener3);
+        handler.addWebRequestListener('listener3', listener3);
 
         const details = {some: 'detail'};
         const callback = jest.fn();
-        handler.handle(details, callback);
+        handler.handleWebRequest(details, callback);
 
         expect(callback).toHaveBeenCalledWith({
             listener1: true,

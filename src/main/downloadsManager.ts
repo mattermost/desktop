@@ -8,6 +8,7 @@ import log from 'electron-log';
 import {ProgressInfo} from 'electron-updater';
 
 import {DownloadedItem, DownloadItemDoneEventState, DownloadedItems, DownloadItemState, DownloadItemUpdatedEventState} from 'types/downloads';
+import {ResponseHeaders} from 'types/webRequest';
 
 import {
     CANCEL_UPDATE_DOWNLOAD,
@@ -32,12 +33,10 @@ import WindowManager from 'main/windows/windowManager';
 import {doubleSecToMs, getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader, shouldIncrementFilename} from 'main/utils';
 import {DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT, DOWNLOADS_DROPDOWN_MAX_ITEMS} from 'common/utils/constants';
 import JsonFileManager from 'common/JsonFileManager';
-
 import {APP_UPDATE_KEY} from 'common/constants';
 
 import {downloadsJson} from './constants';
 import * as Validator from './Validator';
-
 export enum DownloadItemTypeEnum {
     FILE = 'file',
     UPDATE = 'update',
@@ -134,9 +133,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
      * This function monitors webRequests and retrieves the total file size (of files being downloaded)
      * from the custom HTTP header "x-uncompressed-content-length".
      */
-    webRequestOnHeadersReceivedHandler = (details: Electron.OnHeadersReceivedListenerDetails) => {
-        const headers = details.responseHeaders ?? {};
-
+    webRequestOnHeadersReceivedHandler = (headers: ResponseHeaders) => {
         if (headers?.['content-encoding']?.includes('gzip') && headers?.['x-uncompressed-content-length'] && headers?.['content-disposition'].join(';')?.includes('filename=')) {
             const filename = readFilenameFromContentDispositionHeader(headers['content-disposition']);
             const fileSize = headers['x-uncompressed-content-length']?.[0] || '0';
