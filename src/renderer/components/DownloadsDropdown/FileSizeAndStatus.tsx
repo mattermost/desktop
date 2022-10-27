@@ -15,7 +15,7 @@ type OwnProps = {
 const FileSizeAndStatus = ({item}: OwnProps) => {
     const translate = useIntl();
 
-    const {totalBytes, receivedBytes, addedAt} = item;
+    const {totalBytes, receivedBytes, addedAt} = item || {};
 
     const getRemainingTime = useCallback(() => {
         const elapsedMs = Date.now() - addedAt;
