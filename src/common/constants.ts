@@ -12,7 +12,7 @@ import {DownloadItemTypeEnum} from 'main/downloadsManager';
 export const APP_UPDATE_KEY = '#:(APP_UPDATE):#';
 
 export const UPDATE_DOWNLOAD_ITEM: Omit<DownloadedItem, 'filename' | 'state'> = {
-    type: DownloadItemTypeEnum.UPDATE,
+    type: 'update' as DownloadItemTypeEnum,
     progress: 0,
     location: '',
     mimeType: null,
