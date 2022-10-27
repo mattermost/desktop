@@ -58,7 +58,7 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
                 } else if (b.type === 'update') {
                     return 1;
                 }
-                return b.addedAt - a.addedAt;
+                return b?.addedAt - a?.addedAt;
             });
             this.setState({
                 downloads: newDownloads,
