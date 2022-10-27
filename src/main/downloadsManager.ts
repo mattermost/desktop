@@ -26,7 +26,7 @@ import {
 } from 'common/communication';
 import Config from 'common/config';
 import JsonFileManager from 'common/JsonFileManager';
-import {APP_UPDATE_KEY} from 'common/constants';
+import {APP_UPDATE_KEY, UPDATE_DOWNLOAD_ITEM} from 'common/constants';
 import {DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT, DOWNLOADS_DROPDOWN_MAX_ITEMS} from 'common/utils/constants';
 import {localizeMessage} from 'main/i18nManager';
 import {displayDownloadCompleted} from 'main/notifications';
@@ -438,7 +438,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         const downloads = this.downloads;
         if (Object.keys(downloads).length > DOWNLOADS_DROPDOWN_MAX_ITEMS) {
             const oldestFileId = Object.keys(downloads).reduce((prev, curr) => {
-                return downloads[prev].addedAt > downloads[curr].addedAt ? curr : prev;
+                return downloads[prev]?.addedAt > downloads[curr]?.addedAt ? curr : prev;
             });
             delete downloads[oldestFileId];
             this.saveAll(downloads);
@@ -508,15 +508,9 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
      */
     private onUpdateAvailable = (event: Event, version = 'unknown') => {
         this.save(APP_UPDATE_KEY, {
-            type: DownloadItemTypeEnum.UPDATE,
+            ...UPDATE_DOWNLOAD_ITEM,
             filename: version,
             state: 'available',
-            progress: 0,
-            location: '',
-            mimeType: null,
-            addedAt: 0,
-            receivedBytes: 0,
-            totalBytes: 0,
         });
         this.openDownloadsDropdown();
     };
@@ -535,7 +529,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     private onUpdateProgress = (event: Event, progress: ProgressInfo) => {
         log.debug('DownloadsManager.onUpdateProgress', {progress});
         const {total, transferred, percent} = progress;
-        const update = this.downloads[APP_UPDATE_KEY];
+        const update = this.downloads[APP_UPDATE_KEY] || {...UPDATE_DOWNLOAD_ITEM};
         if (typeof update.addedAt !== 'number' || update.addedAt === 0) {
             update.addedAt = Date.now();
         }
