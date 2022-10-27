@@ -8,6 +8,8 @@ import 'renderer/css/index.css';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
+import {createHashHistory, History} from 'history';
+
 import {CombinedConfig, Team} from 'types/config';
 
 import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT, RELOAD_CONFIGURATION, OPEN_APP_MENU} from 'common/communication';
@@ -19,6 +21,8 @@ type State = {
     config?: CombinedConfig;
 }
 
+import('mattermost_webapp/styles');
+
 const LazyApp = React.lazy(() => import('mattermost_webapp/app'));
 const MattermostAppComponent = (props: any) => (
     <React.Suspense fallback={<div>{'Loading...'}</div>}>
@@ -28,12 +32,20 @@ const MattermostAppComponent = (props: any) => (
 MattermostAppComponent.displayName = 'App';
 
 class Root extends React.PureComponent<Record<string, never>, State> {
+    registry?: {
+        getModule: <T>(name: string) => T;
+        setModule: <T>(name: string, component: T) => boolean;
+    }
+
     constructor(props: Record<string, never>) {
         super(props);
         this.state = {};
     }
 
     async componentDidMount() {
+        this.registry = await import('mattermost_webapp/registry');
+        this.registry?.setModule<History>('utils/browser_history', createHashHistory());
+
         await this.setInitialConfig();
 
         window.ipcRenderer.on('synchronize-config', () => {
@@ -154,5 +166,5 @@ window.ipcRenderer.invoke('get-app-version').then(({name, version}) => {
 
 ReactDOM.render(
     <Root/>,
-    document.getElementById('app'),
+    document.getElementById('root'),
 );

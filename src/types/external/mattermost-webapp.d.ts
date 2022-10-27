@@ -5,3 +5,16 @@ declare module 'mattermost_webapp/app' {
 
     export default App;
 }
+
+declare module 'mattermost_webapp/registry' {
+    export const getModule: <T>(name: string) => T;
+    export const setModule: <T>(name: string, component: T) => boolean;
+}
+
+declare module 'mattermost_webapp/store' {
+    const store: Store<any>;
+
+    export default store;
+}
+
+declare module 'mattermost_webapp/styles';
