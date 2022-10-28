@@ -223,6 +223,9 @@ export class WindowManager {
             const bounds = this.getBounds();
             this.throttledWillResize(bounds);
             ipcMain.emit(RESIZE_MODAL, null, bounds);
+            this.teamDropdown?.updateWindowBounds();
+            this.downloadsDropdown?.updateWindowBounds();
+            this.downloadsDropdownMenu?.updateWindowBounds();
         }
         this.isResizing = false;
     }
@@ -254,6 +257,7 @@ export class WindowManager {
         this.viewManager.setLoadingScreenBounds();
         this.teamDropdown?.updateWindowBounds();
         this.downloadsDropdown?.updateWindowBounds();
+        this.downloadsDropdownMenu?.updateWindowBounds();
         ipcMain.emit(RESIZE_MODAL, null, bounds);
     };
 
