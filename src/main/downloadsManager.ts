@@ -401,7 +401,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     private showSaveDialog = (item: DownloadItem) => {
         const filename = item.getFilename();
         const fileElements = filename.split('.');
-        const filters = this.getFileFilters(fileElements);
+        const filters = this.getFileFilters(fileElements.slice(1));
 
         return dialog.showSaveDialog({
             title: filename,
@@ -590,14 +590,15 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     };
 
     private getFileFilters = (fileElements: string[]): FileFilter[] => {
-        const filters = [];
+        const filters = fileElements.map((element) => ({
+            name: `${element.toUpperCase()} (*.${element})`,
+            extensions: [element],
+        }));
 
-        if (fileElements.length > 1) {
-            filters.push({
-                name: localizeMessage('main.app.initialize.downloadBox.allFiles', 'All files'),
-                extensions: ['*'],
-            });
-        }
+        filters.push({
+            name: localizeMessage('main.app.initialize.downloadBox.allFiles', 'All files'),
+            extensions: ['*'],
+        });
 
         return filters;
     };
