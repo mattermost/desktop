@@ -30,15 +30,17 @@ function dirExistsAsync(path) {
 function mkDirAsync(path) {
     return new Promise((resolve, reject) => {
         dirExistsAsync(path).then((exists) => {
-            if (!exists) {
-                fs.mkdir(path, {recursive: true}, (error) => {
-                    if (error) {
-                        reject(error);
-                        return;
-                    }
-                    resolve();
-                });
+            if (exists) {
+                resolve();
+                return;
             }
+            fs.mkdir(path, {recursive: true}, (error) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                resolve();
+            });
         }).catch((err) => {
             reject(err);
         });
