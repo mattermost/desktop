@@ -16,7 +16,7 @@ import {localizeMessage} from 'main/i18nManager';
 
 import WindowManager from '../windows/windowManager';
 
-import getLinuxDoNotDisturb from './dndLinux';
+import getLinuxDoNotDisturb from './internal/dndLinux';
 
 import {displayMention, displayDownloadCompleted, currentNotifications} from './index';
 

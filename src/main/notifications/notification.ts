@@ -12,9 +12,10 @@ import WindowManager from '../windows/windowManager';
 
 import {PLAY_SOUND} from 'common/communication';
 
-import getLinuxDoNotDisturb from './dndLinux';
-import getWindowsDoNotDisturb from './dnd-windows';
-import {Mention} from './Mention';
+import getWindowsDoNotDisturb from './internal/dnd-windows';
+import getLinuxDoNotDisturb from './internal/dndLinux';
+import {showMention} from './internal/Mention';
+import {showElectronNotification} from './internal/Generic';
 
 const logoPath = path.join(path.dirname(app.getAppPath()), 'src/assets/linux/app_icon.svg');
 export const currentNotifications = new Map();
@@ -44,7 +45,7 @@ const defaultOptions: NotificationOptions = {
 
 const isDarwin = process.platform === 'darwin';
 
-function sendNotificationDarwin({options, onClick, channel, teamId}: SendNotificationArguments): Promise<void> {
+function sendNotificationDarwin({options, channel, teamId, notificationType, onClick}: SendNotificationArguments): Promise<void> {
     return new Promise((resolve, reject) => {
         if (!Notification.isSupported()) {
             const errMessage = 'notification not supported';
@@ -52,28 +53,14 @@ function sendNotificationDarwin({options, onClick, channel, teamId}: SendNotific
             return;
         }
 
-        if (!channel) {
-            const errMessage = 'Missing arguments';
-            reject(errMessage);
-            return;
+        switch (notificationType) {
+        case 'mention':
+            showMention({options, channel, teamId, onClick, reject, resolve});
+            break;
+        default:
+            showElectronNotification({options, onClick, resolve});
+            break;
         }
-
-        const customOptions = {
-            title: options.title,
-            body: options.message,
-        };
-
-        const mention = new Mention(customOptions, channel, teamId);
-
-        mention.on('show', () => {
-            log.debug('Notifications.displayMention.show');
-            resolve();
-        });
-
-        mention.on('click', () => {
-            onClick?.();
-        });
-        mention.show();
     });
 }
 
@@ -111,15 +98,14 @@ function sendNotificationWinLinux({options, tag, onClick, onTimeout}: Partial<Se
     });
 }
 
-export const sendNotification = async ({options, tag, silent = false, soundName, channel, teamId, onClick, onTimeout}: SendNotificationArguments): Promise<void> => {
+export const sendNotification = async ({options, tag, silent, soundName, channel, teamId, notificationType, onClick, onTimeout}: SendNotificationArguments): Promise<void> => {
     try {
         if (getDoNotDisturb()) {
             return;
         }
 
-        // Send notification based on OS
         if (isDarwin) {
-            await sendNotificationDarwin({options, channel, teamId});
+            await sendNotificationDarwin({options, channel, notificationType, teamId, onClick});
         } else {
             await sendNotificationWinLinux({options, tag, onClick, onTimeout});
         }

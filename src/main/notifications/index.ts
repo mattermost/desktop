@@ -10,8 +10,6 @@ import {TAB_MESSAGING} from 'common/tabs/TabView';
 import WindowManager from '../windows/windowManager';
 import {localizeMessage} from 'main/i18nManager';
 
-import {NewVersionNotification, UpgradeNotification} from './Upgrade';
-
 import {sendNotification} from './notification';
 
 export const currentNotifications = new Map();
@@ -36,6 +34,7 @@ export function displayMention({title, message, channel, teamId, url, silent, we
     };
     sendNotification({
         channel,
+        notificationType: 'mention',
         options,
         silent,
         soundName,
@@ -51,42 +50,60 @@ export function displayDownloadCompleted(fileName: string, path: string, serverN
     const options = {
         title: process.platform === 'win32' ? serverName : localizeMessage('main.notifications.download.complete.title', 'Download Complete'),
         message: process.platform === 'win32' ? localizeMessage('main.notifications.download.complete.body', 'Download Complete \n {fileName}', {fileName}) : fileName,
+        sound: true, // macos & windows only
     };
 
     const onClick = () => {
         shell.showItemInFolder(path.normalize());
     };
 
-    WindowManager.flashFrame(true);
+    sendNotification({
+        options,
+        onClick,
+        notificationType: 'downloadCompleted',
+    });
+}
+
+export function displayUpgrade(version: string, handleUpgrade: () => void): void {
+    log.debug('Notifications.displayUpgrade', {version});
+
+    const options: NotificationOptions = {
+        title: localizeMessage('main.notifications.upgrade.newVersion.title', 'New desktop version available'),
+        message: localizeMessage('main.notifications.upgrade.newVersion.body', 'A new version is available for you to download now.'),
+        sound: true,
+    };
+
+    const onClick = () => {
+        log.info(`User clicked to upgrade to ${version}`);
+        handleUpgrade();
+    };
 
     sendNotification({
         options,
         onClick,
+        notificationType: 'upgrade',
     });
 }
 
-let upgrade: NewVersionNotification;
+export function displayRestartToUpgrade(version: string, handleUpgrade: () => void): void {
+    log.debug('Notifications.displayRestartToUpgrade', {version});
 
-export function displayUpgrade(version: string, handleUpgrade: () => void): void {
-    if (upgrade) {
-        upgrade.close();
-    }
-    upgrade = new NewVersionNotification();
-    upgrade.on('click', () => {
+    const options: NotificationOptions = {
+        title: localizeMessage('main.notifications.upgrade.newVersion.title', 'New desktop version available'),
+        message: localizeMessage('main.notifications.upgrade.newVersion.body', 'A new version is available for you to download now.'),
+        sound: true,
+    };
+
+    const onClick = () => {
         log.info(`User clicked to upgrade to ${version}`);
         handleUpgrade();
-    });
-    upgrade.show();
-}
+    };
 
-let restartToUpgrade;
-export function displayRestartToUpgrade(version: string, handleUpgrade: () => void): void {
-    restartToUpgrade = new UpgradeNotification();
-    restartToUpgrade.on('click', () => {
-        log.info(`User requested perform the upgrade now to ${version}`);
-        handleUpgrade();
+    sendNotification({
+        options,
+        onClick,
+        notificationType: 'upgrade',
     });
-    restartToUpgrade.show();
 }
 
 export function sendTestNotification() {
@@ -98,6 +115,7 @@ export function sendTestNotification() {
             message: 'This is a test notification',
             sound: true,
         },
+        notificationType: 'test',
     });
 }
 
