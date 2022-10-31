@@ -5,6 +5,7 @@ import {WebRequestManager} from './webRequestManager';
 
 jest.mock('electron-log', () => ({
     debug: jest.fn(),
+    silly: jest.fn(),
 }));
 
 jest.mock('main/webRequest/webRequestHandler', () => ({

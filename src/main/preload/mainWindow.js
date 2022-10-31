@@ -9,6 +9,7 @@ import {ipcRenderer, contextBridge} from 'electron';
 import {
     GET_LANGUAGE_INFORMATION,
     RETRIEVED_LANGUAGE_INFORMATION,
+    GET_CURRENT_SERVER_URL,
 } from 'common/communication';
 
 contextBridge.exposeInMainWorld('ipcRenderer', {
@@ -27,6 +28,10 @@ contextBridge.exposeInMainWorld('process', {
 
 contextBridge.exposeInMainWorld('timers', {
     setImmediate,
+});
+
+contextBridge.exposeInMainWorld('mattermost', {
+    getUrl: ipcRenderer.invoke(GET_CURRENT_SERVER_URL),
 });
 
 window.addEventListener('message', async (event) => {

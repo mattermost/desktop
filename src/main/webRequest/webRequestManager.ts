@@ -51,6 +51,7 @@ export class WebRequestManager {
                 return {};
             }
 
+            log.silly('WebRequestManager.rewriteURL success', webContentsId, details.url, details.url.replace(regex, replacement));
             return {redirectURL: details.url.replace(regex, replacement)};
         });
     }
@@ -67,7 +68,7 @@ export class WebRequestManager {
                 return {};
             }
 
-            return listener(details.requestHeaders);
+            return {requestHeaders: listener(details.requestHeaders)};
         });
     };
 
@@ -83,7 +84,7 @@ export class WebRequestManager {
                 return {};
             }
 
-            return listener(details.responseHeaders);
+            return {responseHeaders: listener(details.responseHeaders)};
         });
     };
 
@@ -93,9 +94,9 @@ export class WebRequestManager {
         result: CallbackResponse,
     ): CallbackResponse => {
         if (result.redirectURL && callbackObject.redirectURL) {
-            throw new Error(`Listeners produced more than one redirect URL: ${result.redirectURL} ${callbackObject.redirectURL}`);
+            throw new Error(`Listeners produced more than one redirect URL for ${details.url}: ${result.redirectURL} ${callbackObject.redirectURL}`);
         }
-        const modifiedCallbackObject: CallbackResponse = {};
+        const modifiedCallbackObject: CallbackResponse = {...callbackObject};
         if (result.cancel) {
             modifiedCallbackObject.cancel = result.cancel;
         }
