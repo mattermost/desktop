@@ -12,7 +12,7 @@ import {localizeMessage} from 'main/i18nManager';
 
 import {sendNotification} from './notification';
 
-export function displayMention({title, message, channel, teamId, url, silent, webContents, soundName}: DisplayMentionArguments) {
+export function displayMention({title, message, channel, teamId, url, silent, webContents, soundName}: DisplayMentionArguments): Promise<void> {
     log.debug('Notifications.displayMention', {title, message, channel, teamId, url, silent, soundName});
 
     const serverName = WindowManager.getServerNameByWebContentsId(webContents.id);
@@ -30,7 +30,7 @@ export function displayMention({title, message, channel, teamId, url, silent, we
             webContents.send('notification-clicked', {channel, teamId, url});
         }
     };
-    sendNotification({
+    return sendNotification({
         channel,
         notificationType: 'mention',
         options,
@@ -42,7 +42,7 @@ export function displayMention({title, message, channel, teamId, url, silent, we
     });
 }
 
-export function displayDownloadCompleted(fileName: string, path: string, serverName: string) {
+export function displayDownloadCompleted(fileName: string, path: string, serverName: string): Promise<void> {
     log.debug('Notifications.displayDownloadCompleted', {fileName, path, serverName});
 
     const options = {
@@ -55,14 +55,14 @@ export function displayDownloadCompleted(fileName: string, path: string, serverN
         shell.showItemInFolder(path.normalize());
     };
 
-    sendNotification({
+    return sendNotification({
         options,
         onClick,
         notificationType: 'downloadCompleted',
     });
 }
 
-export function displayUpgrade(version: string, handleUpgrade: () => void): void {
+export function displayUpgrade(version: string, handleUpgrade: () => void): Promise<void> {
     log.debug('Notifications.displayUpgrade', {version});
 
     const options: NotificationOptions = {
@@ -76,14 +76,14 @@ export function displayUpgrade(version: string, handleUpgrade: () => void): void
         handleUpgrade();
     };
 
-    sendNotification({
+    return sendNotification({
         options,
         onClick,
         notificationType: 'upgrade',
     });
 }
 
-export function displayRestartToUpgrade(version: string, handleUpgrade: () => void): void {
+export function displayRestartToUpgrade(version: string, handleUpgrade: () => void): Promise<void> {
     log.debug('Notifications.displayRestartToUpgrade', {version});
 
     const options: NotificationOptions = {
@@ -97,17 +97,17 @@ export function displayRestartToUpgrade(version: string, handleUpgrade: () => vo
         handleUpgrade();
     };
 
-    sendNotification({
+    return sendNotification({
         options,
         onClick,
         notificationType: 'upgrade',
     });
 }
 
-export function sendTestNotification() {
+export function sendTestNotification(): Promise<void> {
     log.debug('notifications.sendTestNotification');
 
-    sendNotification({
+    return sendNotification({
         options: {
             title: 'Test notification',
             message: 'This is a test notification',
