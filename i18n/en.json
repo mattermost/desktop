@@ -101,8 +101,6 @@
   "main.notifications.mention.title": "Someone mentioned you",
   "main.notifications.upgrade.newVersion.body": "A new version is available for you to download now.",
   "main.notifications.upgrade.newVersion.title": "New desktop version available",
-  "main.notifications.upgrade.readyToInstall.body": "A new desktop version is ready to install now.",
-  "main.notifications.upgrade.readyToInstall.title": "Click to restart and install update",
   "main.tray.tray.expired": "Session Expired: Please sign in to continue receiving notifications.",
   "main.tray.tray.mention": "You have been mentioned",
   "main.tray.tray.unread": "You have unread channels",
