@@ -1,21 +1,15 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import path from 'path';
-
-import {app, Notification} from 'electron';
+import {Notification} from 'electron';
 import log from 'electron-log';
 
 import {MentionOptions, ShowMentionArguments} from 'types/notification';
 
 import {localizeMessage} from 'main/i18nManager';
 
-const assetsDir = path.resolve(app.getAppPath(), 'assets');
-const appIconURL = path.resolve(assetsDir, 'appicon_48.png');
-
 const defaultOptions = {
     title: localizeMessage('main.notifications.mention.title', 'Someone mentioned you'),
-    silent: false,
-    icon: appIconURL,
+    silent: true,
 };
 
 class Mention extends Notification {
@@ -31,27 +25,26 @@ class Mention extends Notification {
     }
 }
 
-export function showMention({options, channel, teamId, onClick, reject, resolve}: ShowMentionArguments) {
-    if (!channel) {
-        const errMessage = 'Missing arguments';
-        reject(errMessage);
-        return;
-    }
+export async function showMention({options, channel, teamId, onClick}: ShowMentionArguments) {
+    return new Promise<void>((resolve, reject) => {
+        if (!channel) {
+            const errMessage = 'Missing arguments';
+            reject(errMessage);
+            return;
+        }
+        const customOptions = {
+            title: options.title,
+            body: options.message,
+        };
+        const mention = new Mention(customOptions, channel, teamId);
+        mention.on('show', () => {
+            log.debug('Notifications.displayMention.show');
+            resolve();
+        });
 
-    const customOptions = {
-        title: options.title,
-        body: options.message,
-    };
-
-    const mention = new Mention(customOptions, channel, teamId);
-
-    mention.on('show', () => {
-        log.debug('Notifications.displayMention.show');
-        resolve();
+        mention.on('click', () => {
+            onClick?.();
+        });
+        mention.show();
     });
-
-    mention.on('click', () => {
-        onClick?.();
-    });
-    mention.show();
 }

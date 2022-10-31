@@ -9,25 +9,27 @@ const existingNotifications: Record<string, Notification | null> = {
     upgrade: null,
 };
 
-export function showElectronNotification({options, notificationType, onClick, resolve}: ShowElectronNotificationArguments) {
-    const customOptions = {
-        title: options.title,
-        body: options.message,
-    };
+export async function showElectronNotification({options, notificationType, onClick}: ShowElectronNotificationArguments) {
+    return new Promise<void>((resolve) => {
+        const customOptions = {
+            title: options.title,
+            body: options.message,
+        };
 
-    const notification = new Notification(customOptions);
+        const notification = new Notification(customOptions);
 
-    // Hide previous identical notifications for Upgrades
-    if (notificationType === 'restartToUpgrade' || notificationType === 'upgrade') {
-        existingNotifications[notificationType]?.close?.();
-        existingNotifications[notificationType] = notification;
-    }
+        // Hide previous identical notifications for Upgrades
+        if (notificationType === 'restartToUpgrade' || notificationType === 'upgrade') {
+            existingNotifications[notificationType]?.close?.();
+            existingNotifications[notificationType] = notification;
+        }
 
-    notification.on('click', () => {
-        onClick?.();
+        notification.on('click', () => {
+            onClick?.();
+        });
+        notification.on('show', () => {
+            resolve?.();
+        });
+        notification.show();
     });
-    notification.on('show', () => {
-        resolve?.();
-    });
-    notification.show();
 }

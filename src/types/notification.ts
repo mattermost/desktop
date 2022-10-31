@@ -31,9 +31,6 @@ type UpgradePayload = {
     handleUpgrade: () => void;
 }
 
-type PromiseResolve = (value: void | PromiseLike<void>) => void;
-type PromiseReject = (reason?: unknown) => void;
-
 export type MentionOptions = {
     title?: string;
     body?: string;
@@ -70,11 +67,9 @@ export type ShowElectronNotificationArguments = {
     options: SendNotificationArguments['options'];
     notificationType?: SendNotificationArguments['notificationType'];
     onClick: SendNotificationArguments['onClick'];
-    resolve: PromiseResolve;
 }
 
 export type ShowMentionArguments = ShowElectronNotificationArguments & {
     channel: SendNotificationArguments['channel'];
     teamId: SendNotificationArguments['teamId'];
-    reject: PromiseReject;
 }

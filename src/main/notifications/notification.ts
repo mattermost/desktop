@@ -45,23 +45,20 @@ const defaultOptions: NotificationOptions = {
 
 const isDarwin = process.platform === 'darwin';
 
-function sendNotificationDarwin({options, channel, teamId, notificationType, onClick}: SendNotificationArguments): Promise<void> {
-    return new Promise((resolve, reject) => {
-        if (!Notification.isSupported()) {
-            const errMessage = 'notification not supported';
-            reject(errMessage);
-            return;
-        }
+async function sendNotificationDarwin({options, channel, teamId, notificationType, onClick}: SendNotificationArguments): Promise<void> {
+    if (!Notification.isSupported()) {
+        log.error('notifications.sendNotificationDarwin', 'notification not supported');
+        return;
+    }
 
-        switch (notificationType) {
-        case 'mention':
-            showMention({options, channel, teamId, onClick, reject, resolve});
-            break;
-        default:
-            showElectronNotification({options, onClick, resolve});
-            break;
-        }
-    });
+    switch (notificationType) {
+    case 'mention':
+        await showMention({options, channel, teamId, onClick});
+        break;
+    default:
+        await showElectronNotification({options, onClick});
+        break;
+    }
 }
 
 export function sendNotificationWinLinux({options, tag, onClick, onTimeout}: Partial<SendNotificationArguments>): Promise<void> {
