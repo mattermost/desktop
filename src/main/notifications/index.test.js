@@ -17,8 +17,9 @@ import {localizeMessage} from 'main/i18nManager';
 import WindowManager from '../windows/windowManager';
 
 import getLinuxDoNotDisturb from './internal/dndLinux';
+import * as notificationsModule from './notification';
 
-import {displayMention, displayDownloadCompleted, currentNotifications} from './index';
+import {displayMention, displayDownloadCompleted} from './index';
 
 const mentions = [];
 
@@ -70,7 +71,7 @@ jest.mock('windows-focus-assist', () => ({
 jest.mock('macos-notification-state', () => ({
     getDoNotDisturb: jest.fn(),
 }));
-
+jest.mock('node-notifier');
 jest.mock('../windows/windowManager', () => ({
     getServerNameByWebContentsId: () => 'server_name',
     sendToRenderer: jest.fn(),
@@ -106,6 +107,7 @@ describe('main/notifications', () => {
 
         it('should do nothing when alarms only is enabled on windows', () => {
             const originalPlatform = process.platform;
+            const sendNotificationWinLinuxInstance = jest.spyOn(notificationsModule, 'sendNotificationWinLinux');
             Object.defineProperty(process, 'platform', {
                 value: 'win32',
             });
@@ -120,11 +122,13 @@ describe('main/notifications', () => {
                 silent: false,
                 webContents: {id: 1},
             });
-            expect(Notification.didConstruct).not.toBeCalled();
+            expect(notificationsModule.sendNotificationWinLinux).not.toBeCalled();
 
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
+            getFocusAssist.mockRestore();
+            sendNotificationWinLinuxInstance.mockRestore();
         });
 
         it('should do nothing when dnd is enabled on mac', () => {
@@ -148,6 +152,33 @@ describe('main/notifications', () => {
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
+            getDarwinDoNotDisturb.mockRestore();
+        });
+
+        it('should do nothing when dnd is enabled on linux', () => {
+            const originalPlatform = process.platform;
+            const sendNotificationWinLinuxInstance = jest.spyOn(notificationsModule, 'sendNotificationWinLinux');
+            Object.defineProperty(process, 'platform', {
+                value: 'linux',
+            });
+
+            cp.execSync.mockReturnValue('false');
+            displayMention({
+                title: 'test',
+                message: 'test body',
+                channel: {id: 'channel_id'},
+                teamId: 'team_id',
+                url: 'http://server-1.com/team_id/channel_id',
+                silent: false,
+                webContents: {id: 1},
+            });
+            expect(notificationsModule.sendNotificationWinLinux).not.toBeCalled();
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+            cp.execSync.mockRestore();
+            sendNotificationWinLinuxInstance.mockRestore();
         });
 
         it('should play notification sound when custom sound is provided', () => {
@@ -164,45 +195,11 @@ describe('main/notifications', () => {
             expect(WindowManager.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'test_sound');
         });
 
-        it('should remove existing notification from the same channel/team on windows', () => {
+        it('should switch tab when clicking on notification', () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
-                value: 'win32',
+                value: 'darwin',
             });
-
-            displayMention({
-                title: 'test',
-                message: 'test body',
-                channel: {id: 'channel_id'},
-                teamId: 'team_id',
-                url: 'http://server-1.com/team_id/channel_id',
-                silent: false,
-                webContents: {id: 1},
-            });
-
-            expect(currentNotifications.has('team_id:channel_id')).toBe(true);
-
-            const existingMention = currentNotifications.get('team_id:channel_id');
-            currentNotifications.delete = jest.fn();
-            displayMention({
-                title: 'test',
-                message: 'test body 2',
-                channel: {id: 'channel_id'},
-                teamId: 'team_id',
-                url: 'http://server-1.com/team_id/channel_id',
-                silent: false,
-                webContents: {id: 1},
-            });
-
-            expect(currentNotifications.delete).toHaveBeenCalled();
-            expect(existingMention.close).toHaveBeenCalled();
-
-            Object.defineProperty(process, 'platform', {
-                value: originalPlatform,
-            });
-        });
-
-        it('should switch tab when clicking on notification', () => {
             displayMention({
                 title: 'click_test',
                 message: 'mention_click_body',
@@ -215,11 +212,18 @@ describe('main/notifications', () => {
             const mention = mentions.find((m) => m.body === 'mention_click_body');
             mention.value.click();
             expect(WindowManager.switchTab).toHaveBeenCalledWith('server_name', TAB_MESSAGING);
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
         });
     });
 
     describe('displayDownloadCompleted', () => {
         it('should open file when clicked', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
             getDarwinDoNotDisturb.mockReturnValue(false);
             localizeMessage.mockReturnValue('test_filename');
             displayDownloadCompleted(
@@ -230,6 +234,9 @@ describe('main/notifications', () => {
             const mention = mentions.find((m) => m.body.includes('test_filename'));
             mention.value.click();
             expect(shell.showItemInFolder).toHaveBeenCalledWith('/path/to/file');
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
         });
     });
 

@@ -20,7 +20,7 @@ import {showElectronNotification} from './internal/Generic';
 const logoPath = path.join(path.dirname(app.getAppPath()), 'src/assets/linux/app_icon.svg');
 export const currentNotifications = new Map();
 
-function getDoNotDisturb() {
+export function getDoNotDisturb() {
     if (process.platform === 'win32') {
         return getWindowsDoNotDisturb();
     }
@@ -64,7 +64,7 @@ function sendNotificationDarwin({options, channel, teamId, notificationType, onC
     });
 }
 
-function sendNotificationWinLinux({options, tag, onClick, onTimeout}: Partial<SendNotificationArguments>): Promise<void> {
+export function sendNotificationWinLinux({options, tag, onClick, onTimeout}: Partial<SendNotificationArguments>): Promise<void> {
     return new Promise((resolve, reject) => {
         const notifyOptions: NotificationOptions = {
             ...defaultOptions,

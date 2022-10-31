@@ -12,8 +12,6 @@ import {localizeMessage} from 'main/i18nManager';
 
 import {sendNotification} from './notification';
 
-export const currentNotifications = new Map();
-
 export function displayMention({title, message, channel, teamId, url, silent, webContents, soundName}: DisplayMentionArguments) {
     log.debug('Notifications.displayMention', {title, message, channel, teamId, url, silent, soundName});
 
