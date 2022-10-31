@@ -31,6 +31,9 @@ jest.mock('electron-updater', () => ({
         downloadUpdate: jest.fn(),
         checkForUpdates: jest.fn(),
     },
+    CancellationToken: jest.fn().mockImplementation(() => {
+        return {};
+    }),
 }));
 
 jest.mock('common/config', () => ({
@@ -49,6 +52,9 @@ jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
 
+jest.mock('main/downloadsManager', () => ({
+    removeUpdateBeforeRestart: jest.fn(),
+}));
 describe('main/autoUpdater', () => {
     describe('constructor', () => {
         afterEach(() => {

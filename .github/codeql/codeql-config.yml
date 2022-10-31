@@ -1,0 +1,11 @@
+name: "CodeQL config"
+
+query-filters:
+  - exclude:
+      problem.severity:
+        - warning
+        - recommendation
+
+paths-ignore:
+  - e2e
+  - '**/*.test.*'

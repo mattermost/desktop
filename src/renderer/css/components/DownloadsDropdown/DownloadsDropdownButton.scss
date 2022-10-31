@@ -1,0 +1,57 @@
+.DownloadsDropdownButton {
+    align-items: center;
+    background: transparent;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin: 4px;
+    position: relative;
+    width: 32px;
+
+    i {
+        color: rgba(63, 67, 80, 0.56);
+        cursor: pointer;
+        font-size: 21px;
+        line-height: 21px;
+    }
+
+    &:hover, &:focus, &.isDownloadsDropdownOpen {
+        background-color: rgba(28, 88, 217, 0.08);
+        i {
+            color: rgba(56, 111, 229, 1);
+        }
+    }
+
+    .DownloadsDropdownButton__badge {
+        background: rgba(210, 75, 78, 1);
+        border-radius: 10px;
+        width: 10px;
+        height: 10px;
+        position: absolute;
+        top: 5px;
+        right: 5px;
+    }
+
+    &.darkMode {
+        i {
+            color: rgba(221, 223, 228, 0.56);
+        }
+
+        &:hover, &:focus {
+            background: rgba(221, 223, 228, 0.08);
+        }
+        &.isDownloadsDropdownOpen {
+            background: rgba(28, 88, 217, 0.08);
+            i {
+                color: rgba(28, 88, 217, 1);
+            }
+
+            &:hover {
+                background: rgba(28, 88, 217, 0.16);
+            }
+        }
+    }
+}

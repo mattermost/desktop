@@ -3,26 +3,54 @@
 
 'use strict';
 
+import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
+
 import {localizeMessage} from 'main/i18nManager';
 import WindowManager from 'main/windows/windowManager';
 
 import {createTemplate} from './app';
 
-jest.mock('electron', () => ({
-    app: {
-        name: 'AppName',
-        getVersion: () => '5.0.0',
-    },
+jest.mock('electron', () => {
+    class NotificationMock {
+        static isSupported = jest.fn();
+        static didConstruct = jest.fn();
+        constructor() {
+            NotificationMock.didConstruct();
+        }
+        on = jest.fn();
+        show = jest.fn();
+        click = jest.fn();
+        close = jest.fn();
+    }
+    return {
+        app: {
+            name: 'AppName',
+            getVersion: () => '5.0.0',
+            getAppPath: () => '',
+        },
+        ipcMain: {
+            emit: jest.fn(),
+            handle: jest.fn(),
+            on: jest.fn(),
+        },
+        Notification: NotificationMock,
+    };
+});
+jest.mock('fs', () => ({
+    existsSync: jest.fn().mockReturnValue(false),
+    readFileSync: jest.fn().mockImplementation((text) => text),
+    writeFile: jest.fn(),
 }));
-
+jest.mock('macos-notification-state', () => ({
+    getDoNotDisturb: jest.fn(),
+}));
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
-
 jest.mock('main/windows/windowManager', () => ({
     getCurrentTeamName: jest.fn(),
+    sendToRenderer: jest.fn(),
 }));
-
 jest.mock('common/tabs/TabView', () => ({
     getTabDisplayName: (name) => name,
 }));
@@ -79,6 +107,9 @@ describe('main/menus/app', () => {
             helpLink: 'http://link-to-help.site.com',
         },
     };
+    beforeEach(() => {
+        getDarwinDoNotDisturb.mockReturnValue(false);
+    });
 
     describe('mac only', () => {
         let originalPlatform;
@@ -175,6 +206,27 @@ describe('main/menus/app', () => {
         const modifiedConfig = {
             ...config,
             enableServerManagement: false,
+        };
+        const menu = createTemplate(modifiedConfig);
+        const fileMenu = menu.find((item) => item.label === '&AppName' || item.label === '&File');
+        const signInOption = fileMenu.submenu.find((item) => item.label === 'Sign in to Another Server');
+        expect(signInOption).not.toBe(undefined);
+    });
+
+    it('should not show `Sign in to Another Server` if no teams are configured', () => {
+        localizeMessage.mockImplementation((id) => {
+            switch (id) {
+            case 'main.menus.app.file':
+                return '&File';
+            case 'main.menus.app.file.signInToAnotherServer':
+                return 'Sign in to Another Server';
+            default:
+                return '';
+            }
+        });
+        const modifiedConfig = {
+            ...config,
+            teams: [],
         };
         const menu = createTemplate(modifiedConfig);
         const fileMenu = menu.find((item) => item.label === '&AppName' || item.label === '&File');

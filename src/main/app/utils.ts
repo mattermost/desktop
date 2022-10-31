@@ -18,6 +18,7 @@ import {MattermostServer} from 'common/servers/MattermostServer';
 import {TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
+import {APP_MENU_WILL_CLOSE} from 'common/communication';
 
 import updateManager from 'main/autoUpdater';
 import {migrationInfoPath, updatePaths} from 'main/constants';
@@ -96,7 +97,10 @@ export function handleUpdateMenuEvent() {
 
     const aMenu = createAppMenu(Config, updateManager);
     Menu.setApplicationMenu(aMenu);
-    aMenu.addListener('menu-will-close', WindowManager.focusBrowserView);
+    aMenu.addListener('menu-will-close', () => {
+        WindowManager.focusBrowserView();
+        WindowManager.sendToRenderer(APP_MENU_WILL_CLOSE);
+    });
 
     // set up context menu for tray icon
     if (shouldShowTrayIcon()) {

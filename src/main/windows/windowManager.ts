@@ -49,6 +49,10 @@ import {ViewManager, LoadingScreenState} from '../views/viewManager';
 import CriticalErrorHandler from '../CriticalErrorHandler';
 
 import TeamDropdownView from '../views/teamDropdownView';
+import DownloadsDropdownView from '../views/downloadsDropdownView';
+import DownloadsDropdownMenuView from '../views/downloadsDropdownMenuView';
+
+import downloadsManager from 'main/downloadsManager';
 
 import {createSettingsWindow} from './settingsWindow';
 import createMainWindow from './mainWindow';
@@ -66,6 +70,8 @@ export class WindowManager {
     callsWidgetWindow?: CallsWidgetWindow;
     viewManager?: ViewManager;
     teamDropdown?: TeamDropdownView;
+    downloadsDropdown?: DownloadsDropdownView;
+    downloadsDropdownMenu?: DownloadsDropdownMenuView;
     currentServerName?: string;
 
     constructor() {
@@ -214,6 +220,8 @@ export class WindowManager {
             }
 
             this.teamDropdown = new TeamDropdownView(this.mainWindow, Config.teams, Config.darkMode, Config.enableServerManagement);
+            this.downloadsDropdown = new DownloadsDropdownView(this.mainWindow, downloadsManager.getDownloads(), Config.darkMode);
+            this.downloadsDropdownMenu = new DownloadsDropdownMenuView(this.mainWindow, Config.darkMode);
         }
         this.initializeViewManager();
 
@@ -232,10 +240,14 @@ export class WindowManager {
     on = this.mainWindow?.on;
 
     handleMaximizeMainWindow = () => {
+        this.downloadsDropdown?.updateWindowBounds();
+        this.downloadsDropdownMenu?.updateWindowBounds();
         this.sendToRenderer(MAXIMIZE_CHANGE, true);
     }
 
     handleUnmaximizeMainWindow = () => {
+        this.downloadsDropdown?.updateWindowBounds();
+        this.downloadsDropdownMenu?.updateWindowBounds();
         this.sendToRenderer(MAXIMIZE_CHANGE, false);
     }
 
@@ -257,6 +269,8 @@ export class WindowManager {
         this.throttledWillResize(newBounds);
         this.viewManager?.setLoadingScreenBounds();
         this.teamDropdown?.updateWindowBounds();
+        this.downloadsDropdown?.updateWindowBounds();
+        this.downloadsDropdownMenu?.updateWindowBounds();
         ipcMain.emit(RESIZE_MODAL, null, newBounds);
     }
 
@@ -267,6 +281,9 @@ export class WindowManager {
             const bounds = this.getBounds();
             this.throttledWillResize(bounds);
             ipcMain.emit(RESIZE_MODAL, null, bounds);
+            this.teamDropdown?.updateWindowBounds();
+            this.downloadsDropdown?.updateWindowBounds();
+            this.downloadsDropdownMenu?.updateWindowBounds();
         }
         this.isResizing = false;
     }
@@ -292,11 +309,13 @@ export class WindowManager {
 
         const bounds = this.getBounds();
 
-        // Another workaround since the window doesn't update p roperly under Linux for some reason
+        // Another workaround since the window doesn't update properly under Linux for some reason
         // See above comment
         setTimeout(this.setCurrentViewBounds, 10, bounds);
         this.viewManager.setLoadingScreenBounds();
         this.teamDropdown?.updateWindowBounds();
+        this.downloadsDropdown?.updateWindowBounds();
+        this.downloadsDropdownMenu?.updateWindowBounds();
         ipcMain.emit(RESIZE_MODAL, null, bounds);
     };
 
@@ -332,7 +351,7 @@ export class WindowManager {
     }
 
     // max retries allows the message to get to the renderer even if it is sent while the app is starting up.
-    sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: any[]) => {
+    sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: unknown[]) => {
         if (!this.mainWindow || !this.mainWindowReady) {
             if (maxRetries > 0) {
                 log.info(`Can't send ${channel}, will retry`);
@@ -354,11 +373,11 @@ export class WindowManager {
         }
     }
 
-    sendToRenderer = (channel: string, ...args: any[]) => {
+    sendToRenderer = (channel: string, ...args: unknown[]) => {
         this.sendToRendererWithRetry(3, channel, ...args);
     }
 
-    sendToAll = (channel: string, ...args: any[]) => {
+    sendToAll = (channel: string, ...args: unknown[]) => {
         this.sendToRenderer(channel, ...args);
         if (this.settingsWindow) {
             this.settingsWindow.webContents.send(channel, ...args);
@@ -367,7 +386,7 @@ export class WindowManager {
         // TODO: should we include popups?
     }
 
-    sendToMattermostViews = (channel: string, ...args: any[]) => {
+    sendToMattermostViews = (channel: string, ...args: unknown[]) => {
         if (this.viewManager) {
             this.viewManager.sendToAllViews(channel, ...args);
         }
@@ -556,7 +575,7 @@ export class WindowManager {
         if (this.viewManager) {
             this.viewManager.focus();
         } else {
-            log.error('Trying to call focus when the viewmanager has not yet been initialized');
+            log.error('Trying to call focus when the viewManager has not yet been initialized');
         }
     }
 
@@ -706,7 +725,7 @@ export class WindowManager {
     }
 
     handleBrowserHistoryPush = (e: IpcMainEvent, viewName: string, pathName: string) => {
-        log.debug('WwindowManager.handleBrowserHistoryPush', {viewName, pathName});
+        log.debug('WindowManager.handleBrowserHistoryPush', {viewName, pathName});
 
         const currentView = this.viewManager?.views.get(viewName);
         const cleanedPathName = urlUtils.cleanPathName(currentView?.tab.server.url.pathname || '', pathName);
@@ -734,7 +753,7 @@ export class WindowManager {
     }
 
     handleBrowserHistoryButton = (e: IpcMainEvent, viewName: string) => {
-        log.debug('EindowManager.handleBrowserHistoryButton', viewName);
+        log.debug('WindowManager.handleBrowserHistoryButton', viewName);
 
         const currentView = this.viewManager?.views.get(viewName);
         if (currentView) {
