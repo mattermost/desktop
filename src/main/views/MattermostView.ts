@@ -5,15 +5,24 @@ import path from 'path';
 
 import {EventEmitter} from 'events';
 
-import {BrowserView, BrowserViewConstructorOptions, BrowserWindow, ipcMain, Rectangle} from 'electron';
+import {
+    BrowserView,
+    BrowserViewConstructorOptions,
+    BrowserWindow, CookiesSetDetails,
+    ipcMain,
+    Rectangle,
+    session,
+} from 'electron';
 import log from 'electron-log';
 
-import {GET_CURRENT_SERVER_URL} from 'common/communication';
+import {RequestHeaders, ResponseHeaders} from 'types/webRequest';
+
+import {CLEAR_COOKIES, GET_CURRENT_SERVER_URL, SETUP_INITIAL_COOKIES} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {TabView} from 'common/tabs/TabView';
 
 import {ServerInfo} from 'main/server/serverInfo';
-import {getLocalPreload, getLocalURLString} from 'main/utils';
+import {createCookieSetDetailsFromCookieString, getLocalPreload, getLocalURLString} from 'main/utils';
 import WebRequestManager from 'main/webRequest/webRequestManager';
 
 export class MattermostView extends EventEmitter {
@@ -26,6 +35,8 @@ export class MattermostView extends EventEmitter {
     isAtRoot: boolean;
     isVisible: boolean;
     isLoggedIn: boolean;
+
+    cookies: CookiesSetDetails[];
 
     constructor(tab: TabView, serverInfo: ServerInfo, window: BrowserWindow, options: BrowserViewConstructorOptions) {
         super();
@@ -47,12 +58,67 @@ export class MattermostView extends EventEmitter {
         this.isLoggedIn = false;
         this.isAtRoot = false;
 
+        // URL handling
         ipcMain.handle(GET_CURRENT_SERVER_URL, () => `${this.tab.server.url}`);
         WebRequestManager.rewriteURL(
             new RegExp(`file:///${path.resolve('/').replace('\\', '/').replace('/', '')}(${this.tab.server.url.pathname})?/(api|static|plugins)/(.*)`, 'g'),
             `${this.tab.server.url}/$2/$3`,
             this.view.webContents.id,
         );
+
+        WebRequestManager.rewriteURL(
+            new RegExp(`file:///${path.resolve('/').replace('\\', '/')}(\\?.+)?$`, 'g'),
+            `${getLocalURLString('index.html')}$1`,
+            this.view.webContents.id,
+        );
+
+        // Cookies
+        this.cookies = [];
+        ipcMain.handle(SETUP_INITIAL_COOKIES, this.setupCookies);
+        ipcMain.on(CLEAR_COOKIES, this.clearCookies);
+        WebRequestManager.onRequestHeaders(this.appendCookies);
+        WebRequestManager.onResponseHeaders(this.extractCookies);
+    }
+
+    private appendCookies = (headers: RequestHeaders) => {
+        return {
+            Cookie: `${headers.Cookie ? `${headers.Cookie}; ` : ''}${this.cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ')}`,
+        };
+    }
+
+    private extractCookies = (headers: ResponseHeaders) => {
+        const cookieHeaderName = Object.keys(headers).find((key) => key.toLowerCase() === 'set-cookie');
+        if (cookieHeaderName) {
+            const cookies = headers[cookieHeaderName];
+            cookies.forEach((cookie) => {
+                const cookieResult = createCookieSetDetailsFromCookieString(cookie, `${this.tab.server.url}`, this.tab.server.url.host);
+                this.cookies.push(cookieResult);
+
+                session.defaultSession.cookies.set(cookieResult).then(() => {
+                    return session.defaultSession.cookies.flushStore();
+                }).catch((err) => {
+                    log.error('An error occurring setting cookies', err);
+                });
+            });
+        }
+        return {};
+    }
+
+    private setupCookies = async () => {
+        const cookies = await session.defaultSession.cookies.get({
+            domain: this.tab.server.url.host,
+            path: this.tab.server.url.pathname,
+        });
+        this.cookies = [...this.cookies, ...cookies.map((cookie) => ({
+            ...cookie,
+            url: `${this.tab.server.url}`,
+        }))];
+        return this.cookies;
+    }
+
+    private clearCookies = async () => {
+        await Promise.all(this.cookies.map((cookie) => session.defaultSession.cookies.remove(cookie.url, cookie.name || '')));
+        this.cookies = [];
     }
 
     load = (url?: string | URL) => {

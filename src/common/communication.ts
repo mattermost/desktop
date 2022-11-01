@@ -161,3 +161,5 @@ export const DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE = 'downloads-dropdown-menu-clear
 export const DOWNLOADS_DROPDOWN_MENU_OPEN_FILE = 'downloads-dropdown-menu-open-file';
 
 export const GET_CURRENT_SERVER_URL = 'get-current-server-url';
+export const SETUP_INITIAL_COOKIES = 'setup-initial-cookies';
+export const CLEAR_COOKIES = 'clear-cookies';

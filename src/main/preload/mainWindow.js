@@ -10,6 +10,8 @@ import {
     GET_LANGUAGE_INFORMATION,
     RETRIEVED_LANGUAGE_INFORMATION,
     GET_CURRENT_SERVER_URL,
+    SETUP_INITIAL_COOKIES,
+    CLEAR_COOKIES,
 } from 'common/communication';
 
 contextBridge.exposeInMainWorld('ipcRenderer', {
@@ -32,6 +34,8 @@ contextBridge.exposeInMainWorld('timers', {
 
 contextBridge.exposeInMainWorld('mattermost', {
     getUrl: ipcRenderer.invoke(GET_CURRENT_SERVER_URL),
+    setupCookies: ipcRenderer.invoke(SETUP_INITIAL_COOKIES),
+    clearCookies: () => ipcRenderer.send(CLEAR_COOKIES),
 });
 
 window.addEventListener('message', async (event) => {
