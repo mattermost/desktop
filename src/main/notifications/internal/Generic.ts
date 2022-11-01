@@ -14,6 +14,7 @@ export async function showElectronNotification({options, notificationType, onCli
     const customOptions = {
         title: options.title,
         body: options.message,
+        silent: !options.sound,
     };
 
     const notification = new Notification(customOptions);
