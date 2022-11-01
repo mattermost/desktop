@@ -43,8 +43,6 @@ const defaultOptions: NotificationOptions = {
     appID: 'Mattermost.Desktop',
 };
 
-const isDarwin = process.platform === 'darwin';
-
 async function sendNotificationDarwin({options, channel, teamId, notificationType, onClick}: SendNotificationArguments): Promise<void> {
     if (!Notification.isSupported()) {
         log.error('notifications.sendNotificationDarwin', 'notification not supported');
@@ -82,39 +80,38 @@ export function sendNotificationWinLinux({options, tag, onClick, onTimeout}: Par
                 case 'activate':
                     onClick?.(metadata);
                     WindowManager.restoreMain();
+                    resolve();
                     break;
                 case 'timeout':
                     onTimeout?.();
+                    resolve();
                     break;
                 default:
+                    resolve();
                     break;
                 }
-                resolve();
             }
         });
     });
 }
 
-export const sendNotification = async ({options, tag, silent, soundName, channel, teamId, notificationType, onClick, onTimeout}: SendNotificationArguments): Promise<void> => {
-    try {
-        if (getDoNotDisturb()) {
-            return;
-        }
-
-        if (isDarwin) {
-            await sendNotificationDarwin({options, channel, notificationType, teamId, onClick});
-        } else {
-            await sendNotificationWinLinux({options, tag, onClick, onTimeout});
-        }
-
-        // Play notification sound on the renderer process
-        if (!silent && soundName) {
-            WindowManager.sendToRenderer(PLAY_SOUND, soundName);
-        }
-
-        // Flash window
-        WindowManager.flashFrame(true);
-    } catch (err) {
-        log.error('notifications.sendNotification.error', {err});
+export const sendNotification = ({options, tag, silent, soundName, channel, teamId, notificationType, onClick, onTimeout}: SendNotificationArguments) => {
+    if (getDoNotDisturb()) {
+        return;
     }
+
+    const isDarwin = process.platform === 'darwin';
+    if (isDarwin) {
+        sendNotificationDarwin({options, channel, notificationType, teamId, onClick});
+    } else {
+        sendNotificationWinLinux({options, tag, onClick, onTimeout});
+    }
+
+    // Play notification sound on the renderer process
+    if (!silent && soundName) {
+        WindowManager.sendToRenderer(PLAY_SOUND, soundName);
+    }
+
+    // Flash window
+    WindowManager.flashFrame(true);
 };
