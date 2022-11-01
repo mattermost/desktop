@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 const path = require('path');
+const fs = require('fs');
 
 const {spawn} = require('electron-notarize/lib/spawn.js');
 
@@ -36,6 +37,22 @@ function getAppFileName(context) {
     }
 }
 
+function replaceTerminalIconForNotifications(context) {
+    if (context.electronPlatformName === 'darwin') {
+        console.log({context});
+        try {
+            fs.copyFileSync(
+                path.join(__dirname, 'src/assets/Terminal.icns'),
+                path.join(context.appOutDir, 'app.asar.unpacked/node_modules/node-notifier/vendor/mac.noindex/terminal-notifier.app/Contents/Resources/Terminal.icns'),
+            );
+        } catch (error) {
+            throw new Error(
+                'Failed to replace Terminal icon for Macos',
+            );
+        }
+    }
+}
+
 exports.default = async function afterPack(context) {
     await flipFuses(
         `${context.appOutDir}/${getAppFileName(context)}`, // Returns the path to the electron binary
@@ -46,5 +63,9 @@ exports.default = async function afterPack(context) {
 
     if (context.electronPlatformName === 'linux') {
         context.targets.forEach(fixSetuid(context));
+    }
+
+    if (context.electronPlatformName === 'darwin') {
+        replaceTerminalIconForNotifications(context);
     }
 };

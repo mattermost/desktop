@@ -100,11 +100,6 @@
           "LICENSE.txt",
           "NOTICE.txt"
         ]
-      },
-      {
-        "from": "src/assets/Terminal.icns",
-        "to": "app.asar.unpacked/node_modules/node-notifier/vendor/mac.noindex/terminal-notifier.app/Contents/Resources/Terminal.icns",
-        "filter": ["*.icns"]
       }
     ],
     "icon": "src/assets/osx/osx_icon.icns",
