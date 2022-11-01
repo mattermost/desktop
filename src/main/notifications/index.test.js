@@ -91,9 +91,9 @@ describe('main/notifications', () => {
             getDarwinDoNotDisturb.mockReturnValue(false);
         });
 
-        it('should do nothing when Notification is not supported', async () => {
+        it('should do nothing when Notification is not supported', () => {
             Notification.isSupported.mockImplementation(() => false);
-            await displayMention({
+            displayMention({
                 title: 'test',
                 message: 'test body',
                 channel: {id: 'channel_id'},
@@ -105,7 +105,7 @@ describe('main/notifications', () => {
             expect(Notification.didConstruct).not.toBeCalled();
         });
 
-        it('should do nothing when alarms only is enabled on windows', async () => {
+        it('should do nothing when alarms only is enabled on windows', () => {
             const originalPlatform = process.platform;
             const sendNotificationWinLinuxInstance = jest.spyOn(notificationsModule, 'sendNotificationWinLinux');
             Object.defineProperty(process, 'platform', {
@@ -113,7 +113,7 @@ describe('main/notifications', () => {
             });
 
             getFocusAssist.mockReturnValue({value: 2});
-            await displayMention({
+            displayMention({
                 title: 'test',
                 message: 'test body',
                 channel: {id: 'channel_id'},
@@ -131,14 +131,14 @@ describe('main/notifications', () => {
             sendNotificationWinLinuxInstance.mockRestore();
         });
 
-        it('should do nothing when dnd is enabled on mac', async () => {
+        it('should do nothing when dnd is enabled on mac', () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'darwin',
             });
 
             getDarwinDoNotDisturb.mockReturnValue(true);
-            await displayMention({
+            displayMention({
                 title: 'test',
                 message: 'test body',
                 channel: {id: 'channel_id'},
@@ -155,7 +155,7 @@ describe('main/notifications', () => {
             getDarwinDoNotDisturb.mockRestore();
         });
 
-        it('should do nothing when dnd is enabled on linux', async () => {
+        it('should do nothing when dnd is enabled on linux', () => {
             const originalPlatform = process.platform;
             const sendNotificationWinLinuxInstance = jest.spyOn(notificationsModule, 'sendNotificationWinLinux');
             Object.defineProperty(process, 'platform', {
@@ -163,7 +163,7 @@ describe('main/notifications', () => {
             });
 
             cp.execSync.mockReturnValue('false');
-            await displayMention({
+            displayMention({
                 title: 'test',
                 message: 'test body',
                 channel: {id: 'channel_id'},
@@ -181,8 +181,8 @@ describe('main/notifications', () => {
             sendNotificationWinLinuxInstance.mockRestore();
         });
 
-        it('should play notification sound when custom sound is provided', async () => {
-            await displayMention({
+        it('should play notification sound when custom sound is provided', () => {
+            displayMention({
                 title: 'test',
                 message: 'test body',
                 channel: {id: 'channel_id'},
@@ -195,12 +195,12 @@ describe('main/notifications', () => {
             expect(WindowManager.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'test_sound');
         });
 
-        it('should switch tab when clicking on notification', async () => {
+        it('should switch tab when clicking on notification', () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'darwin',
             });
-            await displayMention({
+            displayMention({
                 title: 'click_test',
                 message: 'mention_click_body',
                 channel: {id: 'channel_id'},
@@ -219,14 +219,14 @@ describe('main/notifications', () => {
     });
 
     describe('displayDownloadCompleted', () => {
-        it('should open file when clicked', async () => {
+        it('should open file when clicked', () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'darwin',
             });
             getDarwinDoNotDisturb.mockReturnValue(false);
             localizeMessage.mockReturnValue('test_filename');
-            await displayDownloadCompleted(
+            displayDownloadCompleted(
                 'test_filename',
                 '/path/to/file',
                 'server_name',
