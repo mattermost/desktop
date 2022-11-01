@@ -111,7 +111,6 @@ export function sendTestNotification() {
         options: {
             title: 'Test notification',
             message: 'This is a test notification',
-            sound: true,
         },
         notificationType: 'test',
         silent: false,
