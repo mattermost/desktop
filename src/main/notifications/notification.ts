@@ -43,7 +43,7 @@ const defaultOptions: NotificationOptions = {
     appID: 'Mattermost.Desktop',
 };
 
-async function sendNotificationDarwin({options, channel, teamId, notificationType, onClick}: SendNotificationArguments): Promise<void> {
+function sendNotificationDarwin({options, channel, teamId, notificationType, onClick}: SendNotificationArguments) {
     if (!Notification.isSupported()) {
         log.error('notifications.sendNotificationDarwin', 'notification not supported');
         return;
@@ -51,47 +51,42 @@ async function sendNotificationDarwin({options, channel, teamId, notificationTyp
 
     switch (notificationType) {
     case 'mention':
-        await showMention({options, channel, teamId, onClick});
+        showMention({options, channel, teamId, onClick});
         break;
     default:
-        await showElectronNotification({options, onClick});
+        showElectronNotification({options, onClick});
         break;
     }
 }
 
-export function sendNotificationWinLinux({options, tag, onClick, onTimeout}: Partial<SendNotificationArguments>): Promise<void> {
-    return new Promise((resolve, reject) => {
-        const notifyOptions: NotificationOptions = {
-            ...defaultOptions,
-            ...options,
-        };
+export function sendNotificationWinLinux({options, tag, onClick, onTimeout}: Partial<SendNotificationArguments>) {
+    const notifyOptions: NotificationOptions = {
+        ...defaultOptions,
+        ...options,
+    };
 
-        if (tag) {
-            const channelSpecificNumber = parseInt(tag, 10);
-            notifyOptions.id = channelSpecificNumber;
-            notifyOptions.remove = channelSpecificNumber;
-        }
-        nodeNotifier.notify(notifyOptions, (err, response, metadata) => {
-            if (err) {
-                reject(err);
-            } else {
-                log.debug('notifications.sendNotification.Callback', {response, metadata});
-                switch (response) {
-                case 'activate':
-                    onClick?.(metadata);
-                    WindowManager.restoreMain();
-                    resolve();
-                    break;
-                case 'timeout':
-                    onTimeout?.();
-                    resolve();
-                    break;
-                default:
-                    resolve();
-                    break;
-                }
+    if (tag) {
+        const channelSpecificNumber = parseInt(tag, 10);
+        notifyOptions.id = channelSpecificNumber;
+        notifyOptions.remove = channelSpecificNumber;
+    }
+    nodeNotifier.notify(notifyOptions, (err, response, metadata) => {
+        if (err) {
+            log.error('notifications.sendNotification.CallbackError', {err});
+        } else {
+            log.debug('notifications.sendNotification.Callback', {response, metadata});
+            switch (response) {
+            case 'activate':
+                onClick?.(metadata);
+                WindowManager.restoreMain();
+                break;
+            case 'timeout':
+                onTimeout?.();
+                break;
+            default:
+                break;
             }
-        });
+        }
     });
 }
 

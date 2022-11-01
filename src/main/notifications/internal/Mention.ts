@@ -25,26 +25,23 @@ class Mention extends Notification {
     }
 }
 
-export async function showMention({options, channel, teamId, onClick}: ShowMentionArguments) {
-    return new Promise<void>((resolve, reject) => {
-        if (!channel) {
-            const errMessage = 'Missing arguments';
-            reject(errMessage);
-            return;
-        }
-        const customOptions = {
-            title: options.title,
-            body: options.message,
-        };
-        const mention = new Mention(customOptions, channel, teamId);
-        mention.on('show', () => {
-            log.debug('Notifications.displayMention.show');
-            resolve();
-        });
-
-        mention.on('click', () => {
-            onClick?.();
-        });
-        mention.show();
+export function showMention({options, channel, teamId, onClick}: ShowMentionArguments) {
+    if (!channel) {
+        const errMessage = 'Missing arguments';
+        log.error('Notifications.showMentionError', errMessage);
+        return;
+    }
+    const customOptions = {
+        title: options.title,
+        body: options.message,
+    };
+    const mention = new Mention(customOptions, channel, teamId);
+    mention.on('show', () => {
+        log.debug('Notifications.showMention.show');
     });
+    mention.on('click', () => {
+        log.debug('Notifications.showMention.click');
+        onClick?.();
+    });
+    mention.show();
 }

@@ -1,6 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import {Notification} from 'electron';
+import log from 'electron-log';
 
 import {ShowElectronNotificationArguments} from 'types/notification';
 
@@ -10,26 +11,25 @@ const existingNotifications: Record<string, Notification | null> = {
 };
 
 export async function showElectronNotification({options, notificationType, onClick}: ShowElectronNotificationArguments) {
-    return new Promise<void>((resolve) => {
-        const customOptions = {
-            title: options.title,
-            body: options.message,
-        };
+    const customOptions = {
+        title: options.title,
+        body: options.message,
+    };
 
-        const notification = new Notification(customOptions);
+    const notification = new Notification(customOptions);
 
-        // Hide previous identical notifications for Upgrades
-        if (notificationType === 'restartToUpgrade' || notificationType === 'upgrade') {
-            existingNotifications[notificationType]?.close?.();
-            existingNotifications[notificationType] = notification;
-        }
+    // Hide previous identical notifications for Upgrades
+    if (notificationType === 'restartToUpgrade' || notificationType === 'upgrade') {
+        existingNotifications[notificationType]?.close?.();
+        existingNotifications[notificationType] = notification;
+    }
 
-        notification.on('click', () => {
-            onClick?.();
-        });
-        notification.on('show', () => {
-            resolve?.();
-        });
-        notification.show();
+    notification.on('click', () => {
+        log.debug('Notifications.showElectronNotification.click');
+        onClick?.();
     });
+    notification.on('show', () => {
+        log.debug('Notifications.showElectronNotification.show');
+    });
+    notification.show();
 }
