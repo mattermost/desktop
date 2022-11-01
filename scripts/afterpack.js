@@ -39,21 +39,22 @@ function getAppFileName(context) {
 
 function replaceTerminalIconForNotifications(context) {
     if (context.electronPlatformName === 'darwin') {
-        console.log({context});
         try {
             fs.copyFileSync(
-                path.join(__dirname, 'src/assets/Terminal.icns'),
-                path.join(context.appOutDir, 'app.asar.unpacked/node_modules/node-notifier/vendor/mac.noindex/terminal-notifier.app/Contents/Resources/Terminal.icns'),
+                path.join(context.outDir, '..', 'src/assets/Terminal.icns'),
+                path.join(context.appOutDir, 'Mattermost.app/Contents/Resources/app.asar.unpacked/node_modules/node-notifier/vendor/mac.noindex/terminal-notifier.app/Contents/Resources/Terminal.icns'),
             );
         } catch (error) {
             throw new Error(
                 'Failed to replace Terminal icon for Macos',
+                error,
             );
         }
     }
 }
 
 exports.default = async function afterPack(context) {
+    console.log({context});
     await flipFuses(
         `${context.appOutDir}/${getAppFileName(context)}`, // Returns the path to the electron binary
         {
