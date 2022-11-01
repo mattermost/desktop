@@ -71,7 +71,6 @@ jest.mock('windows-focus-assist', () => ({
 jest.mock('macos-notification-state', () => ({
     getDoNotDisturb: jest.fn(),
 }));
-jest.mock('node-notifier');
 jest.mock('../windows/windowManager', () => ({
     getServerNameByWebContentsId: () => 'server_name',
     sendToRenderer: jest.fn(),
