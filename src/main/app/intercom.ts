@@ -85,7 +85,7 @@ export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: 
     Config.set('teams', teams);
 }
 
-function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerModal: boolean, mainWindowIsVisible: boolean) {
+export function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerModal: boolean, mainWindowIsVisible: boolean) {
     log.debug('Intercom.handleMainWindowIsShown.welcomeScreenModal', {showWelcomeScreen, showNewServerModal, mainWindowIsVisible});
     if (showWelcomeScreen) {
         handleWelcomeScreenModal();
