@@ -406,9 +406,7 @@ function initializeAfterAppReady() {
 
     // only check for non-Windows, as with Windows we have to wait for GPO teams
     if (process.platform !== 'win32' || typeof Config.registryConfigData !== 'undefined') {
-        if (Config.teams.length === 0) {
-            handleMainWindowIsShown();
-        }
+        handleMainWindowIsShown();
     }
 }
 

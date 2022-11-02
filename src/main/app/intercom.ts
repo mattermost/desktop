@@ -85,31 +85,31 @@ export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: 
     Config.set('teams', teams);
 }
 
+function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerModal: boolean, mainWindowIsVisible: boolean) {
+    log.debug('Intercom.handleMainWindowIsShown.welcomeScreenModal', {showWelcomeScreen, showNewServerModal, mainWindowIsVisible});
+    if (showWelcomeScreen) {
+        handleWelcomeScreenModal();
+        return;
+    }
+    if (showNewServerModal) {
+        handleNewServerModal();
+    }
+}
+
 export function handleMainWindowIsShown() {
     // eslint-disable-next-line no-undef
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     const showWelcomeScreen = !(Boolean(__SKIP_ONBOARDING_SCREENS__) || Config.teams.length);
+    const showNewServerModal = Config.teams.length === 0;
     const mainWindow = WindowManager.getMainWindow();
 
-    if (mainWindow) {
-        if (mainWindow.isVisible()) {
-            if (showWelcomeScreen) {
-                handleWelcomeScreenModal();
-            } else {
-                handleNewServerModal();
-            }
-        } else {
-            mainWindow.once('show', () => {
-                if (showWelcomeScreen) {
-                    log.debug('Intercom.handleMainWindowIsShown.show.welcomeScreenModal');
-                    handleWelcomeScreenModal();
-                } else {
-                    log.debug('Intercom.handleMainWindowIsShown.show.newServerModal');
-                    handleNewServerModal();
-                }
-            });
-        }
+    if (mainWindow?.isVisible()) {
+        handleShowOnboardingScreens(showWelcomeScreen, showNewServerModal, true);
+    } else {
+        mainWindow?.once('show', () => {
+            handleShowOnboardingScreens(showWelcomeScreen, showNewServerModal, false);
+        });
     }
 }
 

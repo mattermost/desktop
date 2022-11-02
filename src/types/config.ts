@@ -118,7 +118,6 @@ export type CombinedConfig = ConfigV3 & BuildConfig & {
     registryTeams: Team[];
     appName: string;
     useNativeWindow: boolean;
-
 }
 
 export type LocalConfiguration = Config & {
