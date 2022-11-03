@@ -8,6 +8,7 @@ import {CALLS_WIDGET_SHARE_SCREEN} from 'common/communication';
 import {
     MINIMUM_CALLS_WIDGET_WIDTH,
     MINIMUM_CALLS_WIDGET_HEIGHT,
+    CALLS_PLUGIN_ID,
 } from 'common/utils/constants';
 
 import CallsWidgetWindow from './callsWidgetWindow';
@@ -57,8 +58,8 @@ describe('main/windows/callsWidgetWindow', () => {
                 return {
                     x: 0,
                     y: 0,
-                    width: 280,
-                    height: 86,
+                    width: MINIMUM_CALLS_WIDGET_WIDTH,
+                    height: MINIMUM_CALLS_WIDGET_HEIGHT,
                 };
             });
 
@@ -102,9 +103,9 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(widgetWindow.win.setAlwaysOnTop).toHaveBeenCalled();
             expect(widgetWindow.win.setBounds).toHaveBeenCalledWith({
                 x: 12,
-                y: 622,
-                width: 280,
-                height: 86,
+                y: 618,
+                width: MINIMUM_CALLS_WIDGET_WIDTH,
+                height: MINIMUM_CALLS_WIDGET_HEIGHT,
             });
         });
 
@@ -156,8 +157,8 @@ describe('main/windows/callsWidgetWindow', () => {
             let winBounds = {
                 x: 0,
                 y: 0,
-                width: 280,
-                height: 86,
+                width: MINIMUM_CALLS_WIDGET_WIDTH,
+                height: MINIMUM_CALLS_WIDGET_HEIGHT,
             };
             baseWindow.getBounds = jest.fn(() => {
                 return winBounds;
@@ -179,9 +180,9 @@ describe('main/windows/callsWidgetWindow', () => {
 
             expect(baseWindow.setBounds).toHaveBeenCalledWith({
                 x: 12,
-                y: 522,
-                width: 280,
-                height: 186,
+                y: 518,
+                width: MINIMUM_CALLS_WIDGET_WIDTH,
+                height: MINIMUM_CALLS_WIDGET_HEIGHT + 100,
             });
 
             widgetWindow.onResize(null, {
@@ -191,9 +192,9 @@ describe('main/windows/callsWidgetWindow', () => {
 
             expect(baseWindow.setBounds).toHaveBeenCalledWith({
                 x: 12,
-                y: 522,
-                width: 380,
-                height: 186,
+                y: 518,
+                width: MINIMUM_CALLS_WIDGET_WIDTH + 100,
+                height: MINIMUM_CALLS_WIDGET_HEIGHT + 100,
             });
 
             widgetWindow.onResize(null, {
@@ -203,9 +204,9 @@ describe('main/windows/callsWidgetWindow', () => {
 
             expect(baseWindow.setBounds).toHaveBeenCalledWith({
                 x: 12,
-                y: 522,
-                width: 280,
-                height: 186,
+                y: 518,
+                width: MINIMUM_CALLS_WIDGET_WIDTH,
+                height: MINIMUM_CALLS_WIDGET_HEIGHT + 100,
             });
 
             widgetWindow.onResize(null, {
@@ -215,9 +216,9 @@ describe('main/windows/callsWidgetWindow', () => {
 
             expect(baseWindow.setBounds).toHaveBeenCalledWith({
                 x: 12,
-                y: 622,
-                width: 280,
-                height: 86,
+                y: 618,
+                width: MINIMUM_CALLS_WIDGET_WIDTH,
+                height: MINIMUM_CALLS_WIDGET_HEIGHT,
             });
         });
 
@@ -238,7 +239,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 title: 'call test title #/&',
             };
             const widgetWindow = new CallsWidgetWindow(mainWindow, config);
-            const expected = `${config.siteURL}/plugins/com.mattermost.calls/widget/widget.html?call_id=${config.callID}&title=call+test+title+%23%2F%26`;
+            const expected = `${config.siteURL}/plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=${config.callID}&title=call+test+title+%23%2F%26`;
             expect(widgetWindow.getWidgetURL()).toBe(expected);
         });
 
