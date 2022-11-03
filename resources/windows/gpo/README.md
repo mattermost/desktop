@@ -13,7 +13,8 @@ You can read more about GPOs [here](https://learn.microsoft.com/en-us/previous-v
 5. On the right side panel Select the Policy you want to update, eg, "DefaultServerList" then click the "Edit policy setting" hyperlink/button.
 6. Select the "Enabled" radio checkbox and click the "Show" button under Options.
 7. A new windows opens where you can add Multiple values for pre-configured servers, where `value name` is the Server Name and `value` is the Server URL.
-Example:
+Example:   
+
 | Value Name | Value                            |
 |------------|----------------------------------|
 | Community  | <https://community.mattermost.com> |
