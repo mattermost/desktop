@@ -86,7 +86,7 @@ export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: 
 }
 
 export function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerModal: boolean, mainWindowIsVisible: boolean) {
-    log.debug('Intercom.handleMainWindowIsShown.welcomeScreenModal', {showWelcomeScreen, showNewServerModal, mainWindowIsVisible});
+    log.debug('Intercom.handleShowOnboardingScreens', {showWelcomeScreen, showNewServerModal, mainWindowIsVisible});
     if (showWelcomeScreen) {
         handleWelcomeScreenModal();
         return;
@@ -100,15 +100,22 @@ export function handleMainWindowIsShown() {
     // eslint-disable-next-line no-undef
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const showWelcomeScreen = !(Boolean(__SKIP_ONBOARDING_SCREENS__) || Config.teams.length);
-    const showNewServerModal = Config.teams.length === 0;
+    const showWelcomeScreen = () => !(Boolean(__SKIP_ONBOARDING_SCREENS__) || Config.teams.length);
+    const showNewServerModal = () => Config.teams.length === 0;
+
+    /**
+     * The 2 lines above need to be functions, otherwise the mainWindow.once() callback from previous
+     * calls of this function will notification re-evaluate the booleans passed to "handleShowOnboardingScreens".
+    */
+
     const mainWindow = WindowManager.getMainWindow();
 
+    log.debug('intercom.handleMainWindowIsShown', {configTeams: Config.teams, showWelcomeScreen, showNewServerModal, mainWindow: Boolean(mainWindow)});
     if (mainWindow?.isVisible()) {
-        handleShowOnboardingScreens(showWelcomeScreen, showNewServerModal, true);
+        handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), true);
     } else {
         mainWindow?.once('show', () => {
-            handleShowOnboardingScreens(showWelcomeScreen, showNewServerModal, false);
+            handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), false);
         });
     }
 }
