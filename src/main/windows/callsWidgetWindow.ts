@@ -108,7 +108,7 @@ export default class CallsWidgetWindow extends EventEmitter {
 
     private getWidgetURL() {
         const u = new url.URL(this.config.siteURL);
-        u.pathname += `/plugins/${CALLS_PLUGIN_ID}/widget/widget.html`;
+        u.pathname += `/plugins/${CALLS_PLUGIN_ID}/standalone/widget.html`;
         u.searchParams.append('call_id', this.config.callID);
         if (this.config.title) {
             u.searchParams.append('title', this.config.title);
