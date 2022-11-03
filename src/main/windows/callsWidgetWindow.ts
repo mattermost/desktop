@@ -11,7 +11,10 @@ import {
     CallsWidgetWindowConfig,
     CallsWidgetResizeMessage,
     CallsWidgetShareScreenMessage,
+    CallsJoinedCallMessage,
 } from 'types/calls';
+
+import {MattermostView} from 'main/views/MattermostView';
 
 import {getLocalPreload} from 'main/utils';
 
@@ -24,6 +27,7 @@ import Utils from 'common/utils/util';
 import {
     CALLS_WIDGET_RESIZE,
     CALLS_WIDGET_SHARE_SCREEN,
+    CALLS_JOINED_CALL,
 } from 'common/communication';
 
 type LoadURLOpts = {
@@ -33,6 +37,7 @@ type LoadURLOpts = {
 export default class CallsWidgetWindow extends EventEmitter {
     public win: BrowserWindow;
     private main: BrowserWindow;
+    private mainView: MattermostView;
     private config: CallsWidgetWindowConfig;
     private boundsErr: Rectangle = {
         x: 0,
@@ -46,11 +51,12 @@ export default class CallsWidgetWindow extends EventEmitter {
         },
     };
 
-    constructor(mainWindow: BrowserWindow, config: CallsWidgetWindowConfig) {
+    constructor(mainWindow: BrowserWindow, mainView: MattermostView, config: CallsWidgetWindowConfig) {
         super();
 
         this.config = config;
         this.main = mainWindow;
+        this.mainView = mainView;
         this.win = new BrowserWindow({
             width: MINIMUM_CALLS_WIDGET_WIDTH,
             height: MINIMUM_CALLS_WIDGET_HEIGHT,
@@ -74,6 +80,7 @@ export default class CallsWidgetWindow extends EventEmitter {
         this.win.on('closed', this.onClosed);
         ipcMain.on(CALLS_WIDGET_RESIZE, this.onResize);
         ipcMain.on(CALLS_WIDGET_SHARE_SCREEN, this.onShareScreen);
+        ipcMain.on(CALLS_JOINED_CALL, this.onJoinedCall);
 
         this.load();
     }
@@ -91,6 +98,10 @@ export default class CallsWidgetWindow extends EventEmitter {
         return this.config.channelURL;
     }
 
+    public getCallID() {
+        return this.config.callID;
+    }
+
     private load() {
         const opts = {} as LoadURLOpts;
         this.win.loadURL(this.getWidgetURL(), opts).catch((reason) => {
@@ -104,11 +115,12 @@ export default class CallsWidgetWindow extends EventEmitter {
         this.removeAllListeners('closed');
         ipcMain.off(CALLS_WIDGET_RESIZE, this.onResize);
         ipcMain.off(CALLS_WIDGET_SHARE_SCREEN, this.onShareScreen);
+        ipcMain.off(CALLS_JOINED_CALL, this.onJoinedCall);
     }
 
     private getWidgetURL() {
         const u = new url.URL(this.config.siteURL);
-        u.pathname += `/plugins/${CALLS_PLUGIN_ID}/widget/widget.html`;
+        u.pathname += `/plugins/${CALLS_PLUGIN_ID}/standalone/widget.html`;
         u.searchParams.append('call_id', this.config.callID);
         if (this.config.title) {
             u.searchParams.append('title', this.config.title);
@@ -156,6 +168,10 @@ export default class CallsWidgetWindow extends EventEmitter {
 
     private onShareScreen = (ev: IpcMainEvent, viewName: string, message: CallsWidgetShareScreenMessage) => {
         this.win.webContents.send(CALLS_WIDGET_SHARE_SCREEN, message);
+    }
+
+    private onJoinedCall = (ev: IpcMainEvent, message: CallsJoinedCallMessage) => {
+        this.mainView.view.webContents.send(CALLS_JOINED_CALL, message);
     }
 
     private setBounds(bounds: Rectangle) {

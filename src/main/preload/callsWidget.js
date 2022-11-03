@@ -7,6 +7,7 @@ import {ipcRenderer} from 'electron';
 
 import {
     CALLS_LEAVE_CALL,
+    CALLS_JOINED_CALL,
     CALLS_WIDGET_RESIZE,
     CALLS_WIDGET_SHARE_SCREEN,
     CALLS_WIDGET_CHANNEL_LINK_CLICK,
@@ -45,6 +46,7 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
     case DESKTOP_SOURCES_MODAL_REQUEST:
     case CALLS_WIDGET_CHANNEL_LINK_CLICK:
     case CALLS_WIDGET_RESIZE:
+    case CALLS_JOINED_CALL:
     case CALLS_LEAVE_CALL: {
         ipcRenderer.send(type, message);
         break;

@@ -1017,6 +1017,22 @@ describe('main/windows/windowManager', () => {
             windowManager.createCallsWidgetWindow(null, 'server-1_tab-messaging', {callID: 'test'});
             expect(windowManager.callsWidgetWindow).toBeDefined();
         });
+
+        it('should not create a new window if call is the same', () => {
+            const widgetWindow = windowManager.callsWidgetWindow;
+            expect(widgetWindow).toBeDefined();
+            widgetWindow.getCallID = jest.fn(() => 'test');
+            windowManager.createCallsWidgetWindow(null, 'server-1_tab-messaging', {callID: 'test'});
+            expect(windowManager.callsWidgetWindow).toEqual(widgetWindow);
+        });
+
+        it('should create a new window if switching calls', () => {
+            const widgetWindow = windowManager.callsWidgetWindow;
+            expect(widgetWindow).toBeDefined();
+            widgetWindow.getCallID = jest.fn(() => 'test');
+            windowManager.createCallsWidgetWindow(null, 'server-1_tab-messaging', {callID: 'test2'});
+            expect(windowManager.callsWidgetWindow).not.toEqual(widgetWindow);
+        });
     });
 
     describe('handleDesktopSourcesModalRequest', () => {

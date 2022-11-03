@@ -24,3 +24,7 @@ export type CallsWidgetShareScreenMessage = {
     sourceID: string;
     withAudio: boolean;
 }
+
+export type CallsJoinedCallMessage = {
+    callID: string;
+}
