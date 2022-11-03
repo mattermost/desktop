@@ -4,7 +4,7 @@
 import {EventEmitter} from 'events';
 import {BrowserWindow} from 'electron';
 
-import {CALLS_WIDGET_SHARE_SCREEN} from 'common/communication';
+import {CALLS_WIDGET_SHARE_SCREEN, CALLS_JOINED_CALL} from 'common/communication';
 import {
     MINIMUM_CALLS_WIDGET_WIDTH,
     MINIMUM_CALLS_WIDGET_HEIGHT,
@@ -24,15 +24,23 @@ jest.mock('electron', () => ({
 describe('main/windows/callsWidgetWindow', () => {
     describe('create CallsWidgetWindow', () => {
         const widgetConfig = {
-            callID: 'test',
+            callID: 'test-call-id',
             siteURL: 'http://localhost:8065',
             title: '',
-            serverName: 'test',
+            serverName: 'test-server-name',
             channelURL: '/team/channel_id',
         };
 
         const mainWindow = {
             getBounds: jest.fn(),
+        };
+
+        const mainView = {
+            view: {
+                webContents: {
+                    send: jest.fn(),
+                },
+            },
         };
 
         const baseWindow = new EventEmitter();
@@ -74,7 +82,7 @@ describe('main/windows/callsWidgetWindow', () => {
         });
 
         it('verify initial configuration', () => {
-            const widgetWindow = new CallsWidgetWindow(mainWindow, widgetConfig);
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
             expect(widgetWindow).toBeDefined();
             expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
                 width: MINIMUM_CALLS_WIDGET_WIDTH,
@@ -96,7 +104,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 baseWindow.emit('show');
             });
 
-            const widgetWindow = new CallsWidgetWindow(mainWindow, widgetConfig);
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
             widgetWindow.win.emit('ready-to-show');
 
             expect(widgetWindow.win.show).toHaveBeenCalled();
@@ -118,7 +126,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 return Promise.reject(new Error('failed to load URL'));
             });
 
-            const widgetWindow = new CallsWidgetWindow(mainWindow, widgetConfig);
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
             expect(widgetWindow.win.loadURL).toHaveBeenCalled();
         });
 
@@ -133,7 +141,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 openDevTools: jest.fn(),
             };
 
-            const widgetWindow = new CallsWidgetWindow(mainWindow, widgetConfig);
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
             widgetWindow.win.emit('ready-to-show');
 
             expect(widgetWindow.win.webContents.openDevTools).toHaveBeenCalled();
@@ -144,7 +152,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 baseWindow.emit('closed');
             });
 
-            const widgetWindow = new CallsWidgetWindow(mainWindow, widgetConfig);
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
             widgetWindow.close();
             expect(widgetWindow.win.close).toHaveBeenCalled();
         });
@@ -168,7 +176,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 winBounds = bounds;
             });
 
-            const widgetWindow = new CallsWidgetWindow(mainWindow, widgetConfig);
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
             widgetWindow.win.emit('ready-to-show');
 
             expect(baseWindow.setBounds).toHaveBeenCalledTimes(2);
@@ -223,13 +231,18 @@ describe('main/windows/callsWidgetWindow', () => {
         });
 
         it('getServerName', () => {
-            const widgetWindow = new CallsWidgetWindow(mainWindow, widgetConfig);
-            expect(widgetWindow.getServerName()).toBe('test');
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+            expect(widgetWindow.getServerName()).toBe('test-server-name');
         });
 
         it('getChannelURL', () => {
-            const widgetWindow = new CallsWidgetWindow(mainWindow, widgetConfig);
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
             expect(widgetWindow.getChannelURL()).toBe('/team/channel_id');
+        });
+
+        it('getChannelURL', () => {
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+            expect(widgetWindow.getCallID()).toBe('test-call-id');
         });
 
         it('getWidgetURL', () => {
@@ -238,7 +251,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 siteURL: 'http://localhost:8065/subpath',
                 title: 'call test title #/&',
             };
-            const widgetWindow = new CallsWidgetWindow(mainWindow, config);
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, config);
             const expected = `${config.siteURL}/plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=${config.callID}&title=call+test+title+%23%2F%26`;
             expect(widgetWindow.getWidgetURL()).toBe(expected);
         });
@@ -248,13 +261,26 @@ describe('main/windows/callsWidgetWindow', () => {
                 send: jest.fn(),
             };
 
-            const widgetWindow = new CallsWidgetWindow(mainWindow, widgetConfig);
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
             const message = {
-                sourceID: 'test',
+                sourceID: 'test-source-id',
                 withAudio: false,
             };
             widgetWindow.onShareScreen(null, '', message);
             expect(widgetWindow.win.webContents.send).toHaveBeenCalledWith(CALLS_WIDGET_SHARE_SCREEN, message);
+        });
+
+        it('onJoinedCall', () => {
+            baseWindow.webContents = {
+                send: jest.fn(),
+            };
+
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+            const message = {
+                callID: 'test-call-id',
+            };
+            widgetWindow.onJoinedCall(null, message);
+            expect(widgetWindow.mainView.view.webContents.send).toHaveBeenCalledWith(CALLS_JOINED_CALL, message);
         });
     });
 });

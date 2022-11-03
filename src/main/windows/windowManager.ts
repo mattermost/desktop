@@ -107,7 +107,11 @@ export class WindowManager {
     createCallsWidgetWindow = (event: IpcMainEvent, viewName: string, msg: CallsJoinCallMessage) => {
         log.debug('WindowManager.createCallsWidgetWindow');
         if (this.callsWidgetWindow) {
-            return;
+            // trying to join again the call we are already in should not be allowed.
+            if (this.callsWidgetWindow.getCallID() === msg.callID) {
+                return;
+            }
+            this.callsWidgetWindow.close();
         }
         const currentView = this.viewManager?.views.get(viewName);
         if (!currentView) {
@@ -115,7 +119,7 @@ export class WindowManager {
             return;
         }
 
-        this.callsWidgetWindow = new CallsWidgetWindow(this.mainWindow!, {
+        this.callsWidgetWindow = new CallsWidgetWindow(this.mainWindow!, currentView, {
             siteURL: currentView.serverInfo.remoteInfo.siteURL!,
             callID: msg.callID,
             title: msg.title,
