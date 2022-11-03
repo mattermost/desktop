@@ -9,10 +9,12 @@ import WindowsToaster from 'node-notifier/notifiers/toaster';
 
 export type NotificationOptions = WindowsToaster.Notification & WindowsBalloon.Notification & NotifySend.Notification & Growl.Notification & Notification;
 
+type Channel = {
+    id: string;
+}
+
 type MentionPayload = {
-    channel: {
-        id: string;
-    };
+    channel: Channel;
     teamId: string;
     url: string;
     silent: boolean;
@@ -55,7 +57,7 @@ export type SendNotificationArgumentsWinLinux = Omit<SendNotificationArguments, 
 export type DisplayMentionArguments = {
     title: string;
     message: string;
-    channel: {id: string};
+    channel: Channel;
     teamId: string;
     url: string;
     silent: boolean;
