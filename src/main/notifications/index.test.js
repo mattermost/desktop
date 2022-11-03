@@ -8,6 +8,7 @@ import {Notification, shell} from 'electron';
 
 import {getFocusAssist} from 'windows-focus-assist';
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
+import nodeNotifier from 'node-notifier';
 
 import {PLAY_SOUND} from 'common/communication';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
@@ -63,7 +64,9 @@ jest.mock('electron', () => {
         },
     };
 });
-
+jest.mock('node-notifier', () => ({
+    notify: jest.fn(),
+}));
 jest.mock('windows-focus-assist', () => ({
     getFocusAssist: jest.fn(),
 }));
@@ -211,6 +214,69 @@ describe('main/notifications', () => {
             const mention = mentions.find((m) => m.body === 'mention_click_body');
             mention.value.click();
             expect(WindowManager.switchTab).toHaveBeenCalledWith('server_name', TAB_MESSAGING);
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+        });
+
+        it('should use Electron.Notification for macos', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
+            displayMention({
+                title: 'click_test',
+                message: 'mention_click_body',
+                channel: {id: 'channel_id'},
+                teamId: 'team_id',
+                url: 'http://server-1.com/team_id/channel_id',
+                silent: false,
+                webContents: {id: 1, send: jest.fn()},
+            });
+            expect(Notification.didConstruct).toHaveBeenCalled();
+            expect(nodeNotifier.notify).not.toHaveBeenCalled();
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+        });
+
+        it('should use node-notifier for windows', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'win32',
+            });
+            displayMention({
+                title: 'click_test',
+                message: 'mention_click_body',
+                channel: {id: 'channel_id'},
+                teamId: 'team_id',
+                url: 'http://server-1.com/team_id/channel_id',
+                silent: false,
+                webContents: {id: 1, send: jest.fn()},
+            });
+            expect(nodeNotifier.notify).toHaveBeenCalled();
+            expect(Notification.didConstruct).not.toHaveBeenCalled();
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+        });
+
+        it('should use node-notifier for linux', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'linux',
+            });
+            displayMention({
+                title: 'click_test',
+                message: 'mention_click_body',
+                channel: {id: 'channel_id'},
+                teamId: 'team_id',
+                url: 'http://server-1.com/team_id/channel_id',
+                silent: false,
+                webContents: {id: 1, send: jest.fn()},
+            });
+            expect(nodeNotifier.notify).toHaveBeenCalled();
+            expect(Notification.didConstruct).not.toHaveBeenCalled();
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
