@@ -5,15 +5,17 @@ import path from 'path';
 
 import {EventEmitter} from 'events';
 
-import {BrowserView, BrowserViewConstructorOptions, BrowserWindow, ipcMain, Rectangle} from 'electron';
+import {BrowserView, BrowserViewConstructorOptions, BrowserWindow, ipcMain, OnHeadersReceivedListenerDetails, Rectangle} from 'electron';
 import log from 'electron-log';
+
+import {Headers} from 'types/webRequest';
 
 import {GET_CURRENT_SERVER_URL} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {TabView} from 'common/tabs/TabView';
 
 import {ServerInfo} from 'main/server/serverInfo';
-import {getLocalPreload, getLocalURLString} from 'main/utils';
+import {getLocalPreload, getLocalURLString, makeCSPHeader} from 'main/utils';
 import WebRequestManager from 'main/webRequest/webRequestManager';
 
 export class MattermostView extends EventEmitter {
@@ -53,7 +55,21 @@ export class MattermostView extends EventEmitter {
             `${this.tab.server.url}/$2/$3`,
             this.view.webContents.id,
         );
+
+        WebRequestManager.onResponseHeaders(this.addCSPHeader, this.view.webContents.id);
+
+        this.view.webContents.openDevTools({mode: 'detach'});
     }
+
+    addCSPHeader = (details: OnHeadersReceivedListenerDetails) => {
+        if (details.url === getLocalURLString('index.html')) {
+            return {
+                'Content-Security-Policy': [makeCSPHeader(this.tab.server.url, this.serverInfo.remoteInfo.cspHeader)],
+            };
+        }
+
+        return {} as Headers;
+    };
 
     load = (url?: string | URL) => {
         log.debug('MattermostView.load', `${url}`);
@@ -61,7 +77,6 @@ export class MattermostView extends EventEmitter {
         // TODO
         const localURL = getLocalURLString('index.html');
         this.view.webContents.loadURL(localURL);
-        this.view.webContents.openDevTools({mode: 'detach'});
     };
 
     updateServerInfo = (srv: MattermostServer) => {

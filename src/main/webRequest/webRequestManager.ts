@@ -12,7 +12,7 @@ import {
 } from 'electron';
 import log from 'electron-log';
 
-import {RequestHeaders, ResponseHeaders} from 'types/webRequest';
+import {Headers} from 'types/webRequest';
 
 import {WebRequestHandler} from 'main/webRequest/webRequestHandler';
 
@@ -56,7 +56,7 @@ export class WebRequestManager {
         });
     }
 
-    onRequestHeaders = (listener: (headers: RequestHeaders) => RequestHeaders, webContentsId?: number) => {
+    onRequestHeaders = (listener: (headers: OnBeforeSendHeadersListenerDetails) => Headers, webContentsId?: number) => {
         log.debug('WebRequestManager.onRequestHeaders', webContentsId);
 
         this.onBeforeSendHeaders.addWebRequestListener(`onRequestHeaders_${webContentsId ?? '*'}`, (details) => {
@@ -68,11 +68,11 @@ export class WebRequestManager {
                 return {};
             }
 
-            return {requestHeaders: listener(details.requestHeaders)};
+            return {requestHeaders: listener(details)};
         });
     };
 
-    onResponseHeaders = (listener: (headers: ResponseHeaders) => ResponseHeaders, webContentsId?: number) => {
+    onResponseHeaders = (listener: (details: OnHeadersReceivedListenerDetails) => Headers, webContentsId?: number) => {
         log.debug('WebRequestManager.onResponseHeaders', webContentsId);
 
         this.onHeadersReceived.addWebRequestListener(`onResponseHeaders_${webContentsId ?? '*'}`, (details) => {
@@ -84,7 +84,7 @@ export class WebRequestManager {
                 return {};
             }
 
-            return {responseHeaders: listener(details.responseHeaders)};
+            return {responseHeaders: listener(details)};
         });
     };
 

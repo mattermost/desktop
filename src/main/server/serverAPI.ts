@@ -4,7 +4,16 @@
 import {net, session} from 'electron';
 import log from 'electron-log';
 
-export async function getServerAPI<T>(url: URL, isAuthenticated: boolean, onSuccess?: (data: T) => void, onAbort?: () => void, onError?: (error: Error) => void) {
+import {Headers} from 'types/webRequest';
+
+export async function getServerAPI<T>(
+    url: URL,
+    isAuthenticated: boolean,
+    onSuccess?: (data: T) => void,
+    onHeaders?: (headers: Headers) => void,
+    onAbort?: () => void,
+    onError?: (error: Error) => void,
+) {
     if (isAuthenticated) {
         const cookies = await session.defaultSession.cookies.get({});
         if (!cookies) {
@@ -32,9 +41,10 @@ export async function getServerAPI<T>(url: URL, isAuthenticated: boolean, onSucc
         useSessionCookies: true,
     });
 
-    if (onSuccess) {
-        req.on('response', (response: Electron.IncomingMessage) => {
-            log.silly('getServerAPI.response', response);
+    req.on('response', (response: Electron.IncomingMessage) => {
+        log.silly('getServerAPI.response', response);
+        onHeaders?.(response.headers);
+        if (onSuccess) {
             if (response.statusCode === 200) {
                 response.on('data', (chunk: Buffer) => {
                     log.silly('getServerAPI.response.data', `${chunk}`);
@@ -43,7 +53,7 @@ export async function getServerAPI<T>(url: URL, isAuthenticated: boolean, onSucc
                         const data = JSON.parse(raw) as T;
                         onSuccess(data);
                     } catch (e) {
-                        const error = `Error parsing server data from ${url.toString()}`;
+                        const error = `Error parsing server data from ${url.toString()}: ${e}`;
                         log.error(error);
                         onError?.(new Error(error));
                     }
@@ -51,9 +61,9 @@ export async function getServerAPI<T>(url: URL, isAuthenticated: boolean, onSucc
             } else {
                 onError?.(new Error(`Bad status code requesting from ${url.toString()}`));
             }
-            response.on('error', onError || (() => {}));
-        });
-    }
+        }
+        response.on('error', onError || (() => {}));
+    });
     if (onAbort) {
         req.on('abort', onAbort);
     }

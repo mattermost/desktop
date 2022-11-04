@@ -3,12 +3,11 @@
 import path from 'path';
 import fs from 'fs';
 
-import {DownloadItem, Event, WebContents, FileFilter, ipcMain, dialog, shell, Menu, app} from 'electron';
+import {DownloadItem, Event, WebContents, FileFilter, ipcMain, dialog, shell, Menu, app, OnHeadersReceivedListenerDetails} from 'electron';
 import log from 'electron-log';
 import {ProgressInfo} from 'electron-updater';
 
 import {DownloadedItem, DownloadItemDoneEventState, DownloadedItems, DownloadItemState, DownloadItemUpdatedEventState} from 'types/downloads';
-import {ResponseHeaders} from 'types/webRequest';
 
 import {
     CANCEL_UPDATE_DOWNLOAD,
@@ -133,10 +132,10 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
      * This function monitors webRequests and retrieves the total file size (of files being downloaded)
      * from the custom HTTP header "x-uncompressed-content-length".
      */
-    webRequestOnHeadersReceivedHandler = (headers: ResponseHeaders) => {
-        if (headers?.['content-encoding']?.includes('gzip') && headers?.['x-uncompressed-content-length'] && headers?.['content-disposition'].join(';')?.includes('filename=')) {
-            const filename = readFilenameFromContentDispositionHeader(headers['content-disposition']);
-            const fileSize = headers['x-uncompressed-content-length']?.[0] || '0';
+    webRequestOnHeadersReceivedHandler = (details: OnHeadersReceivedListenerDetails) => {
+        if (details.responseHeaders?.['content-encoding']?.includes('gzip') && details.responseHeaders?.['x-uncompressed-content-length'] && details.responseHeaders?.['content-disposition'].join(';')?.includes('filename=')) {
+            const filename = readFilenameFromContentDispositionHeader(details.responseHeaders['content-disposition']);
+            const fileSize = details.responseHeaders['x-uncompressed-content-length']?.[0] || '0';
             if (filename && (!this.fileSizes.has(filename) || this.fileSizes.get(filename)?.toString() !== fileSize)) {
                 this.fileSizes.set(filename, fileSize);
             }

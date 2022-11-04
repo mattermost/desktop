@@ -39,6 +39,8 @@ export const DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT = DOWNLOADS_DROPDOWN_MENU_HEIGH
 export const DOWNLOADS_DROPDOWN_MAX_ITEMS = 50;
 export const DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT = 4000; // 4 sec
 
+export const DEFAULT_CSP_HEADER = 'script-src \'self\'; style-src \'self\' \'unsafe-inline\'; media-src data:';
+
 // supported custom login paths (oath, saml)
 export const customLoginRegexPaths = [
     /^\/oauth\/authorize$/i,
