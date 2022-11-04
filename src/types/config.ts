@@ -16,6 +16,7 @@ export type Team = {
 
 export type TeamWithIndex = Team & {index: number};
 export type TeamWithTabs = Team & {tabs: Tab[]};
+export type TeamWithTabsAndGpo = TeamWithTabs & {isGpo?: boolean};
 
 export type Config = ConfigV3;
 
