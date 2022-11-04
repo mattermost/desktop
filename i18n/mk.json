@@ -29,5 +29,6 @@
     "label.accept": "Прифати",
     "common.tabs.TAB_MESSAGING": "Канали",
     "common.tabs.TAB_FOCALBOARD": "Табли",
-    "common.permissions.canBasicAuth": "Веб Aвтентикација"
+    "common.permissions.canBasicAuth": "Веб Aвтентикација",
+    "main.app.app.handleAppCertificateError.certError.dialog.message": "Има проблем со конфигурацијата со овој Mattermost сервер, или некој се обидува да ја пресретне вашата конекција. Можеби треба да се најавите Wi-Fi на кое што сте поврзани користејќи го вашиот веб-браузер."
 }
