@@ -60,9 +60,7 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
         didCheckForAddServerModal = true;
         updateServerInfos(newConfig.teams);
         WindowManager.initializeCurrentServerName();
-        if (newConfig.teams.length === 0) {
-            handleMainWindowIsShown();
-        }
+        handleMainWindowIsShown();
     }
 
     log.info('Log level set to:', newConfig.logLevel);
