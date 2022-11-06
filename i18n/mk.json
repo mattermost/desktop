@@ -30,5 +30,16 @@
     "common.tabs.TAB_MESSAGING": "Канали",
     "common.tabs.TAB_FOCALBOARD": "Табли",
     "common.permissions.canBasicAuth": "Веб Aвтентикација",
-    "main.app.app.handleAppCertificateError.certError.dialog.message": "Има проблем со конфигурацијата со овој Mattermost сервер, или некој се обидува да ја пресретне вашата конекција. Можеби треба да се најавите Wi-Fi на кое што сте поврзани користејќи го вашиот веб-браузер."
+    "main.app.app.handleAppCertificateError.certError.dialog.message": "Има проблем со конфигурацијата со овој Mattermost сервер, или некој се обидува да ја пресретне вашата конекција. Можеби треба да се најавите Wi-Fi на кое што сте поврзани користејќи го вашиот веб-браузер.",
+    "main.CriticalErrorHandler.uncaughtException.dialog.message": "Апликацијата {appName} неочекувано се откажа. Кликнете \"{showDetails}\" за да дознаете повеќе или \"{reopen}\" за да ја отворите апликацијата поново.\n\nВнатрешна грешка: {err}",
+    "main.CriticalErrorHandler.uncaughtException.button.showDetails": "Покажи детали",
+    "main.CriticalErrorHandler.uncaughtException.button.reopen": "Отвори поново",
+    "main.badge.unreadMentions": "Имате непрочитани споменувања ({mentionCount})",
+    "main.badge.unreadChannels": "Немате непрочитани канали",
+    "main.badge.sessionExpired": "Истечена Сесија: Молиме најавите се за да продолжите да добивате известенија.",
+    "main.badge.noUnreads": "Немате непрочитани пораки",
+    "main.autoUpdater.noUpdate.message": "Вие сте во тек",
+    "main.autoUpdater.noUpdate.detail": "Вие ја користите најновата верзија на {appName} Десктоп Апликација (верзија {version}). Ќе бидете You'll be известени кога ќе биде достапна нова верзија за инсталација.",
+    "main.app.utils.migrateMacAppStore.dialog.message": "Увези постоечки конфигурации",
+    "main.app.utils.migrateMacAppStore.dialog.detail": "Постоечката конфигурација за {appName} може да се увезе, дали сакате да го направите тоа? Ќе бидете прашани да го изберете точниот директориум за конфигурација."
 }
