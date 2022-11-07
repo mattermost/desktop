@@ -58,6 +58,7 @@ export class UpdateManager {
     lastCheck?: NodeJS.Timeout;
     versionAvailable?: string;
     versionDownloaded?: string;
+    downloadedInfo?: UpdateInfo;
 
     constructor() {
         this.cancellationToken = new CancellationToken();
@@ -76,6 +77,7 @@ export class UpdateManager {
 
         autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
             this.versionDownloaded = info.version;
+            this.downloadedInfo = info;
             ipcMain.emit(UPDATE_SHORTCUT_MENU);
             log.info(`[Mattermost] downloaded version ${info.version}`);
             this.notifyDownloaded();
@@ -115,7 +117,7 @@ export class UpdateManager {
     }
 
     notifyDownloaded = (): void => {
-        ipcMain.emit(UPDATE_DOWNLOADED, null, this.versionDownloaded);
+        ipcMain.emit(UPDATE_DOWNLOADED, null, this.downloadedInfo);
         displayRestartToUpgrade(this.versionDownloaded || 'unknown', this.handleUpdate);
     }
 
@@ -141,8 +143,8 @@ export class UpdateManager {
         }
     }
 
-    handleUpdate = async (): Promise<void> => {
-        await downloadsManager.removeUpdateBeforeRestart();
+    handleUpdate = (): void => {
+        downloadsManager.removeUpdateBeforeRestart();
         autoUpdater.quitAndInstall();
     }
 
