@@ -148,8 +148,7 @@ function parseCookieString(cookie: string) {
 
 export function createCookieSetDetailsFromCookieString(cookie: string, url: string, domain: string) {
     const parsedCookie = cookie.split('; ')[0];
-    const cookieName = parsedCookie.split('=')[0];
-    const cookieValue = parsedCookie.split('=')[1];
+    const [cookieName, cookieValue] = parsedCookie.split('=');
     const cookieObject = parseCookieString(cookie);
     return {
         url,
