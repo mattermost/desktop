@@ -46,6 +46,39 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         this.registry = await import('mattermost_webapp/registry');
         this.registry?.setModule<History>('utils/browser_history', createHashHistory());
 
+        // Cookie handling
+        const cookies = await window.mattermost.setupCookies;
+        Object.defineProperty(document, 'cookie', {
+            get() {
+                return this.value || '';
+            },
+            set(cookie) {
+                if (!cookie) {
+                    return '';
+                }
+                window.mattermost.setCookie(cookie);
+                const cutoff = cookie.indexOf(';');
+                const pair = cookie.substring(0, cutoff >= 0 ? cutoff : cookie.length);
+                const bits = pair.split('=');
+                const cookies = this.value ? this.value.split('; ') : [];
+
+                // look for an existing cookie and remove it if it exists
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookieBits = cookies[i].split('=');
+                    if (cookieBits[0] === bits[0]) {
+                        cookies.splice(i, 1);
+                        break;
+                    }
+                }
+                cookies.push(pair);
+                this.value = cookies.join('; ');
+                return this.value;
+            },
+        });
+        cookies.forEach((cookie) => {
+            document.cookie = `${cookie.name}=${cookie.value}`;
+        });
+
         await this.setInitialConfig();
 
         window.ipcRenderer.on('synchronize-config', () => {

@@ -5,17 +5,28 @@ import path from 'path';
 
 import {EventEmitter} from 'events';
 
-import {BrowserView, BrowserViewConstructorOptions, BrowserWindow, ipcMain, OnHeadersReceivedListenerDetails, Rectangle} from 'electron';
+import {
+    BrowserView,
+    BrowserViewConstructorOptions,
+    BrowserWindow,
+    CookiesSetDetails,
+    ipcMain,
+    IpcMainEvent,
+    OnBeforeSendHeadersListenerDetails,
+    OnHeadersReceivedListenerDetails,
+    Rectangle,
+    session,
+} from 'electron';
 import log from 'electron-log';
 
 import {Headers} from 'types/webRequest';
 
-import {GET_CURRENT_SERVER_URL} from 'common/communication';
+import {GET_CURRENT_SERVER_URL, SETUP_INITIAL_COOKIES, SET_COOKIE} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {TabView} from 'common/tabs/TabView';
 
 import {ServerInfo} from 'main/server/serverInfo';
-import {getLocalPreload, getLocalURLString, makeCSPHeader} from 'main/utils';
+import {createCookieSetDetailsFromCookieString, getLocalPreload, getLocalURLString, makeCSPHeader} from 'main/utils';
 import WebRequestManager from 'main/webRequest/webRequestManager';
 
 export class MattermostView extends EventEmitter {
@@ -29,6 +40,8 @@ export class MattermostView extends EventEmitter {
     isVisible: boolean;
     isLoggedIn: boolean;
 
+    cookies: CookiesSetDetails[];
+
     constructor(tab: TabView, serverInfo: ServerInfo, window: BrowserWindow, options: BrowserViewConstructorOptions) {
         super();
 
@@ -37,6 +50,9 @@ export class MattermostView extends EventEmitter {
         this.tab = tab;
         this.serverInfo = serverInfo;
         this.window = window;
+        this.isVisible = false;
+        this.isLoggedIn = false;
+        this.isAtRoot = false;
 
         const preload = getLocalPreload('mainWindow.js');
         this.view = new BrowserView({
@@ -45,16 +61,75 @@ export class MattermostView extends EventEmitter {
                 preload,
             },
         });
-        this.isVisible = false;
-        this.isLoggedIn = false;
-        this.isAtRoot = false;
+        this.view.webContents.openDevTools({mode: 'detach'});
 
+        // URL handling
         ipcMain.handle(GET_CURRENT_SERVER_URL, () => `${this.tab.server.url}`);
         WebRequestManager.rewriteURL(
             new RegExp(`file:///${path.resolve('/').replace('\\', '/').replace('/', '')}(${this.tab.server.url.pathname})?/(api|static|plugins)/(.*)`, 'g'),
             `${this.tab.server.url}/$2/$3`,
             this.view.webContents.id,
         );
+
+        WebRequestManager.rewriteURL(
+            new RegExp(`file:///${path.resolve('/').replace('\\', '/')}(\\?.+)?$`, 'g'),
+            `${getLocalURLString('index.html')}$1`,
+            this.view.webContents.id,
+        );
+
+        // Cookies
+        this.cookies = [];
+        ipcMain.handle(SETUP_INITIAL_COOKIES, this.setupCookies);
+        ipcMain.on(SET_COOKIE, this.setCookie);
+        WebRequestManager.onRequestHeaders(this.appendCookies, this.view.webContents.id);
+        WebRequestManager.onResponseHeaders(this.extractCookies, this.view.webContents.id);
+    }
+
+    private setCookie = async (event: IpcMainEvent, cookie: string) => {
+        log.debug('Mattermost.setCookie', cookie);
+        const cookieSetDetails = createCookieSetDetailsFromCookieString(cookie, `${this.tab.server.url}`, this.tab.server.url.host);
+        await session.defaultSession.cookies.set(cookieSetDetails);
+        this.cookies.push(cookieSetDetails);
+    }
+
+    private appendCookies = (details: OnBeforeSendHeadersListenerDetails) => {
+        return {
+            Cookie: `${details.requestHeaders.Cookie ? `${details.requestHeaders.Cookie}; ` : ''}${this.cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ')}`,
+        };
+    }
+
+    private extractCookies = (details: OnHeadersReceivedListenerDetails) => {
+        if (!details.responseHeaders) {
+            return {};
+        }
+
+        const cookieHeaderName = Object.keys(details.responseHeaders).find((key) => key.toLowerCase() === 'set-cookie');
+        if (cookieHeaderName) {
+            const cookies = details.responseHeaders[cookieHeaderName] as string[];
+            cookies.forEach((cookie) => {
+                const cookieResult = createCookieSetDetailsFromCookieString(cookie, `${this.tab.server.url}`, this.tab.server.url.host);
+                this.cookies.push(cookieResult);
+
+                session.defaultSession.cookies.set(cookieResult).then(() => {
+                    return session.defaultSession.cookies.flushStore();
+                }).catch((err) => {
+                    log.error('An error occurring setting cookies', err);
+                });
+            });
+        }
+        return {};
+    }
+
+    private setupCookies = async () => {
+        const cookies = await session.defaultSession.cookies.get({
+            domain: this.tab.server.url.host,
+            path: this.tab.server.url.pathname,
+        });
+        this.cookies = [...this.cookies, ...cookies.map((cookie) => ({
+            ...cookie,
+            url: `${this.tab.server.url}`,
+        }))];
+        return this.cookies;
 
         WebRequestManager.onResponseHeaders(this.addCSPHeader, this.view.webContents.id);
     }

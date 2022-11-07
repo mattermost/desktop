@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ipcRenderer} from 'electron/renderer';
+import {CookiesSetDetails, ipcRenderer} from 'electron/renderer';
 
 declare global {
     interface Window {
@@ -22,6 +22,10 @@ declare global {
         };
         mas: {
             getThumbnailLocation: (location: string) => Promise<string>;
+        };
+        mattermost: {
+            setupCookies: Promise<CookiesSetDetails[]>;
+            setCookie: (cookie: string) => Promise<void>;
         };
     }
 }

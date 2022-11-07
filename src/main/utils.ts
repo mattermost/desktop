@@ -171,3 +171,28 @@ function addToCSPMap(cspMap: Map<string, string[]>, header: string, ...filters: 
     });
     return cspMap;
 }
+
+function parseCookieString(cookie: string) {
+    const output: any = {};
+    cookie.split(/\s*;\s*/).forEach((value) => {
+        const kvp = value.split(/\s*=\s*/);
+        output[kvp[0]] = kvp.splice(1).join('=');
+    });
+    return output;
+}
+
+export function createCookieSetDetailsFromCookieString(cookie: string, url: string, domain: string) {
+    const parsedCookie = cookie.split('; ')[0];
+    const [cookieName, cookieValue] = parsedCookie.split('=');
+    const cookieObject = parseCookieString(cookie);
+    return {
+        url,
+        name: cookieName,
+        value: cookieValue,
+        domain,
+        path: cookieObject.Path,
+        secure: Object.hasOwn(cookieObject, 'Secure'),
+        httpOnly: Object.hasOwn(cookieObject, 'HttpOnly'),
+        expirationDate: new Date(cookieObject.Expires).valueOf(),
+    };
+}
