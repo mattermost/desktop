@@ -56,6 +56,7 @@ class Root extends React.PureComponent<Record<string, never>, State> {
                 if (!cookie) {
                     return '';
                 }
+                window.mattermost.setCookie(cookie);
                 const cutoff = cookie.indexOf(';');
                 const pair = cookie.substring(0, cutoff >= 0 ? cutoff : cookie.length);
                 const bits = pair.split('=');
@@ -76,11 +77,6 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         });
         cookies.forEach((cookie) => {
             document.cookie = `${cookie.name}=${cookie.value}`;
-        });
-        this.registry?.setModule<() => void>('actions/views/cookie/clearUserCookie', () => {
-            window.mattermost.clearCookies();
-            const defaultFunc = this.registry?.getModule<() => void>('actions/views/cookie/default');
-            defaultFunc?.();
         });
 
         await this.setInitialConfig();

@@ -10,6 +10,7 @@ import {
     BrowserViewConstructorOptions,
     BrowserWindow, CookiesSetDetails,
     ipcMain,
+    IpcMainEvent,
     Rectangle,
     session,
 } from 'electron';
@@ -17,7 +18,7 @@ import log from 'electron-log';
 
 import {RequestHeaders, ResponseHeaders} from 'types/webRequest';
 
-import {CLEAR_COOKIES, GET_CURRENT_SERVER_URL, SETUP_INITIAL_COOKIES} from 'common/communication';
+import {GET_CURRENT_SERVER_URL, SETUP_INITIAL_COOKIES, SET_COOKIE} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {TabView} from 'common/tabs/TabView';
 
@@ -46,6 +47,16 @@ export class MattermostView extends EventEmitter {
         this.tab = tab;
         this.serverInfo = serverInfo;
         this.window = window;
+        this.isVisible = false;
+        this.isLoggedIn = false;
+        this.isAtRoot = false;
+
+        // Cookies
+        this.cookies = [];
+        ipcMain.handle(SETUP_INITIAL_COOKIES, this.setupCookies);
+        ipcMain.on(SET_COOKIE, this.setCookie);
+        WebRequestManager.onRequestHeaders(this.appendCookies);
+        WebRequestManager.onResponseHeaders(this.extractCookies);
 
         const preload = getLocalPreload('mainWindow.js');
         this.view = new BrowserView({
@@ -54,9 +65,6 @@ export class MattermostView extends EventEmitter {
                 preload,
             },
         });
-        this.isVisible = false;
-        this.isLoggedIn = false;
-        this.isAtRoot = false;
 
         // URL handling
         ipcMain.handle(GET_CURRENT_SERVER_URL, () => `${this.tab.server.url}`);
@@ -71,13 +79,13 @@ export class MattermostView extends EventEmitter {
             `${getLocalURLString('index.html')}$1`,
             this.view.webContents.id,
         );
+    }
 
-        // Cookies
-        this.cookies = [];
-        ipcMain.handle(SETUP_INITIAL_COOKIES, this.setupCookies);
-        ipcMain.on(CLEAR_COOKIES, this.clearCookies);
-        WebRequestManager.onRequestHeaders(this.appendCookies);
-        WebRequestManager.onResponseHeaders(this.extractCookies);
+    private setCookie = async (event: IpcMainEvent, cookie: string) => {
+        log.info('Mattermost.setCookie', cookie);
+        const cookieSetDetails = createCookieSetDetailsFromCookieString(cookie, `${this.tab.server.url}`, this.tab.server.url.host);
+        await session.defaultSession.cookies.set(cookieSetDetails);
+        this.cookies.push(cookieSetDetails);
     }
 
     private appendCookies = (headers: RequestHeaders) => {
@@ -114,11 +122,6 @@ export class MattermostView extends EventEmitter {
             url: `${this.tab.server.url}`,
         }))];
         return this.cookies;
-    }
-
-    private clearCookies = async () => {
-        await Promise.all(this.cookies.map((cookie) => session.defaultSession.cookies.remove(cookie.url, cookie.name || '')));
-        this.cookies = [];
     }
 
     load = (url?: string | URL) => {

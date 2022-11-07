@@ -25,7 +25,7 @@ declare global {
         };
         mattermost: {
             setupCookies: Promise<CookiesSetDetails[]>;
-            clearCookies: () => void;
+            setCookie: (cookie: string) => Promise<void>;
         };
     }
 }
