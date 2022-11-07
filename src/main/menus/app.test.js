@@ -316,10 +316,4 @@ describe('main/menus/app', () => {
             expect(menuItem).toBe(undefined);
         }
     });
-
-    it('should show the "Run diagnostics" item under help', () => {
-        const menu = createTemplate(config);
-        const helpSubmenu = menu.find((subMenu) => subMenu.id === 'help')?.submenu;
-        expect(helpSubmenu).toContainObject({id: 'diagnostics'});
-    });
 });
