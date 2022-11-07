@@ -8,6 +8,10 @@ import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEven
 import log from 'electron-log';
 
 import {
+    CallsJoinCallMessage,
+} from 'types/calls';
+
+import {
     MAXIMIZE_CHANGE,
     HISTORY,
     GET_LOADING_SCREEN_DATA,
@@ -27,6 +31,10 @@ import {
     DESKTOP_SOURCES_RESULT,
     RELOAD_CURRENT_VIEW,
     VIEW_FINISHED_RESIZING,
+    CALLS_JOIN_CALL,
+    CALLS_LEAVE_CALL,
+    DESKTOP_SOURCES_MODAL_REQUEST,
+    CALLS_WIDGET_CHANNEL_LINK_CLICK,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
@@ -49,6 +57,8 @@ import downloadsManager from 'main/downloadsManager';
 import {createSettingsWindow} from './settingsWindow';
 import createMainWindow from './mainWindow';
 
+import CallsWidgetWindow from './callsWidgetWindow';
+
 // singleton module to manage application's windows
 
 export class WindowManager {
@@ -57,6 +67,7 @@ export class WindowManager {
     mainWindow?: BrowserWindow;
     mainWindowReady: boolean;
     settingsWindow?: BrowserWindow;
+    callsWidgetWindow?: CallsWidgetWindow;
     viewManager?: ViewManager;
     teamDropdown?: TeamDropdownView;
     downloadsDropdown?: DownloadsDropdownView;
@@ -81,11 +92,62 @@ export class WindowManager {
         ipcMain.on(DISPATCH_GET_DESKTOP_SOURCES, this.handleGetDesktopSources);
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
         ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
+        ipcMain.on(CALLS_JOIN_CALL, this.createCallsWidgetWindow);
+        ipcMain.on(CALLS_LEAVE_CALL, () => this.callsWidgetWindow?.close());
+        ipcMain.on(DESKTOP_SOURCES_MODAL_REQUEST, this.handleDesktopSourcesModalRequest);
+        ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.handleCallsWidgetChannelLinkClick);
     }
 
     handleUpdateConfig = () => {
         if (this.viewManager) {
             this.viewManager.reloadConfiguration(Config.teams || []);
+        }
+    }
+
+    createCallsWidgetWindow = (event: IpcMainEvent, viewName: string, msg: CallsJoinCallMessage) => {
+        log.debug('WindowManager.createCallsWidgetWindow');
+        if (this.callsWidgetWindow) {
+            // trying to join again the call we are already in should not be allowed.
+            if (this.callsWidgetWindow.getCallID() === msg.callID) {
+                return;
+            }
+            this.callsWidgetWindow.close();
+        }
+        const currentView = this.viewManager?.views.get(viewName);
+        if (!currentView) {
+            log.error('unable to create calls widget window: currentView is missing');
+            return;
+        }
+
+        this.callsWidgetWindow = new CallsWidgetWindow(this.mainWindow!, currentView, {
+            siteURL: currentView.serverInfo.remoteInfo.siteURL!,
+            callID: msg.callID,
+            title: msg.title,
+            serverName: this.currentServerName!,
+            channelURL: msg.channelURL,
+        });
+
+        this.callsWidgetWindow.on('closed', () => delete this.callsWidgetWindow);
+    }
+
+    handleDesktopSourcesModalRequest = () => {
+        log.debug('WindowManager.handleDesktopSourcesModalRequest');
+
+        if (this.callsWidgetWindow) {
+            this.switchServer(this.callsWidgetWindow?.getServerName());
+            this.mainWindow?.focus();
+            const currentView = this.viewManager?.getCurrentView();
+            currentView?.view.webContents.send(DESKTOP_SOURCES_MODAL_REQUEST);
+        }
+    }
+
+    handleCallsWidgetChannelLinkClick = () => {
+        log.debug('WindowManager.handleCallsWidgetChannelLinkClick');
+        if (this.callsWidgetWindow) {
+            this.switchServer(this.callsWidgetWindow.getServerName());
+            this.mainWindow?.focus();
+            const currentView = this.viewManager?.getCurrentView();
+            currentView?.view.webContents.send(BROWSER_HISTORY_PUSH, this.callsWidgetWindow.getChannelURL());
         }
     }
 
@@ -743,19 +805,26 @@ export class WindowManager {
     handleGetDesktopSources = async (event: IpcMainEvent, viewName: string, opts: Electron.SourcesOptions) => {
         log.debug('WindowManager.handleGetDesktopSources', {viewName, opts});
 
+        const globalWidget = viewName === 'widget' && this.callsWidgetWindow;
         const view = this.viewManager?.views.get(viewName);
-        if (!view) {
+        if (!view && !globalWidget) {
             return;
         }
 
         desktopCapturer.getSources(opts).then((sources) => {
-            view.view.webContents.send(DESKTOP_SOURCES_RESULT, sources.map((source) => {
+            const message = sources.map((source) => {
                 return {
                     id: source.id,
                     name: source.name,
                     thumbnailURL: source.thumbnail.toDataURL(),
                 };
-            }));
+            });
+
+            if (view) {
+                view.view.webContents.send(DESKTOP_SOURCES_RESULT, message);
+            } else {
+                this.callsWidgetWindow?.win.webContents.send(DESKTOP_SOURCES_RESULT, message);
+            }
         });
     }
 
