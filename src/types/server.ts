@@ -7,6 +7,7 @@ export type RemoteInfo = {
     siteURL?: string;
     hasFocalboard?: boolean;
     hasPlaybooks?: boolean;
+    cspHeader?: string;
 };
 
 export type ClientConfig = {

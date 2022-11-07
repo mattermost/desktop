@@ -26,17 +26,27 @@ export class ServerInfo {
     }
 
     getRemoteInfo = () => {
+        getServerAPI<void>(
+            new URL(`${this.server.url}`),
+            false,
+            undefined,
+            this.onGetIndexHeaders,
+            this.onRetrievedRemoteInfo,
+            this.onRetrievedRemoteInfo);
+
         getServerAPI<ClientConfig>(
-            new URL(`${this.server.url.toString()}/api/v4/config/client?format=old`),
+            new URL(`${this.server.url}/api/v4/config/client?format=old`),
             false,
             this.onGetConfig,
+            undefined,
             this.onRetrievedRemoteInfo,
             this.onRetrievedRemoteInfo);
 
         getServerAPI<Array<{id: string; version: string}>>(
-            new URL(`${this.server.url.toString()}/api/v4/plugins/webapp`),
+            new URL(`${this.server.url}/api/v4/plugins/webapp`),
             false,
             this.onGetPlugins,
+            undefined,
             this.onRetrievedRemoteInfo,
             this.onRetrievedRemoteInfo);
     }
@@ -44,6 +54,12 @@ export class ServerInfo {
     onGetConfig = (data: ClientConfig) => {
         this.remoteInfo.serverVersion = data.Version;
         this.remoteInfo.siteURL = data.SiteURL;
+
+        this.trySendRemoteInfo();
+    }
+
+    onGetIndexHeaders = (headers: Record<string, string | string[]>) => {
+        this.remoteInfo.cspHeader = headers['content-security-policy'] as string;
 
         this.trySendRemoteInfo();
     }
@@ -65,6 +81,7 @@ export class ServerInfo {
 
     isRemoteInfoRetrieved = () => {
         return !(
+            typeof this.remoteInfo.cspHeader === 'undefined' ||
             typeof this.remoteInfo.serverVersion === 'undefined' ||
             typeof this.remoteInfo.hasFocalboard === 'undefined' ||
             typeof this.remoteInfo.hasPlaybooks === 'undefined'

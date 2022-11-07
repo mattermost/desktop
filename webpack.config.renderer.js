@@ -17,8 +17,6 @@ const base = require('./webpack.config.base');
 
 const WEBSERVER_PORT = process.env.WEBSERVER_PORT ?? 9001;
 
-const deps = require('./package.json').dependencies;
-
 const getRemoteEntry = (resolve) => {
     const script = document.createElement('script');
     window.mattermost.getUrl.then((url) => {
