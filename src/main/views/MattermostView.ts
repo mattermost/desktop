@@ -54,13 +54,6 @@ export class MattermostView extends EventEmitter {
         this.isLoggedIn = false;
         this.isAtRoot = false;
 
-        // Cookies
-        this.cookies = [];
-        ipcMain.handle(SETUP_INITIAL_COOKIES, this.setupCookies);
-        ipcMain.on(SET_COOKIE, this.setCookie);
-        WebRequestManager.onRequestHeaders(this.appendCookies);
-        WebRequestManager.onResponseHeaders(this.extractCookies);
-
         const preload = getLocalPreload('mainWindow.js');
         this.view = new BrowserView({
             ...options,
@@ -68,6 +61,7 @@ export class MattermostView extends EventEmitter {
                 preload,
             },
         });
+        this.view.webContents.openDevTools({mode: 'detach'});
 
         // URL handling
         ipcMain.handle(GET_CURRENT_SERVER_URL, () => `${this.tab.server.url}`);
@@ -82,6 +76,13 @@ export class MattermostView extends EventEmitter {
             `${getLocalURLString('index.html')}$1`,
             this.view.webContents.id,
         );
+
+        // Cookies
+        this.cookies = [];
+        ipcMain.handle(SETUP_INITIAL_COOKIES, this.setupCookies);
+        ipcMain.on(SET_COOKIE, this.setCookie);
+        WebRequestManager.onRequestHeaders(this.appendCookies, this.view.webContents.id);
+        WebRequestManager.onResponseHeaders(this.extractCookies, this.view.webContents.id);
     }
 
     private setCookie = async (event: IpcMainEvent, cookie: string) => {
