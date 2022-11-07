@@ -86,7 +86,7 @@ export class MattermostView extends EventEmitter {
     }
 
     private setCookie = async (event: IpcMainEvent, cookie: string) => {
-        log.info('Mattermost.setCookie', cookie);
+        log.debug('Mattermost.setCookie', cookie);
         const cookieSetDetails = createCookieSetDetailsFromCookieString(cookie, `${this.tab.server.url}`, this.tab.server.url.host);
         await session.defaultSession.cookies.set(cookieSetDetails);
         this.cookies.push(cookieSetDetails);
