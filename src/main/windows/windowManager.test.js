@@ -16,6 +16,8 @@ import {WindowManager} from './windowManager';
 import createMainWindow from './mainWindow';
 import {createSettingsWindow} from './settingsWindow';
 
+import CallsWidgetWindow from './callsWidgetWindow';
+
 jest.mock('path', () => ({
     resolve: jest.fn(),
     join: jest.fn(),
@@ -73,6 +75,8 @@ jest.mock('./mainWindow', () => jest.fn());
 jest.mock('../downloadsManager', () => ({
     getDownloads: () => {},
 }));
+
+jest.mock('./callsWidgetWindow');
 
 describe('main/windows/windowManager', () => {
     describe('handleUpdateConfig', () => {
@@ -989,6 +993,187 @@ describe('main/windows/windowManager', () => {
             windowManager.handleBrowserHistoryButton(null, 'server-1_tab-messaging');
             expect(view1.view.webContents.clearHistory).toHaveBeenCalled();
             expect(view1.isAtRoot).toBe(true);
+        });
+    });
+
+    describe('createCallsWidgetWindow', () => {
+        const view = {
+            name: 'server-1_tab-messaging',
+            serverInfo: {
+                remoteInfo: {
+                    siteURL: 'http://server-1.com',
+                },
+            },
+        };
+        const windowManager = new WindowManager();
+        windowManager.viewManager = {
+            views: new Map([
+                ['server-1_tab-messaging', view],
+            ]),
+        };
+
+        it('should create calls widget window', () => {
+            expect(windowManager.callsWidgetWindow).toBeUndefined();
+            windowManager.createCallsWidgetWindow(null, 'server-1_tab-messaging', {callID: 'test'});
+            expect(windowManager.callsWidgetWindow).toBeDefined();
+        });
+
+        it('should not create a new window if call is the same', () => {
+            const widgetWindow = windowManager.callsWidgetWindow;
+            expect(widgetWindow).toBeDefined();
+            widgetWindow.getCallID = jest.fn(() => 'test');
+            windowManager.createCallsWidgetWindow(null, 'server-1_tab-messaging', {callID: 'test'});
+            expect(windowManager.callsWidgetWindow).toEqual(widgetWindow);
+        });
+
+        it('should create a new window if switching calls', () => {
+            const widgetWindow = windowManager.callsWidgetWindow;
+            expect(widgetWindow).toBeDefined();
+            widgetWindow.getCallID = jest.fn(() => 'test');
+            windowManager.createCallsWidgetWindow(null, 'server-1_tab-messaging', {callID: 'test2'});
+            expect(windowManager.callsWidgetWindow).not.toEqual(widgetWindow);
+        });
+    });
+
+    describe('handleDesktopSourcesModalRequest', () => {
+        const windowManager = new WindowManager();
+        windowManager.switchServer = jest.fn();
+        windowManager.viewManager = {
+            showByName: jest.fn(),
+            getCurrentView: jest.fn(),
+        };
+
+        beforeEach(() => {
+            CallsWidgetWindow.mockImplementation(() => {
+                return {
+                    getServerName: () => 'server-1',
+                };
+            });
+
+            Config.teams = [
+                {
+                    name: 'server-1',
+                    order: 1,
+                    tabs: [
+                        {
+                            name: 'tab-1',
+                            order: 0,
+                            isOpen: false,
+                        },
+                        {
+                            name: 'tab-2',
+                            order: 2,
+                            isOpen: true,
+                        },
+                    ],
+                }, {
+                    name: 'server-2',
+                    order: 0,
+                    tabs: [
+                        {
+                            name: 'tab-1',
+                            order: 0,
+                            isOpen: false,
+                        },
+                        {
+                            name: 'tab-2',
+                            order: 2,
+                            isOpen: true,
+                        },
+                    ],
+                    lastActiveTab: 2,
+                },
+            ];
+
+            const map = Config.teams.reduce((arr, item) => {
+                item.tabs.forEach((tab) => {
+                    arr.push([`${item.name}_${tab.name}`, {}]);
+                });
+                return arr;
+            }, []);
+            windowManager.viewManager.views = new Map(map);
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+            Config.teams = [];
+        });
+
+        it('should switch server', () => {
+            windowManager.callsWidgetWindow = new CallsWidgetWindow();
+            windowManager.handleDesktopSourcesModalRequest();
+            expect(windowManager.switchServer).toHaveBeenCalledWith('server-1');
+        });
+    });
+
+    describe('handleCallsWidgetChannelLinkClick', () => {
+        const windowManager = new WindowManager();
+        windowManager.switchServer = jest.fn();
+        windowManager.viewManager = {
+            showByName: jest.fn(),
+            getCurrentView: jest.fn(),
+        };
+
+        beforeEach(() => {
+            CallsWidgetWindow.mockImplementation(() => {
+                return {
+                    getServerName: () => 'server-2',
+                };
+            });
+
+            Config.teams = [
+                {
+                    name: 'server-1',
+                    order: 1,
+                    tabs: [
+                        {
+                            name: 'tab-1',
+                            order: 0,
+                            isOpen: false,
+                        },
+                        {
+                            name: 'tab-2',
+                            order: 2,
+                            isOpen: true,
+                        },
+                    ],
+                }, {
+                    name: 'server-2',
+                    order: 0,
+                    tabs: [
+                        {
+                            name: 'tab-1',
+                            order: 0,
+                            isOpen: false,
+                        },
+                        {
+                            name: 'tab-2',
+                            order: 2,
+                            isOpen: true,
+                        },
+                    ],
+                    lastActiveTab: 2,
+                },
+            ];
+
+            const map = Config.teams.reduce((arr, item) => {
+                item.tabs.forEach((tab) => {
+                    arr.push([`${item.name}_${tab.name}`, {}]);
+                });
+                return arr;
+            }, []);
+            windowManager.viewManager.views = new Map(map);
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+            Config.teams = [];
+        });
+
+        it('should switch server', () => {
+            windowManager.callsWidgetWindow = new CallsWidgetWindow();
+            windowManager.handleCallsWidgetChannelLinkClick();
+            expect(windowManager.switchServer).toHaveBeenCalledWith('server-2');
         });
     });
 });

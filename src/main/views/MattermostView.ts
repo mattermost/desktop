@@ -8,22 +8,25 @@ import {EventEmitter} from 'events';
 import {
     BrowserView,
     BrowserViewConstructorOptions,
-    BrowserWindow, CookiesSetDetails,
+    BrowserWindow,
+    CookiesSetDetails,
     ipcMain,
     IpcMainEvent,
+    OnBeforeSendHeadersListenerDetails,
+    OnHeadersReceivedListenerDetails,
     Rectangle,
     session,
 } from 'electron';
 import log from 'electron-log';
 
-import {RequestHeaders, ResponseHeaders} from 'types/webRequest';
+import {Headers} from 'types/webRequest';
 
 import {GET_CURRENT_SERVER_URL, SETUP_INITIAL_COOKIES, SET_COOKIE} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {TabView} from 'common/tabs/TabView';
 
 import {ServerInfo} from 'main/server/serverInfo';
-import {createCookieSetDetailsFromCookieString, getLocalPreload, getLocalURLString} from 'main/utils';
+import {createCookieSetDetailsFromCookieString, getLocalPreload, getLocalURLString, makeCSPHeader} from 'main/utils';
 import WebRequestManager from 'main/webRequest/webRequestManager';
 
 export class MattermostView extends EventEmitter {
@@ -88,16 +91,20 @@ export class MattermostView extends EventEmitter {
         this.cookies.push(cookieSetDetails);
     }
 
-    private appendCookies = (headers: RequestHeaders) => {
+    private appendCookies = (details: OnBeforeSendHeadersListenerDetails) => {
         return {
-            Cookie: `${headers.Cookie ? `${headers.Cookie}; ` : ''}${this.cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ')}`,
+            Cookie: `${details.requestHeaders.Cookie ? `${details.requestHeaders.Cookie}; ` : ''}${this.cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ')}`,
         };
     }
 
-    private extractCookies = (headers: ResponseHeaders) => {
-        const cookieHeaderName = Object.keys(headers).find((key) => key.toLowerCase() === 'set-cookie');
+    private extractCookies = (details: OnHeadersReceivedListenerDetails) => {
+        if (!details.responseHeaders) {
+            return {};
+        }
+
+        const cookieHeaderName = Object.keys(details.responseHeaders).find((key) => key.toLowerCase() === 'set-cookie');
         if (cookieHeaderName) {
-            const cookies = headers[cookieHeaderName];
+            const cookies = details.responseHeaders[cookieHeaderName] as string[];
             cookies.forEach((cookie) => {
                 const cookieResult = createCookieSetDetailsFromCookieString(cookie, `${this.tab.server.url}`, this.tab.server.url.host);
                 this.cookies.push(cookieResult);
@@ -122,7 +129,19 @@ export class MattermostView extends EventEmitter {
             url: `${this.tab.server.url}`,
         }))];
         return this.cookies;
+
+        WebRequestManager.onResponseHeaders(this.addCSPHeader, this.view.webContents.id);
     }
+
+    addCSPHeader = (details: OnHeadersReceivedListenerDetails) => {
+        if (details.url === getLocalURLString('index.html')) {
+            return {
+                'Content-Security-Policy': [makeCSPHeader(this.tab.server.url, this.serverInfo.remoteInfo.cspHeader)],
+            };
+        }
+
+        return {} as Headers;
+    };
 
     load = (url?: string | URL) => {
         log.debug('MattermostView.load', `${url}`);
@@ -130,7 +149,6 @@ export class MattermostView extends EventEmitter {
         // TODO
         const localURL = getLocalURLString('index.html');
         this.view.webContents.loadURL(localURL);
-        this.view.webContents.openDevTools({mode: 'detach'});
     };
 
     updateServerInfo = (srv: MattermostServer) => {

@@ -100,15 +100,17 @@ describe('main/views/viewManager', () => {
         it('should remove from remove from closedViews when the tab is open', () => {
             viewManager.closedViews.set('server1-tab1', {});
             expect(viewManager.closedViews.has('server1-tab1')).toBe(true);
-            viewManager.loadView({name: 'server1'}, {}, {name: 'tab1', isOpen: true});
+            viewManager.loadView({name: 'server1'}, {promise: Promise.resolve()}, {name: 'tab1', isOpen: true});
             expect(viewManager.closedViews.has('server1-tab1')).toBe(false);
         });
 
-        it('should add view to views map and add listeners', () => {
-            viewManager.loadView({name: 'server1'}, {}, {name: 'tab1', isOpen: true}, 'http://server-1.com/subpath');
+        it('should add view to views map and add listeners', async () => {
+            const promise = Promise.resolve();
+            viewManager.loadView({name: 'server1'}, {promise}, {name: 'tab1', isOpen: true}, 'http://server-1.com/subpath');
             expect(viewManager.views.has('server1-tab1')).toBe(true);
             expect(viewManager.createLoadingScreen).toHaveBeenCalled();
             expect(onceFn).toHaveBeenCalledWith(LOAD_SUCCESS, viewManager.activateView);
+            await promise;
             expect(loadFn).toHaveBeenCalledWith('http://server-1.com/subpath');
         });
     });
@@ -177,9 +179,22 @@ describe('main/views/viewManager', () => {
         const viewManager = new ViewManager({});
 
         beforeEach(() => {
+            const onceFn = jest.fn();
+            const loadFn = jest.fn();
+            const destroyFn = jest.fn();
             viewManager.loadView = jest.fn();
             viewManager.showByName = jest.fn();
             viewManager.showInitial = jest.fn();
+            viewManager.makeView = jest.fn().mockImplementation((srv, serverInfo, tab) => ({
+                on: jest.fn(),
+                load: loadFn,
+                once: onceFn,
+                destroy: destroyFn,
+                name: tab.name,
+                urlTypeTuple: tab.urlTypeTuple,
+                updateServerInfo: jest.fn(),
+                tab,
+            }));
             viewManager.mainWindow.webContents = {
                 send: jest.fn(),
             };
@@ -193,19 +208,6 @@ describe('main/views/viewManager', () => {
                 name,
                 url: new URL(url),
             }));
-            const onceFn = jest.fn();
-            const loadFn = jest.fn();
-            const destroyFn = jest.fn();
-            MattermostView.mockImplementation((tab) => ({
-                on: jest.fn(),
-                load: loadFn,
-                once: onceFn,
-                destroy: destroyFn,
-                name: tab.name,
-                urlTypeTuple: tab.urlTypeTuple,
-                updateServerInfo: jest.fn(),
-                tab,
-            }));
         });
 
         afterEach(() => {
@@ -217,12 +219,12 @@ describe('main/views/viewManager', () => {
         });
 
         it('should recycle existing views', () => {
-            const makeSpy = jest.spyOn(viewManager, 'makeView');
-            const view = new MattermostView({
+            const view = viewManager.makeView(null, null, {
                 name: 'server1-tab1',
                 urlTypeTuple: tuple(new URL('http://server1.com').href, 'tab1'),
                 server: 'server1',
             });
+            viewManager.makeView.mockClear();
             viewManager.views.set('server1-tab1', view);
             viewManager.reloadConfiguration([
                 {
@@ -238,8 +240,7 @@ describe('main/views/viewManager', () => {
                 },
             ]);
             expect(viewManager.views.get('server1-tab1')).toBe(view);
-            expect(makeSpy).not.toHaveBeenCalled();
-            makeSpy.mockRestore();
+            expect(viewManager.makeView).not.toHaveBeenCalled();
         });
 
         it('should close tabs that arent open', () => {
@@ -260,7 +261,6 @@ describe('main/views/viewManager', () => {
         });
 
         it('should create new views for new tabs', () => {
-            const makeSpy = jest.spyOn(viewManager, 'makeView');
             viewManager.reloadConfiguration([
                 {
                     name: 'server1',
@@ -274,7 +274,7 @@ describe('main/views/viewManager', () => {
                     ],
                 },
             ]);
-            expect(makeSpy).toHaveBeenCalledWith(
+            expect(viewManager.makeView).toHaveBeenCalledWith(
                 {
                     name: 'server1',
                     url: new URL('http://server1.com'),
@@ -286,7 +286,6 @@ describe('main/views/viewManager', () => {
                 },
                 'http://server1.com/',
             );
-            makeSpy.mockRestore();
         });
 
         // it('should set focus to current view on reload', () => {

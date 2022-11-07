@@ -85,10 +85,12 @@ export class ViewManager {
         const tabView = getServerView(srv, tab);
         const view = new MattermostView(tabView, serverInfo, this.mainWindow, this.viewOptions);
         view.once(LOAD_SUCCESS, this.activateView);
-        view.load(url);
         view.on(UPDATE_TARGET_URL, this.showURLView);
         view.on(LOADSCREEN_END, this.finishLoading);
         view.on(LOAD_FAILED, this.failLoading);
+        serverInfo.promise.then(() => {
+            view.load(url);
+        });
         return view;
     }
 

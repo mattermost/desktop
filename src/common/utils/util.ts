@@ -2,6 +2,8 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
+import {Rectangle} from 'electron';
+
 import {DEVELOPMENT, PRODUCTION} from './constants';
 
 function runMode() {
@@ -47,8 +49,18 @@ export function t(s: string) {
     return s;
 }
 
+function boundsDiff(base: Rectangle, actual: Rectangle) {
+    return {
+        x: base.x - actual.x,
+        y: base.y - actual.y,
+        width: base.width - actual.width,
+        height: base.height - actual.height,
+    };
+}
+
 export default {
     runMode,
     shorten,
     isVersionGreaterThanOrEqualTo,
+    boundsDiff,
 };

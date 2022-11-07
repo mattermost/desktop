@@ -58,6 +58,7 @@ describe('main/server/serverAPI', () => {
             false,
             successFn,
             null,
+            null,
             errorFn,
         );
         expect(successFn).not.toHaveBeenCalled();
@@ -71,6 +72,7 @@ describe('main/server/serverAPI', () => {
             badDataURL,
             false,
             successFn,
+            null,
             null,
             errorFn,
         );
@@ -100,6 +102,7 @@ describe('main/server/serverAPI', () => {
             false,
             successFn,
             null,
+            null,
             errorFn,
         );
         expect(errorFn).toHaveBeenCalled();
@@ -121,6 +124,7 @@ describe('main/server/serverAPI', () => {
             validURL,
             false,
             successFn,
+            null,
             abortFn,
             null,
         );
@@ -144,6 +148,7 @@ describe('main/server/serverAPI', () => {
             false,
             successFn,
             null,
+            null,
             errorFn,
         );
         expect(errorFn).toHaveBeenCalled();
@@ -154,6 +159,7 @@ describe('main/server/serverAPI', () => {
         await getServerAPI(
             validURL,
             true,
+            undefined,
             successFn,
         );
         expect(net.request).not.toBeCalled();

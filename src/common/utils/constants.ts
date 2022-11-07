@@ -25,6 +25,11 @@ export const DEFAULT_WINDOW_HEIGHT = 800;
 export const MINIMUM_WINDOW_WIDTH = 700;
 export const MINIMUM_WINDOW_HEIGHT = 240;
 
+// Calls
+export const MINIMUM_CALLS_WIDGET_WIDTH = 284;
+export const MINIMUM_CALLS_WIDGET_HEIGHT = 90;
+export const CALLS_PLUGIN_ID = 'com.mattermost.calls';
+
 export const DOWNLOADS_DROPDOWN_HEIGHT = 360;
 export const DOWNLOADS_DROPDOWN_WIDTH = 280;
 export const DOWNLOADS_DROPDOWN_PADDING = 24;
@@ -38,6 +43,8 @@ export const DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH = (DOWNLOADS_DROPDOWN_MENU_PADDI
 export const DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT = DOWNLOADS_DROPDOWN_MENU_HEIGHT + TAB_BAR_PADDING; // only bottom padding included for better positioning
 export const DOWNLOADS_DROPDOWN_MAX_ITEMS = 50;
 export const DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT = 4000; // 4 sec
+
+export const DEFAULT_CSP_HEADER = "script-src 'self'; style-src 'self' 'unsafe-inline'; media-src data:";
 
 // supported custom login paths (oath, saml)
 export const customLoginRegexPaths = [

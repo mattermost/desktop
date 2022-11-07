@@ -5,7 +5,7 @@ import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent} from 'electron';
 
 import log from 'electron-log';
 
-import {CombinedConfig, TeamWithTabs} from 'types/config';
+import {CombinedConfig, Team, TeamWithTabs, TeamWithTabsAndGpo} from 'types/config';
 
 import {
     CLOSE_TEAMS_DROPDOWN,
@@ -25,7 +25,7 @@ import WindowManager from '../windows/windowManager';
 export default class TeamDropdownView {
     view: BrowserView;
     bounds?: Electron.Rectangle;
-    teams: TeamWithTabs[];
+    teams: TeamWithTabsAndGpo[];
     activeTeam?: string;
     darkMode: boolean;
     enableServerManagement?: boolean;
@@ -38,7 +38,7 @@ export default class TeamDropdownView {
     isOpen: boolean;
 
     constructor(window: BrowserWindow, teams: TeamWithTabs[], darkMode: boolean, enableServerManagement: boolean) {
-        this.teams = teams;
+        this.teams = this.addGpoToTeams(teams, []);
         this.window = window;
         this.darkMode = darkMode;
         this.enableServerManagement = enableServerManagement;
@@ -71,7 +71,7 @@ export default class TeamDropdownView {
     updateConfig = (event: IpcMainEvent, config: CombinedConfig) => {
         log.silly('TeamDropdownView.config', {config});
 
-        this.teams = config.teams;
+        this.teams = this.addGpoToTeams(config.teams, config.registryTeams);
         this.darkMode = config.darkMode;
         this.enableServerManagement = config.enableServerManagement;
         this.hasGPOTeams = config.registryTeams && config.registryTeams.length > 0;
@@ -161,5 +161,17 @@ export default class TeamDropdownView {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         this.view.webContents.destroy();
+    }
+
+    addGpoToTeams = (teams: TeamWithTabs[], registryTeams: Team[]): TeamWithTabsAndGpo[] => {
+        if (!registryTeams || registryTeams.length === 0) {
+            return teams.map((team) => ({...team, isGpo: false}));
+        }
+        return teams.map((team) => {
+            return {
+                ...team,
+                isGpo: registryTeams.some((regTeam) => regTeam!.url === team!.url),
+            };
+        });
     }
 }

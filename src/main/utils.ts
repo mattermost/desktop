@@ -9,7 +9,7 @@ import {app, BrowserWindow} from 'electron';
 
 import {Args} from 'types/args';
 
-import {BACK_BAR_HEIGHT, customLoginRegexPaths, PRODUCTION, TAB_BAR_HEIGHT} from 'common/utils/constants';
+import {BACK_BAR_HEIGHT, customLoginRegexPaths, PRODUCTION, TAB_BAR_HEIGHT, DEFAULT_CSP_HEADER} from 'common/utils/constants';
 import UrlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 
@@ -135,6 +135,41 @@ export function shouldIncrementFilename(filepath: string, increment = 0): string
         return shouldIncrementFilename(filepath, increment + 1);
     }
     return filename;
+}
+
+export function makeCSPHeader(serverURL: URL, remoteCSPHeader?: string) {
+    if (!remoteCSPHeader) {
+        return DEFAULT_CSP_HEADER;
+    }
+
+    let headerMap = addToCSPMap(new Map(), DEFAULT_CSP_HEADER);
+    headerMap = addToCSPMap(headerMap, remoteCSPHeader, (piece) => {
+        if (piece === "'self'") {
+            return serverURL.origin;
+        }
+        return piece;
+    });
+
+    const subheaders = [...headerMap.keys()];
+    const header = subheaders.map((sub) => `${sub} ${headerMap.get(sub)?.join(' ')}`).join('; ');
+    return header;
+}
+
+function addToCSPMap(cspMap: Map<string, string[]>, header: string, ...filters: Array<(x: string) => string>) {
+    header.split('; ').forEach((section) => {
+        const pieces = section.split(' ');
+        let existingPieces = (cspMap.get(pieces[0]) ?? []);
+
+        let newPieces = pieces.slice(1);
+        filters.forEach((func) => {
+            newPieces = newPieces.map(func) as string[];
+        });
+
+        existingPieces = existingPieces.concat(newPieces);
+        existingPieces = existingPieces.filter((value, index, self) => index === self.findIndex((t) => (t === value)));
+        cspMap.set(pieces[0], existingPieces);
+    });
+    return cspMap;
 }
 
 function parseCookieString(cookie: string) {

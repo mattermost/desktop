@@ -167,7 +167,7 @@ describe('main/downloadsManager', () => {
             'x-uncompressed-content-length': ['4242'],
             'content-disposition': ['attachment; filename="file.txt"; foobar'],
         };
-        dl.webRequestOnHeadersReceivedHandler(responseHeaders);
+        dl.webRequestOnHeadersReceivedHandler({responseHeaders});
         expect(dl.fileSizes.get('file.txt')).toBe('4242');
     });
 

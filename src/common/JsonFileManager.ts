@@ -31,9 +31,9 @@ export default class JsonFileManager<T> {
         });
     }
 
-    async setJson(json: T): Promise<void> {
+    setJson(json: T): void {
         this.json = json;
-        await this.writeToFile();
+        this.writeToFile();
     }
 
     setValue(key: keyof T, value: T[keyof T]): void {

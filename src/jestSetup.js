@@ -25,4 +25,3 @@ jest.mock('electron-log', () => ({
         },
     },
 }));
-
