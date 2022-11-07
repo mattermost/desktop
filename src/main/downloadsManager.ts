@@ -401,7 +401,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     private showSaveDialog = (item: DownloadItem) => {
         const filename = item.getFilename();
         const fileElements = filename.split('.');
-        const filters = this.getFileFilters(fileElements.slice(1));
+        const filters = this.getFileFilters(fileElements.slice(fileElements.length - 1));
 
         return dialog.showSaveDialog({
             title: filename,
