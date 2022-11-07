@@ -2,10 +2,18 @@
 // See LICENSE.txt for license information.
 
 'use strict';
-import {BACK_BAR_HEIGHT, TAB_BAR_HEIGHT} from 'common/utils/constants';
+import {BACK_BAR_HEIGHT, TAB_BAR_HEIGHT, DEFAULT_CSP_HEADER} from 'common/utils/constants';
 import {runMode} from 'common/utils/util';
 
 import * as Utils from './utils';
+
+jest.mock('common/utils/constants', () => {
+    const original = jest.requireActual('common/utils/constants');
+    return {
+        ...original,
+        DEFAULT_CSP_HEADER: "script-src 'self' a-host.com; style-src 'self'",
+    };
+});
 
 jest.mock('electron', () => ({
     app: {
@@ -160,6 +168,44 @@ describe('main/utils', () => {
     describe('shouldIncrementFilename', () => {
         it('should increment filename if file already exists', () => {
             expect(Utils.shouldIncrementFilename('filename.txt')).toBe('filename (1).txt');
+        });
+    });
+
+    describe('makeCSPHeader', () => {
+        it('should return the default when no remote provided', () => {
+            expect(Utils.makeCSPHeader(new URL('http://server-1.url'))).toBe(DEFAULT_CSP_HEADER);
+        });
+
+        it('should return the default when remote is blank', () => {
+            expect(Utils.makeCSPHeader(new URL('http://server-1.url'), '')).toBe(DEFAULT_CSP_HEADER);
+        });
+
+        it('should add relevant fields to default', () => {
+            expect(Utils.makeCSPHeader(
+                new URL('http://server-1.url'),
+                'default-src http://server-2.url',
+            )).toBe(`${DEFAULT_CSP_HEADER}; default-src http://server-2.url`);
+        });
+
+        it("should replace 'self' with the server url", () => {
+            expect(Utils.makeCSPHeader(
+                new URL('http://server-1.url'),
+                "default-src 'self'",
+            )).toBe(`${DEFAULT_CSP_HEADER}; default-src http://server-1.url`);
+        });
+
+        it('should merge matching sections', () => {
+            expect(Utils.makeCSPHeader(
+                new URL('http://server-1.url'),
+                'script-src http://server-2.url',
+            )).toBe("script-src 'self' a-host.com http://server-2.url; style-src 'self'");
+        });
+
+        it('should not duplicate entries', () => {
+            expect(Utils.makeCSPHeader(
+                new URL('http://server-1.url'),
+                'script-src a-host.com',
+            )).toBe(DEFAULT_CSP_HEADER);
         });
     });
 });

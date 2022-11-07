@@ -57,8 +57,6 @@ export class MattermostView extends EventEmitter {
         );
 
         WebRequestManager.onResponseHeaders(this.addCSPHeader, this.view.webContents.id);
-
-        this.view.webContents.openDevTools({mode: 'detach'});
     }
 
     addCSPHeader = (details: OnHeadersReceivedListenerDetails) => {

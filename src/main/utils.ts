@@ -144,7 +144,7 @@ export function makeCSPHeader(serverURL: URL, remoteCSPHeader?: string) {
 
     let headerMap = addToCSPMap(new Map(), DEFAULT_CSP_HEADER);
     headerMap = addToCSPMap(headerMap, remoteCSPHeader, (piece) => {
-        if (piece === '\'self\'') {
+        if (piece === "'self'") {
             return serverURL.origin;
         }
         return piece;
