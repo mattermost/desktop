@@ -88,4 +88,31 @@ describe('common/utils/util', () => {
             expect(Utils.isVersionGreaterThanOrEqualTo(a, b)).toEqual(true);
         });
     });
+
+    describe('boundsDiff', () => {
+        it('diff', () => {
+            const base = {
+                x: 0,
+                y: 0,
+                width: 400,
+                height: 200,
+            };
+
+            const actual = {
+                x: 100,
+                y: -100,
+                width: 600,
+                height: 100,
+            };
+
+            const diff = {
+                x: -100,
+                y: 100,
+                width: -200,
+                height: 100,
+            };
+
+            expect(Utils.boundsDiff(base, actual)).toEqual(diff);
+        });
+    });
 });

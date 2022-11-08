@@ -122,9 +122,6 @@ export const UPDATE_PATHS = 'update-paths';
 
 export const UPDATE_URL_VIEW_WIDTH = 'update-url-view-width';
 
-export const DISPATCH_GET_DESKTOP_SOURCES = 'dispatch-get-desktop-sources';
-export const DESKTOP_SOURCES_RESULT = 'desktop-sources-result';
-
 export const RELOAD_CURRENT_VIEW = 'reload-current-view';
 
 export const PING_DOMAIN = 'ping-domain';
@@ -135,6 +132,17 @@ export const RETRIEVED_LANGUAGE_INFORMATION = 'retrieved-language-information';
 export const GET_AVAILABLE_LANGUAGES = 'get-available-languages';
 
 export const VIEW_FINISHED_RESIZING = 'view-finished-resizing';
+
+// Calls
+export const DISPATCH_GET_DESKTOP_SOURCES = 'dispatch-get-desktop-sources';
+export const DESKTOP_SOURCES_RESULT = 'desktop-sources-result';
+export const DESKTOP_SOURCES_MODAL_REQUEST = 'desktop-sources-modal-request';
+export const CALLS_JOIN_CALL = 'calls-join-call';
+export const CALLS_LEAVE_CALL = 'calls-leave-call';
+export const CALLS_WIDGET_RESIZE = 'calls-widget-resize';
+export const CALLS_WIDGET_SHARE_SCREEN = 'calls-widget-share-screen';
+export const CALLS_WIDGET_CHANNEL_LINK_CLICK = 'calls-widget-channel-link-click';
+export const CALLS_JOINED_CALL = 'calls-joined-call';
 
 export const REQUEST_CLEAR_DOWNLOADS_DROPDOWN = 'request-clear-downloads-dropdown';
 export const CLOSE_DOWNLOADS_DROPDOWN = 'close-downloads-dropdown';
