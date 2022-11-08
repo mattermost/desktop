@@ -77,6 +77,12 @@ export class MattermostView extends EventEmitter {
             this.view.webContents.id,
         );
 
+        WebRequestManager.rewriteURL(
+            new RegExp(`file://${this.tab.server.url.pathname}/plugins/focalboard/(.+)`, 'g'),
+            `${this.tab.server.url}/plugins/focalboard/$1`,
+            this.view.webContents.id,
+        );
+
         // Cookies
         this.cookies = [];
         ipcMain.handle(SETUP_INITIAL_COOKIES, this.setupCookies);
