@@ -89,6 +89,25 @@ export class MattermostView extends EventEmitter {
         ipcMain.on(SET_COOKIE, this.setCookie);
         WebRequestManager.onRequestHeaders(this.appendCookies, this.view.webContents.id);
         WebRequestManager.onResponseHeaders(this.extractCookies, this.view.webContents.id);
+
+        // Websocket
+        WebRequestManager.onRequestHeaders(this.addOriginForWebsocket);
+    }
+
+    private addOriginForWebsocket = (details: OnBeforeSendHeadersListenerDetails) => {
+        log.silly('WindowManager.addOriginForWebsocket', details.requestHeaders);
+
+        if (!details.url.startsWith('ws')) {
+            return {} as Headers;
+        }
+
+        if (!(details.requestHeaders.Origin === 'file://')) {
+            return {};
+        }
+
+        return {
+            Origin: `${this.tab.server.url.protocol}//${this.tab.server.url.host}`,
+        };
     }
 
     private setCookie = async (event: IpcMainEvent, cookie: string) => {

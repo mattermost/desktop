@@ -24,6 +24,7 @@ declare global {
             getThumbnailLocation: (location: string) => Promise<string>;
         };
         mattermost: {
+            getUrl: Promise<string>;
             setupCookies: Promise<CookiesSetDetails[]>;
             setCookie: (cookie: string) => Promise<void>;
         };

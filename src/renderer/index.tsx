@@ -46,6 +46,10 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         this.registry = await import('mattermost_webapp/registry');
         this.registry?.setModule<History>('utils/browser_history', createHashHistory());
 
+        // Websocket site url handling
+        const currentURL = await window.mattermost.getUrl;
+        this.registry?.setModule<() => string>('utils/url/getSiteURL', () => currentURL);
+
         // Cookie handling
         const cookies = await window.mattermost.setupCookies;
         Object.defineProperty(document, 'cookie', {
