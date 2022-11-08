@@ -3,7 +3,7 @@
 // See LICENSE.txt for license information.
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import 'renderer/css/index.css';
+import 'renderer/css/index.scss';
 import 'renderer/css/settings.css';
 
 import React from 'react';
