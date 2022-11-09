@@ -35,3 +35,5 @@ export const MASK_EMAIL = 'EMAIL_ADDRESS';
 export const MASK_IPV4 = 'IPV4_ADDRESS';
 export const MASK_PATH = 'LOCAL_PATH';
 export const MASK_URL = 'URL';
+
+export const LOGS_MAX_STRING_LENGTH = 24;

@@ -94,4 +94,12 @@ describe('main/diagnostics/loggerHooks', () => {
             });
         });
     });
+
+    it('should truncate very longs substrings', () => {
+        const message = {
+            data: ['ThisIsAVeryVeryVeryVeryVeryVeryVeryVeryLongStringProbablyAToken'],
+        };
+        const result = maskMessageDataHook(loggerMock)(message, 'file').data[0];
+        expect(result).toBe('This...en');
+    });
 });
