@@ -1,14 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {ElectronLog} from 'electron-log';
+
 export type DiagnosticsStepConstructorPayload = {
     name: string;
     retries: number;
-    run: DiagnosticStepRun<DiagnosticStepResponse>;
-}
-
-export type DiagnosticsStepState = Omit<DiagnosticsStepConstructorPayload, 'run'> & {
-    run: DiagnosticStepRun<Promise<DiagnosticStepResponse>>;
+    run: (logger: ElectronLog) => Promise<DiagnosticStepResponse>;
 }
 
 export type DiagnosticStepResponse = {
@@ -18,11 +16,9 @@ export type DiagnosticStepResponse = {
     duration?: number;
 }
 
-export type DiagnosticStepRun<T> = () => T;
-
 export type DiagnosticsReportObject = DiagnosticStepResponse & {
     step: number;
-    name: DiagnosticsStepState['name'];
+    name: DiagnosticsStepConstructorPayload['name'];
 }
 
 export type DiagnosticsReport = DiagnosticsReportObject[];

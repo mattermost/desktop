@@ -1,11 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import log, {LogLevel} from 'electron-log';
+import log, {ElectronLog, LogLevel} from 'electron-log';
 import {DiagnosticsReport} from 'types/diagnostics';
 
 import DiagnosticsStep from './DiagnosticStep';
 import Step1 from './steps/step1.logLevel';
+import loggerHooks from './loggerHooks';
 
 const SORTED_STEPS: DiagnosticsStep[] = [
     Step1,
@@ -16,33 +17,39 @@ class DiagnosticsModule {
     stepTotal = 0;
     report: DiagnosticsReport = [];
     initialLogLevel: LogLevel = 'info';
+    logger: ElectronLog = log.create('diagnostics-logger');
 
-    run = () => {
+    run = async () => {
         log.debug('Diagnostics.run');
+        this.configureLogger();
         this.initializeValues();
         this.sendNotificationDiagnosticsStarted();
-        this.executeSteps();
+        await this.executeSteps();
         this.printReport();
-        this.initializeValues();
+        this.initializeValues(true);
     }
 
-    initializeValues = () => {
-        log.debug('Diagnostics.initializeValues');
+    configureLogger = () => {
+        this.logger.hooks.push(...loggerHooks(this.logger));
+    }
+
+    initializeValues = (clear = false) => {
+        this.logger.debug('Diagnostics.initializeValues');
         this.stepCurrent = 0;
-        this.stepTotal = this.getStepCount();
+        this.stepTotal = clear ? 0 : this.getStepCount();
         this.report = [];
-        this.initialLogLevel = log.transports.console.level || 'info';
+        this.initialLogLevel = this.logger.transports.console.level || 'info';
     }
 
     getStepCount = () => {
         const stepsCount = SORTED_STEPS.length;
-        log.debug('Diagnostics.getStepCount', {stepsCount});
+        this.logger.debug('Diagnostics.getStepCount', {stepsCount});
 
         return stepsCount;
     }
 
     executeSteps = async () => {
-        log.debug('Diagnostics.executeSteps.Started');
+        this.logger.debug('Diagnostics.executeSteps.Started');
         let index = 0;
         for (const step of SORTED_STEPS) {
             const reportStep = {
@@ -51,32 +58,32 @@ class DiagnosticsModule {
             };
             if (this.isValidStep(step)) {
                 // eslint-disable-next-line no-await-in-loop
-                const stepResult = await step.run();
+                const stepResult = await step.run(this.logger);
                 this.report.push({
                     ...stepResult,
                     ...reportStep,
                 });
-                log.debug('Diagnostics.executeSteps.StepCompleted', {index, step, stepResult});
+                this.logger.debug('Diagnostics.executeSteps.StepCompleted', {index, name: step.name, retries: step.retries, stepResult});
             } else {
                 this.report.push({
                     ...reportStep,
                     succeeded: false,
                     duration: 0,
                 });
-                log.warn('Diagnostics.executeSteps.UnknownStep', {index, step});
+                this.logger.warn('Diagnostics.executeSteps.UnknownStep', {index, step});
             }
             index++;
         }
-        log.debug('Diagnostics.executeSteps.Finished');
+        this.logger.debug('Diagnostics.executeSteps.Finished');
     }
 
     printReport = () => {
-        log.debug('Diagnostics.printReport: ', this.report);
+        this.logger.debug('Diagnostics.printReport: ', this.report);
         return this.report;
     }
 
     sendNotificationDiagnosticsStarted = () => {
-        log.debug('Diagnostics.sendNotificationDiagnosticsStarted');
+        this.logger.debug('Diagnostics.sendNotificationDiagnosticsStarted');
     }
 
     isValidStep = (step: unknown) => {

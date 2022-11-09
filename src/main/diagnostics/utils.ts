@@ -1,26 +1,16 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {ElectronLog} from 'electron-log';
 import {DiagnosticStepResponse} from 'types/diagnostics';
 
-export function addDurationToFnReturnObject(fn: () => Promise<DiagnosticStepResponse>): () => Promise<DiagnosticStepResponse & {duration: number}> {
-    return async () => {
+export function addDurationToFnReturnObject(run: (logger: ElectronLog) => Promise<DiagnosticStepResponse>): (logger: ElectronLog) => Promise<DiagnosticStepResponse & {duration: number}> {
+    return async (logger) => {
         const startTime = Date.now();
-        const fnReturnValues = await fn();
+        const runReturnValues = await run(logger);
         return {
-            ...fnReturnValues,
+            ...runReturnValues,
             duration: Date.now() - startTime,
         };
     };
-}
-
-export function toPromise(fn: () => any) {
-    return () => new Promise<any>((resolve, reject) => {
-        try {
-            const res = fn?.();
-            resolve(res);
-        } catch (error) {
-            reject(error);
-        }
-    });
 }
