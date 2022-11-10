@@ -5,11 +5,14 @@ import log, {ElectronLog, LogLevel} from 'electron-log';
 import {DiagnosticsReport} from 'types/diagnostics';
 
 import DiagnosticsStep from './DiagnosticStep';
-import Step1 from './steps/step1.logLevel';
 import loggerHooks from './loggerHooks';
+
+import Step1 from './steps/step1.logLevel';
+import Step2 from './steps/step2.internetConnection';
 
 const SORTED_STEPS: DiagnosticsStep[] = [
     Step1,
+    Step2,
 ];
 
 class DiagnosticsModule {
