@@ -6,18 +6,21 @@ import {DiagnosticStepResponse} from 'types/diagnostics';
 
 import DiagnosticsStep from '../DiagnosticStep';
 
+const stepName = 'Step-X';
+const stepDescriptiveName = 'Template';
+
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
-        logger.debug('Diagnostics.StepTemplate.run');
+        logger.debug(`Diagnostics.${stepName}.run`);
         await Promise.resolve();
         return {
-            message: 'Step X finished successfully',
+            message: `${stepName} finished successfully`,
             succeeded: true,
         };
     } catch (error) {
-        logger.warn('Diagnostics.Step.Failure', {error});
+        logger.warn(`Diagnostics.${stepName}.Failure`, {error});
         return {
-            message: 'Step X failed',
+            message: `${stepName} failed`,
             succeeded: false,
             payload: error,
         };
@@ -25,9 +28,11 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
 };
 
 const StepTemplate = new DiagnosticsStep({
-    name: 'diagnostic-step-X/template',
+    name: `diagnostic-${stepName}/${stepDescriptiveName}`,
     retries: 0,
     run,
 });
 
 export default StepTemplate;
+
+// COPY & PASTE this file to create a new step
