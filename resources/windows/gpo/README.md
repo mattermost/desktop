@@ -1,6 +1,6 @@
-# Developer guide for using Group Policy Objects (GPO) (Windows)
+# Developer guide for using Group Policy Objects (GPO) (Windows 10 Pro)
 
-## They are used to pre-configure servers, autoUpdater and server management settings
+GPOs are used to pre-configure servers/teams, autoUpdater and server management
 
 You can read more about GPOs [here](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/policy/group-policy-objects)
 
@@ -19,3 +19,8 @@ Example:
 |------------|----------------------------------|
 | Community  | <https://community.mattermost.com> |
 8. Now if you open your Mattermost desktop application you should be able to see the server in the server dropdown (team dropdown)
+
+---
+
+### Windows 10 Home:
+The `gpedit.msc` is not available for the Home edition but, there is an open-source tool called [Policy Plus](https://github.com/Fleex255/PolicyPlus) that can help with that.
