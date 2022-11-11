@@ -37,3 +37,6 @@ export const MASK_PATH = 'LOCAL_PATH';
 export const MASK_URL = 'URL';
 
 export const LOGS_MAX_STRING_LENGTH = 24;
+
+// We use this URL inside the Diagnostics to check if the computer has internet connectivity
+export const IS_ONLINE_ENDPOINT = 'https://community.mattermost.com/api/v4/system/ping';

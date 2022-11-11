@@ -5,17 +5,24 @@ import {ElectronLog} from 'electron-log';
 import {DiagnosticStepResponse} from 'types/diagnostics';
 
 import DiagnosticsStep from '../DiagnosticStep';
+import {isOnline} from '../utils';
 
-const stepName = 'Step-1';
+const stepName = 'Step-2';
 const stepDescriptiveName = 'internetConnection';
 
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
         logger.debug(`Diagnostics.${stepName}.run`);
-        await Promise.resolve();
+        const success = await isOnline(logger);
+        if (success) {
+            return {
+                message: `${stepName} finished successfully`,
+                succeeded: true,
+            };
+        }
         return {
-            message: `${stepName} finished successfully`,
-            succeeded: true,
+            message: `${stepName} failed`,
+            succeeded: false,
         };
     } catch (error) {
         logger.warn(`Diagnostics.${stepName}.Failure`, {error});
@@ -27,10 +34,10 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     }
 };
 
-const Step1 = new DiagnosticsStep({
+const Step2 = new DiagnosticsStep({
     name: `diagnostic-${stepName}/${stepDescriptiveName}`,
     retries: 0,
     run,
 });
 
-export default Step1;
+export default Step2;
