@@ -6,37 +6,28 @@ import {DiagnosticStepResponse} from 'types/diagnostics';
 
 import DiagnosticsStep from '../DiagnosticStep';
 
-// to be removed
-const sleep = (ms = 200) => {
-    return new Promise<void>((resolve) => {
-        setTimeout(() => {
-            resolve();
-        }, ms);
-    });
-};
-
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
-        logger.debug('Diagnostics.Step1.run');
-        await sleep(10);
+        logger.debug('Diagnostics.StepTemplate.run');
+        await Promise.resolve();
         return {
-            message: 'Step 1 finished successfully',
+            message: 'Step X finished successfully',
             succeeded: true,
         };
     } catch (error) {
-        logger.warn('Diagnostics.Step1.Failure', {error});
+        logger.warn('Diagnostics.Step.Failure', {error});
         return {
-            message: 'Step 1 failed',
+            message: 'Step X failed',
             succeeded: false,
             payload: error,
         };
     }
 };
 
-const Step1 = new DiagnosticsStep({
-    name: 'diagnostic-step-1/logLevel',
+const StepTemplate = new DiagnosticsStep({
+    name: 'diagnostic-step-X/template',
     retries: 0,
     run,
 });
 
-export default Step1;
+export default StepTemplate;

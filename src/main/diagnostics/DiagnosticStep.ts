@@ -1,16 +1,16 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {DiagnosticsStepConstructorPayload, DiagnosticsStepState} from 'types/diagnostics';
+import {DiagnosticsStepConstructorPayload} from 'types/diagnostics';
 
-import {addDurationToFnReturnObject, toPromise} from './utils';
+import {addDurationToFnReturnObject} from './utils';
 
-const genericStepName = 'diagnostic-stepX/generic';
+const genericStepName = 'diagnostic-step/generic';
 
 class DiagnosticsStep {
-    name: DiagnosticsStepState['name'];
-    retries: DiagnosticsStepState['retries'];
-    run: DiagnosticsStepState['run'];
+    name: DiagnosticsStepConstructorPayload['name'];
+    retries: DiagnosticsStepConstructorPayload['retries'];
+    run: DiagnosticsStepConstructorPayload['run'];
 
     constructor({name = genericStepName, retries = 0, run}: DiagnosticsStepConstructorPayload) {
         if (typeof run !== 'function') {
@@ -18,7 +18,7 @@ class DiagnosticsStep {
         }
         this.name = name;
         this.retries = retries;
-        this.run = addDurationToFnReturnObject(toPromise(run));
+        this.run = addDurationToFnReturnObject(run);
     }
 }
 

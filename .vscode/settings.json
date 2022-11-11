@@ -23,6 +23,8 @@
         "gsettings",
         "ICONNAME",
         "loadscreen",
+        "mailhost",
+        "mailserver",
         "mmjstool",
         "NOSERVERS",
         "Ochiai",
