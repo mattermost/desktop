@@ -17,7 +17,12 @@
   "files": [
     "node_modules/bootstrap/dist/**",
     "node_modules/font-awesome/{css,fonts}/**",
-    "!**/node_modules/macos-notification-state/build/Release/.forge-meta",
+    "!**/node_modules/macos-notification-state/bin/**/*",
+    "!**/node_modules/macos-notification-state/build/**/*",
+    "!**/node_modules/windows-focus-assist/bin/**/*",
+    "!**/node_modules/windows-focus-assist/build/**/*",
+    "node_modules/macos-notification-state/build/**/*.node",
+    "node_modules/windows-focus-assist/build/Release/**/*.node",
     {
       "from": "dist",
       "to": ".",
@@ -49,8 +54,8 @@
     "priority": "optional"
   },
   "asarUnpack": [
-    "./node_modules/macos-notification-state/**/*",
-    "./node_modules/windows-focus-assist/**/*"
+    "./node_modules/macos-notification-state/build/Release/**/*.node",
+    "./node_modules/windows-focus-assist/build/Release/**/*.node"
   ],
   "linux": {
     "category": "Network;InstantMessaging",
