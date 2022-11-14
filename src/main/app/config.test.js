@@ -41,7 +41,9 @@ jest.mock('main/AutoLauncher', () => ({
 jest.mock('main/badge', () => ({
     setUnreadBadgeSetting: jest.fn(),
 }));
-jest.mock('main/tray/tray', () => ({}));
+jest.mock('main/tray/tray', () => ({
+    refreshTrayImages: jest.fn(),
+}));
 jest.mock('main/windows/windowManager', () => ({
     handleUpdateConfig: jest.fn(),
     sendToRenderer: jest.fn(),
