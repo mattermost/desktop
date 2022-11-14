@@ -633,7 +633,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
                 options.push(
                     <div
                         style={settingsPage.container}
-                        key='containerInputSpellchekerURL'
+                        key='containerInputSpellcheckerURL'
                     >
                         <input
                             disabled={!this.state.useSpellChecker}
@@ -855,8 +855,8 @@ class SettingsPage extends React.PureComponent<Props, State> {
                         style={{marginLeft: '20px'}}
                     >
                         <FormattedMessage
-                            id='renderer.components.settingsPage.trayIcon.theme'
-                            defaultMessage='Icon theme: '
+                            id='renderer.components.settingsPage.trayIcon.color'
+                            defaultMessage='Icon color: '
                         />
                         {window.process.platform === 'win32' &&
                             <>
