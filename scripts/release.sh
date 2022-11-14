@@ -14,7 +14,7 @@ function print_info {
 }
 
 function tag {
-    # not forcing tags, this might fail on purpose if tags are already created
+    # not forcing tags, this might fail on purpose if tags are already created 
     # as we don't want to overwrite automatically.
     # if this happens, you should check that versions are ok and see if there are
     # any tags locally or upstream that might conflict.
@@ -26,7 +26,7 @@ function write_package_version {
     jq ".version = \"${1}\"" ./package.json > "${temp_file}" && mv "${temp_file}" ./package.json
     temp_file="$(mktemp -t package-lock.json)"
     jq ".version = \"${1}\"" ./package-lock.json > "${temp_file}" && mv "${temp_file}" ./package-lock.json
-
+    
     git add ./package.json ./package-lock.json
     git commit -qm "Bump to version ${1}"
 }
@@ -68,7 +68,7 @@ fi
 pkg_version="$(jq -r .version package.json)"
 # remove trailing
 current_version="${pkg_version%-develop.*}"
-current_version="${current_version%-rc*}"
+current_version="${current_version%-rc.*}"
 # parse version
 IFS='.' read -r major minor micro <<<"${current_version}"
 case "${1}" in
@@ -77,14 +77,14 @@ case "${1}" in
     ;;
     "rc")
         if [[ "${branch_name}" =~ "release-" ]]; then
-            if [[ "${pkg_version}" =~ "-rc" ]]; then
-                rc="${pkg_version#*-rc}"
+            if [[ "${pkg_version}" =~ "-rc." ]]; then
+                rc="${pkg_version#*-rc.}"
             else
                 print_warning "No release candidate on the version, assuming 0"
                 rc=0
             fi
             case "${rc}" in
-                ''|*[!0-9]*)
+                ''|*[!0-9]*) 
                     print_warning "Can't guess release candidate from version, assuming 1"
                     rc=0
                 ;;
@@ -93,7 +93,7 @@ case "${1}" in
                 ;;
             esac
             print_info "Generating ${current_version} release candidate ${rc}"
-            new_pkg_version="${current_version}-rc${rc}"
+            new_pkg_version="${current_version}-rc.${rc}"
             write_package_version "${new_pkg_version}"
             tag "${new_pkg_version}" "Release candidate ${rc}"
             print_info "Locally created an rc. In order to build you'll have to:"
