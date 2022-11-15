@@ -271,5 +271,6 @@
     "renderer.downloadsDropdown.remaining": "verbleibend",
     "renderer.downloadsDropdown.Downloads": "Downloads",
     "renderer.downloadsDropdown.ClearAll": "Alle löschen",
-    "main.menus.app.view.downloads": "Downloads"
+    "main.menus.app.view.downloads": "Downloads",
+    "renderer.components.settingsPage.trayIcon.color": "Symbol Farbe: "
 }
