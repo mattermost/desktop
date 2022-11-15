@@ -14,7 +14,7 @@ function print_info {
 }
 
 function tag {
-    # not forcing tags, this might fail on purpose if tags are already created 
+    # not forcing tags, this might fail on purpose if tags are already created
     # as we don't want to overwrite automatically.
     # if this happens, you should check that versions are ok and see if there are
     # any tags locally or upstream that might conflict.
@@ -26,7 +26,7 @@ function write_package_version {
     jq ".version = \"${1}\"" ./package.json > "${temp_file}" && mv "${temp_file}" ./package.json
     temp_file="$(mktemp -t package-lock.json)"
     jq ".version = \"${1}\"" ./package-lock.json > "${temp_file}" && mv "${temp_file}" ./package-lock.json
-    
+
     git add ./package.json ./package-lock.json
     git commit -qm "Bump to version ${1}"
 }
@@ -84,7 +84,7 @@ case "${1}" in
                 rc=0
             fi
             case "${rc}" in
-                ''|*[!0-9]*) 
+                ''|*[!0-9]*)
                     print_warning "Can't guess release candidate from version, assuming 1"
                     rc=0
                 ;;
@@ -124,7 +124,7 @@ case "${1}" in
     ;;
     "patch")
         if [[ "${branch_name}" =~ "release-" ]]; then
-            new_pkg_version="${major}.${minor}.$(( micro + 1 ))-rc1"
+            new_pkg_version="${major}.${minor}.$(( micro + 1 ))-rc.1"
             print_info "Releasing v${new_pkg_version}"
             write_package_version "${new_pkg_version}"
             tag "${new_pkg_version}" "Released on $(date -u)"
@@ -147,7 +147,7 @@ case "${1}" in
                 exit 3
             fi
 
-            new_pkg_version="${new_branch_version}.0-rc1"
+            new_pkg_version="${new_branch_version}.0-rc.1"
             git checkout -b "${new_branch_name}"
             write_package_version "${new_pkg_version}"
             tag "${new_pkg_version}" "Quality branch"
@@ -164,7 +164,7 @@ case "${1}" in
             fi
             new_branch_version="${major}.${minor}"
             new_branch_name="release-${new_branch_version}"
-            new_pkg_version="${new_branch_version}.0-rc1"
+            new_pkg_version="${new_branch_version}.0-rc.1"
             master_pkg_version="${major}.$(( minor + 1 )).0-develop"
             print_info "Creating a new features branch: ${new_branch_name}"
 
