@@ -272,5 +272,6 @@
     "renderer.downloadsDropdown.remaining": "kaldı",
     "renderer.downloadsDropdown.Downloads": "İndirmeler",
     "renderer.downloadsDropdown.ClearAll": "Tümünü temizle",
-    "main.menus.app.view.downloads": "İndirmeler"
+    "main.menus.app.view.downloads": "İndirmeler",
+    "renderer.components.settingsPage.trayIcon.color": "Simge rengi: "
 }
