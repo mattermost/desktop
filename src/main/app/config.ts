@@ -67,6 +67,10 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
     setLoggingLevel(newConfig.logLevel as LogLevel);
 
     handleUpdateMenuEvent();
+    if (newConfig.trayIconTheme) {
+        refreshTrayImages(newConfig.trayIconTheme);
+    }
+
     ipcMain.emit(EMIT_CONFIGURATION, true, newConfig);
 }
 

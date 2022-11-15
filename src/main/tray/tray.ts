@@ -74,8 +74,8 @@ export function refreshTrayImages(trayIconTheme: string) {
     return trayImages;
 }
 
-export function setupTray(icontheme: string) {
-    refreshTrayImages(icontheme);
+export function setupTray(iconTheme: string) {
+    refreshTrayImages(iconTheme);
     trayIcon = new Tray(trayImages.normal);
     if (process.platform === 'darwin') {
         systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
