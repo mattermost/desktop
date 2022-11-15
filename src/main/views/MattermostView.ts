@@ -63,6 +63,9 @@ export class MattermostView extends EventEmitter {
         });
         this.view.webContents.openDevTools({mode: 'detach'});
 
+        // Don't cache the remote_entry script
+        WebRequestManager.onResponseHeaders(this.addNoCacheForRemoteEntry, this.view.webContents.id);
+
         // URL handling
         ipcMain.handle(GET_CURRENT_SERVER_URL, () => `${this.tab.server.url}`);
         WebRequestManager.rewriteURL(
@@ -92,6 +95,18 @@ export class MattermostView extends EventEmitter {
 
         // Websocket
         WebRequestManager.onRequestHeaders(this.addOriginForWebsocket);
+    }
+
+    private addNoCacheForRemoteEntry = (details: OnHeadersReceivedListenerDetails) => {
+        log.silly('WindowManager.addNoCacheForRemoteEntry', details.responseHeaders);
+
+        if (!details.url.match(new RegExp(`${this.tab.server.url}/static/remote_entry.js`))) {
+            return {} as Headers;
+        }
+
+        return {
+            'Cache-Control': 'no-cache',
+        };
     }
 
     private addOriginForWebsocket = (details: OnBeforeSendHeadersListenerDetails) => {
