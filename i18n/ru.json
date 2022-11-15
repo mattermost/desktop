@@ -260,5 +260,6 @@
     "label.cancel": "Отмена",
     "label.add": "Добавить",
     "label.accept": "Принять",
-    "common.permissions.canBasicAuth": "Веб-аутентификация"
+    "common.permissions.canBasicAuth": "Веб-аутентификация",
+    "renderer.components.settingsPage.trayIcon.color": "Цвет значка: "
 }
