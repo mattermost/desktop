@@ -271,5 +271,6 @@
     "renderer.downloadsDropdown.remaining": "resterende",
     "renderer.downloadsDropdown.Downloads": "Downloads",
     "renderer.downloadsDropdown.ClearAll": "Alles wissen",
-    "main.menus.app.view.downloads": "Downloads"
+    "main.menus.app.view.downloads": "Downloads",
+    "renderer.components.settingsPage.trayIcon.color": "Icoonkleur: "
 }
