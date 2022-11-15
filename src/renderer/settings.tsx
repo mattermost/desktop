@@ -9,8 +9,6 @@ import 'renderer/css/settings.css';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import {DARK_MODE_CHANGE, GET_DARK_MODE} from 'common/communication';
-
 import darkStyles from 'renderer/css/lazy/settings-dark.lazy.css';
 
 import SettingsPage from './components/SettingsPage';
@@ -24,8 +22,8 @@ const setDarkMode = (darkMode: boolean) => {
     }
 };
 
-window.ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => setDarkMode(darkMode));
-window.ipcRenderer.invoke(GET_DARK_MODE).then(setDarkMode);
+window.desktop.onDarkModeChange((darkMode) => setDarkMode(darkMode));
+window.desktop.getDarkMode().then(setDarkMode);
 
 const start = async () => {
     ReactDOM.render(

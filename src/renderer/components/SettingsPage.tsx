@@ -12,27 +12,15 @@ import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 import ReactSelect, {ActionMeta, MultiValue} from 'react-select';
 
 import {CombinedConfig, LocalConfiguration} from 'types/config';
+import {SaveQueueItem} from 'types/settings';
 import {DeepPartial} from 'types/utils';
 
 import {localeTranslations} from 'common/utils/constants';
-
-import {
-    GET_LOCAL_CONFIGURATION,
-    UPDATE_CONFIGURATION,
-    DOUBLE_CLICK_ON_WINDOW,
-    GET_DOWNLOAD_LOCATION,
-    RELOAD_CONFIGURATION,
-    GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
-    CHECK_FOR_UPDATES,
-    GET_AVAILABLE_LANGUAGES,
-} from 'common/communication';
 
 import AutoSaveIndicator, {SavingState} from './AutoSaveIndicator';
 
 const CONFIG_TYPE_UPDATES = 'updates';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
-
-type ConfigType = typeof CONFIG_TYPE_UPDATES | typeof CONFIG_TYPE_APP_OPTIONS;
 
 type Props = {
     intl: IntlShape;
@@ -52,12 +40,6 @@ type State = DeepPartial<CombinedConfig> & {
 type SavingStateItems = {
     appOptions: SavingState;
     updates: SavingState;
-}
-
-type SaveQueueItem = {
-    configType: ConfigType;
-    key: keyof CombinedConfig;
-    data: CombinedConfig[keyof CombinedConfig];
 }
 
 class SettingsPage extends React.PureComponent<Props, State> {
@@ -125,18 +107,18 @@ class SettingsPage extends React.PureComponent<Props, State> {
     }
 
     componentDidMount() {
-        window.ipcRenderer.on(RELOAD_CONFIGURATION, () => {
+        window.desktop.onReloadConfiguration(() => {
             this.updateSaveState();
             this.getConfig();
         });
 
-        window.ipcRenderer.invoke(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES).then((languages: string[]) => {
+        window.desktop.getAvailableSpellCheckerLanguages().then((languages: string[]) => {
             const availableSpellcheckerLanguages = languages.filter((language) => localeTranslations[language]).map((language) => ({label: localeTranslations[language], value: language}));
             availableSpellcheckerLanguages.sort((a, b) => a.label.localeCompare(b.label));
             this.setState({availableSpellcheckerLanguages});
         });
 
-        window.ipcRenderer.invoke(GET_AVAILABLE_LANGUAGES).then((languages: string[]) => {
+        window.desktop.getAvailableLanguages().then((languages: string[]) => {
             const availableLanguages = languages.filter((language) => localeTranslations[language]).map((language) => ({label: localeTranslations[language], value: language}));
             availableLanguages.sort((a, b) => a.label.localeCompare(b.label));
             this.setState({availableLanguages});
@@ -144,8 +126,8 @@ class SettingsPage extends React.PureComponent<Props, State> {
     }
 
     getConfig = () => {
-        window.ipcRenderer.invoke(GET_LOCAL_CONFIGURATION).then((config) => {
-            this.setState({ready: true, maximized: false, ...this.convertConfigDataToState(config, this.state) as Omit<State, 'ready'>});
+        window.desktop.getLocalConfiguration().then((config) => {
+            this.setState({ready: true, maximized: false, ...this.convertConfigDataToState(config as Partial<LocalConfiguration>, this.state) as Omit<State, 'ready'>});
         });
     }
 
@@ -159,7 +141,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
         return newState;
     }
 
-    saveSetting = (configType: ConfigType, {key, data}: {key: keyof CombinedConfig; data: CombinedConfig[keyof CombinedConfig]}) => {
+    saveSetting = (configType: 'updates' | 'appOptions', {key, data}: {key: keyof CombinedConfig; data: CombinedConfig[keyof CombinedConfig]}) => {
         this.saveQueue.push({
             configType,
             key,
@@ -177,7 +159,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
         this.savingIsDebounced = true;
         setTimeout(() => {
             this.savingIsDebounced = false;
-            window.ipcRenderer.send(UPDATE_CONFIGURATION, this.saveQueue.splice(0, this.saveQueue.length));
+            window.desktop.updateConfiguration(this.saveQueue.splice(0, this.saveQueue.length));
         }, 500);
     }
 
@@ -353,7 +335,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
     }
 
     checkForUpdates = () => {
-        window.ipcRenderer.send(CHECK_FOR_UPDATES);
+        window.desktop.checkForUpdates();
     }
 
     handleChangeSpellCheckerLocales = (value: MultiValue<{label: string; value: string}>, actionMeta: ActionMeta<{label: string; value: string}>) => {
@@ -402,7 +384,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
 
     selectDownloadLocation = () => {
         if (!this.state.userOpenedDownloadDialog) {
-            window.ipcRenderer.invoke(GET_DOWNLOAD_LOCATION, this.state.downloadLocation).then((result) => this.saveDownloadLocation(result));
+            window.desktop.getDownloadLocation(this.state.downloadLocation).then((result) => this.saveDownloadLocation(result));
             this.setState({userOpenedDownloadDialog: true});
         }
         this.setState({userOpenedDownloadDialog: false});
@@ -434,7 +416,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
     }
 
     handleDoubleClick = () => {
-        window.ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW, 'settings');
+        window.desktop.doubleClickOnWindow('settings');
     }
 
     render() {
