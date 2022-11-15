@@ -271,5 +271,6 @@
     "renderer.downloadsDropdown.remaining": "pozostałe",
     "renderer.downloadsDropdown.Downloads": "Do pobrania",
     "renderer.downloadsDropdown.ClearAll": "Wyczyść Wszystko",
-    "main.menus.app.view.downloads": "Do pobrania"
+    "main.menus.app.view.downloads": "Do pobrania",
+    "renderer.components.settingsPage.trayIcon.color": "Kolor ikony: "
 }
