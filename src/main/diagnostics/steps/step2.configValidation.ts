@@ -20,7 +20,7 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
         const configData = JSON.parse(fs.readFileSync(Config.configFilePath, 'utf8'));
 
         // validate based on config file version
-        const validData = Validator.validateAnyConfigData(configData);
+        const validData = Validator.validateConfigData(configData);
 
         if (!validData) {
             throw new Error(`Config validation failed. Config: ${JSON.stringify(Config.combinedData, null, 4)}`);

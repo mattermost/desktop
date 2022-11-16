@@ -357,7 +357,7 @@ export class Config extends EventEmitter {
             configData = this.readFileSync(this.configFilePath);
 
             // validate based on config file version
-            configData = Validator.validateAnyConfigData(configData);
+            configData = Validator.validateConfigData(configData);
 
             if (!configData) {
                 throw new Error('Provided configuration file does not validate, using defaults instead.');

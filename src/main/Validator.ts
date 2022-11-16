@@ -260,22 +260,17 @@ export function validateV3ConfigData(data: ConfigV3) {
     return validateAgainstSchema(data, configDataSchemaV3);
 }
 
-export function validateAnyConfigData(data: AnyConfig) {
-    let configData;
+export function validateConfigData(data: AnyConfig) {
     switch (data.version) {
     case 3:
-        configData = validateV3ConfigData(data)!;
-        break;
+        return validateV3ConfigData(data)!;
     case 2:
-        configData = validateV2ConfigData(data)!;
-        break;
+        return validateV2ConfigData(data)!;
     case 1:
-        configData = validateV1ConfigData(data)!;
-        break;
+        return validateV1ConfigData(data)!;
     default:
-        configData = validateV0ConfigData(data)!;
+        return validateV0ConfigData(data)!;
     }
-    return configData;
 }
 
 // validate certificate.json
