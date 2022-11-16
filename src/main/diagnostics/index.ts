@@ -1,9 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import path from 'path';
-
-import {app, shell} from 'electron';
+import {shell} from 'electron';
 import log, {ElectronLog, LogLevel} from 'electron-log';
 import {DiagnosticsReport} from 'types/diagnostics';
 
@@ -11,7 +9,6 @@ import DiagnosticsStep from './DiagnosticStep';
 
 import Step1 from './steps/step1.logConfig';
 import Step2 from './steps/step2.internetConnection';
-import loggerHooks from './steps/internal/loggerHooks';
 
 const SORTED_STEPS: DiagnosticsStep[] = [
     Step1,
@@ -28,7 +25,6 @@ class DiagnosticsModule {
     run = async () => {
         this.logger.debug('Diagnostics run');
         this.initializeValues();
-        this.configureLogger();
         this.sendNotificationDiagnosticsStarted();
         await this.executeSteps();
         this.printReport();
@@ -43,20 +39,6 @@ class DiagnosticsModule {
         this.stepTotal = clear ? 0 : this.getStepCount();
         this.report = [];
         this.initialLogLevel = this.logger.transports.console.level || 'info';
-    }
-
-    configureLogger = () => {
-        const now = new Date();
-        const filename = `diagnostics_${now.getDate()}-${now.getMonth()}-${now.getFullYear()}_${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}-${now.getMilliseconds()}`;
-        const pathToFile = path.join(app.getAppPath(), `logs/${filename}.txt`);
-        this.logger.transports.file.resolvePath = () => pathToFile;
-        this.logger.transports.file.fileName = filename;
-
-        this.logger.debug('ConfigureLogger', {filename, pathToFile});
-
-        this.logger.hooks.push(...loggerHooks(this.logger));
-        this.logger.transports.file.level = 'silly';
-        this.logger.transports.console.level = 'silly';
     }
 
     getStepCount = () => {
