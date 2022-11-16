@@ -3,7 +3,7 @@
 
 import {DiagnosticsStepConstructorPayload} from 'types/diagnostics';
 
-import {addDurationToFnReturnObject} from './utils';
+import {addDurationToFnReturnObject} from './steps/internal/utils';
 
 const genericStepName = 'diagnostic-step/generic';
 
