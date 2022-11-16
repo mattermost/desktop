@@ -86,6 +86,8 @@ export class MattermostView extends EventEmitter {
             this.view.webContents.id,
         );
 
+        WebRequestManager.onResponseHeaders(this.addCSPHeader, this.view.webContents.id);
+
         // Cookies
         this.cookies = [];
         ipcMain.handle(SETUP_INITIAL_COOKIES, this.setupCookies);
@@ -170,11 +172,9 @@ export class MattermostView extends EventEmitter {
             url: `${this.tab.server.url}`,
         }))];
         return this.cookies;
-
-        WebRequestManager.onResponseHeaders(this.addCSPHeader, this.view.webContents.id);
     }
 
-    addCSPHeader = (details: OnHeadersReceivedListenerDetails) => {
+    private addCSPHeader = (details: OnHeadersReceivedListenerDetails) => {
         if (details.url === getLocalURLString('index.html')) {
             return {
                 'Content-Security-Policy': [makeCSPHeader(this.tab.server.url, this.serverInfo.remoteInfo.cspHeader)],
