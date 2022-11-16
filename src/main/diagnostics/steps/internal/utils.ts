@@ -49,7 +49,7 @@ export async function isOnline(logger: ElectronLog = log): Promise<boolean> {
                 resolve(false);
             });
         }).on('error', (err) => {
-            logger.error('diagnostics.isOnline.Error', {err});
+            logger.error('diagnostics isOnline Error', {err});
             resolve(false);
         });
     });

@@ -2,23 +2,24 @@
 // See LICENSE.txt for license information.
 
 import {ElectronLog} from 'electron-log';
+
 import {DiagnosticStepResponse} from 'types/diagnostics';
 
 import DiagnosticsStep from '../DiagnosticStep';
 
 const stepName = 'Step-1';
-const stepDescriptiveName = 'internetConnection';
+const stepDescriptiveName = 'logConfig';
 
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
-        logger.debug(`Diagnostics.${stepName}.run`);
         await Promise.resolve();
+
         return {
             message: `${stepName} finished successfully`,
             succeeded: true,
         };
     } catch (error) {
-        logger.warn(`Diagnostics.${stepName}.Failure`, {error});
+        logger.warn(`Diagnostics ${stepName} Failure`, {error});
         return {
             message: `${stepName} failed`,
             succeeded: false,
