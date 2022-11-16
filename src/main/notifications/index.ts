@@ -4,7 +4,6 @@
 import {shell, Notification} from 'electron';
 import log from 'electron-log';
 
-import {getFocusAssist, isPriority} from 'windows-focus-assist';
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import {MentionData} from 'types/notification';
@@ -18,6 +17,7 @@ import {Mention} from './Mention';
 import {DownloadNotification} from './Download';
 import {NewVersionNotification, UpgradeNotification} from './Upgrade';
 import getLinuxDoNotDisturb from './dnd-linux';
+import getWindowsDoNotDisturb from './dnd-windows';
 
 export const currentNotifications = new Map();
 
@@ -140,13 +140,7 @@ export function displayRestartToUpgrade(version: string, handleUpgrade: () => vo
 
 function getDoNotDisturb() {
     if (process.platform === 'win32') {
-        const focusAssistValue = getFocusAssist().value;
-        switch (focusAssistValue) {
-        case 1:
-            return !isPriority('Mattermost.Desktop');
-        default:
-            return focusAssistValue;
-        }
+        return getWindowsDoNotDisturb();
     }
 
     if (process.platform === 'darwin') {
