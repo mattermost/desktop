@@ -29,9 +29,9 @@ export function truncateString(str: string, maxLength = LOGS_MAX_STRING_LENGTH):
     return str;
 }
 
-export async function isOnline(logger: ElectronLog = log): Promise<boolean> {
+export async function isOnline(logger: ElectronLog = log, url = IS_ONLINE_ENDPOINT): Promise<boolean> {
     return new Promise<boolean>((resolve) => {
-        https.get(IS_ONLINE_ENDPOINT, (resp) => {
+        https.get(url, (resp) => {
             let data = '';
 
             // A chunk of data has been received.
@@ -41,6 +41,7 @@ export async function isOnline(logger: ElectronLog = log): Promise<boolean> {
 
             // The whole response has been received. Print out the result.
             resp.on('end', () => {
+                logger.debug('resp.on.end', {data});
                 const respBody = JSON.parse(data);
                 if (respBody.status === 'OK') {
                     resolve(true);

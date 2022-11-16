@@ -5,7 +5,7 @@ import log from 'electron-log';
 import Joi from 'joi';
 
 import {Args} from 'types/args';
-import {ConfigV0, ConfigV1, ConfigV2, ConfigV3, TeamWithTabs} from 'types/config';
+import {AnyConfig, ConfigV0, ConfigV1, ConfigV2, ConfigV3, TeamWithTabs} from 'types/config';
 import {DownloadedItems} from 'types/downloads';
 import {SavedWindowState} from 'types/mainWindow';
 import {AppState} from 'types/appState';
@@ -258,6 +258,24 @@ export function validateV3ConfigData(data: ConfigV3) {
         delete data.spellCheckerURL;
     }
     return validateAgainstSchema(data, configDataSchemaV3);
+}
+
+export function validateAnyConfigData(data: AnyConfig) {
+    let configData;
+    switch (data.version) {
+    case 3:
+        configData = validateV3ConfigData(data)!;
+        break;
+    case 2:
+        configData = validateV2ConfigData(data)!;
+        break;
+    case 1:
+        configData = validateV1ConfigData(data)!;
+        break;
+    default:
+        configData = validateV0ConfigData(data)!;
+    }
+    return configData;
 }
 
 // validate certificate.json

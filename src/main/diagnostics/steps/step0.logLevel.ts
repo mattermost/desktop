@@ -12,7 +12,7 @@ import DiagnosticsStep from '../DiagnosticStep';
 
 import loggerHooks from './internal/loggerHooks';
 
-const stepName = 'Step-1';
+const stepName = 'Step-0';
 const stepDescriptiveName = 'logConfig';
 
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
