@@ -11,14 +11,14 @@ const stepDescriptiveName = 'Template';
 
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
-        logger.debug(`Diagnostics.${stepName}.run`);
+        logger.debug(`Diagnostics ${stepName} run`);
         await Promise.resolve();
         return {
             message: `${stepName} finished successfully`,
             succeeded: true,
         };
     } catch (error) {
-        logger.warn(`Diagnostics.${stepName}.Failure`, {error});
+        logger.warn(`Diagnostics ${stepName} Failure`, {error});
         return {
             message: `${stepName} failed`,
             succeeded: false,
