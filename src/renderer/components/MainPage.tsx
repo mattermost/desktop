@@ -15,6 +15,8 @@ import {DownloadedItems} from 'types/downloads';
 
 import {getTabViewName} from 'common/tabs/TabView';
 
+import {getAPI} from 'renderer/api';
+
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
 import minimizeButton from '../../assets/titlebar/chrome-minimize.svg';
@@ -123,7 +125,7 @@ class MainPage extends React.PureComponent<Props, State> {
 
     async requestDownloadsLength() {
         try {
-            const hasDownloads = await window.desktop.requestHasDownloads();
+            const hasDownloads = await getAPI().requestHasDownloads();
             this.setState({
                 hasDownloads,
             });
@@ -137,7 +139,7 @@ class MainPage extends React.PureComponent<Props, State> {
         this.requestDownloadsLength();
 
         // set page on retry
-        window.desktop.onLoadRetry((viewName, retry, err, loadUrl) => {
+        getAPI().onLoadRetry((viewName, retry, err, loadUrl) => {
             console.log(`${viewName}: failed to load ${err}, but retrying`);
             const statusValue = {
                 status: Status.RETRY,
@@ -150,11 +152,11 @@ class MainPage extends React.PureComponent<Props, State> {
             this.updateTabStatus(viewName, statusValue);
         });
 
-        window.desktop.onLoadSuccess((viewName) => {
+        getAPI().onLoadSuccess((viewName) => {
             this.updateTabStatus(viewName, {status: Status.DONE});
         });
 
-        window.desktop.onLoadFailed((viewName, err, loadUrl) => {
+        getAPI().onLoadFailed((viewName, err, loadUrl) => {
             console.log(`${viewName}: failed to load ${err}`);
             const statusValue = {
                 status: Status.FAILED,
@@ -166,39 +168,39 @@ class MainPage extends React.PureComponent<Props, State> {
             this.updateTabStatus(viewName, statusValue);
         });
 
-        window.desktop.onDarkModeChange((darkMode) => {
+        getAPI().onDarkModeChange((darkMode) => {
             this.setState({darkMode});
         });
 
         // can't switch tabs sequentially for some reason...
-        window.desktop.onSetActiveView((serverName, tabName) => {
+        getAPI().onSetActiveView((serverName, tabName) => {
             this.setState({activeServerName: serverName, activeTabName: tabName});
         });
 
-        window.desktop.onMaximizeChange(this.handleMaximizeState);
+        getAPI().onMaximizeChange(this.handleMaximizeState);
 
-        window.desktop.onEnterFullScreen(() => this.handleFullScreenState(true));
-        window.desktop.onLeaveFullScreen(() => this.handleFullScreenState(false));
+        getAPI().onEnterFullScreen(() => this.handleFullScreenState(true));
+        getAPI().onLeaveFullScreen(() => this.handleFullScreenState(false));
 
-        window.desktop.getFullScreenStatus().then((fullScreenStatus) => this.handleFullScreenState(fullScreenStatus));
+        getAPI().getFullScreenStatus().then((fullScreenStatus) => this.handleFullScreenState(fullScreenStatus));
 
-        window.desktop.onPlaySound((soundName) => {
+        getAPI().onPlaySound((soundName) => {
             playSound(soundName);
         });
 
-        window.desktop.onModalOpen(() => {
+        getAPI().onModalOpen(() => {
             this.setState({modalOpen: true});
         });
 
-        window.desktop.onModalClose(() => {
+        getAPI().onModalClose(() => {
             this.setState({modalOpen: false});
         });
 
-        window.desktop.onToggleBackButton((showExtraBar) => {
+        getAPI().onToggleBackButton((showExtraBar) => {
             this.setState({showExtraBar});
         });
 
-        window.desktop.onUpdateMentions((view, mentions, unreads, isExpired) => {
+        getAPI().onUpdateMentions((view, mentions, unreads, isExpired) => {
             const {unreadCounts, mentionCounts, sessionsExpired} = this.state;
 
             const newMentionCounts = {...mentionCounts};
@@ -213,40 +215,40 @@ class MainPage extends React.PureComponent<Props, State> {
             this.setState({unreadCounts: newUnreads, mentionCounts: newMentionCounts, sessionsExpired: expired});
         });
 
-        window.desktop.onCloseTeamsDropdown(() => {
+        getAPI().onCloseTeamsDropdown(() => {
             this.setState({isMenuOpen: false});
         });
 
-        window.desktop.onOpenTeamsDropdown(() => {
+        getAPI().onOpenTeamsDropdown(() => {
             this.setState({isMenuOpen: true});
         });
 
-        window.desktop.onCloseDownloadsDropdown(() => {
+        getAPI().onCloseDownloadsDropdown(() => {
             this.setState({isDownloadsDropdownOpen: false});
         });
 
-        window.desktop.onOpenDownloadsDropdown(() => {
+        getAPI().onOpenDownloadsDropdown(() => {
             this.setState({isDownloadsDropdownOpen: true});
         });
 
-        window.desktop.onShowDownloadsDropdownButtonBadge(() => {
+        getAPI().onShowDownloadsDropdownButtonBadge(() => {
             this.setState({showDownloadsBadge: true});
         });
 
-        window.desktop.onHideDownloadsDropdownButtonBadge(() => {
+        getAPI().onHideDownloadsDropdownButtonBadge(() => {
             this.setState({showDownloadsBadge: false});
         });
 
-        window.desktop.onUpdateDownloadsDropdown((downloads: DownloadedItems) => {
+        getAPI().onUpdateDownloadsDropdown((downloads: DownloadedItems) => {
             this.setState({
                 hasDownloads: (Object.values(downloads)?.length || 0) > 0,
             });
         });
 
-        window.desktop.onAppMenuWillClose(this.unFocusThreeDotsButton);
+        getAPI().onAppMenuWillClose(this.unFocusThreeDotsButton);
 
         if (window.process.platform !== 'darwin') {
-            window.desktop.onFocusThreeDotMenu(this.focusThreeDotsButton);
+            getAPI().onFocusThreeDotMenu(this.focusThreeDotsButton);
         }
 
         window.addEventListener('click', this.handleCloseDropdowns);
@@ -257,7 +259,7 @@ class MainPage extends React.PureComponent<Props, State> {
     }
 
     handleCloseDropdowns = () => {
-        window.desktop.closeTeamsDropdown();
+        getAPI().closeTeamsDropdown();
         this.closeDownloadsDropdown();
     }
 
@@ -273,14 +275,14 @@ class MainPage extends React.PureComponent<Props, State> {
         if (!this.state.activeServerName) {
             return;
         }
-        window.desktop.switchTab(this.state.activeServerName, name);
+        getAPI().switchTab(this.state.activeServerName, name);
     }
 
     handleCloseTab = (name: string) => {
         if (!this.state.activeServerName) {
             return;
         }
-        window.desktop.closeTab(this.state.activeServerName, name);
+        getAPI().closeTab(this.state.activeServerName, name);
     }
 
     handleDragAndDrop = async (dropResult: DropResult) => {
@@ -307,21 +309,21 @@ class MainPage extends React.PureComponent<Props, State> {
 
     handleClose = (e: React.MouseEvent<HTMLDivElement>) => {
         e.stopPropagation(); // since it is our button, the event goes into MainPage's onclick event, getting focus back.
-        window.desktop.closeWindow();
+        getAPI().closeWindow();
     }
 
     handleMinimize = (e: React.MouseEvent<HTMLDivElement>) => {
         e.stopPropagation();
-        window.desktop.minimizeWindow();
+        getAPI().minimizeWindow();
     }
 
     handleMaximize = (e: React.MouseEvent<HTMLDivElement>) => {
         e.stopPropagation();
-        window.desktop.maximizeWindow();
+        getAPI().maximizeWindow();
     }
 
     handleRestore = () => {
-        window.desktop.restoreWindow();
+        getAPI().restoreWindow();
     }
 
     openMenu = () => {
@@ -329,16 +331,16 @@ class MainPage extends React.PureComponent<Props, State> {
     }
 
     handleDoubleClick = () => {
-        window.desktop.doubleClickOnWindow();
+        getAPI().doubleClickOnWindow();
     }
 
     focusOnWebView = () => {
-        window.desktop.focusBrowserView();
+        getAPI().focusBrowserView();
         this.handleCloseDropdowns();
     }
 
     reloadCurrentView = () => {
-        window.desktop.reloadCurrentView();
+        getAPI().reloadCurrentView();
     }
 
     showHideDownloadsBadge(value = false) {
@@ -346,12 +348,12 @@ class MainPage extends React.PureComponent<Props, State> {
     }
 
     closeDownloadsDropdown() {
-        window.desktop.closeDownloadsDropdown();
-        window.desktop.closeDownloadsDropdownMenu();
+        getAPI().closeDownloadsDropdown();
+        getAPI().closeDownloadsDropdownMenu();
     }
 
     openDownloadsDropdown() {
-        window.desktop.openDownloadsDropdown();
+        getAPI().openDownloadsDropdown();
     }
 
     focusThreeDotsButton = () => {
@@ -555,7 +557,7 @@ class MainPage extends React.PureComponent<Props, State> {
                     darkMode={this.state.darkMode}
                     show={this.state.showExtraBar}
                     goBack={() => {
-                        window.desktop.goBack();
+                        getAPI().goBack();
                     }}
                 />
                 <Row>

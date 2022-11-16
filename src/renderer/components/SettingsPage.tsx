@@ -17,6 +17,8 @@ import {DeepPartial} from 'types/utils';
 
 import {localeTranslations} from 'common/utils/constants';
 
+import {getAPI} from 'renderer/api';
+
 import AutoSaveIndicator, {SavingState} from './AutoSaveIndicator';
 
 const CONFIG_TYPE_UPDATES = 'updates';
@@ -107,18 +109,18 @@ class SettingsPage extends React.PureComponent<Props, State> {
     }
 
     componentDidMount() {
-        window.desktop.onReloadConfiguration(() => {
+        getAPI().onReloadConfiguration(() => {
             this.updateSaveState();
             this.getConfig();
         });
 
-        window.desktop.getAvailableSpellCheckerLanguages().then((languages: string[]) => {
+        getAPI().getAvailableSpellCheckerLanguages().then((languages: string[]) => {
             const availableSpellcheckerLanguages = languages.filter((language) => localeTranslations[language]).map((language) => ({label: localeTranslations[language], value: language}));
             availableSpellcheckerLanguages.sort((a, b) => a.label.localeCompare(b.label));
             this.setState({availableSpellcheckerLanguages});
         });
 
-        window.desktop.getAvailableLanguages().then((languages: string[]) => {
+        getAPI().getAvailableLanguages().then((languages: string[]) => {
             const availableLanguages = languages.filter((language) => localeTranslations[language]).map((language) => ({label: localeTranslations[language], value: language}));
             availableLanguages.sort((a, b) => a.label.localeCompare(b.label));
             this.setState({availableLanguages});
@@ -126,7 +128,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
     }
 
     getConfig = () => {
-        window.desktop.getLocalConfiguration().then((config) => {
+        getAPI().getLocalConfiguration().then((config) => {
             this.setState({ready: true, maximized: false, ...this.convertConfigDataToState(config as Partial<LocalConfiguration>, this.state) as Omit<State, 'ready'>});
         });
     }
@@ -159,7 +161,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
         this.savingIsDebounced = true;
         setTimeout(() => {
             this.savingIsDebounced = false;
-            window.desktop.updateConfiguration(this.saveQueue.splice(0, this.saveQueue.length));
+            getAPI().updateConfiguration(this.saveQueue.splice(0, this.saveQueue.length));
         }, 500);
     }
 
@@ -335,7 +337,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
     }
 
     checkForUpdates = () => {
-        window.desktop.checkForUpdates();
+        getAPI().checkForUpdates();
     }
 
     handleChangeSpellCheckerLocales = (value: MultiValue<{label: string; value: string}>, actionMeta: ActionMeta<{label: string; value: string}>) => {
@@ -384,7 +386,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
 
     selectDownloadLocation = () => {
         if (!this.state.userOpenedDownloadDialog) {
-            window.desktop.getDownloadLocation(this.state.downloadLocation).then((result) => this.saveDownloadLocation(result));
+            getAPI().getDownloadLocation(this.state.downloadLocation).then((result) => this.saveDownloadLocation(result));
             this.setState({userOpenedDownloadDialog: true});
         }
         this.setState({userOpenedDownloadDialog: false});
@@ -416,7 +418,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
     }
 
     handleDoubleClick = () => {
-        window.desktop.doubleClickOnWindow('settings');
+        getAPI().doubleClickOnWindow('settings');
     }
 
     render() {

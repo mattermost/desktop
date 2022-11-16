@@ -11,6 +11,7 @@ import {createHashHistory, History} from 'history';
 
 import {CombinedConfig, Team} from 'types/config';
 
+import {getAPI, setAPI} from './api';
 import MainPage from './components/MainPage';
 import IntlProvider from './intl_provider';
 
@@ -40,6 +41,15 @@ class Root extends React.PureComponent<Record<string, never>, State> {
     }
 
     async componentDidMount() {
+        await setAPI();
+
+        getAPI().getVersion().then(({name, version}) => {
+            // eslint-disable-next-line no-undef
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            console.log(`Starting ${name} v${version}${__HASH_VERSION__ ? ` commit: ${__HASH_VERSION__}` : ''}`);
+        });
+
         this.registry = await import('mattermost_webapp/registry');
         this.registry?.setModule<History>('utils/browser_history', createHashHistory());
 
@@ -82,11 +92,11 @@ class Root extends React.PureComponent<Record<string, never>, State> {
 
         await this.setInitialConfig();
 
-        window.desktop.onSynchronizeConfig(() => {
+        getAPI().onSynchronizeConfig(() => {
             this.reloadConfig();
         });
 
-        window.desktop.onReloadConfiguration(() => {
+        getAPI().onReloadConfiguration(() => {
             this.reloadConfig();
         });
 
@@ -138,7 +148,7 @@ class Root extends React.PureComponent<Record<string, never>, State> {
     };
 
     teamConfigChange = async (updatedTeams: Team[]) => {
-        window.desktop.updateTeams(updatedTeams).then(() => {
+        getAPI().updateTeams(updatedTeams).then(() => {
             this.reloadConfig();
         });
     };
@@ -151,12 +161,12 @@ class Root extends React.PureComponent<Record<string, never>, State> {
     requestConfig = async (exitOnError?: boolean) => {
         // todo: should we block?
         try {
-            const configRequest = await window.desktop.getConfiguration() as CombinedConfig;
+            const configRequest = await getAPI().getConfiguration() as CombinedConfig;
             return configRequest;
         } catch (err: any) {
             console.log(`there was an error with the config: ${err}`);
             if (exitOnError) {
-                window.desktop.quit(`unable to load configuration: ${err}`, err.stack);
+                getAPI().quit(`unable to load configuration: ${err}`, err.stack);
             }
         }
         return undefined;
@@ -164,7 +174,7 @@ class Root extends React.PureComponent<Record<string, never>, State> {
 
     openMenu = () => {
         if (window.process.platform !== 'darwin') {
-            window.desktop.openAppMenu();
+            getAPI().openAppMenu();
         }
     }
 
@@ -173,6 +183,7 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         if (!config) {
             return null;
         }
+
         return (
             <>
                 <div id='main'>
@@ -195,12 +206,6 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         );
     }
 }
-window.desktop.getVersion().then(({name, version}) => {
-    // eslint-disable-next-line no-undef
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    console.log(`Starting ${name} v${version}${__HASH_VERSION__ ? ` commit: ${__HASH_VERSION__}` : ''}`);
-});
 
 ReactDOM.render(
     <Root/>,

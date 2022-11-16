@@ -35,6 +35,7 @@ import {
     CALLS_LEAVE_CALL,
     DESKTOP_SOURCES_MODAL_REQUEST,
     CALLS_WIDGET_CHANNEL_LINK_CLICK,
+    GET_DESKTOP_APP_API,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
@@ -74,9 +75,12 @@ export class WindowManager {
     downloadsDropdownMenu?: DownloadsDropdownMenuView;
     currentServerName?: string;
 
+    hasAPIById: number[];
+
     constructor() {
         this.mainWindowReady = false;
         this.assetsDir = path.resolve(app.getAppPath(), 'assets');
+        this.hasAPIById = [];
 
         ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.handle(GET_LOADING_SCREEN_DATA, this.handleLoadingScreenDataRequest);
@@ -96,7 +100,16 @@ export class WindowManager {
         ipcMain.on(CALLS_LEAVE_CALL, () => this.callsWidgetWindow?.close());
         ipcMain.on(DESKTOP_SOURCES_MODAL_REQUEST, this.handleDesktopSourcesModalRequest);
         ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.handleCallsWidgetChannelLinkClick);
+        ipcMain.handle(GET_DESKTOP_APP_API, this.handleGetApi);
     }
+
+    private handleGetApi = (event: IpcMainInvokeEvent) => {
+        if (this.hasAPIById.includes(event.sender.id)) {
+            return false;
+        }
+        this.hasAPIById.push(event.sender.id);
+        return true;
+    };
 
     handleUpdateConfig = () => {
         if (this.viewManager) {

@@ -171,3 +171,5 @@ export const DOWNLOADS_DROPDOWN_MENU_OPEN_FILE = 'downloads-dropdown-menu-open-f
 export const GET_CURRENT_SERVER_URL = 'get-current-server-url';
 export const SETUP_INITIAL_COOKIES = 'setup-initial-cookies';
 export const SET_COOKIE = 'set-cookie';
+
+export const GET_DESKTOP_APP_API = 'get-desktop-app-api';

@@ -5,6 +5,8 @@ import classNames from 'classnames';
 import React, {useEffect} from 'react';
 import {FormattedMessage} from 'react-intl';
 
+import {getAPI} from 'renderer/api';
+
 import '../css/components/TeamDropdownButton.scss';
 
 type Props = {
@@ -30,9 +32,9 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
         event.preventDefault();
         event.stopPropagation();
         if (isMenuOpen) {
-            window.desktop.closeTeamsDropdown();
+            getAPI().closeTeamsDropdown();
         } else {
-            window.desktop.openTeamsDropdown();
+            getAPI().openTeamsDropdown();
         }
     };
 
