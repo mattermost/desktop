@@ -270,5 +270,6 @@
     "renderer.downloadsDropdown.ClearAll": "Clear All",
     "main.menus.app.view.downloads": "Downloads",
     "renderer.time.sec": "seconds",
-    "renderer.time.mins": "minutes"
+    "renderer.time.mins": "minutes",
+    "renderer.components.errorView.havingTroubleConnecting": "A connection to {appName} couldn't be established. Retrying..."
 }
