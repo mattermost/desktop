@@ -24,6 +24,7 @@ jest.mock('main/Validator', () => ({
     validateV1ConfigData: (configData) => (configData.version === 1 ? configData : null),
     validateV2ConfigData: (configData) => (configData.version === 2 ? configData : null),
     validateV3ConfigData: (configData) => (configData.version === 3 ? configData : null),
+    validateConfigData: (configData) => (configData.version === 3 ? configData : null),
 }));
 
 jest.mock('common/tabs/TabView', () => ({

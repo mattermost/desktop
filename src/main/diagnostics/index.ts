@@ -7,10 +7,12 @@ import {DiagnosticsReport} from 'types/diagnostics';
 
 import DiagnosticsStep from './DiagnosticStep';
 
-import Step1 from './steps/step1.logConfig';
-import Step2 from './steps/step2.internetConnection';
+import Step0 from './steps/step0.logLevel';
+import Step1 from './steps/step1.internetConnection';
+import Step2 from './steps/step2.configValidation';
 
 const SORTED_STEPS: DiagnosticsStep[] = [
+    Step0,
     Step1,
     Step2,
 ];
@@ -62,6 +64,7 @@ class DiagnosticsModule {
                 this.report.push({
                     ...stepResult,
                     ...reportStep,
+                    payload: JSON.stringify(stepResult.payload, null, 4),
                 });
                 this.logger.debug('Diagnostics executeSteps StepCompleted', {index, name: step.name, retries: step.retries, stepResult});
             } else {

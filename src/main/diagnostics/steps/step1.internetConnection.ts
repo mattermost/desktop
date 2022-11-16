@@ -8,7 +8,7 @@ import DiagnosticsStep from '../DiagnosticStep';
 
 import {isOnline} from './internal/utils';
 
-const stepName = 'Step-2';
+const stepName = 'Step-1';
 const stepDescriptiveName = 'internetConnection';
 
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
