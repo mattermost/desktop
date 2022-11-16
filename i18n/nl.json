@@ -257,7 +257,7 @@
     "renderer.time.sec": "sec",
     "renderer.time.hours": "uren",
     "renderer.downloadsDropdownMenu.ShowInFinder": "Tonen in Finder",
-    "renderer.downloadsDropdownMenu.ShowInFileExplorer": "Tonen in bestandsverkenner",
+    "renderer.downloadsDropdownMenu.ShowInFileExplorer": "Bestand in verkenner tonen",
     "renderer.downloadsDropdownMenu.ShowInFolder": "Tonen in map",
     "renderer.downloadsDropdownMenu.ShowInFileManager": "Tonen in bestandsbeheer",
     "renderer.downloadsDropdownMenu.Open": "Openen",
@@ -271,5 +271,6 @@
     "renderer.downloadsDropdown.remaining": "resterende",
     "renderer.downloadsDropdown.Downloads": "Downloads",
     "renderer.downloadsDropdown.ClearAll": "Alles wissen",
-    "main.menus.app.view.downloads": "Downloads"
+    "main.menus.app.view.downloads": "Downloads",
+    "renderer.components.settingsPage.trayIcon.color": "Icoonkleur: "
 }

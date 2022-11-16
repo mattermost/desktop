@@ -5,8 +5,6 @@ import classNames from 'classnames';
 import React, {useEffect} from 'react';
 import {FormattedMessage} from 'react-intl';
 
-import {CLOSE_TEAMS_DROPDOWN, OPEN_TEAMS_DROPDOWN} from 'common/communication';
-
 import '../css/components/TeamDropdownButton.scss';
 
 type Props = {
@@ -31,7 +29,11 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
     const handleToggleButton = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
         event.stopPropagation();
-        window.ipcRenderer.send(isMenuOpen ? CLOSE_TEAMS_DROPDOWN : OPEN_TEAMS_DROPDOWN);
+        if (isMenuOpen) {
+            window.desktop.closeTeamsDropdown();
+        } else {
+            window.desktop.openTeamsDropdown();
+        }
     };
 
     let badgeDiv: React.ReactNode;
