@@ -18,8 +18,8 @@ const stepDescriptiveName = 'logConfig';
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
         const now = new Date();
-        const filename = `diagnostics_${now.getDate()}-${now.getMonth()}-${now.getFullYear()}_${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}-${now.getMilliseconds()}`;
-        const pathToFile = path.join(app.getAppPath(), `logs/${filename}.txt`);
+        const filename = `diagnostics_${now.getDate()}-${now.getMonth()}-${now.getFullYear()}_${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}-${now.getMilliseconds()}.txt`;
+        const pathToFile = path.join(app.getAppPath(), `logs/${filename}`);
         logger.transports.file.resolvePath = () => pathToFile;
         logger.transports.file.fileName = filename;
 
