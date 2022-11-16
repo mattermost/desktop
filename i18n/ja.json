@@ -271,5 +271,6 @@
     "renderer.downloadsDropdown.remaining": "残り",
     "renderer.downloadsDropdown.Downloads": "ダウンロード",
     "renderer.downloadsDropdown.ClearAll": "すべてクリア",
-    "main.menus.app.view.downloads": "ダウンロード"
+    "main.menus.app.view.downloads": "ダウンロード",
+    "renderer.components.settingsPage.trayIcon.color": "アイコンの色: "
 }
