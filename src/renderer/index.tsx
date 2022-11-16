@@ -10,8 +10,6 @@ import ReactDOM from 'react-dom';
 
 import {CombinedConfig, Team} from 'types/config';
 
-import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT, RELOAD_CONFIGURATION, OPEN_APP_MENU} from 'common/communication';
-
 import MainPage from './components/MainPage';
 import IntlProvider from './intl_provider';
 
@@ -28,11 +26,11 @@ class Root extends React.PureComponent<Record<string, never>, State> {
     async componentDidMount() {
         await this.setInitialConfig();
 
-        window.ipcRenderer.on('synchronize-config', () => {
+        window.desktop.onSynchronizeConfig(() => {
             this.reloadConfig();
         });
 
-        window.ipcRenderer.on(RELOAD_CONFIGURATION, () => {
+        window.desktop.onReloadConfiguration(() => {
             this.reloadConfig();
         });
 
@@ -84,7 +82,7 @@ class Root extends React.PureComponent<Record<string, never>, State> {
     };
 
     teamConfigChange = async (updatedTeams: Team[]) => {
-        window.ipcRenderer.invoke(UPDATE_TEAMS, updatedTeams).then(() => {
+        window.desktop.updateTeams(updatedTeams).then(() => {
             this.reloadConfig();
         });
     };
@@ -97,20 +95,20 @@ class Root extends React.PureComponent<Record<string, never>, State> {
     requestConfig = async (exitOnError?: boolean) => {
         // todo: should we block?
         try {
-            const configRequest = await window.ipcRenderer.invoke(GET_CONFIGURATION);
+            const configRequest = await window.desktop.getConfiguration() as CombinedConfig;
             return configRequest;
         } catch (err: any) {
             console.log(`there was an error with the config: ${err}`);
             if (exitOnError) {
-                window.ipcRenderer.send(QUIT, `unable to load configuration: ${err}`, err.stack);
+                window.desktop.quit(`unable to load configuration: ${err}`, err.stack);
             }
         }
-        return null;
+        return undefined;
     };
 
     openMenu = () => {
         if (window.process.platform !== 'darwin') {
-            window.ipcRenderer.send(OPEN_APP_MENU);
+            window.desktop.openAppMenu();
         }
     }
 
@@ -134,7 +132,7 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         );
     }
 }
-window.ipcRenderer.invoke('get-app-version').then(({name, version}) => {
+window.desktop.getVersion().then(({name, version}) => {
     // eslint-disable-next-line no-undef
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
