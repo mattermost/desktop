@@ -11,12 +11,14 @@ import Step0 from './steps/step0.logLevel';
 import Step1 from './steps/step1.internetConnection';
 import Step2 from './steps/step2.configValidation';
 import Step3 from './steps/step3.serverConnectivity';
+import Step4 from './steps/step4.sessionDataValidation';
 
 const SORTED_STEPS: DiagnosticsStep[] = [
     Step0,
     Step1,
     Step2,
     Step3,
+    Step4,
 ];
 
 class DiagnosticsModule {
