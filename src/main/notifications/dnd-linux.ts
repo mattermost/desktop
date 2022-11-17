@@ -9,6 +9,9 @@ const GNOME_READ_DND = 'gsettings get org.gnome.desktop.notifications show-banne
 
 function getLinuxDoNotDisturb() {
     try {
+        if (process.platform !== 'linux') {
+            return false;
+        }
         const showNotifications = execSync(GNOME_READ_DND).toString().replace('\n', '');
         log.debug('getLinuxDoNotDisturb', {showNotifications});
 

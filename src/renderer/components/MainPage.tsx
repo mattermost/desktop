@@ -9,48 +9,11 @@ import React, {Fragment} from 'react';
 import {Container, Row} from 'react-bootstrap';
 import {DropResult} from 'react-beautiful-dnd';
 import {injectIntl, IntlShape} from 'react-intl';
-import {IpcRendererEvent} from 'electron/renderer';
 
 import {TeamWithTabs} from 'types/config';
 import {DownloadedItems} from 'types/downloads';
 
 import {getTabViewName} from 'common/tabs/TabView';
-
-import {
-    FOCUS_BROWSERVIEW,
-    MAXIMIZE_CHANGE,
-    DARK_MODE_CHANGE,
-    HISTORY,
-    LOAD_RETRY,
-    LOAD_SUCCESS,
-    LOAD_FAILED,
-    WINDOW_CLOSE,
-    WINDOW_MINIMIZE,
-    WINDOW_RESTORE,
-    WINDOW_MAXIMIZE,
-    DOUBLE_CLICK_ON_WINDOW,
-    PLAY_SOUND,
-    MODAL_OPEN,
-    MODAL_CLOSE,
-    SET_ACTIVE_VIEW,
-    UPDATE_MENTIONS,
-    TOGGLE_BACK_BUTTON,
-    FOCUS_THREE_DOT_MENU,
-    GET_FULL_SCREEN_STATUS,
-    CLOSE_TEAMS_DROPDOWN,
-    OPEN_TEAMS_DROPDOWN,
-    SWITCH_TAB,
-    CLOSE_TAB,
-    RELOAD_CURRENT_VIEW,
-    CLOSE_DOWNLOADS_DROPDOWN,
-    OPEN_DOWNLOADS_DROPDOWN,
-    SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE,
-    HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE,
-    UPDATE_DOWNLOADS_DROPDOWN,
-    REQUEST_HAS_DOWNLOADS,
-    CLOSE_DOWNLOADS_DROPDOWN_MENU,
-    APP_MENU_WILL_CLOSE,
-} from 'common/communication';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
@@ -90,7 +53,7 @@ type State = {
     activeServerName?: string;
     activeTabName?: string;
     sessionsExpired: Record<string, boolean>;
-    unreadCounts: Record<string, number>;
+    unreadCounts: Record<string, boolean>;
     mentionCounts: Record<string, number>;
     maximized: boolean;
     tabViewStatus: Map<string, TabViewStatus>;
@@ -160,7 +123,7 @@ class MainPage extends React.PureComponent<Props, State> {
 
     async requestDownloadsLength() {
         try {
-            const hasDownloads = await window.ipcRenderer.invoke(REQUEST_HAS_DOWNLOADS);
+            const hasDownloads = await window.desktop.requestHasDownloads();
             this.setState({
                 hasDownloads,
             });
@@ -174,7 +137,7 @@ class MainPage extends React.PureComponent<Props, State> {
         this.requestDownloadsLength();
 
         // set page on retry
-        window.ipcRenderer.on(LOAD_RETRY, (_, viewName, retry, err, loadUrl) => {
+        window.desktop.onLoadRetry((viewName, retry, err, loadUrl) => {
             console.log(`${viewName}: failed to load ${err}, but retrying`);
             const statusValue = {
                 status: Status.RETRY,
@@ -187,11 +150,11 @@ class MainPage extends React.PureComponent<Props, State> {
             this.updateTabStatus(viewName, statusValue);
         });
 
-        window.ipcRenderer.on(LOAD_SUCCESS, (_, viewName) => {
+        window.desktop.onLoadSuccess((viewName) => {
             this.updateTabStatus(viewName, {status: Status.DONE});
         });
 
-        window.ipcRenderer.on(LOAD_FAILED, (_, viewName, err, loadUrl) => {
+        window.desktop.onLoadFailed((viewName, err, loadUrl) => {
             console.log(`${viewName}: failed to load ${err}`);
             const statusValue = {
                 status: Status.FAILED,
@@ -203,39 +166,39 @@ class MainPage extends React.PureComponent<Props, State> {
             this.updateTabStatus(viewName, statusValue);
         });
 
-        window.ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => {
+        window.desktop.onDarkModeChange((darkMode) => {
             this.setState({darkMode});
         });
 
         // can't switch tabs sequentially for some reason...
-        window.ipcRenderer.on(SET_ACTIVE_VIEW, (event, serverName, tabName) => {
+        window.desktop.onSetActiveView((serverName, tabName) => {
             this.setState({activeServerName: serverName, activeTabName: tabName});
         });
 
-        window.ipcRenderer.on(MAXIMIZE_CHANGE, this.handleMaximizeState);
+        window.desktop.onMaximizeChange(this.handleMaximizeState);
 
-        window.ipcRenderer.on('enter-full-screen', () => this.handleFullScreenState(true));
-        window.ipcRenderer.on('leave-full-screen', () => this.handleFullScreenState(false));
+        window.desktop.onEnterFullScreen(() => this.handleFullScreenState(true));
+        window.desktop.onLeaveFullScreen(() => this.handleFullScreenState(false));
 
-        window.ipcRenderer.invoke(GET_FULL_SCREEN_STATUS).then((fullScreenStatus) => this.handleFullScreenState(fullScreenStatus));
+        window.desktop.getFullScreenStatus().then((fullScreenStatus) => this.handleFullScreenState(fullScreenStatus));
 
-        window.ipcRenderer.on(PLAY_SOUND, (_event, soundName) => {
+        window.desktop.onPlaySound((soundName) => {
             playSound(soundName);
         });
 
-        window.ipcRenderer.on(MODAL_OPEN, () => {
+        window.desktop.onModalOpen(() => {
             this.setState({modalOpen: true});
         });
 
-        window.ipcRenderer.on(MODAL_CLOSE, () => {
+        window.desktop.onModalClose(() => {
             this.setState({modalOpen: false});
         });
 
-        window.ipcRenderer.on(TOGGLE_BACK_BUTTON, (event, showExtraBar) => {
+        window.desktop.onToggleBackButton((showExtraBar) => {
             this.setState({showExtraBar});
         });
 
-        window.ipcRenderer.on(UPDATE_MENTIONS, (_event, view, mentions, unreads, isExpired) => {
+        window.desktop.onUpdateMentions((view, mentions, unreads, isExpired) => {
             const {unreadCounts, mentionCounts, sessionsExpired} = this.state;
 
             const newMentionCounts = {...mentionCounts};
@@ -250,40 +213,40 @@ class MainPage extends React.PureComponent<Props, State> {
             this.setState({unreadCounts: newUnreads, mentionCounts: newMentionCounts, sessionsExpired: expired});
         });
 
-        window.ipcRenderer.on(CLOSE_TEAMS_DROPDOWN, () => {
+        window.desktop.onCloseTeamsDropdown(() => {
             this.setState({isMenuOpen: false});
         });
 
-        window.ipcRenderer.on(OPEN_TEAMS_DROPDOWN, () => {
+        window.desktop.onOpenTeamsDropdown(() => {
             this.setState({isMenuOpen: true});
         });
 
-        window.ipcRenderer.on(CLOSE_DOWNLOADS_DROPDOWN, () => {
+        window.desktop.onCloseDownloadsDropdown(() => {
             this.setState({isDownloadsDropdownOpen: false});
         });
 
-        window.ipcRenderer.on(OPEN_DOWNLOADS_DROPDOWN, () => {
+        window.desktop.onOpenDownloadsDropdown(() => {
             this.setState({isDownloadsDropdownOpen: true});
         });
 
-        window.ipcRenderer.on(SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE, () => {
+        window.desktop.onShowDownloadsDropdownButtonBadge(() => {
             this.setState({showDownloadsBadge: true});
         });
 
-        window.ipcRenderer.on(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE, () => {
+        window.desktop.onHideDownloadsDropdownButtonBadge(() => {
             this.setState({showDownloadsBadge: false});
         });
 
-        window.ipcRenderer.on(UPDATE_DOWNLOADS_DROPDOWN, (event, downloads: DownloadedItems) => {
+        window.desktop.onUpdateDownloadsDropdown((downloads: DownloadedItems) => {
             this.setState({
                 hasDownloads: (Object.values(downloads)?.length || 0) > 0,
             });
         });
 
-        window.ipcRenderer.on(APP_MENU_WILL_CLOSE, this.unFocusThreeDotsButton);
+        window.desktop.onAppMenuWillClose(this.unFocusThreeDotsButton);
 
         if (window.process.platform !== 'darwin') {
-            window.ipcRenderer.on(FOCUS_THREE_DOT_MENU, this.focusThreeDotsButton);
+            window.desktop.onFocusThreeDotMenu(this.focusThreeDotsButton);
         }
 
         window.addEventListener('click', this.handleCloseDropdowns);
@@ -294,11 +257,11 @@ class MainPage extends React.PureComponent<Props, State> {
     }
 
     handleCloseDropdowns = () => {
-        window.ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
+        window.desktop.closeTeamsDropdown();
         this.closeDownloadsDropdown();
     }
 
-    handleMaximizeState = (_: IpcRendererEvent, maximized: boolean) => {
+    handleMaximizeState = (maximized: boolean) => {
         this.setState({maximized});
     }
 
@@ -307,11 +270,17 @@ class MainPage extends React.PureComponent<Props, State> {
     }
 
     handleSelectTab = (name: string) => {
-        window.ipcRenderer.send(SWITCH_TAB, this.state.activeServerName, name);
+        if (!this.state.activeServerName) {
+            return;
+        }
+        window.desktop.switchTab(this.state.activeServerName, name);
     }
 
     handleCloseTab = (name: string) => {
-        window.ipcRenderer.send(CLOSE_TAB, this.state.activeServerName, name);
+        if (!this.state.activeServerName) {
+            return;
+        }
+        window.desktop.closeTab(this.state.activeServerName, name);
     }
 
     handleDragAndDrop = async (dropResult: DropResult) => {
@@ -338,21 +307,21 @@ class MainPage extends React.PureComponent<Props, State> {
 
     handleClose = (e: React.MouseEvent<HTMLDivElement>) => {
         e.stopPropagation(); // since it is our button, the event goes into MainPage's onclick event, getting focus back.
-        window.ipcRenderer.send(WINDOW_CLOSE);
+        window.desktop.closeWindow();
     }
 
     handleMinimize = (e: React.MouseEvent<HTMLDivElement>) => {
         e.stopPropagation();
-        window.ipcRenderer.send(WINDOW_MINIMIZE);
+        window.desktop.minimizeWindow();
     }
 
     handleMaximize = (e: React.MouseEvent<HTMLDivElement>) => {
         e.stopPropagation();
-        window.ipcRenderer.send(WINDOW_MAXIMIZE);
+        window.desktop.maximizeWindow();
     }
 
     handleRestore = () => {
-        window.ipcRenderer.send(WINDOW_RESTORE);
+        window.desktop.restoreWindow();
     }
 
     openMenu = () => {
@@ -360,16 +329,16 @@ class MainPage extends React.PureComponent<Props, State> {
     }
 
     handleDoubleClick = () => {
-        window.ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW);
+        window.desktop.doubleClickOnWindow();
     }
 
     focusOnWebView = () => {
-        window.ipcRenderer.send(FOCUS_BROWSERVIEW);
+        window.desktop.focusBrowserView();
         this.handleCloseDropdowns();
     }
 
     reloadCurrentView = () => {
-        window.ipcRenderer.send(RELOAD_CURRENT_VIEW);
+        window.desktop.reloadCurrentView();
     }
 
     showHideDownloadsBadge(value = false) {
@@ -377,12 +346,12 @@ class MainPage extends React.PureComponent<Props, State> {
     }
 
     closeDownloadsDropdown() {
-        window.ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
-        window.ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN_MENU);
+        window.desktop.closeDownloadsDropdown();
+        window.desktop.closeDownloadsDropdownMenu();
     }
 
     openDownloadsDropdown() {
-        window.ipcRenderer.send(OPEN_DOWNLOADS_DROPDOWN);
+        window.desktop.openDownloadsDropdown();
     }
 
     focusThreeDotsButton = () => {
@@ -497,12 +466,12 @@ class MainPage extends React.PureComponent<Props, State> {
             }
             return sum + this.state.mentionCounts[key];
         }, 0);
-        const totalUnreadCount = Object.keys(this.state.unreadCounts).reduce((sum, key) => {
+        const hasAnyUnreads = Object.keys(this.state.unreadCounts).reduce((sum, key) => {
             if (this.state.activeServerName && key.match(serverMatch)) {
                 return sum;
             }
-            return sum + this.state.unreadCounts[key];
-        }, 0);
+            return sum || this.state.unreadCounts[key];
+        }, false);
         const topRow = (
             <Row
                 className={topBarClassName}
@@ -536,7 +505,7 @@ class MainPage extends React.PureComponent<Props, State> {
                             isDisabled={this.state.modalOpen}
                             activeServerName={this.state.activeServerName}
                             totalMentionCount={totalMentionCount}
-                            hasUnreads={totalUnreadCount > 0}
+                            hasUnreads={hasAnyUnreads}
                             isMenuOpen={this.state.isMenuOpen}
                             darkMode={this.state.darkMode}
                         />
@@ -586,7 +555,7 @@ class MainPage extends React.PureComponent<Props, State> {
                     darkMode={this.state.darkMode}
                     show={this.state.showExtraBar}
                     goBack={() => {
-                        window.ipcRenderer.send(HISTORY, -1);
+                        window.desktop.goBack();
                     }}
                 />
                 <Row>
