@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {shell} from 'electron';
-import log, {ElectronLog, LogLevel} from 'electron-log';
+import log, {ElectronLog} from 'electron-log';
 import {DiagnosticsReport} from 'types/diagnostics';
 
 import DiagnosticsStep from './DiagnosticStep';
@@ -23,7 +23,6 @@ class DiagnosticsModule {
     stepCurrent = 0;
     stepTotal = 0;
     report: DiagnosticsReport = [];
-    initialLogLevel: LogLevel = 'info';
     logger: ElectronLog = log.create('diagnostics-logger');
 
     run = async () => {
@@ -38,11 +37,12 @@ class DiagnosticsModule {
     }
 
     initializeValues = (clear = false) => {
+        this.logger.transports.file.level = 'silly';
+        this.logger.transports.console.level = 'silly';
         this.logger.debug('Diagnostics initializeValues');
         this.stepCurrent = 0;
         this.stepTotal = clear ? 0 : this.getStepCount();
         this.report = [];
-        this.initialLogLevel = this.logger.transports.console.level || 'info';
     }
 
     getStepCount = () => {
@@ -63,14 +63,14 @@ class DiagnosticsModule {
             if (this.isValidStep(step)) {
                 // eslint-disable-next-line no-await-in-loop
                 const stepResult = await step.run(this.logger);
-                this.report.push({
+                this.addToReport({
                     ...stepResult,
                     ...reportStep,
                     payload: JSON.stringify(stepResult.payload, null, 4),
                 });
                 this.logger.debug('Diagnostics executeSteps StepCompleted', {index, name: step.name, retries: step.retries, stepResult});
             } else {
-                this.report.push({
+                this.addToReport({
                     ...reportStep,
                     succeeded: false,
                     duration: 0,
@@ -83,7 +83,7 @@ class DiagnosticsModule {
     }
 
     printReport = () => {
-        this.logger.debug('Diagnostics printReport: ', this.report);
+        this.logger.debug('Diagnostics printReport: ', {report: this.report});
         return this.report;
     }
 
@@ -103,6 +103,13 @@ class DiagnosticsModule {
 
     getLoggerFilePath = () => {
         return this.logger.transports.file.getFile()?.path;
+    }
+
+    private addToReport(data: DiagnosticsReport[number]): void {
+        this.report = [
+            ...this.report,
+            data,
+        ];
     }
 }
 

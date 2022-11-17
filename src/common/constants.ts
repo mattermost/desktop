@@ -40,3 +40,7 @@ export const LOGS_MAX_STRING_LENGTH = 24;
 
 // We use this URL inside the Diagnostics to check if the computer has internet connectivity
 export const IS_ONLINE_ENDPOINT = 'https://community.mattermost.com/api/v4/system/ping';
+
+export const COOKIE_NAME_USER_ID = 'MMUSERID';
+export const COOKIE_NAME_CSRF = 'MMCSRF';
+export const COOKIE_NAME_AUTH_TOKEN = 'MMAUTHTOKEN';
