@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {MASK_EMAIL, MASK_IPV4, MASK_PATH, MASK_URL} from 'common/constants';
+import {MASK_EMAIL, MASK_PATH} from 'common/constants';
 
 import {maskMessageDataHook} from './loggerHooks';
 
@@ -25,12 +25,12 @@ describe('main/diagnostics/loggerHooks', () => {
         expect(result).toBe(message.data[0]);
     });
 
-    it('should return false if the message includes the string "password"', () => {
+    it('should return empty "" if the message includes the string "password"', () => {
         const message = {
             data: ['Password: someRandomPassword'],
         };
         const result = maskMessageDataHook(loggerMock)(message, 'file');
-        expect(result).toBe(false);
+        expect(result.data[0]).toBe('');
     });
 
     it('should mask emails', () => {
@@ -42,19 +42,21 @@ describe('main/diagnostics/loggerHooks', () => {
     });
 
     it('should mask IPV4 addresses', () => {
+        const IPs = ['192.168.20.44', '1.1.1.1', '255.255.255.255'];
         const message = {
-            data: [':192.168.1.1 http://192.168.2.2 192.168.3.3'],
+            data: [`:${IPs[0]} https://${IPs[1]} networkPc://${IPs[2]}`],
         };
         const result = maskMessageDataHook(loggerMock)(message, 'file').data[0];
-        expect(findOccurrencesInString(MASK_IPV4, result)).toBe(3);
+        expect(IPs.some((ip) => result.includes(ip))).toBe(false);
     });
 
     it('should mask URLs', () => {
+        const URLs = ['www.google.com', 'community.mattermost.com', 'someWebsite.without.tls'];
         const message = {
-            data: ['www.google.com https://community.mattermost.com http://somewebsite.without.tls'],
+            data: [`${URLs[0]} https://${URLs[1]} http://${URLs[2]}`],
         };
         const result = maskMessageDataHook(loggerMock)(message, 'file').data[0];
-        expect(findOccurrencesInString(MASK_URL, result)).toBe(3);
+        expect(URLs.some((url) => result.includes(url))).toBe(false);
     });
 
     describe('should mask paths for all OSs', () => {

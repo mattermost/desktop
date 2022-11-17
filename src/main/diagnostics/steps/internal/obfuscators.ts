@@ -10,48 +10,48 @@ const isLinux = process.platform === 'linux';
 const isWin = process.platform === 'win32';
 
 function maskDataInString(str: string): string {
-    let maskedStr = '';
+    let maskedStr = str;
     if (!str || typeof str !== 'string') {
-        return maskedStr;
+        return str;
     }
 
     // Specific keywords
     if (str?.toLowerCase?.().includes('password')) {
-        return maskedStr;
+        return '';
     }
 
     // Emails
     if (REGEX_EMAIL.test(str)) {
-        maskedStr = str.replaceAll?.(RegExp(REGEX_EMAIL, 'gi'), MASK_EMAIL);
+        maskedStr = maskedStr.replaceAll(RegExp(REGEX_EMAIL, 'gi'), MASK_EMAIL);
     }
 
     // IP addresses
     if (REGEX_IPV4.test(str)) {
-        maskedStr = str.replaceAll?.(RegExp(REGEX_IPV4, 'gi'), MASK_IPV4);
+        maskedStr = maskedStr.replaceAll(RegExp(REGEX_IPV4, 'gi'), MASK_IPV4);
     }
 
     // URLs
     if (REGEX_URL.test(str)) {
-        maskedStr = str.replaceAll?.(RegExp(REGEX_URL, 'gi'), MASK_URL);
+        maskedStr = maskedStr.replaceAll(RegExp(REGEX_URL, 'gi'), MASK_URL);
     }
 
     // Paths
     if (isDarwin) {
         if (REGEX_PATH_DARWIN.test(str)) {
-            maskedStr = str.replaceAll?.(RegExp(REGEX_PATH_DARWIN, 'gi'), MASK_PATH);
+            maskedStr = maskedStr.replaceAll(RegExp(REGEX_PATH_DARWIN, 'gi'), MASK_PATH);
         }
     } else if (isLinux) {
         if (REGEX_PATH_LINUX.test(str)) {
-            maskedStr = str.replaceAll?.(RegExp(REGEX_PATH_LINUX, 'gi'), MASK_PATH);
+            maskedStr = maskedStr.replaceAll(RegExp(REGEX_PATH_LINUX, 'gi'), MASK_PATH);
         }
     } else if (isWin) {
         if (REGEX_PATH_WIN32.test(str)) {
-            maskedStr = str.replaceAll?.(RegExp(REGEX_PATH_WIN32, 'gi'), MASK_PATH);
+            maskedStr = maskedStr.replaceAll(RegExp(REGEX_PATH_WIN32, 'gi'), MASK_PATH);
         }
     }
 
     // Very long strings will be truncated (eg tokens)
-    maskedStr = str.split(/,| |\r?\n/)?.map?.((str: string) => truncateString(str))?.join?.(' ');
+    maskedStr = maskedStr.split(/,| |\r?\n/)?.map?.((str: string) => truncateString(str))?.join?.(' ');
 
     return maskedStr;
 }
