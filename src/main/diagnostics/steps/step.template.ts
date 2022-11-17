@@ -9,6 +9,8 @@ import DiagnosticsStep from '../DiagnosticStep';
 const stepName = 'Step-X';
 const stepDescriptiveName = 'Template';
 
+// COPY & PASTE this file to create a new step
+
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
         logger.debug(`Diagnostics ${stepName} run`);
@@ -34,5 +36,3 @@ const StepTemplate = new DiagnosticsStep({
 });
 
 export default StepTemplate;
-
-// COPY & PASTE this file to create a new step
