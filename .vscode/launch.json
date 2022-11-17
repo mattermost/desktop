@@ -56,6 +56,14 @@
             ],
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": "prepare-e2e"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Unit Tests",
+            "program": "${workspaceRoot}/node_modules/jest/bin/jest",
+            "args": [],
+            "internalConsoleOptions": "openOnSessionStart",
         }
     ]
 }
