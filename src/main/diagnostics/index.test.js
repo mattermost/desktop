@@ -18,6 +18,6 @@ describe('main/diagnostics/index', () => {
 
     it('should count the steps correctly', () => {
         const d = Diagnostics;
-        expect(d.getStepCount()).toBe(3);
+        expect(d.getStepCount()).toBe(4);
     });
 });
