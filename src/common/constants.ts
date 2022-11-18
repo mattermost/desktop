@@ -31,9 +31,9 @@ export const REGEX_PATH_DARWIN = /([/]{1}[a-z0-9.]+)+(\/?)|^([/])/;
 export const REGEX_PATH_LINUX = /([/]{1}[a-z0-9.]+)+(\/?)|^([/])/; // same as darwin
 
 // Masks
-export const MASK_EMAIL = 'EMAIL_ADDRESS';
-export const MASK_IPV4 = 'IPV4_ADDRESS';
-export const MASK_PATH = 'LOCAL_PATH';
+export const MASK_EMAIL = 'EMAIL';
+export const MASK_IPV4 = 'IPV4';
+export const MASK_PATH = 'PATH';
 export const MASK_URL = 'URL';
 
 export const LOGS_MAX_STRING_LENGTH = 24;

@@ -55,5 +55,3 @@ const StepTemplate = new DiagnosticsStep({
 });
 
 export default StepTemplate;
-
-// COPY & PASTE this file to create a new step
