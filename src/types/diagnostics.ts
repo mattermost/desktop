@@ -21,4 +21,9 @@ export type DiagnosticsReportObject = DiagnosticStepResponse & {
     name: DiagnosticsStepConstructorPayload['name'];
 }
 
+export type AddDurationToFnReturnObject =
+    (run: (logger: ElectronLog) => Promise<DiagnosticStepResponse>)
+    => (logger: ElectronLog)
+    => Promise<Omit<DiagnosticStepResponse, 'duration'> & {duration: number}>;
+
 export type DiagnosticsReport = DiagnosticsReportObject[];

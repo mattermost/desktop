@@ -4,11 +4,11 @@
 import https from 'https';
 
 import log, {ElectronLog} from 'electron-log';
-import {DiagnosticStepResponse} from 'types/diagnostics';
+import {AddDurationToFnReturnObject} from 'types/diagnostics';
 
 import {IS_ONLINE_ENDPOINT, LOGS_MAX_STRING_LENGTH} from 'common/constants';
 
-export function addDurationToFnReturnObject(run: (logger: ElectronLog) => Promise<DiagnosticStepResponse>): (logger: ElectronLog) => Promise<DiagnosticStepResponse & {duration: number}> {
+export const addDurationToFnReturnObject: AddDurationToFnReturnObject = (run) => {
     return async (logger) => {
         const startTime = Date.now();
         const runReturnValues = await run(logger);
@@ -17,7 +17,7 @@ export function addDurationToFnReturnObject(run: (logger: ElectronLog) => Promis
             duration: Date.now() - startTime,
         };
     };
-}
+};
 
 export function truncateString(str: string, maxLength = LOGS_MAX_STRING_LENGTH): string {
     if (typeof str === 'string') {

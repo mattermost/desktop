@@ -13,11 +13,10 @@ describe('main/diagnostics/index', () => {
         expect(d.stepTotal).toBe(0);
         expect(d.stepCurrent).toBe(0);
         expect(d.report).toEqual([]);
-        expect(typeof d.initialLogLevel).toBe('string');
     });
 
     it('should count the steps correctly', () => {
         const d = Diagnostics;
-        expect(d.getStepCount()).toBe(4);
+        expect(d.getStepCount()).toBe(5);
     });
 });
