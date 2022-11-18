@@ -240,6 +240,20 @@ describe('main/notifications', () => {
     });
 
     describe('getLinuxDoNotDisturb', () => {
+        let originalPlatform;
+        beforeAll(() => {
+            originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'linux',
+            });
+        });
+
+        afterAll(() => {
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+        });
+
         it('should return false', () => {
             cp.execSync.mockReturnValue('true');
             expect(getLinuxDoNotDisturb()).toBe(false);
