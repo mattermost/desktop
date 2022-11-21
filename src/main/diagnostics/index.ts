@@ -12,6 +12,7 @@ import Step1 from './steps/step1.internetConnection';
 import Step2 from './steps/step2.configValidation';
 import Step3 from './steps/step3.serverConnectivity';
 import Step4 from './steps/step4.sessionDataValidation';
+import Step5 from './steps/step5.browserWindows';
 
 const SORTED_STEPS: DiagnosticsStep[] = [
     Step0,
@@ -19,6 +20,7 @@ const SORTED_STEPS: DiagnosticsStep[] = [
     Step2,
     Step3,
     Step4,
+    Step5,
 ];
 
 class DiagnosticsModule {
@@ -28,6 +30,10 @@ class DiagnosticsModule {
     logger: ElectronLog = log.create('diagnostics-logger');
 
     run = async () => {
+        if (this.isRunning()) {
+            this.logger.warn('Diagnostics is already running');
+            return;
+        }
         this.logger.debug('Diagnostics run');
         this.initializeValues();
         this.sendNotificationDiagnosticsStarted();
@@ -80,6 +86,7 @@ class DiagnosticsModule {
                 this.logger.warn('Diagnostics executeSteps UnknownStep', {index, step});
             }
             index++;
+            this.stepCurrent = index;
         }
         this.logger.debug('Diagnostics executeSteps Finished');
     }
@@ -105,6 +112,10 @@ class DiagnosticsModule {
 
     getLoggerFilePath = () => {
         return this.logger.transports.file.getFile()?.path;
+    }
+
+    isRunning = () => {
+        return this.stepTotal > 0 && this.stepCurrent >= 0;
     }
 
     private addToReport(data: DiagnosticsReport[number]): void {
