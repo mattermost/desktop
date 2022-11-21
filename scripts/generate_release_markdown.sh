@@ -47,7 +47,7 @@ $(print_link "${BASE_URL}/mattermost-desktop_${VERSION}-1_arm64.deb") (beta)
 $(print_link "${BASE_URL}/mattermost-desktop_${VERSION}-1_amd64.deb")
 
 #### Linux (Unofficial) - rpm files (beta)
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-arm64.rpm") (beta)
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-aarch64.rpm") (beta)
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-x86_64.rpm")
 
 #### Linux (Unofficial) - AppImage files

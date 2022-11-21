@@ -88,6 +88,7 @@ fi
 if [[ -f "${SRC}"/mattermost-desktop-${VERSION}-linux-arm64.tar.gz ]]; then
     echo -e "Copying linux\n"
     cp "${SRC}"/mattermost-desktop-*-linux-arm64* "${DEST}/"
+    cp "${SRC}"/mattermost-desktop-*-linux-aarch64* "${DEST}/"
     cp "${SRC}"/mattermost-desktop_"${VERSION}"-1_arm64*.deb "${DEST}/"
     SOMETHING_COPIED=$((SOMETHING_COPIED + 11))
 fi
