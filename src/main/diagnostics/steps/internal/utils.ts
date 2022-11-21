@@ -9,8 +9,18 @@ import {AddDurationToFnReturnObject, WindowStatus} from 'types/diagnostics';
 
 import {IS_ONLINE_ENDPOINT, LOGS_MAX_STRING_LENGTH} from 'common/constants';
 
-function boundsOk(bounds?: Rectangle, strict = false): boolean {
+export function boundsOk(bounds?: Rectangle, strict = false): boolean {
     if (!bounds) {
+        return false;
+    }
+    if (typeof bounds !== 'object') {
+        return false;
+    }
+
+    const propertiesOk = ['x', 'y', 'width', 'height'].every((key) => Object.prototype.hasOwnProperty.call(bounds, key));
+    const valueTypesOk = Object.values(bounds).every((value) => typeof value === 'number');
+
+    if (!propertiesOk || !valueTypesOk) {
         return false;
     }
 
@@ -100,7 +110,7 @@ export function browserWindowVisibilityStatus(name: string, bWindow?: BrowserWin
 
     status.push({
         name: 'opacity',
-        ok: opacity >= 0 && opacity <= 1,
+        ok: opacity > 0 && opacity <= 1,
         data: opacity,
     });
 

@@ -3,6 +3,9 @@
 
 import Diagnostics from '.';
 
+jest.mock('main/windows/windowManager', () => ({
+    mainWindow: {},
+}));
 jest.mock('common/config', () => ({
     configFilePath: 'mock/config/filepath/',
 }));
@@ -17,6 +20,6 @@ describe('main/diagnostics/index', () => {
 
     it('should count the steps correctly', () => {
         const d = Diagnostics;
-        expect(d.getStepCount()).toBe(5);
+        expect(d.getStepCount()).toBe(6);
     });
 });
