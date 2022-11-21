@@ -185,6 +185,11 @@ jobs:
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
+      - run: |
+          $InstallPath = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community"
+          $WorkLoads = '--add Microsoft.VisualStudio.Component.VC.ATL.ARM64'
+          $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"", $WorkLoads, '--quiet', '--norestart', '--nocache')
+          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden -WorkingDirectory "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
       - run:
           name: Install yq
           command: choco install yq --version 4.15.1 -y
@@ -236,6 +241,11 @@ jobs:
       - run: mkdir -p ./build/
       - attach_workspace:
           at: ./build
+      - run: |
+          $InstallPath = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community"
+          $WorkLoads = '--add Microsoft.VisualStudio.Component.VC.ATL.ARM64'
+          $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"", $WorkLoads, '--quiet', '--norestart', '--nocache')
+          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden -WorkingDirectory "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
       - run:
           name: Install yq
           command: choco install yq --version 4.15.1 -y
@@ -263,6 +273,11 @@ jobs:
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
+      - run: |
+          $InstallPath = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community"
+          $WorkLoads = '--add Microsoft.VisualStudio.Component.VC.ATL.ARM64'
+          $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"", $WorkLoads, '--quiet', '--norestart', '--nocache')
+          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden -WorkingDirectory "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
       - run:
           name: Install yq
           command: choco install yq --version 4.15.1 -y
