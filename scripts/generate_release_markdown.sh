@@ -31,6 +31,7 @@ $(print_link "${BASE_URL}/mattermost-desktop-setup-${VERSION}-win.exe")
 #### Windows - zip files
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win32.zip")
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win64.zip")
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-arm64.zip") (beta)
 
 #### Mac
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-mac-universal.dmg")
@@ -38,18 +39,18 @@ $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-mac-x64.dmg")
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-mac-m1.dmg")
 
 #### Linux
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-ia32.tar.gz")
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-arm64.tar.gz") (beta)
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-x64.tar.gz")
 
 #### Linux (Unofficial) - deb files
-$(print_link "${BASE_URL}/mattermost-desktop_${VERSION}-1_i386.deb")
+$(print_link "${BASE_URL}/mattermost-desktop_${VERSION}-1_arm64.deb") (beta)
 $(print_link "${BASE_URL}/mattermost-desktop_${VERSION}-1_amd64.deb")
 
 #### Linux (Unofficial) - rpm files (beta)
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-i686.rpm")
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-aarch64.rpm") (beta)
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-x86_64.rpm")
 
 #### Linux (Unofficial) - AppImage files
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-i386.AppImage")
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-arm64.AppImage") (beta)
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-x86_64.AppImage")
 MD
