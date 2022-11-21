@@ -27,3 +27,9 @@ export type AddDurationToFnReturnObject =
     => Promise<Omit<DiagnosticStepResponse, 'duration'> & {duration: number}>;
 
 export type DiagnosticsReport = DiagnosticsReportObject[];
+
+export type WindowStatus = Array<{
+    name: string;
+    ok: boolean;
+    data?: any;
+}>;

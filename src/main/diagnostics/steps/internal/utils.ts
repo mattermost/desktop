@@ -3,10 +3,33 @@
 
 import https from 'https';
 
+import {BrowserWindow, Rectangle, WebContents} from 'electron';
 import log, {ElectronLog} from 'electron-log';
-import {AddDurationToFnReturnObject} from 'types/diagnostics';
+import {AddDurationToFnReturnObject, WindowStatus} from 'types/diagnostics';
 
 import {IS_ONLINE_ENDPOINT, LOGS_MAX_STRING_LENGTH} from 'common/constants';
+
+export function boundsOk(bounds?: Rectangle, strict = false): boolean {
+    if (!bounds) {
+        return false;
+    }
+    if (typeof bounds !== 'object') {
+        return false;
+    }
+
+    const propertiesOk = ['x', 'y', 'width', 'height'].every((key) => Object.prototype.hasOwnProperty.call(bounds, key));
+    const valueTypesOk = Object.values(bounds).every((value) => typeof value === 'number');
+
+    if (!propertiesOk || !valueTypesOk) {
+        return false;
+    }
+
+    if (strict) {
+        return bounds.height > 0 && bounds.width > 0 && bounds.x >= 0 && bounds.y >= 0;
+    }
+
+    return bounds.height >= 0 && bounds.width >= 0 && bounds.x >= 0 && bounds.y >= 0;
+}
 
 export const addDurationToFnReturnObject: AddDurationToFnReturnObject = (run) => {
     return async (logger) => {
@@ -54,4 +77,68 @@ export async function isOnline(logger: ElectronLog = log, url = IS_ONLINE_ENDPOI
             resolve(false);
         });
     });
+}
+
+export function browserWindowVisibilityStatus(name: string, bWindow?: BrowserWindow): WindowStatus {
+    const status: WindowStatus = [];
+
+    if (!bWindow) {
+        status.push({
+            name: 'windowExists',
+            ok: false,
+        });
+        return status;
+    }
+
+    const bounds = bWindow.getBounds();
+    const opacity = bWindow.getOpacity();
+    const destroyed = bWindow.isDestroyed();
+    const visible = bWindow.isVisible();
+    const enabled = bWindow.isEnabled();
+    const browserViewsBounds = bWindow.getBrowserViews()?.map((view) => view.getBounds());
+
+    status.push({
+        name: 'windowExists',
+        ok: true,
+    });
+
+    status.push({
+        name: 'bounds',
+        ok: boundsOk(bounds, true),
+        data: bounds,
+    });
+
+    status.push({
+        name: 'opacity',
+        ok: opacity > 0 && opacity <= 1,
+        data: opacity,
+    });
+
+    status.push({
+        name: 'destroyed',
+        ok: !destroyed,
+    });
+    status.push({
+        name: 'visible',
+        ok: visible,
+    });
+    status.push({
+        name: 'enabled',
+        ok: enabled,
+    });
+    status.push({
+        name: 'browserViewsBounds',
+        ok: browserViewsBounds.every((bounds) => boundsOk(bounds)),
+        data: browserViewsBounds,
+    });
+
+    return status;
+}
+
+export function webContentsCheck(webContents?: WebContents) {
+    if (!webContents) {
+        return false;
+    }
+
+    return !webContents.isCrashed() && !webContents.isDestroyed() && !webContents.isWaitingForResponse();
 }
