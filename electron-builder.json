@@ -83,6 +83,9 @@
       }
     ]
   },
+  "appImage": {
+    "executableArgs": [" "]
+  },
   "mac": {
     "category": "public.app-category.productivity",
     "target": [
