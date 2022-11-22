@@ -9,6 +9,11 @@ import {AddDurationToFnReturnObject, WindowStatus} from 'types/diagnostics';
 
 import {IS_ONLINE_ENDPOINT, LOGS_MAX_STRING_LENGTH} from 'common/constants';
 
+export function dateTimeInFilename(date?: Date) {
+    const now = date ?? new Date();
+    return `${now.getDate()}-${now.getMonth()}-${now.getFullYear()}_${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}-${now.getMilliseconds()}`;
+}
+
 export function boundsOk(bounds?: Rectangle, strict = false): boolean {
     if (!bounds) {
         return false;

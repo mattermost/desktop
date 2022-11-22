@@ -14,6 +14,7 @@ import Step3 from './steps/step3.serverConnectivity';
 import Step4 from './steps/step4.sessionDataValidation';
 import Step5 from './steps/step5.browserWindows';
 import Step6 from './steps/step6.permissions';
+import Step7 from './steps/step7.performance';
 
 const SORTED_STEPS: DiagnosticsStep[] = [
     Step0,
@@ -23,6 +24,7 @@ const SORTED_STEPS: DiagnosticsStep[] = [
     Step4,
     Step5,
     Step6,
+    Step7,
 ];
 
 class DiagnosticsModule {
