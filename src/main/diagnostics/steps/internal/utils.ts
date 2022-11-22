@@ -1,6 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-
+import fs from 'fs';
 import https from 'https';
 
 import {BrowserWindow, Rectangle, WebContents} from 'electron';
@@ -141,4 +141,21 @@ export function webContentsCheck(webContents?: WebContents) {
     }
 
     return !webContents.isCrashed() && !webContents.isDestroyed() && !webContents.isWaitingForResponse();
+}
+
+export async function checkPathPermissions(path?: fs.PathLike, mode?: number) {
+    try {
+        if (!path) {
+            throw new Error('Invalid path');
+        }
+        await fs.promises.access(path, mode);
+        return {
+            ok: true,
+        };
+    } catch (error) {
+        return {
+            ok: false,
+            error,
+        };
+    }
 }
