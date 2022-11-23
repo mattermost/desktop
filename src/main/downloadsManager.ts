@@ -172,16 +172,25 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
 
         for (const fileId in downloads) {
             if (Object.prototype.hasOwnProperty.call(downloads, fileId)) {
+                const file = downloads[fileId];
+
+                if (this.isInvalidFile(file)) {
+                    delete downloads[fileId];
+                    modified = true;
+                    continue;
+                }
+
                 // Remove update if app was updated and restarted
                 if (fileId === APP_UPDATE_KEY) {
-                    if (appVersionManager.lastAppVersion === downloads[APP_UPDATE_KEY].filename) {
+                    if (appVersionManager.lastAppVersion === file.filename) {
                         delete downloads[APP_UPDATE_KEY];
                         modified = true;
+                        continue;
                     } else {
                         continue;
                     }
                 }
-                const file = downloads[fileId];
+
                 if (file.state === 'completed') {
                     if (!file.location || !fs.existsSync(file.location)) {
                         downloads[fileId].state = 'deleted';
@@ -630,6 +639,13 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     private isAppUpdate = (item: DownloadedItem): boolean => {
         return item.type === DownloadItemTypeEnum.UPDATE;
     };
+
+    private isInvalidFile(file: DownloadedItem) {
+        return (typeof file !== 'object') ||
+            !file.filename ||
+            !file.state ||
+            !file.type;
+    }
 }
 
 let downloadsManager = new DownloadsManager(downloadsJson);
