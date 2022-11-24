@@ -31,7 +31,7 @@ describe('main/diagnostics/utils', () => {
             };
             const fn = addDurationToFnReturnObject(functionToMeasure);
             const b = await fn();
-            expect(b.duration).toBeGreaterThan(timeToSleep - 1);
+            expect(b.duration).toBeGreaterThan(timeToSleep - 10);
             expect(b.duration).toBeLessThan(timeToSleep * 1.5);
         });
     });
