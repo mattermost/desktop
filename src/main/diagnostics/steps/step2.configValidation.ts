@@ -41,10 +41,10 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     }
 };
 
-const StepTemplate = new DiagnosticsStep({
+const Step2 = new DiagnosticsStep({
     name: `diagnostic-${stepName}/${stepDescriptiveName}`,
     retries: 0,
     run,
 });
 
-export default StepTemplate;
+export default Step2;

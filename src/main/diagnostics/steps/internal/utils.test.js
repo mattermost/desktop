@@ -1,7 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+import fs from 'fs';
 
-import {addDurationToFnReturnObject, boundsOk, browserWindowVisibilityStatus, truncateString, webContentsCheck} from './utils';
+import config from 'common/config';
+
+import {addDurationToFnReturnObject, boundsOk, browserWindowVisibilityStatus, checkPathPermissions, truncateString, webContentsCheck} from './utils';
 
 const sleep = (ms) => new Promise((resolve) => {
     setTimeout(() => resolve(), ms);
@@ -9,6 +12,17 @@ const sleep = (ms) => new Promise((resolve) => {
 
 const timeToSleep = 100;
 
+jest.mock('fs', () => ({
+    promises: {
+        access: jest.fn(),
+    },
+    constants: {
+        W_OK: 0,
+    },
+}));
+jest.mock('common/config', () => ({
+    downloadLocation: 'path/to/file.txt',
+}));
 describe('main/diagnostics/utils', () => {
     describe('addDurationToFnReturnObject', () => {
         it('should measure the execution time of a function and include it in the response', async () => {
@@ -155,6 +169,18 @@ describe('main/diagnostics/utils', () => {
                 isDestroyed: () => false,
                 isWaitingForResponse: () => true,
             })).toBe(false);
+        });
+    });
+
+    describe('checkPathPermissions', () => {
+        it('should return {ok: true}', async () => {
+            fs.promises.access.mockImplementation(() => Promise.resolve(undefined));
+            expect(await checkPathPermissions(config.downloadLocation, fs.constants.W_OK)).toStrictEqual({ok: true});
+        });
+        it('should return {ok: false}', async () => {
+            const error = new Error('some error');
+            fs.promises.access.mockImplementation(() => Promise.reject(error));
+            expect(await checkPathPermissions(config.downloadLocation, fs.constants.W_OK)).toStrictEqual({ok: false, error});
         });
     });
 });
