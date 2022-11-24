@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ElectronLog} from 'electron-log';
+import {ElectronLog, LogLevel} from 'electron-log';
 
 export type DiagnosticsStepConstructorPayload = {
     name: string;
@@ -31,5 +31,21 @@ export type DiagnosticsReport = DiagnosticsReportObject[];
 export type WindowStatus = Array<{
     name: string;
     ok: boolean;
-    data?: any;
+    data?: unknown;
 }>;
+
+export type LogFileLineData = {
+    text: string;
+    logLevel?: LogLevel;
+    date?: string;
+}
+
+export type LogLevelAmounts = {
+    silly: number;
+    debug: number;
+    verbose: number;
+    info: number;
+    warn: number;
+    error: number;
+}
+

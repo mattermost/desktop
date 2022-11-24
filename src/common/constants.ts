@@ -30,6 +30,8 @@ export const REGEX_PATH_WIN32 = /(?:[a-z]:)?[/\\](?:[./\\ ](?![./\\\n])|[^<>:"|?
 export const REGEX_PATH_DARWIN = /([/]{1}[a-z0-9.]+)+(\/?)|^([/])/;
 export const REGEX_PATH_LINUX = /([/]{1}[a-z0-9.]+)+(\/?)|^([/])/; // same as darwin
 
+export const REGEX_LOG_FILE_LINE = /\[(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}.\d{3})\]\s\[(silly|debug|verbose|info|warn|error)\]\s+(.*)/;
+
 // Masks
 export const MASK_EMAIL = 'EMAIL';
 export const MASK_IPV4 = 'IPV4';
