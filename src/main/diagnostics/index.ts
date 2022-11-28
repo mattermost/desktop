@@ -16,6 +16,7 @@ import Step5 from './steps/step5.browserWindows';
 import Step6 from './steps/step6.permissions';
 import Step7 from './steps/step7.performance';
 import Step8 from './steps/step8.logHeuristics';
+import Step9 from './steps/step9.config';
 
 const SORTED_STEPS: DiagnosticsStep[] = [
     Step0,
@@ -27,6 +28,7 @@ const SORTED_STEPS: DiagnosticsStep[] = [
     Step6,
     Step7,
     Step8,
+    Step9,
 ];
 
 class DiagnosticsModule {
@@ -80,7 +82,7 @@ class DiagnosticsModule {
                 this.addToReport({
                     ...stepResult,
                     ...reportStep,
-                    payload: JSON.stringify(stepResult.payload, null, 4),
+                    payload: stepResult.payload,
                 });
                 this.logger.debug('Diagnostics executeSteps StepCompleted', {index, name: step.name, retries: step.retries, stepResult});
             } else {
