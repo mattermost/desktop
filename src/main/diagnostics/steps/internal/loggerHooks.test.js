@@ -51,7 +51,7 @@ describe('main/diagnostics/loggerHooks', () => {
     });
 
     it('should mask URLs', () => {
-        const URLs = ['www.google.com', 'community.mattermost.com', 'someWebsite.without.tls'];
+        const URLs = ['http://www.google.com', 'https://community.mattermost.com', 'https://someWebsite.com'];
         const message = {
             data: [`${URLs[0]} https://${URLs[1]} http://${URLs[2]}`],
         };

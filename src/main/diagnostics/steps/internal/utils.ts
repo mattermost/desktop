@@ -2,12 +2,13 @@
 // See LICENSE.txt for license information.
 import fs from 'fs';
 import https from 'https';
+import readline from 'readline';
 
 import {BrowserWindow, Rectangle, WebContents} from 'electron';
-import log, {ElectronLog} from 'electron-log';
-import {AddDurationToFnReturnObject, WindowStatus} from 'types/diagnostics';
+import log, {ElectronLog, LogLevel} from 'electron-log';
+import {AddDurationToFnReturnObject, LogFileLineData, LogLevelAmounts, WindowStatus} from 'types/diagnostics';
 
-import {IS_ONLINE_ENDPOINT, LOGS_MAX_STRING_LENGTH} from 'common/constants';
+import {IS_ONLINE_ENDPOINT, LOGS_MAX_STRING_LENGTH, REGEX_LOG_FILE_LINE} from 'common/constants';
 
 export function dateTimeInFilename(date?: Date) {
     const now = date ?? new Date();
@@ -163,4 +164,79 @@ export async function checkPathPermissions(path?: fs.PathLike, mode?: number) {
             error,
         };
     }
+}
+
+function parseLogFileLine(line: string, lineMatchPattern: RegExp): LogFileLineData {
+    const data = line.match(lineMatchPattern);
+    return {
+        text: line,
+        date: data?.[1],
+        logLevel: data?.[2] as LogLevel,
+    };
+}
+
+/**
+ * The current setup of `electron-log` rotates the file when it reaches ~1mb. It's safe to assume that the file will not be large enough to cause
+ * issues reading it in the same process. If this read function ever causes performance issues we should either execute it in a child process or
+ * read up to X amount of lines (eg 10.000)
+ */
+export async function readFileLineByLine(path: fs.PathLike, lineMatchPattern = REGEX_LOG_FILE_LINE): Promise<{lines: LogFileLineData[]; logLevelAmounts: LogLevelAmounts}> {
+    const logLevelAmounts = {
+        silly: 0,
+        debug: 0,
+        verbose: 0,
+        info: 0,
+        warn: 0,
+        error: 0,
+    };
+    const lines: LogFileLineData[] = [];
+
+    if (!path) {
+        return {
+            lines,
+            logLevelAmounts,
+        };
+    }
+
+    const fileStream = fs.createReadStream(path);
+    const rl = readline.createInterface({
+        input: fileStream,
+
+        /**
+         * Note: we use the crlfDelay option to recognize all instances of CR LF
+         * ('\r\n') in input.txt as a single line break.
+         */
+        crlfDelay: Infinity,
+    });
+
+    let i = -1;
+
+    for await (const line of rl) {
+        const isValidLine = new RegExp(lineMatchPattern, 'gi').test(line);
+
+        if (isValidLine || i === -1) {
+            i++;
+            const lineData = parseLogFileLine(line, lineMatchPattern);
+
+            if (lineData.logLevel) {
+                logLevelAmounts[lineData.logLevel]++;
+            }
+
+            //push in array as new line
+            lines.push(lineData);
+        } else {
+            //concat with previous line
+            lines[i].text = `${lines[i].text}${line}`;
+        }
+
+        // exit loop in edge case of very large file or infinite loop
+        if (i >= 100000) {
+            break;
+        }
+    }
+
+    return {
+        lines,
+        logLevelAmounts,
+    };
 }

@@ -9,12 +9,15 @@ import DiagnosticsStep from './DiagnosticStep';
 
 import Step0 from './steps/step0.logLevel';
 import Step1 from './steps/step1.internetConnection';
+import Step10 from './steps/step10.crashReports';
 import Step2 from './steps/step2.configValidation';
 import Step3 from './steps/step3.serverConnectivity';
 import Step4 from './steps/step4.sessionDataValidation';
 import Step5 from './steps/step5.browserWindows';
 import Step6 from './steps/step6.permissions';
 import Step7 from './steps/step7.performance';
+import Step8 from './steps/step8.logHeuristics';
+import Step9 from './steps/step9.config';
 
 const SORTED_STEPS: DiagnosticsStep[] = [
     Step0,
@@ -25,6 +28,9 @@ const SORTED_STEPS: DiagnosticsStep[] = [
     Step5,
     Step6,
     Step7,
+    Step8,
+    Step9,
+    Step10,
 ];
 
 class DiagnosticsModule {
@@ -78,7 +84,7 @@ class DiagnosticsModule {
                 this.addToReport({
                     ...stepResult,
                     ...reportStep,
-                    payload: JSON.stringify(stepResult.payload, null, 4),
+                    payload: stepResult.payload,
                 });
                 this.logger.debug('Diagnostics executeSteps StepCompleted', {index, name: step.name, retries: step.retries, stepResult});
             } else {
