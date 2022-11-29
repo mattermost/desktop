@@ -10,6 +10,7 @@ import DiagnosticsStep from './DiagnosticStep';
 import Step0 from './steps/step0.logLevel';
 import Step1 from './steps/step1.internetConnection';
 import Step10 from './steps/step10.crashReports';
+import Step11 from './steps/step11.auth';
 import Step2 from './steps/step2.configValidation';
 import Step3 from './steps/step3.serverConnectivity';
 import Step4 from './steps/step4.sessionDataValidation';
@@ -31,6 +32,7 @@ const SORTED_STEPS: DiagnosticsStep[] = [
     Step8,
     Step9,
     Step10,
+    Step11,
 ];
 
 class DiagnosticsModule {
