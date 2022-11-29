@@ -193,5 +193,32 @@ describe('main/downloadsManager', () => {
         dl.showFileInFolder(item1);
         expect(shell.showItemInFolder).toHaveBeenCalledWith(locationMock1);
     });
+
+    it('MM-48483 - should remove an invalid file from the list on startup', () => {
+        const dl = new DownloadsManager(JSON.stringify({
+            ...downloadsJson,
+            'invalid_file1.txt': undefined,
+            'invalid_file2.txt': {},
+            'invalid_file3.txt': {invalidProperty: 'something'},
+            'invalid_file4.txt': {
+                state: 'completed',
+                type: 'file',
+            },
+            'invalid_file5.txt': {
+                filename: 'invalid_file5.txt',
+                type: 'file',
+            },
+            'invalid_file6.txt': {
+                filename: 'invalid_file5.txt',
+                state: 'completed',
+            },
+        }));
+        expect(Object.keys(dl.downloads).includes('invalid_file1.txt')).toBe(false);
+        expect(Object.keys(dl.downloads).includes('invalid_file2.txt')).toBe(false);
+        expect(Object.keys(dl.downloads).includes('invalid_file3.txt')).toBe(false);
+        expect(Object.keys(dl.downloads).includes('invalid_file4.txt')).toBe(false);
+        expect(Object.keys(dl.downloads).includes('invalid_file5.txt')).toBe(false);
+        expect(Object.keys(dl.downloads).includes('invalid_file6.txt')).toBe(false);
+    });
 });
 

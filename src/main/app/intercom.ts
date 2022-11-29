@@ -4,10 +4,11 @@
 import {app, dialog, IpcMainEvent, IpcMainInvokeEvent, Menu} from 'electron';
 import log from 'electron-log';
 
-import {Team, TeamWithIndex} from 'types/config';
+import {Team, TeamWithIndex, RegistryConfig as RegistryConfigType} from 'types/config';
 import {MentionData} from 'types/notification';
 
 import Config from 'common/config';
+import {REGISTRY_READ_EVENT} from 'common/config/RegistryConfig';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 import {ping} from 'common/utils/requests';
 
@@ -87,12 +88,25 @@ export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: 
 
 export function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerModal: boolean, mainWindowIsVisible: boolean) {
     log.debug('Intercom.handleShowOnboardingScreens', {showWelcomeScreen, showNewServerModal, mainWindowIsVisible});
-    if (showWelcomeScreen) {
-        handleWelcomeScreenModal();
-        return;
-    }
-    if (showNewServerModal) {
-        handleNewServerModal();
+
+    const showWelcomeScreenFunc = () => {
+        if (showWelcomeScreen) {
+            handleWelcomeScreenModal();
+            return;
+        }
+        if (showNewServerModal) {
+            handleNewServerModal();
+        }
+    };
+
+    if (process.platform === 'win32' && !Config.registryConfigData) {
+        Config.registryConfig.once(REGISTRY_READ_EVENT, (data: Partial<RegistryConfigType>) => {
+            if (data.teams?.length === 0) {
+                showWelcomeScreenFunc();
+            }
+        });
+    } else {
+        showWelcomeScreenFunc();
     }
 }
 
