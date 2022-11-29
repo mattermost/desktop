@@ -75,14 +75,14 @@ export class MattermostView extends EventEmitter {
         );
 
         WebRequestManager.rewriteURL(
-            new RegExp(`file:///${path.resolve('/').replace('\\', '/')}(\\?.+)?$`, 'g'),
-            `${getLocalURLString('index.html')}$1`,
+            new RegExp(`file://(${this.tab.server.url.pathname})?/(api|static|plugins)/(.*)`, 'g'),
+            `${this.tab.server.url}/$2/$3`,
             this.view.webContents.id,
         );
 
         WebRequestManager.rewriteURL(
-            new RegExp(`file://${this.tab.server.url.pathname}/plugins/focalboard/(.+)`, 'g'),
-            `${this.tab.server.url}/plugins/focalboard/$1`,
+            new RegExp(`file:///${path.resolve('/').replace('\\', '/')}(\\?.+)?$`, 'g'),
+            `${getLocalURLString('index.html')}$1`,
             this.view.webContents.id,
         );
 
