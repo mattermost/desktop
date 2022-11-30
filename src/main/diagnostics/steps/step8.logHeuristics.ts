@@ -16,8 +16,6 @@ const stepDescriptiveName = 'LogHeuristics';
 
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
-        logger.debug(`Diagnostics ${stepName} run`);
-
         const mainLogFilePath = log.transports.file.getFile().path;
         const fileData = await readFileLineByLine(mainLogFilePath);
 
@@ -50,7 +48,7 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
 };
 
 const Step8 = new DiagnosticsStep({
-    name: `diagnostic-${stepName}/${stepDescriptiveName}`,
+    name: `diagnostic-${stepName}: ${stepDescriptiveName}`,
     retries: 0,
     run,
 });

@@ -16,8 +16,6 @@ const stepDescriptiveName = 'BrowserWindowsChecks';
 
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
-        logger.debug(`Diagnostics ${stepName} run`);
-
         /** Main window check */
         if (!windowManager.mainWindowReady) {
             throw new Error('Main window not ready');
@@ -58,7 +56,7 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
 };
 
 const Step5 = new DiagnosticsStep({
-    name: `diagnostic-${stepName}/${stepDescriptiveName}`,
+    name: `diagnostic-${stepName}: ${stepDescriptiveName}`,
     retries: 0,
     run,
 });

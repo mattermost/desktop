@@ -14,8 +14,6 @@ const stepDescriptiveName = 'CrashReports';
 
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
-        logger.debug(`Diagnostics ${stepName} run`);
-
         const pathOfCrashReports = app.getPath('userData');
         const allDirFiles = await fs.promises.readdir(pathOfCrashReports);
         const crashReportFiles = allDirFiles.filter((fileName) => fileName.startsWith('uncaughtException-'));
@@ -48,7 +46,7 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
 };
 
 const Step10 = new DiagnosticsStep({
-    name: `diagnostic-${stepName}/${stepDescriptiveName}`,
+    name: `diagnostic-${stepName}: ${stepDescriptiveName}`,
     retries: 0,
     run,
 });

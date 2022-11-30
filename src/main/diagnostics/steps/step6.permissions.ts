@@ -19,8 +19,6 @@ const isWin32 = process.platform === 'win32';
 
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
-        logger.debug(`Diagnostics ${stepName} run`);
-
         const downloadsFileAccess = await checkPathPermissions(config.downloadLocation, fs.constants.W_OK);
         const logsFileAccess = await checkPathPermissions(log.transports.file.getFile().path, fs.constants.W_OK);
 
@@ -58,7 +56,7 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
 };
 
 const Step6 = new DiagnosticsStep({
-    name: `diagnostic-${stepName}/${stepDescriptiveName}`,
+    name: `diagnostic-${stepName}: ${stepDescriptiveName}`,
     retries: 0,
     run,
 });

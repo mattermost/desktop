@@ -23,13 +23,11 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
         logger.transports.file.resolvePath = () => pathToFile;
         logger.transports.file.fileName = filename;
 
-        logger.debug('ConfigureLogger', {filename, pathToFile});
-
         logger.hooks.push(...loggerHooks(logger));
         logger.transports.file.level = 'silly';
         logger.transports.console.level = 'silly';
 
-        await Promise.resolve();
+        logger.debug('ConfigureLogger', {filename, pathToFile});
         return {
             message: `${stepName} finished successfully`,
             succeeded: true,
@@ -45,7 +43,7 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
 };
 
 const Step0 = new DiagnosticsStep({
-    name: `diagnostic-${stepName}/${stepDescriptiveName}`,
+    name: `diagnostic-${stepName}: ${stepDescriptiveName}`,
     retries: 0,
     run,
 });
