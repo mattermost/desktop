@@ -12,11 +12,9 @@ const stepDescriptiveName = 'AuthSSO';
 
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
-        logger.debug(`Diagnostics ${stepName} run`);
         const cookies = await session.defaultSession.cookies.get({});
 
         if (!cookies) {
-            logger.error(`${stepName}: No cookies found`);
             throw new Error('No cookies found');
         }
 
@@ -44,7 +42,7 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
 };
 
 const Step11 = new DiagnosticsStep({
-    name: `diagnostic-${stepName}/${stepDescriptiveName}`,
+    name: `diagnostic-${stepName}: ${stepDescriptiveName}`,
     retries: 0,
     run,
 });
