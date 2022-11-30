@@ -34,6 +34,8 @@ const SORTED_STEPS: DiagnosticsStep[] = [
     Step10,
     Step11,
 ];
+const maxStepNameLength = Math.max(...SORTED_STEPS.map((s) => s.name.length));
+const HASHTAGS = '#'.repeat(20);
 
 class DiagnosticsModule {
     stepCurrent = 0;
@@ -42,24 +44,31 @@ class DiagnosticsModule {
     logger: ElectronLog = log.create('diagnostics-logger');
 
     run = async () => {
-        if (this.isRunning()) {
-            this.logger.warn('Diagnostics is already running');
-            return;
-        }
-        this.logger.debug('Diagnostics run');
-        this.initializeValues();
-        this.sendNotificationDiagnosticsStarted();
-        await this.executeSteps();
-        this.printReport();
-        this.showLogFile();
+        try {
+            if (this.isRunning()) {
+                this.logger.warn('Diagnostics is already running');
+                return;
+            }
+            this.logger.debug('Diagnostics.run');
 
-        this.initializeValues(true);
+            this.initializeValues();
+            this.sendNotificationDiagnosticsStarted();
+            await this.executeSteps();
+            this.printReport();
+            this.showLogFile();
+
+            this.initializeValues(true);
+        } catch (error) {
+            this.logger.error('Diagnostics.run Error: ', {error});
+            this.initializeValues(true);
+        }
     }
 
     initializeValues = (clear = false) => {
         this.logger.transports.file.level = 'silly';
         this.logger.transports.console.level = 'silly';
-        this.logger.debug('Diagnostics initializeValues');
+
+        this.logger.debug('Diagnostics.initializeValues');
         this.stepCurrent = 0;
         this.stepTotal = clear ? 0 : this.getStepCount();
         this.report = [];
@@ -67,13 +76,13 @@ class DiagnosticsModule {
 
     getStepCount = () => {
         const stepsCount = SORTED_STEPS.length;
-        this.logger.debug('Diagnostics getStepCount', {stepsCount});
+        this.logger.debug('Diagnostics.getStepCount', {stepsCount});
 
         return stepsCount;
     }
 
     executeSteps = async () => {
-        this.logger.debug('Diagnostics executeSteps Started');
+        this.logger.info('Diagnostics.executeSteps Started');
         let index = 0;
         for (const step of SORTED_STEPS) {
             const reportStep = {
@@ -83,34 +92,49 @@ class DiagnosticsModule {
             if (this.isValidStep(step)) {
                 // eslint-disable-next-line no-await-in-loop
                 const stepResult = await step.run(this.logger);
+                this.printStepStart(step.name);
                 this.addToReport({
                     ...stepResult,
                     ...reportStep,
                     payload: stepResult.payload,
                 });
-                this.logger.debug('Diagnostics executeSteps StepCompleted', {index, name: step.name, retries: step.retries, stepResult});
+                this.logger.info({stepResult});
+                this.printStepEnd(step.name);
             } else {
                 this.addToReport({
                     ...reportStep,
                     succeeded: false,
                     duration: 0,
                 });
-                this.logger.warn('Diagnostics executeSteps UnknownStep', {index, step});
+                this.logger.warn('Diagnostics.executeSteps UnknownStep', {index, step});
             }
             index++;
             this.stepCurrent = index;
         }
-        this.logger.debug('Diagnostics executeSteps Finished');
+        this.logger.info('Diagnostics.executeSteps Finished');
     }
 
     printReport = () => {
-        this.logger.debug('Diagnostics printReport: ', {report: this.report});
-        return this.report;
+        const totalStepsCount = this.getStepCount();
+        const successfulStepsCount = this.getSuccessfulStepsCount();
+        this.printStepStart('Report');
+        this.logger.info({report: this.report});
+        this.logger.info(`| index | name${this.fillSpaces(maxStepNameLength - 4)} | succeeded |`);
+        this.logger.info(`| ---${this.fillSpaces(3)}| ---${this.fillSpaces(maxStepNameLength - 3)} | ---${this.fillSpaces(7)}|`);
+
+        this.report.forEach((step, index) => {
+            this.logger.info(`| ${index}${this.fillSpaces(6 - index.toString().length)}| ${step.name}${this.fillSpaces(maxStepNameLength - step.name.length)} | ${step.succeeded}${this.fillSpaces(step.succeeded ? 6 : 5)}|`);
+        });
+
+        this.logger.info(`| ---${this.fillSpaces(3)}| ---${this.fillSpaces(maxStepNameLength - 3)} | ---${this.fillSpaces(7)}|`);
+        this.logger.info(`${successfulStepsCount}/${totalStepsCount} steps succeeded`);
+        this.printStepEnd('Report');
     }
 
     showLogFile = () => {
         const pathToFile = this.getLoggerFilePath();
-        this.logger.debug('Diagnostics showLogFile', {pathToFile});
+
+        this.logger.debug('Diagnostics.showLogFile', {pathToFile});
         shell.showItemInFolder(pathToFile);
     }
 
@@ -130,11 +154,30 @@ class DiagnosticsModule {
         return this.stepTotal > 0 && this.stepCurrent >= 0;
     }
 
+    getSuccessfulStepsCount = () => {
+        return this.report.filter((step) => step.succeeded).length;
+    }
+
+    private printStepStart = (name: string) => {
+        this.logger.info(`${HASHTAGS} ${name} START ${HASHTAGS}`);
+    }
+
+    private printStepEnd = (name: string) => {
+        this.logger.info(`${HASHTAGS} ${name} END ${HASHTAGS}`);
+    }
+
     private addToReport(data: DiagnosticsReport[number]): void {
         this.report = [
             ...this.report,
             data,
         ];
+    }
+
+    private fillSpaces = (i: number) => {
+        if (typeof i !== 'number' || i <= 0) {
+            return '';
+        }
+        return ' '.repeat(i);
     }
 }
 

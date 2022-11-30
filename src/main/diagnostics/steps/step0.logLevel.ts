@@ -29,7 +29,6 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
         logger.transports.file.level = 'silly';
         logger.transports.console.level = 'silly';
 
-        await Promise.resolve();
         return {
             message: `${stepName} finished successfully`,
             succeeded: true,
@@ -45,7 +44,7 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
 };
 
 const Step0 = new DiagnosticsStep({
-    name: `diagnostic-${stepName}/${stepDescriptiveName}`,
+    name: `diagnostic-${stepName}: ${stepDescriptiveName}`,
     retries: 0,
     run,
 });

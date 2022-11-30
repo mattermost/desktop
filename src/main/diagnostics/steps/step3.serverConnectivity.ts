@@ -15,11 +15,10 @@ const stepDescriptiveName = 'serverConnectivity';
 
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
-        logger.debug(`Diagnostics ${stepName} run`);
         const teams = Config.combinedData?.teams || [];
 
         await Promise.all(teams.map(async (team) => {
-            logger.debug('Ping server: ', team.url);
+            logger.debug('Pinging server: ', team.url);
 
             if (!team.name || !team.url) {
                 throw new Error(`Invalid server configuration. Team Url: ${team.url}, team name: ${team.name}`);
@@ -49,7 +48,7 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
 };
 
 const Step3 = new DiagnosticsStep({
-    name: `diagnostic-${stepName}/${stepDescriptiveName}`,
+    name: `diagnostic-${stepName}: ${stepDescriptiveName}`,
     retries: 0,
     run,
 });

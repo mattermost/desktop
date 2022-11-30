@@ -14,7 +14,7 @@ class DiagnosticsStep {
 
     constructor({name = genericStepName, retries = 0, run}: DiagnosticsStepConstructorPayload) {
         if (typeof run !== 'function') {
-            throw new Error(`"run" and "onFailure" are missing from step ${name}`);
+            throw new Error(`"run" function is missing from step ${name}`);
         }
         this.name = name;
         this.retries = retries;

@@ -15,8 +15,6 @@ const stepDescriptiveName = 'PerformanceAndMemory';
 
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
-        logger.debug(`Diagnostics ${stepName} run`);
-
         const heapSnapshotFilepath = path.join(app.getAppPath(), `heapSnapshots/heap_snap_${dateTimeInFilename()}.txt`);
 
         const payload: Record<string, unknown> = {
@@ -62,7 +60,7 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
 };
 
 const Step7 = new DiagnosticsStep({
-    name: `diagnostic-${stepName}/${stepDescriptiveName}`,
+    name: `diagnostic-${stepName}: ${stepDescriptiveName}`,
     retries: 0,
     run,
 });

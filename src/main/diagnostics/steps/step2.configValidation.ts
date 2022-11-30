@@ -15,8 +15,6 @@ const stepDescriptiveName = 'configValidation';
 
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
-        logger.debug(`Diagnostics ${stepName} run`);
-
         const configData = JSON.parse(fs.readFileSync(Config.configFilePath, 'utf8'));
 
         // validate based on config file version
@@ -42,7 +40,7 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
 };
 
 const Step2 = new DiagnosticsStep({
-    name: `diagnostic-${stepName}/${stepDescriptiveName}`,
+    name: `diagnostic-${stepName}: ${stepDescriptiveName}`,
     retries: 0,
     run,
 });

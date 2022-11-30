@@ -13,7 +13,6 @@ const stepDescriptiveName = 'Template';
 
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
-        logger.debug(`Diagnostics ${stepName} run`);
         await Promise.resolve();
         return {
             message: `${stepName} finished successfully`,
@@ -30,7 +29,7 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
 };
 
 const StepTemplate = new DiagnosticsStep({
-    name: `diagnostic-${stepName}/${stepDescriptiveName}`,
+    name: `diagnostic-${stepName}: ${stepDescriptiveName}`,
     retries: 0,
     run,
 });
