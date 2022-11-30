@@ -127,7 +127,7 @@ class DiagnosticsModule {
         });
 
         this.logger.info(`| ---${this.fillSpaces(3)}| ---${this.fillSpaces(maxStepNameLength - 3)} | ---${this.fillSpaces(7)}|`);
-        this.logger.info(`${successfulStepsCount}/${totalStepsCount} steps succeeded`);
+        this.logger.info(`${successfulStepsCount} out of ${totalStepsCount} steps succeeded`);
         this.printStepEnd('Report');
     }
 
