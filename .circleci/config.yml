@@ -111,7 +111,7 @@ commands:
       - run: 
           name: npn run
           command: npm run package:<< parameters.os >>
-          no_output_timeout: 30m
+          no_output_timeout: 60m
       - run: bash -x ./scripts/patch_updater_yml.sh
       - run: mkdir -p << parameters.path >>
       - run: bash -x ./scripts/cp_artifacts.sh release << parameters.path >>
