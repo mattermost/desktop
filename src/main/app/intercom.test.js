@@ -16,7 +16,6 @@ import {
     handleRemoveServerModal,
     handleWelcomeScreenModal,
     handleMainWindowIsShown,
-    handleShowOnboardingScreens,
 } from './intercom';
 
 jest.mock('common/config', () => ({
@@ -271,20 +270,15 @@ describe('main/app/intercom', () => {
             Config.set.mockImplementation((name, value) => {
                 Config[name] = value;
             });
-            Config.teams = JSON.parse(JSON.stringify([{
-                name: 'test-team',
-                order: 0,
-                url: 'https://someurl.here',
-            }]));
+            Config.registryConfigData = {
+                teams: JSON.parse(JSON.stringify([{
+                    name: 'test-team',
+                    order: 0,
+                    url: 'https://someurl.here',
+                }])),
+            };
 
             handleMainWindowIsShown();
-            expect(ModalManager.addModal).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('handleShowOnboardingScreens', () => {
-        it('MM-48079 should not show onboarding screen or server screen if GPO server is pre-configured', () => {
-            handleShowOnboardingScreens(false, false, true);
             expect(ModalManager.addModal).not.toHaveBeenCalled();
         });
     });
