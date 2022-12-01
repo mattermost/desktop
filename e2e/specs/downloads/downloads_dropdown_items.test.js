@@ -67,7 +67,7 @@ describe('downloads/downloads_dropdown_items', function desc() {
             const fileStateInnerText = await fileStateLocator.innerText();
             fileStateInnerText.should.equal('3.92 MB • Downloaded');
 
-            const fileThumbnailLocator = await this.downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Thumbnail');
+            const fileThumbnailLocator = await this.downloadsWindow.waitForSelector('.DownloadsDropdown__Thumbnail');
             const thumbnailBackgroundImage = await fileThumbnailLocator.evaluate((node) => window.getComputedStyle(node).getPropertyValue('background-image'));
             thumbnailBackgroundImage.should.include('text..svg');
         });
@@ -104,7 +104,7 @@ describe('downloads/downloads_dropdown_items', function desc() {
             const fileStateInnerText = await fileStateLocator.innerText();
             fileStateInnerText.should.equal('3.92 MB • Deleted');
 
-            const fileThumbnailLocator = await this.downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Thumbnail');
+            const fileThumbnailLocator = await this.downloadsWindow.waitForSelector('.DownloadsDropdown__Thumbnail');
             const thumbnailBackgroundImage = await fileThumbnailLocator.evaluate((node) => window.getComputedStyle(node).getPropertyValue('background-image'));
             thumbnailBackgroundImage.should.include('text..svg');
         });
@@ -148,7 +148,7 @@ describe('downloads/downloads_dropdown_items', function desc() {
             const fileStateInnerText = await fileStateLocator.innerText();
             fileStateInnerText.should.equal('3.92 MB • Cancelled');
 
-            const fileThumbnailLocator = await this.downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Thumbnail');
+            const fileThumbnailLocator = await this.downloadsWindow.waitForSelector('.DownloadsDropdown__Thumbnail');
             const thumbnailBackgroundImage = await fileThumbnailLocator.evaluate((node) => window.getComputedStyle(node).getPropertyValue('background-image'));
             thumbnailBackgroundImage.should.include('text..svg');
         });
