@@ -258,7 +258,7 @@ export class WindowManager {
     isResizing = false;
 
     handleWillResizeMainWindow = (event: Event, newBounds: Electron.Rectangle) => {
-        log.debug('WindowManager.handleWillResizeMainWindow');
+        log.silly('WindowManager.handleWillResizeMainWindow');
 
         if (!(this.viewManager && this.mainWindow)) {
             return;
@@ -288,7 +288,7 @@ export class WindowManager {
     }
 
     handleResizedMainWindow = () => {
-        log.debug('WindowManager.handleResizedMainWindow');
+        log.silly('WindowManager.handleResizedMainWindow');
 
         if (this.mainWindow) {
             const bounds = this.getBounds();
@@ -306,14 +306,14 @@ export class WindowManager {
     }
 
     private throttledWillResize = (newBounds: Electron.Rectangle) => {
-        log.debug('WindowManager.throttledWillResize', {newBounds});
+        log.silly('WindowManager.throttledWillResize', {newBounds});
 
         this.isResizing = true;
         this.setCurrentViewBounds(newBounds);
     }
 
     handleResizeMainWindow = () => {
-        log.debug('WindowManager.handleResizeMainWindow');
+        log.silly('WindowManager.handleResizeMainWindow');
 
         if (!(this.viewManager && this.mainWindow)) {
             return;
