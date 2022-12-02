@@ -109,7 +109,10 @@
       "__SKIP_ONBOARDING_SCREENS__": false
     },
     "setupFiles": [
-      "./src/jestSetup.js"
+      "./src/jest/jestSetup.js"
+    ],
+    "setupFilesAfterEnv": [
+      "./src/jest/jestSetupAfterEnv.js"
     ],
     "reporters": [
       "default",
