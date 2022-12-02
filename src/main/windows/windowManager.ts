@@ -202,8 +202,17 @@ export class WindowManager {
             return;
         }
 
+        /**
+         * Fixes an issue on win11 related to Snap where the first "will-resize" event would return the same bounds
+         * causing the "resize" event to not fire
+         */
+        const prevBounds = this.getBounds();
+        if (prevBounds.height === newBounds.height && prevBounds.width === newBounds.width) {
+            return;
+        }
+
         if (this.isResizing && this.viewManager.loadingScreenState === LoadingScreenState.HIDDEN && this.viewManager.getCurrentView()) {
-            log.silly('prevented resize');
+            log.debug('prevented resize');
             event.preventDefault();
             return;
         }
@@ -235,6 +244,8 @@ export class WindowManager {
     }
 
     private throttledWillResize = (newBounds: Electron.Rectangle) => {
+        log.silly('WindowManager.throttledWillResize', {newBounds});
+
         this.isResizing = true;
         this.setCurrentViewBounds(newBounds);
     }
@@ -262,6 +273,8 @@ export class WindowManager {
     };
 
     setCurrentViewBounds = (bounds: {width: number; height: number}) => {
+        log.debug('WindowManager.setCurrentViewBounds', {bounds});
+
         const currentView = this.viewManager?.getCurrentView();
         if (currentView) {
             const adjustedBounds = getAdjustedWindowBoundaries(bounds.width, bounds.height, shouldHaveBackBar(currentView.tab.url, currentView.view.webContents.getURL()));

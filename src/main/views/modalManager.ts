@@ -131,7 +131,7 @@ export class ModalManager {
     }
 
     handleResizeModal = (event: IpcMainEvent, bounds: Electron.Rectangle) => {
-        log.debug('ModalManager.handleResizeModal', bounds);
+        log.debug('ModalManager.handleResizeModal', {bounds, modalQueueLength: this.modalQueue.length});
 
         if (this.modalQueue.length) {
             const currentModal = this.modalQueue[0];
