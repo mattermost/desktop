@@ -7,18 +7,10 @@
             "name": "Debug Main Process",
             "cwd": "${workspaceRoot}",
             "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
-            "runtimeArgs": [
-                "src",
-                "--disable-dev-mode"
-            ],
             "windows": {
                 "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
             },
-            "program": "${workspaceRoot}/src/main.js",
-            "outFiles": [
-                "${workspaceRoot}/src/main_bundle.js"
-            ],
-            "sourceMaps": true,
+            "program": "${workspaceRoot}/dist/index.js",
             "preLaunchTask": "Build sources"
         },
         /*
