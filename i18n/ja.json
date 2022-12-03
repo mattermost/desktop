@@ -53,7 +53,7 @@
     "renderer.components.settingsPage.loggingLevel.level.info": "Info (info)",
     "renderer.components.settingsPage.loggingLevel.level.error": "Errors (error)",
     "renderer.components.settingsPage.loggingLevel.level.debug": "Debug (debug)",
-    "renderer.components.settingsPage.loggingLevel.description.subtitle": "ログレベルを上げると、ディスク使用量が増加し、パフォーマンスに影響を与える可能性があります。問題がある場合に飲み、ログレベルを上げることをお勧めします。",
+    "renderer.components.settingsPage.loggingLevel.description.subtitle": "ログレベルを上げると、ディスク使用量が増加し、パフォーマンスに影響を与える可能性があります。問題がある場合にのみ、ログレベルを上げることをお勧めします。",
     "renderer.components.settingsPage.loggingLevel.description": "ログは開発者の役に立ち、デスクトップアプリで発生した問題を切り分けやすくなります。",
     "renderer.components.settingsPage.loggingLevel": "ログレベル",
     "renderer.components.settingsPage.loadingConfig": "設定を読み込んでいます...",
