@@ -67,6 +67,7 @@
   "main.menus.app.help.downloadUpdate": "Download Update",
   "main.menus.app.help.learnMore": "Learn More...",
   "main.menus.app.help.restartAndUpdate": "Restart and Update",
+  "main.menus.app.help.RunDiagnostics": "Run diagnostics",
   "main.menus.app.help.versionString": "Version {version}{commit}",
   "main.menus.app.history": "&History",
   "main.menus.app.history.back": "Back",
