@@ -261,5 +261,6 @@
     "label.add": "Добавить",
     "label.accept": "Принять",
     "common.permissions.canBasicAuth": "Веб-аутентификация",
-    "renderer.components.settingsPage.trayIcon.color": "Цвет значка: "
+    "renderer.components.settingsPage.trayIcon.color": "Цвет значка: ",
+    "main.menus.app.help.RunDiagnostics": "Выполните диагностику"
 }
