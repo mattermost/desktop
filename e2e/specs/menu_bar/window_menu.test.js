@@ -107,18 +107,21 @@ describe('Menu/window_menu', function desc() {
             tabViewButton.should.equal('Channels');
 
             robot.keyTap('2', [env.cmdOrCtrl]);
+            await asyncSleep(500);
             tabViewButton = await mainView.innerText('.active');
             tabViewButton.should.equal('Boards');
         });
 
         it('MM-T4385_2 should show the third tab', async () => {
             robot.keyTap('3', [env.cmdOrCtrl]);
+            await asyncSleep(500);
             const tabViewButton = await mainView.innerText('.active');
             tabViewButton.should.equal('Playbooks');
         });
 
         it('MM-T4385_3 should show the first tab', async () => {
             robot.keyTap('1', [env.cmdOrCtrl]);
+            await asyncSleep(500);
             const tabViewButton = await mainView.innerText('.active');
             tabViewButton.should.equal('Channels');
         });
@@ -133,10 +136,12 @@ describe('Menu/window_menu', function desc() {
         tabViewButton.should.equal('Channels');
 
         robot.keyTap('tab', ['control']);
+        await asyncSleep(500);
         tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Boards');
 
         robot.keyTap('tab', ['shift', 'control']);
+        await asyncSleep(500);
         tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Channels');
 
