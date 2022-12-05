@@ -59,12 +59,10 @@ describe('EditServerModal', function desc() {
                 {
                     name: 'TAB_FOCALBOARD',
                     order: 1,
-                    isOpen: true,
                 },
                 {
                     name: 'TAB_PLAYBOOKS',
                     order: 2,
-                    isOpen: true,
                 },
             ],
             lastActiveTab: 0,
@@ -91,12 +89,10 @@ describe('EditServerModal', function desc() {
                 {
                     name: 'TAB_FOCALBOARD',
                     order: 1,
-                    isOpen: true,
                 },
                 {
                     name: 'TAB_PLAYBOOKS',
                     order: 2,
-                    isOpen: true,
                 },
             ],
             lastActiveTab: 0,
@@ -143,12 +139,10 @@ describe('EditServerModal', function desc() {
                 {
                     name: 'TAB_FOCALBOARD',
                     order: 1,
-                    isOpen: true,
                 },
                 {
                     name: 'TAB_PLAYBOOKS',
                     order: 2,
-                    isOpen: true,
                 },
             ],
             lastActiveTab: 0,
@@ -166,12 +160,10 @@ describe('EditServerModal', function desc() {
                 {
                     name: 'TAB_FOCALBOARD',
                     order: 1,
-                    isOpen: true,
                 },
                 {
                     name: 'TAB_PLAYBOOKS',
                     order: 2,
-                    isOpen: true,
                 },
             ],
             lastActiveTab: 0,
@@ -199,12 +191,10 @@ describe('EditServerModal', function desc() {
                 {
                     name: 'TAB_FOCALBOARD',
                     order: 1,
-                    isOpen: true,
                 },
                 {
                     name: 'TAB_PLAYBOOKS',
                     order: 2,
-                    isOpen: true,
                 },
             ],
             lastActiveTab: 0,
@@ -222,12 +212,10 @@ describe('EditServerModal', function desc() {
                 {
                     name: 'TAB_FOCALBOARD',
                     order: 1,
-                    isOpen: true,
                 },
                 {
                     name: 'TAB_PLAYBOOKS',
                     order: 2,
-                    isOpen: true,
                 },
             ],
             lastActiveTab: 0,
@@ -256,12 +244,10 @@ describe('EditServerModal', function desc() {
                 {
                     name: 'TAB_FOCALBOARD',
                     order: 1,
-                    isOpen: true,
                 },
                 {
                     name: 'TAB_PLAYBOOKS',
                     order: 2,
-                    isOpen: true,
                 },
             ],
             lastActiveTab: 0,
@@ -279,12 +265,10 @@ describe('EditServerModal', function desc() {
                 {
                     name: 'TAB_FOCALBOARD',
                     order: 1,
-                    isOpen: true,
                 },
                 {
                     name: 'TAB_PLAYBOOKS',
                     order: 2,
-                    isOpen: true,
                 },
             ],
             lastActiveTab: 0,

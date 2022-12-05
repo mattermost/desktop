@@ -105,7 +105,7 @@ const demoConfig = {
     darkMode: false,
     lastActiveTeam: 0,
     startInFullscreen: false,
-    autoCheckForUpdates: false,
+    autoCheckForUpdates: true,
     appLanguage: 'en',
     logLevel: 'silly',
 };
@@ -271,14 +271,15 @@ module.exports = {
         await dlButtonLocator.click();
         await asyncSleep(500);
 
-        const downloadsWindow = app.windows().find((window) => window.url().includes('downloadsDropdown'));
+        const downloadsWindow = app.windows().find((window) => window.url().includes('downloadsDropdown.html'));
         await downloadsWindow.waitForLoadState();
         await downloadsWindow.bringToFront();
+        await downloadsWindow.isVisible('.DownloadsDropdown');
         return downloadsWindow;
     },
 
     async downloadsDropdownIsOpen(app) {
-        const downloadsWindow = app.windows().find((window) => window.url().includes('downloadsDropdown'));
+        const downloadsWindow = app.windows().find((window) => window.url().includes('downloadsDropdown.html'));
         const result = await downloadsWindow.isVisible('.DownloadsDropdown');
         return result;
     },

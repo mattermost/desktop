@@ -38,6 +38,7 @@ describe('Menu/window_menu', function desc() {
                 lastActiveTab: 0,
             },
         ],
+        lastActiveTeam: 2,
         minimizeToTray: true,
         alwaysMinimize: true,
     };
@@ -72,7 +73,7 @@ describe('Menu/window_menu', function desc() {
 
         it('MM-T826_1 should show the second server', async () => {
             let dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
-            dropdownButtonText.should.equal('example');
+            dropdownButtonText.should.equal('google');
 
             robot.keyTap('2', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
             dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton:has-text("github")');
@@ -92,7 +93,7 @@ describe('Menu/window_menu', function desc() {
         });
     });
 
-    it('MM-T4385 select tab from menu', async () => {
+    describe('MM-T4385 select tab from menu', async () => {
         let mainView;
 
         before(async () => {

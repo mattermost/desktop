@@ -36,6 +36,7 @@ describe('server_management/drag_and_drop', function desc() {
                 lastActiveTab: 0,
             },
         ],
+        lastActiveTeam: 2,
     };
 
     const beforeFunc = async () => {
@@ -159,7 +160,7 @@ describe('server_management/drag_and_drop', function desc() {
         it('MM-T2635_3 should update the config file', () => {
             // Verify config is updated
             const newConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-            const firstTeam = newConfig.teams.find((team) => team.name === 'example');
+            const firstTeam = newConfig.teams.find((team) => team.name === 'google');
             const order0 = firstTeam.tabs.find((tab) => tab.name === 'TAB_FOCALBOARD');
             order0.order.should.equal(0);
             const order1 = firstTeam.tabs.find((tab) => tab.name === 'TAB_MESSAGING');
