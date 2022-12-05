@@ -58,7 +58,7 @@ export function shouldHaveBackBar(serverUrl: URL | string, inputURL: URL | strin
 
         return false;
     }
-    return !UrlUtils.isTeamUrl(serverUrl, inputURL) && !UrlUtils.isAdminUrl(serverUrl, inputURL);
+    return !UrlUtils.isTeamUrl(serverUrl, inputURL) && !UrlUtils.isAdminUrl(serverUrl, inputURL) && !UrlUtils.isPluginUrl(serverUrl, inputURL);
 }
 
 export function getLocalURLString(urlPath: string, query?: Map<string, string>, isMain?: boolean) {
