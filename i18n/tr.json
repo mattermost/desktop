@@ -273,5 +273,6 @@
     "renderer.downloadsDropdown.Downloads": "İndirmeler",
     "renderer.downloadsDropdown.ClearAll": "Tümünü temizle",
     "main.menus.app.view.downloads": "İndirmeler",
-    "renderer.components.settingsPage.trayIcon.color": "Simge rengi: "
+    "renderer.components.settingsPage.trayIcon.color": "Simge rengi: ",
+    "main.menus.app.help.RunDiagnostics": "Tanılamayı çalıştır"
 }
