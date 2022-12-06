@@ -10,7 +10,7 @@ import ReactDOM from 'react-dom';
 
 import {CombinedConfig, Team} from 'types/config';
 
-import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT, RELOAD_CONFIGURATION} from 'common/communication';
+import {GET_CONFIGURATION, UPDATE_TEAMS, QUIT, RELOAD_CONFIGURATION, OPEN_APP_MENU} from 'common/communication';
 
 import MainPage from './components/MainPage';
 import IntlProvider from './intl_provider';
@@ -110,7 +110,7 @@ class Root extends React.PureComponent<Record<string, never>, State> {
 
     openMenu = () => {
         if (window.process.platform !== 'darwin') {
-            window.ipcRenderer.send('open-app-menu');
+            window.ipcRenderer.send(OPEN_APP_MENU);
         }
     }
 
