@@ -14,7 +14,7 @@ import {TeamWithTabs} from 'types/config';
 import {DownloadedItems} from 'types/downloads';
 
 import {getTabViewName} from 'common/tabs/TabView';
-import {escapeRegex} from 'renderer/utils';
+import {escapeRegex} from 'common/utils/util';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';

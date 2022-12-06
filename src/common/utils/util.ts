@@ -58,9 +58,18 @@ function boundsDiff(base: Rectangle, actual: Rectangle) {
     };
 }
 
+// MM-48463 - https://stackoverflow.com/a/3561711/5605822
+export const escapeRegex = (s?: string) => {
+    if (typeof s !== 'string') {
+        return '';
+    }
+    return s.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');
+};
+
 export default {
     runMode,
     shorten,
     isVersionGreaterThanOrEqualTo,
     boundsDiff,
+    escapeRegex,
 };

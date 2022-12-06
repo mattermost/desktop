@@ -85,19 +85,10 @@ const prettyETA = (ms = 0, intl: IntlShape) => {
     return `${eta} ${intl.formatMessage({id: 'renderer.downloadsDropdown.remaining', defaultMessage: 'remaining'})}`;
 };
 
-// MM-48463 - https://stackoverflow.com/a/3561711/5605822
-const escapeRegex = (s?: string) => {
-    if (typeof s !== 'string') {
-        return '';
-    }
-    return s.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');
-};
-
 export {
     getDownloadingFileStatus,
     getFileSizeOrBytesProgress,
     getIconClassName,
     isImageFile,
     prettyETA,
-    escapeRegex,
 };
