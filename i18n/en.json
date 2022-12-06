@@ -42,7 +42,7 @@
   "main.CriticalErrorHandler.uncaughtException.button.reopen": "Reopen",
   "main.CriticalErrorHandler.uncaughtException.button.showDetails": "Show Details",
   "main.CriticalErrorHandler.uncaughtException.dialog.message": "The {appName} app quit unexpectedly. Click \"{showDetails}\" to learn more or \"{reopen}\" to open the application again.\n\nInternal error: {err}",
-  "main.CriticalErrorHandler.unresponsive.dialog.message": "The window is no longer responsive.\nDo you wait until the window becomes responsive again?",
+  "main.CriticalErrorHandler.unresponsive.dialog.message": "The window is no longer responsive.\nDo you want to wait until the window becomes responsive again?",
   "main.menus.app.edit": "&Edit",
   "main.menus.app.edit.copy": "Copy",
   "main.menus.app.edit.cut": "Cut",
