@@ -87,7 +87,7 @@ describe('file_menu/dropdown', function desc() {
 
     // TODO: Causes issues on Windows so skipping for Windows
     if (process.platform !== 'win32') {
-        it('MM-T806 Exit in the Menu Bar', () => {
+        it('MM-T806 Exit in the Menu Bar', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             mainWindow.should.not.be.null;
 
@@ -99,6 +99,7 @@ describe('file_menu/dropdown', function desc() {
                 robot.keyTap('q', ['control']);
             }
 
+            await asyncSleep(500);
             this.app.windows().find((window) => window.url().should.not.include('index'));
 
             skipAfterEach = true; // Need to skip closing in aftereach as apps execution context is destroyed above

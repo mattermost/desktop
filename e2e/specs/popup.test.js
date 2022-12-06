@@ -43,7 +43,7 @@ describe('popup', function desc() {
             await firstServer.waitForSelector('#sidebarItem_suscipit-4');
             await firstServer.click('#sidebarItem_suscipit-4');
             await firstServer.click('#post_textbox');
-            await firstServer.type('#post_textbox', '/github connect');
+            await firstServer.type('#post_textbox', '/github connect ');
             await firstServer.press('#post_textbox', 'Enter');
 
             const githubLink = await firstServer.waitForSelector('a.theme.markdown__link:has-text("GitHub account")');
@@ -99,7 +99,7 @@ describe('popup', function desc() {
         await firstServer.waitForSelector('#sidebarItem_suscipit-4');
         await firstServer.click('#sidebarItem_suscipit-4');
         await firstServer.click('#post_textbox');
-        await firstServer.type('#post_textbox', '/github connect');
+        await firstServer.type('#post_textbox', '/github connect ');
         await firstServer.press('#post_textbox', 'Enter');
 
         const githubLink = await firstServer.waitForSelector('a.theme.markdown__link:has-text("GitHub account")');
