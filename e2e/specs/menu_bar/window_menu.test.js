@@ -38,6 +38,7 @@ describe('Menu/window_menu', function desc() {
                 lastActiveTab: 0,
             },
         ],
+        lastActiveTeam: 2,
         minimizeToTray: true,
         alwaysMinimize: true,
     };
@@ -72,7 +73,7 @@ describe('Menu/window_menu', function desc() {
 
         it('MM-T826_1 should show the second server', async () => {
             let dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
-            dropdownButtonText.should.equal('example');
+            dropdownButtonText.should.equal('google');
 
             robot.keyTap('2', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
             dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton:has-text("github")');
@@ -92,7 +93,7 @@ describe('Menu/window_menu', function desc() {
         });
     });
 
-    it('MM-T4385 select tab from menu', async () => {
+    describe('MM-T4385 select tab from menu', async () => {
         let mainView;
 
         before(async () => {
@@ -106,18 +107,21 @@ describe('Menu/window_menu', function desc() {
             tabViewButton.should.equal('Channels');
 
             robot.keyTap('2', [env.cmdOrCtrl]);
+            await asyncSleep(500);
             tabViewButton = await mainView.innerText('.active');
             tabViewButton.should.equal('Boards');
         });
 
         it('MM-T4385_2 should show the third tab', async () => {
             robot.keyTap('3', [env.cmdOrCtrl]);
+            await asyncSleep(500);
             const tabViewButton = await mainView.innerText('.active');
             tabViewButton.should.equal('Playbooks');
         });
 
         it('MM-T4385_3 should show the first tab', async () => {
             robot.keyTap('1', [env.cmdOrCtrl]);
+            await asyncSleep(500);
             const tabViewButton = await mainView.innerText('.active');
             tabViewButton.should.equal('Channels');
         });
@@ -132,10 +136,12 @@ describe('Menu/window_menu', function desc() {
         tabViewButton.should.equal('Channels');
 
         robot.keyTap('tab', ['control']);
+        await asyncSleep(500);
         tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Boards');
 
         robot.keyTap('tab', ['shift', 'control']);
+        await asyncSleep(500);
         tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Channels');
 
