@@ -14,6 +14,7 @@ import {TeamWithTabs} from 'types/config';
 import {DownloadedItems} from 'types/downloads';
 
 import {getTabViewName} from 'common/tabs/TabView';
+import {escapeRegex} from 'common/utils/util';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
@@ -462,7 +463,7 @@ class MainPage extends React.PureComponent<Props, State> {
             );
         }
 
-        const serverMatch = `${this.state.activeServerName}___TAB_[A-Z]+`;
+        const serverMatch = `${escapeRegex(this.state.activeServerName)}___TAB_[A-Z]+`;
         const totalMentionCount = Object.keys(this.state.mentionCounts).reduce((sum, key) => {
             // Strip out current server from unread and mention counts
             if (this.state.activeServerName && key.match(serverMatch)) {

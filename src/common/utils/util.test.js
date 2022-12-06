@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import Utils from 'common/utils/util';
+import Utils, {escapeRegex} from 'common/utils/util';
 
 describe('common/utils/util', () => {
     describe('shorten', () => {
@@ -113,6 +113,14 @@ describe('common/utils/util', () => {
             };
 
             expect(Utils.boundsDiff(base, actual)).toEqual(diff);
+        });
+    });
+
+    describe('escapeRegex', () => {
+        it('should escape special chars in string when used inside regex', () => {
+            const str = 'Language C++';
+            const regex = `${escapeRegex(str)}___TAB_[A-Z]+`;
+            expect(new RegExp(regex).test('Language C++___TAB_ABCDEF')).toBe(true);
         });
     });
 });
