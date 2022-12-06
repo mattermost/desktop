@@ -41,7 +41,7 @@
     "main.menus.app.help.versionString": "Version {version}{commit}",
     "main.menus.app.help.restartAndUpdate": "Erneut starten und aktualisieren",
     "main.menus.app.help.learnMore": "Erfahre mehr...",
-    "main.menus.app.help.downloadUpdate": "Aktualisierung runterladen",
+    "main.menus.app.help.downloadUpdate": "Aktualisierung herunterladen",
     "main.menus.app.help.commitString": " commit: {hashVersion}",
     "main.menus.app.help.checkForUpdates": "Prüfe auf Aktualisierungen",
     "main.menus.app.help": "Hilfe (&p)",
@@ -272,5 +272,6 @@
     "renderer.downloadsDropdown.Downloads": "Downloads",
     "renderer.downloadsDropdown.ClearAll": "Alle löschen",
     "main.menus.app.view.downloads": "Downloads",
-    "renderer.components.settingsPage.trayIcon.color": "Symbol Farbe: "
+    "renderer.components.settingsPage.trayIcon.color": "Symbol Farbe: ",
+    "main.menus.app.help.RunDiagnostics": "Diagnose durchführen"
 }

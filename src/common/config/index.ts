@@ -321,7 +321,7 @@ export class Config extends EventEmitter {
     }
 
     get canUpgrade() {
-        return this.canUpgradeValue && this.buildConfigData?.enableAutoUpdater && !(process.platform === 'linux' && !process.env.APPIMAGE) && !(process.platform === 'win32' && this.registryConfigData?.enableAutoUpdater === false);
+        return process.env.NODE_ENV === 'test' || (this.canUpgradeValue && this.buildConfigData?.enableAutoUpdater && !(process.platform === 'linux' && !process.env.APPIMAGE) && !(process.platform === 'win32' && this.registryConfigData?.enableAutoUpdater === false));
     }
 
     get autoCheckForUpdates() {
@@ -357,19 +357,8 @@ export class Config extends EventEmitter {
             configData = this.readFileSync(this.configFilePath);
 
             // validate based on config file version
-            switch (configData.version) {
-            case 3:
-                configData = Validator.validateV3ConfigData(configData)!;
-                break;
-            case 2:
-                configData = Validator.validateV2ConfigData(configData)!;
-                break;
-            case 1:
-                configData = Validator.validateV1ConfigData(configData)!;
-                break;
-            default:
-                configData = Validator.validateV0ConfigData(configData)!;
-            }
+            configData = Validator.validateConfigData(configData);
+
             if (!configData) {
                 throw new Error('Provided configuration file does not validate, using defaults instead.');
             }
