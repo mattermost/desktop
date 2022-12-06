@@ -234,7 +234,7 @@ describe('menu/view', function desc() {
     });
 
     it('MM-T820 should open Developer Tools For Application Wrapper for main window', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index.html'));
         const browserWindow = await this.app.browserWindow(mainWindow);
         const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
@@ -244,7 +244,11 @@ describe('menu/view', function desc() {
         });
         isDevToolsOpen.should.be.false;
 
-        robot.keyTap('i', process.platform === 'darwin' ? ['command', 'alt'] : ['control', 'shift']);
+        robot.keyTap('alt');
+        robot.keyTap('enter');
+        robot.keyTap('v');
+        robot.keyTap('d');
+        robot.keyTap('enter');
         await asyncSleep(1000);
 
         isDevToolsOpen = await browserWindow.evaluate((window) => {
@@ -256,7 +260,7 @@ describe('menu/view', function desc() {
     // TODO: Missing shortcut for macOS
     if (process.platform !== 'darwin') {
         it('MM-T821 should open Developer Tools For Current Server for the active tab', async () => {
-            const mainWindow = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
             const webContentsId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
             const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));

@@ -114,12 +114,14 @@ type TabViewStatus = {
 }
 
 class MainPage extends React.PureComponent<Props, State> {
+    threeDotMenu: React.RefObject<HTMLButtonElement>;
     topBar: React.RefObject<HTMLDivElement>;
 
     constructor(props: Props) {
         super(props);
 
         this.topBar = React.createRef();
+        this.threeDotMenu = React.createRef();
 
         const firstServer = this.props.teams.find((team) => team.order === this.props.lastActiveTeam) || this.props.teams.find((team) => team.order === 0);
         let firstTab = firstServer?.tabs.find((tab) => tab.order === firstServer.lastActiveTab) || firstServer?.tabs.find((tab) => tab.order === 0);
@@ -386,12 +388,14 @@ class MainPage extends React.PureComponent<Props, State> {
     }
 
     focusThreeDotsButton = () => {
+        this.threeDotMenu.current?.focus();
         this.setState({
             threeDotsIsFocused: true,
         });
     }
 
     unFocusThreeDotsButton = () => {
+        this.threeDotMenu.current?.blur();
         this.setState({
             threeDotsIsFocused: false,
         });
@@ -518,6 +522,7 @@ class MainPage extends React.PureComponent<Props, State> {
                         </div>
                     )}
                     <button
+                        ref={this.threeDotMenu}
                         className='three-dot-menu'
                         onClick={this.openMenu}
                         onMouseOver={this.focusThreeDotsButton}
