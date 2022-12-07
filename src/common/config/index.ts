@@ -321,7 +321,7 @@ export class Config extends EventEmitter {
     }
 
     get canUpgrade() {
-        return this.canUpgradeValue && this.buildConfigData?.enableAutoUpdater && !(process.platform === 'linux' && !process.env.APPIMAGE) && !(process.platform === 'win32' && this.registryConfigData?.enableAutoUpdater === false);
+        return process.env.NODE_ENV === 'test' || (this.canUpgradeValue && this.buildConfigData?.enableAutoUpdater && !(process.platform === 'linux' && !process.env.APPIMAGE) && !(process.platform === 'win32' && this.registryConfigData?.enableAutoUpdater === false));
     }
 
     get autoCheckForUpdates() {

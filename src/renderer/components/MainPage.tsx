@@ -14,6 +14,7 @@ import {TeamWithTabs} from 'types/config';
 import {DownloadedItems} from 'types/downloads';
 
 import {getTabViewName} from 'common/tabs/TabView';
+import {escapeRegex} from 'common/utils/util';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
@@ -77,12 +78,14 @@ type TabViewStatus = {
 }
 
 class MainPage extends React.PureComponent<Props, State> {
+    threeDotMenu: React.RefObject<HTMLButtonElement>;
     topBar: React.RefObject<HTMLDivElement>;
 
     constructor(props: Props) {
         super(props);
 
         this.topBar = React.createRef();
+        this.threeDotMenu = React.createRef();
 
         const firstServer = this.props.teams.find((team) => team.order === this.props.lastActiveTeam) || this.props.teams.find((team) => team.order === 0);
         let firstTab = firstServer?.tabs.find((tab) => tab.order === firstServer.lastActiveTab) || firstServer?.tabs.find((tab) => tab.order === 0);
@@ -355,12 +358,14 @@ class MainPage extends React.PureComponent<Props, State> {
     }
 
     focusThreeDotsButton = () => {
+        this.threeDotMenu.current?.focus();
         this.setState({
             threeDotsIsFocused: true,
         });
     }
 
     unFocusThreeDotsButton = () => {
+        this.threeDotMenu.current?.blur();
         this.setState({
             threeDotsIsFocused: false,
         });
@@ -458,7 +463,7 @@ class MainPage extends React.PureComponent<Props, State> {
             );
         }
 
-        const serverMatch = `${this.state.activeServerName}___TAB_[A-Z]+`;
+        const serverMatch = `${escapeRegex(this.state.activeServerName)}___TAB_[A-Z]+`;
         const totalMentionCount = Object.keys(this.state.mentionCounts).reduce((sum, key) => {
             // Strip out current server from unread and mention counts
             if (this.state.activeServerName && key.match(serverMatch)) {
@@ -487,6 +492,7 @@ class MainPage extends React.PureComponent<Props, State> {
                         </div>
                     )}
                     <button
+                        ref={this.threeDotMenu}
                         className='three-dot-menu'
                         onClick={this.openMenu}
                         onMouseOver={this.focusThreeDotsButton}

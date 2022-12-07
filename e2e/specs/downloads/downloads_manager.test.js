@@ -2,10 +2,11 @@
 // See LICENSE.txt for license information.
 'use strict';
 
+const fs = require('fs');
 const robot = require('robotjs');
 
 const env = require('../../modules/environment');
-const {asyncSleep, rmDirAsync, writeFileAsync} = require('../../modules/utils');
+const {asyncSleep, rmDirAsync} = require('../../modules/utils');
 
 const config = {
     ...env.demoMattermostConfig,
@@ -41,12 +42,11 @@ describe('downloads/downloads_manager', function desc() {
     const filename = `${Date.now().toString()}.txt`;
 
     beforeEach(async () => {
-        await env.cleanDataDirAsync();
-        await env.cleanTestConfigAsync();
-        await env.createTestUserDataDirAsync();
-        await writeFileAsync(env.configFilePath, JSON.stringify(config));
+        env.cleanDataDir();
+        env.createTestUserDataDir();
+        env.cleanTestConfig();
+        fs.writeFileSync(env.configFilePath, JSON.stringify(config));
         await asyncSleep(1000);
-
         this.app = await env.getApp();
         this.serverMap = await env.getServerMap(this.app);
         const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
@@ -76,9 +76,9 @@ describe('downloads/downloads_manager', function desc() {
         await firstServer.locator('#file-attachment-link', {hasText: filename}).click();
         await asyncSleep(1000);
         await Promise.all([
-            firstServer.waitForEvent('download'), // It is important to call waitForEvent before click to set up waiting.
             firstServer.locator(`div[role="dialog"] a[download="${filename}"]`).click(), // Triggers the download.
         ]);
+        await asyncSleep(1000);
         (await env.downloadsDropdownIsOpen(this.app)).should.equal(true);
     });
 });
