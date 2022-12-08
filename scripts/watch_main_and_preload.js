@@ -6,6 +6,7 @@ const electron = require('electron-connect').server.create({path: 'dist/'});
 
 const mainConfig = require('../webpack.config.main.js');
 const rendererConfig = require('../webpack.config.renderer.js');
+const rendererMattermostConfig = require('../webpack.config.renderer.mattermost.js');
 
 let started = false;
 
@@ -28,6 +29,13 @@ mainCompiler.watch({}, (err, stats) => {
 
 const preloadCompiler = webpack(rendererConfig);
 preloadCompiler.watch({}, (err) => {
+    if (err) {
+        console.log(err);
+    }
+});
+
+const mattermostCompiler = webpack(rendererMattermostConfig);
+mattermostCompiler.watch({}, (err) => {
     if (err) {
         console.log(err);
     }

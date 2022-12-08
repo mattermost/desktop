@@ -10,43 +10,28 @@ const path = require('path');
 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const webpack = require('webpack');
 const {merge} = require('webpack-merge');
 
 const base = require('./webpack.config.base');
 
 const WEBSERVER_PORT = process.env.WEBSERVER_PORT ?? 9001;
 
-const getRemoteEntry = (resolve) => {
-    const script = document.createElement('script');
-    window.mattermost.getUrl.then((url) => {
-        script.src = `${url}/static/remote_entry.js`;
-        script.onload = () => {
-            // the injected script has loaded and is available on window
-            // we can now resolve this Promise
-            const proxy = {
-                get: (request) => window.mattermost_webapp.get(request),
-                init: (arg) => {
-                    try {
-                        return window.mattermost_webapp.init(arg);
-                    } catch (e) {
-                        // eslint-disable-next-line no-console
-                        console.error('remote container already initialized');
-                        return null;
-                    }
-                },
-            };
-            resolve(proxy);
-        };
-    });
-
-    // inject this script with the src set to the versioned remoteEntry.js
-    document.head.appendChild(script);
-};
-
 module.exports = merge(base, {
     entry: {
-        index: './src/renderer/index_bootstrap.ts',
+        index: './src/renderer/index.tsx',
+        settings: './src/renderer/settings.tsx',
+        dropdown: './src/renderer/dropdown.tsx',
+        downloadsDropdownMenu: './src/renderer/downloadsDropdownMenu.tsx',
+        downloadsDropdown: './src/renderer/downloadsDropdown.tsx',
+        urlView: './src/renderer/modals/urlView/urlView.tsx',
+        newServer: './src/renderer/modals/newServer/newServer.tsx',
+        editServer: './src/renderer/modals/editServer/editServer.tsx',
+        removeServer: './src/renderer/modals/removeServer/removeServer.tsx',
+        loginModal: './src/renderer/modals/login/login.tsx',
+        permissionModal: './src/renderer/modals/permission/permission.tsx',
+        certificateModal: './src/renderer/modals/certificate/certificate.tsx',
+        loadingScreen: './src/renderer/modals/loadingScreen/index.tsx',
+        welcomeScreen: './src/renderer/modals/welcomeScreen/welcomeScreen.tsx',
     },
     output: {
         path: path.resolve(__dirname, 'dist/renderer'),
@@ -54,49 +39,89 @@ module.exports = merge(base, {
         assetModuleFilename: '[name].[ext]',
     },
     plugins: [
-        new webpack.container.ModuleFederationPlugin({
-            name: 'index',
-            remotes: {
-                mattermost_webapp: `promise new Promise(${getRemoteEntry.toString()})`,
-            },
-            shared: {
-                history: {
-                    singleton: true,
-                    eager: true,
-                    import: false,
-                },
-                react: {
-                    singleton: true,
-                    eager: true,
-                    import: false,
-                },
-                'react-beautiful-dnd': {
-                    singleton: true,
-                    eager: true,
-                    import: false,
-                },
-                'react-dom': {
-                    singleton: true,
-                    eager: true,
-                    import: false,
-                },
-                'react-redux': {
-                    singleton: true,
-                    eager: true,
-                    import: false,
-                },
-                'react-router-dom': {
-                    singleton: true,
-                    eager: true,
-                    import: false,
-                },
-            },
-        }),
         new HtmlWebpackPlugin({
             title: 'Mattermost Desktop App',
             template: 'src/renderer/index.html',
             chunks: ['index'],
             filename: 'index.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['settings'],
+            filename: 'settings.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['dropdown'],
+            filename: 'dropdown.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Downloads',
+            template: 'src/renderer/index.html',
+            chunks: ['downloadsDropdown'],
+            filename: 'downloadsDropdown.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Downloads',
+            template: 'src/renderer/index.html',
+            chunks: ['downloadsDropdownMenu'],
+            filename: 'downloadsDropdownMenu.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['urlView'],
+            filename: 'urlView.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['newServer'],
+            filename: 'newServer.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['editServer'],
+            filename: 'editServer.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['removeServer'],
+            filename: 'removeServer.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['loginModal'],
+            filename: 'loginModal.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['permissionModal'],
+            filename: 'permissionModal.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['certificateModal'],
+            filename: 'certificateModal.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['loadingScreen'],
+            filename: 'loadingScreen.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['welcomeScreen'],
+            filename: 'welcomeScreen.html',
         }),
         new MiniCssExtractPlugin({
             filename: 'styles.[contenthash].css',

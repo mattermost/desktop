@@ -380,7 +380,7 @@ export class WindowManager {
             }
             return;
         }
-        this.mainWindow!.webContents.send(channel, ...args);
+        this.mainWindow.webContents.send(channel, ...args);
         if (this.settingsWindow && this.settingsWindow.isVisible()) {
             try {
                 this.settingsWindow.webContents.send(channel, ...args);
