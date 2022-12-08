@@ -3,11 +3,11 @@
 
 const path = require('path');
 
-const {spawn} = require('electron-notarize/lib/spawn.js');
+const { spawn } = require('electron-notarize/lib/spawn.js');
 
 const SETUID_PERMISSIONS = '4755';
 
-const {flipFuses, FuseVersion, FuseV1Options} = require('@electron/fuses');
+const { flipFuses, FuseVersion, FuseV1Options } = require('@electron/fuses');
 
 function fixSetuid(context) {
     return async (target) => {
@@ -24,15 +24,15 @@ function fixSetuid(context) {
 
 function getAppFileName(context) {
     switch (context.electronPlatformName) {
-    case 'win32':
-        return 'Mattermost.exe';
-    case 'darwin':
-    case 'mas':
-        return 'Mattermost.app';
-    case 'linux':
-        return context.packager.executableName;
-    default:
-        return '';
+        case 'win32':
+            return 'Water Care Chat.exe';
+        case 'darwin':
+        case 'mas':
+            return 'Water Care Chat.app';
+        case 'linux':
+            return context.packager.executableName;
+        default:
+            return '';
     }
 }
 

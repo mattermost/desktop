@@ -1,171 +1,173 @@
 {
-  "publish": [
-    {
-    "provider": "generic",
-    "url": "https://releases.mattermost.com/desktop"
-    }
-  ],
-  "appId": "Mattermost.Desktop",
-  "artifactName": "${version}/${name}-${version}-${os}-${arch}.${ext}",
-  "directories": {
-    "buildResources": "src/assets",
-    "output": "release"
-  },
-  "extraMetadata": {
-    "main": "index.js"
-  },
-  "files": [
-    "node_modules/bootstrap/dist/**",
-    "node_modules/font-awesome/{css,fonts}/**",
-    "!**/node_modules/macos-notification-state/bin/**/*",
-    "!**/node_modules/macos-notification-state/build/**/*",
-    "!**/node_modules/windows-focus-assist/bin/**/*",
-    "!**/node_modules/windows-focus-assist/build/**/*",
-    "node_modules/macos-notification-state/build/**/*.node",
-    "node_modules/windows-focus-assist/build/Release/**/*.node",
-    {
-      "from": "dist",
-      "to": ".",
-      "filter": "**/*"
-    }
-  ],
-  "protocols": [
-    {
-      "name": "Mattermost",
-      "schemes": [
-        "mattermost"
-      ]
-    }
-  ],
-  "afterPack": "scripts/afterpack.js",
-  "afterSign": "scripts/notarize.js",
-  "afterAllArtifactBuild": "scripts/afterbuild.js",
-  "deb": {
-    "artifactName": "${version}/${name}_${version}-1_${arch}.${ext}",
-    "synopsis": "Mattermost Desktop App",
-    "depends": [
-      "gconf2",
-      "gconf-service",
-      "libnotify4",
-      "libxtst6",
-      "libnss3"
+    "publish": [
+        {
+            "provider": "generic",
+            "url": "https://releases.watercare.vn/desktop"
+        }
     ],
-    "category": "contrib/net",
-    "priority": "optional"
-  },
-  "asarUnpack": [
-    "./node_modules/macos-notification-state/build/Release/**/*.node",
-    "./node_modules/windows-focus-assist/build/Release/**/*.node"
-  ],
-  "linux": {
-    "category": "Network;InstantMessaging",
-    "target": [
-      "deb",
-      "tar.gz",
-      "appimage",
-      "rpm"
-    ],
-    "icon": "src/assets/icon.icns",
-    "extraFiles": [
-      {
-        "filter": [
-          "LICENSE.txt",
-          "NOTICE.txt"
-        ]
-      },
-      {
-        "from": "src/assets/linux",
-        "filter": [
-          "create_desktop_file.sh",
-          "app_icon.png",
-          "README.md"
-        ]
-      }
-    ]
-  },
-  "appImage": {
-    "executableArgs": [" "]
-  },
-  "mac": {
-    "category": "public.app-category.productivity",
-    "target": [
-      "zip",
-      "dmg"
-    ],
-    "darkModeSupport": true,
-    "extraResources": [
-      {
-        "filter": [
-          "LICENSE.txt",
-          "NOTICE.txt"
-        ]
-      }
-    ],
-    "icon": "src/assets/osx/osx_icon.icns",
-    "hardenedRuntime": true,
-    "gatekeeperAssess": true,
-    "entitlements": "./entitlements.mac.plist",
-    "entitlementsInherit": "./entitlements.mac.plist",
-    "extendInfo": {
-      "NSMicrophoneUsageDescription": "Microphone access may be used by Mattermost plugins, such as Jitsi video conferencing.",
-      "NSCameraUsageDescription": "Camera access may be used by Mattermost plugins, such as Jitsi video conferencing.",
-      "LSFileQuarantineEnabled": true
-  }
-  },
-  "mas": {
-    "hardenedRuntime": false,
-    "entitlements": "./entitlements.mas.plist",
-    "entitlementsInherit": "./entitlements.mas.inherit.plist",
-    "entitlementsLoginHelper": "./entitlements.mas.inherit.plist",
-    "provisioningProfile": "./mas.provisionprofile",
-    "extendInfo": {
-      "ITSAppUsesNonExemptEncryption": false
+    "appId": "chat.vigstudio.watercare",
+    "artifactName": "${version}/${name}-${version}-${os}-${arch}.${ext}",
+    "directories": {
+        "buildResources": "src/assets",
+        "output": "release"
     },
-    "singleArchFiles": "*"
-  },
-  "masDev": {
-    "provisioningProfile": "./mas-dev.provisionprofile"
-  },
-  "dmg": {
-    "background": "src/assets/osx/DMG_BG.png",
-    "contents": [
-      {
-        "x": 135,
-        "y": 165
-      },
-      {
-        "x": 407,
-        "y": 165,
-        "type": "link",
-        "path": "/Applications"
-      }
+    "extraMetadata": {
+        "main": "index.js"
+    },
+    "files": [
+        "node_modules/bootstrap/dist/**",
+        "node_modules/font-awesome/{css,fonts}/**",
+        "!**/node_modules/macos-notification-state/bin/**/*",
+        "!**/node_modules/macos-notification-state/build/**/*",
+        "!**/node_modules/windows-focus-assist/bin/**/*",
+        "!**/node_modules/windows-focus-assist/build/**/*",
+        "node_modules/macos-notification-state/build/**/*.node",
+        "node_modules/windows-focus-assist/build/Release/**/*.node",
+        {
+            "from": "dist",
+            "to": ".",
+            "filter": "**/*"
+        }
     ],
-    "iconSize": 120,
-    "iconTextSize": 14,
-    "window": {
-        "height": 380
-    }
-  },
-  "squirrelWindows": {
-    "iconUrl": "file://src/assets/icon.ico",
-    "artifactName": "${version}/${name}-setup-${version}-${arch}.${ext}"
-  },
-  "win": {
-    "target": [
-      "nsis",
-      "zip"
+    "protocols": [
+        {
+            "name": "Mattermost",
+            "schemes": [
+                "mattermost"
+            ]
+        }
     ],
-    "extraFiles": [
-      {
-        "filter": [
-          "LICENSE.txt",
-          "NOTICE.txt"
+    "afterPack": "scripts/afterpack.js",
+    "afterSign": "scripts/notarize.js",
+    "afterAllArtifactBuild": "scripts/afterbuild.js",
+    "deb": {
+        "artifactName": "${version}/${name}_${version}-1_${arch}.${ext}",
+        "synopsis": "Water Care Chat App",
+        "depends": [
+            "gconf2",
+            "gconf-service",
+            "libnotify4",
+            "libxtst6",
+            "libnss3"
+        ],
+        "category": "contrib/net",
+        "priority": "optional"
+    },
+    "asarUnpack": [
+        "./node_modules/macos-notification-state/build/Release/**/*.node",
+        "./node_modules/windows-focus-assist/build/Release/**/*.node"
+    ],
+    "linux": {
+        "category": "Network;InstantMessaging",
+        "target": [
+            "deb",
+            "tar.gz",
+            "appimage",
+            "rpm"
+        ],
+        "icon": "src/assets/icon.icns",
+        "extraFiles": [
+            {
+                "filter": [
+                    "LICENSE.txt",
+                    "NOTICE.txt"
+                ]
+            },
+            {
+                "from": "src/assets/linux",
+                "filter": [
+                    "create_desktop_file.sh",
+                    "app_icon.png",
+                    "README.md"
+                ]
+            }
         ]
-      }
-    ],
-    "publisherName": "CN=\"Mattermost, Inc.\", O=\"Mattermost, Inc.\", L=Palo Alto, S=California, C=US"
-  },
-  "nsis": {
-    "artifactName": "${version}/${name}-setup-${version}-win.${ext}"
-  }
+    },
+    "appImage": {
+        "executableArgs": [
+            " "
+        ]
+    },
+    "mac": {
+        "category": "public.app-category.productivity",
+        "target": [
+            "zip",
+            "dmg"
+        ],
+        "darkModeSupport": true,
+        "extraResources": [
+            {
+                "filter": [
+                    "LICENSE.txt",
+                    "NOTICE.txt"
+                ]
+            }
+        ],
+        "icon": "src/assets/osx/osx_icon.icns",
+        "hardenedRuntime": true,
+        "gatekeeperAssess": true,
+        "entitlements": "./entitlements.mac.plist",
+        "entitlementsInherit": "./entitlements.mac.plist",
+        "extendInfo": {
+            "NSMicrophoneUsageDescription": "Microphone access may be used by Water Care Chat plugins, such as Jitsi video conferencing.",
+            "NSCameraUsageDescription": "Camera access may be used by Water Care Chat plugins, such as Jitsi video conferencing.",
+            "LSFileQuarantineEnabled": true
+        }
+    },
+    "mas": {
+        "hardenedRuntime": false,
+        "entitlements": "./entitlements.mas.plist",
+        "entitlementsInherit": "./entitlements.mas.inherit.plist",
+        "entitlementsLoginHelper": "./entitlements.mas.inherit.plist",
+        "provisioningProfile": "./mas.provisionprofile",
+        "extendInfo": {
+            "ITSAppUsesNonExemptEncryption": false
+        },
+        "singleArchFiles": "*"
+    },
+    "masDev": {
+        "provisioningProfile": "./mas-dev.provisionprofile"
+    },
+    "dmg": {
+        "background": "src/assets/osx/DMG_BG.png",
+        "contents": [
+            {
+                "x": 135,
+                "y": 165
+            },
+            {
+                "x": 407,
+                "y": 165,
+                "type": "link",
+                "path": "/Applications"
+            }
+        ],
+        "iconSize": 120,
+        "iconTextSize": 14,
+        "window": {
+            "height": 380
+        }
+    },
+    "squirrelWindows": {
+        "iconUrl": "file://src/assets/icon.ico",
+        "artifactName": "${version}/${name}-setup-${version}-${arch}.${ext}"
+    },
+    "win": {
+        "target": [
+            "nsis",
+            "zip"
+        ],
+        "extraFiles": [
+            {
+                "filter": [
+                    "LICENSE.txt",
+                    "NOTICE.txt"
+                ]
+            }
+        ],
+        "publisherName": "CN=\"Water Care Co,.ltd\", O=\"Water Care Co,.ltd\", L=Ben Cat, S=Binh Duong, C=VN"
+    },
+    "nsis": {
+        "artifactName": "${version}/${name}-setup-${version}-win.${ext}"
+    }
 }

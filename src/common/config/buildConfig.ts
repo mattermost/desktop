@@ -2,7 +2,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BuildConfig} from 'types/config';
+import { BuildConfig } from 'types/config';
 
 // For detailed guides, please refer to https://docs.mattermost.com/deployment/desktop-app-deployment.html
 
@@ -21,14 +21,15 @@ import {BuildConfig} from 'types/config';
  * @prop {[]} allowedProtocols - Defines which protocols should be automatically allowed
  */
 const buildConfig: BuildConfig = {
-    defaultTeams: [/*
-    {
-      name: 'example',
-      url: 'https://example.com'
-    }
-  */],
-    helpLink: 'https://docs.mattermost.com/messaging/managing-desktop-app-servers.html',
-    enableServerManagement: true,
+    defaultTeams: [
+        {
+            name: 'Water Care Chat',
+            url: 'https://chat.watercare.vn',
+            order: 0,
+        }
+    ],
+    helpLink: 'https://chat.watercare.vn',
+    enableServerManagement: false,
     enableAutoUpdater: true,
     managedResources: ['trusted'],
     allowedProtocols: [

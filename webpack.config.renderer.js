@@ -10,7 +10,7 @@ const path = require('path');
 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const {merge} = require('webpack-merge');
+const { merge } = require('webpack-merge');
 
 const base = require('./webpack.config.base');
 
@@ -40,85 +40,85 @@ module.exports = merge(base, {
     },
     plugins: [
         new HtmlWebpackPlugin({
-            title: 'Mattermost Desktop App',
+            title: 'Water Care Chat App',
             template: 'src/renderer/index.html',
             chunks: ['index'],
             filename: 'index.html',
         }),
         new HtmlWebpackPlugin({
-            title: 'Mattermost Desktop Settings',
+            title: 'Water Care Chat Settings',
             template: 'src/renderer/index.html',
             chunks: ['settings'],
             filename: 'settings.html',
         }),
         new HtmlWebpackPlugin({
-            title: 'Mattermost Desktop Settings',
+            title: 'Water Care Chat Settings',
             template: 'src/renderer/index.html',
             chunks: ['dropdown'],
             filename: 'dropdown.html',
         }),
         new HtmlWebpackPlugin({
-            title: 'Mattermost Desktop Downloads',
+            title: 'Water Care Chat Downloads',
             template: 'src/renderer/index.html',
             chunks: ['downloadsDropdown'],
             filename: 'downloadsDropdown.html',
         }),
         new HtmlWebpackPlugin({
-            title: 'Mattermost Desktop Downloads',
+            title: 'Water Care Chat Downloads',
             template: 'src/renderer/index.html',
             chunks: ['downloadsDropdownMenu'],
             filename: 'downloadsDropdownMenu.html',
         }),
         new HtmlWebpackPlugin({
-            title: 'Mattermost Desktop Settings',
+            title: 'Water Care Chat Settings',
             template: 'src/renderer/index.html',
             chunks: ['urlView'],
             filename: 'urlView.html',
         }),
         new HtmlWebpackPlugin({
-            title: 'Mattermost Desktop Settings',
+            title: 'Water Care Chat Settings',
             template: 'src/renderer/index.html',
             chunks: ['newServer'],
             filename: 'newServer.html',
         }),
         new HtmlWebpackPlugin({
-            title: 'Mattermost Desktop Settings',
+            title: 'Water Care Chat Settings',
             template: 'src/renderer/index.html',
             chunks: ['editServer'],
             filename: 'editServer.html',
         }),
         new HtmlWebpackPlugin({
-            title: 'Mattermost Desktop Settings',
+            title: 'Water Care Chat Settings',
             template: 'src/renderer/index.html',
             chunks: ['removeServer'],
             filename: 'removeServer.html',
         }),
         new HtmlWebpackPlugin({
-            title: 'Mattermost Desktop Settings',
+            title: 'Water Care Chat Settings',
             template: 'src/renderer/index.html',
             chunks: ['loginModal'],
             filename: 'loginModal.html',
         }),
         new HtmlWebpackPlugin({
-            title: 'Mattermost Desktop Settings',
+            title: 'Water Care Chat Settings',
             template: 'src/renderer/index.html',
             chunks: ['permissionModal'],
             filename: 'permissionModal.html',
         }),
         new HtmlWebpackPlugin({
-            title: 'Mattermost Desktop Settings',
+            title: 'Water Care Chat Settings',
             template: 'src/renderer/index.html',
             chunks: ['certificateModal'],
             filename: 'certificateModal.html',
         }),
         new HtmlWebpackPlugin({
-            title: 'Mattermost Desktop Settings',
+            title: 'Water Care Chat Settings',
             template: 'src/renderer/index.html',
             chunks: ['loadingScreen'],
             filename: 'loadingScreen.html',
         }),
         new HtmlWebpackPlugin({
-            title: 'Mattermost Desktop Settings',
+            title: 'Water Care Chat Settings',
             template: 'src/renderer/index.html',
             chunks: ['welcomeScreen'],
             filename: 'welcomeScreen.html',

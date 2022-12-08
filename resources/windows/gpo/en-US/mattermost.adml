@@ -4,13 +4,13 @@
 	<description/>
 	<resources >
 		<stringTable >
-			<string id="RequiresMattermost43">Requires Mattermost Desktop 4.3 or later</string>
-            <string id="RequiresMattermost51">Requires Mattermost Desktop 5.1 or later</string>
-			<string id="mattermost">Mattermost</string>
-			
+			<string id="RequiresMattermost43">Requires Water Care Chat 4.3 or later</string>
+            <string id="RequiresMattermost51">Requires Water Care Chat 5.1 or later</string>
+			<string id="mattermost">Water Care Chat</string>
+
       		<string id="EnableAutoUpdater">EnableAutoUpdater</string>
 			<string id="EnableAutoUpdaterDescription">If this policy is enabled, users will receive notifications when new versions of the desktop app are available. System Administrator privileges on the computer are required to install the update.</string>
-     
+
 			<string id="EnableServerManagement">EnableServerManagement</string>
 			<string id="EnableServerManagementDescription">If this policy is enabled, users can add or remove servers in their app settings, even if default servers are configured in DefaultServerList.
 

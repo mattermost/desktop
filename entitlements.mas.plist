@@ -32,12 +32,12 @@
 	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>UQ8HT4Q2XM.Mattermost.Desktop</string>
+		<string>3Q9T75U49X.chat.vigstudio.watercare</string>
 	</array>
 	<key>com.apple.application-identifier</key>
-	<string>UQ8HT4Q2XM.Mattermost.Desktop</string>
+	<string>3Q9T75U49X.chat.vigstudio.watercare</string>
 	<key>com.apple.developer.team-identifier</key>
-	<string>UQ8HT4Q2XM</string>
+	<string>3Q9T75U49X</string>
 	<key>com.apple.security.files.bookmarks.app-scope</key>
 	<true/>
 	<key>com.apple.security.files.bookmarks.document-scope</key>
