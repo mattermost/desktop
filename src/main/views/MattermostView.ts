@@ -64,7 +64,6 @@ export class MattermostView extends EventEmitter {
                 preload,
             },
         });
-        this.view.webContents.openDevTools({mode: 'detach'});
 
         // Don't cache the remote_entry script
         WebRequestManager.onRequestHeaders(this.addNoCacheForRemoteEntryRequest, this.view.webContents.id);
@@ -72,13 +71,13 @@ export class MattermostView extends EventEmitter {
         // URL handling
         ipcMain.handle(GET_CURRENT_SERVER_URL, () => `${this.tab.server.url}`);
         WebRequestManager.rewriteURL(
-            new RegExp(`mm-desktop://${this.tab.server.url.host}(${this.tab.server.url.pathname})?/(api|static|plugins)/(.*)`, 'g'),
+            new RegExp(`^mm-desktop://${this.tab.server.url.host}(${this.tab.server.url.pathname})?/(api|static|plugins)/(.*)`, 'g'),
             `${this.tab.server.url}/$2/$3`,
             this.view.webContents.id,
         );
 
         WebRequestManager.rewriteURL(
-            new RegExp(`mm-desktop://${this.tab.server.url.host}${path.resolve('/').replace('\\', '/')}(\\?.+)?$`, 'g'),
+            new RegExp(`^mm-desktop://${this.tab.server.url.host}${path.resolve('/').replace('\\', '/')}(\\?.+)?$`, 'g'),
             `${getLocalURLString('mattermost.html')}$1`,
             this.view.webContents.id,
         );
@@ -129,7 +128,7 @@ export class MattermostView extends EventEmitter {
     }
 
     private addCORSResponseHeader = (details: OnHeadersReceivedListenerDetails): HeadersReceivedResponse => {
-        if (!details.url.match(new RegExp(`${this.tab.server.url.origin}/(.+)`))) {
+        if (!details.url.match(new RegExp(`^${this.tab.server.url.origin}/(.+)`))) {
             return {};
         }
 
@@ -156,7 +155,7 @@ export class MattermostView extends EventEmitter {
     private addNoCacheForRemoteEntryRequest = (details: OnBeforeSendHeadersListenerDetails) => {
         log.silly('WindowManager.addNoCacheForRemoteEntry', details.requestHeaders);
 
-        if (!details.url.match(new RegExp(`${this.tab.server.url}/static/remote_entry.js`))) {
+        if (!details.url.match(new RegExp(`^${this.tab.server.url}/static/remote_entry.js`))) {
             return {} as Headers;
         }
 

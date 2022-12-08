@@ -282,7 +282,7 @@ function initializeAfterAppReady() {
     const defaultSession = session.defaultSession;
 
     defaultSession.protocol.registerFileProtocol('mm-desktop', (request, callback) => {
-        callback(request.url.replace(/mm-desktop:\/\/([A-Za-z0-9.]+)\//, '').replace(/#(.+)/, ''));
+        callback(request.url.replace(/^mm-desktop:\/\/([A-Za-z0-9.]+)\//, '').replace(/#(.+)/, ''));
     });
 
     WebRequestManager.initialize();
