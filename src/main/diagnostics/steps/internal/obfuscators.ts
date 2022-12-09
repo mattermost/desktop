@@ -5,10 +5,6 @@ import {MASK_EMAIL, MASK_IPV4, MASK_PATH, MASK_URL, REGEX_EMAIL, REGEX_IPV4, REG
 
 import {truncateString} from './utils';
 
-const isDarwin = process.platform === 'darwin';
-const isLinux = process.platform === 'linux';
-const isWin = process.platform === 'win32';
-
 function maskDataInString(str: string): string {
     let maskedStr = str;
     if (!str || typeof str !== 'string') {
@@ -36,15 +32,15 @@ function maskDataInString(str: string): string {
     }
 
     // Paths
-    if (isDarwin) {
+    if (process.platform === 'darwin') {
         if (REGEX_PATH_DARWIN.test(str)) {
             maskedStr = maskedStr.replaceAll(RegExp(REGEX_PATH_DARWIN, 'gi'), MASK_PATH);
         }
-    } else if (isLinux) {
+    } else if (process.platform === 'linux') {
         if (REGEX_PATH_LINUX.test(str)) {
             maskedStr = maskedStr.replaceAll(RegExp(REGEX_PATH_LINUX, 'gi'), MASK_PATH);
         }
-    } else if (isWin) {
+    } else if (process.platform === 'win32') {
         if (REGEX_PATH_WIN32.test(str)) {
             maskedStr = maskedStr.replaceAll(RegExp(REGEX_PATH_WIN32, 'gi'), MASK_PATH);
         }
