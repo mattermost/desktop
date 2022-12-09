@@ -272,5 +272,6 @@
     "renderer.components.configureServer.connect.default": "Anslut",
     "renderer.components.configureServer.cardtitle": "Ange dina serveruppgifter",
     "main.menus.app.view.downloads": "Nedladdningar",
-    "renderer.components.settingsPage.trayIcon.color": "Ikonfärg: "
+    "renderer.components.settingsPage.trayIcon.color": "Ikonfärg: ",
+    "main.menus.app.help.RunDiagnostics": "Kör diagnostik"
 }
