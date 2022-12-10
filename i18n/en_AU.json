@@ -271,5 +271,7 @@
     "main.menus.app.view.downloads": "Downloads",
     "renderer.time.sec": "seconds",
     "renderer.time.mins": "minutes",
-    "renderer.components.errorView.havingTroubleConnecting": "A connection to {appName} couldn't be established. Retrying..."
+    "renderer.components.errorView.havingTroubleConnecting": "A connection to {appName} couldn't be established. Retrying...",
+    "renderer.components.settingsPage.trayIcon.color": "Icon colour: ",
+    "main.menus.app.help.RunDiagnostics": "Run diagnostics"
 }
