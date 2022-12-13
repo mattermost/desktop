@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, BrowserWindow, Event, dialog, WebContents, Certificate} from 'electron';
+import {app, BrowserWindow, Event, dialog, WebContents, Certificate, Details} from 'electron';
 import log from 'electron-log';
 
 import urlUtils from 'common/utils/url';
@@ -178,6 +178,6 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
     }
 }
 
-export function handleAppGPUProcessCrashed(event: Event, killed: boolean) {
-    log.error(`The GPU process has crashed (killed = ${killed})`);
+export function handleChildProcessGone(event: Event, details: Details) {
+    log.error('"child-process-gone" The child process has crashed. Details: ', details);
 }
