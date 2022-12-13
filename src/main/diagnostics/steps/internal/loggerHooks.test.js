@@ -97,7 +97,7 @@ describe('main/diagnostics/loggerHooks', () => {
                 data: ['C:/Users/user/Desktop/download.pdf C:\\Users\\user\\Desktop\\folder withSpace/file.txt'],
             };
             const result = maskMessageDataHook(loggerMock)(message, 'file').data[0];
-            expect(findOccurrencesInString(MASK_PATH, result)).toBe(3);
+            expect(findOccurrencesInString(MASK_PATH, result)).toBe(2);
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
