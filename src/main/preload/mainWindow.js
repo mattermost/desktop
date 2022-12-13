@@ -56,9 +56,6 @@ import {
     UPDATE_DOWNLOADS_DROPDOWN,
     APP_MENU_WILL_CLOSE,
     FOCUS_THREE_DOT_MENU,
-    GET_CURRENT_SERVER_URL,
-    SETUP_INITIAL_COOKIES,
-    SET_COOKIE,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -138,12 +135,6 @@ contextBridge.exposeInMainWorld('desktop', {
     onUpdateDownloadsDropdown: (listener) => ipcRenderer.on(UPDATE_DOWNLOADS_DROPDOWN, (_, downloads) => listener(downloads)),
     onAppMenuWillClose: (listener) => ipcRenderer.on(APP_MENU_WILL_CLOSE, () => listener()),
     onFocusThreeDotMenu: (listener) => ipcRenderer.on(FOCUS_THREE_DOT_MENU, () => listener()),
-});
-
-contextBridge.exposeInMainWorld('mattermost', {
-    getUrl: ipcRenderer.invoke(GET_CURRENT_SERVER_URL),
-    setupCookies: ipcRenderer.invoke(SETUP_INITIAL_COOKIES),
-    setCookie: (cookie) => ipcRenderer.send(SET_COOKIE, cookie),
 });
 
 window.addEventListener('message', async (event) => {

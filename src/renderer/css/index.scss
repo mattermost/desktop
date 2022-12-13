@@ -1,13 +1,18 @@
 @import url("fonts.css");
 @import '~@mattermost/compass-icons/css/compass-icons.css';
 
-#app {
+html {
   height: 100%;
+  font-size: 14px;
+}
+body {
+  min-height: 100%;
+  margin: 0;
 }
 
-#main {
+#app {
 
-  //height: 100%;
+  height: 100%;
   //font-size: 14px;
   //min-height: 100%;
 
@@ -208,12 +213,4 @@
   .topBar.darkMode .overlay-gradient {
     /* background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #202124 100%); */
   }
-}
-
-#root {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  top: 40px;
-  height: calc(100% - 40px);
 }
