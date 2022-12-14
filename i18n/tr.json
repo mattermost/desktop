@@ -179,7 +179,7 @@
     "main.menus.app.edit.paste": "Yapıştır",
     "main.menus.app.edit.cut": "Kes",
     "main.menus.app.edit.copy": "Kopyala",
-    "main.CriticalErrorHandler.unresponsive.dialog.message": "Pencere artık yanıt vermiyor.\nPencere yeniden yanıt verene kadar beklemek ister misiniz?",
+    "main.CriticalErrorHandler.unresponsive.dialog.message": "Pencere artık yanıt vermiyor. \nPencere yeniden yanıt verene kadar beklemek ister misiniz?",
     "main.CriticalErrorHandler.uncaughtException.dialog.message": "AppName} uygulaması beklenmedik bir şekilde kapandı. Ayrıntılı bilgi almak için \"{showDetails}\" ya da uygulamayı yeniden açmak için \"{reopen}\" üzerine tıklayın.\n\nDahili hata: {err}",
     "main.CriticalErrorHandler.uncaughtException.button.showDetails": "Ayrıntıları görüntüle",
     "main.CriticalErrorHandler.uncaughtException.button.reopen": "Yeniden aç",
