@@ -63,10 +63,10 @@ import {
     handleAppBeforeQuit,
     handleAppBrowserWindowCreated,
     handleAppCertificateError,
-    handleAppGPUProcessCrashed,
     handleAppSecondInstance,
     handleAppWillFinishLaunching,
     handleAppWindowAllClosed,
+    handleChildProcessGone,
 } from './app';
 import {handleConfigUpdate, handleDarkModeChange} from './config';
 import {
@@ -183,7 +183,7 @@ function initializeAppEventListeners() {
     app.on('before-quit', handleAppBeforeQuit);
     app.on('certificate-error', handleAppCertificateError);
     app.on('select-client-certificate', CertificateManager.handleSelectCertificate);
-    app.on('gpu-process-crashed', handleAppGPUProcessCrashed);
+    app.on('child-process-gone', handleChildProcessGone);
     app.on('login', AuthManager.handleAppLogin);
     app.on('will-finish-launching', handleAppWillFinishLaunching);
 }
