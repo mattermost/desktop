@@ -36,6 +36,9 @@ import {
     TOGGLE_BACK_BUTTON,
     SET_VIEW_OPTIONS,
     LOADSCREEN_END,
+    GET_CURRENT_SERVER_URL,
+    SETUP_INITIAL_COOKIES,
+    SET_COOKIE,
 } from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {TabView, TabTuple} from 'common/tabs/TabView';
@@ -100,7 +103,7 @@ export class MattermostView extends EventEmitter {
         const preload = getLocalPreload('preload.js');
         this.options = Object.assign({}, options);
         this.options.webPreferences = {
-                preload,
+            preload,
             additionalArguments: [
                 `version=${app.getVersion()}`,
                 `appName=${app.name}`,
@@ -146,6 +149,8 @@ export class MattermostView extends EventEmitter {
         WebRequestManager.onResponseHeaders(this.extractCookies, this.view.webContents.id);
 
         // Websocket
+        WebRequestManager.onRequestHeaders(this.addOriginForWebsocket, this.view.webContents.id);
+
         log.info(`BrowserView created for server ${this.tab.name}`);
 
         this.hasBeenShown = false;
@@ -278,20 +283,17 @@ export class MattermostView extends EventEmitter {
         if (someURL) {
             const parsedURL = urlUtils.parseURL(someURL);
             if (parsedURL) {
-                loadURL = parsedURL.toString();
+                loadURL = `${getLocalURLString('mattermost.html')}#${parsedURL.toString().replace(new RegExp(`${this.tab.server.url}(/)?`), '/')}`;
             } else {
                 log.error('Cannot parse provided url, using current server url', someURL);
-                loadURL = this.tab.url.toString();
+                loadURL = `${getLocalURLString('mattermost.html')}#${this.tab.url.toString().replace(new RegExp(`${this.tab.server.url}(/)?`), '/')}`;
             }
         } else {
-            loadURL = this.tab.url.toString();
+            loadURL = `${getLocalURLString('mattermost.html')}#${this.tab.url.toString().replace(new RegExp(`${this.tab.server.url}(/)?`), '/')}`;
         }
         log.info(`[${Util.shorten(this.tab.name)}] Loading ${loadURL}`);
 
-        const localURL = `${getLocalURLString('mattermost.html')}#${this.tab.url.toString().replace(new RegExp(`${this.serverUrl}(/)?`), '/')}`;
-        const loading = this.view.webContents.loadURL(localURL);
-
-        //const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
+        const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             if (err.code && err.code.startsWith('ERR_CERT')) {
                 WindowManager.sendToRenderer(LOAD_FAILED, this.tab.name, err.toString(), loadURL.toString());
@@ -361,7 +363,7 @@ export class MattermostView extends EventEmitter {
                     this.retryLoad = setTimeout(this.retryInBackground(loadURL), RELOAD_INTERVAL);
                 }
             });
-    };
+        };
     }
 
     retryInBackground = (loadURL: string) => {
@@ -397,7 +399,7 @@ export class MattermostView extends EventEmitter {
             this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
             this.emit(LOAD_SUCCESS, this.tab.name, loadURL);
             this.setBounds(getWindowBoundaries(this.window, shouldHaveBackBar(getLocalURLString('mattermost.html'), this.view.webContents.getURL())));
-    };
+        };
     }
 
     reload = () => {

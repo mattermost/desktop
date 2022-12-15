@@ -43,7 +43,7 @@ import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 
 import {MattermostView} from 'main/views/MattermostView';
 
-import {getAdjustedWindowBoundaries, shouldHaveBackBar} from '../utils';
+import {getAdjustedWindowBoundaries, getLocalURLString, shouldHaveBackBar} from '../utils';
 
 import {ViewManager, LoadingScreenState} from '../views/viewManager';
 import CriticalErrorHandler from '../CriticalErrorHandler';
@@ -339,7 +339,7 @@ export class WindowManager {
 
         const currentView = this.viewManager?.getCurrentView();
         if (currentView) {
-            const adjustedBounds = getAdjustedWindowBoundaries(bounds.width, bounds.height, shouldHaveBackBar(currentView.tab.url, currentView.view.webContents.getURL()));
+            const adjustedBounds = getAdjustedWindowBoundaries(bounds.width, bounds.height, shouldHaveBackBar(getLocalURLString('mattermost.html'), currentView.view.webContents.getURL()));
             this.setBoundsFunction(currentView, adjustedBounds);
         }
     }
