@@ -170,10 +170,9 @@ jobs:
           paths:
             - "node_modules"
   performance-tests:
-    executor: wine-mono
+    executor: check-image
     steps:
       - checkout
-      - run: npm i
       - run: npm run test:e2e:performance || true
   build-linux:
     executor: wine-mono
