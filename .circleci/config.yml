@@ -173,8 +173,7 @@ jobs:
     executor: check-image
     steps:
       - checkout
-      - run: npm i cross-env
-      - run: npm run test:e2e:performance || true
+      - run: npm run test:performance-ci || true
   build-linux:
     executor: wine-mono
     steps:
