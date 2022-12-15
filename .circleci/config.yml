@@ -172,10 +172,8 @@ jobs:
   performance-tests:
     executor: wine-mono
     steps:
-      - run:
-          name: Run performance tests
-          command: |
-            npm run test:e2e:performance
+      - checkout
+      - run: npm run test:e2e:performance || true
   build-linux:
     executor: wine-mono
     steps:
