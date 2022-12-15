@@ -32,19 +32,27 @@ describe('Settings', function desc() {
     });
 
     describe('Options', () => {
-        describe('Start app on login', () => {
-            it('MM-T4392 should appear on win32 or linux', async () => {
+        describe('Time to open settings window', () => {
+            it('Should open settings window within expected duration', async () => {
                 const expected = (process.platform === 'win32' || process.platform === 'linux');
                 this.app.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
+
+                const t0 = performance.now();
+
                 const settingsWindow = await this.app.waitForEvent('window', {
                     predicate: (window) => window.url().includes('settings'),
                 });
                 await settingsWindow.waitForSelector('.settingsPage.container');
                 await settingsWindow.waitForSelector('#inputAutoStart', {state: expected ? 'attached' : 'detached'});
-                const existing = await settingsWindow.isVisible('#inputAutoStart');
-                existing.should.equal(expected);
+
+                const t1 = performance.now();
+                const duration = t1 - t0;
+
+                console.log(`Duration: ${duration}ms`);
+
+                duration.should.lessThanOrEqual(500);
             });
         });
     });
