@@ -2,12 +2,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import 'bootstrap/dist/css/bootstrap.min.css';
 import 'renderer/css/index.scss';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-
-import {createHashHistory, History} from 'history';
 
 import {CombinedConfig, Team} from 'types/config';
 
@@ -18,68 +17,13 @@ type State = {
     config?: CombinedConfig;
 }
 
-import('mattermost_webapp/styles');
-
-const LazyApp = React.lazy(() => import('mattermost_webapp/app'));
-const MattermostAppComponent = (props: any) => (
-    <React.Suspense fallback={<div>{'Loading...'}</div>}>
-        <LazyApp {...props}/>
-    </React.Suspense>
-);
-MattermostAppComponent.displayName = 'App';
-
 class Root extends React.PureComponent<Record<string, never>, State> {
-    registry?: {
-        getModule: <T>(name: string) => T;
-        setModule: <T>(name: string, component: T) => boolean;
-    }
-
     constructor(props: Record<string, never>) {
         super(props);
         this.state = {};
     }
 
     async componentDidMount() {
-        this.registry = await import('mattermost_webapp/registry');
-        this.registry?.setModule<History>('utils/browser_history', createHashHistory());
-
-        // Websocket site url handling
-        const currentURL = await window.mattermost.getUrl;
-        this.registry?.setModule<() => string>('utils/url/getSiteURL', () => currentURL);
-
-        // Cookie handling
-        const cookies = await window.mattermost.setupCookies;
-        Object.defineProperty(document, 'cookie', {
-            get() {
-                return this.value || '';
-            },
-            set(cookie) {
-                if (!cookie) {
-                    return '';
-                }
-                window.mattermost.setCookie(cookie);
-                const cutoff = cookie.indexOf(';');
-                const pair = cookie.substring(0, cutoff >= 0 ? cutoff : cookie.length);
-                const bits = pair.split('=');
-                const cookies = this.value ? this.value.split('; ') : [];
-
-                // look for an existing cookie and remove it if it exists
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookieBits = cookies[i].split('=');
-                    if (cookieBits[0] === bits[0]) {
-                        cookies.splice(i, 1);
-                        break;
-                    }
-                }
-                cookies.push(pair);
-                this.value = cookies.join('; ');
-                return this.value;
-            },
-        });
-        cookies.forEach((cookie) => {
-            document.cookie = `${cookie.name}=${cookie.value}`;
-        });
-
         await this.setInitialConfig();
 
         window.desktop.onSynchronizeConfig(() => {
@@ -174,24 +118,17 @@ class Root extends React.PureComponent<Record<string, never>, State> {
             return null;
         }
         return (
-            <>
-                <div id='main'>
-                    <IntlProvider>
-                        <MainPage
-                            teams={config.teams}
-                            lastActiveTeam={config.lastActiveTeam}
-                            moveTabs={this.moveTabs}
-                            openMenu={this.openMenu}
-                            darkMode={config.darkMode}
-                            appName={config.appName}
-                            useNativeWindow={config.useNativeWindow}
-                        />
-                    </IntlProvider>
-                </div>
-                <div id='root'>
-                    <MattermostAppComponent/>
-                </div>
-            </>
+            <IntlProvider>
+                <MainPage
+                    teams={config.teams}
+                    lastActiveTeam={config.lastActiveTeam}
+                    moveTabs={this.moveTabs}
+                    openMenu={this.openMenu}
+                    darkMode={config.darkMode}
+                    appName={config.appName}
+                    useNativeWindow={config.useNativeWindow}
+                />
+            </IntlProvider>
         );
     }
 }

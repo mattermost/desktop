@@ -36,6 +36,9 @@ import {
     DESKTOP_SOURCES_MODAL_REQUEST,
     CALLS_WIDGET_SHARE_SCREEN,
     CLOSE_DOWNLOADS_DROPDOWN,
+    GET_CURRENT_SERVER_URL,
+    SETUP_INITIAL_COOKIES,
+    SET_COOKIE,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -347,4 +350,10 @@ ipcRenderer.on(CALLS_JOINED_CALL, (event, message) => {
 
 window.addEventListener('resize', () => {
     ipcRenderer.send(VIEW_FINISHED_RESIZING);
+});
+
+contextBridge.exposeInMainWorld('mattermost', {
+    getUrl: ipcRenderer.invoke(GET_CURRENT_SERVER_URL),
+    setupCookies: ipcRenderer.invoke(SETUP_INITIAL_COOKIES),
+    setCookie: (cookie) => ipcRenderer.send(SET_COOKIE, cookie),
 });

@@ -211,7 +211,7 @@
     "main.menus.app.edit.cut": "Knippen",
     "main.menus.app.edit.copy": "Kopiëren",
     "main.menus.app.edit": "&Bewerken",
-    "main.CriticalErrorHandler.unresponsive.dialog.message": "Het venster reageert niet meer.\nWil je wachten tot het venster weer reageert?",
+    "main.CriticalErrorHandler.unresponsive.dialog.message": "Het venster reageert niet meer.\nWil je wachten tot het venster terug reageert?",
     "main.CriticalErrorHandler.uncaughtException.dialog.message": "De {appName} app is onverwacht gestopt. Klik op \"{showDetails}\" voor meer informatie of \"{reopen}\" om de toepassing opnieuw te openen.\n\nInterne fout: {err}",
     "main.CriticalErrorHandler.uncaughtException.button.showDetails": "Details tonen",
     "main.CriticalErrorHandler.uncaughtException.button.reopen": "Heropenen",
@@ -272,5 +272,6 @@
     "renderer.downloadsDropdown.Downloads": "Downloads",
     "renderer.downloadsDropdown.ClearAll": "Alles wissen",
     "main.menus.app.view.downloads": "Downloads",
-    "renderer.components.settingsPage.trayIcon.color": "Icoonkleur: "
+    "renderer.components.settingsPage.trayIcon.color": "Icoonkleur: ",
+    "main.menus.app.help.RunDiagnostics": "Diagnostische tests uitvoeren"
 }

@@ -27,7 +27,7 @@ import {MattermostServer} from 'common/servers/MattermostServer';
 import {TabView} from 'common/tabs/TabView';
 
 import {ServerInfo} from 'main/server/serverInfo';
-import {createCookieSetDetailsFromCookieString, getLocalPreload, getLocalURLString, makeCSPHeader} from 'main/utils';
+import {createCookieSetDetailsFromCookieString, getLocalPreload, getLocalURLString, getWindowBoundaries, makeCSPHeader} from 'main/utils';
 import WebRequestManager from 'main/webRequest/webRequestManager';
 
 export class MattermostView extends EventEmitter {
@@ -57,7 +57,7 @@ export class MattermostView extends EventEmitter {
         this.isLoggedIn = false;
         this.isAtRoot = false;
 
-        const preload = getLocalPreload('mainWindow.js');
+        const preload = getLocalPreload('preload.js');
         this.view = new BrowserView({
             ...options,
             webPreferences: {
@@ -249,7 +249,7 @@ export class MattermostView extends EventEmitter {
         log.debug('MattermostView.load', `${url}`);
 
         // TODO
-        const localURL = this.getLocalProtocolURL('index.html');
+        const localURL = this.getLocalProtocolURL('mattermost');
         this.view.webContents.loadURL(localURL);
     };
 
@@ -291,15 +291,8 @@ export class MattermostView extends EventEmitter {
     };
 
     show = () => {
-        log.debug('MattermostView.show');
-
-        // TODO
         this.window.addBrowserView(this.view);
-        this.view.setBounds({
-            ...this.window.getBounds(),
-            x: 0,
-            y: 0,
-        });
+        this.setBounds(getWindowBoundaries(this.window));
         this.isVisible = true;
     };
 
@@ -318,7 +311,7 @@ export class MattermostView extends EventEmitter {
     setBounds = (bounds: Rectangle) => {
         log.debug('MattermostView.setBounds', bounds);
 
-        // TODO
+        this.view.setBounds(bounds);
     };
 
     needsLoadingScreen = () => {

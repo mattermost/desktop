@@ -57,7 +57,7 @@
     "main.menus.app.edit.cut": "Wytnij",
     "main.menus.app.edit.copy": "Kopiuj",
     "main.menus.app.edit": "&Edycja",
-    "main.CriticalErrorHandler.unresponsive.dialog.message": "Okno nie jest już responsywne.\nCzy czekać, aż okno znów stanie się responsywne?",
+    "main.CriticalErrorHandler.unresponsive.dialog.message": "Okno nie jest już responsywne.\nCzy chcesz czekać, aż okno znów stanie się responsywne?",
     "main.CriticalErrorHandler.uncaughtException.dialog.message": "Aplikacja {appName} zakończyła pracę niespodziewanie. Kliknij \"{showDetails}\", aby dowiedzieć się więcej lub \"{reopen}\", aby ponownie otworzyć aplikację.\n\nBłąd wewnętrzny: {err}",
     "main.CriticalErrorHandler.uncaughtException.button.showDetails": "Pokaż Szczegóły",
     "main.CriticalErrorHandler.uncaughtException.button.reopen": "Ponowne otwarcie",
@@ -272,5 +272,6 @@
     "renderer.downloadsDropdown.Downloads": "Do pobrania",
     "renderer.downloadsDropdown.ClearAll": "Wyczyść Wszystko",
     "main.menus.app.view.downloads": "Do pobrania",
-    "renderer.components.settingsPage.trayIcon.color": "Kolor ikony: "
+    "renderer.components.settingsPage.trayIcon.color": "Kolor ikony: ",
+    "main.menus.app.help.RunDiagnostics": "Uruchom diagnostykę"
 }
