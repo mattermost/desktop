@@ -4,7 +4,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import {createHashHistory} from 'history';
+import {getHistory} from './browserHistory';
 
 import('mattermost_webapp/styles');
 
@@ -36,7 +36,7 @@ class MattermostApp extends React.PureComponent<any, State> {
 
     async componentDidMount() {
         this.registry = await import('mattermost_webapp/registry');
-        this.registry?.setModule<History>('utils/browser_history', createHashHistory());
+        this.registry?.setModule<History>('utils/browser_history', getHistory());
 
         // Websocket site url handling
         const currentURL = await window.mattermost.getUrl;

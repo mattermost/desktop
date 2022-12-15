@@ -152,11 +152,11 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
         }
         break;
     }
-    case 'browser-history-push': {
-        const {path} = message;
-        ipcRenderer.send(BROWSER_HISTORY_PUSH, viewName, path);
-        break;
-    }
+    // case 'browser-history-push': {
+    //     const {path} = message;
+    //     ipcRenderer.send(BROWSER_HISTORY_PUSH, viewName, path);
+    //     break;
+    // }
     case 'history-button': {
         ipcRenderer.send(BROWSER_HISTORY_BUTTON, viewName);
         break;
@@ -283,17 +283,17 @@ window.addEventListener('click', (e) => {
     }
 });
 
-ipcRenderer.on(BROWSER_HISTORY_PUSH, (event, pathName) => {
-    window.postMessage(
-        {
-            type: 'browser-history-push-return',
-            message: {
-                pathName,
-            },
-        },
-        window.location.origin,
-    );
-});
+// ipcRenderer.on(BROWSER_HISTORY_PUSH, (event, pathName) => {
+//     window.postMessage(
+//         {
+//             type: 'browser-history-push-return',
+//             message: {
+//                 pathName,
+//             },
+//         },
+//         window.location.origin,
+//     );
+// });
 
 ipcRenderer.on(BROWSER_HISTORY_BUTTON, (event, enableBack, enableForward) => {
     window.postMessage(
@@ -356,4 +356,7 @@ contextBridge.exposeInMainWorld('mattermost', {
     getUrl: ipcRenderer.invoke(GET_CURRENT_SERVER_URL),
     setupCookies: ipcRenderer.invoke(SETUP_INITIAL_COOKIES),
     setCookie: (cookie) => ipcRenderer.send(SET_COOKIE, cookie),
+    browserHistoryPush: (path) => ipcRenderer.send(BROWSER_HISTORY_PUSH, path),
+
+    onBrowserHistoryPush: (listener) => ipcRenderer.on(BROWSER_HISTORY_PUSH, (_, pathname) => listener(pathname)),
 });

@@ -35,6 +35,9 @@ import {
     CALLS_LEAVE_CALL,
     DESKTOP_SOURCES_MODAL_REQUEST,
     CALLS_WIDGET_CHANNEL_LINK_CLICK,
+    GET_CURRENT_SERVER_URL,
+    SETUP_INITIAL_COOKIES,
+    SET_COOKIE,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
@@ -85,8 +88,8 @@ export class WindowManager {
         ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, this.handleLoadingScreenAnimationFinished);
         ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
         ipcMain.on(BROWSER_HISTORY_BUTTON, this.handleBrowserHistoryButton);
-        ipcMain.on(APP_LOGGED_IN, this.handleAppLoggedIn);
-        ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
+        // ipcMain.on(APP_LOGGED_IN, this.handleAppLoggedIn);
+        // ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
         ipcMain.handle(GET_VIEW_NAME, this.handleGetViewName);
         ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, this.handleGetWebContentsId);
         ipcMain.on(DISPATCH_GET_DESKTOP_SOURCES, this.handleGetDesktopSources);
@@ -96,6 +99,34 @@ export class WindowManager {
         ipcMain.on(CALLS_LEAVE_CALL, () => this.callsWidgetWindow?.close());
         ipcMain.on(DESKTOP_SOURCES_MODAL_REQUEST, this.handleDesktopSourcesModalRequest);
         ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.handleCallsWidgetChannelLinkClick);
+
+        ipcMain.handle(GET_CURRENT_SERVER_URL, this.handleGetCurrentServerURL);
+        ipcMain.handle(SETUP_INITIAL_COOKIES, this.handleSetupCookies);
+        ipcMain.on(SET_COOKIE, this.onSetCookie);
+    }
+
+    handleGetCurrentServerURL = (event: IpcMainInvokeEvent) => {
+        const viewName = this.getViewNameByWebContentsId(event.sender.id);
+        if (!viewName) {
+            return null;
+        }
+        return this.viewManager?.views.get(viewName)?.serverUrl;
+    }
+
+    handleSetupCookies = (event: IpcMainInvokeEvent) => {
+        const viewName = this.getViewNameByWebContentsId(event.sender.id);
+        if (!viewName) {
+            return null;
+        }
+        return this.viewManager?.views.get(viewName)?.setupCookies();
+    }
+
+    onSetCookie = (event: IpcMainEvent, cookie: string) => {
+        const viewName = this.getViewNameByWebContentsId(event.sender.id);
+        if (!viewName) {
+            return null;
+        }
+        return this.viewManager?.views.get(viewName)?.setCookie(event, cookie);
     }
 
     handleUpdateConfig = () => {
@@ -741,9 +772,12 @@ export class WindowManager {
         return Config.darkMode;
     }
 
-    handleBrowserHistoryPush = (e: IpcMainEvent, viewName: string, pathName: string) => {
-        log.debug('WindowManager.handleBrowserHistoryPush', {viewName, pathName});
-
+    handleBrowserHistoryPush = (e: IpcMainEvent, pathName: string) => {
+        log.debug('WindowManager.handleBrowserHistoryPush', {pathName});
+        const viewName = this.getViewNameByWebContentsId(e.sender.id);
+        if (!viewName) {
+            return;
+        }
         const currentView = this.viewManager?.views.get(viewName);
         const cleanedPathName = urlUtils.cleanPathName(currentView?.tab.server.url.pathname || '', pathName);
         const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${cleanedPathName}`, Config.teams)?.name || viewName;
