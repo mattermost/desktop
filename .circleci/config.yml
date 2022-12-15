@@ -600,6 +600,9 @@ jobs:
 
 workflows:
   version: 2
+  performance_tests:
+    jobs:
+      - performance-tests
   build_and_test:
     jobs:
       - begin-notification:
@@ -617,9 +620,6 @@ workflows:
               ignore:
                 - /^build-pr-.*/
                 - nightly
-      - performance-tests:
-          requires:
-            - check
       - build-win-no-installer:
           filters:
             branches:
