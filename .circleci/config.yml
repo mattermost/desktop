@@ -619,7 +619,7 @@ workflows:
               ignore:
                 - /^build-pr-.*/
                 - nightly
-      - performance-test:
+      - performance-tests:
           requires:
             - check
       - build-win-no-installer:
