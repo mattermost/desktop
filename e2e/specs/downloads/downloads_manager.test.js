@@ -3,6 +3,7 @@
 'use strict';
 
 const fs = require('fs');
+
 const robot = require('robotjs');
 
 const env = require('../../modules/environment');
