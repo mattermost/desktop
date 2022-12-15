@@ -876,6 +876,7 @@ describe('main/windows/windowManager', () => {
             showByName: jest.fn(),
         };
         windowManager.handleBrowserHistoryButton = jest.fn();
+        windowManager.getViewNameByWebContentsId = jest.fn();
 
         beforeEach(() => {
             Config.teams = [
@@ -918,19 +919,22 @@ describe('main/windows/windowManager', () => {
                 windowManager.viewManager.views.set(name, view);
             });
 
-            windowManager.handleBrowserHistoryPush(null, 'server-1_tab-messaging', '/other_type_2/subpath');
+            windowManager.getViewNameByWebContentsId.mockReturnValue('server-1_tab-messaging');
+            windowManager.handleBrowserHistoryPush({sender: {id: -1}}, '/other_type_2/subpath');
             expect(windowManager.viewManager.openClosedTab).toBeCalledWith('server-1_other_type_2', 'http://server-1.com/other_type_2/subpath');
         });
 
         it('should open redirect view if different from current view', () => {
             urlUtils.getView.mockReturnValue({name: 'server-1_other_type_1'});
-            windowManager.handleBrowserHistoryPush(null, 'server-1_tab-messaging', '/other_type_1/subpath');
+            windowManager.getViewNameByWebContentsId.mockReturnValue('server-1_tab-messaging');
+            windowManager.handleBrowserHistoryPush({sender: {id: -1}}, '/other_type_1/subpath');
             expect(windowManager.viewManager.showByName).toBeCalledWith('server-1_other_type_1');
         });
 
         it('should ignore redirects to "/" to Messages from other tabs', () => {
             urlUtils.getView.mockReturnValue({name: 'server-1_tab-messaging'});
-            windowManager.handleBrowserHistoryPush(null, 'server-1_other_type_1', '/');
+            windowManager.getViewNameByWebContentsId.mockReturnValue('server-1_other_type_1');
+            windowManager.handleBrowserHistoryPush({sender: {id: -1}}, '/');
             expect(view1.view.webContents.send).not.toBeCalled();
         });
     });

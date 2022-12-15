@@ -79,7 +79,7 @@ export class MattermostView extends EventEmitter {
 
         WebRequestManager.rewriteURL(
             new RegExp(`file:///${path.resolve('/').replace('\\', '/')}(\\?.+)?$`, 'g'),
-            `${getLocalURLString('index.html')}$1`,
+            `${getLocalURLString('mattermost.html')}$1`,
             this.view.webContents.id,
         );
 
@@ -185,7 +185,7 @@ export class MattermostView extends EventEmitter {
     }
 
     private addCSPHeader = (details: OnHeadersReceivedListenerDetails) => {
-        if (details.url.startsWith(getLocalURLString('index.html'))) {
+        if (details.url.startsWith(getLocalURLString('mattermost.html'))) {
             return {
                 'Content-Security-Policy': [makeCSPHeader(this.tab.server.url, this.serverInfo.remoteInfo.cspHeader)],
             };
