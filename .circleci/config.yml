@@ -173,6 +173,7 @@ jobs:
     executor: wine-mono
     steps:
       - checkout
+      - run: npm i
       - run: npm run test:e2e:performance || true
   build-linux:
     executor: wine-mono
