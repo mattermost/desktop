@@ -16,7 +16,7 @@ const WEBSERVER_PORT = process.env.WEBSERVER_PORT ?? 9001;
 
 module.exports = merge(base, {
     entry: {
-        e2e: glob.sync('./e2e/specs/**/*.test.js'),
+        e2e: glob.sync((process.env.PERFORMANCE === 'true' ? './e2e/performance/' : './e2e/specs/') + '**/*.test.js'),
     },
     output: {
         path: path.resolve(__dirname, 'dist/tests'),

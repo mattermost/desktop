@@ -165,6 +165,17 @@ commands:
       - store_artifacts:
           path: /tmp/artifacts
 jobs:
+      - save_cache:
+          key: lint-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          paths:
+            - "node_modules"
+  performance-tests:
+    executor: wine-mono
+    steps:
+      - run:
+          name: Run performance tests
+          command: |
+            npm run test:e2e:performance
   build-linux:
     executor: wine-mono
     steps:
@@ -608,7 +619,9 @@ workflows:
               ignore:
                 - /^build-pr-.*/
                 - nightly
-
+      - performance-test:
+          requires:
+            - check
       - build-win-no-installer:
           filters:
             branches:
