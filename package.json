@@ -48,7 +48,6 @@
     "test:e2e:build": "webpack-cli --config webpack.config.test.js",
     "test:e2e:run": "electron-mocha -r @babel/register --reporter mochawesome dist/tests/e2e_bundle.js",
     "test:e2e:send-report": "node ./e2e/save_report.js",
-    "test:performance-ci": "NODE_ENV=test PERFORMANCE=true npm-run-all build build-robotjs test:e2e:build test:e2e:performance-run",
     "test:unit": "jest",
     "test:unit-ci": "jest --runInBand",
     "test:coverage": "jest --coverage",
