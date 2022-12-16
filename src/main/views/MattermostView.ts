@@ -11,6 +11,7 @@ import {
     BrowserViewConstructorOptions,
     BrowserWindow,
     CookiesSetDetails,
+    ipcMain,
     IpcMainEvent,
     OnBeforeSendHeadersListenerDetails,
     OnHeadersReceivedListenerDetails,
