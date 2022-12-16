@@ -37,9 +37,6 @@ import {
     TOGGLE_BACK_BUTTON,
     SET_VIEW_OPTIONS,
     LOADSCREEN_END,
-    GET_CURRENT_SERVER_URL,
-    SETUP_INITIAL_COOKIES,
-    SET_COOKIE,
 } from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {TabView, TabTuple} from 'common/tabs/TabView';
@@ -81,7 +78,7 @@ export class MattermostView extends EventEmitter {
     options: BrowserViewConstructorOptions;
     serverInfo: ServerInfo;
 
-    cookies: CookiesSetDetails[];
+    cookies: Map<string, CookiesSetDetails>;
     corsHeaders: string[];
     corsMethods: string[];
 
@@ -123,7 +120,6 @@ export class MattermostView extends EventEmitter {
         WebRequestManager.onRequestHeaders(this.addNoCacheForRemoteEntryRequest, this.view.webContents.id);
 
         // URL handling
-        ipcMain.handle(GET_CURRENT_SERVER_URL, () => `${this.tab.server.url}`);
         WebRequestManager.rewriteURL(
             new RegExp(`^mm-desktop://${this.tab.server.url.host}(${this.tab.server.url.pathname})?/(api|static|plugins)/(.*)`, 'g'),
             `${this.tab.server.url}/$2/$3`,
@@ -139,9 +135,7 @@ export class MattermostView extends EventEmitter {
         WebRequestManager.onResponseHeaders(this.addCSPHeader, this.view.webContents.id);
 
         // Cookies
-        this.cookies = [];
-        ipcMain.handle(SETUP_INITIAL_COOKIES, this.setupCookies);
-        ipcMain.on(SET_COOKIE, this.setCookie);
+        this.cookies = new Map();
         WebRequestManager.onRequestHeaders(this.appendCookies, this.view.webContents.id);
         WebRequestManager.onResponseHeaders(this.extractCookies, this.view.webContents.id);
 
@@ -153,7 +147,7 @@ export class MattermostView extends EventEmitter {
         this.corsMethods = [];
         WebRequestManager.onRequestHeaders(this.extractCORSHeaders, this.view.webContents.id);
         WebRequestManager.onResponseHeaders(this.addCORSResponseHeader, this.view.webContents.id);
-        
+
         log.info(`BrowserView created for server ${this.tab.name}`);
 
         this.hasBeenShown = false;
@@ -191,7 +185,6 @@ export class MattermostView extends EventEmitter {
             this.altPressStatus = false;
         });
     }
-    
 
     private extractCORSHeaders = (details: OnBeforeSendHeadersListenerDetails) => {
         if (!details.url.match(new RegExp(`${this.tab.server.url.origin}/(.+)`))) {
@@ -244,10 +237,18 @@ export class MattermostView extends EventEmitter {
         };
     }
 
+    get serverUrl() {
+        let url = `${this.tab.server.url}`;
+        if (url.endsWith('/')) {
+            url = url.slice(0, url.length - 1);
+        }
+        return url;
+    }
+
     private addNoCacheForRemoteEntryRequest = (details: OnBeforeSendHeadersListenerDetails) => {
         log.silly('WindowManager.addNoCacheForRemoteEntry', details.requestHeaders);
 
-        if (!details.url.match(new RegExp(`^${this.tab.server.url}/static/remote_entry.js`))) {
+        if (!details.url.match(new RegExp(`${this.serverUrl}/static/remote_entry.js`))) {
             return {} as Headers;
         }
 
@@ -276,17 +277,36 @@ export class MattermostView extends EventEmitter {
         };
     }
 
-    private setCookie = async (event: IpcMainEvent, cookie: string) => {
-        log.debug('Mattermost.setCookie', cookie);
+    setCookie = async (event: IpcMainEvent, cookie: string) => {
+        log.debug('MattermostView.setCookie', this.tab.name, cookie);
         const cookieSetDetails = createCookieSetDetailsFromCookieString(cookie, `${this.tab.server.url}`, this.tab.server.url.host);
+        if (this.cookies.has(cookieSetDetails.name) && this.cookies.get(cookieSetDetails.name)?.value === cookieSetDetails.value) {
+            return;
+        }
         await session.defaultSession.cookies.set(cookieSetDetails);
-        this.cookies.push(cookieSetDetails);
+        this.cookies.set(cookieSetDetails.name, cookieSetDetails);
+    }
+
+    setupCookies = async () => {
+        log.debug('MattermostView.setupCookies', this.tab.name);
+        const cookies = await session.defaultSession.cookies.get({
+            domain: this.tab.server.url.host,
+            path: this.tab.server.url.pathname,
+        });
+        cookies.forEach((cookie) => {
+            this.cookies.set(cookie.name, {
+                ...cookie,
+                url: `${this.serverUrl}`,
+            });
+        });
+        return this.cookies;
     }
 
     private appendCookies = (details: OnBeforeSendHeadersListenerDetails) => {
+        log.debug('MattermostView.appendCookies', details.requestHeaders, this.cookies);
         return {
             requestHeaders: {
-                Cookie: `${details.requestHeaders.Cookie ? `${details.requestHeaders.Cookie}; ` : ''}${this.cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ')}`,
+                Cookie: `${details.requestHeaders.Cookie ? `${details.requestHeaders.Cookie}; ` : ''}${[...this.cookies.values()].map((cookie) => `${cookie.name}=${cookie.value}`).join('; ')}`,
             },
         };
     }
@@ -300,8 +320,8 @@ export class MattermostView extends EventEmitter {
         if (cookieHeaderName) {
             const cookies = details.responseHeaders[cookieHeaderName] as string[];
             cookies.forEach((cookie) => {
-                const cookieResult = createCookieSetDetailsFromCookieString(cookie, `${this.tab.server.url}`, this.tab.server.url.host);
-                this.cookies.push(cookieResult);
+                const cookieResult = createCookieSetDetailsFromCookieString(cookie, `${this.serverUrl}`, this.tab.server.url.host);
+                this.cookies.set(cookieResult.name, cookieResult);
 
                 session.defaultSession.cookies.set(cookieResult).then(() => {
                     return session.defaultSession.cookies.flushStore();
@@ -313,20 +333,8 @@ export class MattermostView extends EventEmitter {
         return {};
     }
 
-    private setupCookies = async () => {
-        const cookies = await session.defaultSession.cookies.get({
-            domain: this.tab.server.url.host,
-            path: this.tab.server.url.pathname,
-        });
-        this.cookies = [...this.cookies, ...cookies.map((cookie) => ({
-            ...cookie,
-            url: `${this.tab.server.url}`,
-        }))];
-        return this.cookies;
-    }
-
     private addCSPHeader = (details: OnHeadersReceivedListenerDetails) => {
-        if (details.url === getLocalURLString('index.html')) {
+        if (details.url.startsWith(getLocalURLString('mattermost.html'))) {
             return {
                 responseHeaders: {
                     'Content-Security-Policy': [makeCSPHeader(this.tab.server.url, this.serverInfo.remoteInfo.cspHeader)],

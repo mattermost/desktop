@@ -152,7 +152,6 @@ export class ViewManager {
             if (!tab.isOpen) {
                 closed.set(tabTuple, {srv, tab, name: view.name});
             } else if (recycle) {
-                recycle.updateServerInfo(srv);
                 views.set(tabTuple, recycle);
             } else {
                 views.set(tabTuple, this.makeView(srv, info, tab, tabTuple[0]));

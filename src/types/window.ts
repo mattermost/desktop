@@ -86,8 +86,11 @@ declare global {
         };
         mattermost: {
             getUrl: Promise<string>;
-            setupCookies: Promise<CookiesSetDetails[]>;
+            setupCookies: Promise<Map<string, CookiesSetDetails>>;
             setCookie: (cookie: string) => Promise<void>;
+            browserHistoryPush: (path: string) => void;
+
+            onBrowserHistoryPush: (listener: (pathname: string) => void) => void;
         };
     }
 }
