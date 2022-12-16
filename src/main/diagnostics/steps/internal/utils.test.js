@@ -6,12 +6,6 @@ import config from 'common/config';
 
 import {addDurationToFnReturnObject, boundsOk, browserWindowVisibilityStatus, checkPathPermissions, truncateString, webContentsCheck} from './utils';
 
-const sleep = (ms) => new Promise((resolve) => {
-    setTimeout(() => resolve(), ms);
-});
-
-const timeToSleep = 100;
-
 jest.mock('fs', () => ({
     promises: {
         access: jest.fn(),
@@ -26,13 +20,14 @@ jest.mock('common/config', () => ({
 describe('main/diagnostics/utils', () => {
     describe('addDurationToFnReturnObject', () => {
         it('should measure the execution time of a function and include it in the response', async () => {
+            const now = jest.spyOn(Date, 'now');
+            now.mockReturnValue(0);
             const functionToMeasure = async () => {
-                await sleep(timeToSleep);
+                now.mockReturnValue(100);
             };
             const fn = addDurationToFnReturnObject(functionToMeasure);
             const b = await fn();
-            expect(b.duration).toBeGreaterThan(timeToSleep - 10);
-            expect(b.duration).toBeLessThan(timeToSleep * 1.5);
+            expect(b.duration).toBe(100);
         });
     });
 
