@@ -190,7 +190,7 @@ export default class CallsWidgetWindow extends EventEmitter {
         log.debug('CallsWidgetWindow.onShow');
 
         this.win.focus();
-        this.win.setVisibleOnAllWorkspaces(true, {visibleOnFullScreen: true});
+        this.win.setVisibleOnAllWorkspaces(true, {visibleOnFullScreen: true, skipTransformProcessType: true});
         this.win.setAlwaysOnTop(true, 'screen-saver');
 
         const bounds = this.win.getBounds();
