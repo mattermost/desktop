@@ -119,6 +119,38 @@ commands:
           root: ./build
           paths:
             - "./<< parameters.subpath >>/"
+  check:
+    description: "Running automated tests"
+    steps:
+      - run: npm run check-types
+      - run: 
+          name: i18n check
+          command: |
+            cp i18n/en.json /tmp/en.json
+            npm run mmjstool -- i18n extract-desktop --desktop-dir .
+            diff /tmp/en.json i18n/en.json
+            rm -rf tmp
+      - run: ELECTRON_DISABLE_SANDBOX=1 npm run test:unit-ci
+      - run: mkdir -p /tmp/test-results
+      - run: cp test-results.xml /tmp/test-results/
+      - store_test_results:
+          path: /tmp/test-results
+  check-windows:
+    description: "Running automated tests"
+    steps:
+      - run: npm run check-types
+      - run: 
+          name: i18n check
+          command: |
+            cp .\i18n\en.json $env:TEMP\en.json
+            npm run mmjstool -- i18n extract-desktop --desktop-dir .
+            diff $env:TEMP\en.json .\i18n\en.json
+            rm -rf tmp
+      - run: $env:ELECTRON_DISABLE_SANDBOX=1; npm run test:unit
+      - run: mkdir -p $env:TEMP\test-results
+      - run: cp test-results.xml $env:TEMP\test-results\
+      - store_test_results:
+          path: /tmp/test-results
   save:
     description: "Save binaries artifacts"
     parameters:
@@ -133,30 +165,6 @@ commands:
       - store_artifacts:
           path: /tmp/artifacts
 jobs:
-  check:
-    executor: check-image
-    steps:
-      - checkout
-      - update_image:
-          apt_opts: "--no-install-recommends"
-      - run: npm run check-types
-      - run: 
-          name: i18n check
-          command: |
-            cp i18n/en.json /tmp/en.json
-            npm run mmjstool -- i18n extract-desktop --desktop-dir .
-            diff /tmp/en.json i18n/en.json
-            rm -rf tmp
-      - run: ELECTRON_DISABLE_SANDBOX=1 npm run test:unit-ci
-      - run: mkdir -p /tmp/test-results
-      - run: cp test-results.xml /tmp/test-results/
-      - store_test_results:
-          path: /tmp/test-results
-      - save_cache:
-          key: lint-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
-          paths:
-            - "node_modules"
-
   build-linux:
     executor: wine-mono
     steps:
@@ -166,6 +174,7 @@ jobs:
           at: ./build
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - check
       - build
       - persist_to_workspace:
           root: ./build/
@@ -198,7 +207,7 @@ jobs:
           command: nvm off; choco install nodejs-lts -y
       - run: npm i -g node-gyp; node-gyp install; node-gyp install --devdir="$env:USERPROFILE\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
       - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
-      - run: $env:ELECTRON_DISABLE_SANDBOX=1; npm run test:unit
+      - check-windows
       - build:
           os: windows
           path: ./build/win
@@ -223,7 +232,7 @@ jobs:
           command: nvm install --lts && nvm use --lts
       - run: jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
       - run: PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci
-      - run: ELECTRON_DISABLE_SANDBOX=1 npm run test:unit-ci
+      - check
       - build:
           os: mac
           path: ./build/macos
@@ -258,6 +267,7 @@ jobs:
           operation: optimize
       - win_make:
           operation: "install-deps"
+      - check-windows
       - win_make:
           operation: "build"
       - run: bash -x ./scripts/patch_updater_yml.sh
@@ -368,6 +378,7 @@ jobs:
       - run:
           name: Installing npm dependencies
           command: npm ci
+      - check
       - build:
           os: mac-with-universal
           path: ./build/macos-release
@@ -409,6 +420,7 @@ jobs:
       - run:
           name: Patch version number for MAS
           command: ./scripts/patch_mas_version.sh
+      - check
       - run: npm run package:mas
       - run:
           name: Don't submit unless it's on a tag or it's the nightly build
@@ -581,12 +593,6 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - check:
-         filters:
-            branches:
-              ignore:
-                - /^build-pr-.*/
-                - nightly
       - begin-notification:
           context: desktop-notify
           filters:
@@ -597,8 +603,6 @@ workflows:
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
       - build-linux:
-          requires:
-            - check
           filters:
             branches:
               ignore:
@@ -606,8 +610,6 @@ workflows:
                 - nightly
 
       - build-win-no-installer:
-          requires:
-            - check
           filters:
             branches:
               ignore:
@@ -616,8 +618,6 @@ workflows:
                 - nightly
 
       - build-mac-no-dmg:
-          requires:
-            - check
           filters:
             branches:
               ignore:
@@ -638,8 +638,6 @@ workflows:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - mac_installer:
-          requires:
-            - check
           context: codesign-certificates
           filters:
             branches:
@@ -647,8 +645,6 @@ workflows:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - mac_app_store_testflight:
-          requires:
-            - check
           context: desktop-mac-app-store
           filters:
             branches:
