@@ -626,8 +626,6 @@ workflows:
                 - nightly
 
       - msi_installer:
-          requires:
-            - check
           context: windows-codesign
           filters:
             branches:
