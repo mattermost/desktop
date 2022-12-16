@@ -288,37 +288,37 @@ describe('main/views/viewManager', () => {
             );
         });
 
-        // it('should set focus to current view on reload', () => {
-        //     const view = {
-        //         name: 'server1-tab1',
-        //         tab: {
-        //             server: {
-        //                 name: 'server-1',
-        //             },
-        //             name: 'server1-tab1',
-        //             url: new URL('http://server1.com'),
-        //         },
-        //         urlTypeTuple: tuple('http://server1.com/', 'tab1'),
-        //         destroy: jest.fn(),
-        //         updateServerInfo: jest.fn(),
-        //     };
-        //     viewManager.currentView = 'server1-tab1';
-        //     viewManager.views.set('server1-tab1', view);
-        //     viewManager.reloadConfiguration([
-        //         {
-        //             name: 'server1',
-        //             url: 'http://server1.com',
-        //             order: 1,
-        //             tabs: [
-        //                 {
-        //                     name: 'tab1',
-        //                     isOpen: true,
-        //                 },
-        //             ],
-        //         },
-        //     ]);
-        //     expect(viewManager.showByName).toHaveBeenCalledWith('server1-tab1');
-        // });
+        it('should set focus to current view on reload', () => {
+            const view = {
+                name: 'server1-tab1',
+                tab: {
+                    server: {
+                        name: 'server-1',
+                    },
+                    name: 'server1-tab1',
+                    url: new URL('http://server1.com'),
+                },
+                urlTypeTuple: tuple('http://server1.com/', 'tab1'),
+                destroy: jest.fn(),
+                updateServerInfo: jest.fn(),
+            };
+            viewManager.currentView = 'server1-tab1';
+            viewManager.views.set('server1-tab1', view);
+            viewManager.reloadConfiguration([
+                {
+                    name: 'server1',
+                    url: 'http://server1.com',
+                    order: 1,
+                    tabs: [
+                        {
+                            name: 'tab1',
+                            isOpen: true,
+                        },
+                    ],
+                },
+            ]);
+            expect(viewManager.showByName).toHaveBeenCalledWith('server1-tab1');
+        });
 
         it('should show initial if currentView has been removed', () => {
             const view = {

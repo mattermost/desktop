@@ -129,11 +129,11 @@ export class ViewManager {
      * close, open, or reload tabs, taking care to reuse tabs and
      * preserve focus on the currently selected tab. */
     reloadConfiguration = (configServers: TeamWithTabs[]) => {
-        const focusedTuple: TabTuple | undefined = this.views.get(this.currentView as string)?.tab.urlTypeTuple;
+        const focusedTuple: TabTuple | undefined = this.views.get(this.currentView as string)?.urlTypeTuple;
 
         const current: Map<TabTuple, MattermostView> = new Map();
         for (const view of this.views.values()) {
-            current.set(view.tab.urlTypeTuple, view);
+            current.set(view.urlTypeTuple, view);
         }
 
         const views: Map<TabTuple, MattermostView> = new Map();
@@ -329,7 +329,7 @@ export class ViewManager {
     openViewDevTools = () => {
         const view = this.getCurrentView();
         if (view) {
-            view.view.webContents.openDevTools({mode: 'detach'});
+            view.openDevTools();
         } else {
             log.error(`couldn't find ${this.currentView}`);
         }
@@ -341,7 +341,7 @@ export class ViewManager {
         const entries = this.views.values();
 
         for (view of entries) {
-            const wc = view.view.webContents;
+            const wc = view.getWebContents();
             if (wc && wc.id === webContentId) {
                 found = view;
             }

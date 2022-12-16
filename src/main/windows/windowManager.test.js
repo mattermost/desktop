@@ -57,6 +57,7 @@ jest.mock('common/tabs/TabView', () => ({
 jest.mock('../utils', () => ({
     getAdjustedWindowBoundaries: jest.fn(),
     shouldHaveBackBar: jest.fn(),
+    getLocalURLString: jest.fn(),
 }));
 jest.mock('../views/viewManager', () => ({
     ViewManager: jest.fn(),
