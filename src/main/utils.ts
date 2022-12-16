@@ -137,12 +137,16 @@ export function shouldIncrementFilename(filepath: string, increment = 0): string
     return filename;
 }
 
+function createBaselineCSPHeader(origin: string) {
+    return DEFAULT_CSP_HEADER.replaceAll('{server-origin}', origin);
+}
+
 export function makeCSPHeader(serverURL: URL, remoteCSPHeader?: string) {
     if (!remoteCSPHeader) {
-        return DEFAULT_CSP_HEADER;
+        return createBaselineCSPHeader(serverURL.origin);
     }
 
-    let headerMap = addToCSPMap(new Map(), DEFAULT_CSP_HEADER);
+    let headerMap = addToCSPMap(new Map(), createBaselineCSPHeader(serverURL.origin));
     headerMap = addToCSPMap(headerMap, remoteCSPHeader, (piece) => {
         if (piece === "'self'") {
             return serverURL.origin;
@@ -182,13 +186,13 @@ function parseCookieString(cookie: string) {
 }
 
 export function createCookieSetDetailsFromCookieString(cookie: string, url: string, domain: string) {
-    const parsedCookie = cookie.split('; ')[0];
+    const parsedCookie = cookie.split(';')[0];
     const [cookieName, cookieValue] = parsedCookie.split('=');
     const cookieObject = parseCookieString(cookie);
     return {
         url,
-        name: cookieName,
-        value: cookieValue,
+        name: cookieName.trim(),
+        value: cookieValue.trim(),
         domain,
         path: cookieObject.Path,
         secure: Object.hasOwn(cookieObject, 'Secure'),

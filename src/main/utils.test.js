@@ -173,25 +173,25 @@ describe('main/utils', () => {
 
     describe('makeCSPHeader', () => {
         it('should return the default when no remote provided', () => {
-            expect(Utils.makeCSPHeader(new URL('http://server-1.url'))).toBe(DEFAULT_CSP_HEADER);
+            expect(Utils.makeCSPHeader(new URL('http://server-1.url'))).toBe(DEFAULT_CSP_HEADER.replaceAll('{server-origin}', 'http://server-1.url'));
         });
 
         it('should return the default when remote is blank', () => {
-            expect(Utils.makeCSPHeader(new URL('http://server-1.url'), '')).toBe(DEFAULT_CSP_HEADER);
+            expect(Utils.makeCSPHeader(new URL('http://server-1.url'), '')).toBe(DEFAULT_CSP_HEADER.replaceAll('{server-origin}', 'http://server-1.url'));
         });
 
         it('should add relevant fields to default', () => {
             expect(Utils.makeCSPHeader(
                 new URL('http://server-1.url'),
                 'default-src http://server-2.url',
-            )).toBe(`${DEFAULT_CSP_HEADER}; default-src http://server-2.url`);
+            )).toBe(`${DEFAULT_CSP_HEADER.replaceAll('{server-origin}', 'http://server-1.url')}; default-src http://server-2.url`);
         });
 
         it("should replace 'self' with the server url", () => {
             expect(Utils.makeCSPHeader(
                 new URL('http://server-1.url'),
                 "default-src 'self'",
-            )).toBe(`${DEFAULT_CSP_HEADER}; default-src http://server-1.url`);
+            )).toBe(`${DEFAULT_CSP_HEADER.replaceAll('{server-origin}', 'http://server-1.url')}; default-src http://server-1.url`);
         });
 
         it('should merge matching sections', () => {
@@ -205,7 +205,7 @@ describe('main/utils', () => {
             expect(Utils.makeCSPHeader(
                 new URL('http://server-1.url'),
                 'script-src a-host.com',
-            )).toBe(DEFAULT_CSP_HEADER);
+            )).toBe(DEFAULT_CSP_HEADER.replaceAll('{server-origin}', 'http://server-1.url'));
         });
     });
 });
