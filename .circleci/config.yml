@@ -198,6 +198,7 @@ jobs:
           command: nvm off; choco install nodejs-lts -y
       - run: npm i -g node-gyp; node-gyp install; node-gyp install --devdir="$env:USERPROFILE\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
       - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
+      - run: $env:ELECTRON_DISABLE_SANDBOX=1; npm run test:unit
       - build:
           os: windows
           path: ./build/win
@@ -222,6 +223,7 @@ jobs:
           command: nvm install --lts && nvm use --lts
       - run: jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
       - run: PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci
+      - run: ELECTRON_DISABLE_SANDBOX=1 npm run test:unit-ci
       - build:
           os: mac
           path: ./build/macos

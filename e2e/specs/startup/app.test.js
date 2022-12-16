@@ -4,8 +4,6 @@
 
 'use strict';
 
-const robot = require('robotjs');
-
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 

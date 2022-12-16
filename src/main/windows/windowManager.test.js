@@ -263,7 +263,7 @@ describe('main/windows/windowManager', () => {
             loadingScreenState: 3,
         };
         windowManager.mainWindow = {
-            getContentBounds: () => ({width: 800, height: 600}),
+            getContentBounds: () => ({width: 1000, height: 900}),
             getSize: () => [1000, 900],
         };
         windowManager.teamDropdown = {

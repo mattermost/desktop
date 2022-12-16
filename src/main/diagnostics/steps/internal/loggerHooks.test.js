@@ -61,11 +61,18 @@ describe('main/diagnostics/loggerHooks', () => {
 
     describe('should mask paths for all OSs', () => {
         it('darwin', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
             const message = {
                 data: ['/Users/user/Projects/desktop /Users/user/Projects/desktop/file.txt /Users/user/Projects/desktop/folder withSpace/file.txt'],
             };
             const result = maskMessageDataHook(loggerMock)(message, 'file').data[0];
             expect(findOccurrencesInString(MASK_PATH, result)).toBe(4);
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
         });
         it('linux', () => {
             const originalPlatform = process.platform;
@@ -87,10 +94,10 @@ describe('main/diagnostics/loggerHooks', () => {
                 value: 'win32',
             });
             const message = {
-                data: ['C:/Users/user/Desktop/download.pdf C:/Users/user/Desktop/folder withSpace/file.txt'],
+                data: ['C:/Users/user/Desktop/download.pdf C:\\Users\\user\\Desktop\\folder withSpace\\file.txt'],
             };
             const result = maskMessageDataHook(loggerMock)(message, 'file').data[0];
-            expect(findOccurrencesInString(MASK_PATH, result)).toBe(3);
+            expect(findOccurrencesInString(MASK_PATH, result)).toBe(2);
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
