@@ -145,7 +145,7 @@ commands:
             cp .\i18n\en.json $env:TEMP\en.json
             npm run mmjstool -- i18n extract-desktop --desktop-dir .
             diff $env:TEMP\en.json .\i18n\en.json
-            rm -rf tmp
+            rm $env:TEMP\en.json
       - run: $env:ELECTRON_DISABLE_SANDBOX=1; npm run test:unit
       - run: mkdir -p $env:TEMP\test-results
       - run: cp test-results.xml $env:TEMP\test-results\
