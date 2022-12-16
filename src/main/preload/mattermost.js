@@ -152,11 +152,6 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
         }
         break;
     }
-    // case 'browser-history-push': {
-    //     const {path} = message;
-    //     ipcRenderer.send(BROWSER_HISTORY_PUSH, viewName, path);
-    //     break;
-    // }
     case 'history-button': {
         ipcRenderer.send(BROWSER_HISTORY_BUTTON, viewName);
         break;
@@ -282,18 +277,6 @@ window.addEventListener('click', (e) => {
         ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
     }
 });
-
-// ipcRenderer.on(BROWSER_HISTORY_PUSH, (event, pathName) => {
-//     window.postMessage(
-//         {
-//             type: 'browser-history-push-return',
-//             message: {
-//                 pathName,
-//             },
-//         },
-//         window.location.origin,
-//     );
-// });
 
 ipcRenderer.on(BROWSER_HISTORY_BUTTON, (event, enableBack, enableForward) => {
     window.postMessage(
