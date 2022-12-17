@@ -267,6 +267,7 @@ jobs:
           operation: optimize
       - win_make:
           operation: "install-deps"
+      - run: PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci
       - check-windows
       - win_make:
           operation: "build"
