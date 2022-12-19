@@ -27,4 +27,4 @@ jobs:
       run: npm ci
 
     - name: E2E Test for Electron 🧪
-      run: ELECTRON_DISABLE_SANDBOX=1 npm run test:e2e:performance || true
+      run: set ELECTRON_DISABLE_SANDBOX=1 npm run test:e2e:performance || true
