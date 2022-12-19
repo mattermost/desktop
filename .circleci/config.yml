@@ -173,7 +173,13 @@ jobs:
     executor: check-image
     steps:
       - checkout
+      - update_image:
+          apt_opts: "--no-install-recommends"
       - run: npm run test:e2e:performance || true
+      - save_cache:
+          key: lint-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          paths:
+            - "node_modules"
   build-linux:
     executor: wine-mono
     steps:
