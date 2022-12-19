@@ -112,7 +112,7 @@
     "label.add": "Hinzufügen",
     "label.accept": "Akzeptieren",
     "common.tabs.TAB_PLAYBOOKS": "Playbooks",
-    "common.tabs.TAB_MESSAGING": "Kanäle",
+    "common.tabs.TAB_MESSAGING": "Channels",
     "common.tabs.TAB_FOCALBOARD": "Boards",
     "common.permissions.canBasicAuth": "Web Authentifizierung",
     "renderer.modals.permission.permissionModal.unknownOrigin": "Unbekannte Herkunft",
