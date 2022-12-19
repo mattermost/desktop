@@ -165,10 +165,6 @@ commands:
       - store_artifacts:
           path: /tmp/artifacts
 jobs:
-      - save_cache:
-          key: lint-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
-          paths:
-            - "node_modules"
   performance-tests:
     executor: check-image
     steps:
