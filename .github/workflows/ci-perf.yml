@@ -11,7 +11,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [windows-latest]
+        os: [macos-latest]
         node-version: [16]
 
     steps:
@@ -26,5 +26,5 @@ jobs:
     - name: Install dependencies 👨🏻‍💻
       run: npm ci
 
-    - name: E2E Test for Electron 🧪
-      run: set ELECTRON_DISABLE_SANDBOX=1 npm run test:e2e:performance || true
+    - name: E2E Performance Test for Electron 🧪
+      run: ELECTRON_DISABLE_SANDBOX=1 npm run test:e2e:performance || true
