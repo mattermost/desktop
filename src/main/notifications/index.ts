@@ -118,4 +118,3 @@ export function sendTestNotification() {
         soundName: 'Bing',
     });
 }
-

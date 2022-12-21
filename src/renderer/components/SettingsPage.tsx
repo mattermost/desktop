@@ -17,10 +17,6 @@ import {DeepPartial} from 'types/utils';
 
 import {localeTranslations} from 'common/utils/constants';
 
-import {
-    SEND_TEST_NOTIFICATION,
-} from 'common/communication';
-
 import AutoSaveIndicator, {SavingState} from './AutoSaveIndicator';
 
 const CONFIG_TYPE_UPDATES = 'updates';
@@ -425,7 +421,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
 
     sendTestNotification = (): void => {
         console.log('Sending test notification');
-        window.ipcRenderer.send(SEND_TEST_NOTIFICATION);
+        window.desktop.sendTestNotification();
     }
 
     render() {
