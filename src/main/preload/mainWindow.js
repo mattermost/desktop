@@ -56,6 +56,7 @@ import {
     UPDATE_DOWNLOADS_DROPDOWN,
     APP_MENU_WILL_CLOSE,
     FOCUS_THREE_DOT_MENU,
+    SEND_TEST_NOTIFICATION,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -135,6 +136,8 @@ contextBridge.exposeInMainWorld('desktop', {
     onUpdateDownloadsDropdown: (listener) => ipcRenderer.on(UPDATE_DOWNLOADS_DROPDOWN, (_, downloads) => listener(downloads)),
     onAppMenuWillClose: (listener) => ipcRenderer.on(APP_MENU_WILL_CLOSE, () => listener()),
     onFocusThreeDotMenu: (listener) => ipcRenderer.on(FOCUS_THREE_DOT_MENU, () => listener()),
+
+    sendTestNotification: () => ipcRenderer.send(SEND_TEST_NOTIFICATION),
 });
 
 window.addEventListener('message', async (event) => {

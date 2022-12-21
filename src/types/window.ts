@@ -83,6 +83,8 @@ declare global {
             onUpdateDownloadsDropdown: (listener: (downloads: DownloadedItems) => void) => void;
             onAppMenuWillClose: (listener: () => void) => void;
             onFocusThreeDotMenu: (listener: () => void) => void;
+
+            sendTestNotification: () => void;
         };
     }
 }

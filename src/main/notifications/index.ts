@@ -19,6 +19,22 @@ import {NewVersionNotification, UpgradeNotification} from './Upgrade';
 import getLinuxDoNotDisturb from './dnd-linux';
 import getWindowsDoNotDisturb from './dnd-windows';
 
+function getDoNotDisturb() {
+    if (process.platform === 'win32') {
+        return getWindowsDoNotDisturb();
+    }
+
+    if (process.platform === 'darwin') {
+        return getDarwinDoNotDisturb();
+    }
+
+    if (process.platform === 'linux') {
+        return getLinuxDoNotDisturb();
+    }
+
+    return false;
+}
+
 export const currentNotifications = new Map();
 
 export function displayMention(title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData) {
@@ -138,18 +154,46 @@ export function displayRestartToUpgrade(version: string, handleUpgrade: () => vo
     restartToUpgrade.show();
 }
 
-function getDoNotDisturb() {
-    if (process.platform === 'win32') {
-        return getWindowsDoNotDisturb();
+export function sendTestNotification(): void {
+    log.debug('Notifications.sendTestNotification');
+
+    if (!Notification.isSupported()) {
+        log.error('notification not supported');
+        return;
+    }
+
+    if (getDoNotDisturb()) {
+        return;
     }
 
     if (process.platform === 'darwin') {
-        return getDarwinDoNotDisturb();
+        const testNotification = new Notification({
+            title: 'Test Notification',
+            body: 'Body of the notification',
+            actions: [{
+                type: 'button',
+                text: 'Sounds good',
+            }],
+        });
+        testNotification.on('action', (event, index) => {
+            log.debug('Notifications.sendTestNotification action event.', {event, index});
+        });
+        testNotification.show();
+    } else if (process.platform === 'win32') {
+        const testNotification = new Notification({
+            toastXml: `
+            <toast>
+                <visual>
+                    <binding template="ToastText02">
+                        <text id="1">The counter needs to be updated</text>
+                        <text id="2">You can count down or up.</text>
+                    </binding>
+                </visual>
+                <actions>
+                    <action content="Count up" activationType="protocol" arguments="mattermost://replyOk" />
+                </actions>
+            </toast>`,
+        });
+        testNotification.show();
     }
-
-    if (process.platform === 'linux') {
-        return getLinuxDoNotDisturb();
-    }
-
-    return false;
 }

@@ -193,6 +193,7 @@
   "renderer.components.settingsPage.minimizeToTray": "Leave app running in notification area when application window is closed",
   "renderer.components.settingsPage.minimizeToTray.description": "If enabled, the app stays running in the notification area after app window is closed.",
   "renderer.components.settingsPage.saving.error": "Can't save your changes. Please try again.",
+  "renderer.components.settingsPage.SendTestNotification": "Send test notification",
   "renderer.components.settingsPage.showUnreadBadge": "Show red badge on {taskbar} icon to indicate unread messages",
   "renderer.components.settingsPage.showUnreadBadge.description": "Regardless of this setting, mentions are always indicated with a red badge and item count on the {taskbar} icon.",
   "renderer.components.settingsPage.startAppOnLogin": "Start app on login",

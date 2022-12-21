@@ -419,6 +419,11 @@ class SettingsPage extends React.PureComponent<Props, State> {
         window.desktop.doubleClickOnWindow('settings');
     }
 
+    sendTestNotification = (): void => {
+        console.log('Sending test notification');
+        window.desktop.sendTestNotification();
+    }
+
     render() {
         const {intl} = this.props;
 
@@ -1099,6 +1104,33 @@ class SettingsPage extends React.PureComponent<Props, State> {
                         defaultMessage='Increasing the log level increases disk space usage and can impact performance. We recommend only increasing the log level if you are having issues.'
                     />
                 </FormText>
+            </div>,
+        );
+
+        options.push(
+            <div
+                style={settingsPage.container}
+                key='containerSendTestNotification'
+            >
+                <hr/>
+                <div>
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.SendTestNotification'
+                        defaultMessage='Send test notification'
+                    />
+                </div>
+                <br/>
+                <Button
+                    key='sendTestNotificationButton'
+                    style={settingsPage.downloadLocationButton}
+                    id='sendTestNotificationButton'
+                    onClick={this.sendTestNotification}
+                >
+                    <FormattedMessage
+                        id='label.sendNotification'
+                        defaultMessage='Send Notification'
+                    />
+                </Button>
             </div>,
         );
 
