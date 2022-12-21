@@ -13,6 +13,7 @@
   "label.ok": "OK",
   "label.remove": "Remove",
   "label.save": "Save",
+  "label.sendNotification": "Send Notification",
   "label.yes": "Yes",
   "main.allowProtocolDialog.button.saveProtocolAsAllowed": "Yes (Save {protocol} as allowed)",
   "main.allowProtocolDialog.detail": "The requested link is {URL}. Do you want to continue?",
