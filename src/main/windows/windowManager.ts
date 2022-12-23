@@ -255,6 +255,13 @@ export class WindowManager {
         this.sendToRenderer(MAXIMIZE_CHANGE, false);
     }
 
+    maximizeMainWindow = () => {
+        if (!(this.viewManager && this.mainWindow)) {
+            return;
+        }
+        this.mainWindow.maximize?.();
+    }
+
     isResizing = false;
 
     handleWillResizeMainWindow = (event: Event, newBounds: Electron.Rectangle) => {
