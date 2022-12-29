@@ -27,6 +27,7 @@ jobs:
       run: |
         if [ "$RUNNER_OS" == "Linux" ]; then
             apt-get install libxtst-dev libpng++-dev
+      shell: bash
 
     - name: Install dependencies 👨🏻‍💻
       run: npm ci
