@@ -4,7 +4,6 @@
 'use strict';
 
 const env = require('../modules/environment');
-const {asyncSleep} = require('../modules/utils');
 
 describe('startup/app', function desc() {
     this.timeout(30000);
@@ -22,7 +21,6 @@ describe('startup/app', function desc() {
     });
 
     it('should show the welcome screen modal when no servers exist', async () => {
-        await asyncSleep(500);
         const welcomeScreenModal = this.app.windows().find((window) => window.url().includes('welcomeScreen'));
         const modalButton = await welcomeScreenModal.innerText('.WelcomeScreen .WelcomeScreen__button');
         modalButton.should.equal('Get Started');
