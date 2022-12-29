@@ -24,10 +24,8 @@ jobs:
         cache: 'npm'
 
     - name: Install ubuntu packages
-      run: |
-        if [ "$RUNNER_OS" == "Linux" ]; then
-            apt-get install libxtst-dev libpng++-dev
-      shell: bash
+      run: apt-get install libxtst-dev libpng++-dev
+      if: runner.os == 'Linux'
 
     - name: Install dependencies 👨🏻‍💻
       run: npm ci
