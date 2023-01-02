@@ -112,5 +112,10 @@
     "main.autoUpdater.download.dialog.detail": "{appName} 데스크톱의 새로운 버전이 존재하여, 지금 다운로드 후 설치할 수 있습니다.",
     "main.autoUpdater.download.dialog.button.remindMeLater": "나중에 다시 알림",
     "main.autoUpdater.download.dialog.button.download": "다운로드",
-    "main.app.utils.migrateMacAppStore.dialog.message": "설정을 제외하고 불러오기"
+    "main.app.utils.migrateMacAppStore.dialog.message": "설정을 제외하고 불러오기",
+    "renderer.time.sec": "초",
+    "renderer.time.mins": "분",
+    "renderer.time.hours": "시간",
+    "renderer.modals.login.loginModal.username": "사용자 이름",
+    "renderer.modals.login.loginModal.password": "비밀번호"
 }
