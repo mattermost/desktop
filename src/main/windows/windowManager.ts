@@ -4,7 +4,7 @@
 /* eslint-disable max-lines */
 import path from 'path';
 
-import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer} from 'electron';
+import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer, Display, screen} from 'electron';
 import log from 'electron-log';
 
 import {
@@ -260,6 +260,35 @@ export class WindowManager {
             return;
         }
         this.mainWindow.maximize?.();
+    }
+
+    displayRemoved = (event: Event, oldDisplay: Display) => {
+        log.debug('WindowManager.displayRemoved', {oldDisplay});
+
+        if (!oldDisplay) {
+            return;
+        }
+
+        if (this.isActiveScreen(oldDisplay.id)) {
+            this.maximizeMainWindow();
+        }
+    }
+
+    displayMetricsChanged = (event: Event, display: Display, changedMetrics: string[]) => {
+        log.debug('WindowManager.displayMetricsChanged', {display, changedMetrics});
+
+        this.maximizeMainWindow();
+    }
+
+    isActiveScreen = (id: Display['id']): boolean => {
+        if (!(this.viewManager && this.mainWindow)) {
+            return false;
+        }
+
+        const mainWindowBounds = this.mainWindow.getBounds();
+        const currentDisplay = screen.getDisplayNearestPoint({x: mainWindowBounds.x, y: mainWindowBounds.y});
+        log.debug('WindowManager.isActiveScreen', {id, currentDisplay});
+        return currentDisplay.id === id;
     }
 
     isResizing = false;

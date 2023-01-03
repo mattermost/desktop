@@ -191,8 +191,8 @@ function initializeAppEventListeners() {
 }
 
 function initializeScreenEventListeners() {
-    screen.on('display-removed', WindowManager.maximizeMainWindow);
-    screen.on('display-metrics-changed', WindowManager.maximizeMainWindow);
+    screen.on('display-removed', WindowManager.displayRemoved);
+    screen.on('display-metrics-changed', WindowManager.displayMetricsChanged);
 }
 
 function initializeBeforeAppReady() {
