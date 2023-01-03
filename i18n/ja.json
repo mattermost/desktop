@@ -178,7 +178,7 @@
     "main.menus.app.edit.cut": "カット",
     "main.menus.app.edit.copy": "コピー",
     "main.menus.app.edit": "&Edit",
-    "main.CriticalErrorHandler.unresponsive.dialog.message": "ウィンドウが応答していません。\nウィンドウが再び応答するまで待ちますか?",
+    "main.CriticalErrorHandler.unresponsive.dialog.message": "ウィンドウが応答していません。\nウィンドウが再び応答するまで待機しますか?",
     "main.CriticalErrorHandler.uncaughtException.dialog.message": "{appName}アプリが予期せず終了しました。詳細を見るために\"{showDetails}\"をクリックするか、アプリを再度開くために\"{reopen}\"をクリックしてください。\n\n内部エラー: {err}",
     "main.CriticalErrorHandler.uncaughtException.button.showDetails": "詳細を表示",
     "main.CriticalErrorHandler.uncaughtException.button.reopen": "再度開く",
@@ -272,5 +272,6 @@
     "renderer.downloadsDropdown.Downloads": "ダウンロード",
     "renderer.downloadsDropdown.ClearAll": "すべてクリア",
     "main.menus.app.view.downloads": "ダウンロード",
-    "renderer.components.settingsPage.trayIcon.color": "アイコンの色: "
+    "renderer.components.settingsPage.trayIcon.color": "アイコンの色: ",
+    "main.menus.app.help.RunDiagnostics": "診断する"
 }

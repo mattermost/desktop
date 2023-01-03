@@ -128,7 +128,7 @@
     "main.menus.app.view.fullscreen": "Teljes képernyő váltása",
     "main.menus.app.view.devToolsCurrentServer": "Fejlesztői eszközök a jelenlegi kiszolgálóhoz",
     "main.menus.app.edit.pasteAndMatchStyle": "Beillesztés és stílus hozzáillesztése",
-    "main.CriticalErrorHandler.unresponsive.dialog.message": "Az ablak már nem reagál.\nMegvárja, amíg az ablak újra reagál?",
+    "main.CriticalErrorHandler.unresponsive.dialog.message": "Az ablak már nem reagál.\nMeg szeretné várni, amíg az ablak újra reagál?",
     "main.badge.unreadMentions": "Vannak olvasatlan említései ({mentionCount})",
     "main.notifications.upgrade.newVersion.title": "Új asztali verzió érhető el",
     "main.notifications.upgrade.newVersion.body": "Egy új verzió már letölthető.",
@@ -272,5 +272,7 @@
     "renderer.downloadsDropdown.remaining": "van hátra",
     "renderer.downloadsDropdown.Downloads": "Letöltések",
     "renderer.downloadsDropdown.ClearAll": "Mind törlése",
-    "main.menus.app.view.downloads": "Letöltések"
+    "main.menus.app.view.downloads": "Letöltések",
+    "renderer.components.settingsPage.trayIcon.color": "Ikon színe: ",
+    "main.menus.app.help.RunDiagnostics": "Diagnosztikák futtatása"
 }
