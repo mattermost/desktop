@@ -51,6 +51,9 @@ jest.mock('electron', () => ({
         handle: jest.fn(),
         emit: jest.fn(),
     },
+    screen: {
+        on: jest.fn(),
+    },
     session: {
         defaultSession: {
             setSpellCheckerDictionaryDownloadURL: jest.fn(),
