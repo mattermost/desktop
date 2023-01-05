@@ -22,7 +22,7 @@ describe('startup/app', function desc() {
 
     it('should show the welcome screen modal when no servers exist', async () => {
         const welcomeScreenModal = this.app.windows().find((window) => window.url().includes('welcomeScreen'));
-        const modalButton = await welcomeScreenModal?.innerText('.WelcomeScreen .WelcomeScreen__button');
+        const modalButton = await welcomeScreenModal.innerText('.WelcomeScreen .WelcomeScreen__button');
         modalButton.should.equal('Get Started');
     });
 });
