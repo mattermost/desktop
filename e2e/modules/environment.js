@@ -120,13 +120,13 @@ const demoMattermostConfig = {
 
 const cmdOrCtrl = process.platform === 'darwin' ? 'command' : 'control';
 
-async function findMainWindow(app, depth = 60) {
+async function findMainWindow(app, depth = 10) {
     const mainWindow = app?.windows().find((window) => window.url().includes('index'));
     if (depth === 0) {
         return mainWindow;
     }
     if (!mainWindow) {
-        await asyncSleep(1000);
+        await asyncSleep(500);
         return findMainWindow(app, depth - 1);
     }
     return mainWindow;
