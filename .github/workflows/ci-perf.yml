@@ -23,11 +23,6 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
 
-    - name: Install ubuntu packages
-      run: |
-        if [ "$RUNNER_OS" == "Linux" ]; then
-            apt-get install libxtst-dev libpng++-dev
-
     - name: Install dependencies 👨🏻‍💻
       run: npm ci
 
