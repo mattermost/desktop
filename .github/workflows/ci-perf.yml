@@ -11,7 +11,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest]
+        os: [ubuntu-latest]
         node-version: [16]
 
     steps:
@@ -23,8 +23,12 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
 
+    - name: Install ubuntu packages
+      run: sudo apt-get install libxtst-dev libpng++-dev libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb
+      if: runner.os == 'Linux'
+
     - name: Install dependencies 👨🏻‍💻
       run: npm ci
 
     - name: E2E Performance Test for Electron 🧪
-      run: ELECTRON_DISABLE_SANDBOX=1 npm run test:e2e:performance
+      run: ELECTRON_DISABLE_SANDBOX=1 npm run test:e2e:performance:ci
