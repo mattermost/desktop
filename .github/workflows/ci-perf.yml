@@ -24,7 +24,7 @@ jobs:
         cache: 'npm'
 
     - name: Install ubuntu packages
-      run: sudo apt-get install libxtst-dev libpng++-dev
+      run: apt-get install libxtst-dev libpng++-dev
       if: runner.os == 'Linux'
 
     - name: Install dependencies 👨🏻‍💻
