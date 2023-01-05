@@ -51,7 +51,7 @@ commands:
         type: string
         default: "https://mattermost.com/wp-content/uploads/2022/02/icon.png"
     steps:
-      - run:
+      - run: 
           command: |
             export VERSION=$(jq -r .version package.json)
             echo '{}' | jq "{
@@ -108,7 +108,7 @@ commands:
         type: string
         default: "./linux/"
     steps:
-      - run:
+      - run: 
           name: npn run
           command: npm run package:<< parameters.os >>
           no_output_timeout: 60m
@@ -123,7 +123,7 @@ commands:
     description: "Running automated tests"
     steps:
       - run: npm run check-types
-      - run:
+      - run: 
           name: i18n check
           command: |
             cp i18n/en.json /tmp/en.json
@@ -139,7 +139,7 @@ commands:
     description: "Running automated tests"
     steps:
       - run: npm run check-types
-      - run:
+      - run: 
           name: i18n check
           command: |
             cp .\i18n\en.json $env:TEMP\en.json
@@ -470,7 +470,7 @@ jobs:
             grep "win" ./templist.txt | awk -F/ '{print "- ["$NF"]("$0")"}' >> ./build/linklist.txt
       - persist_to_workspace:
           root: ./build
-          paths:
+          paths: 
             - ./linklist.txt
             - ./artifactlist.txt
 
@@ -488,7 +488,7 @@ jobs:
           command: |
             echo "Links for $(date +"%b-%d-%Y")" >> ./links/linklist.txt
             cat ./build/linklist.txt >> ./links/linklist.txt
-      - run:
+      - run: 
           command: |
             linklist=$(<./links/linklist.txt);
             echo '{}' | jq "{
@@ -511,7 +511,7 @@ jobs:
           command: |
             if [ -z `git name-rev --name-only --tags --no-undefined HEAD 2>/dev/null` ]; then
               circleci-agent step halt
-            fi
+            fi  
       - run:
           name: "Setup files for aws-s3"
           command: |
@@ -521,7 +521,7 @@ jobs:
           from: ./aws-s3-dist/
           to: s3://releases.mattermost.com/desktop/
           arguments: --acl public-read --cache-control "no-cache" --recursive
-
+  
   upload_to_s3_daily:
     executor: aws
     steps:
@@ -558,7 +558,7 @@ jobs:
           command: |
             if [ -z `git name-rev --name-only --tags --no-undefined HEAD 2>/dev/null` ]; then
               circleci-agent step halt
-            fi
+            fi  
       - run:
           name: "Setup files for ghr"
           command: |
@@ -589,7 +589,7 @@ jobs:
           apt_opts: "--no-install-recommends jq"
       - notify:
           message: "Release process for the desktop app has started, it should take about 30 minutes to complete."
-
+  
   end-notification:
     executor: wine-chrome
     steps:
@@ -602,6 +602,9 @@ jobs:
 
 workflows:
   version: 2
+  performance_tests:
+    jobs:
+      - performance-tests
   build_and_test:
     jobs:
       - begin-notification:
@@ -752,11 +755,11 @@ workflows:
     when: << pipeline.parameters.run_nightly >>
     jobs:
       - msi_installer:
-          context:
+          context: 
             - windows-codesign
             - desktop-rainforest-build
       - mac_installer:
-          context:
+          context: 
             - codesign-certificates
             - desktop-rainforest-build
       - upload_to_s3_daily:
