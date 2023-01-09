@@ -77,9 +77,21 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         this.checkForDeletedFiles();
         this.reloadFilesForMAS();
 
+        this.loadIPCHandlers();
+    };
+
+    private loadIPCHandlers = () => {
+        ipcMain.removeHandler(REQUEST_HAS_DOWNLOADS);
         ipcMain.handle(REQUEST_HAS_DOWNLOADS, () => {
             return this.hasDownloads();
         });
+
+        ipcMain.removeListener(DOWNLOADS_DROPDOWN_FOCUSED, this.clearAutoCloseTimeout);
+        ipcMain.removeListener(UPDATE_AVAILABLE, this.onUpdateAvailable);
+        ipcMain.removeListener(UPDATE_DOWNLOADED, this.onUpdateDownloaded);
+        ipcMain.removeListener(UPDATE_PROGRESS, this.onUpdateProgress);
+        ipcMain.removeListener(NO_UPDATE_AVAILABLE, this.noUpdateAvailable);
+
         ipcMain.on(DOWNLOADS_DROPDOWN_FOCUSED, this.clearAutoCloseTimeout);
         ipcMain.on(UPDATE_AVAILABLE, this.onUpdateAvailable);
         ipcMain.on(UPDATE_DOWNLOADED, this.onUpdateDownloaded);
