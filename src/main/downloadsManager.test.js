@@ -40,6 +40,8 @@ jest.mock('electron', () => {
             emit: jest.fn(),
             handle: jest.fn(),
             on: jest.fn(),
+            removeHandler: jest.fn(),
+            removeListener: jest.fn(),
         },
         Menu: {
             getApplicationMenu: () => ({
