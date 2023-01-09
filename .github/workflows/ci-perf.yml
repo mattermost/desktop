@@ -26,5 +26,8 @@ jobs:
     - name: Install dependencies 👨🏻‍💻
       run: npm ci
 
+    - name: Install packages
+      run: sudo apt-get install libxtst-dev libpng++-dev
+
     - name: E2E Performance Test for Electron 🧪
       run: xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" -- ELECTRON_DISABLE_SANDBOX=1 npm run test:e2e:performance
