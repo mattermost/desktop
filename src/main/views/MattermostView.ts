@@ -199,7 +199,9 @@ export class MattermostView extends EventEmitter {
         }
 
         return {
+            requestHeaders: {
             'Cache-Control': 'max-age=0',
+            },
         };
     }
 
@@ -215,7 +217,9 @@ export class MattermostView extends EventEmitter {
         }
 
         return {
+            requestHeaders: {
             Origin: `${this.tab.server.url.protocol}//${this.tab.server.url.host}`,
+            },
         };
     }
 
@@ -247,7 +251,9 @@ export class MattermostView extends EventEmitter {
     private appendCookies = (details: OnBeforeSendHeadersListenerDetails) => {
         log.debug('MattermostView.appendCookies', details.requestHeaders, this.cookies);
         return {
+            requestHeaders: {
             Cookie: `${details.requestHeaders.Cookie ? `${details.requestHeaders.Cookie}; ` : ''}${[...this.cookies.values()].map((cookie) => `${cookie.name}=${cookie.value}`).join('; ')}`,
+            },
         };
     }
 
@@ -276,7 +282,9 @@ export class MattermostView extends EventEmitter {
     private addCSPHeader = (details: OnHeadersReceivedListenerDetails) => {
         if (details.url.startsWith(getLocalURLString('mattermost.html'))) {
             return {
+                responseHeaders: {
                 'Content-Security-Policy': [makeCSPHeader(this.tab.server.url, this.serverInfo.remoteInfo.cspHeader)],
+                },
             };
         }
 
