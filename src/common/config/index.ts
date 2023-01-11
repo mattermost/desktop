@@ -160,7 +160,7 @@ export class Config extends EventEmitter {
 
         if (properties.length) {
             const newData = properties.reduce((obj, data) => {
-                obj[data.key] = data.data;
+                (obj as any)[data.key] = data.data;
                 return obj;
             }, {} as Partial<ConfigType>);
             this.setMultiple(newData);
