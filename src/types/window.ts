@@ -9,6 +9,7 @@ import {SaveQueueItem} from './settings';
 
 declare global {
     interface Window {
+        basename: string;
         ipcRenderer: {
             send: typeof ipcRenderer.send;
             on: (channel: string, listener: (...args: any[]) => void) => void;

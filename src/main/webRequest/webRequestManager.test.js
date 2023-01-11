@@ -99,8 +99,8 @@ describe('main/webRequest/webRequestManager', () => {
     describe('rewriteURL', () => {
         it('should overwrite old listeners with new ones if the regex matches', () => {
             const manager = new WebRequestManager();
-            manager.onBeforeRequest.eventNames = jest.fn().mockReturnValue(['rewriteURL_/file:\\/\\/\\/*/_4']);
-            manager.rewriteURL(/file:\/\/\/*/, 'http:', 4);
+            manager.onBeforeRequest.eventNames = jest.fn().mockReturnValue(['rewriteURL__file:_/\\*/_4']);
+            manager.rewriteURL('', 'file:', /\*/, 'http:', 4);
             expect(manager.onBeforeRequest.removeAllListeners).toHaveBeenCalled();
         });
 
@@ -110,7 +110,27 @@ describe('main/webRequest/webRequestManager', () => {
             manager.onBeforeRequest.addWebRequestListener.mockImplementation((name, fn) => {
                 result = fn({url: 'file:///some/file/path', webContentsId: 1});
             });
-            manager.rewriteURL(/file:\/\/\/*/, 'http://', 2);
+            manager.rewriteURL('some', 'file:', /\/file\/(.+)/, 'http://other/$1', 2);
+            expect(result).not.toHaveProperty('redirectURL');
+        });
+
+        it('should not rewrite URLs if the request does not match the protocol', () => {
+            const manager = new WebRequestManager();
+            let result = {};
+            manager.onBeforeRequest.addWebRequestListener.mockImplementation((name, fn) => {
+                result = fn({url: 'http://some/file/path', webContentsId: 1});
+            });
+            manager.rewriteURL('some', 'file:', /\/file\/(.+)/, 'http://other/$1', 1);
+            expect(result).not.toHaveProperty('redirectURL');
+        });
+
+        it('should not rewrite URLs if the request does not match the host', () => {
+            const manager = new WebRequestManager();
+            let result = {};
+            manager.onBeforeRequest.addWebRequestListener.mockImplementation((name, fn) => {
+                result = fn({url: 'file://some/file/path', webContentsId: 1});
+            });
+            manager.rewriteURL('different', 'file:', /\/file\/(.+)/, 'http://other/$1', 1);
             expect(result).not.toHaveProperty('redirectURL');
         });
 
@@ -118,9 +138,9 @@ describe('main/webRequest/webRequestManager', () => {
             const manager = new WebRequestManager();
             let result = {};
             manager.onBeforeRequest.addWebRequestListener.mockImplementation((name, fn) => {
-                result = fn({url: 'http://some/file/path', webContentsId: 1});
+                result = fn({url: 'file://some/other/path', webContentsId: 1});
             });
-            manager.rewriteURL(/file:\/\/\/*/, 'http://', 1);
+            manager.rewriteURL('some', 'file:', /\/file\/(.+)/, 'http://other/$1', 1);
             expect(result).not.toHaveProperty('redirectURL');
         });
 
@@ -130,8 +150,8 @@ describe('main/webRequest/webRequestManager', () => {
             manager.onBeforeRequest.addWebRequestListener.mockImplementation((name, fn) => {
                 result = fn({url: 'file:///some/file/path', webContentsId: 1});
             });
-            manager.rewriteURL(/file:\/\/\/*/, 'http://', 1);
-            expect(result).toHaveProperty('redirectURL', 'http://some/file/path');
+            manager.rewriteURL('some', 'file:', /\/file\/(.+)/, 'http://other/$1', 1);
+            expect(result).toHaveProperty('redirectURL', 'http://other/path');
         });
     });
 
