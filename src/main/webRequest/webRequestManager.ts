@@ -12,8 +12,6 @@ import {
 } from 'electron';
 import log from 'electron-log';
 
-import {Headers} from 'types/webRequest';
-
 import {WebRequestHandler} from 'main/webRequest/webRequestHandler';
 
 export class WebRequestManager {
@@ -56,7 +54,7 @@ export class WebRequestManager {
         });
     }
 
-    onRequestHeaders = (listener: (headers: OnBeforeSendHeadersListenerDetails) => Headers, webContentsId?: number) => {
+    onRequestHeaders = (listener: (headers: OnBeforeSendHeadersListenerDetails) => BeforeSendResponse, webContentsId?: number) => {
         log.debug('WebRequestManager.onRequestHeaders', webContentsId);
 
         this.onBeforeSendHeaders.addWebRequestListener(`onRequestHeaders_${webContentsId ?? '*'}`, (details) => {
@@ -68,11 +66,11 @@ export class WebRequestManager {
                 return {};
             }
 
-            return {requestHeaders: listener(details)};
+            return {...listener(details)};
         });
     };
 
-    onResponseHeaders = (listener: (details: OnHeadersReceivedListenerDetails) => Headers, webContentsId?: number) => {
+    onResponseHeaders = (listener: (details: OnHeadersReceivedListenerDetails) => HeadersReceivedResponse, webContentsId?: number) => {
         log.debug('WebRequestManager.onResponseHeaders', webContentsId);
 
         this.onHeadersReceived.addWebRequestListener(`onResponseHeaders_${webContentsId ?? '*'}`, (details) => {
@@ -84,7 +82,7 @@ export class WebRequestManager {
                 return {};
             }
 
-            return {responseHeaders: listener(details)};
+            return {...listener(details)};
         });
     };
 
@@ -129,6 +127,9 @@ export class WebRequestManager {
         callbackObject: HeadersReceivedResponse,
         result: HeadersReceivedResponse,
     ): HeadersReceivedResponse => {
+        if (result.statusLine && callbackObject.statusLine) {
+            throw new Error(`Listeners produced more than one status line for ${details.url}: ${result.statusLine} ${callbackObject.statusLine}`);
+        }
         const modifiedCallbackObject: HeadersReceivedResponse = {
             responseHeaders: {
                 ...details.responseHeaders,
@@ -138,6 +139,9 @@ export class WebRequestManager {
         };
         if (result.cancel) {
             modifiedCallbackObject.cancel = result.cancel;
+        }
+        if (result.statusLine) {
+            modifiedCallbackObject.statusLine = result.statusLine;
         }
         return modifiedCallbackObject;
     }

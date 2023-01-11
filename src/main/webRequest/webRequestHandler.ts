@@ -18,7 +18,7 @@ export class WebRequestHandler<T, T2> extends EventEmitter {
 
         let callbackObject = {} as T2;
         const modify = (result: T2) => {
-            callbackObject = this.modifyCallbackObject(details, callbackObject, result);
+            callbackObject = {...callbackObject, ...this.modifyCallbackObject(details, callbackObject, result)};
         };
 
         for (const id of this.eventNames()) {

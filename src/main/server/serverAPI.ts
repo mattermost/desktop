@@ -4,9 +4,9 @@
 import {net, session} from 'electron';
 import log from 'electron-log';
 
-import {COOKIE_NAME_AUTH_TOKEN, COOKIE_NAME_CSRF, COOKIE_NAME_USER_ID} from 'common/constants';
-
 import {Headers} from 'types/webRequest';
+
+import {COOKIE_NAME_AUTH_TOKEN, COOKIE_NAME_CSRF, COOKIE_NAME_USER_ID} from 'common/constants';
 
 export async function getServerAPI<T>(
     url: URL,
