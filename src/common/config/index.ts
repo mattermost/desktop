@@ -219,6 +219,8 @@ export class Config extends EventEmitter {
             return;
         }
 
+        log.info('Saving config data to file...');
+
         try {
             this.writeFile(this.configFilePath, this.localConfigData, (error: NodeJS.ErrnoException | null) => {
                 if (error) {

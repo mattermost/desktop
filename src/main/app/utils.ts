@@ -58,11 +58,14 @@ export function updateServerInfos(teams: TeamWithTabs[]) {
     });
     Promise.all(serverInfos).then((data: Array<RemoteInfo | string | undefined>) => {
         const teams = Config.teams;
+        let hasUpdates = false;
         teams.forEach((team) => {
-            updateServerURL(data, team);
-            openExtraTabs(data, team);
+            hasUpdates = hasUpdates || updateServerURL(data, team);
+            hasUpdates = hasUpdates || openExtraTabs(data, team);
         });
-        Config.set('teams', teams);
+        if (hasUpdates) {
+            Config.set('teams', teams);
+        }
     }).catch((reason: any) => {
         log.error('Error getting server infos', reason);
     });
@@ -70,27 +73,33 @@ export function updateServerInfos(teams: TeamWithTabs[]) {
 
 function updateServerURL(data: Array<RemoteInfo | string | undefined>, team: TeamWithTabs) {
     const remoteInfo = data.find((info) => info && typeof info !== 'string' && info.name === team.name) as RemoteInfo;
-    if (remoteInfo && remoteInfo.siteURL) {
+    if (remoteInfo && remoteInfo.siteURL && team.url !== remoteInfo.siteURL) {
         team.url = remoteInfo.siteURL;
+        return true;
     }
+    return false;
 }
 
 function openExtraTabs(data: Array<RemoteInfo | string | undefined>, team: TeamWithTabs) {
+    let hasUpdates = false;
     const remoteInfo = data.find((info) => info && typeof info !== 'string' && info.name === team.name) as RemoteInfo;
     if (remoteInfo) {
         team.tabs.forEach((tab) => {
             if (tab.name !== TAB_MESSAGING && remoteInfo.serverVersion && Utils.isVersionGreaterThanOrEqualTo(remoteInfo.serverVersion, '6.0.0')) {
-                if (tab.name === TAB_PLAYBOOKS && remoteInfo.hasPlaybooks && tab.isOpen !== false) {
+                if (tab.name === TAB_PLAYBOOKS && remoteInfo.hasPlaybooks && typeof tab.isOpen === 'undefined') {
                     log.info(`opening ${team.name}___${tab.name} on hasPlaybooks`);
                     tab.isOpen = true;
+                    hasUpdates = true;
                 }
-                if (tab.name === TAB_FOCALBOARD && remoteInfo.hasFocalboard && tab.isOpen !== false) {
+                if (tab.name === TAB_FOCALBOARD && remoteInfo.hasFocalboard && typeof tab.isOpen === 'undefined') {
                     log.info(`opening ${team.name}___${tab.name} on hasFocalboard`);
                     tab.isOpen = true;
+                    hasUpdates = true;
                 }
             }
         });
     }
+    return hasUpdates;
 }
 
 export function handleUpdateMenuEvent() {
