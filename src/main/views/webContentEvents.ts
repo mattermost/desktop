@@ -69,6 +69,9 @@ export class WebContentsEventManager {
             if (parsedURL.protocol === 'mailto:') {
                 return;
             }
+            if (parsedURL.protocol === 'mm-desktop:') {
+                return;
+            }
             if (this.customLogins[contentID]?.inProgress) {
                 return;
             }
