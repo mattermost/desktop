@@ -4,7 +4,7 @@
 import {createBrowserHistory} from 'history';
 
 export const getHistory = () => {
-    const history = createBrowserHistory();
+    const history = createBrowserHistory({basename: window.basename});
     const originalPush = history.push;
     history.push = (path: string | { pathname: string }) => {
         window.mattermost.browserHistoryPush(typeof path === 'object' ? path.pathname : path);
