@@ -50,6 +50,7 @@ export function updateSpellCheckerLocales() {
 }
 
 export function updateServerInfos(teams: TeamWithTabs[]) {
+    log.silly('app.utils.updateServerInfos');
     const serverInfos: Array<Promise<RemoteInfo | string | undefined>> = [];
     teams.forEach((team) => {
         const serverInfo = new ServerInfo(new MattermostServer(team.name, team.url));
