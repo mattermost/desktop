@@ -12,6 +12,8 @@ import {
 } from 'electron';
 import log from 'electron-log';
 
+import url from 'common/utils/url';
+
 import {WebRequestHandler} from 'main/webRequest/webRequestHandler';
 
 export class WebRequestManager {
@@ -31,11 +33,11 @@ export class WebRequestManager {
         session.defaultSession.webRequest.onHeadersReceived(this.onHeadersReceived.handleWebRequest);
     }
 
-    rewriteURL = (regex: RegExp, replacement: string, webContentsId?: number) => {
-        log.debug('WebRequestManager.rewriteURL', regex, replacement, webContentsId);
+    rewriteURL = (host: string, protocol: string, pathnameRegex: RegExp, replacement: string, webContentsId?: number) => {
+        log.debug('WebRequestManager.rewriteURL', host, protocol, pathnameRegex, replacement, webContentsId);
 
         // Purge old listeners since we shouldn't be rewriting the same regex from 2 listeners
-        const eventName = `rewriteURL_${regex}_${webContentsId ?? '*'}`;
+        const eventName = `rewriteURL_${host}_${protocol}_${pathnameRegex}_${webContentsId ?? '*'}`;
         if (this.onBeforeRequest.eventNames().includes(eventName)) {
             this.onBeforeRequest.removeAllListeners(eventName);
         }
@@ -45,12 +47,25 @@ export class WebRequestManager {
                 return {};
             }
 
-            if (!details.url.match(regex)) {
+            const parsedURL = url.parseURL(details.url);
+            if (!parsedURL) {
                 return {};
             }
 
-            log.silly('WebRequestManager.rewriteURL success', webContentsId, details.url, details.url.replace(regex, replacement));
-            return {redirectURL: details.url.replace(regex, replacement)};
+            if (parsedURL.host !== host) {
+                return {};
+            }
+
+            if (parsedURL.protocol !== protocol) {
+                return {};
+            }
+
+            if (!parsedURL.pathname.match(pathnameRegex)) {
+                return {};
+            }
+
+            log.silly('WebRequestManager.rewriteURL success', webContentsId, details.url, parsedURL.pathname.replace(pathnameRegex, replacement));
+            return {redirectURL: parsedURL.pathname.replace(pathnameRegex, replacement)};
         });
     }
 
