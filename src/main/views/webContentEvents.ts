@@ -46,34 +46,43 @@ export class WebContentsEventManager {
         return BrowserWindow.fromWebContents(webContents) === this.popupWindow;
     }
 
-    generateWillNavigate = (getServersFunction: () => TeamWithTabs[]) => {
+    generateWillNavigate = () => {
         return (event: Event & {sender: WebContents}, url: string) => {
             log.debug('webContentEvents.will-navigate', {webContentsId: event.sender.id, url});
 
             const contentID = event.sender.id;
             const parsedURL = urlUtils.parseURL(url)!;
-            const configServers = getServersFunction();
-            const server = urlUtils.getView(parsedURL, configServers);
 
-            if (server && (urlUtils.isTeamUrl(server.url, parsedURL) || urlUtils.isAdminUrl(server.url, parsedURL) || this.isTrustedPopupWindow(event.sender))) {
-                return;
-            }
-
-            if (server && urlUtils.isChannelExportUrl(server.url, parsedURL)) {
-                return;
-            }
-
-            if (server && urlUtils.isCustomLoginURL(parsedURL, server, configServers)) {
-                return;
-            }
             if (parsedURL.protocol === 'mailto:') {
-                return;
-            }
-            if (parsedURL.protocol === 'mm-desktop:') {
                 return;
             }
             if (this.customLogins[contentID]?.inProgress) {
                 return;
+            }
+            if (this.isTrustedPopupWindow(event.sender)) {
+                return;
+            }
+
+            const viewName = WindowManager.getViewNameByWebContentsId(contentID);
+            if (viewName) {
+                const view = WindowManager.viewManager?.views.get(viewName);
+                if (view) {
+                    const serverURL = view.convertURLToMMDesktop(view.tab.server.url);
+                    if (urlUtils.isTeamUrl(serverURL, parsedURL)) {
+                        return;
+                    }
+                    if (urlUtils.isAdminUrl(serverURL, parsedURL)) {
+                        return;
+                    }
+                    if (urlUtils.isChannelExportUrl(serverURL, parsedURL)) {
+                        return;
+                    }
+
+                    // TODO: Need to figure out custom login URLs
+                    // if (urlUtils.isCustomLoginURL(parsedURL, server, configServers)) {
+                    //     return;
+                    // }
+                }
             }
 
             log.info(`Prevented desktop from navigating to: ${url}`);
@@ -259,7 +268,7 @@ export class WebContentsEventManager {
             this.removeWebContentsListeners(contents.id);
         }
 
-        const willNavigate = this.generateWillNavigate(getServersFunction);
+        const willNavigate = this.generateWillNavigate();
         contents.on('will-navigate', willNavigate as (e: Event, u: string) => void); // TODO: Electron types don't include sender for some reason
 
         // handle custom login requests (oath, saml):

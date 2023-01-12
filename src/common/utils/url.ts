@@ -37,9 +37,17 @@ function parseURL(inputURL: URL | string) {
 function getHost(inputURL: URL | string) {
     const parsedURL = parseURL(inputURL);
     if (parsedURL) {
-        return parsedURL.origin;
+        return getOrigin(parsedURL);
     }
     throw new SyntaxError(`Couldn't parse url: ${inputURL}`);
+}
+
+function getOrigin(inputURL: URL) {
+    const origin = inputURL.origin;
+    if (origin === 'null') {
+        return `${inputURL.protocol}//${inputURL.host}`;
+    }
+    return origin;
 }
 
 // isInternalURL determines if the target url is internal to the application.
@@ -168,14 +176,14 @@ export function equalUrlsWithSubpath(url1: URL, url2: URL, ignoreScheme?: boolea
     if (ignoreScheme) {
         return url1.host === url2.host && getFormattedPathName(url2.pathname).startsWith(getFormattedPathName(url1.pathname));
     }
-    return url1.origin === url2.origin && getFormattedPathName(url2.pathname).startsWith(getFormattedPathName(url1.pathname));
+    return getOrigin(url1) === getOrigin(url2) && getFormattedPathName(url2.pathname).startsWith(getFormattedPathName(url1.pathname));
 }
 
 export function equalUrlsIgnoringSubpath(url1: URL, url2: URL, ignoreScheme?: boolean) {
     if (ignoreScheme) {
         return url1.host.toLowerCase() === url2.host.toLowerCase();
     }
-    return url1.origin.toLowerCase() === url2.origin.toLowerCase();
+    return getOrigin(url1).toLowerCase() === getOrigin(url2).toLowerCase();
 }
 
 function isTrustedURL(url: URL | string, teams: TeamWithTabs[]) {

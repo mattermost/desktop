@@ -322,7 +322,7 @@ export class MattermostView extends EventEmitter {
         return {} as Headers;
     };
 
-    private convertURLToMMDesktop = (url: URL) => {
+    convertURLToMMDesktop = (url: URL) => {
         return new URL(`${url}`.replace(/^http(s)?:/, 'mm-desktop:'));
     }
 
