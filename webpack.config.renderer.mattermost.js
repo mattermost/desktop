@@ -51,7 +51,7 @@ module.exports = merge(base, {
     },
     output: {
         path: path.resolve(__dirname, 'dist/renderer'),
-        publicPath: '/',
+        publicPath: 'mm-desktop://mm-desktop-local/',
         filename: '[name]_bundle.js',
         assetModuleFilename: '[name].[ext]',
     },

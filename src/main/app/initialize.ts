@@ -54,7 +54,7 @@ import i18nManager from 'main/i18nManager';
 import parseArgs from 'main/ParseArgs';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import {refreshTrayImages, setupTray} from 'main/tray/tray';
-import {getLocalURLString} from 'main/utils';
+import {getLocalFileString} from 'main/utils';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 import WindowManager from 'main/windows/windowManager';
 import WebRequestManager from 'main/webRequest/webRequestManager';
@@ -291,15 +291,11 @@ function initializeAfterAppReady() {
 
     defaultSession.protocol.registerFileProtocol('mm-desktop', (request, callback) => {
         const parsedURL = urlUtils.parseURL(request.url);
-        if (parsedURL?.pathname === '/mattermost_bundle.js') {
-            callback(getLocalURLString('mattermost_bundle.js').replace(/file:\/\/\//, ''));
+        if (parsedURL?.host === 'mm-desktop-local') {
+            callback(getLocalFileString(parsedURL.pathname.slice(1)));
             return;
         }
-        if (parsedURL?.pathname === '/src_renderer_mattermost_tsx_bundle.js') {
-            callback(getLocalURLString('src_renderer_mattermost_tsx_bundle.js').replace(/file:\/\/\//, ''));
-            return;
-        }
-        callback(getLocalURLString('mattermost.html').replace(/file:\/\/\//, ''));
+        callback(getLocalFileString('mattermost.html'));
     });
 
     WebRequestManager.initialize();
