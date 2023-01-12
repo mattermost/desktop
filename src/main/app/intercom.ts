@@ -321,8 +321,10 @@ export function handleUpdateLastActive(event: IpcMainEvent, serverName: string, 
             team.lastActiveTab = viewOrder;
         }
     });
-    Config.set('teams', teams);
-    Config.set('lastActiveTeam', teams.find((team) => team.name === serverName)?.order || 0);
+    Config.setMultiple({
+        teams,
+        lastActiveTeam: teams.find((team) => team.name === serverName)?.order || 0,
+    });
 }
 
 export function handlePingDomain(event: IpcMainInvokeEvent, url: string): Promise<string> {

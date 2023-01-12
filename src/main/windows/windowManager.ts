@@ -621,6 +621,7 @@ export class WindowManager {
     }
 
     switchServer = (serverName: string, waitForViewToExist = false) => {
+        log.debug('windowManager.switchServer');
         this.showMainWindow();
         const server = Config.teams.find((team) => team.name === serverName);
         if (!server) {
@@ -648,6 +649,7 @@ export class WindowManager {
     }
 
     switchTab = (serverName: string, tabName: string) => {
+        log.debug('windowManager.switchTab');
         this.showMainWindow();
         const tabViewName = getTabViewName(serverName, tabName);
         this.viewManager?.showByName(tabViewName);

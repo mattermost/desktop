@@ -139,7 +139,7 @@ export class MattermostView extends EventEmitter {
         WebRequestManager.onRequestHeaders(this.extractCORSHeaders, this.view.webContents.id);
         WebRequestManager.onResponseHeaders(this.addCORSResponseHeader, this.view.webContents.id);
 
-        log.info(`BrowserView created for server ${this.tab.name}`);
+        log.verbose(`BrowserView created for server ${this.tab.name}`);
 
         this.hasBeenShown = false;
 
@@ -343,8 +343,7 @@ export class MattermostView extends EventEmitter {
         } else {
             loadURL = this.convertURLToMMDesktop(this.tab.url).toString();
         }
-        log.info(`[${Util.shorten(this.tab.name)}] Loading ${loadURL}`);
-
+        log.verbose(`[${Util.shorten(this.tab.name)}] Loading ${loadURL}`);
         const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             if (err.code && err.code.startsWith('ERR_CERT')) {
@@ -444,7 +443,7 @@ export class MattermostView extends EventEmitter {
 
     loadSuccess = (loadURL: string) => {
         return () => {
-            log.info(`[${Util.shorten(this.tab.name)}] finished loading ${loadURL}`);
+            log.verbose(`[${Util.shorten(this.tab.name)}] finished loading ${loadURL}`);
             WindowManager.sendToRenderer(LOAD_SUCCESS, this.tab.name);
             this.maxRetries = MAX_SERVER_RETRIES;
             if (this.status === Status.LOADING) {

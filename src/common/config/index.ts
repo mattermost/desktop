@@ -102,7 +102,7 @@ export class Config extends EventEmitter {
         ipcMain.handle(GET_CONFIGURATION, this.handleGetConfiguration);
         ipcMain.handle(GET_LOCAL_CONFIGURATION, this.handleGetLocalConfiguration);
         ipcMain.handle(UPDATE_TEAMS, this.handleUpdateTeams);
-        ipcMain.on(UPDATE_CONFIGURATION, this.setMultiple);
+        ipcMain.on(UPDATE_CONFIGURATION, this.updateConfiguration);
         if (process.platform === 'darwin' || process.platform === 'win32') {
             nativeTheme.on('updated', this.handleUpdateTheme);
         }
@@ -151,16 +151,22 @@ export class Config extends EventEmitter {
      * @param {*} data value to save for provided key
      */
     set = (key: keyof ConfigType, data: ConfigType[keyof ConfigType]): void => {
-        if (key && this.localConfigData) {
-            if (key === 'teams') {
-                this.localConfigData.teams = this.filterOutPredefinedTeams(data as TeamWithTabs[]);
-                this.predefinedTeams = this.filterInPredefinedTeams(data as TeamWithTabs[]);
-            } else {
-                this.localConfigData = Object.assign({}, this.localConfigData, {[key]: data});
-            }
-            this.regenerateCombinedConfigData();
-            this.saveLocalConfigData();
+        log.debug('Config.set');
+        this.setMultiple({[key]: data});
+    }
+
+    updateConfiguration = (event: Electron.IpcMainEvent, properties: Array<{key: keyof ConfigType; data: ConfigType[keyof ConfigType]}> = []): Partial<ConfigType> | undefined => {
+        log.debug('Config.updateConfiguration', properties);
+
+        if (properties.length) {
+            const newData = properties.reduce((obj, data) => {
+                (obj as any)[data.key] = data.data;
+                return obj;
+            }, {} as Partial<ConfigType>);
+            this.setMultiple(newData);
         }
+
+        return this.localConfigData;
     }
 
     /**
@@ -168,14 +174,16 @@ export class Config extends EventEmitter {
      *
      * @param {array} properties an array of config properties to save
      */
-    setMultiple = (event: Electron.IpcMainEvent, properties: Array<{key: keyof ConfigType; data: ConfigType[keyof ConfigType]}> = []): Partial<ConfigType> | undefined => {
-        log.debug('Config.setMultiple', properties);
+    setMultiple = (newData: Partial<ConfigType>) => {
+        log.debug('Config.setMultiple', newData);
 
-        if (properties.length) {
-            this.localConfigData = Object.assign({}, this.localConfigData, ...properties.map(({key, data}) => ({[key]: data})));
-            this.regenerateCombinedConfigData();
-            this.saveLocalConfigData();
+        this.localConfigData = Object.assign({}, this.localConfigData, newData);
+        if (newData.teams && this.localConfigData) {
+            this.localConfigData.teams = this.filterOutPredefinedTeams(newData.teams as TeamWithTabs[]);
+            this.predefinedTeams = this.filterInPredefinedTeams(newData.teams as TeamWithTabs[]);
         }
+        this.regenerateCombinedConfigData();
+        this.saveLocalConfigData();
 
         return this.localConfigData; //this is the only part that changes
     }
@@ -210,6 +218,8 @@ export class Config extends EventEmitter {
         if (!this.localConfigData) {
             return;
         }
+
+        log.info('Saving config data to file...');
 
         try {
             this.writeFile(this.configFilePath, this.localConfigData, (error: NodeJS.ErrnoException | null) => {
