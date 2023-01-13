@@ -178,8 +178,9 @@ export class MattermostView extends EventEmitter {
     }
 
     private extractCORSHeaders = (details: OnBeforeSendHeadersListenerDetails) => {
-        if (!details.url.startsWith(this.tab.server.url.origin)) {
-            return {} as Headers;
+        const parsedURL = urlUtils.parseURL(details.url);
+        if (parsedURL?.origin !== this.tab.server.url.origin) {
+            return {};
         }
 
         if (details.method !== 'OPTIONS') {
@@ -204,7 +205,8 @@ export class MattermostView extends EventEmitter {
     }
 
     private addCORSResponseHeader = (details: OnHeadersReceivedListenerDetails): HeadersReceivedResponse => {
-        if (!details.url.startsWith(this.tab.server.url.origin)) {
+        const parsedURL = urlUtils.parseURL(details.url);
+        if (parsedURL?.origin !== this.tab.server.url.origin) {
             return {};
         }
 
