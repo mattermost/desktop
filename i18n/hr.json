@@ -1,1 +1,5 @@
-{}
+{
+    "common.tabs.TAB_MESSAGING": "Kanali",
+    "common.tabs.TAB_FOCALBOARD": "Ploče",
+    "common.permissions.canBasicAuth": "Web autentikacija"
+}
