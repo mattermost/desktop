@@ -214,16 +214,16 @@ module.exports = {
         //     // this changes the default debugging port so chromedriver can run without issues.
         //     options.chromeDriverArgs.push('remote-debugging-port=9222');
         //}
-        return electron.launch(options).then(async (app) => {
-            // Make sure the app has time to fully load and that the window is focused
-            await asyncSleep(1000);
-            const mainWindow = app.windows().find((window) => window.url().includes('index'));
-            const browserWindow = await app.browserWindow(mainWindow);
-            await browserWindow.evaluate((win) => {
-                win.show();
-                return true;
+        return electron.launch(options).then(async (eapp) => {
+            await eapp.evaluate(async ({app}) => {
+                const promise = new Promise((resolve) => {
+                    app.on('e2e-app-loaded', () => {
+                        resolve();
+                    });
+                });
+                return promise;
             });
-            return app;
+            return eapp;
         });
     },
 
