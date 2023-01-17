@@ -230,5 +230,6 @@
     "common.tabs.TAB_PLAYBOOKS": "Playbooks",
     "common.tabs.TAB_MESSAGING": "Canaux",
     "common.tabs.TAB_FOCALBOARD": "Tableaux",
-    "common.permissions.canBasicAuth": "Authentification Web"
+    "common.permissions.canBasicAuth": "Authentification Web",
+    "main.menus.app.help.RunDiagnostics": "Exécuter des diagnostics"
 }
