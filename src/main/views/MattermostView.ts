@@ -118,7 +118,7 @@ export class MattermostView extends EventEmitter {
         WebRequestManager.rewriteURL(
             this.tab.server.url.host,
             'mm-desktop:',
-            new RegExp(`^(${this.tab.server.url.pathname})?/(api|static|plugins)/(.*)`, 'g'),
+            new RegExp(`^(${this.tab.server.url.pathname})?/(api|static|plugins)/(.*)`),
             `${this.tab.server.url}/$2/$3`,
             this.view.webContents.id,
         );
