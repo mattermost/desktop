@@ -3,7 +3,7 @@
 
 import path from 'path';
 
-import {app, ipcMain, screen, session} from 'electron';
+import {app, ipcMain, protocol, screen, session} from 'electron';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import isDev from 'electron-is-dev';
 import log from 'electron-log';
@@ -54,6 +54,7 @@ import i18nManager from 'main/i18nManager';
 import parseArgs from 'main/ParseArgs';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import {refreshTrayImages, setupTray} from 'main/tray/tray';
+import {getLocalFileString} from 'main/utils';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 import WindowManager from 'main/windows/windowManager';
 import WebRequestManager from 'main/webRequest/webRequestManager';
@@ -234,6 +235,16 @@ function initializeBeforeAppReady() {
     } else if (mainProtocol) {
         app.setAsDefaultProtocolClient(mainProtocol);
     }
+
+    protocol.registerSchemesAsPrivileged([
+        {
+            scheme: 'mm-desktop',
+            privileges: {
+                standard: true,
+                supportFetchAPI: true,
+            },
+        },
+    ]);
 }
 
 function initializeInterCommunicationEventListeners() {
@@ -277,6 +288,15 @@ function initializeAfterAppReady() {
     updateServerInfos(Config.teams);
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
+
+    defaultSession.protocol.registerFileProtocol('mm-desktop', (request, callback) => {
+        const parsedURL = urlUtils.parseURL(request.url);
+        if (parsedURL?.host === 'mm-desktop-local') {
+            callback(getLocalFileString(parsedURL.pathname.slice(1)));
+            return;
+        }
+        callback(getLocalFileString('mattermost.html'));
+    });
 
     WebRequestManager.initialize();
 

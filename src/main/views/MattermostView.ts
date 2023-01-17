@@ -1,8 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import path from 'path';
-
 import {EventEmitter} from 'events';
 
 import {
@@ -11,6 +9,7 @@ import {
     BrowserViewConstructorOptions,
     BrowserWindow,
     CookiesSetDetails,
+    HeadersReceivedResponse,
     ipcMain,
     IpcMainEvent,
     OnBeforeSendHeadersListenerDetails,
@@ -78,6 +77,8 @@ export class MattermostView extends EventEmitter {
     serverInfo: ServerInfo;
 
     cookies: Map<string, CookiesSetDetails>;
+    corsHeaders: string[];
+    corsMethods: string[];
 
     removeLoading?: number;
 
@@ -113,25 +114,12 @@ export class MattermostView extends EventEmitter {
         this.view = new BrowserView(this.options);
         this.resetLoadingStatus();
 
-        // Don't cache the remote_entry script
-        WebRequestManager.onRequestHeaders(this.addNoCacheForRemoteEntryRequest, this.view.webContents.id);
-
         // URL handling
         WebRequestManager.rewriteURL(
-            new RegExp(`file:///${path.resolve('/').replace('\\', '/').replace('/', '')}(${this.tab.server.url.pathname})?/(api|static|plugins)/(.*)`, 'g'),
+            this.tab.server.url.host,
+            'mm-desktop:',
+            new RegExp(`^(${this.tab.server.url.pathname})?/(api|static|plugins)/(.*)`),
             `${this.tab.server.url}/$2/$3`,
-            this.view.webContents.id,
-        );
-
-        WebRequestManager.rewriteURL(
-            new RegExp(`file://(${this.tab.server.url.pathname})?/(api|static|plugins)/(.*)`, 'g'),
-            `${this.tab.server.url}/$2/$3`,
-            this.view.webContents.id,
-        );
-
-        WebRequestManager.rewriteURL(
-            new RegExp(`file:///${path.resolve('/').replace('\\', '/')}(\\?.+)?$`, 'g'),
-            `${getLocalURLString('mattermost.html')}$1`,
             this.view.webContents.id,
         );
 
@@ -144,6 +132,12 @@ export class MattermostView extends EventEmitter {
 
         // Websocket
         WebRequestManager.onRequestHeaders(this.addOriginForWebsocket, this.view.webContents.id);
+
+        // CORS
+        this.corsHeaders = [];
+        this.corsMethods = [];
+        WebRequestManager.onRequestHeaders(this.extractCORSHeaders, this.view.webContents.id);
+        WebRequestManager.onResponseHeaders(this.addCORSResponseHeader, this.view.webContents.id);
 
         log.verbose(`BrowserView created for server ${this.tab.name}`);
 
@@ -183,26 +177,65 @@ export class MattermostView extends EventEmitter {
         });
     }
 
+    private extractCORSHeaders = (details: OnBeforeSendHeadersListenerDetails) => {
+        const parsedURL = urlUtils.parseURL(details.url);
+        if (parsedURL?.origin !== this.tab.server.url.origin) {
+            return {};
+        }
+
+        if (details.method !== 'OPTIONS') {
+            return {} as Headers;
+        }
+
+        if (details.requestHeaders.Origin !== `mm-desktop://${this.tab.server.url.host}`) {
+            return {} as Headers;
+        }
+
+        const headers = [...details.requestHeaders['Access-Control-Request-Headers'].split(',')];
+        headers.forEach((header) => {
+            if (!this.corsHeaders.includes(header)) {
+                this.corsHeaders.push(header);
+            }
+        });
+        if (!this.corsMethods.includes(details.requestHeaders['Access-Control-Request-Method'])) {
+            this.corsMethods.push(details.requestHeaders['Access-Control-Request-Method']);
+        }
+
+        return {};
+    }
+
+    private addCORSResponseHeader = (details: OnHeadersReceivedListenerDetails): HeadersReceivedResponse => {
+        const parsedURL = urlUtils.parseURL(details.url);
+        if (parsedURL?.origin !== this.tab.server.url.origin) {
+            return {};
+        }
+
+        if (details.method !== 'OPTIONS') {
+            return {
+                responseHeaders: {
+                    'Access-Control-Allow-Credentials': ['true'],
+                    'Access-Control-Allow-Origin': [`mm-desktop://${this.tab.server.url.host}`],
+                },
+            };
+        }
+
+        return {
+            statusLine: 'HTTP/1.1 204 No Content',
+            responseHeaders: {
+                'Access-Control-Allow-Credentials': ['true'],
+                'Access-Control-Allow-Headers': [...this.corsHeaders],
+                'Access-Control-Allow-Origin': [`mm-desktop://${this.tab.server.url.host}`],
+                'Access-Control-Allow-Methods': [...this.corsMethods],
+            },
+        };
+    }
+
     get serverUrl() {
         let url = `${this.tab.server.url}`;
         if (url.endsWith('/')) {
             url = url.slice(0, url.length - 1);
         }
         return url;
-    }
-
-    private addNoCacheForRemoteEntryRequest = (details: OnBeforeSendHeadersListenerDetails) => {
-        log.silly('WindowManager.addNoCacheForRemoteEntry', details.requestHeaders);
-
-        if (!details.url.match(new RegExp(`${this.serverUrl}/static/remote_entry.js`))) {
-            return {} as Headers;
-        }
-
-        return {
-            requestHeaders: {
-                'Cache-Control': 'max-age=0',
-            },
-        };
     }
 
     private addOriginForWebsocket = (details: OnBeforeSendHeadersListenerDetails) => {
@@ -280,7 +313,7 @@ export class MattermostView extends EventEmitter {
     }
 
     private addCSPHeader = (details: OnHeadersReceivedListenerDetails) => {
-        if (details.url.startsWith(getLocalURLString('mattermost.html'))) {
+        if (details.url === this.convertURLToMMDesktop(this.tab.url).toString()) {
             return {
                 responseHeaders: {
                     'Content-Security-Policy': [makeCSPHeader(this.tab.server.url, this.serverInfo.remoteInfo.cspHeader)],
@@ -291,6 +324,10 @@ export class MattermostView extends EventEmitter {
         return {} as Headers;
     };
 
+    convertURLToMMDesktop = (url: URL) => {
+        return new URL(`${url}`.replace(/^http(s)?:/, 'mm-desktop:'));
+    }
+
     load = (someURL?: URL | string) => {
         if (!this.tab) {
             return;
@@ -300,13 +337,13 @@ export class MattermostView extends EventEmitter {
         if (someURL) {
             const parsedURL = urlUtils.parseURL(someURL);
             if (parsedURL) {
-                loadURL = `${getLocalURLString('mattermost.html')}#${parsedURL.toString().replace(new RegExp(`${this.tab.server.url}(/)?`), '/')}`;
+                loadURL = this.convertURLToMMDesktop(parsedURL).toString();
             } else {
                 log.error('Cannot parse provided url, using current server url', someURL);
-                loadURL = `${getLocalURLString('mattermost.html')}#${this.tab.url.toString().replace(new RegExp(`${this.tab.server.url}(/)?`), '/')}`;
+                loadURL = this.convertURLToMMDesktop(this.tab.url).toString();
             }
         } else {
-            loadURL = `${getLocalURLString('mattermost.html')}#${this.tab.url.toString().replace(new RegExp(`${this.tab.server.url}(/)?`), '/')}`;
+            loadURL = this.convertURLToMMDesktop(this.tab.url).toString();
         }
         log.verbose(`[${Util.shorten(this.tab.name)}] Loading ${loadURL}`);
         const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
@@ -327,7 +364,7 @@ export class MattermostView extends EventEmitter {
         const request = typeof requestedVisibility === 'undefined' ? true : requestedVisibility;
         if (request && !this.isVisible) {
             this.window.addBrowserView(this.view);
-            this.setBounds(getWindowBoundaries(this.window, shouldHaveBackBar(getLocalURLString('mattermost.html'), this.view.webContents.getURL())));
+            this.setBounds(getWindowBoundaries(this.window, shouldHaveBackBar(this.getLocalProtocolURL('mattermost.html'), this.view.webContents.getURL())));
             if (this.status === Status.READY) {
                 this.focus();
             }
@@ -345,6 +382,11 @@ export class MattermostView extends EventEmitter {
 
     get urlTypeTuple(): TabTuple {
         return this.tab.urlTypeTuple;
+    }
+
+    getLocalProtocolURL = (urlPath: string) => {
+        const localURL = getLocalURLString(urlPath);
+        return localURL.replace(/file:\/\/\//, `mm-desktop://${this.tab.server.url.host}/`);
     }
 
     updateServerInfo = (srv: MattermostServer) => {
@@ -414,7 +456,7 @@ export class MattermostView extends EventEmitter {
             this.status = Status.WAITING_MM;
             this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
             this.emit(LOAD_SUCCESS, this.tab.name, loadURL);
-            this.setBounds(getWindowBoundaries(this.window, shouldHaveBackBar(getLocalURLString('mattermost.html'), this.view.webContents.getURL())));
+            this.setBounds(getWindowBoundaries(this.window, shouldHaveBackBar(this.getLocalProtocolURL('mattermost.html'), this.view.webContents.getURL())));
         };
     }
 
@@ -523,7 +565,7 @@ export class MattermostView extends EventEmitter {
     handleDidNavigate = (event: Event, url: string) => {
         log.debug('MattermostView.handleDidNavigate', {tabName: this.tab.name, url});
 
-        if (shouldHaveBackBar(getLocalURLString('mattermost.html'), url)) {
+        if (shouldHaveBackBar(this.getLocalProtocolURL('mattermost.html'), url)) {
             this.setBounds(getWindowBoundaries(this.window, true));
             WindowManager.sendToRenderer(TOGGLE_BACK_BUTTON, true);
             log.info('show back button');
@@ -536,7 +578,7 @@ export class MattermostView extends EventEmitter {
 
     handleUpdateTarget = (e: Event, url: string) => {
         log.silly('MattermostView.handleUpdateTarget', {tabName: this.tab.name, url});
-        if (url && !urlUtils.isInternalURL(urlUtils.parseURL(url), this.tab.server.url) && !urlUtils.isInternalURL(urlUtils.parseURL(url), urlUtils.parseURL(getLocalURLString('mattermost.html'))!)) {
+        if (url && !urlUtils.isInternalURL(urlUtils.parseURL(url), this.tab.server.url) && !urlUtils.isInternalURL(urlUtils.parseURL(url), urlUtils.parseURL(this.getLocalProtocolURL('mattermost.html'))!)) {
             this.emit(UPDATE_TARGET_URL, url);
         } else {
             this.emit(UPDATE_TARGET_URL);

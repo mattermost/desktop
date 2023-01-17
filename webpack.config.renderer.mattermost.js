@@ -19,6 +19,8 @@ const WEBSERVER_PORT = (process.env.WEBSERVER_PORT ?? 9001) + 1;
 const getRemoteEntry = (resolve) => {
     const script = document.createElement('script');
     window.mattermost.getUrl.then((url) => {
+        const parsedURL = new URL(url);
+        window.basename = (parsedURL.pathname === '/' ? '' : parsedURL.pathname) || '';
         script.src = `${url}/static/remote_entry.js`;
         script.onload = () => {
             // the injected script has loaded and is available on window
@@ -49,6 +51,7 @@ module.exports = merge(base, {
     },
     output: {
         path: path.resolve(__dirname, 'dist/renderer'),
+        publicPath: 'mm-desktop://mm-desktop-local/',
         filename: '[name]_bundle.js',
         assetModuleFilename: '[name].[ext]',
     },

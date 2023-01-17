@@ -61,18 +61,23 @@ export function shouldHaveBackBar(serverUrl: URL | string, inputURL: URL | strin
     return !UrlUtils.isTeamUrl(serverUrl, inputURL) && !UrlUtils.isAdminUrl(serverUrl, inputURL) && !UrlUtils.isPluginUrl(serverUrl, inputURL);
 }
 
-export function getLocalURLString(urlPath: string, query?: Map<string, string>, isMain?: boolean) {
+export function getLocalFileString(urlPath: string, isMain?: boolean) {
     let pathname;
     const processPath = isMain ? '' : '/renderer';
     const mode = Utils.runMode();
-    const protocol = 'file';
-    const hostname = '';
-    const port = '';
     if (mode === PRODUCTION) {
         pathname = path.join(app.getAppPath(), `${processPath}/${urlPath}`);
     } else {
         pathname = path.resolve(__dirname, `../../dist/${processPath}/${urlPath}`); // TODO: find a better way to work with webpack on this
     }
+    return pathname;
+}
+
+export function getLocalURLString(urlPath: string, query?: Map<string, string>, isMain?: boolean) {
+    const pathname = getLocalFileString(urlPath, isMain);
+    const protocol = 'file';
+    const hostname = '';
+    const port = '';
     const localUrl = new URL(`${protocol}://${hostname}${port}`);
     localUrl.pathname = pathname;
     if (query) {

@@ -117,8 +117,8 @@ describe('main/views/MattermostView', () => {
             mattermostView.view.webContents.loadURL.mockImplementation(() => promise);
             mattermostView.load();
             await promise;
-            expect(mattermostView.view.webContents.loadURL).toBeCalledWith('file://some/file/path/mattermost.html#/', expect.any(Object));
-            expect(mattermostView.loadSuccess).toBeCalledWith('file://some/file/path/mattermost.html#/');
+            expect(mattermostView.view.webContents.loadURL).toBeCalledWith('mm-desktop://server-1.com/', expect.any(Object));
+            expect(mattermostView.loadSuccess).toBeCalledWith('mm-desktop://server-1.com/');
         });
 
         it('should load relative URL when provided', async () => {
@@ -126,8 +126,8 @@ describe('main/views/MattermostView', () => {
             mattermostView.view.webContents.loadURL.mockImplementation(() => promise);
             mattermostView.load('http://server-1.com/some/server/path');
             await promise;
-            expect(mattermostView.view.webContents.loadURL).toBeCalledWith('file://some/file/path/mattermost.html#/some/server/path', expect.any(Object));
-            expect(mattermostView.loadSuccess).toBeCalledWith('file://some/file/path/mattermost.html#/some/server/path');
+            expect(mattermostView.view.webContents.loadURL).toBeCalledWith('mm-desktop://server-1.com/some/server/path', expect.any(Object));
+            expect(mattermostView.loadSuccess).toBeCalledWith('mm-desktop://server-1.com/some/server/path');
         });
     });
 
