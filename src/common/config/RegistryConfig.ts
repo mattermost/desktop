@@ -4,7 +4,8 @@
 
 import {EventEmitter} from 'events';
 import log from 'electron-log';
-import WindowsRegistry from 'winreg-utf8';
+import WindowsRegistry from 'winreg';
+import WindowsRegistryUTF8 from 'winreg-utf8';
 
 import {RegistryConfig as RegistryConfigType, Team} from 'types/config';
 
@@ -126,12 +127,24 @@ export default class RegistryConfig extends EventEmitter {
    * @param {WindowsRegistry} regKey A configured instance of the WindowsRegistry class
    * @param {string} name Name of the specific entry to retrieve (optional)
    */
-    getRegistryEntryValues(hive: string, key: string, name?: string) {
-        const registry = this.createRegistry(hive, key);
+    getRegistryEntryValues(hive: string, key: string, name?: string, utf8 = true) {
         return new Promise<string | WindowsRegistry.RegistryItem[] | undefined>((resolve, reject) => {
             try {
+                const registry = this.createRegistry(hive, key, utf8);
                 registry.values((error: Error, results: WindowsRegistry.RegistryItem[]) => {
-                    if (error || !results || results.length === 0) {
+                    if (error) {
+                        log.error('Error reading the registry', hive, key, name, `utf8: ${utf8}`, error);
+                        if (utf8) {
+                            log.info('Trying without UTF-8...', hive, key, name);
+                            this.getRegistryEntryValues(hive, key, name, false).then((result) => {
+                                resolve(result);
+                            });
+                        } else {
+                            resolve(undefined);
+                        }
+                        return;
+                    }
+                    if (!results || results.length === 0) {
                         resolve(undefined);
                         return;
                     }
@@ -150,18 +163,10 @@ export default class RegistryConfig extends EventEmitter {
     }
 
     createRegistry(hive: string, key: string, utf8 = true) {
-        try {
-            const registry = new WindowsRegistry({hive, key, utf8});
-            return registry;
-        } catch (err) {
-            if (utf8) {
-                log.warn('Couldnt use UTF-8 for registry, trying with UTF-8', err);
-                this.createRegistry(hive, key, false);
-            } else {
-                throw err;
-            }
+        if (utf8) {
+            return new WindowsRegistryUTF8({hive, key, utf8});
         }
 
-        throw new Error('Failed to create registry object');
+        return new WindowsRegistry({hive, key});
     }
 }
