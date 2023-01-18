@@ -133,15 +133,9 @@ export default class RegistryConfig extends EventEmitter {
                 const registry = this.createRegistry(hive, key, utf8);
                 registry.values((error: Error, results: WindowsRegistry.RegistryItem[]) => {
                     if (error) {
-                        log.error('Error reading the registry', hive, key, name, `utf8: ${utf8}`, error);
-                        if (utf8) {
-                            log.info('Trying without UTF-8...', hive, key, name);
-                            this.getRegistryEntryValues(hive, key, name, false).then((result) => {
-                                resolve(result);
-                            });
-                        } else {
-                            resolve(undefined);
-                        }
+                        this.handleRegistryEntryError(error, hive, key, name, utf8).then((result) => {
+                            resolve(result);
+                        });
                         return;
                     }
                     if (!results || results.length === 0) {
@@ -156,10 +150,24 @@ export default class RegistryConfig extends EventEmitter {
                     }
                 });
             } catch (e) {
-                log.error(`There was an error accessing the registry for ${key}`, e);
-                reject(e);
+                this.handleRegistryEntryError(e as Error, hive, key, name, utf8).then((result) => {
+                    if (result) {
+                        resolve(result);
+                    }
+                    reject(e);
+                });
             }
         });
+    }
+
+    handleRegistryEntryError(e: Error, hive: string, key: string, name?: string, utf8?: boolean) {
+        log.error(`There was an error accessing the registry for ${{hive, key, name, utf8}}`, e);
+        if (utf8) {
+            log.info('Trying without UTF-8...', hive, key, name);
+            return this.getRegistryEntryValues(hive, key, name, false);
+        }
+
+        return Promise.resolve(undefined);
     }
 
     createRegistry(hive: string, key: string, utf8 = true) {
