@@ -633,7 +633,7 @@ workflows:
                 # only for release and release candidates
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
-                # - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+                - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - mac_installer:
           context: codesign-certificates
@@ -656,7 +656,6 @@ workflows:
             - build-win-no-installer
             - build-mac-no-dmg
             - mac_installer
-            - msi_installer
           filters:
             branches:
               ignore:
