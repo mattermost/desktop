@@ -44,7 +44,7 @@ describe('popup', function desc() {
             await firstServer.click('#sidebarItem_suscipit-4');
             await firstServer.click('#post_textbox');
             await firstServer.type('#post_textbox', '/github connect ');
-            await firstServer.press('#post_textbox', 'Enter');
+            await firstServer.click('button[data-testid="SendMessageButton"]');
 
             const githubLink = await firstServer.waitForSelector('a.theme.markdown__link:has-text("GitHub account")');
             githubLink.click();
@@ -100,7 +100,7 @@ describe('popup', function desc() {
         await firstServer.click('#sidebarItem_suscipit-4');
         await firstServer.click('#post_textbox');
         await firstServer.type('#post_textbox', '/github connect ');
-        await firstServer.press('#post_textbox', 'Enter');
+        await firstServer.click('button[data-testid="SendMessageButton"]');
 
         const githubLink = await firstServer.waitForSelector('a.theme.markdown__link:has-text("GitHub account")');
         githubLink.click();
