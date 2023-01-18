@@ -156,7 +156,7 @@ export default class RegistryConfig extends EventEmitter {
                     }
                 });
             } catch (e) {
-                log.error(`There was an error accessing the registry for ${key}`);
+                log.error(`There was an error accessing the registry for ${key}`, e);
                 reject(e);
             }
         });
