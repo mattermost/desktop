@@ -161,9 +161,9 @@ export default class RegistryConfig extends EventEmitter {
     }
 
     handleRegistryEntryError(e: Error, hive: string, key: string, name?: string, utf8?: boolean) {
-        log.error(`There was an error accessing the registry for ${{hive, key, name, utf8}}`, e);
+        log.verbose('There was an error accessing the registry for', {hive, key, name, utf8}, e);
         if (utf8) {
-            log.info('Trying without UTF-8...', hive, key, name);
+            log.verbose('Trying without UTF-8...', {hive, key, name});
             return this.getRegistryEntryValues(hive, key, name, false);
         }
 
