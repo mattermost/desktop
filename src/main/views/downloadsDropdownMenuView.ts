@@ -12,6 +12,7 @@ import {
     DOWNLOADS_DROPDOWN_MENU_CANCEL_DOWNLOAD,
     DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE,
     DOWNLOADS_DROPDOWN_MENU_OPEN_FILE,
+    DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER,
     EMIT_CONFIGURATION,
     OPEN_DOWNLOADS_DROPDOWN_MENU,
     REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO,
@@ -69,6 +70,7 @@ export default class DownloadsDropdownMenuView {
         ipcMain.on(EMIT_CONFIGURATION, this.updateConfig);
         ipcMain.on(REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO, this.updateDownloadsDropdownMenu);
         ipcMain.on(DOWNLOADS_DROPDOWN_MENU_OPEN_FILE, this.openFile);
+        ipcMain.on(DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER, this.showFileInFolder);
         ipcMain.on(DOWNLOADS_DROPDOWN_MENU_CANCEL_DOWNLOAD, this.cancelDownload);
         ipcMain.on(DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE, this.clearFile);
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU, this.updateItem);
@@ -161,6 +163,11 @@ export default class DownloadsDropdownMenuView {
 
     openFile = () => {
         downloadsManager.openFile(this.item);
+        this.handleClose();
+    }
+
+    showFileInFolder = (e: IpcMainEvent, item: DownloadedItem) => {
+        downloadsManager.showFileInFolder(item);
         this.handleClose();
     }
 
