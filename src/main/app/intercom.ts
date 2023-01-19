@@ -92,6 +92,18 @@ export function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewS
     const showWelcomeScreenFunc = () => {
         if (showWelcomeScreen) {
             handleWelcomeScreenModal();
+
+            if (process.env.NODE_ENV === 'test') {
+                const welcomeScreen = ModalManager.modalQueue.find((modal) => modal.key === 'welcomeScreen');
+                if (welcomeScreen?.view.webContents.isLoading()) {
+                    welcomeScreen?.view.webContents.once('did-finish-load', () => {
+                        app.emit('e2e-app-loaded');
+                    });
+                } else {
+                    app.emit('e2e-app-loaded');
+                }
+            }
+
             return;
         }
         if (showNewServerModal) {

@@ -549,6 +549,10 @@ export class ViewManager {
     };
 
     sendToAllViews = (channel: string, ...args: unknown[]) => {
-        this.views.forEach((view) => view.view.webContents.send(channel, ...args));
+        this.views.forEach((view) => {
+            if (!view.view.webContents.isDestroyed()) {
+                view.view.webContents.send(channel, ...args);
+            }
+        });
     }
 }
