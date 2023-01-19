@@ -274,12 +274,6 @@ export class WindowManager {
         }
     }
 
-    displayMetricsChanged = (event: Event, display: Display, changedMetrics: string[]) => {
-        log.debug('WindowManager.displayMetricsChanged', {display, changedMetrics});
-
-        this.maximizeMainWindow();
-    }
-
     isActiveScreen = (id: Display['id']): boolean => {
         if (!(this.viewManager && this.mainWindow)) {
             return false;
