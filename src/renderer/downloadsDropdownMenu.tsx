@@ -12,7 +12,7 @@ import {
     DOWNLOADS_DROPDOWN_MENU_CANCEL_DOWNLOAD,
     DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE,
     DOWNLOADS_DROPDOWN_MENU_OPEN_FILE,
-    DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER,
+    DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER,
     REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO,
     UPDATE_DOWNLOADS_DROPDOWN_MENU,
 } from 'common/communication';
@@ -86,7 +86,7 @@ const DownloadsDropdownMenu = () => {
         if (item?.type === 'update') {
             return;
         }
-        window.postMessage({type: DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER, payload: {item}}, window.location.href);
+        window.postMessage({type: DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER, payload: {item}}, window.location.href);
     }, [item]);
 
     const clearFile = useCallback(() => {
