@@ -3,7 +3,7 @@
 
 import path from 'path';
 
-import {app, ipcMain, screen, session} from 'electron';
+import {app, ipcMain, session} from 'electron';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import isDev from 'electron-is-dev';
 import log from 'electron-log';
@@ -119,8 +119,6 @@ export async function initialize() {
         app.whenReady(),
     ]);
 
-    initializeScreenEventListeners();
-
     // no need to continue initializing if app is quitting
     if (global.willAppQuit) {
         return;
@@ -188,11 +186,6 @@ function initializeAppEventListeners() {
     app.on('child-process-gone', handleChildProcessGone);
     app.on('login', AuthManager.handleAppLogin);
     app.on('will-finish-launching', handleAppWillFinishLaunching);
-}
-
-function initializeScreenEventListeners() {
-    screen.on('display-removed', WindowManager.displayRemoved);
-    screen.on('display-metrics-changed', WindowManager.displayMetricsChanged);
 }
 
 function initializeBeforeAppReady() {
