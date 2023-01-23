@@ -24,6 +24,7 @@
         "gsettings",
         "ICONNAME",
         "inputflash",
+        "libxtst",
         "loadscreen",
         "mailhost",
         "mailserver",
@@ -37,6 +38,7 @@
         "officedocument",
         "openxmlformats",
         "presentationml",
+        "servernum",
         "showunreadbadge",
         "spreadsheetml",
         "textbox",
@@ -45,6 +47,7 @@
         "Unreads",
         "webcontents",
         "wordprocessingml",
+        "xvfb",
         "Yuya"
     ],
     "i18n-ally.keystyle": "nested"

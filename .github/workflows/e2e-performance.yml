@@ -1,0 +1,47 @@
+name: E2E Performance Tests (Desktop)
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node-version: [16]
+
+    steps:
+    - name: Set current date as env variable
+      run: echo "NOW=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_ENV
+
+    - uses: actions/checkout@v2
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install packages
+      run: sudo apt-get install libxtst-dev libpng++-dev
+
+    - name: Install dependencies 👨🏻‍💻
+      run: npm ci
+
+    - name: E2E Performance Tests for Electron 🧪
+      run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" -- npm run test:e2e:performance
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_PERFORMANCE_TESTS_PUT_BUCKET }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PERFORMANCE_TESTS_PUT_BUCKET }}
+        aws-region: ${{ secrets.AWS_REGION_PERFORMANCE_TESTS_PUT_BUCKET }}
+        mask-aws-account-id: true
+
+    - name: Upload report to S3
+      run: aws s3 cp e2e/performance/perf-test-report.json s3://${{ secrets.AWS_BUCKET_PERFORMANCE_TESTS }}/${{ github.head_ref }}-${{ github.sha }}-$NOW.json
