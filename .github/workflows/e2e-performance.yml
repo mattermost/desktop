@@ -3,10 +3,13 @@ name: E2E Performance Tests (Desktop)
 on:
   pull_request:
     branches: [ master ]
+    types:
+        - labeled
 
 jobs:
 
   build:
+    if: ${{ github.event.label.name == 'Run E2E Performance Tests' }}
     runs-on: ${{ matrix.os }}
 
     strategy:
