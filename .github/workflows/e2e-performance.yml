@@ -44,4 +44,4 @@ jobs:
         mask-aws-account-id: true
 
     - name: Upload report to S3
-      run: aws s3 cp e2e/performance/perf-test-report.json s3://${{ secrets.AWS_BUCKET_PERFORMANCE_TESTS }}/${{ github.head_ref }}-${{ github.sha }}-${{ $NOW }}.json
+      run: aws s3 cp e2e/performance/perf-test-report.json s3://${{ secrets.AWS_BUCKET_PERFORMANCE_TESTS }}/${{ github.head_ref }}-${{ github.sha }}-${{ env.NOW }}.json
