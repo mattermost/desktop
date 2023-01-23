@@ -85,7 +85,12 @@ export function setupTray(iconTheme: string) {
 
     trayIcon.setToolTip(app.name);
     trayIcon.on('click', () => {
-        WindowManager.restoreMain();
+        if (WindowManager.mainWindow!.isVisible()) {
+            WindowManager.mainWindow!.blur(); // To move focus to the next top-level window in Windows
+            WindowManager.mainWindow!.hide();
+        } else {
+            WindowManager.restoreMain();
+        }
     });
 
     trayIcon.on('right-click', () => {
