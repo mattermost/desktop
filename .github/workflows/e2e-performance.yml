@@ -20,6 +20,18 @@ jobs:
         node-version: [16]
 
     steps:
+
+    - name: Add start comment
+      uses: actions/github-script@v6
+      with:
+        script: |
+            github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `Performance E2E tests started 🏎️`,
+            });
+
     - name: Set env variable for timestamp
       run: echo "NOW=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_ENV
 
@@ -76,3 +88,9 @@ jobs:
                     \`\`\`
                 `,
             });
+
+    - name: Remove "Run E2E Performance Tests" label
+      uses: actions-ecosystem/action-remove-labels@v1
+      with:
+          labels: |
+            Run E2E Performance Tests
