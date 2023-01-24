@@ -29,7 +29,7 @@ jobs:
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: `Performance E2E tests started 🏎️`,
+                body: `E2E Performance Tests started 🏎️`,
             });
 
     - name: Set env variable for timestamp
@@ -81,12 +81,7 @@ jobs:
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: `
-                    Performance Test Results:
-                    \`\`\`
-                        ${fileContents}
-                    \`\`\`
-                `,
+                body: `E2E Performance Test results:\n\`\`\`js\n${fileContents}\n\`\`\``,
             });
 
     - name: Remove "Run E2E Performance Tests" label
