@@ -18,8 +18,10 @@ jobs:
         node-version: [16]
 
     steps:
-    - name: Set current date as env variable
-      run: echo "NOW=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_ENV
+    - name: Set env variables
+      run: |
+        echo "NOW=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_ENV
+        echo "RESULTS_PATH=e2e/performance/perf-test-report.json >> $GITHUB_ENV"
 
     - uses: actions/checkout@v2
 
@@ -42,7 +44,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: perf-test-report.json
-        path: e2e/performance/perf-test-report.json
+        path: ${{ env.RESULTS_PATH }}
         if-no-files-found: error
         retention-days: 14
 
@@ -55,4 +57,22 @@ jobs:
         mask-aws-account-id: true
 
     - name: Upload report to S3
-      run: aws s3 cp e2e/performance/perf-test-report.json s3://${{ secrets.AWS_BUCKET_PERFORMANCE_TESTS }}/${{ github.head_ref }}-${{ github.sha }}-${{ env.NOW }}.json
+      run: aws s3 cp ${{ env.RESULTS_PATH }} s3://${{ secrets.AWS_BUCKET_PERFORMANCE_TESTS }}/${{ github.head_ref }}-${{ github.sha }}-${{ env.NOW }}.json
+
+    - name: Add results in PR comment
+      uses: actions/github-script@v6
+      with:
+        script: |
+            const fs = require('fs');
+            const fileContents = fs.readFileSync(${{ env.RESULTS_PATH }});
+            github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `
+                    Performance Test Results:
+                    \`\`\`
+                        ${fileContents}
+                    \`\`\`
+                `,
+            });
