@@ -64,7 +64,7 @@ jobs:
       with:
         script: |
             const fs = require('fs');
-            const fileContents = fs.readFileSync(${{ env.RESULTS_PATH }});
+            const fileContents = fs.readFileSync('${{ env.RESULTS_PATH }}');
             github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
