@@ -40,7 +40,7 @@ describe('menu/view', function desc() {
             await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
             const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
             await env.loginToMattermost(firstServer);
-            await firstServer.waitForSelector('#searchBox');
+            await firstServer.waitForSelector('#post_textbox');
             let currentWidth = await firstServer.evaluate('window.outerWidth');
             let currentHeight = await firstServer.evaluate('window.outerHeight');
             await mainWindow.click('button.three-dot-menu');
