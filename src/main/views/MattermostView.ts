@@ -355,6 +355,10 @@ export class MattermostView extends EventEmitter {
                 this.status = Status.ERROR;
                 return;
             }
+            if (err.code && err.code.startsWith('ERR_ABORTED')) {
+                // If the loading was aborted, we shouldn't be retrying
+                return;
+            }
             this.loadRetry(loadURL, err);
         });
     }

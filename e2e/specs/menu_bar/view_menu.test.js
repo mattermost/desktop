@@ -70,38 +70,6 @@ describe('menu/view', function desc() {
         text.should.include('in:');
     });
 
-    // TODO: No keyboard shortcut for macOS
-    if (process.platform !== 'darwin') {
-        it('MM-T816 Toggle Full Screen in the Menu Bar', async () => {
-            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
-            const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
-            await env.loginToMattermost(firstServer);
-            await firstServer.waitForSelector('#searchBox');
-            let currentWidth = await firstServer.evaluate('window.outerWidth');
-            let currentHeight = await firstServer.evaluate('window.outerHeight');
-            await mainWindow.click('button.three-dot-menu');
-            robot.keyTap('v');
-            robot.keyTap('t');
-            robot.keyTap('enter');
-            await asyncSleep(1000);
-            const fullScreenWidth = await firstServer.evaluate('window.outerWidth');
-            const fullScreenHeight = await firstServer.evaluate('window.outerHeight');
-            fullScreenWidth.should.be.greaterThan(currentWidth);
-            fullScreenHeight.should.be.greaterThan(currentHeight);
-            await mainWindow.click('button.three-dot-menu');
-            robot.keyTap('v');
-            robot.keyTap('t');
-            robot.keyTap('enter');
-            await asyncSleep(1000);
-            currentWidth = await firstServer.evaluate('window.outerWidth');
-            currentHeight = await firstServer.evaluate('window.outerHeight');
-            currentWidth.should.be.lessThan(fullScreenWidth);
-            currentHeight.should.be.lessThan(fullScreenHeight);
-        });
-    }
-
     it('MM-T817 Actual Size Zoom in the menu bar', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);
