@@ -91,7 +91,7 @@ jobs:
         env:
           ELECTRON_DISABLE_SANDBOX: 1
         run: |
-          npm run test:unit-ci
+          npm run test:unit-ci -- --detectOpenHandles
       - name: ci/build
         run: |
           mkdir -p ./build
