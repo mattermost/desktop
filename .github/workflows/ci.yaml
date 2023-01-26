@@ -12,7 +12,9 @@ env:
 jobs:
   build-linux:
     runs-on: ubuntu-22.04
-    container: electronuserland/builder:16-wine-mono
+    container:
+      image: electronuserland/builder:16-wine-mono
+      options: --user 1001
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -37,7 +39,6 @@ jobs:
           cp i18n/en.json /tmp/en.json
           npm run mmjstool -- i18n extract-desktop --desktop-dir .
           diff /tmp/en.json i18n/en.json
-          rm -rf tmp
       - name: ci/run-unit-ci
         env:
           ELECTRON_DISABLE_SANDBOX: 1
@@ -58,7 +59,7 @@ jobs:
           retention-days: 14 ## No need to keep CI builds more than 14 days
 
   build-win-no-installer:
-    runs-on: windows-2019
+    runs-on: ubuntu-22.04
     container:
       image: electronuserland/builder:16-wine-chrome
       env:
