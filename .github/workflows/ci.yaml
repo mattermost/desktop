@@ -79,7 +79,7 @@ jobs:
           choco install yq --version 4.15.1 -y
           npm i -g node-gyp
           node-gyp install
-          node-gyp install --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
+          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
           npm ci --openssl_fips=''
       - name: ci/run-check-types
         run: npm run check-types
