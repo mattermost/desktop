@@ -86,9 +86,9 @@ jobs:
         run: npm run check-types
       - name: ci/run-i18n-check
         run: |
-          cp .\i18n\en.json $env:TEMP\en.json
+          cp i18n/en.json /tmp/en.json
           npm run mmjstool -- i18n extract-desktop --desktop-dir .
-          diff $env:TEMP\en.json .\i18n\en.json
+          diff /tmp/en.json i18n/en.json
       - name: ci/run-unit-ci
         env:
           ELECTRON_DISABLE_SANDBOX: 1
