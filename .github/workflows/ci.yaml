@@ -81,7 +81,7 @@ jobs:
           npm i -g node-gyp
           node-gyp install
           node-gyp install --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
-          npm ci
+          npm ci --openssl_fips=''
       - name: ci/run-check-types
         run: npm run check-types
       - name: ci/run-i18n-check
