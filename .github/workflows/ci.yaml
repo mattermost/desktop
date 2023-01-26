@@ -90,8 +90,9 @@ jobs:
       - name: ci/run-unit-ci
         env:
           ELECTRON_DISABLE_SANDBOX: 1
+        # https://github.com/facebook/jest/issues/3079
         run: |
-          npm run test:unit-ci -- --detectOpenHandles
+          npm run test:unit-ci -- --forceExit --no-watchman --useStderr --ci
       - name: ci/build
         run: |
           mkdir -p ./build
