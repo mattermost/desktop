@@ -90,7 +90,9 @@ jobs:
       - name: ci/run-unit-ci
         env:
           ELECTRON_DISABLE_SANDBOX: 1
-        run: npm run test:unit
+        run: |
+          npm run test:unit
+          echo "Tests passed"
       - name: ci/build
         run: |
           mkdir -p ./build
