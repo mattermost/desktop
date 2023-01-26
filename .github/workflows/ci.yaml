@@ -12,9 +12,9 @@ env:
 jobs:
   build-linux:
     runs-on: ubuntu-22.04
-    container:
-      image: electronuserland/builder:16-wine-mono
-      options: --user 1001
+    # container:
+    #   image: electronuserland/builder:16-wine-mono
+    #   options: --user 1001
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -59,11 +59,11 @@ jobs:
           retention-days: 14 ## No need to keep CI builds more than 14 days
 
   build-win-no-installer:
-    runs-on: ubuntu-22.04
-    container:
-      image: electronuserland/builder:16-wine-chrome
-      env:
-        TAR_OPTIONS: --no-same-owner
+    runs-on: windows-2019
+    # container:
+    #   image: electronuserland/builder:16-wine-chrome
+    #   env:
+    #     TAR_OPTIONS: --no-same-owner
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
