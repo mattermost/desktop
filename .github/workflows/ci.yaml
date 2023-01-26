@@ -78,7 +78,9 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
           choco install yq --version 4.15.1 -y
-          npm i -g node-gyp; node-gyp install; node-gyp install --devdir="$env:USERPROFILE\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
+          npm i -g node-gyp
+          node-gyp install
+          node-gyp install --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
           npm ci
       - name: ci/run-check-types
         run: npm run check-types
@@ -87,7 +89,6 @@ jobs:
           cp .\i18n\en.json $env:TEMP\en.json
           npm run mmjstool -- i18n extract-desktop --desktop-dir .
           diff $env:TEMP\en.json .\i18n\en.json
-          rm $env:TEMP\en.json
       - name: ci/run-unit-ci
         env:
           ELECTRON_DISABLE_SANDBOX: 1
@@ -132,7 +133,6 @@ jobs:
           cp i18n/en.json /tmp/en.json
           npm run mmjstool -- i18n extract-desktop --desktop-dir .
           diff /tmp/en.json i18n/en.json
-          rm -rf tmp
       - name: ci/run-unit-ci
         env:
           ELECTRON_DISABLE_SANDBOX: 1
