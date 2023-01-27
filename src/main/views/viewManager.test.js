@@ -128,7 +128,7 @@ describe('main/views/viewManager', () => {
                 load: jest.fn(),
                 view: {
                     webContents: {
-                        getURL: () => 'http://server-2.com/subpath',
+                        getURL: () => 'mm-desktop://server-2.com/subpath',
                     },
                 },
                 tab: {
@@ -145,7 +145,7 @@ describe('main/views/viewManager', () => {
                 load: jest.fn(),
                 view: {
                     webContents: {
-                        getURL: () => 'http://server-1.com/',
+                        getURL: () => 'mm-desktop://server-1.com/',
                     },
                 },
                 tab: {
@@ -162,7 +162,7 @@ describe('main/views/viewManager', () => {
                 load: jest.fn(),
                 view: {
                     webContents: {
-                        getURL: () => 'http://server-1.com/subpath',
+                        getURL: () => 'mm-desktop://server-1.com/subpath',
                     },
                 },
                 tab: {

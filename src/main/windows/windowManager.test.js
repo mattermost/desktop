@@ -10,7 +10,7 @@ import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
 
-import {getAdjustedWindowBoundaries} from 'main/utils';
+import {getAdjustedWindowBoundaries, convertURLToMMDesktop} from 'main/utils';
 
 import {WindowManager} from './windowManager';
 import createMainWindow from './mainWindow';
@@ -58,6 +58,7 @@ jest.mock('../utils', () => ({
     getAdjustedWindowBoundaries: jest.fn(),
     shouldHaveBackBar: jest.fn(),
     getLocalURLString: jest.fn(),
+    convertURLToMMDesktop: jest.fn(),
 }));
 jest.mock('../views/viewManager', () => ({
     ViewManager: jest.fn(),
@@ -995,6 +996,7 @@ describe('main/windows/windowManager', () => {
         it('should erase history and set isAtRoot when navigating to root URL', () => {
             view1.isAtRoot = false;
             view1.view.webContents.getURL.mockReturnValue(view1.tab.url.toString());
+            convertURLToMMDesktop.mockImplementation((url) => url);
             windowManager.handleBrowserHistoryButton(null, 'server-1_tab-messaging');
             expect(view1.view.webContents.clearHistory).toHaveBeenCalled();
             expect(view1.isAtRoot).toBe(true);
