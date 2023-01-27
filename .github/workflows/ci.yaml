@@ -88,12 +88,12 @@ jobs:
           npm run mmjstool -- i18n extract-desktop --desktop-dir .
           git --no-pager diff --exit-code i18n/en.json
       - name: ci/run-unit-ci
-        shell: powershell -NonInteractive -ExecutionPolicy Bypass -command ". '{0}'"
+        shell: powershell -NonInteractive -ExecutionPolicy Bypass -command "& '{0}'"
         env:
           ELECTRON_DISABLE_SANDBOX: 1
         # https://github.com/facebook/jest/issues/3079
         run: |
-          npm run test:unit-ci
+          npm run test:unit-ci -- --forceExit
       - name: ci/build
         run: |
           mkdir -p ./build
