@@ -88,7 +88,7 @@ jobs:
           npm run mmjstool -- i18n extract-desktop --desktop-dir .
           git --no-pager diff --exit-code i18n/en.json
       - name: ci/run-unit-ci
-        shell: C:\Windows\System32\bash.exe -noprofile --norc -e -o pipefail {0} ## Use wsl shell https://github.com/actions/runner-images/blob/win22/20230123.1/images/win/Windows2022-Readme.md#shells
+        shell: C:\msys64\usr\bin\bash.exe -noprofile --norc -e -o pipefail {0} ## Use msys shell https://github.com/actions/runner-images/blob/win22/20230123.1/images/win/Windows2022-Readme.md#shells
         env:
           ELECTRON_DISABLE_SANDBOX: 1
         # https://github.com/facebook/jest/issues/3079
