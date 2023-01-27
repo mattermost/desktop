@@ -76,7 +76,7 @@ jobs:
       with:
         script: |
             const fs = require('fs');
-            const {generateCommentBody} = require('/e2e/utils/pr-e2e-durations-report');
+            const {generateCommentBody} = require('./e2e/utils/pr-e2e-durations-report.js');
             const fileContents = fs.readFileSync('${{ env.RESULTS_PATH }}');
             github.rest.issues.createComment({
                 issue_number: context.issue.number,
