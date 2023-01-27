@@ -51,6 +51,9 @@ describe('main/windows/callsWidgetWindow', () => {
         baseWindow.setBackgroundColor = jest.fn();
         baseWindow.setMenuBarVisibility = jest.fn();
         baseWindow.setBounds = jest.fn();
+        baseWindow.webContents = {
+            setWindowOpenHandler: jest.fn(),
+        };
 
         beforeEach(() => {
             mainWindow.getBounds.mockImplementation(() => {
@@ -138,6 +141,7 @@ describe('main/windows/callsWidgetWindow', () => {
             });
 
             baseWindow.webContents = {
+                ...baseWindow.webContents,
                 openDevTools: jest.fn(),
             };
 
@@ -258,6 +262,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         it('onShareScreen', () => {
             baseWindow.webContents = {
+                ...baseWindow.webContents,
                 send: jest.fn(),
             };
 
@@ -272,6 +277,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         it('onJoinedCall', () => {
             baseWindow.webContents = {
+                ...baseWindow.webContents,
                 send: jest.fn(),
             };
 

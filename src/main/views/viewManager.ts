@@ -181,7 +181,7 @@ export class ViewManager {
 
         if ((focusedTuple && closed.has(focusedTuple)) || (this.currentView && this.closedViews.has(this.currentView))) {
             if (configServers.length) {
-                delete this.currentView;
+                this.currentView = undefined;
                 this.showInitial();
             } else {
                 this.mainWindow.webContents.send(SET_ACTIVE_VIEW);
