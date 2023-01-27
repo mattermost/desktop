@@ -58,7 +58,7 @@ jobs:
   #         retention-days: 14 ## No need to keep CI builds more than 14 days
 
   build-win-no-installer:
-    runs-on: windows-2019
+    runs-on: windows-2022
     # container:
     #   image: electronuserland/builder:16-wine-chrome
     #   env:
