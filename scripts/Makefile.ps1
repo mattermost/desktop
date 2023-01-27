@@ -543,13 +543,13 @@ function Run-BuildForceSignature {
             # correct signature from Microsoft. Windows doesn't seem to complain, but we
             # don't know whether this is authorized by the Microsoft EULA.
             Get-ChildItem -Path $archPath -recurse "*.dll" | ForEach-Object {
-                signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "https://rfc3161.ai.moda" /fd sha1 /td sha1 "$($_.FullName)"
-                signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "https://rfc3161.ai.moda" /fd sha256 /td sha256 /as "$($_.FullName)"
+                signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "https://rfc3161.ai.moda/microsoft" /fd sha1 /td sha1 "$($_.FullName)"
+                signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "https://rfc3161.ai.moda/microsoft" /fd sha256 /td sha256 /as "$($_.FullName)"
             }
 
             Print-Info "Signing Mattermost.exe..."
-            signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "https://rfc3161.ai.moda" /fd sha1 /td sha1 "$archPath\Mattermost.exe"
-            signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "https://rfc3161.ai.moda" /fd sha256 /td sha256 /as "$archPath\Mattermost.exe"
+            signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "https://rfc3161.ai.moda/microsoft" /fd sha1 /td sha1 "$archPath\Mattermost.exe"
+            signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "https://rfc3161.ai.moda/microsoft" /fd sha256 /td sha256 /as "$archPath\Mattermost.exe"
         }
     } else {
         Print-Info "Certificate file not found, DLLs and executable won't be signed."
@@ -627,10 +627,10 @@ function Run-BuildMsi {
         # Dual signing is not supported on msi files. Is it recommended to sign with 256 hash.
         # src.: https://security.stackexchange.com/a/124685/84134
         # src.: https://social.msdn.microsoft.com/Forums/windowsdesktop/en-us/d4b70ecd-a883-4289-8047-cc9cde28b492#0b3e3b80-6b3b-463f-ac1e-1bf0dc831952
-        signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "https://rfc3161.ai.moda" /fd sha256 /td sha256 /d "release\$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi" "release\$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi"
+        signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "https://rfc3161.ai.moda/microsoft" /fd sha256 /td sha256 /d "release\$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi" "release\$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x86.msi"
 
         Print-Info "Signing mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi..."
-        signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "https://rfc3161.ai.moda" /fd sha256 /td sha256 /d "release\$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi" "release\$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi"
+        signtool.exe sign /f "./mattermost-desktop-windows.pfx" /p "$env:PFX_KEY" /tr "https://rfc3161.ai.moda/microsoft" /fd sha256 /td sha256 /d "release\$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi" "release\$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)\mattermost-desktop-$($env:COM_MATTERMOST_MAKEFILE_BUILD_ID)-x64.msi"
     } else {
         Print-Info "Certificate file not found, the msi installers won't be signed."
     }
