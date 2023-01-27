@@ -12,7 +12,7 @@ E2E Performance Test results:
 ${data?.passes?.reduce((acc, pass) => {
         return `${acc}| ${pass.fullTitle || 'title'} | ${pass.duration}ms |\n`;
     }, '')
-};
+}
 
 ${data?.failures?.length > 0 ? `
     Some tests failed:
