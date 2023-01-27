@@ -88,7 +88,7 @@ jobs:
           npm run mmjstool -- i18n extract-desktop --desktop-dir .
           git --no-pager diff --exit-code i18n/en.json
       - name: ci/run-unit-ci
-        shell: wsl-bash {0}
+        shell: msys2 {0}
         env:
           ELECTRON_DISABLE_SANDBOX: 1
         # https://github.com/facebook/jest/issues/3079
