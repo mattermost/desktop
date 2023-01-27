@@ -31,7 +31,7 @@ import {getServerView, getTabViewName, TabTuple, TabType} from 'common/tabs/TabV
 import {localizeMessage} from 'main/i18nManager';
 import {ServerInfo} from 'main/server/serverInfo';
 
-import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
+import {getLocalURLString, getLocalPreload, getWindowBoundaries, convertURLToMMDesktop} from '../utils';
 
 import {MattermostView} from './MattermostView';
 import modalManager from './modalManager';
@@ -115,7 +115,7 @@ export class ViewManager {
 
     reloadViewIfNeeded = (viewName: string) => {
         const view = this.views.get(viewName);
-        if (view && view.view.webContents.getURL() !== view.tab.url.toString() && !view.view.webContents.getURL().startsWith(view.tab.url.toString())) {
+        if (view && view.view.webContents.getURL() !== convertURLToMMDesktop(view.tab.url).toString() && !view.view.webContents.getURL().startsWith(convertURLToMMDesktop(view.tab.url).toString())) {
             view.load(view.tab.url);
         }
     }

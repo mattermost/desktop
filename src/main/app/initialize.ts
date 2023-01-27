@@ -424,7 +424,7 @@ function initializeAfterAppReady() {
         const requestingURL = webContents.getURL();
 
         // is the requesting url trusted?
-        callback(urlUtils.isTrustedURL(requestingURL, Config.teams));
+        callback(urlUtils.isTrustedURL(requestingURL, Config.teams, urlUtils.parseURL(requestingURL)?.protocol === 'mm-desktop:'));
     });
 
     // only check for non-Windows, as with Windows we have to wait for GPO teams

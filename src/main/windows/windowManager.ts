@@ -46,7 +46,7 @@ import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 
 import {MattermostView} from 'main/views/MattermostView';
 
-import {getAdjustedWindowBoundaries, shouldHaveBackBar} from '../utils';
+import {convertURLToMMDesktop, getAdjustedWindowBoundaries, shouldHaveBackBar} from '../utils';
 
 import {ViewManager, LoadingScreenState} from '../views/viewManager';
 import CriticalErrorHandler from '../CriticalErrorHandler';
@@ -814,7 +814,7 @@ export class WindowManager {
 
         const currentView = this.viewManager?.views.get(viewName);
         if (currentView) {
-            if (currentView.view.webContents.getURL() === currentView.tab.url.toString()) {
+            if (currentView.view.webContents.getURL() === convertURLToMMDesktop(currentView.tab.url).toString()) {
                 currentView.view.webContents.clearHistory();
                 currentView.isAtRoot = true;
             } else {
