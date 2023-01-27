@@ -82,6 +82,15 @@ export default class CallsWidgetWindow extends EventEmitter {
         ipcMain.on(CALLS_WIDGET_SHARE_SCREEN, this.onShareScreen);
         ipcMain.on(CALLS_JOINED_CALL, this.onJoinedCall);
 
+        this.win.webContents.setWindowOpenHandler(() => {
+            return {
+                action: 'allow',
+                overrideBrowserWindowOptions: {
+                    autoHideMenuBar: true,
+                },
+            };
+        });
+
         this.load();
     }
 
