@@ -3,12 +3,14 @@
 
 function generateCommentBody(fileContents) {
     const data = JSON.parse(fileContents);
+    console.log({fileContents, data});
+
     return `
 E2E Performance Test results:
 
 | Test | Duration |
 | --- | --- |
-${data?.passes?.forEach((pass) => `| ${pass.fullTitle} | ${pass.duration}`)}
+${data?.passes?.forEach((pass) => `| ${pass.fullTitle || 'title'} | ${pass.duration}ms |`)}
 
 ${data?.failures?.length > 0 ? `
     Some tests failed:
