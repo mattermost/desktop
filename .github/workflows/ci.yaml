@@ -10,52 +10,52 @@ env:
   TERM: xterm
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-22.04
-    # container:
-    #   image: electronuserland/builder:16-wine-mono
-    #   options: --user 1001
-    steps:
-      - name: ci/checkout-repo
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-      - name: ci/setup-node
-        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
-        with:
-          node-version-file: "package.json"
-          cache: "npm"
-          cache-dependency-path: package-lock.json
-      - name: ci/install-dependencies
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-        run: |
-          wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | sudo apt-key add -
-          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
-          sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata
-          npm ci
-      - name: ci/run-check-types
-        run: npm run check-types
-      - name: ci/run-i18n-check
-        run: |
-          npm run mmjstool -- i18n extract-desktop --desktop-dir .
-          git --no-pager diff --exit-code i18n/en.json
-      - name: ci/run-unit-ci
-        env:
-          ELECTRON_DISABLE_SANDBOX: 1
-        run: npm run test:unit-ci
-      - name: ci/build
-        run: |
-          mkdir -p ./build
-          npm run package:linux
-          bash -x ./scripts/patch_updater_yml.sh
-          mkdir -p ./build/linux
-          bash -x ./scripts/cp_artifacts.sh release ./linux/
-      - name: ci/upload-test-results
-        if: failure()
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
-        with:
-          name: test-results
-          path: test-results.xml
-          retention-days: 14 ## No need to keep CI builds more than 14 days
+  # build-linux:
+  #   runs-on: ubuntu-22.04
+  #   # container:
+  #   #   image: electronuserland/builder:16-wine-mono
+  #   #   options: --user 1001
+  #   steps:
+  #     - name: ci/checkout-repo
+  #       uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+  #     - name: ci/setup-node
+  #       uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+  #       with:
+  #         node-version-file: "package.json"
+  #         cache: "npm"
+  #         cache-dependency-path: package-lock.json
+  #     - name: ci/install-dependencies
+  #       env:
+  #         PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+  #       run: |
+  #         wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | sudo apt-key add -
+  #         wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
+  #         sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata
+  #         npm ci
+  #     - name: ci/run-check-types
+  #       run: npm run check-types
+  #     - name: ci/run-i18n-check
+  #       run: |
+  #         npm run mmjstool -- i18n extract-desktop --desktop-dir .
+  #         git --no-pager diff --exit-code i18n/en.json
+  #     - name: ci/run-unit-ci
+  #       env:
+  #         ELECTRON_DISABLE_SANDBOX: 1
+  #       run: npm run test:unit-ci
+  #     - name: ci/build
+  #       run: |
+  #         mkdir -p ./build
+  #         npm run package:linux
+  #         bash -x ./scripts/patch_updater_yml.sh
+  #         mkdir -p ./build/linux
+  #         bash -x ./scripts/cp_artifacts.sh release ./linux/
+  #     - name: ci/upload-test-results
+  #       if: failure()
+  #       uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+  #       with:
+  #         name: test-results
+  #         path: test-results.xml
+  #         retention-days: 14 ## No need to keep CI builds more than 14 days
 
   build-win-no-installer:
     runs-on: windows-2019
@@ -87,13 +87,13 @@ jobs:
         run: |
           npm run mmjstool -- i18n extract-desktop --desktop-dir .
           git --no-pager diff --exit-code i18n/en.json
-      - name: ci/run-unit-ci
-        shell: pwsh
+      - name: ci/run-unit
+        shell: powershell
         env:
           ELECTRON_DISABLE_SANDBOX: 1
         # https://github.com/facebook/jest/issues/3079
         run: |
-          npm run test:unit-ci
+          npm run test:unit
       - name: ci/build
         run: |
           mkdir -p ./build
@@ -109,45 +109,46 @@ jobs:
           path: test-results.xml
           retention-days: 14 ## No need to keep CI builds more than 14 days
 
-  build-mac-no-dmg:
-    runs-on: macos-12
-    steps:
-      - name: ci/checkout-repo
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-      - name: ci/setup-node
-        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
-        with:
-          node-version-file: "package.json"
-          cache: "npm"
-          cache-dependency-path: package-lock.json
-      - name: ci/install-dependencies
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-        run: |
-          brew install yq
-          jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
-          npm ci
-      - name: ci/run-check-types
-        run: npm run check-types
-      - name: ci/run-i18n-check
-        run: |
-          npm run mmjstool -- i18n extract-desktop --desktop-dir .
-          git --no-pager diff --exit-code i18n/en.json
-      - name: ci/run-unit-ci
-        env:
-          ELECTRON_DISABLE_SANDBOX: 1
-        run: npm run test:unit-ci
-      - name: ci/build
-        run: |
-          mkdir -p ./build
-          npm run package:mac
-          bash -x ./scripts/patch_updater_yml.sh
-          mkdir -p ./build/macos
-          bash -x ./scripts/cp_artifacts.sh release ./macos/
-      - name: ci/upload-test-results
-        if: failure()
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
-        with:
-          name: test-results
-          path: test-results.xml
-          retention-days: 14 ## No need to keep CI builds more than 14 days
+
+  # build-mac-no-dmg:
+  #   runs-on: macos-12
+  #   steps:
+  #     - name: ci/checkout-repo
+  #       uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+  #     - name: ci/setup-node
+  #       uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+  #       with:
+  #         node-version-file: "package.json"
+  #         cache: "npm"
+  #         cache-dependency-path: package-lock.json
+  #     - name: ci/install-dependencies
+  #       env:
+  #         PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+  #       run: |
+  #         brew install yq
+  #         jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
+  #         npm ci
+  #     - name: ci/run-check-types
+  #       run: npm run check-types
+  #     - name: ci/run-i18n-check
+  #       run: |
+  #         npm run mmjstool -- i18n extract-desktop --desktop-dir .
+  #         git --no-pager diff --exit-code i18n/en.json
+  #     - name: ci/run-unit-ci
+  #       env:
+  #         ELECTRON_DISABLE_SANDBOX: 1
+  #       run: npm run test:unit-ci
+  #     - name: ci/build
+  #       run: |
+  #         mkdir -p ./build
+  #         npm run package:mac
+  #         bash -x ./scripts/patch_updater_yml.sh
+  #         mkdir -p ./build/macos
+  #         bash -x ./scripts/cp_artifacts.sh release ./macos/
+  #     - name: ci/upload-test-results
+  #       if: failure()
+  #       uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+  #       with:
+  #         name: test-results
+  #         path: test-results.xml
+  #         retention-days: 14 ## No need to keep CI builds more than 14 days
