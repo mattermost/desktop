@@ -93,7 +93,7 @@ jobs:
           ELECTRON_DISABLE_SANDBOX: 1
         # https://github.com/facebook/jest/issues/3079
         run: |
-          npm run test:unit-ci
+          npm run test:unit-ci -- --runInBand --detectOpenHandles --forceExit
       - name: ci/build
         run: |
           mkdir -p ./build
