@@ -42,6 +42,7 @@ import {TabView, TabTuple} from 'common/tabs/TabView';
 import {ServerInfo} from 'main/server/serverInfo';
 import {
     createCookieSetDetailsFromCookieString,
+    convertURLToMMDesktop,
     getLocalPreload,
     getLocalURLString,
     getWindowBoundaries,
@@ -313,7 +314,7 @@ export class MattermostView extends EventEmitter {
     }
 
     private addCSPHeader = (details: OnHeadersReceivedListenerDetails) => {
-        if (details.url === this.convertURLToMMDesktop(this.tab.url).toString()) {
+        if (details.url === convertURLToMMDesktop(this.tab.url).toString()) {
             return {
                 responseHeaders: {
                     'Content-Security-Policy': [makeCSPHeader(this.tab.server.url, this.serverInfo.remoteInfo.cspHeader)],
@@ -324,10 +325,6 @@ export class MattermostView extends EventEmitter {
         return {} as Headers;
     };
 
-    convertURLToMMDesktop = (url: URL) => {
-        return new URL(`${url}`.replace(/^http(s)?:/, 'mm-desktop:'));
-    }
-
     load = (someURL?: URL | string) => {
         if (!this.tab) {
             return;
@@ -337,13 +334,13 @@ export class MattermostView extends EventEmitter {
         if (someURL) {
             const parsedURL = urlUtils.parseURL(someURL);
             if (parsedURL) {
-                loadURL = this.convertURLToMMDesktop(parsedURL).toString();
+                loadURL = convertURLToMMDesktop(parsedURL).toString();
             } else {
                 log.error('Cannot parse provided url, using current server url', someURL);
-                loadURL = this.convertURLToMMDesktop(this.tab.url).toString();
+                loadURL = convertURLToMMDesktop(this.tab.url).toString();
             }
         } else {
-            loadURL = this.convertURLToMMDesktop(this.tab.url).toString();
+            loadURL = convertURLToMMDesktop(this.tab.url).toString();
         }
         log.verbose(`[${Util.shorten(this.tab.name)}] Loading ${loadURL}`);
         const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
@@ -368,7 +365,7 @@ export class MattermostView extends EventEmitter {
         const request = typeof requestedVisibility === 'undefined' ? true : requestedVisibility;
         if (request && !this.isVisible) {
             this.window.addBrowserView(this.view);
-            this.setBounds(getWindowBoundaries(this.window, shouldHaveBackBar(this.getLocalProtocolURL('mattermost.html'), this.view.webContents.getURL())));
+            this.setBounds(getWindowBoundaries(this.window, shouldHaveBackBar(this.tab.url, this.view.webContents.getURL())));
             if (this.status === Status.READY) {
                 this.focus();
             }
@@ -460,7 +457,7 @@ export class MattermostView extends EventEmitter {
             this.status = Status.WAITING_MM;
             this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
             this.emit(LOAD_SUCCESS, this.tab.name, loadURL);
-            this.setBounds(getWindowBoundaries(this.window, shouldHaveBackBar(this.getLocalProtocolURL('mattermost.html'), this.view.webContents.getURL())));
+            this.setBounds(getWindowBoundaries(this.window, shouldHaveBackBar(this.tab.url, this.view.webContents.getURL())));
         };
     }
 
@@ -569,7 +566,7 @@ export class MattermostView extends EventEmitter {
     handleDidNavigate = (event: Event, url: string) => {
         log.debug('MattermostView.handleDidNavigate', {tabName: this.tab.name, url});
 
-        if (shouldHaveBackBar(this.getLocalProtocolURL('mattermost.html'), url)) {
+        if (shouldHaveBackBar(this.tab.url, url)) {
             this.setBounds(getWindowBoundaries(this.window, true));
             WindowManager.sendToRenderer(TOGGLE_BACK_BUTTON, true);
             log.info('show back button');

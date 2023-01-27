@@ -10,6 +10,8 @@ import urlUtils from 'common/utils/url';
 import * as WindowManager from '../windows/windowManager';
 import allowProtocolDialog from '../allowProtocolDialog';
 
+import Utils from '../utils';
+
 import {WebContentsEventManager} from './webContentEvents';
 
 jest.mock('electron', () => ({
@@ -75,6 +77,10 @@ jest.mock('../../../electron-builder.json', () => ({
 jest.mock('../allowProtocolDialog', () => ({
     handleDialogEvent: jest.fn(),
 }));
+jest.mock('../utils', () => ({
+    composeUserAgent: () => 'Mattermost/5.0.0',
+    convertURLToMMDesktop: jest.fn(),
+}));
 
 describe('main/views/webContentsEvents', () => {
     const event = {preventDefault: jest.fn(), sender: {id: 1}};
@@ -84,11 +90,13 @@ describe('main/views/webContentsEvents', () => {
         const willNavigate = webContentsEventManager.generateWillNavigate(jest.fn());
 
         beforeEach(() => {
+            Utils.convertURLToMMDesktop.mockImplementation((url) => url);
             WindowManager.getViewNameByWebContentsId.mockReturnValue('server_name');
             WindowManager.viewManager.views.get.mockReturnValue({
-                convertURLToMMDesktop: () => 'http://server-1.com',
                 tab: {
-                    server: {},
+                    server: {
+                        url: new URL('http://server-1.com'),
+                    },
                 },
             });
         });
@@ -107,7 +115,7 @@ describe('main/views/webContentsEvents', () => {
         });
 
         it('should allow navigation when url isAdminURL', () => {
-            urlUtils.isAdminUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}/admin_console`));
+            urlUtils.isAdminUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}admin_console`));
             willNavigate(event, 'http://server-1.com/admin_console/subpath');
             expect(event.preventDefault).not.toBeCalled();
         });
