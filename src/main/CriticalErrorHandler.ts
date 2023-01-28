@@ -68,6 +68,10 @@ export class CriticalErrorHandler {
         const report = createErrorReport(err);
         fs.writeFileSync(file, report.replace(new RegExp('\\n', 'g'), os.EOL));
 
+        if (process.env.NODE_ENV === 'test') {
+            return;
+        }
+
         if (app.isReady()) {
             const buttons = [
                 localizeMessage('main.CriticalErrorHandler.uncaughtException.button.showDetails', 'Show Details'),
