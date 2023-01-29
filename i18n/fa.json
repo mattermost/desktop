@@ -228,5 +228,7 @@
     "main.app.utils.migrateMacAppStore.dialog.message": "وارد کردن تنظیمات فعلی",
     "main.app.utils.migrateMacAppStore.button.selectAndImport": "انتخاب پوشه و وارد کردن",
     "common.tabs.TAB_PLAYBOOKS": "کتاب‌پخش‌ها",
-    "common.tabs.TAB_FOCALBOARD": "تابلوها"
+    "common.tabs.TAB_FOCALBOARD": "تابلوها",
+    "main.allowProtocolDialog.button.saveProtocolAsAllowed": "بله (ذخیره {protocol} مجاز است)",
+    "main.allowProtocolDialog.message": "{protocol} link requires an external application."
 }
