@@ -39,6 +39,7 @@ import {
 } from 'common/communication';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
+import {INTERNAL_PROTOCOL} from 'common/utils/constants';
 
 import AllowProtocolDialog from 'main/allowProtocolDialog';
 import AppVersionManager from 'main/AppVersionManager';
@@ -231,7 +232,7 @@ function initializeBeforeAppReady() {
 
     protocol.registerSchemesAsPrivileged([
         {
-            scheme: 'mm-desktop',
+            scheme: INTERNAL_PROTOCOL,
             privileges: {
                 standard: true,
                 supportFetchAPI: true,
@@ -282,7 +283,7 @@ function initializeAfterAppReady() {
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
 
-    defaultSession.protocol.registerFileProtocol('mm-desktop', (request, callback) => {
+    defaultSession.protocol.registerFileProtocol(INTERNAL_PROTOCOL, (request, callback) => {
         const parsedURL = urlUtils.parseURL(request.url);
         if (parsedURL?.host === 'mm-desktop-local') {
             callback(getLocalFileString(parsedURL.pathname.slice(1)));
@@ -424,7 +425,7 @@ function initializeAfterAppReady() {
         const requestingURL = webContents.getURL();
 
         // is the requesting url trusted?
-        callback(urlUtils.isTrustedURL(requestingURL, Config.teams, urlUtils.parseURL(requestingURL)?.protocol === 'mm-desktop:'));
+        callback(urlUtils.isTrustedURL(requestingURL, Config.teams, urlUtils.parseURL(requestingURL)?.protocol === `${INTERNAL_PROTOCOL}:`));
     });
 
     // only check for non-Windows, as with Windows we have to wait for GPO teams

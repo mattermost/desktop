@@ -250,4 +250,5 @@ export default {
     isUrlType,
     cleanPathName,
     startsWithProtocol,
+    getOrigin,
 };

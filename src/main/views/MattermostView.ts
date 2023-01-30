@@ -23,7 +23,7 @@ import log from 'electron-log';
 import {Headers} from 'types/webRequest';
 
 import Util from 'common/utils/util';
-import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
+import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS, INTERNAL_PROTOCOL} from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
 import {
     LOAD_RETRY,
@@ -118,7 +118,7 @@ export class MattermostView extends EventEmitter {
         // URL handling
         WebRequestManager.rewriteURL(
             this.tab.server.url.host,
-            'mm-desktop:',
+            `${INTERNAL_PROTOCOL}:`,
             new RegExp(`^(${this.tab.server.url.pathname})?/(api|static|plugins)/(.*)`),
             `${this.tab.server.url}/$2/$3`,
             this.view.webContents.id,
@@ -188,7 +188,7 @@ export class MattermostView extends EventEmitter {
             return {} as Headers;
         }
 
-        if (details.requestHeaders.Origin !== `mm-desktop://${this.tab.server.url.host}`) {
+        if (details.requestHeaders.Origin !== urlUtils.getOrigin(convertURLToMMDesktop(this.tab.server.url))) {
             return {} as Headers;
         }
 
@@ -215,7 +215,7 @@ export class MattermostView extends EventEmitter {
             return {
                 responseHeaders: {
                     'Access-Control-Allow-Credentials': ['true'],
-                    'Access-Control-Allow-Origin': [`mm-desktop://${this.tab.server.url.host}`],
+                    'Access-Control-Allow-Origin': [urlUtils.getOrigin(convertURLToMMDesktop(this.tab.server.url))],
                 },
             };
         }
@@ -225,7 +225,7 @@ export class MattermostView extends EventEmitter {
             responseHeaders: {
                 'Access-Control-Allow-Credentials': ['true'],
                 'Access-Control-Allow-Headers': [...this.corsHeaders],
-                'Access-Control-Allow-Origin': [`mm-desktop://${this.tab.server.url.host}`],
+                'Access-Control-Allow-Origin': [urlUtils.getOrigin(convertURLToMMDesktop(this.tab.server.url))],
                 'Access-Control-Allow-Methods': [...this.corsMethods],
             },
         };
@@ -387,7 +387,7 @@ export class MattermostView extends EventEmitter {
 
     getLocalProtocolURL = (urlPath: string) => {
         const localURL = getLocalURLString(urlPath);
-        return localURL.replace(/file:\/\/\//, `mm-desktop://${this.tab.server.url.host}/`);
+        return localURL.replace(/file:\/\/\//, urlUtils.getOrigin(convertURLToMMDesktop(this.tab.server.url)));
     }
 
     updateServerInfo = (srv: MattermostServer) => {

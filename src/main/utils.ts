@@ -9,7 +9,7 @@ import {app, BrowserWindow} from 'electron';
 
 import {Args} from 'types/args';
 
-import {BACK_BAR_HEIGHT, customLoginRegexPaths, PRODUCTION, TAB_BAR_HEIGHT, DEFAULT_CSP_HEADER} from 'common/utils/constants';
+import {BACK_BAR_HEIGHT, customLoginRegexPaths, PRODUCTION, TAB_BAR_HEIGHT, DEFAULT_CSP_HEADER, INTERNAL_PROTOCOL} from 'common/utils/constants';
 import UrlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 
@@ -207,5 +207,5 @@ export function createCookieSetDetailsFromCookieString(cookie: string, url: stri
 }
 
 export function convertURLToMMDesktop(url: URL) {
-    return new URL(`${url}`.replace(/^http(s)?:/, 'mm-desktop:'));
+    return new URL(`${url}`.replace(/^http(s)?:/, `${INTERNAL_PROTOCOL}:`));
 }
