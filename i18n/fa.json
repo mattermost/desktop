@@ -230,5 +230,11 @@
     "common.tabs.TAB_PLAYBOOKS": "کتاب‌پخش‌ها",
     "common.tabs.TAB_FOCALBOARD": "تابلوها",
     "main.allowProtocolDialog.button.saveProtocolAsAllowed": "بله (ذخیره {protocol} مجاز است)",
-    "main.allowProtocolDialog.message": "{protocol} link requires an external application."
+    "main.allowProtocolDialog.message": "{protocol} link requires an external application.",
+    "main.autoUpdater.noUpdate.detail": "شما از آخرین نسخه‌ی",
+    "main.app.utils.migrateMacAppStore.dialog.detail": "به نظر می‌رسد که تنظیماتی برای {appName} موجود است، آیا می‌خواهید از آن استفاده کنید؟ در مرحله‌ی بعد از شما محل آن پرسیده می‌شود.",
+    "main.app.app.handleAppCertificateError.certNotTrusted.dialog.message": "گواهی‌نامه از «{issuerName}» مورد اعتماد نیست.",
+    "main.app.app.handleAppCertificateError.certError.dialog.message": "یک مشکلی در پیکربندی سرور مترموست وجود دارد، یا شخصی قصد اختلال در اتصال شما را دارد. به هر صورت شاید لازم باشد برای اینترنتی که به آن وصل شده اید، در مرورگر وارد حساب خود شوید.",
+    "main.app.app.handleAppCertificateError.certError.dialog.detail": "{extraDetail}ریشه: {origin}\nخطا: {error}",
+    "main.allowProtocolDialog.title": "پروتکل غیر ‭http(s)"
 }
