@@ -50,7 +50,7 @@
     "test:e2e:run": "electron-mocha -r @babel/register --reporter mochawesome dist/tests/e2e_bundle.js",
     "test:e2e:send-report": "node ./e2e/save_report.js",
     "test:unit": "cross-env NODE_ENV=jest jest",
-    "test:unit-ci": "cross-env NODE_ENV=jest jest --runInBand --debug --forceExit --detectOpenHandles --logHeapUsage --no-watchman --showConfig",
+    "test:unit-ci": "cross-env NODE_ENV=jest jest --runInBand --debug --forceExit --detectOpenHandles --logHeapUsage --no-watchman",
     "test:coverage": "jest --coverage",
     "package:all": "cross-env NODE_ENV=production npm-run-all package:windows package:windows-nsis package:mac package:mac-with-universal package:linux",
     "package:windows": "npm-run-all build-prod && electron-builder --win zip --x64 --ia32 --arm64 --publish=never",
