@@ -30,7 +30,7 @@ jest.mock('electron', () => ({
 }));
 
 jest.mock('../allowProtocolDialog', () => ({}));
-jest.mock('../windows/windowManager', () => ({
+jest.mock('main/windows/windowManager', () => ({
     showMainWindow: jest.fn(),
     getViewNameByWebContentsId: jest.fn(),
     viewManager: {
@@ -38,6 +38,9 @@ jest.mock('../windows/windowManager', () => ({
             get: jest.fn(),
         },
     },
+}));
+jest.mock('main/downloadsManager', () => ({
+    downloadURLInMattermostView: jest.fn(),
 }));
 
 jest.mock('common/config', () => ({
