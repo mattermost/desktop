@@ -63,7 +63,7 @@ export class CertificateStore {
         this.data[host] = comparableCert;
 
         // Trust certificate for websocket connections on the same origin.
-        if (host.startsWith('https:')) {
+        if (host.startsWith('https://')) {
             const wssHost = host.replace('https', 'wss');
             this.data[wssHost] = comparableCert;
         }
