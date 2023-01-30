@@ -186,12 +186,12 @@ export function equalUrlsIgnoringSubpath(url1: URL, url2: URL, ignoreScheme?: bo
     return getOrigin(url1).toLowerCase() === getOrigin(url2).toLowerCase();
 }
 
-function isTrustedURL(url: URL | string, teams: TeamWithTabs[]) {
+function isTrustedURL(url: URL | string, teams: TeamWithTabs[], ignoreScheme = false) {
     const parsedURL = parseURL(url);
     if (!parsedURL) {
         return false;
     }
-    return getView(parsedURL, teams) !== null;
+    return getView(parsedURL, teams, ignoreScheme) !== null;
 }
 
 function isCustomLoginURL(url: URL | string, server: ServerFromURL, teams: TeamWithTabs[]): boolean {
@@ -250,4 +250,5 @@ export default {
     isUrlType,
     cleanPathName,
     startsWithProtocol,
+    getOrigin,
 };

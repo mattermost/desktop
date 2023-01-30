@@ -9,7 +9,7 @@ import {app, BrowserWindow} from 'electron';
 
 import {Args} from 'types/args';
 
-import {BACK_BAR_HEIGHT, customLoginRegexPaths, PRODUCTION, TAB_BAR_HEIGHT, DEFAULT_CSP_HEADER} from 'common/utils/constants';
+import {BACK_BAR_HEIGHT, customLoginRegexPaths, PRODUCTION, TAB_BAR_HEIGHT, DEFAULT_CSP_HEADER, INTERNAL_PROTOCOL} from 'common/utils/constants';
 import UrlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 
@@ -39,10 +39,10 @@ export function getAdjustedWindowBoundaries(width: number, height: number, hasBa
     };
 }
 
-export function shouldHaveBackBar(serverUrl: URL | string, inputURL: URL | string) {
+export function shouldHaveBackBar(serverUrl: URL, inputURL: URL | string) {
+    const mmDesktopUrl = convertURLToMMDesktop(serverUrl);
     if (UrlUtils.isUrlType('login', serverUrl, inputURL)) {
-        const serverURL = UrlUtils.parseURL(serverUrl);
-        const subpath = serverURL ? serverURL.pathname : '';
+        const subpath = mmDesktopUrl ? mmDesktopUrl.pathname : '';
         const parsedURL = UrlUtils.parseURL(inputURL);
         if (!parsedURL) {
             return false;
@@ -58,7 +58,7 @@ export function shouldHaveBackBar(serverUrl: URL | string, inputURL: URL | strin
 
         return false;
     }
-    return !UrlUtils.isTeamUrl(serverUrl, inputURL) && !UrlUtils.isAdminUrl(serverUrl, inputURL) && !UrlUtils.isPluginUrl(serverUrl, inputURL);
+    return !UrlUtils.isTeamUrl(mmDesktopUrl, inputURL) && !UrlUtils.isAdminUrl(mmDesktopUrl, inputURL) && !UrlUtils.isPluginUrl(mmDesktopUrl, inputURL);
 }
 
 export function getLocalFileString(urlPath: string, isMain?: boolean) {
@@ -204,4 +204,8 @@ export function createCookieSetDetailsFromCookieString(cookie: string, url: stri
         httpOnly: Object.hasOwn(cookieObject, 'HttpOnly'),
         expirationDate: new Date(cookieObject.Expires).valueOf(),
     };
+}
+
+export function convertURLToMMDesktop(url: URL) {
+    return new URL(`${url}`.replace(/^http(s)?:/, `${INTERNAL_PROTOCOL}:`));
 }

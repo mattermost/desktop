@@ -102,6 +102,7 @@ jest.mock('common/config', () => ({
 
 jest.mock('common/utils/url', () => ({
     isTrustedURL: jest.fn(),
+    parseURL: jest.fn(),
 }));
 
 jest.mock('main/allowProtocolDialog', () => ({

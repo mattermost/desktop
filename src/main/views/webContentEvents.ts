@@ -16,7 +16,7 @@ import WindowManager from '../windows/windowManager';
 import {protocols} from '../../../electron-builder.json';
 
 import allowProtocolDialog from '../allowProtocolDialog';
-import {composeUserAgent} from '../utils';
+import {composeUserAgent, convertURLToMMDesktop} from '../utils';
 
 import {MattermostView} from './MattermostView';
 
@@ -67,7 +67,7 @@ export class WebContentsEventManager {
             if (viewName) {
                 const view = WindowManager.viewManager?.views.get(viewName);
                 if (view) {
-                    const serverURL = view.convertURLToMMDesktop(view.tab.server.url);
+                    const serverURL = convertURLToMMDesktop(view.tab.server.url);
                     if (urlUtils.isTeamUrl(serverURL, parsedURL)) {
                         return;
                     }
@@ -120,7 +120,7 @@ export class WebContentsEventManager {
 
     generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spellcheck?: boolean) => {
         return (details: Electron.HandlerDetails): {action: 'deny' | 'allow'} => {
-            log.debug('webContentEvents.new-window', details.url);
+            log.verbose('webContentEvents.new-window', details.url);
 
             const parsedURL = urlUtils.parseURL(details.url);
             if (!parsedURL) {
@@ -158,6 +158,7 @@ export class WebContentsEventManager {
             // Public download links case
             // TODO: We might be handling different types differently in the future, for now
             // we are going to mimic the browser and just pop a new browser window for public links
+            log.verbose('pathname', parsedURL.pathname);
             if (parsedURL.pathname.match(/^(\/api\/v[3-4]\/public)*\/files\//)) {
                 shell.openExternal(details.url);
                 return {action: 'deny'};

@@ -48,6 +48,7 @@ jest.mock('../utils', () => ({
     getLocalPreload: (file) => file,
     composeUserAgent: () => 'Mattermost/5.0.0',
     shouldHaveBackBar: jest.fn(),
+    convertURLToMMDesktop: jest.fn(),
 }));
 
 const server = new MattermostServer('server_name', 'http://server-1.com');
@@ -59,66 +60,67 @@ describe('main/views/MattermostView', () => {
         const mattermostView = new MattermostView(tabView, {}, window, {});
 
         beforeEach(() => {
+            Utils.convertURLToMMDesktop.mockImplementation((url) => url);
             Utils.getLocalURLString.mockReturnValue('file://some/file/path/mattermost.html');
             mattermostView.loadSuccess = jest.fn();
             mattermostView.loadRetry = jest.fn();
         });
 
-        // it('should load provided URL when provided', async () => {
-        //     const promise = Promise.resolve();
-        //     mattermostView.view.webContents.loadURL.mockImplementation(() => promise);
-        //     mattermostView.load('http://server-2.com');
-        //     await promise;
-        //     expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-2.com/', expect.any(Object));
-        //     expect(mattermostView.loadSuccess).toBeCalledWith('http://server-2.com/');
-        // });
+        it('should load provided URL when provided', async () => {
+            const promise = Promise.resolve();
+            mattermostView.view.webContents.loadURL.mockImplementation(() => promise);
+            mattermostView.load('http://server-2.com');
+            await promise;
+            expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-2.com/', expect.any(Object));
+            expect(mattermostView.loadSuccess).toBeCalledWith('http://server-2.com/');
+        });
 
-        // it('should load server URL when not provided', async () => {
-        //     const promise = Promise.resolve();
-        //     mattermostView.view.webContents.loadURL.mockImplementation(() => promise);
-        //     mattermostView.load();
-        //     await promise;
-        //     expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
-        //     expect(mattermostView.loadSuccess).toBeCalledWith('http://server-1.com/');
-        // });
+        it('should load server URL when not provided', async () => {
+            const promise = Promise.resolve();
+            mattermostView.view.webContents.loadURL.mockImplementation(() => promise);
+            mattermostView.load();
+            await promise;
+            expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
+            expect(mattermostView.loadSuccess).toBeCalledWith('http://server-1.com/');
+        });
 
-        // it('should load server URL when bad url provided', async () => {
-        //     const promise = Promise.resolve();
-        //     mattermostView.view.webContents.loadURL.mockImplementation(() => promise);
-        //     mattermostView.load('a-bad<url');
-        //     await promise;
-        //     expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
-        //     expect(mattermostView.loadSuccess).toBeCalledWith('http://server-1.com/');
-        // });
+        it('should load server URL when bad url provided', async () => {
+            const promise = Promise.resolve();
+            mattermostView.view.webContents.loadURL.mockImplementation(() => promise);
+            mattermostView.load('a-bad<url');
+            await promise;
+            expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
+            expect(mattermostView.loadSuccess).toBeCalledWith('http://server-1.com/');
+        });
 
-        // it('should call retry when failing to load', async () => {
-        //     const error = new Error('test');
-        //     const promise = Promise.reject(error);
-        //     mattermostView.view.webContents.loadURL.mockImplementation(() => promise);
-        //     mattermostView.load('a-bad<url');
-        //     await expect(promise).rejects.toThrow(error);
-        //     expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
-        //     expect(mattermostView.loadRetry).toBeCalledWith('http://server-1.com/', error);
-        // });
+        it('should call retry when failing to load', async () => {
+            const error = new Error('test');
+            const promise = Promise.reject(error);
+            mattermostView.view.webContents.loadURL.mockImplementation(() => promise);
+            mattermostView.load('a-bad<url');
+            await expect(promise).rejects.toThrow(error);
+            expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
+            expect(mattermostView.loadRetry).toBeCalledWith('http://server-1.com/', error);
+        });
 
-        // it('should not retry when failing to load due to cert error', async () => {
-        //     const error = new Error('test');
-        //     error.code = 'ERR_CERT_ERROR';
-        //     const promise = Promise.reject(error);
-        //     mattermostView.view.webContents.loadURL.mockImplementation(() => promise);
-        //     mattermostView.load('a-bad<url');
-        //     await expect(promise).rejects.toThrow(error);
-        //     expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
-        //     expect(mattermostView.loadRetry).not.toBeCalled();
-        // });
+        it('should not retry when failing to load due to cert error', async () => {
+            const error = new Error('test');
+            error.code = 'ERR_CERT_ERROR';
+            const promise = Promise.reject(error);
+            mattermostView.view.webContents.loadURL.mockImplementation(() => promise);
+            mattermostView.load('a-bad<url');
+            await expect(promise).rejects.toThrow(error);
+            expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
+            expect(mattermostView.loadRetry).not.toBeCalled();
+        });
 
         it('should load base URL when not provided', async () => {
             const promise = Promise.resolve();
             mattermostView.view.webContents.loadURL.mockImplementation(() => promise);
             mattermostView.load();
             await promise;
-            expect(mattermostView.view.webContents.loadURL).toBeCalledWith('mm-desktop://server-1.com/', expect.any(Object));
-            expect(mattermostView.loadSuccess).toBeCalledWith('mm-desktop://server-1.com/');
+            expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
+            expect(mattermostView.loadSuccess).toBeCalledWith('http://server-1.com/');
         });
 
         it('should load relative URL when provided', async () => {
@@ -126,8 +128,8 @@ describe('main/views/MattermostView', () => {
             mattermostView.view.webContents.loadURL.mockImplementation(() => promise);
             mattermostView.load('http://server-1.com/some/server/path');
             await promise;
-            expect(mattermostView.view.webContents.loadURL).toBeCalledWith('mm-desktop://server-1.com/some/server/path', expect.any(Object));
-            expect(mattermostView.loadSuccess).toBeCalledWith('mm-desktop://server-1.com/some/server/path');
+            expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-1.com/some/server/path', expect.any(Object));
+            expect(mattermostView.loadSuccess).toBeCalledWith('http://server-1.com/some/server/path');
         });
     });
 
