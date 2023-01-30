@@ -37,7 +37,7 @@ describe('dark_mode', function desc() {
             mainWindow.should.not.be.null;
 
             // Toggle Dark Mode
-            toggleDarkMode();
+            await toggleDarkMode();
 
             const topBarElementWithDarkMode = await mainWindow.waitForSelector('.topBar');
             const topBarElementClassWithDarkMode = await topBarElementWithDarkMode.getAttribute('class');
@@ -45,7 +45,7 @@ describe('dark_mode', function desc() {
             topBarElementClassWithDarkMode.should.contain('topBar darkMode row');
 
             // Toggle Light Mode
-            toggleDarkMode();
+            await toggleDarkMode();
 
             const topBarElementWithLightMode = await mainWindow.waitForSelector('.topBar');
             const topBarElementClassWithLightMode = await topBarElementWithLightMode.getAttribute('class');
@@ -55,11 +55,12 @@ describe('dark_mode', function desc() {
     }
 });
 
-function toggleDarkMode() {
+async function toggleDarkMode() {
     robot.keyTap('alt');
     robot.keyTap('enter');
     robot.keyTap('v');
     robot.keyTap('t');
+    await asyncSleep(500); // Add a sleep because sometimes the second 't' doesn't fire
     robot.keyTap('t'); // Click on "Toggle Dark Mode" menu item
     robot.keyTap('enter');
 }
