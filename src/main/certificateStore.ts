@@ -58,7 +58,15 @@ export class CertificateStore {
     };
 
     add = (targetURL: string, certificate: Certificate, dontTrust = false) => {
-        this.data[urlUtils.getHost(targetURL)] = comparableCertificate(certificate, dontTrust);
+        const host = urlUtils.getHost(targetURL);
+        const comparableCert = comparableCertificate(certificate, dontTrust);
+        this.data[host] = comparableCert;
+
+        // Trust certificate for websocket connections on the same origin.
+        if (host.startsWith('https://')) {
+            const wssHost = host.replace('https', 'wss');
+            this.data[wssHost] = comparableCert;
+        }
     };
 
     isExisting = (targetURL: string) => {
