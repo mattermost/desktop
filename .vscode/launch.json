@@ -52,6 +52,23 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "E2E Performance Tests",
+            "program": "${workspaceRoot}/node_modules/electron-mocha/bin/electron-mocha",
+            "args": [
+                "-r",
+                "@babel/register",
+                "--recursive",
+                "--timeout",
+                "999999",
+                "--colors",
+                "${workspaceRoot}/dist/tests/e2e_bundle.js"
+            ],
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "prepare-e2e-performance",
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Unit Tests",
             "program": "${workspaceRoot}/node_modules/jest/bin/jest",
             "args": [],
