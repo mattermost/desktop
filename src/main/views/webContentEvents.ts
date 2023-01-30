@@ -178,7 +178,6 @@ export class WebContentsEventManager {
             }
 
             if (urlUtils.isTeamUrl(server.url, parsedURL, true)) {
-                log.verbose('should be hitting this I think');
                 WindowManager.showMainWindow(parsedURL);
                 return {action: 'deny'};
             }
