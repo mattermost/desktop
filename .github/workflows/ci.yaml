@@ -93,7 +93,7 @@ jobs:
       - name: ci/install-node-gyp-dependencies
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-          run: |
+        run: |
             choco install yq --version 4.15.1 -y
             npm i -g node-gyp
             node-gyp install
