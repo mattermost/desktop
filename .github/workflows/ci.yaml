@@ -56,8 +56,7 @@ jobs:
   #         name: test-results
   #         path: test-results.xml
   #         retention-days: 14 ## No need to keep CI builds more than 14 days
-
-  build-win-no-installer:
+  windows-install-deps:
     runs-on: windows-2022
     # container:
     #   image: electronuserland/builder:16-wine-chrome
@@ -72,7 +71,20 @@ jobs:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
+
+      - name: ci/cache-node-modules
+        id: cache-node-modules
+        uses: actions/cache@627f0f41f6904a5b1efbaed9f96d9eb58e92e920 # v3.2.4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-build-node-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-node-modules
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
       - name: ci/install-dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
@@ -80,19 +92,63 @@ jobs:
           npm i -g node-gyp
           node-gyp install
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
-          npm ci --openssl_fips=''
+          npm install --openssl_fips=''
+
+  build-win-no-installer:
+    runs-on: windows-2022
+    needs:
+      - windows-install-deps
+    # container:
+    #   image: electronuserland/builder:16-wine-chrome
+    #   env:
+    #     TAR_OPTIONS: --no-same-owner
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: ci/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: "package.json"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: ci/cache-node-modules
+        id: cache-node-modules
+        uses: actions/cache@627f0f41f6904a5b1efbaed9f96d9eb58e92e920 # v3.2.4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-build-node-modules-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-node-modules
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      - name: ci/install-dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+        run: |
+          choco install yq --version 4.15.1 -y
+          npm i -g node-gyp
+          node-gyp install
+          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
+          npm install --openssl_fips=''
+
       - name: ci/run-check-types
         run: npm run check-types
+
       - name: ci/run-i18n-check
         run: |
           npm run mmjstool -- i18n extract-desktop --desktop-dir .
           git --no-pager diff --exit-code i18n/en.json
+
       - name: ci/run-unit-ci
         env:
           ELECTRON_DISABLE_SANDBOX: 1
         # https://github.com/facebook/jest/issues/3079
         run: |
           npm run test:unit-ci
+
       - name: ci/build
         run: |
           mkdir -p ./build
@@ -100,6 +156,7 @@ jobs:
           bash -x ./scripts/patch_updater_yml.sh
           mkdir -p ./build/win
           bash -x ./scripts/cp_artifacts.sh release ./win/
+
       - name: ci/upload-test-results
         if: failure()
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
