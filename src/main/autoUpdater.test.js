@@ -120,12 +120,6 @@ describe('main/autoUpdater', () => {
             jest.useRealTimers();
         });
 
-        afterAll(() => {
-            jest.runOnlyPendingTimers();
-            jest.clearAllTimers();
-            jest.useRealTimers();
-        });
-
         it('should add a new timeout', () => {
             const updateManager = new UpdateManager();
             updateManager.notify();

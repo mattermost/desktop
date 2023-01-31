@@ -218,11 +218,8 @@ describe('main/windows/windowManager', () => {
             jest.runAllTimers();
             jest.resetAllMocks();
             jest.runOnlyPendingTimers();
-            jest.useRealTimers();
-        });
-
-        afterAll(() => {
             jest.clearAllTimers();
+            jest.useRealTimers();
         });
 
         it('should update loading screen and team dropdown bounds', () => {
