@@ -97,7 +97,7 @@
     ],
     "testMatch": [
       "**/src/**/*.test.js",
-      "!**src/main/app/initialize.test.js"
+      "!**/src/main/app/initialize.test.js"
     ],
     "testPathIgnorePatterns": [
       "/node_modules/",
