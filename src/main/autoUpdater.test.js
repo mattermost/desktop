@@ -116,8 +116,8 @@ describe('main/autoUpdater', () => {
 
         afterEach(() => {
             jest.runAllTimers();
-            jest.runOnlyPendingTimers()
-            jest.useRealTimers()
+            jest.runOnlyPendingTimers();
+            jest.useRealTimers();
         });
 
         afterAll(() => {
@@ -153,8 +153,6 @@ describe('main/autoUpdater', () => {
         beforeEach(() => {
             autoUpdater.checkForUpdates.mockReturnValue(Promise.resolve());
             jest.useFakeTimers();
-            jest.runOnlyPendingTimers()
-            jest.useRealTimers()
         });
 
         afterEach(() => {

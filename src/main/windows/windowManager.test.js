@@ -217,8 +217,8 @@ describe('main/windows/windowManager', () => {
         afterEach(() => {
             jest.runAllTimers();
             jest.resetAllMocks();
-            jest.runOnlyPendingTimers()
-            jest.useRealTimers()
+            jest.runOnlyPendingTimers();
+            jest.useRealTimers();
         });
 
         afterAll(() => {
@@ -657,8 +657,6 @@ describe('main/windows/windowManager', () => {
         afterEach(() => {
             jest.resetAllMocks();
             Config.teams = [];
-            jest.runOnlyPendingTimers()
-            jest.useRealTimers()
         });
 
         afterAll(() => {
