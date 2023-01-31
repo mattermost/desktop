@@ -260,6 +260,7 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(widgetWindow.getWidgetURL()).toBe(expected);
         });
 
+        // potential memory leak
         it('onShareScreen', () => {
             baseWindow.webContents = {
                 ...baseWindow.webContents,
@@ -275,6 +276,7 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(widgetWindow.win.webContents.send).toHaveBeenCalledWith(CALLS_WIDGET_SHARE_SCREEN, message);
         });
 
+        // potential memory leak
         it('onJoinedCall', () => {
             baseWindow.webContents = {
                 ...baseWindow.webContents,

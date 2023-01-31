@@ -124,9 +124,8 @@ describe('main/views/MattermostView', () => {
             mattermostView.retryInBackground = () => retryInBackgroundFn;
         });
 
-        afterEach(() => {
-            jest.runOnlyPendingTimers()
-            jest.useRealTimers()
+        afterAll(() => {
+            jest.useRealTimers();
         });
 
         it('should do nothing when webcontents are destroyed', () => {
@@ -185,11 +184,9 @@ describe('main/views/MattermostView', () => {
             mattermostView.findUnreadState = jest.fn();
         });
 
-        afterEach(() => {
-            jest.runOnlyPendingTimers()
-            jest.useRealTimers()
+        afterAll(() => {
+            jest.useRealTimers();
         });
-
 
         it('should reset max retries', () => {
             mattermostView.maxRetries = 1;
@@ -209,9 +206,8 @@ describe('main/views/MattermostView', () => {
             mattermostView.focus = jest.fn();
         });
 
-        afterEach(() => {
-            jest.runOnlyPendingTimers()
-            jest.useRealTimers()
+        afterAll(() => {
+            jest.useRealTimers();
         });
 
         it('should add browser view to window and set bounds when request is true and view not currently visible', () => {

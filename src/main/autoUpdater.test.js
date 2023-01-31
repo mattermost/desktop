@@ -120,6 +120,10 @@ describe('main/autoUpdater', () => {
             jest.useRealTimers()
         });
 
+        afterAll(() => {
+            jest.useRealTimers();
+        });
+
         it('should add a new timeout', () => {
             const updateManager = new UpdateManager();
             updateManager.notify();
@@ -155,6 +159,10 @@ describe('main/autoUpdater', () => {
 
         afterEach(() => {
             jest.resetAllMocks();
+        });
+
+        afterAll(() => {
+            jest.useRealTimers();
         });
 
         it('should show dialog if update is not available', () => {

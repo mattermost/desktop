@@ -221,6 +221,10 @@ describe('main/windows/windowManager', () => {
             jest.useRealTimers()
         });
 
+        afterAll(() => {
+            jest.useRealTimers();
+        });
+
         it('should update loading screen and team dropdown bounds', () => {
             windowManager.handleResizeMainWindow();
             expect(windowManager.viewManager.setLoadingScreenBounds).toHaveBeenCalled();
@@ -655,6 +659,10 @@ describe('main/windows/windowManager', () => {
             Config.teams = [];
             jest.runOnlyPendingTimers()
             jest.useRealTimers()
+        });
+
+        afterAll(() => {
+            jest.useRealTimers();
         });
 
         it('should do nothing if cannot find the server', () => {
