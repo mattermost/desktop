@@ -121,6 +121,8 @@ describe('main/autoUpdater', () => {
         });
 
         afterAll(() => {
+            jest.runOnlyPendingTimers();
+            jest.clearAllTimers();
             jest.useRealTimers();
         });
 
@@ -160,6 +162,8 @@ describe('main/autoUpdater', () => {
         });
 
         afterAll(() => {
+            jest.runOnlyPendingTimers();
+            jest.clearAllTimers();
             jest.useRealTimers();
         });
 

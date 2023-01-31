@@ -222,7 +222,7 @@ describe('main/windows/windowManager', () => {
         });
 
         afterAll(() => {
-            jest.useRealTimers();
+            jest.clearAllTimers();
         });
 
         it('should update loading screen and team dropdown bounds', () => {
@@ -660,6 +660,8 @@ describe('main/windows/windowManager', () => {
         });
 
         afterAll(() => {
+            jest.runOnlyPendingTimers();
+            jest.clearAllTimers();
             jest.useRealTimers();
         });
 
