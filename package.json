@@ -96,8 +96,7 @@
       "src/main/**/*.ts"
     ],
     "testMatch": [
-      "**/src/**/*.test.js",
-      "!**/src/main/app/initialize.test.js"
+      "**/src/**/*.test.js"
     ],
     "testPathIgnorePatterns": [
       "/node_modules/",
