@@ -49,6 +49,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     progressingItems: Map<string, DownloadItem>;
     downloads: DownloadedItems;
     willDownloadURLs: Map<string, {filePath: string; bookmark?: string}>;
+    overrideUserGesturesURLs: Set<string>;
     bookmarks: Map<string, {originalPath: string; bookmark: string}>;
 
     constructor(file: string) {
@@ -58,6 +59,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         this.fileSizes = new Map();
         this.progressingItems = new Map();
         this.willDownloadURLs = new Map();
+        this.overrideUserGesturesURLs = new Set();
         this.bookmarks = new Map();
         this.autoCloseTimeout = null;
         this.downloads = {};
@@ -99,6 +101,15 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         ipcMain.on(NO_UPDATE_AVAILABLE, this.noUpdateAvailable);
     };
 
+    downloadURLInMattermostView = (viewName: string, url: string) => {
+        const view = WindowManager.viewManager?.views.get(viewName);
+        if (!view) {
+            return;
+        }
+        this.overrideUserGesturesURLs.add(url);
+        view.view.webContents.downloadURL(url);
+    }
+
     handleNewDownload = async (event: Event, item: DownloadItem, webContents: WebContents) => {
         log.debug('DownloadsManager.handleNewDownload', {item, sourceURL: webContents.getURL()});
 
@@ -122,22 +133,24 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
             this.toggleAppMenuDownloadsEnabled(true);
         } else {
             event.preventDefault();
-
-            if (this.shouldShowSaveDialog(item, Config.downloadLocation)) {
-                const saveDialogResult = await this.showSaveDialog(item);
-                if (saveDialogResult.canceled || !saveDialogResult.filePath) {
-                    return;
-                }
-                this.willDownloadURLs.set(url, {filePath: saveDialogResult.filePath, bookmark: saveDialogResult.bookmark});
-            } else {
-                const filename = this.createFilename(item);
-                const savePath = this.getSavePath(`${Config.downloadLocation}`, filename);
-                this.willDownloadURLs.set(url, {filePath: savePath});
-            }
-
-            webContents.downloadURL(url);
+            await this.addToDownloadQueue(url, webContents, item.getFilename(), item.hasUserGesture() || this.overrideUserGesturesURLs.delete(url));
         }
     };
+
+    private addToDownloadQueue = async (url: string, webContents: WebContents, filename: string, hasUserGesture = false) => {
+        if (!hasUserGesture || !Config.downloadLocation) {
+            const saveDialogResult = await this.showSaveDialog(filename);
+            if (saveDialogResult.canceled || !saveDialogResult.filePath) {
+                return;
+            }
+            this.willDownloadURLs.set(url, {filePath: saveDialogResult.filePath, bookmark: saveDialogResult.bookmark});
+        } else {
+            const savePath = this.getDefaultSavePath(filename);
+            this.willDownloadURLs.set(url, {filePath: savePath});
+        }
+
+        webContents.downloadURL(url);
+    }
 
     /**
      * This function monitors webRequests and retrieves the total file size (of files being downloaded)
@@ -409,16 +422,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         });
     };
 
-    /**
-     *  This function return true if "downloadLocation" is undefined
-     */
-    private shouldShowSaveDialog = (item: DownloadItem, downloadLocation?: string) => {
-        log.debug('DownloadsManager.shouldShowSaveDialog', {downloadLocation});
-        return !item.hasUserGesture() || !downloadLocation;
-    };
-
-    private showSaveDialog = (item: DownloadItem) => {
-        const filename = item.getFilename();
+    private showSaveDialog = (filename: string) => {
         const fileElements = filename.split('.');
         const filters = this.getFileFilters(fileElements.slice(fileElements.length - 1));
 
@@ -603,6 +607,10 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         return itemTotalBytes;
     };
 
+    private getDefaultSavePath = (filename: string) => {
+        return this.getSavePath(`${Config.downloadLocation}`, this.createFilename(filename));
+    }
+
     private getSavePath = (downloadLocation: string, filename?: string) => {
         const name = isStringWithLength(filename) ? `${filename}` : 'file';
         return path.join(downloadLocation, name);
@@ -622,8 +630,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         return filters;
     };
 
-    private createFilename = (item: DownloadItem): string => {
-        const defaultFilename = item.getFilename();
+    private createFilename = (defaultFilename: string): string => {
         const incrementedFilenameIfExists = shouldIncrementFilename(path.join(`${Config.downloadLocation}`, defaultFilename));
         return incrementedFilenameIfExists;
     };

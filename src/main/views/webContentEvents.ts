@@ -10,8 +10,8 @@ import Config from 'common/config';
 import urlUtils from 'common/utils/url';
 
 import ContextMenu from 'main/contextMenu';
-
-import WindowManager from '../windows/windowManager';
+import DownloadsManager from 'main/downloadsManager';
+import WindowManager from 'main/windows/windowManager';
 
 import {protocols} from '../../../electron-builder.json';
 
@@ -120,7 +120,7 @@ export class WebContentsEventManager {
 
     generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spellcheck?: boolean) => {
         return (details: Electron.HandlerDetails): {action: 'deny' | 'allow'} => {
-            log.verbose('webContentEvents.new-window', details.url);
+            log.debug('webContentEvents.new-window', details.url);
 
             const parsedURL = urlUtils.parseURL(details.url);
             if (!parsedURL) {
@@ -155,22 +155,27 @@ export class WebContentsEventManager {
                 return {action: 'deny'};
             }
 
+            const pathname = details.url.replace(server.url, '');
+            if (pathname.match(/^(\/api\/v[3-4])*\/files\//)) {
+                DownloadsManager.downloadURLInMattermostView(server.name, details.url);
+                return {action: 'deny'};
+            }
+
             // Public download links case
             // TODO: We might be handling different types differently in the future, for now
             // we are going to mimic the browser and just pop a new browser window for public links
-            log.verbose('pathname', parsedURL.pathname);
-            if (parsedURL.pathname.match(/^(\/api\/v[3-4]\/public)*\/files\//)) {
+            if (pathname.match(/^(\/api\/v[3-4]\/public)*\/files\//)) {
                 shell.openExternal(details.url);
                 return {action: 'deny'};
             }
 
             // Image proxy case
-            if (parsedURL.pathname.match(/^\/api\/v[3-4]\/image/)) {
+            if (pathname.match(/^\/api\/v[3-4]\/image/)) {
                 shell.openExternal(details.url);
                 return {action: 'deny'};
             }
 
-            if (parsedURL.pathname.match(/^\/help\//)) {
+            if (pathname.match(/^\/help\//)) {
                 // Help links case
                 // continue to open special case internal urls in default browser
                 shell.openExternal(details.url);
