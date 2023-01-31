@@ -217,6 +217,8 @@ describe('main/windows/windowManager', () => {
         afterEach(() => {
             jest.runAllTimers();
             jest.resetAllMocks();
+            jest.runOnlyPendingTimers()
+            jest.useRealTimers()
         });
 
         it('should update loading screen and team dropdown bounds', () => {
@@ -651,6 +653,8 @@ describe('main/windows/windowManager', () => {
         afterEach(() => {
             jest.resetAllMocks();
             Config.teams = [];
+            jest.runOnlyPendingTimers()
+            jest.useRealTimers()
         });
 
         it('should do nothing if cannot find the server', () => {

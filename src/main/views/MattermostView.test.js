@@ -124,6 +124,11 @@ describe('main/views/MattermostView', () => {
             mattermostView.retryInBackground = () => retryInBackgroundFn;
         });
 
+        afterEach(() => {
+            jest.runOnlyPendingTimers()
+            jest.useRealTimers()
+        });
+
         it('should do nothing when webcontents are destroyed', () => {
             const webContents = mattermostView.view.webContents;
             mattermostView.view.webContents = null;
@@ -180,6 +185,12 @@ describe('main/views/MattermostView', () => {
             mattermostView.findUnreadState = jest.fn();
         });
 
+        afterEach(() => {
+            jest.runOnlyPendingTimers()
+            jest.useRealTimers()
+        });
+
+
         it('should reset max retries', () => {
             mattermostView.maxRetries = 1;
             mattermostView.loadSuccess('http://server-1.com')();
@@ -196,6 +207,11 @@ describe('main/views/MattermostView', () => {
             jest.useFakeTimers();
             mattermostView.setBounds = jest.fn();
             mattermostView.focus = jest.fn();
+        });
+
+        afterEach(() => {
+            jest.runOnlyPendingTimers()
+            jest.useRealTimers()
         });
 
         it('should add browser view to window and set bounds when request is true and view not currently visible', () => {

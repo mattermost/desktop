@@ -116,6 +116,8 @@ describe('main/autoUpdater', () => {
 
         afterEach(() => {
             jest.runAllTimers();
+            jest.runOnlyPendingTimers()
+            jest.useRealTimers()
         });
 
         it('should add a new timeout', () => {
@@ -147,6 +149,8 @@ describe('main/autoUpdater', () => {
         beforeEach(() => {
             autoUpdater.checkForUpdates.mockReturnValue(Promise.resolve());
             jest.useFakeTimers();
+            jest.runOnlyPendingTimers()
+            jest.useRealTimers()
         });
 
         afterEach(() => {
