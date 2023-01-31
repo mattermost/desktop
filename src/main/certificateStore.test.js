@@ -32,13 +32,13 @@ jest.mock('fs', () => ({
 
 const certificateData = {
     'https://server-1.com': {
-        data: 'somerandomdata',
-        issuerName: 'someissuer',
+        data: 'someRandomData',
+        issuerName: 'someIssuer',
         dontTrust: false,
     },
     'https://server-2.com': {
-        data: 'somerandomdata',
-        issuerName: 'someissuer',
+        data: 'someRandomData',
+        issuerName: 'someIssuer',
         dontTrust: true,
     },
 };
@@ -49,7 +49,7 @@ describe('main/certificateStore', () => {
 
         let certificateStore;
         expect(() => {
-            certificateStore = new CertificateStore('somefilename');
+            certificateStore = new CertificateStore('someFilename');
         }).not.toThrow(Error);
         expect(certificateStore.data).toStrictEqual({});
     });
@@ -59,35 +59,48 @@ describe('main/certificateStore', () => {
         beforeAll(() => {
             validateCertificateStore.mockImplementation((data) => JSON.parse(data));
             fs.readFileSync.mockImplementation(() => JSON.stringify(certificateData));
-            certificateStore = new CertificateStore('somefilename');
+            certificateStore = new CertificateStore('someFilename');
         });
 
         it('should return true for stored matching certificate', () => {
-            certificateStore = new CertificateStore('somefilename');
+            certificateStore = new CertificateStore('someFilename');
 
             expect(certificateStore.isTrusted('https://server-1.com', {
-                data: 'somerandomdata',
-                issuerName: 'someissuer',
+                data: 'someRandomData',
+                issuerName: 'someIssuer',
             })).toBe(true);
         });
 
         it('should return false for missing url', () => {
             expect(certificateStore.isTrusted('https://server-3.com', {
-                data: 'somerandomdata',
-                issuerName: 'someissuer',
+                data: 'someRandomData',
+                issuerName: 'someIssuer',
             })).toBe(false);
         });
 
-        it('should return false for unmatching cert', () => {
+        it('should return false for unmatched cert', () => {
             expect(certificateStore.isTrusted('https://server-1.com', {
-                data: 'someotherrandomdata',
-                issuerName: 'someissuer',
+                data: 'someOtherRandomData',
+                issuerName: 'someIssuer',
             })).toBe(false);
 
             expect(certificateStore.isTrusted('https://server-1.com', {
-                data: 'somerandomdata',
-                issuerName: 'someotherissuer',
+                data: 'someRandomData',
+                issuerName: 'someOtherIssuer',
             })).toBe(false);
+        });
+
+        it('should add certificate for websocket too', () => {
+            const certOrigin = 'https://server-websocket.com';
+            const wssCertOrigin = certOrigin.replace('https', 'wss');
+            const certData = {
+                data: 'someRandomData',
+                issuerName: 'someIssuer',
+            };
+
+            certificateStore = new CertificateStore('someFilename');
+            certificateStore.add(certOrigin, certData);
+            expect(certificateStore.isTrusted(wssCertOrigin, certData)).toBe(true);
         });
     });
 
@@ -96,20 +109,20 @@ describe('main/certificateStore', () => {
         beforeAll(() => {
             validateCertificateStore.mockImplementation((data) => JSON.parse(data));
             fs.readFileSync.mockImplementation(() => JSON.stringify(certificateData));
-            certificateStore = new CertificateStore('somefilename');
+            certificateStore = new CertificateStore('someFilename');
         });
 
         it('should return true for explicitly untrusted cert', () => {
             expect(certificateStore.isExplicitlyUntrusted('https://server-2.com', {
-                data: 'somerandomdata',
-                issuerName: 'someissuer',
+                data: 'someRandomData',
+                issuerName: 'someIssuer',
             })).toBe(true);
         });
 
         it('should return false for trusted cert', () => {
             expect(certificateStore.isExplicitlyUntrusted('https://server-1.com', {
-                data: 'somerandomdata',
-                issuerName: 'someissuer',
+                data: 'someRandomData',
+                issuerName: 'someIssuer',
             })).toBe(false);
         });
     });
