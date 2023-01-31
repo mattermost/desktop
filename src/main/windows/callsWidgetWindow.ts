@@ -77,7 +77,8 @@ export default class CallsWidgetWindow extends EventEmitter {
 
         this.win.once('ready-to-show', () => this.win.show());
         this.win.once('show', this.onShow);
-        this.win.on('closed', this.onClosed);
+
+        // this.win.on('closed', this.onClosed);
         ipcMain.on(CALLS_WIDGET_RESIZE, this.onResize);
         ipcMain.on(CALLS_WIDGET_SHARE_SCREEN, this.onShareScreen);
         ipcMain.on(CALLS_JOINED_CALL, this.onJoinedCall);
