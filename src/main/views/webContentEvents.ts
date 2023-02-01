@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserWindow, shell, WebContents} from 'electron';
+import {BrowserWindow, session, shell, WebContents} from 'electron';
 import log from 'electron-log';
 
 import {TeamWithTabs} from 'types/config';
@@ -9,6 +9,7 @@ import {TeamWithTabs} from 'types/config';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
 
+import {flushCookiesStore} from 'main/app/utils';
 import ContextMenu from 'main/contextMenu';
 
 import WindowManager from '../windows/windowManager';
@@ -70,6 +71,7 @@ export class WebContentsEventManager {
                 return;
             }
             if (this.customLogins[contentID]?.inProgress) {
+                flushCookiesStore(session.defaultSession);
                 return;
             }
 
