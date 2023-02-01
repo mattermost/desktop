@@ -24,6 +24,10 @@ jest.mock('./windows/windowManager', () => ({
     setOverlayIcon: jest.fn(),
 }));
 
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn().mockReturnValue(''),
+}));
+
 describe('main/badge', () => {
     describe('showBadgeWindows', () => {
         it('should show dot when session expired', () => {

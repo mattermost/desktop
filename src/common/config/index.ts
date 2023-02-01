@@ -41,6 +41,12 @@ function checkWriteableApp() {
     if (process.platform === 'win32') {
         try {
             fs.accessSync(path.join(path.dirname(app.getAppPath()), '../../'), fs.constants.W_OK);
+
+            // check to make sure that app-update.yml exists
+            if (!fs.existsSync(path.join(process.resourcesPath, 'app-update.yml'))) {
+                log.warn('app-update.yml does not exist, disabling auto-updates');
+                return false;
+            }
         } catch (error) {
             log.info(`${app.getAppPath()}: ${error}`);
             log.warn('autoupgrade disabled');
@@ -96,7 +102,7 @@ export class Config extends EventEmitter {
         ipcMain.handle(GET_CONFIGURATION, this.handleGetConfiguration);
         ipcMain.handle(GET_LOCAL_CONFIGURATION, this.handleGetLocalConfiguration);
         ipcMain.handle(UPDATE_TEAMS, this.handleUpdateTeams);
-        ipcMain.on(UPDATE_CONFIGURATION, this.setMultiple);
+        ipcMain.on(UPDATE_CONFIGURATION, this.updateConfiguration);
         if (process.platform === 'darwin' || process.platform === 'win32') {
             nativeTheme.on('updated', this.handleUpdateTheme);
         }
@@ -145,16 +151,22 @@ export class Config extends EventEmitter {
      * @param {*} data value to save for provided key
      */
     set = (key: keyof ConfigType, data: ConfigType[keyof ConfigType]): void => {
-        if (key && this.localConfigData) {
-            if (key === 'teams') {
-                this.localConfigData.teams = this.filterOutPredefinedTeams(data as TeamWithTabs[]);
-                this.predefinedTeams = this.filterInPredefinedTeams(data as TeamWithTabs[]);
-            } else {
-                this.localConfigData = Object.assign({}, this.localConfigData, {[key]: data});
-            }
-            this.regenerateCombinedConfigData();
-            this.saveLocalConfigData();
+        log.debug('Config.set');
+        this.setMultiple({[key]: data});
+    }
+
+    updateConfiguration = (event: Electron.IpcMainEvent, properties: Array<{key: keyof ConfigType; data: ConfigType[keyof ConfigType]}> = []): Partial<ConfigType> | undefined => {
+        log.debug('Config.updateConfiguration', properties);
+
+        if (properties.length) {
+            const newData = properties.reduce((obj, data) => {
+                (obj as any)[data.key] = data.data;
+                return obj;
+            }, {} as Partial<ConfigType>);
+            this.setMultiple(newData);
         }
+
+        return this.localConfigData;
     }
 
     /**
@@ -162,14 +174,16 @@ export class Config extends EventEmitter {
      *
      * @param {array} properties an array of config properties to save
      */
-    setMultiple = (event: Electron.IpcMainEvent, properties: Array<{key: keyof ConfigType; data: ConfigType[keyof ConfigType]}> = []): Partial<ConfigType> | undefined => {
-        log.debug('Config.setMultiple', properties);
+    setMultiple = (newData: Partial<ConfigType>) => {
+        log.debug('Config.setMultiple', newData);
 
-        if (properties.length) {
-            this.localConfigData = Object.assign({}, this.localConfigData, ...properties.map(({key, data}) => ({[key]: data})));
-            this.regenerateCombinedConfigData();
-            this.saveLocalConfigData();
+        this.localConfigData = Object.assign({}, this.localConfigData, newData);
+        if (newData.teams && this.localConfigData) {
+            this.localConfigData.teams = this.filterOutPredefinedTeams(newData.teams as TeamWithTabs[]);
+            this.predefinedTeams = this.filterInPredefinedTeams(newData.teams as TeamWithTabs[]);
         }
+        this.regenerateCombinedConfigData();
+        this.saveLocalConfigData();
 
         return this.localConfigData; //this is the only part that changes
     }
@@ -204,6 +218,8 @@ export class Config extends EventEmitter {
         if (!this.localConfigData) {
             return;
         }
+
+        log.info('Saving config data to file...');
 
         try {
             this.writeFile(this.configFilePath, this.localConfigData, (error: NodeJS.ErrnoException | null) => {
@@ -315,11 +331,15 @@ export class Config extends EventEmitter {
     }
 
     get canUpgrade() {
-        return this.canUpgradeValue && this.buildConfigData?.enableAutoUpdater && !(process.platform === 'win32' && this.registryConfigData?.enableAutoUpdater === false);
+        return process.env.NODE_ENV === 'test' || (this.canUpgradeValue && this.buildConfigData?.enableAutoUpdater && !(process.platform === 'linux' && !process.env.APPIMAGE) && !(process.platform === 'win32' && this.registryConfigData?.enableAutoUpdater === false));
     }
 
     get autoCheckForUpdates() {
         return this.combinedData?.autoCheckForUpdates;
+    }
+
+    get appLanguage() {
+        return this.combinedData?.appLanguage;
     }
 
     // initialization/processing methods
@@ -347,19 +367,8 @@ export class Config extends EventEmitter {
             configData = this.readFileSync(this.configFilePath);
 
             // validate based on config file version
-            switch (configData.version) {
-            case 3:
-                configData = Validator.validateV3ConfigData(configData)!;
-                break;
-            case 2:
-                configData = Validator.validateV2ConfigData(configData)!;
-                break;
-            case 1:
-                configData = Validator.validateV1ConfigData(configData)!;
-                break;
-            default:
-                configData = Validator.validateV0ConfigData(configData)!;
-            }
+            configData = Validator.validateConfigData(configData);
+
             if (!configData) {
                 throw new Error('Provided configuration file does not validate, using defaults instead.');
             }

@@ -16,6 +16,7 @@ import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINI
 import Utils from 'common/utils/util';
 
 import {boundsInfoPath} from 'main/constants';
+import {localizeMessage} from 'main/i18nManager';
 
 import * as Validator from '../Validator';
 import ContextMenu from '../contextMenu';
@@ -124,10 +125,6 @@ function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean})
         }
     });
 
-    mainWindow.once('show', () => {
-        mainWindow.show();
-    });
-
     mainWindow.once('restore', () => {
         mainWindow.restore();
     });
@@ -160,11 +157,11 @@ function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean})
                         hideWindow(mainWindow);
                     } else {
                         dialog.showMessageBox(mainWindow, {
-                            title: 'Minimize to Tray',
-                            message: 'Mattermost will continue to run in the system tray. This can be disabled in Settings.',
+                            title: localizeMessage('main.windows.mainWindow.minimizeToTray.dialog.title', 'Minimize to Tray'),
+                            message: localizeMessage('main.windows.mainWindow.minimizeToTray.dialog.message', '{appName} will continue to run in the system tray. This can be disabled in Settings.', {appName: app.name}),
                             type: 'info',
                             checkboxChecked: true,
-                            checkboxLabel: 'Don\'t show again',
+                            checkboxLabel: localizeMessage('main.windows.mainWindow.minimizeToTray.dialog.checkboxLabel', 'Don\'t show again'),
                         }).then((result: {response: number; checkboxChecked: boolean}) => {
                             Config.set('alwaysMinimize', result.checkboxChecked);
                             hideWindow(mainWindow);
@@ -174,13 +171,16 @@ function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean})
                     app.quit();
                 } else {
                     dialog.showMessageBox(mainWindow, {
-                        title: 'Close Application',
-                        message: 'Are you sure you want to quit?',
-                        detail: 'You will no longer receive notifications for messages. If you want to leave Mattermost running in the system tray, you can enable this in Settings.',
+                        title: localizeMessage('main.windows.mainWindow.closeApp.dialog.title', 'Close Application'),
+                        message: localizeMessage('main.windows.mainWindow.closeApp.dialog.message', 'Are you sure you want to quit?'),
+                        detail: localizeMessage('main.windows.mainWindow.closeApp.dialog.detail', 'You will no longer receive notifications for messages. If you want to leave {appName} running in the system tray, you can enable this in Settings.', {appName: app.name}),
                         type: 'question',
-                        buttons: ['Yes', 'No'],
+                        buttons: [
+                            localizeMessage('label.yes', 'Yes'),
+                            localizeMessage('label.no', 'No'),
+                        ],
                         checkboxChecked: true,
-                        checkboxLabel: 'Don\'t ask again',
+                        checkboxLabel: localizeMessage('main.windows.mainWindow.closeApp.dialog.checkboxLabel', 'Don\'t ask again'),
                     }).then((result: {response: number; checkboxChecked: boolean}) => {
                         Config.set('alwaysClose', result.checkboxChecked && result.response === 0);
                         if (result.response === 0) {

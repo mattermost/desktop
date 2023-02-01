@@ -246,6 +246,8 @@ function Install-Deps {
         Print-Info "Refreshing PATH..."
         Refresh-Path
     }
+
+    InstallDeps-Electron
 }
 
 function Install-Wix {
@@ -254,8 +256,8 @@ function Install-Wix {
     # choco install wixtoolset --yes
     $WebClient = New-Object System.Net.WebClient
     # if they ever fix the installer we can move to 3.11
-    #$WebClient.DownloadFile("https://github.com/wixtoolset/wix3/releases/download/wix3111rtm/wix311.exe",".\scripts\wix.exe")
-    $WebClient.DownloadFile("https://github.com/wixtoolset/wix3/releases/download/wix3104rtm/wix310.exe",".\scripts\wix.exe")
+    $WebClient.DownloadFile("https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311.exe",".\scripts\wix.exe")
+    #$WebClient.DownloadFile("https://github.com/wixtoolset/wix3/releases/download/wix3104rtm/wix310.exe",".\scripts\wix.exe")
     Print-Info "Installing wixtoolset..."
     # todo: check hash
     .\scripts\wix.exe -q
@@ -511,26 +513,22 @@ function Run-BuildId {
     Print-Info "Modified Wix XML"
 }
 
-function Run-BuildChangelog {
-    Print-Info "Getting list of commits for changelog..."
-    $previousTag = $(Invoke-Expression "git describe --abbrev=0 --tags $(git describe --abbrev=0)^")
-    $currentTag = [string]"HEAD"
-    $changelogRaw = "$(git log --oneline --since=""$(git log -1 ""$previousTag"" --pretty=%ad)"" --until=""$(git log -1 "$currentTag" --pretty=%ad)"")"
-    $changelog = "";
-    foreach ($i in $changelogRaw) {
-        $changelog += "* $i`n"
-    }
-    $env:COM_MATTERMOST_MAKEFILE_BUILD_CHANGELOG = $changelog
+function InstallDeps-Electron {
+    Print-Info "Installing nodejs/electron dependencies (running npm ci)..."
+    npm i -g node-gyp
+    node-gyp install
+    node-gyp install --devdir="$env:USERPROFILE\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
+    npm ci
 }
 
 function Run-BuildElectron {
-    Print-Info "Installing nodejs/electron dependencies (running npm ci)..."
-    npm ci
     #npm install --prefix="$(Get-RootDir)" "$(Get-RootDir)"
     Print-Info "Building nodejs/electron code (running npm run build)..."
     npm run build
     #npm run build --prefix="$(Get-RootDir)" "$(Get-RootDir)"
     Print-Info "Packaging nodejs/electron for Windows (running npm run package:windows)..."
+    # NSIS has the upgrade flag enabled, so it must be done first
+    npm run package:windows-nsis
     npm run package:windows
     #npm run package:windows --prefix="$(Get-RootDir)" "$(Get-RootDir)"
 }
@@ -674,7 +672,6 @@ function Run-Build {
     Prepare-Path
     Get-Cert
     Run-BuildId
-    Run-BuildChangelog
     Run-BuildElectron
     Run-BuildForceSignature
     Run-BuildLicense

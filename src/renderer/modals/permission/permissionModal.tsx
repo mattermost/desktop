@@ -3,12 +3,14 @@
 
 import React from 'react';
 import {Modal, Button} from 'react-bootstrap';
+import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 
 import {PermissionType} from 'types/trustedOrigin';
 
 import {ModalMessage} from 'types/modals';
 
 import urlUtil from 'common/utils/url';
+import {t} from 'common/utils/util';
 import {MODAL_INFO} from 'common/communication';
 import {PERMISSION_DESCRIPTION} from 'common/permissions';
 
@@ -17,6 +19,7 @@ type Props = {
     handleGrant: React.MouseEventHandler<HTMLButtonElement>;
     getPermissionInfo: () => void;
     openExternalLink: (protocol: string, url: string) => void;
+    intl: IntlShape;
 };
 
 type State = {
@@ -24,7 +27,7 @@ type State = {
     permission?: PermissionType;
 }
 
-export default class PermissionModal extends React.PureComponent<Props, State> {
+class PermissionModal extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props);
         this.state = {};
@@ -53,12 +56,21 @@ export default class PermissionModal extends React.PureComponent<Props, State> {
     }
 
     getModalTitle() {
-        return `${PERMISSION_DESCRIPTION[this.state.permission!]} Required`;
+        if (!this.state.permission) {
+            return null;
+        }
+
+        const permission = this.props.intl.formatMessage({id: PERMISSION_DESCRIPTION[this.state.permission!]});
+        return this.props.intl.formatMessage({id: 'renderer.modals.permission.permissionModal.title', defaultMessage: '{permission} Required'}, {permission});
     }
 
     getModalBody() {
+        if (!this.state.permission) {
+            return null;
+        }
+
         const {url, permission} = this.state;
-        const originDisplay = url ? urlUtil.getHost(url) : 'unknown origin';
+        const originDisplay = url ? urlUtil.getHost(url) : this.props.intl.formatMessage({id: 'renderer.modals.permission.permissionModal.unknownOrigin', defaultMessage: 'unknown origin'});
         const originLink = url ? originDisplay : '';
 
         const click = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -75,11 +87,32 @@ export default class PermissionModal extends React.PureComponent<Props, State> {
         return (
             <div>
                 <p>
-                    {`A site that's not included in your Mattermost server configuration requires access for ${PERMISSION_DESCRIPTION[permission!]}.`}
+                    <FormattedMessage
+                        id='renderer.modals.permission.permissionModal.body'
+                        defaultMessage={'A site that\'s not included in your Mattermost server configuration requires access for {permission}.'}
+                        values={{
+                            permission: this.props.intl.formatMessage({id: PERMISSION_DESCRIPTION[permission!]}),
+                        }}
+                    />
+                    {}
                 </p>
                 <p>
-                    <span>{'This request originated from '}</span>
-                    <a onClick={click}>{originDisplay}</a>
+                    <FormattedMessage
+                        id='renderer.modals.permission.permissionModal.requestOriginatedFromOrigin'
+                        defaultMessage='This request originated from <link>{origin}</link>'
+                        values={{
+                            origin: originDisplay,
+                            link: (msg: React.ReactNode) => (
+                                <a
+
+                                    onClick={click}
+                                    href='#'
+                                >
+                                    {msg}
+                                </a>
+                            ),
+                        }}
+                    />
                 </p>
             </div>
         );
@@ -103,16 +136,28 @@ export default class PermissionModal extends React.PureComponent<Props, State> {
                 </Modal.Body>
                 <Modal.Footer className={'remove-border'}>
                     <div>
-                        <Button
-                            onClick={this.props.handleDeny}
-                        >{'Cancel'}</Button>
+                        <Button onClick={this.props.handleDeny}>
+                            <FormattedMessage
+                                id='label.cancel'
+                                defaultMessage='Cancel'
+                            />
+                        </Button>
                         <Button
                             variant='primary'
                             onClick={this.props.handleGrant}
-                        >{'Accept'}</Button>
+                        >
+                            <FormattedMessage
+                                id='label.accept'
+                                defaultMessage='Accept'
+                            />
+                        </Button>
                     </div>
                 </Modal.Footer>
             </Modal>
         );
     }
 }
+
+t('common.permissions.canBasicAuth');
+
+export default injectIntl(PermissionModal);

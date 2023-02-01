@@ -4,7 +4,7 @@ parameters:
     default: false
     type: boolean
 orbs:
-  win: circleci/windows@1.0.0
+  win: circleci/windows@5.0.0
   aws-s3: circleci/aws-s3@2.0.0
   owasp: entur/owasp@0.0.10
 
@@ -12,19 +12,19 @@ executors:
   check-image:
     working_directory: ~/mattermost-desktop
     docker:
-      - image: electronuserland/builder:wine-chrome
+      - image: electronuserland/builder:16-wine-chrome
         environment:
           TAR_OPTIONS: --no-same-owner
   wine-chrome:
     working_directory: ~/mattermost-desktop
     docker:
-      - image: electronuserland/builder:wine-chrome
+      - image: electronuserland/builder:16-wine-chrome
         environment:
           TAR_OPTIONS: --no-same-owner
   wine-mono:
     working_directory: ~/mattermost-desktop
     docker:
-      - image: electronuserland/builder:wine-mono
+      - image: electronuserland/builder:16-wine-mono
   mac:
     working_directory: ~/mattermost-desktop
     macos:
@@ -36,7 +36,7 @@ executors:
   github:
     working_directory: ~/mattermost-desktop
     docker:
-      - image: circleci/golang:1.12
+      - image: cimg/go:1.19.2
 commands:
   notify:
     description: "notify on release channel"
@@ -51,7 +51,7 @@ commands:
         type: string
         default: "https://mattermost.com/wp-content/uploads/2022/02/icon.png"
     steps:
-      - run: 
+      - run:
           command: |
             export VERSION=$(jq -r .version package.json)
             echo '{}' | jq "{
@@ -71,7 +71,7 @@ commands:
         default: ""
     steps:
       - run: wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | apt-key add -
-      - run: apt-get update || true && apt-get install -y ca-certificates libxtst-dev libpng++-dev && apt-get update && apt-get -y install << parameters.apt_opts >>
+      - run: apt-get update || true && apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu && apt-get update && apt-get -y install << parameters.apt_opts >>
       - run: wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
   update_image:
     description: "Update image"
@@ -108,10 +108,10 @@ commands:
         type: string
         default: "./linux/"
     steps:
-      - run: 
+      - run:
           name: npn run
           command: npm run package:<< parameters.os >>
-          no_output_timeout: 30m
+          no_output_timeout: 60m
       - run: bash -x ./scripts/patch_updater_yml.sh
       - run: mkdir -p << parameters.path >>
       - run: bash -x ./scripts/cp_artifacts.sh release << parameters.path >>
@@ -119,6 +119,38 @@ commands:
           root: ./build
           paths:
             - "./<< parameters.subpath >>/"
+  check:
+    description: "Running automated tests"
+    steps:
+      - run: npm run check-types
+      - run:
+          name: i18n check
+          command: |
+            cp i18n/en.json /tmp/en.json
+            npm run mmjstool -- i18n extract-desktop --desktop-dir .
+            diff /tmp/en.json i18n/en.json
+            rm -rf tmp
+      - run: ELECTRON_DISABLE_SANDBOX=1 npm run test:unit-ci
+      - run: mkdir -p /tmp/test-results
+      - run: cp test-results.xml /tmp/test-results/
+      - store_test_results:
+          path: /tmp/test-results
+  check-windows:
+    description: "Running automated tests"
+    steps:
+      - run: npm run check-types
+      - run:
+          name: i18n check
+          command: |
+            cp .\i18n\en.json $env:TEMP\en.json
+            npm run mmjstool -- i18n extract-desktop --desktop-dir .
+            diff $env:TEMP\en.json .\i18n\en.json
+            rm $env:TEMP\en.json
+      - run: $env:ELECTRON_DISABLE_SANDBOX=1; npm run test:unit
+      - run: mkdir -p $env:TEMP\test-results
+      - run: cp test-results.xml $env:TEMP\test-results\
+      - store_test_results:
+          path: /tmp/test-results
   save:
     description: "Save binaries artifacts"
     parameters:
@@ -133,23 +165,6 @@ commands:
       - store_artifacts:
           path: /tmp/artifacts
 jobs:
-  check:
-    executor: check-image
-    steps:
-      - checkout
-      - update_image:
-          apt_opts: "--no-install-recommends"
-      - run: npm run check-types
-      - run: ELECTRON_DISABLE_SANDBOX=1 npm run test:unit-ci
-      - run: mkdir -p /tmp/test-results
-      - run: cp test-results.xml /tmp/test-results/
-      - store_test_results:
-          path: /tmp/test-results
-      - save_cache:
-          key: lint-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
-          paths:
-            - "node_modules"
-
   build-linux:
     executor: wine-mono
     steps:
@@ -159,6 +174,7 @@ jobs:
           at: ./build
       - update_image:
           apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - check
       - build
       - persist_to_workspace:
           root: ./build/
@@ -172,14 +188,26 @@ jobs:
             - "~/.cache/electron-builder"
 
   build-win-no-installer:
-    executor: wine-mono
+    executor: win/server-2019
     steps:
       - checkout
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - update_image:
-          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run: |
+          $InstallPath = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community"
+          $WorkLoads = '--add Microsoft.VisualStudio.Component.VC.ATL.ARM64'
+          $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"", $WorkLoads, '--quiet', '--norestart', '--nocache')
+          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden -WorkingDirectory "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
+      - run:
+          name: Install yq
+          command: choco install yq --version 4.15.1 -y
+      - run:
+          name: Install nodejs-lts
+          command: nvm off; choco install nodejs-lts -y
+      - run: npm i -g node-gyp; node-gyp install; node-gyp install --devdir="$env:USERPROFILE\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
+      - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
+      - check-windows
       - build:
           os: windows
           path: ./build/win
@@ -192,16 +220,19 @@ jobs:
             - "~/.cache/electron-builder"
 
   build-mac-no-dmg:
-    executor: wine-mono
+    executor: mac
     steps:
       - checkout
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - update_image:
-          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run: brew install yq
+      - run:
+          name: Update node to v16
+          command: nvm install --lts && nvm use --lts
       - run: jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
-
+      - run: PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci
+      - check
       - build:
           os: mac
           path: ./build/macos
@@ -214,23 +245,29 @@ jobs:
             - "~/.cache/electron-builder"
 
   msi_installer:
-    executor: win/vs2019
+    executor: win/server-2019
 
     steps:
       - checkout
       - run: mkdir -p ./build/
       - attach_workspace:
           at: ./build
-      - run:
-          name: Update node to v16
-          command: choco install nodejs --version 16.8.0
+      - run: |
+          $InstallPath = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community"
+          $WorkLoads = '--add Microsoft.VisualStudio.Component.VC.ATL.ARM64'
+          $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"", $WorkLoads, '--quiet', '--norestart', '--nocache')
+          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden -WorkingDirectory "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
       - run:
           name: Install yq
-          command: choco install yq --version 4.15.1
+          command: choco install yq --version 4.15.1 -y
+      - run:
+          name: Install nodejs-lts
+          command: nvm off; choco install nodejs-lts -y
       - win_make:
           operation: optimize
       - win_make:
           operation: "install-deps"
+      - check-windows
       - win_make:
           operation: "build"
       - run: bash -x ./scripts/patch_updater_yml.sh
@@ -242,14 +279,25 @@ jobs:
             - "./win-release/"
 
   build-windows-pr:
-    executor: wine-mono
+    executor: win/server-2019
     steps:
       - checkout
       - run: mkdir -p ./build
       - attach_workspace:
           at: ./build
-      - update_image:
-          apt_opts: "--no-install-recommends jq icnsutils graphicsmagick tzdata"
+      - run: |
+          $InstallPath = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community"
+          $WorkLoads = '--add Microsoft.VisualStudio.Component.VC.ATL.ARM64'
+          $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"", $WorkLoads, '--quiet', '--norestart', '--nocache')
+          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden -WorkingDirectory "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
+      - run:
+          name: Install yq
+          command: choco install yq --version 4.15.1 -y
+      - run:
+          name: Install nodejs-lts
+          command: nvm off; choco install nodejs-lts -y
+      - run: npm i -g node-gyp; node-gyp install; node-gyp install --devdir="$env:USERPROFILE\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
+      - run: $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1; npm ci
       - build:
           os: windows
           path: ./build/win
@@ -261,7 +309,7 @@ jobs:
             - "~/.cache/electron"
             - "~/.cache/electron-builder"
       - save:
-          filename: "$(jq -r .version package.json)/*.exe"
+          filename: "$(jq -r .version package.json)/*.zip"
 
   build-mac-pr:
     executor: mac
@@ -274,7 +322,7 @@ jobs:
       - run: brew install yq
       - run:
           name: Update node to v16
-          command: brew upgrade node || true
+          command: nvm install --lts && nvm use --lts
       - run:
           name: Installing npm dependencies
           command: npm ci
@@ -290,11 +338,7 @@ jobs:
           command: tar -xzf rename.tgz
       - run:
           name: rename arm64 to m1
-          command: ./rename-1.601/rename 's/arm64/m1/' ./build/macos-release/*
-      - persist_to_workspace:
-          root: ./build
-          paths:
-            - "./macos-release/"
+          command: ./rename-1.601/rename 's/arm64/m1/' ./release/$(jq -r .version package.json)/*
       - save:
           filename: "$(jq -r .version package.json)/*.dmg"
 
@@ -327,13 +371,14 @@ jobs:
           at: ./build
       - run:
           name: Update node to v16
-          command: brew upgrade node || true
+          command: nvm install --lts && nvm use --lts
       - run:
           name: Install yq
           command: brew install yq
       - run:
           name: Installing npm dependencies
           command: npm ci
+      - check
       - build:
           os: mac-with-universal
           path: ./build/macos-release
@@ -346,7 +391,7 @@ jobs:
           command: tar -xzf rename.tgz
       - run:
           name: rename arm64 to m1
-          command: ./rename-1.601/rename 's/arm64/m1/' ./build/macos-release/*
+          command: ./rename-1.601/rename 's/arm64/m1/' ./build/macos-release/$(jq -r .version package.json)/*
       - persist_to_workspace:
           root: ./build
           paths:
@@ -362,7 +407,7 @@ jobs:
           at: ./build
       - run:
           name: Update node to v16
-          command: brew upgrade node || true
+          command: nvm install --lts && nvm use --lts
       - run:
           name: Install yq
           command: brew install yq
@@ -375,7 +420,16 @@ jobs:
       - run:
           name: Patch version number for MAS
           command: ./scripts/patch_mas_version.sh
+      - check
       - run: npm run package:mas
+      - run:
+          name: Don't submit unless it's on a tag or it's the nightly build
+          command: |
+            if [ -z `git name-rev --name-only --tags --no-undefined HEAD 2>/dev/null` ]; then
+              if [ `git rev-parse --abbrev-ref HEAD` != "nightly" ]; then
+                circleci-agent step halt
+              fi
+            fi
       - run:
           name: 'Upload to App Store Connect'
           command: fastlane publish_test path:"$(find . -name \*.pkg -print -quit)"
@@ -405,7 +459,7 @@ jobs:
             grep "win" ./templist.txt | awk -F/ '{print "- ["$NF"]("$0")"}' >> ./build/linklist.txt
       - persist_to_workspace:
           root: ./build
-          paths: 
+          paths:
             - ./linklist.txt
             - ./artifactlist.txt
 
@@ -423,7 +477,7 @@ jobs:
           command: |
             echo "Links for $(date +"%b-%d-%Y")" >> ./links/linklist.txt
             cat ./build/linklist.txt >> ./links/linklist.txt
-      - run: 
+      - run:
           command: |
             linklist=$(<./links/linklist.txt);
             echo '{}' | jq "{
@@ -446,7 +500,7 @@ jobs:
           command: |
             if [ -z `git name-rev --name-only --tags --no-undefined HEAD 2>/dev/null` ]; then
               circleci-agent step halt
-            fi  
+            fi
       - run:
           name: "Setup files for aws-s3"
           command: |
@@ -456,7 +510,7 @@ jobs:
           from: ./aws-s3-dist/
           to: s3://releases.mattermost.com/desktop/
           arguments: --acl public-read --cache-control "no-cache" --recursive
-  
+
   upload_to_s3_daily:
     executor: aws
     steps:
@@ -493,16 +547,16 @@ jobs:
           command: |
             if [ -z `git name-rev --name-only --tags --no-undefined HEAD 2>/dev/null` ]; then
               circleci-agent step halt
-            fi  
+            fi
       - run:
           name: "Setup files for ghr"
           command: |
             mkdir -p ./ghr-dist
-            cp -r --backup=numbered ./build/{macos-release,win-release,linux}/* ./ghr-dist
+            find ./build/{macos-release,win-release,linux} -type f -exec cp --backup=numbered -t ./ghr-dist {} +
       - run:
           name: "Publish Release on GitHub"
           command: |
-            go get github.com/tcnksm/ghr
+            go install github.com/tcnksm/ghr@latest
             VERSION=$(jq -r .version package.json)
             RELEASE_TITLE="v${VERSION} ($(date -u "+%Y-%m-%d"))"
             ghr \
@@ -524,7 +578,7 @@ jobs:
           apt_opts: "--no-install-recommends jq"
       - notify:
           message: "Release process for the desktop app has started, it should take about 30 minutes to complete."
-  
+
   end-notification:
     executor: wine-chrome
     steps:
@@ -539,12 +593,6 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - check:
-         filters:
-            branches:
-              ignore:
-                - /^build-pr-.*/
-                - nightly
       - begin-notification:
           context: desktop-notify
           filters:
@@ -555,17 +603,12 @@ workflows:
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
       - build-linux:
-          requires:
-            - check
           filters:
             branches:
               ignore:
                 - /^build-pr-.*/
                 - nightly
-
       - build-win-no-installer:
-          requires:
-            - check
           filters:
             branches:
               ignore:
@@ -574,8 +617,6 @@ workflows:
                 - nightly
 
       - build-mac-no-dmg:
-          requires:
-            - check
           filters:
             branches:
               ignore:
@@ -584,8 +625,6 @@ workflows:
                 - nightly
 
       - msi_installer:
-          requires:
-            - check
           context: windows-codesign
           filters:
             branches:
@@ -596,8 +635,6 @@ workflows:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - mac_installer:
-          requires:
-            - check
           context: codesign-certificates
           filters:
             branches:
@@ -605,8 +642,6 @@ workflows:
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
 
       - mac_app_store_testflight:
-          requires:
-            - check
           context: desktop-mac-app-store
           filters:
             branches:
@@ -698,14 +733,23 @@ workflows:
             - build-linux
             - msi_installer
             - mac_installer
-      - upload_to_s3_daily:
-          context: mattermost-desktop-daily-s3
-          requires:
-            - build-linux
-            - msi_installer
-            - mac_installer
       - share_to_channel:
           context: desktop_browserview
           requires:
             - store_artifacts
-
+  nightly_rainforest:
+    when: << pipeline.parameters.run_nightly >>
+    jobs:
+      - msi_installer:
+          context:
+            - windows-codesign
+            - desktop-rainforest-build
+      - mac_installer:
+          context:
+            - codesign-certificates
+            - desktop-rainforest-build
+      - upload_to_s3_daily:
+          context: mattermost-desktop-daily-s3
+          requires:
+            - msi_installer
+            - mac_installer

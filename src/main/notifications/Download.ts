@@ -8,11 +8,13 @@ import {app, Notification} from 'electron';
 
 import Utils from 'common/utils/util';
 
+import {localizeMessage} from 'main/i18nManager';
+
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const appIconURL = path.resolve(assetsDir, 'appicon_48.png');
 
 const defaultOptions = {
-    title: 'Download Complete',
+    title: localizeMessage('main.notifications.download.complete.title', 'Download Complete'),
     silent: false,
     icon: appIconURL,
     urgency: 'normal' as Notification['urgency'],
@@ -27,8 +29,8 @@ export class DownloadNotification extends Notification {
             Reflect.deleteProperty(options, 'icon');
         }
 
-        options.title = process.platform === 'win32' ? serverName : 'Download Complete';
-        options.body = process.platform === 'win32' ? `Download Complete \n ${fileName}` : fileName;
+        options.title = process.platform === 'win32' ? serverName : localizeMessage('main.notifications.download.complete.title', 'Download Complete');
+        options.body = process.platform === 'win32' ? localizeMessage('main.notifications.download.complete.body', 'Download Complete \n {fileName}', {fileName}) : fileName;
 
         super(options);
     }

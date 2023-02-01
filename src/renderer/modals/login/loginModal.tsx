@@ -4,6 +4,7 @@
 
 import React from 'react';
 import {Button, Col, FormLabel, Form, FormGroup, FormControl, Modal} from 'react-bootstrap';
+import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 
 import {LoginModalData} from 'types/auth';
 import {ModalMessage} from 'types/modals';
@@ -16,6 +17,7 @@ type Props = {
     onCancel: (request: AuthenticationResponseDetails) => void;
     onLogin: (request: AuthenticationResponseDetails, username: string, password: string) => void;
     getAuthInfo: () => void;
+    intl: IntlShape;
 };
 
 type State = {
@@ -25,7 +27,7 @@ type State = {
     authInfo?: AuthInfo;
 };
 
-export default class LoginModal extends React.PureComponent<Props, State> {
+class LoginModal extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props);
         this.state = {
@@ -86,27 +88,46 @@ export default class LoginModal extends React.PureComponent<Props, State> {
         this.setState({password: e.target.value});
     }
 
-    render() {
-        let theServer = '';
+    renderLoginModalMessage = () => {
         if (!(this.state.request && this.state.authInfo)) {
-            theServer = '';
+            return null;
         } else if (this.state.authInfo.isProxy) {
-            theServer = `The proxy ${this.state.authInfo.host}:${this.state.authInfo.port}`;
-        } else {
-            const tmpURL = urlUtils.parseURL(this.state.request.url);
-            theServer = `The server ${tmpURL?.protocol}//${tmpURL?.host}`;
+            return (
+                <FormattedMessage
+                    id='renderer.modals.login.loginModal.message.proxy'
+                    defaultMessage='The proxy {host}:{port} requires a username and password.'
+                    values={{host: this.state.authInfo.host, port: this.state.authInfo.port}}
+                />
+            );
         }
-        const message = `${theServer} requires a username and password.`;
+        const tmpURL = urlUtils.parseURL(this.state.request.url);
+        return (
+            <FormattedMessage
+                id='renderer.modals.login.loginModal.message.server'
+                defaultMessage='The server {url} requires a username and password.'
+                values={{url: `${tmpURL?.protocol}//${tmpURL?.host}`}}
+            />
+        );
+    }
+
+    render() {
+        const {intl} = this.props;
+
         return (
             <Modal
                 show={Boolean(this.state.request && this.state.authInfo)}
             >
                 <Modal.Header>
-                    <Modal.Title>{'Authentication Required'}</Modal.Title>
+                    <Modal.Title>
+                        <FormattedMessage
+                            id='renderer.modals.login.loginModal.title'
+                            defaultMessage='Authentication Required'
+                        />
+                    </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <p>
-                        { message }
+                        {this.renderLoginModalMessage()}
                     </p>
                     <Form
                         onSubmit={this.handleSubmit}
@@ -115,11 +136,16 @@ export default class LoginModal extends React.PureComponent<Props, State> {
                             <Col
                                 as={FormLabel}
                                 sm={2}
-                            >{'User Name'}</Col>
+                            >
+                                <FormattedMessage
+                                    id='renderer.modals.login.loginModal.username'
+                                    defaultMessage='User Name'
+                                />
+                            </Col>
                             <Col sm={10}>
                                 <FormControl
                                     type='text'
-                                    placeholder='User Name'
+                                    placeholder={intl.formatMessage({id: 'renderer.modals.login.loginModal.username', defaultMessage: 'User Name'})}
                                     onChange={this.setUsername}
                                     value={this.state.username}
                                     onClick={(e: React.MouseEvent<HTMLInputElement>) => {
@@ -132,11 +158,16 @@ export default class LoginModal extends React.PureComponent<Props, State> {
                             <Col
                                 as={FormLabel}
                                 sm={2}
-                            >{'Password'}</Col>
+                            >
+                                <FormattedMessage
+                                    id='renderer.modals.login.loginModal.password'
+                                    defaultMessage='Password'
+                                />
+                            </Col>
                             <Col sm={10}>
                                 <FormControl
                                     type='password'
-                                    placeholder='Password'
+                                    placeholder={intl.formatMessage({id: 'renderer.modals.login.loginModal.password', defaultMessage: 'Password'})}
                                     onChange={this.setPassword}
                                     value={this.state.password}
                                     onClick={(e: React.MouseEvent<HTMLInputElement>) => {
@@ -151,12 +182,22 @@ export default class LoginModal extends React.PureComponent<Props, State> {
                                     <Button
                                         type='submit'
                                         variant='primary'
-                                    >{'Login'}</Button>
+                                    >
+                                        <FormattedMessage
+                                            id='label.login'
+                                            defaultMessage='Login'
+                                        />
+                                    </Button>
                                     { ' ' }
                                     <Button
                                         variant='link'
                                         onClick={this.handleCancel}
-                                    >{'Cancel'}</Button>
+                                    >
+                                        <FormattedMessage
+                                            id='label.cancel'
+                                            defaultMessage='Cancel'
+                                        />
+                                    </Button>
                                 </div>
                             </Col>
                         </FormGroup>
@@ -166,3 +207,5 @@ export default class LoginModal extends React.PureComponent<Props, State> {
         );
     }
 }
+
+export default injectIntl(LoginModal);

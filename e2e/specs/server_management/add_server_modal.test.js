@@ -35,12 +35,13 @@ describe('Add Server Modal', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     let newServerView;
 
     it('MM-T1312 should focus the first text input', async () => {
-        const isFocused = await newServerView.$eval('#teamNameInput', (el) => el === document.activeElement);
+        const isFocused = await newServerView.$eval('#teamUrlInput', (el) => el.isSameNode(document.activeElement));
         isFocused.should.be.true;
     });
 
@@ -52,16 +53,12 @@ describe('Add Server Modal', function desc() {
     });
 
     describe('MM-T4389 Invalid messages', () => {
-        it('MM-T4389_1 should not be valid if no team name has been set', async () => {
+        it('MM-T4389_1 should not be valid if no team name or URL has been set', async () => {
             await newServerView.click('#saveNewServerModal');
-            const existing = await newServerView.isVisible('#teamNameInput.is-invalid');
-            existing.should.be.true;
-        });
-
-        it('MM-T4389_2 should not be valid if no server address has been set', async () => {
-            await newServerView.click('#saveNewServerModal');
-            const existing = await newServerView.isVisible('#teamUrlInput.is-invalid');
-            existing.should.be.true;
+            const existingName = await newServerView.isVisible('#teamNameInput.is-invalid');
+            const existingUrl = await newServerView.isVisible('#teamUrlInput.is-invalid');
+            existingName.should.be.true;
+            existingUrl.should.be.true;
         });
 
         it('should not be valid if a server with the same name exists', async () => {
@@ -86,13 +83,12 @@ describe('Add Server Modal', function desc() {
                 await newServerView.click('#saveNewServerModal');
             });
 
-            it('MM-T4389_3 should not be marked invalid', async () => {
-                const existing = await newServerView.isVisible('#teamNameInput.is-invalid');
-                existing.should.be.false;
-            });
-
-            it('MM-T4389_4 should not be possible to click save', async () => {
+            it('MM-T4389_2 Name should not be marked invalid, URL should be marked invalid', async () => {
+                const existingName = await newServerView.isVisible('#teamNameInput.is-invalid');
+                const existingUrl = await newServerView.isVisible('#teamUrlInput.is-invalid');
                 const disabled = await newServerView.getAttribute('#saveNewServerModal', 'disabled');
+                existingName.should.be.false;
+                existingUrl.should.be.true;
                 (disabled === '').should.be.true;
             });
         });
@@ -103,13 +99,12 @@ describe('Add Server Modal', function desc() {
                 await newServerView.click('#saveNewServerModal');
             });
 
-            it('MM-T4389_5 should be valid', async () => {
-                const existing = await newServerView.isVisible('#teamUrlInput.is-invalid');
-                existing.should.be.false;
-            });
-
-            it('MM-T4389_6 should not be possible to click save', async () => {
+            it('MM-T4389_3 URL should not be marked invalid, name should be marked invalid', async () => {
+                const existingName = await newServerView.isVisible('#teamNameInput.is-invalid');
+                const existingUrl = await newServerView.isVisible('#teamUrlInput.is-invalid');
                 const disabled = await newServerView.getAttribute('#saveNewServerModal', 'disabled');
+                existingName.should.be.true;
+                existingUrl.should.be.false;
                 (disabled === '').should.be.true;
             });
         });

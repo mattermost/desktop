@@ -1,0 +1,17 @@
+{
+    "label.yes": "Si",
+    "label.save": "Salva",
+    "label.remove": "Rimuovi",
+    "label.ok": "OK",
+    "label.no": "No",
+    "label.login": "Login",
+    "label.close": "Chiudi",
+    "label.change": "Cambia",
+    "label.cancel": "Annulla",
+    "label.add": "Aggiungi",
+    "label.accept": "Accetta",
+    "common.tabs.TAB_PLAYBOOKS": "Playbooks",
+    "common.tabs.TAB_MESSAGING": "Canali",
+    "common.tabs.TAB_FOCALBOARD": "Boards",
+    "common.permissions.canBasicAuth": "Autenticazione WEB"
+}

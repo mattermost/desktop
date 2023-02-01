@@ -4,7 +4,8 @@
 
 import {EventEmitter} from 'events';
 import log from 'electron-log';
-import WindowsRegistry from 'winreg-utf8';
+import WindowsRegistry from 'winreg';
+import WindowsRegistryUTF8 from 'winreg-utf8';
 
 import {RegistryConfig as RegistryConfigType, Team} from 'types/config';
 
@@ -126,12 +127,18 @@ export default class RegistryConfig extends EventEmitter {
    * @param {WindowsRegistry} regKey A configured instance of the WindowsRegistry class
    * @param {string} name Name of the specific entry to retrieve (optional)
    */
-    getRegistryEntryValues(hive: string, key: string, name?: string) {
-        const registry = new WindowsRegistry({hive, key, utf8: true});
+    getRegistryEntryValues(hive: string, key: string, name?: string, utf8 = true) {
         return new Promise<string | WindowsRegistry.RegistryItem[] | undefined>((resolve, reject) => {
             try {
+                const registry = this.createRegistry(hive, key, utf8);
                 registry.values((error: Error, results: WindowsRegistry.RegistryItem[]) => {
-                    if (error || !results || results.length === 0) {
+                    if (error) {
+                        this.handleRegistryEntryError(error, hive, key, name, utf8).then((result) => {
+                            resolve(result);
+                        });
+                        return;
+                    }
+                    if (!results || results.length === 0) {
                         resolve(undefined);
                         return;
                     }
@@ -143,9 +150,31 @@ export default class RegistryConfig extends EventEmitter {
                     }
                 });
             } catch (e) {
-                log.error(`There was an error accessing the registry for ${key}`);
-                reject(e);
+                this.handleRegistryEntryError(e as Error, hive, key, name, utf8).then((result) => {
+                    if (result) {
+                        resolve(result);
+                    }
+                    reject(e);
+                });
             }
         });
+    }
+
+    handleRegistryEntryError(e: Error, hive: string, key: string, name?: string, utf8?: boolean) {
+        log.verbose('There was an error accessing the registry for', {hive, key, name, utf8}, e);
+        if (utf8) {
+            log.verbose('Trying without UTF-8...', {hive, key, name});
+            return this.getRegistryEntryValues(hive, key, name, false);
+        }
+
+        return Promise.resolve(undefined);
+    }
+
+    createRegistry(hive: string, key: string, utf8 = true) {
+        if (utf8) {
+            return new WindowsRegistryUTF8({hive, key, utf8});
+        }
+
+        return new WindowsRegistry({hive, key});
     }
 }

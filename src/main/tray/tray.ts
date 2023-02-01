@@ -7,6 +7,8 @@ import {app, nativeImage, Tray, systemPreferences, nativeTheme} from 'electron';
 
 import {UPDATE_TRAY} from 'common/communication';
 
+import {localizeMessage} from 'main/i18nManager';
+
 import WindowManager from '../windows/windowManager';
 import * as AppState from '../appState';
 
@@ -19,7 +21,7 @@ let lastMessage = app.name;
 
 /* istanbul ignore next */
 export function refreshTrayImages(trayIconTheme: string) {
-    const systemTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+    const systemTheme = nativeTheme.shouldUseDarkColors ? 'light' : 'dark';
     const winTheme = trayIconTheme === 'use_system' ? systemTheme : trayIconTheme;
 
     switch (process.platform) {
@@ -72,8 +74,8 @@ export function refreshTrayImages(trayIconTheme: string) {
     return trayImages;
 }
 
-export function setupTray(icontheme: string) {
-    refreshTrayImages(icontheme);
+export function setupTray(iconTheme: string) {
+    refreshTrayImages(iconTheme);
     trayIcon = new Tray(trayImages.normal);
     if (process.platform === 'darwin') {
         systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
@@ -83,7 +85,12 @@ export function setupTray(icontheme: string) {
 
     trayIcon.setToolTip(app.name);
     trayIcon.on('click', () => {
-        WindowManager.restoreMain();
+        if (WindowManager.mainWindow!.isVisible()) {
+            WindowManager.mainWindow!.blur(); // To move focus to the next top-level window in Windows
+            WindowManager.mainWindow!.hide();
+        } else {
+            WindowManager.restoreMain();
+        }
     });
 
     trayIcon.on('right-click', () => {
@@ -95,11 +102,11 @@ export function setupTray(icontheme: string) {
 
     AppState.on(UPDATE_TRAY, (anyExpired, anyMentions, anyUnreads) => {
         if (anyMentions) {
-            setTray('mention', 'You have been mentioned');
+            setTray('mention', localizeMessage('main.tray.tray.mention', 'You have been mentioned'));
         } else if (anyUnreads) {
-            setTray('unread', 'You have unread channels');
+            setTray('unread', localizeMessage('main.tray.tray.unread', 'You have unread channels'));
         } else if (anyExpired) {
-            setTray('mention', 'Session Expired: Please sign in to continue receiving notifications.');
+            setTray('mention', localizeMessage('main.tray.tray.expired', 'Session Expired: Please sign in to continue receiving notifications.'));
         } else {
             setTray('normal', app.name);
         }

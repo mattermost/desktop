@@ -3,7 +3,7 @@
 
 import fs from 'fs-extra';
 
-import {dialog} from 'electron';
+import {dialog, screen} from 'electron';
 
 import Config from 'common/config';
 import JsonFileManager from 'common/JsonFileManager';
@@ -34,6 +34,9 @@ jest.mock('electron', () => ({
         showOpenDialogSync: jest.fn(),
         showMessageBoxSync: jest.fn(),
     },
+    screen: {
+        getAllDisplays: jest.fn(),
+    },
 }));
 
 jest.mock('common/config', () => ({
@@ -42,12 +45,14 @@ jest.mock('common/config', () => ({
 jest.mock('common/JsonFileManager');
 jest.mock('common/utils/util', () => ({
     isVersionGreaterThanOrEqualTo: jest.fn(),
-    getDisplayBoundaries: jest.fn(),
 }));
 
 jest.mock('main/autoUpdater', () => ({}));
 jest.mock('main/constants', () => ({
     updatePaths: jest.fn(),
+}));
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
 }));
 jest.mock('main/menus/app', () => ({}));
 jest.mock('main/menus/tray', () => ({}));
@@ -102,6 +107,7 @@ describe('main/app/utils', () => {
         it('should open all tabs', async () => {
             ServerInfo.mockReturnValue({promise: {
                 name: 'server-1',
+                siteURL: 'http://server-1.com',
                 serverVersion: '6.0.0',
                 hasPlaybooks: true,
                 hasFocalboard: true,
@@ -117,6 +123,7 @@ describe('main/app/utils', () => {
         it('should open only playbooks', async () => {
             ServerInfo.mockReturnValue({promise: {
                 name: 'server-1',
+                siteURL: 'http://server-1.com',
                 serverVersion: '6.0.0',
                 hasPlaybooks: true,
                 hasFocalboard: false,
@@ -132,6 +139,7 @@ describe('main/app/utils', () => {
         it('should open none when server version is too old', async () => {
             ServerInfo.mockReturnValue({promise: {
                 name: 'server-1',
+                siteURL: 'http://server-1.com',
                 serverVersion: '5.0.0',
                 hasPlaybooks: true,
                 hasFocalboard: true,
@@ -142,6 +150,21 @@ describe('main/app/utils', () => {
 
             expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_PLAYBOOKS).isOpen).toBeUndefined();
             expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_FOCALBOARD).isOpen).toBeUndefined();
+        });
+
+        it('should update server URL using site URL', async () => {
+            ServerInfo.mockReturnValue({promise: {
+                name: 'server-1',
+                siteURL: 'http://server-2.com',
+                serverVersion: '6.0.0',
+                hasPlaybooks: true,
+                hasFocalboard: true,
+            }});
+
+            updateServerInfos(Config.teams);
+            await new Promise(setImmediate); // workaround since Promise.all seems to not let me wait here
+
+            expect(Config.teams.find((team) => team.name === 'server-1').url).toBe('http://server-2.com');
         });
     });
 
@@ -161,13 +184,13 @@ describe('main/app/utils', () => {
 
     describe('resizeScreen', () => {
         beforeEach(() => {
-            Utils.getDisplayBoundaries.mockReturnValue([{
-                minX: 400,
-                minY: 300,
-                maxX: 2320,
-                maxY: 1380,
-                width: 1920,
-                height: 1080,
+            screen.getAllDisplays.mockReturnValue([{
+                workArea: {
+                    x: 400,
+                    y: 300,
+                    width: 1920,
+                    height: 1080,
+                },
             }]);
         });
         it('should keep the same position if it is within a display', () => {
@@ -176,7 +199,7 @@ describe('main/app/utils', () => {
                 getSize: () => [1280, 720],
                 setPosition: jest.fn(),
                 center: jest.fn(),
-                on: jest.fn(),
+                once: jest.fn(),
             };
             resizeScreen(browserWindow);
             expect(browserWindow.setPosition).toHaveBeenCalledWith(500, 400);
@@ -188,7 +211,7 @@ describe('main/app/utils', () => {
                 getSize: () => [1280, 720],
                 setPosition: jest.fn(),
                 center: jest.fn(),
-                on: jest.fn(),
+                once: jest.fn(),
             };
             resizeScreen(browserWindow);
             expect(browserWindow.setPosition).toHaveBeenCalledWith(1680, 400);
@@ -198,7 +221,7 @@ describe('main/app/utils', () => {
                 getSize: () => [1280, 720],
                 setPosition: jest.fn(),
                 center: jest.fn(),
-                on: jest.fn(),
+                once: jest.fn(),
             };
             resizeScreen(browserWindow);
             expect(browserWindow.setPosition).toHaveBeenCalledWith(500, 1020);
@@ -210,7 +233,7 @@ describe('main/app/utils', () => {
                 getSize: () => [1280, 720],
                 setPosition: jest.fn(),
                 center: jest.fn(),
-                on: jest.fn(),
+                once: jest.fn(),
             };
             resizeScreen(browserWindow);
             expect(browserWindow.setPosition).not.toHaveBeenCalled();

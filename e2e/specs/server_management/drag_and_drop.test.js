@@ -8,8 +8,6 @@ const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
 describe('server_management/drag_and_drop', function desc() {
-    this.timeout(30000);
-
     const config = {
         ...env.demoConfig,
         teams: [
@@ -38,108 +36,137 @@ describe('server_management/drag_and_drop', function desc() {
                 lastActiveTab: 0,
             },
         ],
+        lastActiveTeam: 2,
     };
 
-    beforeEach(async () => {
+    const beforeFunc = async () => {
         env.createTestUserDataDir();
         env.cleanTestConfig();
         fs.writeFileSync(env.configFilePath, JSON.stringify(config));
         await asyncSleep(1000);
         this.app = await env.getApp();
-    });
+    };
 
-    afterEach(async () => {
+    const afterFunc = async () => {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
+    };
+
+    this.timeout(30000);
+
+    describe('MM-T2634 should be able to drag and drop servers in the dropdown menu', async () => {
+        let mainWindow;
+        let dropdownView;
+
+        before(async () => {
+            await beforeFunc();
+            mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+            await mainWindow.click('.TeamDropdownButton');
+        });
+        after(afterFunc);
+
+        it('MM-T2634_1 should appear the original order', async () => {
+            const firstMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(1) .TeamDropdown__draggable-handle');
+            const firstMenuItemText = await firstMenuItem.innerText();
+            firstMenuItemText.should.equal('example');
+            const secondMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(2) .TeamDropdown__draggable-handle');
+            const secondMenuItemText = await secondMenuItem.innerText();
+            secondMenuItemText.should.equal('github');
+            const thirdMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(3) .TeamDropdown__draggable-handle');
+            const thirdMenuItemText = await thirdMenuItem.innerText();
+            thirdMenuItemText.should.equal('google');
+        });
+
+        it('MM-T2634_2 after dragging the server down, should appear in the new order', async () => {
+            // Move the first server down, then re-open the dropdown
+            const initialMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(1) .TeamDropdown__draggable-handle');
+            await initialMenuItem.focus();
+            await dropdownView.keyboard.down(' ');
+            await dropdownView.keyboard.down('ArrowDown');
+            await dropdownView.keyboard.down(' ');
+            await asyncSleep(1000);
+            await mainWindow.keyboard.press('Escape');
+            await mainWindow.click('.TeamDropdownButton');
+
+            // Verify that the new order persists
+            const firstMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(1) .TeamDropdown__draggable-handle');
+            const firstMenuItemText = await firstMenuItem.innerText();
+            firstMenuItemText.should.equal('github');
+            const secondMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(2) .TeamDropdown__draggable-handle');
+            const secondMenuItemText = await secondMenuItem.innerText();
+            secondMenuItemText.should.equal('example');
+            const thirdMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(3) .TeamDropdown__draggable-handle');
+            const thirdMenuItemText = await thirdMenuItem.innerText();
+            thirdMenuItemText.should.equal('google');
+        });
+
+        it('MM-T2634_3 should update the config file', () => {
+            // Verify config is updated
+            const newConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+            const order0 = newConfig.teams.find((team) => team.name === 'github');
+            order0.order.should.equal(0);
+            const order1 = newConfig.teams.find((team) => team.name === 'example');
+            order1.order.should.equal(1);
+            const order2 = newConfig.teams.find((team) => team.name === 'google');
+            order2.order.should.equal(2);
+        });
     });
 
-    it('MM-T2634 should be able to drag and drop servers in the dropdown menu', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
-        await mainWindow.click('.TeamDropdownButton');
+    describe('MM-T2635 should be able to drag and drop tabs', async () => {
+        let mainWindow;
+        before(async () => {
+            await beforeFunc();
+            mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        });
+        after(afterFunc);
 
-        // Verify the original order
-        let firstMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(1) .TeamDropdown__draggable-handle');
-        let firstMenuItemText = await firstMenuItem.innerText();
-        firstMenuItemText.should.equal('example');
-        let secondMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(2) .TeamDropdown__draggable-handle');
-        let secondMenuItemText = await secondMenuItem.innerText();
-        secondMenuItemText.should.equal('github');
-        let thirdMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(3) .TeamDropdown__draggable-handle');
-        let thirdMenuItemText = await thirdMenuItem.innerText();
-        thirdMenuItemText.should.equal('google');
+        it('MM-T2635_1 should be in the original order', async () => {
+            // Verify the original order
+            const firstTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(1)');
+            const firstTabText = await firstTab.innerText();
+            firstTabText.should.equal('Channels');
+            const secondTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(2)');
+            const secondTabText = await secondTab.innerText();
+            secondTabText.should.equal('Boards');
+            const thirdTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(3)');
+            const thirdTabText = await thirdTab.innerText();
+            thirdTabText.should.equal('Playbooks');
+        });
 
-        // Move the first server down, then re-open the dropdown
-        await firstMenuItem.focus();
-        await dropdownView.keyboard.down(' ');
-        await dropdownView.keyboard.down('ArrowDown');
-        await dropdownView.keyboard.down(' ');
-        await asyncSleep(1000);
-        await mainWindow.keyboard.press('Escape');
-        await mainWindow.click('.TeamDropdownButton');
+        it('MM-T2635_2 after moving the tab to the right, the tab should be in the new order', async () => {
+            // Move the first tab to the right
+            let firstTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(1)');
+            await firstTab.focus();
+            await mainWindow.keyboard.down(' ');
+            await mainWindow.keyboard.down('ArrowRight');
+            await mainWindow.keyboard.down(' ');
+            await asyncSleep(1000);
 
-        // Verify that the new order persists
-        firstMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(1) .TeamDropdown__draggable-handle');
-        firstMenuItemText = await firstMenuItem.innerText();
-        firstMenuItemText.should.equal('github');
-        secondMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(2) .TeamDropdown__draggable-handle');
-        secondMenuItemText = await secondMenuItem.innerText();
-        secondMenuItemText.should.equal('example');
-        thirdMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(3) .TeamDropdown__draggable-handle');
-        thirdMenuItemText = await thirdMenuItem.innerText();
-        thirdMenuItemText.should.equal('google');
+            // Verify that the new order is visible
+            firstTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(1)');
+            const firstTabText = await firstTab.innerText();
+            firstTabText.should.equal('Boards');
+            const secondTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(2)');
+            const secondTabText = await secondTab.innerText();
+            secondTabText.should.equal('Channels');
+            const thirdTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(3)');
+            const thirdTabText = await thirdTab.innerText();
+            thirdTabText.should.equal('Playbooks');
+        });
 
-        // Verify config is updated
-        const newConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-        const order0 = newConfig.teams.find((team) => team.name === 'github');
-        order0.order.should.equal(0);
-        const order1 = newConfig.teams.find((team) => team.name === 'example');
-        order1.order.should.equal(1);
-        const order2 = newConfig.teams.find((team) => team.name === 'google');
-        order2.order.should.equal(2);
-    });
-
-    it('MM-T2635 should be able to drag and drop tabs', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-
-        // Verify the original order
-        let firstTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(1)');
-        let firstTabText = await firstTab.innerText();
-        firstTabText.should.equal('Channels');
-        let secondTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(2)');
-        let secondTabText = await secondTab.innerText();
-        secondTabText.should.equal('Boards');
-        let thirdTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(3)');
-        let thirdTabText = await thirdTab.innerText();
-        thirdTabText.should.equal('Playbooks');
-
-        // Move the first tab to the right
-        await firstTab.focus();
-        await mainWindow.keyboard.down(' ');
-        await mainWindow.keyboard.down('ArrowRight');
-        await mainWindow.keyboard.down(' ');
-        await asyncSleep(1000);
-
-        // Verify that the new order is visible
-        firstTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(1)');
-        firstTabText = await firstTab.innerText();
-        firstTabText.should.equal('Boards');
-        secondTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(2)');
-        secondTabText = await secondTab.innerText();
-        secondTabText.should.equal('Channels');
-        thirdTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(3)');
-        thirdTabText = await thirdTab.innerText();
-        thirdTabText.should.equal('Playbooks');
-
-        // Verify config is updated
-        const newConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-        const firstTeam = newConfig.teams.find((team) => team.name === 'example');
-        const order0 = firstTeam.tabs.find((tab) => tab.name === 'TAB_FOCALBOARD');
-        order0.order.should.equal(0);
-        const order1 = firstTeam.tabs.find((tab) => tab.name === 'TAB_MESSAGING');
-        order1.order.should.equal(1);
-        const order2 = firstTeam.tabs.find((tab) => tab.name === 'TAB_PLAYBOOKS');
-        order2.order.should.equal(2);
+        it('MM-T2635_3 should update the config file', () => {
+            // Verify config is updated
+            const newConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+            const firstTeam = newConfig.teams.find((team) => team.name === 'google');
+            const order0 = firstTeam.tabs.find((tab) => tab.name === 'TAB_FOCALBOARD');
+            order0.order.should.equal(0);
+            const order1 = firstTeam.tabs.find((tab) => tab.name === 'TAB_MESSAGING');
+            order1.order.should.equal(1);
+            const order2 = firstTeam.tabs.find((tab) => tab.name === 'TAB_PLAYBOOKS');
+            order2.order.should.equal(2);
+        });
     });
 });

@@ -5,6 +5,7 @@
 	<resources >
 		<stringTable >
 			<string id="RequiresMattermost43">Requires Mattermost Desktop 4.3 or later</string>
+            <string id="RequiresMattermost51">Requires Mattermost Desktop 5.1 or later</string>
 			<string id="mattermost">Mattermost</string>
 			
       		<string id="EnableAutoUpdater">EnableAutoUpdater</string>

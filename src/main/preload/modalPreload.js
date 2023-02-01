@@ -16,6 +16,10 @@ import {
     DARK_MODE_CHANGE,
     GET_MODAL_UNCLOSEABLE,
     MODAL_UNCLOSEABLE,
+    PING_DOMAIN,
+    PING_DOMAIN_RESPONSE,
+    GET_LANGUAGE_INFORMATION,
+    RETRIEVED_LANGUAGE_INFORMATION,
 } from 'common/communication';
 
 console.log('preloaded for the modal!');
@@ -58,6 +62,18 @@ window.addEventListener('message', async (event) => {
     case GET_DARK_MODE:
         console.log('getting dark mode value');
         window.postMessage({type: DARK_MODE_CHANGE, data: await ipcRenderer.invoke(GET_DARK_MODE)}, window.location.href);
+        break;
+    case PING_DOMAIN:
+        console.log('pinging domain: ' + event.data.data);
+        try {
+            const protocol = await ipcRenderer.invoke(PING_DOMAIN, event.data.data);
+            window.postMessage({type: PING_DOMAIN_RESPONSE, data: protocol}, window.location.href);
+        } catch (error) {
+            window.postMessage({type: PING_DOMAIN_RESPONSE, data: error}, window.location.href);
+        }
+        break;
+    case GET_LANGUAGE_INFORMATION:
+        window.postMessage({type: RETRIEVED_LANGUAGE_INFORMATION, data: await ipcRenderer.invoke(GET_LANGUAGE_INFORMATION)});
         break;
     default:
         console.log(`got a message: ${event}`);

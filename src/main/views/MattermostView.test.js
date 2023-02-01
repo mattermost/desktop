@@ -97,6 +97,17 @@ describe('main/views/MattermostView', () => {
             expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
             expect(mattermostView.loadRetry).toBeCalledWith('http://server-1.com/', error);
         });
+
+        it('should not retry when failing to load due to cert error', async () => {
+            const error = new Error('test');
+            error.code = 'ERR_CERT_ERROR';
+            const promise = Promise.reject(error);
+            mattermostView.view.webContents.loadURL.mockImplementation(() => promise);
+            mattermostView.load('a-bad<url');
+            await expect(promise).rejects.toThrow(error);
+            expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
+            expect(mattermostView.loadRetry).not.toBeCalled();
+        });
     });
 
     describe('retry', () => {
@@ -315,7 +326,13 @@ describe('main/views/MattermostView', () => {
 
         it('should not emit tooltip URL if internal', () => {
             mattermostView.handleUpdateTarget(null, 'http://server-1.com/path/to/channels');
-            expect(mattermostView.emit).not.toHaveBeenCalled();
+            expect(mattermostView.emit).toHaveBeenCalled();
+            expect(mattermostView.emit).not.toHaveBeenCalledWith(UPDATE_TARGET_URL, 'http://server-1.com/path/to/channels');
+        });
+
+        it('should still emit even if URL is blank', () => {
+            mattermostView.handleUpdateTarget(null, '');
+            expect(mattermostView.emit).toHaveBeenCalled();
         });
     });
 
@@ -325,17 +342,12 @@ describe('main/views/MattermostView', () => {
 
         it('should parse mentions from title', () => {
             mattermostView.updateMentionsFromTitle('(7) Mattermost');
-            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.name, 7, undefined);
+            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.name, 7);
         });
 
         it('should parse unreads from title', () => {
             mattermostView.updateMentionsFromTitle('* Mattermost');
-            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.name, 0, true);
-        });
-
-        it('should not parse unreads when title is on a channel with an asterisk before it', () => {
-            mattermostView.updateMentionsFromTitle('*testChannel - Mattermost');
-            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.name, 0, false);
+            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.name, 0);
         });
     });
 });

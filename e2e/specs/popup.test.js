@@ -28,6 +28,7 @@ describe('popup', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     // NOTE: These tests requires that the test server have the GitHub plugin configured
@@ -42,8 +43,8 @@ describe('popup', function desc() {
             await firstServer.waitForSelector('#sidebarItem_suscipit-4');
             await firstServer.click('#sidebarItem_suscipit-4');
             await firstServer.click('#post_textbox');
-            await firstServer.type('#post_textbox', '/github connect');
-            await firstServer.press('#post_textbox', 'Enter');
+            await firstServer.type('#post_textbox', '/github connect ');
+            await firstServer.click('button[data-testid="SendMessageButton"]');
 
             const githubLink = await firstServer.waitForSelector('a.theme.markdown__link:has-text("GitHub account")');
             githubLink.click();
@@ -98,13 +99,13 @@ describe('popup', function desc() {
         await firstServer.waitForSelector('#sidebarItem_suscipit-4');
         await firstServer.click('#sidebarItem_suscipit-4');
         await firstServer.click('#post_textbox');
-        await firstServer.type('#post_textbox', '/github connect');
-        await firstServer.press('#post_textbox', 'Enter');
+        await firstServer.type('#post_textbox', '/github connect ');
+        await firstServer.click('button[data-testid="SendMessageButton"]');
 
         const githubLink = await firstServer.waitForSelector('a.theme.markdown__link:has-text("GitHub account")');
         githubLink.click();
         const popupWindow = await this.app.waitForEvent('window');
-        popupWindow.focus();
+        await popupWindow.bringToFront();
         const currentURL = popupWindow.url();
 
         // Try and go back

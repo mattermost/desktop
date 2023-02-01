@@ -4,6 +4,8 @@
 import {net, session} from 'electron';
 import log from 'electron-log';
 
+import {COOKIE_NAME_AUTH_TOKEN, COOKIE_NAME_CSRF, COOKIE_NAME_USER_ID} from 'common/constants';
+
 export async function getServerAPI<T>(url: URL, isAuthenticated: boolean, onSuccess?: (data: T) => void, onAbort?: () => void, onError?: (error: Error) => void) {
     if (isAuthenticated) {
         const cookies = await session.defaultSession.cookies.get({});
@@ -15,9 +17,9 @@ export async function getServerAPI<T>(url: URL, isAuthenticated: boolean, onSucc
         // Filter out cookies that aren't part of our domain
         const filteredCookies = cookies.filter((cookie) => cookie.domain && url.toString().indexOf(cookie.domain) >= 0);
 
-        const userId = filteredCookies.find((cookie) => cookie.name === 'MMUSERID');
-        const csrf = filteredCookies.find((cookie) => cookie.name === 'MMCSRF');
-        const authToken = filteredCookies.find((cookie) => cookie.name === 'MMAUTHTOKEN');
+        const userId = filteredCookies.find((cookie) => cookie.name === COOKIE_NAME_USER_ID);
+        const csrf = filteredCookies.find((cookie) => cookie.name === COOKIE_NAME_CSRF);
+        const authToken = filteredCookies.find((cookie) => cookie.name === COOKIE_NAME_AUTH_TOKEN);
 
         if (!userId || !csrf || !authToken) {
             // Missing cookies needed for req

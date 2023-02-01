@@ -28,6 +28,7 @@ describe('copylink', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     it('MM-T125 Copy Link can be used from channel LHS', async () => {

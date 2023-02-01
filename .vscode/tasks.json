@@ -8,6 +8,18 @@
             "type": "npm",
             "script": "build",
             "problemMatcher": []
+        },
+        {
+            "label": "prepare-e2e",
+            "type": "shell",
+            "command": "npm run build; npm run build-robotjs; npm run test:e2e:build",
+            "problemMatcher": []
+        },
+        {
+            "label": "prepare-e2e-performance",
+            "type": "shell",
+            "command": "cross-env NODE_ENV=test PERFORMANCE=true npm run build; npm run build-robotjs; npm run test:e2e:build-performance",
+            "problemMatcher": []
         }
     ]
 }

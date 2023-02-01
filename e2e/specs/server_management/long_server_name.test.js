@@ -38,62 +38,40 @@ describe('LongServerName', function desc() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     let newServerView;
 
-    describe('MM-T4050 Long server name', () => {
-        beforeEach(async () => {
-            await newServerView.type('#teamNameInput', longServerName);
-            await newServerView.type('#teamUrlInput', longServerUrl);
-            await newServerView.click('#saveNewServerModal');
+    it('MM-T4050 Long server name', async () => {
+        await newServerView.type('#teamNameInput', longServerName);
+        await newServerView.type('#teamUrlInput', longServerUrl);
+        await newServerView.click('#saveNewServerModal');
+
+        await asyncSleep(1000);
+        const existing = Boolean(await this.app.windows().find((window) => window.url().includes('newServer')));
+        existing.should.be.false;
+
+        const mainView = this.app.windows().find((window) => window.url().includes('index'));
+        const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+
+        const isServerTabExists = Boolean(await mainView.locator(`text=${longServerName}`));
+        const isServerAddedDropdown = Boolean(await dropdownView.locator(`text=${longServerName}`));
+        isServerTabExists.should.be.true;
+        isServerAddedDropdown.should.be.true;
+
+        const serverNameLocator = await mainView.locator(`text=${longServerName}`);
+
+        const isTruncated = await serverNameLocator.evaluate((element) => {
+            return element.offsetWidth < element.scrollWidth;
         });
+        isTruncated.should.be.true;
 
-        it('MM-T4050_1 should add new server tab', async () => {
-            await asyncSleep(1000);
-            const existing = Boolean(await this.app.windows().find((window) => window.url().includes('newServer')));
-            existing.should.be.false;
+        const isWithinMaxWidth = await serverNameLocator.evaluate((element) => {
+            const width = parseFloat(window.getComputedStyle(element).getPropertyValue('width'));
 
-            const mainView = this.app.windows().find((window) => window.url().includes('index'));
-            const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
-
-            const isServerTabExists = Boolean(await mainView.locator(`text=${longServerName}`));
-            const isServerAddedDropdown = Boolean(await dropdownView.locator(`text=${longServerName}`));
-
-            isServerTabExists.should.be.true;
-            isServerAddedDropdown.should.be.true;
+            return width <= 400;
         });
-
-        it('MM-T4050_2 should truncate server name', async () => {
-            await asyncSleep(1000);
-            const existing = Boolean(await this.app.windows().find((window) => window.url().includes('newServer')));
-            existing.should.be.false;
-
-            const mainView = this.app.windows().find((window) => window.url().includes('index'));
-            const serverNameLocator = await mainView.locator(`text=${longServerName}`);
-
-            const isTruncated = await serverNameLocator.evaluate((element) => {
-                return element.offsetWidth < element.scrollWidth;
-            });
-
-            isTruncated.should.be.true;
-        });
-
-        it('MM-T4050_3 should display server tab with max width of 400px', async () => {
-            await asyncSleep(1000);
-            const existing = Boolean(await this.app.windows().find((window) => window.url().includes('newServer')));
-            existing.should.be.false;
-
-            const mainView = this.app.windows().find((window) => window.url().includes('index'));
-            const serverNameLocator = await mainView.locator('.TeamDropdownButton');
-
-            const isWithinMaxWidth = await serverNameLocator.evaluate((element) => {
-                const width = parseFloat(window.getComputedStyle(element).getPropertyValue('width'));
-
-                return width <= 400;
-            });
-
-            isWithinMaxWidth.should.be.true;
-        });
+        isWithinMaxWidth.should.be.true;
     });
 });

@@ -3,8 +3,7 @@
 
 import classNames from 'classnames';
 import React, {useEffect} from 'react';
-
-import {CLOSE_TEAMS_DROPDOWN, OPEN_TEAMS_DROPDOWN} from 'common/communication';
+import {FormattedMessage} from 'react-intl';
 
 import '../css/components/TeamDropdownButton.scss';
 
@@ -30,7 +29,11 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
     const handleToggleButton = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
         event.stopPropagation();
-        window.ipcRenderer.send(isMenuOpen ? CLOSE_TEAMS_DROPDOWN : OPEN_TEAMS_DROPDOWN);
+        if (isMenuOpen) {
+            window.desktop.closeTeamsDropdown();
+        } else {
+            window.desktop.openTeamsDropdown();
+        }
     };
 
     let badgeDiv: React.ReactNode;
@@ -64,7 +67,13 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
                 <i className='icon-server-variant'/>
                 {badgeDiv}
             </div>
-            <span>{activeServerName || 'No servers configured'}</span>
+            {activeServerName && <span>{activeServerName}</span>}
+            {!activeServerName &&
+                <FormattedMessage
+                    id='renderer.components.teamDropdownButton.noServersConfigured'
+                    defaultMessage='No servers configured'
+                />
+            }
             <i className='icon-chevron-down'/>
         </button>
     );

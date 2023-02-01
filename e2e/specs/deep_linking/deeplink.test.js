@@ -27,12 +27,18 @@ describe('application', function desc() {
             // eslint-disable-next-line no-empty
             } catch (err) {}
         }
+        await env.clearElectronInstances();
     });
 
     if (process.platform === 'win32') {
         it('MM-T1304/MM-T1306 should open the app on the requested deep link', async () => {
             this.app = await env.getApp(['mattermost://github.com/test/url']);
             this.serverMap = await env.getServerMap(this.app);
+            if (!this.app.windows().some((window) => window.url().includes('github.com'))) {
+                await this.app.waitForEvent('window', {
+                    predicate: (window) => window.url().includes('github.com'),
+                });
+            }
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
             const webContentsId = this.serverMap[`${config.teams[1].name}___TAB_MESSAGING`].webContentsId;

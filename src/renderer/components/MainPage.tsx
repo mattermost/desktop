@@ -2,49 +2,19 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+/* eslint-disable max-lines */
+
 import classNames from 'classnames';
 import React, {Fragment} from 'react';
 import {Container, Row} from 'react-bootstrap';
 import {DropResult} from 'react-beautiful-dnd';
-import {IpcRendererEvent} from 'electron/renderer';
-import prettyBytes from 'pretty-bytes';
+import {injectIntl, IntlShape} from 'react-intl';
 
 import {TeamWithTabs} from 'types/config';
+import {DownloadedItems} from 'types/downloads';
 
 import {getTabViewName} from 'common/tabs/TabView';
-
-import {
-    FOCUS_BROWSERVIEW,
-    MAXIMIZE_CHANGE,
-    DARK_MODE_CHANGE,
-    HISTORY,
-    LOAD_RETRY,
-    LOAD_SUCCESS,
-    LOAD_FAILED,
-    WINDOW_CLOSE,
-    WINDOW_MINIMIZE,
-    WINDOW_RESTORE,
-    WINDOW_MAXIMIZE,
-    DOUBLE_CLICK_ON_WINDOW,
-    PLAY_SOUND,
-    MODAL_OPEN,
-    MODAL_CLOSE,
-    SET_ACTIVE_VIEW,
-    UPDATE_MENTIONS,
-    TOGGLE_BACK_BUTTON,
-    FOCUS_THREE_DOT_MENU,
-    GET_FULL_SCREEN_STATUS,
-    CLOSE_TEAMS_DROPDOWN,
-    OPEN_TEAMS_DROPDOWN,
-    SWITCH_TAB,
-    UPDATE_AVAILABLE,
-    UPDATE_DOWNLOADED,
-    UPDATE_PROGRESS,
-    START_UPGRADE,
-    START_DOWNLOAD,
-    CLOSE_TAB,
-    RELOAD_CURRENT_VIEW,
-} from 'common/communication';
+import {escapeRegex} from 'common/utils/util';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
@@ -57,6 +27,8 @@ import TabBar from './TabBar';
 import ExtraBar from './ExtraBar';
 import ErrorView from './ErrorView';
 import TeamDropdownButton from './TeamDropdownButton';
+import DownloadsDropdownButton from './DownloadsDropdown/DownloadsDropdownButton';
+
 import '../css/components/UpgradeButton.scss';
 
 enum Status {
@@ -67,13 +39,6 @@ enum Status {
     NOSERVERS = -2,
 }
 
-enum UpgradeStatus {
-    NONE = 0,
-    AVAILABLE = 1,
-    DOWNLOADING = 2,
-    DOWNLOADED = 3,
-}
-
 type Props = {
     teams: TeamWithTabs[];
     lastActiveTeam?: number;
@@ -82,13 +47,14 @@ type Props = {
     darkMode: boolean;
     appName: string;
     useNativeWindow: boolean;
+    intl: IntlShape;
 };
 
 type State = {
     activeServerName?: string;
     activeTabName?: string;
     sessionsExpired: Record<string, boolean>;
-    unreadCounts: Record<string, number>;
+    unreadCounts: Record<string, boolean>;
     mentionCounts: Record<string, number>;
     maximized: boolean;
     tabViewStatus: Map<string, TabViewStatus>;
@@ -97,14 +63,10 @@ type State = {
     fullScreen?: boolean;
     showExtraBar?: boolean;
     isMenuOpen: boolean;
-    upgradeStatus: UpgradeStatus;
-    upgradeProgress?: {
-        total: number;
-        delta: number;
-        transferred: number;
-        percent: number;
-        bytesPerSecond: number;
-    };
+    isDownloadsDropdownOpen: boolean;
+    showDownloadsBadge: boolean;
+    hasDownloads: boolean;
+    threeDotsIsFocused: boolean;
 };
 
 type TabViewStatus = {
@@ -115,9 +77,9 @@ type TabViewStatus = {
     };
 }
 
-export default class MainPage extends React.PureComponent<Props, State> {
-    topBar: React.RefObject<HTMLDivElement>;
+class MainPage extends React.PureComponent<Props, State> {
     threeDotMenu: React.RefObject<HTMLButtonElement>;
+    topBar: React.RefObject<HTMLDivElement>;
 
     constructor(props: Props) {
         super(props);
@@ -142,7 +104,10 @@ export default class MainPage extends React.PureComponent<Props, State> {
             tabViewStatus: new Map(this.props.teams.map((team) => team.tabs.map((tab) => getTabViewName(team.name, tab.name))).flat().map((tabViewName) => [tabViewName, {status: Status.LOADING}])),
             darkMode: this.props.darkMode,
             isMenuOpen: false,
-            upgradeStatus: UpgradeStatus.NONE,
+            isDownloadsDropdownOpen: false,
+            showDownloadsBadge: false,
+            hasDownloads: false,
+            threeDotsIsFocused: false,
         };
     }
 
@@ -159,9 +124,23 @@ export default class MainPage extends React.PureComponent<Props, State> {
         this.setState({tabViewStatus: status});
     }
 
+    async requestDownloadsLength() {
+        try {
+            const hasDownloads = await window.desktop.requestHasDownloads();
+            this.setState({
+                hasDownloads,
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
     componentDidMount() {
+        // request downloads
+        this.requestDownloadsLength();
+
         // set page on retry
-        window.ipcRenderer.on(LOAD_RETRY, (_, viewName, retry, err, loadUrl) => {
+        window.desktop.onLoadRetry((viewName, retry, err, loadUrl) => {
             console.log(`${viewName}: failed to load ${err}, but retrying`);
             const statusValue = {
                 status: Status.RETRY,
@@ -174,11 +153,11 @@ export default class MainPage extends React.PureComponent<Props, State> {
             this.updateTabStatus(viewName, statusValue);
         });
 
-        window.ipcRenderer.on(LOAD_SUCCESS, (_, viewName) => {
+        window.desktop.onLoadSuccess((viewName) => {
             this.updateTabStatus(viewName, {status: Status.DONE});
         });
 
-        window.ipcRenderer.on(LOAD_FAILED, (_, viewName, err, loadUrl) => {
+        window.desktop.onLoadFailed((viewName, err, loadUrl) => {
             console.log(`${viewName}: failed to load ${err}`);
             const statusValue = {
                 status: Status.FAILED,
@@ -190,39 +169,39 @@ export default class MainPage extends React.PureComponent<Props, State> {
             this.updateTabStatus(viewName, statusValue);
         });
 
-        window.ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => {
+        window.desktop.onDarkModeChange((darkMode) => {
             this.setState({darkMode});
         });
 
         // can't switch tabs sequentially for some reason...
-        window.ipcRenderer.on(SET_ACTIVE_VIEW, (event, serverName, tabName) => {
+        window.desktop.onSetActiveView((serverName, tabName) => {
             this.setState({activeServerName: serverName, activeTabName: tabName});
         });
 
-        window.ipcRenderer.on(MAXIMIZE_CHANGE, this.handleMaximizeState);
+        window.desktop.onMaximizeChange(this.handleMaximizeState);
 
-        window.ipcRenderer.on('enter-full-screen', () => this.handleFullScreenState(true));
-        window.ipcRenderer.on('leave-full-screen', () => this.handleFullScreenState(false));
+        window.desktop.onEnterFullScreen(() => this.handleFullScreenState(true));
+        window.desktop.onLeaveFullScreen(() => this.handleFullScreenState(false));
 
-        window.ipcRenderer.invoke(GET_FULL_SCREEN_STATUS).then((fullScreenStatus) => this.handleFullScreenState(fullScreenStatus));
+        window.desktop.getFullScreenStatus().then((fullScreenStatus) => this.handleFullScreenState(fullScreenStatus));
 
-        window.ipcRenderer.on(PLAY_SOUND, (_event, soundName) => {
+        window.desktop.onPlaySound((soundName) => {
             playSound(soundName);
         });
 
-        window.ipcRenderer.on(MODAL_OPEN, () => {
+        window.desktop.onModalOpen(() => {
             this.setState({modalOpen: true});
         });
 
-        window.ipcRenderer.on(MODAL_CLOSE, () => {
+        window.desktop.onModalClose(() => {
             this.setState({modalOpen: false});
         });
 
-        window.ipcRenderer.on(TOGGLE_BACK_BUTTON, (event, showExtraBar) => {
+        window.desktop.onToggleBackButton((showExtraBar) => {
             this.setState({showExtraBar});
         });
 
-        window.ipcRenderer.on(UPDATE_MENTIONS, (_event, view, mentions, unreads, isExpired) => {
+        window.desktop.onUpdateMentions((view, mentions, unreads, isExpired) => {
             const {unreadCounts, mentionCounts, sessionsExpired} = this.state;
 
             const newMentionCounts = {...mentionCounts};
@@ -237,55 +216,55 @@ export default class MainPage extends React.PureComponent<Props, State> {
             this.setState({unreadCounts: newUnreads, mentionCounts: newMentionCounts, sessionsExpired: expired});
         });
 
-        window.ipcRenderer.on(CLOSE_TEAMS_DROPDOWN, () => {
+        window.desktop.onCloseTeamsDropdown(() => {
             this.setState({isMenuOpen: false});
         });
 
-        window.ipcRenderer.on(OPEN_TEAMS_DROPDOWN, () => {
+        window.desktop.onOpenTeamsDropdown(() => {
             this.setState({isMenuOpen: true});
         });
 
-        window.ipcRenderer.on(UPDATE_AVAILABLE, () => {
-            this.setState({upgradeStatus: UpgradeStatus.AVAILABLE});
+        window.desktop.onCloseDownloadsDropdown(() => {
+            this.setState({isDownloadsDropdownOpen: false});
         });
 
-        window.ipcRenderer.on(UPDATE_DOWNLOADED, () => {
-            this.setState({upgradeStatus: UpgradeStatus.DOWNLOADED});
+        window.desktop.onOpenDownloadsDropdown(() => {
+            this.setState({isDownloadsDropdownOpen: true});
         });
 
-        window.ipcRenderer.on(UPDATE_PROGRESS, (event, total, delta, transferred, percent, bytesPerSecond) => {
+        window.desktop.onShowDownloadsDropdownButtonBadge(() => {
+            this.setState({showDownloadsBadge: true});
+        });
+
+        window.desktop.onHideDownloadsDropdownButtonBadge(() => {
+            this.setState({showDownloadsBadge: false});
+        });
+
+        window.desktop.onUpdateDownloadsDropdown((downloads: DownloadedItems) => {
             this.setState({
-                upgradeStatus: UpgradeStatus.DOWNLOADING,
-                upgradeProgress: {
-                    total,
-                    delta,
-                    transferred,
-                    percent,
-                    bytesPerSecond,
-                },
+                hasDownloads: (Object.values(downloads)?.length || 0) > 0,
             });
         });
+
+        window.desktop.onAppMenuWillClose(this.unFocusThreeDotsButton);
 
         if (window.process.platform !== 'darwin') {
-            window.ipcRenderer.on(FOCUS_THREE_DOT_MENU, () => {
-                if (this.threeDotMenu.current) {
-                    this.threeDotMenu.current.focus();
-                }
-            });
+            window.desktop.onFocusThreeDotMenu(this.focusThreeDotsButton);
         }
 
-        window.addEventListener('click', this.handleCloseTeamsDropdown);
+        window.addEventListener('click', this.handleCloseDropdowns);
     }
 
     componentWillUnmount() {
-        window.removeEventListener('click', this.handleCloseTeamsDropdown);
+        window.removeEventListener('click', this.handleCloseDropdowns);
     }
 
-    handleCloseTeamsDropdown = () => {
-        window.ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
+    handleCloseDropdowns = () => {
+        window.desktop.closeTeamsDropdown();
+        this.closeDownloadsDropdown();
     }
 
-    handleMaximizeState = (_: IpcRendererEvent, maximized: boolean) => {
+    handleMaximizeState = (maximized: boolean) => {
         this.setState({maximized});
     }
 
@@ -294,11 +273,17 @@ export default class MainPage extends React.PureComponent<Props, State> {
     }
 
     handleSelectTab = (name: string) => {
-        window.ipcRenderer.send(SWITCH_TAB, this.state.activeServerName, name);
+        if (!this.state.activeServerName) {
+            return;
+        }
+        window.desktop.switchTab(this.state.activeServerName, name);
     }
 
     handleCloseTab = (name: string) => {
-        window.ipcRenderer.send(CLOSE_TAB, this.state.activeServerName, name);
+        if (!this.state.activeServerName) {
+            return;
+        }
+        window.desktop.closeTab(this.state.activeServerName, name);
     }
 
     handleDragAndDrop = async (dropResult: DropResult) => {
@@ -325,44 +310,69 @@ export default class MainPage extends React.PureComponent<Props, State> {
 
     handleClose = (e: React.MouseEvent<HTMLDivElement>) => {
         e.stopPropagation(); // since it is our button, the event goes into MainPage's onclick event, getting focus back.
-        window.ipcRenderer.send(WINDOW_CLOSE);
+        window.desktop.closeWindow();
     }
 
     handleMinimize = (e: React.MouseEvent<HTMLDivElement>) => {
         e.stopPropagation();
-        window.ipcRenderer.send(WINDOW_MINIMIZE);
+        window.desktop.minimizeWindow();
     }
 
     handleMaximize = (e: React.MouseEvent<HTMLDivElement>) => {
         e.stopPropagation();
-        window.ipcRenderer.send(WINDOW_MAXIMIZE);
+        window.desktop.maximizeWindow();
     }
 
     handleRestore = () => {
-        window.ipcRenderer.send(WINDOW_RESTORE);
+        window.desktop.restoreWindow();
     }
 
     openMenu = () => {
-        if (window.process.platform !== 'darwin') {
-            this.threeDotMenu.current?.blur();
-        }
         this.props.openMenu();
     }
 
     handleDoubleClick = () => {
-        window.ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW);
+        window.desktop.doubleClickOnWindow();
     }
 
     focusOnWebView = () => {
-        window.ipcRenderer.send(FOCUS_BROWSERVIEW);
-        this.handleCloseTeamsDropdown();
+        window.desktop.focusBrowserView();
+        this.handleCloseDropdowns();
     }
 
     reloadCurrentView = () => {
-        window.ipcRenderer.send(RELOAD_CURRENT_VIEW);
+        window.desktop.reloadCurrentView();
+    }
+
+    showHideDownloadsBadge(value = false) {
+        this.setState({showDownloadsBadge: value});
+    }
+
+    closeDownloadsDropdown() {
+        window.desktop.closeDownloadsDropdown();
+        window.desktop.closeDownloadsDropdownMenu();
+    }
+
+    openDownloadsDropdown() {
+        window.desktop.openDownloadsDropdown();
+    }
+
+    focusThreeDotsButton = () => {
+        this.threeDotMenu.current?.focus();
+        this.setState({
+            threeDotsIsFocused: true,
+        });
+    }
+
+    unFocusThreeDotsButton = () => {
+        this.threeDotMenu.current?.blur();
+        this.setState({
+            threeDotsIsFocused: false,
+        });
     }
 
     render() {
+        const {intl} = this.props;
         const currentTabs = this.props.teams.find((team) => team.name === this.state.activeServerName)?.tabs || [];
 
         const tabsRow = (
@@ -379,7 +389,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
                 onCloseTab={this.handleCloseTab}
                 onDrop={this.handleDragAndDrop}
                 tabsDisabled={this.state.modalOpen}
-                isMenuOpen={this.state.isMenuOpen}
+                isMenuOpen={this.state.isMenuOpen || this.state.isDownloadsDropdownOpen}
             />
         );
 
@@ -389,6 +399,16 @@ export default class MainPage extends React.PureComponent<Props, State> {
             fullScreen: this.state.fullScreen,
         });
 
+        const downloadsDropdownButton = this.state.hasDownloads ? (
+            <DownloadsDropdownButton
+                darkMode={this.state.darkMode}
+                isDownloadsDropdownOpen={this.state.isDownloadsDropdownOpen}
+                showDownloadsBadge={this.state.showDownloadsBadge}
+                closeDownloadsDropdown={this.closeDownloadsDropdown}
+                openDownloadsDropdown={this.openDownloadsDropdown}
+            />
+        ) : null;
+
         let maxButton;
         if (this.state.maximized || this.state.fullScreen) {
             maxButton = (
@@ -396,7 +416,10 @@ export default class MainPage extends React.PureComponent<Props, State> {
                     className='button restore-button'
                     onClick={this.handleRestore}
                 >
-                    <img src={restoreButton}/>
+                    <img
+                        src={restoreButton}
+                        draggable={false}
+                    />
                 </div>
             );
         } else {
@@ -405,51 +428,12 @@ export default class MainPage extends React.PureComponent<Props, State> {
                     className='button max-button'
                     onClick={this.handleMaximize}
                 >
-                    <img src={maximizeButton}/>
+                    <img
+                        src={maximizeButton}
+                        draggable={false}
+                    />
                 </div>
             );
-        }
-
-        let upgradeTooltip;
-        switch (this.state.upgradeStatus) {
-        case UpgradeStatus.AVAILABLE:
-            upgradeTooltip = 'Update available';
-            break;
-        case UpgradeStatus.DOWNLOADED:
-            upgradeTooltip = 'Update ready to install';
-            break;
-        case UpgradeStatus.DOWNLOADING:
-            upgradeTooltip = `Downloading update. ${String(this.state.upgradeProgress?.percent).split('.')[0]}% of ${prettyBytes(this.state.upgradeProgress?.total || 0)} @ ${prettyBytes(this.state.upgradeProgress?.bytesPerSecond || 0)}/s`;
-            break;
-        }
-
-        let upgradeIcon;
-        if (this.state.upgradeStatus !== UpgradeStatus.NONE) {
-            upgradeIcon = (
-                <span className={classNames('upgrade-btns', {darkMode: this.state.darkMode})}>
-                    <div
-                        className={classNames('button upgrade-button', {
-                            rotate: this.state.upgradeStatus === UpgradeStatus.DOWNLOADING,
-                        })}
-                        title={upgradeTooltip}
-                        onClick={() => {
-                            if (this.state.upgradeStatus === UpgradeStatus.DOWNLOADING) {
-                                return;
-                            }
-
-                            window.ipcRenderer.send(this.state.upgradeStatus === UpgradeStatus.DOWNLOADED ? START_UPGRADE : START_DOWNLOAD);
-                        }}
-                    >
-                        <i
-                            className={classNames({
-                                'icon-arrow-down-bold-circle-outline': this.state.upgradeStatus === UpgradeStatus.AVAILABLE,
-                                'icon-sync': this.state.upgradeStatus === UpgradeStatus.DOWNLOADING,
-                                'icon-arrow-up-bold-circle-outline': this.state.upgradeStatus === UpgradeStatus.DOWNLOADED,
-                            })}
-                        />
-                        {(this.state.upgradeStatus !== UpgradeStatus.DOWNLOADING) && <div className={'circle'}/>}
-                    </div>
-                </span>);
         }
 
         let titleBarButtons;
@@ -460,20 +444,26 @@ export default class MainPage extends React.PureComponent<Props, State> {
                         className='button min-button'
                         onClick={this.handleMinimize}
                     >
-                        <img src={minimizeButton}/>
+                        <img
+                            src={minimizeButton}
+                            draggable={false}
+                        />
                     </div>
                     {maxButton}
                     <div
                         className='button close-button'
                         onClick={this.handleClose}
                     >
-                        <img src={closeButton}/>
+                        <img
+                            src={closeButton}
+                            draggable={false}
+                        />
                     </div>
                 </span>
             );
         }
 
-        const serverMatch = `${this.state.activeServerName}___TAB_[A-Z]+`;
+        const serverMatch = `${escapeRegex(this.state.activeServerName)}___TAB_[A-Z]+`;
         const totalMentionCount = Object.keys(this.state.mentionCounts).reduce((sum, key) => {
             // Strip out current server from unread and mention counts
             if (this.state.activeServerName && key.match(serverMatch)) {
@@ -481,12 +471,12 @@ export default class MainPage extends React.PureComponent<Props, State> {
             }
             return sum + this.state.mentionCounts[key];
         }, 0);
-        const totalUnreadCount = Object.keys(this.state.unreadCounts).reduce((sum, key) => {
+        const hasAnyUnreads = Object.keys(this.state.unreadCounts).reduce((sum, key) => {
             if (this.state.activeServerName && key.match(serverMatch)) {
                 return sum;
             }
-            return sum + this.state.unreadCounts[key];
-        }, 0);
+            return sum || this.state.unreadCounts[key];
+        }, false);
         const topRow = (
             <Row
                 className={topBarClassName}
@@ -496,38 +486,52 @@ export default class MainPage extends React.PureComponent<Props, State> {
                     ref={this.topBar}
                     className={'topBar-bg'}
                 >
+                    {window.process.platform !== 'linux' && this.props.teams.length === 0 && (
+                        <div className='app-title'>
+                            {intl.formatMessage({id: 'renderer.components.mainPage.titleBar', defaultMessage: 'Mattermost'})}
+                        </div>
+                    )}
                     <button
+                        ref={this.threeDotMenu}
                         className='three-dot-menu'
                         onClick={this.openMenu}
+                        onMouseOver={this.focusThreeDotsButton}
+                        onMouseOut={this.unFocusThreeDotsButton}
                         tabIndex={0}
-                        ref={this.threeDotMenu}
-                        aria-label='Context menu'
+                        aria-label={intl.formatMessage({id: 'renderer.components.mainPage.contextMenu.ariaLabel', defaultMessage: 'Context menu'})}
                     >
-                        <i className='icon-dots-vertical'/>
+                        <i
+                            className={classNames('icon-dots-vertical', {
+                                isFocused: this.state.threeDotsIsFocused,
+                            })}
+                        />
                     </button>
-                    <TeamDropdownButton
-                        isDisabled={this.state.modalOpen}
-                        activeServerName={this.state.activeServerName}
-                        totalMentionCount={totalMentionCount}
-                        hasUnreads={totalUnreadCount > 0}
-                        isMenuOpen={this.state.isMenuOpen}
-                        darkMode={this.state.darkMode}
-                    />
+                    {this.props.teams.length !== 0 && (
+                        <TeamDropdownButton
+                            isDisabled={this.state.modalOpen}
+                            activeServerName={this.state.activeServerName}
+                            totalMentionCount={totalMentionCount}
+                            hasUnreads={hasAnyUnreads}
+                            isMenuOpen={this.state.isMenuOpen}
+                            darkMode={this.state.darkMode}
+                        />
+                    )}
                     {tabsRow}
-                    {upgradeIcon}
+                    {downloadsDropdownButton}
                     {titleBarButtons}
                 </div>
             </Row>
         );
 
         const views = () => {
+            if (!this.props.teams.length) {
+                return null;
+            }
             let component;
             const tabStatus = this.getTabViewStatus();
             if (!tabStatus) {
-                if (this.state.activeTabName) {
+                if (this.state.activeTabName || this.state.activeServerName) {
                     console.error(`Not tabStatus for ${this.state.activeTabName}`);
-                } else {
-                    console.error('No tab status, tab doesn\'t exist anymore');
                 }
                 return null;
             }
@@ -557,7 +561,7 @@ export default class MainPage extends React.PureComponent<Props, State> {
                     darkMode={this.state.darkMode}
                     show={this.state.showExtraBar}
                     goBack={() => {
-                        window.ipcRenderer.send(HISTORY, -1);
+                        window.desktop.goBack();
                     }}
                 />
                 <Row>
@@ -578,3 +582,5 @@ export default class MainPage extends React.PureComponent<Props, State> {
         );
     }
 }
+
+export default injectIntl(MainPage);

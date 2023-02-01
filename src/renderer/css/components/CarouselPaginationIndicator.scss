@@ -1,0 +1,70 @@
+@import url("../_css_variables.scss");
+
+.CarouselPaginationIndicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 23px;
+
+    .indicatorDot {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: none;
+        box-shadow: 0 0 0 3px transparent;
+        cursor: pointer;
+
+        &:not(:first-child) {
+            margin-left: 4px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(var(--denim-button-bg-rgb), 0.32);
+        }
+
+        &.active,
+        &.disabled {
+            cursor: default;
+            pointer-events: none;
+        }
+
+        &.active {
+            background: rgba(var(--denim-button-bg-rgb), 0.16);
+
+            .dot {
+                background: var(--denim-button-bg);
+            }
+        }
+
+        &:focus-visible {
+            box-sizing: border-box;
+            border: 2px solid var(--sidebar-text-active-border);
+            outline: none;
+        }
+    }
+
+    .indicatorDot-inverted {
+        .dot {
+            background: rgba(var(--button-color-rgb), 0.32);
+        }
+
+        &.active {
+            background: rgba(var(--button-color-rgb), 0.16);
+
+            .dot {
+                background: var(--button-color);
+            }
+        }
+
+        &:focus-visible {
+            border: 2px solid var(--denim-sidebar-active-border);
+            color: var(--denim-button-bg);
+        }
+    }
+}

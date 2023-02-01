@@ -31,14 +31,11 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('../../electron-builder.json', () => ({
-    protocols: [{
-        name: 'Mattermost',
-        schemes: [
-            'pone',
-            'ptwo',
-        ],
-    }],
+jest.mock('common/config/buildConfig', () => ({
+    allowedProtocols: [
+        'pone',
+        'ptwo',
+    ],
 }));
 
 jest.mock('./Validator', () => ({
@@ -47,6 +44,10 @@ jest.mock('./Validator', () => ({
 
 jest.mock('./windows/windowManager', () => ({
     getMainWindow: jest.fn(),
+}));
+
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
 }));
 
 describe('main/allowProtocolDialog', () => {

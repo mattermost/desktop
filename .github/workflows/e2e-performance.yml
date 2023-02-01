@@ -1,0 +1,93 @@
+name: E2E Performance Tests (Desktop)
+
+on:
+  pull_request:
+    branches: [ master ]
+    types:
+        - labeled
+
+env:
+    RESULTS_PATH: e2e/performance/perf-test-report.json
+
+jobs:
+  build:
+    if: ${{ github.event.label.name == 'Run E2E Performance Tests' }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node-version: [16]
+
+    steps:
+
+    - name: Add start comment
+      uses: actions/github-script@v6
+      with:
+        script: |
+            github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `E2E Performance Tests started 🏎️`,
+            });
+
+    - name: Set env variable for timestamp
+      run: echo "NOW=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_ENV
+
+    - uses: actions/checkout@v2
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install packages
+      run: sudo apt-get install libxtst-dev libpng++-dev
+
+    - name: Install dependencies 👨🏻‍💻
+      run: npm ci
+
+    - name: E2E Performance Tests for Electron 🧪
+      run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" -- npm run test:e2e:performance
+
+    - name: Upload artifact to Github
+      uses: actions/upload-artifact@v3
+      with:
+        name: perf-test-report.json
+        path: ${{ env.RESULTS_PATH }}
+        if-no-files-found: error
+        retention-days: 14
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_PERFORMANCE_TESTS_PUT_BUCKET }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PERFORMANCE_TESTS_PUT_BUCKET }}
+        aws-region: ${{ secrets.AWS_REGION_PERFORMANCE_TESTS_PUT_BUCKET }}
+        mask-aws-account-id: true
+
+    - name: Upload report to S3
+      run: aws s3 cp ${{ env.RESULTS_PATH }} s3://${{ secrets.AWS_BUCKET_PERFORMANCE_TESTS }}/${{ github.head_ref }}-${{ github.sha }}-${{ env.NOW }}.json
+
+    - name: Add results in PR comment
+      uses: actions/github-script@v6
+      with:
+        script: |
+            const fs = require('fs');
+            const {generateCommentBody} = require('./e2e/utils/pr-e2e-durations-report.js');
+            const fileContents = fs.readFileSync('${{ env.RESULTS_PATH }}');
+            github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: generateCommentBody(fileContents),
+            });
+
+    - name: Remove "Run E2E Performance Tests" label
+      if: always()
+      uses: actions-ecosystem/action-remove-labels@v1
+      with:
+          labels: |
+            Run E2E Performance Tests

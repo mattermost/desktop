@@ -3,7 +3,7 @@
 
 import RegistryConfig from 'common/config/RegistryConfig';
 
-jest.mock('winreg-utf8', () => {
+jest.mock('winreg', () => {
     return jest.fn().mockImplementation(({hive, key}) => {
         return {
             values: (fn) => {
@@ -58,7 +58,7 @@ describe('common/config/RegistryConfig', () => {
 
         const registryConfig = new RegistryConfig();
         const originalFn = registryConfig.getRegistryEntryValues;
-        registryConfig.getRegistryEntryValues = (hive, key, name) => originalFn('mattermost-hive', key, name);
+        registryConfig.getRegistryEntryValues = (hive, key, name) => originalFn.apply(registryConfig, ['mattermost-hive', key, name, false]);
         await registryConfig.init();
 
         Object.defineProperty(process, 'platform', {
@@ -77,7 +77,7 @@ describe('common/config/RegistryConfig', () => {
         const registryConfig = new RegistryConfig();
 
         it('should return correct values', () => {
-            expect(registryConfig.getRegistryEntryValues('correct-hive', 'correct-key')).resolves.toStrictEqual([
+            expect(registryConfig.getRegistryEntryValues('correct-hive', 'correct-key', null, false)).resolves.toStrictEqual([
                 {
                     name: 'correct-key-name-1',
                     value: 'correct-key-value-1',
@@ -90,19 +90,19 @@ describe('common/config/RegistryConfig', () => {
         });
 
         it('should return correct value by name', () => {
-            expect(registryConfig.getRegistryEntryValues('correct-hive', 'correct-key', 'correct-key-name-1')).resolves.toBe('correct-key-value-1');
+            expect(registryConfig.getRegistryEntryValues('correct-hive', 'correct-key', 'correct-key-name-1', false)).resolves.toBe('correct-key-value-1');
         });
 
         it('should return undefined with wrong name', () => {
-            expect(registryConfig.getRegistryEntryValues('correct-hive', 'correct-key', 'wrong-key-name-1')).resolves.toBe(undefined);
+            expect(registryConfig.getRegistryEntryValues('correct-hive', 'correct-key', 'wrong-key-name-1', false)).resolves.toBe(undefined);
         });
 
         it('should return undefined with bad hive', () => {
-            expect(registryConfig.getRegistryEntryValues('bad-hive', 'correct-key')).resolves.toBe(undefined);
+            expect(registryConfig.getRegistryEntryValues('bad-hive', 'correct-key', null, false)).resolves.toBe(undefined);
         });
 
         it('should call reject when an error occurs', () => {
-            expect(registryConfig.getRegistryEntryValues('really-bad-hive', 'correct-key')).rejects.toThrow(new Error('This is an error'));
+            expect(registryConfig.getRegistryEntryValues('really-bad-hive', 'correct-key', null, false)).rejects.toThrow(new Error('This is an error'));
         });
     });
 });

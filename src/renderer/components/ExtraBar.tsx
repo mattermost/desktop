@@ -3,6 +3,7 @@
 
 import React from 'react';
 import {Row, Button} from 'react-bootstrap';
+import {FormattedMessage} from 'react-intl';
 
 type Props = {
     darkMode?: boolean;
@@ -39,7 +40,10 @@ export default class ExtraBar extends React.PureComponent<Props> {
                     >
                         <span className={'backIcon icon-arrow-left'}/>
                         <span className={'backLabel'}>
-                            {'Back'}
+                            <FormattedMessage
+                                id='renderer.components.extraBar.back'
+                                defaultMessage='Back'
+                            />
                         </span>
                     </Button>
                 </div>

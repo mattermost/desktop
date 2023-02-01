@@ -2,24 +2,9 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
-import {screen} from 'electron';
+import {Rectangle} from 'electron';
 
 import {DEVELOPMENT, PRODUCTION} from './constants';
-
-function getDisplayBoundaries() {
-    const displays = screen.getAllDisplays();
-
-    return displays.map((display) => {
-        return {
-            maxX: display.workArea.x + display.workArea.width,
-            maxY: display.workArea.y + display.workArea.height,
-            minX: display.workArea.x,
-            minY: display.workArea.y,
-            maxWidth: display.workArea.width,
-            maxHeight: display.workArea.height,
-        };
-    });
-}
 
 function runMode() {
     return process.env.NODE_ENV === PRODUCTION ? PRODUCTION : DEVELOPMENT;
@@ -60,9 +45,31 @@ function isVersionGreaterThanOrEqualTo(currentVersion: string, compareVersion: s
     return true;
 }
 
+export function t(s: string) {
+    return s;
+}
+
+function boundsDiff(base: Rectangle, actual: Rectangle) {
+    return {
+        x: base.x - actual.x,
+        y: base.y - actual.y,
+        width: base.width - actual.width,
+        height: base.height - actual.height,
+    };
+}
+
+// MM-48463 - https://stackoverflow.com/a/3561711/5605822
+export const escapeRegex = (s?: string) => {
+    if (typeof s !== 'string') {
+        return '';
+    }
+    return s.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');
+};
+
 export default {
-    getDisplayBoundaries,
     runMode,
     shorten,
     isVersionGreaterThanOrEqualTo,
+    boundsDiff,
+    escapeRegex,
 };

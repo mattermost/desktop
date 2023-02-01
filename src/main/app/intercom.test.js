@@ -14,6 +14,8 @@ import {
     handleNewServerModal,
     handleEditServerModal,
     handleRemoveServerModal,
+    handleWelcomeScreenModal,
+    handleMainWindowIsShown,
 } from './intercom';
 
 jest.mock('common/config', () => ({
@@ -233,6 +235,51 @@ describe('main/app/intercom', () => {
                 url: 'http://server-1.com',
                 tabs,
             }));
+        });
+    });
+
+    describe('handleWelcomeScreenModal', () => {
+        beforeEach(() => {
+            getLocalURLString.mockReturnValue('/some/index.html');
+            getLocalPreload.mockReturnValue('/some/preload.js');
+            WindowManager.getMainWindow.mockReturnValue({});
+
+            Config.set.mockImplementation((name, value) => {
+                Config[name] = value;
+            });
+            Config.teams = JSON.parse(JSON.stringify([]));
+        });
+
+        it('should show welcomeScreen modal', async () => {
+            const promise = Promise.resolve({});
+            ModalManager.addModal.mockReturnValue(promise);
+
+            handleWelcomeScreenModal();
+            expect(ModalManager.addModal).toHaveBeenCalledWith('welcomeScreen', '/some/index.html', '/some/preload.js', [], {}, true);
+        });
+    });
+
+    describe('handleMainWindowIsShown', () => {
+        it('MM-48079 should not show onboarding screen or server screen if GPO server is pre-configured', () => {
+            getLocalURLString.mockReturnValue('/some/index.html');
+            getLocalPreload.mockReturnValue('/some/preload.js');
+            WindowManager.getMainWindow.mockReturnValue({
+                isVisible: () => true,
+            });
+
+            Config.set.mockImplementation((name, value) => {
+                Config[name] = value;
+            });
+            Config.registryConfigData = {
+                teams: JSON.parse(JSON.stringify([{
+                    name: 'test-team',
+                    order: 0,
+                    url: 'https://someurl.here',
+                }])),
+            };
+
+            handleMainWindowIsShown();
+            expect(ModalManager.addModal).not.toHaveBeenCalled();
         });
     });
 });

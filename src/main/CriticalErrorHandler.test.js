@@ -36,6 +36,10 @@ jest.mock('child_process', () => ({
     spawn: jest.fn(),
 }));
 
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
+}));
+
 describe('main/CriticalErrorHandler', () => {
     const criticalErrorHandler = new CriticalErrorHandler();
     beforeEach(() => {

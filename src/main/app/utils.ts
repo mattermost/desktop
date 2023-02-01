@@ -5,7 +5,7 @@ import path from 'path';
 
 import fs from 'fs-extra';
 
-import {app, BrowserWindow, Menu, Rectangle, Session, session, dialog, nativeImage} from 'electron';
+import {app, BrowserWindow, Menu, Rectangle, Session, session, dialog, nativeImage, screen} from 'electron';
 import log, {LevelOption} from 'electron-log';
 
 import {MigrationInfo, TeamWithTabs} from 'types/config';
@@ -18,9 +18,11 @@ import {MattermostServer} from 'common/servers/MattermostServer';
 import {TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
+import {APP_MENU_WILL_CLOSE} from 'common/communication';
 
 import updateManager from 'main/autoUpdater';
 import {migrationInfoPath, updatePaths} from 'main/constants';
+import {localizeMessage} from 'main/i18nManager';
 import {createMenu as createAppMenu} from 'main/menus/app';
 import {createMenu as createTrayMenu} from 'main/menus/tray';
 import {ServerInfo} from 'main/server/serverInfo';
@@ -48,6 +50,7 @@ export function updateSpellCheckerLocales() {
 }
 
 export function updateServerInfos(teams: TeamWithTabs[]) {
+    log.silly('app.utils.updateServerInfos');
     const serverInfos: Array<Promise<RemoteInfo | string | undefined>> = [];
     teams.forEach((team) => {
         const serverInfo = new ServerInfo(new MattermostServer(team.name, team.url));
@@ -55,29 +58,48 @@ export function updateServerInfos(teams: TeamWithTabs[]) {
     });
     Promise.all(serverInfos).then((data: Array<RemoteInfo | string | undefined>) => {
         const teams = Config.teams;
-        teams.forEach((team) => openExtraTabs(data, team));
-        Config.set('teams', teams);
+        let hasUpdates = false;
+        teams.forEach((team) => {
+            hasUpdates = hasUpdates || updateServerURL(data, team);
+            hasUpdates = hasUpdates || openExtraTabs(data, team);
+        });
+        if (hasUpdates) {
+            Config.set('teams', teams);
+        }
     }).catch((reason: any) => {
         log.error('Error getting server infos', reason);
     });
 }
 
+function updateServerURL(data: Array<RemoteInfo | string | undefined>, team: TeamWithTabs) {
+    const remoteInfo = data.find((info) => info && typeof info !== 'string' && info.name === team.name) as RemoteInfo;
+    if (remoteInfo && remoteInfo.siteURL && team.url !== remoteInfo.siteURL) {
+        team.url = remoteInfo.siteURL;
+        return true;
+    }
+    return false;
+}
+
 function openExtraTabs(data: Array<RemoteInfo | string | undefined>, team: TeamWithTabs) {
+    let hasUpdates = false;
     const remoteInfo = data.find((info) => info && typeof info !== 'string' && info.name === team.name) as RemoteInfo;
     if (remoteInfo) {
         team.tabs.forEach((tab) => {
             if (tab.name !== TAB_MESSAGING && remoteInfo.serverVersion && Utils.isVersionGreaterThanOrEqualTo(remoteInfo.serverVersion, '6.0.0')) {
-                if (tab.name === TAB_PLAYBOOKS && remoteInfo.hasPlaybooks && tab.isOpen !== false) {
+                if (tab.name === TAB_PLAYBOOKS && remoteInfo.hasPlaybooks && typeof tab.isOpen === 'undefined') {
                     log.info(`opening ${team.name}___${tab.name} on hasPlaybooks`);
                     tab.isOpen = true;
+                    hasUpdates = true;
                 }
-                if (tab.name === TAB_FOCALBOARD && remoteInfo.hasFocalboard && tab.isOpen !== false) {
+                if (tab.name === TAB_FOCALBOARD && remoteInfo.hasFocalboard && typeof tab.isOpen === 'undefined') {
                     log.info(`opening ${team.name}___${tab.name} on hasFocalboard`);
                     tab.isOpen = true;
+                    hasUpdates = true;
                 }
             }
         });
     }
+    return hasUpdates;
 }
 
 export function handleUpdateMenuEvent() {
@@ -85,7 +107,10 @@ export function handleUpdateMenuEvent() {
 
     const aMenu = createAppMenu(Config, updateManager);
     Menu.setApplicationMenu(aMenu);
-    aMenu.addListener('menu-will-close', WindowManager.focusBrowserView);
+    aMenu.addListener('menu-will-close', () => {
+        WindowManager.focusBrowserView();
+        WindowManager.sendToRenderer(APP_MENU_WILL_CLOSE);
+    });
 
     // set up context menu for tray icon
     if (shouldShowTrayIcon()) {
@@ -136,10 +161,25 @@ function isWithinDisplay(state: Rectangle, display: Boundaries) {
     return !(midX > display.maxX || midY > display.maxY);
 }
 
+function getDisplayBoundaries() {
+    const displays = screen.getAllDisplays();
+
+    return displays.map((display) => {
+        return {
+            maxX: display.workArea.x + display.workArea.width,
+            maxY: display.workArea.y + display.workArea.height,
+            minX: display.workArea.x,
+            minY: display.workArea.y,
+            maxWidth: display.workArea.width,
+            maxHeight: display.workArea.height,
+        };
+    });
+}
+
 function getValidWindowPosition(state: Rectangle) {
     // Check if the previous position is out of the viewable area
     // (e.g. because the screen has been plugged off)
-    const boundaries = Utils.getDisplayBoundaries();
+    const boundaries = getDisplayBoundaries();
     const display = boundaries.find((boundary) => {
         return isWithinDisplay(state, boundary);
     });
@@ -168,7 +208,7 @@ export function resizeScreen(browserWindow: BrowserWindow) {
         }
     }
 
-    browserWindow.on('restore', handle);
+    browserWindow.once('restore', handle);
     handle();
 }
 
@@ -214,11 +254,14 @@ export function migrateMacAppStore() {
     }
 
     const cancelImport = dialog.showMessageBoxSync({
-        title: 'Mattermost',
-        message: 'Import Existing Configuration',
-        detail: 'It appears that an existing Mattermost configuration exists, would you like to import it? You will be asked to pick the correct configuration directory.',
+        title: app.name,
+        message: localizeMessage('main.app.utils.migrateMacAppStore.dialog.message', 'Import Existing Configuration'),
+        detail: localizeMessage('main.app.utils.migrateMacAppStore.dialog.detail', 'It appears that an existing {appName} configuration exists, would you like to import it? You will be asked to pick the correct configuration directory.', {appName: app.name}),
         icon: appIcon,
-        buttons: ['Select Directory and Import', 'Don\'t Import'],
+        buttons: [
+            localizeMessage('main.app.utils.migrateMacAppStore.button.selectAndImport', 'Select Directory and Import'),
+            localizeMessage('main.app.utils.migrateMacAppStore.button.dontImport', 'Don\'t Import'),
+        ],
         type: 'info',
         defaultId: 0,
         cancelId: 1,

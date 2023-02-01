@@ -13,6 +13,7 @@ export const TAB_MESSAGING = 'TAB_MESSAGING';
 export const TAB_FOCALBOARD = 'TAB_FOCALBOARD';
 export const TAB_PLAYBOOKS = 'TAB_PLAYBOOKS';
 export type TabType = typeof TAB_MESSAGING | typeof TAB_FOCALBOARD | typeof TAB_PLAYBOOKS;
+export type TabTuple = [string, TabType];
 
 export interface TabView {
     server: MattermostServer;
@@ -21,6 +22,7 @@ export interface TabView {
     get type(): TabType;
     get url(): URL;
     get shouldNotify(): boolean;
+    get urlTypeTuple(): TabTuple;
 }
 
 export function getDefaultTeamWithTabsFromTeam(team: Team) {
@@ -57,10 +59,6 @@ export function getServerView(srv: MattermostServer, tab: Tab) {
     }
 }
 
-export function getTabViewName(serverName: string, tabType: string) {
-    return `${serverName}___${tabType}`;
-}
-
 export function getTabDisplayName(tabType: TabType) {
     switch (tabType) {
     case TAB_MESSAGING:
@@ -72,6 +70,10 @@ export function getTabDisplayName(tabType: TabType) {
     default:
         throw new Error('Not implemeneted');
     }
+}
+
+export function getTabViewName(serverName: string, tabType: string) {
+    return `${serverName}___${tabType}`;
 }
 
 export function canCloseTab(tabType: TabType) {

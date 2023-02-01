@@ -29,6 +29,13 @@ import {
     GET_VIEW_WEBCONTENTS_ID,
     DISPATCH_GET_DESKTOP_SOURCES,
     DESKTOP_SOURCES_RESULT,
+    VIEW_FINISHED_RESIZING,
+    CALLS_JOIN_CALL,
+    CALLS_JOINED_CALL,
+    CALLS_LEAVE_CALL,
+    DESKTOP_SOURCES_MODAL_REQUEST,
+    CALLS_WIDGET_SHARE_SCREEN,
+    CLOSE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -155,6 +162,18 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
         ipcRenderer.send(DISPATCH_GET_DESKTOP_SOURCES, viewName, message);
         break;
     }
+    case CALLS_JOIN_CALL: {
+        ipcRenderer.send(CALLS_JOIN_CALL, viewName, message);
+        break;
+    }
+    case CALLS_WIDGET_SHARE_SCREEN: {
+        ipcRenderer.send(CALLS_WIDGET_SHARE_SCREEN, viewName, message);
+        break;
+    }
+    case CALLS_LEAVE_CALL: {
+        ipcRenderer.send(CALLS_LEAVE_CALL, viewName, message);
+        break;
+    }
     }
 });
 
@@ -242,8 +261,23 @@ setInterval(() => {
     webFrame.clearCache();
 }, CLEAR_CACHE_INTERVAL);
 
-window.addEventListener('click', () => {
+function isDownloadLink(el) {
+    if (typeof el !== 'object') {
+        return false;
+    }
+    const parentEl = el.parentElement;
+    if (typeof parentEl !== 'object') {
+        return el.className?.includes?.('download') || el.tagName?.toLowerCase?.() === 'svg';
+    }
+    return el.closest('a[download]') !== null;
+}
+
+window.addEventListener('click', (e) => {
     ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
+    const el = e.target;
+    if (!isDownloadLink(el)) {
+        ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
+    }
 });
 
 ipcRenderer.on(BROWSER_HISTORY_PUSH, (event, pathName) => {
@@ -290,5 +324,27 @@ ipcRenderer.on(DESKTOP_SOURCES_RESULT, (event, sources) => {
     );
 });
 
+ipcRenderer.on(DESKTOP_SOURCES_MODAL_REQUEST, () => {
+    window.postMessage(
+        {
+            type: DESKTOP_SOURCES_MODAL_REQUEST,
+        },
+        window.location.origin,
+    );
+});
+
+ipcRenderer.on(CALLS_JOINED_CALL, (event, message) => {
+    window.postMessage(
+        {
+            type: CALLS_JOINED_CALL,
+            message,
+        },
+        window.location.origin,
+    );
+});
+
 /* eslint-enable no-magic-numbers */
 
+window.addEventListener('resize', () => {
+    ipcRenderer.send(VIEW_FINISHED_RESIZING);
+});

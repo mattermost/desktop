@@ -3,7 +3,7 @@
 
 import log from 'electron-log';
 
-import {RemoteInfo} from 'types/server';
+import {ClientConfig, RemoteInfo} from 'types/server';
 
 import {MattermostServer} from 'common/servers/MattermostServer';
 
@@ -26,7 +26,7 @@ export class ServerInfo {
     }
 
     getRemoteInfo = () => {
-        getServerAPI<{Version: string}>(
+        getServerAPI<ClientConfig>(
             new URL(`${this.server.url.toString()}/api/v4/config/client?format=old`),
             false,
             this.onGetConfig,
@@ -41,8 +41,9 @@ export class ServerInfo {
             this.onRetrievedRemoteInfo);
     }
 
-    onGetConfig = (data: {Version: string}) => {
+    onGetConfig = (data: ClientConfig) => {
         this.remoteInfo.serverVersion = data.Version;
+        this.remoteInfo.siteURL = data.SiteURL;
 
         this.trySendRemoteInfo();
     }

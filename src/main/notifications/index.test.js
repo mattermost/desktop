@@ -2,17 +2,29 @@
 // See LICENSE.txt for license information.
 
 'use strict';
+import cp from 'child_process';
 
 import {Notification, shell} from 'electron';
+
+import {getFocusAssist} from 'windows-focus-assist';
+import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import {PLAY_SOUND} from 'common/communication';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
 
+import {localizeMessage} from 'main/i18nManager';
+
 import WindowManager from '../windows/windowManager';
+
+import getLinuxDoNotDisturb from './dnd-linux';
 
 import {displayMention, displayDownloadCompleted, currentNotifications} from './index';
 
 const mentions = [];
+
+jest.mock('child_process', () => ({
+    execSync: jest.fn(),
+}));
 
 jest.mock('electron', () => {
     class NotificationMock {
@@ -51,6 +63,14 @@ jest.mock('electron', () => {
     };
 });
 
+jest.mock('windows-focus-assist', () => ({
+    getFocusAssist: jest.fn(),
+}));
+
+jest.mock('macos-notification-state', () => ({
+    getDoNotDisturb: jest.fn(),
+}));
+
 jest.mock('../windows/windowManager', () => ({
     getServerNameByWebContentsId: () => 'server_name',
     sendToRenderer: jest.fn(),
@@ -58,10 +78,16 @@ jest.mock('../windows/windowManager', () => ({
     switchTab: jest.fn(),
 }));
 
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
+}));
+
 describe('main/notifications', () => {
     describe('displayMention', () => {
         beforeEach(() => {
             Notification.isSupported.mockImplementation(() => true);
+            getFocusAssist.mockReturnValue({value: false});
+            getDarwinDoNotDisturb.mockReturnValue(false);
         });
 
         it('should do nothing when Notification is not supported', () => {
@@ -77,6 +103,54 @@ describe('main/notifications', () => {
                 {},
             );
             expect(Notification.didConstruct).not.toBeCalled();
+        });
+
+        it('should do nothing when alarms only is enabled on windows', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'win32',
+            });
+
+            getFocusAssist.mockReturnValue({value: 2});
+            displayMention(
+                'test',
+                'test body',
+                {id: 'channel_id'},
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+                false,
+                {id: 1},
+                {},
+            );
+            expect(Notification.didConstruct).not.toBeCalled();
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+        });
+
+        it('should do nothing when dnd is enabled on mac', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
+
+            getDarwinDoNotDisturb.mockReturnValue(true);
+            displayMention(
+                'test',
+                'test body',
+                {id: 'channel_id'},
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+                false,
+                {id: 1},
+                {},
+            );
+            expect(Notification.didConstruct).not.toBeCalled();
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
         });
 
         it('should play notification sound when custom sound is provided', () => {
@@ -152,6 +226,8 @@ describe('main/notifications', () => {
 
     describe('displayDownloadCompleted', () => {
         it('should open file when clicked', () => {
+            getDarwinDoNotDisturb.mockReturnValue(false);
+            localizeMessage.mockReturnValue('test_filename');
             displayDownloadCompleted(
                 'test_filename',
                 '/path/to/file',
@@ -160,6 +236,39 @@ describe('main/notifications', () => {
             const mention = mentions.find((m) => m.body.includes('test_filename'));
             mention.value.click();
             expect(shell.showItemInFolder).toHaveBeenCalledWith('/path/to/file');
+        });
+    });
+
+    describe('getLinuxDoNotDisturb', () => {
+        let originalPlatform;
+        beforeAll(() => {
+            originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'linux',
+            });
+        });
+
+        afterAll(() => {
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+        });
+
+        it('should return false', () => {
+            cp.execSync.mockReturnValue('true');
+            expect(getLinuxDoNotDisturb()).toBe(false);
+        });
+
+        it('should return false if error is thrown', () => {
+            cp.execSync.mockImplementation(() => {
+                throw Error('error');
+            });
+            expect(getLinuxDoNotDisturb()).toBe(false);
+        });
+
+        it('should return true', () => {
+            cp.execSync.mockReturnValue('false');
+            expect(getLinuxDoNotDisturb()).toBe(true);
         });
     });
 });

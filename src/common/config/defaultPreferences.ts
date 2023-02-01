@@ -29,7 +29,7 @@ const defaultPreferences: ConfigV3 = {
     trayIconTheme: 'use_system',
     minimizeToTray: process.platform !== 'linux',
     notifications: {
-        flashWindow: 2,
+        flashWindow: process.platform === 'linux' ? 0 : 2,
         bounceIcon: true,
         bounceIconType: 'informational',
     },

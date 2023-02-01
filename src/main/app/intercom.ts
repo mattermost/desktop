@@ -4,11 +4,13 @@
 import {app, dialog, IpcMainEvent, IpcMainInvokeEvent, Menu} from 'electron';
 import log from 'electron-log';
 
-import {Team, TeamWithIndex} from 'types/config';
+import {Team, TeamWithIndex, RegistryConfig as RegistryConfigType} from 'types/config';
 import {MentionData} from 'types/notification';
 
 import Config from 'common/config';
+import {REGISTRY_READ_EVENT} from 'common/config/RegistryConfig';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
+import {ping} from 'common/utils/requests';
 
 import {displayMention} from 'main/notifications';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
@@ -84,17 +86,63 @@ export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: 
     Config.set('teams', teams);
 }
 
-export function addNewServerModalWhenMainWindowIsShown() {
-    const mainWindow = WindowManager.getMainWindow();
-    if (mainWindow) {
-        if (mainWindow.isVisible()) {
-            handleNewServerModal();
-        } else {
-            mainWindow.once('show', () => {
-                log.debug('Intercom.addNewServerModalWhenMainWindowIsShown.show');
-                handleNewServerModal();
-            });
+export function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerModal: boolean, mainWindowIsVisible: boolean) {
+    log.debug('Intercom.handleShowOnboardingScreens', {showWelcomeScreen, showNewServerModal, mainWindowIsVisible});
+
+    const showWelcomeScreenFunc = () => {
+        if (showWelcomeScreen) {
+            handleWelcomeScreenModal();
+
+            if (process.env.NODE_ENV === 'test') {
+                const welcomeScreen = ModalManager.modalQueue.find((modal) => modal.key === 'welcomeScreen');
+                if (welcomeScreen?.view.webContents.isLoading()) {
+                    welcomeScreen?.view.webContents.once('did-finish-load', () => {
+                        app.emit('e2e-app-loaded');
+                    });
+                } else {
+                    app.emit('e2e-app-loaded');
+                }
+            }
+
+            return;
         }
+        if (showNewServerModal) {
+            handleNewServerModal();
+        }
+    };
+
+    if (process.platform === 'win32' && !Config.registryConfigData) {
+        Config.registryConfig.once(REGISTRY_READ_EVENT, (data: Partial<RegistryConfigType>) => {
+            if (data.teams?.length === 0) {
+                showWelcomeScreenFunc();
+            }
+        });
+    } else {
+        showWelcomeScreenFunc();
+    }
+}
+
+export function handleMainWindowIsShown() {
+    // eslint-disable-next-line no-undef
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const showWelcomeScreen = () => !(Boolean(__SKIP_ONBOARDING_SCREENS__) || Config.teams.length);
+    const showNewServerModal = () => Config.teams.length === 0;
+
+    /**
+     * The 2 lines above need to be functions, otherwise the mainWindow.once() callback from previous
+     * calls of this function will notification re-evaluate the booleans passed to "handleShowOnboardingScreens".
+    */
+
+    const mainWindow = WindowManager.getMainWindow();
+
+    log.debug('intercom.handleMainWindowIsShown', {configTeams: Config.teams, showWelcomeScreen, showNewServerModal, mainWindow: Boolean(mainWindow)});
+    if (mainWindow?.isVisible()) {
+        handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), true);
+    } else {
+        mainWindow?.once('show', () => {
+            handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), false);
+        });
     }
 }
 
@@ -160,6 +208,7 @@ export function handleEditServerModal(e: IpcMainEvent, name: string) {
             teams[serverIndex].name = data.name;
             teams[serverIndex].url = data.url;
             Config.set('teams', teams);
+            updateServerInfos([teams[serverIndex]]);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -211,6 +260,38 @@ export function handleRemoveServerModal(e: IpcMainEvent, name: string) {
     }
 }
 
+export function handleWelcomeScreenModal() {
+    log.debug('Intercom.handleWelcomeScreenModal');
+
+    const html = getLocalURLString('welcomeScreen.html');
+
+    const modalPreload = getLocalPreload('modalPreload.js');
+
+    const mainWindow = WindowManager.getMainWindow();
+    if (!mainWindow) {
+        return;
+    }
+    const modalPromise = ModalManager.addModal<TeamWithIndex[], Team>('welcomeScreen', html, modalPreload, Config.teams.map((team, index) => ({...team, index})), mainWindow, Config.teams.length === 0);
+    if (modalPromise) {
+        modalPromise.then((data) => {
+            const teams = Config.teams;
+            const order = teams.length;
+            const newTeam = getDefaultTeamWithTabsFromTeam({...data, order});
+            teams.push(newTeam);
+            Config.set('teams', teams);
+            updateServerInfos([newTeam]);
+            WindowManager.switchServer(newTeam.name, true);
+        }).catch((e) => {
+            // e is undefined for user cancellation
+            if (e) {
+                log.error(`there was an error in the welcome screen modal: ${e}`);
+            }
+        });
+    } else {
+        log.warn('There is already a welcome screen modal');
+    }
+}
+
 export function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, data: MentionData) {
     log.debug('Intercom.handleMentionNotification', {title, body, channel, teamId, url, silent, data});
     displayMention(title, body, channel, teamId, url, silent, event.sender, data);
@@ -252,7 +333,22 @@ export function handleUpdateLastActive(event: IpcMainEvent, serverName: string, 
             team.lastActiveTab = viewOrder;
         }
     });
-    Config.set('teams', teams);
-    Config.set('lastActiveTeam', teams.find((team) => team.name === serverName)?.order || 0);
+    Config.setMultiple({
+        teams,
+        lastActiveTeam: teams.find((team) => team.name === serverName)?.order || 0,
+    });
 }
 
+export function handlePingDomain(event: IpcMainInvokeEvent, url: string): Promise<string> {
+    return Promise.allSettled([
+        ping(new URL(`https://${url}`)),
+        ping(new URL(`http://${url}`)),
+    ]).then(([https, http]): string => {
+        if (https.status === 'fulfilled') {
+            return 'https';
+        } else if (http.status === 'fulfilled') {
+            return 'http';
+        }
+        throw new Error('Could not find server ' + url);
+    });
+}

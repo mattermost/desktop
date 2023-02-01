@@ -19,6 +19,10 @@ function isValidURI(testURL: string) {
     return Boolean(isUri(testURL));
 }
 
+function startsWithProtocol(testURL: string) {
+    return Boolean((/^https?:\/\/.*/).test(testURL.trim()));
+}
+
 function parseURL(inputURL: URL | string) {
     if (inputURL instanceof URL) {
         return inputURL;
@@ -208,6 +212,18 @@ function isChannelExportUrl(serverUrl: URL | string, inputUrl: URL | string): bo
     return isUrlType('plugins/com.mattermost.plugin-channel-export/api/v1/export', serverUrl, inputUrl);
 }
 
+function cleanPathName(basePathName: string, pathName: string) {
+    if (basePathName === '/') {
+        return pathName;
+    }
+
+    if (pathName.startsWith(basePathName)) {
+        return pathName.replace(basePathName, '');
+    }
+
+    return pathName;
+}
+
 export default {
     isValidURL,
     isValidURI,
@@ -224,4 +240,6 @@ export default {
     isCustomLoginURL,
     isChannelExportUrl,
     isUrlType,
+    cleanPathName,
+    startsWithProtocol,
 };

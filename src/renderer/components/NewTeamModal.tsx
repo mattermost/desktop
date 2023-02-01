@@ -4,10 +4,12 @@
 
 import React from 'react';
 import {Modal, Button, FormGroup, FormControl, FormLabel, FormText} from 'react-bootstrap';
+import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 
 import {TeamWithIndex} from 'types/config';
 
 import urlUtils from 'common/utils/url';
+import {PING_DOMAIN, PING_DOMAIN_RESPONSE} from 'common/communication';
 
 type Props = {
     onClose?: () => void;
@@ -19,6 +21,7 @@ type Props = {
     restoreFocus?: boolean;
     currentOrder?: number;
     setInputRef?: (inputRef: HTMLInputElement) => void;
+    intl: IntlShape;
 };
 
 type State = {
@@ -29,9 +32,9 @@ type State = {
     saveStarted: boolean;
 }
 
-export default class NewTeamModal extends React.PureComponent<Props, State> {
+class NewTeamModal extends React.PureComponent<Props, State> {
     wasShown?: boolean;
-    teamNameInputRef?: HTMLInputElement;
+    teamUrlInputRef?: HTMLInputElement;
 
     static defaultProps = {
         restoreFocus: true,
@@ -69,10 +72,20 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
                 currentTeams.splice(this.props.team.index, 1);
             }
             if (currentTeams.find((team) => team.name === this.state.teamName)) {
-                return 'A server with the same name already exists.';
+                return (
+                    <FormattedMessage
+                        id='renderer.components.newTeamModal.error.serverNameExists'
+                        defaultMessage='A server with the same name already exists.'
+                    />
+                );
             }
         }
-        return this.state.teamName.length > 0 ? null : 'Name is required.';
+        return this.state.teamName.length > 0 ? null : (
+            <FormattedMessage
+                id='renderer.components.newTeamModal.error.nameRequired'
+                defaultMessage='Name is required.'
+            />
+        );
     }
 
     getTeamNameValidationState() {
@@ -95,17 +108,37 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
                 currentTeams.splice(this.props.team.index, 1);
             }
             if (currentTeams.find((team) => team.url === this.state.teamUrl)) {
-                return 'A server with the same URL already exists.';
+                return (
+                    <FormattedMessage
+                        id='renderer.components.newTeamModal.error.serverUrlExists'
+                        defaultMessage='A server with the same URL already exists.'
+                    />
+                );
             }
         }
         if (this.state.teamUrl.length === 0) {
-            return 'URL is required.';
+            return (
+                <FormattedMessage
+                    id='renderer.components.newTeamModal.error.urlRequired'
+                    defaultMessage='URL is required.'
+                />
+            );
         }
         if (!(/^https?:\/\/.*/).test(this.state.teamUrl.trim())) {
-            return 'URL should start with http:// or https://.';
+            return (
+                <FormattedMessage
+                    id='renderer.components.newTeamModal.error.urlNeedsHttp'
+                    defaultMessage='URL should start with http:// or https://.'
+                />
+            );
         }
         if (!urlUtils.isValidURL(this.state.teamUrl.trim())) {
-            return 'URL is not formatted correctly.';
+            return (
+                <FormattedMessage
+                    id='renderer.components.newTeamModal.error.urlIncorrectFormatting'
+                    defaultMessage='URL is not formatted correctly.'
+                />
+            );
         }
         return null;
     }
@@ -115,8 +148,29 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
     }
 
     handleTeamUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        this.setState({
-            teamUrl: e.target.value,
+        const teamUrl = e.target.value;
+        this.setState({teamUrl});
+    }
+
+    addProtocolToUrl = (teamUrl: string): Promise<void> => {
+        if (teamUrl.startsWith('http://') || teamUrl.startsWith('https://')) {
+            return Promise.resolve(undefined);
+        }
+
+        return new Promise((resolve) => {
+            const handler = (event: {data: {type: string; data: string | Error}}) => {
+                if (event.data.type === PING_DOMAIN_RESPONSE) {
+                    if (event.data.data instanceof Error) {
+                        console.error(`Could not ping url: ${teamUrl}`);
+                    } else {
+                        this.setState({teamUrl: `${event.data.data}://${this.state.teamUrl}`});
+                    }
+                    window.removeEventListener('message', handler);
+                    resolve(undefined);
+                }
+            };
+            window.addEventListener('message', handler);
+            window.postMessage({type: PING_DOMAIN, data: teamUrl}, window.location.href);
         });
     }
 
@@ -125,7 +179,13 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
         const urlError = this.getTeamUrlValidationError();
 
         if (nameError && urlError) {
-            return 'Name and URL are required.';
+            return (
+                <>
+                    {nameError}
+                    <br/>
+                    {urlError}
+                </>
+            );
         } else if (nameError) {
             return nameError;
         } else if (urlError) {
@@ -139,7 +199,8 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
             this.getTeamUrlValidationState() === null;
     }
 
-    save = () => {
+    save = async () => {
+        await this.addProtocolToUrl(this.state.teamUrl);
         this.setState({
             saveStarted: true,
         }, () => {
@@ -156,16 +217,36 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
 
     getSaveButtonLabel() {
         if (this.props.editMode) {
-            return 'Save';
+            return (
+                <FormattedMessage
+                    id='label.save'
+                    defaultMessage='Save'
+                />
+            );
         }
-        return 'Add';
+        return (
+            <FormattedMessage
+                id='label.add'
+                defaultMessage='Add'
+            />
+        );
     }
 
     getModalTitle() {
         if (this.props.editMode) {
-            return 'Edit Server';
+            return (
+                <FormattedMessage
+                    id='renderer.components.newTeamModal.title.edit'
+                    defaultMessage='Edit Server'
+                />
+            );
         }
-        return 'Add Server';
+        return (
+            <FormattedMessage
+                id='renderer.components.newTeamModal.title.add'
+                defaultMessage='Add Server'
+            />
+        );
     }
 
     render() {
@@ -181,7 +262,7 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
                 show={this.props.show}
                 id='newServerModal'
                 enforceFocus={true}
-                onEntered={() => this.teamNameInputRef?.focus()}
+                onEntered={() => this.teamUrlInputRef?.focus()}
                 onHide={this.props.onClose}
                 restoreFocus={this.props.restoreFocus}
                 onKeyDown={(e: React.KeyboardEvent) => {
@@ -206,32 +287,12 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
                 <Modal.Body>
                     <form>
                         <FormGroup>
-                            <FormLabel>{'Server Display Name'}</FormLabel>
-                            <FormControl
-                                id='teamNameInput'
-                                type='text'
-                                value={this.state.teamName}
-                                placeholder='Server Name'
-                                onChange={this.handleTeamNameChange}
-                                ref={(ref: HTMLInputElement) => {
-                                    this.teamNameInputRef = ref;
-                                    if (this.props.setInputRef) {
-                                        this.props.setInputRef(ref);
-                                    }
-                                }}
-                                onClick={(e: React.MouseEvent<HTMLInputElement>) => {
-                                    e.stopPropagation();
-                                }}
-                                autoFocus={true}
-                                isInvalid={Boolean(this.getTeamNameValidationState())}
-                            />
-                            <FormControl.Feedback/>
-                            <FormText>{'The name of the server displayed on your desktop app tab bar.'}</FormText>
-                        </FormGroup>
-                        <FormGroup
-                            className='NewTeamModal-noBottomSpace'
-                        >
-                            <FormLabel>{'Server URL'}</FormLabel>
+                            <FormLabel>
+                                <FormattedMessage
+                                    id='renderer.components.newTeamModal.serverURL'
+                                    defaultMessage='Server URL'
+                                />
+                            </FormLabel>
                             <FormControl
                                 id='teamUrlInput'
                                 type='text'
@@ -241,10 +302,48 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
                                 onClick={(e: React.MouseEvent<HTMLInputElement>) => {
                                     e.stopPropagation();
                                 }}
+                                ref={(ref: HTMLInputElement) => {
+                                    this.teamUrlInputRef = ref;
+                                    if (this.props.setInputRef) {
+                                        this.props.setInputRef(ref);
+                                    }
+                                }}
                                 isInvalid={Boolean(this.getTeamUrlValidationState())}
+                                autoFocus={true}
                             />
                             <FormControl.Feedback/>
-                            <FormText className='NewTeamModal-noBottomSpace'>{'The URL of your Mattermost server. Must start with http:// or https://.'}</FormText>
+                            <FormText>
+                                <FormattedMessage
+                                    id='renderer.components.newTeamModal.serverURL.description'
+                                    defaultMessage='The URL of your Mattermost server. Must start with http:// or https://.'
+                                />
+                            </FormText>
+                        </FormGroup>
+                        <FormGroup className='NewTeamModal-noBottomSpace'>
+                            <FormLabel>
+                                <FormattedMessage
+                                    id='renderer.components.newTeamModal.serverDisplayName'
+                                    defaultMessage='Server Display Name'
+                                />
+                            </FormLabel>
+                            <FormControl
+                                id='teamNameInput'
+                                type='text'
+                                value={this.state.teamName}
+                                placeholder={this.props.intl.formatMessage({id: 'renderer.components.newTeamModal.serverDisplayName', defaultMessage: 'Server Display Name'})}
+                                onChange={this.handleTeamNameChange}
+                                onClick={(e: React.MouseEvent<HTMLInputElement>) => {
+                                    e.stopPropagation();
+                                }}
+                                isInvalid={Boolean(this.getTeamNameValidationState())}
+                            />
+                            <FormControl.Feedback/>
+                            <FormText className='NewTeamModal-noBottomSpace'>
+                                <FormattedMessage
+                                    id='renderer.components.newTeamModal.serverDisplayName.description'
+                                    defaultMessage='The name of the server displayed on your desktop app tab bar.'
+                                />
+                            </FormText>
                         </FormGroup>
                     </form>
                 </Modal.Body>
@@ -262,7 +361,10 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
                             onClick={this.props.onClose}
                             variant='link'
                         >
-                            {'Cancel'}
+                            <FormattedMessage
+                                id='label.cancel'
+                                defaultMessage='Cancel'
+                            />
                         </Button>
                     }
                     {this.props.onSave &&
@@ -281,3 +383,5 @@ export default class NewTeamModal extends React.PureComponent<Props, State> {
         );
     }
 }
+
+export default injectIntl(NewTeamModal);

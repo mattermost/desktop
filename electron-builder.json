@@ -17,6 +17,12 @@
   "files": [
     "node_modules/bootstrap/dist/**",
     "node_modules/font-awesome/{css,fonts}/**",
+    "!**/node_modules/macos-notification-state/bin/**/*",
+    "!**/node_modules/macos-notification-state/build/**/*",
+    "!**/node_modules/windows-focus-assist/bin/**/*",
+    "!**/node_modules/windows-focus-assist/build/**/*",
+    "node_modules/macos-notification-state/build/**/*.node",
+    "node_modules/windows-focus-assist/build/Release/**/*.node",
     {
       "from": "dist",
       "to": ".",
@@ -27,17 +33,13 @@
     {
       "name": "Mattermost",
       "schemes": [
-        "mattermost",
-        "http",
-        "https",
-        "ftp",
-        "mailto",
-        "tel"
+        "mattermost"
       ]
     }
   ],
   "afterPack": "scripts/afterpack.js",
   "afterSign": "scripts/notarize.js",
+  "afterAllArtifactBuild": "scripts/afterbuild.js",
   "deb": {
     "artifactName": "${version}/${name}_${version}-1_${arch}.${ext}",
     "synopsis": "Mattermost Desktop App",
@@ -51,6 +53,10 @@
     "category": "contrib/net",
     "priority": "optional"
   },
+  "asarUnpack": [
+    "./node_modules/macos-notification-state/build/Release/**/*.node",
+    "./node_modules/windows-focus-assist/build/Release/**/*.node"
+  ],
   "linux": {
     "category": "Network;InstantMessaging",
     "target": [
@@ -76,6 +82,9 @@
         ]
       }
     ]
+  },
+  "appImage": {
+    "executableArgs": [" "]
   },
   "mac": {
     "category": "public.app-category.productivity",
@@ -111,7 +120,8 @@
     "provisioningProfile": "./mas.provisionprofile",
     "extendInfo": {
       "ITSAppUsesNonExemptEncryption": false
-    }
+    },
+    "singleArchFiles": "*"
   },
   "masDev": {
     "provisioningProfile": "./mas-dev.provisionprofile"
@@ -157,5 +167,8 @@
   },
   "nsis": {
     "artifactName": "${version}/${name}-setup-${version}-win.${ext}"
+  },
+  "rpm": {
+    "fpm": ["--rpm-rpmbuild-define", "_build_id_links none"]
   }
 }

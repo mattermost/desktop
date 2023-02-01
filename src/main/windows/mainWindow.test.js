@@ -69,6 +69,10 @@ jest.mock('../utils', () => ({
     getLocalURLString: jest.fn(),
 }));
 
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
+}));
+
 'use strict';
 
 describe('main/windows/mainWindow', () => {

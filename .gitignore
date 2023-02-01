@@ -10,8 +10,10 @@ npm-debug.log*
 build/
 coverage/
 dist/
+mochawesome-report/
 
 test-results.xml
+/e2e/performance/perf-test-report.json
 test_config.json
 .idea
 testUserData

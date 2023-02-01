@@ -32,7 +32,10 @@ import {
     GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
     USER_ACTIVITY_UPDATE,
     START_UPGRADE,
-    START_DOWNLOAD,
+    START_UPDATE_DOWNLOAD,
+    PING_DOMAIN,
+    MAIN_WINDOW_SHOWN,
+    OPEN_APP_MENU,
 } from 'common/communication';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
@@ -46,7 +49,8 @@ import {setupBadge} from 'main/badge';
 import CertificateManager from 'main/certificateManager';
 import {updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
-import {displayDownloadCompleted} from 'main/notifications';
+import downloadsManager from 'main/downloadsManager';
+import i18nManager from 'main/i18nManager';
 import parseArgs from 'main/ParseArgs';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import {refreshTrayImages, setupTray} from 'main/tray/tray';
@@ -59,14 +63,14 @@ import {
     handleAppBeforeQuit,
     handleAppBrowserWindowCreated,
     handleAppCertificateError,
-    handleAppGPUProcessCrashed,
     handleAppSecondInstance,
     handleAppWillFinishLaunching,
     handleAppWindowAllClosed,
+    handleChildProcessGone,
 } from './app';
 import {handleConfigUpdate, handleDarkModeChange} from './config';
 import {
-    addNewServerModalWhenMainWindowIsShown,
+    handleMainWindowIsShown,
     handleAppVersion,
     handleCloseTab,
     handleEditServerModal,
@@ -81,6 +85,7 @@ import {
     handleSwitchServer,
     handleSwitchTab,
     handleUpdateLastActive,
+    handlePingDomain,
 } from './intercom';
 import {
     clearAppCache,
@@ -138,12 +143,6 @@ export async function initialize() {
 function initializeArgs() {
     global.args = parseArgs(process.argv.slice(1));
 
-    // output the application version via cli when requested (-v or --version)
-    if (global.args.version) {
-        process.stdout.write(`v.${app.getVersion()}\n`);
-        process.exit(0); // eslint-disable-line no-process-exit
-    }
-
     global.isDev = isDev && !global.args.disableDevMode; // this doesn't seem to be right and isn't used as the single source of truth
 
     if (global.args.dataDir) {
@@ -163,7 +162,10 @@ async function initializeConfig() {
             handleConfigUpdate(configData);
 
             // can only call this before the app is ready
-            if (Config.enableHardwareAcceleration === false) {
+            // eslint-disable-next-line no-undef
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            if (Config.enableHardwareAcceleration === false || __DISABLE_GPU__) {
                 app.disableHardwareAcceleration();
             }
 
@@ -181,7 +183,7 @@ function initializeAppEventListeners() {
     app.on('before-quit', handleAppBeforeQuit);
     app.on('certificate-error', handleAppCertificateError);
     app.on('select-client-certificate', CertificateManager.handleSelectCertificate);
-    app.on('gpu-process-crashed', handleAppGPUProcessCrashed);
+    app.on('child-process-gone', handleChildProcessGone);
     app.on('login', AuthManager.handleAppLogin);
     app.on('will-finish-launching', handleAppWillFinishLaunching);
 }
@@ -235,7 +237,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(UPDATE_LAST_ACTIVE, handleUpdateLastActive);
 
     if (process.platform !== 'darwin') {
-        ipcMain.on('open-app-menu', handleOpenAppMenu);
+        ipcMain.on(OPEN_APP_MENU, handleOpenAppMenu);
     }
 
     ipcMain.on(SWITCH_SERVER, handleSwitchServer);
@@ -250,6 +252,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(SHOW_NEW_SERVER_MODAL, handleNewServerModal);
     ipcMain.on(SHOW_EDIT_SERVER_MODAL, handleEditServerModal);
     ipcMain.on(SHOW_REMOVE_SERVER_MODAL, handleRemoveServerModal);
+    ipcMain.on(MAIN_WINDOW_SHOWN, handleMainWindowIsShown);
     ipcMain.on(WINDOW_CLOSE, WindowManager.close);
     ipcMain.on(WINDOW_MAXIMIZE, WindowManager.maximize);
     ipcMain.on(WINDOW_MINIMIZE, WindowManager.minimize);
@@ -257,8 +260,9 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(SHOW_SETTINGS_WINDOW, WindowManager.showSettingsWindow);
     ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, () => session.defaultSession.availableSpellCheckerLanguages);
     ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
-    ipcMain.on(START_DOWNLOAD, handleStartDownload);
+    ipcMain.on(START_UPDATE_DOWNLOAD, handleStartDownload);
     ipcMain.on(START_UPGRADE, handleStartUpgrade);
+    ipcMain.handle(PING_DOMAIN, handlePingDomain);
 }
 
 function initializeAfterAppReady() {
@@ -269,7 +273,7 @@ function initializeAfterAppReady() {
     if (process.platform !== 'darwin') {
         defaultSession.on('spellcheck-dictionary-download-failure', (event, lang) => {
             if (Config.spellCheckerURL) {
-                log.error(`There was an error while trying to load the dictionary definitions for ${lang} fromfully the specified url. Please review you have access to the needed files. Url used was ${Config.spellCheckerURL}`);
+                log.error(`There was an error while trying to load the dictionary definitions for ${lang} from fully the specified url. Please review you have access to the needed files. Url used was ${Config.spellCheckerURL}`);
             } else {
                 log.warn(`There was an error while trying to download the dictionary definitions for ${lang}, spellchecking might not work properly.`);
             }
@@ -355,29 +359,15 @@ function initializeAfterAppReady() {
     }
     setupBadge();
 
-    defaultSession.on('will-download', (event, item, webContents) => {
-        log.debug('Initialize.will-download', {item, sourceURL: webContents.getURL()});
-        const filename = item.getFilename();
-        const fileElements = filename.split('.');
-        const filters = [];
-        if (fileElements.length > 1) {
-            filters.push({
-                name: 'All files',
-                extensions: ['*'],
-            });
-        }
-        item.setSaveDialogOptions({
-            title: filename,
-            defaultPath: Config.downloadLocation ? path.resolve(Config.downloadLocation, filename) : undefined,
-            filters,
-        });
+    defaultSession.on('will-download', downloadsManager.handleNewDownload);
 
-        item.on('done', (doneEvent, state) => {
-            if (state === 'completed') {
-                displayDownloadCompleted(filename, item.savePath, WindowManager.getServerNameByWebContentsId(webContents.id) || '');
-            }
-        });
-    });
+    // needs to be done after app ready
+    // must be done before update menu
+    if (Config.appLanguage) {
+        i18nManager.setLocale(Config.appLanguage);
+    } else if (!i18nManager.setLocale(app.getLocale())) {
+        i18nManager.setLocale(app.getLocaleCountryCode());
+    }
 
     handleUpdateMenuEvent();
 
@@ -416,9 +406,7 @@ function initializeAfterAppReady() {
 
     // only check for non-Windows, as with Windows we have to wait for GPO teams
     if (process.platform !== 'win32' || typeof Config.registryConfigData !== 'undefined') {
-        if (Config.teams.length === 0) {
-            addNewServerModalWhenMainWindowIsShown();
-        }
+        handleMainWindowIsShown();
     }
 }
 

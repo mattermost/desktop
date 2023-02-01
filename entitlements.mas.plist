@@ -18,9 +18,15 @@
 	<true/>
 	<key>com.apple.security.network.server</key>
 	<true/>
-	<key>com.apple.security.files.user-selected.read-only</key>
-	<true/>
 	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+	<key>com.apple.security.files.downloads.read-write</key>
+	<true/>
+	<key>com.apple.security.assets.pictures.read-write</key>
+	<true/>
+	<key>com.apple.security.assets.music.read-write</key>
+	<true/>
+	<key>com.apple.security.assets.movies.read-write</key>
 	<true/>
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
@@ -32,5 +38,9 @@
 	<string>UQ8HT4Q2XM.Mattermost.Desktop</string>
 	<key>com.apple.developer.team-identifier</key>
 	<string>UQ8HT4Q2XM</string>
+	<key>com.apple.security.files.bookmarks.app-scope</key>
+	<true/>
+	<key>com.apple.security.files.bookmarks.document-scope</key>
+	<true/>
 </dict>
 </plist>

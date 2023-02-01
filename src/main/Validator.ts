@@ -5,7 +5,8 @@ import log from 'electron-log';
 import Joi from 'joi';
 
 import {Args} from 'types/args';
-import {ConfigV0, ConfigV1, ConfigV2, ConfigV3, TeamWithTabs} from 'types/config';
+import {AnyConfig, ConfigV0, ConfigV1, ConfigV2, ConfigV3, TeamWithTabs} from 'types/config';
+import {DownloadedItems} from 'types/downloads';
 import {SavedWindowState} from 'types/mainWindow';
 import {AppState} from 'types/appState';
 import {ComparableCertificate} from 'types/certificate';
@@ -44,6 +45,21 @@ const appStateSchema = Joi.object<AppState>({
     skippedVersion: Joi.string(),
     updateCheckedDate: Joi.string(),
 });
+
+const downloadsSchema = Joi.object<DownloadedItems>().pattern(
+    Joi.string(),
+    {
+        type: Joi.string().valid('file', 'update'),
+        filename: Joi.string().allow(null),
+        state: Joi.string().valid('interrupted', 'progressing', 'completed', 'cancelled', 'deleted', 'available'),
+        progress: Joi.number().min(0).max(100),
+        location: Joi.string().allow(''),
+        mimeType: Joi.string().allow(null),
+        addedAt: Joi.number().min(0),
+        receivedBytes: Joi.number().min(0),
+        totalBytes: Joi.number().min(0),
+        bookmark: Joi.string(),
+    });
 
 const configDataSchemaV0 = Joi.object<ConfigV0>({
     url: Joi.string().required(),
@@ -96,7 +112,7 @@ const configDataSchemaV2 = Joi.object<ConfigV2>({
 });
 
 const configDataSchemaV3 = Joi.object<ConfigV3>({
-    version: Joi.number().min(2).default(2),
+    version: Joi.number().min(3).default(3),
     teams: Joi.array().items(Joi.object({
         name: Joi.string().required(),
         url: Joi.string().required(),
@@ -131,6 +147,7 @@ const configDataSchemaV3 = Joi.object<ConfigV3>({
     alwaysMinimize: Joi.boolean(),
     alwaysClose: Joi.boolean(),
     logLevel: Joi.string().default('info'),
+    appLanguage: Joi.string().allow(''),
 });
 
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};
@@ -168,6 +185,11 @@ export function validateBoundsInfo(data: SavedWindowState) {
 // validate app_state.json
 export function validateAppState(data: AppState) {
     return validateAgainstSchema(data, appStateSchema);
+}
+
+// validate downloads.json
+export function validateDownloads(data: DownloadedItems) {
+    return validateAgainstSchema(data, downloadsSchema);
 }
 
 // validate v.0 config.json
@@ -236,6 +258,19 @@ export function validateV3ConfigData(data: ConfigV3) {
         delete data.spellCheckerURL;
     }
     return validateAgainstSchema(data, configDataSchemaV3);
+}
+
+export function validateConfigData(data: AnyConfig) {
+    switch (data.version) {
+    case 3:
+        return validateV3ConfigData(data)!;
+    case 2:
+        return validateV2ConfigData(data)!;
+    case 1:
+        return validateV1ConfigData(data)!;
+    default:
+        return validateV0ConfigData(data)!;
+    }
 }
 
 // validate certificate.json

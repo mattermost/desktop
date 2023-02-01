@@ -1,0 +1,467 @@
+@import url("fonts.css");
+@import '~@mattermost/compass-icons/css/compass-icons.css';
+
+@mixin file-icon($path) {
+    background-image: url($path);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 24px 24px;
+}
+
+/* with this, padding doesn't change an element's width & height */
+* {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    display: none;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(63, 67, 80, 0.6);
+    border-radius: 4px;
+    width: 8px;
+}
+
+body {
+    margin: 0;
+    background: transparent;
+    font-family: Open Sans;
+    overflow: hidden;
+
+    #app {
+        width: 328px; // 280px + 24px*2
+        padding: 0 24px 24px;
+
+        .DownloadsDropdown {
+            background: #ffffff;
+            border-radius: 4px;
+            border: 1px solid rgba(61, 60, 64, 0.16);
+            box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
+            display: flex;
+            flex-direction: column;
+            max-height: 360px;
+            max-width: 280px;
+            min-height: 120px;
+            padding: 0 0 8px;
+            width: 280px;
+
+            .DownloadsDropdown__Thumbnail__Container {
+                align-items: center;
+                background: rgba(63, 67, 80, 0.08);
+                border-radius: 4px;
+                display: flex;
+                height: 32px;
+                justify-content: center;
+                margin-right: 8px;
+                min-height: 32px;
+                min-width: 32px;
+                position: relative;
+                width: 32px;
+
+                > svg {
+                    background: #ffffff;
+                    border-radius: 50%;
+                    border: 1px solid #ffffff;
+                    position: absolute;
+                    right: 0;
+                    top: 0;
+                    transform: translate(50%, -50%);
+                }
+
+                .DownloadsDropdown__Thumbnail {
+                    border-radius: 4px;
+                    width: 100%;
+                    height: 100%;
+
+                    &.mattermost {
+                        @include file-icon('./thumbnails/mattermost.svg');
+                        background-size: 32px 32px;
+                    }
+                    &.text {
+                        @include file-icon('./thumbnails/text.svg');
+                    }
+                    &.audio {
+                        @include file-icon('./thumbnails/audio.svg');
+                    }
+                    &.video {
+                        @include file-icon('./thumbnails/video.svg');
+                    }
+                    &.ppt {
+                        @include file-icon('./thumbnails/ppt.svg');
+                    }
+                    &.generic,
+                    &.other {
+                        @include file-icon('./thumbnails/generic.svg');
+                    }
+                    &.code {
+                        @include file-icon('./thumbnails/code.svg');
+                    }
+                    &.excel {
+                        @include file-icon('./thumbnails/excel.svg');
+                    }
+                    &.word {
+                        @include file-icon('./thumbnails/word.svg');
+                    }
+                    &.pdf {
+                        @include file-icon('./thumbnails/pdf.svg');
+                    }
+                    &.patch {
+                        @include file-icon('./thumbnails/patch.svg');
+                    }
+                    &.image {
+                        @include file-icon('./thumbnails/image.svg');
+                    }
+                    &.zip {
+                        @include file-icon('./thumbnails/zip.svg');
+                    }
+                }
+            }
+
+            .DownloadsDropdown__header {
+                align-items: center;
+                display: flex;
+                flex-direction: row;
+                min-height: 44px;
+                justify-content: space-between;
+                padding: 6px 10px 6px 20px;
+
+                .DownloadsDropdown__Downloads {
+                    font-weight: 600;
+                    font-size: 14px;
+                    line-height: 20px;
+                    color: #3D3C40;
+                }
+
+                .DownloadsDropdown__clearAllButton {
+                    background: transparent;
+                    border-radius: 4px;
+                    color: #1C58D9;
+                    cursor: pointer;
+                    font-size: 11px;
+                    font-style: normal;
+                    font-weight: 600;
+                    height: 24px;
+                    letter-spacing: 0.02em;
+                    padding: 4px 10px;
+
+                    &:hover {
+                        background: rgba(28, 88, 217, 0.08);
+                    }
+
+                    &.disabled {
+                        background: transparent;
+                        cursor: default;
+                        color: rgba(63, 67, 80, 0.32);
+                    }
+                }
+            }
+
+            .DownloadsDropdown__divider {
+                border-top: 1px solid rgba(61, 60, 64, 0.08);
+                border-bottom: 0;
+                width: 100%;
+                margin: 0 0 8px;
+            }
+
+            .DownloadsDropdown__list {
+                align-items: flex-start;
+                display: flex;
+                flex-direction: column;
+                font-size: 12px;
+                justify-content: flex-start;
+                overflow-x: hidden;
+                overflow-y: auto;
+                width: 100%;
+
+                .DownloadsDropdown__File {
+                    align-items: center;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    height: 100%;
+                    justify-content: flex-start;
+                    height: 56px;
+                    padding: 12px 12px 12px 20px;
+                    width: 100%;
+
+                    &.progressing {
+                        height: 68px;
+                    }
+
+                    &.update {
+                        height: 92px;
+                        .DownloadsDropdown__File__Body {
+                            height: 100%;
+                            .DownloadsDropdown__File__Body__Details {
+                                width: calc(100% - 32px - 16px);
+
+                                button#restartAndUpdateButton {
+                                    font-style: normal;
+                                    font-weight: 600;
+                                    font-size: 12px;
+                                    height: 32px;
+                                    margin-top: 6px;
+                                    padding: 10px 16px;
+                                    width: auto;
+                                }
+                            }
+                        }
+                    }
+
+                    &:hover {
+                        background: rgba(63, 67, 80, 0.08);
+                    }
+
+                    .DownloadsDropdown__File__Body {
+                        align-items: center;
+                        display: flex;
+                        flex-direction: row;
+                        justify-content: space-between;
+                        width: 100%;
+
+                        .DownloadsDropdown__File__Body__Details {
+                            margin-right: 8px;
+                            /* 100% - thumbnail width - three dot button width - margins of first 2 elements */
+                            width: calc(100% - 32px - 28px - 16px);
+
+                            > * {
+                                overflow: hidden;
+                                text-align: left;
+                                text-overflow: ellipsis;
+                                white-space: nowrap;
+                                width: 100%;
+
+                                &.DownloadsDropdown__File__Body__Details__Filename {
+                                    color: #3F4350;
+                                    font-size: 12px;
+                                    font-weight: 600;
+                                }
+                                &.DownloadsDropdown__File__Body__Details__FileSizeAndStatus {
+                                    margin-top: 2px;
+                                    color: rgba(63, 67, 80, 0.64);
+                                    font-size: 10px;
+                                    font-weight: 400;
+
+                                    &.cancelled {
+                                        color: #D24B4E;
+                                    }
+                                }
+                            }
+                        }
+
+                        .DownloadsDropdown__File__Body__ThreeDotButton {
+                            background: transparent;
+                            border: none;
+                            border-radius: 4px;
+                            color: rgba(63, 67, 80, 0.56);
+                            cursor: pointer;
+                            visibility: hidden;
+                            font-size: 18px;
+                            height: 28px;
+                            outline: none;
+                            position: relative;
+                            width: 28px;
+
+                            &.visible {
+                                visibility: visible;
+                            }
+                            &.active {
+                                visibility: visible;
+                                background: rgba(28, 88, 217, 0.08);
+                                color: rgba(28, 88, 217, 1);
+                            }
+                            &:hover {
+                                background-color: rgba(63, 67, 80, 0.08);
+                                color: rgba(63, 67, 80, 0.72)
+                            }
+                            *.active:hover {
+                                background: rgba(28, 88, 217, 0.16);
+                                color: rgba(28, 88, 217, 1);
+                            }
+                            &:active {
+                                background: rgba(28, 88, 217, 0.08);
+                                color: rgba(28, 88, 217, 1);
+                            }
+                            > .icon-dots-vertical {
+                                position: absolute;
+                                top: 50%;
+                                left: 50%;
+                                transform: translate(-50%, -50%);
+                            }
+                        }
+                    }
+
+                    .DownloadsDropdown__File__ProgressBarContainer {
+                        width: 100%;
+                        height: 4px;
+                        background: rgba(63, 67, 80, 0.16);
+                        border-radius: 4px;
+                        margin-top: 4px;
+                        overflow: hidden;
+                        position: relative;
+
+                        .DownloadsDropdown__File__ProgressBar {
+                            background: #1c58d9;
+                            height: 100%;
+                            left: 0;
+                            position: absolute;
+                            top: 0;
+                            transition: all 0.2s;
+                            width: 0%;
+                        }
+                    }
+                }
+
+                .DownloadsDropdown__Update {
+                    align-items: flex-start;
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: flex-start;
+                    padding: 12px 12px 12px 20px;
+                    width: 100%;
+
+                    .DownloadsDropdown__Update__Details {
+                        align-items: flex-start;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: space-between;
+
+                        .DownloadsDropdown__Update__Details__Title {
+                            color: #3F4350;
+                            font-family: 'Open Sans';
+                            font-size: 12px;
+                            font-style: normal;
+                            font-weight: 600;
+                            line-height: 16px;
+                            max-width: 200px;
+                            overflow: hidden;
+                            text-align: left;
+                            text-overflow: ellipsis;
+                            white-space: nowrap;
+                        }
+
+                        .DownloadsDropdown__Update__Details__Description {
+                            color: rgba(63, 67, 80, 0.64);
+                            font-size: 10px;
+                            font-style: normal;
+                            font-weight: 400;
+                            letter-spacing: 0.02em;
+                            line-height: 16px;
+                            max-width: 200px;
+                        }
+
+                        button#downloadUpdateButton {
+                            font-style: normal;
+                            font-weight: 600;
+                            font-size: 12px;
+                            height: 32px;
+                            margin-top: 6px;
+                            padding: 10px 16px;
+                        }
+                    }
+                }
+            }
+
+            &.darkMode {
+                background: #1f1f1f;
+                border: 1px solid rgba(221, 223, 228, 0.16);
+
+                .DownloadsDropdown__header {
+                    .DownloadsDropdown__clearAllButton {
+                        color: rgb(56, 111, 229);
+                        &:hover {
+                            background: rgba(56, 111, 229, 0.08);
+                        }
+                        &.disabled {
+                            background: transparent;
+                            color: rgba(63, 67, 80, 0.52);
+                        }
+                    }
+                    .DownloadsDropdown__Downloads {
+                        color: #DDD;
+                    }
+                }
+
+                .DownloadsDropdown__divider {
+                    border-color: rgba(221, 221, 221, 0.08);
+                }
+
+                .DownloadsDropdown__list {
+                    color: #DDD;
+
+                    .DownloadsDropdown__File {
+                        &:hover {
+                            background: rgba(221, 223, 228, 0.08);
+                        }
+
+                        .DownloadsDropdown__Thumbnail__Container {
+                            background: rgba(221, 223, 228, 0.08);
+
+                            > svg {
+                                background: #1f1f1f;
+                                border: 1px solid transparent;
+                            }
+                        }
+
+                        .DownloadsDropdown__File__Body {
+                            align-items: flex-start;
+
+                            .DownloadsDropdown__File__Body__Details {
+                                .DownloadsDropdown__File__Body__Details__Filename {
+                                    color: rgba(221, 223, 228, 1);
+                                }
+
+                                .DownloadsDropdown__File__Body__Details__FileSizeAndStatus {
+                                    color: rgba(221, 223, 228, 0.64);
+
+                                    &.cancelled {
+                                        color: #D24B4E;
+                                    }
+                                }
+                            }
+
+                            .DownloadsDropdown__File__Body__ThreeDotButton {
+                                color: rgba(221, 223, 228, 0.56);
+
+                                &:hover {
+                                    background: rgba(221, 223, 228, 0.08);
+                                }
+                                &:active {
+                                    background: rgba(56, 111, 229, 0.08);
+                                    color: rgb(56, 111, 229);
+                                }
+                                &.active {
+                                    background: rgba(56, 111, 229, 0.08);
+                                    color: rgb(56, 111, 229);
+                                }
+                                &.active:hover {
+                                    background: rgba(56, 111, 229, 0.16);
+                                    color: rgba(28, 88, 217, 1);
+                                }
+                            }
+                        }
+                    }
+
+                    .DownloadsDropdown__Update .DownloadsDropdown__Update__Details {
+                        .DownloadsDropdown__Update__Details__Title {
+                            color: rgba(221, 223, 228, 1);
+                        }
+
+                        .DownloadsDropdown__Update__Details__Description {
+                            color: rgba(221, 223, 228, 0.64);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

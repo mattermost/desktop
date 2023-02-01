@@ -21,8 +21,8 @@ import {
     SET_VIEW_OPTIONS,
     LOADSCREEN_END,
 } from 'common/communication';
-
-import {TabView} from 'common/tabs/TabView';
+import {MattermostServer} from 'common/servers/MattermostServer';
+import {TabView, TabTuple} from 'common/tabs/TabView';
 
 import {ServerInfo} from 'main/server/serverInfo';
 import ContextMenu from '../contextMenu';
@@ -39,7 +39,6 @@ export enum Status {
     ERROR = -1,
 }
 
-const ASTERISK_GROUP = 3;
 const MENTIONS_GROUP = 2;
 
 export class MattermostView extends EventEmitter {
@@ -53,12 +52,6 @@ export class MattermostView extends EventEmitter {
     serverInfo: ServerInfo;
 
     removeLoading?: number;
-
-    /**
-     * for backward compatibility when reading the title.
-     * null means we have yet to figure out if it uses it or not but we consider it false until proven wrong
-     */
-    usesAsteriskForUnreads?: boolean;
 
     currentFavicon?: string;
     hasBeenShown: boolean;
@@ -92,7 +85,7 @@ export class MattermostView extends EventEmitter {
         this.view = new BrowserView(this.options);
         this.resetLoadingStatus();
 
-        log.info(`BrowserView created for server ${this.tab.name}`);
+        log.verbose(`BrowserView created for server ${this.tab.name}`);
 
         this.hasBeenShown = false;
 
@@ -136,6 +129,16 @@ export class MattermostView extends EventEmitter {
         return this.tab.name;
     }
 
+    get urlTypeTuple(): TabTuple {
+        return this.tab.urlTypeTuple;
+    }
+
+    updateServerInfo = (srv: MattermostServer) => {
+        this.tab.server = srv;
+        this.serverInfo = new ServerInfo(srv);
+        this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.name, this.tab.shouldNotify);
+    }
+
     resetLoadingStatus = () => {
         if (this.status !== Status.LOADING) { // if it's already loading, don't touch anything
             delete this.retryLoad;
@@ -161,9 +164,20 @@ export class MattermostView extends EventEmitter {
         } else {
             loadURL = this.tab.url.toString();
         }
-        log.info(`[${Util.shorten(this.tab.name)}] Loading ${loadURL}`);
+        log.verbose(`[${Util.shorten(this.tab.name)}] Loading ${loadURL}`);
         const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
+            if (err.code && err.code.startsWith('ERR_CERT')) {
+                WindowManager.sendToRenderer(LOAD_FAILED, this.tab.name, err.toString(), loadURL.toString());
+                this.emit(LOAD_FAILED, this.tab.name, err.toString(), loadURL.toString());
+                log.info(`[${Util.shorten(this.tab.name)}] Invalid certificate, stop retrying until the user decides what to do: ${err}.`);
+                this.status = Status.ERROR;
+                return;
+            }
+            if (err.code && err.code.startsWith('ERR_ABORTED')) {
+                // If the loading was aborted, we shouldn't be retrying
+                return;
+            }
             this.loadRetry(loadURL, err);
         });
     }
@@ -210,7 +224,7 @@ export class MattermostView extends EventEmitter {
 
     loadSuccess = (loadURL: string) => {
         return () => {
-            log.info(`[${Util.shorten(this.tab.name)}] finished loading ${loadURL}`);
+            log.verbose(`[${Util.shorten(this.tab.name)}] finished loading ${loadURL}`);
             WindowManager.sendToRenderer(LOAD_SUCCESS, this.tab.name);
             this.maxRetries = MAX_SERVER_RETRIES;
             if (this.status === Status.LOADING) {
@@ -360,6 +374,8 @@ export class MattermostView extends EventEmitter {
         log.silly('MattermostView.handleUpdateTarget', {tabName: this.tab.name, url});
         if (url && !urlUtils.isInternalURL(urlUtils.parseURL(url), this.tab.server.url)) {
             this.emit(UPDATE_TARGET_URL, url);
+        } else {
+            this.emit(UPDATE_TARGET_URL);
         }
     }
 
@@ -372,33 +388,20 @@ export class MattermostView extends EventEmitter {
     }
 
     updateMentionsFromTitle = (title: string) => {
-        //const title = this.view.webContents.getTitle();
         const resultsIterator = title.matchAll(this.titleParser);
         const results = resultsIterator.next(); // we are only interested in the first set
-
-        // if not using asterisk (version > v5.28), it'll be marked as undefined and wont be used to check if there are unread channels
-        const hasAsterisk = results && results.value && results.value[ASTERISK_GROUP];
-        if (typeof hasAsterisk !== 'undefined') {
-            this.usesAsteriskForUnreads = true;
-        }
-        let unreads;
-        if (this.usesAsteriskForUnreads) {
-            unreads = Boolean(hasAsterisk);
-        }
         const mentions = (results && results.value && parseInt(results.value[MENTIONS_GROUP], 10)) || 0;
 
-        appState.updateMentions(this.tab.name, mentions, unreads);
+        appState.updateMentions(this.tab.name, mentions);
     }
 
     handleFaviconUpdate = (e: Event, favicons: string[]) => {
         log.silly('MattermostView.handleFaviconUpdate', {tabName: this.tab.name, favicons});
 
-        if (!this.usesAsteriskForUnreads) {
-            // if unread state is stored for that favicon, retrieve value.
-            // if not, get related info from preload and store it for future changes
-            this.currentFavicon = favicons[0];
-            this.findUnreadState(favicons[0]);
-        }
+        // if unread state is stored for that favicon, retrieve value.
+        // if not, get related info from preload and store it for future changes
+        this.currentFavicon = favicons[0];
+        this.findUnreadState(favicons[0]);
     }
 
     // if favicon is null, it will affect appState, but won't be memoized

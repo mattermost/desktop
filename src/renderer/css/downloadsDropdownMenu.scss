@@ -1,0 +1,90 @@
+@import url("fonts.css");
+@import '~@mattermost/compass-icons/css/compass-icons.css';
+
+@mixin file-icon($path) {
+    background-image: url($path);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 24px 24px;
+}
+
+/* with this, padding doesn't change an element's width & height */
+* {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    margin: 0;
+    background-color: transparent;
+    font-family: Open Sans;
+    overflow: hidden;
+    height: 172px; // 160 + 12
+    width: 176px; // 154 + 12
+
+    #app {
+        background-color: transparent;
+        padding: 0 0 12px 12px;
+        height: 100%;
+        width: 100%;
+
+        .DownloadsDropdownMenu {
+            background: #ffffff;
+            border-radius: 4px;
+            border: 1px solid rgba(61, 60, 64, 0.16);
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.12);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+            padding: 8px 0px;
+            width: 100%;
+
+            .DownloadsDropdownMenu__MenuItem {
+                align-items: center;
+                background-color: transparent;
+                color: rgba(63, 67, 80, 1);
+                cursor: pointer;
+                display: flex;
+                font-size: 14px;
+                font-weight: 400;
+                height: 25%;
+                justify-content: flex-start;
+                padding-left: 20px;
+
+                &:hover {
+                    background-color: rgba(63, 67, 80, 0.08);
+                }
+
+                &.disabled {
+                    background-color: transparent;
+                    cursor: unset;
+                    color: rgba(63, 67, 80, 0.32);
+                }
+            }
+
+            &.darkMode {
+                background: #1f1f1f;
+                border: 1px solid rgba(221, 223, 228, 0.16);
+                color: rgba(221, 223, 228, 1);
+
+                .DownloadsDropdownMenu__MenuItem {
+                    color: rgba(221, 223, 228, 1);
+
+                    &:hover {
+                        background: rgba(221, 223, 228, 0.08);
+                    }
+
+                    &.disabled {
+                        background: #1f1f1f;
+                        color: rgba(221, 223, 228, 0.32);
+                    }
+                }
+            }
+        }
+    }
+}

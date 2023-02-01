@@ -7,7 +7,7 @@ const fs = require('fs');
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
-describe('back_button', function desc() {
+describe('MM-T2633 Back button should behave as expected', function desc() {
     this.timeout(30000);
 
     const config = {
@@ -39,7 +39,11 @@ describe('back_button', function desc() {
         ],
     };
 
-    beforeEach(async () => {
+    let mainWindow;
+    let firstServer;
+    let backButton;
+
+    before(async () => {
         env.cleanDataDir();
         env.createTestUserDataDir();
         env.cleanTestConfig();
@@ -47,48 +51,57 @@ describe('back_button', function desc() {
         await asyncSleep(1000);
         this.app = await env.getApp();
         this.serverMap = await env.getServerMap(this.app);
+
+        mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+        firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+        await firstServer.click('a:has-text("Okta")');
+        backButton = await mainWindow.waitForSelector('button:has-text("Back")');
     });
 
-    afterEach(async () => {
+    after(async () => {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
-    it('MM-T2633 Back button should behave as expected', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
-        const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
-
-        await firstServer.click('a:has-text("OneLogin")');
-        let backButton = await mainWindow.waitForSelector('button:has-text("Back")');
+    it('MM-T2633_1 after clicking Okta, back button should appear', async () => {
         backButton.should.not.be.null;
-        let poweredByOneLogin = await firstServer.waitForSelector('a:has-text("Powered by OneLogin")');
-        poweredByOneLogin.should.not.be.null;
+        const poweredByOkta = await firstServer.waitForSelector('p:has-text("Powered by Okta")');
+        poweredByOkta.should.not.be.null;
+    });
 
+    it('MM-T2633_2 after clicking Back, should be back on the login screen', async () => {
         await backButton.click();
-        let loginPrompt = await firstServer.waitForSelector('#loginId');
+        const loginPrompt = await firstServer.waitForSelector('#input_loginId');
         loginPrompt.should.not.be.null;
         await mainWindow.waitForSelector('button:has-text("Back")', {state: 'hidden'});
+    });
 
+    it('MM-T2633_3 on the Okta screen, should still allow links to be clicked and still show the Back button', async () => {
         let isNewWindow = false;
         this.app.on('window', () => {
             isNewWindow = true;
         });
-        const oneLoginUrl = firstServer.url();
-        await firstServer.click('a:has-text("OneLogin")');
-        poweredByOneLogin = await firstServer.waitForSelector('a:has-text("Powered by OneLogin")');
-        poweredByOneLogin.click();
+        const OktaUrl = firstServer.url();
+        await firstServer.click('a:has-text("Okta")');
+        const poweredByOkta = await firstServer.waitForSelector('p:has-text("Powered by Okta") a:has-text("Okta")');
+        poweredByOkta.click();
         backButton = await mainWindow.waitForSelector('button:has-text("Back")');
         backButton.should.not.be.null;
         const frameUrl = firstServer.url();
-        frameUrl.should.not.equal(oneLoginUrl);
+        frameUrl.should.not.equal(OktaUrl);
         isNewWindow.should.be.false;
+        await firstServer.waitForSelector('p:has-text("Powered by Okta")', {state: 'hidden'});
+    });
 
+    it('MM-T2633_4 after click Back twice, user should be on the main login screen again', async () => {
         await backButton.click();
+        await firstServer.waitForURL('https://mattermost.okta.com/**');
         await backButton.click();
-        loginPrompt = await firstServer.waitForSelector('#loginId');
+        const loginPrompt = await firstServer.waitForSelector('#input_loginId');
         loginPrompt.should.not.be.null;
     });
 });

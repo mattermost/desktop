@@ -10,8 +10,6 @@ const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
 describe('Menu/window_menu', function desc() {
-    this.timeout(30000);
-
     const config = {
         ...env.demoConfig,
         teams: [
@@ -40,80 +38,119 @@ describe('Menu/window_menu', function desc() {
                 lastActiveTab: 0,
             },
         ],
+        lastActiveTeam: 2,
         minimizeToTray: true,
         alwaysMinimize: true,
     };
 
-    beforeEach(async () => {
+    const beforeFunc = async () => {
         env.cleanDataDir();
         env.createTestUserDataDir();
         env.cleanTestConfig();
         fs.writeFileSync(env.configFilePath, JSON.stringify(config));
         await asyncSleep(1000);
         this.app = await env.getApp();
-    });
+    };
 
-    afterEach(async () => {
+    const afterFunc = async () => {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
+    };
+
+    this.timeout(30000);
+
+    describe('MM-T826 should switch to servers when keyboard shortcuts are pressed', async () => {
+        let mainWindow;
+
+        before(async () => {
+            await beforeFunc();
+            await env.getServerMap(this.app);
+            mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        });
+        after(afterFunc);
+
+        it('MM-T826_1 should show the second server', async () => {
+            let dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+            dropdownButtonText.should.equal('google');
+
+            robot.keyTap('2', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
+            dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton:has-text("github")');
+            dropdownButtonText.should.equal('github');
+        });
+
+        it('MM-T826_2 should show the third server', async () => {
+            robot.keyTap('3', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
+            const dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton:has-text("google")');
+            dropdownButtonText.should.equal('google');
+        });
+
+        it('MM-T826_3 should show the first server', async () => {
+            robot.keyTap('1', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
+            const dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton:has-text("example")');
+            dropdownButtonText.should.equal('example');
+        });
     });
 
-    it('MM-T826 should switch to servers when keyboard shortcuts are pressed', async () => {
-        await env.getServerMap(this.app);
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+    describe('MM-T4385 select tab from menu', async () => {
+        let mainView;
 
-        let dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
-        dropdownButtonText.should.equal('example');
+        before(async () => {
+            await beforeFunc();
+            mainView = this.app.windows().find((window) => window.url().includes('index'));
+        });
+        after(afterFunc);
 
-        robot.keyTap('2', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
-        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton:has-text("github")');
-        dropdownButtonText.should.equal('github');
+        it('MM-T4385_1 should show the second tab', async () => {
+            let tabViewButton = await mainView.innerText('.active');
+            tabViewButton.should.equal('Channels');
 
-        robot.keyTap('3', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
-        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton:has-text("google")');
-        dropdownButtonText.should.equal('google');
+            robot.keyTap('2', [env.cmdOrCtrl]);
+            await asyncSleep(500);
+            tabViewButton = await mainView.innerText('.active');
+            tabViewButton.should.equal('Boards');
+        });
 
-        robot.keyTap('1', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
-        dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton:has-text("example")');
-        dropdownButtonText.should.equal('example');
-    });
+        it('MM-T4385_2 should show the third tab', async () => {
+            robot.keyTap('3', [env.cmdOrCtrl]);
+            await asyncSleep(500);
+            const tabViewButton = await mainView.innerText('.active');
+            tabViewButton.should.equal('Playbooks');
+        });
 
-    it('MM-T4385 select tab from menu', async () => {
-        const mainView = this.app.windows().find((window) => window.url().includes('index'));
-
-        let tabViewButton = await mainView.innerText('.active');
-        tabViewButton.should.equal('Channels');
-
-        robot.keyTap('2', [env.cmdOrCtrl]);
-        tabViewButton = await mainView.innerText('.active');
-        tabViewButton.should.equal('Boards');
-
-        robot.keyTap('3', [env.cmdOrCtrl]);
-        tabViewButton = await mainView.innerText('.active');
-        tabViewButton.should.equal('Playbooks');
-
-        robot.keyTap('1', [env.cmdOrCtrl]);
-        tabViewButton = await mainView.innerText('.active');
-        tabViewButton.should.equal('Channels');
+        it('MM-T4385_3 should show the first tab', async () => {
+            robot.keyTap('1', [env.cmdOrCtrl]);
+            await asyncSleep(500);
+            const tabViewButton = await mainView.innerText('.active');
+            tabViewButton.should.equal('Channels');
+        });
     });
 
     it('MM-T827 select next/previous tab', async () => {
+        await beforeFunc();
+
         const mainView = this.app.windows().find((window) => window.url().includes('index'));
 
         let tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Channels');
 
         robot.keyTap('tab', ['control']);
+        await asyncSleep(500);
         tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Boards');
 
         robot.keyTap('tab', ['shift', 'control']);
+        await asyncSleep(500);
         tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.equal('Channels');
+
+        await afterFunc();
     });
 
     it('MM-T824 should be minimized when keyboard shortcuts are pressed', async () => {
+        await beforeFunc();
+
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);
         if (process.platform === 'darwin') {
@@ -128,9 +165,13 @@ describe('Menu/window_menu', function desc() {
         await asyncSleep(2000);
         const isMinimized = await browserWindow.evaluate((window) => window.isMinimized());
         isMinimized.should.be.true;
+
+        await afterFunc();
     });
 
     it('MM-T825 should be hidden when keyboard shortcuts are pressed', async () => {
+        await beforeFunc();
+
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);
         robot.keyTap('w', [env.cmdOrCtrl]);
@@ -139,5 +180,7 @@ describe('Menu/window_menu', function desc() {
         isVisible.should.be.false;
         const isDestroyed = await browserWindow.evaluate((window) => window.isDestroyed());
         isDestroyed.should.be.false;
+
+        await afterFunc();
     });
 });

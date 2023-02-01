@@ -16,6 +16,7 @@ export type Team = {
 
 export type TeamWithIndex = Team & {index: number};
 export type TeamWithTabs = Team & {tabs: Tab[]};
+export type TeamWithTabsAndGpo = TeamWithTabs & {isGpo?: boolean};
 
 export type Config = ConfigV3;
 
@@ -45,6 +46,7 @@ export type ConfigV3 = {
     alwaysMinimize?: boolean;
     alwaysClose?: boolean;
     logLevel?: string;
+    appLanguage?: string;
 }
 
 export type ConfigV2 = {
@@ -104,6 +106,7 @@ export type BuildConfig = {
     enableServerManagement: boolean;
     enableAutoUpdater: boolean;
     managedResources: string[];
+    allowedProtocols: string[];
 }
 
 export type RegistryConfig = {
@@ -116,7 +119,6 @@ export type CombinedConfig = ConfigV3 & BuildConfig & {
     registryTeams: Team[];
     appName: string;
     useNativeWindow: boolean;
-
 }
 
 export type LocalConfiguration = Config & {
