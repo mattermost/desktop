@@ -23,6 +23,9 @@ jest.mock('electron', () => ({
                         if (event === 'data') {
                             responseCallback(url === badDataURL ? '98&H09986t&(*6BV789RhN^t97rb6Ev^*e5v89 re5bg^&' : JSON.stringify(testData));
                         }
+                        if (event === 'end') {
+                            responseCallback();
+                        }
                     }),
                     statusCode: (url === validURL || url === badDataURL) ? 200 : 404,
                 });
