@@ -4,6 +4,7 @@
 'use strict';
 
 import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, clipboard} from 'electron';
+import log from 'electron-log';
 
 import {BROWSER_HISTORY_BUTTON, OPEN_TEAMS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
 import {t} from 'common/utils/util';
@@ -339,6 +340,14 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         });
         submenu.push(separatorItem);
     }
+
+    submenu.push({
+        id: 'Show logs',
+        label: localizeMessage('main.menus.app.help.ShowLogs', 'Show logs'),
+        click() {
+            shell.showItemInFolder(log.transports.file.getFile().path);
+        },
+    });
 
     submenu.push({
         id: 'diagnostics',
