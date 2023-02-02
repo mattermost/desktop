@@ -1,0 +1,46 @@
+name: build-linux
+on:
+  workflow_call:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: ci/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: "package.json"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - name: ci/install-dependencies
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+        run: |
+          wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | sudo apt-key add -
+          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
+          sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata
+          npm ci
+      - name: ci/test
+        uses: ./.github/actions/test
+      - name: ci/build
+        run: |
+          mkdir -p ./build
+          npm run package:linux
+          bash -x ./scripts/patch_updater_yml.sh
+          mkdir -p ./build/linux
+          bash -x ./scripts/cp_artifacts.sh release ./linux/
+      - name: ci/upload-build
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: build
+          path: ./build
+          retention-days: 14 ## No need to keep CI builds more than 14 days
+      - name: ci/test-report
+        uses: dorny/test-reporter@c9b3d0e2bd2a4e96aaf424dbaa31c46b42318226 # v1.6.0
+        if: success() || failure()
+        with:
+          name: Linux Tests
+          path: test-result.xml
+          reporter: jest-junit
