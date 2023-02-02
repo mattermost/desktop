@@ -42,5 +42,5 @@ jobs:
         if: success() || failure()
         with:
           name: Linux Tests
-          path: test-result.xml
+          path: test-results.xml
           reporter: jest-junit

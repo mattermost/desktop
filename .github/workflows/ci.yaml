@@ -98,7 +98,7 @@ jobs:
         if: success() || failure()
         with:
           name: Windows Tests
-          path: test-result.xml
+          path: test-results.xml
           reporter: jest-junit
 
   build-mac-no-dmg:
@@ -139,5 +139,5 @@ jobs:
         if: success() || failure()
         with:
           name: MacOS Tests
-          path: test-result.xml
+          path: test-results.xml
           reporter: jest-junit
