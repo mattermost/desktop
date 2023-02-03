@@ -23,10 +23,13 @@ import {
     MAIN_WINDOW_SHOWN,
 } from 'common/communication';
 import Config from 'common/config';
-import urlUtils from 'common/utils/url';
+import urlUtils, {equalUrlsIgnoringSubpath, equalUrlsWithSubpath, getFormattedPathName} from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
-import {getServerView, getTabViewName, TabTuple, TabType} from 'common/tabs/TabView';
+import {getTabViewName, TabTuple, TabType, TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS} from 'common/tabs/TabView';
+import MessagingTabView from 'common/tabs/MessagingTabView';
+import FocalboardTabView from 'common/tabs/FocalboardTabView';
+import PlaybooksTabView from 'common/tabs/PlaybooksTabView';
 
 import {localizeMessage} from 'main/i18nManager';
 import {ServerInfo} from 'main/server/serverInfo';
@@ -82,7 +85,7 @@ export class ViewManager {
     }
 
     makeView = (srv: MattermostServer, serverInfo: ServerInfo, tab: Tab, url?: string): MattermostView => {
-        const tabView = getServerView(srv, tab);
+        const tabView = this.getServerView(srv, tab);
         const view = new MattermostView(tabView, serverInfo, this.mainWindow, this.viewOptions);
         view.once(LOAD_SUCCESS, this.activateView);
         view.load(url);
@@ -146,7 +149,7 @@ export class ViewManager {
         for (const [team, tab] of sortedTabs) {
             const srv = new MattermostServer(team.name, team.url);
             const info = new ServerInfo(srv);
-            const view = getServerView(srv, tab);
+            const view = this.getServerView(srv, tab);
             const tabTuple = tuple(new URL(team.url).href, tab.name as TabType);
             const recycle = current.get(tabTuple);
             if (!tab.isOpen) {
@@ -511,11 +514,48 @@ export class ViewManager {
         view.removeListener(LOAD_SUCCESS, this.deeplinkSuccess);
     }
 
+    getViewByURL = (inputURL: URL | string, ignoreScheme = false): {name: string; url: string} | undefined => {
+        const parsedURL = urlUtils.parseURL(inputURL);
+        if (!parsedURL) {
+            return undefined;
+        }
+        let firstOption;
+        let secondOption;
+        Config.teams.forEach((team) => {
+            const srv = new MattermostServer(team.name, team.url);
+
+            // sort by length so that we match the highest specificity last
+            const filteredTabs = team.tabs.map((tab) => {
+                const tabView = this.getServerView(srv, tab);
+                const parsedServerUrl = urlUtils.parseURL(tabView.url);
+                return {tabView, parsedServerUrl};
+            });
+
+            filteredTabs.sort((a, b) => a.tabView.url.toString().length - b.tabView.url.toString().length);
+            filteredTabs.forEach((tab) => {
+                if (tab.parsedServerUrl) {
+                    // check server and subpath matches (without subpath pathname is \ so it always matches)
+                    if (getFormattedPathName(tab.parsedServerUrl.pathname) !== '/' && equalUrlsWithSubpath(tab.parsedServerUrl, parsedURL, ignoreScheme)) {
+                        firstOption = {name: tab.tabView.name, url: tab.parsedServerUrl.toString()};
+                    }
+                    if (getFormattedPathName(tab.parsedServerUrl.pathname) === '/' && equalUrlsIgnoringSubpath(tab.parsedServerUrl, parsedURL, ignoreScheme)) {
+                        // in case the user added something on the path that doesn't really belong to the server
+                        // there might be more than one that matches, but we can't differentiate, so last one
+                        // is as good as any other in case there is no better match (e.g.: two subpath servers with the same origin)
+                        // e.g.: https://community.mattermost.com/core
+                        secondOption = {name: tab.tabView.name, url: tab.parsedServerUrl.toString()};
+                    }
+                }
+            });
+        });
+        return firstOption || secondOption;
+    }
+
     handleDeepLink = (url: string | URL) => {
         // TODO: fix for new tabs
         if (url) {
             const parsedURL = urlUtils.parseURL(url)!;
-            const tabView = urlUtils.getView(parsedURL, this.getServers(), true);
+            const tabView = this.getViewByURL(parsedURL, true);
             if (tabView) {
                 const urlWithSchema = `${urlUtils.parseURL(tabView.url)?.origin}${parsedURL.pathname}${parsedURL.search}`;
                 if (this.closedViews.has(tabView.name)) {
@@ -554,5 +594,18 @@ export class ViewManager {
                 view.view.webContents.send(channel, ...args);
             }
         });
+    }
+
+    private getServerView = (srv: MattermostServer, tab: Tab) => {
+        switch (tab.name) {
+        case TAB_MESSAGING:
+            return new MessagingTabView(srv);
+        case TAB_FOCALBOARD:
+            return new FocalboardTabView(srv);
+        case TAB_PLAYBOOKS:
+            return new PlaybooksTabView(srv);
+        default:
+            throw new Error('Not implemeneted');
+        }
     }
 }

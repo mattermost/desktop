@@ -47,7 +47,6 @@ jest.mock('common/config', () => ({}));
 jest.mock('common/utils/url', () => ({
     isTeamUrl: jest.fn(),
     isAdminUrl: jest.fn(),
-    getView: jest.fn(),
     cleanPathName: jest.fn(),
 }));
 jest.mock('common/tabs/TabView', () => ({
@@ -874,6 +873,7 @@ describe('main/windows/windowManager', () => {
             ]),
             openClosedTab: jest.fn(),
             showByName: jest.fn(),
+            getViewByURL: jest.fn(),
         };
         windowManager.handleBrowserHistoryButton = jest.fn();
 
@@ -911,7 +911,7 @@ describe('main/windows/windowManager', () => {
         });
 
         it('should open closed view if pushing to it', () => {
-            urlUtils.getView.mockReturnValue({name: 'server-1_other_type_2'});
+            windowManager.viewManager.getViewByURL.mockReturnValue({name: 'server-1_other_type_2'});
             windowManager.viewManager.openClosedTab.mockImplementation((name) => {
                 const view = windowManager.viewManager.closedViews.get(name);
                 windowManager.viewManager.closedViews.delete(name);
@@ -923,13 +923,13 @@ describe('main/windows/windowManager', () => {
         });
 
         it('should open redirect view if different from current view', () => {
-            urlUtils.getView.mockReturnValue({name: 'server-1_other_type_1'});
+            windowManager.viewManager.getViewByURL.mockReturnValue({name: 'server-1_other_type_1'});
             windowManager.handleBrowserHistoryPush(null, 'server-1_tab-messaging', '/other_type_1/subpath');
             expect(windowManager.viewManager.showByName).toBeCalledWith('server-1_other_type_1');
         });
 
         it('should ignore redirects to "/" to Messages from other tabs', () => {
-            urlUtils.getView.mockReturnValue({name: 'server-1_tab-messaging'});
+            windowManager.viewManager.getViewByURL.mockReturnValue({name: 'server-1_tab-messaging'});
             windowManager.handleBrowserHistoryPush(null, 'server-1_other_type_1', '/');
             expect(view1.view.webContents.send).not.toBeCalled();
         });

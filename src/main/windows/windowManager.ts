@@ -752,7 +752,7 @@ export class WindowManager {
 
         const currentView = this.viewManager?.views.get(viewName);
         const cleanedPathName = urlUtils.cleanPathName(currentView?.tab.server.url.pathname || '', pathName);
-        const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${cleanedPathName}`, Config.teams)?.name || viewName;
+        const redirectedViewName = this.viewManager?.getViewByURL(`${currentView?.tab.server.url}${cleanedPathName}`)?.name || viewName;
         if (this.viewManager?.closedViews.has(redirectedViewName)) {
             // If it's a closed view, just open it and stop
             this.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${cleanedPathName}`);
@@ -856,6 +856,14 @@ export class WindowManager {
         }
         view?.reload();
         this.viewManager?.showByName(view?.name);
+    }
+
+    getServerURLFromWebContentsId = (id: number) => {
+        const viewName = this.getViewNameByWebContentsId(id);
+        if (!viewName) {
+            return undefined;
+        }
+        return this.viewManager?.views.get(viewName)?.tab.server.url;
     }
 }
 

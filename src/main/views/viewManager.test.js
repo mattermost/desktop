@@ -9,8 +9,7 @@ import {Tuple as tuple} from '@bloomberg/record-tuple-polyfill';
 
 import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, MAIN_WINDOW_SHOWN} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
-import {getServerView, getTabViewName} from 'common/tabs/TabView';
-import urlUtils from 'common/utils/url';
+import {getTabViewName} from 'common/tabs/TabView';
 
 import {MattermostView} from './MattermostView';
 import {ViewManager} from './viewManager';
@@ -29,7 +28,6 @@ jest.mock('electron', () => ({
 }));
 
 jest.mock('common/tabs/TabView', () => ({
-    getServerView: jest.fn(),
     getTabViewName: jest.fn((a, b) => `${a}-${b}`),
 }));
 
@@ -45,7 +43,6 @@ jest.mock('common/utils/url', () => ({
             return null;
         }
     },
-    getView: jest.fn(),
 }));
 
 jest.mock('main/i18nManager', () => ({
@@ -75,7 +72,7 @@ describe('main/views/viewManager', () => {
         beforeEach(() => {
             viewManager.createLoadingScreen = jest.fn();
             viewManager.showByName = jest.fn();
-            getServerView.mockImplementation((srv, tab) => ({name: `${srv.name}-${tab.name}`}));
+            viewManager.getServerView = jest.fn().mockImplementation((srv, tab) => ({name: `${srv.name}-${tab.name}`}));
             MattermostView.mockImplementation((tab) => ({
                 on: jest.fn(),
                 load: loadFn,
@@ -184,7 +181,7 @@ describe('main/views/viewManager', () => {
                 send: jest.fn(),
             };
 
-            getServerView.mockImplementation((srv, tab) => ({
+            viewManager.getServerView = jest.fn().mockImplementation((srv, tab) => ({
                 name: `${srv.name}-${tab.name}`,
                 urlTypeTuple: tuple(`http://${srv.name}.com/`, tab.name),
                 url: new URL(`http://${srv.name}.com`),
@@ -684,6 +681,114 @@ describe('main/views/viewManager', () => {
         });
     });
 
+    // describe('getViewByURL', () => {
+    //     const servers = [
+    //         {
+    //             name: 'server-1',
+    //             url: 'http://server-1.com',
+    //             tabs: [
+    //                 {
+    //                     name: 'tab',
+    //                 },
+    //                 {
+    //                     name: 'tab-type1',
+    //                 },
+    //                 {
+    //                     name: 'tab-type2',
+    //                 },
+    //             ],
+    //         },
+    //         {
+    //             name: 'server-2',
+    //             url: 'http://server-2.com/subpath',
+    //             tabs: [
+    //                 {
+    //                     name: 'tab-type1',
+    //                 },
+    //                 {
+    //                     name: 'tab-type2',
+    //                 },
+    //                 {
+    //                     name: 'tab',
+    //                 },
+    //             ],
+    //         },
+    //     ];
+
+    //     it('should match the correct server - base URL', () => {
+    //         const inputURL = new URL('http://server-1.com');
+    //         expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-1_tab', url: 'http://server-1.com/'});
+    //     });
+
+    //     it('should match the correct server - base tab', () => {
+    //         const inputURL = new URL('http://server-1.com/team');
+    //         expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-1_tab', url: 'http://server-1.com/'});
+    //     });
+
+    //     it('should match the correct server - different tab', () => {
+    //         const inputURL = new URL('http://server-1.com/type1/app');
+    //         expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-1_tab-type1', url: 'http://server-1.com/type1'});
+    //     });
+
+    //     it('should return undefined for server with subpath and URL without', () => {
+    //         const inputURL = new URL('http://server-2.com');
+    //         expect(urlUtils.getView(inputURL, servers)).toBe(undefined);
+    //     });
+
+    //     it('should return undefined for server with subpath and URL with wrong subpath', () => {
+    //         const inputURL = new URL('http://server-2.com/different/subpath');
+    //         expect(urlUtils.getView(inputURL, servers)).toBe(undefined);
+    //     });
+
+    //     it('should match the correct server with a subpath - base URL', () => {
+    //         const inputURL = new URL('http://server-2.com/subpath');
+    //         expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-2_tab', url: 'http://server-2.com/subpath/'});
+    //     });
+
+    //     it('should match the correct server with a subpath - base tab', () => {
+    //         const inputURL = new URL('http://server-2.com/subpath/team');
+    //         expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-2_tab', url: 'http://server-2.com/subpath/'});
+    //     });
+
+    //     it('should match the correct server with a subpath - different tab', () => {
+    //         const inputURL = new URL('http://server-2.com/subpath/type2/team');
+    //         expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-2_tab-type2', url: 'http://server-2.com/subpath/type2'});
+    //     });
+
+    //     it('should return undefined for wrong server', () => {
+    //         const inputURL = new URL('http://server-3.com');
+    //         expect(urlUtils.getView(inputURL, servers)).toBe(undefined);
+    //     });
+    // });
+
+    // describe('getServerView', () => {
+    //     it('should return correct URL on messaging tab', () => {
+    //         const server = new MattermostServer('server-1', 'http://server-1.com');
+    //         const tab = {name: TabView.TAB_MESSAGING};
+    //         expect(TabView.getServerView(server, tab).url).toBe(server.url);
+    //     });
+
+    //     it('should return correct URL on playbooks tab', () => {
+    //         const server = new MattermostServer('server-1', 'http://server-1.com');
+    //         const tab = {name: TabView.TAB_PLAYBOOKS};
+    //         expect(TabView.getServerView(server, tab).url.toString()).toBe(`${server.url}playbooks`);
+    //     });
+
+    //     it('should return correct URL on boards tab', () => {
+    //         const server = new MattermostServer('server-1', 'http://server-1.com');
+    //         const tab = {name: TabView.TAB_FOCALBOARD};
+    //         expect(TabView.getServerView(server, tab).url.toString()).toBe(`${server.url}boards`);
+    //     });
+
+    //     it('should throw error on bad tab name', () => {
+    //         const server = new MattermostServer('server-1', 'http://server-1.com');
+    //         const tab = {name: 'not a real tab name'};
+    //         expect(() => {
+    //             TabView.getServerView(server, tab);
+    //         }).toThrow(Error);
+    //     });
+    // });
+
     describe('handleDeepLink', () => {
         const viewManager = new ViewManager({});
         const baseView = {
@@ -705,6 +810,7 @@ describe('main/views/viewManager', () => {
 
         beforeEach(() => {
             viewManager.openClosedTab = jest.fn();
+            viewManager.getViewByURL = jest.fn();
         });
 
         afterEach(() => {
@@ -714,7 +820,7 @@ describe('main/views/viewManager', () => {
         });
 
         it('should load URL into matching view', () => {
-            urlUtils.getView.mockImplementation(() => ({name: 'view1', url: 'http://server-1.com/'}));
+            viewManager.getViewByURL.mockImplementation(() => ({name: 'view1', url: 'http://server-1.com/'}));
             const view = {...baseView};
             viewManager.views.set('view1', view);
             viewManager.handleDeepLink('mattermost://server-1.com/deep/link?thing=yes');
@@ -722,7 +828,7 @@ describe('main/views/viewManager', () => {
         });
 
         it('should send the URL to the view if its already loaded on a 6.0 server', () => {
-            urlUtils.getView.mockImplementation(() => ({name: 'view1', url: 'http://server-1.com/'}));
+            viewManager.getViewByURL.mockImplementation(() => ({name: 'view1', url: 'http://server-1.com/'}));
             const view = {
                 ...baseView,
                 serverInfo: {
@@ -743,7 +849,7 @@ describe('main/views/viewManager', () => {
         });
 
         it('should throw error if view is missing', () => {
-            urlUtils.getView.mockImplementation(() => ({name: 'view1', url: 'http://server-1.com/'}));
+            viewManager.getViewByURL.mockImplementation(() => ({name: 'view1', url: 'http://server-1.com/'}));
             const view = {...baseView};
             viewManager.handleDeepLink('mattermost://server-1.com/deep/link?thing=yes');
             expect(view.load).not.toHaveBeenCalled();
@@ -757,7 +863,7 @@ describe('main/views/viewManager', () => {
         });
 
         it('should reopen closed tab if called upon', () => {
-            urlUtils.getView.mockImplementation(() => ({name: 'view1', url: 'https://server-1.com/'}));
+            viewManager.getViewByURL.mockImplementation(() => ({name: 'view1', url: 'https://server-1.com/'}));
             viewManager.closedViews.set('view1', {});
             viewManager.handleDeepLink('mattermost://server-1.com/deep/link?thing=yes');
             expect(viewManager.openClosedTab).toHaveBeenCalledWith('view1', 'https://server-1.com/deep/link?thing=yes');

@@ -399,9 +399,15 @@ function initializeAfterAppReady() {
         }
 
         const requestingURL = webContents.getURL();
+        const serverURL = WindowManager.getServerURLFromWebContentsId(webContents.id);
+
+        if (!serverURL) {
+            callback(false);
+            return;
+        }
 
         // is the requesting url trusted?
-        callback(urlUtils.isTrustedURL(requestingURL, Config.teams));
+        callback(urlUtils.isTrustedURL(requestingURL, serverURL));
     });
 
     // only check for non-Windows, as with Windows we have to wait for GPO teams

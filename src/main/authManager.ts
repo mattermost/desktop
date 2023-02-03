@@ -6,7 +6,6 @@ import log from 'electron-log';
 import {PermissionType} from 'types/trustedOrigin';
 import {LoginModalData} from 'types/auth';
 
-import Config from 'common/config';
 import {BASIC_AUTH_PERMISSION} from 'common/permissions';
 import urlUtils from 'common/utils/url';
 
@@ -39,13 +38,13 @@ export class AuthManager {
         if (!parsedURL) {
             return;
         }
-        const server = urlUtils.getView(parsedURL, Config.teams);
-        if (!server) {
+        const serverURL = WindowManager.getServerURLFromWebContentsId(webContents.id);
+        if (!serverURL) {
             return;
         }
 
         this.loginCallbackMap.set(request.url, callback); // if callback is undefined set it to null instead so we know we have set it up with no value
-        if (urlUtils.isTrustedURL(request.url, Config.teams) || urlUtils.isCustomLoginURL(parsedURL, server, Config.teams) || TrustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
+        if (urlUtils.isTrustedURL(request.url, serverURL) || urlUtils.isCustomLoginURL(parsedURL, serverURL) || TrustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
             this.popLoginModal(request, authInfo);
         } else {
             this.popPermissionModal(request, authInfo, BASIC_AUTH_PERMISSION);
