@@ -6,4 +6,4 @@ about: Suggest an idea for this project
 
 Suggest features in the Mattermost feature idea forum so it can be discussed, upvoted and considered for a [help wanted ticket](https://docs.mattermost.com/process/help-wanted.html).
 
-https://portal.productboard.com/mattermost/33-what-matters-to-you
+https://mattermost.com/suggestions/
