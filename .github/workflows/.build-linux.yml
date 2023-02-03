@@ -30,17 +30,16 @@ jobs:
           npm run package:linux
           bash -x ./scripts/patch_updater_yml.sh
           mkdir -p ./build/linux
-          bash -x ./scripts/cp_artifacts.sh release ./linux/
+          bash -x ./scripts/cp_artifacts.sh release ./build/linux
       - name: ci/upload-build
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: build
-          path: ./build
+          path: ./build/linux
           retention-days: 14 ## No need to keep CI builds more than 14 days
-      - name: ci/test-report
-        uses: dorny/test-reporter@c9b3d0e2bd2a4e96aaf424dbaa31c46b42318226 # v1.6.0
-        if: success() || failure()
+      - name: ci/upload-test-results
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
-          name: Linux Tests
+          name: linux-test-results
           path: test-results.xml
-          reporter: jest-junit
+          retention-days: 5

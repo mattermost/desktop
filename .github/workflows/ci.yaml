@@ -86,20 +86,19 @@ jobs:
           npm run package:windows
           bash -x ./scripts/patch_updater_yml.sh
           mkdir -p ./build/win
-          bash -x ./scripts/cp_artifacts.sh release ./win/
+          bash -x ./scripts/cp_artifacts.sh release ./build/win
       - name: ci/upload-build
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: build
-          path: ./build
+          path: ./build/win
           retention-days: 14 ## No need to keep CI builds more than 14 days
-      - name: ci/test-report
-        uses: dorny/test-reporter@c9b3d0e2bd2a4e96aaf424dbaa31c46b42318226 # v1.6.0
-        if: success() || failure()
+      - name: ci/upload-test-results
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
-          name: Windows Tests
+          name: windows-test-results
           path: test-results.xml
-          reporter: jest-junit
+          retention-days: 5
 
   build-mac-no-dmg:
     runs-on: macos-12
@@ -127,17 +126,37 @@ jobs:
           npm run package:mac
           bash -x ./scripts/patch_updater_yml.sh
           mkdir -p ./build/macos
-          bash -x ./scripts/cp_artifacts.sh release ./macos/
+          bash -x ./scripts/cp_artifacts.sh release ./build/macos/
       - name: ci/upload-build
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: build
-          path: ./build
+          path: ./build/macos/
           retention-days: 14 ## No need to keep CI builds more than 14 days
-      - name: ci/test-report
-        uses: dorny/test-reporter@c9b3d0e2bd2a4e96aaf424dbaa31c46b42318226 # v1.6.0
-        if: success() || failure()
+      - name: ci/upload-test-results
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
-          name: MacOS Tests
+          name: macos-test-results
           path: test-results.xml
-          reporter: jest-junit
+          retention-days: 5
+
+  report-test-results:
+    if: always()
+    needs:
+      - build-mac-no-dmg
+      - build-win-no-installer
+      - build-linux
+    runs-on: ubuntu-22.04
+    permissions:
+      checks: write
+      pull-requests: write
+    steps:
+      - name: ci/download-test-results
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+      - run: ls -R
+      - name: ci/publish-results
+        uses: EnricoMi/publish-unit-test-result-action@a3caf02865c0604ad3dc1ecfcc5cdec9c41b7936 # v2.3.0
+        with:
+          comment_mode: failures
+          compare_to_earlier_commit: false
+          junit_files: "**/*.xml"
