@@ -122,6 +122,7 @@ export default class CallsWidgetWindow extends EventEmitter {
         ipcMain.off(CALLS_WIDGET_RESIZE, this.onResize);
         ipcMain.off(CALLS_WIDGET_SHARE_SCREEN, this.onShareScreen);
         ipcMain.off(CALLS_JOINED_CALL, this.onJoinedCall);
+        ipcMain.off(CALLS_POPOUT_FOCUS, this.onPopOutFocus);
     }
 
     private getWidgetURL() {
