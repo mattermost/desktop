@@ -218,7 +218,7 @@
     "main.allowProtocolDialog.button.saveProtocolAsAllowed": "Evet (izin verildiği gibi {protokol} kaydet)",
     "label.yes": "Evet",
     "label.save": "Kaydet",
-    "label.remove": "Sil",
+    "label.remove": "Kaldır",
     "label.ok": "Tamam",
     "label.no": "Hayır",
     "label.login": "Oturum aç",
