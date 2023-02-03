@@ -25,9 +25,10 @@ import {
 } from 'common/utils/constants';
 import Utils from 'common/utils/util';
 import {
+    CALLS_JOINED_CALL,
+    CALLS_POPOUT_FOCUS,
     CALLS_WIDGET_RESIZE,
     CALLS_WIDGET_SHARE_SCREEN,
-    CALLS_JOINED_CALL,
 } from 'common/communication';
 
 type LoadURLOpts = {
@@ -37,6 +38,7 @@ type LoadURLOpts = {
 export default class CallsWidgetWindow extends EventEmitter {
     public win: BrowserWindow;
     private main: BrowserWindow;
+    private popOut: BrowserWindow | null = null;
     private mainView: MattermostView;
     private config: CallsWidgetWindowConfig;
     private boundsErr: Rectangle = {
@@ -81,16 +83,10 @@ export default class CallsWidgetWindow extends EventEmitter {
         ipcMain.on(CALLS_WIDGET_RESIZE, this.onResize);
         ipcMain.on(CALLS_WIDGET_SHARE_SCREEN, this.onShareScreen);
         ipcMain.on(CALLS_JOINED_CALL, this.onJoinedCall);
+        ipcMain.on(CALLS_POPOUT_FOCUS, this.onPopOutFocus);
 
-        this.win.webContents.setWindowOpenHandler(() => {
-            return {
-                action: 'allow',
-                overrideBrowserWindowOptions: {
-                    parent: this.win,
-                    autoHideMenuBar: true,
-                },
-            };
-        });
+        this.win.webContents.setWindowOpenHandler(this.onPopOutOpen);
+        this.win.webContents.on('did-create-window', this.onPopOutCreate);
 
         this.load();
     }
@@ -218,6 +214,29 @@ export default class CallsWidgetWindow extends EventEmitter {
         }
 
         this.setBounds(initialBounds);
+    }
+
+    private onPopOutOpen = () => {
+        return {
+            action: 'allow' as const,
+            overrideBrowserWindowOptions: {
+                autoHideMenuBar: true,
+            },
+        };
+    }
+
+    private onPopOutCreate = (win: BrowserWindow) => {
+        this.popOut = win;
+    }
+
+    private onPopOutFocus = () => {
+        if (!this.popOut) {
+            return;
+        }
+        if (this.popOut.isMinimized()) {
+            this.popOut.restore();
+        }
+        this.popOut.focus();
     }
 }
 

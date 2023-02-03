@@ -53,6 +53,7 @@ describe('main/windows/callsWidgetWindow', () => {
         baseWindow.setBounds = jest.fn();
         baseWindow.webContents = {
             setWindowOpenHandler: jest.fn(),
+            on: jest.fn(),
         };
 
         beforeEach(() => {
@@ -287,6 +288,47 @@ describe('main/windows/callsWidgetWindow', () => {
             };
             widgetWindow.onJoinedCall(null, message);
             expect(widgetWindow.mainView.view.webContents.send).toHaveBeenCalledWith(CALLS_JOINED_CALL, message);
+        });
+
+        it('menubar disabled on popout', () => {
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+            expect(widgetWindow.onPopOutOpen()).toHaveProperty('action', 'allow');
+            expect(widgetWindow.onPopOutOpen().overrideBrowserWindowOptions).toHaveProperty('autoHideMenuBar', true);
+        });
+
+        it('onPopOutFocus', () => {
+            baseWindow.webContents = {
+                ...baseWindow.webContents,
+                send: jest.fn(),
+            };
+
+            let isMinimized = false;
+            baseWindow.restore = jest.fn();
+            baseWindow.isMinimized = jest.fn(() => isMinimized);
+
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+
+            expect(baseWindow.webContents.setWindowOpenHandler).toHaveBeenCalledWith(widgetWindow.onPopOutOpen);
+            expect(baseWindow.webContents.on).toHaveBeenCalledWith('did-create-window', widgetWindow.onPopOutCreate);
+
+            expect(widgetWindow.popOut).toBeNull();
+
+            const popOut = new BrowserWindow();
+            widgetWindow.onPopOutFocus();
+            expect(popOut.focus).not.toHaveBeenCalled();
+            expect(popOut.restore).not.toHaveBeenCalled();
+
+            widgetWindow.onPopOutCreate(popOut);
+            expect(widgetWindow.popOut).toBe(popOut);
+
+            widgetWindow.onPopOutFocus();
+            expect(popOut.focus).toHaveBeenCalled();
+            expect(popOut.restore).not.toHaveBeenCalled();
+
+            isMinimized = true;
+            widgetWindow.onPopOutFocus();
+            expect(popOut.focus).toHaveBeenCalled();
+            expect(popOut.restore).toHaveBeenCalled();
         });
     });
 });
