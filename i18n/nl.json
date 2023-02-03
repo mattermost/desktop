@@ -273,5 +273,6 @@
     "renderer.downloadsDropdown.ClearAll": "Alles wissen",
     "main.menus.app.view.downloads": "Downloads",
     "renderer.components.settingsPage.trayIcon.color": "Icoonkleur: ",
-    "main.menus.app.help.RunDiagnostics": "Diagnostische tests uitvoeren"
+    "main.menus.app.help.RunDiagnostics": "Diagnostische tests uitvoeren",
+    "main.menus.app.help.ShowLogs": "Logs tonen"
 }
