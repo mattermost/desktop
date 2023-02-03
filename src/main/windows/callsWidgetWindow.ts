@@ -86,6 +86,7 @@ export default class CallsWidgetWindow extends EventEmitter {
             return {
                 action: 'allow',
                 overrideBrowserWindowOptions: {
+                    parent: this.win,
                     autoHideMenuBar: true,
                 },
             };
