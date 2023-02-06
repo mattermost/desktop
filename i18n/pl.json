@@ -273,5 +273,6 @@
     "renderer.downloadsDropdown.ClearAll": "Wyczyść Wszystko",
     "main.menus.app.view.downloads": "Do pobrania",
     "renderer.components.settingsPage.trayIcon.color": "Kolor ikony: ",
-    "main.menus.app.help.RunDiagnostics": "Uruchom diagnostykę"
+    "main.menus.app.help.RunDiagnostics": "Uruchom diagnostykę",
+    "main.menus.app.help.ShowLogs": "Pokaż logi"
 }

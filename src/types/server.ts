@@ -12,4 +12,5 @@ export type RemoteInfo = {
 export type ClientConfig = {
     Version: string;
     SiteURL: string;
+    BuildBoards: string;
 }

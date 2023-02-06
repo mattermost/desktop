@@ -1,8 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import path from 'path';
 
-import {app, BrowserView, BrowserWindow, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
+import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 
 import log from 'electron-log';
 
@@ -212,13 +211,6 @@ export default class DownloadsDropdownView {
     }
 
     getDownloadImageThumbnailLocation = (event: IpcMainInvokeEvent, location: string) => {
-        // eslint-disable-next-line no-undef
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        if (!__IS_MAC_APP_STORE__) {
-            return location;
-        }
-
-        return path.resolve(app.getPath('temp'), path.basename(location));
+        return location;
     }
 }
