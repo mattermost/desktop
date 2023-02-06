@@ -143,6 +143,7 @@ export const CALLS_WIDGET_RESIZE = 'calls-widget-resize';
 export const CALLS_WIDGET_SHARE_SCREEN = 'calls-widget-share-screen';
 export const CALLS_WIDGET_CHANNEL_LINK_CLICK = 'calls-widget-channel-link-click';
 export const CALLS_JOINED_CALL = 'calls-joined-call';
+export const CALLS_POPOUT_FOCUS = 'calls-popout-focus';
 
 export const REQUEST_CLEAR_DOWNLOADS_DROPDOWN = 'request-clear-downloads-dropdown';
 export const CLOSE_DOWNLOADS_DROPDOWN = 'close-downloads-dropdown';
