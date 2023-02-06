@@ -47,11 +47,6 @@ export default class CallsWidgetWindow extends EventEmitter {
         width: 0,
         height: 0,
     };
-    private offsetsMap = {
-        'calls-widget-menu': {
-            height: 0,
-        },
-    };
 
     constructor(mainWindow: BrowserWindow, mainView: MattermostView, config: CallsWidgetWindowConfig) {
         super();
@@ -137,40 +132,18 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     private onResize = (event: IpcMainEvent, msg: CallsWidgetResizeMessage) => {
-        log.debug('CallsWidgetWindow.onResize');
+        log.debug('CallsWidgetWindow.onResize', msg);
 
+        const zoomFactor = this.win.webContents.getZoomFactor();
         const currBounds = this.win.getBounds();
+        const newBounds = {
+            x: currBounds.x,
+            y: currBounds.y - (Math.ceil(msg.height * zoomFactor) - currBounds.height),
+            width: Math.ceil(msg.width * zoomFactor),
+            height: Math.ceil(msg.height * zoomFactor),
+        };
 
-        switch (msg.element) {
-        case 'calls-widget-audio-menu': {
-            const newBounds = {
-                x: currBounds.x,
-                y: currBounds.y,
-                width: msg.width > 0 ? currBounds.width + msg.width : MINIMUM_CALLS_WIDGET_WIDTH,
-                height: currBounds.height,
-            };
-
-            this.setBounds(newBounds);
-
-            break;
-        }
-        case 'calls-widget-menu': {
-            const hOff = this.offsetsMap[msg.element].height;
-
-            const newBounds = {
-                x: currBounds.x,
-                y: msg.height === 0 ? currBounds.y + hOff : currBounds.y - (msg.height - hOff),
-                width: MINIMUM_CALLS_WIDGET_WIDTH,
-                height: MINIMUM_CALLS_WIDGET_HEIGHT + msg.height,
-            };
-
-            this.setBounds(newBounds);
-
-            this.offsetsMap[msg.element].height = msg.height;
-
-            break;
-        }
-        }
+        this.setBounds(newBounds);
     }
 
     private onShareScreen = (ev: IpcMainEvent, viewName: string, message: CallsWidgetShareScreenMessage) => {

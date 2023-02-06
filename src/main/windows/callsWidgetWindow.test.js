@@ -181,57 +181,87 @@ describe('main/windows/callsWidgetWindow', () => {
                 winBounds = bounds;
             });
 
+            baseWindow.webContents.getZoomFactor = jest.fn(() => 1.0);
+
             const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
             widgetWindow.win.emit('ready-to-show');
 
             expect(baseWindow.setBounds).toHaveBeenCalledTimes(2);
 
+            expect(baseWindow.setBounds).toHaveBeenCalledWith({
+                x: 12,
+                y: 720 - MINIMUM_CALLS_WIDGET_HEIGHT - 12,
+                width: MINIMUM_CALLS_WIDGET_WIDTH,
+                height: MINIMUM_CALLS_WIDGET_HEIGHT,
+            });
+
             widgetWindow.onResize(null, {
-                element: 'calls-widget-menu',
+                element: 'calls-widget',
+                width: 300,
                 height: 100,
             });
 
             expect(baseWindow.setBounds).toHaveBeenCalledWith({
                 x: 12,
-                y: 518,
-                width: MINIMUM_CALLS_WIDGET_WIDTH,
-                height: MINIMUM_CALLS_WIDGET_HEIGHT + 100,
+                y: 720 - 100 - 12,
+                width: 300,
+                height: 100,
+            });
+        });
+
+        it('zoom', () => {
+            baseWindow.show = jest.fn(() => {
+                baseWindow.emit('show');
             });
 
-            widgetWindow.onResize(null, {
-                element: 'calls-widget-audio-menu',
-                width: 100,
-            });
-
-            expect(baseWindow.setBounds).toHaveBeenCalledWith({
-                x: 12,
-                y: 518,
-                width: MINIMUM_CALLS_WIDGET_WIDTH + 100,
-                height: MINIMUM_CALLS_WIDGET_HEIGHT + 100,
-            });
-
-            widgetWindow.onResize(null, {
-                element: 'calls-widget-audio-menu',
-                width: 0,
-            });
-
-            expect(baseWindow.setBounds).toHaveBeenCalledWith({
-                x: 12,
-                y: 518,
-                width: MINIMUM_CALLS_WIDGET_WIDTH,
-                height: MINIMUM_CALLS_WIDGET_HEIGHT + 100,
-            });
-
-            widgetWindow.onResize(null, {
-                element: 'calls-widget-menu',
-                height: 0,
-            });
-
-            expect(baseWindow.setBounds).toHaveBeenCalledWith({
-                x: 12,
-                y: 618,
+            let winBounds = {
+                x: 0,
+                y: 0,
                 width: MINIMUM_CALLS_WIDGET_WIDTH,
                 height: MINIMUM_CALLS_WIDGET_HEIGHT,
+            };
+            baseWindow.getBounds = jest.fn(() => {
+                return winBounds;
+            });
+
+            baseWindow.setBounds = jest.fn((bounds) => {
+                winBounds = bounds;
+            });
+
+            baseWindow.webContents.getZoomFactor = jest.fn(() => 1.0);
+
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+            widgetWindow.win.emit('ready-to-show');
+
+            expect(baseWindow.setBounds).toHaveBeenCalledTimes(1);
+            expect(baseWindow.webContents.getZoomFactor).toHaveBeenCalledTimes(0);
+
+            baseWindow.webContents.getZoomFactor = jest.fn(() => 2.0);
+            widgetWindow.onResize(null, {
+                element: 'calls-widget',
+                width: 300,
+                height: 100,
+            });
+            expect(baseWindow.webContents.getZoomFactor).toHaveBeenCalledTimes(1);
+            expect(baseWindow.setBounds).toHaveBeenCalledWith({
+                x: 12,
+                y: 720 - 200 - 12,
+                width: 600,
+                height: 200,
+            });
+
+            baseWindow.webContents.getZoomFactor = jest.fn(() => 0.5);
+            widgetWindow.onResize(null, {
+                element: 'calls-widget',
+                width: 300,
+                height: 100,
+            });
+            expect(baseWindow.webContents.getZoomFactor).toHaveBeenCalledTimes(1);
+            expect(baseWindow.setBounds).toHaveBeenCalledWith({
+                x: 12,
+                y: 720 - 50 - 12,
+                width: 150,
+                height: 50,
             });
         });
 
