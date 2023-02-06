@@ -109,5 +109,20 @@
     "main.CriticalErrorHandler.uncaughtException.button.reopen": "再次打开",
     "main.badge.unreadMentions": "您有未读的提及 {{mentionCount}}",
     "main.badge.unreadChannels": "您有未读的频道",
-    "main.badge.sessionExpired": "会话已过期：请登录以继续接收通知。"
+    "main.badge.sessionExpired": "会话已过期：请登录以继续接收通知。",
+    "renderer.components.configureServer.name.placeholder": "服务器显示名",
+    "renderer.components.configureServer.connect.saving": "连接中…",
+    "renderer.components.configureServer.connect.default": "连接",
+    "renderer.components.configureServer.cardtitle": "请输入服务器详情",
+    "renderer.components.autoSaveIndicator.saving": "保存中…",
+    "renderer.components.autoSaveIndicator.saved": "已保存",
+    "main.windows.mainWindow.minimizeToTray.dialog.title": "最小化到托盘",
+    "main.windows.mainWindow.minimizeToTray.dialog.message": "{appName} 将保持在系统托盘区运行。可在设定中进行变更。",
+    "main.windows.mainWindow.minimizeToTray.dialog.checkboxLabel": "不再显示",
+    "main.windows.mainWindow.closeApp.dialog.title": "关闭程序",
+    "main.windows.mainWindow.closeApp.dialog.message": "确认退出？",
+    "main.views.viewManager.handleDeepLink.error.title": "无匹配服务器",
+    "main.notifications.upgrade.readyToInstall.body": "新版本的桌面程序已准备安装。",
+    "main.menus.app.window.bringAllToFront": "全部前台显示",
+    "main.menus.app.help.ShowLogs": "显示日志"
 }
