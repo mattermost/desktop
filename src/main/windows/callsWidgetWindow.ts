@@ -57,8 +57,6 @@ export default class CallsWidgetWindow extends EventEmitter {
         this.win = new BrowserWindow({
             width: MINIMUM_CALLS_WIDGET_WIDTH,
             height: MINIMUM_CALLS_WIDGET_HEIGHT,
-            minWidth: MINIMUM_CALLS_WIDGET_WIDTH,
-            minHeight: MINIMUM_CALLS_WIDGET_HEIGHT,
             title: 'Calls Widget',
             fullscreen: false,
             resizable: false,
