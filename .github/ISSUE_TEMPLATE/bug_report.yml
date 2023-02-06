@@ -63,13 +63,13 @@ body:
     description: Include a clear description of what actually happens.
   validations:
     required: true
-  - type: textarea
-    attributes:
-      label: Log Output
-      description: Please include output from the log files. You can find the location of the log files by going to [Help] > [Show logs].
-      render: shell
-    validations:
-      required: true
+- type: textarea
+  attributes:
+    label: Log Output
+    description: Please include output from the log files. You can find the location of the log files by going to [Help] > [Show logs].
+    render: shell
+  validations:
+    required: true
 - type: textarea
   attributes:
     label: Additional Information
