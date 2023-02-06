@@ -37,14 +37,20 @@ function getAppFileName(context) {
 }
 
 exports.default = async function afterPack(context) {
-    await flipFuses(
-        `${context.appOutDir}/${getAppFileName(context)}`, // Returns the path to the electron binary
-        {
-            version: FuseVersion.V1,
-            [FuseV1Options.RunAsNode]: false, // Disables ELECTRON_RUN_AS_NODE
-        });
+    try {
+        await flipFuses(
+            `${context.appOutDir}/${getAppFileName(context)}`, // Returns the path to the electron binary
+            {
+                version: FuseVersion.V1,
+                [FuseV1Options.RunAsNode]: false, // Disables ELECTRON_RUN_AS_NODE
+            });
 
-    if (context.electronPlatformName === 'linux') {
-        context.targets.forEach(fixSetuid(context));
+        if (context.electronPlatformName === 'linux') {
+            context.targets.forEach(fixSetuid(context));
+        }
+    } catch (error) {
+        console.error('afterPack error: ', error);
+        // eslint-disable-next-line no-process-exit
+        process.exit(1);
     }
 };
