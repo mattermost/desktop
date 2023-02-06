@@ -23,8 +23,8 @@ body:
     label: Mattermost Desktop Version 
     description: |
       What version of the Desktop App are you using? You can find it by going to [Help] > [Version Number]
-    validations:
-      required: true
+  validations:
+    required: true
 - type: input
   attributes:
     label: Operating System
@@ -35,8 +35,8 @@ body:
       - Windows 10 x64
       - macOS Ventura 13.2 Apple Silicon
       - Ubuntu Linux 22.04 LTS x64
-    validations:
-      required: true
+  validations:
+    required: true
 - type: input
   attributes:
     label: Mattermost Server Version
