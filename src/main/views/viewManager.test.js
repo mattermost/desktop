@@ -10,6 +10,7 @@ import {Tuple as tuple} from '@bloomberg/record-tuple-polyfill';
 import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, MAIN_WINDOW_SHOWN} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {getTabViewName} from 'common/tabs/TabView';
+import {equalUrlsIgnoringSubpath} from 'common/utils/url';
 
 import {MattermostView} from './MattermostView';
 import {ViewManager} from './viewManager';
@@ -29,6 +30,7 @@ jest.mock('electron', () => ({
 
 jest.mock('common/tabs/TabView', () => ({
     getTabViewName: jest.fn((a, b) => `${a}-${b}`),
+    TAB_MESSAGING: 'tab',
 }));
 
 jest.mock('common/servers/MattermostServer', () => ({
@@ -43,6 +45,7 @@ jest.mock('common/utils/url', () => ({
             return null;
         }
     },
+    equalUrlsIgnoringSubpath: jest.fn(),
 }));
 
 jest.mock('main/i18nManager', () => ({
@@ -72,7 +75,7 @@ describe('main/views/viewManager', () => {
         beforeEach(() => {
             viewManager.createLoadingScreen = jest.fn();
             viewManager.showByName = jest.fn();
-            viewManager.getServerView = jest.fn().mockImplementation((srv, tab) => ({name: `${srv.name}-${tab.name}`}));
+            viewManager.getServerView = jest.fn().mockImplementation((srv, tabName) => ({name: `${srv.name}-${tabName}`}));
             MattermostView.mockImplementation((tab) => ({
                 on: jest.fn(),
                 load: loadFn,
@@ -181,9 +184,9 @@ describe('main/views/viewManager', () => {
                 send: jest.fn(),
             };
 
-            viewManager.getServerView = jest.fn().mockImplementation((srv, tab) => ({
-                name: `${srv.name}-${tab.name}`,
-                urlTypeTuple: tuple(`http://${srv.name}.com/`, tab.name),
+            viewManager.getServerView = jest.fn().mockImplementation((srv, tabName) => ({
+                name: `${srv.name}-${tabName}`,
+                urlTypeTuple: tuple(`http://${srv.name}.com/`, tabName),
                 url: new URL(`http://${srv.name}.com`),
             }));
             MattermostServer.mockImplementation((name, url) => ({
@@ -681,113 +684,105 @@ describe('main/views/viewManager', () => {
         });
     });
 
-    // describe('getViewByURL', () => {
-    //     const servers = [
-    //         {
-    //             name: 'server-1',
-    //             url: 'http://server-1.com',
-    //             tabs: [
-    //                 {
-    //                     name: 'tab',
-    //                 },
-    //                 {
-    //                     name: 'tab-type1',
-    //                 },
-    //                 {
-    //                     name: 'tab-type2',
-    //                 },
-    //             ],
-    //         },
-    //         {
-    //             name: 'server-2',
-    //             url: 'http://server-2.com/subpath',
-    //             tabs: [
-    //                 {
-    //                     name: 'tab-type1',
-    //                 },
-    //                 {
-    //                     name: 'tab-type2',
-    //                 },
-    //                 {
-    //                     name: 'tab',
-    //                 },
-    //             ],
-    //         },
-    //     ];
+    describe('getViewByURL', () => {
+        const viewManager = new ViewManager({});
+        viewManager.getServers = () => [
+            {
+                name: 'server-1',
+                url: 'http://server-1.com',
+                tabs: [
+                    {
+                        name: 'tab',
+                    },
+                    {
+                        name: 'tab-type1',
+                    },
+                    {
+                        name: 'tab-type2',
+                    },
+                ],
+            },
+            {
+                name: 'server-2',
+                url: 'http://server-2.com/subpath',
+                tabs: [
+                    {
+                        name: 'tab-type1',
+                    },
+                    {
+                        name: 'tab-type2',
+                    },
+                    {
+                        name: 'tab',
+                    },
+                ],
+            },
+        ];
+        viewManager.getServerView = (srv, tabName) => {
+            const postfix = tabName.split('-')[1];
+            return {
+                name: `${srv.name}_${tabName}`,
+                url: new URL(`${srv.url.toString().replace(/\/$/, '')}${postfix ? `/${postfix}` : ''}`),
+            };
+        };
 
-    //     it('should match the correct server - base URL', () => {
-    //         const inputURL = new URL('http://server-1.com');
-    //         expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-1_tab', url: 'http://server-1.com/'});
-    //     });
+        beforeEach(() => {
+            MattermostServer.mockImplementation((name, url) => ({
+                name,
+                url: new URL(url),
+            }));
+            equalUrlsIgnoringSubpath.mockImplementation((url1, url2) => `${url1}`.startsWith(`${url2}`));
+        });
 
-    //     it('should match the correct server - base tab', () => {
-    //         const inputURL = new URL('http://server-1.com/team');
-    //         expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-1_tab', url: 'http://server-1.com/'});
-    //     });
+        afterEach(() => {
+            jest.resetAllMocks();
+        });
 
-    //     it('should match the correct server - different tab', () => {
-    //         const inputURL = new URL('http://server-1.com/type1/app');
-    //         expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-1_tab-type1', url: 'http://server-1.com/type1'});
-    //     });
+        it('should match the correct server - base URL', () => {
+            const inputURL = new URL('http://server-1.com');
+            expect(viewManager.getViewByURL(inputURL)).toStrictEqual({name: 'server-1_tab', url: new URL('http://server-1.com')});
+        });
 
-    //     it('should return undefined for server with subpath and URL without', () => {
-    //         const inputURL = new URL('http://server-2.com');
-    //         expect(urlUtils.getView(inputURL, servers)).toBe(undefined);
-    //     });
+        it('should match the correct server - base tab', () => {
+            const inputURL = new URL('http://server-1.com/team');
+            expect(viewManager.getViewByURL(inputURL)).toStrictEqual({name: 'server-1_tab', url: new URL('http://server-1.com')});
+        });
 
-    //     it('should return undefined for server with subpath and URL with wrong subpath', () => {
-    //         const inputURL = new URL('http://server-2.com/different/subpath');
-    //         expect(urlUtils.getView(inputURL, servers)).toBe(undefined);
-    //     });
+        it('should match the correct server - different tab', () => {
+            const inputURL = new URL('http://server-1.com/type1/app');
+            expect(viewManager.getViewByURL(inputURL)).toStrictEqual({name: 'server-1_tab-type1', url: new URL('http://server-1.com/type1')});
+        });
 
-    //     it('should match the correct server with a subpath - base URL', () => {
-    //         const inputURL = new URL('http://server-2.com/subpath');
-    //         expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-2_tab', url: 'http://server-2.com/subpath/'});
-    //     });
+        it('should return undefined for server with subpath and URL without', () => {
+            const inputURL = new URL('http://server-2.com');
+            expect(viewManager.getViewByURL(inputURL)).toBe(undefined);
+        });
 
-    //     it('should match the correct server with a subpath - base tab', () => {
-    //         const inputURL = new URL('http://server-2.com/subpath/team');
-    //         expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-2_tab', url: 'http://server-2.com/subpath/'});
-    //     });
+        it('should return undefined for server with subpath and URL with wrong subpath', () => {
+            const inputURL = new URL('http://server-2.com/different/subpath');
+            expect(viewManager.getViewByURL(inputURL)).toBe(undefined);
+        });
 
-    //     it('should match the correct server with a subpath - different tab', () => {
-    //         const inputURL = new URL('http://server-2.com/subpath/type2/team');
-    //         expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-2_tab-type2', url: 'http://server-2.com/subpath/type2'});
-    //     });
+        it('should match the correct server with a subpath - base URL', () => {
+            const inputURL = new URL('http://server-2.com/subpath');
+            expect(viewManager.getViewByURL(inputURL)).toStrictEqual({name: 'server-2_tab', url: new URL('http://server-2.com/subpath')});
+        });
 
-    //     it('should return undefined for wrong server', () => {
-    //         const inputURL = new URL('http://server-3.com');
-    //         expect(urlUtils.getView(inputURL, servers)).toBe(undefined);
-    //     });
-    // });
+        it('should match the correct server with a subpath - base tab', () => {
+            const inputURL = new URL('http://server-2.com/subpath/team');
+            expect(viewManager.getViewByURL(inputURL)).toStrictEqual({name: 'server-2_tab', url: new URL('http://server-2.com/subpath')});
+        });
 
-    // describe('getServerView', () => {
-    //     it('should return correct URL on messaging tab', () => {
-    //         const server = new MattermostServer('server-1', 'http://server-1.com');
-    //         const tab = {name: TabView.TAB_MESSAGING};
-    //         expect(TabView.getServerView(server, tab).url).toBe(server.url);
-    //     });
+        it('should match the correct server with a subpath - different tab', () => {
+            const inputURL = new URL('http://server-2.com/subpath/type2/team');
+            expect(viewManager.getViewByURL(inputURL)).toStrictEqual({name: 'server-2_tab-type2', url: new URL('http://server-2.com/subpath/type2')});
+        });
 
-    //     it('should return correct URL on playbooks tab', () => {
-    //         const server = new MattermostServer('server-1', 'http://server-1.com');
-    //         const tab = {name: TabView.TAB_PLAYBOOKS};
-    //         expect(TabView.getServerView(server, tab).url.toString()).toBe(`${server.url}playbooks`);
-    //     });
-
-    //     it('should return correct URL on boards tab', () => {
-    //         const server = new MattermostServer('server-1', 'http://server-1.com');
-    //         const tab = {name: TabView.TAB_FOCALBOARD};
-    //         expect(TabView.getServerView(server, tab).url.toString()).toBe(`${server.url}boards`);
-    //     });
-
-    //     it('should throw error on bad tab name', () => {
-    //         const server = new MattermostServer('server-1', 'http://server-1.com');
-    //         const tab = {name: 'not a real tab name'};
-    //         expect(() => {
-    //             TabView.getServerView(server, tab);
-    //         }).toThrow(Error);
-    //     });
-    // });
+        it('should return undefined for wrong server', () => {
+            const inputURL = new URL('http://server-3.com');
+            expect(viewManager.getViewByURL(inputURL)).toBe(undefined);
+        });
+    });
 
     describe('handleDeepLink', () => {
         const viewManager = new ViewManager({});
