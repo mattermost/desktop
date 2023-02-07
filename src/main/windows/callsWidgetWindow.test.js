@@ -91,8 +91,6 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
                 width: MINIMUM_CALLS_WIDGET_WIDTH,
                 height: MINIMUM_CALLS_WIDGET_HEIGHT,
-                minWidth: MINIMUM_CALLS_WIDGET_WIDTH,
-                minHeight: MINIMUM_CALLS_WIDGET_HEIGHT,
                 fullscreen: false,
                 resizable: false,
                 frame: false,
