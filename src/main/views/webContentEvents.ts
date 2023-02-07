@@ -37,7 +37,7 @@ export class WebContentsEventManager {
         this.listeners = {};
     }
 
-    isTrustedPopupWindow = (webContents: WebContents) => {
+    private isTrustedPopupWindow = (webContents: WebContents) => {
         if (!webContents) {
             return false;
         }
@@ -47,24 +47,23 @@ export class WebContentsEventManager {
         return BrowserWindow.fromWebContents(webContents) === this.popupWindow;
     }
 
-    generateWillNavigate = (getServersFunction: () => TeamWithTabs[]) => {
+    generateWillNavigate = () => {
         return (event: Event & {sender: WebContents}, url: string) => {
             log.debug('webContentEvents.will-navigate', {webContentsId: event.sender.id, url});
 
             const contentID = event.sender.id;
             const parsedURL = urlUtils.parseURL(url)!;
-            const configServers = getServersFunction();
-            const server = urlUtils.getView(parsedURL, configServers);
+            const serverURL = WindowManager.getServerURLFromWebContentsId(event.sender.id);
 
-            if (server && (urlUtils.isTeamUrl(server.url, parsedURL) || urlUtils.isAdminUrl(server.url, parsedURL) || this.isTrustedPopupWindow(event.sender))) {
+            if (serverURL && (urlUtils.isTeamUrl(serverURL, parsedURL) || urlUtils.isAdminUrl(serverURL, parsedURL) || this.isTrustedPopupWindow(event.sender))) {
                 return;
             }
 
-            if (server && urlUtils.isChannelExportUrl(server.url, parsedURL)) {
+            if (serverURL && urlUtils.isChannelExportUrl(serverURL, parsedURL)) {
                 return;
             }
 
-            if (server && urlUtils.isCustomLoginURL(parsedURL, server, configServers)) {
+            if (serverURL && urlUtils.isCustomLoginURL(parsedURL, serverURL)) {
                 return;
             }
             if (parsedURL.protocol === 'mailto:') {
@@ -80,24 +79,21 @@ export class WebContentsEventManager {
         };
     };
 
-    generateDidStartNavigation = (getServersFunction: () => TeamWithTabs[]) => {
+    generateDidStartNavigation = () => {
         return (event: Event & {sender: WebContents}, url: string) => {
             log.debug('webContentEvents.did-start-navigation', {webContentsId: event.sender.id, url});
 
-            const serverList = getServersFunction();
             const contentID = event.sender.id;
             const parsedURL = urlUtils.parseURL(url)!;
-            const server = urlUtils.getView(parsedURL, serverList);
+            const serverURL = WindowManager.getServerURLFromWebContentsId(event.sender.id);
 
-            if (!urlUtils.isTrustedURL(parsedURL, serverList)) {
+            if (!serverURL || !urlUtils.isTrustedURL(parsedURL, serverURL)) {
                 return;
             }
 
-            const serverURL = urlUtils.parseURL(server?.url || '');
-
-            if (server && urlUtils.isCustomLoginURL(parsedURL, server, serverList)) {
+            if (serverURL && urlUtils.isCustomLoginURL(parsedURL, serverURL)) {
                 this.customLogins[contentID].inProgress = true;
-            } else if (server && this.customLogins[contentID].inProgress && urlUtils.isInternalURL(serverURL || new URL(''), parsedURL)) {
+            } else if (serverURL && this.customLogins[contentID].inProgress && urlUtils.isInternalURL(serverURL || new URL(''), parsedURL)) {
                 this.customLogins[contentID].inProgress = false;
             }
         };
@@ -108,7 +104,7 @@ export class WebContentsEventManager {
         return {action: 'deny'};
     };
 
-    generateNewWindowListener = (getServersFunction: () => TeamWithTabs[], spellcheck?: boolean) => {
+    generateNewWindowListener = (webContentsId: number, spellcheck?: boolean) => {
         return (details: Electron.HandlerDetails): {action: 'deny' | 'allow'} => {
             log.debug('webContentEvents.new-window', details.url);
 
@@ -117,8 +113,6 @@ export class WebContentsEventManager {
                 log.warn(`Ignoring non-url ${details.url}`);
                 return {action: 'deny'};
             }
-
-            const configServers = getServersFunction();
 
             // Dev tools case
             if (parsedURL.protocol === 'devtools:') {
@@ -138,9 +132,9 @@ export class WebContentsEventManager {
                 return {action: 'deny'};
             }
 
-            const server = urlUtils.getView(parsedURL, configServers);
+            const serverURL = WindowManager.getServerURLFromWebContentsId(webContentsId);
 
-            if (!server) {
+            if (!serverURL) {
                 shell.openExternal(details.url);
                 return {action: 'deny'};
             }
@@ -166,11 +160,11 @@ export class WebContentsEventManager {
                 return {action: 'deny'};
             }
 
-            if (urlUtils.isTeamUrl(server.url, parsedURL, true)) {
+            if (urlUtils.isTeamUrl(serverURL, parsedURL, true)) {
                 WindowManager.showMainWindow(parsedURL);
                 return {action: 'deny'};
             }
-            if (urlUtils.isAdminUrl(server.url, parsedURL)) {
+            if (urlUtils.isAdminUrl(serverURL, parsedURL)) {
                 log.info(`${details.url} is an admin console page, preventing to open a new window`);
                 return {action: 'deny'};
             }
@@ -180,7 +174,7 @@ export class WebContentsEventManager {
             }
 
             // TODO: move popups to its own and have more than one.
-            if (urlUtils.isPluginUrl(server.url, parsedURL) || urlUtils.isManagedResource(server.url, parsedURL)) {
+            if (urlUtils.isPluginUrl(serverURL, parsedURL) || urlUtils.isManagedResource(serverURL, parsedURL)) {
                 if (!this.popupWindow) {
                     this.popupWindow = new BrowserWindow({
                         backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
@@ -200,7 +194,7 @@ export class WebContentsEventManager {
                     });
                 }
 
-                if (urlUtils.isManagedResource(server.url, parsedURL)) {
+                if (urlUtils.isManagedResource(serverURL, parsedURL)) {
                     this.popupWindow.loadURL(details.url);
                 } else {
                     // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth
@@ -258,7 +252,7 @@ export class WebContentsEventManager {
             this.removeWebContentsListeners(contents.id);
         }
 
-        const willNavigate = this.generateWillNavigate(getServersFunction);
+        const willNavigate = this.generateWillNavigate();
         contents.on('will-navigate', willNavigate as (e: Event, u: string) => void); // TODO: Electron types don't include sender for some reason
 
         // handle custom login requests (oath, saml):
@@ -266,11 +260,11 @@ export class WebContentsEventManager {
         //    - indicate custom login is in progress
         // 2. are we finished with the custom login process?
         //    - indicate custom login is NOT in progress
-        const didStartNavigation = this.generateDidStartNavigation(getServersFunction);
+        const didStartNavigation = this.generateDidStartNavigation();
         contents.on('did-start-navigation', didStartNavigation as (e: Event, u: string) => void);
 
         const spellcheck = Config.useSpellChecker;
-        const newWindow = this.generateNewWindowListener(getServersFunction, spellcheck);
+        const newWindow = this.generateNewWindowListener(contents.id, spellcheck);
         contents.setWindowOpenHandler(newWindow);
 
         addListeners?.(contents);

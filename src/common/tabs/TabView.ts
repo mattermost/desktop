@@ -1,13 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Tab, Team} from 'types/config';
+import {Team} from 'types/config';
 
 import {MattermostServer} from 'common/servers/MattermostServer';
-
-import MessagingTabView from './MessagingTabView';
-import FocalboardTabView from './FocalboardTabView';
-import PlaybooksTabView from './PlaybooksTabView';
 
 export const TAB_MESSAGING = 'TAB_MESSAGING';
 export const TAB_FOCALBOARD = 'TAB_FOCALBOARD';
@@ -44,19 +40,6 @@ export function getDefaultTeamWithTabsFromTeam(team: Team) {
             },
         ],
     };
-}
-
-export function getServerView(srv: MattermostServer, tab: Tab) {
-    switch (tab.name) {
-    case TAB_MESSAGING:
-        return new MessagingTabView(srv);
-    case TAB_FOCALBOARD:
-        return new FocalboardTabView(srv);
-    case TAB_PLAYBOOKS:
-        return new PlaybooksTabView(srv);
-    default:
-        throw new Error('Not implemeneted');
-    }
 }
 
 export function getTabDisplayName(tabType: TabType) {
