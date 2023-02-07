@@ -12,7 +12,7 @@ body:
         required: true
       - label: "This issue is not a troubleshooting question. Troubleshooting questions go here: https://forum.mattermost.com/c/trouble-shoot/16."
         required: true
-      - label: "This issue is not a feature request. You can request features and make product suggestions here: https://mattermost.com/suggestions/"
+      - label: "This issue is not a feature request. You can request features and make product suggestions here: https://mattermost.com/suggestions/."
         required: true
       - label: This issue doesn't reproduce on web browsers (such as in Chrome). If it does, [issue reports go to the Mattermost Server repository](https://github.com/mattermost/mattermost-server/issues).
         required: true
