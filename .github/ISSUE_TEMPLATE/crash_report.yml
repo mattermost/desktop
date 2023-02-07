@@ -64,7 +64,7 @@ body:
 - type: textarea
   attributes:
     label: Log Output
-    description: Please include output from the log files if relevant. You can find the location of the log files by going to [Help] > [Show logs]. If you cannot access that, you can find them [here](https://docs.mattermost.com/install/troubleshooting.html#mattermost-desktop-app-logs)
+    description: Please include output from the log files if relevant. You can find the location of the log files by going to [Help] > [Show logs]. If you cannot access that, you can find them [here](https://docs.mattermost.com/install/troubleshooting.html#mattermost-desktop-app-logs).
     render: shell
 - type: textarea
   attributes:
