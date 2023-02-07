@@ -10,7 +10,7 @@ body:
     options:
       - label: I have checked the [issue tracker](https://github.com/mattermost/desktop/issues) and have not found an issue that matches the one I'm filing.
         required: true
-      - label: "This issue is not a troubleshooting question. [Troubleshooting questions go here: https://docs.mattermost.com/install/troubleshooting.html](https://docs.mattermost.com/install/troubleshooting.html)."
+      - label: "This issue is not a troubleshooting question. Troubleshooting questions go here: https://forum.mattermost.com/c/trouble-shoot/16."
         required: true
       - label: "This issue is not a feature request. You can request features and make product suggestions here: https://mattermost.com/suggestions/"
         required: true
