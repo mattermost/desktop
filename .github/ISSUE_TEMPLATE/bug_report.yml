@@ -22,7 +22,7 @@ body:
   attributes:
     label: Mattermost Desktop Version 
     description: |
-      What version of the Desktop App are you using? You can find it by going to [Help] > [Version Number]
+      What version of the Desktop App are you using? You can find it by going to [Help] > [Version Number].
   validations:
     required: true
 - type: input
