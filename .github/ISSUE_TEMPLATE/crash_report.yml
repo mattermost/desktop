@@ -1,0 +1,72 @@
+name: Crash report
+description: Create a report about a crash you experienced while using the Mattermost Desktop App
+title: "[Crash]: "
+labels: "Type/Crash Report"
+body:
+- type: checkboxes
+  attributes:
+    label: Before you file a crash report
+    description: Please ensure you can confirm the following
+    options:
+      - label: I have checked the [issue tracker](https://github.com/mattermost/desktop/issues) and have not found an issue that matches the one I'm filing.
+        required: true
+      - label: This issue doesn't reproduce on web browsers (such as in Chrome). If it does, [issue reports go to the Mattermost Server repository](https://github.com/mattermost/mattermost-server/issues).
+        required: true
+      - label: I have read the [contribution guidelines](https://github.com/mattermost/desktop/blob/master/CONTRIBUTING.md).
+        required: true
+- type: input
+  attributes:
+    label: Mattermost Desktop Version 
+    description: |
+      What version of the Desktop App are you using? You can find it by going to [Help] > [Version Number]. If you cannot access that, please check which version you downloaded, or ask your system administrator.
+  validations:
+    required: true
+- type: input
+  attributes:
+    label: Operating System
+    description: |
+      What operating system does this issue occur on? Please include the distribution name (if necessary) and architecture.
+
+      Examples:
+      - Windows 10 x64
+      - macOS Ventura 13.2 Apple Silicon
+      - Ubuntu Linux 22.04 LTS x64
+  validations:
+    required: true
+- type: input
+  attributes:
+    label: Mattermost Server Version
+    description: |
+      Which version of the Mattermost Server did this occur on?
+      You can find your Mattermost Server version by [Mattermost Menu] > [About Mattermost], where [Mattermost Menu] can be accessed by clicking on the grid in the top-left corner.
+      If you cannot access this, ask your system administrator.
+- type: dropdown
+  attributes:
+    label: What type of crash did you experience?
+    options:
+      - White screen (I can see the top bar, but I cannot see my Mattermost server)
+      - Uncaught exception (I saw a dialog pop up that said "The Mattermost app quit unexpectedly")
+      - System crash (The application quit unexpectedly with no warning, or the operating system reported a crash)
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Crash report details
+    description: |
+      Please provide any information you can about the crash you experienced.
+      
+      - White screen: If you experience a white screen, please first verify that the same behaviour doesn't reproduce on the browser and if it doesn't, you can go to [View] > [Developer Tools for Current Server], clicking on the Console tab, then right-clicking on the logs area and clicking [Save as]. Then you can copy and paste the contents of that file here.
+      - Uncaught exception: If you receive a dialog that says "The Mattermost app quit unexpectedly", click on the Show Details button. Copy the text that is shown and paste it there.
+      - System crash: For any other crashes, please provide the trace log or Event Viewer output or anything else that might be relevant here.
+    render: shell
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Log Output
+    description: Please include output from the log files if relevant. You can find the location of the log files by going to [Help] > [Show logs]. If you cannot access that, you can find them [here](https://docs.mattermost.com/install/troubleshooting.html#mattermost-desktop-app-logs).
+    render: shell
+- type: textarea
+  attributes:
+    label: Additional Information
+    description: If you have anything else to add to the ticket, you may do so here. 

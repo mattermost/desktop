@@ -172,86 +172,6 @@ describe('common/utils/url', () => {
         });
     });
 
-    describe('getView', () => {
-        const servers = [
-            {
-                name: 'server-1',
-                url: 'http://server-1.com',
-                tabs: [
-                    {
-                        name: 'tab',
-                    },
-                    {
-                        name: 'tab-type1',
-                    },
-                    {
-                        name: 'tab-type2',
-                    },
-                ],
-            },
-            {
-                name: 'server-2',
-                url: 'http://server-2.com/subpath',
-                tabs: [
-                    {
-                        name: 'tab-type1',
-                    },
-                    {
-                        name: 'tab-type2',
-                    },
-                    {
-                        name: 'tab',
-                    },
-                ],
-            },
-        ];
-
-        it('should match the correct server - base URL', () => {
-            const inputURL = new URL('http://server-1.com');
-            expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-1_tab', url: 'http://server-1.com/'});
-        });
-
-        it('should match the correct server - base tab', () => {
-            const inputURL = new URL('http://server-1.com/team');
-            expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-1_tab', url: 'http://server-1.com/'});
-        });
-
-        it('should match the correct server - different tab', () => {
-            const inputURL = new URL('http://server-1.com/type1/app');
-            expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-1_tab-type1', url: 'http://server-1.com/type1'});
-        });
-
-        it('should return undefined for server with subpath and URL without', () => {
-            const inputURL = new URL('http://server-2.com');
-            expect(urlUtils.getView(inputURL, servers)).toBe(undefined);
-        });
-
-        it('should return undefined for server with subpath and URL with wrong subpath', () => {
-            const inputURL = new URL('http://server-2.com/different/subpath');
-            expect(urlUtils.getView(inputURL, servers)).toBe(undefined);
-        });
-
-        it('should match the correct server with a subpath - base URL', () => {
-            const inputURL = new URL('http://server-2.com/subpath');
-            expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-2_tab', url: 'http://server-2.com/subpath/'});
-        });
-
-        it('should match the correct server with a subpath - base tab', () => {
-            const inputURL = new URL('http://server-2.com/subpath/team');
-            expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-2_tab', url: 'http://server-2.com/subpath/'});
-        });
-
-        it('should match the correct server with a subpath - different tab', () => {
-            const inputURL = new URL('http://server-2.com/subpath/type2/team');
-            expect(urlUtils.getView(inputURL, servers)).toStrictEqual({name: 'server-2_tab-type2', url: 'http://server-2.com/subpath/type2'});
-        });
-
-        it('should return undefined for wrong server', () => {
-            const inputURL = new URL('http://server-3.com');
-            expect(urlUtils.getView(inputURL, servers)).toBe(undefined);
-        });
-    });
-
     describe('equalUrls', () => {
         it('base urls', () => {
             const url1 = new URL('http://server-1.com');
@@ -321,110 +241,38 @@ describe('common/utils/url', () => {
         it('should match correct URL', () => {
             expect(urlUtils.isCustomLoginURL(
                 'http://server.com/oauth/authorize',
-                {
-                    url: 'http://server.com',
-                },
-                [
-                    {
-                        name: 'a',
-                        url: 'http://server.com',
-                        tabs: [
-                            {
-                                name: 'tab',
-                            },
-                        ],
-                    },
-                ])).toBe(true);
+                'http://server.com',
+            )).toBe(true);
         });
         it('should not match incorrect URL', () => {
             expect(urlUtils.isCustomLoginURL(
                 'http://server.com/oauth/notauthorize',
-                {
-                    url: 'http://server.com',
-                },
-                [
-                    {
-                        name: 'a',
-                        url: 'http://server.com',
-                        tabs: [
-                            {
-                                name: 'tab',
-                            },
-                        ],
-                    },
-                ])).toBe(false);
+                'http://server.com',
+            )).toBe(false);
         });
         it('should not match base URL', () => {
             expect(urlUtils.isCustomLoginURL(
                 'http://server.com/',
-                {
-                    url: 'http://server.com',
-                },
-                [
-                    {
-                        name: 'a',
-                        url: 'http://server.com',
-                        tabs: [
-                            {
-                                name: 'tab',
-                            },
-                        ],
-                    },
-                ])).toBe(false);
+                'http://server.com',
+            )).toBe(false);
         });
         it('should match with subpath', () => {
             expect(urlUtils.isCustomLoginURL(
                 'http://server.com/subpath/oauth/authorize',
-                {
-                    url: 'http://server.com/subpath',
-                },
-                [
-                    {
-                        name: 'a',
-                        url: 'http://server.com/subpath',
-                        tabs: [
-                            {
-                                name: 'tab',
-                            },
-                        ],
-                    },
-                ])).toBe(true);
+                'http://server.com/subpath',
+            )).toBe(true);
         });
         it('should not match with different subpath', () => {
             expect(urlUtils.isCustomLoginURL(
                 'http://server.com/subpath/oauth/authorize',
-                {
-                    url: 'http://server.com/different/subpath',
-                },
-                [
-                    {
-                        name: 'a',
-                        url: 'http://server.com/different/subpath',
-                        tabs: [
-                            {
-                                name: 'tab',
-                            },
-                        ],
-                    },
-                ])).toBe(false);
+                'http://server.com/different/subpath',
+            )).toBe(false);
         });
         it('should not match with oauth subpath', () => {
             expect(urlUtils.isCustomLoginURL(
                 'http://server.com/oauth/authorize',
-                {
-                    url: 'http://server.com/oauth/authorize',
-                },
-                [
-                    {
-                        name: 'a',
-                        url: 'http://server.com/oauth/authorize',
-                        tabs: [
-                            {
-                                name: 'tab',
-                            },
-                        ],
-                    },
-                ])).toBe(false);
+                'http://server.com/oauth/authorize',
+            )).toBe(false);
         });
     });
 });
