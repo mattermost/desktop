@@ -14,7 +14,7 @@ env:
   TERM: xterm
 
 jobs:
-  build-linux:
+  build-linux-for-pr:
     runs-on: ubuntu-22.04
     steps:
       - name: ci/checkout-repo
@@ -75,7 +75,7 @@ jobs:
         run: |
           npm ci --openssl_fips=''
 
-  build-win-no-installer:
+  build-win-for-pr:
     runs-on: windows-2022
     needs:
       - windows-install-deps
@@ -126,7 +126,7 @@ jobs:
           path: ./build/win
           retention-days: 10 ## No need to keep CI builds more than 10 days
 
-  build-mac-no-dmg:
+  build-mac-for-pr:
     runs-on: macos-12
     steps:
       - name: ci/checkout-repo
