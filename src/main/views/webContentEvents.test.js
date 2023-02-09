@@ -250,5 +250,11 @@ describe('main/views/webContentsEvents', () => {
             expect(newWindow({url: 'http://server-1.com/trusted/login'})).toStrictEqual({action: 'deny'});
             expect(webContentsEventManager.popupWindow).toBeTruthy();
         });
+
+        it('should open external URIs in browser', () => {
+            urlUtils.isValidURI.mockReturnValue(false);
+            expect(newWindow({url: 'https://google.com'})).toStrictEqual({action: 'deny'});
+            expect(shell.openExternal).toBeCalledWith('https://google.com');
+        });
     });
 });
