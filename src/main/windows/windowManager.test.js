@@ -1183,4 +1183,35 @@ describe('main/windows/windowManager', () => {
             expect(windowManager.switchServer).toHaveBeenCalledWith('server-2');
         });
     });
+
+    describe('getServerURLFromWebContentsId', () => {
+        const view = {
+            name: 'server-1_tab-messaging',
+            serverInfo: {
+                remoteInfo: {
+                    siteURL: 'http://server-1.com',
+                },
+            },
+        };
+        const windowManager = new WindowManager();
+        windowManager.viewManager = {
+            views: new Map([
+                ['server-1_tab-messaging', view],
+            ]),
+            findViewByWebContent: jest.fn(),
+        };
+
+        it('should return calls widget URL', () => {
+            CallsWidgetWindow.mockImplementation(() => {
+                return {
+                    on: jest.fn(),
+                    getURL: jest.fn(() => 'http://localhost:8065'),
+                    getWebContentsId: jest.fn(() => 'callsID'),
+                };
+            });
+
+            windowManager.createCallsWidgetWindow(null, 'server-1_tab-messaging', {callID: 'test'});
+            expect(windowManager.getServerURLFromWebContentsId('callsID')).toBe(windowManager.callsWidgetWindow.getURL());
+        });
+    });
 });

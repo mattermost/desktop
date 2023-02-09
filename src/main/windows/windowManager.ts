@@ -862,6 +862,10 @@ export class WindowManager {
     }
 
     getServerURLFromWebContentsId = (id: number) => {
+        if (this.callsWidgetWindow && id === this.callsWidgetWindow.getWebContentsId()) {
+            return this.callsWidgetWindow.getURL();
+        }
+
         const viewName = this.getViewNameByWebContentsId(id);
         if (!viewName) {
             return undefined;

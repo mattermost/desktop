@@ -358,5 +358,26 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(popOut.focus).toHaveBeenCalled();
             expect(popOut.restore).toHaveBeenCalled();
         });
+
+        it('getWebContentsId', () => {
+            baseWindow.webContents = {
+                ...baseWindow.webContents,
+                id: 'testID',
+            };
+
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+            expect(widgetWindow.getWebContentsId()).toBe('testID');
+        });
+
+        it('getURL', () => {
+            baseWindow.webContents = {
+                ...baseWindow.webContents,
+                id: 'testID',
+                getURL: jest.fn(() => 'http://localhost:8065/'),
+            };
+
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+            expect(widgetWindow.getURL().toString()).toBe('http://localhost:8065/');
+        });
     });
 });
