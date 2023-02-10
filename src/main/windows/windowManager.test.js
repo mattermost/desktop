@@ -165,17 +165,24 @@ describe('main/windows/windowManager', () => {
             const window = {
                 on: jest.fn(),
                 once: jest.fn(),
+                webContents: {
+                    setWindowOpenHandler: jest.fn(),
+                },
             };
             createMainWindow.mockReturnValue(window);
             windowManager.showMainWindow();
             expect(windowManager.mainWindow).toBe(window);
             expect(window.on).toHaveBeenCalled();
+            expect(window.webContents.setWindowOpenHandler).toHaveBeenCalled();
         });
 
         it('should open deep link when provided', () => {
             const window = {
                 on: jest.fn(),
                 once: jest.fn(),
+                webContents: {
+                    setWindowOpenHandler: jest.fn(),
+                },
             };
             createMainWindow.mockReturnValue(window);
             windowManager.showMainWindow('mattermost://server-1.com/subpath');

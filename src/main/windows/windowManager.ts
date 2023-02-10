@@ -215,6 +215,9 @@ export class WindowManager {
             this.mainWindow.on('enter-full-screen', () => this.sendToRenderer('enter-full-screen'));
             this.mainWindow.on('leave-full-screen', () => this.sendToRenderer('leave-full-screen'));
 
+            // Should not allow the main window to generate a window of its own
+            this.mainWindow.webContents.setWindowOpenHandler(() => ({action: 'deny'}));
+
             if (process.env.MM_DEBUG_SETTINGS) {
                 this.mainWindow.webContents.openDevTools({mode: 'detach'});
             }

@@ -133,7 +133,6 @@ export class WebContentsEventManager {
             }
 
             const serverURL = WindowManager.getServerURLFromWebContentsId(webContentsId);
-
             if (!serverURL) {
                 shell.openExternal(details.url);
                 return {action: 'deny'};
@@ -206,8 +205,12 @@ export class WebContentsEventManager {
 
                 const contextMenu = new ContextMenu({}, this.popupWindow);
                 contextMenu.reload();
+
+                return {action: 'deny'};
             }
 
+            // If all else fails, just open externally
+            shell.openExternal(details.url);
             return {action: 'deny'};
         };
     };
