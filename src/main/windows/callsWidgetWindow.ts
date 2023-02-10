@@ -24,6 +24,7 @@ import {
     CALLS_PLUGIN_ID,
 } from 'common/utils/constants';
 import Utils from 'common/utils/util';
+import urlUtils from 'common/utils/url';
 import {
     CALLS_JOINED_CALL,
     CALLS_POPOUT_FOCUS,
@@ -209,6 +210,14 @@ export default class CallsWidgetWindow extends EventEmitter {
             this.popOut.restore();
         }
         this.popOut.focus();
+    }
+
+    public getWebContentsId() {
+        return this.win.webContents.id;
+    }
+
+    public getURL() {
+        return urlUtils.parseURL(this.win.webContents.getURL());
     }
 }
 
