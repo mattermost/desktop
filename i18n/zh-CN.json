@@ -38,7 +38,7 @@
     "label.add": "添加",
     "label.accept": "接受",
     "common.permissions.canBasicAuth": "Web 认证",
-    "main.app.app.handleAppCertificateError.certError.dialog.message": "这台Mattermost服务器有配置问题，或者有人试图拦截您的连接。你可能还需要通过浏览器登录到你连接的Wi-Fi上。",
+    "main.app.app.handleAppCertificateError.certError.dialog.message": "这台Mattermost服务器有配置问题，或者有人试图拦截您的连接。您可能还需要通过浏览器登录到您连接的Wi-Fi上。",
     "common.tabs.TAB_PLAYBOOKS": "脚本",
     "common.tabs.TAB_MESSAGING": "频道",
     "common.tabs.TAB_FOCALBOARD": "公告板",
