@@ -264,5 +264,7 @@
     "renderer.components.configureServer.name.info": "将显示在服务器列表中的名称",
     "main.windows.mainWindow.closeApp.dialog.detail": "您将不再收到邮件通知。如果您想让{appName}在系统托盘中运行，您可以在设置中启用它。",
     "main.views.viewManager.handleDeepLink.error.body": "应用程序中没有匹配请求url的配置服务器:{url}",
-    "main.CriticalErrorHandler.unresponsive.dialog.message": "窗口不再有响应。\n您是否要等待窗口再次恢复响应?"
+    "main.CriticalErrorHandler.unresponsive.dialog.message": "窗口不再有响应。\n您是否要等待窗口再次恢复响应?",
+    "renderer.components.settingsPage.loggingLevel.level.silly": "精细(silly)",
+    "renderer.components.settingsPage.loggingLevel.level.verbose": "详细(verbose)"
 }
