@@ -273,5 +273,6 @@
     "renderer.downloadsDropdown.ClearAll": "すべてクリア",
     "main.menus.app.view.downloads": "ダウンロード",
     "renderer.components.settingsPage.trayIcon.color": "アイコンの色: ",
-    "main.menus.app.help.RunDiagnostics": "診断する"
+    "main.menus.app.help.RunDiagnostics": "診断する",
+    "main.menus.app.help.ShowLogs": "ログを表示"
 }
