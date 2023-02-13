@@ -86,6 +86,15 @@ declare global {
             onUpdateDownloadsDropdown: (listener: (downloads: DownloadedItems) => void) => void;
             onAppMenuWillClose: (listener: () => void) => void;
             onFocusThreeDotMenu: (listener: () => void) => void;
+
+            modals: {
+                cancelModal: <T>(data?: T) => void;
+                finishModal: <T>(data?: T) => void;
+                getModalInfo: <T>() => Promise<T>;
+                isModalUncloseable: () => Promise<boolean>;
+                confirmProtocol: (protocol: string, url: string) => void;
+                pingDomain: (url: string) => Promise<string>;
+            };
         };
     }
 }

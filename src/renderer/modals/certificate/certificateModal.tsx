@@ -6,11 +6,6 @@ import React, {Fragment} from 'react';
 import {Modal, Button, Table, Row, Col} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
 
-import {CertificateModalData} from 'types/certificate';
-import {ModalMessage} from 'types/modals';
-
-import {MODAL_INFO} from 'common/communication';
-
 import IntlProvider from 'renderer/intl_provider';
 
 import ShowCertificateModal from '../../components/showCertificateModal';
@@ -18,7 +13,7 @@ import ShowCertificateModal from '../../components/showCertificateModal';
 type Props = {
     onSelect: (cert: Certificate) => void;
     onCancel?: () => void;
-    getCertInfo: () => void;
+    getCertInfo: () => Promise<{url: string; list: Certificate[]}>;
 }
 
 type State = {
@@ -34,27 +29,14 @@ export default class SelectCertificateModal extends React.PureComponent<Props, S
         this.state = {};
     }
 
-    componentDidMount() {
-        window.addEventListener('message', this.handleCertInfoMessage);
-
-        this.props.getCertInfo();
+    async componentDidMount() {
+        await this.getCertInfo();
     }
 
-    componentWillUnmount() {
-        window.removeEventListener('message', this.handleCertInfoMessage);
-    }
-
-    handleCertInfoMessage = (event: {data: ModalMessage<CertificateModalData>}) => {
-        switch (event.data.type) {
-        case MODAL_INFO: {
-            const {url, list} = event.data.data;
-            this.setState({url, list});
-            break;
-        }
-        default:
-            break;
-        }
-    }
+    getCertInfo = async () => {
+        const {url, list} = await this.props.getCertInfo();
+        this.setState({url, list});
+    };
 
     selectfn = (index: number) => {
         return (() => {

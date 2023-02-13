@@ -7,82 +7,40 @@
 import {ipcRenderer, contextBridge} from 'electron';
 
 import {
-    MODAL_CANCEL,
-    MODAL_RESULT,
-    MODAL_INFO,
-    RETRIEVE_MODAL_INFO,
-    MODAL_SEND_IPC_MESSAGE,
     GET_DARK_MODE,
     DARK_MODE_CHANGE,
+    MODAL_CANCEL,
+    MODAL_RESULT,
+    RETRIEVE_MODAL_INFO,
     GET_MODAL_UNCLOSEABLE,
-    MODAL_UNCLOSEABLE,
     PING_DOMAIN,
-    PING_DOMAIN_RESPONSE,
     GET_LANGUAGE_INFORMATION,
 } from 'common/communication';
 
-console.log('preloaded for the modal!');
+console.log('Preload initialized');
 
-let uncloseable = false;
 const createKeyDownListener = () => {
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !uncloseable) {
-            ipcRenderer.send(MODAL_CANCEL);
-        }
+    ipcRenderer.invoke(GET_MODAL_UNCLOSEABLE).then((uncloseable) => {
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !uncloseable) {
+                ipcRenderer.send(MODAL_CANCEL);
+            }
+        });
     });
 };
-
-contextBridge.exposeInMainWorld('desktop', {
-    getLanguageInformation: () => ipcRenderer.invoke(GET_LANGUAGE_INFORMATION),
-});
-
-window.addEventListener('message', async (event) => {
-    switch (event.data.type) {
-    case MODAL_CANCEL: {
-        console.log('canceling modal');
-        ipcRenderer.send(MODAL_CANCEL, event.data.data);
-        break;
-    }
-    case MODAL_RESULT: {
-        console.log(`accepting modal with ${event.data.data}`);
-        ipcRenderer.send(MODAL_RESULT, event.data.data);
-        break;
-    }
-    case RETRIEVE_MODAL_INFO:
-        console.log('getting modal data');
-        window.postMessage({type: MODAL_INFO, data: await ipcRenderer.invoke(RETRIEVE_MODAL_INFO)}, window.location.href);
-        break;
-    case GET_MODAL_UNCLOSEABLE:
-        console.log('get modal uncloseable');
-        uncloseable = await ipcRenderer.invoke(GET_MODAL_UNCLOSEABLE);
-        createKeyDownListener();
-        window.postMessage({type: MODAL_UNCLOSEABLE, data: uncloseable}, window.location.href);
-        break;
-    case MODAL_SEND_IPC_MESSAGE:
-        console.log('sending custom ipc message');
-        ipcRenderer.send(event.data.data.type, ...event.data.data.args);
-        break;
-    case GET_DARK_MODE:
-        console.log('getting dark mode value');
-        window.postMessage({type: DARK_MODE_CHANGE, data: await ipcRenderer.invoke(GET_DARK_MODE)}, window.location.href);
-        break;
-    case PING_DOMAIN:
-        console.log('pinging domain: ' + event.data.data);
-        try {
-            const protocol = await ipcRenderer.invoke(PING_DOMAIN, event.data.data);
-            window.postMessage({type: PING_DOMAIN_RESPONSE, data: protocol}, window.location.href);
-        } catch (error) {
-            window.postMessage({type: PING_DOMAIN_RESPONSE, data: error}, window.location.href);
-        }
-        break;
-    default:
-        console.log(`got a message: ${event}`);
-        console.log(event);
-    }
-});
-
 createKeyDownListener();
 
-ipcRenderer.on(DARK_MODE_CHANGE, (event, darkMode) => {
-    window.postMessage({type: DARK_MODE_CHANGE, data: darkMode}, window.location.href);
+contextBridge.exposeInMainWorld('desktop', {
+    getDarkMode: () => ipcRenderer.invoke(GET_DARK_MODE),
+    onDarkModeChange: (listener) => ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => listener(darkMode)),
+    getLanguageInformation: () => ipcRenderer.invoke(GET_LANGUAGE_INFORMATION),
+
+    modals: {
+        cancelModal: (data) => ipcRenderer.send(MODAL_CANCEL, data),
+        finishModal: (data) => ipcRenderer.send(MODAL_RESULT, data),
+        getModalInfo: () => ipcRenderer.invoke(RETRIEVE_MODAL_INFO),
+        isModalUncloseable: () => ipcRenderer.invoke(GET_MODAL_UNCLOSEABLE),
+        confirmProtocol: (protocol, url) => ipcRenderer.send('confirm-protocol', protocol, url),
+        pingDomain: (url) => ipcRenderer.invoke(PING_DOMAIN, url),
+    },
 });

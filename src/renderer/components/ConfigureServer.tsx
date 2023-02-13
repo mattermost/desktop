@@ -14,7 +14,6 @@ import Input, {STATUS, SIZE} from 'renderer/components/Input';
 import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
 import SaveButton from 'renderer/components/SaveButton/SaveButton';
 
-import {PING_DOMAIN, PING_DOMAIN_RESPONSE} from 'common/communication';
 import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
 
@@ -77,33 +76,15 @@ function ConfigureServer({
         if (urlUtils.startsWithProtocol(checkURL)) {
             return Promise.resolve(checkURL);
         }
-
-        return new Promise((resolve) => {
-            let eventCount = 0;
-
-            const handler = (event: {data: {type: string; data: string | Error}}) => {
-                let newURL = checkURL;
-
-                if (event.data.type === PING_DOMAIN_RESPONSE) {
-                    if (event.data.data instanceof Error) {
-                        console.error(`Could not ping url: ${checkURL}`);
-                    } else {
-                        newURL = `${event.data.data}://${checkURL}`;
-                        setUrl(newURL);
-                    }
-
-                    window.removeEventListener('message', handler);
-                    resolve(newURL);
-                } else if (eventCount >= 3) {
-                    window.removeEventListener('message', handler);
-                    resolve(newURL);
-                }
-
-                eventCount++;
-            };
-
-            window.addEventListener('message', handler);
-            window.postMessage({type: PING_DOMAIN, data: checkURL}, window.location.href);
+        return window.desktop.modals.pingDomain(checkURL).then((result: string | Error) => {
+            let newURL = checkURL;
+            if (result instanceof Error) {
+                console.error(`Could not ping url: ${checkURL}`);
+            } else {
+                newURL = `${result}://${checkURL}`;
+                setUrl(newURL);
+            }
+            return newURL;
         });
     };
 
