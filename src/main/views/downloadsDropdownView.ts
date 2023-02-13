@@ -10,7 +10,6 @@ import {DownloadedItem, DownloadedItems} from 'types/downloads';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN,
-    DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER,
     EMIT_CONFIGURATION,
     OPEN_DOWNLOADS_DROPDOWN,
     RECEIVE_DOWNLOADS_DROPDOWN_SIZE,
@@ -67,7 +66,6 @@ export default class DownloadsDropdownView {
         ipcMain.on(REQUEST_CLEAR_DOWNLOADS_DROPDOWN, this.clearDownloads);
         ipcMain.on(RECEIVE_DOWNLOADS_DROPDOWN_SIZE, this.handleReceivedDownloadsDropdownSize);
         ipcMain.on(DOWNLOADS_DROPDOWN_OPEN_FILE, this.openFile);
-        ipcMain.on(DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER, this.showFileInFolder);
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN, this.updateDownloads);
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM, this.updateDownloadsDropdownMenuItem);
         ipcMain.handle(GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION, this.getDownloadImageThumbnailLocation);
@@ -149,12 +147,6 @@ export default class DownloadsDropdownView {
         log.debug('DownloadsDropdownView.openFile', {item});
 
         downloadsManager.openFile(item);
-    }
-
-    showFileInFolder = (e: IpcMainEvent, item: DownloadedItem) => {
-        log.debug('DownloadsDropdownView.showFileInFolder', {item});
-
-        downloadsManager.showFileInFolder(item);
     }
 
     getBounds = (width: number, height: number) => {

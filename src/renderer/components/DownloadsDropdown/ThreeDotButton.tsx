@@ -6,8 +6,6 @@ import {DownloadedItem} from 'types/downloads';
 
 import classNames from 'classnames';
 
-import {TOGGLE_DOWNLOADS_DROPDOWN_MENU} from 'common/communication';
-
 type OwnProps = {
     activeItem?: DownloadedItem;
     item: DownloadedItem;
@@ -22,13 +20,10 @@ const ThreeDotButton = ({item, activeItem, visible}: OwnProps) => {
         e.stopPropagation();
 
         const coords = buttonElement.current?.getBoundingClientRect();
-        window.postMessage({
-            type: TOGGLE_DOWNLOADS_DROPDOWN_MENU,
-            payload: {
-                coordinates: coords?.toJSON(),
-                item,
-            },
-        }, window.location.href);
+        window.desktop.downloadsDropdown.toggleDownloadsDropdownMenu({
+            coordinates: coords?.toJSON(),
+            item,
+        });
     };
 
     return (

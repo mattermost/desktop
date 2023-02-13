@@ -1,12 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ipcRenderer} from 'electron/renderer';
+import {ipcRenderer, Rectangle} from 'electron/renderer';
 
 import {Language} from '../../i18n/i18n';
 
 import {CombinedConfig, LocalConfiguration, Team} from './config';
-import {DownloadedItems} from './downloads';
+import {DownloadedItem, DownloadedItems, DownloadsMenuOpenEventPayload} from './downloads';
 import {SaveQueueItem} from './settings';
 
 declare global {
@@ -99,6 +99,28 @@ declare global {
             loadingScreen: {
                 loadingScreenAnimationFinished: () => void;
                 onToggleLoadingScreenVisibility: (listener: (toggle: boolean) => void) => void;
+            };
+
+            downloadsDropdown: {
+                requestInfo: () => void;
+                sendSize: (width: number, height: number) => void;
+                openFile: (item: DownloadedItem) => void;
+                startUpdateDownload: () => void;
+                startUpgrade: () => void;
+                requestClearDownloadsDropdown: () => void;
+                toggleDownloadsDropdownMenu: (payload: DownloadsMenuOpenEventPayload) => void;
+
+                onUpdateDownloadsDropdown: (listener: (downloads: DownloadedItems, darkMode: boolean, windowBounds: Rectangle, item?: DownloadedItem) => void) => void;
+            };
+
+            downloadsDropdownMenu: {
+                requestInfo: () => void;
+                showInFolder: (item: DownloadedItem) => void;
+                cancelDownload: (item: DownloadedItem) => void;
+                clearFile: (item: DownloadedItem) => void;
+                openFile: (item: DownloadedItem) => void;
+
+                onUpdateDownloadsDropdownMenu: (listener: (item: DownloadedItem, darkMode: boolean) => void) => void;
             };
         };
     }

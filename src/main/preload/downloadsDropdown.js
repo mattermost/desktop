@@ -9,12 +9,10 @@ import {
     CLOSE_DOWNLOADS_DROPDOWN,
     CLOSE_DOWNLOADS_DROPDOWN_MENU,
     DOWNLOADS_DROPDOWN_FOCUSED,
-    DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER,
     GET_LANGUAGE_INFORMATION,
     RECEIVE_DOWNLOADS_DROPDOWN_SIZE,
     REQUEST_CLEAR_DOWNLOADS_DROPDOWN,
     REQUEST_DOWNLOADS_DROPDOWN_INFO,
-    SEND_DOWNLOADS_DROPDOWN_SIZE,
     START_UPDATE_DOWNLOAD,
     START_UPGRADE,
     TOGGLE_DOWNLOADS_DROPDOWN_MENU,
@@ -35,6 +33,19 @@ contextBridge.exposeInMainWorld('mas', {
 
 contextBridge.exposeInMainWorld('desktop', {
     getLanguageInformation: () => ipcRenderer.invoke(GET_LANGUAGE_INFORMATION),
+    closeDownloadsDropdown: () => ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN),
+
+    downloadsDropdown: {
+        toggleDownloadsDropdownMenu: (payload) => ipcRenderer.send(TOGGLE_DOWNLOADS_DROPDOWN_MENU, payload),
+        requestInfo: () => ipcRenderer.send(REQUEST_DOWNLOADS_DROPDOWN_INFO),
+        sendSize: (width, height) => ipcRenderer.send(RECEIVE_DOWNLOADS_DROPDOWN_SIZE, width, height),
+        requestClearDownloadsDropdown: () => ipcRenderer.send(REQUEST_CLEAR_DOWNLOADS_DROPDOWN),
+        openFile: (item) => ipcRenderer.send(DOWNLOADS_DROPDOWN_OPEN_FILE, item),
+        startUpdateDownload: () => ipcRenderer.send(START_UPDATE_DOWNLOAD),
+        startUpgrade: () => ipcRenderer.send(START_UPGRADE),
+
+        onUpdateDownloadsDropdown: (listener) => ipcRenderer.on(UPDATE_DOWNLOADS_DROPDOWN, (_, downloads, darkMode, windowBounds, item) => listener(downloads, darkMode, windowBounds, item)),
+    },
 });
 
 window.addEventListener('click', () => {
@@ -43,48 +54,4 @@ window.addEventListener('click', () => {
 
 window.addEventListener('mousemove', () => {
     ipcRenderer.send(DOWNLOADS_DROPDOWN_FOCUSED);
-});
-
-/**
- * renderer => main
- */
-window.addEventListener('message', async (event) => {
-    switch (event.data.type) {
-    case CLOSE_DOWNLOADS_DROPDOWN:
-        ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
-        break;
-    case TOGGLE_DOWNLOADS_DROPDOWN_MENU:
-        ipcRenderer.send(TOGGLE_DOWNLOADS_DROPDOWN_MENU, event.data.payload);
-        break;
-    case REQUEST_DOWNLOADS_DROPDOWN_INFO:
-        ipcRenderer.send(REQUEST_DOWNLOADS_DROPDOWN_INFO);
-        break;
-    case SEND_DOWNLOADS_DROPDOWN_SIZE:
-        ipcRenderer.send(RECEIVE_DOWNLOADS_DROPDOWN_SIZE, event.data.data.width, event.data.data.height);
-        break;
-    case REQUEST_CLEAR_DOWNLOADS_DROPDOWN:
-        ipcRenderer.send(REQUEST_CLEAR_DOWNLOADS_DROPDOWN);
-        break;
-    case DOWNLOADS_DROPDOWN_OPEN_FILE:
-        ipcRenderer.send(DOWNLOADS_DROPDOWN_OPEN_FILE, event.data.payload.item);
-        break;
-    case DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER:
-        ipcRenderer.send(DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER, event.data.payload.item);
-        break;
-    case START_UPDATE_DOWNLOAD:
-        ipcRenderer.send(START_UPDATE_DOWNLOAD);
-        break;
-    case START_UPGRADE:
-        ipcRenderer.send(START_UPGRADE);
-        break;
-    default:
-        console.log('Got an unknown message. Unknown messages are ignored');
-    }
-});
-
-/**
- * main => renderer
- */
-ipcRenderer.on(UPDATE_DOWNLOADS_DROPDOWN, (event, downloads, darkMode, windowBounds, item) => {
-    window.postMessage({type: UPDATE_DOWNLOADS_DROPDOWN, data: {downloads, darkMode, windowBounds, item}}, window.location.href);
 });
