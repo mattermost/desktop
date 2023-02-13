@@ -9,7 +9,6 @@ import {
     UPDATE_TEAMS_DROPDOWN,
     REQUEST_TEAMS_DROPDOWN_INFO,
     RECEIVE_DROPDOWN_MENU_SIZE,
-    SEND_DROPDOWN_MENU_SIZE,
     SWITCH_SERVER,
     CLOSE_TEAMS_DROPDOWN,
     SHOW_NEW_SERVER_MODAL,
@@ -26,41 +25,38 @@ contextBridge.exposeInMainWorld('process', {
 });
 
 contextBridge.exposeInMainWorld('desktop', {
+    closeTeamsDropdown: () => ipcRenderer.send(CLOSE_TEAMS_DROPDOWN),
     getLanguageInformation: () => ipcRenderer.invoke(GET_LANGUAGE_INFORMATION),
-});
+    updateTeams: (updatedTeams) => ipcRenderer.invoke(UPDATE_TEAMS, updatedTeams),
 
-window.addEventListener('message', async (event) => {
-    switch (event.data.type) {
-    case REQUEST_TEAMS_DROPDOWN_INFO:
-        ipcRenderer.send(REQUEST_TEAMS_DROPDOWN_INFO);
-        break;
-    case SEND_DROPDOWN_MENU_SIZE:
-        ipcRenderer.send(RECEIVE_DROPDOWN_MENU_SIZE, event.data.data.width, event.data.data.height);
-        break;
-    case SWITCH_SERVER:
-        ipcRenderer.send(SWITCH_SERVER, event.data.data);
-        break;
-    case SHOW_NEW_SERVER_MODAL:
-        ipcRenderer.send(SHOW_NEW_SERVER_MODAL);
-        break;
-    case SHOW_EDIT_SERVER_MODAL:
-        ipcRenderer.send(SHOW_EDIT_SERVER_MODAL, event.data.data.name);
-        break;
-    case SHOW_REMOVE_SERVER_MODAL:
-        ipcRenderer.send(SHOW_REMOVE_SERVER_MODAL, event.data.data.name);
-        break;
-    case CLOSE_TEAMS_DROPDOWN:
-        ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
-        break;
-    case UPDATE_TEAMS:
-        ipcRenderer.invoke(UPDATE_TEAMS, event.data.data);
-        break;
-    default:
-        console.log(`got a message: ${event}`);
-        console.log(event);
-    }
-});
+    serverDropdown: {
+        requestInfo: () => ipcRenderer.send(REQUEST_TEAMS_DROPDOWN_INFO),
+        sendSize: (width, height) => ipcRenderer.send(RECEIVE_DROPDOWN_MENU_SIZE, width, height),
+        switchServer: (server) => ipcRenderer.send(SWITCH_SERVER, server),
+        showNewServerModal: () => ipcRenderer.send(SHOW_NEW_SERVER_MODAL),
+        showEditServerModal: (serverName) => ipcRenderer.send(SHOW_EDIT_SERVER_MODAL, serverName),
+        showRemoveServerModal: (serverName) => ipcRenderer.send(SHOW_REMOVE_SERVER_MODAL, serverName),
 
-ipcRenderer.on(UPDATE_TEAMS_DROPDOWN, (event, teams, activeTeam, darkMode, enableServerManagement, hasGPOTeams, expired, mentions, unreads, windowBounds) => {
-    window.postMessage({type: UPDATE_TEAMS_DROPDOWN, data: {teams, activeTeam, darkMode, enableServerManagement, hasGPOTeams, expired, mentions, unreads, windowBounds}}, window.location.href);
+        onUpdateServerDropdown: (listener) => ipcRenderer.on(UPDATE_TEAMS_DROPDOWN, (_,
+            teams,
+            activeTeam,
+            darkMode,
+            enableServerManagement,
+            hasGPOTeams,
+            expired,
+            mentions,
+            unreads,
+            windowBounds,
+        ) => listener(
+            teams,
+            activeTeam,
+            darkMode,
+            enableServerManagement,
+            hasGPOTeams,
+            expired,
+            mentions,
+            unreads,
+            windowBounds,
+        )),
+    },
 });

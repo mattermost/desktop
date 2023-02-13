@@ -105,14 +105,14 @@ export default class TeamDropdownView {
         this.view.webContents.send(
             UPDATE_TEAMS_DROPDOWN,
             this.teams,
-            this.activeTeam,
             this.darkMode,
+            this.windowBounds,
+            this.activeTeam,
             this.enableServerManagement,
             this.hasGPOTeams,
             this.expired,
             this.mentions,
             this.unreads,
-            this.windowBounds,
         );
     }
 

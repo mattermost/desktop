@@ -5,7 +5,7 @@ import {ipcRenderer, Rectangle} from 'electron/renderer';
 
 import {Language} from '../../i18n/i18n';
 
-import {CombinedConfig, LocalConfiguration, Team} from './config';
+import {CombinedConfig, LocalConfiguration, Team, TeamWithTabsAndGpo} from './config';
 import {DownloadedItem, DownloadedItems, DownloadsMenuOpenEventPayload} from './downloads';
 import {SaveQueueItem} from './settings';
 
@@ -121,6 +121,27 @@ declare global {
                 openFile: (item: DownloadedItem) => void;
 
                 onUpdateDownloadsDropdownMenu: (listener: (item: DownloadedItem, darkMode: boolean) => void) => void;
+            };
+
+            serverDropdown: {
+                requestInfo: () => void;
+                sendSize: (width: number, height: number) => void;
+                switchServer: (serverName: string) => void;
+                showNewServerModal: () => void;
+                showEditServerModal: (serverName: string) => void;
+                showRemoveServerModal: (serverName: string) => void;
+
+                onUpdateServerDropdown: (listener: (
+                    teams: TeamWithTabsAndGpo[],
+                    darkMode: boolean,
+                    windowBounds: Rectangle,
+                    activeTeam?: string,
+                    enableServerManagement?: boolean,
+                    hasGPOTeams?: boolean,
+                    expired?: Map<string, boolean>,
+                    mentions?: Map<string, number>,
+                    unreads?: Map<string, boolean>,
+                ) => void) => void;
             };
         };
     }
