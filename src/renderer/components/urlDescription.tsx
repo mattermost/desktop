@@ -3,13 +3,11 @@
 
 import React, {useEffect} from 'react';
 
-import {UPDATE_URL_VIEW_WIDTH} from 'common/communication';
-
 export default function UrlDescription(props: {url: string}) {
     const urlRef = React.createRef<HTMLDivElement>();
 
     useEffect(() => {
-        window.postMessage({type: UPDATE_URL_VIEW_WIDTH, data: urlRef.current?.scrollWidth}, window.location.href);
+        window.desktop.updateURLViewWidth(urlRef.current?.scrollWidth);
     }, []);
 
     if (props.url) {

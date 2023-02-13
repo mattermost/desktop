@@ -87,6 +87,8 @@ declare global {
             onAppMenuWillClose: (listener: () => void) => void;
             onFocusThreeDotMenu: (listener: () => void) => void;
 
+            updateURLViewWidth: (width?: number) => void;
+
             modals: {
                 cancelModal: <T>(data?: T) => void;
                 finishModal: <T>(data?: T) => void;
