@@ -362,7 +362,7 @@ export class ViewManager {
         }
         if (url && url !== '') {
             const urlString = typeof url === 'string' ? url : url.toString();
-            const preload = getLocalPreload('urlView.js');
+            const preload = getLocalPreload('desktopAPI.js');
             const urlView = new BrowserView({
                 webPreferences: {
                     preload,
@@ -427,7 +427,7 @@ export class ViewManager {
     }
 
     createLoadingScreen = () => {
-        const preload = getLocalPreload('loadingScreenPreload.js');
+        const preload = getLocalPreload('desktopAPI.js');
         this.loadingScreen = new BrowserView({webPreferences: {
             preload,
 

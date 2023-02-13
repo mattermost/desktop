@@ -28,10 +28,18 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
             downloads: [],
         };
 
-        window.desktop.downloadsDropdown.onUpdateDownloadsDropdown(this.handleUpdate);
+        window.desktop.onUpdateDownloadsDropdown(this.handleUpdate);
     }
 
     componentDidMount() {
+        window.addEventListener('click', () => {
+            window.desktop.closeDownloadsDropdownMenu();
+        });
+
+        window.addEventListener('mousemove', () => {
+            window.desktop.downloadsDropdown.focus();
+        });
+
         window.desktop.downloadsDropdown.requestInfo();
     }
 

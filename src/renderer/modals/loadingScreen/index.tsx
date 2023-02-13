@@ -33,6 +33,11 @@ class LoadingScreenRoot extends React.PureComponent<Props, State> {
         this.setDarkMode(darkMode);
 
         window.desktop.loadingScreen.onToggleLoadingScreenVisibility(this.onToggleLoadingScreenVisibility);
+
+        window.addEventListener('click', () => {
+            window.desktop.closeTeamsDropdown();
+            window.desktop.closeDownloadsDropdown();
+        });
     }
 
     setDarkMode = (darkMode: boolean) => {

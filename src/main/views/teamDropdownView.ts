@@ -46,7 +46,7 @@ export default class TeamDropdownView {
 
         this.windowBounds = this.window.getContentBounds();
 
-        const preload = getLocalPreload('dropdown.js');
+        const preload = getLocalPreload('desktopAPI.js');
         this.view = new BrowserView({webPreferences: {
             preload,
 

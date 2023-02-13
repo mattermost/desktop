@@ -83,7 +83,7 @@ declare global {
             onOpenDownloadsDropdown: (listener: () => void) => void;
             onShowDownloadsDropdownButtonBadge: (listener: () => void) => void;
             onHideDownloadsDropdownButtonBadge: (listener: () => void) => void;
-            onUpdateDownloadsDropdown: (listener: (downloads: DownloadedItems) => void) => void;
+            onUpdateDownloadsDropdown: (listener: (downloads: DownloadedItems, darkMode: boolean, windowBounds: Rectangle, item: DownloadedItem) => void) => void;
             onAppMenuWillClose: (listener: () => void) => void;
             onFocusThreeDotMenu: (listener: () => void) => void;
 
@@ -111,8 +111,7 @@ declare global {
                 startUpgrade: () => void;
                 requestClearDownloadsDropdown: () => void;
                 toggleDownloadsDropdownMenu: (payload: DownloadsMenuOpenEventPayload) => void;
-
-                onUpdateDownloadsDropdown: (listener: (downloads: DownloadedItems, darkMode: boolean, windowBounds: Rectangle, item?: DownloadedItem) => void) => void;
+                focus: () => void;
             };
 
             downloadsDropdownMenu: {
