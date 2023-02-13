@@ -95,6 +95,11 @@ declare global {
                 confirmProtocol: (protocol: string, url: string) => void;
                 pingDomain: (url: string) => Promise<string>;
             };
+
+            loadingScreen: {
+                loadingScreenAnimationFinished: () => void;
+                onToggleLoadingScreenVisibility: (listener: (toggle: boolean) => void) => void;
+            };
         };
     }
 }

@@ -4,11 +4,11 @@
 
 'use strict';
 
-import {ipcRenderer} from 'electron';
+import {contextBridge, ipcRenderer} from 'electron';
 
 import {
-    RECEIVED_LOADING_SCREEN_DATA,
-    GET_LOADING_SCREEN_DATA,
+    GET_DARK_MODE,
+    DARK_MODE_CHANGE,
     LOADING_SCREEN_ANIMATION_FINISHED,
     TOGGLE_LOADING_SCREEN_VISIBILITY,
     CLOSE_TEAMS_DROPDOWN,
@@ -17,26 +17,14 @@ import {
 
 console.log('preloaded for the loading screen!');
 
-window.addEventListener('message', async (event) => {
-    switch (event.data.type) {
-    case GET_LOADING_SCREEN_DATA:
-        window.postMessage({type: RECEIVED_LOADING_SCREEN_DATA, data: await ipcRenderer.invoke(GET_LOADING_SCREEN_DATA)}, window.location.href);
-        break;
-    case LOADING_SCREEN_ANIMATION_FINISHED:
-        ipcRenderer.send(LOADING_SCREEN_ANIMATION_FINISHED);
-        break;
-    default:
-        console.log(`got a message: ${event}`);
-        console.log(event);
-    }
-});
+contextBridge.exposeInMainWorld('desktop', {
+    getDarkMode: () => ipcRenderer.invoke(GET_DARK_MODE),
+    onDarkModeChange: (listener) => ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => listener(darkMode)),
 
-ipcRenderer.on(GET_LOADING_SCREEN_DATA, (_, result) => {
-    window.postMessage({type: RECEIVED_LOADING_SCREEN_DATA, data: result}, window.location.href);
-});
-
-ipcRenderer.on(TOGGLE_LOADING_SCREEN_VISIBILITY, (_, toggle) => {
-    window.postMessage({type: TOGGLE_LOADING_SCREEN_VISIBILITY, data: toggle}, window.location.href);
+    loadingScreen: {
+        loadingScreenAnimationFinished: () => ipcRenderer.send(LOADING_SCREEN_ANIMATION_FINISHED),
+        onToggleLoadingScreenVisibility: (listener) => ipcRenderer.on(TOGGLE_LOADING_SCREEN_VISIBILITY, (_, toggle) => listener(toggle)),
+    },
 });
 
 window.addEventListener('click', () => {

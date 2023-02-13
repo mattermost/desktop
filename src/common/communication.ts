@@ -74,8 +74,6 @@ export const TOGGLE_BACK_BUTTON = 'toggle-back-button';
 
 export const SHOW_SETTINGS_WINDOW = 'show-settings-window';
 
-export const RECEIVED_LOADING_SCREEN_DATA = 'received-loading-screen-data';
-export const GET_LOADING_SCREEN_DATA = 'get-loading-screen-data';
 export const LOADING_SCREEN_ANIMATION_FINISHED = 'loading-screen-animation-finished';
 export const TOGGLE_LOADING_SCREEN_VISIBILITY = 'toggle-loading-screen-visibility';
 

@@ -9,11 +9,6 @@ import {
 
 import {PermissionType} from './trustedOrigin';
 
-export type ModalMessage<T> = {
-    type: string;
-    data: T;
-}
-
 export type CertificateModalInfo = {
     url: string;
     list: Certificate[];
