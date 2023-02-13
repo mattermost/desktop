@@ -4,7 +4,7 @@
 
 'use strict';
 
-import {ipcRenderer} from 'electron';
+import {ipcRenderer, contextBridge} from 'electron';
 
 import {
     MODAL_CANCEL,
@@ -19,7 +19,6 @@ import {
     PING_DOMAIN,
     PING_DOMAIN_RESPONSE,
     GET_LANGUAGE_INFORMATION,
-    RETRIEVED_LANGUAGE_INFORMATION,
 } from 'common/communication';
 
 console.log('preloaded for the modal!');
@@ -32,6 +31,10 @@ const createKeyDownListener = () => {
         }
     });
 };
+
+contextBridge.exposeInMainWorld('desktop', {
+    getLanguageInformation: () => ipcRenderer.invoke(GET_LANGUAGE_INFORMATION),
+});
 
 window.addEventListener('message', async (event) => {
     switch (event.data.type) {
@@ -71,9 +74,6 @@ window.addEventListener('message', async (event) => {
         } catch (error) {
             window.postMessage({type: PING_DOMAIN_RESPONSE, data: error}, window.location.href);
         }
-        break;
-    case GET_LANGUAGE_INFORMATION:
-        window.postMessage({type: RETRIEVED_LANGUAGE_INFORMATION, data: await ipcRenderer.invoke(GET_LANGUAGE_INFORMATION)});
         break;
     default:
         console.log(`got a message: ${event}`);

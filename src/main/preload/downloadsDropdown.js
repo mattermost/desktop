@@ -14,7 +14,6 @@ import {
     RECEIVE_DOWNLOADS_DROPDOWN_SIZE,
     REQUEST_CLEAR_DOWNLOADS_DROPDOWN,
     REQUEST_DOWNLOADS_DROPDOWN_INFO,
-    RETRIEVED_LANGUAGE_INFORMATION,
     SEND_DOWNLOADS_DROPDOWN_SIZE,
     START_UPDATE_DOWNLOAD,
     START_UPGRADE,
@@ -32,6 +31,10 @@ contextBridge.exposeInMainWorld('process', {
 
 contextBridge.exposeInMainWorld('mas', {
     getThumbnailLocation: (location) => ipcRenderer.invoke(GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION, location),
+});
+
+contextBridge.exposeInMainWorld('desktop', {
+    getLanguageInformation: () => ipcRenderer.invoke(GET_LANGUAGE_INFORMATION),
 });
 
 window.addEventListener('click', () => {
@@ -73,9 +76,6 @@ window.addEventListener('message', async (event) => {
         break;
     case START_UPGRADE:
         ipcRenderer.send(START_UPGRADE);
-        break;
-    case GET_LANGUAGE_INFORMATION:
-        window.postMessage({type: RETRIEVED_LANGUAGE_INFORMATION, data: await ipcRenderer.invoke(GET_LANGUAGE_INFORMATION)});
         break;
     default:
         console.log('Got an unknown message. Unknown messages are ignored');

@@ -3,6 +3,8 @@
 
 import {ipcRenderer} from 'electron/renderer';
 
+import {Language} from '../../i18n/i18n';
+
 import {CombinedConfig, LocalConfiguration, Team} from './config';
 import {DownloadedItems} from './downloads';
 import {SaveQueueItem} from './settings';
@@ -58,6 +60,7 @@ declare global {
             getAvailableLanguages: () => Promise<string[]>;
             getLocalConfiguration: (option?: keyof LocalConfiguration) => Promise<LocalConfiguration[keyof LocalConfiguration] | Partial<LocalConfiguration>>;
             getDownloadLocation: (downloadLocation?: string) => Promise<string>;
+            getLanguageInformation: () => Promise<Language>;
 
             onSynchronizeConfig: (listener: () => void) => void;
             onReloadConfiguration: (listener: () => void) => void;

@@ -17,13 +17,16 @@ import {
     SHOW_REMOVE_SERVER_MODAL,
     UPDATE_TEAMS,
     GET_LANGUAGE_INFORMATION,
-    RETRIEVED_LANGUAGE_INFORMATION,
 } from 'common/communication';
 
 console.log('preloaded for the dropdown!');
 
 contextBridge.exposeInMainWorld('process', {
     platform: process.platform,
+});
+
+contextBridge.exposeInMainWorld('desktop', {
+    getLanguageInformation: () => ipcRenderer.invoke(GET_LANGUAGE_INFORMATION),
 });
 
 window.addEventListener('message', async (event) => {
@@ -51,9 +54,6 @@ window.addEventListener('message', async (event) => {
         break;
     case UPDATE_TEAMS:
         ipcRenderer.invoke(UPDATE_TEAMS, event.data.data);
-        break;
-    case GET_LANGUAGE_INFORMATION:
-        window.postMessage({type: RETRIEVED_LANGUAGE_INFORMATION, data: await ipcRenderer.invoke(GET_LANGUAGE_INFORMATION)});
         break;
     default:
         console.log(`got a message: ${event}`);

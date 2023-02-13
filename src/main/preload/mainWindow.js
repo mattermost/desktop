@@ -8,7 +8,6 @@ import {ipcRenderer, contextBridge} from 'electron';
 
 import {
     GET_LANGUAGE_INFORMATION,
-    RETRIEVED_LANGUAGE_INFORMATION,
     QUIT,
     GET_VIEW_NAME,
     GET_VIEW_WEBCONTENTS_ID,
@@ -110,6 +109,7 @@ contextBridge.exposeInMainWorld('desktop', {
     getAvailableLanguages: () => ipcRenderer.invoke(GET_AVAILABLE_LANGUAGES),
     getLocalConfiguration: (option) => ipcRenderer.invoke(GET_LOCAL_CONFIGURATION, option),
     getDownloadLocation: (downloadLocation) => ipcRenderer.invoke(GET_DOWNLOAD_LOCATION, downloadLocation),
+    getLanguageInformation: () => ipcRenderer.invoke(GET_LANGUAGE_INFORMATION),
 
     onSynchronizeConfig: (listener) => ipcRenderer.on('synchronize-config', () => listener()),
     onReloadConfiguration: (listener) => ipcRenderer.on(RELOAD_CONFIGURATION, () => listener()),
@@ -135,12 +135,4 @@ contextBridge.exposeInMainWorld('desktop', {
     onUpdateDownloadsDropdown: (listener) => ipcRenderer.on(UPDATE_DOWNLOADS_DROPDOWN, (_, downloads) => listener(downloads)),
     onAppMenuWillClose: (listener) => ipcRenderer.on(APP_MENU_WILL_CLOSE, () => listener()),
     onFocusThreeDotMenu: (listener) => ipcRenderer.on(FOCUS_THREE_DOT_MENU, () => listener()),
-});
-
-window.addEventListener('message', async (event) => {
-    switch (event.data.type) {
-    case GET_LANGUAGE_INFORMATION:
-        window.postMessage({type: RETRIEVED_LANGUAGE_INFORMATION, data: await ipcRenderer.invoke(GET_LANGUAGE_INFORMATION)});
-        break;
-    }
 });

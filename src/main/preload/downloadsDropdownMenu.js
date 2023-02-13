@@ -8,7 +8,6 @@ import {ipcRenderer, contextBridge} from 'electron';
 import {
     GET_LANGUAGE_INFORMATION,
     DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE,
-    RETRIEVED_LANGUAGE_INFORMATION,
     DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER,
     DOWNLOADS_DROPDOWN_MENU_CANCEL_DOWNLOAD,
     DOWNLOADS_DROPDOWN_MENU_OPEN_FILE,
@@ -20,6 +19,10 @@ console.log('preloaded for the downloadsDropdownMenu!');
 
 contextBridge.exposeInMainWorld('process', {
     platform: process.platform,
+});
+
+contextBridge.exposeInMainWorld('desktop', {
+    getLanguageInformation: () => ipcRenderer.invoke(GET_LANGUAGE_INFORMATION),
 });
 
 /**
@@ -41,9 +44,6 @@ window.addEventListener('message', async (event) => {
         break;
     case DOWNLOADS_DROPDOWN_MENU_OPEN_FILE:
         ipcRenderer.send(DOWNLOADS_DROPDOWN_MENU_OPEN_FILE, event.data.payload.item);
-        break;
-    case GET_LANGUAGE_INFORMATION:
-        window.postMessage({type: RETRIEVED_LANGUAGE_INFORMATION, data: await ipcRenderer.invoke(GET_LANGUAGE_INFORMATION)});
         break;
     default:
         console.log('Got an unknown message. Unknown messages are ignored');
