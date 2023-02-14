@@ -258,7 +258,7 @@ export class MattermostView extends EventEmitter {
     }
 
     setCookie = async (event: IpcMainEvent, cookie: string) => {
-        log.debug('MattermostView.setCookie', this.tab.name, cookie);
+        log.silly('MattermostView.setCookie', this.tab.name, cookie);
         const cookieSetDetails = createCookieSetDetailsFromCookieString(cookie, `${this.tab.server.url}`, this.tab.server.url.host);
         if (this.cookies.has(cookieSetDetails.name) && this.cookies.get(cookieSetDetails.name)?.value === cookieSetDetails.value) {
             return;
@@ -283,7 +283,13 @@ export class MattermostView extends EventEmitter {
     }
 
     private appendCookies = (details: OnBeforeSendHeadersListenerDetails) => {
-        log.debug('MattermostView.appendCookies', details.requestHeaders, this.cookies);
+        const parsedURL = urlUtils.parseURL(details.url);
+        if (parsedURL?.host !== this.tab.server.url.host) {
+            log.silly('MattermostView.appendCookies', 'ignore different host', details.url);
+            return {};
+        }
+
+        log.silly('MattermostView.appendCookies', details.requestHeaders, this.cookies);
         return {
             requestHeaders: {
                 Cookie: `${details.requestHeaders.Cookie ? `${details.requestHeaders.Cookie}; ` : ''}${[...this.cookies.values()].map((cookie) => `${cookie.name}=${cookie.value}`).join('; ')}`,
