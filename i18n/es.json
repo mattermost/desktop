@@ -271,5 +271,8 @@
     "renderer.components.configureServer.connect.saving": "Conectando…",
     "renderer.components.configureServer.connect.default": "Conecta",
     "renderer.components.configureServer.cardtitle": "Proporciona los detalles de tu servidor",
-    "main.menus.app.view.downloads": "Descargas"
+    "main.menus.app.view.downloads": "Descargas",
+    "main.menus.app.help.ShowLogs": "",
+    "main.menus.app.help.RunDiagnostics": "",
+    "renderer.components.settingsPage.trayIcon.color": ""
 }
