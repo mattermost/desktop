@@ -261,5 +261,6 @@
     "main.menus.app.view.devToolsAppWrapper": "ابزارهای توسعه‌دهنده برای لفاف‌پیچی برنامه (Application Wrapper)",
     "main.menus.app.help.commitString": " ارجاع: {hashVersion}",
     "main.CriticalErrorHandler.unresponsive.dialog.message": "این پنجره دیگر پاسخگو نیست.\nآیا منتظر می‌مانید تا دوباره به حالت عادی بازگردد؟",
-    "main.CriticalErrorHandler.uncaughtException.dialog.message": "برنامه {appName} به صورت ناگهانی بسته شد. برای اطلاعات بیشتر روی «{showDetails}» بزنید یا برای باز کردن دوباره برنامه «{reopen}» را بزنید.\n\nخطای درونی: {err}"
+    "main.CriticalErrorHandler.uncaughtException.dialog.message": "برنامه {appName} به صورت ناگهانی بسته شد. برای اطلاعات بیشتر روی «{showDetails}» بزنید یا برای باز کردن دوباره برنامه «{reopen}» را بزنید.\n\nخطای درونی: {err}",
+    "main.menus.app.help.ShowLogs": ""
 }
