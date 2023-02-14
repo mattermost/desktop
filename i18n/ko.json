@@ -268,5 +268,7 @@
     "main.windows.mainWindow.closeApp.dialog.message": "종료하시겠습니까?",
     "main.windows.mainWindow.closeApp.dialog.detail": "더 이상 메시지 알림을 받지 않습니다. {appName}을(를) 시스템 트레이에서 실행 중인 상태로 두려면 설정(Settings)에서 활성화할 수 있습니다.",
     "renderer.components.settingsPage.bounceIcon": "Dock 아이콘 바운스",
-    "renderer.components.configureServer.subtitle": "팀의 커뮤니케이션 허브에<br></br>연결할 첫 번째 서버 설정"
+    "renderer.components.configureServer.subtitle": "팀의 커뮤니케이션 허브에<br></br>연결할 첫 번째 서버 설정",
+    "renderer.downloadsDropdown.remaining": "",
+    "main.menus.app.help.ShowLogs": ""
 }
