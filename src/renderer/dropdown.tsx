@@ -9,16 +9,6 @@ import {DragDropContext, Draggable, DraggingStyle, Droppable, DropResult, NotDra
 
 import {Team, TeamWithTabs, TeamWithTabsAndGpo} from 'types/config';
 
-import {
-    CLOSE_TEAMS_DROPDOWN,
-    REQUEST_TEAMS_DROPDOWN_INFO,
-    SEND_DROPDOWN_MENU_SIZE,
-    SHOW_NEW_SERVER_MODAL,
-    SHOW_EDIT_SERVER_MODAL,
-    SHOW_REMOVE_SERVER_MODAL,
-    SWITCH_SERVER, UPDATE_TEAMS,
-    UPDATE_TEAMS_DROPDOWN,
-} from 'common/communication';
 import {getTabViewName} from 'common/tabs/TabView';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH_MAC} from 'common/utils/constants';
 
@@ -64,30 +54,38 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
 
         this.buttonRefs = new Map();
         this.addServerRef = React.createRef();
-        window.addEventListener('message', this.handleMessageEvent);
+
+        window.desktop.serverDropdown.onUpdateServerDropdown(this.handleUpdate);
     }
 
-    handleMessageEvent = (event: MessageEvent) => {
-        if (event.data.type === UPDATE_TEAMS_DROPDOWN) {
-            const {teams, activeTeam, darkMode, enableServerManagement, hasGPOTeams, unreads, mentions, expired, windowBounds} = event.data.data;
-            this.setState({
-                teams,
-                orderedTeams: teams.concat().sort((a: TeamWithTabs, b: TeamWithTabs) => a.order - b.order),
-                activeTeam,
-                darkMode,
-                enableServerManagement,
-                hasGPOTeams,
-                unreads,
-                mentions,
-                expired,
-                windowBounds,
-            });
-        }
+    handleUpdate = (
+        teams: TeamWithTabsAndGpo[],
+        darkMode: boolean,
+        windowBounds: Electron.Rectangle,
+        activeTeam?: string,
+        enableServerManagement?: boolean,
+        hasGPOTeams?: boolean,
+        expired?: Map<string, boolean>,
+        mentions?: Map<string, number>,
+        unreads?: Map<string, boolean>,
+    ) => {
+        this.setState({
+            teams,
+            orderedTeams: teams.concat().sort((a: TeamWithTabs, b: TeamWithTabs) => a.order - b.order),
+            activeTeam,
+            darkMode,
+            enableServerManagement,
+            hasGPOTeams,
+            unreads,
+            mentions,
+            expired,
+            windowBounds,
+        });
     }
 
     selectServer = (team: Team) => {
         return () => {
-            window.postMessage({type: SWITCH_SERVER, data: team.name}, window.location.href);
+            window.desktop.serverDropdown.switchServer(team.name);
             this.closeMenu();
         };
     }
@@ -95,7 +93,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
     closeMenu = () => {
         if (!this.state.isAnyDragging) {
             (document.activeElement as HTMLElement).blur();
-            window.postMessage({type: CLOSE_TEAMS_DROPDOWN}, window.location.href);
+            window.desktop.closeTeamsDropdown();
         }
     }
 
@@ -104,7 +102,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
     }
 
     addServer = () => {
-        window.postMessage({type: SHOW_NEW_SERVER_MODAL}, window.location.href);
+        window.desktop.serverDropdown.showNewServerModal();
         this.closeMenu();
     }
 
@@ -142,17 +140,17 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
             teams[t.index].order = order;
         });
         this.setState({teams, orderedTeams: teams.concat().sort((a: Team, b: Team) => a.order - b.order), isAnyDragging: false});
-        window.postMessage({type: UPDATE_TEAMS, data: teams}, window.location.href);
+        window.desktop.updateTeams(teams);
     }
 
     componentDidMount() {
-        window.postMessage({type: REQUEST_TEAMS_DROPDOWN_INFO}, window.location.href);
+        window.desktop.serverDropdown.requestInfo();
         window.addEventListener('click', this.closeMenu);
         window.addEventListener('keydown', this.handleKeyboardShortcuts);
     }
 
     componentDidUpdate() {
-        window.postMessage({type: SEND_DROPDOWN_MENU_SIZE, data: {width: document.body.scrollWidth, height: document.body.scrollHeight}}, window.location.href);
+        window.desktop.serverDropdown.sendSize(document.body.scrollWidth, document.body.scrollHeight);
     }
 
     componentWillUnmount() {
@@ -218,7 +216,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
         }
         return (event: React.MouseEvent<HTMLButtonElement>) => {
             event.stopPropagation();
-            window.postMessage({type: SHOW_EDIT_SERVER_MODAL, data: {name: teamName}}, window.location.href);
+            window.desktop.serverDropdown.showEditServerModal(teamName);
             this.closeMenu();
         };
     }
@@ -229,7 +227,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
         }
         return (event: React.MouseEvent<HTMLButtonElement>) => {
             event.stopPropagation();
-            window.postMessage({type: SHOW_REMOVE_SERVER_MODAL, data: {name: teamName}}, window.location.href);
+            window.desktop.serverDropdown.showRemoveServerModal(teamName);
             this.closeMenu();
         };
     }

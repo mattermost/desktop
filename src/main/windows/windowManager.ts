@@ -14,7 +14,6 @@ import {
 import {
     MAXIMIZE_CHANGE,
     HISTORY,
-    GET_LOADING_SCREEN_DATA,
     REACT_APP_INITIALIZED,
     LOADING_SCREEN_ANIMATION_FINISHED,
     FOCUS_THREE_DOT_MENU,
@@ -79,7 +78,6 @@ export class WindowManager {
         this.assetsDir = path.resolve(app.getAppPath(), 'assets');
 
         ipcMain.on(HISTORY, this.handleHistory);
-        ipcMain.handle(GET_LOADING_SCREEN_DATA, this.handleLoadingScreenDataRequest);
         ipcMain.handle(GET_DARK_MODE, this.handleGetDarkMode);
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
         ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, this.handleLoadingScreenAnimationFinished);

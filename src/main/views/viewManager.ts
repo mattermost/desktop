@@ -13,7 +13,6 @@ import {
     LOAD_SUCCESS,
     LOAD_FAILED,
     TOGGLE_LOADING_SCREEN_VISIBILITY,
-    GET_LOADING_SCREEN_DATA,
     LOADSCREEN_END,
     SET_ACTIVE_VIEW,
     OPEN_TAB,
@@ -21,6 +20,7 @@ import {
     UPDATE_LAST_ACTIVE,
     UPDATE_URL_VIEW_WIDTH,
     MAIN_WINDOW_SHOWN,
+    DARK_MODE_CHANGE,
 } from 'common/communication';
 import Config from 'common/config';
 import urlUtils, {equalUrlsIgnoringSubpath} from 'common/utils/url';
@@ -362,7 +362,7 @@ export class ViewManager {
         }
         if (url && url !== '') {
             const urlString = typeof url === 'string' ? url : url.toString();
-            const preload = getLocalPreload('urlView.js');
+            const preload = getLocalPreload('desktopAPI.js');
             const urlView = new BrowserView({
                 webPreferences: {
                     preload,
@@ -427,7 +427,7 @@ export class ViewManager {
     }
 
     createLoadingScreen = () => {
-        const preload = getLocalPreload('loadingScreenPreload.js');
+        const preload = getLocalPreload('desktopAPI.js');
         this.loadingScreen = new BrowserView({webPreferences: {
             preload,
 
@@ -490,7 +490,7 @@ export class ViewManager {
 
     updateLoadingScreenDarkMode = (darkMode: boolean) => {
         if (this.loadingScreen) {
-            this.loadingScreen.webContents.send(GET_LOADING_SCREEN_DATA, {darkMode});
+            this.loadingScreen.webContents.send(DARK_MODE_CHANGE, darkMode);
         }
     }
 

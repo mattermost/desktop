@@ -5,16 +5,9 @@ import React, {useEffect, useState} from 'react';
 import ReactDOM from 'react-dom';
 
 import {TeamWithIndex} from 'types/config';
-import {ModalMessage} from 'types/modals';
 
-import {
-    MODAL_RESULT,
-    GET_MODAL_UNCLOSEABLE,
-    GET_DARK_MODE,
-    DARK_MODE_CHANGE,
-    MODAL_INFO,
-} from 'common/communication';
 import IntlProvider from 'renderer/intl_provider';
+
 import WelcomeScreen from '../../components/WelcomeScreen';
 import ConfigureServer from '../../components/ConfigureServer';
 
@@ -23,7 +16,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 const MOBILE_SCREEN_WIDTH = 1200;
 
 const onConnect = (data: TeamWithIndex) => {
-    window.postMessage({type: MODAL_RESULT, data}, window.location.href);
+    window.desktop.modals.finishModal(data);
 };
 
 const WelcomeScreenModalWrapper = () => {
@@ -37,31 +30,25 @@ const WelcomeScreenModalWrapper = () => {
     };
 
     useEffect(() => {
-        window.postMessage({type: GET_MODAL_UNCLOSEABLE}, window.location.href);
-        window.postMessage({type: GET_DARK_MODE}, window.location.href);
+        window.desktop.getDarkMode().then((result) => {
+            setDarkMode(result);
+        });
+
+        window.desktop.onDarkModeChange((result) => {
+            setDarkMode(result);
+        });
+
+        window.desktop.modals.getModalInfo<TeamWithIndex[]>().then((result) => {
+            setCurrentTeams(result);
+        });
 
         handleWindowResize();
-
         window.addEventListener('resize', handleWindowResize);
-        window.addEventListener('message', handleMessageEvent);
 
         return () => {
-            window.removeEventListener('message', handleMessageEvent);
+            window.removeEventListener('resize', handleWindowResize);
         };
     }, []);
-
-    const handleMessageEvent = (event: {data: ModalMessage<boolean | Electron.Rectangle | TeamWithIndex[]>}) => {
-        switch (event.data.type) {
-        case DARK_MODE_CHANGE:
-            setDarkMode(event.data.data as boolean);
-            break;
-        case MODAL_INFO:
-            setCurrentTeams(event.data.data as TeamWithIndex[]);
-            break;
-        default:
-            break;
-        }
-    };
 
     const onGetStarted = () => {
         setGetStarted(true);

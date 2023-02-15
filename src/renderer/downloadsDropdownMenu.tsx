@@ -8,15 +8,6 @@ import {FormattedMessage} from 'react-intl';
 
 import {DownloadedItem} from 'types/downloads';
 
-import {
-    DOWNLOADS_DROPDOWN_MENU_CANCEL_DOWNLOAD,
-    DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE,
-    DOWNLOADS_DROPDOWN_MENU_OPEN_FILE,
-    DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER,
-    REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO,
-    UPDATE_DOWNLOADS_DROPDOWN_MENU,
-} from 'common/communication';
-
 import IntlProvider from './intl_provider';
 
 import './css/downloadsDropdownMenu.scss';
@@ -25,20 +16,14 @@ const DownloadsDropdownMenu = () => {
     const [item, setItem] = useState<DownloadedItem | null>(null);
     const [darkMode, setDarkMode] = useState(false);
 
-    useEffect(() => {
-        const handleMessageEvent = (event: MessageEvent) => {
-            if (event.data.type === UPDATE_DOWNLOADS_DROPDOWN_MENU) {
-                const {item, darkMode} = event.data.data;
-                setItem(item);
-                setDarkMode(darkMode);
-            }
-        };
+    const handleUpdate = (item: DownloadedItem, darkMode: boolean) => {
+        setItem(item);
+        setDarkMode(darkMode);
+    };
 
-        window.addEventListener('message', handleMessageEvent);
-        window.postMessage({type: REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO}, window.location.href);
-        return () => {
-            window.removeEventListener('message', handleMessageEvent);
-        };
+    useEffect(() => {
+        window.desktop.downloadsDropdownMenu.requestInfo();
+        window.desktop.downloadsDropdownMenu.onUpdateDownloadsDropdownMenu(handleUpdate);
     }, []);
 
     const preventPropagation = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -76,31 +61,43 @@ const DownloadsDropdownMenu = () => {
     };
 
     const openFile = useCallback(() => {
+        if (!item) {
+            return;
+        }
         if (item?.type === 'update') {
             return;
         }
-        window.postMessage({type: DOWNLOADS_DROPDOWN_MENU_OPEN_FILE, payload: {item}}, window.location.href);
+        window.desktop.downloadsDropdownMenu.openFile(item);
     }, [item]);
 
     const showInFolder = useCallback(() => {
+        if (!item) {
+            return;
+        }
         if (item?.type === 'update') {
             return;
         }
-        window.postMessage({type: DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER, payload: {item}}, window.location.href);
+        window.desktop.downloadsDropdownMenu.showInFolder(item);
     }, [item]);
 
     const clearFile = useCallback(() => {
+        if (!item) {
+            return;
+        }
         if (item?.type === 'update') {
             return;
         }
-        window.postMessage({type: DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE, payload: {item}}, window.location.href);
+        window.desktop.downloadsDropdownMenu.clearFile(item);
     }, [item]);
 
     const cancelDownload = useCallback(() => {
+        if (!item) {
+            return;
+        }
         if (item?.state !== 'progressing') {
             return;
         }
-        window.postMessage({type: DOWNLOADS_DROPDOWN_MENU_CANCEL_DOWNLOAD, payload: {item}}, window.location.href);
+        window.desktop.downloadsDropdownMenu.cancelDownload(item);
     }, [item]);
 
     return (

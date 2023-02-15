@@ -8,9 +8,6 @@ import React, {useEffect, useState} from 'react';
 import ReactDOM from 'react-dom';
 
 import {TeamWithIndex} from 'types/config';
-import {ModalMessage} from 'types/modals';
-
-import {MODAL_CANCEL, MODAL_INFO, MODAL_RESULT, RETRIEVE_MODAL_INFO} from 'common/communication';
 
 import IntlProvider from 'renderer/intl_provider';
 
@@ -20,33 +17,28 @@ import setupDarkMode from '../darkMode';
 
 setupDarkMode();
 
+type ModalInfo = {
+    team: TeamWithIndex;
+    currentTeams: TeamWithIndex[];
+};
+
 const onClose = () => {
-    window.postMessage({type: MODAL_CANCEL}, window.location.href);
+    window.desktop.modals.cancelModal();
 };
 
 const onSave = (data: TeamWithIndex) => {
-    window.postMessage({type: MODAL_RESULT, data}, window.location.href);
+    window.desktop.modals.finishModal(data);
 };
 
 const EditServerModalWrapper: React.FC = () => {
     const [server, setServer] = useState<TeamWithIndex>();
     const [currentTeams, setCurrentTeams] = useState<TeamWithIndex[]>();
 
-    const handleEditServerMessage = (event: {data: ModalMessage<{currentTeams: TeamWithIndex[]; team: TeamWithIndex}>}) => {
-        switch (event.data.type) {
-        case MODAL_INFO: {
-            setServer(event.data.data.team);
-            setCurrentTeams(event.data.data.currentTeams);
-            break;
-        }
-        default:
-            break;
-        }
-    };
-
     useEffect(() => {
-        window.addEventListener('message', handleEditServerMessage);
-        window.postMessage({type: RETRIEVE_MODAL_INFO}, window.location.href);
+        window.desktop.modals.getModalInfo<ModalInfo>().then(({team, currentTeams}) => {
+            setServer(team);
+            setCurrentTeams(currentTeams);
+        });
     }, []);
 
     return (

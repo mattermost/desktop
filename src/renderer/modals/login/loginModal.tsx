@@ -6,17 +6,16 @@ import React from 'react';
 import {Button, Col, FormLabel, Form, FormGroup, FormControl, Modal} from 'react-bootstrap';
 import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 
-import {LoginModalData} from 'types/auth';
-import {ModalMessage} from 'types/modals';
 import {AuthenticationResponseDetails, AuthInfo} from 'electron/renderer';
 
+import {LoginModalInfo} from 'types/modals';
+
 import urlUtils from 'common/utils/url';
-import {MODAL_INFO} from 'common/communication';
 
 type Props = {
     onCancel: (request: AuthenticationResponseDetails) => void;
     onLogin: (request: AuthenticationResponseDetails, username: string, password: string) => void;
-    getAuthInfo: () => void;
+    getAuthInfo: () => Promise<LoginModalInfo>;
     intl: IntlShape;
 };
 
@@ -36,26 +35,13 @@ class LoginModal extends React.PureComponent<Props, State> {
         };
     }
 
-    componentDidMount() {
-        window.addEventListener('message', this.handleAuthInfoMessage);
-
-        this.props.getAuthInfo();
+    async componentDidMount() {
+        await this.getAuthInfo();
     }
 
-    componentWillUnmount() {
-        window.removeEventListener('message', this.handleAuthInfoMessage);
-    }
-
-    handleAuthInfoMessage = (event: {data: ModalMessage<LoginModalData>}) => {
-        switch (event.data.type) {
-        case MODAL_INFO: {
-            const {request, authInfo} = event.data.data;
-            this.setState({request, authInfo});
-            break;
-        }
-        default:
-            break;
-        }
+    getAuthInfo = async () => {
+        const {request, authInfo} = await this.props.getAuthInfo();
+        this.setState({request, authInfo});
     }
 
     handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {

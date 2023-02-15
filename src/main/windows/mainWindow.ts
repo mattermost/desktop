@@ -46,7 +46,7 @@ function isFramelessWindow() {
 
 function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean}) {
     // Create the browser window.
-    const preload = getLocalPreload('mainWindow.js');
+    const preload = getLocalPreload('desktopAPI.js');
     let savedWindowState: any;
     try {
         savedWindowState = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));

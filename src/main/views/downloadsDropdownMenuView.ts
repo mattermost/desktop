@@ -51,7 +51,7 @@ export default class DownloadsDropdownMenuView {
         this.windowBounds = this.window.getContentBounds();
         this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
 
-        const preload = getLocalPreload('downloadsDropdownMenu.js');
+        const preload = getLocalPreload('desktopAPI.js');
         this.view = new BrowserView({webPreferences: {
             preload,
 

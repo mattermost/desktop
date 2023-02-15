@@ -5,11 +5,11 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import {Certificate} from 'electron/renderer';
 
-import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO} from 'common/communication';
-
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'renderer/css/modals.css';
 import 'renderer/css/components/CertificateModal.css';
+
+import {CertificateModalInfo} from 'types/modals';
 
 import setupDarkMode from '../darkMode';
 
@@ -18,15 +18,15 @@ import SelectCertificateModal from './certificateModal';
 setupDarkMode();
 
 const handleCancel = () => {
-    window.postMessage({type: MODAL_CANCEL}, window.location.href);
+    window.desktop.modals.cancelModal();
 };
 
 const handleSelect = (cert: Certificate) => {
-    window.postMessage({type: MODAL_RESULT, data: {cert}}, window.location.href);
+    window.desktop.modals.finishModal({cert});
 };
 
 const getCertInfo = () => {
-    window.postMessage({type: RETRIEVE_MODAL_INFO}, window.location.href);
+    return window.desktop.modals.getModalInfo<CertificateModalInfo>();
 };
 
 const start = async () => {

@@ -7,8 +7,6 @@ import classNames from 'classnames';
 
 import {useIntl} from 'react-intl';
 
-import {DOWNLOADS_DROPDOWN_OPEN_FILE} from 'common/communication';
-
 import FileSizeAndStatus from './FileSizeAndStatus';
 import ProgressBar from './ProgressBar';
 import ThreeDotButton from './ThreeDotButton';
@@ -26,7 +24,7 @@ const DownloadsDropdownItemFile = ({item, activeItem}: OwnProps) => {
     const onFileClick = (e: React.MouseEvent<HTMLDivElement>) => {
         e.preventDefault();
 
-        window.postMessage({type: DOWNLOADS_DROPDOWN_OPEN_FILE, payload: {item}}, window.location.href);
+        window.desktop.downloadsDropdown.openFile(item);
     };
 
     const itemFilename = item.type === 'update' ?

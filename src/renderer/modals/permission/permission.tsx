@@ -4,7 +4,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO, MODAL_SEND_IPC_MESSAGE} from 'common/communication';
+import {PermissionModalInfo} from 'types/modals';
 
 import IntlProvider from 'renderer/intl_provider';
 
@@ -18,19 +18,19 @@ import PermissionModal from './permissionModal';
 setupDarkMode();
 
 const handleDeny = () => {
-    window.postMessage({type: MODAL_CANCEL}, window.location.href);
+    window.desktop.modals.cancelModal();
 };
 
 const handleGrant = () => {
-    window.postMessage({type: MODAL_RESULT}, window.location.href);
+    window.desktop.modals.finishModal();
 };
 
 const getPermissionInfo = () => {
-    window.postMessage({type: RETRIEVE_MODAL_INFO}, window.location.href);
+    return window.desktop.modals.getModalInfo<PermissionModalInfo>();
 };
 
 const openExternalLink = (protocol: string, url: string) => {
-    window.postMessage({type: MODAL_SEND_IPC_MESSAGE, data: {type: 'confirm-protocol', args: [protocol, url]}}, window.location.href);
+    window.desktop.modals.confirmProtocol(protocol, url);
 };
 
 const start = async () => {

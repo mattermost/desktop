@@ -41,10 +41,8 @@ export const SHOW_REMOVE_SERVER_MODAL = 'show-remove-server-modal';
 export const MAIN_WINDOW_SHOWN = 'main-window-shown';
 
 export const RETRIEVE_MODAL_INFO = 'retrieve-modal-info';
-export const MODAL_INFO = 'modal-info';
 export const MODAL_CANCEL = 'modal-cancel';
 export const MODAL_RESULT = 'modal-result';
-export const MODAL_SEND_IPC_MESSAGE = 'modal-send-ipc-message';
 export const MODAL_OPEN = 'modal-open';
 export const MODAL_CLOSE = 'modal-close';
 export const NOTIFY_MENTION = 'notify_mention';
@@ -74,8 +72,6 @@ export const TOGGLE_BACK_BUTTON = 'toggle-back-button';
 
 export const SHOW_SETTINGS_WINDOW = 'show-settings-window';
 
-export const RECEIVED_LOADING_SCREEN_DATA = 'received-loading-screen-data';
-export const GET_LOADING_SCREEN_DATA = 'get-loading-screen-data';
 export const LOADING_SCREEN_ANIMATION_FINISHED = 'loading-screen-animation-finished';
 export const TOGGLE_LOADING_SCREEN_VISIBILITY = 'toggle-loading-screen-visibility';
 
@@ -91,7 +87,6 @@ export const UPDATE_TEAMS_DROPDOWN = 'update-teams-dropdown';
 export const UPDATE_DROPDOWN_MENTIONS = 'update-dropdown-mentions';
 export const REQUEST_TEAMS_DROPDOWN_INFO = 'request-teams-dropdown-info';
 export const RECEIVE_DROPDOWN_MENU_SIZE = 'receive-dropdown-menu-size';
-export const SEND_DROPDOWN_MENU_SIZE = 'send-dropdown-menu-size';
 
 export const UPDATE_AVAILABLE = 'update-available';
 export const UPDATE_DOWNLOADED = 'update-downloaded';
@@ -116,7 +111,6 @@ export const GET_VIEW_WEBCONTENTS_ID = 'get-view-webcontents-id';
 
 export const RESIZE_MODAL = 'resize-modal';
 export const GET_MODAL_UNCLOSEABLE = 'get-modal-uncloseable';
-export const MODAL_UNCLOSEABLE = 'modal-uncloseable';
 
 export const UPDATE_PATHS = 'update-paths';
 
@@ -128,7 +122,6 @@ export const PING_DOMAIN = 'ping-domain';
 export const PING_DOMAIN_RESPONSE = 'ping-domain-response';
 
 export const GET_LANGUAGE_INFORMATION = 'get-language-information';
-export const RETRIEVED_LANGUAGE_INFORMATION = 'retrieved-language-information';
 export const GET_AVAILABLE_LANGUAGES = 'get-available-languages';
 
 export const VIEW_FINISHED_RESIZING = 'view-finished-resizing';
@@ -152,12 +145,10 @@ export const SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE = 'show-downloads-dropdown-but
 export const HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE = 'hide-downloads-dropdown-button-badge';
 export const REQUEST_DOWNLOADS_DROPDOWN_INFO = 'request-downloads-dropdown-info';
 export const UPDATE_DOWNLOADS_DROPDOWN = 'update-downloads-dropdown';
-export const DOWNLOADS_DROPDOWN_SHOW_FILE_IN_FOLDER = 'downloads-dropdown-show-file-in-folder';
 export const DOWNLOADS_DROPDOWN_OPEN_FILE = 'downloads-dropdown-open-file';
 export const REQUEST_HAS_DOWNLOADS = 'request-has-downloads';
 export const DOWNLOADS_DROPDOWN_FOCUSED = 'downloads-dropdown-focused';
 export const RECEIVE_DOWNLOADS_DROPDOWN_SIZE = 'receive-downloads-dropdown-size';
-export const SEND_DOWNLOADS_DROPDOWN_SIZE = 'send-downloads-dropdown-size';
 export const GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION = 'get-downloaded-image-thumbnail-location';
 
 export const OPEN_DOWNLOADS_DROPDOWN_MENU = 'open-downloads-dropdown-menu';
