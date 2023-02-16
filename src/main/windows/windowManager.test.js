@@ -4,7 +4,7 @@
 /* eslint-disable max-lines */
 'use strict';
 
-import {app, systemPreferences} from 'electron';
+import {app, systemPreferences, desktopCapturer} from 'electron';
 
 import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
@@ -39,6 +39,10 @@ jest.mock('electron', () => ({
     },
     systemPreferences: {
         getUserDefault: jest.fn(),
+        getMediaAccessStatus: jest.fn(() => 'granted'),
+    },
+    desktopCapturer: {
+        getSources: jest.fn(),
     },
 }));
 
@@ -1039,6 +1043,84 @@ describe('main/windows/windowManager', () => {
             widgetWindow.getCallID = jest.fn(() => 'test');
             windowManager.createCallsWidgetWindow(null, 'server-1_tab-messaging', {callID: 'test2'});
             expect(windowManager.callsWidgetWindow).not.toEqual(widgetWindow);
+        });
+    });
+
+    describe('handleGetDesktopSources', () => {
+        const windowManager = new WindowManager();
+        windowManager.viewManager = {
+            showByName: jest.fn(),
+            getCurrentView: jest.fn(),
+        };
+
+        beforeEach(() => {
+            windowManager.viewManager.views = new Map();
+            windowManager.callsWidgetWindow = new CallsWidgetWindow();
+            windowManager.callsWidgetWindow.win = {
+                webContents: {
+                    send: jest.fn(),
+                },
+            };
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+            Config.teams = [];
+        });
+
+        it('should send sources back', async () => {
+            jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([
+                {
+                    id: 'screen0',
+                    thumbnail: {
+                        toDataURL: jest.fn(),
+                    },
+                },
+                {
+                    id: 'window0',
+                    thumbnail: {
+                        toDataURL: jest.fn(),
+                    },
+                },
+            ]);
+
+            await windowManager.handleGetDesktopSources(null, 'widget', null);
+
+            expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('desktop-sources-result', [
+                {
+                    id: 'screen0',
+                },
+                {
+                    id: 'window0',
+                },
+            ]);
+        });
+
+        it('should send error with no sources', async () => {
+            jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([]);
+            await windowManager.handleGetDesktopSources(null, 'widget', null);
+            expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
+                err: 'screen-permissions',
+            });
+        });
+
+        it('should send error with no permissions', async () => {
+            jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([
+                {
+                    id: 'screen0',
+                    thumbnail: {
+                        toDataURL: jest.fn(),
+                    },
+                },
+            ]);
+            jest.spyOn(systemPreferences, 'getMediaAccessStatus').mockReturnValue('denied');
+
+            await windowManager.handleGetDesktopSources(null, 'widget', null);
+
+            expect(systemPreferences.getMediaAccessStatus).toHaveBeenCalledWith('screen');
+            expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
+                err: 'screen-permissions',
+            });
         });
     });
 
