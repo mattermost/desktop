@@ -219,5 +219,9 @@ export default class CallsWidgetWindow extends EventEmitter {
     public getURL() {
         return urlUtils.parseURL(this.win.webContents.getURL());
     }
+
+    public getMainView() {
+        return this.mainView;
+    }
 }
 
