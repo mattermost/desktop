@@ -5,27 +5,21 @@ import React from 'react';
 import {Modal, Button} from 'react-bootstrap';
 import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 
-import {PermissionType} from 'types/trustedOrigin';
-
-import {ModalMessage} from 'types/modals';
+import {PermissionModalInfo} from 'types/modals';
 
 import urlUtil from 'common/utils/url';
 import {t} from 'common/utils/util';
-import {MODAL_INFO} from 'common/communication';
 import {PERMISSION_DESCRIPTION} from 'common/permissions';
 
 type Props = {
     handleDeny: React.MouseEventHandler<HTMLButtonElement>;
     handleGrant: React.MouseEventHandler<HTMLButtonElement>;
-    getPermissionInfo: () => void;
+    getPermissionInfo: () => Promise<PermissionModalInfo>;
     openExternalLink: (protocol: string, url: string) => void;
     intl: IntlShape;
 };
 
-type State = {
-    url?: string;
-    permission?: PermissionType;
-}
+type State = Partial<PermissionModalInfo>;
 
 class PermissionModal extends React.PureComponent<Props, State> {
     constructor(props: Props) {
@@ -33,26 +27,13 @@ class PermissionModal extends React.PureComponent<Props, State> {
         this.state = {};
     }
 
-    componentDidMount() {
-        window.addEventListener('message', this.handlePermissionInfoMessage);
-
-        this.props.getPermissionInfo();
+    getPermissionInfo = async () => {
+        const {url, permission} = await this.props.getPermissionInfo();
+        this.setState({url, permission});
     }
 
-    componentWillUnmount() {
-        window.removeEventListener('message', this.handlePermissionInfoMessage);
-    }
-
-    handlePermissionInfoMessage = (event: {data: ModalMessage<{url: string; permission: PermissionType}>}) => {
-        switch (event.data.type) {
-        case MODAL_INFO: {
-            const {url, permission} = event.data.data;
-            this.setState({url, permission});
-            break;
-        }
-        default:
-            break;
-        }
+    async componentDidMount() {
+        await this.getPermissionInfo();
     }
 
     getModalTitle() {

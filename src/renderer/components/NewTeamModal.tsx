@@ -9,7 +9,6 @@ import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 import {TeamWithIndex} from 'types/config';
 
 import urlUtils from 'common/utils/url';
-import {PING_DOMAIN, PING_DOMAIN_RESPONSE} from 'common/communication';
 
 type Props = {
     onClose?: () => void;
@@ -157,20 +156,12 @@ class NewTeamModal extends React.PureComponent<Props, State> {
             return Promise.resolve(undefined);
         }
 
-        return new Promise((resolve) => {
-            const handler = (event: {data: {type: string; data: string | Error}}) => {
-                if (event.data.type === PING_DOMAIN_RESPONSE) {
-                    if (event.data.data instanceof Error) {
-                        console.error(`Could not ping url: ${teamUrl}`);
-                    } else {
-                        this.setState({teamUrl: `${event.data.data}://${this.state.teamUrl}`});
-                    }
-                    window.removeEventListener('message', handler);
-                    resolve(undefined);
-                }
-            };
-            window.addEventListener('message', handler);
-            window.postMessage({type: PING_DOMAIN, data: teamUrl}, window.location.href);
+        return window.desktop.modals.pingDomain(teamUrl).then((result: string | Error) => {
+            if (result instanceof Error) {
+                console.error(`Could not ping url: ${teamUrl}`);
+            } else {
+                this.setState({teamUrl: `${result}://${this.state.teamUrl}`});
+            }
         });
     }
 

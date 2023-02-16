@@ -10,8 +10,6 @@ import {Button} from 'react-bootstrap';
 
 import classNames from 'classnames';
 
-import {START_UPGRADE} from 'common/communication';
-
 import Thumbnail from '../Thumbnail';
 import FileSizeAndStatus from '../FileSizeAndStatus';
 
@@ -24,7 +22,7 @@ const UpdateAvailable = ({item}: OwnProps) => {
 
     const onButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
         e?.preventDefault?.();
-        window.postMessage({type: START_UPGRADE}, window.location.href);
+        window.desktop.downloadsDropdown.startUpgrade();
     };
 
     return (

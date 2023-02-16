@@ -10,7 +10,7 @@ import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
 
 export function createSettingsWindow(mainWindow: BrowserWindow, withDevTools: boolean) {
-    const preload = getLocalPreload('mainWindow.js');
+    const preload = getLocalPreload('desktopAPI.js');
     const spellcheck = (typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker);
     const settingsWindow = new BrowserWindow({
         parent: mainWindow,

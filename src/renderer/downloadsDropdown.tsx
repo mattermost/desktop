@@ -6,15 +6,7 @@ import ReactDOM from 'react-dom';
 import classNames from 'classnames';
 import {FormattedMessage} from 'react-intl';
 
-import {DownloadedItem} from 'types/downloads';
-
-import {
-    CLOSE_DOWNLOADS_DROPDOWN,
-    REQUEST_CLEAR_DOWNLOADS_DROPDOWN,
-    REQUEST_DOWNLOADS_DROPDOWN_INFO,
-    SEND_DOWNLOADS_DROPDOWN_SIZE,
-    UPDATE_DOWNLOADS_DROPDOWN,
-} from 'common/communication';
+import {DownloadedItem, DownloadedItems} from 'types/downloads';
 
 import IntlProvider from './intl_provider';
 import DownloadsDropdownItem from './components/DownloadsDropdown/DownloadsDropdownItem';
@@ -36,46 +28,51 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
             downloads: [],
         };
 
-        window.addEventListener('message', this.handleMessageEvent);
+        window.desktop.onUpdateDownloadsDropdown(this.handleUpdate);
     }
 
     componentDidMount() {
-        window.postMessage({type: REQUEST_DOWNLOADS_DROPDOWN_INFO}, window.location.href);
+        window.addEventListener('click', () => {
+            window.desktop.closeDownloadsDropdownMenu();
+        });
+
+        window.addEventListener('mousemove', () => {
+            window.desktop.downloadsDropdown.focus();
+        });
+
+        window.desktop.downloadsDropdown.requestInfo();
     }
 
     componentDidUpdate() {
-        window.postMessage({type: SEND_DOWNLOADS_DROPDOWN_SIZE, data: {width: document.body.scrollWidth, height: document.body.scrollHeight}}, window.location.href);
+        window.desktop.downloadsDropdown.sendSize(document.body.scrollWidth, document.body.scrollHeight);
     }
 
-    handleMessageEvent = (event: MessageEvent) => {
-        if (event.data.type === UPDATE_DOWNLOADS_DROPDOWN) {
-            const {downloads, darkMode, windowBounds, item} = event.data.data;
-            const newDownloads = Object.values<DownloadedItem>(downloads);
-            newDownloads.sort((a, b) => {
-                // Show App update first
-                if (a.type === 'update') {
-                    return -1;
-                } else if (b.type === 'update') {
-                    return 1;
-                }
-                return b?.addedAt - a?.addedAt;
-            });
-            this.setState({
-                downloads: newDownloads,
-                darkMode,
-                windowBounds,
-                item,
-            });
-        }
+    handleUpdate = (downloads: DownloadedItems, darkMode: boolean, windowBounds: Electron.Rectangle, item?: DownloadedItem) => {
+        const newDownloads = Object.values<DownloadedItem>(downloads);
+        newDownloads.sort((a, b) => {
+            // Show App update first
+            if (a.type === 'update') {
+                return -1;
+            } else if (b.type === 'update') {
+                return 1;
+            }
+            return b?.addedAt - a?.addedAt;
+        });
+        this.setState({
+            downloads: newDownloads,
+            darkMode,
+            windowBounds,
+            item,
+        });
     }
 
     closeMenu = () => {
-        window.postMessage({type: CLOSE_DOWNLOADS_DROPDOWN}, window.location.href);
+        window.desktop.closeDownloadsDropdown();
     }
 
     clearAll = () => {
         if (!this.clearAllButtonDisabled()) {
-            window.postMessage({type: REQUEST_CLEAR_DOWNLOADS_DROPDOWN}, window.location.href);
+            window.desktop.downloadsDropdown.requestClearDownloadsDropdown();
         }
     }
 

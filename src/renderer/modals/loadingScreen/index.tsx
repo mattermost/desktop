@@ -4,10 +4,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import {ModalMessage} from 'types/modals';
-
-import {RECEIVED_LOADING_SCREEN_DATA, GET_LOADING_SCREEN_DATA, LOADING_SCREEN_ANIMATION_FINISHED, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
-
 import LoadingScreen from '../../components/LoadingScreen';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -31,32 +27,29 @@ class LoadingScreenRoot extends React.PureComponent<Props, State> {
         };
     }
 
-    componentDidMount() {
-        window.postMessage({type: GET_LOADING_SCREEN_DATA}, window.location.href);
+    async componentDidMount() {
+        window.desktop.onDarkModeChange(this.setDarkMode);
+        const darkMode = await window.desktop.getDarkMode();
+        this.setDarkMode(darkMode);
 
-        window.addEventListener('message', this.handleMessageEvent);
+        window.desktop.loadingScreen.onToggleLoadingScreenVisibility(this.onToggleLoadingScreenVisibility);
+
+        window.addEventListener('click', () => {
+            window.desktop.closeTeamsDropdown();
+            window.desktop.closeDownloadsDropdown();
+        });
     }
 
-    componentWillUnmount() {
-        window.removeEventListener('message', this.handleMessageEvent);
+    setDarkMode = (darkMode: boolean) => {
+        this.setState({darkMode});
     }
 
-    handleMessageEvent = (event: {data: ModalMessage<any>}) => {
-        if (event.data.type === RECEIVED_LOADING_SCREEN_DATA) {
-            this.setState({
-                darkMode: event.data.data.darkMode,
-            });
-        }
-
-        if (event.data.type === TOGGLE_LOADING_SCREEN_VISIBILITY) {
-            this.setState({
-                showLoadingScreen: event.data.data,
-            });
-        }
+    onToggleLoadingScreenVisibility = (showLoadingScreen: boolean) => {
+        this.setState({showLoadingScreen});
     }
 
     onFadeOutComplete = () => {
-        window.postMessage({type: LOADING_SCREEN_ANIMATION_FINISHED}, window.location.href);
+        window.desktop.loadingScreen.loadingScreenAnimationFinished();
     }
 
     render() {
