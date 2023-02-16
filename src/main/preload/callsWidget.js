@@ -12,6 +12,7 @@ import {
     CALLS_WIDGET_RESIZE,
     CALLS_WIDGET_SHARE_SCREEN,
     CALLS_WIDGET_CHANNEL_LINK_CLICK,
+    CALLS_ERROR,
     DESKTOP_SOURCES_RESULT,
     DESKTOP_SOURCES_MODAL_REQUEST,
     DISPATCH_GET_DESKTOP_SOURCES,
@@ -70,6 +71,16 @@ ipcRenderer.on(CALLS_WIDGET_SHARE_SCREEN, (event, message) => {
     window.postMessage(
         {
             type: CALLS_WIDGET_SHARE_SCREEN,
+            message,
+        },
+        window.location.origin,
+    );
+});
+
+ipcRenderer.on(CALLS_ERROR, (event, message) => {
+    window.postMessage(
+        {
+            type: CALLS_ERROR,
             message,
         },
         window.location.origin,
