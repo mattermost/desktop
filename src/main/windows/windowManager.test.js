@@ -10,7 +10,11 @@ import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
 
-import {getAdjustedWindowBoundaries} from 'main/utils';
+import {
+    getAdjustedWindowBoundaries,
+    resetScreensharePermissionsMacOS,
+    openScreensharePermissionsSettingsMacOS,
+} from 'main/utils';
 
 import {WindowManager} from './windowManager';
 import createMainWindow from './mainWindow';
@@ -60,6 +64,8 @@ jest.mock('common/tabs/TabView', () => ({
 jest.mock('../utils', () => ({
     getAdjustedWindowBoundaries: jest.fn(),
     shouldHaveBackBar: jest.fn(),
+    openScreensharePermissionsSettingsMacOS: jest.fn(),
+    resetScreensharePermissionsMacOS: jest.fn(),
 }));
 jest.mock('../views/viewManager', () => ({
     ViewManager: jest.fn(),
@@ -1114,6 +1120,7 @@ describe('main/windows/windowManager', () => {
         afterEach(() => {
             jest.resetAllMocks();
             Config.teams = [];
+            windowManager.missingScreensharePermissions = undefined;
         });
 
         it('should send sources back', async () => {
@@ -1176,12 +1183,46 @@ describe('main/windows/windowManager', () => {
             expect(windowManager.viewManager.views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
-            expect(windowManager.viewManager.views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledWith('desktop-sources-result', [
+            expect(windowManager.viewManager.views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledTimes(1);
+            expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
+        });
+
+        it('macos - no permissions', async () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
+
+            jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([
                 {
                     id: 'screen0',
+                    thumbnail: {
+                        toDataURL: jest.fn(),
+                    },
                 },
             ]);
-            expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
+            jest.spyOn(systemPreferences, 'getMediaAccessStatus').mockReturnValue('denied');
+
+            await windowManager.handleGetDesktopSources(null, 'server-1_tab-1', null);
+
+            expect(windowManager.missingScreensharePermissions).toBe(true);
+            expect(resetScreensharePermissionsMacOS).toHaveBeenCalledTimes(1);
+            expect(openScreensharePermissionsSettingsMacOS).toHaveBeenCalledTimes(0);
+            expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
+                err: 'screen-permissions',
+            });
+            expect(windowManager.viewManager.views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledWith('calls-error', {
+                err: 'screen-permissions',
+            });
+
+            await windowManager.handleGetDesktopSources(null, 'server-1_tab-1', null);
+
+            expect(resetScreensharePermissionsMacOS).toHaveBeenCalledTimes(2);
+            expect(openScreensharePermissionsSettingsMacOS).toHaveBeenCalledTimes(1);
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
         });
     });
 

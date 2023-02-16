@@ -43,7 +43,12 @@ import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 
 import {MattermostView} from 'main/views/MattermostView';
 
-import {getAdjustedWindowBoundaries, shouldHaveBackBar} from '../utils';
+import {
+    getAdjustedWindowBoundaries,
+    shouldHaveBackBar,
+    resetScreensharePermissionsMacOS,
+    openScreensharePermissionsSettingsMacOS,
+} from '../utils';
 
 import {ViewManager, LoadingScreenState} from '../views/viewManager';
 import CriticalErrorHandler from '../CriticalErrorHandler';
@@ -73,6 +78,7 @@ export class WindowManager {
     downloadsDropdown?: DownloadsDropdownView;
     downloadsDropdownMenu?: DownloadsDropdownMenuView;
     currentServerName?: string;
+    missingScreensharePermissions?: boolean;
 
     constructor() {
         this.mainWindowReady = false;
@@ -823,12 +829,29 @@ export class WindowManager {
         return event.sender.id;
     }
 
-    handleGetDesktopSources = (event: IpcMainEvent, viewName: string, opts: Electron.SourcesOptions) => {
+    handleGetDesktopSources = async (event: IpcMainEvent, viewName: string, opts: Electron.SourcesOptions) => {
         log.debug('WindowManager.handleGetDesktopSources', {viewName, opts});
 
         const view = this.viewManager?.views.get(viewName);
         if (!view) {
             return Promise.resolve();
+        }
+
+        if (process.platform === 'darwin' && systemPreferences.getMediaAccessStatus('screen') === 'denied') {
+            try {
+                // If permissions are missing we reset them so that the system
+                // prompt can be showed.
+                await resetScreensharePermissionsMacOS();
+
+                // We only open the system settings if permissions were already missing since
+                // on the first attempt to get the sources the OS will correctly show a prompt.
+                if (this.missingScreensharePermissions) {
+                    await openScreensharePermissionsSettingsMacOS();
+                }
+                this.missingScreensharePermissions = true;
+            } catch (err) {
+                log.error('failed to reset screen sharing permissions', err);
+            }
         }
 
         const screenPermissionsErrMsg = {err: 'screen-permissions'};
@@ -848,6 +871,7 @@ export class WindowManager {
                 log.info('missing screen permissions');
                 view.view.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
                 this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
+                return;
             }
 
             const message = sources.map((source) => {
