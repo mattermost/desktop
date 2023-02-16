@@ -36,6 +36,7 @@ import {
     DESKTOP_SOURCES_MODAL_REQUEST,
     CALLS_WIDGET_SHARE_SCREEN,
     CLOSE_DOWNLOADS_DROPDOWN,
+    CALLS_ERROR,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -337,6 +338,16 @@ ipcRenderer.on(CALLS_JOINED_CALL, (event, message) => {
     window.postMessage(
         {
             type: CALLS_JOINED_CALL,
+            message,
+        },
+        window.location.origin,
+    );
+});
+
+ipcRenderer.on(CALLS_ERROR, (event, message) => {
+    window.postMessage(
+        {
+            type: CALLS_ERROR,
             message,
         },
         window.location.origin,

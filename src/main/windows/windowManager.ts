@@ -139,7 +139,7 @@ export class WindowManager {
         log.debug('WindowManager.handleDesktopSourcesModalRequest');
 
         if (this.callsWidgetWindow) {
-            this.switchServer(this.callsWidgetWindow?.getServerName());
+            this.switchServer(this.callsWidgetWindow.getServerName());
             this.mainWindow?.focus();
             const currentView = this.viewManager?.getCurrentView();
             currentView?.view.webContents.send(DESKTOP_SOURCES_MODAL_REQUEST);
@@ -834,6 +834,7 @@ export class WindowManager {
 
         const view = this.viewManager?.views.get(viewName);
         if (!view) {
+            log.error('WindowManager.handleGetDesktopSources: view not found');
             return Promise.resolve();
         }
 
