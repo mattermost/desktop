@@ -826,11 +826,12 @@ export class WindowManager {
     handleGetDesktopSources = (event: IpcMainEvent, viewName: string, opts: Electron.SourcesOptions) => {
         log.debug('WindowManager.handleGetDesktopSources', {viewName, opts});
 
-        const globalWidget = viewName === 'widget' && this.callsWidgetWindow;
         const view = this.viewManager?.views.get(viewName);
-        if (!view && !globalWidget) {
+        if (!view) {
             return Promise.resolve();
         }
+
+        const screenPermissionsErrMsg = {err: 'screen-permissions'};
 
         return desktopCapturer.getSources(opts).then((sources) => {
             let hasScreenPermissions = true;
@@ -843,11 +844,10 @@ export class WindowManager {
                 }
             }
 
-            if (!hasScreenPermissions || !sources?.length) {
-                this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, {
-                    err: 'screen-permissions',
-                });
-                return;
+            if (!hasScreenPermissions || !sources.length) {
+                log.info('missing screen permissions');
+                view.view.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
+                this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
             }
 
             const message = sources.map((source) => {
@@ -858,16 +858,14 @@ export class WindowManager {
                 };
             });
 
-            if (view) {
+            if (message.length > 0) {
                 view.view.webContents.send(DESKTOP_SOURCES_RESULT, message);
-            } else {
-                this.callsWidgetWindow?.win.webContents.send(DESKTOP_SOURCES_RESULT, message);
             }
         }).catch((err) => {
             log.error('desktopCapturer.getSources failed', err);
-            this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, {
-                err: 'screen-permissions',
-            });
+
+            view.view.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
+            this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
         });
     }
 

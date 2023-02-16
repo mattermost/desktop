@@ -15,7 +15,6 @@ import {
     CALLS_ERROR,
     DESKTOP_SOURCES_RESULT,
     DESKTOP_SOURCES_MODAL_REQUEST,
-    DISPATCH_GET_DESKTOP_SOURCES,
 } from 'common/communication';
 
 window.addEventListener('message', ({origin, data = {}} = {}) => {
@@ -39,10 +38,6 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
                 window.location.origin,
             );
         });
-        break;
-    }
-    case 'get-desktop-sources': {
-        ipcRenderer.send(DISPATCH_GET_DESKTOP_SOURCES, 'widget', message);
         break;
     }
     case DESKTOP_SOURCES_MODAL_REQUEST:

@@ -1054,13 +1054,61 @@ describe('main/windows/windowManager', () => {
         };
 
         beforeEach(() => {
-            windowManager.viewManager.views = new Map();
             windowManager.callsWidgetWindow = new CallsWidgetWindow();
             windowManager.callsWidgetWindow.win = {
                 webContents: {
                     send: jest.fn(),
                 },
             };
+
+            Config.teams = [
+                {
+                    name: 'server-1',
+                    order: 1,
+                    tabs: [
+                        {
+                            name: 'tab-1',
+                            order: 0,
+                            isOpen: false,
+                        },
+                        {
+                            name: 'tab-2',
+                            order: 2,
+                            isOpen: true,
+                        },
+                    ],
+                }, {
+                    name: 'server-2',
+                    order: 0,
+                    tabs: [
+                        {
+                            name: 'tab-1',
+                            order: 0,
+                            isOpen: false,
+                        },
+                        {
+                            name: 'tab-2',
+                            order: 2,
+                            isOpen: true,
+                        },
+                    ],
+                    lastActiveTab: 2,
+                },
+            ];
+
+            const map = Config.teams.reduce((arr, item) => {
+                item.tabs.forEach((tab) => {
+                    arr.push([`${item.name}_${tab.name}`, {
+                        view: {
+                            webContents: {
+                                send: jest.fn(),
+                            },
+                        },
+                    }]);
+                });
+                return arr;
+            }, []);
+            windowManager.viewManager.views = new Map(map);
         });
 
         afterEach(() => {
@@ -1084,9 +1132,9 @@ describe('main/windows/windowManager', () => {
                 },
             ]);
 
-            await windowManager.handleGetDesktopSources(null, 'widget', null);
+            await windowManager.handleGetDesktopSources(null, 'server-1_tab-1', null);
 
-            expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('desktop-sources-result', [
+            expect(windowManager.viewManager.views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledWith('desktop-sources-result', [
                 {
                     id: 'screen0',
                 },
@@ -1098,10 +1146,14 @@ describe('main/windows/windowManager', () => {
 
         it('should send error with no sources', async () => {
             jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([]);
-            await windowManager.handleGetDesktopSources(null, 'widget', null);
+            await windowManager.handleGetDesktopSources(null, 'server-2_tab-1', null);
             expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
+            expect(windowManager.viewManager.views.get('server-2_tab-1').view.webContents.send).toHaveBeenCalledWith('calls-error', {
+                err: 'screen-permissions',
+            });
+            expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
         });
 
         it('should send error with no permissions', async () => {
@@ -1115,12 +1167,21 @@ describe('main/windows/windowManager', () => {
             ]);
             jest.spyOn(systemPreferences, 'getMediaAccessStatus').mockReturnValue('denied');
 
-            await windowManager.handleGetDesktopSources(null, 'widget', null);
+            await windowManager.handleGetDesktopSources(null, 'server-1_tab-1', null);
 
             expect(systemPreferences.getMediaAccessStatus).toHaveBeenCalledWith('screen');
             expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
+            expect(windowManager.viewManager.views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledWith('calls-error', {
+                err: 'screen-permissions',
+            });
+            expect(windowManager.viewManager.views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledWith('desktop-sources-result', [
+                {
+                    id: 'screen0',
+                },
+            ]);
+            expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
         });
     });
 
