@@ -15,6 +15,9 @@ import WebContentsEventManager from '../views/webContentEvents';
 import CallsWidgetWindow from './callsWidgetWindow';
 
 jest.mock('electron', () => ({
+    app: {
+        getAppPath: () => '/path/to/app',
+    },
     BrowserWindow: jest.fn(),
     ipcMain: {
         on: jest.fn(),
