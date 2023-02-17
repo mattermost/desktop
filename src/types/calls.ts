@@ -28,3 +28,7 @@ export type CallsWidgetShareScreenMessage = {
 export type CallsJoinedCallMessage = {
     callID: string;
 }
+
+export type CallsLinkClickMessage = {
+    link: string | URL;
+}
