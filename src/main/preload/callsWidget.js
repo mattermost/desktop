@@ -50,6 +50,7 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
     case CALLS_WIDGET_RESIZE:
     case CALLS_JOINED_CALL:
     case CALLS_POPOUT_FOCUS:
+    case CALLS_ERROR:
     case CALLS_LEAVE_CALL: {
         ipcRenderer.send(type, message);
         break;
