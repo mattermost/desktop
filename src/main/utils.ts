@@ -5,6 +5,11 @@
 import path from 'path';
 import fs from 'fs';
 
+import {exec as execOriginal} from 'child_process';
+
+import {promisify} from 'util';
+const exec = promisify(execOriginal);
+
 import {app, BrowserWindow} from 'electron';
 
 import {Args} from 'types/args';
@@ -135,4 +140,20 @@ export function shouldIncrementFilename(filepath: string, increment = 0): string
         return shouldIncrementFilename(filepath, increment + 1);
     }
     return filename;
+}
+
+export function resetScreensharePermissionsMacOS() {
+    if (process.platform !== 'darwin') {
+        return Promise.resolve();
+    }
+    return exec('tccutil reset ScreenCapture Mattermost.Desktop',
+        {timeout: 1000});
+}
+
+export function openScreensharePermissionsSettingsMacOS() {
+    if (process.platform !== 'darwin') {
+        return Promise.resolve();
+    }
+    return exec('open "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"',
+        {timeout: 1000});
 }
