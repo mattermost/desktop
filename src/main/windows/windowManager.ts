@@ -9,6 +9,7 @@ import log from 'electron-log';
 
 import {
     CallsJoinCallMessage,
+    CallsErrorMessage,
 } from 'types/calls';
 
 import {
@@ -101,6 +102,7 @@ export class WindowManager {
         ipcMain.on(CALLS_LEAVE_CALL, () => this.callsWidgetWindow?.close());
         ipcMain.on(DESKTOP_SOURCES_MODAL_REQUEST, this.handleDesktopSourcesModalRequest);
         ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.handleCallsWidgetChannelLinkClick);
+        ipcMain.on(CALLS_ERROR, this.handleCallsError);
     }
 
     handleUpdateConfig = () => {
@@ -153,6 +155,14 @@ export class WindowManager {
             this.mainWindow?.focus();
             const currentView = this.viewManager?.getCurrentView();
             currentView?.view.webContents.send(BROWSER_HISTORY_PUSH, this.callsWidgetWindow.getChannelURL());
+        }
+    }
+
+    handleCallsError = (event: IpcMainEvent, msg: CallsErrorMessage) => {
+        if (this.callsWidgetWindow) {
+            this.switchServer(this.callsWidgetWindow.getServerName());
+            this.mainWindow?.focus();
+            this.callsWidgetWindow.getMainView().view.webContents.send(CALLS_ERROR, msg);
         }
     }
 

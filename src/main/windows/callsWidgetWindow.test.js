@@ -379,5 +379,10 @@ describe('main/windows/callsWidgetWindow', () => {
             const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
             expect(widgetWindow.getURL().toString()).toBe('http://localhost:8065/');
         });
+
+        it('getMainView', () => {
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+            expect(widgetWindow.getMainView()).toEqual(mainView);
+        });
     });
 });

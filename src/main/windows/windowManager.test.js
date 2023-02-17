@@ -1368,6 +1368,42 @@ describe('main/windows/windowManager', () => {
         });
     });
 
+    describe('handleCallsError', () => {
+        const windowManager = new WindowManager();
+        windowManager.switchServer = jest.fn();
+        windowManager.mainWindow = {
+            focus: jest.fn(),
+        };
+
+        beforeEach(() => {
+            CallsWidgetWindow.mockImplementation(() => {
+                return {
+                    getServerName: () => 'server-2',
+                    getMainView: jest.fn().mockReturnValue({
+                        view: {
+                            webContents: {
+                                send: jest.fn(),
+                            },
+                        },
+                    }),
+                };
+            });
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+            Config.teams = [];
+        });
+
+        it('should focus view and propagate error to main view', () => {
+            windowManager.callsWidgetWindow = new CallsWidgetWindow();
+            windowManager.handleCallsError(null, {err: 'client-error'});
+            expect(windowManager.switchServer).toHaveBeenCalledWith('server-2');
+            expect(windowManager.mainWindow.focus).toHaveBeenCalled();
+            expect(windowManager.callsWidgetWindow.getMainView().view.webContents.send).toHaveBeenCalledWith('calls-error', {err: 'client-error'});
+        });
+    });
+
     describe('getServerURLFromWebContentsId', () => {
         const view = {
             name: 'server-1_tab-messaging',
