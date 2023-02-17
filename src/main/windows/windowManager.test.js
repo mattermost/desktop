@@ -80,6 +80,7 @@ jest.mock('../downloadsManager', () => ({
 }));
 
 jest.mock('./callsWidgetWindow');
+jest.mock('main/views/webContentEvents', () => ({}));
 
 describe('main/windows/windowManager', () => {
     describe('handleUpdateConfig', () => {
@@ -1263,6 +1264,29 @@ describe('main/windows/windowManager', () => {
             windowManager.callsWidgetWindow = new CallsWidgetWindow();
             windowManager.handleCallsWidgetChannelLinkClick();
             expect(windowManager.switchServer).toHaveBeenCalledWith('server-2');
+        });
+    });
+
+    describe('handleCallsLinkClick', () => {
+        const windowManager = new WindowManager();
+        const view1 = {
+            view: {
+                webContents: {
+                    send: jest.fn(),
+                },
+            },
+        };
+        windowManager.viewManager = {
+            views: new Map([
+                ['server-1_tab-messaging', view1],
+            ]),
+            getCurrentView: jest.fn(),
+        };
+
+        it('should pass through the click link to browser history push', () => {
+            windowManager.viewManager.getCurrentView.mockReturnValue(view1);
+            windowManager.handleCallsLinkClick(null, {link: '/other/subpath'});
+            expect(view1.view.webContents.send).toBeCalledWith('browser-history-push', '/other/subpath');
         });
     });
 
