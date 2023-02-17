@@ -10,6 +10,7 @@ import log from 'electron-log';
 import {
     CallsJoinCallMessage,
     CallsErrorMessage,
+    CallsLinkClickMessage,
 } from 'types/calls';
 
 import {
@@ -36,6 +37,7 @@ import {
     DESKTOP_SOURCES_MODAL_REQUEST,
     CALLS_WIDGET_CHANNEL_LINK_CLICK,
     CALLS_ERROR,
+    CALLS_LINK_CLICK,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
@@ -103,6 +105,7 @@ export class WindowManager {
         ipcMain.on(DESKTOP_SOURCES_MODAL_REQUEST, this.handleDesktopSourcesModalRequest);
         ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.handleCallsWidgetChannelLinkClick);
         ipcMain.on(CALLS_ERROR, this.handleCallsError);
+        ipcMain.on(CALLS_LINK_CLICK, this.handleCallsLinkClick);
     }
 
     handleUpdateConfig = () => {
@@ -159,11 +162,19 @@ export class WindowManager {
     }
 
     handleCallsError = (event: IpcMainEvent, msg: CallsErrorMessage) => {
+        log.debug('WindowManager.handleCallsError', msg);
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerName());
             this.mainWindow?.focus();
             this.callsWidgetWindow.getMainView().view.webContents.send(CALLS_ERROR, msg);
         }
+    }
+
+    handleCallsLinkClick = (_: IpcMainEvent, msg: CallsLinkClickMessage) => {
+        log.debug('WindowManager.handleCallsLinkClick with linkURL', msg.link);
+        this.mainWindow?.focus();
+        const currentView = this.viewManager?.getCurrentView();
+        currentView?.view.webContents.send(BROWSER_HISTORY_PUSH, msg.link);
     }
 
     showSettingsWindow = () => {

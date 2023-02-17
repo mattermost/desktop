@@ -33,4 +33,8 @@ export type CallsErrorMessage = {
     err: string;
     callID?: string;
     errMsg?: string;
-};
+}
+
+export type CallsLinkClickMessage = {
+    link: string | URL;
+}
