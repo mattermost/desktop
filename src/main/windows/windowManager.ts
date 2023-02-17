@@ -34,6 +34,7 @@ import {
     CALLS_LEAVE_CALL,
     DESKTOP_SOURCES_MODAL_REQUEST,
     CALLS_WIDGET_CHANNEL_LINK_CLICK,
+    CALLS_ERROR,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
@@ -822,16 +823,33 @@ export class WindowManager {
         return event.sender.id;
     }
 
-    handleGetDesktopSources = async (event: IpcMainEvent, viewName: string, opts: Electron.SourcesOptions) => {
+    handleGetDesktopSources = (event: IpcMainEvent, viewName: string, opts: Electron.SourcesOptions) => {
         log.debug('WindowManager.handleGetDesktopSources', {viewName, opts});
 
         const globalWidget = viewName === 'widget' && this.callsWidgetWindow;
         const view = this.viewManager?.views.get(viewName);
         if (!view && !globalWidget) {
-            return;
+            return Promise.resolve();
         }
 
-        desktopCapturer.getSources(opts).then((sources) => {
+        return desktopCapturer.getSources(opts).then((sources) => {
+            let hasScreenPermissions = true;
+            if (systemPreferences.getMediaAccessStatus) {
+                const screenPermissions = systemPreferences.getMediaAccessStatus('screen');
+                log.debug('screenPermissions', screenPermissions);
+                if (screenPermissions === 'denied') {
+                    log.info('no screen sharing permissions');
+                    hasScreenPermissions = false;
+                }
+            }
+
+            if (!hasScreenPermissions || !sources?.length) {
+                this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, {
+                    err: 'screen-permissions',
+                });
+                return;
+            }
+
             const message = sources.map((source) => {
                 return {
                     id: source.id,
@@ -845,6 +863,11 @@ export class WindowManager {
             } else {
                 this.callsWidgetWindow?.win.webContents.send(DESKTOP_SOURCES_RESULT, message);
             }
+        }).catch((err) => {
+            log.error('desktopCapturer.getSources failed', err);
+            this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, {
+                err: 'screen-permissions',
+            });
         });
     }
 
