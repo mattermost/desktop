@@ -9,6 +9,8 @@ import log from 'electron-log';
 
 import {
     CallsJoinCallMessage,
+    CallsErrorMessage,
+    CallsLinkClickMessage,
 } from 'types/calls';
 
 import {
@@ -35,6 +37,7 @@ import {
     DESKTOP_SOURCES_MODAL_REQUEST,
     CALLS_WIDGET_CHANNEL_LINK_CLICK,
     CALLS_ERROR,
+    CALLS_LINK_CLICK,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
@@ -43,7 +46,12 @@ import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 
 import {MattermostView} from 'main/views/MattermostView';
 
-import {getAdjustedWindowBoundaries, shouldHaveBackBar} from '../utils';
+import {
+    getAdjustedWindowBoundaries,
+    shouldHaveBackBar,
+    resetScreensharePermissionsMacOS,
+    openScreensharePermissionsSettingsMacOS,
+} from '../utils';
 
 import {ViewManager, LoadingScreenState} from '../views/viewManager';
 import CriticalErrorHandler from '../CriticalErrorHandler';
@@ -73,6 +81,7 @@ export class WindowManager {
     downloadsDropdown?: DownloadsDropdownView;
     downloadsDropdownMenu?: DownloadsDropdownMenuView;
     currentServerName?: string;
+    missingScreensharePermissions?: boolean;
 
     constructor() {
         this.mainWindowReady = false;
@@ -95,6 +104,8 @@ export class WindowManager {
         ipcMain.on(CALLS_LEAVE_CALL, () => this.callsWidgetWindow?.close());
         ipcMain.on(DESKTOP_SOURCES_MODAL_REQUEST, this.handleDesktopSourcesModalRequest);
         ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.handleCallsWidgetChannelLinkClick);
+        ipcMain.on(CALLS_ERROR, this.handleCallsError);
+        ipcMain.on(CALLS_LINK_CLICK, this.handleCallsLinkClick);
     }
 
     handleUpdateConfig = () => {
@@ -133,7 +144,7 @@ export class WindowManager {
         log.debug('WindowManager.handleDesktopSourcesModalRequest');
 
         if (this.callsWidgetWindow) {
-            this.switchServer(this.callsWidgetWindow?.getServerName());
+            this.switchServer(this.callsWidgetWindow.getServerName());
             this.mainWindow?.focus();
             const currentView = this.viewManager?.getCurrentView();
             currentView?.view.webContents.send(DESKTOP_SOURCES_MODAL_REQUEST);
@@ -148,6 +159,22 @@ export class WindowManager {
             const currentView = this.viewManager?.getCurrentView();
             currentView?.view.webContents.send(BROWSER_HISTORY_PUSH, this.callsWidgetWindow.getChannelURL());
         }
+    }
+
+    handleCallsError = (event: IpcMainEvent, msg: CallsErrorMessage) => {
+        log.debug('WindowManager.handleCallsError', msg);
+        if (this.callsWidgetWindow) {
+            this.switchServer(this.callsWidgetWindow.getServerName());
+            this.mainWindow?.focus();
+            this.callsWidgetWindow.getMainView().view.webContents.send(CALLS_ERROR, msg);
+        }
+    }
+
+    handleCallsLinkClick = (_: IpcMainEvent, msg: CallsLinkClickMessage) => {
+        log.debug('WindowManager.handleCallsLinkClick with linkURL', msg.link);
+        this.mainWindow?.focus();
+        const currentView = this.viewManager?.getCurrentView();
+        currentView?.view.webContents.send(BROWSER_HISTORY_PUSH, msg.link);
     }
 
     showSettingsWindow = () => {
@@ -823,14 +850,33 @@ export class WindowManager {
         return event.sender.id;
     }
 
-    handleGetDesktopSources = (event: IpcMainEvent, viewName: string, opts: Electron.SourcesOptions) => {
+    handleGetDesktopSources = async (event: IpcMainEvent, viewName: string, opts: Electron.SourcesOptions) => {
         log.debug('WindowManager.handleGetDesktopSources', {viewName, opts});
 
-        const globalWidget = viewName === 'widget' && this.callsWidgetWindow;
         const view = this.viewManager?.views.get(viewName);
-        if (!view && !globalWidget) {
+        if (!view) {
+            log.error('WindowManager.handleGetDesktopSources: view not found');
             return Promise.resolve();
         }
+
+        if (process.platform === 'darwin' && systemPreferences.getMediaAccessStatus('screen') === 'denied') {
+            try {
+                // If permissions are missing we reset them so that the system
+                // prompt can be showed.
+                await resetScreensharePermissionsMacOS();
+
+                // We only open the system settings if permissions were already missing since
+                // on the first attempt to get the sources the OS will correctly show a prompt.
+                if (this.missingScreensharePermissions) {
+                    await openScreensharePermissionsSettingsMacOS();
+                }
+                this.missingScreensharePermissions = true;
+            } catch (err) {
+                log.error('failed to reset screen sharing permissions', err);
+            }
+        }
+
+        const screenPermissionsErrMsg = {err: 'screen-permissions'};
 
         return desktopCapturer.getSources(opts).then((sources) => {
             let hasScreenPermissions = true;
@@ -843,10 +889,10 @@ export class WindowManager {
                 }
             }
 
-            if (!hasScreenPermissions || !sources?.length) {
-                this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, {
-                    err: 'screen-permissions',
-                });
+            if (!hasScreenPermissions || !sources.length) {
+                log.info('missing screen permissions');
+                view.view.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
+                this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
                 return;
             }
 
@@ -858,16 +904,14 @@ export class WindowManager {
                 };
             });
 
-            if (view) {
+            if (message.length > 0) {
                 view.view.webContents.send(DESKTOP_SOURCES_RESULT, message);
-            } else {
-                this.callsWidgetWindow?.win.webContents.send(DESKTOP_SOURCES_RESULT, message);
             }
         }).catch((err) => {
             log.error('desktopCapturer.getSources failed', err);
-            this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, {
-                err: 'screen-permissions',
-            });
+
+            view.view.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
+            this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
         });
     }
 

@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import url from 'url';
-
 import {EventEmitter} from 'events';
 import {BrowserWindow, Rectangle, ipcMain, IpcMainEvent} from 'electron';
 import log from 'electron-log';
@@ -31,6 +30,8 @@ import {
     CALLS_WIDGET_RESIZE,
     CALLS_WIDGET_SHARE_SCREEN,
 } from 'common/communication';
+import webContentsEventManager from 'main/views/webContentEvents';
+import Config from 'common/config';
 
 type LoadURLOpts = {
     extraHeaders: string;
@@ -200,6 +201,11 @@ export default class CallsWidgetWindow extends EventEmitter {
 
     private onPopOutCreate = (win: BrowserWindow) => {
         this.popOut = win;
+
+        // Let the webContentsEventManager handle links that try to open a new window
+        const spellcheck = Config.useSpellChecker;
+        const newWindow = webContentsEventManager.generateNewWindowListener(this.popOut.webContents.id, spellcheck);
+        this.popOut.webContents.setWindowOpenHandler(newWindow);
     }
 
     private onPopOutFocus = () => {
@@ -218,6 +224,10 @@ export default class CallsWidgetWindow extends EventEmitter {
 
     public getURL() {
         return urlUtils.parseURL(this.win.webContents.getURL());
+    }
+
+    public getMainView() {
+        return this.mainView;
     }
 }
 

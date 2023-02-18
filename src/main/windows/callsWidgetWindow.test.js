@@ -10,15 +10,24 @@ import {
     MINIMUM_CALLS_WIDGET_HEIGHT,
     CALLS_PLUGIN_ID,
 } from 'common/utils/constants';
+import WebContentsEventManager from '../views/webContentEvents';
 
 import CallsWidgetWindow from './callsWidgetWindow';
 
 jest.mock('electron', () => ({
+    app: {
+        getAppPath: () => '/path/to/app',
+    },
     BrowserWindow: jest.fn(),
     ipcMain: {
         on: jest.fn(),
         off: jest.fn(),
+        handle: jest.fn(),
     },
+}));
+
+jest.mock('../views/webContentEvents', () => ({
+    generateNewWindowListener: jest.fn(),
 }));
 
 describe('main/windows/callsWidgetWindow', () => {
@@ -330,9 +339,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 send: jest.fn(),
             };
 
-            let isMinimized = false;
             baseWindow.restore = jest.fn();
-            baseWindow.isMinimized = jest.fn(() => isMinimized);
 
             const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
 
@@ -341,19 +348,30 @@ describe('main/windows/callsWidgetWindow', () => {
 
             expect(widgetWindow.popOut).toBeNull();
 
-            const popOut = new BrowserWindow();
+            const popOut = new EventEmitter();
+            popOut.webContents = {
+                setWindowOpenHandler: jest.fn(),
+                on: jest.fn(),
+                id: 'webContentsId',
+            };
+            popOut.focus = jest.fn();
+            popOut.restore = jest.fn();
+            popOut.isMinimized = jest.fn().mockReturnValue(false);
+
             widgetWindow.onPopOutFocus();
             expect(popOut.focus).not.toHaveBeenCalled();
             expect(popOut.restore).not.toHaveBeenCalled();
 
             widgetWindow.onPopOutCreate(popOut);
             expect(widgetWindow.popOut).toBe(popOut);
+            expect(popOut.webContents.setWindowOpenHandler).toHaveBeenCalled();
+            expect(WebContentsEventManager.generateNewWindowListener).toHaveBeenCalledWith('webContentsId', true);
 
             widgetWindow.onPopOutFocus();
             expect(popOut.focus).toHaveBeenCalled();
             expect(popOut.restore).not.toHaveBeenCalled();
 
-            isMinimized = true;
+            popOut.isMinimized = jest.fn().mockReturnValue(true);
             widgetWindow.onPopOutFocus();
             expect(popOut.focus).toHaveBeenCalled();
             expect(popOut.restore).toHaveBeenCalled();
@@ -378,6 +396,11 @@ describe('main/windows/callsWidgetWindow', () => {
 
             const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
             expect(widgetWindow.getURL().toString()).toBe('http://localhost:8065/');
+        });
+
+        it('getMainView', () => {
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+            expect(widgetWindow.getMainView()).toEqual(mainView);
         });
     });
 });
