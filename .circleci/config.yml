@@ -611,29 +611,6 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
-      - temp1:
-          context:
-            - desktop-notify
-            - windows-codesign
-            - mattermost-release-s3
-            - matterbuild-github-token
-            - electron-installer
-            - desktop_browserview
-            - desktop-rainforest-build
-          filters:
-            branches:
-              ignore:
-                - /^build-pr-.*/
-                - nightly
-      - temp2:
-          context:
-            - codesign-certificates
-            - mattermost-desktop-daily-s3
-          filters:
-            branches:
-              ignore:
-                - /^build-pr-.*/
-                - nightly
       - build-linux:
           filters:
             branches:

@@ -113,6 +113,8 @@ jobs:
         run: |
           npm ci --openssl_fips=''
       - name: ci/build
+        env:
+          MM_WIN_INSTALLERS: 1
         run: |
           mkdir -p ./build
           npm run package:windows
@@ -145,6 +147,12 @@ jobs:
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           npm ci
       - name: ci/build
+        env:
+          APPLEID: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_APPLE_ID }}
+          APPLEIDPASS: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_APPLE_ID_PASS }}
+          CSC_FOR_PULL_REQUEST: true
+          CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_KEY_PASSWORD }}
+          CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_LINK }}
         run: |
           mkdir -p ./build
           npm run package:mac
