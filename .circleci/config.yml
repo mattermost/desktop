@@ -32,7 +32,7 @@ executors:
   aws:
     working_directory: ~/mattermost-desktop
     docker:
-      - image: 'circleci/python:2.7'
+      - image: "circleci/python:2.7"
   github:
     working_directory: ~/mattermost-desktop
     docker:
@@ -165,6 +165,16 @@ commands:
       - store_artifacts:
           path: /tmp/artifacts
 jobs:
+  temp1:
+    executor: aws
+    steps:
+      - checkout
+      - run: tail -f /dev/null
+  temp2:
+    executor: aws
+    steps:
+      - checkout
+      - run: tail -f /dev/null
   build-linux:
     executor: wine-mono
     steps:
@@ -431,7 +441,7 @@ jobs:
               fi
             fi
       - run:
-          name: 'Upload to App Store Connect'
+          name: "Upload to App Store Connect"
           command: fastlane publish_test path:"$(find . -name \*.pkg -print -quit)"
 
   store_artifacts:
@@ -588,7 +598,6 @@ jobs:
       - notify:
           message: "Release process for the desktop app ended, the new release can be found on [GitHub](https://github.com/mattermost/desktop/releases)."
 
-
 workflows:
   version: 2
   build_and_test:
@@ -602,6 +611,29 @@ workflows:
                 # release-XX.YY.ZZ
                 # release-XX.YY.ZZ-rc-something
                 - /^release-\d+(\.\d+){1,2}(-rc.*)?/
+      - temp1:
+          context:
+            - desktop-notify
+            - windows-codesign
+            - mattermost-release-s3
+            - matterbuild-github-token
+            - electron-installer
+            - desktop_browserview
+            - desktop-rainforest-build
+          filters:
+            branches:
+              ignore:
+                - /^build-pr-.*/
+                - nightly
+      - temp2:
+          context:
+            - codesign-certificates
+            - mattermost-desktop-daily-s3
+          filters:
+            branches:
+              ignore:
+                - /^build-pr-.*/
+                - nightly
       - build-linux:
           filters:
             branches:
