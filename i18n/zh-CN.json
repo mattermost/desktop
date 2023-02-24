@@ -267,7 +267,7 @@
     "main.CriticalErrorHandler.unresponsive.dialog.message": "窗口不再有响应。\n您是否要等待窗口再次恢复响应?",
     "renderer.components.settingsPage.loggingLevel.level.silly": "精细(silly)",
     "renderer.components.settingsPage.loggingLevel.level.verbose": "详细(verbose)",
-    "renderer.components.showCertificateModal.notValidBefore": "",
-    "renderer.components.showCertificateModal.commonName": "",
-    "renderer.components.showCertificateModal.notValidAfter": ""
+    "renderer.components.showCertificateModal.notValidBefore": "不早于",
+    "renderer.components.showCertificateModal.commonName": "公用名",
+    "renderer.components.showCertificateModal.notValidAfter": "不晚于"
 }
