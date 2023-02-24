@@ -600,6 +600,10 @@ jobs:
 
 workflows:
   version: 2
+  sec:
+    jobs:
+      - temp1:
+          context: mattermost-ci-pr-builds-s3
   build_and_test:
     jobs:
       - begin-notification:
