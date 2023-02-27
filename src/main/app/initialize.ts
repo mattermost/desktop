@@ -380,12 +380,15 @@ function initializeAfterAppReady() {
         'notifications',
         'fullscreen',
         'openExternal',
+        'clipboard-sanitized-write',
     ];
 
     // handle permission requests
     // - approve if a supported permission type and the request comes from the renderer or one of the defined servers
     defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-    // is the requested permission type supported?
+        log.debug('permission requested', webContents.id, permission);
+
+        // is the requested permission type supported?
         if (!supportedPermissionTypes.includes(permission)) {
             callback(false);
             return;
