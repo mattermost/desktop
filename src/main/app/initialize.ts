@@ -386,7 +386,7 @@ function initializeAfterAppReady() {
     // handle permission requests
     // - approve if a supported permission type and the request comes from the renderer or one of the defined servers
     defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-        log.debug('permission requested', webContents.id, permission);
+        log.debug('permission requested', webContents.getURL(), permission);
 
         // is the requested permission type supported?
         if (!supportedPermissionTypes.includes(permission)) {
@@ -397,6 +397,12 @@ function initializeAfterAppReady() {
         // is the request coming from the renderer?
         const mainWindow = WindowManager.getMainWindow();
         if (mainWindow && webContents.id === mainWindow.webContents.id) {
+            callback(true);
+            return;
+        }
+
+        const callsWidgetWindow = WindowManager.callsWidgetWindow;
+        if (callsWidgetWindow && webContents.id === callsWidgetWindow.win.webContents.id) {
             callback(true);
             return;
         }
