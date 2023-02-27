@@ -26,7 +26,7 @@ export const REGEX_EMAIL = /[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\
 export const REGEX_IPV4 = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/;
 export const REGEX_URL = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/;
 
-export const REGEX_PATH_WIN32 = /(?:[a-z]:)?[/\\](?:[./\\ ](?![./\\\n])|[^<>:"|?*./\\ \n])+[a-zA-Z0-9]./;
+export const REGEX_PATH_WIN32 = /((?:[a-zA-Z]:|[\\/][\\/][\w\s.]+[\\/][\w\s.$]+)[\\/](?:[\w\s.]+[\\/])+)([\w\s.]+)[$'"\s]/;
 export const REGEX_PATH_DARWIN = /([/]{1}[a-z0-9.]+)+(\/?)|^([/])/;
 export const REGEX_PATH_LINUX = /([/]{1}[a-z0-9.]+)+(\/?)|^([/])/; // same as darwin
 
