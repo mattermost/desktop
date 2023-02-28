@@ -1239,6 +1239,13 @@ describe('main/windows/windowManager', () => {
             CallsWidgetWindow.mockImplementation(() => {
                 return {
                     getServerName: () => 'server-1',
+                    getMainView: jest.fn().mockReturnValue({
+                        view: {
+                            webContents: {
+                                send: jest.fn(),
+                            },
+                        },
+                    }),
                 };
             });
 
@@ -1310,6 +1317,14 @@ describe('main/windows/windowManager', () => {
             CallsWidgetWindow.mockImplementation(() => {
                 return {
                     getServerName: () => 'server-2',
+                    getMainView: jest.fn().mockReturnValue({
+                        view: {
+                            webContents: {
+                                send: jest.fn(),
+                            },
+                        },
+                    }),
+                    getChannelURL: jest.fn(),
                 };
             });
 
@@ -1407,6 +1422,7 @@ describe('main/windows/windowManager', () => {
 
     describe('handleCallsLinkClick', () => {
         const windowManager = new WindowManager();
+        windowManager.switchServer = jest.fn();
         const view1 = {
             view: {
                 webContents: {
@@ -1418,12 +1434,26 @@ describe('main/windows/windowManager', () => {
             views: new Map([
                 ['server-1_tab-messaging', view1],
             ]),
-            getCurrentView: jest.fn(),
         };
 
+        beforeEach(() => {
+            CallsWidgetWindow.mockImplementation(() => {
+                return {
+                    getServerName: () => 'server-1',
+                    getMainView: jest.fn().mockReturnValue(view1),
+                };
+            });
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+            Config.teams = [];
+        });
+
         it('should pass through the click link to browser history push', () => {
-            windowManager.viewManager.getCurrentView.mockReturnValue(view1);
+            windowManager.callsWidgetWindow = new CallsWidgetWindow();
             windowManager.handleCallsLinkClick(null, {link: '/other/subpath'});
+            expect(windowManager.switchServer).toHaveBeenCalledWith('server-1');
             expect(view1.view.webContents.send).toBeCalledWith('browser-history-push', '/other/subpath');
         });
     });

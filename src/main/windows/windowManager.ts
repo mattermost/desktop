@@ -146,23 +146,23 @@ export class WindowManager {
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerName());
             this.mainWindow?.focus();
-            const currentView = this.viewManager?.getCurrentView();
-            currentView?.view.webContents.send(DESKTOP_SOURCES_MODAL_REQUEST);
+            this.callsWidgetWindow.getMainView().view.webContents.send(DESKTOP_SOURCES_MODAL_REQUEST);
         }
     }
 
     handleCallsWidgetChannelLinkClick = () => {
         log.debug('WindowManager.handleCallsWidgetChannelLinkClick');
+
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerName());
             this.mainWindow?.focus();
-            const currentView = this.viewManager?.getCurrentView();
-            currentView?.view.webContents.send(BROWSER_HISTORY_PUSH, this.callsWidgetWindow.getChannelURL());
+            this.callsWidgetWindow.getMainView().view.webContents.send(BROWSER_HISTORY_PUSH, this.callsWidgetWindow.getChannelURL());
         }
     }
 
     handleCallsError = (event: IpcMainEvent, msg: CallsErrorMessage) => {
         log.debug('WindowManager.handleCallsError', msg);
+
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerName());
             this.mainWindow?.focus();
@@ -172,9 +172,12 @@ export class WindowManager {
 
     handleCallsLinkClick = (_: IpcMainEvent, msg: CallsLinkClickMessage) => {
         log.debug('WindowManager.handleCallsLinkClick with linkURL', msg.link);
-        this.mainWindow?.focus();
-        const currentView = this.viewManager?.getCurrentView();
-        currentView?.view.webContents.send(BROWSER_HISTORY_PUSH, msg.link);
+
+        if (this.callsWidgetWindow) {
+            this.switchServer(this.callsWidgetWindow.getServerName());
+            this.mainWindow?.focus();
+            this.callsWidgetWindow.getMainView().view.webContents.send(BROWSER_HISTORY_PUSH, msg.link);
+        }
     }
 
     showSettingsWindow = () => {
