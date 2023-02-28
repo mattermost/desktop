@@ -4,6 +4,7 @@
 import {MASK_EMAIL, MASK_PATH} from 'common/constants';
 
 import {maskMessageDataHook} from './loggerHooks';
+import {obfuscateByType} from './obfuscators';
 
 const loggerMock = {
     transports: {
@@ -57,6 +58,13 @@ describe('main/diagnostics/loggerHooks', () => {
         };
         const result = maskMessageDataHook(loggerMock)(message, 'file').data[0];
         expect(URLs.some((url) => result.includes(url))).toBe(false);
+    });
+
+    it('should not allow local prototype pollution', () => {
+        const obj = JSON.parse('{"__proto__":["1","2","3","4"]}');
+        expect(obj instanceof Array).toBe(false);
+        const obf = obfuscateByType(obj);
+        expect(obf instanceof Array).toBe(false);
     });
 
     describe('should mask paths for all OSs', () => {

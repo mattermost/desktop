@@ -60,7 +60,10 @@ function maskDataInArray(arr: unknown[]): unknown[] {
 
 function maskDataInObject(obj: Record<string, unknown>): Record<string, unknown> {
     return Object.keys(obj).reduce<Record<string, unknown>>((acc, key) => {
-        acc[key] = obfuscateByType(obj[key]);
+        // Avoid local prototype pollution
+        if (key !== '__proto__') {
+            acc[key] = obfuscateByType(obj[key]);
+        }
         return acc;
     }, {});
 }
