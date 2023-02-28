@@ -4,7 +4,7 @@
 import {MASK_EMAIL, MASK_PATH} from 'common/constants';
 
 import {maskMessageDataHook} from './loggerHooks';
-import { obfuscateByType } from './obfuscators';
+import {obfuscateByType} from './obfuscators';
 
 const loggerMock = {
     transports: {
