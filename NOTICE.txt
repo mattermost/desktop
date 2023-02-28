@@ -687,6 +687,19 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ---
 
+## webpack-dev-server
+
+This product contains 'webpack-dev-server' by webpack.
+
+Use webpack with a development server that provides live reloading. This should be used for development only.
+
+* HOMEPAGE:
+  * https://github.com/webpack/webpack-dev-server#readme
+
+* LICENSE: https://github.com/webpack/webpack-dev-server/blob/master/LICENSE
+
+---
+
 ## webpack-merge
 
 This product contains 'webpack-merge' by SurviveJS.
