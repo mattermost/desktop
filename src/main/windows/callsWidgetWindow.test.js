@@ -27,7 +27,7 @@ jest.mock('electron', () => ({
 }));
 
 jest.mock('../views/webContentEvents', () => ({
-    generateNewWindowListener: jest.fn(),
+    addWebContentsEventListeners: jest.fn(),
 }));
 
 jest.mock('common/utils/url', () => {
@@ -413,8 +413,15 @@ describe('main/windows/callsWidgetWindow', () => {
 
         it('menubar disabled on popout', () => {
             const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            expect(widgetWindow.onPopOutOpen()).toHaveProperty('action', 'allow');
-            expect(widgetWindow.onPopOutOpen().overrideBrowserWindowOptions).toHaveProperty('autoHideMenuBar', true);
+            const popOutURL = 'http://localhost:8065/team/com.mattermost.calls/expanded/test-call-id';
+            expect(widgetWindow.onPopOutOpen({url: popOutURL})).toHaveProperty('action', 'allow');
+            expect(widgetWindow.onPopOutOpen({url: popOutURL}).overrideBrowserWindowOptions).toHaveProperty('autoHideMenuBar', true);
+        });
+
+        it('wrong popout url disabled', () => {
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+            const popOutURL = 'http://localhost/team/com.mattermost.calls/expanded/test-call-id';
+            expect(widgetWindow.onPopOutOpen({url: popOutURL})).toHaveProperty('action', 'deny');
         });
 
         it('onPopOutFocus', () => {
@@ -434,7 +441,6 @@ describe('main/windows/callsWidgetWindow', () => {
 
             const popOut = new EventEmitter();
             popOut.webContents = {
-                setWindowOpenHandler: jest.fn(),
                 on: jest.fn(),
                 id: 'webContentsId',
             };
@@ -448,8 +454,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
             widgetWindow.onPopOutCreate(popOut);
             expect(widgetWindow.popOut).toBe(popOut);
-            expect(popOut.webContents.setWindowOpenHandler).toHaveBeenCalled();
-            expect(WebContentsEventManager.generateNewWindowListener).toHaveBeenCalledWith('webContentsId', true);
+            expect(WebContentsEventManager.addWebContentsEventListeners).toHaveBeenCalledWith(popOut.webContents);
 
             widgetWindow.onPopOutFocus();
             expect(popOut.focus).toHaveBeenCalled();
@@ -507,6 +512,28 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(widgetWindow.isAllowedEvent({
                 sender: baseWindow.webContents,
             })).toEqual(true);
+        });
+
+        it('getPopOutWebContentsId', () => {
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+            widgetWindow.popOut = {
+                webContents: {
+                    id: 'popOutID',
+                },
+            };
+            expect(widgetWindow.getPopOutWebContentsId()).toBe('popOutID');
+        });
+
+        it('onNavigate', () => {
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+
+            const ev = {preventDefault: jest.fn()};
+
+            widgetWindow.onNavigate(ev, widgetWindow.getWidgetURL());
+            expect(ev.preventDefault).not.toHaveBeenCalled();
+
+            widgetWindow.onNavigate(ev, 'http://localhost:8065/invalid/url');
+            expect(ev.preventDefault).toHaveBeenCalledTimes(1);
         });
     });
 });

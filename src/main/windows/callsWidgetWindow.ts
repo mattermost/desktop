@@ -30,7 +30,6 @@ import {
     CALLS_WIDGET_SHARE_SCREEN,
 } from 'common/communication';
 import webContentsEventManager from 'main/views/webContentEvents';
-import Config from 'common/config';
 
 type LoadURLOpts = {
     extraHeaders: string;
@@ -82,6 +81,10 @@ export default class CallsWidgetWindow extends EventEmitter {
         this.win.webContents.setWindowOpenHandler(this.onPopOutOpen);
         this.win.webContents.on('did-create-window', this.onPopOutCreate);
 
+        // Calls widget window is not supposed to navigate anywhere else.
+        this.win.webContents.on('will-navigate', this.onNavigate);
+        this.win.webContents.on('did-start-navigation', this.onNavigate);
+
         this.load();
     }
 
@@ -100,6 +103,14 @@ export default class CallsWidgetWindow extends EventEmitter {
 
     public getCallID() {
         return this.config.callID;
+    }
+
+    private onNavigate = (ev: Event, url: string) => {
+        if (url === this.getWidgetURL()) {
+            return;
+        }
+        log.warn(`CallsWidgetWindow: prevented widget window from navigating to: ${url}`);
+        ev.preventDefault();
     }
 
     private load() {
@@ -209,7 +220,12 @@ export default class CallsWidgetWindow extends EventEmitter {
         this.setBounds(initialBounds);
     }
 
-    private onPopOutOpen = () => {
+    private onPopOutOpen = ({url}: {url: string}) => {
+        if (!urlUtils.isCallsPopOutURL(this.mainView.serverInfo.server.url, url, this.config.callID)) {
+            log.warn(`CallsWidgetWindow.onPopOutOpen: prevented window open to ${url}`);
+            return {action: 'deny' as const};
+        }
+
         return {
             action: 'allow' as const,
             overrideBrowserWindowOptions: {
@@ -222,9 +238,7 @@ export default class CallsWidgetWindow extends EventEmitter {
         this.popOut = win;
 
         // Let the webContentsEventManager handle links that try to open a new window
-        const spellcheck = Config.useSpellChecker;
-        const newWindow = webContentsEventManager.generateNewWindowListener(this.popOut.webContents.id, spellcheck);
-        this.popOut.webContents.setWindowOpenHandler(newWindow);
+        webContentsEventManager.addWebContentsEventListeners(this.popOut.webContents);
     }
 
     private onPopOutFocus = () => {
@@ -239,6 +253,10 @@ export default class CallsWidgetWindow extends EventEmitter {
 
     public getWebContentsId() {
         return this.win.webContents.id;
+    }
+
+    public getPopOutWebContentsId() {
+        return this.popOut?.webContents.id;
     }
 
     public getURL() {
